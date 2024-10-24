@@ -318,3 +318,69 @@ type CGStakeStatsRWalk struct {
 	TotalTokensMinted			int64
 	NumActiveStakers			int64
 }
+type CGNftStakedInfoRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	UnstakeTimeStamp			int64
+	UnstakeDate					string
+	StakerAid					int64
+	StakerAddr					string
+}
+type CGNftUnstakedInfoRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	StakerAid					int64
+	StakerAddr					string
+	RewardAmount				string
+	RewardAmountEth				float64
+	MaxUnpaidDepositIndex		int64
+}
+type CGNftStakeUnstakeCombined struct {
+	Stake						CGNftStakedInfoRec
+	Unstake						CGNftUnstakedInfoRec
+	Reward						string
+	RewardEth					float64
+	Claimed						bool
+}
+type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of deposits-rewards
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositId					int64
+	DepositRoundNum				int64
+	NumStakedNFTs				int64
+	DepositAmount				string
+	DepositAmountEth			float64
+	YourTokensStaked			int64
+	YourClaimableAmount			string
+	YourClaimableAmountEth		float64
+	NumTokensCollected			int64
+	AmountPerToken				string
+	AmountPerTokenEth			float64
+	Modulo						string
+	ModuloF64					float64
+	FullyClaimed				bool
+	ClaimedAmount				string
+	ClaimedAmountEth			float64
+	Actions						[]CGNftStakeUnstakeCombined
+}

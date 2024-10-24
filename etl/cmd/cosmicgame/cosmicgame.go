@@ -1211,12 +1211,13 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.DepositAmount.String()
 	//evt.AccumModulo = eth_evt.Modulo.String()
 	evt.AccumModulo = "0";	// pending for resolution regarding StakingWalletCST refactoring
-	evt.RoundNum = find_prize_num(evt.TxId)
-	if evt.RoundNum == -1 {
-		Error.Printf("Failed to gather round_num variable")
-		Info.Printf("Failed to gather round_num variable")
-		os.Exit(1)
-	}
+	evt.RoundNum = eth_evt.RoundNum.Int64();
+	//evt.RoundNum = find_prize_num(evt.TxId)
+	//if evt.RoundNum == -1 {
+	//	Error.Printf("Failed to gather round_num variable")
+	//	Info.Printf("Failed to gather round_num variable")
+	//	os.Exit(1)
+	//}
 	divres:=big.NewInt(0)
 	rem:=big.NewInt(0)
 	divres.QuoRem(eth_evt.DepositAmount,eth_evt.NumStakedNfts,rem);

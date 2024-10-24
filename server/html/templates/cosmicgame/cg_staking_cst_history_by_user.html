@@ -1,0 +1,67 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>CST Staking history for user {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">CST staking history for user {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Deposit Id</th>
+		<th class="market_reports">Total staked tokens</th>
+		<th class="market_reports">Total deposited</th>
+		<th class="market_reports">Reward on your stake</th>
+		<th class="market_reports">Your stake (num)</th>
+		<th class="market_reports">Your stake<br/> collected(num)</th>
+		<th class="market_reports">Amount collected (ETH)</th>
+	</tr>
+	{{- range $i, $change := .UserCstStakingHistory}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td style="text-align: center;" title="">
+				<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
+				{{.DepositId}}
+				</a>
+			</td>
+			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .YourClaimableAmountEth}}</td>
+			<td style="text-align: center;" title="">{{.YourTokensStaked}}</td>
+			<td style="text-align: center;" title="">{{.NumTokensCollected}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .ClaimedAmountEth}}</td>
+			<td>
+				<table>
+					<tr>
+						<th class="market_reports">RecordID</th>
+						<th class="market_reports">ActionID</th>
+						<th class="market_reports">Stake Date</th>
+					</tr>
+					{{- range $j, $row := .Actions }}
+					<tr class="market_reports">
+						<td class="">
+							{{.Stake.RecordId}}
+						</td>
+						<td class="">
+							{{.Stake.ActionId}}
+						</td>
+						<td class="">
+							{{.Stake.DateTime}}
+						</td>
+					</tr>
+					{{- end }}
+				</table>
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/cst/rewards/collected/by_user/[user_addr]/[offset]/[limit]</br>
+
+	Example: /api/cosmicgame/staking/cst/rewards/collected/by_user/{{.UserAddr}}/0/10000
+</code>
+</body>

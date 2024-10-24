@@ -318,3 +318,30 @@ func cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
 		"CSTStakingRewardMints" : mints,
 	})
 }
+func cosmic_game_staking_cst_history_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+    p_user_addr:= c.Param("user_addr")
+    if len(p_user_addr) == 0 {
+        respond_error(c,"'user_addr' parameter is not set")
+        return
+    }
+    user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+    if err != nil {
+        c.HTML(http.StatusBadRequest, "error.html", gin.H{
+            "title": "Error",
+            "ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+        })
+        return
+    }
+
+	history := arb_storagew.Get_staking_cst_history_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_staking_cst_history_by_user.html", gin.H{
+		"UserAid":user_aid,
+		"UserAddr":p_user_addr,
+		"UserCstStakingHistory" : history,
+	})
+}
