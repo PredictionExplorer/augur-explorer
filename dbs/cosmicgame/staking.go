@@ -1100,6 +1100,141 @@ func (sw *SQLStorageWrapper) Get_staking_cst_mints_global(offset,limit int) []p.
 func (sw *SQLStorageWrapper) Get_staking_cst_history_by_user(user_aid int64) []p.CGCombinedDepositRewardRec {
 
 	var query string
+		query = 
+			"SELECT "+
+				"sa_id,sa_evtlog_id,sa_block_num,sa_tx_id,sa_tx_hash,sa_time_stamp,sa_date_time, "+
+				"sa_action_id,sa_token_id,sa_num_staked_nfts,"+
+				"ua_id,ua_evtlog_id,ua_block_num,ua_tx_id,ua_tx_hash,ua_time_stamp,ua_date_time, "+
+				"ua_action_id,ua_token_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,ua_unpaid_deposit,"+
+				"d.id,d.evtlog_id,d.block_num,tx.id,tx.tx_hash,EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp,"+
+				"d.deposit_id,d.round_num,d.num_staked_nfts,d.amount,d.amount/1e18,amount_per_staker/1e18,"+
+				"str.reward,"+
+				"str.reward/1e18,"+
+				"str.collected "+
+			"FROM "+sw.S.SchemaName()+".cg_st_reward str "+
+				"INNER JOIN cg_eth_deposit d ON str.deposit_id=d.deposit_id "+
+				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
+				"INNER JOIN LATERAL ("+
+					"SELECT "+
+						"sa.id sa_id,sa.evtlog_id sa_evtlog_id,sa.block_num sa_block_num,satx.id sa_tx_id,satx.tx_hash sa_tx_hash,EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT sa_time_stamp,sa.time_stamp sa_date_time, "+
+						"sa.action_id sa_action_id,sa.token_id sa_token_id,sa.num_staked_nfts sa_num_staked_nfts,"+
+						"ua.id ua_id,ua.evtlog_id ua_evtlog_id,ua.block_num ua_block_num,uatx.id ua_tx_id,uatx.tx_hash ua_tx_hash,EXTRACT(EPOCH FROM ua.time_stamp)::BIGINT ua_time_stamp,ua.time_stamp ua_date_time, "+
+						"ua.action_id ua_action_id,ua.token_id ua_token_id,ua.num_staked_nfts ua_num_staked_nfts,ua.reward ua_reward,ua.reward/1e18 ua_reward_eth,ua.unpaid_deposit ua_unpaid_deposit "+
+					"FROM cg_nft_staked_cst sa " +
+						"LEFT JOIN cg_nft_unstaked_cst ua ON ua.action_id=sa.action_id "+
+						"LEFT JOIN transaction satx ON satx.id=sa.tx_id "+
+						"LEFT JOIN transaction uatx ON uatx.id=ua.tx_id "+
+				") a ON a.sa_action_id=str.action_id "+
+			"WHERE str.staker_aid=$1 "+
+			"ORDER BY d.id DESC,sa_action_id DESC "
+
+	fmt.Printf("user_id = %v\n",user_aid)
+	fmt.Printf("query = %v\n",query)
+	rows,err := sw.S.Db().Query(query,user_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	var rec p.CGCombinedDepositRewardRec
+	var cur_deposit_id int64 = -1
+	var your_tokens_staked int64 = 0
+	var num_tokens_collected int64 = 0
+	var your_claimable_amount float64 = 0
+	var your_claimed_amount float64 = 0
+	var fully_claimed bool = true
+	records := make([]p.CGCombinedDepositRewardRec,0, 16)
+	actions := make([]p.CGNftStakeUnstakeCombined,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec_row p.CGNftStakeUnstakeCombined
+		var null_record_id,null_action_id,null_evtlog_id,null_block_num,null_tx_id,null_token_id,null_num_staked_nfts,null_unpaid_dep_idx,null_time_stamp sql.NullInt64
+		var null_tx_hash,null_reward,null_date_time sql.NullString
+		var null_reward_eth sql.NullFloat64
+		var record_id,evtlog_id,block_num,tx_id,deposit_id,time_stamp,dep_round,num_staked_nfts int64
+		var tx_hash,date_time,deposit_amount string
+		var dep_amount_eth,amount_per_token_eth float64
+		err=rows.Scan(
+			&rec_row.Stake.RecordId,&rec_row.Stake.EvtLogId,&rec_row.Stake.BlockNum,&rec_row.Stake.TxId,&rec_row.Stake.TxHash,&rec_row.Stake.TimeStamp,&rec_row.Stake.DateTime,
+			&rec_row.Stake.ActionId,&rec_row.Stake.TokenId,&rec_row.Stake.NumStakedNFTs,
+			&null_record_id,&null_evtlog_id,&null_block_num,&null_tx_id,&null_tx_hash,&null_time_stamp,&null_date_time,
+			&null_action_id,&null_token_id,&null_num_staked_nfts,&null_reward,&null_reward_eth,&null_unpaid_dep_idx,
+			&record_id,&evtlog_id,&block_num,&tx_id,&tx_hash,&time_stamp,&date_time,
+			&deposit_id,&dep_round,&num_staked_nfts,&deposit_amount,&dep_amount_eth,&amount_per_token_eth,
+			&rec_row.Reward,&rec_row.RewardEth,
+			&rec_row.Claimed,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_record_id.Valid { rec_row.Unstake.RecordId = null_record_id.Int64; rec_row.Unstake.StakerAid = user_aid; }
+		if null_evtlog_id.Valid { rec_row.Unstake.EvtLogId = null_evtlog_id.Int64 }
+		if null_block_num.Valid { rec_row.Unstake.BlockNum = null_block_num.Int64 }
+		if null_tx_id.Valid { rec_row.Unstake.TxId = null_tx_id.Int64 }
+		if null_tx_hash.Valid { rec_row.Unstake.TxHash = null_tx_hash.String }
+		if null_time_stamp.Valid { rec_row.Unstake.TimeStamp = null_time_stamp.Int64 }
+		if null_date_time.Valid { rec_row.Unstake.DateTime = null_date_time.String }
+		if null_action_id.Valid { rec_row.Unstake.ActionId = null_action_id.Int64 }
+		if null_token_id.Valid { rec_row.Unstake.TokenId = null_token_id.Int64 }
+		if null_num_staked_nfts.Valid { rec_row.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
+		if null_unpaid_dep_idx.Valid { rec_row.Unstake.MaxUnpaidDepositIndex = null_unpaid_dep_idx.Int64 }
+		if null_reward.Valid { rec_row.Unstake.RewardAmount = null_reward.String }
+		if null_reward_eth.Valid { rec_row.Unstake.RewardAmountEth = null_reward_eth.Float64 }
+		if deposit_id != cur_deposit_id {
+			if cur_deposit_id != -1 {
+				rec.Actions = actions;
+				rec.YourTokensStaked = your_tokens_staked
+				rec.YourClaimableAmountEth = your_claimable_amount
+				rec.FullyClaimed = fully_claimed
+				rec.NumTokensCollected = num_tokens_collected
+				rec.ClaimedAmountEth = your_claimed_amount
+				records = append(records,rec)
+
+				fully_claimed = true
+				your_tokens_staked = 0
+				your_claimable_amount = 0
+				actions = make([]p.CGNftStakeUnstakeCombined,0, 16)
+			}
+			rec.RecordId = record_id
+			rec.EvtLogId = evtlog_id
+			rec.BlockNum = block_num
+			rec.TxId = tx_id
+			rec.TxHash = tx_hash
+			rec.TimeStamp = time_stamp
+			rec.DateTime  = date_time
+			rec.DepositId = deposit_id
+			rec.DepositRoundNum = dep_round
+			rec.NumStakedNFTs = num_staked_nfts
+			rec.DepositId = deposit_id 
+			rec.DepositAmount = deposit_amount
+			rec.DepositAmountEth = dep_amount_eth
+			rec.AmountPerTokenEth = amount_per_token_eth
+			cur_deposit_id = deposit_id
+		}
+		your_tokens_staked += 1
+		if !rec_row.Claimed {
+			your_claimable_amount += rec_row.RewardEth
+			fully_claimed = false
+		} else {
+			num_tokens_collected += 1
+			your_claimed_amount += rec_row.RewardEth
+		}
+		actions = append(actions,rec_row)
+	}
+	if your_tokens_staked > 0 {
+		rec.Actions = actions;
+		rec.YourTokensStaked = your_tokens_staked
+		rec.YourClaimableAmountEth = your_claimable_amount
+		rec.FullyClaimed = fully_claimed
+		rec.NumTokensCollected = num_tokens_collected
+		rec.ClaimedAmountEth = your_claimed_amount
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staking_cst_history_by_user_old(user_aid int64) []p.CGCombinedDepositRewardRec {
+
+	var query string
 	query = "WITH rwd AS ("+
 				"SELECT "+
 					"token_id,"+
