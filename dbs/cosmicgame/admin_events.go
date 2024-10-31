@@ -89,8 +89,8 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 				"ts,"+
 				"date_time,"+
 				"addr_value, "+ 
-				"int_value "+
-				"float_value "+
+				"int_value, "+
+				"float_value, "+
 				"string_value "+
 			"FROM ("+
 				"("+
@@ -334,6 +334,9 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"0 AS float_value, "+
 						"'' AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_marketing_addr r "+
+
+
+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"LEFT JOIN address a ON a.address_id = r.new_marketing_aid "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -540,7 +543,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"'' AS addr_value," +
 						"0 AS int_value, "+
 						"r.new_multiplier/1e18 AS float_value, "+
-						"r.new_multiplier AS string_value "+
+						"r.new_multiplier::TEXT AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_erc_rwd_mul r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -557,7 +560,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"'' AS addr_value," +
 						"0 AS int_value, "+
 						"r.new_price/1e18 AS float_value, "+
-						"r.new_price AS string_value "+
+						"r.new_price::TEXT AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_cst_min_lim r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -574,7 +577,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"'' AS addr_value," +
 						"0 AS int_value, "+
 						"r.new_reward/1e18 AS float_value, "+
-						"r.new_reward AS string_value "+
+						"r.new_reward::TEXT AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_mkt_reward r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -591,7 +594,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"'' AS addr_value," +
 						"0 AS int_value, "+
 						"r.new_reward/1e18 AS float_value, "+
-						"r.new_reward AS string_value "+
+						"r.new_reward::TEXT AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_erc20_reward r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -625,7 +628,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"'' AS addr_value," +
 						"0 AS int_value, "+
 						"0 AS float_value, "+
-						"'new_uri' AS string_value "+
+						"new_url AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_script_url r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -642,7 +645,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"'' AS addr_value," +
 						"0 AS int_value, "+
 						"0 AS float_value, "+
-						"'new_uri' AS string_value "+
+						"new_uri AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_base_uri_cs r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+

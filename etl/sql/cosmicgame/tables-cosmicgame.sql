@@ -203,6 +203,7 @@ CREATE TABLE cg_stellar_winner (
 	round_num		BIGINT NOT NULL,
 	erc721_token_id		BIGINT NOT NULL,
 	erc20_amount	DECIMAL NOT NULL,
+	total_spent_cst	DECIMAL NOT NULL,
 	winner_idx		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
@@ -757,7 +758,7 @@ CREATE TABLE cg_adm_script_url ( -- TokenGenerationScriptURLEvent(admin event)
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	new_url			DECIMAL NOT NULL,
+	new_url			TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_base_uri_cs( -- BaseURI for CosmicSignature NFT (admin event)

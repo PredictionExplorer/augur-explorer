@@ -1545,7 +1545,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 			Info.Printf(err.Error())
 			respond_error(c,err.Error());
 		} else {
-			auction_duration,seconds_elapsed,err := contract.AuctionDuration(&copts);
+			auction_duration,seconds_elapsed,err := contract.GetCstAuctionDuration(&copts);
 			if err != nil {
 				Error.Printf(err.Error())
 				Info.Printf(err.Error())

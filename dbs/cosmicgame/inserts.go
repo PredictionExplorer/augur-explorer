@@ -382,8 +382,8 @@ func (sw *SQLStorageWrapper) Insert_stellar_winner(evt *p.CGStellarWinner) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_stellar_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx,total_spent_cst"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -395,6 +395,7 @@ func (sw *SQLStorageWrapper) Insert_stellar_winner(evt *p.CGStellarWinner) {
 		evt.Erc721TokenId,
 		evt.Erc20Amount,
 		evt.WinnerIndex,
+		evt.TotalSpentCST,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stellar_winner table: %v\n",err))

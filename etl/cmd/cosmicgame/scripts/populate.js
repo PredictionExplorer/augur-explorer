@@ -57,7 +57,7 @@ async function main() {
         cosmicSignature,
         charityWallet,
         cosmicDAO,
-        raffleWallet,
+        ethPrizesWallet,
         randomWalkNFT,
         stakingWalletCosmicSignatureNft,
         stakingWalletRandomWalkNft,
@@ -77,7 +77,7 @@ async function main() {
         "','" +
         (await charityWallet.getAddress()) +
         "','" +
-        (await raffleWallet.getAddress()) +
+        (await ethPrizesWallet.getAddress()) +
         "','" +
         (await randomWalkNFT.getAddress()) +
         "','" +
@@ -286,12 +286,12 @@ async function main() {
     await ethers.provider.send("evm_increaseTime", [100]);
     await ethers.provider.send("evm_mine");
 
-    let prizeAmount = await cosmicGameProxy.prizeAmount();
+    let prizeAmount = await cosmicGameProxy.mainPrizeAmount();
     let charityAmount = await cosmicGameProxy.charityAmount();
     await cosmicGameProxy.connect(addr5).claimPrize({
         gasLimit: 30000000
     });
-    let prizeAmount2 = await cosmicGameProxy.prizeAmount();
+    let prizeAmount2 = await cosmicGameProxy.mainPrizeAmount();
     let expectedprizeAmount = (prizeAmount - charityAmount) / 2n;
 
 	stake_available_nfts()
@@ -314,12 +314,12 @@ async function main() {
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
 
-    prizeAmount = await cosmicGameProxy.prizeAmount();
+    prizeAmount = await cosmicGameProxy.mainPrizeAmount();
     charityAmount = await cosmicGameProxy.charityAmount();
     await cosmicGameProxy.connect(addr1).claimPrize({
         gasLimit: 3000000
     });
-    prizeAmount2 = await cosmicGameProxy.prizeAmount();
+    prizeAmount2 = await cosmicGameProxy.mainPrizeAmount();
 	stake_available_nfts();
     let ts = await cosmicSignature.totalSupply();
     let rn = await cosmicGameProxy.roundNum();
@@ -486,7 +486,7 @@ async function main() {
         .setRandomWalkNft(await randomWalkNFT.getAddress());
     await cosmicGameProxy
         .connect(owner)
-        .setRaffleWallet(await raffleWallet.getAddress());
+        .setEthPrizesWallet(await ethPrizesWallet.getAddress());
     await cosmicGameProxy
         .connect(owner)
         .setStakingWalletCosmicSignatureNft(await stakingWalletCosmicSignatureNft.getAddress());
@@ -499,7 +499,7 @@ async function main() {
     await cosmicGameProxy.connect(owner).setNumRaffleETHWinnersBidding(4);
     await cosmicGameProxy.connect(owner).setNumRaffleNFTWinnersBidding(6);
     await cosmicGameProxy.connect(owner).setNumRaffleNFTWinnersStakingRWalk(3);
-    await cosmicGameProxy.connect(owner).setPrizePercentage(30);
+    await cosmicGameProxy.connect(owner).setMainPrizePercentage(30);
     await cosmicGameProxy.connect(owner).setCharityPercentage(5);
     await cosmicGameProxy.connect(owner).setRafflePercentage(6);
     await cosmicGameProxy.connect(owner).setCharity(addr3.address);
@@ -559,14 +559,14 @@ async function main() {
 
     await cosmicGameProxy.connect(addr3).claimDonatedNFT(0n);
     await cosmicGameProxy.connect(addr3).claimDonatedNFT(1n);
-    topic_sig = raffleWallet.interface.getEvent("RaffleDepositEvent").topicHash;
+    topic_sig = ethPrizesWallet.interface.getEvent("PrizeReceived").topicHash;
     deposit_logs = receipt.logs.filter((x) => x.topics.indexOf(topic_sig) >= 0);
     let withdrawal_done = [];
     for (let i = 0; i < deposit_logs.length; i++) {
-        let wlog = raffleWallet.interface.parseLog(deposit_logs[i]);
+        let wlog = ethPrizesWallet.interface.parseLog(deposit_logs[i]);
         let winner_signer = await hre.ethers.getSigner(wlog.args.winner);
         if (typeof withdrawal_done[wlog.args.winner] === "undefined") {
-            await raffleWallet.connect(winner_signer).withdraw();
+            await ethPrizesWallet.connect(winner_signer).withdraw();
             withdrawal_done[wlog.args.winner] = 1;
         } else {
             // skip

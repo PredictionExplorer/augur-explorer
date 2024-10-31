@@ -201,6 +201,7 @@ type CGStellarWinner struct {
 	WinnerIndex			int64
 	Erc721TokenId		int64
 	Erc20Amount			string
+	TotalSpentCST		string
 }
 /*
 type CGRaffleNFTClaimed struct {

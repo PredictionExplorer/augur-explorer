@@ -164,7 +164,7 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			token_reward = "error"
 		} else { token_reward = tmp_val.String() }
-		tmp_val,err = bwcontract.PrizePercentage(&copts)
+		tmp_val,err = bwcontract.MainPrizePercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizePercentage() call: %v\n",err)
 			Error.Printf(err_str)
@@ -244,7 +244,7 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			prize_claim_date = -1
 		} else { prize_claim_date = tmp_val.Int64() }
-		tmp_val , err = bwcontract.PrizeAmount(&copts)
+		tmp_val , err = bwcontract.MainPrizeAmount(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizeAmount() call: %v\n",err)
 			Error.Printf(err_str)
@@ -295,7 +295,7 @@ func do_reload_contract_variables() {
 				Error.Printf(err_str)
 				Info.Printf(err_str)
 				last_bidder_bid_time = -1
-			} else { last_bidder_bid_time = tmp_bidder_info.LastBidTime.Int64() }
+			} else { last_bidder_bid_time = tmp_bidder_info.LastBidTimeStamp.Int64() }
 		}
 		tmp_val,err = bwcontract.InitialSecondsUntilPrize(&copts)
 		if err != nil {
@@ -311,7 +311,7 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			timeout_claim = -1
 		} else { timeout_claim = tmp_val.Int64() }
-		tmp_val,err = bwcontract.RoundStartCSTAuctionLength(&copts)
+		tmp_val,err = bwcontract.CstAuctionLength(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at RoundStartCSTAuctionLength() call: %v\n",err)
 			Error.Printf(err_str)
@@ -347,7 +347,7 @@ func do_reload_contract_variables() {
 		} else {
 			stellar_spender_addr = tmp_addr.String()
 		}
-		tmp_val , err = bwcontract.StellarSpenderAmount(&copts)
+		tmp_val , err = bwcontract.StellarSpenderTotalSpentCst(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at StellarSpenderAmount() call: %v\n",err)
 			Error.Printf(err_str)
@@ -1740,7 +1740,7 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 			Info.Printf(err.Error())
 			respond_error(c,err.Error());
 		} else {
-			auction_duration,seconds_elapsed,err := contract.AuctionDuration(&copts);
+			auction_duration,seconds_elapsed,err := contract.GetCstAuctionDuration(&copts);
 			if err != nil {
 				Error.Printf(err.Error())
 				Info.Printf(err.Error())
