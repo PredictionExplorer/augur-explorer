@@ -203,6 +203,17 @@ type CGStellarWinner struct {
 	Erc20Amount			string
 	TotalSpentCST		string
 }
+type CGChronoWarrior struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+	Round				int64
+	Amount				string
+}
 /*
 type CGRaffleNFTClaimed struct {
 	EvtId				int64
@@ -358,6 +369,7 @@ type CGNftUnstakedCst struct {
 	ContractAddr		string
 	RoundNum			int64
 	ActionId			int64
+	ActionCounter		int64
 	NftId				int64
 	NumStakedNfts		int64
 	StakerAddress		string
@@ -667,4 +679,30 @@ type CGBaseURIEvent struct {
 	TimeStamp               int64
 	Contract                string
 	NewURI					string
+}
+type CGOwnershipTransferred struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	PrevOwner				string
+	NewOwner				string
+	ContractCode			int64
+}
+type CGInitialized struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Version					int64
+}
+type CGCstMinLimit struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	CstMinLimit				string
 }

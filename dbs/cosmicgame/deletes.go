@@ -649,3 +649,43 @@ func (sw *SQLStorageWrapper) Delete_reward_paid_event(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Delete_ownership_transferred_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_ownership WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_initialized_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_initialized WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_chrono_warrior_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_chrono_warrior WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_cst_min_limit_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_cst_min_limit WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

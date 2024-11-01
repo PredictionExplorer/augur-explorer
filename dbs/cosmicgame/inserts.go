@@ -402,6 +402,31 @@ func (sw *SQLStorageWrapper) Insert_stellar_winner(evt *p.CGStellarWinner) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_chrono_warrior("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"winner_aid,round_num,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		winner_aid,
+		evt.Round,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_chrono_warrior table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaimed) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
@@ -519,9 +544,9 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 	var query string
 	query = "INSERT INTO cg_nft_unstaked_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid,reward,unpaid_deposit" +
+				"action_id,token_id,num_staked_nfts,staker_aid,reward,unpaid_deposit,action_counter" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -535,6 +560,7 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 		staker_aid,
 		evt.RewardAmount,
 		evt.MaxUnpaidDepositIndex,
+		evt.ActionCounter,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_unstaked_cst  table: %v\n",err))
@@ -1595,6 +1621,78 @@ func (sw *SQLStorageWrapper) Insert_nft_staked_event(evt *p.CGNftStaked,nftType 
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into "+table+" table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_ownership_transferred_event(evt *p.CGOwnershipTransferred) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	new_owner_aid:=sw.S.Lookup_or_create_address(evt.NewOwner,evt.BlockNum,evt.TxId)
+	prev_owner_aid:=sw.S.Lookup_or_create_address(evt.PrevOwner,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_ownership(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"prev_owner_aid,new_cossig_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		prev_owner_aid,
+		new_owner_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_ownership table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_initialized_event(evt *p.CGInitialized) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_initialized(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"version" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.Version,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_initialized table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cst_min_limit_event(evt *p.CGCstMinLimit) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_cst_min_limit(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"min_limit" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.CstMinLimit,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_min_limit table: %v\n",err))
 		os.Exit(1)
 	}
 }

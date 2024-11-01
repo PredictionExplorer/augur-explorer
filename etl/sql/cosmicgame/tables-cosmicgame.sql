@@ -207,6 +207,18 @@ CREATE TABLE cg_stellar_winner (
 	winner_idx		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_chrono_warrior (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_donated_nft_claimed (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -272,6 +284,7 @@ CREATE TABLE cg_nft_unstaked_cst (
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
 	action_id		BIGINT NOT NULL,
+	action_counter	BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
 	staker_aid		BIGINT NOT NULL,
@@ -388,6 +401,16 @@ CREATE TABLE cg_unstake_action_rwalk (
 	token_id		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
 	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_cst_min_limit ( -- StartingBidPriceCSTMinLimitChanged event
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	min_limit		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_mkt_reward ( -- MarketingWallet RewardSentEvent
@@ -769,6 +792,28 @@ CREATE TABLE cg_adm_base_uri_cs( -- BaseURI for CosmicSignature NFT (admin event
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_uri			TEXT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_ownership ( -- OwnershipTransferred event (OpenZeppelin)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	prev_owner_aid	BIGINT NOT NULL,
+	new_owner_aid	BIGINT NOT NULL,
+	contract_code	INT NOT NULL,		-- 1: CosmicGame, 2: CosmicSignature, 3: CosmicToken, 3: CharityWallet, 4: EthPrizesWallet, 5: StakingWallet CST, 6: StakingWallet RWalk
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_initialized( -- Initialized event (OpenZeppelin)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	version			BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
