@@ -440,6 +440,14 @@ type CGStakingPercentageChanged struct {
 	Contract                string
 	NewStakingPercentage	string
 }
+type CGChronoPercentageChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewChronoPercentage		string
+}
 type CGNumRaffleETHWinnersBiddingChanged struct {
 	EvtId                   int64
 	BlockNum                int64
@@ -705,4 +713,22 @@ type CGCstMinLimit struct {
 	TimeStamp               int64
 	Contract                string
 	CstMinLimit				string
+}
+type CGFundTransferFailed struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Destination				string
+	Amount					string
+}
+type CGErc20TransferFailed struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Destination				string
+	Amount					string
 }

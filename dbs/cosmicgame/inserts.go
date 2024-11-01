@@ -986,6 +986,29 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_percentage_changed_event
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_cosmic_game_chrono_percentage_changed_event(evt *p.CGChronoPercentageChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_chrono_pcent (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"percentage" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewChronoPercentage,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_chrono_pcent table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_cosmic_game_system_mode_changed_event(evt *p.CGSystemModeChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
@@ -1693,6 +1716,56 @@ func (sw *SQLStorageWrapper) Insert_cst_min_limit_event(evt *p.CGCstMinLimit) {
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_min_limit table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_fund_transfer_failed_event(evt *p.CGFundTransferFailed ) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	destination_aid:=sw.S.Lookup_or_create_address(evt.Destination,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_fund_transf_err(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"destination_aid,amount" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		destination_aid,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_fund_transf_err table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_erc20_transfer_failed_event(evt *p.CGErc20TransferFailed ) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	destination_aid:=sw.S.Lookup_or_create_address(evt.Destination,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_erc20_transf_err(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"destination_aid,amount" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		destination_aid,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc20_transf_err table: %v\n",err))
 		os.Exit(1)
 	}
 }

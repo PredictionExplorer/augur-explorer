@@ -75,6 +75,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_chrono_percentage_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_num_raffle_eth_winners_bidding_changed[:4]),
 			ContractAid: 0,
 		},
@@ -262,6 +266,14 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_cst_min_limit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_fund_transf_err[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_erc20_transf_err[:4]),
 			ContractAid: 0,
 		},
 	)
@@ -1745,6 +1757,37 @@ func proc_staking_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 	storagew.Delete_cosmic_game_staking_percentage_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_staking_percentage_changed_event(&evt)
 }
+func proc_chrono_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGChronoPercentageChanged
+	var eth_evt CosmicGameChronoWarriorEthPrizePercentageChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing StakingPercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingPercentageChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event StakingPercentageChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewChronoPercentage= eth_evt.NewChronoWarriorEthPrizePercentage.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("ChronoWarriorEthPrizePercentageChanged{\n")
+	Info.Printf("\tNewPercentage: %v\n",evt.NewChronoPercentage)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_chrono_percentage_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_chrono_percentage_changed_event(&evt)
+}
 func proc_num_raffle_eth_winners_bidding_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNumRaffleETHWinnersBiddingChanged 
@@ -2652,7 +2695,7 @@ func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEv
 		return
 	}
 	Info.Printf("Processing Initialized event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"Initialized",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StartingBidPriceCSTMinLimitChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event Initialized decode error: %v",err)
 		os.Exit(1)
@@ -2672,6 +2715,72 @@ func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEv
 
 	storagew.Delete_cst_min_limit_event(evt.EvtId)
     storagew.Insert_cst_min_limit_event(&evt)
+}
+func proc_fund_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGFundTransferFailed
+	var eth_evt CosmicGameFundTransferFailed
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing Initialized event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"FundTransferFailed",log.Data)
+	if err != nil {
+		Error.Printf("Event Initialized decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Destination= common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Amount= eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FundTransferFailed {\n")
+	Info.Printf("\tDestination: %v\n",evt.Destination)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storagew.Delete_fund_transfer_failed_event(evt.EvtId)
+    storagew.Insert_fund_transfer_failed_event(&evt)
+}
+func proc_erc20_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGErc20TransferFailed
+	var eth_evt CosmicGameEventsERC20TransferFailed
+
+	if !bytes.Equal(log.Address.Bytes(),marketing_wallet_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing Initialized event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ERC20TransferFailed",log.Data)
+	if err != nil {
+		Error.Printf("Event Initialized decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Destination= common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Amount= eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FundTransferFailed {\n")
+	Info.Printf("\tDestination: %v\n",evt.Destination)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storagew.Delete_erc20_transfer_failed_event(evt.EvtId)
+    storagew.Insert_erc20_transfer_failed_event(&evt)
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
@@ -2851,6 +2960,12 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_min_limit) {
 		proc_starting_bid_price_cst_min_limit_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fund_transf_err) {
+		proc_fund_transfer_failed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transf_err) {
+		proc_erc20_transfer_failed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {
