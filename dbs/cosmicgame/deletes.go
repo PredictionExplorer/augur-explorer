@@ -602,7 +602,7 @@ func (sw *SQLStorageWrapper) Delete_token_generation_script_url_event(evtlog_id 
 func (sw *SQLStorageWrapper) Delete_base_uri_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_base_uri WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_base_uri_cs WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -682,7 +682,7 @@ func (sw *SQLStorageWrapper) Delete_initialized_event(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_chrono_warrior_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_chrono_warrior WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_chrono_warrior WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -713,6 +713,16 @@ func (sw *SQLStorageWrapper) Delete_erc20_transfer_failed_event(evtlog_id int64)
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_erc20_transfer_err WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_funds_transferred_to_charity_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_funds_to_charity WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

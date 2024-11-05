@@ -51,6 +51,8 @@
 				 {{ if eq 30 .RecordType}}MaxMessageLengthChanged{{end}}
 				 {{ if eq 31 .RecordType}}TokenGenerationScriptURLEvent{{end}}
 				 {{ if eq 32 .RecordType}}BaseURI{{end}}
+				 {{ if eq 33 .RecordType}}Initialized{{end}}
+				 {{ if eq 34 .RecordType}}OwnershipTransferred{{end}}
 			</td>
 			<td style="text-align: center;">{{.BlockNum}}</td>
 			<td style="text-align: left;">{{.DateTime}};</td>
@@ -82,6 +84,14 @@
 				 {{ if eq 24 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 25 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 26 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 27 .RecordType}}{{.StringValue}}{{end}}
+				 {{ if eq 28 .RecordType}}{{.StringValue}}{{end}}
+				 {{ if eq 29 .RecordType}}{{.StringValue}}{{end}}
+				 {{ if eq 30 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 31 .RecordType}}{{.StringValue}}{{end}}
+				 {{ if eq 32 .RecordType}}{{.StringValue}}{{end}}
+				 {{ if eq 33 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 34 .RecordType}}{{.AddressValue}}{{end}}
 			</td>
 		</tr>
 	{{- end}}

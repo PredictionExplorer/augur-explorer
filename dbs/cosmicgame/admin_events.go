@@ -649,6 +649,42 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"FROM "+sw.S.SchemaName()+".cg_adm_base_uri_cs r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"33 AS record_type,"+			// Initialized
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"version AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_initialized r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"34 AS record_type,"+			// OwnershipTransferred
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"noa.addr AS addr_value," +
+						"0 AS int_value, "+
+						"0 AS float_value, "+
+						"poa.addr AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_ownership r "+
+						"LEFT JOIN transaction t ON t.id=r.tx_id "+
+						"LEFT JOIN address poa ON r.prev_owner_aid=poa.address_id " +
+						"LEFT JOIN address noa ON r.new_owner_aid=noa.address_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				")" +
 			") everything "+
 			"ORDER BY evtlog_id "

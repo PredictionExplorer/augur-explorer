@@ -276,6 +276,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_erc20_transf_err[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_funds2charity[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -1674,7 +1678,7 @@ func proc_prize_percentage_changed_event(log *types.Log,elog *EthereumEventLog) 
 		return
 	}
 	Info.Printf("Processing PrizePercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PrizePercentageChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"MainPrizePercentageChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event PrizePercentageChanged decode error: %v",err)
 		os.Exit(1)
@@ -1953,7 +1957,7 @@ func proc_random_walk_address_changed_event(log *types.Log,elog *EthereumEventLo
 		return
 	}
 	Info.Printf("Processing RandomWalkAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RandomWalkAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RandomWalkNftAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event RandomWalkAddressChanged decode error: %v",err)
 		os.Exit(1)
@@ -2046,7 +2050,7 @@ func proc_staking_wallet_rwalk_address_changed_event(log *types.Log,elog *Ethere
 		return
 	}
 	Info.Printf("Processing StakingWalletRWalkAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWalletRWalkAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWalletRandomWalkNftAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event StakingWalletRWalkAddressChanged decode error: %v",err)
 		os.Exit(1)
@@ -2567,12 +2571,12 @@ func proc_base_uri_event(log *types.Log,elog *EthereumEventLog) {
 	var evt CGBaseURIEvent
 	var eth_evt ICosmicSignatureBaseURIEvent
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing BaseURIEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BaseURIEvent",log.Data)
+	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"BaseURIEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event BaseURIEvent decode error: %v",err)
 		os.Exit(1)
@@ -2782,6 +2786,39 @@ func proc_erc20_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_erc20_transfer_failed_event(evt.EvtId)
     storagew.Insert_erc20_transfer_failed_event(&evt)
 }
+func proc_funds_transferred_to_charity_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGFundsToCharity
+	var eth_evt CosmicGameEventsFundsTransferredToCharity
+
+	if !bytes.Equal(log.Address.Bytes(),marketing_wallet_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing FundsTransferredToCharity event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"FundsTransferredToCharity",log.Data)
+	if err != nil {
+		Error.Printf("Event FundsTransferredToCharity decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.CharityAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Amount= eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FundsTransferredToCharity{\n")
+	Info.Printf("\tCharityAddress: %v\n",evt.CharityAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storagew.Delete_funds_transferred_to_charity_event(evt.EvtId)
+    storagew.Insert_funds_transferred_to_charity_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -2966,6 +3003,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transf_err) {
 		proc_erc20_transfer_failed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funds2charity) {
+		proc_funds_transferred_to_charity_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

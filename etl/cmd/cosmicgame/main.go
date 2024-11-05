@@ -93,6 +93,7 @@ const (
 	OWNERSHIP_TRANSFERRED	= "8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
 	INITIALIZED				= "c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"
 	STARTING_CST_MIN_LIM	= "15fb6c6abdad971cc4a820ceb8acad2a1f3b8e37646630e2132287a6ecb80958"
+	FUNDS_TO_CHARITY		= "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d"
 )
 var (
 	eclient 				*ethclient.Client
@@ -145,6 +146,7 @@ var (
 	evt_cst_min_limit,_				= hex.DecodeString(STARTING_CST_MIN_LIM)
 	evt_fund_transf_err,_		= hex.DecodeString(FUND_TRANSFER_ERR)
 	evt_erc20_transf_err,_			= hex.DecodeString(ERC20_TRANSFER_ERR)
+	evt_funds2charity,_				= hex.DecodeString(FUNDS_TO_CHARITY)
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)

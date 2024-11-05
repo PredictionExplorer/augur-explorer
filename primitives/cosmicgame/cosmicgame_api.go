@@ -532,6 +532,8 @@ type CGAdminEvent struct {
 										//			30		MaxMessageLengthChanged
 										//			31		TokenGenerationScriptURLEvent
 										//			32		BaseURI (CosmicSignature)
+										//			33		Initialized (Initialized event, openzeppelin)
+										//			34		OwnershipTransferred
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64

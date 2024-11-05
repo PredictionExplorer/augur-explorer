@@ -732,3 +732,12 @@ type CGErc20TransferFailed struct {
 	Destination				string
 	Amount					string
 }
+type CGFundsToCharity struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	CharityAddr				string
+	Amount					string
+}

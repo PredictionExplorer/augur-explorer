@@ -1655,9 +1655,9 @@ func (sw *SQLStorageWrapper) Insert_ownership_transferred_event(evt *p.CGOwnersh
 	var query string
 	query = "INSERT INTO cg_adm_ownership(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"prev_owner_aid,new_cossig_aid" +
+				"prev_owner_aid,new_owner_aid,contract_code" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -1667,6 +1667,7 @@ func (sw *SQLStorageWrapper) Insert_ownership_transferred_event(evt *p.CGOwnersh
 		contract_aid,
 		prev_owner_aid,
 		new_owner_aid,
+		evt.ContractCode,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_ownership table: %v\n",err))
@@ -1766,6 +1767,31 @@ func (sw *SQLStorageWrapper) Insert_erc20_transfer_failed_event(evt *p.CGErc20Tr
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc20_transf_err table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_funds_transferred_to_charity_event(evt *p.CGFundsToCharity ) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	charity_aid:=sw.S.Lookup_or_create_address(evt.CharityAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_funds_to_charity(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"charity_aid,amount" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		charity_aid,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_funds_to_charity table: %v\n",err))
 		os.Exit(1)
 	}
 }
