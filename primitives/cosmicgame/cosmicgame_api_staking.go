@@ -384,3 +384,19 @@ type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of d
 	ClaimedAmountEth			float64
 	Actions						[]CGNftStakeUnstakeCombined
 }
+type CGRewardPaidRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	ActionId					int64
+	TokenId						int64
+	StakerAid					int64
+	StakerAddr					string
+	RewardAmount				string
+	RewardAmountEth				float64
+	UnpaidDepositIndex		int64
+}

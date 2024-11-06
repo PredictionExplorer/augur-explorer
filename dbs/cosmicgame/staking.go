@@ -1126,7 +1126,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_history_by_user(user_aid int64) []p
 						"LEFT JOIN transaction uatx ON uatx.id=ua.tx_id "+
 				") a ON a.sa_action_id=str.action_id "+
 			"WHERE str.staker_aid=$1 "+
-			"ORDER BY d.id DESC,sa_action_id DESC "
+			"ORDER BY d.id ASC,sa_action_id DESC "		// Note: sort order is ASC because we are accumularting the sum in golang (between rows)
 
 	fmt.Printf("user_id = %v\n",user_aid)
 	fmt.Printf("query = %v\n",query)
@@ -1232,108 +1232,56 @@ func (sw *SQLStorageWrapper) Get_staking_cst_history_by_user(user_aid int64) []p
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_staking_cst_history_by_user_old(user_aid int64) []p.CGCombinedDepositRewardRec {
+func (sw *SQLStorageWrapper) Get_staking_reward_paid_records(user_aid int64) []p.CGRewardPaidRec {
 
+	records := make([]p.CGRewardPaidRec,0, 16)
 	var query string
-	query = "WITH rwd AS ("+
-				"SELECT "+
-					"token_id,"+
-					"reward AS reward," +
-					"reward/1e18 AS reward_eth,"+
-					"action_id,"+
-					"deposit_id, "+
-					"collected AS claimed "+
-				"FROM cg_st_reward "+
-				"WHERE staker_aid=$1 "+
-			") "+
-			"SELECT "+
-				"sa.id,sa.evtlog_id,sa.block_num,satx.id,satx.tx_hash,EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT,sa.time_stamp, "+
-				"sa.action_id,sa.token_id,sa.num_staked_nfts,"+
-				"ua.id,ua.evtlog_id,ua.block_num,uatx.id,uatx.tx_hash,EXTRACT(EPOCH FROM ua.time_stamp)::BIGINT,ua.time_stamp, "+
-				"ua.action_id,ua.token_id,ua.num_staked_nfts,ua.reward,ua.reward/1e18,ua.unpaid_deposit,"+
-				"d.id,d.evtlog_id,d.block_num,tx.id,tx.tx_hash,EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp,"+
-				"d.deposit_id,d.round_num,d.num_staked_nfts,d.amount,d.amount/1e18,"+
-				"rwd.reward,"+
-				"rwd.reward_eth,"+
-				"rwd.claimed "+
-			"FROM "+sw.S.SchemaName()+".cg_st_reward str "+
-				"INNER JOIN cg_eth_deposit d ON str.deposit_id=d.deposit_id "+
-				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
-				"INNER JOIN cg_nft_staked_cst sa ON sa.action_id=str.action_id "+
-				"INNER JOIN transaction satx ON satx.id=sa.tx_id "+
-				"INNER JOIN rwd ON rwd.deposit_id=str.deposit_id "+
-				"LEFT JOIN cg_nft_unstaked_cst ua ON ua.action_id=sa.action_id "+
-				"LEFT JOIN transaction uatx ON uatx.id=ua.tx_id "+
-			"WHERE str.staker_aid=$1 "+
-			"ORDER BY d.id DESC,sa.action_id DESC "
 
-	fmt.Printf("user_id = %v\n",user_aid)
-	fmt.Printf("query = %v\n",query)
+	query = "SELECT "+
+				"r.id,"+
+				"r.action_id, "+
+				"r.token_id, "+
+				"r.block_num, "+
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT,"+
+				"r.time_stamp,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"r.reward,"+
+				"r.reward/1e18, "+
+				"r.unpaid_dep_id "+
+			"FROM "+sw.S.SchemaName()+".cg_reward_paid r "+
+				"LEFT JOIN address sa ON r.staker_aid=sa.address_id "+
+				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
+			"WHERE "+
+				"r.staker_aid = $1 "+
+			"ORDER BY r.evtlog_id DESC "
+
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	var rec p.CGCombinedDepositRewardRec
-	var cur_deposit_id int64 = -1
-	var your_tokens_staked int64 = 0
-	var num_tokens_collected int64 = 0
-	var your_claimable_amount float64 = 0
-	var your_claimed_amount float64 = 0
-	var fully_claimed bool = true
-	records := make([]p.CGCombinedDepositRewardRec,0, 16)
-	actions := make([]p.CGNftStakeUnstakeCombined,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-		var rec_row p.CGNftStakeUnstakeCombined
+		var rec p.CGRewardPaidRec
 		err=rows.Scan(
-			&rec_row.Stake.RecordId,&rec_row.Stake.EvtLogId,&rec_row.Stake.BlockNum,&rec_row.Stake.TxId,&rec_row.Stake.TxHash,&rec_row.Stake.TimeStamp,&rec_row.Stake.DateTime,
-			&rec_row.Stake.ActionId,&rec_row.Stake.TokenId,&rec_row.Stake.NumStakedNFTs,
-			&rec_row.Unstake.RecordId,&rec_row.Unstake.EvtLogId,&rec_row.Unstake.BlockNum,&rec_row.Unstake.TxId,&rec_row.Unstake.TxHash,&rec_row.Unstake.TimeStamp,&rec_row.Unstake.DateTime,
-			&rec_row.Unstake.ActionId,&rec_row.Unstake.TokenId,&rec_row.Unstake.NumStakedNFTs,&rec_row.Unstake.RewardAmount,&rec_row.Unstake.RewardAmountEth,&rec_row.Unstake.MaxUnpaidDepositIndex,
-			&rec.RecordId,&rec.EvtLogId,&rec.BlockNum,&rec.TxId,&rec.TxHash,&rec.TimeStamp,&rec.DateTime,
-			&rec.DepositId,&rec.DepositRoundNum,&rec.NumStakedNFTs,&rec.DepositAmount,&rec.DepositAmountEth,
-			&rec_row.Reward,&rec_row.RewardEth,
-			&rec_row.Claimed,
+			&rec.RecordId,
+			&rec.ActionId,
+			&rec.TokenId,
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.RewardAmount,
+			&rec.RewardAmountEth,
+			&rec.UnpaidDepositIndex,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if rec.DepositId != cur_deposit_id {
-			if cur_deposit_id != -1 {
-				rec.Actions = actions;
-				rec.YourTokensStaked = your_tokens_staked
-				rec.YourClaimableAmountEth += your_claimable_amount
-				rec.FullyClaimed = fully_claimed
-				rec.NumTokensCollected = num_tokens_collected
-				rec.ClaimedAmountEth = your_claimed_amount
-				records = append(records,rec)
-
-				fully_claimed = true
-				your_tokens_staked = 0
-				your_claimable_amount = 0
-				actions = make([]p.CGNftStakeUnstakeCombined,0, 16)
-			}
-			cur_deposit_id = rec.DepositId
-		}
-		your_tokens_staked += 1
-		if !rec_row.Claimed {
-			your_claimable_amount += rec_row.RewardEth
-			fully_claimed = false
-		} else {
-			num_tokens_collected += 1
-			your_claimed_amount += rec_row.RewardEth
-		}
-		actions = append(actions,rec_row)
-	}
-	if your_tokens_staked > 0 {
-		rec.Actions = actions;
-		rec.YourTokensStaked = your_tokens_staked
-		rec.YourClaimableAmountEth = your_claimable_amount
-		rec.FullyClaimed = fully_claimed
-		rec.NumTokensCollected = num_tokens_collected
-		rec.ClaimedAmountEth = your_claimed_amount
+		rec.StakerAid = user_aid
 		records = append(records,rec)
 	}
 	return records

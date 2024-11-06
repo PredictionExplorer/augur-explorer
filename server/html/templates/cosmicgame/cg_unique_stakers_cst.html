@@ -12,6 +12,7 @@
 		<th class="market_reports">Total reward<br/>(ETH)</th>
 		<th class="market_reports">Unclaimed reward <br/>(ETH)</th>
 		<th class="market_reports">Token reward <br/>(num tokens)</th>
+		<th class="market_reports">Tokens at stake</th>
 
 	</tr>
 	{{- range $i, $change := .UniqueStakersCST }}
@@ -27,6 +28,7 @@
 			<td style="text-align: right;" title="">{{printf "%.6f" .TotalRewardEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .UnclaimedRewardEth}}</td>
 			<td class="" style="text-align: center;">{{.TotalTokensMinted}}</td>
+			<td class="" style="text-align: center;">{{.TotalTokensStaked}}</td>
 		</tr>
 	{{- end}}
 </table>

@@ -753,7 +753,7 @@ async function main() {
         let owner_signer = await hre.ethers.getSigner(ownr);
 		try {
 	        await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i,1);
-	        await stakingWalletCosmicSignatureNft.connect(owner_signer).payReward(i,1);
+	        await stakingWalletCosmicSignatureNft.connect(owner_signer).payReward(i,100);
 		} catch (e) {
 		//	console.log("unstake() error: ",e);
 		}
