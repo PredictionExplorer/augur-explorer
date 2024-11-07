@@ -289,6 +289,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_delay_duration_round[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_round_started[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -2892,6 +2896,38 @@ func proc_delay_duration_before_next_round_changed_event(log *types.Log,elog *Et
     storagew.Delete_delay_duration_before_next_round_changed_event(evt.EvtId)
 	storagew.Insert_delay_duration_before_next_round_changed_event(&evt)
 }
+func proc_round_started_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRoundStarted
+	var eth_evt CosmicGameFirstBidPlacedInRound
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing FirstBidPlacedInRound  event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"FirstBidPlacedInRound",log.Data)
+	if err != nil {
+		Error.Printf("Event FirstBidPlacedInRound decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.RoundNum= eth_evt.RoundNum.Int64()
+	evt.StartTimestamp= eth_evt.Timestamp.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FirstBidPlacedInRound{\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tStart TS: %v\n",evt.StartTimestamp)
+	Info.Printf("}\n")
+
+    storagew.Delete_round_started_event(evt.EvtId)
+	storagew.Insert_round_started_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -3086,6 +3122,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_delay_duration_round) {
 		proc_delay_duration_before_next_round_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_started) {
+		proc_round_started_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

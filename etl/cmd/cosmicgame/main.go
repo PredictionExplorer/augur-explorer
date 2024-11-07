@@ -55,6 +55,7 @@ const (
 	REWARD_PAID_EVENT		= "f9bac74bc321a00ef2afeb1f44684e20e22f567699a5840df47967ea88c5b449"
 	FUND_TRANSFER_ERR		= "154fb6c686c977314af35b730a16b83facda5265b2abec7237c730f63e42215a"
 	ERC20_TRANSFER_ERR		= "f7fce645f12ae266a329c431e96ebea892316a1415809056621ffeea04efd4ab"
+	ROUND_STARTED			= "028a52641badd593b7f30072734c0b97e449213f55b5c3663756427340accd3c"
 
 	/// Admin events
 	PROXY_UPGRADED			= "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b"
@@ -151,6 +152,7 @@ var (
 	evt_erc20_reward_mult,_				= hex.DecodeString(ERC20_REWARD_MULT)
 	evt_funds2charity,_				= hex.DecodeString(FUNDS_TO_CHARITY)
 	evt_delay_duration_round,_		= hex.DecodeString(DELAY_DURATION_ROUND)
+	evt_round_started,_				= hex.DecodeString(ROUND_STARTED)
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)

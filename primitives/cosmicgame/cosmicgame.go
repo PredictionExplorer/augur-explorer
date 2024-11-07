@@ -749,3 +749,12 @@ type CGDelayDuration struct {
 	Contract                string
 	NewValue				int64
 }
+type CGRoundStarted	struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	RoundNum				int64
+	StartTimestamp			int64
+}

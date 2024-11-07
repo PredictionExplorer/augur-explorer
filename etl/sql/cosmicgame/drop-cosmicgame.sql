@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS
 	cg_nft_unstaked_cst,
 	cg_nft_unstaked_rwalk,
 	cg_eth_deposit,
+	cg_round_started,
 	cg_claim_reward,
 	cg_reward_paid,
 	cg_mkt_reward,

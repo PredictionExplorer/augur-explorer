@@ -16,18 +16,27 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 		offset = 0
 	}
 	var query string
-	query = "SELECT "+
-				"s.id,"+
-				"s.evtlog_id,"+
-				"s.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
-				"s.time_stamp, "+
-				"s.sysmode "+
-			"FROM "+sw.S.SchemaName()+".cg_adm_sysmode s "+
-				"LEFT JOIN transaction t ON t.id=s.tx_id "+
-			"ORDER BY s.id DESC "+
+	query = 
+			"("+
+				"SELECT "+
+					"s.evtlog_id," +
+					"s.block_num," +
+					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts,"+
+					"s.time_stamp date_time,"+
+					"s.round_num, "+
+					"0 AS rec_type "+
+				"FROM cg_round_started s"+
+			") UNION ALL ("+
+				"SELECT "+
+					"p.evtlog_id," +
+					"p.block_num,"+
+					"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT ts,"+
+					"p.time_stamp date_time,"+
+					"-1 AS round_num,"+
+					"1 AS rec_type "+
+				"FROM cg_prize_claim p "+
+			") "+
+			"ORDER BY evtlog_id DESC " +
 			"OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
@@ -36,25 +45,34 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 		os.Exit(1)
 	}
 	records := make([]p.CGSystemModeRec,0, 256)
+	var evtlog_hi int64 = math.MaxInt64
+	var rnum int64 = 0;
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGSystemModeRec
+		var rtype int64
 		err=rows.Scan(
-			&rec.RecordId,
 			&rec.EvtLogId,
 			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
 			&rec.TimeStamp,
 			&rec.DateTime,
-			&rec.SystemMode,
+			&rec.RoundNum,
+			&rtype,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		records = append(records,rec)
+		if rtype == 1 {
+			rec.NextEvtLogId = evtlog_hi
+			rec.RoundNum = rnum
+			records = append(records,rec)
+		} else { 
+			evtlog_hi = rec.EvtLogId
+			rnum = rec.RoundNum
+		}
 	}
+	/*
 	var next_evtlog int64 = math.MaxInt64;
 	for i:=0; i<len(records); i++ {
 		r := records[i];
@@ -62,15 +80,14 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 		next_evtlog = r.EvtLogId
 		records[i]=r
 	}
+	*/
 	if add_deployment_events {
 		if len(records) > 0 {
 			var rec p.CGSystemModeRec
-			rec.RecordId = -1
 			rec.EvtLogId = -1
 			rec.BlockNum = -1
-			rec.TxId = -1
-			rec.SystemMode = -1
-			rec.NextEvtLogId = records[len(records)-1].EvtLogId
+			rec.RoundNum = 0
+			rec.NextEvtLogId = evtlog_hi
 			records = append(records,rec)
 		}
 	}
@@ -334,9 +351,6 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"0 AS float_value, "+
 						"'' AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_marketing_addr r "+
-
-
-
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"LEFT JOIN address a ON a.address_id = r.new_marketing_aid "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
@@ -510,7 +524,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.new_atime AS int_value, "+
 						"0 AS float_value, "+
 						"'' AS string_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_acttime r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_acttime r "+ // ActivationTimeChanged
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+

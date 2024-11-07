@@ -1818,3 +1818,27 @@ func (sw *SQLStorageWrapper) Insert_delay_duration_before_next_round_changed_eve
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_round_started_event(evt *p.CGRoundStarted) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_round_started(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"round_num,start_ts" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.RoundNum,
+		evt.StartTimestamp,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_round_started table: %v\n",err))
+		os.Exit(1)
+	}
+}

@@ -339,6 +339,17 @@ CREATE TABLE cg_eth_deposit (
 	accum_modulo	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_round_started (	-- FirstBidPlacedInRound
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	start_ts		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_claim_reward (	-- DISCONTINUED, removal pending
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
