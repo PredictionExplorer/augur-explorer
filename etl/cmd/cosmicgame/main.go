@@ -86,7 +86,8 @@ const (
 	ROUND_START_AUCTION_LENGTH_CHANGED = "23dabd88e0a182dcd593bec053f3867f1bd6afc77d470cbc1ef48ad189bfd676"
 	MARKETING_REWARD_SENT	= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
 	MARKETING_REWARD_CHANGED = "aa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f36489221"
-	ERC20_TOKEN_REWARD		= "128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb2"
+	ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
+	ERC20_REWARD_MULT		= "128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb2"
 	MAX_MESSAGE_LENGTH		= "ba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc8"
 	TOKEN_SCRIPT_URL		= "0119741ee0f95fab26124262a82c3c0e9e1c7ff4bb33c6fba5f3b11c9b6d0bad"
 	BASE_URI				= "2fc013f885e8a815b9d697da28bc143b4dced47528c41b46e2b35fd0f4be718c"
@@ -94,6 +95,7 @@ const (
 	INITIALIZED				= "c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"
 	STARTING_CST_MIN_LIM	= "15fb6c6abdad971cc4a820ceb8acad2a1f3b8e37646630e2132287a6ecb80958"
 	FUNDS_TO_CHARITY		= "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d"
+	DELAY_DURATION_ROUND	= "ba119b025b7f0f7591a0d1e1fd133553194c0bcf45c3aa033e50a9825bd72527"
 )
 var (
 	eclient 				*ethclient.Client
@@ -146,7 +148,9 @@ var (
 	evt_cst_min_limit,_				= hex.DecodeString(STARTING_CST_MIN_LIM)
 	evt_fund_transf_err,_		= hex.DecodeString(FUND_TRANSFER_ERR)
 	evt_erc20_transf_err,_			= hex.DecodeString(ERC20_TRANSFER_ERR)
+	evt_erc20_reward_mult,_				= hex.DecodeString(ERC20_REWARD_MULT)
 	evt_funds2charity,_				= hex.DecodeString(FUNDS_TO_CHARITY)
+	evt_delay_duration_round,_		= hex.DecodeString(DELAY_DURATION_ROUND)
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)

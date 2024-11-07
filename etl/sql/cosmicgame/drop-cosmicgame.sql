@@ -73,6 +73,7 @@ DROP TABLE IF EXISTS
 	cg_funds_to_charity,
 	cg_adm_chrono_pcent,
 	cg_adm_cst_min_limit,
+	cg_delay_duration,
 	cg_chrono_warrior,
 	cg_transfer_stats,
 	cg_round_stats,

@@ -125,15 +125,17 @@ const basicDeploymentAdvanced = async function (
 	await cosmicGameProxy.connect(deployerAcct).setStakingWalletCosmicSignatureNft(stakingWalletCosmicSignatureNftAddr);
 	await cosmicGameProxy.connect(deployerAcct).setStakingWalletRandomWalkNft(stakingWalletRandomWalkNftAddr);
 	await cosmicGameProxy.connect(deployerAcct).setMarketingWallet(marketingWalletAddr);
+	await cosmicGameProxy.connect(deployerAcct).setDelayDurationBeforeNextRound(1);
 	if (activationTime == 0) {
 		let latestBlock = await hre.ethers.provider.getBlock("latest");
 		await cosmicGameProxy.connect(deployerAcct).setActivationTime(0);
 	} else {
 		await cosmicGameProxy.connect(deployerAcct).setActivationTime(0);
 	}
+	/*
 	if (switchToRuntime) {
 		await cosmicGameProxy.connect(deployerAcct).setRuntimeMode();
-	}
+	}*/
 	return {
 		cosmicGameProxy,
 		cosmicToken,

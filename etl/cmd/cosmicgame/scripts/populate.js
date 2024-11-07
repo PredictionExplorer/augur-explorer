@@ -467,7 +467,8 @@ async function main() {
     await cosmicGameProxy.connect(addr3).bidWithCST("bid using ERC20 token");
     await ethers.provider.send("evm_mine");
 
-    await cosmicGameProxy.connect(owner).prepareMaintenance();
+	await cosmicGameProxy.connect(owner).setDelayDurationBeforeNextRound(1000);
+//    await cosmicGameProxy.connect(owner).prepareMaintenance();
 
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
@@ -555,7 +556,10 @@ async function main() {
     tmp = await cosmicGameProxy.activationTime();
     await cosmicGameProxy.connect(owner).setActivationTime(tmp);
 
-    await cosmicGameProxy.connect(owner).setRuntimeMode();
+	await cosmicGameProxy.connect(owner).setDelayDurationBeforeNextRound(1);
+    await ethers.provider.send("evm_increaseTime", [1001]);
+    await ethers.provider.send("evm_mine");
+//    await cosmicGameProxy.connect(owner).setRuntimeMode();
 
     await cosmicGameProxy.connect(addr3).claimDonatedNFT(0n);
     await cosmicGameProxy.connect(addr3).claimDonatedNFT(1n);

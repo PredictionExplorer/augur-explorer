@@ -154,10 +154,11 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_round_start_auction_length_changed[:4]),
 			ContractAid: 0,
 		},
+		/* DISCONTINUED, removal pending
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_system_mode_changed[:4]),
 			ContractAid: 0,
-		},
+		},*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_donation_received_event[:4]),
 			ContractAid: 0,
@@ -233,6 +234,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_erc20_reward_mult[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_max_msg_length_changed[:4]),
 			ContractAid: 0,
 		},
@@ -278,6 +283,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_funds2charity[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_delay_duration_round[:4]),
 			ContractAid: 0,
 		},
 	)
@@ -1885,6 +1894,7 @@ func proc_num_raffle_nft_winners_staking_rwalk_changed_event(log *types.Log,elog
 	storagew.Delete_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(&evt)
 }
+/*DISCONTINUED, removal pending
 func proc_system_mode_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGSystemModeChanged
@@ -1916,6 +1926,7 @@ func proc_system_mode_changed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_cosmic_game_system_mode_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_system_mode_changed_event(&evt)
 }
+*/
 func proc_charity_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGCharityAddressChanged
@@ -2401,7 +2412,7 @@ func proc_activation_time_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewActivationTime = eth_evt.NewActivationTime.String()
+	evt.NewActivationTime = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("ActivationTimeChanged {\n")
@@ -2503,6 +2514,37 @@ func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog
 
 	storagew.Delete_erc20_token_reward_changed_event(evt.EvtId)
     storagew.Insert_erc20_token_reward_changed_event(&evt)
+}
+func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGERC20RewardMultiplierChanged
+	var eth_evt BiddingErc20RewardMultiplierChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing RewardMultiplierChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"Erc20RewardMultiplierChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event Erc20RewardMultiplierChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewMultiplier= eth_evt.NewMultiplier.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("Erc20RewardMultiplierChanged{\n")
+	Info.Printf("\tNewMultiplier: %v\n",evt.NewMultiplier)
+	Info.Printf("}\n")
+
+	storagew.Delete_erc20_reward_multiplier_changed_event(evt.EvtId)
+    storagew.Insert_erc20_reward_multiplier_changed_event(&evt)
 }
 func proc_max_msg_length_changed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2819,6 +2861,37 @@ func proc_funds_transferred_to_charity_event(log *types.Log,elog *EthereumEventL
 	storagew.Delete_funds_transferred_to_charity_event(evt.EvtId)
     storagew.Insert_funds_transferred_to_charity_event(&evt)
 }
+func proc_delay_duration_before_next_round_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGDelayDuration
+	var eth_evt CosmicGameDelayDurationBeforeNextRoundChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing DelayDurationBeforeNextRoundChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DelayDurationBeforeNextRoundChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event DelayDurationBeforeNextRoundChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue= eth_evt.NewValue.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("DelayDurationBeforeNextRoundChanged{\n")
+	Info.Printf("\tNewValue: %v\n",evt.NewValue)
+	Info.Printf("}\n")
+
+    storagew.Delete_delay_duration_before_next_round_changed_event(evt.EvtId)
+	storagew.Insert_delay_duration_before_next_round_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -2920,9 +2993,10 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_staking_rwalk_changed) {
 		proc_num_raffle_nft_winners_staking_rwalk_changed_event(log,evtlog)
 	}
+	/* DISCONTINUED , removal pending
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_system_mode_changed) {
 		proc_system_mode_changed_event(log,evtlog)
-	}
+	}*/
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_address_changed) {
 		proc_charity_address_changed_event(log,evtlog)
 	}
@@ -2977,6 +3051,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_token_reward) {
 		proc_erc20_token_reward_changed_event(log,evtlog)
 	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_reward_mult) {
+		proc_erc20_reward_multiplier_changed_event(log,evtlog)
+	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_max_msg_length_changed) {
 		proc_max_msg_length_changed_event(log,evtlog)
 	}
@@ -3006,6 +3083,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funds2charity) {
 		proc_funds_transferred_to_charity_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_delay_duration_round) {
+		proc_delay_duration_before_next_round_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {
