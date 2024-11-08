@@ -541,7 +541,7 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
-	evt.RoundNum = eth_evt.Round.Int64()
+	evt.RoundNum = eth_evt.RoundNum.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationEvent {\n")
@@ -591,7 +591,7 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.RecordId = eth_evt.RecordId.Int64();
 	evt.Amount = eth_evt.Amount.String()
-	evt.RoundNum = eth_evt.Round.Int64()
+	evt.RoundNum = eth_evt.RoundNum.Int64()
 	data_json,err := get_donation_data(evt.RecordId)
 	if err != nil {
 		Info.Printf("Failure to fetch donation info record: %v\n",err.Error())
@@ -859,7 +859,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRaffleDeposit
-	var eth_evt EthPrizesWalletPrizeReceived
+	var eth_evt PrizesWalletPrizeReceived
 
 	Info.Printf("Processing PrizeReceived event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -1996,7 +1996,7 @@ func proc_random_walk_address_changed_event(log *types.Log,elog *EthereumEventLo
 func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRaffleWalletAddressChanged
-	var eth_evt IMainPrizeEthPrizesWalletAddressChanged
+	var eth_evt CosmicGamePrizesWalletAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -2014,7 +2014,7 @@ func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewRaffleWallet = eth_evt.NewEthPrizesWallet.String()
+	evt.NewRaffleWallet = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("EthPrizesWalletAddressChanged{\n")
@@ -2150,7 +2150,7 @@ func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventL
 func proc_cosmic_signature_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGCosmicSignatureAddressChanged
-	var eth_evt CosmicGameCosmicSignatureAddressChanged
+	var eth_evt CosmicGameCosmicSignatureNftAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -2168,7 +2168,7 @@ func proc_cosmic_signature_address_changed_event(log *types.Log,elog *EthereumEv
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewCosmicSignature= eth_evt.NewCosmicSignature.String()
+	evt.NewCosmicSignature= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CosmicSignatureAddressChanged{\n")
@@ -2917,7 +2917,7 @@ func proc_round_started_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.RoundNum= eth_evt.RoundNum.Int64()
-	evt.StartTimestamp= eth_evt.Timestamp.Int64()
+	evt.StartTimestamp= eth_evt.TimeStamp.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("FirstBidPlacedInRound{\n")
