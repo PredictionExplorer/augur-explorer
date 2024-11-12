@@ -270,7 +270,7 @@ func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.CGMintEvent) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.CGRaffleDeposit) {
+func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.CGPrizesEthDeposit) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
@@ -295,7 +295,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.CGRaffleDeposit) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_raffle_withdrawal(evt *p.CGRaffleWithdrawal) {
+func (sw *SQLStorageWrapper) Insert_raffle_withdrawal(evt *p.CGPrizesEthWithdrawal) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)

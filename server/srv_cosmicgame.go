@@ -304,7 +304,7 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			initial_seconds = -1
 		} else { initial_seconds = tmp_val.Int64() }
-		tmp_val,err = bwcontract.TimeoutClaimPrize(&copts)
+		tmp_val,err = bwcontract.TimeoutDurationToClaimMainPrize(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at TimeoutClaimPrize() call: %v\n",err)
 			Error.Printf(err_str)

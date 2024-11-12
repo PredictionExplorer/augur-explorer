@@ -180,7 +180,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_deposit[:4]),
+			Signature: hex.EncodeToString(evt_eth_deposit[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -704,15 +704,15 @@ func get_token_uri(token_id int64,contract_addr common.Address) string {
 func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNFTDonationEvent
-	var eth_evt CosmicGameNFTDonationEvent
+	var eth_evt IPrizesWalletNftDonated 
 
-	Info.Printf("Processing NFTDonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing NftDonated event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NFTDonationEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NftDonated",log.Data)
 	if err != nil {
 		Error.Printf("Event NFTDonationEvent decode error: %v",err)
 		os.Exit(1)
@@ -723,9 +723,9 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.TokenAddr = common.BytesToAddress(log.Topics[2][12:]).String()
-	evt.RoundNum = log.Topics[3].Big().Int64()
+	evt.DonorAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.TokenId = eth_evt.NftId.Int64()
 	evt.BidId = storagew.Get_cosmic_game_bid_by_evtlog_id(evt.EvtId-2)
 	evt.NFTTokenURI = get_token_uri(evt.TokenId,common.HexToAddress(evt.TokenAddr))
@@ -856,10 +856,10 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	}
 	*/
 }
-func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
+func proc_prizes_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGRaffleDeposit
-	var eth_evt PrizesWalletPrizeReceived
+	var evt CGPrizesEthDeposit
+	var eth_evt IPrizesWalletEthReceived  
 
 	Info.Printf("Processing PrizeReceived event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -867,7 +867,7 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"PrizeReceived",log.Data)
+	err := prizes_wallet_abi.UnpackIntoInterface(&eth_evt,"EthReceived",log.Data)
 	if err != nil {
 		Error.Printf("Event PrizeReceived decode error: %v",err)
 		os.Exit(1)
@@ -887,10 +887,10 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Round = prize_num
-	evt.Amount = eth_evt.PrizeAmount.String()
+	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("PrizeReceived{\n")
+	Info.Printf("EthReceived{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
@@ -901,8 +901,8 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGRaffleWithdrawal
-	var eth_evt EthPrizesWalletPrizeWithdrawn
+	var evt CGPrizesEthWithdrawal
+	var eth_evt IPrizesWalletEthWithdrawn
 
 	Info.Printf("Processing RaffleWithdrawalevent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -910,7 +910,7 @@ func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"PrizeWithdrawn",log.Data)
+	err := prizes_wallet_abi.UnpackIntoInterface(&eth_evt,"EthWithdrawn",log.Data)
 	if err != nil {
 		Error.Printf("Event PrizeWithdrawn decode error: %v",err)
 		os.Exit(1)
@@ -922,7 +922,7 @@ func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Amount = eth_evt.PrizeAmount.String()
+	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PrizeWithdrawn {\n")
@@ -1090,11 +1090,11 @@ func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonatedNFTClaimed
-	var eth_evt CosmicGameDonatedNFTClaimedEvent
+	var eth_evt PrizesWalletDonatedNftClaimed 
 
 	Info.Printf("Processing DonatedNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),raffle_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
@@ -1109,11 +1109,11 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.TokenAddr = eth_evt.NftAddressdonatedNFTs.String()
+	evt.TokenAddr = eth_evt.NftAddress.String()
 	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.TokenId = eth_evt.NftId.String()
 	evt.Index = eth_evt.Index.Int64()
-	evt.WinnerAddr = eth_evt.Winner.String()
+	evt.WinnerAddr = eth_evt.ClaimedBy.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonatedNFTClaimedEvent{\n")
@@ -1256,7 +1256,7 @@ func proc_unstake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_unstake_action_cst_event(evt.EvtId)
 	storagew.Insert_unstake_action_cst_event(&evt)
 }*/
-func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
+func proc_staking_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGEthDeposit
 	var eth_evt IStakingWalletCosmicSignatureNftEthDepositReceived
@@ -2243,7 +2243,7 @@ func proc_time_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 func proc_timeout_claimprize_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGTimeoutClaimPrizeChanged
-	var eth_evt CosmicGameTimeoutClaimPrizeChanged
+	var eth_evt CosmicGameTimeoutDurationToClaimMainPrizeChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -2261,7 +2261,7 @@ func proc_timeout_claimprize_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewTimeout = eth_evt.NewTimeout.Int64()
+	evt.NewTimeout = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TimeIncreaseChanged{\n")
@@ -2917,7 +2917,7 @@ func proc_round_started_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.RoundNum= eth_evt.RoundNum.Int64()
-	evt.StartTimestamp= eth_evt.TimeStamp.Int64()
+	evt.StartTimestamp= eth_evt.BlockTimeStamp.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("FirstBidPlacedInRound{\n")
@@ -2960,8 +2960,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_mint_event) {
 		proc_mint_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_deposit) {
-		proc_raffle_deposit_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
+		proc_prizes_eth_deposit_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_withdrawal) {
 		proc_raffle_withdrawal_event(log,evtlog)
@@ -3000,7 +3000,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 		proc_nft_unstaked_cst_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
-		proc_eth_deposit_event(log,evtlog)
+		proc_staking_eth_deposit_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reward_paid) {
 		proc_reward_paid_event(log,evtlog)

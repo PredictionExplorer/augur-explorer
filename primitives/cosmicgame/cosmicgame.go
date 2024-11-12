@@ -141,7 +141,7 @@ type CGMintEvent struct {
 	RoundNum			int64
 	MintType			int64
 }
-type CGRaffleDeposit struct {
+type CGPrizesEthDeposit struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -152,7 +152,7 @@ type CGRaffleDeposit struct {
 	Round				int64
 	Amount				string
 }
-type CGRaffleWithdrawal struct {
+type CGPrizesEthWithdrawal struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64

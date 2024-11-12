@@ -36,10 +36,10 @@ const (
 	CHARITY_UPDATED			= "a0bd6b2fdbf082ae2356710c23fc8d76d56d418cecb4514d119c77a8617b4ffe"
 	TOKEN_NAME_EVENT		= "8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
 	MINT_EVENT				= "c646da88dc2b2526461a0ebb4326e2418ec0bea89496b632b7c9ee42fbfe1d4d"
-	NFT_DONATION_EVENT		= "c85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d1"
-	DONATED_NFT_CLAIMED		= "0d0e4b90a96d931964d5b0421a6b5b48dd73abf538cdb9ae015069d49e9a4679"
-	RAFFLE_DEPOSIT_EVENT	= "ee97096f32eed49908b904623ae7ba7af58c121e15fe6e7f31ac379fb7ca1a98"
-	RAFFLE_WITHDRAWAL_EVENT = "0835f27f462de8bce2ca086b3439451a8842d337fe4bf1fcc4aced1f952a2e2f"
+	NFT_DONATION_EVENT		= "b12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23"
+	DONATED_NFT_CLAIMED		= "03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3"
+	ETH_DEPOSIT_EVENT		= "85177f287940f2f05425a4029951af0e047a7f9c4eaa9a6e6917bcd869f86695"
+	RAFFLE_WITHDRAWAL_EVENT = "4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383"
 	RAFFLE_NFT_WINNER		= "2bdb3647f6d54492d99a46c4bf9e7b84ac8adf7aa868ec130450d96f6b4650e7"
 	ENDURANCE_WINNER		= "a32dfd1d4e09d55aebef273d2ce943439a7cdcdfb9ec44f27e6678d86a4fe880"
 	STELLAR_WINNER			= "0fc6a6935451e1388d6434f252504ff521df29ff374919a59299b8dadc54122f"
@@ -50,7 +50,7 @@ const (
 //	UNSTAKE_ACTION_EVENT	= "678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96"
 	NFT_UNSTAKED_RWALK		= "1792a7a9d5e2f53a8d06f2ae40b4446d91b503e84dd7f6307f40cdeb11541668"
 	NFT_UNSTAKED_CST		= "ec478a78e4e3931ff728a54eeb6875304c891fa5fa253337b60d37fdc5e1feaf"
-	ETH_DEPOSIT_EVENT		= "b71b1087ee7f659cf742c29d8095c562e6e832337190e10dbe81db89955c0913"
+	STAKING_ETH_DEPOSIT_EVENT= "b71b1087ee7f659cf742c29d8095c562e6e832337190e10dbe81db89955c0913"
 	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
 	REWARD_PAID_EVENT		= "f9bac74bc321a00ef2afeb1f44684e20e22f567699a5840df47967ea88c5b449"
 	FUND_TRANSFER_ERR		= "154fb6c686c977314af35b730a16b83facda5265b2abec7237c730f63e42215a"
@@ -78,7 +78,7 @@ const (
 	COSMIC_SIGNATURE_ADDRESS_CHANGED	= "7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1"
 	BUSINESS_LOGIC_ADDRESS_CHANGED	= "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd"
 	TIME_INCREASE_CHANGED	= "ed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd"
-	TIMEOUT_CLAIMPRIZE_CHANGED	= "caf8e5c6bc1bb2c19935f84ddcdaefb232ad06f9f2abd2ad588bea4bbe631d26"
+	TIMEOUT_CLAIMPRIZE_CHANGED	= "37a332914fac995349420c0419b4423a19dcb762017f691442a0782ce4bf417a"
 	PRICE_INCREASE_CHANGED	= "cbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac"
 	NANOSECONDS_EXTRA_CHANGED = "678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9"
 	INITIAL_SECONDS_UNTIL_PRIZE_CHANGED = "6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305"
@@ -164,7 +164,7 @@ var (
 	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
 
 	// RaffleWallet events
-	evt_raffle_deposit,_	= hex.DecodeString(RAFFLE_DEPOSIT_EVENT)
+	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
 	evt_raffle_withdrawal,_	= hex.DecodeString(RAFFLE_WITHDRAWAL_EVENT)
 
 	// ERC20 events
@@ -178,7 +178,7 @@ var (
 	evt_nft_unstaked_cst,_	= hex.DecodeString(NFT_UNSTAKED_CST)
 //	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
 	evt_reward_paid,_		= hex.DecodeString(REWARD_PAID_EVENT)
-	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
+	evt_staking_eth_deposit,_		= hex.DecodeString(STAKING_ETH_DEPOSIT_EVENT)
 
 	// MarketingWallet events
 	evt_marketing_reward_sent,_		= hex.DecodeString(MARKETING_REWARD_SENT)
@@ -189,7 +189,7 @@ var (
 	cosmic_signature_abi	*abi.ABI
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI
-	raffle_wallet_abi		*abi.ABI
+	prizes_wallet_abi		*abi.ABI
 	staking_wallet_cst_abi		*abi.ABI
 	staking_wallet_rwalk_abi		*abi.ABI
 	marketing_wallet_abi	*abi.ABI
@@ -319,7 +319,7 @@ func main() {
 	cosmic_signature_abi = get_abi(CosmicSignatureABI)
 	cosmic_token_abi = get_abi(CosmicTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);
-	raffle_wallet_abi = get_abi(EthPrizesWalletABI);
+	prizes_wallet_abi = get_abi(PrizesWalletABI);
 	staking_wallet_cst_abi = get_abi(IStakingWalletCosmicSignatureNftABI);
 	staking_wallet_rwalk_abi = get_abi(IStakingWalletRandomWalkNftABI);
 	marketing_wallet_abi = get_abi(MarketingWalletABI);
