@@ -392,7 +392,7 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_raffle_wallet_address_changed_ev
 func (sw *SQLStorageWrapper) Delete_cosmic_game_staking_wallet_cst_address_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_staking_addr WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_staking_cst_addr WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -402,7 +402,7 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_staking_wallet_cst_address_chang
 func (sw *SQLStorageWrapper) Delete_cosmic_game_staking_wallet_rwalk_address_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_staking_addr WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_staking_rwalk_addr WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

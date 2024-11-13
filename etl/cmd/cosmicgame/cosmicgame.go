@@ -184,6 +184,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_staking_eth_deposit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_raffle_withdrawal[:4]),
 			ContractAid: 0,
 		},
@@ -466,6 +470,8 @@ func find_prize_num(tx_id int64) int64 {
 	}
 	return log.Topics[1].Big().Int64()
 }
+
+
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGBidEvent
@@ -1098,7 +1104,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonatedNFTClaimedEvent",log.Data)
+	err := prizes_wallet_abi.UnpackIntoInterface(&eth_evt,"DonatedNftClaimed",log.Data)
 	if err != nil {
 		Error.Printf("Event DonatedNFTClaimedEvent decode error: %v",err)
 		os.Exit(1)
@@ -2250,7 +2256,7 @@ func proc_timeout_claimprize_changed_event(log *types.Log,elog *EthereumEventLog
 		return
 	}
 	Info.Printf("Processing TimeoutClaimPrizeChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TimeoutClaimPrizeChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TimeoutDurationToClaimMainPrizeChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event TimeoutClaimPrizeChanged decode error: %v",err)
 		os.Exit(1)
@@ -2264,7 +2270,7 @@ func proc_timeout_claimprize_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.NewTimeout = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("TimeIncreaseChanged{\n")
+	Info.Printf("TimeoutDurationToClaimMainPrizeChanged{\n")
 	Info.Printf("\tNewTimeout: %v\n",evt.NewTimeout)
 	Info.Printf("}\n")
 
@@ -2916,7 +2922,7 @@ func proc_round_started_event(log *types.Log,elog *EthereumEventLog) {
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
-	evt.RoundNum= eth_evt.RoundNum.Int64()
+	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.StartTimestamp= eth_evt.BlockTimeStamp.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -2999,7 +3005,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nft_unstaked_cst) {
 		proc_nft_unstaked_cst_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_eth_deposit) {
 		proc_staking_eth_deposit_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reward_paid) {
