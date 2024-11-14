@@ -1,5 +1,4 @@
 package main
-
 import (
 	"os"
 	"log"
@@ -201,7 +200,7 @@ var (
 	cosmic_token_addr		common.Address
 	cosmic_dao_addr			common.Address
 	charity_wallet_addr		common.Address
-	raffle_wallet_addr		common.Address
+	prizes_wallet_addr		common.Address
 	staking_wallet_cst_addr		common.Address
 	staking_wallet_rwalk_addr		common.Address
 	marketing_wallet_addr	common.Address
@@ -337,7 +336,7 @@ func main() {
 	cosmic_token_addr = common.HexToAddress(cg_contracts.CosmicTokenAddr)
 	cosmic_dao_addr = common.HexToAddress(cg_contracts.CosmicDaoAddr)
 	charity_wallet_addr = common.HexToAddress(cg_contracts.CharityWalletAddr)
-	raffle_wallet_addr = common.HexToAddress(cg_contracts.RaffleWalletAddr)
+	prizes_wallet_addr = common.HexToAddress(cg_contracts.RaffleWalletAddr)
 	staking_wallet_cst_addr = common.HexToAddress(cg_contracts.StakingWalletCSTAddr)
 	staking_wallet_rwalk_addr = common.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
 	marketing_wallet_addr = common.HexToAddress(cg_contracts.MarketingWalletAddr)
