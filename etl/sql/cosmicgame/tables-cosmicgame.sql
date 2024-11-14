@@ -138,7 +138,7 @@ CREATE TABLE cg_mint_event (
 --	stake_action_id	BIGINT DEFAULT 0,			DISCINTINUED
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_raffle_deposit (
+CREATE TABLE cg_prize_deposit (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -152,7 +152,7 @@ CREATE TABLE cg_raffle_deposit (
 	withdrawal_id	BIGINT DEFAULT 0, -- at withdrawal set to evtlog_id of bw_raffle_Withdrawal
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_raffle_withdrawal (
+CREATE TABLE cg_prize_withdrawal (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,

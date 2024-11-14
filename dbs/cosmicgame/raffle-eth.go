@@ -8,7 +8,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_unclaimed_raffle_eth_deposits(winner_aid int64,offset,limit int) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,offset,limit int) []p.CGRaffleDepositRec {
 
 	var query string
 	query = 
@@ -27,7 +27,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_raffle_eth_deposits(winner_aid int64,
 				"rd.claimed, "+
 				"EXTRACT(EPOCH FROM rw.time_stamp)::BIGINT AS tstmp, "+
 				"rw.time_stamp "+
-			"FROM cg_raffle_deposit rd "+
+			"FROM cg_prize_deposit rd "+
 				"LEFT JOIN cg_raffle_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id "+
 				"LEFT JOIN transaction t ON t.id=rd.tx_id "+
 				"LEFT JOIN address wa ON rd.winner_aid = wa.address_id "+
@@ -71,7 +71,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_raffle_eth_deposits(winner_aid int64,
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_list(offset,limit int) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.CGRaffleDepositRec {
 
 	if limit == 0 { limit = 1000000 }
 	var query string
@@ -87,7 +87,7 @@ func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_list(offset,limit int) []p.
 				"wa.addr,"+
 				"p.round_num, "+
 				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_deposit p "+
+			"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"ORDER BY p.id DESC "+
@@ -123,7 +123,7 @@ func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_list(offset,limit int) []p.
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_raffle_deposits_by_round(round_num int64) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CGRaffleDepositRec {
 
 	var query string
 	query =  "SELECT " +
@@ -138,7 +138,7 @@ func (sw *SQLStorageWrapper) Get_raffle_deposits_by_round(round_num int64) []p.C
 				"wa.addr,"+
 				"p.round_num,"+
 				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_deposit p "+
+			"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.round_num = $1 " +

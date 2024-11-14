@@ -472,7 +472,7 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winnings_by_user(winner_aid int64) [
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_raffle_deposits_by_user(winner_aid int64) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_prize_deposits_by_user(winner_aid int64) []p.CGRaffleDepositRec {
 
 	var query string
 	query =  "SELECT " +
@@ -487,7 +487,7 @@ func (sw *SQLStorageWrapper) Get_raffle_deposits_by_user(winner_aid int64) []p.C
 				"wa.addr,"+
 				"p.round_num,"+
 				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_deposit p "+
+			"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid = $1 " +

@@ -876,7 +876,7 @@ func proc_prizes_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 		Error.Printf("Event PrizeReceived decode error: %v",err)
 		os.Exit(1)
 	}
-
+/*
 	prize_num := find_prize_num(elog.TxId)
 	if prize_num == -1 {
 		err_str := fmt.Sprintf("find_prize_num() couldn't find corresponding PrizeClaimEvent()")
@@ -884,13 +884,14 @@ func proc_prizes_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 		Error.Printf(err_str)
 		os.Exit(1)
 	}
+	*/
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = prize_num
+	evt.Round = log.Topics[1].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -900,8 +901,8 @@ func proc_prizes_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storagew.Delete_raffle_deposit(evt.EvtId)
-	storagew.Insert_raffle_deposit(&evt)
+	storagew.Delete_prize_deposit(evt.EvtId)
+	storagew.Insert_prize_deposit(&evt)
 }
 func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -934,8 +935,8 @@ func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storagew.Delete_raffle_withdrawal(evt.EvtId)
-	storagew.Insert_raffle_withdrawal(&evt)
+	storagew.Delete_prize_withdrawal(evt.EvtId)
+	storagew.Insert_prize_withdrawal(&evt)
 }
 func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 

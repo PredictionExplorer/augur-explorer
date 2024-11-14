@@ -231,7 +231,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
 
 	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num)
-	raffle_eth_deposits := sw.Get_raffle_deposits_by_round(prize_num)
+	raffle_eth_deposits := sw.Get_prize_deposits_by_round(prize_num)
 
 	rec.RaffleNFTWinners = raffle_nft_winners
 	rec.RaffleETHDeposits = raffle_eth_deposits

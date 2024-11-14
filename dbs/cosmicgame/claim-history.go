@@ -44,7 +44,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
 						"rd.claimed "+
-					"FROM cg_raffle_deposit rd "+
+					"FROM cg_prize_deposit rd "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
 					"WHERE rd.winner_aid=$1  "+
 				") UNION ALL (" +
@@ -349,7 +349,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"rd.claimed, "+
 						"wa.addr winner_addr," +
 						"rd.winner_aid "+
-					"FROM cg_raffle_deposit rd "+
+					"FROM cg_prize_deposit rd "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
 						"LEFT JOIN address wa ON rd.winner_aid=wa.address_id "+
 				") UNION ALL (" +

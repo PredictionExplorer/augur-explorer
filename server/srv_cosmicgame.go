@@ -829,7 +829,7 @@ func cosmic_game_donations_nft_info(c *gin.Context) {
 		})
 	}
 }
-func cosmic_game_raffle_deposits_list(c *gin.Context) {
+func cosmic_game_prize_deposits_list(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -840,7 +840,7 @@ func cosmic_game_raffle_deposits_list(c *gin.Context) {
 	if !success {
 		return
 	}
-	deposits := arb_storagew.Get_raffle_eth_deposits_list(offset,limit)
+	deposits := arb_storagew.Get_prize_eth_deposits_list(offset,limit)
 
 	c.HTML(http.StatusOK, "cg_raffle_deposits.html", gin.H{
 		"RaffleDeposits" : deposits,
@@ -848,7 +848,7 @@ func cosmic_game_raffle_deposits_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func cosmic_game_raffle_deposits_by_round(c *gin.Context) {
+func cosmic_game_prize_deposits_by_round(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -867,7 +867,7 @@ func cosmic_game_raffle_deposits_by_round(c *gin.Context) {
 		respond_error(c,"'round_num' parameter is not set")
 		return
 	}
-	deposits := arb_storagew.Get_raffle_deposits_by_round(round_num)
+	deposits := arb_storagew.Get_prize_deposits_by_round(round_num)
 
 	c.HTML(http.StatusOK, "cg_raffle_deposits_by_round.html", gin.H{
 		"RaffleDeposits" : deposits,
@@ -919,7 +919,7 @@ func cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 		"RoundNum" : round_num,
 	})
 }
-func cosmic_game_raffle_deposits_by_user(c *gin.Context) {
+func cosmic_game_prize_deposits_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -947,7 +947,7 @@ func cosmic_game_raffle_deposits_by_user(c *gin.Context) {
 		return
 	}
 
-	deposits := arb_storagew.Get_raffle_deposits_by_user(user_aid)
+	deposits := arb_storagew.Get_prize_deposits_by_user(user_aid)
 
 	c.HTML(http.StatusOK, "cg_user_raffle_deposits.html", gin.H{
 		"UserRaffleDeposits" : deposits,
@@ -1335,7 +1335,7 @@ func cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 		"PrizeNum": prize_num,
 	})
 }
-func cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
+func cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1362,7 +1362,7 @@ func cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 
 	offset = 0; limit = 100000000;
 
-	deposits := arb_storagew.Get_unclaimed_raffle_eth_deposits(user_aid,offset,limit)
+	deposits := arb_storagew.Get_unclaimed_prize_eth_deposits(user_aid,offset,limit)
 	c.HTML(http.StatusOK, "cg_user_unclaimed_raffle_eth_deposits.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,

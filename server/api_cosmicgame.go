@@ -508,7 +508,7 @@ func api_cosmic_game_donated_nft_info(c *gin.Context) {
 		})
 	}
 }
-func api_cosmic_game_raffle_deposits_list(c *gin.Context) {
+func api_cosmic_game_prize_deposits_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -521,7 +521,7 @@ func api_cosmic_game_raffle_deposits_list(c *gin.Context) {
 		return
 	}
 
-	deposits := arb_storagew.Get_raffle_eth_deposits_list(offset,limit)
+	deposits := arb_storagew.Get_prize_eth_deposits_list(offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -533,7 +533,7 @@ func api_cosmic_game_raffle_deposits_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_cosmic_game_raffle_deposits_by_round(c *gin.Context) {
+func api_cosmic_game_prize_deposits_by_round(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -554,7 +554,7 @@ func api_cosmic_game_raffle_deposits_by_round(c *gin.Context) {
 		return
 	}
 
-	deposits := arb_storagew.Get_raffle_deposits_by_round(round_num)
+	deposits := arb_storagew.Get_prize_deposits_by_round(round_num)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -682,7 +682,7 @@ func api_cosmic_game_user_raffle_deposits(c *gin.Context) {
 		return
 	}
 
-	deposits := arb_storagew.Get_raffle_deposits_by_user(user_aid)
+	deposits := arb_storagew.Get_prize_deposits_by_user(user_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -1102,7 +1102,7 @@ func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 		"PrizeNum": prize_num,
 	})
 }
-func api_cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
+func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1129,7 +1129,7 @@ func api_cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 		return
 	}
 
-	deposits := arb_storagew.Get_unclaimed_raffle_eth_deposits(user_aid,offset,limit)
+	deposits := arb_storagew.Get_unclaimed_prize_eth_deposits(user_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""

@@ -6,10 +6,10 @@ CREATE TRIGGER cg_donation_received_insert AFTER INSERT ON cg_donation_received 
 CREATE TRIGGER cg_donation_received_delete AFTER DELETE ON cg_donation_received FOR EACH ROW EXECUTE PROCEDURE on_donation_received_delete();
 CREATE TRIGGER cg_nft_donation_insert AFTER INSERT ON cg_nft_donation FOR EACH ROW EXECUTE PROCEDURE on_nft_donation_insert();
 CREATE TRIGGER cg_nft_donation_delete AFTER DELETE ON cg_nft_donation FOR EACH ROW EXECUTE PROCEDURE on_nft_donation_delete();
-CREATE TRIGGER cg_raffle_deposit_insert AFTER INSERT ON cg_raffle_deposit FOR EACH ROW EXECUTE PROCEDURE on_raffle_deposit_insert();
-CREATE TRIGGER cg_raffle_deposit_delete AFTER DELETE ON cg_raffle_deposit FOR EACH ROW EXECUTE PROCEDURE on_raffle_deposit_delete();
-CREATE TRIGGER cg_raffle_withdrawal_insert AFTER INSERT ON cg_raffle_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_raffle_withdrawal_insert();
-CREATE TRIGGER cg_raffle_withdrawal_delete AFTER DELETE ON cg_raffle_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_raffle_withdrawal_delete();
+CREATE TRIGGER cg_prize_deposit_insert AFTER INSERT ON cg_prize_deposit FOR EACH ROW EXECUTE PROCEDURE on_prize_deposit_insert();
+CREATE TRIGGER cg_prize_deposit_delete AFTER DELETE ON cg_prize_deposit FOR EACH ROW EXECUTE PROCEDURE on_prize_deposit_delete();
+CREATE TRIGGER cg_prize_withdrawal_insert AFTER INSERT ON cg_prize_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_prize_withdrawal_insert();
+CREATE TRIGGER cg_prize_withdrawal_delete AFTER DELETE ON cg_prize_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_prize_withdrawal_delete();
 CREATE TRIGGER cg_raffle_nft_winner_insert AFTER INSERT ON cg_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_insert();
 CREATE TRIGGER cg_raffle_nft_winner_delete AFTER DELETE ON cg_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_delete();
 CREATE TRIGGER cg_transer_insert AFTER INSERT ON cg_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_insert();

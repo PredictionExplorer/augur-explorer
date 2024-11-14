@@ -270,13 +270,13 @@ func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.CGMintEvent) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.CGPrizesEthDeposit) {
+func (sw *SQLStorageWrapper) Insert_prize_deposit(evt *p.CGPrizesEthDeposit) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_deposit ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_deposit ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,round_num,amount"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
@@ -291,17 +291,17 @@ func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.CGPrizesEthDeposit) {
 		evt.Amount,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_deposit table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_prize_deposit table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_raffle_withdrawal(evt *p.CGPrizesEthWithdrawal) {
+func (sw *SQLStorageWrapper) Insert_prize_withdrawal(evt *p.CGPrizesEthWithdrawal) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_withdrawal("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_withdrawal("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,amount"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
@@ -315,7 +315,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_withdrawal(evt *p.CGPrizesEthWithdraw
 		evt.Amount,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_withdrawal table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_prize_withdrawal table: %v\n",err))
 		os.Exit(1)
 	}
 }

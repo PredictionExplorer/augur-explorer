@@ -262,7 +262,7 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_raffle_deposit_insert() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_prize_deposit_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
@@ -290,7 +290,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_raffle_deposit_delete() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_prize_deposit_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
@@ -594,7 +594,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_raffle_withdrawal_insert() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_prize_withdrawal_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
@@ -608,12 +608,12 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_raffle_winner_stats(winner_aid,withdrawal_sum) VALUES(NEW.winner_aid,NEW.amount);
 	END IF;
-	UPDATE cg_raffle_deposit SET claimed=TRUE,withdrawal_id=NEW.evtlog_id WHERE (evtlog_id<NEW.evtlog_id) AND (withdrawal_id=0) AND (winner_aid=NEW.winner_aid);
+	UPDATE cg_prize_deposit SET claimed=TRUE,withdrawal_id=NEW.evtlog_id WHERE (evtlog_id<NEW.evtlog_id) AND (withdrawal_id=0) AND (winner_aid=NEW.winner_aid);
 	UPDATE cg_glob_stats SET total_raffle_eth_withdrawn = (total_raffle_eth_withdrawn + NEW.amount);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_raffle_withdrawal_delete() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_prize_withdrawal_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
@@ -622,7 +622,7 @@ BEGIN
 			withdrawal_sum = (withdrawal_sum - OLD.amount),
 			amount_sum = (amount_sum - OLD.amount)
 		WHERE winner_aid = OLD.winner_aid;
-	UPDATE cg_raffle_deposit SET claimed=FALSE,withdrawal_id=0 WHERE withdrawal_id = OLD.evtlog_id;
+	UPDATE cg_prize_deposit SET claimed=FALSE,withdrawal_id=0 WHERE withdrawal_id = OLD.evtlog_id;
 	UPDATE cg_glob_stats SET total_raffle_eth_withdrawn = (total_raffle_eth_withdrawn - OLD.amount);
 	RETURN OLD;
 END;
