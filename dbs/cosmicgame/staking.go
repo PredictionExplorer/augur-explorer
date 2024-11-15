@@ -1286,3 +1286,60 @@ func (sw *SQLStorageWrapper) Get_staking_reward_paid_records(user_aid int64) []p
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_staking_cst_by_user_rewards(user_aid int64) []p.CGStakingCstRewardPerTokenRec {
+
+	var query string
+	query = "WITH rwd AS ("+
+				"SELECT "+
+					"token_id, "+
+					"SUM("+
+						"CASE "+
+							"WHEN collected='T' THEN reward "+
+							"ELSE 0 "+
+						"END "+
+					")/1e18 AS reward_collected, "+
+					"SUM("+
+						"CASE "+
+							"WHEN collected='F' THEN reward "+
+							"ELSE 0 "+
+						"END"+
+					")/1e18 AS reward_to_collect "+
+				"FROM cg_st_reward "+
+				"WHERE staker_aid=$1 "+
+				"GROUP BY token_id "+
+			") "+
+			"SELECT "+
+				"rwd.token_id,"+
+				"rwd.reward_collected,"+
+				"rwd.reward_to_collect "+
+			"FROM rwd "+
+			"ORDER BY token_id "
+
+	rows,err := sw.S.Db().Query(query,user_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakingCstRewardPerTokenRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakingCstRewardPerTokenRec
+		err=rows.Scan(
+			&rec.TokenId,
+			&rec.RewardCollectedEth,
+			&rec.RewardToCollectEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.UserAid = user_aid
+		records = append(records,rec)
+	}
+	return records
+
+
+
+
+
+}

@@ -400,3 +400,11 @@ type CGRewardPaidRec struct {
 	RewardAmountEth				float64
 	UnpaidDepositIndex		int64
 }
+type CGStakingCstRewardPerTokenRec struct {
+	TokenId						int64
+	RewardCollectedEth			float64
+	RewardToCollectEth			float64
+	UserAid						int64
+	UserAddr					string
+}
+

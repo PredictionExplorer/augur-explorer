@@ -1,0 +1,28 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>CST Staking rewards for  {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">CST Staking rewards for user {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Token ID</th>
+		<th class="market_reports">Reward Collected</th>
+		<th class="market_reports">Reward To Collect</th>
+	</tr>
+	{{- range $i, $change := .RewardsByToken}}
+		<tr class="market_reports">
+			<td class=""> {{.TokenId}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .RewardCollectedEth}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .RewardToCollectEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/cst/by_user/rewards/[user_addr]</br>
+
+	Example: /api//cosmicgame/staking/cst/by_user/rewards/{{.UserAddr}}
+</code>
+</body>
