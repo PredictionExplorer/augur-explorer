@@ -227,7 +227,20 @@ type CGRaffleNFTClaimed struct {
 	TokenId				int64
 }
 */
-type CGDonatedNFTClaimed struct {
+type CGDonatedTokenClaimed struct {	// ERC20 tokens
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	Index				int64
+	TokenAddr			string
+	Amount				string
+	BeneficiaryAddr		string
+}
+type CGDonatedNFTClaimed struct {	// ERC721 tokens
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -238,7 +251,7 @@ type CGDonatedNFTClaimed struct {
 	Index				int64
 	TokenAddr			string
 	TokenId				string
-	WinnerAddr			string
+	BeneficiaryAddr		string
 }
 type CGStakeActionCST struct {
 	EvtId				int64

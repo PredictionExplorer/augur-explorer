@@ -55,6 +55,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_donated_token_claimed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_donated_nft_claimed[:4]),
 			ContractAid: 0,
 		},
@@ -1092,6 +1096,45 @@ func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_chrono_warrior_event(evt.EvtId)
 	storagew.Insert_chrono_warrior_event(&evt)
 }
+func proc_donated_token_claimed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGDonatedTokenClaimed
+	var eth_evt PrizesWalletDonatedTokenClaimed 
+
+	Info.Printf("Processing DonatedTokenClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),prizes_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := prizes_wallet_abi.UnpackIntoInterface(&eth_evt,"DonatedTokenClaimed",log.Data)
+	if err != nil {
+		Error.Printf("Event DonatedTokenClaimedEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.TokenAddr = eth_evt.TokenAddress.String()
+	evt.RoundNum = log.Topics[1].Big().Int64()
+	evt.Amount = eth_evt.Amount.String()
+	evt.BeneficiaryAddr = eth_evt.Beneficiary.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("DonatedTokenClaimedEvent{\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tBeneficiary: %v\n",evt.BeneficiaryAddr)
+
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount);
+	Info.Printf("}\n")
+
+	storagew.Delete_donated_token_claimed(evt.EvtId)
+	storagew.Insert_donated_token_claimed(&evt)
+}
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonatedNFTClaimed
@@ -1118,13 +1161,13 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.TokenId = eth_evt.NftId.String()
 	evt.Index = eth_evt.Index.Int64()
-	evt.WinnerAddr = eth_evt.ClaimedBy.String()
+	evt.BeneficiaryAddr = eth_evt.Beneficiary.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonatedNFTClaimedEvent{\n")
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tIndex: %v\n",evt.Index)
-	Info.Printf("\tWinner: %v\n",evt.WinnerAddr)
+	Info.Printf("\tBeneficiary: %v\n",evt.BeneficiaryAddr)
 
 	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId);
@@ -2982,6 +3025,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_chrono_warrior) {
 		proc_chrono_warrior_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_token_claimed) {
+		proc_donated_token_claimed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_nft_claimed) {
 		proc_donated_nft_claimed_event(log,evtlog)

@@ -36,6 +36,7 @@ const (
 	TOKEN_NAME_EVENT		= "8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
 	MINT_EVENT				= "c646da88dc2b2526461a0ebb4326e2418ec0bea89496b632b7c9ee42fbfe1d4d"
 	NFT_DONATION_EVENT		= "b12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23"
+	DONATED_TOKEN_CLAIMED	= "af1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0"
 	DONATED_NFT_CLAIMED		= "03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3"
 //	ETH_DEPOSIT_EVENT		= "85177f287940f2f05425a4029951af0e047a7f9c4eaa9a6e6917bcd869f86695"
 	ETH_DEPOSIT_EVENT		= "999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326"
@@ -112,6 +113,7 @@ var (
 	evt_endurance_winner,_	= hex.DecodeString(ENDURANCE_WINNER)
 	evt_stellar_winner,_	= hex.DecodeString(STELLAR_WINNER)
 	evt_chrono_warrior,_	= hex.DecodeString(CHRONO_WARRIOR)
+	evt_donated_token_claimed,_	= hex.DecodeString(DONATED_TOKEN_CLAIMED)
 	evt_donated_nft_claimed,_= hex.DecodeString(DONATED_NFT_CLAIMED)
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)

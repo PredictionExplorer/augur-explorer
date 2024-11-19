@@ -91,6 +91,11 @@ async function main() {
         implementationAddr +
         "')"
     );
+	const Samp = await hre.ethers.getContractFactory("Samp");
+	const samp = await Samp.deploy();
+	await samp.waitForDeployment();
+	let sampAddr = await samp.getAddress();
+
     let donationAmount = hre.ethers.parseEther("10");
     await cosmicGameProxy.donate({
         value: donationAmount
@@ -361,6 +366,21 @@ async function main() {
     await addr2.sendTransaction(tx);
     await addr2.sendTransaction(tx);
 
+    bidParams = {
+        msg: "",
+        rwalk: -1
+    };
+    params = ethers.AbiCoder.defaultAbiCoder().encode(
+        [bidParamsEncoding],
+        [bidParams]
+    );
+    rn = await cosmicGameProxy.roundNum();
+	await samp.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
+	await samp.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
+    bidPrice = await cosmicGameProxy.getBidPrice();
+	await cosmicGameProxy.bidAndDonateToken(params,await samp.getAddress(),10000000000000000000n,{value:bidPrice});
+
+
     bidPrice = await cosmicGameProxy.getBidPrice();
     bidParams = {
         msg: "bid 6",
@@ -477,6 +497,7 @@ async function main() {
         gasLimit: 3000000
     });
     receipt = await tx.wait();
+//	prizesWallet.connect(addr3).withdrawEverythingtrue);
 	stake_available_nfts();
 
     await cosmicGameProxy

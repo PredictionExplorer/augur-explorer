@@ -219,7 +219,21 @@ CREATE TABLE cg_chrono_warrior (
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_donated_nft_claimed (
+CREATE TABLE cg_donated_tok_claimed (	--- ERC 20 (donated) tokens
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	idx				BIGINT NOT NULL,
+	token_aid		BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_donated_nft_claimed ( -- ERC721 (donated) tokens
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,

@@ -427,11 +427,39 @@ func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior)
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_donated_token_claimed(evt *p.CGDonatedTokenClaimed) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	token_aid := sw.S.Lookup_or_create_address(evt.TokenAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.BeneficiaryAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donated_tok_claimed ("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"round_num,idx,token_aid,winner_aid,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		evt.RoundNum,
+		evt.Index,
+		token_aid,
+		winner_aid,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donated_token_claimed table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaimed) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	token_aid := sw.S.Lookup_or_create_address(evt.TokenAddr,0, 0)
-	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.BeneficiaryAddr,0, 0)
 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donated_nft_claimed ("+

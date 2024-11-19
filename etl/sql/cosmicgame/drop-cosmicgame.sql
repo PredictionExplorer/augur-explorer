@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS
 	cg_endurance_winner,
 	cg_stellar_winner,
 	cg_donated_nft_claimed,
+	cg_donated_tok_claimed,
 	cg_stake_action_cst,
 	cg_nft_staked_cst,
 	cg_nft_staked_rwalk,
