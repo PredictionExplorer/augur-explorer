@@ -202,6 +202,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/donations/nft/statistics",cosmic_game_nft_donation_stats)
 	r.GET("/black/cosmicgame/donations/nft/by_prize/:prize_num",cosmic_game_nft_donations_by_prize)
 	r.GET("/black/cosmicgame/donations/nft/unclaimed_by_prize/:prize_num",cosmic_game_unclaimed_donated_nfts_by_prize)
+	r.GET("/black/cosmicgame/donations/erc20/:round_num",cosmic_game_donations_erc20_by_round)
 	r.GET("/black/cosmicgame/raffle/deposits/list/:offset/:limit",cosmic_game_prize_deposits_list)
 	r.GET("/black/cosmicgame/raffle/deposits/by_round/:round_num",cosmic_game_prize_deposits_by_round)
 	r.GET("/black/cosmicgame/raffle/nft_winners/list/:offset/:limit",cosmic_game_raffle_nft_winners_list)

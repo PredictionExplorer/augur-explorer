@@ -18,6 +18,7 @@
 		<th class="market_reports"></th>
 		<th class="market_reports"></th>
 		<th class="market_reports"></th>
+		<th class="market_reports"></th>
 		<th class="market_reports">Bids</th>
 		<th class="market_reports">Donated</th>
 		<th class="market_reports">Raffle Deposits</th>
@@ -35,6 +36,9 @@
 			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}} ETH </td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/nft/by_prize/{{.PrizeNum}}">&nbsp;&nbsp;Donated NFTs</a>
+			</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/donations/erc20/{{.PrizeNum}}">&nbsp;&nbsp;Donated ERC20</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/eth/both/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Donated ETH</a>

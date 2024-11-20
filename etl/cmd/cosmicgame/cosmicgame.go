@@ -39,6 +39,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_erc20_donated[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_nft_donation_event[:4]),
 			ContractAid: 0,
 		},
@@ -708,6 +712,45 @@ func get_token_uri(token_id int64,contract_addr common.Address) string {
 		return ""
 	}
 	return tok_uri
+}
+func proc_erc20_donated_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGERC20DonationEvent
+	var eth_evt IPrizesWalletTokenDonated
+
+	Info.Printf("Processing TokenDonated event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),prizes_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := prizes_wallet_abi.UnpackIntoInterface(&eth_evt,"TokenDonated",log.Data)
+	if err != nil {
+		Error.Printf("Event TokenDonated decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.RoundNum = log.Topics[1].Big().Int64()
+	evt.DonorAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.Amount = eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TokenDonated{\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
+
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount);
+	Info.Printf("}\n")
+
+	storagew.Delete_erc20_donated_event(evt.EvtId)
+	storagew.Insert_erc20_donated_event(&evt)
 }
 func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2998,6 +3041,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nft_donation_event) {
 		proc_nft_donation_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_donated) {
+		proc_erc20_donated_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_updated) {
 		proc_charity_updated_event(log,evtlog)

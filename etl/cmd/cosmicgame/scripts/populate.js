@@ -92,9 +92,12 @@ async function main() {
         "')"
     );
 	const Samp = await hre.ethers.getContractFactory("Samp");
-	const samp = await Samp.deploy();
-	await samp.waitForDeployment();
-	let sampAddr = await samp.getAddress();
+	const samp1 = await Samp.deploy();
+	await samp1.waitForDeployment();
+	let samp1Addr = await samp1.getAddress();
+	const samp2 = await Samp.deploy();
+	await samp2.waitForDeployment();
+	let samp2Addr = await samp2.getAddress();
 
     let donationAmount = hre.ethers.parseEther("10");
     await cosmicGameProxy.donate({
@@ -375,11 +378,14 @@ async function main() {
         [bidParams]
     );
     rn = await cosmicGameProxy.roundNum();
-	await samp.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
-	await samp.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
+	await samp1.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
+	await samp1.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
     bidPrice = await cosmicGameProxy.getBidPrice();
-	await cosmicGameProxy.bidAndDonateToken(params,await samp.getAddress(),10000000000000000000n,{value:bidPrice});
-
+	await cosmicGameProxy.bidAndDonateToken(params,await samp1.getAddress(),10000000000000000000n,{value:bidPrice});
+	await samp2.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
+	await samp2.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
+    bidPrice = await cosmicGameProxy.getBidPrice();
+	await cosmicGameProxy.bidAndDonateToken(params,await samp2.getAddress(),10000000000000000000n,{value:bidPrice});
 
     bidPrice = await cosmicGameProxy.getBidPrice();
     bidParams = {
@@ -497,7 +503,8 @@ async function main() {
         gasLimit: 3000000
     });
     receipt = await tx.wait();
-//	prizesWallet.connect(addr3).withdrawEverythingtrue);
+	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress());
+	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp2.getAddress());
 	stake_available_nfts();
 
     await cosmicGameProxy
@@ -648,6 +655,15 @@ async function main() {
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
 
+	await samp1.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
+	await samp1.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
+    bidPrice = await cosmicGameProxy.getBidPrice();
+	await cosmicGameProxy.bidAndDonateToken(params,await samp1.getAddress(),11000000000000000000n,{value:bidPrice});
+	await samp2.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
+	await samp2.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
+    bidPrice = await cosmicGameProxy.getBidPrice();
+	await cosmicGameProxy.bidAndDonateToken(params,await samp2.getAddress(),11000000000000000000n,{value:bidPrice});
+
     // generate one deposit to charity and not to Staking Wallet
     bidPrice = await cosmicGameProxy.getBidPrice();
     bidParams = {
@@ -673,12 +689,14 @@ async function main() {
     await cosmicGameProxy.connect(addr3).bid(params, {
         value: bidPrice
     });
+	rn = cosmicGameProxy.roundNum();
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     tx = await cosmicGameProxy.connect(addr3).claimPrize({
         gasLimit: 3000000
     });
 
+	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress());	// only claim one of the tokens (samp1, not samp2)
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
 
     ts = await cosmicSignature.totalSupply();
@@ -720,6 +738,7 @@ async function main() {
             await cosmicGameProxy.getAddress(),
             hre.ethers.parseEther("10000000")
         );
+
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await cosmicGameProxy.connect(addr1).bidWithCst("CST bid addr1");
     prizeTime = await cosmicGameProxy.timeUntilPrize();

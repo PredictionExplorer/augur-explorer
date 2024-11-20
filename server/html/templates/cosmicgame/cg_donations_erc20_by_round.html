@@ -1,0 +1,38 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ERC20 donations for Round {{.PrizeNum}}</title>
+</head>
+<body>
+	<h3 class="page_title">ERC20 Donations<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Donor</th>
+		<th class="market_reports">Token Address</th>
+		<th class="market_reports">Amount</th>
+	</tr>
+	{{- range $i, $change := .DonationsERC20}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">
+					{{.BlockNum}}
+				</a>
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.DonorAid}}">
+				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
+			<td style="text-align: right;" title="">{{ printf "%6f" .AmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/donations/erc20/by_prize/[round_num]</br>
+
+	Example: /api/cosmicgame/donations/erc20/by_prize/{{.PrizeNum}}
+</code>
+</body>

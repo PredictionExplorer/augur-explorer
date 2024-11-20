@@ -83,6 +83,20 @@ CREATE TABLE cg_donation_sent (
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_erc20_donation ( --PrizesWallet::TokenDonated event
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	donor_aid		BIGINT NOT NULL,
+	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
+	amount			DECIMAL NOT NULL,
+	bid_id			BIGINT NOT NULL,		-- id of the related `cg_bid` record
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_nft_donation (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

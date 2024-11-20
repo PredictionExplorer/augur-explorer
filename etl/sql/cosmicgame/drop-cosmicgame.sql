@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS
 	cg_donation_json ,
 	cg_donation_received,
 	cg_donation_sent,
+	cg_erc20_donation,
 	cg_nft_donation,
 	cg_charity_updated,
 	cg_token_name,

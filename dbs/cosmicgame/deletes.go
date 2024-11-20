@@ -69,6 +69,16 @@ func (sw *SQLStorageWrapper) Delete_donation_sent(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Delete_erc20_donated_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_erc20_donation WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Delete_nft_donation_event(evtlog_id int64) {
 
 	var query string
@@ -162,7 +172,7 @@ func (sw *SQLStorageWrapper) Delete_stellar_winner(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_donated_token_claimed(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_donated_token_claimed WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_donated_tok_claimed WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

@@ -94,6 +94,19 @@ type CGDonationSentEvent struct {
 	CharityAddr			string
 	Amount				string
 }
+type CGERC20DonationEvent struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	TokenAddr			string
+	RoundNum			int64
+	DonorAddr			string
+	Amount				string
+	BidId				int64	// id of related bid record
+}
 type CGNFTDonationEvent struct {
 	EvtId				int64
 	BlockNum			int64

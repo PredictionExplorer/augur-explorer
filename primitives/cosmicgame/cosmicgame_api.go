@@ -203,6 +203,22 @@ type CGUniqueDonor struct {
 	TotalDonated				string
 	TotalDonatedEth				float64
 }
+type CGERC20Donation struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	RoundNum					int64
+	DonorAid					int64
+	DonorAddr					string
+	TokenAid					int64
+	TokenAddr					string
+	Amount						string
+	AmountEth					float64
+}
 type CGNFTDonation struct {
 	RecordId					int64
 	EvtLogId					int64
