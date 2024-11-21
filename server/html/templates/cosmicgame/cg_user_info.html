@@ -226,23 +226,41 @@
 		</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports" title="">Stake History</td>
+		<td class="market_reports" title="">CST Staking</td>
 		<td class="market_reports">
 			<table>
+				<tr>
+					<td style="text-align: center">Rewards By Token</td>
+					<td style="text-align: center">Rewards By Deposit</td>
+				</tr>
 				<tr>
 					<td>
 						<nav style="float: right;">
 							<ul>
 							<li style="width: 20em;">
-								<a class="btn_link" href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">CST Actions</a>
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/by_user/by_token/rewards/{{.UserInfo.Address}}">By Token</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 20em;">
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/by_user/by_deposit/rewards/{{.UserInfo.Address}}">By Deposit</a>
 								<span></span><span></span><span></span><span></span>
 							</li>
 							</ul>
 						</nav>
 					</td>
 				</tr>
-				<tr>
-					<td>
+			</table>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports" title="">RWalk Staking</td>
+		<td class="market_reports">
 						<nav style="float: right;">
 							<ul>
 							<li style="width: 20em;">
@@ -251,9 +269,6 @@
 							</li>
 							</ul>
 						</nav>
-					</td>
-				</tr>
-			</table>
 		</td>
 	</tr>
 	<tr class="market_reports">

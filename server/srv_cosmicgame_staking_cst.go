@@ -318,7 +318,7 @@ func cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
 		"CSTStakingRewardMints" : mints,
 	})
 }
-func cosmic_game_staking_cst_history_by_user(c *gin.Context) {
+func cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -338,11 +338,11 @@ func cosmic_game_staking_cst_history_by_user(c *gin.Context) {
         return
     }
 
-	history := arb_storagew.Get_staking_cst_history_by_user(user_aid)
-	c.HTML(http.StatusOK, "cg_staking_cst_history_by_user.html", gin.H{
+	history := arb_storagew.Get_staking_cst_by_user_by_deposit_rewards(user_aid)
+	c.HTML(http.StatusOK, "cg_staking_cst_by_user_by_deposit_rewards.html", gin.H{
 		"UserAid":user_aid,
 		"UserAddr":p_user_addr,
-		"UserCstStakingHistory" : history,
+		"RewardsByDeposit" : history,
 	})
 }
 func cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
@@ -368,7 +368,7 @@ func cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
 		"RewardPaidRecords" : rewards,
 	})
 }
-func cosmic_game_staking_cst_by_user_rewards(c *gin.Context) {
+func cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
@@ -383,10 +383,46 @@ func cosmic_game_staking_cst_by_user_rewards(c *gin.Context) {
 		respond_error(c,"Provided address wasn't found")
 		return
 	}
-	rewards := arb_storagew.Get_staking_cst_by_user_rewards(user_aid)
-	c.HTML(http.StatusOK, "cg_staking_cst_by_user_rewards.html", gin.H{
+	rewards := arb_storagew.Get_staking_cst_by_user_by_token_rewards(user_aid)
+	c.HTML(http.StatusOK, "cg_staking_cst_by_user_by_token_rewards.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"RewardsByToken" : rewards,
+	})
+}
+func cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c,"Provided address wasn't found")
+		return
+	}
+	p_token_id:= c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,HTTP,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'token_id' parameter is not set")
+		return
+	}
+
+	rewards := arb_storagew.Get_staking_cst_by_user_by_token_rewards_details_for_token(user_aid,token_id)
+	c.HTML(http.StatusOK, "cg_staking_cst_by_user_by_token_rewards_detail.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"TokenId" : token_id,
+		"RewardsByTokenDetails" : rewards,
 	})
 }

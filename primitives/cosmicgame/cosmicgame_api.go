@@ -385,7 +385,7 @@ type CGClaimInfo struct {
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - Stellar NFT winner, 9 - Endurance ERC20 winner, 10 - Stellar ERC20 winner
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - Stellar NFT winner, 9 - Endurance ERC20 winner, 10 - Stellar ERC20 winner , 11 - Donated ERC20 token
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64

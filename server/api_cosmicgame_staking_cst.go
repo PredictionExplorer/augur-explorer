@@ -401,7 +401,7 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit_with_claim_info(c
 		"ActionIdsWithClaimInfo" : action_ids,
 	})
 }
-func api_cosmic_game_staking_cst_history_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -419,7 +419,7 @@ func api_cosmic_game_staking_cst_history_by_user(c *gin.Context) {
 		return
 	}
 
-	history := arb_storagew.Get_staking_cst_history_by_user(user_aid)
+	history := arb_storagew.Get_staking_cst_by_user_by_deposit_rewards(user_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -427,7 +427,7 @@ func api_cosmic_game_staking_cst_history_by_user(c *gin.Context) {
 		"error" : err_str,
 		"UserAid":user_aid,
 		"UserAddr":p_user_addr,
-		"UserCstStakingHistory" : history,
+		"RewardsByDeposit" : history,
 	})
 }
 func api_cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
@@ -458,7 +458,7 @@ func api_cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
 		"RewardPaidRecords" : rewards,
 	})
 }
-func api_cosmic_game_staking_cst_by_user_rewards(c *gin.Context) {
+func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -476,7 +476,7 @@ func api_cosmic_game_staking_cst_by_user_rewards(c *gin.Context) {
 		return
 	}
 
-	rewards := arb_storagew.Get_staking_cst_by_user_rewards(user_aid)
+	rewards := arb_storagew.Get_staking_cst_by_user_by_token_rewards(user_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -485,5 +485,49 @@ func api_cosmic_game_staking_cst_by_user_rewards(c *gin.Context) {
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"RewardsByToken" : rewards,
+	})
+}
+func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	p_token_id:= c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,JSON,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+
+	rewards := arb_storagew.Get_staking_cst_by_user_by_token_rewards_details_for_token(user_aid,token_id)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"TokenId" : token_id,
+		"RewardsByTokenDetails" : rewards,
 	})
 }

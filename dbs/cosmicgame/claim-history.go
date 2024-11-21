@@ -252,7 +252,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 					"WHERE (rn.winner_aid=$1) "+
 				") UNION ALL (" +
 					"SELECT "+
-						"9 AS record_type,"+
+						"10 AS record_type,"+
 						"rn.evtlog_id,"+
 						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
 						"rn.time_stamp AS date_time, "+
@@ -270,6 +270,29 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 					"FROM cg_stellar_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 					"WHERE (rn.winner_aid=$1) "+
+				") UNION ALL (" +
+					"SELECT "+
+						"11 AS record_type,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
+						"t.tx_hash,"+
+						"p.prize_num,"+
+						"d.amount AS amount,"+
+						"d.amount/1e18 AS amount_eth,"+
+						"ta.addr token_addr, " +
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index,"+
+						"c.id IS NOT NULL as claimed "+
+					"FROM cg_prize_claim p "+
+						"JOIN cg_erc20_donation d ON p.prize_num=d.round_num "+ 
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
+						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.prize_num) AND (c.token_aid=d.token_aid)"+
+					"WHERE p.winner_aid=$1 "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -596,6 +619,31 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 					"FROM cg_stellar_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
+				") UNION ALL (" +
+					"SELECT "+
+						"11 AS record_type,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
+						"t.tx_hash,"+
+						"p.prize_num,"+
+						"d.amount AS amount,"+
+						"d.amount/1e18 AS amount_eth,"+
+						"ta.addr token_addr, " +
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index,"+
+						"c.id IS NOT NULL as claimed, "+
+						"wa.addr winner_addr,"+
+						"p.winner_aid "+
+					"FROM cg_prize_claim p "+
+						"JOIN cg_erc20_donation d ON p.prize_num=d.round_num "+ 
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
+						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.prize_num) AND (c.token_aid=d.token_aid)"+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +

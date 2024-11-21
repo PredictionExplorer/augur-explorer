@@ -25,10 +25,11 @@ CREATE TRIGGER cg_token_name_insert AFTER INSERT ON cg_token_name FOR EACH ROW E
 CREATE TRIGGER cg_token_name_delete AFTER DELETE ON cg_token_name FOR EACH ROW EXECUTE PROCEDURE on_token_name_delete();
 CREATE TRIGGER cg_donation_sent_insert AFTER INSERT ON cg_donation_sent FOR EACH ROW EXECUTE PROCEDURE on_donation_sent_insert();
 CREATE TRIGGER cg_donation_sent_delete AFTER DELETE ON cg_donation_sent FOR EACH ROW EXECUTE PROCEDURE on_donation_sent_delete();
-CREATE TRIGGER cg_stake_action_cst_insert AFTER INSERT ON cg_stake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_stake_action_cst_insert();
-CREATE TRIGGER cg_stake_action_cst_delete AFTER DELETE ON cg_stake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_stake_action_cst_delete();
-CREATE TRIGGER cg_unstake_action_cst_insert AFTER INSERT ON cg_unstake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_cst_insert();
-CREATE TRIGGER cg_unstake_action_cst_delete AFTER DELETE ON cg_unstake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_cst_delete();
+-- DISCONTINUED, removal pending
+--CREATE TRIGGER cg_stake_action_cst_insert AFTER INSERT ON cg_stake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_stake_action_cst_insert();
+--CREATE TRIGGER cg_stake_action_cst_delete AFTER DELETE ON cg_stake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_stake_action_cst_delete();
+--CREATE TRIGGER cg_unstake_action_cst_insert AFTER INSERT ON cg_unstake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_cst_insert();
+--CREATE TRIGGER cg_unstake_action_cst_delete AFTER DELETE ON cg_unstake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_cst_delete();
 CREATE TRIGGER cg_eth_deposit_insert AFTER INSERT ON cg_eth_deposit FOR EACH ROW EXECUTE PROCEDURE on_eth_deposit_insert();
 CREATE TRIGGER cg_eth_deposit_delete AFTER DELETE ON cg_eth_deposit FOR EACH ROW EXECUTE PROCEDURE on_eth_deposit_delete();
 CREATE TRIGGER cg_claim_reward_insert AFTER INSERT ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_insert();
@@ -39,10 +40,10 @@ CREATE TRIGGER cg_donation_insert AFTER INSERT ON cg_donation FOR EACH ROW EXECU
 CREATE TRIGGER cg_donation_delete AFTER DELETE ON cg_donation FOR EACH ROW EXECUTE PROCEDURE on_direct_donation_delete();
 CREATE TRIGGER cg_donation_wi_insert AFTER INSERT ON cg_donation_wi FOR EACH ROW EXECUTE PROCEDURE on_direct_donation_insert();
 CREATE TRIGGER cg_donation_wi_delete AFTER DELETE ON cg_donation_wi FOR EACH ROW EXECUTE PROCEDURE on_direct_donation_delete();
-CREATE TRIGGER cg_stake_action_rwalk_insert AFTER INSERT ON cg_stake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_stake_action_rwalk_insert();
-CREATE TRIGGER cg_stake_action_rwalk_delete AFTER DELETE ON cg_stake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_stake_action_rwalk_delete();
-CREATE TRIGGER cg_unstake_action_rwalk_insert AFTER INSERT ON cg_unstake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_rwalk_insert();
-CREATE TRIGGER cg_unstake_action_rwalk_delete AFTER DELETE ON cg_unstake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_rwalk_delete();
+--CREATE TRIGGER cg_stake_action_rwalk_insert AFTER INSERT ON cg_stake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_stake_action_rwalk_insert();
+--CREATE TRIGGER cg_stake_action_rwalk_delete AFTER DELETE ON cg_stake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_stake_action_rwalk_delete();
+--CREATE TRIGGER cg_unstake_action_rwalk_insert AFTER INSERT ON cg_unstake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_rwalk_insert();
+--CREATE TRIGGER cg_unstake_action_rwalk_delete AFTER DELETE ON cg_unstake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_rwalk_delete();
 CREATE TRIGGER cg_nft_staked_rwalk_insert AFTER INSERT ON cg_nft_staked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_rwalk_insert();
 CREATE TRIGGER cg_nft_staked_rwalk_delete AFTER DELETE ON cg_nft_staked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_rwalk_delete();
 CREATE TRIGGER cg_nft_staked_cst_insert AFTER INSERT ON cg_nft_staked_cst FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_cst_insert();

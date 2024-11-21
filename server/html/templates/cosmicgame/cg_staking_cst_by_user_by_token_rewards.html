@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CST Staking rewards for  {{.UserAddr}}</title>
+	<title>CST Staking rewards by Token for {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">CST Staking rewards for user {{.UserAddr}}<h3>
+	<h3 class="page_title">CST Staking rewards by Token for {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Token ID</th>
@@ -13,7 +13,9 @@
 	</tr>
 	{{- range $i, $change := .RewardsByToken}}
 		<tr class="market_reports">
-			<td class=""> {{.TokenId}}</td>
+			<td class="">
+				<a href="/black/cosmicgame/staking/cst/by_user/by_token/rewards/details/{{$.UserAddr}}/{{.TokenId}}">{{.TokenId}}</a>
+			</td>
 			<td style="text-align: center;" title="">{{ printf "%.6f" .RewardCollectedEth}}</td>
 			<td style="text-align: center;" title="">{{ printf "%.6f" .RewardToCollectEth}}</td>
 		</tr>
@@ -21,8 +23,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/cst/by_user/rewards/[user_addr]</br>
+	API: /api/cosmicgame/staking/cst/by_user/by_token/rewards/[user_addr]</br>
 
-	Example: /api//cosmicgame/staking/cst/by_user/rewards/{{.UserAddr}}
+	Example: /api/cosmicgame/staking/cst/by_user/by_token/rewards/{{.UserAddr}}
 </code>
 </body>

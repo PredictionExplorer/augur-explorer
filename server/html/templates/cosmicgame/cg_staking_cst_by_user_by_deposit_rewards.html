@@ -1,16 +1,16 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CST Staking history for user {{.UserAddr}}</title>
+	<title>Staking Rewards By Deposit for {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">CST staking history for user {{.UserAddr}}<h3>
+	<h3 class="page_title">Staking Rewards By Deposit for {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Deposit Info</th>
 		<th class="market_reports">Detailed info on rewards per token</th>
 	</tr>
-	{{- range $i, $change := .UserCstStakingHistory}}
+	{{- range $i, $change := .RewardsByDeposit}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				<table class="market_reports">
@@ -109,8 +109,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/cst/rewards/collected/by_user/[user_addr]/[offset]/[limit]</br>
+	API: /api/cosmicgame/staking/cst/by_user/by_deposit/rewards/[user_addr]</br>
 
-	Example: /api/cosmicgame/staking/cst/rewards/collected/by_user/{{.UserAddr}}/0/10000
+	Example: /api/cosmicgame/staking/cst/by_user/by_deposit/rewards/{{.UserAddr}}
 </code>
 </body>

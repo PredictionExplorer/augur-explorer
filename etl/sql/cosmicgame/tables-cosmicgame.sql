@@ -261,36 +261,37 @@ CREATE TABLE cg_donated_nft_claimed ( -- ERC721 (donated) tokens
 	token_id		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_stake_action_cst (
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1,
-	action_id		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	num_staked_nfts	BIGINT NOT NULL,
-	staker_aid		BIGINT NOT NULL,
-	claimed			BOOLEAN DEFAULT 'F',
-	UNIQUE(evtlog_id)
-);
-CREATE TABLE cg_unstake_action_cst (
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1,
-	action_id		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	num_staked_nfts	BIGINT NOT NULL,
-	staker_aid		BIGINT NOT NULL,
-	reward			DECIMAL NOT NULL,
-	UNIQUE(evtlog_id)
-);
+-- DISCONTINUED, removal pending
+--CREATE TABLE cg_stake_action_cst (
+--	id				BIGSERIAL PRIMARY KEY,
+--	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+--	block_num		BIGINT NOT NULL,
+--	tx_id			BIGINT NOT NULL,
+--	time_stamp		TIMESTAMPTZ NOT NULL,
+--	contract_aid	BIGINT NOT NULL,
+--	round_num		BIGINT DEFAULT -1,
+--	action_id		BIGINT NOT NULL,
+--	token_id		BIGINT NOT NULL,
+--	num_staked_nfts	BIGINT NOT NULL,
+--	staker_aid		BIGINT NOT NULL,
+--	claimed			BOOLEAN DEFAULT 'F',
+--	UNIQUE(evtlog_id)
+--);
+--CREATE TABLE cg_unstake_action_cst (
+--	id				BIGSERIAL PRIMARY KEY,
+--	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+--	block_num		BIGINT NOT NULL,
+--	tx_id			BIGINT NOT NULL,
+--	time_stamp		TIMESTAMPTZ NOT NULL,
+--	contract_aid	BIGINT NOT NULL,
+--	round_num		BIGINT DEFAULT -1,
+--	action_id		BIGINT NOT NULL,
+--	token_id		BIGINT NOT NULL,
+--	num_staked_nfts	BIGINT NOT NULL,
+--	staker_aid		BIGINT NOT NULL,
+--	reward			DECIMAL NOT NULL,
+--	UNIQUE(evtlog_id)
+--);
 CREATE TABLE cg_nft_unstaked_rwalk (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -396,6 +397,7 @@ CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This
 	action_id		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	deposit_id		BIGINT NOT NULL,
+	deposit_index	BIGINT NOT NULL,
 	reward			DECIMAL NOT NULL,
 	collected		BOOLEAN DEFAULT 'F',
 	UNIQUE(action_id,deposit_id)
@@ -414,34 +416,35 @@ CREATE TABLE cg_reward_paid (	-- Event RewardPaid (StakingWalletCosmicSignatureN
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_stake_action_rwalk (
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1,
-	action_id		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	num_staked_nfts	BIGINT NOT NULL,
-	staker_aid		BIGINT NOT NULL,
-	UNIQUE(evtlog_id)
-);
-CREATE TABLE cg_unstake_action_rwalk (
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1,
-	action_id		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	num_staked_nfts	BIGINT NOT NULL,
-	staker_aid		BIGINT NOT NULL,
-	UNIQUE(evtlog_id)
-);
+-- DISCONTINUED, removal pending
+--CREATE TABLE cg_stake_action_rwalk (
+--	id				BIGSERIAL PRIMARY KEY,
+--	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+--	block_num		BIGINT NOT NULL,
+--	tx_id			BIGINT NOT NULL,
+--	time_stamp		TIMESTAMPTZ NOT NULL,
+--	contract_aid	BIGINT NOT NULL,
+--	round_num		BIGINT DEFAULT -1,
+--	action_id		BIGINT NOT NULL,
+--	token_id		BIGINT NOT NULL,
+--	num_staked_nfts	BIGINT NOT NULL,
+--	staker_aid		BIGINT NOT NULL,
+--	UNIQUE(evtlog_id)
+--);
+--CREATE TABLE cg_unstake_action_rwalk (
+--	id				BIGSERIAL PRIMARY KEY,
+--	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+--	block_num		BIGINT NOT NULL,
+--	tx_id			BIGINT NOT NULL,
+--	time_stamp		TIMESTAMPTZ NOT NULL,
+--	contract_aid	BIGINT NOT NULL,
+--	round_num		BIGINT DEFAULT -1,
+--	action_id		BIGINT NOT NULL,
+--	token_id		BIGINT NOT NULL,
+--	num_staked_nfts	BIGINT NOT NULL,
+--	staker_aid		BIGINT NOT NULL,
+--	UNIQUE(evtlog_id)
+--);
 CREATE TABLE cg_adm_cst_min_limit ( -- StartingBidPriceCSTMinLimitChanged event
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

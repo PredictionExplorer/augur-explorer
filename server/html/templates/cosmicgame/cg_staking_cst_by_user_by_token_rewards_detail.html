@@ -1,0 +1,32 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>CST Staking reward details for Token {{.TokenId}} , user {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">CST Staking reward details for Token {{.TokenId}} , user {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">DepositId</th>
+		<th class="market_reports">DepositIndex</th>
+		<th class="market_reports">Reward (ETH)</th>
+		<th class="market_reports">Collected ?</th>
+	</tr>
+	{{- range $i, $change := .RewardsByTokenDetails}}
+		<tr class="market_reports">
+			<td style="text-align: center">{{.DepositId}}</td>
+			<td style="text-align: center">{{.DepositIndex}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .RewardEth}}</td>
+			<td style="text-align: center;" title="">
+				{{ if .Claimed }}Yes{{else}}No{{end}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/cst/by_user/by_token/rewards/details/[user_addr]/[token_id]</br>
+
+	Example: /api/cosmicgame/staking/cst/by_user/by_token/rewards/details/{{.UserAddr}}/{{.TokenId}}
+</code>
+</body>
