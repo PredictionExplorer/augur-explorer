@@ -45,6 +45,27 @@
 		</td>
 	</tr>
 	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Donated ERC20 tokens</td>
+		<td class="market_reports">
+			<table>
+			<tr class="market_reports">
+				<th class="market_reports">Token Addr</th>
+				<th class="market_reports">Amount</th>
+			</tr>
+			{{- range $i, $change := .Winnings.DonatedERC20Tokens}}
+				<tr class="market_reports">
+					<td style="text-align: center">{{.TokenAddr}}</td>
+					<td style="text-align: center;" title="">{{ printf "%.6f" .AmountEth}}</td>
+				</tr>
+		    {{- end}}
+			</table>
+		</td>
+	</tr>
+</table>
+
+		</td>
+	</tr>
 </table>
 
 <br/><br/>

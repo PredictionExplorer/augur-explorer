@@ -1345,6 +1345,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 				"rwd.reward,"+
 				"rwd.reward/1e18, "+
 				"rwd.collected, "+
+				"rwd.round_num,"+
 				"rwd.deposit_id,"+
 				"rwd.deposit_index,"+
 				// stake action fields
@@ -1352,8 +1353,10 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 				"sa_action_id,sa_num_staked_nfts,"+
 				// unstake action fields
 				"ua_id,ua_evtlog_id,ua_block_num,ua_tx_id,ua_tx_hash,ua_time_stamp,ua_date_time, "+
-				"ua_action_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,ua_unpaid_deposit "+
+				"ua_action_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,ua_unpaid_deposit, "+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp "+
 			"FROM cg_st_reward rwd "+
+				"INNER JOIN cg_eth_deposit d ON rwd.deposit_id=d.deposit_id "+
 				"INNER JOIN LATERAL ("+
 					"SELECT "+
 						"sa.id sa_id,sa.evtlog_id sa_evtlog_id,sa.block_num sa_block_num,satx.id sa_tx_id,satx.tx_hash sa_tx_hash,EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT sa_time_stamp,sa.time_stamp sa_date_time, "+
@@ -1384,6 +1387,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 			&rec.Reward,
 			&rec.RewardEth,
 			&rec.Claimed,
+			&rec.RoundNum,
 			&rec.DepositId,
 			&rec.DepositIndex,
 			// stake action fields
@@ -1409,6 +1413,8 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 			&null_reward,
 			&null_reward_eth,
 			&null_max_deposit_id,
+			&rec.DepositTimeStamp,
+			&rec.DepositDateTime,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

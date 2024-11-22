@@ -1289,7 +1289,7 @@ func (sw *SQLStorageWrapper) Get_user_notif_red_box_rewards(winner_aid int64) p.
 				"d.total_amount, "+
 				"d.total_amount/1e18 "+
 			"FROM cg_prize_claim p "+
-				"JOIN cg_erc20_donation_stats d ON d.round_num=p.prize_num "+
+				"JOIN cg_erc20_donation_stats d ON d.round_num=p.prize_num AND claimed='F' "+
 				"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
 			"WHERE p.winner_aid=$1 "
 

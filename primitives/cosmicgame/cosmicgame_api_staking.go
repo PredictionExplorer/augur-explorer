@@ -356,6 +356,9 @@ type CGNftStakeUnstakeCombined struct {
 	Unstake						CGNftUnstakedInfoRec
 	DepositId					int64
 	DepositIndex				int64
+	DepositTimeStamp			int64
+	DepositDateTime				string
+	RoundNum					int64
 	Reward						string
 	RewardEth					float64
 	Claimed						bool
