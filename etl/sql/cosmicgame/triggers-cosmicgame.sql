@@ -4,6 +4,8 @@ CREATE TRIGGER cg_prize_claim_insert AFTER INSERT ON cg_prize_claim FOR EACH ROW
 CREATE TRIGGER cg_prize_claim_delete AFTER DELETE ON cg_prize_claim FOR EACH ROW EXECUTE PROCEDURE on_prize_claim_delete();
 CREATE TRIGGER cg_donation_received_insert AFTER INSERT ON cg_donation_received FOR EACH ROW EXECUTE PROCEDURE on_donation_received_insert();
 CREATE TRIGGER cg_donation_received_delete AFTER DELETE ON cg_donation_received FOR EACH ROW EXECUTE PROCEDURE on_donation_received_delete();
+CREATE TRIGGER cg_erc20_donation_insert AFTER INSERT ON cg_erc20_donation FOR EACH ROW EXECUTE PROCEDURE on_erc20_donation_insert();
+CREATE TRIGGER cg_erc20_donation_delete AFTER DELETE ON cg_erc20_donation FOR EACH ROW EXECUTE PROCEDURE on_erc20_donation_delete();
 CREATE TRIGGER cg_nft_donation_insert AFTER INSERT ON cg_nft_donation FOR EACH ROW EXECUTE PROCEDURE on_nft_donation_insert();
 CREATE TRIGGER cg_nft_donation_delete AFTER DELETE ON cg_nft_donation FOR EACH ROW EXECUTE PROCEDURE on_nft_donation_delete();
 CREATE TRIGGER cg_prize_deposit_insert AFTER INSERT ON cg_prize_deposit FOR EACH ROW EXECUTE PROCEDURE on_prize_deposit_insert();
@@ -18,6 +20,8 @@ CREATE TRIGGER cg_erc20_transer_insert AFTER INSERT ON cg_erc20_transfer FOR EAC
 CREATE TRIGGER cg_erc20_transfer_delete AFTER DELETE ON cg_erc20_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc20_transfer_delete();
 CREATE TRIGGER cg_donated_nft_claimed_insert AFTER INSERT ON cg_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_insert();
 CREATE TRIGGER cg_donated_nft_claimed_delete AFTER DELETE ON cg_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_delete();
+CREATE TRIGGER cg_donated_tok_claimed_insert AFTER INSERT ON cg_donated_tok_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_tok_claimed_insert();
+CREATE TRIGGER cg_donated_tok_claimed_delete AFTER DELETE ON cg_donated_tok_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_tok_claimed_delete();
 CREATE TRIGGER cg_mint_insert AFTER INSERT ON cg_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_insert();
 CREATE TRIGGER cg_mint_delete AFTER DELETE ON cg_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_delete();
 CREATE TRIGGER cg_mint_update AFTER UPDATE ON cg_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_update();

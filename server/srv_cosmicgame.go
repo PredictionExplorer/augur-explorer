@@ -1205,7 +1205,7 @@ func cosmic_game_time_until_prize(c *gin.Context) {
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
-func cosmic_game_user_global_winnings(c *gin.Context) {
+func cosmic_game_user_notif_red_box_rewards(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1226,7 +1226,7 @@ func cosmic_game_user_global_winnings(c *gin.Context) {
 		return
 	}
 
-	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
+	claim_info := arb_storagew.Get_user_notif_red_box_rewards(user_aid)
 	c.HTML(http.StatusOK, "cg_notif_red_box.html", gin.H{
 		"Winnings" : claim_info,
 		"UserAddr" : p_user_addr,

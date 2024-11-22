@@ -962,7 +962,7 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 		return
 	}
 
-	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
+	claim_info := arb_storagew.Get_user_notif_red_box_rewards(user_aid)
 
 	var req_status int = 1
 	var err_str string = ""

@@ -382,6 +382,7 @@ type CGClaimInfo struct {
 	ETHRaffleToClaimWei			string
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
 	UnclaimedStakingReward		float64
+	DonatedERC20Tokens			[]ERC20DonatedTokensInfo
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
@@ -560,4 +561,11 @@ type CGAdminEvent struct {
 	IntegerValue				int64
 	FloatValue					float64
 	StringValue					string
+}
+type ERC20DonatedTokensInfo struct {
+	RoundNum					int64
+	TokenAid					int64
+	TokenAddr					string
+	Amount						string
+	AmountEth					float64
 }

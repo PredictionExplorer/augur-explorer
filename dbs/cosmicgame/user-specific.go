@@ -1232,3 +1232,88 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_user_notif_red_box_rewards(winner_aid int64) p.CGClaimInfo {
+
+	var output p.CGClaimInfo
+	var query string
+	query = "SELECT " +
+				"s.amount_sum,"+ 
+				"s.amount_sum/1e18, " +
+				"w.unclaimed_nfts  " +
+			"FROM cg_raffle_winner_stats s " +
+				"LEFT JOIN cg_winner w ON s.winner_aid=w.winner_aid "+
+			"WHERE s.winner_aid = $1"
+
+	row := sw.S.Db().QueryRow(query,winner_aid)
+	var err error
+	var null_wei sql.NullString
+	var null_eth sql.NullFloat64
+	var null_nfts sql.NullInt64
+
+	err=row.Scan(&null_wei,&null_eth,&null_nfts);
+	if err != nil {
+		if err == sql.ErrNoRows {
+		} else {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	if null_eth.Valid {
+		output.ETHRaffleToClaim = null_eth.Float64
+	}
+	if null_wei.Valid {
+		output.ETHRaffleToClaimWei = null_wei.String
+	}
+	if null_nfts.Valid {
+		output.NumDonatedNFTToClaim = null_nfts.Int64
+	}
+
+	var null_staking_rewards sql.NullFloat64
+	query = "SELECT unclaimed_reward/1e18 FROM cg_staker_cst WHERE staker_aid=$1"
+	row = sw.S.Db().QueryRow(query,winner_aid)
+	err=row.Scan(&null_staking_rewards);
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output;
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	if null_staking_rewards.Valid {
+		output.UnclaimedStakingReward = null_staking_rewards.Float64
+	}
+	query = "SELECT "+
+				"p.prize_num,"+
+				"d.token_aid,"+
+				"ta.addr,"+
+				"d.total_amount, "+
+				"d.total_amount/1e18 "+
+			"FROM cg_prize_claim p "+
+				"JOIN cg_erc20_donation_stats d ON d.round_num=p.prize_num "+
+				"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
+			"WHERE p.winner_aid=$1 "
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	output.DonatedERC20Tokens = make([]p.ERC20DonatedTokensInfo,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ERC20DonatedTokensInfo
+		err=rows.Scan(
+			&rec.RoundNum,
+			&rec.TokenAid,
+			&rec.TokenAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		output.DonatedERC20Tokens = append(output.DonatedERC20Tokens,rec)
+	}
+	return output
+}

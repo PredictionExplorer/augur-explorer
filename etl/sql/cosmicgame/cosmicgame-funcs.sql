@@ -225,6 +225,28 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc20_donation_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt					NUMERIC;
+BEGIN
+
+	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount + NEW.amount) WHERE round_num=NEW.round_num AND token_aid=NEW.token_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_erc20_donation_stats(token_aid,round_num,total_amount) VALUES (NEW.token_aid,NEW.round_num,NEW.amount);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc20_donation_delete() RETURNS trigger AS  $$
+DECLARE
+	v_cnt					NUMERIC;
+BEGIN
+
+	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount - OLD.amount) WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_donation_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt					NUMERIC;
@@ -530,6 +552,45 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_donated_tok_claimed_insert() RETURNS trigger AS  $$
+DECLARE
+	v_amount					DECIMAL;
+BEGIN
+
+	UPDATE cg_erc20_donation_stats
+		SET
+			total_amount = (total_amount - NEW.amount)
+		WHERE round_num = NEW.round_num AND token_aid = NEW.token_aid;
+	SELECT total_amount FROM cg_erc20_donation_stats 
+		WHERE round_num=NEW.round_num AND token_aid=NEW.token_aid
+		INTO v_amount;
+	IF v_amount = 0 THEN
+		UPDATE cg_erc20_donation_stats SET claimed = 't'
+			WHERE round_num = NEW.round_num AND token_aid = NEW.token_aid;
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_donated_tok_claimed_delete() RETURNS trigger AS  $$
+DECLARE
+	v_amount					DECIMAL;
+BEGIN
+
+	UPDATE cg_erc20_donation_stats
+		SET
+			total_amount = (total_amount + OLD.amount)
+		WHERE round_num = OLD.round_num AND token_aid = OLD.token_aid;
+	SELECT total_amount FROM cg_erc20_donation_stats 
+		WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid
+		INTO v_amount;
+	IF v_amount <> 0 THEN
+		UPDATE cg_erc20_donation_stats SET claimed = 'f'
+			WHERE round_num = OLD.round_num AND token_aid = OLD.token_aid;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_donated_nft_claimed_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
@@ -762,8 +823,8 @@ BEGIN
 				INSERT INTO cg_staked_token_cst_rewards(staker_aid,token_id,stake_action_id,accumulated_reward)
 					VALUES(v_rec.staker_aid,v_rec.token_id,v_rec.stake_action_id,NEW.amount_per_staker);
 			END IF;
-			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,deposit_index,reward)
-				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.deposit_num,NEW.amount_per_staker);
+			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,deposit_index,round_num,reward)
+				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.deposit_num,NEW.round_num,NEW.amount_per_staker);
 		END LOOP;
 	END IF;
 

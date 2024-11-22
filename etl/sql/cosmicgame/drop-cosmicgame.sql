@@ -87,6 +87,7 @@ DROP TABLE IF EXISTS
 	cg_staked_token_rwalk,
 	cg_st_reward,
 	cg_raffle_winner_stats,
+	cg_erc20_donation_stats,
 	cg_raffle_nft_winner_stats,
 	cg_glob_stats,
 	cg_nft_stats,

@@ -398,6 +398,7 @@ CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This
 	token_id		BIGINT NOT NULL,
 	deposit_id		BIGINT NOT NULL,
 	deposit_index	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
 	reward			DECIMAL NOT NULL,
 	collected		BOOLEAN DEFAULT 'F',
 	UNIQUE(action_id,deposit_id)
@@ -920,6 +921,7 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	round_num					BIGINT NOT NULL PRIMARY KEY,
 	total_bids					BIGINT DEFAULT 0,
 	total_nft_donated			BIGINT DEFAULT 0,
+	total_erc20_donated			BIGINT DEFAULT 0,
 	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
 	total_raffle_nfts			BIGINT DEFAULT 0,
 	donations_round_total		DECIMAL DEFAULT 0,		-- total donations for current round (reset on claimPrize())
@@ -1026,6 +1028,13 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
 	contract_aid			BIGINT PRIMARY KEY,
 	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
+);
+CREATE TABLE cg_erc20_donation_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
+	token_aid				BIGINT NOT NULL,
+	round_num				BIGINT NOT NULL,
+	total_amount			DECIMAL DEFAULT 0,		-- the sum for all donations for the round on single ERC200 token
+	claimed					BOOLEAN DEFAULT 'F',
+	PRIMARY KEY(round_num,token_aid)
 );
 CREATE TABLE cg_stake_stats_cst ( -- gloal staking statistics (StakinWalletCST)
 	total_tokens_staked		BIGINT DEFAULT 0,
