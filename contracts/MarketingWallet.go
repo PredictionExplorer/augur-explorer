@@ -31,7 +31,7 @@ var (
 
 // IMarketingWalletMetaData contains all meta data concerning the IMarketingWallet contract.
 var IMarketingWalletMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"contractICosmicToken\",\"name\":\"newCosmicToken\",\"type\":\"address\"}],\"name\":\"CosmicTokenAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardSentEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractICosmicToken\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardPaid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"contractICosmicSignatureToken\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"TokenContractAddressChanged\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"marketerAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractICosmicSignatureToken\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // IMarketingWalletABI is the input ABI used to generate the binding from.
@@ -180,51 +180,51 @@ func (_IMarketingWallet *IMarketingWalletTransactorRaw) Transact(opts *bind.Tran
 	return _IMarketingWallet.Contract.contract.Transact(opts, method, params...)
 }
 
-// Send is a paid mutator transaction binding the contract method 0x785d04f5.
+// PayReward is a paid mutator transaction binding the contract method 0x8b8afcd7.
 //
-// Solidity: function send(uint256 amount, address to) returns()
-func (_IMarketingWallet *IMarketingWalletTransactor) Send(opts *bind.TransactOpts, amount *big.Int, to common.Address) (*types.Transaction, error) {
-	return _IMarketingWallet.contract.Transact(opts, "send", amount, to)
+// Solidity: function payReward(address marketerAddress_, uint256 amount_) returns()
+func (_IMarketingWallet *IMarketingWalletTransactor) PayReward(opts *bind.TransactOpts, marketerAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _IMarketingWallet.contract.Transact(opts, "payReward", marketerAddress_, amount_)
 }
 
-// Send is a paid mutator transaction binding the contract method 0x785d04f5.
+// PayReward is a paid mutator transaction binding the contract method 0x8b8afcd7.
 //
-// Solidity: function send(uint256 amount, address to) returns()
-func (_IMarketingWallet *IMarketingWalletSession) Send(amount *big.Int, to common.Address) (*types.Transaction, error) {
-	return _IMarketingWallet.Contract.Send(&_IMarketingWallet.TransactOpts, amount, to)
+// Solidity: function payReward(address marketerAddress_, uint256 amount_) returns()
+func (_IMarketingWallet *IMarketingWalletSession) PayReward(marketerAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _IMarketingWallet.Contract.PayReward(&_IMarketingWallet.TransactOpts, marketerAddress_, amount_)
 }
 
-// Send is a paid mutator transaction binding the contract method 0x785d04f5.
+// PayReward is a paid mutator transaction binding the contract method 0x8b8afcd7.
 //
-// Solidity: function send(uint256 amount, address to) returns()
-func (_IMarketingWallet *IMarketingWalletTransactorSession) Send(amount *big.Int, to common.Address) (*types.Transaction, error) {
-	return _IMarketingWallet.Contract.Send(&_IMarketingWallet.TransactOpts, amount, to)
-}
-
-// SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
-//
-// Solidity: function setTokenContract(address addr) returns()
-func (_IMarketingWallet *IMarketingWalletTransactor) SetTokenContract(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
-	return _IMarketingWallet.contract.Transact(opts, "setTokenContract", addr)
+// Solidity: function payReward(address marketerAddress_, uint256 amount_) returns()
+func (_IMarketingWallet *IMarketingWalletTransactorSession) PayReward(marketerAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _IMarketingWallet.Contract.PayReward(&_IMarketingWallet.TransactOpts, marketerAddress_, amount_)
 }
 
 // SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
 //
-// Solidity: function setTokenContract(address addr) returns()
-func (_IMarketingWallet *IMarketingWalletSession) SetTokenContract(addr common.Address) (*types.Transaction, error) {
-	return _IMarketingWallet.Contract.SetTokenContract(&_IMarketingWallet.TransactOpts, addr)
+// Solidity: function setTokenContract(address newValue_) returns()
+func (_IMarketingWallet *IMarketingWalletTransactor) SetTokenContract(opts *bind.TransactOpts, newValue_ common.Address) (*types.Transaction, error) {
+	return _IMarketingWallet.contract.Transact(opts, "setTokenContract", newValue_)
 }
 
 // SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
 //
-// Solidity: function setTokenContract(address addr) returns()
-func (_IMarketingWallet *IMarketingWalletTransactorSession) SetTokenContract(addr common.Address) (*types.Transaction, error) {
-	return _IMarketingWallet.Contract.SetTokenContract(&_IMarketingWallet.TransactOpts, addr)
+// Solidity: function setTokenContract(address newValue_) returns()
+func (_IMarketingWallet *IMarketingWalletSession) SetTokenContract(newValue_ common.Address) (*types.Transaction, error) {
+	return _IMarketingWallet.Contract.SetTokenContract(&_IMarketingWallet.TransactOpts, newValue_)
 }
 
-// IMarketingWalletCosmicTokenAddressChangedIterator is returned from FilterCosmicTokenAddressChanged and is used to iterate over the raw logs and unpacked data for CosmicTokenAddressChanged events raised by the IMarketingWallet contract.
-type IMarketingWalletCosmicTokenAddressChangedIterator struct {
-	Event *IMarketingWalletCosmicTokenAddressChanged // Event containing the contract specifics and raw log
+// SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
+//
+// Solidity: function setTokenContract(address newValue_) returns()
+func (_IMarketingWallet *IMarketingWalletTransactorSession) SetTokenContract(newValue_ common.Address) (*types.Transaction, error) {
+	return _IMarketingWallet.Contract.SetTokenContract(&_IMarketingWallet.TransactOpts, newValue_)
+}
+
+// IMarketingWalletRewardPaidIterator is returned from FilterRewardPaid and is used to iterate over the raw logs and unpacked data for RewardPaid events raised by the IMarketingWallet contract.
+type IMarketingWalletRewardPaidIterator struct {
+	Event *IMarketingWalletRewardPaid // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -238,7 +238,7 @@ type IMarketingWalletCosmicTokenAddressChangedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *IMarketingWalletCosmicTokenAddressChangedIterator) Next() bool {
+func (it *IMarketingWalletRewardPaidIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -247,7 +247,7 @@ func (it *IMarketingWalletCosmicTokenAddressChangedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(IMarketingWalletCosmicTokenAddressChanged)
+			it.Event = new(IMarketingWalletRewardPaid)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -262,7 +262,7 @@ func (it *IMarketingWalletCosmicTokenAddressChangedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(IMarketingWalletCosmicTokenAddressChanged)
+		it.Event = new(IMarketingWalletRewardPaid)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -278,41 +278,52 @@ func (it *IMarketingWalletCosmicTokenAddressChangedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *IMarketingWalletCosmicTokenAddressChangedIterator) Error() error {
+func (it *IMarketingWalletRewardPaidIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *IMarketingWalletCosmicTokenAddressChangedIterator) Close() error {
+func (it *IMarketingWalletRewardPaidIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// IMarketingWalletCosmicTokenAddressChanged represents a CosmicTokenAddressChanged event raised by the IMarketingWallet contract.
-type IMarketingWalletCosmicTokenAddressChanged struct {
-	NewCosmicToken common.Address
-	Raw            types.Log // Blockchain specific contextual infos
+// IMarketingWalletRewardPaid represents a RewardPaid event raised by the IMarketingWallet contract.
+type IMarketingWalletRewardPaid struct {
+	MarketerAddress common.Address
+	Amount          *big.Int
+	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterCosmicTokenAddressChanged is a free log retrieval operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
+// FilterRewardPaid is a free log retrieval operation binding the contract event 0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486.
 //
-// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
-func (_IMarketingWallet *IMarketingWalletFilterer) FilterCosmicTokenAddressChanged(opts *bind.FilterOpts) (*IMarketingWalletCosmicTokenAddressChangedIterator, error) {
+// Solidity: event RewardPaid(address indexed marketerAddress, uint256 amount)
+func (_IMarketingWallet *IMarketingWalletFilterer) FilterRewardPaid(opts *bind.FilterOpts, marketerAddress []common.Address) (*IMarketingWalletRewardPaidIterator, error) {
 
-	logs, sub, err := _IMarketingWallet.contract.FilterLogs(opts, "CosmicTokenAddressChanged")
+	var marketerAddressRule []interface{}
+	for _, marketerAddressItem := range marketerAddress {
+		marketerAddressRule = append(marketerAddressRule, marketerAddressItem)
+	}
+
+	logs, sub, err := _IMarketingWallet.contract.FilterLogs(opts, "RewardPaid", marketerAddressRule)
 	if err != nil {
 		return nil, err
 	}
-	return &IMarketingWalletCosmicTokenAddressChangedIterator{contract: _IMarketingWallet.contract, event: "CosmicTokenAddressChanged", logs: logs, sub: sub}, nil
+	return &IMarketingWalletRewardPaidIterator{contract: _IMarketingWallet.contract, event: "RewardPaid", logs: logs, sub: sub}, nil
 }
 
-// WatchCosmicTokenAddressChanged is a free log subscription operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
+// WatchRewardPaid is a free log subscription operation binding the contract event 0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486.
 //
-// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
-func (_IMarketingWallet *IMarketingWalletFilterer) WatchCosmicTokenAddressChanged(opts *bind.WatchOpts, sink chan<- *IMarketingWalletCosmicTokenAddressChanged) (event.Subscription, error) {
+// Solidity: event RewardPaid(address indexed marketerAddress, uint256 amount)
+func (_IMarketingWallet *IMarketingWalletFilterer) WatchRewardPaid(opts *bind.WatchOpts, sink chan<- *IMarketingWalletRewardPaid, marketerAddress []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _IMarketingWallet.contract.WatchLogs(opts, "CosmicTokenAddressChanged")
+	var marketerAddressRule []interface{}
+	for _, marketerAddressItem := range marketerAddress {
+		marketerAddressRule = append(marketerAddressRule, marketerAddressItem)
+	}
+
+	logs, sub, err := _IMarketingWallet.contract.WatchLogs(opts, "RewardPaid", marketerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -322,8 +333,8 @@ func (_IMarketingWallet *IMarketingWalletFilterer) WatchCosmicTokenAddressChange
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(IMarketingWalletCosmicTokenAddressChanged)
-				if err := _IMarketingWallet.contract.UnpackLog(event, "CosmicTokenAddressChanged", log); err != nil {
+				event := new(IMarketingWalletRewardPaid)
+				if err := _IMarketingWallet.contract.UnpackLog(event, "RewardPaid", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -344,21 +355,21 @@ func (_IMarketingWallet *IMarketingWalletFilterer) WatchCosmicTokenAddressChange
 	}), nil
 }
 
-// ParseCosmicTokenAddressChanged is a log parse operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
+// ParseRewardPaid is a log parse operation binding the contract event 0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486.
 //
-// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
-func (_IMarketingWallet *IMarketingWalletFilterer) ParseCosmicTokenAddressChanged(log types.Log) (*IMarketingWalletCosmicTokenAddressChanged, error) {
-	event := new(IMarketingWalletCosmicTokenAddressChanged)
-	if err := _IMarketingWallet.contract.UnpackLog(event, "CosmicTokenAddressChanged", log); err != nil {
+// Solidity: event RewardPaid(address indexed marketerAddress, uint256 amount)
+func (_IMarketingWallet *IMarketingWalletFilterer) ParseRewardPaid(log types.Log) (*IMarketingWalletRewardPaid, error) {
+	event := new(IMarketingWalletRewardPaid)
+	if err := _IMarketingWallet.contract.UnpackLog(event, "RewardPaid", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// IMarketingWalletRewardSentEventIterator is returned from FilterRewardSentEvent and is used to iterate over the raw logs and unpacked data for RewardSentEvent events raised by the IMarketingWallet contract.
-type IMarketingWalletRewardSentEventIterator struct {
-	Event *IMarketingWalletRewardSentEvent // Event containing the contract specifics and raw log
+// IMarketingWalletTokenContractAddressChangedIterator is returned from FilterTokenContractAddressChanged and is used to iterate over the raw logs and unpacked data for TokenContractAddressChanged events raised by the IMarketingWallet contract.
+type IMarketingWalletTokenContractAddressChangedIterator struct {
+	Event *IMarketingWalletTokenContractAddressChanged // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -372,7 +383,7 @@ type IMarketingWalletRewardSentEventIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *IMarketingWalletRewardSentEventIterator) Next() bool {
+func (it *IMarketingWalletTokenContractAddressChangedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -381,7 +392,7 @@ func (it *IMarketingWalletRewardSentEventIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(IMarketingWalletRewardSentEvent)
+			it.Event = new(IMarketingWalletTokenContractAddressChanged)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -396,7 +407,7 @@ func (it *IMarketingWalletRewardSentEventIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(IMarketingWalletRewardSentEvent)
+		it.Event = new(IMarketingWalletTokenContractAddressChanged)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -412,52 +423,41 @@ func (it *IMarketingWalletRewardSentEventIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *IMarketingWalletRewardSentEventIterator) Error() error {
+func (it *IMarketingWalletTokenContractAddressChangedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *IMarketingWalletRewardSentEventIterator) Close() error {
+func (it *IMarketingWalletTokenContractAddressChangedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// IMarketingWalletRewardSentEvent represents a RewardSentEvent event raised by the IMarketingWallet contract.
-type IMarketingWalletRewardSentEvent struct {
-	Marketer common.Address
-	Amount   *big.Int
+// IMarketingWalletTokenContractAddressChanged represents a TokenContractAddressChanged event raised by the IMarketingWallet contract.
+type IMarketingWalletTokenContractAddressChanged struct {
+	NewValue common.Address
 	Raw      types.Log // Blockchain specific contextual infos
 }
 
-// FilterRewardSentEvent is a free log retrieval operation binding the contract event 0xdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba.
+// FilterTokenContractAddressChanged is a free log retrieval operation binding the contract event 0x2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421.
 //
-// Solidity: event RewardSentEvent(address indexed marketer, uint256 amount)
-func (_IMarketingWallet *IMarketingWalletFilterer) FilterRewardSentEvent(opts *bind.FilterOpts, marketer []common.Address) (*IMarketingWalletRewardSentEventIterator, error) {
+// Solidity: event TokenContractAddressChanged(address newValue)
+func (_IMarketingWallet *IMarketingWalletFilterer) FilterTokenContractAddressChanged(opts *bind.FilterOpts) (*IMarketingWalletTokenContractAddressChangedIterator, error) {
 
-	var marketerRule []interface{}
-	for _, marketerItem := range marketer {
-		marketerRule = append(marketerRule, marketerItem)
-	}
-
-	logs, sub, err := _IMarketingWallet.contract.FilterLogs(opts, "RewardSentEvent", marketerRule)
+	logs, sub, err := _IMarketingWallet.contract.FilterLogs(opts, "TokenContractAddressChanged")
 	if err != nil {
 		return nil, err
 	}
-	return &IMarketingWalletRewardSentEventIterator{contract: _IMarketingWallet.contract, event: "RewardSentEvent", logs: logs, sub: sub}, nil
+	return &IMarketingWalletTokenContractAddressChangedIterator{contract: _IMarketingWallet.contract, event: "TokenContractAddressChanged", logs: logs, sub: sub}, nil
 }
 
-// WatchRewardSentEvent is a free log subscription operation binding the contract event 0xdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba.
+// WatchTokenContractAddressChanged is a free log subscription operation binding the contract event 0x2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421.
 //
-// Solidity: event RewardSentEvent(address indexed marketer, uint256 amount)
-func (_IMarketingWallet *IMarketingWalletFilterer) WatchRewardSentEvent(opts *bind.WatchOpts, sink chan<- *IMarketingWalletRewardSentEvent, marketer []common.Address) (event.Subscription, error) {
+// Solidity: event TokenContractAddressChanged(address newValue)
+func (_IMarketingWallet *IMarketingWalletFilterer) WatchTokenContractAddressChanged(opts *bind.WatchOpts, sink chan<- *IMarketingWalletTokenContractAddressChanged) (event.Subscription, error) {
 
-	var marketerRule []interface{}
-	for _, marketerItem := range marketer {
-		marketerRule = append(marketerRule, marketerItem)
-	}
-
-	logs, sub, err := _IMarketingWallet.contract.WatchLogs(opts, "RewardSentEvent", marketerRule)
+	logs, sub, err := _IMarketingWallet.contract.WatchLogs(opts, "TokenContractAddressChanged")
 	if err != nil {
 		return nil, err
 	}
@@ -467,8 +467,8 @@ func (_IMarketingWallet *IMarketingWalletFilterer) WatchRewardSentEvent(opts *bi
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(IMarketingWalletRewardSentEvent)
-				if err := _IMarketingWallet.contract.UnpackLog(event, "RewardSentEvent", log); err != nil {
+				event := new(IMarketingWalletTokenContractAddressChanged)
+				if err := _IMarketingWallet.contract.UnpackLog(event, "TokenContractAddressChanged", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -489,12 +489,12 @@ func (_IMarketingWallet *IMarketingWalletFilterer) WatchRewardSentEvent(opts *bi
 	}), nil
 }
 
-// ParseRewardSentEvent is a log parse operation binding the contract event 0xdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba.
+// ParseTokenContractAddressChanged is a log parse operation binding the contract event 0x2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421.
 //
-// Solidity: event RewardSentEvent(address indexed marketer, uint256 amount)
-func (_IMarketingWallet *IMarketingWalletFilterer) ParseRewardSentEvent(log types.Log) (*IMarketingWalletRewardSentEvent, error) {
-	event := new(IMarketingWalletRewardSentEvent)
-	if err := _IMarketingWallet.contract.UnpackLog(event, "RewardSentEvent", log); err != nil {
+// Solidity: event TokenContractAddressChanged(address newValue)
+func (_IMarketingWallet *IMarketingWalletFilterer) ParseTokenContractAddressChanged(log types.Log) (*IMarketingWalletTokenContractAddressChanged, error) {
+	event := new(IMarketingWalletTokenContractAddressChanged)
+	if err := _IMarketingWallet.contract.UnpackLog(event, "TokenContractAddressChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -503,8 +503,8 @@ func (_IMarketingWallet *IMarketingWalletFilterer) ParseRewardSentEvent(log type
 
 // MarketingWalletMetaData contains all meta data concerning the MarketingWallet contract.
 var MarketingWalletMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"token_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ERC20TransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NonZeroValueRequired\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"contractICosmicToken\",\"name\":\"newCosmicToken\",\"type\":\"address\"}],\"name\":\"CosmicTokenAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardSentEvent\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractICosmicToken\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x60806040523461002f57610019610014610100565b61026a565b610021610034565b610bc06103f18239610bc090f35b61003a565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100669061003e565b810190811060018060401b0382111761007e57604052565b610048565b9061009661008f610034565b928361005c565b565b5f80fd5b60018060a01b031690565b6100b09061009c565b90565b6100bc906100a7565b90565b6100c8816100b3565b036100cf57565b5f80fd5b905051906100e0826100bf565b565b906020828203126100fb576100f8915f016100d3565b90565b610098565b61011e610fb18038038061011381610083565b9283398101906100e2565b90565b90565b61013861013361013d9261009c565b610121565b61009c565b90565b61014990610124565b90565b61015590610140565b90565b90565b61016f61016a61017492610158565b610121565b61009c565b90565b6101809061015b565b90565b60209181520190565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6101c06017602092610183565b6101c98161018c565b0190565b6101e29060208101905f8183039101526101b3565b90565b156101ec57565b6101f4610034565b63eac0d38960e01b81528061020b600482016101cd565b0390fd5b5f1b90565b9061022560018060a01b039161020f565b9181191691161790565b61023890610124565b90565b6102449061022f565b90565b90565b9061025f61025a6102669261023b565b610247565b8254610214565b9055565b6102ab90610277336102ad565b6102a46102838261014c565b61029d6102976102925f610177565b6100a7565b916100a7565b14156101e5565b600161024a565b565b6102b6906102da565b565b6102c1906100a7565b9052565b91906102d8905f602085019401906102b8565b565b806102f56102ef6102ea5f610177565b6100a7565b916100a7565b146103055761030390610391565b565b6103286103115f610177565b5f918291631e4fbdf760e01b8352600483016102c5565b0390fd5b5f1c90565b60018060a01b031690565b61034861034d9161032c565b610331565b90565b61035a905461033c565b90565b61036690610140565b90565b90565b9061038161037c6103889261035d565b610369565b8254610214565b9055565b5f0190565b61039a5f610350565b6103a4825f61036c565b906103d86103d27f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09361035d565b9161035d565b916103e1610034565b806103eb8161038c565b0390a356fe60806040526004361015610013575b610392565b61001d5f3561007c565b8063715018a614610077578063785d04f5146100725780638da5cb5b1461006d578063bbcd5bbe14610068578063f2fde38b146100635763fc0c546a0361000e5761035d565b61028d565b61023c565b6101ba565b610164565b6100a4565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f91031261009a57565b61008c565b5f0190565b346100d2576100b4366004610090565b6100bc6103e6565b6100c4610082565b806100ce8161009f565b0390f35b610088565b90565b6100e3816100d7565b036100ea57565b5f80fd5b905035906100fb826100da565b565b60018060a01b031690565b610111906100fd565b90565b61011d81610108565b0361012457565b5f80fd5b9050359061013582610114565b565b919060408382031261015f578061015361015c925f86016100ee565b93602001610128565b90565b61008c565b346101935761017d610177366004610137565b90610833565b610185610082565b8061018f8161009f565b0390f35b610088565b6101a190610108565b9052565b91906101b8905f60208501940190610198565b565b346101ea576101ca366004610090565b6101e66101d561086f565b6101dd610082565b918291826101a5565b0390f35b610088565b6101f890610108565b90565b610204816101ef565b0361020b57565b5f80fd5b9050359061021c826101fb565b565b9060208282031261023757610234915f0161020f565b90565b61008c565b3461026a5761025461024f36600461021e565b610a32565b61025c610082565b806102668161009f565b0390f35b610088565b9060208282031261028857610285915f01610128565b90565b61008c565b346102bb576102a56102a036600461026f565b610aa2565b6102ad610082565b806102b78161009f565b0390f35b610088565b1c90565b60018060a01b031690565b6102df9060086102e493026102c0565b6102c4565b90565b906102f291546102cf565b90565b61030160015f906102e7565b90565b90565b61031b610316610320926100fd565b610304565b6100fd565b90565b61032c90610307565b90565b61033890610323565b90565b6103449061032f565b9052565b919061035b905f6020850194019061033b565b565b3461038d5761036d366004610090565b6103896103786102f5565b610380610082565b91829182610348565b0390f35b610088565b5f80fd5b61039e610aad565b6103a66103d3565b565b90565b6103bf6103ba6103c4926103a8565b610304565b6100fd565b90565b6103d0906103ab565b90565b6103e46103df5f6103c7565b610b1e565b565b6103ee610396565b565b90610402916103fd610aad565b6106f9565b565b60209181520190565b60207f2e00000000000000000000000000000000000000000000000000000000000000917f526563697069656e7420616464726573732063616e6e6f74206265207a65726f5f8201520152565b6104676021604092610404565b6104708161040d565b0190565b6104899060208101905f81830391015261045a565b90565b1561049357565b61049b610082565b63eac0d38960e01b8152806104b260048201610474565b0390fd5b6104ca6104c56104cf926103a8565b610304565b6100d7565b90565b60207f2e00000000000000000000000000000000000000000000000000000000000000917f416d6f756e74206d7573742062652067726561746572207468616e207a65726f5f8201520152565b61052c6021604092610404565b610535816104d2565b0190565b61054e9060208101905f81830391015261051f565b90565b1561055857565b610560610082565b63af33979960e01b81528061057760048201610539565b0390fd5b5f1c90565b61058c6105919161057b565b6102c4565b90565b61059e9054610580565b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906105c9906105a1565b810190811067ffffffffffffffff8211176105e357604052565b6105ab565b60e01b90565b151590565b6105fc816105ee565b0361060357565b5f80fd5b90505190610614826105f3565b565b9060208282031261062f5761062c915f01610607565b90565b61008c565b61063d906100d7565b9052565b91602061066292949361065b60408201965f830190610198565b0190610634565b565b5f7f5472616e73666572206661696c65642e00000000000000000000000000000000910152565b6106986010602092610404565b6106a181610664565b0190565b9160406106d69294936106cf6106c4606083018381035f85015261068b565b966020830190610198565b0190610634565b565b6106e190610323565b90565b91906106f7905f60208501940190610634565b565b9061071f8161071861071261070d5f6103c7565b610108565b91610108565b141561048c565b61073b8261073561072f5f6104b6565b916100d7565b11610551565b61074d6107486001610594565b61032f565b602063a9059cbb9183906107745f879561077f610768610082565b978896879586946105e8565b845260048401610641565b03925af19081610807575b50155f146108025760016107dd575b6107d86107c67fdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba926106d8565b926107cf610082565b918291826106e4565b0390a2565b6107fe6107e8610082565b92839263f7fce64560e01b8452600484016106a5565b0390fd5b610799565b6108279060203d811161082c575b61081f81836105bf565b810190610616565b61078a565b503d610815565b9061083d916103f0565b565b5f90565b60018060a01b031690565b61085a61085f9161057b565b610843565b90565b61086c905461084e565b90565b61087761083f565b506108815f610862565b90565b61089590610890610aad565b6109af565b565b6108a090610323565b90565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6108d76017602092610404565b6108e0816108a3565b0190565b6108f99060208101905f8183039101526108ca565b90565b1561090357565b61090b610082565b63eac0d38960e01b815280610922600482016108e4565b0390fd5b61092f90610307565b90565b61093b90610926565b90565b5f1b90565b9061095460018060a01b039161093e565b9181191691161790565b61096790610926565b90565b90565b9061098261097d6109899261095e565b61096a565b8254610943565b9055565b61099690610897565b9052565b91906109ad905f6020850194019061098d565b565b6109dc6109bb82610897565b6109d56109cf6109ca5f6103c7565b610108565b91610108565b14156108fc565b6109f76109f06109eb83610897565b610932565b600161096d565b610a2d7f3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb91610a24610082565b9182918261099a565b0390a1565b610a3b90610884565b565b610a4e90610a49610aad565b610a50565b565b80610a6b610a65610a605f6103c7565b610108565b91610108565b14610a7b57610a7990610b1e565b565b610a9e610a875f6103c7565b5f918291631e4fbdf760e01b8352600483016101a5565b0390fd5b610aab90610a3d565b565b610ab561086f565b610ace610ac8610ac3610b7d565b610108565b91610108565b03610ad557565b610af7610ae0610b7d565b5f91829163118cdaa760e01b8352600483016101a5565b0390fd5b90565b90610b13610b0e610b1a926106d8565b610afb565b8254610943565b9055565b610b275f610862565b610b31825f610afe565b90610b65610b5f7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936106d8565b916106d8565b91610b6e610082565b80610b788161009f565b0390a3565b610b8561083f565b50339056fea26469706673582212205b8ac8fbb4998717f9b2fd934b88a279cec9b9f72ee636bf1469d265de2cb86164736f6c634300081b0033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"contractCosmicSignatureToken\",\"name\":\"token_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardPaid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"contractICosmicSignatureToken\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"TokenContractAddressChanged\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"marketerAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractICosmicSignatureToken\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicSignatureToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x60806040523461002f57610019610014610100565b61026a565b610021610034565b61097d6103f1823961097d90f35b61003a565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100669061003e565b810190811060018060401b0382111761007e57604052565b610048565b9061009661008f610034565b928361005c565b565b5f80fd5b60018060a01b031690565b6100b09061009c565b90565b6100bc906100a7565b90565b6100c8816100b3565b036100cf57565b5f80fd5b905051906100e0826100bf565b565b906020828203126100fb576100f8915f016100d3565b90565b610098565b61011e610d6e8038038061011381610083565b9283398101906100e2565b90565b90565b61013861013361013d9261009c565b610121565b61009c565b90565b61014990610124565b90565b61015590610140565b90565b90565b61016f61016a61017492610158565b610121565b61009c565b90565b6101809061015b565b90565b60209181520190565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6101c06017602092610183565b6101c98161018c565b0190565b6101e29060208101905f8183039101526101b3565b90565b156101ec57565b6101f4610034565b63eac0d38960e01b81528061020b600482016101cd565b0390fd5b5f1b90565b9061022560018060a01b039161020f565b9181191691161790565b61023890610124565b90565b6102449061022f565b90565b90565b9061025f61025a6102669261023b565b610247565b8254610214565b9055565b6102ab90610277336102ad565b6102a46102838261014c565b61029d6102976102925f610177565b6100a7565b916100a7565b14156101e5565b600161024a565b565b6102b6906102da565b565b6102c1906100a7565b9052565b91906102d8905f602085019401906102b8565b565b806102f56102ef6102ea5f610177565b6100a7565b916100a7565b146103055761030390610391565b565b6103286103115f610177565b5f918291631e4fbdf760e01b8352600483016102c5565b0390fd5b5f1c90565b60018060a01b031690565b61034861034d9161032c565b610331565b90565b61035a905461033c565b90565b61036690610140565b90565b90565b9061038161037c6103889261035d565b610369565b8254610214565b9055565b5f0190565b61039a5f610350565b6103a4825f61036c565b906103d86103d27f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09361035d565b9161035d565b916103e1610034565b806103eb8161038c565b0390a356fe60806040526004361015610013575b610392565b61001d5f3561007c565b8063715018a6146100775780638b8afcd7146100725780638da5cb5b1461006d578063bbcd5bbe14610068578063f2fde38b146100635763fc0c546a0361000e5761035d565b61028d565b61023c565b6101ba565b610164565b6100a4565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f91031261009a57565b61008c565b5f0190565b346100d2576100b4366004610090565b6100bc6103e6565b6100c4610082565b806100ce8161009f565b0390f35b610088565b60018060a01b031690565b6100eb906100d7565b90565b6100f7816100e2565b036100fe57565b5f80fd5b9050359061010f826100ee565b565b90565b61011d81610111565b0361012457565b5f80fd5b9050359061013582610114565b565b919060408382031261015f578061015361015c925f8601610102565b93602001610128565b90565b61008c565b346101935761017d610177366004610137565b906105e7565b610185610082565b8061018f8161009f565b0390f35b610088565b6101a1906100e2565b9052565b91906101b8905f60208501940190610198565b565b346101ea576101ca366004610090565b6101e66101d5610623565b6101dd610082565b918291826101a5565b0390f35b610088565b6101f8906100e2565b90565b610204816101ef565b0361020b57565b5f80fd5b9050359061021c826101fb565b565b9060208282031261023757610234915f0161020f565b90565b61008c565b3461026a5761025461024f36600461021e565b6107ef565b61025c610082565b806102668161009f565b0390f35b610088565b9060208282031261028857610285915f01610102565b90565b61008c565b346102bb576102a56102a036600461026f565b61085f565b6102ad610082565b806102b78161009f565b0390f35b610088565b1c90565b60018060a01b031690565b6102df9060086102e493026102c0565b6102c4565b90565b906102f291546102cf565b90565b61030160015f906102e7565b90565b90565b61031b610316610320926100d7565b610304565b6100d7565b90565b61032c90610307565b90565b61033890610323565b90565b6103449061032f565b9052565b919061035b905f6020850194019061033b565b565b3461038d5761036d366004610090565b6103896103786102f5565b610380610082565b91829182610348565b0390f35b610088565b5f80fd5b61039e61086a565b6103a66103d3565b565b90565b6103bf6103ba6103c4926103a8565b610304565b6100d7565b90565b6103d0906103ab565b90565b6103e46103df5f6103c7565b6108db565b565b6103ee610396565b565b90610402916103fd61086a565b61051e565b565b5f1c90565b61041561041a91610404565b6102c4565b90565b6104279054610409565b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906104529061042a565b810190811067ffffffffffffffff82111761046c57604052565b610434565b60e01b90565b151590565b61048581610477565b0361048c57565b5f80fd5b9050519061049d8261047c565b565b906020828203126104b8576104b5915f01610490565b90565b61008c565b6104c690610111565b9052565b9160206104eb9294936104e460408201965f830190610198565b01906104bd565b565b6104f5610082565b3d5f823e3d90fd5b61050690610323565b90565b919061051c905f602085019401906104bd565b565b61053061052b600161041d565b61032f565b602063a9059cbb9183906105575f879561056261054b610082565b97889687958694610471565b8452600484016104ca565b03925af180156105e2576105b6575b506105b161059f7fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926104fd565b926105a8610082565b91829182610509565b0390a2565b6105d69060203d81116105db575b6105ce8183610448565b81019061049f565b610571565b503d6105c4565b6104ed565b906105f1916103f0565b565b5f90565b60018060a01b031690565b61060e61061391610404565b6105f7565b90565b6106209054610602565b90565b61062b6105f3565b506106355f610616565b90565b6106499061064461086a565b61076c565b565b61065490610323565b90565b60209181520190565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6106946017602092610657565b61069d81610660565b0190565b6106b69060208101905f818303910152610687565b90565b156106c057565b6106c8610082565b63eac0d38960e01b8152806106df600482016106a1565b0390fd5b6106ec90610307565b90565b6106f8906106e3565b90565b5f1b90565b9061071160018060a01b03916106fb565b9181191691161790565b610724906106e3565b90565b90565b9061073f61073a6107469261071b565b610727565b8254610700565b9055565b6107539061064b565b9052565b919061076a905f6020850194019061074a565b565b6107996107788261064b565b61079261078c6107875f6103c7565b6100e2565b916100e2565b14156106b9565b6107b46107ad6107a88361064b565b6106ef565b600161072a565b6107ea7f2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421916107e1610082565b91829182610757565b0390a1565b6107f890610638565b565b61080b9061080661086a565b61080d565b565b8061082861082261081d5f6103c7565b6100e2565b916100e2565b1461083857610836906108db565b565b61085b6108445f6103c7565b5f918291631e4fbdf760e01b8352600483016101a5565b0390fd5b610868906107fa565b565b610872610623565b61088b61088561088061093a565b6100e2565b916100e2565b0361089257565b6108b461089d61093a565b5f91829163118cdaa760e01b8352600483016101a5565b0390fd5b90565b906108d06108cb6108d7926104fd565b6108b8565b8254610700565b9055565b6108e45f610616565b6108ee825f6108bb565b9061092261091c7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936104fd565b916104fd565b9161092b610082565b806109358161009f565b0390a3565b6109426105f3565b50339056fea2646970667358221220c47c0ed8601f745c7a3c4bc000b6b8c90aa91a2dc1af1065f0d4eba2e8826cbd64736f6c634300081b0033",
 }
 
 // MarketingWalletABI is the input ABI used to generate the binding from.
@@ -736,6 +736,27 @@ func (_MarketingWallet *MarketingWalletCallerSession) Token() (common.Address, e
 	return _MarketingWallet.Contract.Token(&_MarketingWallet.CallOpts)
 }
 
+// PayReward is a paid mutator transaction binding the contract method 0x8b8afcd7.
+//
+// Solidity: function payReward(address marketerAddress_, uint256 amount_) returns()
+func (_MarketingWallet *MarketingWalletTransactor) PayReward(opts *bind.TransactOpts, marketerAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _MarketingWallet.contract.Transact(opts, "payReward", marketerAddress_, amount_)
+}
+
+// PayReward is a paid mutator transaction binding the contract method 0x8b8afcd7.
+//
+// Solidity: function payReward(address marketerAddress_, uint256 amount_) returns()
+func (_MarketingWallet *MarketingWalletSession) PayReward(marketerAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _MarketingWallet.Contract.PayReward(&_MarketingWallet.TransactOpts, marketerAddress_, amount_)
+}
+
+// PayReward is a paid mutator transaction binding the contract method 0x8b8afcd7.
+//
+// Solidity: function payReward(address marketerAddress_, uint256 amount_) returns()
+func (_MarketingWallet *MarketingWalletTransactorSession) PayReward(marketerAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _MarketingWallet.Contract.PayReward(&_MarketingWallet.TransactOpts, marketerAddress_, amount_)
+}
+
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
 //
 // Solidity: function renounceOwnership() returns()
@@ -757,46 +778,25 @@ func (_MarketingWallet *MarketingWalletTransactorSession) RenounceOwnership() (*
 	return _MarketingWallet.Contract.RenounceOwnership(&_MarketingWallet.TransactOpts)
 }
 
-// Send is a paid mutator transaction binding the contract method 0x785d04f5.
+// SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
 //
-// Solidity: function send(uint256 amount, address to) returns()
-func (_MarketingWallet *MarketingWalletTransactor) Send(opts *bind.TransactOpts, amount *big.Int, to common.Address) (*types.Transaction, error) {
-	return _MarketingWallet.contract.Transact(opts, "send", amount, to)
-}
-
-// Send is a paid mutator transaction binding the contract method 0x785d04f5.
-//
-// Solidity: function send(uint256 amount, address to) returns()
-func (_MarketingWallet *MarketingWalletSession) Send(amount *big.Int, to common.Address) (*types.Transaction, error) {
-	return _MarketingWallet.Contract.Send(&_MarketingWallet.TransactOpts, amount, to)
-}
-
-// Send is a paid mutator transaction binding the contract method 0x785d04f5.
-//
-// Solidity: function send(uint256 amount, address to) returns()
-func (_MarketingWallet *MarketingWalletTransactorSession) Send(amount *big.Int, to common.Address) (*types.Transaction, error) {
-	return _MarketingWallet.Contract.Send(&_MarketingWallet.TransactOpts, amount, to)
+// Solidity: function setTokenContract(address newValue_) returns()
+func (_MarketingWallet *MarketingWalletTransactor) SetTokenContract(opts *bind.TransactOpts, newValue_ common.Address) (*types.Transaction, error) {
+	return _MarketingWallet.contract.Transact(opts, "setTokenContract", newValue_)
 }
 
 // SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
 //
-// Solidity: function setTokenContract(address addr) returns()
-func (_MarketingWallet *MarketingWalletTransactor) SetTokenContract(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
-	return _MarketingWallet.contract.Transact(opts, "setTokenContract", addr)
+// Solidity: function setTokenContract(address newValue_) returns()
+func (_MarketingWallet *MarketingWalletSession) SetTokenContract(newValue_ common.Address) (*types.Transaction, error) {
+	return _MarketingWallet.Contract.SetTokenContract(&_MarketingWallet.TransactOpts, newValue_)
 }
 
 // SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
 //
-// Solidity: function setTokenContract(address addr) returns()
-func (_MarketingWallet *MarketingWalletSession) SetTokenContract(addr common.Address) (*types.Transaction, error) {
-	return _MarketingWallet.Contract.SetTokenContract(&_MarketingWallet.TransactOpts, addr)
-}
-
-// SetTokenContract is a paid mutator transaction binding the contract method 0xbbcd5bbe.
-//
-// Solidity: function setTokenContract(address addr) returns()
-func (_MarketingWallet *MarketingWalletTransactorSession) SetTokenContract(addr common.Address) (*types.Transaction, error) {
-	return _MarketingWallet.Contract.SetTokenContract(&_MarketingWallet.TransactOpts, addr)
+// Solidity: function setTokenContract(address newValue_) returns()
+func (_MarketingWallet *MarketingWalletTransactorSession) SetTokenContract(newValue_ common.Address) (*types.Transaction, error) {
+	return _MarketingWallet.Contract.SetTokenContract(&_MarketingWallet.TransactOpts, newValue_)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -818,140 +818,6 @@ func (_MarketingWallet *MarketingWalletSession) TransferOwnership(newOwner commo
 // Solidity: function transferOwnership(address newOwner) returns()
 func (_MarketingWallet *MarketingWalletTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
 	return _MarketingWallet.Contract.TransferOwnership(&_MarketingWallet.TransactOpts, newOwner)
-}
-
-// MarketingWalletCosmicTokenAddressChangedIterator is returned from FilterCosmicTokenAddressChanged and is used to iterate over the raw logs and unpacked data for CosmicTokenAddressChanged events raised by the MarketingWallet contract.
-type MarketingWalletCosmicTokenAddressChangedIterator struct {
-	Event *MarketingWalletCosmicTokenAddressChanged // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *MarketingWalletCosmicTokenAddressChangedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(MarketingWalletCosmicTokenAddressChanged)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(MarketingWalletCosmicTokenAddressChanged)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *MarketingWalletCosmicTokenAddressChangedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *MarketingWalletCosmicTokenAddressChangedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// MarketingWalletCosmicTokenAddressChanged represents a CosmicTokenAddressChanged event raised by the MarketingWallet contract.
-type MarketingWalletCosmicTokenAddressChanged struct {
-	NewCosmicToken common.Address
-	Raw            types.Log // Blockchain specific contextual infos
-}
-
-// FilterCosmicTokenAddressChanged is a free log retrieval operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
-//
-// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
-func (_MarketingWallet *MarketingWalletFilterer) FilterCosmicTokenAddressChanged(opts *bind.FilterOpts) (*MarketingWalletCosmicTokenAddressChangedIterator, error) {
-
-	logs, sub, err := _MarketingWallet.contract.FilterLogs(opts, "CosmicTokenAddressChanged")
-	if err != nil {
-		return nil, err
-	}
-	return &MarketingWalletCosmicTokenAddressChangedIterator{contract: _MarketingWallet.contract, event: "CosmicTokenAddressChanged", logs: logs, sub: sub}, nil
-}
-
-// WatchCosmicTokenAddressChanged is a free log subscription operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
-//
-// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
-func (_MarketingWallet *MarketingWalletFilterer) WatchCosmicTokenAddressChanged(opts *bind.WatchOpts, sink chan<- *MarketingWalletCosmicTokenAddressChanged) (event.Subscription, error) {
-
-	logs, sub, err := _MarketingWallet.contract.WatchLogs(opts, "CosmicTokenAddressChanged")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(MarketingWalletCosmicTokenAddressChanged)
-				if err := _MarketingWallet.contract.UnpackLog(event, "CosmicTokenAddressChanged", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseCosmicTokenAddressChanged is a log parse operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
-//
-// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
-func (_MarketingWallet *MarketingWalletFilterer) ParseCosmicTokenAddressChanged(log types.Log) (*MarketingWalletCosmicTokenAddressChanged, error) {
-	event := new(MarketingWalletCosmicTokenAddressChanged)
-	if err := _MarketingWallet.contract.UnpackLog(event, "CosmicTokenAddressChanged", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
 }
 
 // MarketingWalletOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the MarketingWallet contract.
@@ -1107,9 +973,9 @@ func (_MarketingWallet *MarketingWalletFilterer) ParseOwnershipTransferred(log t
 	return event, nil
 }
 
-// MarketingWalletRewardSentEventIterator is returned from FilterRewardSentEvent and is used to iterate over the raw logs and unpacked data for RewardSentEvent events raised by the MarketingWallet contract.
-type MarketingWalletRewardSentEventIterator struct {
-	Event *MarketingWalletRewardSentEvent // Event containing the contract specifics and raw log
+// MarketingWalletRewardPaidIterator is returned from FilterRewardPaid and is used to iterate over the raw logs and unpacked data for RewardPaid events raised by the MarketingWallet contract.
+type MarketingWalletRewardPaidIterator struct {
+	Event *MarketingWalletRewardPaid // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1123,7 +989,7 @@ type MarketingWalletRewardSentEventIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *MarketingWalletRewardSentEventIterator) Next() bool {
+func (it *MarketingWalletRewardPaidIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1132,7 +998,7 @@ func (it *MarketingWalletRewardSentEventIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(MarketingWalletRewardSentEvent)
+			it.Event = new(MarketingWalletRewardPaid)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1147,7 +1013,7 @@ func (it *MarketingWalletRewardSentEventIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(MarketingWalletRewardSentEvent)
+		it.Event = new(MarketingWalletRewardPaid)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1163,52 +1029,52 @@ func (it *MarketingWalletRewardSentEventIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *MarketingWalletRewardSentEventIterator) Error() error {
+func (it *MarketingWalletRewardPaidIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *MarketingWalletRewardSentEventIterator) Close() error {
+func (it *MarketingWalletRewardPaidIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// MarketingWalletRewardSentEvent represents a RewardSentEvent event raised by the MarketingWallet contract.
-type MarketingWalletRewardSentEvent struct {
-	Marketer common.Address
-	Amount   *big.Int
-	Raw      types.Log // Blockchain specific contextual infos
+// MarketingWalletRewardPaid represents a RewardPaid event raised by the MarketingWallet contract.
+type MarketingWalletRewardPaid struct {
+	MarketerAddress common.Address
+	Amount          *big.Int
+	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterRewardSentEvent is a free log retrieval operation binding the contract event 0xdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba.
+// FilterRewardPaid is a free log retrieval operation binding the contract event 0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486.
 //
-// Solidity: event RewardSentEvent(address indexed marketer, uint256 amount)
-func (_MarketingWallet *MarketingWalletFilterer) FilterRewardSentEvent(opts *bind.FilterOpts, marketer []common.Address) (*MarketingWalletRewardSentEventIterator, error) {
+// Solidity: event RewardPaid(address indexed marketerAddress, uint256 amount)
+func (_MarketingWallet *MarketingWalletFilterer) FilterRewardPaid(opts *bind.FilterOpts, marketerAddress []common.Address) (*MarketingWalletRewardPaidIterator, error) {
 
-	var marketerRule []interface{}
-	for _, marketerItem := range marketer {
-		marketerRule = append(marketerRule, marketerItem)
+	var marketerAddressRule []interface{}
+	for _, marketerAddressItem := range marketerAddress {
+		marketerAddressRule = append(marketerAddressRule, marketerAddressItem)
 	}
 
-	logs, sub, err := _MarketingWallet.contract.FilterLogs(opts, "RewardSentEvent", marketerRule)
+	logs, sub, err := _MarketingWallet.contract.FilterLogs(opts, "RewardPaid", marketerAddressRule)
 	if err != nil {
 		return nil, err
 	}
-	return &MarketingWalletRewardSentEventIterator{contract: _MarketingWallet.contract, event: "RewardSentEvent", logs: logs, sub: sub}, nil
+	return &MarketingWalletRewardPaidIterator{contract: _MarketingWallet.contract, event: "RewardPaid", logs: logs, sub: sub}, nil
 }
 
-// WatchRewardSentEvent is a free log subscription operation binding the contract event 0xdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba.
+// WatchRewardPaid is a free log subscription operation binding the contract event 0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486.
 //
-// Solidity: event RewardSentEvent(address indexed marketer, uint256 amount)
-func (_MarketingWallet *MarketingWalletFilterer) WatchRewardSentEvent(opts *bind.WatchOpts, sink chan<- *MarketingWalletRewardSentEvent, marketer []common.Address) (event.Subscription, error) {
+// Solidity: event RewardPaid(address indexed marketerAddress, uint256 amount)
+func (_MarketingWallet *MarketingWalletFilterer) WatchRewardPaid(opts *bind.WatchOpts, sink chan<- *MarketingWalletRewardPaid, marketerAddress []common.Address) (event.Subscription, error) {
 
-	var marketerRule []interface{}
-	for _, marketerItem := range marketer {
-		marketerRule = append(marketerRule, marketerItem)
+	var marketerAddressRule []interface{}
+	for _, marketerAddressItem := range marketerAddress {
+		marketerAddressRule = append(marketerAddressRule, marketerAddressItem)
 	}
 
-	logs, sub, err := _MarketingWallet.contract.WatchLogs(opts, "RewardSentEvent", marketerRule)
+	logs, sub, err := _MarketingWallet.contract.WatchLogs(opts, "RewardPaid", marketerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1218,8 +1084,8 @@ func (_MarketingWallet *MarketingWalletFilterer) WatchRewardSentEvent(opts *bind
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(MarketingWalletRewardSentEvent)
-				if err := _MarketingWallet.contract.UnpackLog(event, "RewardSentEvent", log); err != nil {
+				event := new(MarketingWalletRewardPaid)
+				if err := _MarketingWallet.contract.UnpackLog(event, "RewardPaid", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1240,12 +1106,146 @@ func (_MarketingWallet *MarketingWalletFilterer) WatchRewardSentEvent(opts *bind
 	}), nil
 }
 
-// ParseRewardSentEvent is a log parse operation binding the contract event 0xdceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba.
+// ParseRewardPaid is a log parse operation binding the contract event 0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486.
 //
-// Solidity: event RewardSentEvent(address indexed marketer, uint256 amount)
-func (_MarketingWallet *MarketingWalletFilterer) ParseRewardSentEvent(log types.Log) (*MarketingWalletRewardSentEvent, error) {
-	event := new(MarketingWalletRewardSentEvent)
-	if err := _MarketingWallet.contract.UnpackLog(event, "RewardSentEvent", log); err != nil {
+// Solidity: event RewardPaid(address indexed marketerAddress, uint256 amount)
+func (_MarketingWallet *MarketingWalletFilterer) ParseRewardPaid(log types.Log) (*MarketingWalletRewardPaid, error) {
+	event := new(MarketingWalletRewardPaid)
+	if err := _MarketingWallet.contract.UnpackLog(event, "RewardPaid", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// MarketingWalletTokenContractAddressChangedIterator is returned from FilterTokenContractAddressChanged and is used to iterate over the raw logs and unpacked data for TokenContractAddressChanged events raised by the MarketingWallet contract.
+type MarketingWalletTokenContractAddressChangedIterator struct {
+	Event *MarketingWalletTokenContractAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *MarketingWalletTokenContractAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(MarketingWalletTokenContractAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(MarketingWalletTokenContractAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *MarketingWalletTokenContractAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *MarketingWalletTokenContractAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// MarketingWalletTokenContractAddressChanged represents a TokenContractAddressChanged event raised by the MarketingWallet contract.
+type MarketingWalletTokenContractAddressChanged struct {
+	NewValue common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterTokenContractAddressChanged is a free log retrieval operation binding the contract event 0x2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421.
+//
+// Solidity: event TokenContractAddressChanged(address newValue)
+func (_MarketingWallet *MarketingWalletFilterer) FilterTokenContractAddressChanged(opts *bind.FilterOpts) (*MarketingWalletTokenContractAddressChangedIterator, error) {
+
+	logs, sub, err := _MarketingWallet.contract.FilterLogs(opts, "TokenContractAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &MarketingWalletTokenContractAddressChangedIterator{contract: _MarketingWallet.contract, event: "TokenContractAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchTokenContractAddressChanged is a free log subscription operation binding the contract event 0x2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421.
+//
+// Solidity: event TokenContractAddressChanged(address newValue)
+func (_MarketingWallet *MarketingWalletFilterer) WatchTokenContractAddressChanged(opts *bind.WatchOpts, sink chan<- *MarketingWalletTokenContractAddressChanged) (event.Subscription, error) {
+
+	logs, sub, err := _MarketingWallet.contract.WatchLogs(opts, "TokenContractAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(MarketingWalletTokenContractAddressChanged)
+				if err := _MarketingWallet.contract.UnpackLog(event, "TokenContractAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTokenContractAddressChanged is a log parse operation binding the contract event 0x2ea51ddc5dacc666588569f7c6d26d9f79fe6bc7fea7cc7d89bcd6e38cdfb421.
+//
+// Solidity: event TokenContractAddressChanged(address newValue)
+func (_MarketingWallet *MarketingWalletFilterer) ParseTokenContractAddressChanged(log types.Log) (*MarketingWalletTokenContractAddressChanged, error) {
+	event := new(MarketingWalletTokenContractAddressChanged)
+	if err := _MarketingWallet.contract.UnpackLog(event, "TokenContractAddressChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

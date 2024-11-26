@@ -29,21 +29,21 @@ var (
 	_ = abi.ConvertType
 )
 
-// CosmicGameConstantsBalanceInfo is an auto generated low-level Go binding around an user-defined struct.
-type CosmicGameConstantsBalanceInfo struct {
+// CosmicSignatureConstantsBalanceInfo is an auto generated low-level Go binding around an user-defined struct.
+type CosmicSignatureConstantsBalanceInfo struct {
 	RoundNum *big.Int
 	Amount   *big.Int
 }
 
-// CosmicGameConstantsDonatedTokenToClaim is an auto generated low-level Go binding around an user-defined struct.
-type CosmicGameConstantsDonatedTokenToClaim struct {
+// CosmicSignatureConstantsDonatedTokenToClaim is an auto generated low-level Go binding around an user-defined struct.
+type CosmicSignatureConstantsDonatedTokenToClaim struct {
 	RoundNum     *big.Int
 	TokenAddress common.Address
 }
 
 // IPrizesWalletMetaData contains all meta data concerning the IPrizesWallet contract.
 var IPrizesWalletMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonatedTokenClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NftDonated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newValue\",\"type\":\"uint256\"}],\"name\":\"TimeoutDurationToWithdrawPrizesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenDonated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index_\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"claimDonatedToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"indices_\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNfts\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicGameConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"}],\"name\":\"claimManyDonatedTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"winner_\",\"type\":\"address\"}],\"name\":\"depositEth\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donor_\",\"type\":\"address\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nftId_\",\"type\":\"uint256\"}],\"name\":\"donateNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donor_\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"donateToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"getDonatedTokenAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicGameConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"winner_\",\"type\":\"address\"}],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicGameConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"roundMainPrizeWinner_\",\"type\":\"address\"}],\"name\":\"registerRoundEnd\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newValue_\",\"type\":\"uint256\"}],\"name\":\"setTimeoutDurationToWithdrawPrizes\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"winner_\",\"type\":\"address\"}],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"withdrawEth_\",\"type\":\"bool\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicGameConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256[]\",\"name\":\"donatedNftIndices_\",\"type\":\"uint256[]\"}],\"name\":\"withdrawEverything\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonatedTokenClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NftDonated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newValue\",\"type\":\"uint256\"}],\"name\":\"TimeoutDurationToWithdrawPrizesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenDonated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index_\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"claimDonatedToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"indices_\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNfts\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicSignatureConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"}],\"name\":\"claimManyDonatedTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"depositEth\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donorAddress_\",\"type\":\"address\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nftId_\",\"type\":\"uint256\"}],\"name\":\"donateNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donorAddress_\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"donateToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"getDonatedTokenAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicSignatureConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicSignatureConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"roundMainPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"registerRoundEnd\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newValue_\",\"type\":\"uint256\"}],\"name\":\"setTimeoutDurationToWithdrawPrizes\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"withdrawEth_\",\"type\":\"bool\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicSignatureConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256[]\",\"name\":\"donatedNftIndices_\",\"type\":\"uint256[]\"}],\"name\":\"withdrawEverything\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // IPrizesWalletABI is the input ABI used to generate the binding from.
@@ -226,15 +226,15 @@ func (_IPrizesWallet *IPrizesWalletCallerSession) GetDonatedTokenAmount(roundNum
 // GetEthBalanceInfo is a free data retrieval call binding the contract method 0x1a18c889.
 //
 // Solidity: function getEthBalanceInfo() view returns((uint256,uint256))
-func (_IPrizesWallet *IPrizesWalletCaller) GetEthBalanceInfo(opts *bind.CallOpts) (CosmicGameConstantsBalanceInfo, error) {
+func (_IPrizesWallet *IPrizesWalletCaller) GetEthBalanceInfo(opts *bind.CallOpts) (CosmicSignatureConstantsBalanceInfo, error) {
 	var out []interface{}
 	err := _IPrizesWallet.contract.Call(opts, &out, "getEthBalanceInfo")
 
 	if err != nil {
-		return *new(CosmicGameConstantsBalanceInfo), err
+		return *new(CosmicSignatureConstantsBalanceInfo), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(CosmicGameConstantsBalanceInfo)).(*CosmicGameConstantsBalanceInfo)
+	out0 := *abi.ConvertType(out[0], new(CosmicSignatureConstantsBalanceInfo)).(*CosmicSignatureConstantsBalanceInfo)
 
 	return out0, err
 
@@ -243,29 +243,29 @@ func (_IPrizesWallet *IPrizesWalletCaller) GetEthBalanceInfo(opts *bind.CallOpts
 // GetEthBalanceInfo is a free data retrieval call binding the contract method 0x1a18c889.
 //
 // Solidity: function getEthBalanceInfo() view returns((uint256,uint256))
-func (_IPrizesWallet *IPrizesWalletSession) GetEthBalanceInfo() (CosmicGameConstantsBalanceInfo, error) {
+func (_IPrizesWallet *IPrizesWalletSession) GetEthBalanceInfo() (CosmicSignatureConstantsBalanceInfo, error) {
 	return _IPrizesWallet.Contract.GetEthBalanceInfo(&_IPrizesWallet.CallOpts)
 }
 
 // GetEthBalanceInfo is a free data retrieval call binding the contract method 0x1a18c889.
 //
 // Solidity: function getEthBalanceInfo() view returns((uint256,uint256))
-func (_IPrizesWallet *IPrizesWalletCallerSession) GetEthBalanceInfo() (CosmicGameConstantsBalanceInfo, error) {
+func (_IPrizesWallet *IPrizesWalletCallerSession) GetEthBalanceInfo() (CosmicSignatureConstantsBalanceInfo, error) {
 	return _IPrizesWallet.Contract.GetEthBalanceInfo(&_IPrizesWallet.CallOpts)
 }
 
 // GetEthBalanceInfo0 is a free data retrieval call binding the contract method 0xa089e0be.
 //
-// Solidity: function getEthBalanceInfo(address winner_) view returns((uint256,uint256))
-func (_IPrizesWallet *IPrizesWalletCaller) GetEthBalanceInfo0(opts *bind.CallOpts, winner_ common.Address) (CosmicGameConstantsBalanceInfo, error) {
+// Solidity: function getEthBalanceInfo(address roundPrizeWinnerAddress_) view returns((uint256,uint256))
+func (_IPrizesWallet *IPrizesWalletCaller) GetEthBalanceInfo0(opts *bind.CallOpts, roundPrizeWinnerAddress_ common.Address) (CosmicSignatureConstantsBalanceInfo, error) {
 	var out []interface{}
-	err := _IPrizesWallet.contract.Call(opts, &out, "getEthBalanceInfo0", winner_)
+	err := _IPrizesWallet.contract.Call(opts, &out, "getEthBalanceInfo0", roundPrizeWinnerAddress_)
 
 	if err != nil {
-		return *new(CosmicGameConstantsBalanceInfo), err
+		return *new(CosmicSignatureConstantsBalanceInfo), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(CosmicGameConstantsBalanceInfo)).(*CosmicGameConstantsBalanceInfo)
+	out0 := *abi.ConvertType(out[0], new(CosmicSignatureConstantsBalanceInfo)).(*CosmicSignatureConstantsBalanceInfo)
 
 	return out0, err
 
@@ -273,16 +273,16 @@ func (_IPrizesWallet *IPrizesWalletCaller) GetEthBalanceInfo0(opts *bind.CallOpt
 
 // GetEthBalanceInfo0 is a free data retrieval call binding the contract method 0xa089e0be.
 //
-// Solidity: function getEthBalanceInfo(address winner_) view returns((uint256,uint256))
-func (_IPrizesWallet *IPrizesWalletSession) GetEthBalanceInfo0(winner_ common.Address) (CosmicGameConstantsBalanceInfo, error) {
-	return _IPrizesWallet.Contract.GetEthBalanceInfo0(&_IPrizesWallet.CallOpts, winner_)
+// Solidity: function getEthBalanceInfo(address roundPrizeWinnerAddress_) view returns((uint256,uint256))
+func (_IPrizesWallet *IPrizesWalletSession) GetEthBalanceInfo0(roundPrizeWinnerAddress_ common.Address) (CosmicSignatureConstantsBalanceInfo, error) {
+	return _IPrizesWallet.Contract.GetEthBalanceInfo0(&_IPrizesWallet.CallOpts, roundPrizeWinnerAddress_)
 }
 
 // GetEthBalanceInfo0 is a free data retrieval call binding the contract method 0xa089e0be.
 //
-// Solidity: function getEthBalanceInfo(address winner_) view returns((uint256,uint256))
-func (_IPrizesWallet *IPrizesWalletCallerSession) GetEthBalanceInfo0(winner_ common.Address) (CosmicGameConstantsBalanceInfo, error) {
-	return _IPrizesWallet.Contract.GetEthBalanceInfo0(&_IPrizesWallet.CallOpts, winner_)
+// Solidity: function getEthBalanceInfo(address roundPrizeWinnerAddress_) view returns((uint256,uint256))
+func (_IPrizesWallet *IPrizesWalletCallerSession) GetEthBalanceInfo0(roundPrizeWinnerAddress_ common.Address) (CosmicSignatureConstantsBalanceInfo, error) {
+	return _IPrizesWallet.Contract.GetEthBalanceInfo0(&_IPrizesWallet.CallOpts, roundPrizeWinnerAddress_)
 }
 
 // ClaimDonatedNft is a paid mutator transaction binding the contract method 0x94d907fc.
@@ -351,106 +351,106 @@ func (_IPrizesWallet *IPrizesWalletTransactorSession) ClaimManyDonatedNfts(indic
 // ClaimManyDonatedTokens is a paid mutator transaction binding the contract method 0x50a15deb.
 //
 // Solidity: function claimManyDonatedTokens((uint256,address)[] donatedTokensToClaim_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) ClaimManyDonatedTokens(opts *bind.TransactOpts, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim) (*types.Transaction, error) {
+func (_IPrizesWallet *IPrizesWalletTransactor) ClaimManyDonatedTokens(opts *bind.TransactOpts, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim) (*types.Transaction, error) {
 	return _IPrizesWallet.contract.Transact(opts, "claimManyDonatedTokens", donatedTokensToClaim_)
 }
 
 // ClaimManyDonatedTokens is a paid mutator transaction binding the contract method 0x50a15deb.
 //
 // Solidity: function claimManyDonatedTokens((uint256,address)[] donatedTokensToClaim_) returns()
-func (_IPrizesWallet *IPrizesWalletSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim) (*types.Transaction, error) {
+func (_IPrizesWallet *IPrizesWalletSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim) (*types.Transaction, error) {
 	return _IPrizesWallet.Contract.ClaimManyDonatedTokens(&_IPrizesWallet.TransactOpts, donatedTokensToClaim_)
 }
 
 // ClaimManyDonatedTokens is a paid mutator transaction binding the contract method 0x50a15deb.
 //
 // Solidity: function claimManyDonatedTokens((uint256,address)[] donatedTokensToClaim_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim) (*types.Transaction, error) {
+func (_IPrizesWallet *IPrizesWalletTransactorSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim) (*types.Transaction, error) {
 	return _IPrizesWallet.Contract.ClaimManyDonatedTokens(&_IPrizesWallet.TransactOpts, donatedTokensToClaim_)
 }
 
 // DepositEth is a paid mutator transaction binding the contract method 0x46f6b4e1.
 //
-// Solidity: function depositEth(uint256 roundNum_, address winner_) payable returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) DepositEth(opts *bind.TransactOpts, roundNum_ *big.Int, winner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.contract.Transact(opts, "depositEth", roundNum_, winner_)
+// Solidity: function depositEth(uint256 roundNum_, address roundPrizeWinnerAddress_) payable returns()
+func (_IPrizesWallet *IPrizesWalletTransactor) DepositEth(opts *bind.TransactOpts, roundNum_ *big.Int, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.contract.Transact(opts, "depositEth", roundNum_, roundPrizeWinnerAddress_)
 }
 
 // DepositEth is a paid mutator transaction binding the contract method 0x46f6b4e1.
 //
-// Solidity: function depositEth(uint256 roundNum_, address winner_) payable returns()
-func (_IPrizesWallet *IPrizesWalletSession) DepositEth(roundNum_ *big.Int, winner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.DepositEth(&_IPrizesWallet.TransactOpts, roundNum_, winner_)
+// Solidity: function depositEth(uint256 roundNum_, address roundPrizeWinnerAddress_) payable returns()
+func (_IPrizesWallet *IPrizesWalletSession) DepositEth(roundNum_ *big.Int, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.DepositEth(&_IPrizesWallet.TransactOpts, roundNum_, roundPrizeWinnerAddress_)
 }
 
 // DepositEth is a paid mutator transaction binding the contract method 0x46f6b4e1.
 //
-// Solidity: function depositEth(uint256 roundNum_, address winner_) payable returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) DepositEth(roundNum_ *big.Int, winner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.DepositEth(&_IPrizesWallet.TransactOpts, roundNum_, winner_)
+// Solidity: function depositEth(uint256 roundNum_, address roundPrizeWinnerAddress_) payable returns()
+func (_IPrizesWallet *IPrizesWalletTransactorSession) DepositEth(roundNum_ *big.Int, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.DepositEth(&_IPrizesWallet.TransactOpts, roundNum_, roundPrizeWinnerAddress_)
 }
 
 // DonateNft is a paid mutator transaction binding the contract method 0xfe673fd3.
 //
-// Solidity: function donateNft(uint256 roundNum_, address donor_, address nftAddress_, uint256 nftId_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) DonateNft(opts *bind.TransactOpts, roundNum_ *big.Int, donor_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
-	return _IPrizesWallet.contract.Transact(opts, "donateNft", roundNum_, donor_, nftAddress_, nftId_)
+// Solidity: function donateNft(uint256 roundNum_, address donorAddress_, address nftAddress_, uint256 nftId_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactor) DonateNft(opts *bind.TransactOpts, roundNum_ *big.Int, donorAddress_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
+	return _IPrizesWallet.contract.Transact(opts, "donateNft", roundNum_, donorAddress_, nftAddress_, nftId_)
 }
 
 // DonateNft is a paid mutator transaction binding the contract method 0xfe673fd3.
 //
-// Solidity: function donateNft(uint256 roundNum_, address donor_, address nftAddress_, uint256 nftId_) returns()
-func (_IPrizesWallet *IPrizesWalletSession) DonateNft(roundNum_ *big.Int, donor_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.DonateNft(&_IPrizesWallet.TransactOpts, roundNum_, donor_, nftAddress_, nftId_)
+// Solidity: function donateNft(uint256 roundNum_, address donorAddress_, address nftAddress_, uint256 nftId_) returns()
+func (_IPrizesWallet *IPrizesWalletSession) DonateNft(roundNum_ *big.Int, donorAddress_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.DonateNft(&_IPrizesWallet.TransactOpts, roundNum_, donorAddress_, nftAddress_, nftId_)
 }
 
 // DonateNft is a paid mutator transaction binding the contract method 0xfe673fd3.
 //
-// Solidity: function donateNft(uint256 roundNum_, address donor_, address nftAddress_, uint256 nftId_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) DonateNft(roundNum_ *big.Int, donor_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.DonateNft(&_IPrizesWallet.TransactOpts, roundNum_, donor_, nftAddress_, nftId_)
+// Solidity: function donateNft(uint256 roundNum_, address donorAddress_, address nftAddress_, uint256 nftId_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactorSession) DonateNft(roundNum_ *big.Int, donorAddress_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.DonateNft(&_IPrizesWallet.TransactOpts, roundNum_, donorAddress_, nftAddress_, nftId_)
 }
 
 // DonateToken is a paid mutator transaction binding the contract method 0xe2051c7e.
 //
-// Solidity: function donateToken(uint256 roundNum_, address donor_, address tokenAddress_, uint256 amount_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) DonateToken(opts *bind.TransactOpts, roundNum_ *big.Int, donor_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
-	return _IPrizesWallet.contract.Transact(opts, "donateToken", roundNum_, donor_, tokenAddress_, amount_)
+// Solidity: function donateToken(uint256 roundNum_, address donorAddress_, address tokenAddress_, uint256 amount_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactor) DonateToken(opts *bind.TransactOpts, roundNum_ *big.Int, donorAddress_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _IPrizesWallet.contract.Transact(opts, "donateToken", roundNum_, donorAddress_, tokenAddress_, amount_)
 }
 
 // DonateToken is a paid mutator transaction binding the contract method 0xe2051c7e.
 //
-// Solidity: function donateToken(uint256 roundNum_, address donor_, address tokenAddress_, uint256 amount_) returns()
-func (_IPrizesWallet *IPrizesWalletSession) DonateToken(roundNum_ *big.Int, donor_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.DonateToken(&_IPrizesWallet.TransactOpts, roundNum_, donor_, tokenAddress_, amount_)
+// Solidity: function donateToken(uint256 roundNum_, address donorAddress_, address tokenAddress_, uint256 amount_) returns()
+func (_IPrizesWallet *IPrizesWalletSession) DonateToken(roundNum_ *big.Int, donorAddress_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.DonateToken(&_IPrizesWallet.TransactOpts, roundNum_, donorAddress_, tokenAddress_, amount_)
 }
 
 // DonateToken is a paid mutator transaction binding the contract method 0xe2051c7e.
 //
-// Solidity: function donateToken(uint256 roundNum_, address donor_, address tokenAddress_, uint256 amount_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) DonateToken(roundNum_ *big.Int, donor_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.DonateToken(&_IPrizesWallet.TransactOpts, roundNum_, donor_, tokenAddress_, amount_)
+// Solidity: function donateToken(uint256 roundNum_, address donorAddress_, address tokenAddress_, uint256 amount_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactorSession) DonateToken(roundNum_ *big.Int, donorAddress_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.DonateToken(&_IPrizesWallet.TransactOpts, roundNum_, donorAddress_, tokenAddress_, amount_)
 }
 
 // RegisterRoundEnd is a paid mutator transaction binding the contract method 0xcc5810d8.
 //
-// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinner_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) RegisterRoundEnd(opts *bind.TransactOpts, roundNum_ *big.Int, roundMainPrizeWinner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.contract.Transact(opts, "registerRoundEnd", roundNum_, roundMainPrizeWinner_)
+// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinnerAddress_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactor) RegisterRoundEnd(opts *bind.TransactOpts, roundNum_ *big.Int, roundMainPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.contract.Transact(opts, "registerRoundEnd", roundNum_, roundMainPrizeWinnerAddress_)
 }
 
 // RegisterRoundEnd is a paid mutator transaction binding the contract method 0xcc5810d8.
 //
-// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinner_) returns()
-func (_IPrizesWallet *IPrizesWalletSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.RegisterRoundEnd(&_IPrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinner_)
+// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinnerAddress_) returns()
+func (_IPrizesWallet *IPrizesWalletSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.RegisterRoundEnd(&_IPrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinnerAddress_)
 }
 
 // RegisterRoundEnd is a paid mutator transaction binding the contract method 0xcc5810d8.
 //
-// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinner_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.RegisterRoundEnd(&_IPrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinner_)
+// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinnerAddress_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactorSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.RegisterRoundEnd(&_IPrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinnerAddress_)
 }
 
 // SetTimeoutDurationToWithdrawPrizes is a paid mutator transaction binding the contract method 0x9e2842a8.
@@ -476,23 +476,23 @@ func (_IPrizesWallet *IPrizesWalletTransactorSession) SetTimeoutDurationToWithdr
 
 // WithdrawEth is a paid mutator transaction binding the contract method 0x25e16063.
 //
-// Solidity: function withdrawEth(address winner_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) WithdrawEth(opts *bind.TransactOpts, winner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.contract.Transact(opts, "withdrawEth", winner_)
+// Solidity: function withdrawEth(address roundPrizeWinnerAddress_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactor) WithdrawEth(opts *bind.TransactOpts, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.contract.Transact(opts, "withdrawEth", roundPrizeWinnerAddress_)
 }
 
 // WithdrawEth is a paid mutator transaction binding the contract method 0x25e16063.
 //
-// Solidity: function withdrawEth(address winner_) returns()
-func (_IPrizesWallet *IPrizesWalletSession) WithdrawEth(winner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.WithdrawEth(&_IPrizesWallet.TransactOpts, winner_)
+// Solidity: function withdrawEth(address roundPrizeWinnerAddress_) returns()
+func (_IPrizesWallet *IPrizesWalletSession) WithdrawEth(roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.WithdrawEth(&_IPrizesWallet.TransactOpts, roundPrizeWinnerAddress_)
 }
 
 // WithdrawEth is a paid mutator transaction binding the contract method 0x25e16063.
 //
-// Solidity: function withdrawEth(address winner_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) WithdrawEth(winner_ common.Address) (*types.Transaction, error) {
-	return _IPrizesWallet.Contract.WithdrawEth(&_IPrizesWallet.TransactOpts, winner_)
+// Solidity: function withdrawEth(address roundPrizeWinnerAddress_) returns()
+func (_IPrizesWallet *IPrizesWalletTransactorSession) WithdrawEth(roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _IPrizesWallet.Contract.WithdrawEth(&_IPrizesWallet.TransactOpts, roundPrizeWinnerAddress_)
 }
 
 // WithdrawEth0 is a paid mutator transaction binding the contract method 0xa0ef91df.
@@ -519,21 +519,21 @@ func (_IPrizesWallet *IPrizesWalletTransactorSession) WithdrawEth0() (*types.Tra
 // WithdrawEverything is a paid mutator transaction binding the contract method 0xa72be1b2.
 //
 // Solidity: function withdrawEverything(bool withdrawEth_, (uint256,address)[] donatedTokensToClaim_, uint256[] donatedNftIndices_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactor) WithdrawEverything(opts *bind.TransactOpts, withdrawEth_ bool, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
+func (_IPrizesWallet *IPrizesWalletTransactor) WithdrawEverything(opts *bind.TransactOpts, withdrawEth_ bool, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
 	return _IPrizesWallet.contract.Transact(opts, "withdrawEverything", withdrawEth_, donatedTokensToClaim_, donatedNftIndices_)
 }
 
 // WithdrawEverything is a paid mutator transaction binding the contract method 0xa72be1b2.
 //
 // Solidity: function withdrawEverything(bool withdrawEth_, (uint256,address)[] donatedTokensToClaim_, uint256[] donatedNftIndices_) returns()
-func (_IPrizesWallet *IPrizesWalletSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
+func (_IPrizesWallet *IPrizesWalletSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
 	return _IPrizesWallet.Contract.WithdrawEverything(&_IPrizesWallet.TransactOpts, withdrawEth_, donatedTokensToClaim_, donatedNftIndices_)
 }
 
 // WithdrawEverything is a paid mutator transaction binding the contract method 0xa72be1b2.
 //
 // Solidity: function withdrawEverything(bool withdrawEth_, (uint256,address)[] donatedTokensToClaim_, uint256[] donatedNftIndices_) returns()
-func (_IPrizesWallet *IPrizesWalletTransactorSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
+func (_IPrizesWallet *IPrizesWalletTransactorSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
 	return _IPrizesWallet.Contract.WithdrawEverything(&_IPrizesWallet.TransactOpts, withdrawEth_, donatedTokensToClaim_, donatedNftIndices_)
 }
 
@@ -606,17 +606,17 @@ func (it *IPrizesWalletDonatedNftClaimedIterator) Close() error {
 
 // IPrizesWalletDonatedNftClaimed represents a DonatedNftClaimed event raised by the IPrizesWallet contract.
 type IPrizesWalletDonatedNftClaimed struct {
-	RoundNum    *big.Int
-	Beneficiary common.Address
-	NftAddress  common.Address
-	NftId       *big.Int
-	Index       *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+	RoundNum           *big.Int
+	BeneficiaryAddress common.Address
+	NftAddress         common.Address
+	NftId              *big.Int
+	Index              *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
 }
 
 // FilterDonatedNftClaimed is a free log retrieval operation binding the contract event 0x03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3.
 //
-// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiary, address nftAddress, uint256 nftId, uint256 index)
+// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiaryAddress, address nftAddress, uint256 nftId, uint256 index)
 func (_IPrizesWallet *IPrizesWalletFilterer) FilterDonatedNftClaimed(opts *bind.FilterOpts, roundNum []*big.Int) (*IPrizesWalletDonatedNftClaimedIterator, error) {
 
 	var roundNumRule []interface{}
@@ -633,7 +633,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) FilterDonatedNftClaimed(opts *bind.
 
 // WatchDonatedNftClaimed is a free log subscription operation binding the contract event 0x03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3.
 //
-// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiary, address nftAddress, uint256 nftId, uint256 index)
+// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiaryAddress, address nftAddress, uint256 nftId, uint256 index)
 func (_IPrizesWallet *IPrizesWalletFilterer) WatchDonatedNftClaimed(opts *bind.WatchOpts, sink chan<- *IPrizesWalletDonatedNftClaimed, roundNum []*big.Int) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
@@ -675,7 +675,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) WatchDonatedNftClaimed(opts *bind.W
 
 // ParseDonatedNftClaimed is a log parse operation binding the contract event 0x03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3.
 //
-// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiary, address nftAddress, uint256 nftId, uint256 index)
+// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiaryAddress, address nftAddress, uint256 nftId, uint256 index)
 func (_IPrizesWallet *IPrizesWalletFilterer) ParseDonatedNftClaimed(log types.Log) (*IPrizesWalletDonatedNftClaimed, error) {
 	event := new(IPrizesWalletDonatedNftClaimed)
 	if err := _IPrizesWallet.contract.UnpackLog(event, "DonatedNftClaimed", log); err != nil {
@@ -754,16 +754,16 @@ func (it *IPrizesWalletDonatedTokenClaimedIterator) Close() error {
 
 // IPrizesWalletDonatedTokenClaimed represents a DonatedTokenClaimed event raised by the IPrizesWallet contract.
 type IPrizesWalletDonatedTokenClaimed struct {
-	RoundNum     *big.Int
-	Beneficiary  common.Address
-	TokenAddress common.Address
-	Amount       *big.Int
-	Raw          types.Log // Blockchain specific contextual infos
+	RoundNum           *big.Int
+	BeneficiaryAddress common.Address
+	TokenAddress       common.Address
+	Amount             *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
 }
 
 // FilterDonatedTokenClaimed is a free log retrieval operation binding the contract event 0xaf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0.
 //
-// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiary, address tokenAddress, uint256 amount)
+// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiaryAddress, address tokenAddress, uint256 amount)
 func (_IPrizesWallet *IPrizesWalletFilterer) FilterDonatedTokenClaimed(opts *bind.FilterOpts, roundNum []*big.Int) (*IPrizesWalletDonatedTokenClaimedIterator, error) {
 
 	var roundNumRule []interface{}
@@ -780,7 +780,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) FilterDonatedTokenClaimed(opts *bin
 
 // WatchDonatedTokenClaimed is a free log subscription operation binding the contract event 0xaf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0.
 //
-// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiary, address tokenAddress, uint256 amount)
+// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiaryAddress, address tokenAddress, uint256 amount)
 func (_IPrizesWallet *IPrizesWalletFilterer) WatchDonatedTokenClaimed(opts *bind.WatchOpts, sink chan<- *IPrizesWalletDonatedTokenClaimed, roundNum []*big.Int) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
@@ -822,7 +822,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) WatchDonatedTokenClaimed(opts *bind
 
 // ParseDonatedTokenClaimed is a log parse operation binding the contract event 0xaf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0.
 //
-// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiary, address tokenAddress, uint256 amount)
+// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiaryAddress, address tokenAddress, uint256 amount)
 func (_IPrizesWallet *IPrizesWalletFilterer) ParseDonatedTokenClaimed(log types.Log) (*IPrizesWalletDonatedTokenClaimed, error) {
 	event := new(IPrizesWalletDonatedTokenClaimed)
 	if err := _IPrizesWallet.contract.UnpackLog(event, "DonatedTokenClaimed", log); err != nil {
@@ -901,27 +901,27 @@ func (it *IPrizesWalletEthReceivedIterator) Close() error {
 
 // IPrizesWalletEthReceived represents a EthReceived event raised by the IPrizesWallet contract.
 type IPrizesWalletEthReceived struct {
-	RoundNum *big.Int
-	Winner   common.Address
-	Amount   *big.Int
-	Raw      types.Log // Blockchain specific contextual infos
+	RoundNum                *big.Int
+	RoundPrizeWinnerAddress common.Address
+	Amount                  *big.Int
+	Raw                     types.Log // Blockchain specific contextual infos
 }
 
 // FilterEthReceived is a free log retrieval operation binding the contract event 0x999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326.
 //
-// Solidity: event EthReceived(uint256 indexed roundNum, address indexed winner, uint256 amount)
-func (_IPrizesWallet *IPrizesWalletFilterer) FilterEthReceived(opts *bind.FilterOpts, roundNum []*big.Int, winner []common.Address) (*IPrizesWalletEthReceivedIterator, error) {
+// Solidity: event EthReceived(uint256 indexed roundNum, address indexed roundPrizeWinnerAddress, uint256 amount)
+func (_IPrizesWallet *IPrizesWalletFilterer) FilterEthReceived(opts *bind.FilterOpts, roundNum []*big.Int, roundPrizeWinnerAddress []common.Address) (*IPrizesWalletEthReceivedIterator, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "EthReceived", roundNumRule, winnerRule)
+	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "EthReceived", roundNumRule, roundPrizeWinnerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -930,19 +930,19 @@ func (_IPrizesWallet *IPrizesWalletFilterer) FilterEthReceived(opts *bind.Filter
 
 // WatchEthReceived is a free log subscription operation binding the contract event 0x999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326.
 //
-// Solidity: event EthReceived(uint256 indexed roundNum, address indexed winner, uint256 amount)
-func (_IPrizesWallet *IPrizesWalletFilterer) WatchEthReceived(opts *bind.WatchOpts, sink chan<- *IPrizesWalletEthReceived, roundNum []*big.Int, winner []common.Address) (event.Subscription, error) {
+// Solidity: event EthReceived(uint256 indexed roundNum, address indexed roundPrizeWinnerAddress, uint256 amount)
+func (_IPrizesWallet *IPrizesWalletFilterer) WatchEthReceived(opts *bind.WatchOpts, sink chan<- *IPrizesWalletEthReceived, roundNum []*big.Int, roundPrizeWinnerAddress []common.Address) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "EthReceived", roundNumRule, winnerRule)
+	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "EthReceived", roundNumRule, roundPrizeWinnerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -976,7 +976,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) WatchEthReceived(opts *bind.WatchOp
 
 // ParseEthReceived is a log parse operation binding the contract event 0x999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326.
 //
-// Solidity: event EthReceived(uint256 indexed roundNum, address indexed winner, uint256 amount)
+// Solidity: event EthReceived(uint256 indexed roundNum, address indexed roundPrizeWinnerAddress, uint256 amount)
 func (_IPrizesWallet *IPrizesWalletFilterer) ParseEthReceived(log types.Log) (*IPrizesWalletEthReceived, error) {
 	event := new(IPrizesWalletEthReceived)
 	if err := _IPrizesWallet.contract.UnpackLog(event, "EthReceived", log); err != nil {
@@ -1055,27 +1055,27 @@ func (it *IPrizesWalletEthWithdrawnIterator) Close() error {
 
 // IPrizesWalletEthWithdrawn represents a EthWithdrawn event raised by the IPrizesWallet contract.
 type IPrizesWalletEthWithdrawn struct {
-	Winner      common.Address
-	Beneficiary common.Address
-	Amount      *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+	RoundPrizeWinnerAddress common.Address
+	BeneficiaryAddress      common.Address
+	Amount                  *big.Int
+	Raw                     types.Log // Blockchain specific contextual infos
 }
 
 // FilterEthWithdrawn is a free log retrieval operation binding the contract event 0x4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383.
 //
-// Solidity: event EthWithdrawn(address indexed winner, address indexed beneficiary, uint256 amount)
-func (_IPrizesWallet *IPrizesWalletFilterer) FilterEthWithdrawn(opts *bind.FilterOpts, winner []common.Address, beneficiary []common.Address) (*IPrizesWalletEthWithdrawnIterator, error) {
+// Solidity: event EthWithdrawn(address indexed roundPrizeWinnerAddress, address indexed beneficiaryAddress, uint256 amount)
+func (_IPrizesWallet *IPrizesWalletFilterer) FilterEthWithdrawn(opts *bind.FilterOpts, roundPrizeWinnerAddress []common.Address, beneficiaryAddress []common.Address) (*IPrizesWalletEthWithdrawnIterator, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
-	var beneficiaryRule []interface{}
-	for _, beneficiaryItem := range beneficiary {
-		beneficiaryRule = append(beneficiaryRule, beneficiaryItem)
+	var beneficiaryAddressRule []interface{}
+	for _, beneficiaryAddressItem := range beneficiaryAddress {
+		beneficiaryAddressRule = append(beneficiaryAddressRule, beneficiaryAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "EthWithdrawn", winnerRule, beneficiaryRule)
+	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "EthWithdrawn", roundPrizeWinnerAddressRule, beneficiaryAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1084,19 +1084,19 @@ func (_IPrizesWallet *IPrizesWalletFilterer) FilterEthWithdrawn(opts *bind.Filte
 
 // WatchEthWithdrawn is a free log subscription operation binding the contract event 0x4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383.
 //
-// Solidity: event EthWithdrawn(address indexed winner, address indexed beneficiary, uint256 amount)
-func (_IPrizesWallet *IPrizesWalletFilterer) WatchEthWithdrawn(opts *bind.WatchOpts, sink chan<- *IPrizesWalletEthWithdrawn, winner []common.Address, beneficiary []common.Address) (event.Subscription, error) {
+// Solidity: event EthWithdrawn(address indexed roundPrizeWinnerAddress, address indexed beneficiaryAddress, uint256 amount)
+func (_IPrizesWallet *IPrizesWalletFilterer) WatchEthWithdrawn(opts *bind.WatchOpts, sink chan<- *IPrizesWalletEthWithdrawn, roundPrizeWinnerAddress []common.Address, beneficiaryAddress []common.Address) (event.Subscription, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
-	var beneficiaryRule []interface{}
-	for _, beneficiaryItem := range beneficiary {
-		beneficiaryRule = append(beneficiaryRule, beneficiaryItem)
+	var beneficiaryAddressRule []interface{}
+	for _, beneficiaryAddressItem := range beneficiaryAddress {
+		beneficiaryAddressRule = append(beneficiaryAddressRule, beneficiaryAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "EthWithdrawn", winnerRule, beneficiaryRule)
+	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "EthWithdrawn", roundPrizeWinnerAddressRule, beneficiaryAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1130,7 +1130,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) WatchEthWithdrawn(opts *bind.WatchO
 
 // ParseEthWithdrawn is a log parse operation binding the contract event 0x4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383.
 //
-// Solidity: event EthWithdrawn(address indexed winner, address indexed beneficiary, uint256 amount)
+// Solidity: event EthWithdrawn(address indexed roundPrizeWinnerAddress, address indexed beneficiaryAddress, uint256 amount)
 func (_IPrizesWallet *IPrizesWalletFilterer) ParseEthWithdrawn(log types.Log) (*IPrizesWalletEthWithdrawn, error) {
 	event := new(IPrizesWalletEthWithdrawn)
 	if err := _IPrizesWallet.contract.UnpackLog(event, "EthWithdrawn", log); err != nil {
@@ -1209,33 +1209,33 @@ func (it *IPrizesWalletNftDonatedIterator) Close() error {
 
 // IPrizesWalletNftDonated represents a NftDonated event raised by the IPrizesWallet contract.
 type IPrizesWalletNftDonated struct {
-	RoundNum   *big.Int
-	Donor      common.Address
-	NftAddress common.Address
-	NftId      *big.Int
-	Index      *big.Int
-	Raw        types.Log // Blockchain specific contextual infos
+	RoundNum     *big.Int
+	DonorAddress common.Address
+	NftAddress   common.Address
+	NftId        *big.Int
+	Index        *big.Int
+	Raw          types.Log // Blockchain specific contextual infos
 }
 
 // FilterNftDonated is a free log retrieval operation binding the contract event 0xb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23.
 //
-// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donor, address indexed nftAddress, uint256 nftId, uint256 index)
-func (_IPrizesWallet *IPrizesWalletFilterer) FilterNftDonated(opts *bind.FilterOpts, roundNum []*big.Int, donor []common.Address, nftAddress []common.Address) (*IPrizesWalletNftDonatedIterator, error) {
+// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed nftAddress, uint256 nftId, uint256 index)
+func (_IPrizesWallet *IPrizesWalletFilterer) FilterNftDonated(opts *bind.FilterOpts, roundNum []*big.Int, donorAddress []common.Address, nftAddress []common.Address) (*IPrizesWalletNftDonatedIterator, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var nftAddressRule []interface{}
 	for _, nftAddressItem := range nftAddress {
 		nftAddressRule = append(nftAddressRule, nftAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "NftDonated", roundNumRule, donorRule, nftAddressRule)
+	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "NftDonated", roundNumRule, donorAddressRule, nftAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1244,23 +1244,23 @@ func (_IPrizesWallet *IPrizesWalletFilterer) FilterNftDonated(opts *bind.FilterO
 
 // WatchNftDonated is a free log subscription operation binding the contract event 0xb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23.
 //
-// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donor, address indexed nftAddress, uint256 nftId, uint256 index)
-func (_IPrizesWallet *IPrizesWalletFilterer) WatchNftDonated(opts *bind.WatchOpts, sink chan<- *IPrizesWalletNftDonated, roundNum []*big.Int, donor []common.Address, nftAddress []common.Address) (event.Subscription, error) {
+// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed nftAddress, uint256 nftId, uint256 index)
+func (_IPrizesWallet *IPrizesWalletFilterer) WatchNftDonated(opts *bind.WatchOpts, sink chan<- *IPrizesWalletNftDonated, roundNum []*big.Int, donorAddress []common.Address, nftAddress []common.Address) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var nftAddressRule []interface{}
 	for _, nftAddressItem := range nftAddress {
 		nftAddressRule = append(nftAddressRule, nftAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "NftDonated", roundNumRule, donorRule, nftAddressRule)
+	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "NftDonated", roundNumRule, donorAddressRule, nftAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1294,7 +1294,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) WatchNftDonated(opts *bind.WatchOpt
 
 // ParseNftDonated is a log parse operation binding the contract event 0xb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23.
 //
-// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donor, address indexed nftAddress, uint256 nftId, uint256 index)
+// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed nftAddress, uint256 nftId, uint256 index)
 func (_IPrizesWallet *IPrizesWalletFilterer) ParseNftDonated(log types.Log) (*IPrizesWalletNftDonated, error) {
 	event := new(IPrizesWalletNftDonated)
 	if err := _IPrizesWallet.contract.UnpackLog(event, "NftDonated", log); err != nil {
@@ -1508,7 +1508,7 @@ func (it *IPrizesWalletTokenDonatedIterator) Close() error {
 // IPrizesWalletTokenDonated represents a TokenDonated event raised by the IPrizesWallet contract.
 type IPrizesWalletTokenDonated struct {
 	RoundNum     *big.Int
-	Donor        common.Address
+	DonorAddress common.Address
 	TokenAddress common.Address
 	Amount       *big.Int
 	Raw          types.Log // Blockchain specific contextual infos
@@ -1516,23 +1516,23 @@ type IPrizesWalletTokenDonated struct {
 
 // FilterTokenDonated is a free log retrieval operation binding the contract event 0x3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af.
 //
-// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donor, address indexed tokenAddress, uint256 amount)
-func (_IPrizesWallet *IPrizesWalletFilterer) FilterTokenDonated(opts *bind.FilterOpts, roundNum []*big.Int, donor []common.Address, tokenAddress []common.Address) (*IPrizesWalletTokenDonatedIterator, error) {
+// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed tokenAddress, uint256 amount)
+func (_IPrizesWallet *IPrizesWalletFilterer) FilterTokenDonated(opts *bind.FilterOpts, roundNum []*big.Int, donorAddress []common.Address, tokenAddress []common.Address) (*IPrizesWalletTokenDonatedIterator, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var tokenAddressRule []interface{}
 	for _, tokenAddressItem := range tokenAddress {
 		tokenAddressRule = append(tokenAddressRule, tokenAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "TokenDonated", roundNumRule, donorRule, tokenAddressRule)
+	logs, sub, err := _IPrizesWallet.contract.FilterLogs(opts, "TokenDonated", roundNumRule, donorAddressRule, tokenAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1541,23 +1541,23 @@ func (_IPrizesWallet *IPrizesWalletFilterer) FilterTokenDonated(opts *bind.Filte
 
 // WatchTokenDonated is a free log subscription operation binding the contract event 0x3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af.
 //
-// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donor, address indexed tokenAddress, uint256 amount)
-func (_IPrizesWallet *IPrizesWalletFilterer) WatchTokenDonated(opts *bind.WatchOpts, sink chan<- *IPrizesWalletTokenDonated, roundNum []*big.Int, donor []common.Address, tokenAddress []common.Address) (event.Subscription, error) {
+// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed tokenAddress, uint256 amount)
+func (_IPrizesWallet *IPrizesWalletFilterer) WatchTokenDonated(opts *bind.WatchOpts, sink chan<- *IPrizesWalletTokenDonated, roundNum []*big.Int, donorAddress []common.Address, tokenAddress []common.Address) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var tokenAddressRule []interface{}
 	for _, tokenAddressItem := range tokenAddress {
 		tokenAddressRule = append(tokenAddressRule, tokenAddressItem)
 	}
 
-	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "TokenDonated", roundNumRule, donorRule, tokenAddressRule)
+	logs, sub, err := _IPrizesWallet.contract.WatchLogs(opts, "TokenDonated", roundNumRule, donorAddressRule, tokenAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1591,7 +1591,7 @@ func (_IPrizesWallet *IPrizesWalletFilterer) WatchTokenDonated(opts *bind.WatchO
 
 // ParseTokenDonated is a log parse operation binding the contract event 0x3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af.
 //
-// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donor, address indexed tokenAddress, uint256 amount)
+// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed tokenAddress, uint256 amount)
 func (_IPrizesWallet *IPrizesWalletFilterer) ParseTokenDonated(log types.Log) (*IPrizesWalletTokenDonated, error) {
 	event := new(IPrizesWalletTokenDonated)
 	if err := _IPrizesWallet.contract.UnpackLog(event, "TokenDonated", log); err != nil {
@@ -1603,8 +1603,8 @@ func (_IPrizesWallet *IPrizesWalletFilterer) ParseTokenDonated(log types.Log) (*
 
 // PrizesWalletMetaData contains all meta data concerning the PrizesWallet contract.
 var PrizesWalletMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"game_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"}],\"name\":\"CallDenied\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftClaimDenied\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"name\":\"DonatedTokenClaimDenied\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ERC20TransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"operationAllowedTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimeStamp\",\"type\":\"uint256\"}],\"name\":\"EarlyWithdrawal\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"InvalidDonatedNftIndex\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonatedTokenClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NftDonated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newValue\",\"type\":\"uint256\"}],\"name\":\"TimeoutDurationToWithdrawPrizesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenDonated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index_\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"claimDonatedToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"indices_\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNfts\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicGameConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"}],\"name\":\"claimManyDonatedTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"winner_\",\"type\":\"address\"}],\"name\":\"depositEth\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donor_\",\"type\":\"address\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nftId_\",\"type\":\"uint256\"}],\"name\":\"donateNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donor_\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"donateToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNfts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedTokens\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"game\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"getDonatedTokenAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicGameConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"winner_\",\"type\":\"address\"}],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicGameConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNfts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"roundMainPrizeWinner_\",\"type\":\"address\"}],\"name\":\"registerRoundEnd\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"roundMainPrizeWinners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"roundTimeoutTimesToWithdrawPrizes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newValue_\",\"type\":\"uint256\"}],\"name\":\"setTimeoutDurationToWithdrawPrizes\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeoutDurationToWithdrawPrizes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"winner_\",\"type\":\"address\"}],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"withdrawEth_\",\"type\":\"bool\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicGameConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256[]\",\"name\":\"donatedNftIndices_\",\"type\":\"uint256[]\"}],\"name\":\"withdrawEverything\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x60806040523461002f576100196100146100f4565b6103fd565b610021610034565b612ca26105998239612ca290f35b61003a565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100669061003e565b810190811060018060401b0382111761007e57604052565b610048565b9061009661008f610034565b928361005c565b565b5f80fd5b60018060a01b031690565b6100b09061009c565b90565b6100bc816100a7565b036100c357565b5f80fd5b905051906100d4826100b3565b565b906020828203126100ef576100ec915f016100c7565b90565b610098565b61011261323b8038038061010781610083565b9283398101906100d6565b90565b90565b90565b90565b61013261012d61013792610115565b61011b565b610118565b90565b610144603c61011e565b90565b610151603c61011e565b90565b634e487b7160e01b5f52601160045260245ffd5b61017761017d91939293610118565b92610118565b91610189838202610118565b92818404149015171561019857565b610154565b6101b66101a861013a565b6101b0610147565b90610168565b90565b90565b6101d06101cb6101d5926101b9565b61011b565b610118565b90565b6101e260186101bc565b90565b6101fe6101f061019d565b6101f86101d8565b90610168565b90565b90565b61021861021361021d92610201565b61011b565b610118565b90565b61023b600a6102366102306101e5565b91610204565b610168565b90565b5f1b90565b9061024f5f199161023e565b9181191691161790565b61026d61026861027292610118565b61011b565b610118565b90565b90565b9061028d61028861029492610259565b610275565b8254610243565b9055565b90565b6102af6102aa6102b492610298565b61011b565b610118565b90565b906102cc6102c76102d39261029b565b610275565b8254610243565b9055565b6102eb6102e66102f092610298565b61011b565b61009c565b90565b6102fc906102d7565b90565b60209181520190565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b61033c60176020926102ff565b61034581610308565b0190565b61035e9060208101905f81830391015261032f565b90565b1561036857565b610370610034565b63eac0d38960e01b81528061038760048201610349565b0390fd5b9061039c60018060a01b039161023e565b9181191691161790565b6103ba6103b56103bf9261009c565b61011b565b61009c565b90565b6103cb906103a6565b90565b6103d7906103c2565b90565b90565b906103f26103ed6103f9926103ce565b6103da565b825461038b565b9055565b6104779061040a33610479565b610424610415610220565b68010000000000000002610278565b61044b5f7c01000000000000000200000000000000000000000200000000000000036102b7565b6104708161046961046361045e5f6102f3565b6100a7565b916100a7565b1415610361565b60016103dd565b565b61048290610484565b565b61048d906104b1565b565b610498906100a7565b9052565b91906104af905f6020850194019061048f565b565b806104cc6104c66104c15f6102f3565b6100a7565b916100a7565b146104dc576104da90610539565b565b6104ff6104e85f6102f3565b5f918291631e4fbdf760e01b83526004830161049c565b0390fd5b5f1c90565b60018060a01b031690565b61051f61052491610503565b610508565b90565b6105319054610513565b90565b5f0190565b6105425f610527565b61054c825f6103dd565b9061058061057a7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936103ce565b916103ce565b91610589610034565b8061059381610534565b0390a356fe60806040526004361015610013575b610f6e565b61001d5f356101bc565b8063150b7a02146101b75780631a18c889146101b257806325e16063146101ad57806346f6b4e1146101a85780634b5e1b19146101a357806350a15deb1461019e5780636224dd3f14610199578063715018a614610194578063854fdf1b1461018f5780638da5cb5b1461018a578063909466221461018557806394d907fc1461018057806395de6c2c1461017b5780639cf10d32146101765780639e2842a814610171578063a089e0be1461016c578063a0ef91df14610167578063a72be1b214610162578063b2ddb1661461015d578063c3fe3e2814610158578063cc5810d814610153578063d7f4f8be1461014e578063e2051c7e14610149578063e4a6c2a414610144578063f2fde38b1461013f5763fe673fd30361000e57610f37565b610e8f565b610e5b565b610dee565b610d73565b610cc8565b610c93565b610c4f565b610b82565b610a7d565b610a48565b610a15565b6109dd565b610844565b610811565b6107dc565b61077c565b610724565b610695565b610660565b610615565b61056b565b610453565b6103f3565b61039b565b61030d565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b60018060a01b031690565b6101e8906101d4565b90565b6101f4816101df565b036101fb57565b5f80fd5b9050359061020c826101eb565b565b90565b61021a8161020e565b0361022157565b5f80fd5b9050359061023282610211565b565b5f80fd5b5f80fd5b5f80fd5b909182601f8301121561027a5781359167ffffffffffffffff831161027557602001926001830284011161027057565b61023c565b610238565b610234565b906080828203126102da57610296815f84016101ff565b926102a482602085016101ff565b926102b28360408301610225565b92606082013567ffffffffffffffff81116102d5576102d19201610240565b9091565b6101d0565b6101cc565b63ffffffff60e01b1690565b6102f4906102df565b9052565b919061030b905f602085019401906102eb565b565b346103415761033d61032c61032336600461027f565b93929092610f76565b6103346101c2565b918291826102f8565b0390f35b6101c8565b5f91031261035057565b6101cc565b61035e9061020e565b9052565b906020806103849361037a5f8201515f860190610355565b0151910190610355565b565b9190610399905f60408501940190610362565b565b346103cb576103ab366004610346565b6103c76103b66110c0565b6103be6101c2565b91829182610386565b0390f35b6101c8565b906020828203126103e9576103e6915f016101ff565b90565b6101cc565b5f0190565b346104215761040b6104063660046103d0565b611376565b6104136101c2565b8061041d816103ee565b0390f35b6101c8565b919060408382031261044e578061044261044b925f8601610225565b936020016101ff565b90565b6101cc565b610467610461366004610426565b906116ce565b61046f6101c2565b80610479816103ee565b0390f35b9060208282031261049657610493915f01610225565b90565b6101cc565b634e487b7160e01b5f52603260045260245ffd5b506801000000000000000090565b90565b6104c9816104af565b8210156104e3576104db6001916104bd565b910201905f90565b61049b565b1c90565b90565b6104ff90600861050493026104e8565b6104ec565b90565b9061051291546104ef565b90565b68010000000000000003610528816104af565b821015610545576105429161053c916104c0565b90610507565b90565b5f80fd5b6105529061020e565b9052565b9190610569905f60208501940190610549565b565b3461059b5761059761058661058136600461047d565b610515565b61058e6101c2565b91829182610556565b0390f35b6101c8565b909182601f830112156105da5781359167ffffffffffffffff83116105d55760200192604083028401116105d057565b61023c565b610238565b610234565b90602082820312610610575f82013567ffffffffffffffff811161060b5761060792016105a0565b9091565b6101d0565b6101cc565b346106445761062e6106283660046105df565b9061171c565b6106366101c2565b80610640816103ee565b0390f35b6101c8565b61065d680100000000000000025f90610507565b90565b3461069057610670366004610346565b61068c61067b610649565b6106836101c2565b91829182610556565b0390f35b6101c8565b346106c3576106a5366004610346565b6106ad6117e2565b6106b56101c2565b806106bf816103ee565b0390f35b6101c8565b6106d1906101df565b90565b6106dd816106c8565b036106e457565b5f80fd5b905035906106f5826106d4565b565b919060408382031261071f578061071361071c925f8601610225565b936020016106e8565b90565b6101cc565b346107555761075161074061073a3660046106f7565b906117ec565b6107486101c2565b91829182610556565b0390f35b6101c8565b610763906101df565b9052565b919061077a905f6020850194019061075a565b565b346107ac5761078c366004610346565b6107a861079761182f565b61079f6101c2565b91829182610767565b0390f35b6101c8565b6107d97c01000000000000000200000000000000000000000200000000000000035f90610507565b90565b3461080c576107ec366004610346565b6108086107f76107b1565b6107ff6101c2565b91829182610556565b0390f35b6101c8565b3461083f5761082961082436600461047d565b611bb7565b6108316101c2565b8061083b816103ee565b0390f35b6101c8565b346108735761085d6108573660046106f7565b90612113565b6108656101c2565b8061086f816103ee565b0390f35b6101c8565b506801000000000000000090565b90565b61089281610878565b8210156108ac576108a4600391610886565b910201905f90565b61049b565b5f1c90565b6108c26108c7916108b1565b6104ec565b90565b6108d490546108b6565b90565b60018060a01b031690565b6108ee6108f3916108b1565b6108d7565b90565b61090090546108e2565b90565b7c01000000000000000200000000000000000000000200000000000000049061092b82610878565b8110156109635761093b91610889565b506109475f82016108ca565b916109606002610959600185016108f6565b93016108ca565b90565b5f80fd5b90565b61097e610979610983926101d4565b610967565b6101d4565b90565b61098f9061096a565b90565b61099b90610986565b90565b6109a790610992565b9052565b6040906109d46109db94969593966109ca60608401985f850190610549565b602083019061099e565b0190610549565b565b34610a1057610a0c6109f86109f336600461047d565b610903565b610a039391936101c2565b938493846109ab565b0390f35b6101c8565b34610a4357610a2d610a2836600461047d565b612346565b610a356101c2565b80610a3f816103ee565b0390f35b6101c8565b34610a7857610a74610a63610a5e3660046103d0565b612351565b610a6b6101c2565b91829182610386565b0390f35b6101c8565b34610aab57610a8d366004610346565b610a95612383565b610a9d6101c2565b80610aa7816103ee565b0390f35b6101c8565b151590565b610abe81610ab0565b03610ac557565b5f80fd5b90503590610ad682610ab5565b565b909182601f83011215610b125781359167ffffffffffffffff8311610b0d576020019260208302840111610b0857565b61023c565b610238565b610234565b606081830312610b7d57610b2d825f8301610ac9565b92602082013567ffffffffffffffff8111610b785783610b4e9184016105a0565b929093604082013567ffffffffffffffff8111610b7357610b6f9201610ad8565b9091565b6101d0565b6101d0565b6101cc565b34610bb457610b9e610b95366004610b17565b9392909261244e565b610ba66101c2565b80610bb0816103ee565b0390f35b6101c8565b506801000000000000000090565b90565b610bd381610bb9565b821015610bed57610be5600191610bc7565b910201905f90565b61049b565b60018060a01b031690565b610c0d906008610c1293026104e8565b610bf2565b90565b90610c209154610bfd565b90565b6002610c2e81610bb9565b821015610c4b57610c4891610c4291610bca565b90610c15565b90565b5f80fd5b34610c7f57610c7b610c6a610c6536600461047d565b610c23565b610c726101c2565b91829182610767565b0390f35b6101c8565b610c9060015f90610c15565b90565b34610cc357610ca3366004610346565b610cbf610cae610c84565b610cb66101c2565b91829182610767565b0390f35b6101c8565b34610cf757610ce1610cdb366004610426565b9061251f565b610ce96101c2565b80610cf3816103ee565b0390f35b6101c8565b50600160e01b90565b90565b610d1181610cfc565b821015610d2b57610d23600191610d05565b910201905f90565b61049b565b7402000000000000000000000002000000000000000390610d5082610cfc565b811015610d6f57610d655f91610d6c93610d08565b50016108ca565b90565b5f80fd5b34610da357610d9f610d8e610d8936600461047d565b610d30565b610d966101c2565b91829182610556565b0390f35b6101c8565b608081830312610de957610dbe825f8301610225565b92610de6610dcf84602085016101ff565b93610ddd81604086016106e8565b93606001610225565b90565b6101cc565b34610e2057610e0a610e01366004610da8565b92919091612774565b610e126101c2565b80610e1c816103ee565b0390f35b6101c8565b90602082820312610e56575f82013567ffffffffffffffff8111610e5157610e4d9201610ad8565b9091565b6101d0565b6101cc565b34610e8a57610e74610e6e366004610e25565b9061279b565b610e7c6101c2565b80610e86816103ee565b0390f35b6101c8565b34610ebd57610ea7610ea23660046103d0565b612860565b610eaf6101c2565b80610eb9816103ee565b0390f35b6101c8565b610ecb906101df565b90565b610ed781610ec2565b03610ede57565b5f80fd5b90503590610eef82610ece565b565b608081830312610f3257610f07825f8301610225565b92610f2f610f1884602085016101ff565b93610f268160408601610ee2565b93606001610225565b90565b6101cc565b34610f6957610f53610f4a366004610ef1565b92919091612ae2565b610f5b6101c2565b80610f65816103ee565b0390f35b6101c8565b5f80fd5b5f90565b5050505050610f83610f72565b50630a85bd0160e11b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b90610fb790610f8f565b810190811067ffffffffffffffff821117610fd157604052565b610f99565b90610fe9610fe26101c2565b9283610fad565b565b610ff56040610fd6565b90565b5f90565b611004610feb565b9060208083611011610ff8565b81520161101c610ff8565b81525050565b61102a610ffc565b90565b6110369061096a565b90565b50600160a01b90565b90565b61104e81611039565b82101561106857611060600291611042565b910201905f90565b61049b565b906110779061020e565b9052565b906110b26110a9600161108c610feb565b946110a361109b5f83016108ca565b5f880161106d565b016108ca565b6020840161106d565b565b6110bd9061107b565b90565b6110c8611022565b506110ee6110e8680200000000000000036110e23361102d565b90611045565b506110b4565b90565b90565b90565b61110b611106611110926110f4565b610967565b61020e565b90565b60209181520190565b5f7f4e6f7420656e6f7567682074696d652068617320656c61707365642e00000000910152565b611150601c602092611113565b6111598161111c565b0190565b91604061118e92949361118761117c606083018381035f850152611143565b966020830190610549565b0190610549565b565b15611199575050565b6111ba6111a46101c2565b92839263496fca8f60e11b84526004840161115d565b0390fd5b1b90565b919060086111dd9102916111d75f19846111be565b926111be565b9181191691161790565b6111fb6111f66112009261020e565b610967565b61020e565b90565b90565b919061121c611217611224936111e7565b611203565b9083546111c2565b9055565b5f90565b61123e91611238611228565b91611206565b565b61124990610986565b90565b905090565b61125c5f809261124c565b0190565b61126990611251565b90565b67ffffffffffffffff811161128a57611286602091610f8f565b0190565b610f99565b906112a161129c8361126c565b610fd6565b918252565b606090565b3d5f146112c6576112bb3d61128f565b903d5f602084013e5b565b6112ce6112a6565b906112c4565b5f7f455448207769746864726177616c206661696c65642e00000000000000000000910152565b6113086016602092611113565b611311816112d4565b0190565b91604061134692949361133f611334606083018381035f8501526112fb565b96602083019061075a565b0190610549565b565b15611351575050565b61137261135c6101c2565b928392630aa7db6360e11b845260048401611315565b0390fd5b61148d9061139f611399680200000000000000036113938461102d565b90611045565b506110f1565b906113ed6113ca6113c4680100000000000000036113be5f87016108ca565b906104c0565b90610507565b426113dd6113d78361020e565b9161020e565b1015908161148f575b4291611190565b6114125f806113fe600186016108ca565b9461140c826001830161122c565b0161122c565b33829161145d61144b6114457f4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f5929238393611240565b93611240565b936114546101c2565b91829182610556565b0390a35f80338361146c6101c2565b908161147781611260565b03925af16114836112ab565b5090339091611348565b565b8091506114a461149e5f6110f7565b9161020e565b11906113e6565b6114b76114bc916108b1565b610bf2565b90565b6114c990546114ab565b90565b60207f7065726d697474656420746f2063616c6c2074686973206d6574686f642e0000917f4f6e6c792074686520436f736d696347616d6520636f6e7472616374206973205f8201520152565b611526603e604092611113565b61152f816114cc565b0190565b919061155690602061154e604086018681035f880152611519565b94019061075a565b565b156115605750565b6115829061156c6101c2565b91829163336e7de360e11b835260048301611533565b0390fd5b906115b7916115b2336115aa6115a461159f60016114bf565b6101df565b916101df565b143390611558565b61162d565b565b5f1b90565b906115ca5f19916115b9565b9181191691161790565b906115e96115e46115f0926111e7565b611203565b82546115be565b9055565b634e487b7160e01b5f52601160045260245ffd5b61161761161d9193929361020e565b9261020e565b820180921161162857565b6115f4565b61167e61165561164f680200000000000000036116498661102d565b90611045565b506110f1565b611661835f83016115d4565b611678600134920191611673836108ca565b611608565b906115d4565b9034916116c96116b76116b17f999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326936111e7565b93611240565b936116c06101c2565b91829182610556565b0390a3565b906116d891611586565b565b60016116e6910161020e565b90565b5090565b91908110156116fd576040020190565b61049b565b3561170c81610211565b90565b35611719816106d4565b90565b91906117275f6110f7565b5b8061174561173f61173a8786906116e9565b61020e565b9161020e565b101561178f5761178a906117856117685f611762888786916116ed565b01611702565b61177f6020611779898887916116ed565b0161170f565b90612113565b6116da565b611728565b50509050565b61179d612af0565b6117a56117cf565b565b6117bb6117b66117c0926110f4565b610967565b6101d4565b90565b6117cc906117a7565b90565b6117e06117db5f6117c3565b612b5e565b565b6117ea611795565b565b611821611806611828935f93611800611228565b50612c25565b74020000000000000000000000020000000000000003610d08565b50016108ca565b90565b5f90565b61183761182b565b506118415f6114bf565b90565b90565b9061185190610ec2565b9052565b61185f6060610fd6565b90565b906118b16118a86002611873611855565b9461188a6118825f83016108ca565b5f880161106d565b6118a2611899600183016108f6565b60208801611847565b016108ca565b6040840161106d565b565b6118bc90611862565b90565b6118c99051610ec2565b90565b5f7f446f6e61746564204e465420616c726561647920636c61696d65642e00000000910152565b611900601c602092611113565b611909816118cc565b0190565b9190611930906020611928604086018681035f8801526118f3565b940190610549565b565b5f7f496e76616c696420646f6e61746564204e465420696e6465782e000000000000910152565b611966601a602092611113565b61196f81611932565b0190565b919061199690602061198e604086018681035f880152611959565b940190610549565b565b6119a2905161020e565b90565b60407f4e46542e00000000000000000000000000000000000000000000000000000000917f4f6e6c792062696464696e6720726f756e64206d61696e207072697a652077695f8201527f6e6e6572206973207065726d697474656420746f20636c61696d20746869732060208201520152565b611a256044606092611113565b611a2e816119a5565b0190565b916040611a63929493611a5c611a51606083018381035f850152611a18565b96602083019061075a565b0190610549565b565b15611a6e575050565b611a8f611a796101c2565b92839263d1b9b13b60e01b845260048401611a32565b0390fd5b91906008611ab3910291611aad60018060a01b03846111be565b926111be565b9181191691161790565b611ac69061096a565b90565b611ad290611abd565b90565b90565b9190611aee611ae9611af693611ac9565b611ad5565b908354611a93565b9055565b5f90565b611b1091611b0a611afa565b91611ad8565b565b611b47611b4e94611b3d606094989795611b33608086019a5f87019061075a565b602085019061099e565b6040830190610549565b0190610549565b565b611b5990610986565b90565b5f80fd5b60e01b90565b5f910312611b7057565b6101cc565b604090611b9e611ba59496959396611b9460608401985f85019061075a565b602083019061075a565b0190610549565b565b611baf6101c2565b3d5f823e3d90fd5b90611be9611be37c01000000000000000200000000000000000000000200000000000000048490610889565b50611844565b611bf2816118b3565b90611c07611c02602084016118bf565b610992565b611c21611c1b611c165f6117c3565b6101df565b916101df565b145f14611cb5578380611c61611c5b611c567c01000000000000000200000000000000000000000200000000000000036108ca565b61020e565b9161020e565b10155f14611c8f57611c8b90611c756101c2565b9182916306420ad160e41b835260048301611973565b0390fd5b611cb190611c9b6101c2565b91829163aa576f4960e01b83526004830161190d565b0390fd5b5f6002611d15929593949533611cf0611cea611ce5611cdf86611cd9898d01611998565b90610bca565b90610c15565b6101df565b916101df565b03611e27575b611d028380830161122c565b611d0f8360018301611afe565b0161122c565b611d205f8301611998565b33611d2d602085016118bf565b90611d7a611d3d60408701611998565b94611d687f03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3956111e7565b95611d716101c2565b94859485611b12565b0390a2611d91611d8c602083016118bf565b610992565b6342842e0e90611da030611b50565b90611dae6040339501611998565b92813b15611e22575f611dd491611ddf8296611dc86101c2565b98899788968795611b60565b855260048501611b75565b03925af18015611e1d57611df1575b50565b611e10905f3d8111611e16575b611e088183610fad565b810190611b66565b5f611dee565b503d611dfe565b611ba7565b611b5c565b611e76611e51611e4b68010000000000000003611e45878b01611998565b906104c0565b90610507565b42611e64611e5e8361020e565b9161020e565b10159081611e7b575b50338791611a65565b611cf6565b9050611e8f611e89866110f7565b9161020e565b115f611e6d565b60407f4552432d323020746f6b656e20646f6e6174696f6e2e00000000000000000000917f4f6e6c792062696464696e6720726f756e64206d61696e207072697a652077695f8201527f6e6e6572206973207065726d697474656420746f20636c61696d20746869732060208201520152565b611f166056606092611113565b611f1f81611e96565b0190565b611f2c90610986565b90565b611f3890611f23565b9052565b606090611f75611f7c9496959396611f6b611f60608085018581035f870152611f09565b986020850190610549565b604083019061075a565b0190611f2f565b565b9290919215611f8c57505050565b611fae90611f986101c2565b93849363b039722960e01b855260048501611f3c565b0390fd5b90565b611fbf6020610fd6565b90565b90611fe1611fd95f611fd2611fb5565b94016108ca565b5f840161106d565b565b611fec90611fc2565b90565b60409061201861201f949695939661200e60608401985f85019061075a565b6020830190611f2f565b0190610549565b565b9050519061202e82610ab5565b565b9060208282031261204957612046915f01612021565b90565b6101cc565b91602061206f92949361206860408201965f83019061075a565b0190610549565b565b5f7f5472616e73666572206661696c65642e00000000000000000000000000000000910152565b6120a56010602092611113565b6120ae81612071565b0190565b9160406120e39294936120dc6120d1606083018381035f850152612098565b96602083019061075a565b0190610549565b565b156120ee575050565b61210f6120f96101c2565b92839263f7fce64560e01b8452600484016120b2565b0390fd5b906121e3903361213f61213961213461212e60028890610bca565b90610c15565b6101df565b916101df565b0361227e575b612177612171612156858490612c25565b74020000000000000000000000020000000000000003610d08565b50611fb2565b9261218d5f8061218687611fe3565b960161122c565b33908261219b5f8701611998565b926121db6121c97faf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0946111e7565b946121d26101c2565b93849384611fef565b0390a2611f23565b90602063a9059cbb9233906122155f6121fd818701611998565b966122206122096101c2565b98899687958694611b60565b84526004840161204e565b03925af1801561227957612249925f9161224b575b50906122435f339201611998565b916120e5565b565b61226c915060203d8111612272575b6122648183610fad565b810190612030565b5f612235565b503d61225a565b611ba7565b6122c561229e6122986801000000000000000386906104c0565b90610507565b426122b16122ab8361020e565b9161020e565b101590816122ca575b508433908492611f7e565b612145565b90506122de6122d85f6110f7565b9161020e565b115f6122ba565b6122f6906122f1612af0565b6122f8565b565b61230b81680100000000000000026115d4565b6123417f8717bb199c6bc4a5dadb21547205f9ef8ec037dda246a5526d6a6471306ea52e916123386101c2565b91829182610556565b0390a1565b61234f906122e5565b565b61237a61238091612360611022565b50612374680200000000000000039161102d565b90611045565b506110b4565b90565b61244c6123ab6123a56802000000000000000361239f3361102d565b90611045565b506110f1565b6123d05f806123bc600185016108ca565b936123ca826001830161122c565b0161122c565b3333829161241c61240a6124047f4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f5929238393611240565b93611240565b936124136101c2565b91829182610556565b0390a35f80338361242b6101c2565b908161243681611260565b03925af16124426112ab565b5090339091611348565b565b916124639161246895949361246a575b61171c565b61279b565b565b612472612383565b61245e565b906124a8916124a33361249b61249561249060016114bf565b6101df565b916101df565b143390611558565b6124cf565b565b90565b91906124c36124be6124cb93611240565b6124aa565b908354611a93565b9055565b6124e861251d926124e260028490610bca565b906124ad565b61251761250742612501680100000000000000026108ca565b90611608565b91680100000000000000036104c0565b90611206565b565b9061252991612477565b565b9061255e9392916125593361255161254b61254660016114bf565b6101df565b916101df565b143390611558565b6125fb565b565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6125946017602092611113565b61259d81612560565b0190565b6125b69060208101905f818303910152612587565b90565b156125c057565b6125c86101c2565b63eac0d38960e01b8152806125df600482016125a1565b0390fd5b6125ec9061096a565b90565b6125f8906125e3565b90565b60209193926126e09161263161261083611f23565b61262a61262461261f5f6117c3565b6101df565b916101df565b14156125b9565b612682612666612660612645848690612c25565b74020000000000000000000000020000000000000003610d08565b50611fb2565b61267c5f88920191612677836108ca565b611608565b906115d4565b85829086926126d86126c66126c06126ba7f3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af946111e7565b94611240565b946125ef565b946126cf6101c2565b91829182610556565b0390a4611f23565b6323b872dd939061270d5f6126f430611b50565b96612718876127016101c2565b998a9788968795611b60565b855260048501611b75565b03925af1801561276f5761273f925f91612741575b509061273830611b50565b90916120e5565b565b612762915060203d8111612768575b61275a8183610fad565b810190612030565b5f61272d565b503d612750565b611ba7565b9061278093929161252b565b565b5090565b9190811015612796576020020190565b61049b565b9190916127a75f6110f7565b5b806127c56127bf6127ba858890612782565b61020e565b9161020e565b10156127f5576127f0906127eb6127e66127e185888591612786565b611702565b611bb7565b6116da565b6127a8565b50509050565b61280c90612807612af0565b61280e565b565b8061282961282361281e5f6117c3565b6101df565b916101df565b146128395761283790612b5e565b565b61285c6128455f6117c3565b5f918291631e4fbdf760e01b835260048301610767565b0390fd5b612869906127fb565b565b9061289e9392916128993361289161288b61288660016114bf565b6101df565b916101df565b143390611558565b61291a565b565b906128b160018060a01b03916115b9565b9181191691161790565b906128d06128cb6128d792611ac9565b611ad5565b82546128a0565b9055565b9160206128fc9294936128f560408201965f830190610549565b0190610549565b565b6129079061020e565b5f1981146129155760010190565b6115f4565b91612a53612a30612a58939461295361293285610992565b61294c6129466129415f6117c3565b6101df565b916101df565b14156125b9565b6129797c01000000000000000200000000000000000000000200000000000000036108ca565b906129d16129ae6129a87c01000000000000000200000000000000000000000200000000000000048590610889565b50611844565b6129ba835f83016115d4565b6129c787600183016128bb565b60028a91016115d4565b868590899284612a13612a0d612a077fb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23946111e7565b94611240565b94611ac9565b94612a28612a1f6101c2565b928392836128db565b0390a46128fe565b7c01000000000000000200000000000000000000000200000000000000036115d4565b610992565b6342842e0e9190612a6830611b50565b9392813b15612add575f612a8f91612a9a8296612a836101c2565b98899788968795611b60565b855260048501611b75565b03925af18015612ad857612aac575b50565b612acb905f3d8111612ad1575b612ac38183610fad565b810190611b66565b5f612aa9565b503d612ab9565b611ba7565b611b5c565b90612aee93929161286b565b565b612af861182f565b612b11612b0b612b06612c5f565b6101df565b916101df565b03612b1857565b612b3a612b23612c5f565b5f91829163118cdaa760e01b835260048301610767565b0390fd5b90612b53612b4e612b5a92611240565b6124aa565b82546128a0565b9055565b612b675f6114bf565b612b71825f612b3e565b90612ba5612b9f7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093611240565b91611240565b91612bae6101c2565b80612bb8816103ee565b0390a3565b612bd1612bcc612bd6926101d4565b610967565b61020e565b90565b90565b60ff1690565b612bf6612bf1612bfb92612bd9565b610967565b612bdc565b90565b612c1d90612c17612c11612c2294612bdc565b9161020e565b906111be565b61020e565b90565b612c4b612c46612c41612c5b93612c3a611228565b5094611f23565b61102d565b612bbd565b612c556040612be2565b90612bfe565b1790565b612c6761182b565b50339056fea2646970667358221220647612196d004e7e1ebc88349035f289470a190ee5bd8b5dc543e2ec06e4adc964736f6c634300081b0033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"game_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"callerAddress\",\"type\":\"address\"}],\"name\":\"CallDenied\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftClaimDenied\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"name\":\"DonatedTokenClaimDenied\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ERC20TransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"operationAllowedTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimeStamp\",\"type\":\"uint256\"}],\"name\":\"EarlyWithdrawal\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"InvalidDonatedNftIndex\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"DonatedNftClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonatedTokenClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beneficiaryAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NftDonated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newValue\",\"type\":\"uint256\"}],\"name\":\"TimeoutDurationToWithdrawPrizesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenDonated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index_\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"claimDonatedToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"indices_\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNfts\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicSignatureConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"}],\"name\":\"claimManyDonatedTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"depositEth\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donorAddress_\",\"type\":\"address\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nftId_\",\"type\":\"uint256\"}],\"name\":\"donateNft\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"donorAddress_\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"donateToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNfts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nftId\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedTokens\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"game\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress_\",\"type\":\"address\"}],\"name\":\"getDonatedTokenAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicSignatureConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"getEthBalanceInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structCosmicSignatureConstants.BalanceInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNfts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"roundMainPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"registerRoundEnd\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"roundMainPrizeWinnerAddresses\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"roundTimeoutTimesToWithdrawPrizes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newValue_\",\"type\":\"uint256\"}],\"name\":\"setTimeoutDurationToWithdrawPrizes\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeoutDurationToWithdrawPrizes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"roundPrizeWinnerAddress_\",\"type\":\"address\"}],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawEth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"withdrawEth_\",\"type\":\"bool\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20\",\"name\":\"tokenAddress\",\"type\":\"address\"}],\"internalType\":\"structCosmicSignatureConstants.DonatedTokenToClaim[]\",\"name\":\"donatedTokensToClaim_\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256[]\",\"name\":\"donatedNftIndices_\",\"type\":\"uint256[]\"}],\"name\":\"withdrawEverything\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x60806040523461002f576100196100146100f4565b6103fd565b610021610034565b612cc86105998239612cc890f35b61003a565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100669061003e565b810190811060018060401b0382111761007e57604052565b610048565b9061009661008f610034565b928361005c565b565b5f80fd5b60018060a01b031690565b6100b09061009c565b90565b6100bc816100a7565b036100c357565b5f80fd5b905051906100d4826100b3565b565b906020828203126100ef576100ec915f016100c7565b90565b610098565b6101126132618038038061010781610083565b9283398101906100d6565b90565b90565b90565b90565b61013261012d61013792610115565b61011b565b610118565b90565b610144603c61011e565b90565b610151603c61011e565b90565b634e487b7160e01b5f52601160045260245ffd5b61017761017d91939293610118565b92610118565b91610189838202610118565b92818404149015171561019857565b610154565b6101b66101a861013a565b6101b0610147565b90610168565b90565b90565b6101d06101cb6101d5926101b9565b61011b565b610118565b90565b6101e260186101bc565b90565b6101fe6101f061019d565b6101f86101d8565b90610168565b90565b90565b61021861021361021d92610201565b61011b565b610118565b90565b61023b600a6102366102306101e5565b91610204565b610168565b90565b5f1b90565b9061024f5f199161023e565b9181191691161790565b61026d61026861027292610118565b61011b565b610118565b90565b90565b9061028d61028861029492610259565b610275565b8254610243565b9055565b90565b6102af6102aa6102b492610298565b61011b565b610118565b90565b906102cc6102c76102d39261029b565b610275565b8254610243565b9055565b6102eb6102e66102f092610298565b61011b565b61009c565b90565b6102fc906102d7565b90565b60209181520190565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b61033c60176020926102ff565b61034581610308565b0190565b61035e9060208101905f81830391015261032f565b90565b1561036857565b610370610034565b63eac0d38960e01b81528061038760048201610349565b0390fd5b9061039c60018060a01b039161023e565b9181191691161790565b6103ba6103b56103bf9261009c565b61011b565b61009c565b90565b6103cb906103a6565b90565b6103d7906103c2565b90565b90565b906103f26103ed6103f9926103ce565b6103da565b825461038b565b9055565b6104779061040a33610479565b610424610415610220565b68010000000000000002610278565b61044b5f7c01000000000000000200000000000000000000000200000000000000036102b7565b6104708161046961046361045e5f6102f3565b6100a7565b916100a7565b1415610361565b60016103dd565b565b61048290610484565b565b61048d906104b1565b565b610498906100a7565b9052565b91906104af905f6020850194019061048f565b565b806104cc6104c66104c15f6102f3565b6100a7565b916100a7565b146104dc576104da90610539565b565b6104ff6104e85f6102f3565b5f918291631e4fbdf760e01b83526004830161049c565b0390fd5b5f1c90565b60018060a01b031690565b61051f61052491610503565b610508565b90565b6105319054610513565b90565b5f0190565b6105425f610527565b61054c825f6103dd565b9061058061057a7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936103ce565b916103ce565b91610589610034565b8061059381610534565b0390a356fe60806040526004361015610013575b610f6e565b61001d5f356101bc565b8063150b7a02146101b75780631a18c889146101b25780632299072b146101ad57806325e16063146101a857806346f6b4e1146101a35780634b5e1b191461019e57806350a15deb146101995780636224dd3f14610194578063715018a61461018f578063854fdf1b1461018a5780638da5cb5b14610185578063909466221461018057806394d907fc1461017b57806395de6c2c146101765780639cf10d32146101715780639e2842a81461016c578063a089e0be14610167578063a0ef91df14610162578063a72be1b21461015d578063c3fe3e2814610158578063cc5810d814610153578063d7f4f8be1461014e578063e2051c7e14610149578063e4a6c2a414610144578063f2fde38b1461013f5763fe673fd30361000e57610f37565b610e8f565b610e5b565b610dee565b610d73565b610cc8565b610c93565b610c4d565b610b48565b610b13565b610ae0565b610aa8565b61090f565b6108dc565b6108a7565b610847565b610811565b610782565b61074d565b610702565b610658565b610576565b610516565b6104be565b61039b565b61030d565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b60018060a01b031690565b6101e8906101d4565b90565b6101f4816101df565b036101fb57565b5f80fd5b9050359061020c826101eb565b565b90565b61021a8161020e565b0361022157565b5f80fd5b9050359061023282610211565b565b5f80fd5b5f80fd5b5f80fd5b909182601f8301121561027a5781359167ffffffffffffffff831161027557602001926001830284011161027057565b61023c565b610238565b610234565b906080828203126102da57610296815f84016101ff565b926102a482602085016101ff565b926102b28360408301610225565b92606082013567ffffffffffffffff81116102d5576102d19201610240565b9091565b6101d0565b6101cc565b63ffffffff60e01b1690565b6102f4906102df565b9052565b919061030b905f602085019401906102eb565b565b346103415761033d61032c61032336600461027f565b93929092610f76565b6103346101c2565b918291826102f8565b0390f35b6101c8565b5f91031261035057565b6101cc565b61035e9061020e565b9052565b906020806103849361037a5f8201515f860190610355565b0151910190610355565b565b9190610399905f60408501940190610362565b565b346103cb576103ab366004610346565b6103c76103b66110c0565b6103be6101c2565b91829182610386565b0390f35b6101c8565b906020828203126103e9576103e6915f01610225565b90565b6101cc565b634e487b7160e01b5f52603260045260245ffd5b506801000000000000000090565b90565b61041c81610402565b8210156104365761042e600191610410565b910201905f90565b6103ee565b1c90565b60018060a01b031690565b61045a90600861045f930261043b565b61043f565b90565b9061046d915461044a565b90565b600261047b81610402565b821015610498576104959161048f91610413565b90610462565b90565b5f80fd5b6104a5906101df565b9052565b91906104bc905f6020850194019061049c565b565b346104ee576104ea6104d96104d43660046103d0565b610470565b6104e16101c2565b918291826104a9565b0390f35b6101c8565b9060208282031261050c57610509915f016101ff565b90565b6101cc565b5f0190565b346105445761052e6105293660046104f3565b611376565b6105366101c2565b8061054081610511565b0390f35b6101c8565b9190604083820312610571578061056561056e925f8601610225565b936020016101ff565b90565b6101cc565b61058a610584366004610549565b906116f4565b6105926101c2565b8061059c81610511565b0390f35b506801000000000000000090565b90565b6105ba816105a0565b8210156105d4576105cc6001916105ae565b910201905f90565b6103ee565b90565b6105ec9060086105f1930261043b565b6105d9565b90565b906105ff91546105dc565b90565b68010000000000000003610615816105a0565b8210156106325761062f91610629916105b1565b906105f4565b90565b5f80fd5b61063f9061020e565b9052565b9190610656905f60208501940190610636565b565b346106885761068461067361066e3660046103d0565b610602565b61067b6101c2565b91829182610643565b0390f35b6101c8565b909182601f830112156106c75781359167ffffffffffffffff83116106c25760200192604083028401116106bd57565b61023c565b610238565b610234565b906020828203126106fd575f82013567ffffffffffffffff81116106f8576106f4920161068d565b9091565b6101d0565b6101cc565b346107315761071b6107153660046106cc565b90611742565b6107236101c2565b8061072d81610511565b0390f35b6101c8565b61074a680100000000000000025f906105f4565b90565b3461077d5761075d366004610346565b610779610768610736565b6107706101c2565b91829182610643565b0390f35b6101c8565b346107b057610792366004610346565b61079a611808565b6107a26101c2565b806107ac81610511565b0390f35b6101c8565b6107be906101df565b90565b6107ca816107b5565b036107d157565b5f80fd5b905035906107e2826107c1565b565b919060408382031261080c5780610800610809925f8601610225565b936020016107d5565b90565b6101cc565b346108425761083e61082d6108273660046107e4565b90611812565b6108356101c2565b91829182610643565b0390f35b6101c8565b3461087757610857366004610346565b610873610862611855565b61086a6101c2565b918291826104a9565b0390f35b6101c8565b6108a47c01000000000000000200000000000000000000000200000000000000035f906105f4565b90565b346108d7576108b7366004610346565b6108d36108c261087c565b6108ca6101c2565b91829182610643565b0390f35b6101c8565b3461090a576108f46108ef3660046103d0565b611bdd565b6108fc6101c2565b8061090681610511565b0390f35b6101c8565b3461093e576109286109223660046107e4565b90612139565b6109306101c2565b8061093a81610511565b0390f35b6101c8565b506801000000000000000090565b90565b61095d81610943565b8210156109775761096f600391610951565b910201905f90565b6103ee565b5f1c90565b61098d6109929161097c565b6105d9565b90565b61099f9054610981565b90565b60018060a01b031690565b6109b96109be9161097c565b6109a2565b90565b6109cb90546109ad565b90565b7c0100000000000000020000000000000000000000020000000000000004906109f682610943565b811015610a2e57610a0691610954565b50610a125f8201610995565b91610a2b6002610a24600185016109c1565b9301610995565b90565b5f80fd5b90565b610a49610a44610a4e926101d4565b610a32565b6101d4565b90565b610a5a90610a35565b90565b610a6690610a51565b90565b610a7290610a5d565b9052565b604090610a9f610aa69496959396610a9560608401985f850190610636565b6020830190610a69565b0190610636565b565b34610adb57610ad7610ac3610abe3660046103d0565b6109ce565b610ace9391936101c2565b93849384610a76565b0390f35b6101c8565b34610b0e57610af8610af33660046103d0565b61236c565b610b006101c2565b80610b0a81610511565b0390f35b6101c8565b34610b4357610b3f610b2e610b293660046104f3565b612377565b610b366101c2565b91829182610386565b0390f35b6101c8565b34610b7657610b58366004610346565b610b606123a9565b610b686101c2565b80610b7281610511565b0390f35b6101c8565b151590565b610b8981610b7b565b03610b9057565b5f80fd5b90503590610ba182610b80565b565b909182601f83011215610bdd5781359167ffffffffffffffff8311610bd8576020019260208302840111610bd357565b61023c565b610238565b610234565b606081830312610c4857610bf8825f8301610b94565b92602082013567ffffffffffffffff8111610c435783610c1991840161068d565b929093604082013567ffffffffffffffff8111610c3e57610c3a9201610ba3565b9091565b6101d0565b6101d0565b6101cc565b34610c7f57610c69610c60366004610be2565b93929092612474565b610c716101c2565b80610c7b81610511565b0390f35b6101c8565b610c9060015f90610462565b90565b34610cc357610ca3366004610346565b610cbf610cae610c84565b610cb66101c2565b918291826104a9565b0390f35b6101c8565b34610cf757610ce1610cdb366004610549565b90612545565b610ce96101c2565b80610cf381610511565b0390f35b6101c8565b50600160e01b90565b90565b610d1181610cfc565b821015610d2b57610d23600191610d05565b910201905f90565b6103ee565b7402000000000000000000000002000000000000000390610d5082610cfc565b811015610d6f57610d655f91610d6c93610d08565b5001610995565b90565b5f80fd5b34610da357610d9f610d8e610d893660046103d0565b610d30565b610d966101c2565b91829182610643565b0390f35b6101c8565b608081830312610de957610dbe825f8301610225565b92610de6610dcf84602085016101ff565b93610ddd81604086016107d5565b93606001610225565b90565b6101cc565b34610e2057610e0a610e01366004610da8565b9291909161279a565b610e126101c2565b80610e1c81610511565b0390f35b6101c8565b90602082820312610e56575f82013567ffffffffffffffff8111610e5157610e4d9201610ba3565b9091565b6101d0565b6101cc565b34610e8a57610e74610e6e366004610e25565b906127c1565b610e7c6101c2565b80610e8681610511565b0390f35b6101c8565b34610ebd57610ea7610ea23660046104f3565b612886565b610eaf6101c2565b80610eb981610511565b0390f35b6101c8565b610ecb906101df565b90565b610ed781610ec2565b03610ede57565b5f80fd5b90503590610eef82610ece565b565b608081830312610f3257610f07825f8301610225565b92610f2f610f1884602085016101ff565b93610f268160408601610ee2565b93606001610225565b90565b6101cc565b34610f6957610f53610f4a366004610ef1565b92919091612b08565b610f5b6101c2565b80610f6581610511565b0390f35b6101c8565b5f80fd5b5f90565b5050505050610f83610f72565b50630a85bd0160e11b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b90610fb790610f8f565b810190811067ffffffffffffffff821117610fd157604052565b610f99565b90610fe9610fe26101c2565b9283610fad565b565b610ff56040610fd6565b90565b5f90565b611004610feb565b9060208083611011610ff8565b81520161101c610ff8565b81525050565b61102a610ffc565b90565b61103690610a35565b90565b50600160a01b90565b90565b61104e81611039565b82101561106857611060600291611042565b910201905f90565b6103ee565b906110779061020e565b9052565b906110b26110a9600161108c610feb565b946110a361109b5f8301610995565b5f880161106d565b01610995565b6020840161106d565b565b6110bd9061107b565b90565b6110c8611022565b506110ee6110e8680200000000000000036110e23361102d565b90611045565b506110b4565b90565b90565b90565b61110b611106611110926110f4565b610a32565b61020e565b90565b60209181520190565b5f7f4e6f7420656e6f7567682074696d652068617320656c61707365642e00000000910152565b611150601c602092611113565b6111598161111c565b0190565b91604061118e92949361118761117c606083018381035f850152611143565b966020830190610636565b0190610636565b565b15611199575050565b6111ba6111a46101c2565b92839263496fca8f60e11b84526004840161115d565b0390fd5b1b90565b919060086111dd9102916111d75f19846111be565b926111be565b9181191691161790565b6111fb6111f66112009261020e565b610a32565b61020e565b90565b90565b919061121c611217611224936111e7565b611203565b9083546111c2565b9055565b5f90565b61123e91611238611228565b91611206565b565b61124990610a51565b90565b905090565b61125c5f809261124c565b0190565b61126990611251565b90565b67ffffffffffffffff811161128a57611286602091610f8f565b0190565b610f99565b906112a161129c8361126c565b610fd6565b918252565b606090565b3d5f146112c6576112bb3d61128f565b903d5f602084013e5b565b6112ce6112a6565b906112c4565b5f7f455448207769746864726177616c206661696c65642e00000000000000000000910152565b6113086016602092611113565b611311816112d4565b0190565b91604061134692949361133f611334606083018381035f8501526112fb565b96602083019061049c565b0190610636565b565b15611351575050565b61137261135c6101c2565b928392630aa7db6360e11b845260048401611315565b0390fd5b61148d9061139f611399680200000000000000036113938461102d565b90611045565b506110f1565b906113ed6113ca6113c4680100000000000000036113be5f8701610995565b906105b1565b906105f4565b426113dd6113d78361020e565b9161020e565b1015908161148f575b4291611190565b6114125f806113fe60018601610995565b9461140c826001830161122c565b0161122c565b33829161145d61144b6114457f4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f5929238393611240565b93611240565b936114546101c2565b91829182610643565b0390a35f80338361146c6101c2565b908161147781611260565b03925af16114836112ab565b5090339091611348565b565b8091506114a461149e5f6110f7565b9161020e565b11906113e6565b6114b76114bc9161097c565b61043f565b90565b6114c990546114ab565b90565b60407f6d6574686f642e00000000000000000000000000000000000000000000000000917f4f6e6c792074686520436f736d69635369676e617475726547616d6520636f6e5f8201527f7472616374206973207065726d697474656420746f2063616c6c20746869732060208201520152565b61154c6047606092611113565b611555816114cc565b0190565b919061157c906020611574604086018681035f88015261153f565b94019061049c565b565b156115865750565b6115a8906115926101c2565b91829163336e7de360e11b835260048301611559565b0390fd5b906115dd916115d8336115d06115ca6115c560016114bf565b6101df565b916101df565b14339061157e565b611653565b565b5f1b90565b906115f05f19916115df565b9181191691161790565b9061160f61160a611616926111e7565b611203565b82546115e4565b9055565b634e487b7160e01b5f52601160045260245ffd5b61163d6116439193929361020e565b9261020e565b820180921161164e57565b61161a565b6116a461167b6116756802000000000000000361166f8661102d565b90611045565b506110f1565b611687835f83016115fa565b61169e60013492019161169983610995565b61162e565b906115fa565b9034916116ef6116dd6116d77f999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326936111e7565b93611240565b936116e66101c2565b91829182610643565b0390a3565b906116fe916115ac565b565b600161170c910161020e565b90565b5090565b9190811015611723576040020190565b6103ee565b3561173281610211565b90565b3561173f816107c1565b90565b919061174d5f6110f7565b5b8061176b61176561176087869061170f565b61020e565b9161020e565b10156117b5576117b0906117ab61178e5f61178888878691611713565b01611728565b6117a5602061179f89888791611713565b01611735565b90612139565b611700565b61174e565b50509050565b6117c3612b16565b6117cb6117f5565b565b6117e16117dc6117e6926110f4565b610a32565b6101d4565b90565b6117f2906117cd565b90565b6118066118015f6117e9565b612b84565b565b6118106117bb565b565b61184761182c61184e935f93611826611228565b50612c4b565b74020000000000000000000000020000000000000003610d08565b5001610995565b90565b5f90565b61185d611851565b506118675f6114bf565b90565b90565b9061187790610ec2565b9052565b6118856060610fd6565b90565b906118d76118ce600261189961187b565b946118b06118a85f8301610995565b5f880161106d565b6118c86118bf600183016109c1565b6020880161186d565b01610995565b6040840161106d565b565b6118e290611888565b90565b6118ef9051610ec2565b90565b5f7f446f6e61746564204e465420616c726561647920636c61696d65642e00000000910152565b611926601c602092611113565b61192f816118f2565b0190565b919061195690602061194e604086018681035f880152611919565b940190610636565b565b5f7f496e76616c696420646f6e61746564204e465420696e6465782e000000000000910152565b61198c601a602092611113565b61199581611958565b0190565b91906119bc9060206119b4604086018681035f88015261197f565b940190610636565b565b6119c8905161020e565b90565b60407f686973204e46542e000000000000000000000000000000000000000000000000917f4f6e6c79207468652062696464696e6720726f756e64206d61696e207072697a5f8201527f652077696e6e6572206973207065726d697474656420746f20636c61696d207460208201520152565b611a4b6048606092611113565b611a54816119cb565b0190565b916040611a89929493611a82611a77606083018381035f850152611a3e565b96602083019061049c565b0190610636565b565b15611a94575050565b611ab5611a9f6101c2565b92839263d1b9b13b60e01b845260048401611a58565b0390fd5b91906008611ad9910291611ad360018060a01b03846111be565b926111be565b9181191691161790565b611aec90610a35565b90565b611af890611ae3565b90565b90565b9190611b14611b0f611b1c93611aef565b611afb565b908354611ab9565b9055565b5f90565b611b3691611b30611b20565b91611afe565b565b611b6d611b7494611b63606094989795611b59608086019a5f87019061049c565b6020850190610a69565b6040830190610636565b0190610636565b565b611b7f90610a51565b90565b5f80fd5b60e01b90565b5f910312611b9657565b6101cc565b604090611bc4611bcb9496959396611bba60608401985f85019061049c565b602083019061049c565b0190610636565b565b611bd56101c2565b3d5f823e3d90fd5b90611c0f611c097c01000000000000000200000000000000000000000200000000000000048490610954565b5061186a565b611c18816118d9565b90611c2d611c28602084016118e5565b610a5d565b611c47611c41611c3c5f6117e9565b6101df565b916101df565b145f14611cdb578380611c87611c81611c7c7c0100000000000000020000000000000000000000020000000000000003610995565b61020e565b9161020e565b10155f14611cb557611cb190611c9b6101c2565b9182916306420ad160e41b835260048301611999565b0390fd5b611cd790611cc16101c2565b91829163aa576f4960e01b835260048301611933565b0390fd5b5f6002611d3b929593949533611d16611d10611d0b611d0586611cff898d016119be565b90610413565b90610462565b6101df565b916101df565b03611e4d575b611d288380830161122c565b611d358360018301611b24565b0161122c565b611d465f83016119be565b33611d53602085016118e5565b90611da0611d63604087016119be565b94611d8e7f03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3956111e7565b95611d976101c2565b94859485611b38565b0390a2611db7611db2602083016118e5565b610a5d565b6342842e0e90611dc630611b76565b90611dd460403395016119be565b92813b15611e48575f611dfa91611e058296611dee6101c2565b98899788968795611b86565b855260048501611b9b565b03925af18015611e4357611e17575b50565b611e36905f3d8111611e3c575b611e2e8183610fad565b810190611b8c565b5f611e14565b503d611e24565b611bcd565b611b82565b611e9c611e77611e7168010000000000000003611e6b878b016119be565b906105b1565b906105f4565b42611e8a611e848361020e565b9161020e565b10159081611ea1575b50338791611a8b565b611d1c565b9050611eb5611eaf866110f7565b9161020e565b115f611e93565b60407f686973204552432d323020746f6b656e20646f6e6174696f6e2e000000000000917f4f6e6c79207468652062696464696e6720726f756e64206d61696e207072697a5f8201527f652077696e6e6572206973207065726d697474656420746f20636c61696d207460208201520152565b611f3c605a606092611113565b611f4581611ebc565b0190565b611f5290610a51565b90565b611f5e90611f49565b9052565b606090611f9b611fa29496959396611f91611f86608085018581035f870152611f2f565b986020850190610636565b604083019061049c565b0190611f55565b565b9290919215611fb257505050565b611fd490611fbe6101c2565b93849363b039722960e01b855260048501611f62565b0390fd5b90565b611fe56020610fd6565b90565b90612007611fff5f611ff8611fdb565b9401610995565b5f840161106d565b565b61201290611fe8565b90565b60409061203e612045949695939661203460608401985f85019061049c565b6020830190611f55565b0190610636565b565b9050519061205482610b80565b565b9060208282031261206f5761206c915f01612047565b90565b6101cc565b91602061209592949361208e60408201965f83019061049c565b0190610636565b565b5f7f5472616e73666572206661696c65642e00000000000000000000000000000000910152565b6120cb6010602092611113565b6120d481612097565b0190565b9160406121099294936121026120f7606083018381035f8501526120be565b96602083019061049c565b0190610636565b565b15612114575050565b61213561211f6101c2565b92839263f7fce64560e01b8452600484016120d8565b0390fd5b90612209903361216561215f61215a61215460028890610413565b90610462565b6101df565b916101df565b036122a4575b61219d61219761217c858490612c4b565b74020000000000000000000000020000000000000003610d08565b50611fd8565b926121b35f806121ac87612009565b960161122c565b3390826121c15f87016119be565b926122016121ef7faf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0946111e7565b946121f86101c2565b93849384612015565b0390a2611f49565b90602063a9059cbb92339061223b5f6122238187016119be565b9661224661222f6101c2565b98899687958694611b86565b845260048401612074565b03925af1801561229f5761226f925f91612271575b50906122695f3392016119be565b9161210b565b565b612292915060203d8111612298575b61228a8183610fad565b810190612056565b5f61225b565b503d612280565b611bcd565b6122eb6122c46122be6801000000000000000386906105b1565b906105f4565b426122d76122d18361020e565b9161020e565b101590816122f0575b508433908492611fa4565b61216b565b90506123046122fe5f6110f7565b9161020e565b115f6122e0565b61231c90612317612b16565b61231e565b565b61233181680100000000000000026115fa565b6123677f8717bb199c6bc4a5dadb21547205f9ef8ec037dda246a5526d6a6471306ea52e9161235e6101c2565b91829182610643565b0390a1565b6123759061230b565b565b6123a06123a691612386611022565b5061239a680200000000000000039161102d565b90611045565b506110b4565b90565b6124726123d16123cb680200000000000000036123c53361102d565b90611045565b506110f1565b6123f65f806123e260018501610995565b936123f0826001830161122c565b0161122c565b3333829161244261243061242a7f4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f5929238393611240565b93611240565b936124396101c2565b91829182610643565b0390a35f8033836124516101c2565b908161245c81611260565b03925af16124686112ab565b5090339091611348565b565b916124899161248e959493612490575b611742565b6127c1565b565b6124986123a9565b612484565b906124ce916124c9336124c16124bb6124b660016114bf565b6101df565b916101df565b14339061157e565b6124f5565b565b90565b91906124e96124e46124f193611240565b6124d0565b908354611ab9565b9055565b61250e6125439261250860028490610413565b906124d3565b61253d61252d4261252768010000000000000002610995565b9061162e565b91680100000000000000036105b1565b90611206565b565b9061254f9161249d565b565b9061258493929161257f3361257761257161256c60016114bf565b6101df565b916101df565b14339061157e565b612621565b565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6125ba6017602092611113565b6125c381612586565b0190565b6125dc9060208101905f8183039101526125ad565b90565b156125e657565b6125ee6101c2565b63eac0d38960e01b815280612605600482016125c7565b0390fd5b61261290610a35565b90565b61261e90612609565b90565b60209193926127069161265761263683611f49565b61265061264a6126455f6117e9565b6101df565b916101df565b14156125df565b6126a861268c61268661266b848690612c4b565b74020000000000000000000000020000000000000003610d08565b50611fd8565b6126a25f8892019161269d83610995565b61162e565b906115fa565b85829086926126fe6126ec6126e66126e07f3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af946111e7565b94611240565b94612615565b946126f56101c2565b91829182610643565b0390a4611f49565b6323b872dd93906127335f61271a30611b76565b9661273e876127276101c2565b998a9788968795611b86565b855260048501611b9b565b03925af1801561279557612765925f91612767575b509061275e30611b76565b909161210b565b565b612788915060203d811161278e575b6127808183610fad565b810190612056565b5f612753565b503d612776565b611bcd565b906127a6939291612551565b565b5090565b91908110156127bc576020020190565b6103ee565b9190916127cd5f6110f7565b5b806127eb6127e56127e08588906127a8565b61020e565b9161020e565b101561281b576128169061281161280c612807858885916127ac565b611728565b611bdd565b611700565b6127ce565b50509050565b6128329061282d612b16565b612834565b565b8061284f6128496128445f6117e9565b6101df565b916101df565b1461285f5761285d90612b84565b565b61288261286b5f6117e9565b5f918291631e4fbdf760e01b8352600483016104a9565b0390fd5b61288f90612821565b565b906128c49392916128bf336128b76128b16128ac60016114bf565b6101df565b916101df565b14339061157e565b612940565b565b906128d760018060a01b03916115df565b9181191691161790565b906128f66128f16128fd92611aef565b611afb565b82546128c6565b9055565b91602061292292949361291b60408201965f830190610636565b0190610636565b565b61292d9061020e565b5f19811461293b5760010190565b61161a565b91612a79612a56612a7e939461297961295885610a5d565b61297261296c6129675f6117e9565b6101df565b916101df565b14156125df565b61299f7c0100000000000000020000000000000000000000020000000000000003610995565b906129f76129d46129ce7c01000000000000000200000000000000000000000200000000000000048590610954565b5061186a565b6129e0835f83016115fa565b6129ed87600183016128e1565b60028a91016115fa565b868590899284612a39612a33612a2d7fb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23946111e7565b94611240565b94611aef565b94612a4e612a456101c2565b92839283612901565b0390a4612924565b7c01000000000000000200000000000000000000000200000000000000036115fa565b610a5d565b6342842e0e9190612a8e30611b76565b9392813b15612b03575f612ab591612ac08296612aa96101c2565b98899788968795611b86565b855260048501611b9b565b03925af18015612afe57612ad2575b50565b612af1905f3d8111612af7575b612ae98183610fad565b810190611b8c565b5f612acf565b503d612adf565b611bcd565b611b82565b90612b14939291612891565b565b612b1e611855565b612b37612b31612b2c612c85565b6101df565b916101df565b03612b3e57565b612b60612b49612c85565b5f91829163118cdaa760e01b8352600483016104a9565b0390fd5b90612b79612b74612b8092611240565b6124d0565b82546128c6565b9055565b612b8d5f6114bf565b612b97825f612b64565b90612bcb612bc57f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093611240565b91611240565b91612bd46101c2565b80612bde81610511565b0390a3565b612bf7612bf2612bfc926101d4565b610a32565b61020e565b90565b90565b60ff1690565b612c1c612c17612c2192612bff565b610a32565b612c02565b90565b612c4390612c3d612c37612c4894612c02565b9161020e565b906111be565b61020e565b90565b612c71612c6c612c67612c8193612c60611228565b5094611f49565b61102d565b612be3565b612c7b6040612c08565b90612c24565b1790565b612c8d611851565b50339056fea26469706673582212202b671a0571a883476a42da499921690086ac4b8ddf6dd6c6bb5653419aac1db164736f6c634300081b0033",
 }
 
 // PrizesWalletABI is the input ABI used to generate the binding from.
@@ -1920,15 +1920,15 @@ func (_PrizesWallet *PrizesWalletCallerSession) GetDonatedTokenAmount(roundNum_ 
 // GetEthBalanceInfo is a free data retrieval call binding the contract method 0x1a18c889.
 //
 // Solidity: function getEthBalanceInfo() view returns((uint256,uint256))
-func (_PrizesWallet *PrizesWalletCaller) GetEthBalanceInfo(opts *bind.CallOpts) (CosmicGameConstantsBalanceInfo, error) {
+func (_PrizesWallet *PrizesWalletCaller) GetEthBalanceInfo(opts *bind.CallOpts) (CosmicSignatureConstantsBalanceInfo, error) {
 	var out []interface{}
 	err := _PrizesWallet.contract.Call(opts, &out, "getEthBalanceInfo")
 
 	if err != nil {
-		return *new(CosmicGameConstantsBalanceInfo), err
+		return *new(CosmicSignatureConstantsBalanceInfo), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(CosmicGameConstantsBalanceInfo)).(*CosmicGameConstantsBalanceInfo)
+	out0 := *abi.ConvertType(out[0], new(CosmicSignatureConstantsBalanceInfo)).(*CosmicSignatureConstantsBalanceInfo)
 
 	return out0, err
 
@@ -1937,29 +1937,29 @@ func (_PrizesWallet *PrizesWalletCaller) GetEthBalanceInfo(opts *bind.CallOpts) 
 // GetEthBalanceInfo is a free data retrieval call binding the contract method 0x1a18c889.
 //
 // Solidity: function getEthBalanceInfo() view returns((uint256,uint256))
-func (_PrizesWallet *PrizesWalletSession) GetEthBalanceInfo() (CosmicGameConstantsBalanceInfo, error) {
+func (_PrizesWallet *PrizesWalletSession) GetEthBalanceInfo() (CosmicSignatureConstantsBalanceInfo, error) {
 	return _PrizesWallet.Contract.GetEthBalanceInfo(&_PrizesWallet.CallOpts)
 }
 
 // GetEthBalanceInfo is a free data retrieval call binding the contract method 0x1a18c889.
 //
 // Solidity: function getEthBalanceInfo() view returns((uint256,uint256))
-func (_PrizesWallet *PrizesWalletCallerSession) GetEthBalanceInfo() (CosmicGameConstantsBalanceInfo, error) {
+func (_PrizesWallet *PrizesWalletCallerSession) GetEthBalanceInfo() (CosmicSignatureConstantsBalanceInfo, error) {
 	return _PrizesWallet.Contract.GetEthBalanceInfo(&_PrizesWallet.CallOpts)
 }
 
 // GetEthBalanceInfo0 is a free data retrieval call binding the contract method 0xa089e0be.
 //
-// Solidity: function getEthBalanceInfo(address winner_) view returns((uint256,uint256))
-func (_PrizesWallet *PrizesWalletCaller) GetEthBalanceInfo0(opts *bind.CallOpts, winner_ common.Address) (CosmicGameConstantsBalanceInfo, error) {
+// Solidity: function getEthBalanceInfo(address roundPrizeWinnerAddress_) view returns((uint256,uint256))
+func (_PrizesWallet *PrizesWalletCaller) GetEthBalanceInfo0(opts *bind.CallOpts, roundPrizeWinnerAddress_ common.Address) (CosmicSignatureConstantsBalanceInfo, error) {
 	var out []interface{}
-	err := _PrizesWallet.contract.Call(opts, &out, "getEthBalanceInfo0", winner_)
+	err := _PrizesWallet.contract.Call(opts, &out, "getEthBalanceInfo0", roundPrizeWinnerAddress_)
 
 	if err != nil {
-		return *new(CosmicGameConstantsBalanceInfo), err
+		return *new(CosmicSignatureConstantsBalanceInfo), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(CosmicGameConstantsBalanceInfo)).(*CosmicGameConstantsBalanceInfo)
+	out0 := *abi.ConvertType(out[0], new(CosmicSignatureConstantsBalanceInfo)).(*CosmicSignatureConstantsBalanceInfo)
 
 	return out0, err
 
@@ -1967,16 +1967,16 @@ func (_PrizesWallet *PrizesWalletCaller) GetEthBalanceInfo0(opts *bind.CallOpts,
 
 // GetEthBalanceInfo0 is a free data retrieval call binding the contract method 0xa089e0be.
 //
-// Solidity: function getEthBalanceInfo(address winner_) view returns((uint256,uint256))
-func (_PrizesWallet *PrizesWalletSession) GetEthBalanceInfo0(winner_ common.Address) (CosmicGameConstantsBalanceInfo, error) {
-	return _PrizesWallet.Contract.GetEthBalanceInfo0(&_PrizesWallet.CallOpts, winner_)
+// Solidity: function getEthBalanceInfo(address roundPrizeWinnerAddress_) view returns((uint256,uint256))
+func (_PrizesWallet *PrizesWalletSession) GetEthBalanceInfo0(roundPrizeWinnerAddress_ common.Address) (CosmicSignatureConstantsBalanceInfo, error) {
+	return _PrizesWallet.Contract.GetEthBalanceInfo0(&_PrizesWallet.CallOpts, roundPrizeWinnerAddress_)
 }
 
 // GetEthBalanceInfo0 is a free data retrieval call binding the contract method 0xa089e0be.
 //
-// Solidity: function getEthBalanceInfo(address winner_) view returns((uint256,uint256))
-func (_PrizesWallet *PrizesWalletCallerSession) GetEthBalanceInfo0(winner_ common.Address) (CosmicGameConstantsBalanceInfo, error) {
-	return _PrizesWallet.Contract.GetEthBalanceInfo0(&_PrizesWallet.CallOpts, winner_)
+// Solidity: function getEthBalanceInfo(address roundPrizeWinnerAddress_) view returns((uint256,uint256))
+func (_PrizesWallet *PrizesWalletCallerSession) GetEthBalanceInfo0(roundPrizeWinnerAddress_ common.Address) (CosmicSignatureConstantsBalanceInfo, error) {
+	return _PrizesWallet.Contract.GetEthBalanceInfo0(&_PrizesWallet.CallOpts, roundPrizeWinnerAddress_)
 }
 
 // NumDonatedNfts is a free data retrieval call binding the contract method 0x90946622.
@@ -2072,12 +2072,12 @@ func (_PrizesWallet *PrizesWalletCallerSession) Owner() (common.Address, error) 
 	return _PrizesWallet.Contract.Owner(&_PrizesWallet.CallOpts)
 }
 
-// RoundMainPrizeWinners is a free data retrieval call binding the contract method 0xb2ddb166.
+// RoundMainPrizeWinnerAddresses is a free data retrieval call binding the contract method 0x2299072b.
 //
-// Solidity: function roundMainPrizeWinners(uint256 ) view returns(address)
-func (_PrizesWallet *PrizesWalletCaller) RoundMainPrizeWinners(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
+// Solidity: function roundMainPrizeWinnerAddresses(uint256 ) view returns(address)
+func (_PrizesWallet *PrizesWalletCaller) RoundMainPrizeWinnerAddresses(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
 	var out []interface{}
-	err := _PrizesWallet.contract.Call(opts, &out, "roundMainPrizeWinners", arg0)
+	err := _PrizesWallet.contract.Call(opts, &out, "roundMainPrizeWinnerAddresses", arg0)
 
 	if err != nil {
 		return *new(common.Address), err
@@ -2089,18 +2089,18 @@ func (_PrizesWallet *PrizesWalletCaller) RoundMainPrizeWinners(opts *bind.CallOp
 
 }
 
-// RoundMainPrizeWinners is a free data retrieval call binding the contract method 0xb2ddb166.
+// RoundMainPrizeWinnerAddresses is a free data retrieval call binding the contract method 0x2299072b.
 //
-// Solidity: function roundMainPrizeWinners(uint256 ) view returns(address)
-func (_PrizesWallet *PrizesWalletSession) RoundMainPrizeWinners(arg0 *big.Int) (common.Address, error) {
-	return _PrizesWallet.Contract.RoundMainPrizeWinners(&_PrizesWallet.CallOpts, arg0)
+// Solidity: function roundMainPrizeWinnerAddresses(uint256 ) view returns(address)
+func (_PrizesWallet *PrizesWalletSession) RoundMainPrizeWinnerAddresses(arg0 *big.Int) (common.Address, error) {
+	return _PrizesWallet.Contract.RoundMainPrizeWinnerAddresses(&_PrizesWallet.CallOpts, arg0)
 }
 
-// RoundMainPrizeWinners is a free data retrieval call binding the contract method 0xb2ddb166.
+// RoundMainPrizeWinnerAddresses is a free data retrieval call binding the contract method 0x2299072b.
 //
-// Solidity: function roundMainPrizeWinners(uint256 ) view returns(address)
-func (_PrizesWallet *PrizesWalletCallerSession) RoundMainPrizeWinners(arg0 *big.Int) (common.Address, error) {
-	return _PrizesWallet.Contract.RoundMainPrizeWinners(&_PrizesWallet.CallOpts, arg0)
+// Solidity: function roundMainPrizeWinnerAddresses(uint256 ) view returns(address)
+func (_PrizesWallet *PrizesWalletCallerSession) RoundMainPrizeWinnerAddresses(arg0 *big.Int) (common.Address, error) {
+	return _PrizesWallet.Contract.RoundMainPrizeWinnerAddresses(&_PrizesWallet.CallOpts, arg0)
 }
 
 // RoundTimeoutTimesToWithdrawPrizes is a free data retrieval call binding the contract method 0x4b5e1b19.
@@ -2231,106 +2231,106 @@ func (_PrizesWallet *PrizesWalletTransactorSession) ClaimManyDonatedNfts(indices
 // ClaimManyDonatedTokens is a paid mutator transaction binding the contract method 0x50a15deb.
 //
 // Solidity: function claimManyDonatedTokens((uint256,address)[] donatedTokensToClaim_) returns()
-func (_PrizesWallet *PrizesWalletTransactor) ClaimManyDonatedTokens(opts *bind.TransactOpts, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim) (*types.Transaction, error) {
+func (_PrizesWallet *PrizesWalletTransactor) ClaimManyDonatedTokens(opts *bind.TransactOpts, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim) (*types.Transaction, error) {
 	return _PrizesWallet.contract.Transact(opts, "claimManyDonatedTokens", donatedTokensToClaim_)
 }
 
 // ClaimManyDonatedTokens is a paid mutator transaction binding the contract method 0x50a15deb.
 //
 // Solidity: function claimManyDonatedTokens((uint256,address)[] donatedTokensToClaim_) returns()
-func (_PrizesWallet *PrizesWalletSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim) (*types.Transaction, error) {
+func (_PrizesWallet *PrizesWalletSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim) (*types.Transaction, error) {
 	return _PrizesWallet.Contract.ClaimManyDonatedTokens(&_PrizesWallet.TransactOpts, donatedTokensToClaim_)
 }
 
 // ClaimManyDonatedTokens is a paid mutator transaction binding the contract method 0x50a15deb.
 //
 // Solidity: function claimManyDonatedTokens((uint256,address)[] donatedTokensToClaim_) returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim) (*types.Transaction, error) {
+func (_PrizesWallet *PrizesWalletTransactorSession) ClaimManyDonatedTokens(donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim) (*types.Transaction, error) {
 	return _PrizesWallet.Contract.ClaimManyDonatedTokens(&_PrizesWallet.TransactOpts, donatedTokensToClaim_)
 }
 
 // DepositEth is a paid mutator transaction binding the contract method 0x46f6b4e1.
 //
-// Solidity: function depositEth(uint256 roundNum_, address winner_) payable returns()
-func (_PrizesWallet *PrizesWalletTransactor) DepositEth(opts *bind.TransactOpts, roundNum_ *big.Int, winner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.contract.Transact(opts, "depositEth", roundNum_, winner_)
+// Solidity: function depositEth(uint256 roundNum_, address roundPrizeWinnerAddress_) payable returns()
+func (_PrizesWallet *PrizesWalletTransactor) DepositEth(opts *bind.TransactOpts, roundNum_ *big.Int, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.contract.Transact(opts, "depositEth", roundNum_, roundPrizeWinnerAddress_)
 }
 
 // DepositEth is a paid mutator transaction binding the contract method 0x46f6b4e1.
 //
-// Solidity: function depositEth(uint256 roundNum_, address winner_) payable returns()
-func (_PrizesWallet *PrizesWalletSession) DepositEth(roundNum_ *big.Int, winner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.DepositEth(&_PrizesWallet.TransactOpts, roundNum_, winner_)
+// Solidity: function depositEth(uint256 roundNum_, address roundPrizeWinnerAddress_) payable returns()
+func (_PrizesWallet *PrizesWalletSession) DepositEth(roundNum_ *big.Int, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.DepositEth(&_PrizesWallet.TransactOpts, roundNum_, roundPrizeWinnerAddress_)
 }
 
 // DepositEth is a paid mutator transaction binding the contract method 0x46f6b4e1.
 //
-// Solidity: function depositEth(uint256 roundNum_, address winner_) payable returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) DepositEth(roundNum_ *big.Int, winner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.DepositEth(&_PrizesWallet.TransactOpts, roundNum_, winner_)
+// Solidity: function depositEth(uint256 roundNum_, address roundPrizeWinnerAddress_) payable returns()
+func (_PrizesWallet *PrizesWalletTransactorSession) DepositEth(roundNum_ *big.Int, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.DepositEth(&_PrizesWallet.TransactOpts, roundNum_, roundPrizeWinnerAddress_)
 }
 
 // DonateNft is a paid mutator transaction binding the contract method 0xfe673fd3.
 //
-// Solidity: function donateNft(uint256 roundNum_, address donor_, address nftAddress_, uint256 nftId_) returns()
-func (_PrizesWallet *PrizesWalletTransactor) DonateNft(opts *bind.TransactOpts, roundNum_ *big.Int, donor_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
-	return _PrizesWallet.contract.Transact(opts, "donateNft", roundNum_, donor_, nftAddress_, nftId_)
+// Solidity: function donateNft(uint256 roundNum_, address donorAddress_, address nftAddress_, uint256 nftId_) returns()
+func (_PrizesWallet *PrizesWalletTransactor) DonateNft(opts *bind.TransactOpts, roundNum_ *big.Int, donorAddress_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
+	return _PrizesWallet.contract.Transact(opts, "donateNft", roundNum_, donorAddress_, nftAddress_, nftId_)
 }
 
 // DonateNft is a paid mutator transaction binding the contract method 0xfe673fd3.
 //
-// Solidity: function donateNft(uint256 roundNum_, address donor_, address nftAddress_, uint256 nftId_) returns()
-func (_PrizesWallet *PrizesWalletSession) DonateNft(roundNum_ *big.Int, donor_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.DonateNft(&_PrizesWallet.TransactOpts, roundNum_, donor_, nftAddress_, nftId_)
+// Solidity: function donateNft(uint256 roundNum_, address donorAddress_, address nftAddress_, uint256 nftId_) returns()
+func (_PrizesWallet *PrizesWalletSession) DonateNft(roundNum_ *big.Int, donorAddress_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.DonateNft(&_PrizesWallet.TransactOpts, roundNum_, donorAddress_, nftAddress_, nftId_)
 }
 
 // DonateNft is a paid mutator transaction binding the contract method 0xfe673fd3.
 //
-// Solidity: function donateNft(uint256 roundNum_, address donor_, address nftAddress_, uint256 nftId_) returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) DonateNft(roundNum_ *big.Int, donor_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.DonateNft(&_PrizesWallet.TransactOpts, roundNum_, donor_, nftAddress_, nftId_)
+// Solidity: function donateNft(uint256 roundNum_, address donorAddress_, address nftAddress_, uint256 nftId_) returns()
+func (_PrizesWallet *PrizesWalletTransactorSession) DonateNft(roundNum_ *big.Int, donorAddress_ common.Address, nftAddress_ common.Address, nftId_ *big.Int) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.DonateNft(&_PrizesWallet.TransactOpts, roundNum_, donorAddress_, nftAddress_, nftId_)
 }
 
 // DonateToken is a paid mutator transaction binding the contract method 0xe2051c7e.
 //
-// Solidity: function donateToken(uint256 roundNum_, address donor_, address tokenAddress_, uint256 amount_) returns()
-func (_PrizesWallet *PrizesWalletTransactor) DonateToken(opts *bind.TransactOpts, roundNum_ *big.Int, donor_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
-	return _PrizesWallet.contract.Transact(opts, "donateToken", roundNum_, donor_, tokenAddress_, amount_)
+// Solidity: function donateToken(uint256 roundNum_, address donorAddress_, address tokenAddress_, uint256 amount_) returns()
+func (_PrizesWallet *PrizesWalletTransactor) DonateToken(opts *bind.TransactOpts, roundNum_ *big.Int, donorAddress_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _PrizesWallet.contract.Transact(opts, "donateToken", roundNum_, donorAddress_, tokenAddress_, amount_)
 }
 
 // DonateToken is a paid mutator transaction binding the contract method 0xe2051c7e.
 //
-// Solidity: function donateToken(uint256 roundNum_, address donor_, address tokenAddress_, uint256 amount_) returns()
-func (_PrizesWallet *PrizesWalletSession) DonateToken(roundNum_ *big.Int, donor_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.DonateToken(&_PrizesWallet.TransactOpts, roundNum_, donor_, tokenAddress_, amount_)
+// Solidity: function donateToken(uint256 roundNum_, address donorAddress_, address tokenAddress_, uint256 amount_) returns()
+func (_PrizesWallet *PrizesWalletSession) DonateToken(roundNum_ *big.Int, donorAddress_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.DonateToken(&_PrizesWallet.TransactOpts, roundNum_, donorAddress_, tokenAddress_, amount_)
 }
 
 // DonateToken is a paid mutator transaction binding the contract method 0xe2051c7e.
 //
-// Solidity: function donateToken(uint256 roundNum_, address donor_, address tokenAddress_, uint256 amount_) returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) DonateToken(roundNum_ *big.Int, donor_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.DonateToken(&_PrizesWallet.TransactOpts, roundNum_, donor_, tokenAddress_, amount_)
+// Solidity: function donateToken(uint256 roundNum_, address donorAddress_, address tokenAddress_, uint256 amount_) returns()
+func (_PrizesWallet *PrizesWalletTransactorSession) DonateToken(roundNum_ *big.Int, donorAddress_ common.Address, tokenAddress_ common.Address, amount_ *big.Int) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.DonateToken(&_PrizesWallet.TransactOpts, roundNum_, donorAddress_, tokenAddress_, amount_)
 }
 
 // RegisterRoundEnd is a paid mutator transaction binding the contract method 0xcc5810d8.
 //
-// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinner_) returns()
-func (_PrizesWallet *PrizesWalletTransactor) RegisterRoundEnd(opts *bind.TransactOpts, roundNum_ *big.Int, roundMainPrizeWinner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.contract.Transact(opts, "registerRoundEnd", roundNum_, roundMainPrizeWinner_)
+// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinnerAddress_) returns()
+func (_PrizesWallet *PrizesWalletTransactor) RegisterRoundEnd(opts *bind.TransactOpts, roundNum_ *big.Int, roundMainPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.contract.Transact(opts, "registerRoundEnd", roundNum_, roundMainPrizeWinnerAddress_)
 }
 
 // RegisterRoundEnd is a paid mutator transaction binding the contract method 0xcc5810d8.
 //
-// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinner_) returns()
-func (_PrizesWallet *PrizesWalletSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.RegisterRoundEnd(&_PrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinner_)
+// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinnerAddress_) returns()
+func (_PrizesWallet *PrizesWalletSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.RegisterRoundEnd(&_PrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinnerAddress_)
 }
 
 // RegisterRoundEnd is a paid mutator transaction binding the contract method 0xcc5810d8.
 //
-// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinner_) returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.RegisterRoundEnd(&_PrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinner_)
+// Solidity: function registerRoundEnd(uint256 roundNum_, address roundMainPrizeWinnerAddress_) returns()
+func (_PrizesWallet *PrizesWalletTransactorSession) RegisterRoundEnd(roundNum_ *big.Int, roundMainPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.RegisterRoundEnd(&_PrizesWallet.TransactOpts, roundNum_, roundMainPrizeWinnerAddress_)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -2398,23 +2398,23 @@ func (_PrizesWallet *PrizesWalletTransactorSession) TransferOwnership(newOwner c
 
 // WithdrawEth is a paid mutator transaction binding the contract method 0x25e16063.
 //
-// Solidity: function withdrawEth(address winner_) returns()
-func (_PrizesWallet *PrizesWalletTransactor) WithdrawEth(opts *bind.TransactOpts, winner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.contract.Transact(opts, "withdrawEth", winner_)
+// Solidity: function withdrawEth(address roundPrizeWinnerAddress_) returns()
+func (_PrizesWallet *PrizesWalletTransactor) WithdrawEth(opts *bind.TransactOpts, roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.contract.Transact(opts, "withdrawEth", roundPrizeWinnerAddress_)
 }
 
 // WithdrawEth is a paid mutator transaction binding the contract method 0x25e16063.
 //
-// Solidity: function withdrawEth(address winner_) returns()
-func (_PrizesWallet *PrizesWalletSession) WithdrawEth(winner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.WithdrawEth(&_PrizesWallet.TransactOpts, winner_)
+// Solidity: function withdrawEth(address roundPrizeWinnerAddress_) returns()
+func (_PrizesWallet *PrizesWalletSession) WithdrawEth(roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.WithdrawEth(&_PrizesWallet.TransactOpts, roundPrizeWinnerAddress_)
 }
 
 // WithdrawEth is a paid mutator transaction binding the contract method 0x25e16063.
 //
-// Solidity: function withdrawEth(address winner_) returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) WithdrawEth(winner_ common.Address) (*types.Transaction, error) {
-	return _PrizesWallet.Contract.WithdrawEth(&_PrizesWallet.TransactOpts, winner_)
+// Solidity: function withdrawEth(address roundPrizeWinnerAddress_) returns()
+func (_PrizesWallet *PrizesWalletTransactorSession) WithdrawEth(roundPrizeWinnerAddress_ common.Address) (*types.Transaction, error) {
+	return _PrizesWallet.Contract.WithdrawEth(&_PrizesWallet.TransactOpts, roundPrizeWinnerAddress_)
 }
 
 // WithdrawEth0 is a paid mutator transaction binding the contract method 0xa0ef91df.
@@ -2441,21 +2441,21 @@ func (_PrizesWallet *PrizesWalletTransactorSession) WithdrawEth0() (*types.Trans
 // WithdrawEverything is a paid mutator transaction binding the contract method 0xa72be1b2.
 //
 // Solidity: function withdrawEverything(bool withdrawEth_, (uint256,address)[] donatedTokensToClaim_, uint256[] donatedNftIndices_) returns()
-func (_PrizesWallet *PrizesWalletTransactor) WithdrawEverything(opts *bind.TransactOpts, withdrawEth_ bool, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
+func (_PrizesWallet *PrizesWalletTransactor) WithdrawEverything(opts *bind.TransactOpts, withdrawEth_ bool, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
 	return _PrizesWallet.contract.Transact(opts, "withdrawEverything", withdrawEth_, donatedTokensToClaim_, donatedNftIndices_)
 }
 
 // WithdrawEverything is a paid mutator transaction binding the contract method 0xa72be1b2.
 //
 // Solidity: function withdrawEverything(bool withdrawEth_, (uint256,address)[] donatedTokensToClaim_, uint256[] donatedNftIndices_) returns()
-func (_PrizesWallet *PrizesWalletSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
+func (_PrizesWallet *PrizesWalletSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
 	return _PrizesWallet.Contract.WithdrawEverything(&_PrizesWallet.TransactOpts, withdrawEth_, donatedTokensToClaim_, donatedNftIndices_)
 }
 
 // WithdrawEverything is a paid mutator transaction binding the contract method 0xa72be1b2.
 //
 // Solidity: function withdrawEverything(bool withdrawEth_, (uint256,address)[] donatedTokensToClaim_, uint256[] donatedNftIndices_) returns()
-func (_PrizesWallet *PrizesWalletTransactorSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicGameConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
+func (_PrizesWallet *PrizesWalletTransactorSession) WithdrawEverything(withdrawEth_ bool, donatedTokensToClaim_ []CosmicSignatureConstantsDonatedTokenToClaim, donatedNftIndices_ []*big.Int) (*types.Transaction, error) {
 	return _PrizesWallet.Contract.WithdrawEverything(&_PrizesWallet.TransactOpts, withdrawEth_, donatedTokensToClaim_, donatedNftIndices_)
 }
 
@@ -2528,17 +2528,17 @@ func (it *PrizesWalletDonatedNftClaimedIterator) Close() error {
 
 // PrizesWalletDonatedNftClaimed represents a DonatedNftClaimed event raised by the PrizesWallet contract.
 type PrizesWalletDonatedNftClaimed struct {
-	RoundNum    *big.Int
-	Beneficiary common.Address
-	NftAddress  common.Address
-	NftId       *big.Int
-	Index       *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+	RoundNum           *big.Int
+	BeneficiaryAddress common.Address
+	NftAddress         common.Address
+	NftId              *big.Int
+	Index              *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
 }
 
 // FilterDonatedNftClaimed is a free log retrieval operation binding the contract event 0x03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3.
 //
-// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiary, address nftAddress, uint256 nftId, uint256 index)
+// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiaryAddress, address nftAddress, uint256 nftId, uint256 index)
 func (_PrizesWallet *PrizesWalletFilterer) FilterDonatedNftClaimed(opts *bind.FilterOpts, roundNum []*big.Int) (*PrizesWalletDonatedNftClaimedIterator, error) {
 
 	var roundNumRule []interface{}
@@ -2555,7 +2555,7 @@ func (_PrizesWallet *PrizesWalletFilterer) FilterDonatedNftClaimed(opts *bind.Fi
 
 // WatchDonatedNftClaimed is a free log subscription operation binding the contract event 0x03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3.
 //
-// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiary, address nftAddress, uint256 nftId, uint256 index)
+// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiaryAddress, address nftAddress, uint256 nftId, uint256 index)
 func (_PrizesWallet *PrizesWalletFilterer) WatchDonatedNftClaimed(opts *bind.WatchOpts, sink chan<- *PrizesWalletDonatedNftClaimed, roundNum []*big.Int) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
@@ -2597,7 +2597,7 @@ func (_PrizesWallet *PrizesWalletFilterer) WatchDonatedNftClaimed(opts *bind.Wat
 
 // ParseDonatedNftClaimed is a log parse operation binding the contract event 0x03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3.
 //
-// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiary, address nftAddress, uint256 nftId, uint256 index)
+// Solidity: event DonatedNftClaimed(uint256 indexed roundNum, address beneficiaryAddress, address nftAddress, uint256 nftId, uint256 index)
 func (_PrizesWallet *PrizesWalletFilterer) ParseDonatedNftClaimed(log types.Log) (*PrizesWalletDonatedNftClaimed, error) {
 	event := new(PrizesWalletDonatedNftClaimed)
 	if err := _PrizesWallet.contract.UnpackLog(event, "DonatedNftClaimed", log); err != nil {
@@ -2676,16 +2676,16 @@ func (it *PrizesWalletDonatedTokenClaimedIterator) Close() error {
 
 // PrizesWalletDonatedTokenClaimed represents a DonatedTokenClaimed event raised by the PrizesWallet contract.
 type PrizesWalletDonatedTokenClaimed struct {
-	RoundNum     *big.Int
-	Beneficiary  common.Address
-	TokenAddress common.Address
-	Amount       *big.Int
-	Raw          types.Log // Blockchain specific contextual infos
+	RoundNum           *big.Int
+	BeneficiaryAddress common.Address
+	TokenAddress       common.Address
+	Amount             *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
 }
 
 // FilterDonatedTokenClaimed is a free log retrieval operation binding the contract event 0xaf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0.
 //
-// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiary, address tokenAddress, uint256 amount)
+// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiaryAddress, address tokenAddress, uint256 amount)
 func (_PrizesWallet *PrizesWalletFilterer) FilterDonatedTokenClaimed(opts *bind.FilterOpts, roundNum []*big.Int) (*PrizesWalletDonatedTokenClaimedIterator, error) {
 
 	var roundNumRule []interface{}
@@ -2702,7 +2702,7 @@ func (_PrizesWallet *PrizesWalletFilterer) FilterDonatedTokenClaimed(opts *bind.
 
 // WatchDonatedTokenClaimed is a free log subscription operation binding the contract event 0xaf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0.
 //
-// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiary, address tokenAddress, uint256 amount)
+// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiaryAddress, address tokenAddress, uint256 amount)
 func (_PrizesWallet *PrizesWalletFilterer) WatchDonatedTokenClaimed(opts *bind.WatchOpts, sink chan<- *PrizesWalletDonatedTokenClaimed, roundNum []*big.Int) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
@@ -2744,7 +2744,7 @@ func (_PrizesWallet *PrizesWalletFilterer) WatchDonatedTokenClaimed(opts *bind.W
 
 // ParseDonatedTokenClaimed is a log parse operation binding the contract event 0xaf1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0.
 //
-// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiary, address tokenAddress, uint256 amount)
+// Solidity: event DonatedTokenClaimed(uint256 indexed roundNum, address beneficiaryAddress, address tokenAddress, uint256 amount)
 func (_PrizesWallet *PrizesWalletFilterer) ParseDonatedTokenClaimed(log types.Log) (*PrizesWalletDonatedTokenClaimed, error) {
 	event := new(PrizesWalletDonatedTokenClaimed)
 	if err := _PrizesWallet.contract.UnpackLog(event, "DonatedTokenClaimed", log); err != nil {
@@ -2823,27 +2823,27 @@ func (it *PrizesWalletEthReceivedIterator) Close() error {
 
 // PrizesWalletEthReceived represents a EthReceived event raised by the PrizesWallet contract.
 type PrizesWalletEthReceived struct {
-	RoundNum *big.Int
-	Winner   common.Address
-	Amount   *big.Int
-	Raw      types.Log // Blockchain specific contextual infos
+	RoundNum                *big.Int
+	RoundPrizeWinnerAddress common.Address
+	Amount                  *big.Int
+	Raw                     types.Log // Blockchain specific contextual infos
 }
 
 // FilterEthReceived is a free log retrieval operation binding the contract event 0x999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326.
 //
-// Solidity: event EthReceived(uint256 indexed roundNum, address indexed winner, uint256 amount)
-func (_PrizesWallet *PrizesWalletFilterer) FilterEthReceived(opts *bind.FilterOpts, roundNum []*big.Int, winner []common.Address) (*PrizesWalletEthReceivedIterator, error) {
+// Solidity: event EthReceived(uint256 indexed roundNum, address indexed roundPrizeWinnerAddress, uint256 amount)
+func (_PrizesWallet *PrizesWalletFilterer) FilterEthReceived(opts *bind.FilterOpts, roundNum []*big.Int, roundPrizeWinnerAddress []common.Address) (*PrizesWalletEthReceivedIterator, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "EthReceived", roundNumRule, winnerRule)
+	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "EthReceived", roundNumRule, roundPrizeWinnerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2852,19 +2852,19 @@ func (_PrizesWallet *PrizesWalletFilterer) FilterEthReceived(opts *bind.FilterOp
 
 // WatchEthReceived is a free log subscription operation binding the contract event 0x999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326.
 //
-// Solidity: event EthReceived(uint256 indexed roundNum, address indexed winner, uint256 amount)
-func (_PrizesWallet *PrizesWalletFilterer) WatchEthReceived(opts *bind.WatchOpts, sink chan<- *PrizesWalletEthReceived, roundNum []*big.Int, winner []common.Address) (event.Subscription, error) {
+// Solidity: event EthReceived(uint256 indexed roundNum, address indexed roundPrizeWinnerAddress, uint256 amount)
+func (_PrizesWallet *PrizesWalletFilterer) WatchEthReceived(opts *bind.WatchOpts, sink chan<- *PrizesWalletEthReceived, roundNum []*big.Int, roundPrizeWinnerAddress []common.Address) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "EthReceived", roundNumRule, winnerRule)
+	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "EthReceived", roundNumRule, roundPrizeWinnerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2898,7 +2898,7 @@ func (_PrizesWallet *PrizesWalletFilterer) WatchEthReceived(opts *bind.WatchOpts
 
 // ParseEthReceived is a log parse operation binding the contract event 0x999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326.
 //
-// Solidity: event EthReceived(uint256 indexed roundNum, address indexed winner, uint256 amount)
+// Solidity: event EthReceived(uint256 indexed roundNum, address indexed roundPrizeWinnerAddress, uint256 amount)
 func (_PrizesWallet *PrizesWalletFilterer) ParseEthReceived(log types.Log) (*PrizesWalletEthReceived, error) {
 	event := new(PrizesWalletEthReceived)
 	if err := _PrizesWallet.contract.UnpackLog(event, "EthReceived", log); err != nil {
@@ -2977,27 +2977,27 @@ func (it *PrizesWalletEthWithdrawnIterator) Close() error {
 
 // PrizesWalletEthWithdrawn represents a EthWithdrawn event raised by the PrizesWallet contract.
 type PrizesWalletEthWithdrawn struct {
-	Winner      common.Address
-	Beneficiary common.Address
-	Amount      *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+	RoundPrizeWinnerAddress common.Address
+	BeneficiaryAddress      common.Address
+	Amount                  *big.Int
+	Raw                     types.Log // Blockchain specific contextual infos
 }
 
 // FilterEthWithdrawn is a free log retrieval operation binding the contract event 0x4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383.
 //
-// Solidity: event EthWithdrawn(address indexed winner, address indexed beneficiary, uint256 amount)
-func (_PrizesWallet *PrizesWalletFilterer) FilterEthWithdrawn(opts *bind.FilterOpts, winner []common.Address, beneficiary []common.Address) (*PrizesWalletEthWithdrawnIterator, error) {
+// Solidity: event EthWithdrawn(address indexed roundPrizeWinnerAddress, address indexed beneficiaryAddress, uint256 amount)
+func (_PrizesWallet *PrizesWalletFilterer) FilterEthWithdrawn(opts *bind.FilterOpts, roundPrizeWinnerAddress []common.Address, beneficiaryAddress []common.Address) (*PrizesWalletEthWithdrawnIterator, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
-	var beneficiaryRule []interface{}
-	for _, beneficiaryItem := range beneficiary {
-		beneficiaryRule = append(beneficiaryRule, beneficiaryItem)
+	var beneficiaryAddressRule []interface{}
+	for _, beneficiaryAddressItem := range beneficiaryAddress {
+		beneficiaryAddressRule = append(beneficiaryAddressRule, beneficiaryAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "EthWithdrawn", winnerRule, beneficiaryRule)
+	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "EthWithdrawn", roundPrizeWinnerAddressRule, beneficiaryAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3006,19 +3006,19 @@ func (_PrizesWallet *PrizesWalletFilterer) FilterEthWithdrawn(opts *bind.FilterO
 
 // WatchEthWithdrawn is a free log subscription operation binding the contract event 0x4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383.
 //
-// Solidity: event EthWithdrawn(address indexed winner, address indexed beneficiary, uint256 amount)
-func (_PrizesWallet *PrizesWalletFilterer) WatchEthWithdrawn(opts *bind.WatchOpts, sink chan<- *PrizesWalletEthWithdrawn, winner []common.Address, beneficiary []common.Address) (event.Subscription, error) {
+// Solidity: event EthWithdrawn(address indexed roundPrizeWinnerAddress, address indexed beneficiaryAddress, uint256 amount)
+func (_PrizesWallet *PrizesWalletFilterer) WatchEthWithdrawn(opts *bind.WatchOpts, sink chan<- *PrizesWalletEthWithdrawn, roundPrizeWinnerAddress []common.Address, beneficiaryAddress []common.Address) (event.Subscription, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
+	var roundPrizeWinnerAddressRule []interface{}
+	for _, roundPrizeWinnerAddressItem := range roundPrizeWinnerAddress {
+		roundPrizeWinnerAddressRule = append(roundPrizeWinnerAddressRule, roundPrizeWinnerAddressItem)
 	}
-	var beneficiaryRule []interface{}
-	for _, beneficiaryItem := range beneficiary {
-		beneficiaryRule = append(beneficiaryRule, beneficiaryItem)
+	var beneficiaryAddressRule []interface{}
+	for _, beneficiaryAddressItem := range beneficiaryAddress {
+		beneficiaryAddressRule = append(beneficiaryAddressRule, beneficiaryAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "EthWithdrawn", winnerRule, beneficiaryRule)
+	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "EthWithdrawn", roundPrizeWinnerAddressRule, beneficiaryAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3052,7 +3052,7 @@ func (_PrizesWallet *PrizesWalletFilterer) WatchEthWithdrawn(opts *bind.WatchOpt
 
 // ParseEthWithdrawn is a log parse operation binding the contract event 0x4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383.
 //
-// Solidity: event EthWithdrawn(address indexed winner, address indexed beneficiary, uint256 amount)
+// Solidity: event EthWithdrawn(address indexed roundPrizeWinnerAddress, address indexed beneficiaryAddress, uint256 amount)
 func (_PrizesWallet *PrizesWalletFilterer) ParseEthWithdrawn(log types.Log) (*PrizesWalletEthWithdrawn, error) {
 	event := new(PrizesWalletEthWithdrawn)
 	if err := _PrizesWallet.contract.UnpackLog(event, "EthWithdrawn", log); err != nil {
@@ -3131,33 +3131,33 @@ func (it *PrizesWalletNftDonatedIterator) Close() error {
 
 // PrizesWalletNftDonated represents a NftDonated event raised by the PrizesWallet contract.
 type PrizesWalletNftDonated struct {
-	RoundNum   *big.Int
-	Donor      common.Address
-	NftAddress common.Address
-	NftId      *big.Int
-	Index      *big.Int
-	Raw        types.Log // Blockchain specific contextual infos
+	RoundNum     *big.Int
+	DonorAddress common.Address
+	NftAddress   common.Address
+	NftId        *big.Int
+	Index        *big.Int
+	Raw          types.Log // Blockchain specific contextual infos
 }
 
 // FilterNftDonated is a free log retrieval operation binding the contract event 0xb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23.
 //
-// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donor, address indexed nftAddress, uint256 nftId, uint256 index)
-func (_PrizesWallet *PrizesWalletFilterer) FilterNftDonated(opts *bind.FilterOpts, roundNum []*big.Int, donor []common.Address, nftAddress []common.Address) (*PrizesWalletNftDonatedIterator, error) {
+// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed nftAddress, uint256 nftId, uint256 index)
+func (_PrizesWallet *PrizesWalletFilterer) FilterNftDonated(opts *bind.FilterOpts, roundNum []*big.Int, donorAddress []common.Address, nftAddress []common.Address) (*PrizesWalletNftDonatedIterator, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var nftAddressRule []interface{}
 	for _, nftAddressItem := range nftAddress {
 		nftAddressRule = append(nftAddressRule, nftAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "NftDonated", roundNumRule, donorRule, nftAddressRule)
+	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "NftDonated", roundNumRule, donorAddressRule, nftAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3166,23 +3166,23 @@ func (_PrizesWallet *PrizesWalletFilterer) FilterNftDonated(opts *bind.FilterOpt
 
 // WatchNftDonated is a free log subscription operation binding the contract event 0xb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23.
 //
-// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donor, address indexed nftAddress, uint256 nftId, uint256 index)
-func (_PrizesWallet *PrizesWalletFilterer) WatchNftDonated(opts *bind.WatchOpts, sink chan<- *PrizesWalletNftDonated, roundNum []*big.Int, donor []common.Address, nftAddress []common.Address) (event.Subscription, error) {
+// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed nftAddress, uint256 nftId, uint256 index)
+func (_PrizesWallet *PrizesWalletFilterer) WatchNftDonated(opts *bind.WatchOpts, sink chan<- *PrizesWalletNftDonated, roundNum []*big.Int, donorAddress []common.Address, nftAddress []common.Address) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var nftAddressRule []interface{}
 	for _, nftAddressItem := range nftAddress {
 		nftAddressRule = append(nftAddressRule, nftAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "NftDonated", roundNumRule, donorRule, nftAddressRule)
+	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "NftDonated", roundNumRule, donorAddressRule, nftAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3216,7 +3216,7 @@ func (_PrizesWallet *PrizesWalletFilterer) WatchNftDonated(opts *bind.WatchOpts,
 
 // ParseNftDonated is a log parse operation binding the contract event 0xb12e72bab0c2a8fe98175a3c02792645ebdf65d37cf3983517e6d1c5ab842e23.
 //
-// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donor, address indexed nftAddress, uint256 nftId, uint256 index)
+// Solidity: event NftDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed nftAddress, uint256 nftId, uint256 index)
 func (_PrizesWallet *PrizesWalletFilterer) ParseNftDonated(log types.Log) (*PrizesWalletNftDonated, error) {
 	event := new(PrizesWalletNftDonated)
 	if err := _PrizesWallet.contract.UnpackLog(event, "NftDonated", log); err != nil {
@@ -3583,7 +3583,7 @@ func (it *PrizesWalletTokenDonatedIterator) Close() error {
 // PrizesWalletTokenDonated represents a TokenDonated event raised by the PrizesWallet contract.
 type PrizesWalletTokenDonated struct {
 	RoundNum     *big.Int
-	Donor        common.Address
+	DonorAddress common.Address
 	TokenAddress common.Address
 	Amount       *big.Int
 	Raw          types.Log // Blockchain specific contextual infos
@@ -3591,23 +3591,23 @@ type PrizesWalletTokenDonated struct {
 
 // FilterTokenDonated is a free log retrieval operation binding the contract event 0x3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af.
 //
-// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donor, address indexed tokenAddress, uint256 amount)
-func (_PrizesWallet *PrizesWalletFilterer) FilterTokenDonated(opts *bind.FilterOpts, roundNum []*big.Int, donor []common.Address, tokenAddress []common.Address) (*PrizesWalletTokenDonatedIterator, error) {
+// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed tokenAddress, uint256 amount)
+func (_PrizesWallet *PrizesWalletFilterer) FilterTokenDonated(opts *bind.FilterOpts, roundNum []*big.Int, donorAddress []common.Address, tokenAddress []common.Address) (*PrizesWalletTokenDonatedIterator, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var tokenAddressRule []interface{}
 	for _, tokenAddressItem := range tokenAddress {
 		tokenAddressRule = append(tokenAddressRule, tokenAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "TokenDonated", roundNumRule, donorRule, tokenAddressRule)
+	logs, sub, err := _PrizesWallet.contract.FilterLogs(opts, "TokenDonated", roundNumRule, donorAddressRule, tokenAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3616,23 +3616,23 @@ func (_PrizesWallet *PrizesWalletFilterer) FilterTokenDonated(opts *bind.FilterO
 
 // WatchTokenDonated is a free log subscription operation binding the contract event 0x3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af.
 //
-// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donor, address indexed tokenAddress, uint256 amount)
-func (_PrizesWallet *PrizesWalletFilterer) WatchTokenDonated(opts *bind.WatchOpts, sink chan<- *PrizesWalletTokenDonated, roundNum []*big.Int, donor []common.Address, tokenAddress []common.Address) (event.Subscription, error) {
+// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed tokenAddress, uint256 amount)
+func (_PrizesWallet *PrizesWalletFilterer) WatchTokenDonated(opts *bind.WatchOpts, sink chan<- *PrizesWalletTokenDonated, roundNum []*big.Int, donorAddress []common.Address, tokenAddress []common.Address) (event.Subscription, error) {
 
 	var roundNumRule []interface{}
 	for _, roundNumItem := range roundNum {
 		roundNumRule = append(roundNumRule, roundNumItem)
 	}
-	var donorRule []interface{}
-	for _, donorItem := range donor {
-		donorRule = append(donorRule, donorItem)
+	var donorAddressRule []interface{}
+	for _, donorAddressItem := range donorAddress {
+		donorAddressRule = append(donorAddressRule, donorAddressItem)
 	}
 	var tokenAddressRule []interface{}
 	for _, tokenAddressItem := range tokenAddress {
 		tokenAddressRule = append(tokenAddressRule, tokenAddressItem)
 	}
 
-	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "TokenDonated", roundNumRule, donorRule, tokenAddressRule)
+	logs, sub, err := _PrizesWallet.contract.WatchLogs(opts, "TokenDonated", roundNumRule, donorAddressRule, tokenAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3666,7 +3666,7 @@ func (_PrizesWallet *PrizesWalletFilterer) WatchTokenDonated(opts *bind.WatchOpt
 
 // ParseTokenDonated is a log parse operation binding the contract event 0x3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af.
 //
-// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donor, address indexed tokenAddress, uint256 amount)
+// Solidity: event TokenDonated(uint256 indexed roundNum, address indexed donorAddress, address indexed tokenAddress, uint256 amount)
 func (_PrizesWallet *PrizesWalletFilterer) ParseTokenDonated(log types.Log) (*PrizesWalletTokenDonated, error) {
 	event := new(PrizesWalletTokenDonated)
 	if err := _PrizesWallet.contract.UnpackLog(event, "TokenDonated", log); err != nil {
