@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"context"
 	"math/big"
-	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -42,9 +41,21 @@ func main() {
 	cosmic_game_addr := common.HexToAddress(cg_addr)
 	fmt.Printf("Calling to contract at %v\n",cosmic_game_addr.String())
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
+		os.Exit(1)
+	}
+	prize_wallet_addr,err := cosmic_game_ctrct.PrizesWallet(&copts);
+	if err != nil {
+		fmt.Printf("Error at PrizesWallet()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	prizes_wallet,err := NewPrizesWallet(prize_wallet_addr,eclient);
+	if err != nil {
+		fmt.Printf("Error at instantiation of PrizesWallet()(): %v\n",err)
+		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
 
@@ -72,13 +83,13 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	prize_amount,err := cosmic_game_ctrct.PrizeAmount(&copts)
+	prize_amount,err := cosmic_game_ctrct.MainPrizeAmount(&copts)
 	if err != nil {
 		fmt.Printf("Error at PrizeAmount()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	prize_percentage,err := cosmic_game_ctrct.PrizePercentage(&copts)
+	prize_percentage,err := cosmic_game_ctrct.MainPrizePercentage(&copts)
 	if err != nil {
 		fmt.Printf("Error at PrizePercentage()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -96,13 +107,13 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	nft_bidders,err := cosmic_game_ctrct.NumRaffleNFTWinnersBidding(&copts)
+	nft_bidders,err := cosmic_game_ctrct.NumRaffleNftWinnersBidding(&copts)
 	if err != nil {
 		fmt.Printf("Error at NumRaffleNFTWinnersBidding()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	nft_stakers,err := cosmic_game_ctrct.NumRaffleNFTWinnersStakingRWalk(&copts)
+	nft_stakers,err := cosmic_game_ctrct.NumRaffleNftWinnersStakingRWalk(&copts)
 	if err != nil {
 		fmt.Printf("Error at NumRaffleNFTWinnersBidding()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -115,7 +126,7 @@ func main() {
 		os.Exit(1)
 	}
 	var charity_donation_recipient string
-	charity_addr,err := cosmic_game_ctrct.Charity(&copts)
+	charity_addr,err := cosmic_game_ctrct.CharityAddress(&copts)
 	if err != nil {
 		fmt.Printf("Error at Charity()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -145,7 +156,7 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	last_bidder,err := cosmic_game_ctrct.LastBidder(&copts)
+	last_bidder,err := cosmic_game_ctrct.LastBidderAddress(&copts)
 	if err != nil {
 		fmt.Printf("Error at LastBidder()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -164,7 +175,7 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	num_donated_nfts,err := cosmic_game_ctrct.NumDonatedNFTs(&copts)
+	num_donated_nfts,err := prizes_wallet.NumDonatedNfts(&copts)
 	if err != nil {
 		fmt.Printf("Error at numDonatedNFTs()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -182,7 +193,7 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	timeout,err := cosmic_game_ctrct.TimeoutClaimPrize(&copts)
+	timeout,err := cosmic_game_ctrct.TimeoutDurationToClaimMainPrize(&copts)
 	if err != nil {
 		fmt.Printf("Error at timeoutClaimPrize(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -194,33 +205,22 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	blogic_addr,err := cosmic_game_ctrct.BLogic(&copts)
-	if err != nil {
-		fmt.Printf("Error at bLogic(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	staking_addr_cst,err := cosmic_game_ctrct.StakingWalletCST(&copts)
+	/*
+	staking_addr_cst,err := cosmic_game_ctrct.StakingWalletCosmicSignatureNft(&copts)
 	if err != nil {
 		fmt.Printf("Error at StakingWalletCST(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	staking_addr_rwalk,err := cosmic_game_ctrct.StakingWalletRWalk(&copts)
+	staking_addr_rwalk,err := cosmic_game_ctrct.StakingWalletRandomWalkNft(&copts)
 	if err != nil {
 		fmt.Printf("Error at StakingWalletRWalk(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
-	}
-	randomwalk_addr,err := cosmic_game_ctrct.RandomWalk(&copts)
+	}*/
+	randomwalk_addr,err := cosmic_game_ctrct.RandomWalkNft(&copts)
 	if err != nil {
 		fmt.Printf("Error at RandomWalk(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	last_bid_type,err := cosmic_game_ctrct.LastBidType(&copts)
-	if err != nil {
-		fmt.Printf("Error at LastBidType()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
@@ -230,15 +230,9 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	cst_auction_length,err := cosmic_game_ctrct.CSTAuctionLength(&copts)
+	cst_auction_length,err := cosmic_game_ctrct.CstAuctionLength(&copts)
 	if err != nil {
 		fmt.Printf("Error at CSTAuctionLength()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	system_mode,err := cosmic_game_ctrct.SystemMode(&copts)
-	if err != nil {
-		fmt.Printf("Error at SystemMode()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
@@ -293,74 +287,8 @@ func main() {
 	fmt.Printf("Endurance champion state variable = %v\n",stvar_endurance_champ.String())
 	fmt.Printf("Endurance champion duration state variable = %v\n",stvar_endurance_champ_dur.Int64())
 	fmt.Printf("Stellar champion = %v\n",stellar_spender.String())
-	fmt.Printf("BusinessLogic = %v\n",blogic_addr.String())
 	fmt.Printf("RandomWalk addr = %v\n",randomwalk_addr.String())
-	fmt.Printf("LastBidType = %v\n",last_bid_type)
 	fmt.Printf("ActivationTime= %v\n",activation_time)
 	fmt.Printf("CSTAuctionLength = %v\n",cst_auction_length);
-	fmt.Printf("SystemMode = %v (0-Runtime, 1-Prepare maintenance, 2-Maintenance)\n",system_mode.String());
 
-	swallet_cst,err := NewStakingWalletCST(staking_addr_cst,eclient);
-	if err != nil {
-		fmt.Printf("Failed to instantiate StakingWalletCST contract: %v\n",err)
-		os.Exit(1)
-	}
-	swallet_rwalk,err := NewStakingWalletRWalk(staking_addr_rwalk,eclient);
-	if err != nil {
-		fmt.Printf("Failed to instantiate StakingWalletRWalk contract: %v\n",err)
-		os.Exit(1)
-	}
-	staked_nfts_cst,err := swallet_cst.NumStakedNFTs(&copts);
-	if err != nil {
-		fmt.Printf("Failed to call NumStakedNFTs() method in StakingWalletCST: %v\n",err)
-		os.Exit(1)
-	}
-	staked_nfts_rwalk,err := swallet_rwalk.NumStakedNFTs(&copts);
-	if err != nil {
-		fmt.Printf("Failed to call NumStakedNFTs() method in StakingWalletRWalk: %v\n",err)
-		os.Exit(1)
-	}
-
-	fmt.Printf("StakingWalletCST->numStakedNFTs = %v\n",staked_nfts_cst.String())
-	fmt.Printf("STakingWalletRWalk->numStakedNFTs = %v\n",staked_nfts_rwalk.String())
-	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate BusinessLogic contract: %v\n",err)
-		os.Exit(1)
-	}
-	cst_bytes,err := blogic_ctrct.CurrentCSTPrice(&copts);
-	if err != nil {
-		fmt.Printf("Error at CurrentCSTPrice()(): %v\n",err)
-	} else {
-		slice_len := len(cst_bytes);
-		fmt.Printf("currentCSTPrice output length: %v\n",slice_len);
-		if slice_len > 0 {
-			fmt.Printf("currentCSTPrice hex value: %v\n",hex.EncodeToString(cst_bytes));
-			price_hash := common.BytesToHash(cst_bytes[64:])
-			cst_price := price_hash.Big()
-			f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-			f_price := big.NewFloat(0.0).SetInt(cst_price)
-			f_quo := big.NewFloat(0.0).Quo(f_price,f_divisor)
-			bid_price_eth,_ := f_quo.Float64()
-			fmt.Printf("CST Bid Price (Ether) = %.6f\n",bid_price_eth)
-			fmt.Printf("CST Bid Price (Wei) = %v\n",cst_price.String())
-		}
-	}
-	ad_bytes,err := blogic_ctrct.AuctionDuration(&copts);
-	if err != nil {
-		fmt.Printf("Error at AuctionDuration()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	} else {
-		slice_len := len(cst_bytes);
-		fmt.Printf("AuctionDuration() output length: %v\n",slice_len);
-		if slice_len > 0 {
-			seconds_hash := common.BytesToHash(ad_bytes[64:96])
-			seconds := seconds_hash.Big().Int64()
-			duration_hash := common.BytesToHash(ad_bytes[96:])
-			duration := duration_hash.Big().Int64()
-			fmt.Printf("CST auction elapsed time (sec): %v\n",seconds)
-			fmt.Printf("CST auction duration: %v\n",duration)
-		}
-	}
 }

@@ -53,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	stw_contract,err := NewStakingWalletRWalk(staking_wallet_addr,eclient)
+	stw_contract,err := NewStakingWalletRandomWalkNft(staking_wallet_addr,eclient)
 	if err != nil {
 		fmt.Printf("Error instantiating StakingWallet: %v\n",err)
 		os.Exit(1)

@@ -128,7 +128,7 @@ func do_reload_contract_constants() {
 		Info.Printf(err_str)
 		fmt.Printf(err_str)
 	}
-	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	bwcontract,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -143,7 +143,7 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			price_increase = "error"
 		} else { price_increase=tmp_val.String() }
-		charity_addr,err = bwcontract.Charity(&copts)
+		charity_addr,err = bwcontract.CharityAddress(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at Charity() call: %v\n",err)
 			Error.Printf(err_str)
@@ -199,14 +199,14 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			raffle_eth_winners_bidding = -1 
 		} else { raffle_eth_winners_bidding = tmp_val.Int64()}
-		tmp_val,err = bwcontract.NumRaffleNFTWinnersBidding(&copts)
+		tmp_val,err = bwcontract.NumRaffleNftWinnersBidding(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersBidding() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			raffle_nft_winners_bidding = -1
 		} else { raffle_nft_winners_bidding = tmp_val.Int64() }
-		tmp_val,err = bwcontract.NumRaffleNFTWinnersStakingRWalk(&copts)
+		tmp_val,err = bwcontract.NumRaffleNftWinnersStakingRWalk(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersStakingRWalk() call: %v\n",err)
 			Error.Printf(err_str)
@@ -217,7 +217,7 @@ func do_reload_contract_constants() {
 }
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
-	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	bwcontract,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -282,7 +282,7 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			nanoseconds_extra = "error"
 		} else { nanoseconds_extra = tmp_val.String() }
-		last_bidder,err = bwcontract.LastBidder(&copts)
+		last_bidder,err = bwcontract.LastBidderAddress(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at LastBidder() call: %v\n",err)
 			Error.Printf(err_str)
@@ -1727,7 +1727,7 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 	// both function return a byte array of 32 bytes , this workaround will work, otherwise, we would
 	// need to make explicit eth_call() method to CosmicGame contract (because the default is to transact
 	// since the method is not declared as 'view')
-	contract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	contract,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)

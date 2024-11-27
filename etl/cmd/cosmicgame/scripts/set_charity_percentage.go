@@ -52,7 +52,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cosmicgame_ctrct,err := NewCosmicGame(cosmicgame_addr,eclient)
+	cosmicgame_ctrct,err := NewCosmicSignatureGame(cosmicgame_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate contract: %v\n",err)
 		os.Exit(1)

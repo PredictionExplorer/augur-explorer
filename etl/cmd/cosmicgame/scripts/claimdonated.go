@@ -52,11 +52,23 @@ func main() {
 
 	cosmic_game_addr := common.HexToAddress(os.Args[2])
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
 	}
+	var copts bind.CallOpts
+	prizes_wallet_addr, err := cosmic_game_ctrct.PrizesWallet(&copts)
+	if err!=nil {
+		fmt.Printf("Failed to get PrizesWallet address : %v\n",err)
+		os.Exit(1)
+	}
+	prizes_wallet,err := NewPrizesWallet(prizes_wallet_addr,eclient)
+	if err!=nil {
+		fmt.Printf("Failed to instantiate PrizesWallet contract: %v\n",err)
+		os.Exit(1)
+	}
+
 
 	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
 	if err != nil {
@@ -103,7 +115,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.ClaimDonatedNFT(txopts,big.NewInt(num))
+	tx,err := prizes_wallet.ClaimDonatedNft(txopts,big.NewInt(num))
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

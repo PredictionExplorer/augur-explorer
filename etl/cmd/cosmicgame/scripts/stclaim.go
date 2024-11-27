@@ -33,8 +33,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) != 5 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [staking_wallet_addr] [action_id] [deposit_id]\n\n\t\tClaims staking reward(deposit)\n",os.Args[0])
+	if len(os.Args) != 4 {
+		fmt.Printf("Usage: \n\t\t%v [priv_key] [staking_wallet_addr] [action_id]\n\n\t\tClaims staking reward(deposit)\n",os.Args[0])
 		os.Exit(1)
 	}
 
@@ -52,15 +52,9 @@ func main() {
 		fmt.Printf("error parsing action_id parameter: %v\n",err)
 		os.Exit(1)
 	}
-	deposit_id_str := os.Args[4]
-	deposit_id,err := strconv.ParseInt(deposit_id_str,10,64)
-	if err != nil {
-		fmt.Printf("error parsing deposit_id parameter: %v\n",err)
-		os.Exit(1)
-	}
 
 //	var copts bind.CallOpts
-	stw_contract,err := NewStakingWallet(staking_wallet_addr,eclient)
+	stw_contract,err := NewStakingWalletCosmicSignatureNft(staking_wallet_addr,eclient)
 	if err != nil {
 		fmt.Printf("Error instantiating BusinessLogic: %v\n",err)
 		os.Exit(1)
@@ -110,7 +104,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := stw_contract.ClaimReward(txopts,big.NewInt(action_id),big.NewInt(deposit_id))
+	tx,err := stw_contract.PayReward(txopts,big.NewInt(action_id),big.NewInt(999))
 	if tx != nil {
 		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	}

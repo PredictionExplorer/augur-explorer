@@ -44,29 +44,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	var copts bind.CallOpts
 	cosmic_game_addr := common.HexToAddress(os.Args[2])
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
 	}
 
-	var copts bind.CallOpts
-	blc,err := NewBusinessLogic(cosmic_game_addr,eclient)
-	if err != nil {
-		fmt.Printf("Error instantiating BusinessLogic: %v\n",err)
-		os.Exit(1)
-	}
-	cst_price_bytes,err := blc.CurrentCSTPrice(&copts)
-	if err != nil {
-		fmt.Printf("Error at currentCSTPrice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	b := cst_price_bytes[64:];
-	h := common.BytesToHash(b);
-	cst_price := h.Big()
+	cst_price,err := cosmic_game_ctrct.GetCurrentBidPriceCST(&copts)
 	fmt.Printf("CST price = %v\n",cst_price.String())
 
 	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
@@ -113,7 +100,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.BidWithCST(txopts,"bid with CST from golang")
+	tx,err := cosmic_game_ctrct.BidWithCst(txopts,cst_price,"bid with CST from golang")
 	if tx != nil {
 		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	}

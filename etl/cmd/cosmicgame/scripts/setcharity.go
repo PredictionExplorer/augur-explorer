@@ -97,7 +97,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := charity_ctrct.SetCharity(txopts,recipient_addr)
+	tx,err := charity_ctrct.SetCharityAddress(txopts,recipient_addr)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

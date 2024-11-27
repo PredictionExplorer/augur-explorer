@@ -59,7 +59,7 @@ func main() {
 	}
 	token_id := big.NewInt(num)
 
-	costok_ctrct,err := NewCosmicSignature(cossig_addr,eclient)
+	costok_ctrct,err := NewCosmicSignatureNft(cossig_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
 		os.Exit(1)

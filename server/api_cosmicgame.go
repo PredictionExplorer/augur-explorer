@@ -925,7 +925,7 @@ func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
 	}
 
 	var copts bind.CallOpts
-	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	bwcontract,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err != nil {
 		respond_error_json(c,fmt.Sprintf("Error during call: can't instantiate CG contract: %v",err))
 		return
@@ -1532,7 +1532,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 	// both function return a byte array of 32 bytes , this workaround will work, otherwise, we would
 	// need to make explicit eth_call() method to CosmicGame contract (because the default is to transact
 	// since the method is not declared as 'view')
-	contract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	contract,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)

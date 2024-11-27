@@ -40,13 +40,13 @@ func main() {
 	cosmic_game_addr := common.HexToAddress(cg_addr)
 	fmt.Printf("Calling to contract at %v\n",cosmic_game_addr.String())
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
 	}
 
-	num_recs,err := cosmic_game_ctrct.DonateWithInfoNumRecords(&copts)
+	num_recs,err := cosmic_game_ctrct.NumDonationInfoRecords(&copts)
 	if err != nil {
 		fmt.Printf("Error at DonateWithInfoNumRecords()(): %v\n",err)
 		fmt.Printf("Aborting\n")

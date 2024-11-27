@@ -44,7 +44,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	erc721_ctrct,err := NewCosmicSignature(erc721_addr,eclient)
+	erc721_ctrct,err := NewCosmicSignatureNft(erc721_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate ERC721 contract: %v\n",err)
 		os.Exit(1)

@@ -318,10 +318,10 @@ func main() {
 	storagew.S.Init_log(db_log_file)
 	storagew.S.Log_msg("Log initialized\n")
 
-	cosmic_game_abi = get_abi(CosmicGameABI)
+	cosmic_game_abi = get_abi(CosmicSignatureGameABI)
 //	blogic_abi = get_abi(BusinessLogicABI);
-	cosmic_signature_abi = get_abi(CosmicSignatureABI)
-	cosmic_token_abi = get_abi(CosmicTokenABI)
+	cosmic_signature_abi = get_abi(CosmicSignatureNftABI)
+	cosmic_token_abi = get_abi(CosmicSignatureTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);
 	prizes_wallet_abi = get_abi(PrizesWalletABI);
 	staking_wallet_cst_abi = get_abi(IStakingWalletCosmicSignatureNftABI);

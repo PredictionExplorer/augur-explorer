@@ -38,7 +38,7 @@ func main() {
 	owner := common.HexToAddress(os.Args[2])
 	operator := common.HexToAddress(os.Args[3])
 
-	cosmic_sig_ctrct,err := NewCosmicSignature(cosmic_sig_addr,eclient)
+	cosmic_sig_ctrct,err := NewCosmicSignatureNft(cosmic_sig_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
 		os.Exit(1)

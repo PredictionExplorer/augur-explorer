@@ -35,14 +35,14 @@ func main() {
 
 	cosmic_game_addr := common.HexToAddress(os.Args[1])
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
 	}
 
 	var copts bind.CallOpts
-	cst_price,err := cosmic_game_ctrct.CurrentCSTPrice(&copts)
+	cst_price,err := cosmic_game_ctrct.GetCurrentBidPriceCST(&copts)
 	if err != nil {
 		fmt.Printf("Error at currentCSTPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")

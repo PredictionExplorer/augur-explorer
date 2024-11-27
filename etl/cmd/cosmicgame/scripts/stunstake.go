@@ -52,7 +52,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	stw_contract,err := NewStakingWallet(staking_wallet_addr,eclient)
+	stw_contract,err := NewStakingWalletCosmicSignatureNft(staking_wallet_addr,eclient)
 	if err != nil {
 		fmt.Printf("Error instantiating StakingWallet: %v\n",err)
 		os.Exit(1)
@@ -102,7 +102,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := stw_contract.Unstake(txopts,big.NewInt(action_id))
+	tx,err := stw_contract.Unstake(txopts,big.NewInt(action_id),big.NewInt(99999))
 	if tx != nil {
 		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	}

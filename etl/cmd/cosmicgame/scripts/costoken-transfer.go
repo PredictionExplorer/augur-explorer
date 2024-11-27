@@ -59,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	costok_ctrct,err := NewCosmicToken(costok_addr,eclient)
+	costok_ctrct,err := NewCosmicSignatureToken(costok_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicToken contract: %v\n",err)
 		os.Exit(1)

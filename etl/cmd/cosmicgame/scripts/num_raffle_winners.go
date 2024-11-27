@@ -53,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
@@ -103,7 +103,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.SetNumRaffleWinnersPerRound(txopts,num_val)
+	tx,err := cosmic_game_ctrct.SetNumRaffleETHWinnersBidding(txopts,num_val)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

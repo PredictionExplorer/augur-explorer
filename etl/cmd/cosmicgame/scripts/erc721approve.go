@@ -46,7 +46,7 @@ func main() {
 	erc721_contract_addr := common.HexToAddress(os.Args[2])
 	operator_addr := common.HexToAddress(os.Args[3])
 
-	contract,err := NewCosmicSignature(erc721_contract_addr,eclient)
+	contract,err := NewCosmicSignatureNft(erc721_contract_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
 		os.Exit(1)

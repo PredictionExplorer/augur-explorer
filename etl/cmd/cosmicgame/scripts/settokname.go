@@ -52,7 +52,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cosmic_sig_ctrct,err := NewCosmicSignature(cosmic_sig,eclient)
+	cosmic_sig_ctrct,err := NewCosmicSignatureNft(cosmic_sig,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
 		os.Exit(1)
