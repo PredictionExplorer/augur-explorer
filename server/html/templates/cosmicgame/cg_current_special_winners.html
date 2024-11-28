@@ -4,7 +4,7 @@
 	<title>Current Special Winners</title>
 </head>
 <body>
-	<h3 class="page_title">Data for displaying Endurance Champion & Stellar Spender info<h3>
+	<h3 class="page_title">Data for displaying Endurance Champion & Last CST Bidder info<h3>
 <table>
 	<tr class="market_reports">
 		<td class="">Last Bidder</td>
@@ -27,18 +27,10 @@
 		<td>{{.EnduranceChampionDuration}}</td>
 	</tr>
 	<tr>
-		<td>Stellar Spender Address</td>
+		<td>LastCST Bidder Address</td>
 		<td>
-			<a href="/black/cosmicgame/user/info/{{.StellarSpenderAddress}}">{{.StellarSpenderAddress}}</a>
+			<a href="/black/cosmicgame/user/info/{{.LastCstBidderAddress}}">{{.LastCstBidderAddress}}</a>
 		</td>
-	</tr>
-	<tr>
-		<td>Stellar Spender Amount (Wei)</td>
-		<td>{{.StellarSpenderAmount}}</td>
-	</tr>
-	<tr>
-		<td>Stellar Spender Amount (ETH)</td>
-		<td style="text-align: right;" >{{printf "%.6f" .StellarSpenderAmountEth}}</td>
 	</tr>
 </table>
 <br/><br/>

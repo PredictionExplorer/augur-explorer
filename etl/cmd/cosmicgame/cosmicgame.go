@@ -55,7 +55,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_stellar_winner[:4]),
+			Signature: hex.EncodeToString(evt_lastcst_bidder_winner[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -1065,19 +1065,19 @@ func proc_endurance_winner_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_endurance_winner(evt.EvtId)
 	storagew.Insert_endurance_winner(&evt)
 }
-func proc_stellar_winner_event(log *types.Log,elog *EthereumEventLog) {
+func proc_lastcst_bidder_winner_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGStellarWinner
-	var eth_evt ICosmicSignatureGameStellarSpenderPrizePaid
-	Info.Printf("Processing StellarSpender winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	var evt CGLastBidderWinner
+	var eth_evt CosmicSignatureGameLastCstBidderPrizePaid 
+	Info.Printf("Processing LastCstBidderwinner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StellarSpenderPrizePaid",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"LastCstBidderPrizePaid",log.Data)
 	if err != nil {
-		Error.Printf("Event StellarSpender decode error: %v",err)
+		Error.Printf("Event LastCstBidderPrizePaid decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1086,14 +1086,13 @@ func proc_stellar_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = log.Topics[2].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Round = log.Topics[1].Big().Int64()
 	evt.Erc721TokenId = log.Topics[3].Big().Int64()
 	evt.Erc20Amount = eth_evt.CstPrizeAmount.String()
-	evt.TotalSpentCST = eth_evt.TotalSpentCst.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("StellarSpenderWinnerEvent{\n")
+	Info.Printf("LastCstBidderPrizePaidEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
 	Info.Printf("\tErc721TokenId: %v\n",evt.Erc721TokenId)
@@ -1101,8 +1100,8 @@ func proc_stellar_winner_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
 	Info.Printf("}\n")
 
-	storagew.Delete_stellar_winner(evt.EvtId)
-	storagew.Insert_stellar_winner(&evt)
+	storagew.Delete_lastcst_bidder_winner(evt.EvtId)
+	storagew.Insert_lastcst_bidder_winner(&evt)
 }
 func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2613,16 +2612,16 @@ func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog
 func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGERC20RewardMultiplierChanged
-	var eth_evt BiddingErc20RewardMultiplierChanged
+	var eth_evt BiddingCstRewardAmountMultiplierChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing RewardMultiplierChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"Erc20RewardMultiplierChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CstRewardAmountMultiplierChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event Erc20RewardMultiplierChanged decode error: %v",err)
+		Error.Printf("Event CstRewardAmountMultiplierChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -2631,10 +2630,10 @@ func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEve
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewMultiplier= eth_evt.NewMultiplier.String()
+	evt.NewMultiplier= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("Erc20RewardMultiplierChanged{\n")
+	Info.Printf("cstRewardMultiplierChanged{\n")
 	Info.Printf("\tNewMultiplier: %v\n",evt.NewMultiplier)
 	Info.Printf("}\n")
 
@@ -3066,8 +3065,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_winner) {
 	proc_endurance_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_stellar_winner) {
-		proc_stellar_winner_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_lastcst_bidder_winner) {
+		proc_lastcst_bidder_winner_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_chrono_warrior) {
 		proc_chrono_warrior_event(log,evtlog)

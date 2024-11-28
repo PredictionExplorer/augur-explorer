@@ -202,7 +202,7 @@ type CGEnduranceWinner struct {
 	Erc721TokenId		int64
 	Erc20Amount			string
 }
-type CGStellarWinner struct {
+type CGLastBidderWinner struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -214,7 +214,6 @@ type CGStellarWinner struct {
 	WinnerIndex			int64
 	Erc721TokenId		int64
 	Erc20Amount			string
-	TotalSpentCST		string
 }
 type CGChronoWarrior struct {
 	EvtId				int64

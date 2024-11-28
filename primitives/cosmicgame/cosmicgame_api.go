@@ -89,12 +89,12 @@ type CGPrizeRec struct {
 	StakingNumStakedTokens		int64
 	EnduranceWinnerAddr			string
 	EnduranceERC721TokenId			int64
-	StellarWinnerAddr			string
-	StellarERC721TokenId				int64
+	LastCstBidderAddr			string
+	LastCstBidderERC721TokenId				int64
 	EnduranceERC20Amount		string
 	EnduranceERC20AmountEth		float64
-	StellarERC20Amount			string
-	StellarERC20AmountEth		float64
+	LastCstBidderERC20Amount	string
+	LastCstBidderERC20AmountEth	float64
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
@@ -304,7 +304,7 @@ type CGEnduranceNFTWinnerRec struct {
 	TokenId						int64
 	WinnerIndex					int64
 }
-type CGTopBidderNFTWinnerRec struct {
+type CGLastCStNFTWinnerRec struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -386,7 +386,7 @@ type CGClaimInfo struct {
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - Stellar NFT winner, 9 - Endurance ERC20 winner, 10 - Stellar ERC20 winner , 11 - Donated ERC20 token
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - LastCst Bid NFT winner, 9 - Endurance ERC20 winner, 10 - LastCst Bid ERC20 winner , 11 - Donated ERC20 token
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64

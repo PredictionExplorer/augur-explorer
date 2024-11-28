@@ -206,6 +206,7 @@ CREATE TABLE cg_endurance_winner (
 	winner_idx		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+/* DISCONTINUED, removal pending
 CREATE TABLE cg_stellar_winner (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -218,6 +219,20 @@ CREATE TABLE cg_stellar_winner (
 	erc721_token_id		BIGINT NOT NULL,
 	erc20_amount	DECIMAL NOT NULL,
 	total_spent_cst	DECIMAL NOT NULL,
+	winner_idx		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);*/
+CREATE TABLE cg_lastcst_winner (	-- LastCstBidderPrizePaid
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	erc721_token_id		BIGINT NOT NULL,
+	erc20_amount	DECIMAL NOT NULL,
 	winner_idx		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );

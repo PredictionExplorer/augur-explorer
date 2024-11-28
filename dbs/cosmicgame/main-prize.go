@@ -163,7 +163,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"LEFT JOIN cg_round_stats s ON s.round_num=p.prize_num "+
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
 				"LEFT JOIN cg_endurance_winner endu ON endu.round_num=p.prize_num "+
-				"LEFT JOIN cg_stellar_winner top ON top.round_num=p.prize_num "+
+				"LEFT JOIN cg_lastcst_winner top ON top.round_num=p.prize_num "+
 				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
 				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
 				"LEFT JOIN LATERAL (" +
@@ -178,9 +178,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
-	var null_endurance_tid,null_topbidder_tid sql.NullInt64
-	var null_endurance_addr,null_topbidder_addr,null_endurance_erc20_amount,null_topbidder_erc20_amount sql.NullString
-	var null_endurance_erc20_amount_float,null_topbidder_erc20_amount_float sql.NullFloat64
+	var null_endurance_tid,null_lastcst_tid sql.NullInt64
+	var null_endurance_addr,null_lastcst_addr,null_endurance_erc20_amount,null_lastcst_erc20_amount sql.NullString
+	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float sql.NullFloat64
 	err := row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -211,12 +211,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 		&null_num_staked_nfts,
 		&null_endurance_tid,
 		&null_endurance_addr,
-		&null_topbidder_tid,
-		&null_topbidder_addr,
+		&null_lastcst_tid,
+		&null_lastcst_addr,
 		&null_endurance_erc20_amount,
 		&null_endurance_erc20_amount_float,
-		&null_topbidder_erc20_amount,
-		&null_topbidder_erc20_amount_float,
+		&null_lastcst_erc20_amount,
+		&null_lastcst_erc20_amount_float,
 		&rec.RoundStats.TotalDonatedCount,
 		&rec.RoundStats.TotalDonatedAmount,
 		&rec.RoundStats.TotalDonatedAmountEth,
@@ -243,9 +243,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	if null_dep_deposit_num.Valid { rec.StakingDepositNum = null_dep_deposit_num.Int64} else {rec.StakingDepositNum = -1}
 	if null_num_staked_nfts.Valid { rec.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 	if null_endurance_tid.Valid { rec.EnduranceWinnerAddr = null_endurance_addr.String; rec.EnduranceERC721TokenId=null_endurance_tid.Int64 }
-	if null_topbidder_tid.Valid { rec.StellarWinnerAddr = null_topbidder_addr.String; rec.StellarERC721TokenId=null_topbidder_tid.Int64 }
+	if null_lastcst_tid.Valid { rec.LastCstBidderAddr = null_lastcst_addr.String; rec.LastCstBidderERC721TokenId=null_lastcst_tid.Int64 }
 	if null_endurance_erc20_amount.Valid { rec.EnduranceERC20Amount = null_endurance_erc20_amount.String; rec.EnduranceERC20AmountEth = null_endurance_erc20_amount_float.Float64 }
-	if null_topbidder_erc20_amount.Valid { rec.StellarERC20Amount = null_topbidder_erc20_amount.String; rec.StellarERC20AmountEth = null_topbidder_erc20_amount_float.Float64 }
+	if null_lastcst_erc20_amount.Valid { rec.LastCstBidderERC20Amount = null_lastcst_erc20_amount.String; rec.LastCstBidderERC20AmountEth = null_lastcst_erc20_amount_float.Float64 }
 
 	return true,rec
 }

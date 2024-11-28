@@ -44,7 +44,7 @@ const (
 	RAFFLE_WITHDRAWAL_EVENT = "4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383"
 	RAFFLE_NFT_WINNER		= "c595fdec2102257d05c3e92bbc14934b4858785c8c2d02dc63daa0f47251a90c"
 	ENDURANCE_WINNER		= "a32dfd1d4e09d55aebef273d2ce943439a7cdcdfb9ec44f27e6678d86a4fe880"
-	STELLAR_WINNER			= "0fc6a6935451e1388d6434f252504ff521df29ff374919a59299b8dadc54122f"
+	LASTCST_BIDDER_WINNER	= "3901b6430c99dc290ee88ff84c4de6091ad7eac335b58e92ef5cbb0793abf4f6"
 	CHRONO_WARRIOR			= "88077a1c3b4ebaa272c01980b7c3f16069bf124a8066434e45b31c7b4e4a096f"
 	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	//STAKE_ACTION_EVENT		= "cd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8"
@@ -90,7 +90,7 @@ const (
 	MARKETING_REWARD_SENT	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486"
 	MARKETING_REWARD_CHANGED = "aa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f36489221"
 	ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
-	ERC20_REWARD_MULT		= "128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb2"
+	ERC20_REWARD_MULT		= "44d50377242b2c165fd7ae3c2a9f2ccad8ecf04268512599ba6b81dedec0a59b"	//CstRewardAmountMultiplierChanged
 	MAX_MESSAGE_LENGTH		= "ba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc8"
 	TOKEN_SCRIPT_URL		= "0119741ee0f95fab26124262a82c3c0e9e1c7ff4bb33c6fba5f3b11c9b6d0bad"
 	BASE_URI				= "2fc013f885e8a815b9d697da28bc143b4dced47528c41b46e2b35fd0f4be718c"
@@ -113,7 +113,7 @@ var (
 	evt_erc20_donated,_		= hex.DecodeString(ERC20_DONATED)
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
 	evt_endurance_winner,_	= hex.DecodeString(ENDURANCE_WINNER)
-	evt_stellar_winner,_	= hex.DecodeString(STELLAR_WINNER)
+	evt_lastcst_bidder_winner,_	= hex.DecodeString(LASTCST_BIDDER_WINNER)
 	evt_chrono_warrior,_	= hex.DecodeString(CHRONO_WARRIOR)
 	evt_donated_token_claimed,_	= hex.DecodeString(DONATED_TOKEN_CLAIMED)
 	evt_donated_nft_claimed,_= hex.DecodeString(DONATED_NFT_CLAIMED)

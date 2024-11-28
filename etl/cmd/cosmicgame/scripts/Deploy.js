@@ -14,7 +14,7 @@ const basicDeployment = async function (
 	switchToRuntime = true,
 ) {
 	return await basicDeploymentAdvanced(
-		"CosmicGame",
+		"CosmicSignatureGame",
 		deployerAcct,
 		randomWalkAddr,
 		activationTime,
@@ -54,18 +54,18 @@ const basicDeploymentAdvanced = async function (
     let implementationAddr = ethers.AbiCoder.defaultAbiCoder().decode(['address'],implementationAddrBytes);
 	let cosmicGameAddr = await cosmicGameProxy.runner.provider.getStorage(cosmicGameProxyAddr,'0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc');
 	let cosmicGame = await CosmicGame.attach(cosmicGameProxyAddr);
-	let CosmicToken = await hre.ethers.getContractFactory("CosmicToken");
+	let CosmicToken = await hre.ethers.getContractFactory("CosmicSignatureToken");
 	cosmicToken = await CosmicToken.connect(deployerAcct).deploy();
 	await cosmicToken.waitForDeployment();
 	let cosmicTokenAddr = await cosmicToken.getAddress();
 	await cosmicToken.connect(deployerAcct).transferOwnership(cosmicGameProxyAddr);
 
-	let CosmicSignature = await hre.ethers.getContractFactory("CosmicSignature");
+	let CosmicSignature = await hre.ethers.getContractFactory("CosmicSignatureNft");
 	cosmicSignature = await CosmicSignature.connect(deployerAcct).deploy(cosmicGameProxyAddr);
 	await cosmicSignature.waitForDeployment();
 	let cosmicSignatureAddr = await cosmicSignature.getAddress();
 
-	let CosmicDAO = await hre.ethers.getContractFactory("CosmicDAO");
+	let CosmicDAO = await hre.ethers.getContractFactory("CosmicSignatureDao");
 	cosmicDAO = await CosmicDAO.connect(deployerAcct).deploy(cosmicTokenAddr);
 	await cosmicDAO.waitForDeployment();
 	let cosmicDAOAddr = await cosmicDAO.getAddress();
@@ -78,7 +78,7 @@ const basicDeploymentAdvanced = async function (
 		const [owner, otherAccount] = await hre.ethers.getSigners();
 		charityAddr = otherAccount.address;
 	}
-	await charityWallet.setCharity(charityAddr);
+	await charityWallet.setCharityAddress(charityAddr);
 	if (transferOwnership) {
 		await charityWallet.connect(deployerAcct).transferOwnership(cosmicDAOAddr);
 	}
@@ -119,7 +119,7 @@ const basicDeploymentAdvanced = async function (
 
 	await cosmicGameProxy.connect(deployerAcct).setTokenContract(cosmicTokenAddr);
 	await cosmicGameProxy.connect(deployerAcct).setCosmicSignatureNft(cosmicSignatureAddr);
-	await cosmicGameProxy.connect(deployerAcct).setCharity(charityWalletAddr);
+	await cosmicGameProxy.connect(deployerAcct).setCharityAddress(charityWalletAddr);
 	await cosmicGameProxy.connect(deployerAcct).setRandomWalkNft(randomWalkNFTAddr);
 	await cosmicGameProxy.connect(deployerAcct).setPrizesWallet(prizesWalletAddr);
 	await cosmicGameProxy.connect(deployerAcct).setStakingWalletCosmicSignatureNft(stakingWalletCosmicSignatureNftAddr);

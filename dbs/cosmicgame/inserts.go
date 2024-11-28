@@ -401,16 +401,16 @@ func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_stellar_winner(evt *p.CGStellarWinner) {
+func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWinner) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_stellar_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_lastcst_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx,total_spent_cst"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
+					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -422,10 +422,9 @@ func (sw *SQLStorageWrapper) Insert_stellar_winner(evt *p.CGStellarWinner) {
 		evt.Erc721TokenId,
 		evt.Erc20Amount,
 		evt.WinnerIndex,
-		evt.TotalSpentCST,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stellar_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_lastcst_winner table: %v\n",err))
 		os.Exit(1)
 	}
 }

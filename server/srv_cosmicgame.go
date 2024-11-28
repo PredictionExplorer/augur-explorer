@@ -65,9 +65,7 @@ var (
 	round_start_ts				int64
 	endurance_champ_addr		string
 	endurance_duration			int64
-	stellar_spender_addr		string
-	stellar_spender_amount		string
-	stellar_spender_amount_eth	float64
+	lastcst_bidder_addr			string
 
 	// contract counters	(collected via DB)
 	bw_stats					CGStatistics
@@ -339,27 +337,14 @@ func do_reload_contract_variables() {
 			endurance_champ_addr = tmp_addr.String()
 			endurance_duration = tmp_duration.Int64()
 		}
-		tmp_addr, err = bwcontract.StellarSpender(&copts);
+		tmp_addr, err = bwcontract.LastCstBidderAddress(&copts);
 		if err != nil {
-			err_str := fmt.Sprintf("Error at StellarSpender() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at lastCstBidderAddress() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		} else {
-			stellar_spender_addr = tmp_addr.String()
+			lastcst_bidder_addr = tmp_addr.String()
 		}
-		tmp_val , err = bwcontract.StellarSpenderTotalSpentCst(&copts)
-		if err != nil {
-			err_str := fmt.Sprintf("Error at StellarSpenderAmount() call: %v\n",err)
-			Error.Printf(err_str)
-			Info.Printf(err_str)
-			stellar_spender_amount = "error"
-		} else {
-			stellar_spender_amount = tmp_val.String()
-			f_amount:= big.NewFloat(0.0).SetInt(tmp_val)
-			f_quo := big.NewFloat(0.0).Quo(f_amount,f_divisor)
-			stellar_spender_amount_eth,_ = f_quo.Float64()
-		}
-
 	}
 }
 func do_reload_database_variables() {
@@ -1824,9 +1809,7 @@ func cosmic_game_bid_special_winners(c *gin.Context) {
 		"LastBidderLastBidTime" : last_bidder_bid_time,
 		"EnduranceChampionAddress": endurance_champ_addr,
 		"EnduranceChampionDuration": endurance_duration,
-		"StellarSpenderAddress" : stellar_spender_addr,
-		"StellarSpenderAmount" : stellar_spender_amount,
-		"StellarSpenderAmountEth" : stellar_spender_amount_eth,
+		"LastCstBidderAddress" : lastcst_bidder_addr,
 	})
 }
 

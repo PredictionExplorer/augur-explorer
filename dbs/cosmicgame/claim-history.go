@@ -227,7 +227,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"'' AS token_uri,"+
 						"rn.winner_idx, "+
 						"'T' AS claimed "+
-					"FROM cg_stellar_winner rn "+
+					"FROM cg_lastcst_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 					"WHERE (rn.winner_aid=$1) "+
 				") UNION ALL (" +
@@ -267,7 +267,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"'' AS token_uri,"+
 						"rn.winner_idx, "+
 						"'T' AS claimed "+
-					"FROM cg_stellar_winner rn "+
+					"FROM cg_lastcst_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 					"WHERE (rn.winner_aid=$1) "+
 				") UNION ALL (" +
@@ -572,7 +572,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"'T' AS claimed, "+
 						"wa.addr winner_addr,"+
 						"rn.winner_aid "+
-					"FROM cg_stellar_winner rn "+
+					"FROM cg_lastcst_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
 				") UNION ALL (" +
@@ -616,7 +616,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"'T' AS claimed, "+
 						"wa.addr winner_addr,"+
 						"rn.winner_aid "+
-					"FROM cg_stellar_winner rn "+
+					"FROM cg_lastcst_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
 				") UNION ALL (" +
