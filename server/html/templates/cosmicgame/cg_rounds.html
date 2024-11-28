@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Prize Claims</title>
+	<title>Rounds</title>
 </head>
 <body>
-	<h3 class="page_title">Prize Claims<h3>
+	<h3 class="page_title">Rounds<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Datetime</th>
@@ -24,10 +24,10 @@
 		<th class="market_reports">Raffle Deposits</th>
 		<th class="market_reports">Raffle NFTs</th>
 	</tr>
-	{{- range $i, $change := .PrizeClaims}}
+	{{- range $i, $change := .Rounds}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/prize/info/{{.PrizeNum}}">{{.DateTime}}</a>
+				<a href="/black/cosmicgame/rounds/info/{{.PrizeNum}}">{{.DateTime}}</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
@@ -68,8 +68,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/prize/list/[offset]/[limit]</br>
+	API: /api/cosmicgame/rounds/list/[offset]/[limit]</br>
 
-	Example: /api/cosmicgame/prize/list/0/1000000
+	Example: /api/cosmicgame/rounds/list/0/1000000
 </code>
 </body>

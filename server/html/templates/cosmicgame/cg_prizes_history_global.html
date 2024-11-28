@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Global winnings</title>
+	<title>Global history of prize distribution</title>
 </head>
 <body>
-	<h3 class="page_title">Global history of winnings<h3>
+	<h3 class="page_title">Global history of prize distribution<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">RecordType</th>
@@ -17,7 +17,7 @@
 		<th class="market_reports">Claimed</th>
 		<th class="market_reports"></th>
 	</tr>
-	{{- range $i, $change := .GlobalClaimHistory}}
+	{{- range $i, $change := .GlobalPrizeHistory}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{ if eq 0 .RecordType}}Raffle ETH Deposit{{end}}
@@ -48,8 +48,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/prize/claim_history/[offset]/[limit]</br>
+	API: /api/cosmicgame/prizes/history/global/[offset]/[limit]</br>
 
-	Example: /api/cosmicgame/prize/claim_history/0/100000
+	Example: /api/cosmicgame/prizes/history/global/0/100000
 </code>
 </body>

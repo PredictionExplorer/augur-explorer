@@ -148,10 +148,13 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"end_a.addr, "+
 				"top.erc721_token_id,"+
 				"top_a.addr, "+
+				"w_a.addr,"+
 				"endu.erc20_amount,"+
 				"endu.erc20_amount/1e18, "+
 				"top.erc20_amount,"+
 				"top.erc20_amount/1e18, "+
+				"w.amount,"+
+				"w.amount/1e18, "+
 				"s.donations_round_count,"+
 				"s.donations_round_total,"+
 				"s.donations_round_total/1e18 "+
@@ -164,8 +167,10 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
 				"LEFT JOIN cg_endurance_winner endu ON endu.round_num=p.prize_num "+
 				"LEFT JOIN cg_lastcst_winner top ON top.round_num=p.prize_num "+
+				"LEFT JOIN cg_chrono_warrior w ON w.round_num = p.prize_num "+
 				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
 				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
+				"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
 				"LEFT JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
@@ -179,8 +184,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
 	var null_endurance_tid,null_lastcst_tid sql.NullInt64
-	var null_endurance_addr,null_lastcst_addr,null_endurance_erc20_amount,null_lastcst_erc20_amount sql.NullString
-	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float sql.NullFloat64
+	var null_endurance_addr,null_lastcst_addr,null_warrior_addr sql.NullString
+	var null_endurance_erc20_amount,null_lastcst_erc20_amount,null_warrior_amount sql.NullString
+	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float,null_warrior_amount_float sql.NullFloat64
 	err := row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -213,10 +219,13 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 		&null_endurance_addr,
 		&null_lastcst_tid,
 		&null_lastcst_addr,
+		&null_warrior_addr,
 		&null_endurance_erc20_amount,
 		&null_endurance_erc20_amount_float,
 		&null_lastcst_erc20_amount,
 		&null_lastcst_erc20_amount_float,
+		&null_warrior_amount,
+		&null_warrior_amount_float,
 		&rec.RoundStats.TotalDonatedCount,
 		&rec.RoundStats.TotalDonatedAmount,
 		&rec.RoundStats.TotalDonatedAmountEth,
@@ -230,10 +239,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	}
 	if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
 
-	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num)
+	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num,false)
+	staking_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num,true)
 	raffle_eth_deposits := sw.Get_prize_deposits_by_round(prize_num)
 
 	rec.RaffleNFTWinners = raffle_nft_winners
+	rec.StakingNFTWinners = staking_nft_winners
 	rec.RaffleETHDeposits = raffle_eth_deposits
 
 	if null_dep_amount.Valid { rec.StakingDepositAmount = null_dep_amount.String }
@@ -246,6 +257,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	if null_lastcst_tid.Valid { rec.LastCstBidderAddr = null_lastcst_addr.String; rec.LastCstBidderERC721TokenId=null_lastcst_tid.Int64 }
 	if null_endurance_erc20_amount.Valid { rec.EnduranceERC20Amount = null_endurance_erc20_amount.String; rec.EnduranceERC20AmountEth = null_endurance_erc20_amount_float.Float64 }
 	if null_lastcst_erc20_amount.Valid { rec.LastCstBidderERC20Amount = null_lastcst_erc20_amount.String; rec.LastCstBidderERC20AmountEth = null_lastcst_erc20_amount_float.Float64 }
+	if null_warrior_amount.Valid { rec.ChronoWarriorAmount = null_warrior_amount.String }
+	if null_warrior_amount_float.Valid { rec.ChronoWarriorAmountEth = null_warrior_amount_float.Float64 }
+	if null_warrior_addr.Valid { rec.ChronoWarriorAddr = null_warrior_addr.String }
 
 	return true,rec
 }

@@ -95,8 +95,12 @@ type CGPrizeRec struct {
 	EnduranceERC20AmountEth		float64
 	LastCstBidderERC20Amount	string
 	LastCstBidderERC20AmountEth	float64
+	ChronoWarriorAddr			string
+	ChronoWarriorAmount			string
+	ChronoWarriorAmountEth		float64
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
+	StakingNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
 }
 type UserStakingInfo struct {

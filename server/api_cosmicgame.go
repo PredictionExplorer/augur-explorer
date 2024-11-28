@@ -99,7 +99,7 @@ func api_cosmic_game_prize_list(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"PrizeClaims" : prizes,
+		"Rounds" : prizes,
 	})
 }
 func api_cosmic_game_bid_list(c *gin.Context) {
@@ -209,7 +209,7 @@ func api_cosmic_game_bid_info(c *gin.Context) {
 		})
 	}
 } 
-func api_cosmic_game_prize_info(c *gin.Context) {
+func api_cosmic_game_round_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -238,7 +238,7 @@ func api_cosmic_game_prize_info(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": req_status,
 			"error" : err_str,
-			"PrizeInfo" : prize_info,
+			"RoundInfo" : prize_info,
 		})
 	}
 } 
@@ -611,14 +611,16 @@ func api_cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 		return
 	}
 
-	winners := arb_storagew.Get_raffle_nft_winners_by_round(round_num)
+	winners_raffle := arb_storagew.Get_raffle_nft_winners_by_round(round_num,false)
+	winners_staking := arb_storagew.Get_raffle_nft_winners_by_round(round_num,true)
 
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"RaffleNFTWinners" : winners,
+		"RaffleNFTWinners" : winners_raffle,
+		"StakingNFTWinners" : winners_staking,
 		"RoundNum" : round_num,
 	})
 }
@@ -1010,7 +1012,7 @@ func api_cosmic_game_claim_history_detail(c *gin.Context) {
 		"error" : err_str,
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"ClaimHistory" : claim_history,
+		"USerPrizeHistory" : claim_history,
 	})
 }
 func api_cosmic_game_global_claim_history_detail(c *gin.Context) {
@@ -1032,7 +1034,7 @@ func api_cosmic_game_global_claim_history_detail(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"GlobalClaimHistory" : claim_history,
+		"GlobalPrizeHistory" : claim_history,
 	})
 }
 func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {

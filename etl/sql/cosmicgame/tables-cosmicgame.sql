@@ -204,6 +204,7 @@ CREATE TABLE cg_endurance_winner (
 	erc721_token_id		BIGINT NOT NULL,
 	erc20_amount	DECIMAL NOT NULL,
 	winner_idx		BIGINT NOT NULL,
+	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
 /* DISCONTINUED, removal pending
@@ -234,6 +235,7 @@ CREATE TABLE cg_lastcst_winner (	-- LastCstBidderPrizePaid
 	erc721_token_id		BIGINT NOT NULL,
 	erc20_amount	DECIMAL NOT NULL,
 	winner_idx		BIGINT NOT NULL,
+	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_chrono_warrior (
@@ -246,6 +248,7 @@ CREATE TABLE cg_chrono_warrior (
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
+	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_donated_tok_claimed (	--- ERC 20 (donated) tokens

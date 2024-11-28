@@ -7,9 +7,13 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64) []p.CGRaffleNFTWinnerRec {
+func query_nft_winners(is_staker bool) string {
 
 	var query string
+	var staking_condition ="'F'"
+	if is_staker {
+		staking_condition = "'T'"
+	}
 	query = "SELECT "+
 				"p.evtlog_id,"+
 				"p.block_num,"+
@@ -24,12 +28,17 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64) []
 				"p.winner_idx, "+
 				"p.is_rwalk,"+
 				"p.is_staker "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner p "+
+			"FROM cg_raffle_nft_winner p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"WHERE p.round_num=$1 " +
+			"WHERE p.round_num=$1 AND p.is_staker= " + staking_condition +
 			"ORDER BY p.id DESC"
+	return query
+}
+func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64,is_staker bool) []p.CGRaffleNFTWinnerRec {
 
+	var query string
+	query = query_nft_winners(is_staker)
 	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

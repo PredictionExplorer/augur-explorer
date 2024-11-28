@@ -6,6 +6,11 @@
 <body>
 	<h3 class="page_title">Raffle NFT Winners</h3>
 	<h3 class="page_title">Round: {{.RoundNum}}</h3>
+
+<p>
+	&nbsp;
+</p>
+<h4>Raffle NFT Winners</h4>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -18,6 +23,36 @@
 		<th class="market_reports">IsRandomWalk</th>
 	</tr>
 	{{- range $i, $change := .RaffleNFTWinners}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: right;" title="">{{ .TokenId}}</td>
+			<td style="text-align: right;" title="">{{ .WinnerIndex}}</td>
+			<td style="text-align: right;" title="">{{ .IsStaker}}</td>
+			<td style="text-align: right;" title="">{{ .IsRWalk}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<h4>Staking NFT Winners</h4>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Winner</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">TokenId</th>
+		<th class="market_reports">Index</th>
+		<th class="market_reports">IsStaker</th>
+		<th class="market_reports">IsRandomWalk</th>
+	</tr>
+	{{- range $i, $change := .StakingNFTWinners}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}

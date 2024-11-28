@@ -306,7 +306,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 	)
-	return inspected_events
+	eturn inspected_events
 }
 func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 

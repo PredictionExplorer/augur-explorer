@@ -451,8 +451,8 @@ func cosmic_game_prize_claims(c *gin.Context) {
 	}
 	prizes := arb_storagew.Get_prize_claims(offset,limit)
 
-	c.HTML(http.StatusOK, "cg_prize_claims.html", gin.H{
-		"PrizeClaims" : prizes,
+	c.HTML(http.StatusOK, "cg_rounds.html", gin.H{
+		"Rounds" : prizes,
 		"Offset" : offset,
 		"Limit" : limit,
 	})
@@ -568,7 +568,7 @@ func cosmic_game_bid_info(c *gin.Context) {
 		})
 	}
 } 
-func cosmic_game_prize_info(c *gin.Context) {
+func cosmic_game_round_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -595,8 +595,8 @@ func cosmic_game_prize_info(c *gin.Context) {
 		})
 	} else {
 		nft_donations := arb_storagew.Get_nft_donations_by_prize(prize_num)
-		c.HTML(http.StatusOK, "cg_prize_info.html", gin.H{
-			"PrizeInfo" : prize_info,
+		c.HTML(http.StatusOK, "cg_round_info.html", gin.H{
+			"RoundInfo" : prize_info,
 			"DonatedNFTs" : nft_donations,
 		})
 	}
@@ -897,10 +897,12 @@ func cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 		respond_error(c,"'round_num' parameter is not set")
 		return
 	}
-	winners := arb_storagew.Get_raffle_nft_winners_by_round(round_num)
+	winners_raffle := arb_storagew.Get_raffle_nft_winners_by_round(round_num,false)
+	winners_staking := arb_storagew.Get_raffle_nft_winners_by_round(round_num,true)
 
 	c.HTML(http.StatusOK, "cg_raffle_nft_winners_by_round.html", gin.H{
-		"RaffleNFTWinners" : winners,
+		"RaffleNFTWinners" : winners_raffle,
+		"StakingNFTWinners" : winners_staking,
 		"RoundNum" : round_num,
 	})
 }
@@ -1231,8 +1233,8 @@ func cosmic_game_global_claim_history_detail(c *gin.Context) {
 	}
 
 	claim_history := arb_storagew.Get_claim_history_detailed_global(offset,limit)
-	c.HTML(http.StatusOK, "cg_global_claim_history_detail.html", gin.H{
-		"GlobalClaimHistory" : claim_history,
+	c.HTML(http.StatusOK, "cg_prizes_history_global.html", gin.H{
+		"GlobalPrizeHistory" : claim_history,
 	})
 }
 func cosmic_game_claim_history_detail(c *gin.Context) {
