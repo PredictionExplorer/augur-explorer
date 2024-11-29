@@ -1227,12 +1227,8 @@ func cosmic_game_global_claim_history_detail(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params_html(c)
-	if !success {
-		return
-	}
 
-	claim_history := arb_storagew.Get_claim_history_detailed_global(offset,limit)
+	claim_history := arb_storagew.Get_claim_history_detailed_global(0, 1000000)
 	c.HTML(http.StatusOK, "cg_prizes_history_global.html", gin.H{
 		"GlobalPrizeHistory" : claim_history,
 	})

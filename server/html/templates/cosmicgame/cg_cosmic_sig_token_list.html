@@ -23,6 +23,7 @@
 		<th class="market_reports">Current Owner</th>
 		<th class="market_reports">Round Num</th>
 		<th class="market_reports">Prize Type</th>
+		<th class="market_reports">Name History</th>
 	</tr>
 	{{- range $i, $change := .CosmicSignatureTokenList}}
 		<tr class="market_reports">
@@ -40,10 +41,15 @@
 				{{.RoundNum}}
 			</td>
 			<td class="" style="text-align:center;">
-				{{ if eq 0 .RecordType}}ETH Deposit{{end}}
-				{{ if eq 1 .RecordType}}CS NFT Token{{end}}
-				{{ if eq 2 .RecordType}}Donated NFT{{end}}
+				{{ if eq 0 .RecordType}}Unknown prize{{end}}
+				{{ if eq 1 .RecordType}}Raffle NFT Token{{end}}
+				{{ if eq 2 .RecordType}}Staking RWalk{{end}}
 				{{ if eq 3 .RecordType}}Main Prize{{end}}
+				{{ if eq 4 .RecordType}}Endurance Champion{{end}}
+				{{ if eq 5 .RecordType}}Last CST Bidder{{end}}
+			</td>
+			<td class="addr" style="text-align: center">
+				<a href="/black/cosmicgame/cst/names/history/{{.TokenId}}">Names</a>
 			</td>
 		</tr>
 	{{- end}}
