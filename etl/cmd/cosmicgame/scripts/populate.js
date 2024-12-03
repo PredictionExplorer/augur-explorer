@@ -351,13 +351,13 @@ async function main() {
         gasLimit: 5000000
     });
     receipt = await tx.wait();
-    topic_sig = cosmicSignature.interface.getEvent("MintEvent").topicHash;
+    topic_sig = cosmicSignature.interface.getEvent("NftMinted").topicHash;
     log = receipt.logs.find((x) => x.topics.indexOf(topic_sig) >= 0);
     parsed_log = cosmicSignature.interface.parseLog(log);
     let args = parsed_log.args.toObject();
     token_id = args.nftId;
-    await cosmicSignature.connect(addr1).setTokenName(token_id, "name 0");
-    await cosmicSignature.connect(addr1).setTokenName(token_id, "name after 0");
+    await cosmicSignature.connect(addr1).setNftName(token_id, "name 0");
+    await cosmicSignature.connect(addr1).setNftName(token_id, "name after 0");
 
 	stake_available_nfts();
     await charityWallet.connect(addr1).send();
@@ -556,8 +556,8 @@ async function main() {
         .setMarketingReward(120000000000000000000n);
     await cosmicGameProxy.connect(owner).setTokenReward(130000000000000000000n);
     await cosmicGameProxy.connect(owner).setMaxMessageLength(199);
-    await cosmicSignature.connect(owner).setTokenGenerationScriptURL("ipfs://");
-    await cosmicSignature.connect(owner).setBaseURI("nttp://");
+    await cosmicSignature.connect(owner).setNftGenerationScriptUri("ipfs://");
+    await cosmicSignature.connect(owner).setNftBaseUri("nttp://");
     let iAddrBytes = await ethers.provider.getStorage(
         await cosmicGameProxy.getAddress(),
         "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"

@@ -37,12 +37,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_lastcst_winner cst ON m.token_id=cst.erc721_token_id "+
-				"LEFT JOIN cg_endurance_winner endu ON m.token_id=endu.erc721_token_id "+
-				"LEFT JOIN cg_raffle_nft_winner rnw ON m.token_id=rnw.token_id "+
+				"LEFT JOIN cg_lastcst_winner cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num) "+
+				"LEFT JOIN cg_endurance_winner endu ON (m.token_id=endu.erc721_token_id AND m.round_num=endu.round_num) "+
+				"LEFT JOIN cg_raffle_nft_winner rnw ON (m.token_id=rnw.token_id AND m.round_num=rnw.round_num) "+
 			"ORDER BY m.id DESC "+
 			"OFFSET $1 LIMIT $2"
-
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -216,7 +215,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id in
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 			"WHERE n.token_id=$1 "+
 			"ORDER BY n.id DESC "
-
 	rows,err := sw.S.Db().Query(query,token_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -306,7 +306,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 	)
-	eturn inspected_events
+	return inspected_events
 }
 func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -828,7 +828,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGTokenNameEvent
-	var eth_evt CosmicSignatureNftTokenNameEvent
+	var eth_evt ICosmicSignatureNftNftNameChanged
 
 	Info.Printf("Processing TokenNameEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -836,7 +836,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"TokenNameEvent",log.Data)
+	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"NftNameChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event TokenNameEvent decode error: %v",err)
 		os.Exit(1)
@@ -848,7 +848,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = log.Topics[1].Big().Int64()
-	evt.TokenName = eth_evt.NewName
+	evt.TokenName = eth_evt.NftName
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenNameEvent {\n")
@@ -862,7 +862,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGMintEvent
-	var eth_evt CosmicSignatureNftMintEvent
+	var eth_evt CosmicSignatureNftNftMinted
 
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -870,7 +870,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"MintEvent",log.Data)
+	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"NftMinted",log.Data)
 	if err != nil {
 		Error.Printf("Event MintEvent decode error: %v",err)
 		os.Exit(1)
@@ -881,10 +881,10 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.TokenId = log.Topics[1].Big().Int64()
-	evt.RoundNum = log.Topics[3].Big().Int64()
+	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.OwnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
-	evt.Seed = hex.EncodeToString(eth_evt.Seed[:])
+	evt.Seed = hex.EncodeToString(eth_evt.NftSeed.Bytes())
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MintEvent{\n")
@@ -2674,14 +2674,14 @@ func proc_max_msg_length_changed_event(log *types.Log,elog *EthereumEventLog) {
 func proc_token_generation_script_url_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGTokenGenerationScriptURL
-	var eth_evt ICosmicSignatureNftTokenGenerationScriptURLEvent 
+	var eth_evt ICosmicSignatureNftNftGenerationScriptUriChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing TokenGenerationScriptURLEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TokenGenerationScriptURLEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NftGenerationScriptUriChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event TokenGenerationScriptURLEvent decode error: %v",err)
 		os.Exit(1)
@@ -2692,7 +2692,7 @@ func proc_token_generation_script_url_event(log *types.Log,elog *EthereumEventLo
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewURL = eth_evt.NewURL
+	evt.NewURL = eth_evt.NewValue
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenGenerationScriptURLEvent{\n")
@@ -2705,14 +2705,14 @@ func proc_token_generation_script_url_event(log *types.Log,elog *EthereumEventLo
 func proc_base_uri_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGBaseURIEvent
-	var eth_evt ICosmicSignatureNftBaseURIEvent
+	var eth_evt CosmicSignatureNftNftBaseUriChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing BaseURIEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"BaseURIEvent",log.Data)
+	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"NftBaseUriChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event BaseURIEvent decode error: %v",err)
 		os.Exit(1)
@@ -2723,7 +2723,7 @@ func proc_base_uri_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewURI = eth_evt.NewURI
+	evt.NewURI = eth_evt.NewValue
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("BaseURIEvent{\n")
