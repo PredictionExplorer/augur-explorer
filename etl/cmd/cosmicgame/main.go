@@ -42,6 +42,7 @@ const (
 //	ETH_DEPOSIT_EVENT		= "85177f287940f2f05425a4029951af0e047a7f9c4eaa9a6e6917bcd869f86695"
 	ETH_DEPOSIT_EVENT		= "999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326"
 	RAFFLE_WITHDRAWAL_EVENT = "4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383"
+	RAFFLE_ETH_WINNER		= "636e2e77ba7f2fd4bb40906f0d04dec909e31a90ea0d3a7c7ea7193dbcbbfa11"
 	RAFFLE_NFT_WINNER		= "c595fdec2102257d05c3e92bbc14934b4858785c8c2d02dc63daa0f47251a90c"
 	ENDURANCE_WINNER		= "a32dfd1d4e09d55aebef273d2ce943439a7cdcdfb9ec44f27e6678d86a4fe880"
 	LASTCST_BIDDER_WINNER	= "3901b6430c99dc290ee88ff84c4de6091ad7eac335b58e92ef5cbb0793abf4f6"
@@ -112,6 +113,7 @@ var (
 	evt_nft_donation_event,_= hex.DecodeString(NFT_DONATION_EVENT)
 	evt_erc20_donated,_		= hex.DecodeString(ERC20_DONATED)
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
+	evt_raffle_eth_winner,_	= hex.DecodeString(RAFFLE_ETH_WINNER)
 	evt_endurance_winner,_	= hex.DecodeString(ENDURANCE_WINNER)
 	evt_lastcst_bidder_winner,_	= hex.DecodeString(LASTCST_BIDDER_WINNER)
 	evt_chrono_warrior,_	= hex.DecodeString(CHRONO_WARRIOR)

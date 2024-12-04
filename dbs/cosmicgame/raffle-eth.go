@@ -8,7 +8,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,offset,limit int) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,offset,limit int) []p.CGPrizeDepositRec {
 
 	var query string
 	query = 
@@ -39,10 +39,10 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRaffleDepositRec,0, 32)
+	records := make([]p.CGPrizeDepositRec,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRaffleDepositRec
+		var rec p.CGPrizeDepositRec
 		var null_ts sql.NullInt64
 		var null_date sql.NullString
 		err=rows.Scan(
@@ -71,7 +71,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.CGPrizeDepositRec {
 
 	if limit == 0 { limit = 1000000 }
 	var query string
@@ -98,10 +98,10 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRaffleDepositRec,0, 256)
+	records := make([]p.CGPrizeDepositRec,0, 256)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRaffleDepositRec
+		var rec p.CGPrizeDepositRec
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -123,7 +123,7 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CGPrizeDepositRec {
 
 	var query string
 	query =  "SELECT " +
@@ -149,10 +149,10 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRaffleDepositRec,0, 32)
+	records := make([]p.CGPrizeDepositRec,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRaffleDepositRec
+		var rec p.CGPrizeDepositRec
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,

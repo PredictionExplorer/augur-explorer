@@ -149,6 +149,16 @@ func (sw *SQLStorageWrapper) Delete_raffle_nft_winner(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Delete_raffle_eth_winner(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_raffle_eth_winner WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Delete_endurance_winner(evtlog_id int64) {
 
 	var query string

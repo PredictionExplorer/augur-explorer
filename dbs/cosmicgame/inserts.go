@@ -374,6 +374,32 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_raffle_eth_winner(evt *p.CGRaffleETHWinner) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_eth_winner ("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"winner_aid,round_num,winner_idx,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		winner_aid,
+		evt.Round,
+		evt.WinnerIndex,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_eth_winner table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)

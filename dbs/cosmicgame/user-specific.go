@@ -164,7 +164,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	}
 	return true,rec
 }
-func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGPrizeRec {
+func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRoundRec {
 
 	var query string
 	query = "SELECT "+
@@ -208,10 +208,10 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGPr
 		os.Exit(1)
 	}
 	var null_seed sql.NullString
-	records := make([]p.CGPrizeRec,0, 32)
+	records := make([]p.CGRoundRec,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGPrizeRec
+		var rec p.CGRoundRec
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -472,7 +472,7 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winnings_by_user(winner_aid int64) [
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_prize_deposits_by_user(winner_aid int64) []p.CGRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_prize_deposits_chrono_warrior_by_user(winner_aid int64) []p.CGPrizeDepositRec {
 
 	var query string
 	query =  "SELECT " +
@@ -487,21 +487,22 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_user(winner_aid int64) []p.CG
 				"wa.addr,"+
 				"p.round_num,"+
 				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"FROM "+sw.S.SchemaName()+".cg_chrono_warrior p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid = $1 " +
 			"ORDER BY p.id DESC"
-
+	fmt.Printf("q = %v\n",query)
+	fmt.Printf("user_aid= %v\n",winner_aid)
 	rows,err := sw.S.Db().Query(query,winner_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRaffleDepositRec,0, 32)
+	records := make([]p.CGPrizeDepositRec,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRaffleDepositRec
+		var rec p.CGPrizeDepositRec
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -519,6 +520,60 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_user(winner_aid int64) []p.CG
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		rec.RecordType = 2
+		records = append(records,rec)
+	}
+	return records
+
+}
+func (sw *SQLStorageWrapper) Get_prize_deposits_raffle_eth_by_user(winner_aid int64) []p.CGPrizeDepositRec {
+
+	var query string
+	query =  "SELECT " +
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.round_num,"+
+				"p.amount/1e18 amount_eth "+
+			"FROM "+sw.S.SchemaName()+".cg_raffle_eth_winner p "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"WHERE p.winner_aid = $1 " +
+			"ORDER BY p.id DESC"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGPrizeDepositRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGPrizeDepositRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.RoundNum,
+			&rec.Amount,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.RecordType = 1
 		records = append(records,rec)
 	}
 	return records

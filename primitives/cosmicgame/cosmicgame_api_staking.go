@@ -412,4 +412,7 @@ type CGStakingCstRewardPerTokenRec struct {
 	UserAid						int64
 	UserAddr					string
 }
-
+type UserStakingInfo struct {
+	CSTStakingInfo				CGStakeStatsCST
+	RWalkStakingInfo			CGStakeStatsRWalk
+}

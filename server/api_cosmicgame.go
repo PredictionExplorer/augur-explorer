@@ -660,7 +660,7 @@ func api_cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func api_cosmic_game_user_raffle_deposits(c *gin.Context) {
+func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -684,13 +684,47 @@ func api_cosmic_game_user_raffle_deposits(c *gin.Context) {
 		return
 	}
 
-	deposits := arb_storagew.Get_prize_deposits_by_user(user_aid)
+	deposits := arb_storagew.Get_prize_deposits_raffle_eth_by_user(user_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
 		"UserRaffleDeposits" : deposits,
+		"UserInfo" : user_info,
+	})
+}
+func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_prize_deposits_chrono_warrior_by_user(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserChronoWarriorDeposits" : deposits,
 		"UserInfo" : user_info,
 	})
 }

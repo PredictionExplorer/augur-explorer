@@ -64,7 +64,7 @@ type CGBidRec struct {
 	ImageURL					string
 	Message						string
 }
-type CGPrizeRec struct {
+type CGRoundRec struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -101,11 +101,7 @@ type CGPrizeRec struct {
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	StakingNFTWinners			[]CGRaffleNFTWinnerRec
-	RaffleETHDeposits			[]CGRaffleDepositRec
-}
-type UserStakingInfo struct {
-	CSTStakingInfo				CGStakeStatsCST
-	RWalkStakingInfo			CGStakeStatsRWalk
+	RaffleETHDeposits			[]CGPrizeDepositRec
 }
 type CGUserInfo struct {
 	AddressId					int64
@@ -250,7 +246,7 @@ type CGRecordCounters struct {
 	TotalPrizes					int64
 	TotalDonatedNFTs			int64
 }
-type CGRaffleDepositRec struct {
+type CGPrizeDepositRec struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -258,6 +254,7 @@ type CGRaffleDepositRec struct {
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
+	RecordType					int64		// 0 - undefined ; 1 - Raffle Deposit ; 2 - Chronor Warrior
 	WinnerAddr					string
 	WinnerAid					int64
 	RoundNum					int64

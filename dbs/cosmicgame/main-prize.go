@@ -8,7 +8,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
+func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 
 	if limit == 0 { limit = 1000000 }
 	var query string
@@ -60,13 +60,13 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 		os.Exit(1)
 	}
 	var null_seed sql.NullString
-	records := make([]p.CGPrizeRec,0, 256)
+	records := make([]p.CGRoundRec,0, 256)
 	defer rows.Close()
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
 	for rows.Next() {
-		var rec p.CGPrizeRec
+		var rec p.CGRoundRec
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -112,9 +112,9 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec) {
+func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec) {
 
-	var rec p.CGPrizeRec
+	var rec p.CGRoundRec
 	var query string
 	query = "SELECT "+
 				"p.evtlog_id,"+

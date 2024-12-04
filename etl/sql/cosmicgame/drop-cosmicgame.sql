@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS
 	cg_prize_deposit,
 	cg_prize_withdrawal,
 	cg_raffle_nft_winner,
+	cg_raffle_eth_winner,
 	cg_endurance_winner,
 	cg_lastcst_winner,
 	cg_donated_nft_claimed,

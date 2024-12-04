@@ -189,6 +189,18 @@ type CGRaffleNFTWinner struct {
 	IsRandomWalk		bool
 	IsStaker			bool
 }
+type CGRaffleETHWinner struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+	Round				int64
+	WinnerIndex			int64
+	Amount 				string
+}
 type CGEnduranceWinner struct {
 	EvtId				int64
 	BlockNum			int64
