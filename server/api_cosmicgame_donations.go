@@ -242,3 +242,32 @@ func api_cosmic_game_donations_erc20_by_round(c *gin.Context) {
 		"RoundNum": round_num,
 	})
 }
+func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	donations := arb_storagew.Get_erc20_donations_by_user(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"DonationsERC20ByUser" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}

@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>ERC20 donations for Round {{.PrizeNum}}</title>
+	<title>ERC20 donations by User {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">ERC20 Donations<h3>
+	<h3 class="page_title">ERC20 Donations by User {{.UserAddr}}  <h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -15,7 +15,7 @@
 		<th class="market_reports">Winer</th>
 		<th class="market_reports">Claimed</th>
 	</tr>
-	{{- range $i, $change := .DonationsERC20}}
+	{{- range $i, $change := .DonationsERC20ByUser}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">
@@ -35,8 +35,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/donations/erc20/by_prize/[round_num]</br>
+	API: /api/cosmicgame/donations/erc20/by_user/[user_addr]</br>
 
-	Example: /api/cosmicgame/donations/erc20/by_prize/{{.PrizeNum}}
+	Example: /api/cosmicgame/donations/erc20/by_user/{{.UserAddr}}
 </code>
 </body>

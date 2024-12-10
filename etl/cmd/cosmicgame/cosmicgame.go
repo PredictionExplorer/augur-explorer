@@ -2787,7 +2787,7 @@ func proc_ownership_transferred_event(log *types.Log,elog *EthereumEventLog) {
 		contract_code = 2
 	}
 	if bytes.Equal(log.Address.Bytes(),cosmic_token_addr.Bytes()) {
-		contract_code = 3
+	contract_code = 3
 	}
 	if bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		contract_code = 4 

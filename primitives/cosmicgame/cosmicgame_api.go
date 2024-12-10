@@ -218,6 +218,9 @@ type CGERC20Donation struct {
 	TokenAddr					string
 	Amount						string
 	AmountEth					float64
+	WinnerAid					int64
+	WinnerAddr					string
+	Claimed						bool
 }
 type CGNFTDonation struct {
 	RecordId					int64
