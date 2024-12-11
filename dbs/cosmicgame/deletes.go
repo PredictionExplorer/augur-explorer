@@ -229,6 +229,7 @@ func (sw *SQLStorageWrapper) Delete_eth_deposit_event(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
+/* DISCONTINUED, removal pending
 func (sw *SQLStorageWrapper) Delete_claim_reward_event(evtlog_id int64) {
 
 	var query string
@@ -238,7 +239,7 @@ func (sw *SQLStorageWrapper) Delete_claim_reward_event(evtlog_id int64) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
-}
+}*/
 func (sw *SQLStorageWrapper) Delete_stake_action_rwalk_event(evtlog_id int64) {
 
 	var query string

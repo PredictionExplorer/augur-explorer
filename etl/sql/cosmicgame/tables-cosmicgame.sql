@@ -410,19 +410,19 @@ CREATE TABLE cg_round_started (	-- FirstBidPlacedInRound
 	start_ts		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_claim_reward (	-- DISCONTINUED, removal pending
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	action_id		BIGINT NOT NULL,
-	deposit_id		BIGINT NOT NULL,
-	reward			DECIMAL NOT NULL,
-	staker_aid		BIGINT NOT NULL,
-	UNIQUE(evtlog_id)
-);
+--CREATE TABLE cg_claim_reward (	-- DISCONTINUED, removal pending
+--	id				BIGSERIAL PRIMARY KEY,
+--	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+--	block_num		BIGINT NOT NULL,
+--	tx_id			BIGINT NOT NULL,
+--	time_stamp		TIMESTAMPTZ NOT NULL,
+--	contract_aid	BIGINT NOT NULL,
+--	action_id		BIGINT NOT NULL,
+--	deposit_id		BIGINT NOT NULL,
+--	reward			DECIMAL NOT NULL,
+--	staker_aid		BIGINT NOT NULL,
+--	UNIQUE(evtlog_id)
+--);
 CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This is the smallest reward unit (from which other accumulators are composed)
 	staker_aid		BIGINT NOT NULL,
 	action_id		BIGINT NOT NULL,

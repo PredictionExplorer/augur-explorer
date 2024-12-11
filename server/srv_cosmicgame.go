@@ -65,6 +65,8 @@ var (
 	round_start_ts				int64
 	endurance_champ_addr		string
 	endurance_duration			int64
+	chrono_warrior_addr			string
+	chrono_warrior_duration		int64
 	lastcst_bidder_addr			string
 
 	// contract counters	(collected via DB)
@@ -328,16 +330,19 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_charity_balance,f_divisor)
 			charity_balance_eth,_ = f_quo.Float64()
 		}
-		tmp_addr, tmp_duration, err := bwcontract.CurrentEnduranceChampion(&copts);
+		//tmp_addr1, tmp_duration1,tmp_addr2,tmp_duration2, err := bwcontract.TryGetCurrentChampions(&copts);
+		champs,err := bwcontract.TryGetCurrentChampions(&copts);
 		if err != nil {
-			err_str := fmt.Sprintf("Error at currentEnduranceChampion() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at TryGetCurrentChampions() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		} else {
-			endurance_champ_addr = tmp_addr.String()
-			endurance_duration = tmp_duration.Int64()
+			endurance_champ_addr = champs.EnduranceChampionAddress.String()
+			endurance_duration = champs.EnduranceChampionDuration.Int64()
+			chrono_warrior_addr = champs.ChronoWarriorAddress.String()
+			chrono_warrior_duration = champs.ChronoWarriorDuration.Int64()
 		}
-		tmp_addr, err = bwcontract.LastCstBidderAddress(&copts);
+		tmp_addr, err := bwcontract.LastCstBidderAddress(&copts);
 		if err != nil {
 			err_str := fmt.Sprintf("Error at lastCstBidderAddress() call: %v\n",err)
 			Error.Printf(err_str)

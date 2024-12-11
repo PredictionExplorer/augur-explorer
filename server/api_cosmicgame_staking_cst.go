@@ -253,18 +253,12 @@ func api_cosmic_game_staking_cst_rewards_global(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
-	}
-	rewards := arb_storagew.Get_global_staking_rewards(offset, limit)
+	rewards := arb_storagew.Get_global_staking_rewards()
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"Offset" : offset,
-		"Limit" : limit,
 		"StakingCSTRewards" : rewards,
 	})
 }

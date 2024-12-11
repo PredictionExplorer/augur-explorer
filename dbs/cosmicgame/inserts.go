@@ -678,6 +678,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		os.Exit(1)
 	}
 }
+/* DISCONTINUED , removal pending
 func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
@@ -704,7 +705,7 @@ func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_claim_reward table: %v\n",err))
 		os.Exit(1)
 	}
-}
+}*/
 func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)

@@ -1,42 +1,36 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CST Staking Rewards pending to claim globally</title>
+	<title>CST Staking Rewards global</title>
 </head>
 <body>
-	<h3 class="page_title">CST Staking Rewards pending to claim globally<h3>
+	<h3 class="page_title">CST Staking Rewards global<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">RecordId</th>
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Deposit Id</th>
-		<th class="market_reports">Staker</th>
-		<th class="market_reports">Amount to claim (ETH)</th>
-		<th class="market_reports">Fully claimed?</th>
+		<th class="market_reports">Round Num</th>
+		<th class="market_reports">Amount (ETH)</th>
+		<th class="market_reports">Collected?</th>
+		<th class="market_reports">Pending to collect</th>
 	</tr>
 	{{- range $i, $change := .StakingCSTRewards}}
 		<tr class="market_reports">
 			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.RecordId}}</td>
 			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.BlockNum}}</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
-			<td class="" style="text-align: center;">
-				<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{.StakerAddr}}/{{.DepositId}}">
-				{{.DepositId}}
-				</a>
-			</td>
-			<td class="addr" title="{{.StakerAid}}">
-			<a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.StakerAddr}}">{{.StakerAddr}}</a>
-			</td>
-			<td style="text-align: right;" title="">{{printf "%.6f" .YourAmountToClaimEth}}</td>
+			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.RoundNum}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .TotalDepositAmountEth}}</td>
 			<td style="text-align: center;">{{.FullyClaimed}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .AmountCollectedEth}}</td>
 		</tr>
 	{{- end}}
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/cst/rewards/global/[offset]/[limit]</br>
+	API: /api/cosmicgame/staking/cst/rewards/global</br>
 
-	Example: /api/cosmicgame/staking/cst/rewards/global/0/10000
+	Example: /api/cosmicgame/staking/cst/rewards/global
 </code>
 </body>

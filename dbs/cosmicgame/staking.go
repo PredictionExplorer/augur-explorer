@@ -667,19 +667,19 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CGCollectedReward {
+func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlobal {
 
-	records := make([]p.CGCollectedReward,0, 32)
+	records := make([]p.CGStakingRewardGlobal,0, 32)
 	var query string
 	query = "WITH rwd AS ("+
 				"SELECT "+
-					"COUNT(id) AS num_toks_collected,"+
+					"COUNT(token_id) AS num_toks_collected,"+
 					"SUM(reward) AS collected_reward," +
 					"SUM(reward)/1e18 AS collected_reward_eth,"+
-					"deposit_id, "+
-					"staker_aid "+
-				"FROM cg_claim_reward "+
-				"GROUP BY staker_aid,deposit_id "+
+					"round_num "+
+				"FROM cg_st_reward "+
+				"WHERE collected='t' "+
+				"GROUP BY round_num "+
 			") "+
 			"SELECT "+
 				"d.id,"+
@@ -691,35 +691,25 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CG
 				"d.time_stamp,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
-				"d.deposit_id,"+
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
-				"sd.tokens_staked,"+
-				"sd.amount_to_claim,"+
-				"sd.amount_to_claim/1e18,"+
-				"COALESCE(rwd.num_toks_collected,0),"+
 				"d.round_num, "+
 				"COALESCE(rwd.collected_reward,0),"+
-				"COALESCE(rwd.collected_reward_eth,0), "+
-				"sd.staker_aid,"+
-				"sa.addr "+
-			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
+				"COALESCE(rwd.collected_reward_eth,0) "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
-				"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
-				"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
-			"ORDER BY d.id DESC,sd.staker_aid " +
-			"OFFSET $1 LIMIT $2"
+				"LEFT JOIN rwd ON (rwd.round_num=d.round_num) "+
+			"ORDER BY d.id DESC "
 
-	rows,err := sw.S.Db().Query(query,offset,limit)
+	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGCollectedReward	
+		var rec p.CGStakingRewardGlobal
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -730,25 +720,17 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CG
 			&rec.DateTime,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
-			&rec.DepositId,
 			&rec.NumStakedNFTs,
 			&rec.TotalDepositAmount,
 			&rec.TotalDepositAmountEth,
-			&rec.YourTokensStaked,
-			&rec.YourAmountToClaim,
-			&rec.YourAmountToClaimEth,
-			&rec.NumTokensCollected,
 			&rec.RoundNum,
-			&rec.YourCollectedAmount,
-			&rec.YourCollectedAmountEth,
-			&rec.StakerAid,
-			&rec.StakerAddr,
+			&rec.AmountCollected,
+			&rec.AmountCollectedEth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if rec.YourAmountToClaimEth == rec.YourCollectedAmountEth { rec.FullyClaimed = true }
 		records = append(records,rec)
 	}
 	return records

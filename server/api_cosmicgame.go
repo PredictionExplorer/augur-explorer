@@ -1688,6 +1688,8 @@ func api_cosmic_game_bid_special_winners(c *gin.Context) {
 		"LastBidderLastBidTime" : last_bidder_bid_time,
 		"EnduranceChampionAddress": endurance_champ_addr,
 		"EnduranceChampionDuration": endurance_duration,
+		"ChronoWarriorAddress" : chrono_warrior_addr,
+		"ChronoWarriorDuration" : chrono_warrior_duration,
 		"LastCstBidderAddress" : lastcst_bidder_addr,
 	})
 }

@@ -68,7 +68,7 @@ func cosmic_game_staking_cst_rewards_global(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	rewards := arb_storagew.Get_global_staking_rewards(0, 1000000)
+	rewards := arb_storagew.Get_global_staking_rewards()
 	c.HTML(http.StatusOK, "cg_staking_cst_rewards_global.html", gin.H{
 		"StakingCSTRewards" : rewards,
 	})

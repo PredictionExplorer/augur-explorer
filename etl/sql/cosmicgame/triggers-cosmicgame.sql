@@ -36,8 +36,8 @@ CREATE TRIGGER cg_donation_sent_delete AFTER DELETE ON cg_donation_sent FOR EACH
 --CREATE TRIGGER cg_unstake_action_cst_delete AFTER DELETE ON cg_unstake_action_cst FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_cst_delete();
 CREATE TRIGGER cg_eth_deposit_insert AFTER INSERT ON cg_eth_deposit FOR EACH ROW EXECUTE PROCEDURE on_eth_deposit_insert();
 CREATE TRIGGER cg_eth_deposit_delete AFTER DELETE ON cg_eth_deposit FOR EACH ROW EXECUTE PROCEDURE on_eth_deposit_delete();
-CREATE TRIGGER cg_claim_reward_insert AFTER INSERT ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_insert();
-CREATE TRIGGER cg_claim_reward_delete AFTER DELETE ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_delete();
+--DISCONTINUED     CREATE TRIGGER cg_claim_reward_insert AFTER INSERT ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_insert();
+--DISCONTINUED     CREATE TRIGGER cg_claim_reward_delete AFTER DELETE ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_delete();
 CREATE TRIGGER cg_marketing_rewards_insert AFTER INSERT ON cg_mkt_reward FOR EACH ROW EXECUTE PROCEDURE on_marketing_rewards_insert();
 CREATE TRIGGER cg_marketing_rewards_delete AFTER DELETE ON cg_mkt_reward FOR EACH ROW EXECUTE PROCEDURE on_marketing_rewards_delete();
 CREATE TRIGGER cg_donation_insert AFTER INSERT ON cg_donation FOR EACH ROW EXECUTE PROCEDURE on_direct_donation_insert();

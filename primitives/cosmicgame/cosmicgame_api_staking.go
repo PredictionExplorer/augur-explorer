@@ -272,6 +272,29 @@ type CGCollectedReward struct {
 	StakerAddr					string
 	FullyClaimed				bool
 }
+type CGStakingRewardGlobal	struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	DepositId					int64
+	NumStakedNFTs				int64
+	TotalDepositAmount			string
+	TotalDepositAmountEth		float64
+	DepositAmountPerToken		string
+	DepositAmountPerTokenEth	float64
+	Modulo						string
+	ModuloF64					float64
+	RoundNum					int64
+	FullyClaimed				bool
+	AmountCollected				string
+	AmountCollectedEth			float64
+}
 type CGUniqueStakerCST struct {
 	StakerAid					int64
 	StakerAddr					string

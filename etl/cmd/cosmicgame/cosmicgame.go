@@ -335,7 +335,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.PrizeNum= log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
-	evt.Amount = eth_evt.Amount.String()
+	evt.Amount = eth_evt.EthPrizeAmount.String()
 	evt.TokenId = find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
 	evt.DonationEvtId = storagew.Get_donation_received_evt_id(evt.TxId,evt.EvtId,hex.EncodeToString(evt_donation_received_event[:4]))
 	if evt.DonationEvtId == 0 {
@@ -630,7 +630,7 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonationReceivedEvent
-	var eth_evt CharityWalletDonationReceivedEvent
+	var eth_evt CharityWalletDonationReceived
 
 	Info.Printf("Processing DonationReceivedEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -638,7 +638,7 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"DonationReceivedEvent",log.Data)
+	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"DonationReceived",log.Data)
 	if err != nil {
 		Error.Printf("Event DonationReceivedEvent decode error: %v",err)
 		os.Exit(1)
@@ -666,7 +666,7 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonationSentEvent
-	var eth_evt CharityWalletDonationSentEvent
+	var eth_evt CharityWalletDonationSent
 
 	Info.Printf("Processing DonationSentEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -674,7 +674,7 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"DonationSentEvent",log.Data)
+	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"DonationSent",log.Data)
 	if err != nil {
 		Error.Printf("Event DonationSentEvent decode error: %v",err)
 		os.Exit(1)
