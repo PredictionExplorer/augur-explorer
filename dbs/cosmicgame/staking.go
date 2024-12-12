@@ -269,8 +269,8 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			&rec.DepositAmount,
 			&rec.DepositAmountEth,
 			&rec.YourTokensStaked,
-			&rec.YourClaimableAmount,
-			&rec.YourClaimableAmountEth,
+			&rec.YourAmountToClaim,
+			&rec.YourAmountToClaimEth,
 			&null_collected,
 			&null_collected_eth,
 			&rec.AmountPerToken,
@@ -280,8 +280,9 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_collected.Valid {rec.YourClaimableAmount = null_collected.String }
-		if null_collected_eth.Valid { rec.YourClaimableAmountEth = null_collected_eth.Float64 }
+		if null_collected.Valid {rec.YourCollectedAmount = null_collected.String }
+		if null_collected_eth.Valid { rec.YourCollectedAmountEth = null_collected_eth.Float64 }
+		rec.PendingToClaimEth = rec.YourAmountToClaimEth - rec.YourCollectedAmountEth
 		records = append(records,rec)
 	}
 	return records

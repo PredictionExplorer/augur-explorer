@@ -99,14 +99,14 @@ async function main() {
 	await samp2.waitForDeployment();
 	let samp2Addr = await samp2.getAddress();
 
-    let donationAmount = hre.ethers.parseEther("10");
+    let donationAmount = hre.ethers.parseEther("1000");
     await cosmicGameProxy.donate({
         value: donationAmount
     });
     let donationData =
         '{"version":1,"title":"Hardhat donation","message":"Donation from HardHat","url":"http://hardhat.org"}';
     await cosmicGameProxy.donateWithInfo(donationData, {
-        value: hre.ethers.parseEther("6"),
+        value: hre.ethers.parseEther("60"),
     });
     donationData =
         '{"version":1,"title":"ArtBlocks donation","message":"ArtBlocks offers a platform for creators, buyers and sellers of digital assets and any non-digital products, services and/or benefits to be furnished by or on behalf of sellers in connection with such sales","url":"https://www.artblocks.io"}';
@@ -114,7 +114,7 @@ async function main() {
     await cosmicGameProxy
         .connect(addr2)
         .donateWithInfo(donationData, {
-            value: hre.ethers.parseEther("6")
+            value: hre.ethers.parseEther("90")
         });
 
 	let numStakeActions = 5
@@ -539,7 +539,7 @@ async function main() {
     await cosmicGameProxy
         .connect(owner)
         .setCharityAddress(await charityWallet.getAddress());
-    await cosmicGameProxy.connect(owner).setStakingPercentage(9);
+    await cosmicGameProxy.connect(owner).setStakingPercentage(19);
     await cosmicGameProxy
         .connect(owner)
         .setTokenContract(await cosmicToken.getAddress());
@@ -753,6 +753,10 @@ async function main() {
         gasLimit: 3000000
     });
 
+    donationAmount = hre.ethers.parseEther("500");
+    await cosmicGameProxy.donate({
+        value: donationAmount
+    });
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
 	cstPrice = await cosmicGameProxy.getCurrentBidPriceCST();
     await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"CST bid addr1");

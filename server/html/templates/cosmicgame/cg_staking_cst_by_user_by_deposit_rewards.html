@@ -55,8 +55,8 @@
 						<td style="text-align: left;" title="">{{.NumTokensCollected}}</td>
 					</tr>
 					<tr>
-						<td>Amount collected (ETH)</td>
-						<td style="text-align: center;" title="">{{ printf "%.6f" .ClaimedAmountEth}}</td>
+						<td>Accum. Amount collected (ETH)</td>
+						<td style="text-align: right;" title="">{{ printf "%.6f" .ClaimedAmountEth}}</td>
 					</tr>
 				</table>
 			</td>
@@ -109,8 +109,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/cst/by_user/by_deposit/rewards/[user_addr]</br>
+	API: /api/cosmicgame/staking/cst/rewards/by_user/by_deposit/[user_addr]</br>
 
-	Example: /api/cosmicgame/staking/cst/by_user/by_deposit/rewards/{{.UserAddr}}
+	Example: /api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserAddr}}
 </code>
 </body>
