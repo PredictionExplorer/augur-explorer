@@ -1010,7 +1010,7 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
-func api_cosmic_game_claim_history_detail(c *gin.Context) {
+func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1037,7 +1037,7 @@ func api_cosmic_game_claim_history_detail(c *gin.Context) {
 		return
 	}
 
-	claim_history := arb_storagew.Get_claim_history_detailed(user_aid,offset,limit)
+	claim_history := arb_storagew.Get_prize_history_detailed_by_user(user_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""

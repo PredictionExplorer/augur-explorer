@@ -73,42 +73,6 @@ func cosmic_game_staking_cst_rewards_global(c *gin.Context) {
 		"StakingCSTRewards" : rewards,
 	})
 }
-func cosmic_game_staking_cst_rewards_action_ids_by_deposit_with_claim_info(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	p_user_addr:= c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		respond_error(c,"'user_addr' parameter is not set")
-		return
-	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		respond_error(c,"Provided address wasn't found")
-		return
-	}
-	p_deposit_id := c.Param("deposit_id")
-	var deposit_id int64
-	if len(p_deposit_id) > 0 {
-		var success bool
-		deposit_id,success = parse_int_from_remote_or_error(c,HTTP,&p_deposit_id)
-		if !success {
-			return
-		}
-	} else {
-		respond_error(c,"'deposit_id' parameter is not set")
-		return
-	}
-	action_ids := arb_storagew.Get_action_ids_for_deposit_with_claim_info(deposit_id,user_aid)
-	c.HTML(http.StatusOK, "cg_action_ids_by_deposit_with_claim_info.html", gin.H{
-		"UserAddr" : p_user_addr,
-		"UserAid" : user_aid,
-		"DepositId" : deposit_id,
-		"ActionIdsWithClaimInfo" : action_ids,
-	})
-}
 func cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -137,13 +101,12 @@ func cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		respond_error(c,"'deposit_id' parameter is not set")
 		return
 	}
-	fmt.Printf("executing action_ids_for_Deposit\n");
-	action_ids := arb_storagew.Get_action_ids_for_deposit(deposit_id,user_aid)
+	action_ids := arb_storagew.Get_action_ids_for_deposit_with_claim_info(deposit_id,user_aid)
 	c.HTML(http.StatusOK, "cg_action_ids_by_deposit.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"DepositId" : deposit_id,
-		"ActionIds" : action_ids,
+		"ActionIdsWithClaimInfo" : action_ids,
 	})
 }
 func cosmic_game_staked_tokens_cst_global(c *gin.Context) {

@@ -812,7 +812,7 @@ func cosmic_game_donations_nft_info(c *gin.Context) {
 	}
 	found,nftdonation := arb_storagew.Get_NFT_donation_info(record_id)
 	if !found {
-		respond_error(c,"Database link wasn't configured")
+		respond_error(c,"Record not found")
 	} else {
 		c.HTML(http.StatusOK, "cg_donated_nft_info.html", gin.H{
 			"NFTDonation" : nftdonation,
@@ -1273,7 +1273,7 @@ func cosmic_game_global_claim_history_detail(c *gin.Context) {
 		"GlobalPrizeHistory" : claim_history,
 	})
 }
-func cosmic_game_claim_history_detail(c *gin.Context) {
+func cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1298,7 +1298,7 @@ func cosmic_game_claim_history_detail(c *gin.Context) {
 		return
 	}
 
-	claim_history := arb_storagew.Get_claim_history_detailed(user_aid,offset,limit)
+	claim_history := arb_storagew.Get_prize_history_detailed_by_user(user_aid,offset,limit)
 	c.HTML(http.StatusOK, "cg_user_claim_history_detail.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,

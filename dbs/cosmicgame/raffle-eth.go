@@ -28,7 +28,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 				"EXTRACT(EPOCH FROM rw.time_stamp)::BIGINT AS tstmp, "+
 				"rw.time_stamp "+
 			"FROM cg_prize_deposit rd "+
-				"LEFT JOIN cg_raffle_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id "+
+				"LEFT JOIN cg_prize_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id "+
 				"LEFT JOIN transaction t ON t.id=rd.tx_id "+
 				"LEFT JOIN address wa ON rd.winner_aid = wa.address_id "+
 			"WHERE rd.winner_aid=$1 AND rd.claimed='F' " +

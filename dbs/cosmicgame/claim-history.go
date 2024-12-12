@@ -7,7 +7,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,limit int) []p.CGRaffleHistory {
+func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64,offset,limit int) []p.CGPrizeHistory {
 	
 	var query string
 	query = "SELECT "+
@@ -114,12 +114,12 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 				") UNION ALL (" +
 					"WITH rwd AS ("+
 						"SELECT "+
-							"COUNT(id) AS num_toks_collected,"+
+							"COUNT(token_id) AS num_toks_collected,"+
 							"SUM(reward) AS collected_reward," +
 							"SUM(reward)/1e18 AS collected_reward_eth,"+
 							"deposit_id, "+
 							"staker_aid "+
-						"FROM cg_claim_reward "+
+						"FROM cg_st_reward "+
 						"GROUP BY staker_aid,deposit_id "+
 					") "+
 					"SELECT "+
@@ -302,10 +302,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRaffleHistory,0, 32)
+	records := make([]p.CGPrizeHistory,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRaffleHistory
+		var rec p.CGPrizeHistory
 		err=rows.Scan(
 			&rec.RecordType,
 			&rec.EvtLogId,
@@ -331,7 +331,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int) []p.CGRaffleHistory {
+func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int) []p.CGPrizeHistory {
 	
 	var query string
 	query = "SELECT "+
@@ -448,12 +448,12 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 				") UNION ALL (" +
 					"WITH rwd AS ("+
 						"SELECT "+
-							"COUNT(id) AS num_toks_collected,"+
+							"COUNT(token_id) AS num_toks_collected,"+
 							"SUM(reward) AS collected_reward," +
 							"SUM(reward)/1e18 AS collected_reward_eth,"+
 							"deposit_id, "+
 							"staker_aid "+
-						"FROM cg_claim_reward "+
+						"FROM cg_st_reward "+
 						"GROUP BY staker_aid,deposit_id "+
 					") "+
 					"SELECT "+
@@ -654,10 +654,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRaffleHistory,0, 32)
+	records := make([]p.CGPrizeHistory,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRaffleHistory
+		var rec p.CGPrizeHistory
 		err=rows.Scan(
 			&rec.RecordType,
 			&rec.EvtLogId,

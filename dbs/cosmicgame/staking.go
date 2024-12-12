@@ -208,12 +208,12 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 	var query string
 	query = "WITH rwd AS ("+
 				"SELECT "+
-					"COUNT(id) AS num_toks_collected,"+
+					"COUNT(token_id) AS num_toks_collected,"+
 					"SUM(reward) AS collected_reward," +
 					"SUM(reward)/1e18 AS collected_reward_eth,"+
 					"deposit_id "+
-				"FROM cg_claim_reward "+
-				"WHERE staker_aid=$1 "+
+				"FROM cg_st_reward "+
+				"WHERE staker_aid=$1 AND collected='f' "+
 				"GROUP BY deposit_id "+
 			") "+
 			"SELECT "+
@@ -241,7 +241,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 				"LEFT JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
-			"WHERE (sd.staker_aid = $1) AND (sd.amount_to_claim != COALESCE(rwd.collected_reward,0)) " +
+			"WHERE (sd.staker_aid = $1) " +
 			"ORDER BY d.id DESC "
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
@@ -506,83 +506,11 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_global() []p.CGStakedTokenR
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_aid int64) []p.CGActionIdsForDeposit {
-
-	records := make([]p.CGActionIdsForDeposit,0, 16)
-	cur_ts := sw.S.Get_last_block_timestamp()
-	var query string
-	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_id=$1"
-	row := sw.S.Db().QueryRow(query,deposit_id)
-	var null_ts sql.NullInt64
-	err:=row.Scan(&null_ts)
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			return records
-		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_action_ids_for_deposit(): %v, q=%v",err,query))
-		os.Exit(1)
-	}
-	query = "SELECT "+
-				"a.id,"+
-				"a.action_id, "+
-				"a.token_id, "+
-				"EXTRACT(epoch FROM a.time_stamp)::BIGINT action_ts,"+
-//				"r.deposit_id, "+
-				"d.amount_per_staker, "+
-				"d.amount_per_staker/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst a "+
-				"JOIN cg_eth_deposit d ON d.deposit_id=$3 "+
-				"LEFT JOIN cg_nft_staked_cst u ON a.action_id=u.action_id "+
-//PENDING				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
-			"WHERE "+
-				"(a.staker_aid = $1) AND ("+
-					"("+
-						"(a.action_id < $2) AND (u.id IS NULL)"+
-					") OR "+
-						"(" + 
-							"(a.action_id<$2 AND "+
-							"(u.id IS NOT NULL) AND "+
-							"($2<=u.action_id) "+
-						")"+
-					")"+
-				") " +
-			"ORDER BY a.action_id "
-	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64,deposit_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.CGActionIdsForDeposit
-		var null_deposit_id sql.NullInt64
-		err=rows.Scan(
-			&rec.RecordId,
-			&rec.StakeActionId,
-			&rec.TokenId,
-			&rec.StakeActionTimeStamp,
-//			&null_deposit_id,			// PENDING for refactoring
-			&rec.Amount,
-			&rec.AmountEth,
-		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		rec.DepositId = deposit_id
-		rec.UserAid = user_aid
-		if null_deposit_id.Valid {rec.Claimed = true }
-		rec.CurChainTimeStamp = cur_ts
-		rec.TimeStampDiff = -1
-		records = append(records,rec)
-	}
-	return records
-}
 func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_id int64,user_aid int64) []p.CGActionIdsForDepositWithClaimInfo {
 
 	records := make([]p.CGActionIdsForDepositWithClaimInfo,0, 16)
 	var query string
-	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_id=$1"
+	/*query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_id=$1"
 	row := sw.S.Db().QueryRow(query,deposit_id)
 	var null_ts sql.NullInt64
 	err:=row.Scan(&null_ts)
@@ -592,39 +520,41 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_action_ids_for_deposit(): %v, q=%v",err,query))
 		os.Exit(1)
-	}
+	}*/
 
 	query = "SELECT "+
-				"r.id,"+
+				"d.id,"+
 				"a.action_id, "+
 				"a.token_id, "+
-				"r.deposit_id, "+
-				"r.block_num, "+
-				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT,"+
-				"r.time_stamp,"+
+				"d.deposit_id, "+
+				"d.block_num, "+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
 				"tx.id,"+
 				"tx.tx_hash,"+
 				"r.reward,"+
-				"r.reward/1e18 "+
+				"r.reward/1e18, "+
+				"r.collected "+
 			"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst a "+
-				"JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
+				"JOIN cg_st_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$1) AND (r.staker_aid=a.staker_aid) AND (r.staker_aid=$2) " +
+				"JOIN cg_eth_deposit d ON r.deposit_id=d.deposit_id "+
 				"LEFT JOIN cg_nft_unstaked_cst u ON a.action_id=u.action_id "+
-				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
+				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
 			"WHERE "+
-				"(a.staker_aid = $1) AND ("+
+				"(a.staker_aid = $2) AND ("+
 					"("+
-						"(a.time_stamp < TO_TIMESTAMP($2)) AND (u.id IS NULL)"+
+						"(a.action_id < $1) AND (u.action_counter IS NULL)"+
 					") OR "+
 						"(" + 
-							"(a.time_stamp<TO_TIMESTAMP($2) AND "+
-							"(u.id IS NOT NULL) AND "+
-							"(TO_TIMESTAMP($2)<=u.time_stamp) "+
+							"(a.action_id<$1 AND "+
+							"(u.action_counter IS NOT NULL) AND "+
+							"($1<=u.action_counter) "+
 						")"+
 					")"+
 				") " +
-			"ORDER BY r.evtlog_id DESC "
+			"ORDER BY d.evtlog_id DESC "
 
-	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64,deposit_id)
+	rows,err := sw.S.Db().Query(query,deposit_id,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -648,6 +578,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 			&null_rwd_tx_hash,
 			&null_reward,
 			&null_reward_eth,
+			&rec.Claimed,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -655,7 +586,6 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 		}
 		rec.DepositId = deposit_id
 		rec.UserAid = user_aid
-		if null_deposit_id.Valid {rec.Claimed = true }
 		if null_rwd_block_num.Valid {rec.ClaimBlockNum = null_rwd_block_num.Int64}
 		if null_rwd_timestamp.Valid {rec.ClaimTimeStamp = null_rwd_timestamp.Int64}
 		if null_rwd_datetime.Valid {rec.ClaimDateTime = null_rwd_datetime.String}
