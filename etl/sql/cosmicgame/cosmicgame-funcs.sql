@@ -1191,3 +1191,35 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_reward_paid_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+	v_rec RECORD;
+BEGIN
+
+	FOR v_rec IN (SELECT action_id,deposit_index FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
+		LOOP
+			IF NEW.unpaid_dep_id < v_rec.deposit_index THEN
+				UPDATE cg_st_reward SET collected = 'T' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
+			END IF;
+		END LOOP;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_reward_paid_delete() RETURNS trigger AS  $$
+DECLARE
+	v_rec RECORD;
+BEGIN
+
+
+	FOR v_rec IN (SELECT action_id,deposit_index FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
+		LOOP
+			IF NEW.unpaid_dep_id < v_rec.deposit_index THEN
+				UPDATE cg_st_reward SET collected = 'F' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
+			END IF;
+		END LOOP;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
