@@ -536,7 +536,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonationEvent
-	var eth_evt CosmicSignatureGameDonationEvent
+	var eth_evt CosmicSignatureGameEthDonated
 
 	Info.Printf("Processing DonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -544,7 +544,7 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonationEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthDonated",log.Data)
 	if err != nil {
 		Error.Printf("Event DonationEvent decode error: %v",err)
 		os.Exit(1)
@@ -576,7 +576,7 @@ func get_donation_data(record_id int64) (string,error) {
 		return "",err
 	}
 	var copts bind.CallOpts
-	dinfo_rec,err := cosmic_game_ctrct.DonationInfoRecords(&copts,big.NewInt(record_id))
+	dinfo_rec,err := cosmic_game_ctrct.EthDonationWithInfoRecords(&copts,big.NewInt(record_id))
 	if err != nil {
 		return "",err
 	}
@@ -585,7 +585,7 @@ func get_donation_data(record_id int64) (string,error) {
 func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonationWithInfoEvent
-	var eth_evt CosmicSignatureGameDonationWithInfoEvent
+	var eth_evt CosmicSignatureGameEthDonatedWithInfo
 
 	Info.Printf("Processing DonationWithInfoEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -593,7 +593,7 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonationWithInfoEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthDonatedWithInfo",log.Data)
 	if err != nil {
 		Error.Printf("Event DonationWithInfoEvent decode error: %v",err)
 		os.Exit(1)
@@ -605,7 +605,7 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.RecordId = eth_evt.RecordId.Int64();
+	evt.RecordId = eth_evt.EthDonationWithInfoRecordIndex.Int64();
 	evt.Amount = eth_evt.Amount.String()
 	evt.RoundNum = eth_evt.RoundNum.Int64()
 	data_json,err := get_donation_data(evt.RecordId)
@@ -1802,7 +1802,7 @@ func proc_charity_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewCharityPercentage= eth_evt.NewCharityPercentage.String()
+	evt.NewCharityPercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CharityPercentageChanged {\n")
@@ -1833,7 +1833,7 @@ func proc_prize_percentage_changed_event(log *types.Log,elog *EthereumEventLog) 
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewPrizePercentage= eth_evt.NewMainPrizePercentage.String()
+	evt.NewPrizePercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PrizePercentageChanged {\n")
@@ -1864,7 +1864,7 @@ func proc_raffle_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewRafflePercentage= eth_evt.NewRafflePercentage.String()
+	evt.NewRafflePercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RafflePercentageChanged {\n")
@@ -1895,7 +1895,7 @@ func proc_staking_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewStakingPercentage= eth_evt.NewStakingPercentage.String()
+	evt.NewStakingPercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("StakingPercentageChanged {\n")
@@ -1926,7 +1926,7 @@ func proc_chrono_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewChronoPercentage= eth_evt.NewChronoWarriorEthPrizePercentage.String()
+	evt.NewChronoPercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("ChronoWarriorEthPrizePercentageChanged{\n")
@@ -1957,7 +1957,7 @@ func proc_num_raffle_eth_winners_bidding_changed_event(log *types.Log,elog *Ethe
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewNumRaffleETHWinnersBidding = eth_evt.NewNumRaffleETHWinnersBidding.Int64()
+	evt.NewNumRaffleETHWinnersBidding = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NumRaffleETHWinnersBiddingChanged{\n")
@@ -1988,7 +1988,7 @@ func proc_num_raffle_nft_winners_bidding_changed_event(log *types.Log,elog *Ethe
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewNumRaffleNFTWinnersBidding  = eth_evt.NewNumRaffleNftWinnersBidding.Int64()
+	evt.NewNumRaffleNFTWinnersBidding  = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NumRaffleNFTWinnersBiddingChanged{\n")
@@ -2019,7 +2019,7 @@ func proc_num_raffle_nft_winners_staking_rwalk_changed_event(log *types.Log,elog
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewNumRaffleNFTWinnersStakingRWalk = eth_evt.NewNumRaffleNftWinnersStakingRWalk.Int64()
+	evt.NewNumRaffleNFTWinnersStakingRWalk = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NumRaffleNFTWinnersStakingRWalkChanged{\n")
@@ -2361,7 +2361,7 @@ func proc_time_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewTimeIncrease = eth_evt.NewTimeIncrease.String()
+	evt.NewTimeIncrease = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TimeIncreaseChanged{\n")
@@ -2423,7 +2423,7 @@ func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewPriceIncrease = eth_evt.NewPriceIncrease.String()
+	evt.NewPriceIncrease = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PriceIncreaseChanged{\n")
@@ -2454,7 +2454,7 @@ func proc_nanoseconds_extra_changed_event(log *types.Log,elog *EthereumEventLog)
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewNanoSecondsExtra = eth_evt.NewNanoSecondsExtra.String()
+	evt.NewNanoSecondsExtra = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NanoSecondsExtraChanged{\n")
@@ -2485,7 +2485,7 @@ func proc_initial_seconds_until_prize_changed_event(log *types.Log,elog *Ethereu
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewInitialSecondsUntilPrize = eth_evt.NewInitialSecondsUntilPrize.String()
+	evt.NewInitialSecondsUntilPrize = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("InitialSecondsUntilPrizeChanged{\n")
@@ -2516,7 +2516,7 @@ func proc_initial_bid_amount_fraction_changed_event(log *types.Log,elog *Ethereu
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewInitialBidAmountFraction = eth_evt.NewInitialBidAmountFraction.String()
+	evt.NewInitialBidAmountFraction = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("InitialBidAmountFractionChanged {\n")
@@ -2578,7 +2578,7 @@ func proc_round_start_cst_auction_length_changed_event(log *types.Log,elog *Ethe
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewAuctionLength = eth_evt.NewRoundStartCstAuctionLength.String()
+	evt.NewAuctionLength = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RoundStartCSTAuctionLengthChanged {\n")
@@ -2609,7 +2609,7 @@ func proc_marketing_reward_changed(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewReward= eth_evt.NewReward.String()
+	evt.NewReward= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenRewardChanged{\n")
@@ -2640,7 +2640,7 @@ func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewReward = eth_evt.NewReward.String()
+	evt.NewReward = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenRewardChanged{\n")
@@ -2702,7 +2702,7 @@ func proc_max_msg_length_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewMessageLength = eth_evt.NewMessageLength.String()
+	evt.NewMessageLength = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NewMessageLengthChanged{\n")
@@ -2887,7 +2887,7 @@ func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEv
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.CstMinLimit = eth_evt.NewStartingBidPriceCSTMinLimit.String()
+	evt.CstMinLimit = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("StartingBidPriceCSTMinLimitChanged{\n")
@@ -2930,6 +2930,7 @@ func proc_fund_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_fund_transfer_failed_event(evt.EvtId)
     storagew.Insert_fund_transfer_failed_event(&evt)
 }
+/* DISCONTINUED , removal pending
 func proc_erc20_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGErc20TransferFailed
@@ -2962,7 +2963,7 @@ func proc_erc20_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_erc20_transfer_failed_event(evt.EvtId)
     storagew.Insert_erc20_transfer_failed_event(&evt)
-}
+}*/
 func proc_funds_transferred_to_charity_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGFundsToCharity
@@ -3254,9 +3255,10 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fund_transf_err) {
 		proc_fund_transfer_failed_event(log,evtlog)
 	}
+	/* DISCONTINUED
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transf_err) {
 		proc_erc20_transfer_failed_event(log,evtlog)
-	}
+	} */
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funds2charity) {
 		proc_funds_transferred_to_charity_event(log,evtlog)
 	}

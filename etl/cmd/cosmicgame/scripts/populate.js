@@ -100,12 +100,12 @@ async function main() {
 	let samp2Addr = await samp2.getAddress();
 
     let donationAmount = hre.ethers.parseEther("1000");
-    await cosmicGameProxy.donate({
+    await cosmicGameProxy.donateEth({
         value: donationAmount
     });
     let donationData =
         '{"version":1,"title":"Hardhat donation","message":"Donation from HardHat","url":"http://hardhat.org"}';
-    await cosmicGameProxy.donateWithInfo(donationData, {
+    await cosmicGameProxy.donateEthWithInfo(donationData, {
         value: hre.ethers.parseEther("60"),
     });
     donationData =
@@ -113,7 +113,7 @@ async function main() {
 
     await cosmicGameProxy
         .connect(addr2)
-        .donateWithInfo(donationData, {
+        .donateEthWithInfo(donationData, {
             value: hre.ethers.parseEther("90")
         });
 
@@ -143,150 +143,44 @@ async function main() {
     let prizeTime = await cosmicGameProxy.timeUntilPrize();
     console.log("Donation complete");
 
-    var bidParams = {
-        msg: "bid 1",
-        rwalk: -1
-    };
-    let params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
     const contractBalance = await ethers.provider.getBalance(
         await cosmicGameProxy.getAddress()
     );
     let bidPrice = await cosmicGameProxy.getBidPrice();
-    await cosmicGameProxy.connect(addr1).bid(params, {
-        value: bidPrice + 1000n
-    }); // this works
+    await cosmicGameProxy.connect(addr1).bid(-1,"bid 1", { value: bidPrice + 1000n }); // this works
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bdParams = {
-        msg: "bid 1",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr2).bid(params, {
-        value: bidPrice + 1000n
-    }); // this works
+    await cosmicGameProxy.connect(addr2).bid(-1,"bid 1", { value: bidPrice + 1000n }); // this works
 
     let nanoSecondsExtra = await cosmicGameProxy.nanoSecondsExtra();
     prizeTime = await cosmicGameProxy.timeUntilPrize();
 
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 2",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr1).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr1).bid(-1,"bid 2", { value: bidPrice });
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 2",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr1).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr1).bid(-1, "bid 2", { value: bidPrice });
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     let token_id = await mint_rwalk(owner);
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bidWithRWLK",
-        rwalk: Number(token_id)
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(owner).bid(params, {
+    await cosmicGameProxy.connect(owner).bid(Number(token_id),"bidWithRWlk", {value: bidPrice });
+
+    bidPrice = await cosmicGameProxy.getBidPrice();
+    await cosmicGameProxy.connect(addr3).bid(-1,"bid 3", {
+        value: bidPrice
+    });
+    bidPrice = await cosmicGameProxy.getBidPrice();
+    await cosmicGameProxy.connect(addr3).bid(-1,"bid 3", {
         value: bidPrice
     });
 
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 3",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr3).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr4).bid(-1,"", { value: bidPrice });
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 3",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr3).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr4).bid(-1,"", { value: bidPrice });
 
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr4).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr5).bid(-1,"", {value: bidPrice });
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr4).bid(params, {
-        value: bidPrice
-    });
-
-    bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr5).bid(params, {
-        value: bidPrice
-    });
-    bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr5).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr5).bid(-1,"", {value: bidPrice });
 
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime) - 100]);
@@ -305,15 +199,7 @@ async function main() {
 
 	stake_available_nfts()
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 4",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr1).bid(params, {
+    await cosmicGameProxy.connect(addr1).bid(-1,"bid 4", {
         value: bidPrice
     });
 
@@ -334,17 +220,7 @@ async function main() {
     let oldTotalSupply = ts;
 
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 5",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr1).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr1).bid(-1,"bid 5", { value: bidPrice });
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     tx = await cosmicGameProxy.connect(addr1).claimPrize({
@@ -369,36 +245,18 @@ async function main() {
     await addr2.sendTransaction(tx);
     await addr2.sendTransaction(tx);
 
-    bidParams = {
-        msg: "",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
     rn = await cosmicGameProxy.roundNum();
 	await samp1.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
 	await samp1.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
     bidPrice = await cosmicGameProxy.getBidPrice();
-	await cosmicGameProxy.bidAndDonateToken(params,await samp1.getAddress(),10000000000000000000n,{value:bidPrice});
+	await cosmicGameProxy.bidAndDonateToken(-1,"bid&donateerc20",await samp1.getAddress(),10000000000000000000n,{value:bidPrice});
 	await samp2.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
 	await samp2.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
     bidPrice = await cosmicGameProxy.getBidPrice();
-	await cosmicGameProxy.bidAndDonateToken(params,await samp2.getAddress(),10000000000000000000n,{value:bidPrice});
+	await cosmicGameProxy.bidAndDonateToken(-1,"bid&donateerc20",await samp2.getAddress(),10000000000000000000n,{value:bidPrice});
 
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 6",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr3).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr3).bid(-1,"bid 6", { value: bidPrice });
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
 
     await randomWalkNFT
@@ -413,66 +271,34 @@ async function main() {
 
     bidPrice = await cosmicGameProxy.getBidPrice();
     token_id = await mint_rwalk(addr1);
-    bidParams = {
-        msg: "donated token_id=" + token_id,
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
 	await randomWalkNFT.connect(addr1).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr1)
-        .bidAndDonateNft(params, await randomWalkNFT.getAddress(), token_id, {
+        .bidAndDonateNft(-1,"donated token_id="+token_id,await randomWalkNFT.getAddress(), token_id, {
             value: bidPrice,
         });
     bidPrice = await cosmicGameProxy.getBidPrice();
     token_id = await mint_rwalk(addr2);
-    bidParams = {
-        msg: "me donated token_id=" + token_id,
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
 	await randomWalkNFT.connect(addr2).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr2)
-        .bidAndDonateNft(params, await randomWalkNFT.getAddress(), token_id, {
+        .bidAndDonateNft(-1,"me donated token_id="+token_id, await randomWalkNFT.getAddress(), token_id, {
             value: bidPrice,
         });
     bidPrice = await cosmicGameProxy.getBidPrice();
     token_id = await mint_rwalk(addr3);
-    bidParams = {
-        msg: "me donated token_id=" + token_id,
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
 	await randomWalkNFT.connect(addr3).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr3)
-        .bidAndDonateNft(params, await randomWalkNFT.getAddress(), token_id, {
+        .bidAndDonateNft(-1,"me donated token_id="+token_id, await randomWalkNFT.getAddress(), token_id, {
             value: bidPrice,
         });
     bidPrice = await cosmicGameProxy.getBidPrice();
     token_id = await mint_rwalk(addr3);
-    bidParams = {
-        msg: "me donated token_id=" + token_id,
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
 	await randomWalkNFT.connect(addr3).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr3)
-        .bidAndDonateNft(params, await randomWalkNFT.getAddress(), token_id, {
+        .bidAndDonateNft(-1,"me donated token_id="+token_id, await randomWalkNFT.getAddress(), token_id, {
             value: bidPrice,
         });
     await ethers.provider.send("evm_increaseTime", [36000]);
@@ -584,7 +410,7 @@ async function main() {
     tmp = await cosmicGameProxy.initialSecondsUntilPrize();
     await cosmicGameProxy.connect(owner).setInitialSecondsUntilPrize(tmp);
     tmp = await cosmicGameProxy.initialBidAmountFraction();
-    await cosmicGameProxy.connect(owner).updateInitialBidAmountFraction(tmp);
+    await cosmicGameProxy.connect(owner).setInitialBidAmountFraction(tmp);
     tmp = await cosmicGameProxy.activationTime();
     await cosmicGameProxy.connect(owner).setActivationTime(tmp);
 
@@ -609,11 +435,9 @@ async function main() {
     }
 
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {  msg: "", rwalk: -1 };
-    params = ethers.AbiCoder.defaultAbiCoder().encode([bidParamsEncoding],[bidParams]);
-    await cosmicGameProxy.connect(addr1).bid(params, { value: bidPrice  });
+    await cosmicGameProxy.connect(addr1).bid(-1,"", { value: bidPrice  });
     bidPrice = await cosmicGameProxy.getBidPrice();
-    await cosmicGameProxy.connect(addr1).bid(params, { value: bidPrice  });
+    await cosmicGameProxy.connect(addr1).bid(-1,"", { value: bidPrice  });
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
@@ -626,10 +450,10 @@ async function main() {
 
     donationData =
         '{"version":1,"title":"EF donation","message":"Ethereum Foundation is a non-profit and part of a community of organizations and people working to fund protocol development, grow the ecosystem, and advocate for Ethereum.","url":"http://ethereum.org/en"}';
-    await cosmicGameProxy.donateWithInfo(donationData, {
+    await cosmicGameProxy.donateEthWithInfo(donationData, {
         value: hre.ethers.parseEther("9"),
     });
-    await cosmicGameProxy.donateWithInfo(donationData, {
+    await cosmicGameProxy.donateEthWithInfo(donationData, {
         value: hre.ethers.parseEther("8"),
     });
 
@@ -662,37 +486,17 @@ async function main() {
 	await samp1.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
 	await samp1.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
     bidPrice = await cosmicGameProxy.getBidPrice();
-	await cosmicGameProxy.bidAndDonateToken(params,await samp1.getAddress(),11000000000000000000n,{value:bidPrice});
+	await cosmicGameProxy.bidAndDonateToken(-1,"bid&donateerc20",await samp1.getAddress(),11000000000000000000n,{value:bidPrice});
 	await samp2.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
 	await samp2.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
     bidPrice = await cosmicGameProxy.getBidPrice();
-	await cosmicGameProxy.bidAndDonateToken(params,await samp2.getAddress(),11000000000000000000n,{value:bidPrice});
+	await cosmicGameProxy.bidAndDonateToken(-1,"bid&donateerc20",await samp2.getAddress(),11000000000000000000n,{value:bidPrice});
 
     // generate one deposit to charity and not to Staking Wallet
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 3",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr3).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr3).bid(-1,"bid 3",{value: bidPrice});
     bidPrice = await cosmicGameProxy.getBidPrice();
-    bidParams = {
-        msg: "bid 3",
-        rwalk: -1
-    };
-    params = ethers.AbiCoder.defaultAbiCoder().encode(
-        [bidParamsEncoding],
-        [bidParams]
-    );
-    await cosmicGameProxy.connect(addr3).bid(params, {
-        value: bidPrice
-    });
+    await cosmicGameProxy.connect(addr3).bid(-1,"bid 3", {value: bidPrice });
 	rn = cosmicGameProxy.roundNum();
     prizeTime = await cosmicGameProxy.timeUntilPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
@@ -754,7 +558,7 @@ async function main() {
     });
 
     donationAmount = hre.ethers.parseEther("500");
-    await cosmicGameProxy.donate({
+    await cosmicGameProxy.donateEth({
         value: donationAmount
     });
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
