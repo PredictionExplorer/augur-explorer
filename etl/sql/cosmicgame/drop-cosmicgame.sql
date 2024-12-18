@@ -59,7 +59,7 @@ DROP TABLE IF EXISTS
 	cg_adm_ethcst,
 	cg_adm_auclen,
 	cg_adm_erc_rwd_mul,
-	cg_adm_cst_min_lim,
+--	cg_adm_cst_min_lim,
 	cg_adm_mkt_reward,
 	cg_adm_erc20_reward,
 	cg_adm_msg_len,

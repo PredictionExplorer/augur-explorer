@@ -46,12 +46,12 @@
 				<tr><td>CST</td><td>RWalk</td></tr>
 				<tr>
 					<td style="text-align:center">
-						<a href="/black/cosmicgame/user/staked/cst/{{.UserInfo.Address}}">
+						<a href="/black/cosmicgame/staking/cst/staked_tokens/by_user/{{.UserInfo.Address}}">
 						{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensStaked}}
 						</a>
 					</td>
 					<td style="text-align:center">
-						<a href="/black/cosmicgame/user/staked/rwalk/{{.UserInfo.Address}}">
+						<a href="/black/cosmicgame/staking/rwalk/staked_tokens/by_user/{{.UserInfo.Address}}">
 						{{.UserInfo.StakingStatistics.RWalkStakingInfo.TotalTokensStaked}}
 						</a>
 					</td>
@@ -99,12 +99,9 @@
 		<td class="market_reports">Total Mints in Raffles</td>
 		<td class="market_reports">
 			<table>
-				<tr><td>CST</td><td>RWalk</td></tr>
+				<tr><td></td><td>RWalk</td></tr>
 				<tr>
 					<td style="text-align:center">
-						<a href="/black/cosmicgame/staking/cst/mints/by_user/{{.UserInfo.Address}}">
-						{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensMinted}}
-						</a>
 					</td>
 					<td style="text-align:center">
 						<a href="/black/cosmicgame/staking/rwalk/mints/by_user/{{.UserInfo.Address}}">
@@ -124,12 +121,12 @@
 		</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports">Unclaimed NFTs</td>
+		<td class="market_reports">Unclaimed (donated) NFTs</td>
 		<td class="market_reports">
-			<a class="addr" href="/black/cosmicgame/user/nft/unclaimed_by_user/{{.UserInfo.Address}}">
+			<a class="addr" href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.UnclaimedNFTs}}
 			</a>
-			<a href="/black/cosmicgame/user/nft/claims/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/donations/nft/claims/by_user/{{.UserInfo.Address}}">
 				View claim list
 			</a>
 		</td>
@@ -137,11 +134,11 @@
 	<tr class="market_reports">
 		<td class="market_reports">Total ETH won in raffles</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/prizes/deposits/raffle/by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.SumRaffleEthWinnings}}
 			</a>
 			&nbsp;&nbsp;
-			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/prizes/deposits/raffle/by_user/{{.UserInfo.Address}}">
 				<small>Raffle ETH Deposits</small>
 			</a>
 		</td>
@@ -149,11 +146,11 @@
 	<tr class="market_reports">
 		<td class="market_reports">Number of (ETH) raffles participated in</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/prizes/deposits/raffle/by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.NumRaffleEthWinnings}}
 			</a>
 			&nbsp;&nbsp;
-			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/prizes/deposits/raffle/by_user/{{.UserInfo.Address}}">
 				<small>Raffle ETH Deposits</small>
 			</a>
 		</td>
@@ -161,11 +158,11 @@
 	<tr class="market_reports">
 		<td class="market_reports">Number of Raffle NFTs won</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/user/raffle_nft_winnings/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}">
 				{{.UserInfo.RaffleNFTWon}}
 			</a>
 			&nbsp;&nbsp;
-			<a href="/black/cosmicgame/user/raffle_nft_winnings/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}">
 				<small>Raffle NFT winnings</small>
 			</a>
 		</td>
@@ -290,7 +287,7 @@
 		<nav style="float: right;">
 			<ul>
 			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/staking/cst/history/by_user/{{.UserInfo.Address}}">CST Reward History</a>
+				<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserInfo.Address}}">CST Reward History</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>
@@ -303,7 +300,7 @@
 		<nav style="float: right;">
 			<ul>
 			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/user/cosmictoken/transfers/{{.UserInfo.Address}}">Transfers</a>
+				<a class="btn_link" href="/black/cosmicgame/ct/transfers/by_user/{{.UserInfo.Address}}">Transfers</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>
@@ -315,7 +312,7 @@
 		<nav style="float: right;">
 			<ul>
 			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/user/cosmicsignature/transfers/{{.UserInfo.Address}}">Transfers</a>
+				<a class="btn_link" href="/black/cosmicgame/cst/transfers/by_user/{{.UserInfo.Address}}">Transfers</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>
@@ -369,7 +366,7 @@
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/prize/info/{{.PrizeNum}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/rounds/info/{{.PrizeNum}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>

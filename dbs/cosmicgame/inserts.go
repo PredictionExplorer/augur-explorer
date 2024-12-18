@@ -1559,6 +1559,7 @@ func (sw *SQLStorageWrapper) Insert_erc20_reward_multiplier_changed_event(evt *p
 		os.Exit(1)
 	}
 }
+/* DISCONTINUED 
 func (sw *SQLStorageWrapper) Insert_starting_bid_price_cst_min_limit_changed_event(evt *p.CGStartingBidPriceCSTMinLimitChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
@@ -1581,7 +1582,7 @@ func (sw *SQLStorageWrapper) Insert_starting_bid_price_cst_min_limit_changed_eve
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_min_lim table: %v\n",err))
 		os.Exit(1)
 	}
-}
+}*/
 func (sw *SQLStorageWrapper) Insert_marketing_reward_changed_event(evt *p.CGMarketingRewardChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

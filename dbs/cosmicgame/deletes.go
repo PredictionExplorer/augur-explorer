@@ -580,6 +580,7 @@ func (sw *SQLStorageWrapper) Delete_erc20_reward_multiplier_changed_event(evtlog
 		os.Exit(1)
 	}
 }
+/* DISCONTINUED
 func (sw *SQLStorageWrapper) Delete_starting_bid_price_st_min_limit_changed_event(evtlog_id int64) {
 
 	var query string
@@ -589,7 +590,7 @@ func (sw *SQLStorageWrapper) Delete_starting_bid_price_st_min_limit_changed_even
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
-}
+}*/
 func (sw *SQLStorageWrapper) Delete_marketing_reward_changed_event(evtlog_id int64) {
 
 	var query string

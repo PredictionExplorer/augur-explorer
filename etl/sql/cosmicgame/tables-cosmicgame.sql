@@ -688,7 +688,7 @@ CREATE TABLE cg_adm_marketing_addr( -- MarketingWalletAddressChanged event (cont
 	new_marketing_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_costok_addr( -- CosmicTokenAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_costok_addr( -- CosmicTokenContractAddressChanged event (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -728,7 +728,7 @@ CREATE TABLE cg_adm_time_inc( -- TimeIncreaseChanged event (contract CosmicGame)
 	new_time_inc	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_timeout_claimprize( -- TimeoutClaimPrzeChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_timeout_claimprize( -- TimeoutDurationToClaimMainPrizeChanged event (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -818,16 +818,16 @@ CREATE TABLE cg_adm_erc_rwd_mul ( -- Erc20RewardMultiplierChanged (admin event)
 	new_multiplier	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_cst_min_lim ( -- StartingBidPriceCSTMinLimitChanged(admin event)
-	id              BIGSERIAL PRIMARY KEY,
-	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num       BIGINT NOT NULL,
-	tx_id           BIGINT NOT NULL,
-	time_stamp      TIMESTAMPTZ NOT NULL,
-	contract_aid    BIGINT NOT NULL,
-	new_price		DECIMAL NOT NULL,
-	UNIQUE(evtlog_id)
-);
+--CREATE TABLE cg_adm_cst_min_lim ( -- StartingBidPriceCSTMinLimitChanged(admin event)
+--	id              BIGSERIAL PRIMARY KEY,
+--	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+--	block_num       BIGINT NOT NULL,
+--	tx_id           BIGINT NOT NULL,
+--	time_stamp      TIMESTAMPTZ NOT NULL,
+--	contract_aid    BIGINT NOT NULL,
+--	new_price		DECIMAL NOT NULL,
+--	UNIQUE(evtlog_id)
+--);
 CREATE TABLE cg_adm_mkt_reward ( -- MarketingRewardChanged (admin event)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

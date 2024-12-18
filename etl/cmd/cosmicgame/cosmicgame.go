@@ -1911,13 +1911,13 @@ func proc_chrono_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 	var eth_evt CosmicSignatureGameChronoWarriorEthPrizePercentageChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
-		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing StakingPercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingPercentageChanged",log.Data)
+	Info.Printf("Processing ChronoWarriorEthPrizePercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ChronoWarriorEthPrizePercentageChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event StakingPercentageChanged decode error: %v",err)
+		Error.Printf("Event ChronoWarriorEthPrizePercentageChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1976,10 +1976,10 @@ func proc_num_raffle_nft_winners_bidding_changed_event(log *types.Log,elog *Ethe
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing NumRaffleNFTWinnersBiddingChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NumRaffleNFTWinnersBiddingChanged",log.Data)
+	Info.Printf("Processing NumRaffleNftWinnersBiddingChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NumRaffleNftWinnersBiddingChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event NumRaffleNFTWinnersBiddingChanged decode error: %v",err)
+		Error.Printf("Event NumRaffleNftWinnersBiddingChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1991,7 +1991,7 @@ func proc_num_raffle_nft_winners_bidding_changed_event(log *types.Log,elog *Ethe
 	evt.NewNumRaffleNFTWinnersBidding  = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("NumRaffleNFTWinnersBiddingChanged{\n")
+	Info.Printf("NumRaffleNftWinnersBiddingChanged{\n")
 	Info.Printf("\tNewNumRaffleNFTWinnersBidding: %v\n",evt.NewNumRaffleNFTWinnersBidding)
 	Info.Printf("}\n")
 
@@ -2134,7 +2134,7 @@ func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 		return
 	}
 	Info.Printf("Processing EthPrizesWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthPrizesWalletAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PrizesWalletAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event EthPrizesWalletAddressChanged decode error: %v",err)
 		os.Exit(1)
@@ -2717,12 +2717,12 @@ func proc_token_generation_script_url_event(log *types.Log,elog *EthereumEventLo
 	var evt CGTokenGenerationScriptURL
 	var eth_evt ICosmicSignatureNftNftGenerationScriptUriChanged
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing TokenGenerationScriptURLEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NftGenerationScriptUriChanged",log.Data)
+	err := cosmic_signature_abi.UnpackIntoInterface(&eth_evt,"NftGenerationScriptUriChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event TokenGenerationScriptURLEvent decode error: %v",err)
 		os.Exit(1)
@@ -2875,7 +2875,7 @@ func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEv
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing Initialized event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing StartingBidPriceCSTMinLimitChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StartingBidPriceCSTMinLimitChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event Initialized decode error: %v",err)
@@ -3160,6 +3160,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_percentage_changed) {
 		proc_staking_percentage_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_chrono_percentage_changed) {
+		proc_chrono_percentage_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_eth_winners_bidding_changed) {
 		proc_num_raffle_eth_winners_bidding_changed_event(log,evtlog)

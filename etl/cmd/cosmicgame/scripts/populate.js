@@ -362,6 +362,7 @@ async function main() {
     await cosmicGameProxy.connect(owner).setCharityPercentage(5);
     await cosmicGameProxy.connect(owner).setRafflePercentage(6);
     await cosmicGameProxy.connect(owner).setCharityAddress(addr3.address);
+	await cosmicGameProxy.connect(owner).setChronoWarriorEthPrizePercentage(8);
     await cosmicGameProxy
         .connect(owner)
         .setCharityAddress(await charityWallet.getAddress());
