@@ -40,8 +40,8 @@ const (
 	DONATED_TOKEN_CLAIMED	= "af1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0"
 	DONATED_NFT_CLAIMED		= "03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3"
 //	ETH_DEPOSIT_EVENT		= "85177f287940f2f05425a4029951af0e047a7f9c4eaa9a6e6917bcd869f86695"
-	ETH_DEPOSIT_EVENT		= "999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326"
-	RAFFLE_WITHDRAWAL_EVENT = "4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383"
+	ETH_PRIZE_DEPOSIT_EVENT		= "999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326"
+	ETH_PRIZE_WITHDRAWAL_EVENT = "4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383"
 	RAFFLE_ETH_WINNER		= "636e2e77ba7f2fd4bb40906f0d04dec909e31a90ea0d3a7c7ea7193dbcbbfa11"
 	RAFFLE_NFT_WINNER		= "c595fdec2102257d05c3e92bbc14934b4858785c8c2d02dc63daa0f47251a90c"
 	ENDURANCE_WINNER		= "a32dfd1d4e09d55aebef273d2ce943439a7cdcdfb9ec44f27e6678d86a4fe880"
@@ -73,7 +73,7 @@ const (
 	SYSTEM_MODE_CHANGED		= "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c"
 	CHARITY_ADDRESS_CHANGED	= "1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c"
 	RWALK_ADDRESS_CHANGED	= "dab38e33e6e11cbb8b085bba9d7426d5e5af01bcc46d2c5957645e4d09e8c49c"
-	RAFFLE_ADDRESS_CHANGED	= "b4cecfe1346c94da27291cf5a02969d5fe0b5c36eca49b04fcd60841d28c5e13"
+	PRIZE_WALLET_ADDRESS_CHANGED	= "b4cecfe1346c94da27291cf5a02969d5fe0b5c36eca49b04fcd60841d28c5e13"
 	STAKING_WALLET_CST_ADDRESS_CHANGED  = "4da1815cd654922275d14d2335fd9a0dd0aa6a0d0ff87fb4cc872ebe9704596f"
 	STAKING_WALLET_RWALK_ADDRESS_CHANGED  = "bf6e296f85d08cc1ab124aed644bf4b19e4a726a7aea53e3784ab1341738a040"
 	MARKETING_ADDRESS_CHANGED = "4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54"
@@ -129,7 +129,7 @@ var (
 	evt_num_raffle_nft_winners_staking_rwalk_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_STAKING_RWALK_CHANGED);
 	evt_charity_address_changed,_	= hex.DecodeString(CHARITY_ADDRESS_CHANGED);
 	evt_rwalk_address_changed,_	= hex.DecodeString(RWALK_ADDRESS_CHANGED);
-	evt_raffle_address_changed,_	= hex.DecodeString(RAFFLE_ADDRESS_CHANGED);
+	evt_prizes_wallet_address_changed,_	= hex.DecodeString(PRIZE_WALLET_ADDRESS_CHANGED);
 	evt_staking_wallet_cst_address_changed,_	= hex.DecodeString(STAKING_WALLET_CST_ADDRESS_CHANGED);
 	evt_staking_wallet_rwalk_address_changed,_	= hex.DecodeString(STAKING_WALLET_RWALK_ADDRESS_CHANGED);
 	evt_marketing_address_changed,_	= hex.DecodeString(MARKETING_ADDRESS_CHANGED);
@@ -169,20 +169,17 @@ var (
 	evt_token_name_event,_	= hex.DecodeString(TOKEN_NAME_EVENT)
 	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
 
-	// RaffleWallet events
-	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
-	evt_raffle_withdrawal,_	= hex.DecodeString(RAFFLE_WITHDRAWAL_EVENT)
+	// PrizeWallet events
+	evt_eth_prize_deposit,_		= hex.DecodeString(ETH_PRIZE_DEPOSIT_EVENT)
+	evt_eth_prize_withdrawal,_	= hex.DecodeString(ETH_PRIZE_WITHDRAWAL_EVENT)
 
 	// ERC20 events
 	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
 
 	// StakingWallet events
-//	evt_stake_action,_		= hex.DecodeString(STAKE_ACTION_EVENT)
 	evt_nft_staked,_		= hex.DecodeString(NFT_STAKED_EVENT)
-//	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
 	evt_nft_unstaked_rwalk,_= hex.DecodeString(NFT_UNSTAKED_RWALK)
 	evt_nft_unstaked_cst,_	= hex.DecodeString(NFT_UNSTAKED_CST)
-//	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
 	evt_reward_paid,_		= hex.DecodeString(REWARD_PAID_EVENT)
 	evt_staking_eth_deposit,_		= hex.DecodeString(STAKING_ETH_DEPOSIT_EVENT)
 
@@ -343,7 +340,7 @@ func main() {
 	cosmic_token_addr = common.HexToAddress(cg_contracts.CosmicTokenAddr)
 	cosmic_dao_addr = common.HexToAddress(cg_contracts.CosmicDaoAddr)
 	charity_wallet_addr = common.HexToAddress(cg_contracts.CharityWalletAddr)
-	prizes_wallet_addr = common.HexToAddress(cg_contracts.RaffleWalletAddr)
+	prizes_wallet_addr = common.HexToAddress(cg_contracts.PrizesWalletAddr)
 	staking_wallet_cst_addr = common.HexToAddress(cg_contracts.StakingWalletCSTAddr)
 	staking_wallet_rwalk_addr = common.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
 	marketing_wallet_addr = common.HexToAddress(cg_contracts.MarketingWalletAddr)

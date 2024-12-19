@@ -20,7 +20,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 				"cosmic_token_addr,"+
 				"cosmic_dao_addr,"+
 				"charity_wallet_addr, "+
-				"raffle_wallet_addr, "+
+				"prizes_wallet_addr, "+
 				"random_walk_addr, "+
 				"staking_wallet_cst_addr, "+
 				"staking_wallet_rwalk_addr, "+
@@ -33,7 +33,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	var cosmic_token_addr string
 	var cosmic_dao_addr string
 	var charity_wallet_addr string
-	var raffle_wallet_addr string
+	var prizes_wallet_addr string
 	var random_walk_addr string
 	var staking_wallet_cst_addr string
 	var staking_wallet_rwalk_addr string
@@ -46,7 +46,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 		&cosmic_token_addr,
 		&cosmic_dao_addr,
 		&charity_wallet_addr,
-		&raffle_wallet_addr,
+		&prizes_wallet_addr,
 		&random_walk_addr,
 		&staking_wallet_cst_addr,
 		&staking_wallet_rwalk_addr,
@@ -63,7 +63,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	output.CosmicTokenAddr = cosmic_token_addr
 	output.CosmicDaoAddr = cosmic_dao_addr
 	output.CharityWalletAddr = charity_wallet_addr
-	output.RaffleWalletAddr = raffle_wallet_addr
+	output.PrizesWalletAddr = prizes_wallet_addr
 	output.RandomWalkAddr = random_walk_addr
 	output.StakingWalletCSTAddr = staking_wallet_cst_addr
 	output.StakingWalletRWalkAddr = staking_wallet_rwalk_addr

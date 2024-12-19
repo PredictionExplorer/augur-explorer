@@ -678,34 +678,6 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		os.Exit(1)
 	}
 }
-/* DISCONTINUED , removal pending
-func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_claim_reward(" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,deposit_id,reward,staker_aid" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.DepositId,
-		evt.Reward,
-		staker_aid,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_claim_reward table: %v\n",err))
-		os.Exit(1)
-	}
-}*/
 func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
@@ -910,7 +882,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_percentage_changed_event(e
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_prize_pcent (" +
+	query = "INSERT INTO cg_adm_main_prize_pcent (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"percentage" +
 			") VALUES (" +
@@ -925,7 +897,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_percentage_changed_event(e
 		evt.NewPrizePercentage,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_prize_pcent table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_main_prize_pcent table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -1090,29 +1062,6 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_chrono_percentage_changed_event(
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_system_mode_changed_event(evt *p.CGSystemModeChanged) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_adm_sysmode (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"sysmode" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewSystemMode,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_sysmode table: %v\n",err))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_address_changed_event(evt *p.CGCharityAddressChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
@@ -1161,14 +1110,14 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_random_walk_address_changed_even
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_wallet_address_changed_event(evt *p.CGRaffleWalletAddressChanged) {
+func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_wallet_address_changed_event(evt *p.CGPrizeWalletAddressChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	new_raffle_aid:=sw.S.Lookup_or_create_address(evt.NewRaffleWallet,evt.BlockNum,evt.TxId)
+	new_raffle_aid:=sw.S.Lookup_or_create_address(evt.NewPrizeWallet,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raffle_addr(" +
+	query = "INSERT INTO cg_adm_prizes_wallet_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_raffle_aid" +
+				"new_wallet_aid" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"
@@ -1181,7 +1130,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_wallet_address_changed_ev
 		new_raffle_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_rwalk_addr table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_prizes_wallet table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -1559,30 +1508,6 @@ func (sw *SQLStorageWrapper) Insert_erc20_reward_multiplier_changed_event(evt *p
 		os.Exit(1)
 	}
 }
-/* DISCONTINUED 
-func (sw *SQLStorageWrapper) Insert_starting_bid_price_cst_min_limit_changed_event(evt *p.CGStartingBidPriceCSTMinLimitChanged) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_adm_st_min_lim(" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_price" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewPrice,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_min_lim table: %v\n",err))
-		os.Exit(1)
-	}
-}*/
 func (sw *SQLStorageWrapper) Insert_marketing_reward_changed_event(evt *p.CGMarketingRewardChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

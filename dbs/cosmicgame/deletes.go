@@ -303,7 +303,7 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_charity_percentage_changed_event
 func (sw *SQLStorageWrapper) Delete_cosmic_game_prize_percentage_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_prize_pcent WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_main_prize_pcent WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -380,16 +380,6 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_chrono_percentage_changed_event(
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_cosmic_game_system_mode_changed_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_sysmode WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Delete_cosmic_game_charity_address_changed_event(evtlog_id int64) {
 
 	var query string
@@ -410,10 +400,10 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_random_walk_address_changed_even
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_cosmic_game_raffle_wallet_address_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_cosmic_game_prize_wallet_address_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raffle_addr WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_prizes_wallet_addr WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -580,17 +570,6 @@ func (sw *SQLStorageWrapper) Delete_erc20_reward_multiplier_changed_event(evtlog
 		os.Exit(1)
 	}
 }
-/* DISCONTINUED
-func (sw *SQLStorageWrapper) Delete_starting_bid_price_st_min_limit_changed_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_cst_min_lim WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}*/
 func (sw *SQLStorageWrapper) Delete_marketing_reward_changed_event(evtlog_id int64) {
 
 	var query string

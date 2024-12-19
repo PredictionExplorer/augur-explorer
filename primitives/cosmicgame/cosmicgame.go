@@ -10,7 +10,7 @@ type CosmicGameContractAddrs struct {
 	CosmicTokenAddr				string
 	CosmicDaoAddr				string
 	CharityWalletAddr			string
-	RaffleWalletAddr			string
+	PrizesWalletAddr				string
 	RandomWalkAddr				string
 	StakingWalletCSTAddr			string
 	StakingWalletRWalkAddr			string
@@ -541,13 +541,13 @@ type CGRandomWalkAddressChanged struct {
 	Contract                string
 	NewRandomWalk				string
 }
-type CGRaffleWalletAddressChanged struct {
+type CGPrizeWalletAddressChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewRaffleWallet				string
+	NewPrizeWallet			string
 }
 type CGStakingWalletCSTAddressChanged struct {
 	EvtId                   int64

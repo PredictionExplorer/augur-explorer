@@ -530,7 +530,7 @@ type CGAdminEvent struct {
 										//			8		NumRaffleNFTWinnersStakingRWalkChanged
 										//			9		CharityAddressChanged
 										//			10		RandomWalkAddressChanged
-										//			11		RaffleWalletAddressChanged
+										//			11		PrizeWalletAddressChanged
 										//			12		StakingWalletCSTAddressChanged
 										//			13		StakingWalletRWalkAddressChanged
 										//			14		MarketingWalletAddressChanged
