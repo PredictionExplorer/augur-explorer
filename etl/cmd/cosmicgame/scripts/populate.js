@@ -100,12 +100,12 @@ async function main() {
 	let samp2Addr = await samp2.getAddress();
 
     let donationAmount = hre.ethers.parseEther("1000");
-    await cosmicGameProxy.donateEth({
+    await cosmicGameProxy.connect(addr5).donateEth({
         value: donationAmount
     });
     let donationData =
         '{"version":1,"title":"Hardhat donation","message":"Donation from HardHat","url":"http://hardhat.org"}';
-    await cosmicGameProxy.donateEthWithInfo(donationData, {
+    await cosmicGameProxy.connect(addr4).donateEthWithInfo(donationData, {
         value: hre.ethers.parseEther("60"),
     });
     donationData =
@@ -140,7 +140,7 @@ async function main() {
         await stakingWalletRandomWalkNft.connect(addr3).stake(token_id);
     }
 
-    let prizeTime = await cosmicGameProxy.timeUntilPrize();
+    let prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     console.log("Donation complete");
 
     const contractBalance = await ethers.provider.getBalance(
@@ -152,13 +152,13 @@ async function main() {
     await cosmicGameProxy.connect(addr2).bid(-1,"bid 1", { value: bidPrice + 1000n }); // this works
 
     let nanoSecondsExtra = await cosmicGameProxy.nanoSecondsExtra();
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
 
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(addr1).bid(-1,"bid 2", { value: bidPrice });
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(addr1).bid(-1, "bid 2", { value: bidPrice });
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     let token_id = await mint_rwalk(owner);
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(owner).bid(Number(token_id),"bidWithRWlk", {value: bidPrice });
@@ -182,19 +182,19 @@ async function main() {
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(addr5).bid(-1,"", {value: bidPrice });
 
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime) - 100]);
     await ethers.provider.send("evm_mine");
 
     await ethers.provider.send("evm_increaseTime", [100]);
     await ethers.provider.send("evm_mine");
 
-    let prizeAmount = await cosmicGameProxy.mainPrizeAmount();
-    let charityAmount = await cosmicGameProxy.charityAmount();
-    await cosmicGameProxy.connect(addr5).claimPrize({
+    let prizeAmount = await cosmicGameProxy.getMainEthPrizeAmount();
+    let charityAmount = await cosmicGameProxy.getCharityEthDonationAmount();
+    await cosmicGameProxy.connect(addr5).claimMainPrize({
         gasLimit: 30000000
     });
-    let prizeAmount2 = await cosmicGameProxy.mainPrizeAmount();
+    let prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
     let expectedprizeAmount = (prizeAmount - charityAmount) / 2n;
 
 	stake_available_nfts()
@@ -203,17 +203,17 @@ async function main() {
         value: bidPrice
     });
 
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
 
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
 
-    prizeAmount = await cosmicGameProxy.mainPrizeAmount();
-    charityAmount = await cosmicGameProxy.charityAmount();
-    await cosmicGameProxy.connect(addr1).claimPrize({
+    prizeAmount = await cosmicGameProxy.getMainEthPrizeAmount();
+    charityAmount = await cosmicGameProxy.getCharityEthDonationAmount();
+    await cosmicGameProxy.connect(addr1).claimMainPrize({
         gasLimit: 3000000
     });
-    prizeAmount2 = await cosmicGameProxy.mainPrizeAmount();
+    prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
 	stake_available_nfts();
     let ts = await cosmicSignature.totalSupply();
     let rn = await cosmicGameProxy.roundNum();
@@ -221,9 +221,9 @@ async function main() {
 
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(addr1).bid(-1,"bid 5", { value: bidPrice });
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
-    tx = await cosmicGameProxy.connect(addr1).claimPrize({
+    tx = await cosmicGameProxy.connect(addr1).claimMainPrize({
         gasLimit: 5000000
     });
     receipt = await tx.wait();
@@ -326,10 +326,10 @@ async function main() {
 
 	await cosmicGameProxy.connect(owner).setDelayDurationBeforeNextRound(1000);
 
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
-    tx = await cosmicGameProxy.connect(addr3).claimPrize({
+    tx = await cosmicGameProxy.connect(addr3).claimMainPrize({
         gasLimit: 3000000
     });
     receipt = await tx.wait();
@@ -355,18 +355,18 @@ async function main() {
     await cosmicGameProxy
         .connect(owner)
         .setMarketingWallet(await marketingWallet.getAddress());
-    await cosmicGameProxy.connect(owner).setNumRaffleETHWinnersBidding(4);
-    await cosmicGameProxy.connect(owner).setNumRaffleNftWinnersBidding(6);
-    await cosmicGameProxy.connect(owner).setNumRaffleNftWinnersStakingRWalk(3);
-    await cosmicGameProxy.connect(owner).setMainPrizePercentage(30);
-    await cosmicGameProxy.connect(owner).setCharityPercentage(5);
-    await cosmicGameProxy.connect(owner).setRafflePercentage(6);
+    await cosmicGameProxy.connect(owner).setNumRaffleEthPrizesForBidders(4);
+    await cosmicGameProxy.connect(owner).setNumRaffleCosmicSignatureNftsForBidders(6);
+    await cosmicGameProxy.connect(owner).setNumRaffleCosmicSignatureNftsForRandomWalkNftStakers(3);
+    await cosmicGameProxy.connect(owner).setMainEthPrizeAmountPercentage(30);
+    await cosmicGameProxy.connect(owner).setCharityEthDonationAmountPercentage(5);
+    await cosmicGameProxy.connect(owner).setRaffleTotalEthPrizeAmountPercentage(6);
     await cosmicGameProxy.connect(owner).setCharityAddress(addr3.address);
-	await cosmicGameProxy.connect(owner).setChronoWarriorEthPrizePercentage(8);
+	await cosmicGameProxy.connect(owner).setChronoWarriorEthPrizeAmountPercentage(8);
     await cosmicGameProxy
         .connect(owner)
         .setCharityAddress(await charityWallet.getAddress());
-    await cosmicGameProxy.connect(owner).setStakingPercentage(19);
+    await cosmicGameProxy.connect(owner).setStakingTotalEthRewardAmountPercentage(19);
     await cosmicGameProxy
         .connect(owner)
         .setTokenContract(await cosmicToken.getAddress());
@@ -439,10 +439,10 @@ async function main() {
     await cosmicGameProxy.connect(addr1).bid(-1,"", { value: bidPrice  });
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(addr1).bid(-1,"", { value: bidPrice  });
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
-    await cosmicGameProxy.connect(addr1).claimPrize({
+    await cosmicGameProxy.connect(addr1).claimMainPrize({
         gasLimit: 30000000
     });
 
@@ -499,9 +499,9 @@ async function main() {
     bidPrice = await cosmicGameProxy.getBidPrice();
     await cosmicGameProxy.connect(addr3).bid(-1,"bid 3", {value: bidPrice });
 	rn = cosmicGameProxy.roundNum();
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
-    tx = await cosmicGameProxy.connect(addr3).claimPrize({
+    tx = await cosmicGameProxy.connect(addr3).claimMainPrize({
         gasLimit: 3000000
     });
 
@@ -551,33 +551,33 @@ async function main() {
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
 	cstPrice = await cosmicGameProxy.getCurrentBidPriceCST();
     await cosmicGameProxy.connect(addr1).bidWithCst(cstPrice,"CST bid addr1");
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
-    tx = await cosmicGameProxy.connect(addr1).claimPrize({
+    tx = await cosmicGameProxy.connect(addr1).claimMainPrize({
         gasLimit: 3000000
     });
 
     donationAmount = hre.ethers.parseEther("500");
-    await cosmicGameProxy.donateEth({
+    await cosmicGameProxy.connect(addr3).donateEth({
         value: donationAmount
     });
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
 	cstPrice = await cosmicGameProxy.getCurrentBidPriceCST();
     await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"CST bid addr1");
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
-    tx = await cosmicGameProxy.connect(addr3).claimPrize({
+    tx = await cosmicGameProxy.connect(addr3).claimMainPrize({
         gasLimit: 3000000
     });
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
 	cstPrice = await cosmicGameProxy.getCurrentBidPriceCST();
     await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"CST bid addr1");
-    prizeTime = await cosmicGameProxy.timeUntilPrize();
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
-    tx = await cosmicGameProxy.connect(addr3).claimPrize({
+    tx = await cosmicGameProxy.connect(addr3).claimMainPrize({
         gasLimit: 3000000
     });
     await ethers.provider.send("evm_mine"); // mine empty block as spacing

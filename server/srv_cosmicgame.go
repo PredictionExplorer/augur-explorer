@@ -149,7 +149,7 @@ func do_reload_contract_constants() {
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		}
-		tmp_val,err = bwcontract.CharityPercentage(&copts)
+		tmp_val,err = bwcontract.CharityEthDonationAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at Charity() call: %v\n",err)
 			Error.Printf(err_str)
@@ -164,21 +164,21 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			token_reward = "error"
 		} else { token_reward = tmp_val.String() }
-		tmp_val,err = bwcontract.MainPrizePercentage(&copts)
+		tmp_val,err = bwcontract.MainEthPrizeAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizePercentage() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			prize_percentage = -1
 		} else { prize_percentage = tmp_val.Int64() }
-		tmp_val,err = bwcontract.RafflePercentage(&copts)
+		tmp_val,err = bwcontract.RaffleTotalEthPrizeAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at RafflePercentage() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			raffle_percentage = -1
 		} else { raffle_percentage = tmp_val.Int64() }
-		tmp_val,err = bwcontract.StakingPercentage(&copts)
+		tmp_val,err = bwcontract.StakingTotalEthRewardAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at StakingPercentage() call: %v\n",err)
 			Error.Printf(err_str)
@@ -192,21 +192,21 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			time_increase = "error"
 		} else { time_increase = tmp_val.String() }
-		tmp_val,err = bwcontract.NumRaffleETHWinnersBidding(&copts)
+		tmp_val,err = bwcontract.NumRaffleEthPrizesForBidders(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumRaffleETHWinnersBidding() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			raffle_eth_winners_bidding = -1 
 		} else { raffle_eth_winners_bidding = tmp_val.Int64()}
-		tmp_val,err = bwcontract.NumRaffleNftWinnersBidding(&copts)
+		tmp_val,err = bwcontract.NumRaffleCosmicSignatureNftsForBidders(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersBidding() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			raffle_nft_winners_bidding = -1
 		} else { raffle_nft_winners_bidding = tmp_val.Int64() }
-		tmp_val,err = bwcontract.NumRaffleNftWinnersStakingRWalk(&copts)
+		tmp_val,err = bwcontract.NumRaffleCosmicSignatureNftsForRandomWalkNftStakers(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersStakingRWalk() call: %v\n",err)
 			Error.Printf(err_str)
@@ -237,14 +237,14 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_bid_price,f_divisor)
 			bid_price_eth,_ = f_quo.Float64()
 		}
-		tmp_val,err = bwcontract.PrizeTime(&copts)
+		tmp_val,err = bwcontract.GetDurationUntilMainPrize(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizeTime() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			prize_claim_date = -1
 		} else { prize_claim_date = tmp_val.Int64() }
-		tmp_val , err = bwcontract.MainPrizeAmount(&copts)
+		tmp_val , err = bwcontract.GetMainEthPrizeAmount(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizeAmount() call: %v\n",err)
 			Error.Printf(err_str)
@@ -256,7 +256,7 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_prize_amount,f_divisor)
 			prize_amount_eth,_ = f_quo.Float64()
 		}
-		tmp_val , err = bwcontract.RaffleAmount(&copts)
+		tmp_val , err = bwcontract.GetRaffleTotalEthPrizeAmount(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at RaffleAmount() call: %v\n",err)
 			Error.Printf(err_str)

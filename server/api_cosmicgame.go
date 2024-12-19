@@ -966,7 +966,7 @@ func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
 		respond_error_json(c,fmt.Sprintf("Error during call: can't instantiate CG contract: %v",err))
 		return
 	}
-	prize_time,err := bwcontract.PrizeTime(&copts)
+	prize_time,err := bwcontract.GetDurationUntilMainPrize(&copts)
 	if err!=nil {
 		respond_error_json(c,fmt.Sprintf("Error during call: %v",err))
 		return

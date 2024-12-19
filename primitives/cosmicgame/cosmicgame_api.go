@@ -526,7 +526,7 @@ type CGAdminEvent struct {
 										//			4		StakingPercentageChanged
 										//			5		numRaffleETHWinnersBidding
 										//			6		numRaffleNFTWinnersBidding
-										//			7		numRaffleNFTWinnersStakingCST
+										//			7		Unused
 										//			8		NumRaffleNFTWinnersStakingRWalkChanged
 										//			9		CharityAddressChanged
 										//			10		RandomWalkAddressChanged
