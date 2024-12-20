@@ -19,17 +19,17 @@
 		<tr class="market_reports">
 			<td style="text-align: left;">
 				 {{ if eq 0 .RecordType}}Undefined{{end}}
-				 {{ if eq 1 .RecordType}}CharityPercentageChanged{{end}}
-				 {{ if eq 2 .RecordType}}PrizePercentageChanged{{end}}
+				 {{ if eq 1 .RecordType}}CharityEthDonationAmountPercentageChanged{{end}}
+				 {{ if eq 2 .RecordType}}MainEthPrizeAmountPercentageChanged{{end}}
 				 {{ if eq 3 .RecordType}}RafflePercentageChanged{{end}}
 				 {{ if eq 4 .RecordType}}StakingPercentageChanged{{end}}
 				 {{ if eq 5 .RecordType}}NumRaffleETHWinnersBiddingChanged{{end}}
 				 {{ if eq 6 .RecordType}}NumRaffleNFTWinnersBiddingChanged{{end}}
-				 {{ if eq 7 .RecordType}}Unused{{end}}
+				 {{ if eq 7 .RecordType}}DelayDurationBeforeNextRoundChanged{{end}}
 				 {{ if eq 8 .RecordType}}NumRaffleNFTWinnersStakingRWalk{{end}}
 				 {{ if eq 9 .RecordType}}CharityAddressChanged{{end}}
 				 {{ if eq 10 .RecordType}}RandomWalkAddressChanged{{end}}
-				 {{ if eq 11 .RecordType}}RaffleWalletAddressChanged{{end}}
+				 {{ if eq 11 .RecordType}}PrizesWalletAddressChanged{{end}}
 				 {{ if eq 12 .RecordType}}StakingWalletCSTAddressChanged{{end}}
 				 {{ if eq 13 .RecordType}}StakingWalletRWalkAddressChanged{{end}}
 				 {{ if eq 14 .RecordType}}MarketingWalletAddressChanged{{end}}

@@ -2028,7 +2028,7 @@ func proc_cosmic_signature_address_changed_event(log *types.Log,elog *EthereumEv
 		return
 	}
 	Info.Printf("Processing CosmicSignatureAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureNftAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event CosmicSignatureAddressChanged decode error: %v",err)
 		os.Exit(1)
