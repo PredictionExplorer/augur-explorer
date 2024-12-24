@@ -1021,8 +1021,8 @@ func proc_raffle_eth_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = log.Topics[2].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Round = log.Topics[1].Big().Int64()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
 	evt.Amount = eth_evt.EthPrizeAmount.String()
 
@@ -1058,8 +1058,8 @@ func proc_endurance_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = log.Topics[2].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Round = log.Topics[1].Big().Int64()
 	evt.Erc721TokenId = log.Topics[3].Big().Int64()
 	evt.Erc20Amount = eth_evt.CstPrizeAmount.String()
 
@@ -1133,8 +1133,8 @@ func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = log.Topics[2].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Round = log.Topics[1].Big().Int64()
 	evt.Amount = eth_evt.EthPrizeAmount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())

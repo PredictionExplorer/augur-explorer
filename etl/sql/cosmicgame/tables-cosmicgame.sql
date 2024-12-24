@@ -825,7 +825,9 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
 	total_raffle_nfts			BIGINT DEFAULT 0,
 	donations_round_total		DECIMAL DEFAULT 0,		-- total donations for current round (reset on claimPrize())
-	donations_round_count		BIGINT DEFAULT 0		-- total number of donations for the current round
+	donations_round_count		BIGINT DEFAULT 0,		-- total number of donations for the current round
+	total_eth_in_bids			DECIMAL DEFAULT 0,		-- sum of ETH in all bids
+	total_cst_in_bids			DECIMAL DEFAULT 0		-- sum of CST in all bids
 );
 CREATE TABLE cg_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,

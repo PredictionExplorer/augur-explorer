@@ -33,7 +33,11 @@ BEGIN
 		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids + 1);
-	UPDATE cg_round_stats SET total_bids = (total_bids + 1) WHERE round_num=NEW.round_num;
+	UPDATE cg_round_stats SET 
+			total_bids = (total_bids + 1),
+			total_cst_in_bids = (total_cst_in_bids + NEW.num_cst_tokens),
+			total_eth_in_Bids = (total_eth_in_bids + NEW.bid_price)
+	   	WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,total_bids) VALUES (NEW.round_num,1);
@@ -71,7 +75,11 @@ BEGIN
 		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids - 1) WHERE cur_num_bids>0;
-	UPDATE cg_round_stats SET total_bids = (total_bids - 1) WHERE round_num=OLD.round_num;
+	UPDATE cg_round_stats SET 
+			total_bids = (total_bids - 1),
+			total_cst_in_bids = (total_cst_in_bids + NEW.num_cst_tokens),
+			total_eth_in_Bids = (total_eth_in_bids + NEW.bid_price)
+		WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -733,17 +741,17 @@ CREATE OR REPLACE FUNCTION on_staker_update() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	IF NEW.total_tokens_staked = 0 THEN
-		IF OLD.total_tokens_staked = 1 THEN
-			UPDATE cg_stake_stats_cst SET total_num_stakers = (total_num_stakers - 1);
-		END IF;
-	ELSE
-		IF NEW.total_tokens_staked = 1 THEN
-			IF OLD.total_tokens_staked = 0 THEN
-				UPDATE cg_stake_stats_cst SET total_num_stakers = (total_num_stakers + 1);
-			END IF;
-		END IF;
-	END IF;
+--	IF NEW.total_tokens_staked = 0 THEN
+--		IF OLD.total_tokens_staked = 1 THEN
+--			UPDATE cg_stake_stats_cst SET total_num_stakers = (total_num_stakers - 1);
+--		END IF;
+--	ELSE
+--		IF NEW.total_tokens_staked = 1 THEN
+--			IF OLD.total_tokens_staked = 0 THEN
+--				UPDATE cg_stake_stats_cst SET total_num_stakers = (total_num_stakers + 1);
+--			END IF;
+--		END IF;
+--	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -979,6 +987,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_staked_cst_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
+	v_active_stakers			INT;
 BEGIN
 
 	INSERT INTO cg_staked_token_cst(staker_aid,token_id,stake_action_id)
@@ -994,11 +1003,16 @@ BEGIN
 		INSERT INTO cg_staker_cst(staker_aid,num_stake_actions,total_tokens_staked) VALUES(NEW.staker_aid,1,1);
 	END IF;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
+	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_cst SET total_num_stakers=v_active_stakers;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_staked_cst_delete() RETURNS trigger AS  $$
 DECLARE
+	v_active_stakers			INT;
 BEGIN
 
 	DELETE FROM cg_staked_token_cst WHERE token_id = OLD.token_id;
@@ -1008,6 +1022,10 @@ BEGIN
 			num_stake_actions = (num_stake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
+	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_cst SET total_num_stakers=v_active_stakers;
+	END IF;
 
 	RETURN OLD;
 END;
@@ -1049,6 +1067,7 @@ CREATE OR REPLACE FUNCTION on_nft_unstaked_cst_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 	v_rec RECORD;
+	v_active_stakers			INT;
 BEGIN
 
 	UPDATE cg_staker_cst
@@ -1065,12 +1084,17 @@ BEGIN
 		END LOOP;
 
 	DELETE from cg_staked_token_cst WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
+	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_cst SET total_num_stakers=v_active_stakers;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_unstaked_cst_delete() RETURNS trigger AS  $$
 DECLARE
 	v_rec RECORD;
+	v_active_stakers			INT;
 BEGIN
 
 	UPDATE cg_staker_cst
@@ -1085,6 +1109,10 @@ BEGIN
 				UPDATE cg_st_reward SET collected = 'F' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
 			END IF;
 		END LOOP;
+	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_cst SET total_num_stakers=v_active_stakers;
+	END IF;
 
 	RETURN OLD;
 END;
