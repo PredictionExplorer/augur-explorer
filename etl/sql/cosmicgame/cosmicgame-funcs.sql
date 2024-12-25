@@ -104,7 +104,7 @@ BEGIN
 		v_prizes_sum := 0;
 		v_prizes_count := 0;
 	END IF;
-	SELECT total_nft_donated FROm cg_round_stats WHERE round_num=NEW.prize_num INTO v_donated_nfts;
+	SELECT total_nft_donated FROM cg_round_stats WHERE round_num=NEW.prize_num INTO v_donated_nfts;
 	IF v_donated_nfts IS NULL THEN
 		v_donated_nfts := 0;
 	END IF;

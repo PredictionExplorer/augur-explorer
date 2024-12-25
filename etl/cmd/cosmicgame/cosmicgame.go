@@ -143,6 +143,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_timeout_to_withdraw_prize[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_price_increase_changed[:4]),
 			ContractAid: 0,
 		},
@@ -2142,6 +2146,37 @@ func proc_timeout_claimprize_changed_event(log *types.Log,elog *EthereumEventLog
 	storagew.Delete_timeout_claimprize_changed_event(evt.EvtId)
     storagew.Insert_timeout_claimprize_changed_event(&evt)
 }
+func proc_timeout_duration_to_withdraw_prize_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGTimeoutToWithdrawPrizeChanged
+	var eth_evt IPrizesWalletTimeoutDurationToWithdrawPrizesChanged
+
+	if !bytes.Equal(log.Address.Bytes(),prizes_wallet_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing TimeoutDurationToWithdrawPrizesChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := prizes_wallet_abi.UnpackIntoInterface(&eth_evt,"TimeoutDurationToWithdrawPrizesChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event TimeoutDurationToWithdrawPrizesChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewTimeout = eth_evt.NewValue.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TimeoutDurationToWithdrawPrizesChanged {\n")
+	Info.Printf("\tNewTimeout: %v\n",evt.NewTimeout)
+	Info.Printf("}\n")
+
+	storagew.Delete_timeout_to_withdraw_prizes_changed_event(evt.EvtId)
+    storagew.Insert_timeout_to_withdraw_prizes_changed_event(&evt)
+}
 func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGPriceIncreaseChanged
@@ -2945,6 +2980,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_timeout_claimprize_changed) {
 		proc_timeout_claimprize_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_timeout_to_withdraw_prize) {
+		proc_timeout_duration_to_withdraw_prize_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_price_increase_changed) {
 		proc_price_increase_changed_event(log,evtlog)

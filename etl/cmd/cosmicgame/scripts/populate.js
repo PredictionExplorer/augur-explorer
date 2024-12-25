@@ -414,6 +414,8 @@ async function main() {
     await cosmicGameProxy.connect(owner).setInitialBidAmountFraction(tmp);
     tmp = await cosmicGameProxy.activationTime();
     await cosmicGameProxy.connect(owner).setActivationTime(tmp);
+	tmp = await prizesWallet.timeoutDurationToWithdrawPrizes();
+	await prizesWallet.connect(owner).setTimeoutDurationToWithdrawPrizes(Number(tmp)/2);
 
 	await cosmicGameProxy.connect(owner).setDelayDurationBeforeNextRound(1);
     await ethers.provider.send("evm_increaseTime", [1001]);

@@ -554,6 +554,7 @@ type CGAdminEvent struct {
 										//			32		BaseURI (CosmicSignature)
 										//			33		Initialized (Initialized event, openzeppelin)
 										//			34		OwnershipTransferred
+										//			35		TimeoutDurationToWithdrawPrizesChanged
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64

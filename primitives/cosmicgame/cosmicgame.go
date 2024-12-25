@@ -613,6 +613,14 @@ type CGTimeoutClaimPrizeChanged struct {
 	Contract                string
 	NewTimeout				int64
 }
+type CGTimeoutToWithdrawPrizeChanged  struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewTimeout				int64
+}
 type CGPriceIncreaseChanged struct {
 	EvtId                   int64
 	BlockNum                int64

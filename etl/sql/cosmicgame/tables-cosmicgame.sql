@@ -149,7 +149,7 @@ CREATE TABLE cg_mint_event (	-- CosmicSignatureNft.sol:NftMinted event
 	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_prize_deposit (	--PrizesWallet.sol:EthDeposit (not to confuse with staking eth deposit)
+CREATE TABLE cg_prize_deposit (	--PrizesWallet.sol:EthReceived(not to confuse with staking eth deposit)
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -174,7 +174,7 @@ CREATE TABLE cg_prize_withdrawal (	-- PrizesWallet.sol:EthWithdrawn
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_raffle_nft_winner (	-- CosmicSignatureGame.sol:RaffleNftWinnerEvent
+CREATE TABLE cg_raffle_nft_winner (	-- CosmicSignatureGame.sol:RaffleWinnerCosmicSignatureNftAwarded
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -189,7 +189,7 @@ CREATE TABLE cg_raffle_nft_winner (	-- CosmicSignatureGame.sol:RaffleNftWinnerEv
 	is_staker		BOOLEAN NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_raffle_eth_winner (	-- CosmicSignatureGame.sol:RaffleEthWinnerEvent
+CREATE TABLE cg_raffle_eth_winner (	-- CosmicSignatureGame.sol:RaffleWinnerEthPrizeAllocated
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -232,7 +232,7 @@ CREATE TABLE cg_lastcst_winner (	-- CosmicSignatureGame.sol:LastCstBidderPrizePa
 	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_chrono_warrior (	-- CosmicSignatureGame.sol:ChronoWarriorPrizePaid
+CREATE TABLE cg_chrono_warrior (	-- CosmicSignatureGame.sol:ChronoWarriorPrizeAllocated
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -437,7 +437,7 @@ CREATE TABLE cg_costok_owner( -- CosmicToken owner info (about balance)
 	owner_aid		BIGINT PRIMARY KEY,
 	cur_balance		DECIMAL DEFAULT 0 --- user's balance in CosmicToken denomination
 );
-CREATE TABLE cg_adm_charity_pcent( -- ISystemEvents.sol:CharityPercentageChanged event
+CREATE TABLE cg_adm_charity_pcent( -- ISystemEvents.sol:CharityEthDonationAmountPercentageChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -447,7 +447,7 @@ CREATE TABLE cg_adm_charity_pcent( -- ISystemEvents.sol:CharityPercentageChanged
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_main_prize_pcent( -- ISystemEvents.sol:MainPrizePercentageChanged event
+CREATE TABLE cg_adm_main_prize_pcent( -- ISystemEvents.sol:MainEthPrizeAmountPercentageChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -457,7 +457,7 @@ CREATE TABLE cg_adm_main_prize_pcent( -- ISystemEvents.sol:MainPrizePercentageCh
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_stake_pcent( -- ISystemEvents.sol:StakingPercentageChanged event
+CREATE TABLE cg_adm_stake_pcent( -- ISystemEvents.sol:StakingTotalEthRewardAmountPercentageChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -467,7 +467,7 @@ CREATE TABLE cg_adm_stake_pcent( -- ISystemEvents.sol:StakingPercentageChanged e
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raffle_pcent( -- ISystemEvents.sol:RafflePercentageChanged event
+CREATE TABLE cg_adm_raffle_pcent( -- ISystemEvents.sol:RaffleTotalEthPrizeAmountPercentageChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -477,7 +477,7 @@ CREATE TABLE cg_adm_raffle_pcent( -- ISystemEvents.sol:RafflePercentageChanged e
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_chrono_pcent( -- ISystemEvents.sol:ChronoWarriorEthPrizePercentageChanged event
+CREATE TABLE cg_adm_chrono_pcent( -- ISystemEvents.sol:ChronoWarriorEthPrizeAmountPercentageChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -487,7 +487,7 @@ CREATE TABLE cg_adm_chrono_pcent( -- ISystemEvents.sol:ChronoWarriorEthPrizePerc
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_eth_bidding( -- ISystemEvents.sol:NumRaffleETHWinnersBiddingChanged event
+CREATE TABLE cg_adm_raf_eth_bidding( -- ISystemEvents.sol:NumRaffleEthPrizesForBiddersChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -497,7 +497,7 @@ CREATE TABLE cg_adm_raf_eth_bidding( -- ISystemEvents.sol:NumRaffleETHWinnersBid
 	num_winners		DECIMAL NOT NULL,	-- newNumRaffleETHWinnersBidding
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_nft_bidding( -- ISystemEvents.sol:NumRaffleNFTWinnersBiddingChanged event
+CREATE TABLE cg_adm_raf_nft_bidding( -- ISystemEvents.sol:NumRaffleCosmicSignatureNftsForBiddersChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -507,7 +507,7 @@ CREATE TABLE cg_adm_raf_nft_bidding( -- ISystemEvents.sol:NumRaffleNFTWinnersBid
 	num_winners		DECIMAL NOT NULL,	-- newNumRaffleNFTWinnersBidding 
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_nft_staking_rwalk( -- ISystemEvents.sol:NumRaffleNFTWinnersStakingRWalkChanged event
+CREATE TABLE cg_adm_raf_nft_staking_rwalk( -- ISystemEvents.sol:NumRaffleCosmicSignatureNftsForRandomWalkNftStakersChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -537,7 +537,7 @@ CREATE TABLE cg_adm_rwalk_addr( -- ISystemEvents.sol:RandomWalkAddressChanged ev
 	new_rwalk_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_prizes_wallet_addr( -- ISystemEvents.sol:PrizesWalletAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_prizes_wallet_addr( -- ISystemEvents.sol:PrizesWalletAddressChangedevent (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -547,7 +547,7 @@ CREATE TABLE cg_adm_prizes_wallet_addr( -- ISystemEvents.sol:PrizesWalletAddress
 	new_wallet_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_staking_cst_addr( -- ISystemEvents.sol:StakingWalletCSTAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_staking_cst_addr( -- ISystemEvents.sol:StakingWalletCosmicSignatureNftAddressChangedevent (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -557,7 +557,7 @@ CREATE TABLE cg_adm_staking_cst_addr( -- ISystemEvents.sol:StakingWalletCSTAddre
 	new_staking_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_staking_rwalk_addr( -- ISystemEVents.sol:StakingWalletRWalkAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_staking_rwalk_addr( -- ISystemEVents.sol:StakingWalletRandomWalkNftAddressChanged(contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -587,7 +587,7 @@ CREATE TABLE cg_adm_costok_addr( -- ISystemEvents.sol:CosmicTokenContractAddress
 	new_costok_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_cossig_addr( -- ISystemEvents.sol:CosmicSignatureAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_cossig_addr( -- ISystemEvents.sol:CosmicSignatureNftAddressChangedevent (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -618,6 +618,16 @@ CREATE TABLE cg_adm_time_inc( -- ISystemEvents.sol:TimeIncreaseChanged event (co
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_timeout_claimprize( -- ISystemEvents.sol:TimeoutDurationToClaimMainPrizeChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_timeout		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_timeout_withdraw( -- IPrizesWallet.sol:TimeoutDurationToWithdrawPrizesChanged event (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -923,6 +933,7 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	total_raffle_eth_deposits DECIMAL DEFAULT 0,
 	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
 	total_nft_donated		BIGINT DEFAULT 0,
+	total_erc20_donated		BIGINT DEFAULT 0,
 	total_cst_consumed		DECIMAL DEFAULT 0,		-- or burned, sum of the tokens that was burned as bid price
 	total_mkt_rewards		DECIMAL DEFAULT 0,
 	num_mkt_rewards			BIGINT DEFAULT 0

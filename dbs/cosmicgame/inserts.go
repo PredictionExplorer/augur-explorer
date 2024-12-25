@@ -1324,6 +1324,29 @@ func (sw *SQLStorageWrapper) Insert_timeout_claimprize_changed_event(evt *p.CGTi
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_timeout_to_withdraw_prizes_changed_event(evt *p.CGTimeoutToWithdrawPrizeChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_timeout_withdraw(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_timeout" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewTimeout,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_timeout_withdraw table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_price_increase_changed_event(evt *p.CGPriceIncreaseChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

@@ -49,6 +49,7 @@ DROP TABLE IF EXISTS
 	cg_adm_upgraded,
 	cg_adm_time_inc,
 	cg_adm_timeout_claimprize,
+	cg_adm_timeout_withdraw,
 	cg_adm_price_inc,
 	cg_adm_nanosec_extra,
 	cg_adm_inisecprize,
