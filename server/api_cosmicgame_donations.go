@@ -271,3 +271,59 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 		"UserAid": user_aid,
 	})
 }
+func api_cosmic_game_donations_erc20_global(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	donations := arb_storagew.Get_erc20_donations_global(offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"DonationsERC20" : donations,
+		"Offset": offset,
+		"Limit": limit,
+	})
+}
+func api_cosmic_game_donated_erc20_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_record_id:= c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,JSON,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'record_id' parameter is not set")
+		return
+	}
+	found,nftdonation := arb_storagew.Get_erc20_donation_info(record_id)
+	var req_status int = 1
+	var err_str string = ""
+	if !found {
+		respond_error_json(c,"Record not found")
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"ERC20Donation" : nftdonation,
+		})
+	}
+}

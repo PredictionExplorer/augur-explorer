@@ -75,3 +75,117 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_round(round_num int64) []p.C
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_erc20_donations_global(offset, limit int) []p.CGERC20Donation {
+
+	var query string
+	query = "SELECT "+
+				"tok.id,"+
+				"tok.evtlog_id,"+
+				"tok.block_num,"+
+				"tok.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM tok.time_stamp)::BIGINT,"+
+				"tok.time_stamp,"+
+				"tok.round_num,"+
+				"tok.donor_aid,"+
+				"da.addr, "+
+				"tokaddr.address_id,"+
+				"tokaddr.addr, "+
+				"tok.amount, "+
+				"tok.amount/1e18, "+
+				"tc.winner_aid,"+
+				"wa.addr "+
+			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON tok.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address tokaddr ON tok.token_aid=tokaddr.address_id "+
+				"LEFT JOIN cg_donated_tok_claimed tc ON (tc.token_aid=tok.token_aid AND tok.round_num=tc.round_num)"+
+				"LEFT JOIN address wa ON wa.address_id = tc.winner_aid "+
+			"ORDER BY tok.id DESC " +
+			"OFFSET $1 LIMIT $2"
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGERC20Donation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGERC20Donation
+		var null_winner_addr sql.NullString
+		var null_winner_aid sql.NullInt64
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RoundNum,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.TokenAid,
+			&rec.TokenAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&null_winner_aid,
+			&null_winner_addr,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_winner_aid.Valid { rec.Claimed = true; rec.WinnerAid=null_winner_aid.Int64 }
+		if null_winner_addr.Valid { rec.WinnerAddr = null_winner_addr.String }
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_erc20_donation_info(id int64) (bool,p.CGERC20Donation) {
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.round_num,"+
+				"d.donor_aid,"+
+				"da.addr, "+
+				"toka.address_id,"+
+				"toka.addr "+
+			"FROM "+sw.S.SchemaName()+".cg_erc20_donation d "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON d.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address toka ON d.token_aid=toka.address_id "+
+			"WHERE d.id=$1"
+
+	row := sw.S.Db().QueryRow(query,id)
+	var err error
+	var rec p.CGERC20Donation
+	rec.RecordId = id
+	err=row.Scan(
+		&rec.EvtLogId,
+		&rec.BlockNum,
+		&rec.TxId,
+		&rec.TxHash,
+		&rec.TimeStamp,
+		&rec.DateTime,
+		&rec.RoundNum,
+		&rec.DonorAid,
+		&rec.DonorAddr,
+		&rec.TokenAid,
+		&rec.TokenAddr,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false,rec
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_ERC2_donation_info(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return true,rec
+}

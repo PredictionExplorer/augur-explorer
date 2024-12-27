@@ -250,6 +250,7 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,num_erc20_donations) VALUES (NEW.round_num,1);
 	END IF;
+	UPDATE cg_glob_stats SET total_erc20_donations = (total_erc20_donations + 1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -260,6 +261,7 @@ BEGIN
 
 	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount - OLD.amount) WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid;
 	UPDATE cg_round_stats SET num_erc20_donations = (num_erc20_donations - 1) WHERE round_num=OLD.round_num;
+	UPDATE cg_glob_stats SET total_erc20_donations = (total_erc20_donations - 1);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

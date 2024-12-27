@@ -210,3 +210,43 @@ func cosmic_game_donations_erc20_by_user(c *gin.Context) {
 		"UserAid": user_aid,
 	})
 }
+func cosmic_game_donations_erc20_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_global(0, 10000)
+	c.HTML(http.StatusOK, "cg_donations_erc20_global.html", gin.H{
+		"DonationsERC20" : donations,
+		"Offset": 0,
+		"Limit": 10000,
+	})
+}
+func cosmic_game_donations_erc20_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_record_id:= c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,HTTP,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'record_id' parameter is not set")
+		return
+	}
+	found,donation := arb_storagew.Get_erc20_donation_info(record_id)
+	if !found {
+		respond_error(c,"Record not found")
+	} else {
+		c.HTML(http.StatusOK, "cg_donated_erc20_info.html", gin.H{
+			"ERC20Donation" : donation,
+		})
+	}
+}

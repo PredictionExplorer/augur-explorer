@@ -214,6 +214,8 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/donations/nft/unclaimed/by_user/:user_addr",api_cosmic_game_unclaimed_donated_nfts_by_user)
 	r.GET("/api/cosmicgame/donations/erc20/by_round/:round_num",api_cosmic_game_donations_erc20_by_round)
 	r.GET("/api/cosmicgame/donations/erc20/by_user/:user_addr",api_cosmic_game_donations_erc20_by_user)
+	r.GET("/api/cosmicgame/donations/erc20/global/:offset/:limit",api_cosmic_game_donations_erc20_global)
+	r.GET("/api/cosmicgame/donations/erc20/info/:record_id",api_cosmic_game_donated_erc20_info)
 	r.GET("/api/cosmicgame/raffle/deposits/list/:offset/:limit",api_cosmic_game_prize_deposits_list)
 	r.GET("/api/cosmicgame/raffle/deposits/by_round/:round_num",api_cosmic_game_prize_deposits_by_round)
 	r.GET("/api/cosmicgame/raffle/nft/all/list/:offset/:limit",api_cosmic_game_raffle_nft_winners_list)

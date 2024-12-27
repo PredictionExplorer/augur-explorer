@@ -1,0 +1,57 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Donated ERC20 info</title>
+</head>
+<body>
+	<h3 class="page_title">Donted ERC20 Info<h3>
+<table>
+	<tr>
+		<td>Record ID</td>
+		<td>{{.ERCDonation.RecordId}}
+	</tr>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.ERCDonation.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.ERC20Donation.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.ERC20Donation.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.ERC20Donation.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.ERC20TDonation.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.ERC20Donation.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Donor Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.ERC20Donation.DonorAddr}}">{{.ERC20Donation.DonorAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Token Address</td>
+		<td>{{.ERC20Donation.TokenAddr}} (ETH)</td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/donations/erc20/info/[record_id]<br/>
+
+	Example: /api/cosmicgame/donations/erc20/info/{{.ERC20Donation.RecordId}}
+</code>
+</body>
