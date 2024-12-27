@@ -1,7 +1,7 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Prize record for round number ={{.RoundInfo.PrizeNum}}</title>
+	<title>Prize record for round number ={{.RoundInfo.RoundNum}}</title>
 </head>
 <body>
 	<h3 class="page_title">Round Info<h3>
@@ -37,7 +37,7 @@
 	<tr>
 		<td>Round Num</td>
 		<td>
-			{{.RoundInfo.PrizeNum}}
+			{{.RoundInfo.RoundNum}}
 		</td>
 	</tr>
 	<tr>
@@ -116,7 +116,7 @@
 				<tr>
 					<td>Unclaimed Donated NFTs</td>
 					<td>
-						<a href="/black/cosmicgame/donations/nft/unclaimed/by_round/{{.RoundInfo.PrizeNum}}">
+						<a href="/black/cosmicgame/donations/nft/unclaimed/by_round/{{.RoundInfo.RoundNum}}">
 						Unclaimed
 						</a>
 					</td>
@@ -227,6 +227,6 @@
 <code>
 	API: /api/cosmicgame/rounds/info/[prize_num]<br/>
 
-	Example: /api/cosmicgame/rounds/info/{{.RoundInfo.PrizeNum}}
+	Example: /api/cosmicgame/rounds/info/{{.RoundInfo.RoundNum}}
 </code>
 </body>

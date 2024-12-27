@@ -314,7 +314,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.PrizeNum= log.Topics[1].Big().Int64()
+	evt.RoundNum= log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.EthPrizeAmount.String()
 	evt.TokenId = find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
@@ -327,7 +327,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MainPrizeClaimed {\n")
-	Info.Printf("\tPrizeNum: %v\n",evt.PrizeNum)
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tWinner%v\n",evt.WinnerAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
@@ -638,7 +638,7 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("DonationReceivedEvent {\n")
 	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
-	Info.Printf("\tPrizeNum: %v\n",evt.RoundNum)
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("}\n")
 
 	storagew.Delete_donation_received(evt.EvtId)
@@ -983,8 +983,8 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = log.Topics[2].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Round = log.Topics[1].Big().Int64()
 	evt.TokenId = log.Topics[3].Big().Int64()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
 	evt.IsRandomWalk = eth_evt.WinnerIsRandomWalkNftStaker

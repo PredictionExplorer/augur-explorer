@@ -5,7 +5,7 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	tx_id					BIGINT NOT NULL,
 	time_stamp				TIMESTAMPTZ NOT NULL,
 	contract_aid			BIGINT NOT NULL,
-	prize_num				BIGINT NOT NULL,
+	round_num				BIGINT NOT NULL,
 	winner_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	amount					DECIMAL DEFAULT 0,
@@ -831,7 +831,7 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	round_num					BIGINT NOT NULL PRIMARY KEY,
 	total_bids					BIGINT DEFAULT 0,
 	total_nft_donated			BIGINT DEFAULT 0,
-	total_erc20_donated			BIGINT DEFAULT 0,
+	num_erc20_donations			BIGINT DEFAULT 0,		-- number of donations made during the round (ERC20 tokens)
 	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
 	total_raffle_nfts			BIGINT DEFAULT 0,
 	donations_round_total		DECIMAL DEFAULT 0,		-- total donations for current round (reset on claimPrize())
@@ -947,6 +947,7 @@ CREATE TABLE cg_erc20_donation_stats ( -- stats for donated NFTs (donated with b
 	round_num				BIGINT NOT NULL,
 	total_amount			DECIMAL DEFAULT 0,		-- the sum for all donations for the round on single ERC200 token
 	claimed					BOOLEAN DEFAULT 'F',
+	winner_aid				BIGINT DEFAULT 0,		-- stored winner_aid when the guy actually makes the claim
 	PRIMARY KEY(round_num,token_aid)
 );
 CREATE TABLE cg_stake_stats_cst ( -- gloal staking statistics (StakinWalletCST)

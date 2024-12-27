@@ -75,7 +75,7 @@ type CGRoundRec struct {
 	WinnerAddr					string
 	Amount						string
 	AmountEth					float64	// divided by 1e18
-	PrizeNum					uint64
+	RoundNum					uint64
 	TokenId						uint64
 	Seed						string
 	CharityAddress				string
@@ -374,6 +374,7 @@ type CGRoundStats struct {
 	RoundNum					int64
 	TotalBids					int64
 	TotalDonatedNFTs			int64
+	NumERC20Donations			int64
 	TotalRaffleEthDeposits		string
 	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
 	TotalRaffleNFTs				int64

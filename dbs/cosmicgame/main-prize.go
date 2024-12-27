@@ -23,11 +23,12 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"wa.addr,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
-				"p.prize_num,"+
+				"p.round_num,"+
 				"p.token_id,"+
 				"m.seed,"+
 				"s.total_bids, "+
 				"s.total_nft_donated, "+
+				"s.num_erc20_donations, "+
 				"s.total_raffle_eth_deposits,"+
 				"s.total_raffle_eth_deposits/1e18 eth_deposits,"+
 				"s.total_raffle_nfts, "+
@@ -43,9 +44,9 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-				"LEFT JOIN cg_mint_event m ON m.token_id=p.prize_num "+
-				"LEFT JOIN cg_round_stats s ON p.prize_num=s.round_num "+
-				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.prize_num " +
+				"LEFT JOIN cg_mint_event m ON m.token_id=p.round_num "+
+				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
+				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
 				"LEFT JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
@@ -79,11 +80,12 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&rec.WinnerAddr,
 			&rec.Amount,
 			&rec.AmountEth,
-			&rec.PrizeNum,
+			&rec.RoundNum,
 			&rec.TokenId,
 			&null_seed,
 			&rec.RoundStats.TotalBids,
 			&rec.RoundStats.TotalDonatedNFTs,
+			&rec.RoundStats.NumERC20Donations,
 			&rec.RoundStats.TotalRaffleEthDeposits,
 			&rec.RoundStats.TotalRaffleEthDepositsEth,
 			&rec.RoundStats.TotalRaffleNFTs,
@@ -113,7 +115,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec) {
+func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec) {
 
 	var rec p.CGRoundRec
 	var query string
@@ -128,11 +130,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec)
 				"wa.addr,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
-				"p.prize_num,"+
+				"p.round_num,"+
 				"p.token_id,"+
 				"m.seed, "+
 				"s.total_bids,"+
 				"s.total_nft_donated, "+
+				"s.num_erc20_donations,"+
 				"s.total_raffle_eth_deposits, "+
 				"s.total_raffle_eth_deposits/1e18,"+
 				"s.total_raffle_nfts, "+
@@ -163,12 +166,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec)
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.prize_num " +
-				"LEFT JOIN cg_round_stats s ON s.round_num=p.prize_num "+
+				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
+				"LEFT JOIN cg_round_stats s ON s.round_num=p.round_num "+
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
-				"LEFT JOIN cg_endurance_winner endu ON endu.round_num=p.prize_num "+
-				"LEFT JOIN cg_lastcst_winner top ON top.round_num=p.prize_num "+
-				"LEFT JOIN cg_chrono_warrior w ON w.round_num = p.prize_num "+
+				"LEFT JOIN cg_endurance_winner endu ON endu.round_num=p.round_num "+
+				"LEFT JOIN cg_lastcst_winner top ON top.round_num=p.round_num "+
+				"LEFT JOIN cg_chrono_warrior w ON w.round_num = p.round_num "+
 				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
 				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
 				"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
@@ -177,9 +180,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec)
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 						"JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
 				") d ON p.donation_evt_id=d.evtlog_id "+
-			"WHERE p.prize_num=$1"
+			"WHERE p.round_num=$1"
 
-	row := sw.S.Db().QueryRow(query,prize_num)
+	row := sw.S.Db().QueryRow(query,round_num)
 	var null_seed sql.NullString
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
@@ -199,11 +202,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec)
 		&rec.WinnerAddr,
 		&rec.Amount,
 		&rec.AmountEth,
-		&rec.PrizeNum,
+		&rec.RoundNum,
 		&rec.TokenId,
 		&null_seed,
 		&rec.RoundStats.TotalBids,
 		&rec.RoundStats.TotalDonatedNFTs,
+		&rec.RoundStats.NumERC20Donations,
 		&rec.RoundStats.TotalRaffleEthDeposits,
 		&rec.RoundStats.TotalRaffleEthDepositsEth,
 		&rec.RoundStats.TotalRaffleNFTs,
@@ -240,9 +244,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGRoundRec)
 	}
 	if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
 
-	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num,false)
-	staking_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num,true)
-	raffle_eth_deposits := sw.Get_prize_deposits_by_round(prize_num)
+	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(round_num,false)
+	staking_nft_winners := sw.Get_raffle_nft_winners_by_round(round_num,true)
+	raffle_eth_deposits := sw.Get_prize_deposits_by_round(round_num)
 
 	rec.RaffleNFTWinners = raffle_nft_winners
 	rec.StakingNFTWinners = staking_nft_winners

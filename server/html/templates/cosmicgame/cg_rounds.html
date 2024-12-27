@@ -27,37 +27,37 @@
 	{{- range $i, $change := .Rounds}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/rounds/info/{{.PrizeNum}}">{{.DateTime}}</a>
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.DateTime}}</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
-			<td class="" style="text-align:center;">{{.PrizeNum}}</td>
+			<td class="" style="text-align:center;">{{.RoundNum}}</td>
 			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}} ETH </td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/donations/nft/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Donated NFTs</a>
+				<a href="/black/cosmicgame/donations/nft/by_round/{{.RoundNum}}">&nbsp;&nbsp;Donated NFTs</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/donations/erc20/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Donated ERC20</a>
+				<a href="/black/cosmicgame/donations/erc20/by_round/{{.RoundNum}}">&nbsp;&nbsp;Donated ERC20</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/donations/eth/both/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Donated ETH</a>
+				<a href="/black/cosmicgame/donations/eth/both/by_round/{{.RoundNum}}">&nbsp;&nbsp;Donated ETH</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/bid/list/by_round/{{.PrizeNum}}/0/0/100000">&nbsp;&nbsp;Bid list</a>
+				<a href="/black/cosmicgame/bid/list/by_round/{{.RoundNum}}/0/0/100000">&nbsp;&nbsp;Bid list</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/raffle/deposits/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Raffle ETH</a>
+				<a href="/black/cosmicgame/raffle/deposits/by_round/{{.RoundNum}}">&nbsp;&nbsp;Raffle ETH</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/raffle/nft/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Raffle NFTs</a>
+				<a href="/black/cosmicgame/raffle/nft/by_round/{{.RoundNum}}">&nbsp;&nbsp;Raffle NFTs</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/staking/cst/rewards/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Staking</a>
+				<a href="/black/cosmicgame/staking/cst/rewards/by_round/{{.RoundNum}}">&nbsp;&nbsp;Staking</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/donations/eth/simple/by_round/{{.PrizeNum}}">&nbsp;&nbsp;DS</a>
-				<a href="/black/cosmicgame/donations/eth/with_info/by_round/{{.PrizeNum}}">&nbsp;&nbsp;DWI</a>
+				<a href="/black/cosmicgame/donations/eth/simple/by_round/{{.RoundNum}}">&nbsp;&nbsp;DS</a>
+				<a href="/black/cosmicgame/donations/eth/with_info/by_round/{{.RoundNum}}">&nbsp;&nbsp;DWI</a>
 			</td>
 			<td style="text-align:center;">{{.RoundStats.TotalBids}}</td>
 			<td style="text-align:center;">{{.RoundStats.TotalDonatedNFTs}}</td>

@@ -1038,7 +1038,7 @@ func cosmic_game_nft_donations_by_prize(c *gin.Context) {
 	nft_donations := arb_storagew.Get_nft_donations_by_prize(prize_num)
 	c.HTML(http.StatusOK, "cg_nft_donations_by_prize.html", gin.H{
 		"NFTDonations" : nft_donations,
-		"PrizeNum": prize_num,
+		"RoundNum": prize_num,
 	})
 }
 func cosmic_game_cosmic_signature_token_list(c *gin.Context) {
@@ -1355,7 +1355,7 @@ func cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 	nft_donations := arb_storagew.Get_unclaimed_donated_nfts_by_prize(prize_num)
 	c.HTML(http.StatusOK, "cg_nft_donations_by_prize.html", gin.H{
 		"NFTDonations" : nft_donations,
-		"PrizeNum": prize_num,
+		"RoundNum": prize_num,
 	})
 }
 func cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {

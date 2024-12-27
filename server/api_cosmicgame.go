@@ -755,7 +755,7 @@ func api_cosmic_game_nft_donations_by_prize(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"NFTDonations" : nft_donations,
-		"PrizeNum": prize_num,
+		"RoundNum": prize_num,
 	})
 }
 func api_cosmic_game_cosmic_signature_token_list(c *gin.Context) {
@@ -1135,7 +1135,7 @@ func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"NFTDonations" : nft_donations,
-		"PrizeNum": prize_num,
+		"RoundNum": prize_num,
 	})
 }
 func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {

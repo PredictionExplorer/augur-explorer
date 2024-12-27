@@ -179,7 +179,7 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims(offset,limit int) []p.CGDona
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.CGNFTDonation {
+func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(round_num int64) []p.CGNFTDonation {
 
 	var query string
 	query = "SELECT "+
@@ -205,7 +205,7 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.CGN
 			"WHERE d.round_num= $1 " +
 			"ORDER BY d.id DESC"
 
-	rows,err := sw.S.Db().Query(query,prize_num)
+	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -239,7 +239,7 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.CGN
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(prize_num int64) []p.CGNFTDonation {
+func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(round_num int64) []p.CGNFTDonation {
 
 	var query string
 	query = "SELECT "+
@@ -266,7 +266,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(prize_num int64
 			"WHERE d.round_num= $1 AND dc.idx IS NULL " +
 			"ORDER BY d.id DESC"
 
-	rows,err := sw.S.Db().Query(query,prize_num)
+	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)

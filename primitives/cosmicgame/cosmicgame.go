@@ -27,7 +27,7 @@ type CGPrizeClaimEvent struct {
 	TxId				int64
 	LogIndex			int64
 	ContractAddr		string
-	PrizeNum			int64
+	RoundNum			int64
 	TokenId				int64
 	WinnerAddr			string
 	Amount				string

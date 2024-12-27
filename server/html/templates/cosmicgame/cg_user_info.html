@@ -366,7 +366,7 @@
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/rounds/info/{{.PrizeNum}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>

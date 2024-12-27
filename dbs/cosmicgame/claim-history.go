@@ -76,7 +76,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"p.block_num,"+
 						"p.tx_id,"+
 						"t.tx_hash,"+
-						"p.prize_num,"+
+						"p.round_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
 						"ta.addr token_addr, " +
@@ -85,10 +85,10 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"d.idx winner_index,"+
 						"c.id IS NOT NULL as claimed "+
 					"FROM cg_prize_claim p "+
-						"JOIN cg_nft_donation d ON p.prize_num=d.round_num "+ 
+						"JOIN cg_nft_donation d ON p.round_num=d.round_num "+ 
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
-						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.prize_num) AND (d.idx=c.idx) "+
+						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.round_num) AND (d.idx=c.idx) "+
 					"WHERE p.winner_aid=$1 "+
 				") UNION ALL (" +
 					"SELECT "+
@@ -99,7 +99,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"p.block_num,"+
 						"p.tx_id,"+
 						"t.tx_hash,"+
-						"p.prize_num,"+
+						"p.round_num,"+
 						"p.amount,"+
 						"p.amount/1e18 AS amount_eth,"+
 						"'' AS token_addr, " +
@@ -279,7 +279,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"p.block_num,"+
 						"p.tx_id,"+
 						"t.tx_hash,"+
-						"p.prize_num,"+
+						"p.round_num,"+
 						"d.amount AS amount,"+
 						"d.amount/1e18 AS amount_eth,"+
 						"ta.addr token_addr, " +
@@ -288,10 +288,10 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"-1 AS winner_index,"+
 						"c.id IS NOT NULL as claimed "+
 					"FROM cg_prize_claim p "+
-						"JOIN cg_erc20_donation d ON p.prize_num=d.round_num "+ 
+						"JOIN cg_erc20_donation d ON p.round_num=d.round_num "+ 
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
-						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.prize_num) AND (c.token_aid=d.token_aid)"+
+						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.round_num) AND (c.token_aid=d.token_aid)"+
 					"WHERE p.winner_aid=$1 "+
 				") "+
 			") everything " +
@@ -407,7 +407,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"p.block_num,"+
 						"p.tx_id,"+
 						"t.tx_hash,"+
-						"p.prize_num,"+
+						"p.round_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
 						"ta.addr token_addr, " +
@@ -418,11 +418,11 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"wa.addr winner_addr,"+
 						"p.winner_aid "+
 					"FROM cg_prize_claim p "+
-						"JOIN cg_nft_donation d ON p.prize_num=d.round_num "+ 
+						"JOIN cg_nft_donation d ON p.round_num=d.round_num "+ 
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
 						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.prize_num) AND (d.idx=c.idx) "+
+						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.round_num) AND (d.idx=c.idx) "+
 				") UNION ALL (" +
 					"SELECT "+
 						"3 AS record_type,"+
@@ -432,7 +432,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"p.block_num,"+
 						"p.tx_id,"+
 						"t.tx_hash,"+
-						"p.prize_num,"+
+						"p.round_num,"+
 						"p.amount,"+
 						"p.amount/1e18 AS amount_eth,"+
 						"'' AS token_addr, " +
@@ -628,7 +628,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"p.block_num,"+
 						"p.tx_id,"+
 						"t.tx_hash,"+
-						"p.prize_num,"+
+						"p.round_num,"+
 						"d.amount AS amount,"+
 						"d.amount/1e18 AS amount_eth,"+
 						"ta.addr token_addr, " +
@@ -639,11 +639,11 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"wa.addr winner_addr,"+
 						"p.winner_aid "+
 					"FROM cg_prize_claim p "+
-						"JOIN cg_erc20_donation d ON p.prize_num=d.round_num "+ 
+						"JOIN cg_erc20_donation d ON p.round_num=d.round_num "+ 
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
 						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.prize_num) AND (c.token_aid=d.token_aid)"+
+						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.round_num) AND (c.token_aid=d.token_aid)"+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +

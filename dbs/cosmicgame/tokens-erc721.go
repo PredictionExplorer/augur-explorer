@@ -27,7 +27,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"m.token_id,"+
 				"m.token_name,"+
 				"m.round_num,"+
-				"p.prize_num, "+
+				"p.round_num, "+
 				"cst.erc721_token_id,"+
 				"endu.erc721_token_id, "+
 				"rnw.is_staker, "+
@@ -107,7 +107,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"m.seed, "+
 				"m.token_id,"+
 				"m.round_num,"+
-				"p.prize_num, "+
+				"p.round_num, "+
 				"m.token_name, "+
 				"st.staker_aid,"+
 				"sta.addr,"+

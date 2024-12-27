@@ -395,7 +395,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCST
 				"m.seed, "+
 				"m.token_id,"+
 				"m.round_num,"+
-				"p.prize_num, "+
+				"p.round_num, "+
 				"m.token_name, "+
 				"a.evtlog_id,"+
 				"a.block_num,"+

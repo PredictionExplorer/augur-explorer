@@ -178,7 +178,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 				"wa.addr,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
-				"p.prize_num,"+
+				"p.round_num,"+
 				"p.token_id,"+
 				"m.seed,"+
 				"s.total_bids,"+
@@ -193,7 +193,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_round_stats s ON p.prize_num=s.round_num "+
+				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
 				"LEFT JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
@@ -223,7 +223,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 			&rec.WinnerAddr,
 			&rec.Amount,
 			&rec.AmountEth,
-			&rec.PrizeNum,
+			&rec.RoundNum,
 			&rec.TokenId,
 			&null_seed,
 			&rec.RoundStats.TotalBids,
@@ -347,12 +347,12 @@ func (sw *SQLStorageWrapper) Get_unclaimed_donated_nft_by_user(winner_aid int64)
 				"nft.addr, "+
 				"d.token_uri "+
 			"FROM "+sw.S.SchemaName()+".cg_nft_donation d "+
-				"JOIN "+sw.S.SchemaName()+".cg_prize_claim p ON p.prize_num=d.round_num "+
+				"JOIN "+sw.S.SchemaName()+".cg_prize_claim p ON p.round_num=d.round_num "+
 				"LEFT JOIN cg_donated_nft_claimed c ON c.idx=d.idx "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=d.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address da ON d.donor_aid=da.address_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address nft ON d.token_aid=nft.address_id "+
-			"WHERE p.winner_aid=$1 AND p.prize_num IS NOT NULL  AND c.idx IS NULL " +
+			"WHERE p.winner_aid=$1 AND p.round_num IS NOT NULL  AND c.idx IS NULL " +
 			"ORDER BY d.evtlog_id DESC "
 
 	rows,err := sw.S.Db().Query(query,winner_aid)
@@ -658,7 +658,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 				"m.token_id,"+
 				"m.token_name,"+
 				"m.round_num,"+
-				"p.prize_num, "+
+				"p.round_num, "+
 				"sa.action_id,"+
 				"EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT,"+
 				"sa.time_stamp,"+
@@ -916,7 +916,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_by_user(user_aid int64) []p.C
 				"m.seed, "+
 				"m.token_id,"+
 				"m.round_num,"+
-				"p.prize_num, "+
+				"p.round_num, "+
 				"m.token_name, "+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
@@ -1338,13 +1338,13 @@ func (sw *SQLStorageWrapper) Get_user_notif_red_box_rewards(winner_aid int64) p.
 		output.UnclaimedStakingReward = null_staking_rewards.Float64
 	}
 	query = "SELECT "+
-				"p.prize_num,"+
+				"p.round_num,"+
 				"d.token_aid,"+
 				"ta.addr,"+
 				"d.total_amount, "+
 				"d.total_amount/1e18 "+
 			"FROM cg_prize_claim p "+
-				"JOIN cg_erc20_donation_stats d ON d.round_num=p.prize_num AND claimed='F' "+
+				"JOIN cg_erc20_donation_stats d ON d.round_num=p.round_num AND claimed='F' "+
 				"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
 			"WHERE p.winner_aid=$1 "
 
@@ -1393,7 +1393,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(user_aid int64) []p.CGE
 				"tc.winner_aid,"+
 				"wa.addr "+
 			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
-				"INNER JOIN cg_prize_claim p ON p.prize_num=tok.round_num "+
+				"INNER JOIN cg_prize_claim p ON p.round_num=tok.round_num "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address da ON tok.donor_aid=da.address_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address tokaddr ON tok.token_aid=tokaddr.address_id "+

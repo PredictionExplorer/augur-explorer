@@ -104,7 +104,7 @@ BEGIN
 		v_prizes_sum := 0;
 		v_prizes_count := 0;
 	END IF;
-	SELECT total_nft_donated FROM cg_round_stats WHERE round_num=NEW.prize_num INTO v_donated_nfts;
+	SELECT total_nft_donated FROM cg_round_stats WHERE round_num=NEW.round_num INTO v_donated_nfts;
 	IF v_donated_nfts IS NULL THEN
 		v_donated_nfts := 0;
 	END IF;
@@ -126,6 +126,7 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = 0;
+	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -161,6 +162,7 @@ BEGIN
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
+	UPDATE cg_erc20_donation_stats SET winner_aid=0 WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -243,6 +245,11 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_erc20_donation_stats(token_aid,round_num,total_amount) VALUES (NEW.token_aid,NEW.round_num,NEW.amount);
 	END IF;
+	UPDATE cg_round_stats SET num_erc20_donations = (num_erc20_donations + 1) WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num,num_erc20_donations) VALUES (NEW.round_num,1);
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -252,6 +259,7 @@ DECLARE
 BEGIN
 
 	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount - OLD.amount) WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid;
+	UPDATE cg_round_stats SET num_erc20_donations = (num_erc20_donations - 1) WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
