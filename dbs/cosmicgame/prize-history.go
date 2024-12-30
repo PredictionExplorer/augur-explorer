@@ -293,6 +293,26 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
 						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.round_num) AND (c.token_aid=d.token_aid)"+
 					"WHERE p.winner_aid=$1 "+
+				") UNION ALL (" +
+					"SELECT "+
+						"12 AS record_type,"+
+						"p.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
+						"t.tx_hash,"+
+						"p.round_num,"+
+						"p.amount AS amount,"+
+						"p.amount/1e18 AS amount_eth,"+
+						"'' token_addr, " +
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index,"+
+						"'T' as claimed "+
+					"FROM cg_chrono_warrior p "+
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+					"WHERE p.winner_aid=$1 "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -644,6 +664,28 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
 						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.round_num) AND (c.token_aid=d.token_aid)"+
+				") UNION ALL (" +
+					"SELECT "+
+						"12 AS record_type,"+
+						"w.evtlog_id,"+
+						"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT AS tstmp, "+
+						"w.time_stamp AS date_time, "+
+						"w.block_num,"+
+						"w.tx_id,"+
+						"t.tx_hash,"+
+						"w.round_num,"+
+						"w.amount, "+
+						"w.amount/1e18 AS amount_eth,"+
+						"'' AS token_addr, "+
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index, "+
+						"'T' AS claimed, "+
+						"wa.addr winner_addr," +
+						"w.winner_aid "+
+					"FROM cg_chrono_warrior w "+
+						"LEFT JOIN transaction t ON t.id=w.tx_id "+
+						"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
