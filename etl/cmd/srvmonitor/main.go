@@ -1,15 +1,20 @@
 // Used for monitoring our server installation
 
+// df command line:
+//		df --output=target,pcent '/dev/nvme0n1p1' '/dev/nvme1n1p1' '/dev/bcache0' /dev/mapper/ubuntu--vg-ubuntu--lv
 package main
 
 import (
 //	"net/http"
 	"os"
+	"os/exec"
 	"fmt"
 	"log"
 	"time"
 	"net"
 	"errors"
+//	"os/signal"
+//	"syscall"
 //	"io/ioutil"
 	"context"
 	"sync"
@@ -45,6 +50,7 @@ type Layer1Status struct {
 const (
 	WAIT_RPC_BLOCK_NUM	= 60		// seconds to wait before second getBlock() call
 	WAIT_DB_BLOCK_NUM = 60			// seconds to wait to detect incremental database update
+	WAIT_BETWEEN_UPDATES = 30		// seconds to wait after each poll for data
 )
 var (
 	Error   *log.Logger
@@ -106,45 +112,52 @@ func check_rpc_status(status *RPCStatus, wg *sync.WaitGroup) {
 }
 func print_rpc_status_line(status *RPCStatus) {
 
-	printAtPosition(status.X,status.Y,status.RPCName,termbox.ColorWhite,termbox.ColorBlack)
-	printAtPosition(status.X+22,status.Y,status.RPCUrl,termbox.ColorWhite,termbox.ColorBlack)
+	printAtPosition(status.X,status.Y,status.RPCName,termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(status.X+22,status.Y,status.RPCUrl,termbox.ColorWhite,termbox.ColorDefault)
 	alive_str := string("Alive")
 	if !status.Alive  {
 		alive_str = "DOWN"
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorRed,termbox.ColorBlack)
+		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
 	} else {
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorGreen,termbox.ColorBlack)
+		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
 	}
-	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorBlack)
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",status.ErrStr),termbox.ColorYellow,termbox.ColorBlack)
+	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
+	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",status.ErrStr),termbox.ColorYellow,termbox.ColorDefault)
 }
 func print_current_rpc_status() {
+	printAtPosition(0, 0, "--------------------- RPC Nodes ------------------------------    (hit any key to exit)",termbox.ColorWhite,termbox.ColorDefault)
 	print_rpc_status_line(&rpc0)
 	print_rpc_status_line(&rpc1)
 	print_rpc_status_line(&rpc2)
 	print_rpc_status_line(&rpc3)
 	print_rpc_status_line(&rpc4)
 	print_rpc_status_line(&rpc5)
+	print_rpc_status_line(&rpc6)
 	termbox.Flush()
 }
 func check_rpc_services() {
 
-	var wg_rpcs sync.WaitGroup
-	wg_rpcs.Add(5);
-	init_rpc_status_struct(&rpc0,os.Getenv("RPC0_NAME"),os.Getenv("RPC0_URL"),1,0)
-	init_rpc_status_struct(&rpc1,os.Getenv("RPC1_NAME"),os.Getenv("RPC1_URL"),1,1)
-	init_rpc_status_struct(&rpc2,os.Getenv("RPC2_NAME"),os.Getenv("RPC2_URL"),1,2)
-	init_rpc_status_struct(&rpc3,os.Getenv("RPC3_NAME"),os.Getenv("RPC3_URL"),1,3)
-	init_rpc_status_struct(&rpc4,os.Getenv("RPC4_NAME"),os.Getenv("RPC4_URL"),1,4)
-	init_rpc_status_struct(&rpc5,os.Getenv("RPC5_NAME"),os.Getenv("RPC4_URL"),1,5)
-	go check_rpc_status(&rpc0,&wg_rpcs); 
-	go check_rpc_status(&rpc1,&wg_rpcs); 
-	go check_rpc_status(&rpc2,&wg_rpcs); 
-	go check_rpc_status(&rpc3,&wg_rpcs); 
-	go check_rpc_status(&rpc4,&wg_rpcs); 
-	go check_rpc_status(&rpc5,&wg_rpcs); 
-	wg_rpcs.Wait() 
-	print_current_rpc_status()
+	for {
+		var wg_rpcs sync.WaitGroup
+		wg_rpcs.Add(7);
+		init_rpc_status_struct(&rpc0,os.Getenv("RPC0_NAME"),os.Getenv("RPC0_URL"),1,1)
+		init_rpc_status_struct(&rpc1,os.Getenv("RPC1_NAME"),os.Getenv("RPC1_URL"),1,2)
+		init_rpc_status_struct(&rpc2,os.Getenv("RPC2_NAME"),os.Getenv("RPC2_URL"),1,3)
+		init_rpc_status_struct(&rpc3,os.Getenv("RPC3_NAME"),os.Getenv("RPC3_URL"),1,4)
+		init_rpc_status_struct(&rpc4,os.Getenv("RPC4_NAME"),os.Getenv("RPC4_URL"),1,5)
+		init_rpc_status_struct(&rpc5,os.Getenv("RPC5_NAME"),os.Getenv("RPC5_URL"),1,6)
+		init_rpc_status_struct(&rpc6,os.Getenv("RPC6_NAME"),os.Getenv("RPC6_URL"),1,7)
+		go check_rpc_status(&rpc0,&wg_rpcs); 
+		go check_rpc_status(&rpc1,&wg_rpcs); 
+		go check_rpc_status(&rpc2,&wg_rpcs); 
+		go check_rpc_status(&rpc3,&wg_rpcs); 
+		go check_rpc_status(&rpc4,&wg_rpcs); 
+		go check_rpc_status(&rpc5,&wg_rpcs); 
+		go check_rpc_status(&rpc6,&wg_rpcs); 
+		wg_rpcs.Wait() 
+		print_current_rpc_status()
+		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
+	}
 }
 func init_layer1_status_struct(s *Layer1Status,name,host,dbname,user,pass string,x,y int) {
 	s.Name = name
@@ -211,19 +224,20 @@ func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
 }
 func print_layer1_status_line(status *Layer1Status) {
 
-	printAtPosition(status.X,status.Y,status.Name,termbox.ColorWhite,termbox.ColorBlack)
-	printAtPosition(status.X+22,status.Y,status.Host,termbox.ColorWhite,termbox.ColorBlack)
+	printAtPosition(status.X,status.Y,status.Name,termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(status.X+22,status.Y,status.Host,termbox.ColorWhite,termbox.ColorDefault)
 	alive_str := string("Alive")
 	if !status.Alive  {
 		alive_str = "DOWN"
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorRed,termbox.ColorBlack)
+		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
 	} else {
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorGreen,termbox.ColorBlack)
+		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
 	}
-	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorBlack)
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",status.ErrStr),termbox.ColorYellow,termbox.ColorBlack)
+	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
+	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",status.ErrStr),termbox.ColorYellow,termbox.ColorDefault)
 }
 func print_current_layer1_status() {
+	printAtPosition(0, 8, "--------------------- SQL DB -----------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_layer1_status_line(&db1)
 	print_layer1_status_line(&db2)
 	print_layer1_status_line(&db3)
@@ -231,19 +245,47 @@ func print_current_layer1_status() {
 }
 func check_layer1() {
 
-	var wg_db sync.WaitGroup
-	wg_db.Add(3);
-	init_layer1_status_struct(&db1,os.Getenv("DB_RWALK_L1_NAME_SRV1"),os.Getenv("DB_RWALK_L1_HOST_SRV1"),os.Getenv("DB_RWALK_L1_DBNAME_SRV1"),os.Getenv("DB_RWALK_L1_USER_SRV1"),os.Getenv("DB_RWALK_L1_PASS_SRV1"),1,10)
-	init_layer1_status_struct(&db2,os.Getenv("DB_RWALK_L1_NAME_SRV2"),os.Getenv("DB_RWALK_L1_HOST_SRV2"),os.Getenv("DB_RWALK_L1_DBNAME_SRV2"),os.Getenv("DB_RWALK_L1_USER_SRV2"),os.Getenv("DB_RWALK_L1_PASS_SRV2"),1,11)
-	init_layer1_status_struct(&db3,os.Getenv("DB_RWALK_L1_NAME_SRV3"),os.Getenv("DB_RWALK_L1_HOST_SRV3"),os.Getenv("DB_RWALK_L1_DBNAME_SRV3"),os.Getenv("DB_RWALK_L1_USER_SRV3"),os.Getenv("DB_RWALK_L1_PASS_SRV3"),1,12)
-	go check_sql_db_status_layer1(&db1,&wg_db); 
-	go check_sql_db_status_layer1(&db2,&wg_db); 
-	go check_sql_db_status_layer1(&db3,&wg_db); 
-	wg_db.Wait() 
-	print_current_layer1_status()
+	init_layer1_status_struct(&db1,os.Getenv("DB_RWALK_L1_NAME_SRV1"),os.Getenv("DB_RWALK_L1_HOST_SRV1"),os.Getenv("DB_RWALK_L1_DBNAME_SRV1"),os.Getenv("DB_RWALK_L1_USER_SRV1"),os.Getenv("DB_RWALK_L1_PASS_SRV1"),1,9)
+	init_layer1_status_struct(&db2,os.Getenv("DB_RWALK_L1_NAME_SRV2"),os.Getenv("DB_RWALK_L1_HOST_SRV2"),os.Getenv("DB_RWALK_L1_DBNAME_SRV2"),os.Getenv("DB_RWALK_L1_USER_SRV2"),os.Getenv("DB_RWALK_L1_PASS_SRV2"),1,10)
+	init_layer1_status_struct(&db3,os.Getenv("DB_RWALK_L1_NAME_SRV3"),os.Getenv("DB_RWALK_L1_HOST_SRV3"),os.Getenv("DB_RWALK_L1_DBNAME_SRV3"),os.Getenv("DB_RWALK_L1_USER_SRV3"),os.Getenv("DB_RWALK_L1_PASS_SRV3"),1,11)
+
+	for {
+		var wg_db sync.WaitGroup
+		wg_db.Add(3);
+		go check_sql_db_status_layer1(&db1,&wg_db); 
+		go check_sql_db_status_layer1(&db2,&wg_db); 
+		go check_sql_db_status_layer1(&db3,&wg_db); 
+		wg_db.Wait() 
+		print_current_layer1_status()
+		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
+	}
+}
+func print_df_for_server(server_name,command string) {
+
+	cmd := exec.Command(command)
+	err := cmd.Run()
+	if err != nil {
+		Info.Printf("Error: %v\n",err)
+	}
+
 }
 func main() {
-	err := termbox.Init()
+	/*
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		os.Exit(1)
+    }() */
+	logfile, err := os.OpenFile("/tmp/srvmonitor.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
+	defer os.Remove("/tmp/srvmonitor.log")
+
+	err = termbox.Init()
 	if err != nil {
 		log.Fatalf("Failed to initialize termbox: %v", err)
 	}
@@ -252,9 +294,7 @@ func main() {
 	fmt.Printf("\n\n\n\n\n\n")
 
 //	storage = Connect_to_storage(Info)
-	//check_rpc_services()
-//	check_sql_db_status_layer1(os.Getenv("DB_RWALK_HOST_S1"),os.Getenv("DB_RWALK_DBNAME_S1"),os.Getenv("DB_RWALK_USER_S1"),os.Getenv("DB_RWALK_PASS_S1"),os.Getenv("DB_RWALK_L1_)
-	check_layer1()
-	printAtPosition(3,20,fmt.Sprintf("Press any key to exit"),termbox.ColorGreen,termbox.ColorBlack)
+	go check_rpc_services()
+	go check_layer1()
 	termbox.PollEvent()
 }
