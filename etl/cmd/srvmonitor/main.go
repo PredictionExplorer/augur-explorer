@@ -13,6 +13,7 @@ import (
 	"time"
 	"net"
 	"errors"
+	"strings"
 //	"os/signal"
 //	"syscall"
 //	"io/ioutil"
@@ -47,18 +48,27 @@ type Layer1Status struct {
 	X					int
 	Y					int
 }
+type DfStatus struct {
+	Title				string
+	Command				string
+	X					int
+	Y					int
+	ErrStr				string
+}
 const (
-	WAIT_RPC_BLOCK_NUM	= 60		// seconds to wait before second getBlock() call
-	WAIT_DB_BLOCK_NUM = 60			// seconds to wait to detect incremental database update
-	WAIT_BETWEEN_UPDATES = 30		// seconds to wait after each poll for data
+	WAIT_RPC_BLOCK_NUM	= 60			// seconds to wait before second getBlock() call
+	WAIT_DB_BLOCK_NUM = 60				// seconds to wait to detect incremental database update
+	WAIT_BETWEEN_UPDATES = 30			// seconds to wait after each poll for data
+	WAIT_BETWEEN_UPDATES_DFCMD = 600	// seconds to wait after each poll for data
 )
 var (
 	Error   *log.Logger
 	Info	*log.Logger
 	storage *SQLStorage
 
-	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6		RPCStatus
+	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6,rpc7		RPCStatus
 	db1,db2,db3								Layer1Status
+	df1,df2,df3								DfStatus
 )
 func printAtPosition(x, y int, text string, fg, bg termbox.Attribute) {
 	for i, r := range text {
@@ -113,16 +123,20 @@ func check_rpc_status(status *RPCStatus, wg *sync.WaitGroup) {
 func print_rpc_status_line(status *RPCStatus) {
 
 	printAtPosition(status.X,status.Y,status.RPCName,termbox.ColorWhite,termbox.ColorDefault)
-	printAtPosition(status.X+22,status.Y,status.RPCUrl,termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(status.X+25,status.Y,status.RPCUrl,termbox.ColorWhite,termbox.ColorDefault)
 	alive_str := string("Alive")
 	if !status.Alive  {
-		alive_str = "DOWN"
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
+		alive_str = "DOWN "
+		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
 	} else {
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
+		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
 	}
 	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",status.ErrStr),termbox.ColorYellow,termbox.ColorDefault)
+	var error_string string = strings.Repeat(" ",200);
+	if len(status.ErrStr) > 0 {
+		error_string = status.ErrStr
+	}
+	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",error_string),termbox.ColorYellow,termbox.ColorDefault)
 }
 func print_current_rpc_status() {
 	printAtPosition(0, 0, "--------------------- RPC Nodes ------------------------------    (hit any key to exit)",termbox.ColorWhite,termbox.ColorDefault)
@@ -133,13 +147,14 @@ func print_current_rpc_status() {
 	print_rpc_status_line(&rpc4)
 	print_rpc_status_line(&rpc5)
 	print_rpc_status_line(&rpc6)
+	print_rpc_status_line(&rpc7)
 	termbox.Flush()
 }
 func check_rpc_services() {
 
 	for {
 		var wg_rpcs sync.WaitGroup
-		wg_rpcs.Add(7);
+		wg_rpcs.Add(8);
 		init_rpc_status_struct(&rpc0,os.Getenv("RPC0_NAME"),os.Getenv("RPC0_URL"),1,1)
 		init_rpc_status_struct(&rpc1,os.Getenv("RPC1_NAME"),os.Getenv("RPC1_URL"),1,2)
 		init_rpc_status_struct(&rpc2,os.Getenv("RPC2_NAME"),os.Getenv("RPC2_URL"),1,3)
@@ -147,6 +162,7 @@ func check_rpc_services() {
 		init_rpc_status_struct(&rpc4,os.Getenv("RPC4_NAME"),os.Getenv("RPC4_URL"),1,5)
 		init_rpc_status_struct(&rpc5,os.Getenv("RPC5_NAME"),os.Getenv("RPC5_URL"),1,6)
 		init_rpc_status_struct(&rpc6,os.Getenv("RPC6_NAME"),os.Getenv("RPC6_URL"),1,7)
+		init_rpc_status_struct(&rpc7,os.Getenv("RPC7_NAME"),os.Getenv("RPC7_URL"),1,8)
 		go check_rpc_status(&rpc0,&wg_rpcs); 
 		go check_rpc_status(&rpc1,&wg_rpcs); 
 		go check_rpc_status(&rpc2,&wg_rpcs); 
@@ -154,6 +170,7 @@ func check_rpc_services() {
 		go check_rpc_status(&rpc4,&wg_rpcs); 
 		go check_rpc_status(&rpc5,&wg_rpcs); 
 		go check_rpc_status(&rpc6,&wg_rpcs); 
+		go check_rpc_status(&rpc7,&wg_rpcs); 
 		wg_rpcs.Wait() 
 		print_current_rpc_status()
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
@@ -221,23 +238,28 @@ func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
 //	fmt.Printf("sql diff = %v\n",diff)
 	status.LastBlockNum = bnum2
 	wg.Done()
+	defer dbobj.Close()
 }
 func print_layer1_status_line(status *Layer1Status) {
 
 	printAtPosition(status.X,status.Y,status.Name,termbox.ColorWhite,termbox.ColorDefault)
-	printAtPosition(status.X+22,status.Y,status.Host,termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(status.X+25,status.Y,status.Host,termbox.ColorWhite,termbox.ColorDefault)
 	alive_str := string("Alive")
 	if !status.Alive  {
-		alive_str = "DOWN"
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
+		alive_str = "DOWN "
+		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
 	} else {
-		printAtPosition(status.X+55,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
+		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
 	}
 	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",status.ErrStr),termbox.ColorYellow,termbox.ColorDefault)
+	var error_string string = strings.Repeat(" ",200);
+	if len(status.ErrStr) > 0 {
+		error_string = status.ErrStr
+	}
+	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",error_string),termbox.ColorYellow,termbox.ColorDefault)
 }
 func print_current_layer1_status() {
-	printAtPosition(0, 8, "--------------------- SQL DB -----------------------------",termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(0, 9, "--------------------- SQL DB --------------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_layer1_status_line(&db1)
 	print_layer1_status_line(&db2)
 	print_layer1_status_line(&db3)
@@ -245,9 +267,9 @@ func print_current_layer1_status() {
 }
 func check_layer1() {
 
-	init_layer1_status_struct(&db1,os.Getenv("DB_RWALK_L1_NAME_SRV1"),os.Getenv("DB_RWALK_L1_HOST_SRV1"),os.Getenv("DB_RWALK_L1_DBNAME_SRV1"),os.Getenv("DB_RWALK_L1_USER_SRV1"),os.Getenv("DB_RWALK_L1_PASS_SRV1"),1,9)
-	init_layer1_status_struct(&db2,os.Getenv("DB_RWALK_L1_NAME_SRV2"),os.Getenv("DB_RWALK_L1_HOST_SRV2"),os.Getenv("DB_RWALK_L1_DBNAME_SRV2"),os.Getenv("DB_RWALK_L1_USER_SRV2"),os.Getenv("DB_RWALK_L1_PASS_SRV2"),1,10)
-	init_layer1_status_struct(&db3,os.Getenv("DB_RWALK_L1_NAME_SRV3"),os.Getenv("DB_RWALK_L1_HOST_SRV3"),os.Getenv("DB_RWALK_L1_DBNAME_SRV3"),os.Getenv("DB_RWALK_L1_USER_SRV3"),os.Getenv("DB_RWALK_L1_PASS_SRV3"),1,11)
+	init_layer1_status_struct(&db1,os.Getenv("DB_RWALK_L1_NAME_SRV1"),os.Getenv("DB_RWALK_L1_HOST_SRV1"),os.Getenv("DB_RWALK_L1_DBNAME_SRV1"),os.Getenv("DB_RWALK_L1_USER_SRV1"),os.Getenv("DB_RWALK_L1_PASS_SRV1"),1,10)
+	init_layer1_status_struct(&db2,os.Getenv("DB_RWALK_L1_NAME_SRV2"),os.Getenv("DB_RWALK_L1_HOST_SRV2"),os.Getenv("DB_RWALK_L1_DBNAME_SRV2"),os.Getenv("DB_RWALK_L1_USER_SRV2"),os.Getenv("DB_RWALK_L1_PASS_SRV2"),1,11)
+	init_layer1_status_struct(&db3,os.Getenv("DB_RWALK_L1_NAME_SRV3"),os.Getenv("DB_RWALK_L1_HOST_SRV3"),os.Getenv("DB_RWALK_L1_DBNAME_SRV3"),os.Getenv("DB_RWALK_L1_USER_SRV3"),os.Getenv("DB_RWALK_L1_PASS_SRV3"),1,12)
 
 	for {
 		var wg_db sync.WaitGroup
@@ -260,14 +282,50 @@ func check_layer1() {
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
 	}
 }
-func print_df_for_server(server_name,command string) {
+func init_df_status_struct(s *DfStatus,title,command string,x,y int) {
+	s.Title = title
+	s.Command = command
+	s.X = x
+	s.Y = y
+}
+func print_df_for_server(status *DfStatus,wg *sync.WaitGroup) {
 
-	cmd := exec.Command(command)
+	cmd := exec.Command(status.Command)
 	err := cmd.Run()
 	if err != nil {
-		Info.Printf("Error: %v\n",err)
+		status.ErrStr = err.Error()
 	}
+	output,err := cmd.Output()
+	if err != nil {
+		status.ErrStr = err.Error()
+	}
+	lines := strings.Split(string(output),"\n")
+	for i:=1; i<len(lines);i++ {
+		line:=lines[i];
+		var error_string string = strings.Repeat(" ",200);
+		if len(status.ErrStr) > 0 {
+			error_string = status.ErrStr
+		}
+		printAtPosition(status.X,status.Y+i,status.Title,termbox.ColorWhite,termbox.ColorDefault)
+		printAtPosition(status.X,status.Y+i,line,termbox.ColorWhite,termbox.ColorDefault)
+		if len(status.ErrStr) > 0 {
+			printAtPosition(status.X,status.Y+i+1,error_string,termbox.ColorWhite,termbox.ColorDefault)
+			break
+		}
+	}
+	wg.Done()
 
+}
+func show_disk_usage_statistics() {
+
+	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_SSH"),1,14)
+	for {
+		var wg sync.WaitGroup
+		wg.Add(1);
+		go print_df_for_server(&df1,&wg)
+		wg.Wait() 
+		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
+	}
 }
 func main() {
 	/*
@@ -296,5 +354,6 @@ func main() {
 //	storage = Connect_to_storage(Info)
 	go check_rpc_services()
 	go check_layer1()
+	go show_disk_usage_statistics()
 	termbox.PollEvent()
 }
