@@ -14,9 +14,6 @@ import (
 	"net"
 	"errors"
 	"strings"
-//	"os/signal"
-//	"syscall"
-//	"io/ioutil"
 	"context"
 	"sync"
 	"database/sql"
@@ -48,9 +45,11 @@ type Layer1Status struct {
 	X					int
 	Y					int
 }
-type DfStatus struct {
+type DfStatus struct {	// note: this is for passwordless execution, copy id_rsa.pub to authorized_hosts on the destination server
 	Title				string
-	Command				string
+	User				string
+	Ip					string
+	DeviceList			string
 	X					int
 	Y					int
 	ErrStr				string
@@ -235,7 +234,6 @@ func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
 	} else {
 		status.Alive = true
 	}
-//	fmt.Printf("sql diff = %v\n",diff)
 	status.LastBlockNum = bnum2
 	wg.Done()
 	defer dbobj.Close()
@@ -282,49 +280,53 @@ func check_layer1() {
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
 	}
 }
-func init_df_status_struct(s *DfStatus,title,command string,x,y int) {
+func init_df_status_struct(s *DfStatus,title,user,ip,device_list string,x,y int) {
 	s.Title = title
-	s.Command = command
+	s.User= user
+	s.Ip = ip
+	s.DeviceList = device_list
 	s.X = x
 	s.Y = y
 }
 func print_df_for_server(status *DfStatus,wg *sync.WaitGroup) {
 
-	cmd := exec.Command(status.Command)
-	err := cmd.Run()
-	if err != nil {
-		status.ErrStr = err.Error()
-	}
+	cmd := exec.Command("/usr/bin/ssh","-l",status.User,status.Ip,"df --output=target,pcent",status.DeviceList)
 	output,err := cmd.Output()
 	if err != nil {
 		status.ErrStr = err.Error()
 	}
+	printAtPosition(status.X+3,status.Y,status.Title,termbox.ColorYellow,termbox.ColorDefault)
 	lines := strings.Split(string(output),"\n")
-	for i:=1; i<len(lines);i++ {
+	for i:=1; i<(len(lines)-1);i++ {
 		line:=lines[i];
 		var error_string string = strings.Repeat(" ",200);
 		if len(status.ErrStr) > 0 {
 			error_string = status.ErrStr
 		}
-		printAtPosition(status.X,status.Y+i,status.Title,termbox.ColorWhite,termbox.ColorDefault)
 		printAtPosition(status.X,status.Y+i,line,termbox.ColorWhite,termbox.ColorDefault)
 		if len(status.ErrStr) > 0 {
 			printAtPosition(status.X,status.Y+i+1,error_string,termbox.ColorWhite,termbox.ColorDefault)
 			break
 		}
+		_=line;_=error_string
 	}
+	termbox.Flush()
 	wg.Done()
 
 }
 func show_disk_usage_statistics() {
 
-	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_SSH"),1,14)
+	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_USER"),os.Getenv("SSH_CMD_DF_SRV1_IP"),os.Getenv("SSH_CMD_DF_SRV1_DEVICES"),1,14)
+	init_df_status_struct(&df2,os.Getenv("SSH_CMD_DF_SRV2_NAME"),os.Getenv("SSH_CMD_DF_SRV2_USER"),os.Getenv("SSH_CMD_DF_SRV2_IP"),os.Getenv("SSH_CMD_DF_SRV2_DEVICES"),25,14)
+	init_df_status_struct(&df3,os.Getenv("SSH_CMD_DF_SRV3_NAME"),os.Getenv("SSH_CMD_DF_SRV3_USER"),os.Getenv("SSH_CMD_DF_SRV3_IP"),os.Getenv("SSH_CMD_DF_SRV3_DEVICES"),50,14)
 	for {
 		var wg sync.WaitGroup
-		wg.Add(1);
+		wg.Add(3);
 		go print_df_for_server(&df1,&wg)
+		go print_df_for_server(&df2,&wg)
+		go print_df_for_server(&df3,&wg)
 		wg.Wait() 
-		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
+		time.Sleep(WAIT_BETWEEN_UPDATES_DFCMD * time.Second)
 	}
 }
 func main() {
@@ -348,10 +350,8 @@ func main() {
 		log.Fatalf("Failed to initialize termbox: %v", err)
 	}
 	defer termbox.Close()
-	//Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	fmt.Printf("\n\n\n\n\n\n")
 
-//	storage = Connect_to_storage(Info)
 	go check_rpc_services()
 	go check_layer1()
 	go show_disk_usage_statistics()
