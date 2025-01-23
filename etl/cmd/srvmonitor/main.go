@@ -7,18 +7,10 @@ package main
 import (
 //	"net/http"
 	"os"
-	"os/exec"
 	"fmt"
 	"log"
 	"time"
-	"net"
-	"errors"
-	"strings"
-	"context"
 	"sync"
-	"database/sql"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nsf/termbox-go"
 
 //	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -54,6 +46,19 @@ type DfStatus struct {	// note: this is for passwordless execution, copy id_rsa.
 	Y					int
 	ErrStr				string
 }
+type AppLayerStatus struct {	// fetches last block number that was processed by application layer
+	Title				string
+	LastBlockNum		int64
+	DbName				string
+	Host				string
+	User				string
+	Name				string
+	Pass				string
+	TableName			string
+	ErrStr				string
+	X					int
+	Y					int
+}
 const (
 	WAIT_RPC_BLOCK_NUM	= 60			// seconds to wait before second getBlock() call
 	WAIT_DB_BLOCK_NUM = 60				// seconds to wait to detect incremental database update
@@ -68,87 +73,9 @@ var (
 	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6,rpc7		RPCStatus
 	db1,db2,db3								Layer1Status
 	df1,df2,df3								DfStatus
+	rwalk_app1,rwalk_app2					AppLayerStatus
+	cosmic_app1,cosmic_app2					AppLayerStatus
 )
-func printAtPosition(x, y int, text string, fg, bg termbox.Attribute) {
-	for i, r := range text {
-		termbox.SetCell(x+i, y, r, fg, bg)
-	}
-}
-func init_rpc_status_struct(s *RPCStatus,name string,url string,x int,y int) {
-	s.RPCName = name
-	s.RPCUrl = url
-	s.X = x
-	s.Y = y
-}
-func check_rpc_status(status *RPCStatus, wg *sync.WaitGroup) {
-
-	if len(status.RPCUrl) == 0 {
-		status.RPCUrl = "*** not set ***"
-		wg.Done()
-		return
-	}
-	status.ErrStr = ""
-	status.Alive = false
-	rpc_obj, err:=rpc.DialContext(context.Background(), status.RPCUrl)
-	if err != nil {
-		status.ErrStr = err.Error()
-		wg.Done()
-		return
-	}
-	eclient := ethclient.NewClient(rpc_obj)
-	latestBlock1, err := eclient.HeaderByNumber(context.Background(), nil)
-    if err != nil {
-		status.ErrStr = err.Error()
-		wg.Done()
-		return
-    }
-	time.Sleep(WAIT_RPC_BLOCK_NUM*time.Second)
-	latestBlock2, err := eclient.HeaderByNumber(context.Background(), nil)
-    if err != nil {
-		status.ErrStr = err.Error()
-		wg.Done()
-		return
-    }
-	diff := latestBlock2.Number.Int64() - latestBlock1.Number.Int64()
-	if diff == 0 {
-		status.ErrStr=fmt.Sprintf("Block difference is zero (last block = %v)",latestBlock2.Number.Int64())
-	} else {
-		status.Alive = true
-	}
-	status.LastBlockNum = latestBlock2.Number.Int64()
-	wg.Done()
-
-}
-func print_rpc_status_line(status *RPCStatus) {
-
-	printAtPosition(status.X,status.Y,status.RPCName,termbox.ColorWhite,termbox.ColorDefault)
-	printAtPosition(status.X+25,status.Y,status.RPCUrl,termbox.ColorWhite,termbox.ColorDefault)
-	alive_str := string("Alive")
-	if !status.Alive  {
-		alive_str = "DOWN "
-		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
-	} else {
-		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
-	}
-	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
-	var error_string string = strings.Repeat(" ",200);
-	if len(status.ErrStr) > 0 {
-		error_string = status.ErrStr
-	}
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",error_string),termbox.ColorYellow,termbox.ColorDefault)
-}
-func print_current_rpc_status() {
-	printAtPosition(0, 0, "--------------------- RPC Nodes ------------------------------    (hit any key to exit)",termbox.ColorWhite,termbox.ColorDefault)
-	print_rpc_status_line(&rpc0)
-	print_rpc_status_line(&rpc1)
-	print_rpc_status_line(&rpc2)
-	print_rpc_status_line(&rpc3)
-	print_rpc_status_line(&rpc4)
-	print_rpc_status_line(&rpc5)
-	print_rpc_status_line(&rpc6)
-	print_rpc_status_line(&rpc7)
-	termbox.Flush()
-}
 func check_rpc_services() {
 
 	for {
@@ -175,94 +102,6 @@ func check_rpc_services() {
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
 	}
 }
-func init_layer1_status_struct(s *Layer1Status,name,host,dbname,user,pass string,x,y int) {
-	s.Name = name
-	s.Host = host
-	s.DbName = dbname
-	s.User = user
-	s.Pass = pass
-	s.X = x
-	s.Y = y
-}
-func pg_connect_db(host_port,db_name,user,pass string) (error , *sql.DB) {
-    var err error
-    host,port,err:=net.SplitHostPort(host_port)
-    if (err!=nil) {
-        host=host_port
-        port="5432"
-    }   
-    conn_str := "user='"+user+"' dbname='" + db_name + "' password='" + pass +
-                "' host='" + host + "' port='" + port + "'";
-    dbobj,err := sql.Open("postgres",conn_str);
-    if (err!=nil) {
-        return errors.New(fmt.Sprintf("Error connecting: %v\n",err)),nil
-    }   
-    _,err = dbobj.Exec("SET timezone TO 0")        // Setting timezone to UTC 
-    if (err!=nil) {
-        return errors.New(fmt.Sprintf("DB Error: %v",err)),nil
-    }
-	return nil,dbobj
-}
-func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
-
-	status.ErrStr = ""
-	status.Alive = false
-	err,dbobj := pg_connect_db(status.Host,status.DbName,status.User,status.Pass)
-	if err != nil {
-		status.ErrStr = fmt.Sprintf("%v",err)
-		wg.Done()
-		return
-	}
-	var bnum1 int64
-	err = dbobj.QueryRow("SELECT block_num FROM block ORDER BY block_num DESC LIMIT 1").Scan(&bnum1)
-	if err != nil {
-		status.ErrStr = fmt.Sprintf("Error %v",err)
-		wg.Done()
-		return
-	}
-	time.Sleep(WAIT_RPC_BLOCK_NUM*time.Second)
-	var bnum2 int64
-	err = dbobj.QueryRow("SELECT block_num FROM block ORDER BY block_num DESC LIMIT 1").Scan(&bnum2)
-	if err != nil {
-		status.ErrStr = fmt.Sprintf("Error %v",err)
-		wg.Done()
-		return
-	}
-	diff := bnum2 - bnum1
-	if diff == 0 {
-		status.ErrStr=fmt.Sprintf("Block difference is zero (last block = %v)",bnum2)
-	} else {
-		status.Alive = true
-	}
-	status.LastBlockNum = bnum2
-	wg.Done()
-	defer dbobj.Close()
-}
-func print_layer1_status_line(status *Layer1Status) {
-
-	printAtPosition(status.X,status.Y,status.Name,termbox.ColorWhite,termbox.ColorDefault)
-	printAtPosition(status.X+25,status.Y,status.Host,termbox.ColorWhite,termbox.ColorDefault)
-	alive_str := string("Alive")
-	if !status.Alive  {
-		alive_str = "DOWN "
-		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorRed,termbox.ColorDefault)
-	} else {
-		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
-	}
-	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
-	var error_string string = strings.Repeat(" ",200);
-	if len(status.ErrStr) > 0 {
-		error_string = status.ErrStr
-	}
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",error_string),termbox.ColorYellow,termbox.ColorDefault)
-}
-func print_current_layer1_status() {
-	printAtPosition(0, 9, "--------------------- SQL DB --------------------------------",termbox.ColorWhite,termbox.ColorDefault)
-	print_layer1_status_line(&db1)
-	print_layer1_status_line(&db2)
-	print_layer1_status_line(&db3)
-	termbox.Flush()
-}
 func check_layer1() {
 
 	init_layer1_status_struct(&db1,os.Getenv("DB_RWALK_L1_NAME_SRV1"),os.Getenv("DB_RWALK_L1_HOST_SRV1"),os.Getenv("DB_RWALK_L1_DBNAME_SRV1"),os.Getenv("DB_RWALK_L1_USER_SRV1"),os.Getenv("DB_RWALK_L1_PASS_SRV1"),1,10)
@@ -280,40 +119,6 @@ func check_layer1() {
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
 	}
 }
-func init_df_status_struct(s *DfStatus,title,user,ip,device_list string,x,y int) {
-	s.Title = title
-	s.User= user
-	s.Ip = ip
-	s.DeviceList = device_list
-	s.X = x
-	s.Y = y
-}
-func print_df_for_server(status *DfStatus,wg *sync.WaitGroup) {
-
-	cmd := exec.Command("/usr/bin/ssh","-l",status.User,status.Ip,"df --output=target,pcent",status.DeviceList)
-	output,err := cmd.Output()
-	if err != nil {
-		status.ErrStr = err.Error()
-	}
-	printAtPosition(status.X+3,status.Y,status.Title,termbox.ColorYellow,termbox.ColorDefault)
-	lines := strings.Split(string(output),"\n")
-	for i:=1; i<(len(lines)-1);i++ {
-		line:=lines[i];
-		var error_string string = strings.Repeat(" ",200);
-		if len(status.ErrStr) > 0 {
-			error_string = status.ErrStr
-		}
-		printAtPosition(status.X,status.Y+i,line,termbox.ColorWhite,termbox.ColorDefault)
-		if len(status.ErrStr) > 0 {
-			printAtPosition(status.X,status.Y+i+1,error_string,termbox.ColorWhite,termbox.ColorDefault)
-			break
-		}
-		_=line;_=error_string
-	}
-	termbox.Flush()
-	wg.Done()
-
-}
 func show_disk_usage_statistics() {
 
 	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_USER"),os.Getenv("SSH_CMD_DF_SRV1_IP"),os.Getenv("SSH_CMD_DF_SRV1_DEVICES"),1,14)
@@ -327,6 +132,24 @@ func show_disk_usage_statistics() {
 		go print_df_for_server(&df3,&wg)
 		wg.Wait() 
 		time.Sleep(WAIT_BETWEEN_UPDATES_DFCMD * time.Second)
+	}
+}
+func show_application_layer_last_blocks() {
+	init_application_layer_status_struct(&cosmic_app1,os.Getenv("APP_STATUS_SRV1_TITLE"),os.Getenv("APP_STATUS_SRV1_HOST"),os.Getenv("APP_STATUS_SRV1_DBNAME"),os.Getenv("APP_STATUS_SRV1_USER"),os.Getenv("APP_STATUS_SRV1_PASS"),"cg_proc_status",80,2)
+	init_application_layer_status_struct(&cosmic_app2,os.Getenv("APP_STATUS_SRV2_TITLE"),os.Getenv("APP_STATUS_SRV2_HOST"),os.Getenv("APP_STATUS_SRV2_DBNAME"),os.Getenv("APP_STATUS_SRV2_USER"),os.Getenv("APP_STATUS_SRV2_PASS"),"cg_proc_status",80,3)
+	init_application_layer_status_struct(&rwalk_app1,os.Getenv("APP_STATUS_SRV3_TITLE"),os.Getenv("APP_STATUS_SRV3_HOST"),os.Getenv("APP_STATUS_SRV3_DBNAME"),os.Getenv("APP_STATUS_SRV3_USER"),os.Getenv("APP_STATUS_SRV3_PASS"),"rw_proc_status",80,4)
+	init_application_layer_status_struct(&rwalk_app2,os.Getenv("APP_STATUS_SRV4_TITLE"),os.Getenv("APP_STATUS_SRV4_HOST"),os.Getenv("APP_STATUS_SRV4_DBNAME"),os.Getenv("APP_STATUS_SRV4_USER"),os.Getenv("APP_STATUS_SRV4_PASS"),"rw_proc_status",80,5)
+
+	for {
+		var wg sync.WaitGroup
+		wg.Add(4);
+		go check_sql_db_status_application(&cosmic_app1,&wg)
+		go check_sql_db_status_application(&cosmic_app2,&wg)
+		go check_sql_db_status_application(&rwalk_app1,&wg)
+		go check_sql_db_status_application(&rwalk_app2,&wg)
+		wg.Wait()
+		print_current_application_layer_status()
+		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
 	}
 }
 func main() {
@@ -355,5 +178,7 @@ func main() {
 	go check_rpc_services()
 	go check_layer1()
 	go show_disk_usage_statistics()
+//	go show_application_layer_last_blocks()
+
 	termbox.PollEvent()
 }
