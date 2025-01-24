@@ -70,17 +70,35 @@ var (
 	Info	*log.Logger
 	storage *SQLStorage
 
-	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6,rpc7		RPCStatus
-	db1,db2,db3								Layer1Status
+	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6,rpc7,rpc8		RPCStatus
+	db1,db2,db3,db4								Layer1Status
 	df1,df2,df3								DfStatus
 	rwalk_app1,rwalk_app2					AppLayerStatus
 	cosmic_app1,cosmic_app2					AppLayerStatus
+
+	globErr1								string
+	globErr2								string
 )
+func update_global_errors(new_error string) {
+	if len(new_error) == 0 { return }
+	if len(globErr1) == 0 { 
+		globErr1 = new_error
+		printAtPosition(1,26,fmt.Sprintf("%v",globErr1),termbox.ColorYellow,termbox.ColorDefault)
+		termbox.Flush()
+		return 
+	}
+	if len(globErr2) == 0 { 
+		globErr2 = new_error
+		printAtPosition(1,27,fmt.Sprintf("%v",globErr2),termbox.ColorYellow,termbox.ColorDefault)
+		termbox.Flush()
+		return 
+	}
+}
 func check_rpc_services() {
 
 	for {
 		var wg_rpcs sync.WaitGroup
-		wg_rpcs.Add(8);
+		wg_rpcs.Add(9);
 		init_rpc_status_struct(&rpc0,os.Getenv("RPC0_NAME"),os.Getenv("RPC0_URL"),1,1)
 		init_rpc_status_struct(&rpc1,os.Getenv("RPC1_NAME"),os.Getenv("RPC1_URL"),1,2)
 		init_rpc_status_struct(&rpc2,os.Getenv("RPC2_NAME"),os.Getenv("RPC2_URL"),1,3)
@@ -89,6 +107,7 @@ func check_rpc_services() {
 		init_rpc_status_struct(&rpc5,os.Getenv("RPC5_NAME"),os.Getenv("RPC5_URL"),1,6)
 		init_rpc_status_struct(&rpc6,os.Getenv("RPC6_NAME"),os.Getenv("RPC6_URL"),1,7)
 		init_rpc_status_struct(&rpc7,os.Getenv("RPC7_NAME"),os.Getenv("RPC7_URL"),1,8)
+		init_rpc_status_struct(&rpc8,os.Getenv("RPC8_NAME"),os.Getenv("RPC8_URL"),1,9)
 		go check_rpc_status(&rpc0,&wg_rpcs); 
 		go check_rpc_status(&rpc1,&wg_rpcs); 
 		go check_rpc_status(&rpc2,&wg_rpcs); 
@@ -97,6 +116,7 @@ func check_rpc_services() {
 		go check_rpc_status(&rpc5,&wg_rpcs); 
 		go check_rpc_status(&rpc6,&wg_rpcs); 
 		go check_rpc_status(&rpc7,&wg_rpcs); 
+		go check_rpc_status(&rpc8,&wg_rpcs); 
 		wg_rpcs.Wait() 
 		print_current_rpc_status()
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
@@ -104,16 +124,18 @@ func check_rpc_services() {
 }
 func check_layer1() {
 
-	init_layer1_status_struct(&db1,os.Getenv("DB_RWALK_L1_NAME_SRV1"),os.Getenv("DB_RWALK_L1_HOST_SRV1"),os.Getenv("DB_RWALK_L1_DBNAME_SRV1"),os.Getenv("DB_RWALK_L1_USER_SRV1"),os.Getenv("DB_RWALK_L1_PASS_SRV1"),1,10)
-	init_layer1_status_struct(&db2,os.Getenv("DB_RWALK_L1_NAME_SRV2"),os.Getenv("DB_RWALK_L1_HOST_SRV2"),os.Getenv("DB_RWALK_L1_DBNAME_SRV2"),os.Getenv("DB_RWALK_L1_USER_SRV2"),os.Getenv("DB_RWALK_L1_PASS_SRV2"),1,11)
-	init_layer1_status_struct(&db3,os.Getenv("DB_RWALK_L1_NAME_SRV3"),os.Getenv("DB_RWALK_L1_HOST_SRV3"),os.Getenv("DB_RWALK_L1_DBNAME_SRV3"),os.Getenv("DB_RWALK_L1_USER_SRV3"),os.Getenv("DB_RWALK_L1_PASS_SRV3"),1,12)
+	init_layer1_status_struct(&db1,os.Getenv("DB_L1_NAME_SRV1"),os.Getenv("DB_L1_HOST_SRV1"),os.Getenv("DB_L1_DBNAME_SRV1"),os.Getenv("DB_L1_USER_SRV1"),os.Getenv("DB_L1_PASS_SRV1"),1,12)
+	init_layer1_status_struct(&db2,os.Getenv("DB_L1_NAME_SRV2"),os.Getenv("DB_L1_HOST_SRV2"),os.Getenv("DB_L1_DBNAME_SRV2"),os.Getenv("DB_L1_USER_SRV2"),os.Getenv("DB_L1_PASS_SRV2"),1,13)
+	init_layer1_status_struct(&db3,os.Getenv("DB_L1_NAME_SRV3"),os.Getenv("DB_L1_HOST_SRV3"),os.Getenv("DB_L1_DBNAME_SRV3"),os.Getenv("DB_L1_USER_SRV3"),os.Getenv("DB_L1_PASS_SRV3"),1,14)
+	init_layer1_status_struct(&db4,os.Getenv("DB_L1_NAME_SRV4"),os.Getenv("DB_L1_HOST_SRV4"),os.Getenv("DB_L1_DBNAME_SRV4"),os.Getenv("DB_L1_USER_SRV4"),os.Getenv("DB_L1_PASS_SRV4"),1,15)
 
 	for {
 		var wg_db sync.WaitGroup
-		wg_db.Add(3);
+		wg_db.Add(4);
 		go check_sql_db_status_layer1(&db1,&wg_db); 
 		go check_sql_db_status_layer1(&db2,&wg_db); 
 		go check_sql_db_status_layer1(&db3,&wg_db); 
+		go check_sql_db_status_layer1(&db4,&wg_db); 
 		wg_db.Wait() 
 		print_current_layer1_status()
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
@@ -121,9 +143,9 @@ func check_layer1() {
 }
 func show_disk_usage_statistics() {
 
-	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_USER"),os.Getenv("SSH_CMD_DF_SRV1_IP"),os.Getenv("SSH_CMD_DF_SRV1_DEVICES"),1,14)
-	init_df_status_struct(&df2,os.Getenv("SSH_CMD_DF_SRV2_NAME"),os.Getenv("SSH_CMD_DF_SRV2_USER"),os.Getenv("SSH_CMD_DF_SRV2_IP"),os.Getenv("SSH_CMD_DF_SRV2_DEVICES"),25,14)
-	init_df_status_struct(&df3,os.Getenv("SSH_CMD_DF_SRV3_NAME"),os.Getenv("SSH_CMD_DF_SRV3_USER"),os.Getenv("SSH_CMD_DF_SRV3_IP"),os.Getenv("SSH_CMD_DF_SRV3_DEVICES"),50,14)
+	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_USER"),os.Getenv("SSH_CMD_DF_SRV1_IP"),os.Getenv("SSH_CMD_DF_SRV1_DEVICES"),1,20)
+	init_df_status_struct(&df2,os.Getenv("SSH_CMD_DF_SRV2_NAME"),os.Getenv("SSH_CMD_DF_SRV2_USER"),os.Getenv("SSH_CMD_DF_SRV2_IP"),os.Getenv("SSH_CMD_DF_SRV2_DEVICES"),25,20)
+	init_df_status_struct(&df3,os.Getenv("SSH_CMD_DF_SRV3_NAME"),os.Getenv("SSH_CMD_DF_SRV3_USER"),os.Getenv("SSH_CMD_DF_SRV3_IP"),os.Getenv("SSH_CMD_DF_SRV3_DEVICES"),50,20)
 	for {
 		var wg sync.WaitGroup
 		wg.Add(3);
@@ -135,10 +157,10 @@ func show_disk_usage_statistics() {
 	}
 }
 func show_application_layer_last_blocks() {
-	init_application_layer_status_struct(&cosmic_app1,os.Getenv("APP_STATUS_SRV1_TITLE"),os.Getenv("APP_STATUS_SRV1_HOST"),os.Getenv("APP_STATUS_SRV1_DBNAME"),os.Getenv("APP_STATUS_SRV1_USER"),os.Getenv("APP_STATUS_SRV1_PASS"),"cg_proc_status",80,2)
-	init_application_layer_status_struct(&cosmic_app2,os.Getenv("APP_STATUS_SRV2_TITLE"),os.Getenv("APP_STATUS_SRV2_HOST"),os.Getenv("APP_STATUS_SRV2_DBNAME"),os.Getenv("APP_STATUS_SRV2_USER"),os.Getenv("APP_STATUS_SRV2_PASS"),"cg_proc_status",80,3)
-	init_application_layer_status_struct(&rwalk_app1,os.Getenv("APP_STATUS_SRV3_TITLE"),os.Getenv("APP_STATUS_SRV3_HOST"),os.Getenv("APP_STATUS_SRV3_DBNAME"),os.Getenv("APP_STATUS_SRV3_USER"),os.Getenv("APP_STATUS_SRV3_PASS"),"rw_proc_status",80,4)
-	init_application_layer_status_struct(&rwalk_app2,os.Getenv("APP_STATUS_SRV4_TITLE"),os.Getenv("APP_STATUS_SRV4_HOST"),os.Getenv("APP_STATUS_SRV4_DBNAME"),os.Getenv("APP_STATUS_SRV4_USER"),os.Getenv("APP_STATUS_SRV4_PASS"),"rw_proc_status",80,5)
+	init_application_layer_status_struct(&cosmic_app1,os.Getenv("APP_STATUS_SRV1_TITLE"),os.Getenv("APP_STATUS_SRV1_HOST"),os.Getenv("APP_STATUS_SRV1_DBNAME"),os.Getenv("APP_STATUS_SRV1_USER"),os.Getenv("APP_STATUS_SRV1_PASS"),"cg_proc_status",90,2)
+	init_application_layer_status_struct(&cosmic_app2,os.Getenv("APP_STATUS_SRV2_TITLE"),os.Getenv("APP_STATUS_SRV2_HOST"),os.Getenv("APP_STATUS_SRV2_DBNAME"),os.Getenv("APP_STATUS_SRV2_USER"),os.Getenv("APP_STATUS_SRV2_PASS"),"cg_proc_status",90,3)
+	init_application_layer_status_struct(&rwalk_app1,os.Getenv("APP_STATUS_SRV3_TITLE"),os.Getenv("APP_STATUS_SRV3_HOST"),os.Getenv("APP_STATUS_SRV3_DBNAME"),os.Getenv("APP_STATUS_SRV3_USER"),os.Getenv("APP_STATUS_SRV3_PASS"),"rw_proc_status",90,4)
+	init_application_layer_status_struct(&rwalk_app2,os.Getenv("APP_STATUS_SRV4_TITLE"),os.Getenv("APP_STATUS_SRV4_HOST"),os.Getenv("APP_STATUS_SRV4_DBNAME"),os.Getenv("APP_STATUS_SRV4_USER"),os.Getenv("APP_STATUS_SRV4_PASS"),"rw_proc_status",90,5)
 
 	for {
 		var wg sync.WaitGroup
@@ -178,7 +200,7 @@ func main() {
 	go check_rpc_services()
 	go check_layer1()
 	go show_disk_usage_statistics()
-//	go show_application_layer_last_blocks()
+	go show_application_layer_last_blocks()
 
 	termbox.PollEvent()
 }

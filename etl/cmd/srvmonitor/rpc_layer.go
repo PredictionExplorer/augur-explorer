@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 	"context"
-	"strings"
 	"github.com/nsf/termbox-go"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -29,6 +28,7 @@ func check_rpc_status(status *RPCStatus, wg *sync.WaitGroup) {
 	rpc_obj, err:=rpc.DialContext(context.Background(), status.RPCUrl)
 	if err != nil {
 		status.ErrStr = err.Error()
+		update_global_errors(status.ErrStr)
 		wg.Done()
 		return
 	}
@@ -36,6 +36,7 @@ func check_rpc_status(status *RPCStatus, wg *sync.WaitGroup) {
 	latestBlock1, err := eclient.HeaderByNumber(context.Background(), nil)
     if err != nil {
 		status.ErrStr = err.Error()
+		update_global_errors(status.ErrStr)
 		wg.Done()
 		return
     }
@@ -43,12 +44,14 @@ func check_rpc_status(status *RPCStatus, wg *sync.WaitGroup) {
 	latestBlock2, err := eclient.HeaderByNumber(context.Background(), nil)
     if err != nil {
 		status.ErrStr = err.Error()
+		update_global_errors(status.ErrStr)
 		wg.Done()
 		return
     }
 	diff := latestBlock2.Number.Int64() - latestBlock1.Number.Int64()
 	if diff == 0 {
 		status.ErrStr=fmt.Sprintf("Block difference is zero (last block = %v)",latestBlock2.Number.Int64())
+		update_global_errors(status.ErrStr)
 	} else {
 		status.Alive = true
 	}
@@ -68,14 +71,12 @@ func print_rpc_status_line(status *RPCStatus) {
 		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
 	}
 	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
-	var error_string string = strings.Repeat(" ",200);
 	if len(status.ErrStr) > 0 {
-		error_string = status.ErrStr
+		update_global_errors(status.ErrStr)
 	}
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",error_string),termbox.ColorYellow,termbox.ColorDefault)
 }
 func print_current_rpc_status() {
-	printAtPosition(0, 0, "--------------------- RPC Nodes ------------------------------    (hit any key to exit)",termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(0, 0, "--------------------- RPC Nodes ------------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_rpc_status_line(&rpc0)
 	print_rpc_status_line(&rpc1)
 	print_rpc_status_line(&rpc2)
@@ -84,5 +85,6 @@ func print_current_rpc_status() {
 	print_rpc_status_line(&rpc5)
 	print_rpc_status_line(&rpc6)
 	print_rpc_status_line(&rpc7)
+	print_rpc_status_line(&rpc8)
 	termbox.Flush()
 }

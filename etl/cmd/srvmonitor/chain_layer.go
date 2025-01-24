@@ -4,7 +4,6 @@ import (
 	"sync"
 	"fmt"
 	"time"
-	"strings"
 	"github.com/nsf/termbox-go"
 )
 func init_layer1_status_struct(s *Layer1Status,name,host,dbname,user,pass string,x,y int) {
@@ -19,7 +18,7 @@ func init_layer1_status_struct(s *Layer1Status,name,host,dbname,user,pass string
 func print_layer1_status_line(status *Layer1Status) {
 
 	printAtPosition(status.X,status.Y,status.Name,termbox.ColorWhite,termbox.ColorDefault)
-	printAtPosition(status.X+25,status.Y,status.Host,termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(status.X+35,status.Y,status.Host,termbox.ColorWhite,termbox.ColorDefault)
 	alive_str := string("Alive")
 	if !status.Alive  {
 		alive_str = "DOWN "
@@ -28,17 +27,16 @@ func print_layer1_status_line(status *Layer1Status) {
 		printAtPosition(status.X+60,status.Y,alive_str,termbox.ColorGreen,termbox.ColorDefault)
 	}
 	printAtPosition(status.X+70,status.Y,fmt.Sprintf("%v",status.LastBlockNum),termbox.ColorBlue,termbox.ColorDefault)
-	var error_string string = strings.Repeat(" ",200);
 	if len(status.ErrStr) > 0 {
-		error_string = status.ErrStr
+		update_global_errors(status.ErrStr)
 	}
-	printAtPosition(status.X+85,status.Y,fmt.Sprintf("%v",error_string),termbox.ColorYellow,termbox.ColorDefault)
 }
 func print_current_layer1_status() {
-	printAtPosition(0, 9, "--------------------- SQL DB --------------------------------",termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(0, 11, "--------------------- SQL DB --------------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_layer1_status_line(&db1)
 	print_layer1_status_line(&db2)
 	print_layer1_status_line(&db3)
+	print_layer1_status_line(&db4)
 	termbox.Flush()
 }
 func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
@@ -48,6 +46,7 @@ func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
 	err,dbobj := pg_connect_db(status.Host,status.DbName,status.User,status.Pass)
 	if err != nil {
 		status.ErrStr = fmt.Sprintf("%v",err)
+		update_global_errors(status.ErrStr)
 		wg.Done()
 		return
 	}
@@ -55,6 +54,7 @@ func check_sql_db_status_layer1(status *Layer1Status,wg *sync.WaitGroup) {
 	err = dbobj.QueryRow("SELECT block_num FROM block ORDER BY block_num DESC LIMIT 1").Scan(&bnum1)
 	if err != nil {
 		status.ErrStr = fmt.Sprintf("Error %v",err)
+		update_global_errors(status.ErrStr)
 		wg.Done()
 		return
 	}

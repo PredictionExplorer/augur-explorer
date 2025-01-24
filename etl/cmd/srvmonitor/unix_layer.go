@@ -22,21 +22,20 @@ func print_df_for_server(status *DfStatus,wg *sync.WaitGroup) {
 	output,err := cmd.Output()
 	if err != nil {
 		status.ErrStr = err.Error()
+		update_global_errors(status.ErrStr)
 	}
 	printAtPosition(status.X+3,status.Y,status.Title,termbox.ColorYellow,termbox.ColorDefault)
 	lines := strings.Split(string(output),"\n")
 	for i:=1; i<(len(lines)-1);i++ {
 		line:=lines[i];
-		var error_string string = strings.Repeat(" ",200);
 		if len(status.ErrStr) > 0 {
-			error_string = status.ErrStr
+			update_global_errors(status.ErrStr)
 		}
 		printAtPosition(status.X,status.Y+i,line,termbox.ColorWhite,termbox.ColorDefault)
 		if len(status.ErrStr) > 0 {
-			printAtPosition(status.X,status.Y+i+1,error_string,termbox.ColorWhite,termbox.ColorDefault)
+			update_global_errors(status.ErrStr)
 			break
 		}
-		_=line;_=error_string
 	}
 	termbox.Flush()
 	wg.Done()
