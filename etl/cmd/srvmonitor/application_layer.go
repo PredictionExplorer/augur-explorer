@@ -2,6 +2,7 @@ package main
 
 import (
 	"sync"
+	"math"
 	"fmt"
 	"github.com/nsf/termbox-go"
 )
@@ -26,6 +27,14 @@ func check_sql_db_status_application(status *AppLayerStatus,wg *sync.WaitGroup) 
 		wg.Done()
 		return
 	}
+	var chain_id_str string
+	err = dbobj.QueryRow("SELECT chain_id FROM contract_addresses").Scan(&chain_id_str)
+	if err != nil {
+		status.ErrStr = fmt.Sprintf("Error %v",err)
+		update_global_errors(status.ErrStr)
+		wg.Done()
+		return
+	}
 	var last_evt_id int64
 	err = dbobj.QueryRow("SELECT last_evt_id FROM "+status.TableName).Scan(&last_evt_id)
 	if err != nil {
@@ -43,6 +52,20 @@ func check_sql_db_status_application(status *AppLayerStatus,wg *sync.WaitGroup) 
 		return
 	}
 	status.LastBlockNum = bnum
+	if chain_id_str == "42161" {
+		if Official_arbitrum_ptr != nil {
+			if Official_arbitrum_ptr.LastBlockNum != 0 {
+				status.OfficialLagDiff = Official_arbitrum_ptr.LastBlockNum - status.LastBlockNum
+			}
+		}
+	}
+	if chain_id_str == "421614" {
+		if Official_sepolia_arb_ptr != nil {
+			if Official_sepolia_arb_ptr.LastBlockNum != 0 {
+				status.OfficialLagDiff = Official_sepolia_arb_ptr.LastBlockNum - status.LastBlockNum
+			}
+		}
+	}
 	wg.Done()
 	defer dbobj.Close()
 }
@@ -53,6 +76,11 @@ func print_application_layer_status_line(status *AppLayerStatus) {
 	if len(status.ErrStr) > 0 {
 		update_global_errors(status.ErrStr)
 	}
+	var official_diff string = "------"
+	if status.OfficialLagDiff != math.MaxInt64 {
+		official_diff = fmt.Sprintf("%6v",status.OfficialLagDiff)
+	}
+	printAtPosition(status.X+45,status.Y,official_diff,termbox.ColorBlue,termbox.ColorDefault)
 }
 func print_current_application_layer_status() {
 	printAtPosition(90, 0, "---- Last Block Numbers for App layer ---",termbox.ColorWhite,termbox.ColorDefault)
