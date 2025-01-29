@@ -197,19 +197,22 @@ func main() {
 		os.Exit(1)
 	}
 	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
-	defer os.Remove("/tmp/srvmonitor.log")
+	defer os.Rename("/tmp/srvmonitor.log","/tmp/srvmonitor-old.log")
 
 	err = termbox.Init()
 	if err != nil {
 		log.Fatalf("Failed to initialize termbox: %v", err)
 	}
 	defer termbox.Close()
+	
 	fmt.Printf("\n\n\n\n\n\n")
-
+/*
 	go check_rpc_services()
 	go check_layer1()
 	go show_disk_usage_statistics()
 	go show_application_layer_last_blocks()
-
+*/
+//	check_randomwalk_resource_availability()
+	check_cosmicgame_resource_availability()
 	termbox.PollEvent()
 }
