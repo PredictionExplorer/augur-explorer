@@ -213,6 +213,7 @@ func main() {
 	go show_application_layer_last_blocks()
 */
 //	check_randomwalk_resource_availability()
-	check_cosmicgame_resource_availability()
+//	check_cosmicgame_resource_availability()
+	send_alarm_slack(SEND_ALARMS_INTERVAL,"sample message from golang")
 	termbox.PollEvent()
 }

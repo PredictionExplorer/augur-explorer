@@ -243,7 +243,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
 				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
-				"LEFT JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
+				"INNER JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
 			"WHERE (sd.staker_aid = $1) " +
 			"ORDER BY d.id DESC "
 	rows,err := sw.S.Db().Query(query,user_aid)
@@ -1293,7 +1293,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 						"LEFT JOIN transaction satx ON satx.id=sa.tx_id "+
 						"LEFT JOIN transaction uatx ON uatx.id=ua.tx_id "+
 				") a ON a.sa_action_id=rwd.action_id "+
-			"WHERE rwd.staker_aid=$1 AND rwd.token_id=$2" +
+			"WHERE rwd.staker_aid=$1 AND rwd.token_id=$2 " +
 			"ORDER BY rwd.deposit_id"
 
 	rows,err := sw.S.Db().Query(query,user_aid,token_id)

@@ -38,7 +38,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"dp.amount,"+
 				"dp.amount/1e18, "+
 				"dp.amount_per_staker,"+
-				"dp.amount_per_staker/1e18i, "+
+				"dp.amount_per_staker/1e18, "+
 				"dp.deposit_num, "+
 				"dp.num_staked_nfts "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
