@@ -14,7 +14,7 @@
 		<th class="market_reports">Total deposited</th>
 		<th class="market_reports">Reward per token</th>
 		<th class="market_reports">Your stake position size</th>
-		<th class="market_reports">Your reward</th>
+		<th class="market_reports">Your Reward Amount</th>
 		<th class="market_reports">Reward you have collected</th>
 		<th class="market_reports">Pending to claim</th>
 	</tr>
@@ -33,7 +33,7 @@
 			<td style="text-align: right;" title="">{{printf "%.6f" .DepositAmountEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountPerTokenEth}}</td>
 			<td style="text-align: center;" title="">{{.YourTokensStaked}}</td>
-			<td style="text-align: right;" title="">{{ printf "%.6f" .YourAmountToClaimEth}}</td>
+			<td style="text-align: right;" title="">{{ printf "%.6f" .YourRewardAmountEth}}</td>
 			<td style="text-align: right;" title="">{{ printf "%.6f" .YourCollectedAmountEth}}</td>
 			<td style="text-align: right;" title="">{{ printf "%.6f" .PendingToClaimEth}}</td>
 		</tr>

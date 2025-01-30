@@ -208,9 +208,9 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 	var query string
 	query = "WITH rwd AS ("+
 				"SELECT "+
-					"COUNT(token_id) AS num_toks_collected,"+
-					"SUM(reward) AS collected_reward," +
-					"SUM(reward)/1e18 AS collected_reward_eth,"+
+					"COUNT(token_id) AS num_toks_to_collect,"+
+					"SUM(reward) AS pending_reward," +
+					"SUM(reward)/1e18 AS pending_reward_eth,"+
 					"deposit_id "+
 				"FROM cg_st_reward "+
 				"WHERE staker_aid=$1 AND collected='f' "+
@@ -231,10 +231,13 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"d.amount,"+
 				"d.amount/1e18,"+
 				"sd.tokens_staked,"+
-				"sd.amount_to_claim,"+
-				"sd.amount_to_claim/1e18,"+
-				"sd.amount_to_claim - COALESCE(rwd.collected_reward,0),"+
-				"(sd.amount_to_claim - COALESCE(rwd.collected_reward,0))/1e18, "+
+				"sd.amount_deposited,"+
+				"sd.amount_deposited/1e18,"+
+				"sd.amount_deposited-COALESCE(rwd.pending_reward,0),"+
+				"(sd.amount_deposited-COALESCE(rwd.pending_reward,0))/1e18,"+
+				"rwd.pending_reward,"+
+				"rwd.pending_reward_eth, "+
+				"rwd.num_toks_to_collect,"+
 				"d.amount/d.num_staked_nfts,"+
 				"(d.amount/d.num_staked_nfts)/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
@@ -252,8 +255,9 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGRewardToClaim
-		var null_collected sql.NullString
-		var null_collected_eth sql.NullFloat64
+		var null_pending_reward sql.NullString
+		var null_pending_reward_eth sql.NullFloat64
+		var null_pending_num_toks sql.NullInt64
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -269,10 +273,13 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			&rec.DepositAmount,
 			&rec.DepositAmountEth,
 			&rec.YourTokensStaked,
-			&rec.YourAmountToClaim,
-			&rec.YourAmountToClaimEth,
-			&null_collected,
-			&null_collected_eth,
+			&rec.YourRewardAmount,
+			&rec.YourRewardAmountEth,
+			&rec.YourCollectedAmount,
+			&rec.YourCollectedAmountEth,
+			&null_pending_reward,
+			&null_pending_reward_eth,
+			&null_pending_num_toks,
 			&rec.AmountPerToken,
 			&rec.AmountPerTokenEth,
 		)
@@ -280,9 +287,12 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_collected.Valid {rec.YourCollectedAmount = null_collected.String }
-		if null_collected_eth.Valid { rec.YourCollectedAmountEth = null_collected_eth.Float64 }
-		rec.PendingToClaimEth = rec.YourAmountToClaimEth - rec.YourCollectedAmountEth
+	//	if null_collected.Valid {rec.YourCollectedAmount = null_collected.String }
+	//	if null_collected_eth.Valid { rec.YourCollectedAmountEth = null_collected_eth.Float64 }
+	//	rec.PendingToClaimEth = rec.YourAmountToClaimEth - rec.YourCollectedAmountEth
+		if null_pending_reward.Valid { rec.PendingToClaim = null_pending_reward.String }
+		if null_pending_reward_eth.Valid { rec.PendingToClaimEth = null_pending_reward_eth.Float64 }
+		if null_pending_num_toks.Valid { rec.NumUnclaimedTokens = null_pending_num_toks.Int64 }
 		records = append(records,rec)
 	}
 	return records
@@ -1106,6 +1116,8 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 				fully_claimed = true
 				your_tokens_staked = 0
 				your_claimable_amount = 0
+				your_claimed_amount = 0
+				num_tokens_collected = 0
 				actions = make([]p.CGNftStakeUnstakeCombined,0, 16)
 			}
 			rec.RecordId = record_id

@@ -98,7 +98,7 @@ func main() {
 		Message string
 		RandomWalkNFTId *big.Int
 	}{
-		"sample bid golang",
+		"",
 		big.NewInt(-1),
 	}
 	packed, err:=params.Pack(&record)

@@ -370,6 +370,7 @@ CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This
 	round_num		BIGINT NOT NULL,
 	reward			DECIMAL NOT NULL,
 	collected		BOOLEAN DEFAULT 'F',
+	is_unstake		BOOLEAN DEFAULT 'F',	-- true if reward is generated on unstake() transaction
 	UNIQUE(action_id,deposit_id)
 );
 CREATE TABLE cg_reward_paid (	-- StakingWalletCosmicSignatureNft.sol: RewardPaid (staking)
@@ -872,6 +873,7 @@ CREATE TABLE cg_staker_deposit (-- accumulates rewards per staker (this is for C
 	deposit_id				BIGINT NOT NULL, 
 	deposit_num				BIGINT NOT NULL,
 	tokens_staked			BIGINT DEFAULT 0,
+	amount_deposited		DECIMAL DEFAULT 0,
 	amount_to_claim			DECIMAL DEFAULT 0,
 	PRIMARY KEY(staker_aid,deposit_id)
 );

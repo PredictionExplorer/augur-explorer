@@ -236,11 +236,13 @@ type CGRewardToClaim struct {
 	DepositAmount				string
 	DepositAmountEth			float64
 	YourTokensStaked			int64
-	YourAmountToClaim			string
-	YourAmountToClaimEth		float64
+	YourRewardAmount			string
+	YourRewardAmountEth			float64
 	YourCollectedAmount			string
 	YourCollectedAmountEth		float64
+	PendingToClaim				string
 	PendingToClaimEth			float64
+	NumUnclaimedTokens			int64
 	AmountPerToken				string
 	AmountPerTokenEth			float64
 	Modulo						string

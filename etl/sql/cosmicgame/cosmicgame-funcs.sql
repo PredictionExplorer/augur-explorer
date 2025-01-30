@@ -789,8 +789,8 @@ BEGIN
 			;
 		FOR v_rec IN (SELECT count(*) AS num_toks,staker_aid FROM cg_staked_token_cst GROUP BY staker_aid)
 		LOOP
-			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,deposit_num,tokens_staked,amount_to_claim)
-				VALUES(v_rec.staker_aid,NEW.deposit_id,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,deposit_num,tokens_staked,amount_to_claim,amount_deposited)
+				VALUES(v_rec.staker_aid,NEW.deposit_id,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
 		END LOOP;
 		FOR v_rec IN (SELECT token_id,stake_action_id,staker_aid FROM cg_staked_token_cst)
 		LOOP
@@ -1086,10 +1086,13 @@ BEGIN
 		WHERE staker_aid=NEW.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
 
-	FOR v_rec IN (SELECT action_id,deposit_index FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
 			IF NEW.unpaid_deposit < v_rec.deposit_index THEN
-				UPDATE cg_st_reward SET collected = 'T' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
+				UPDATE cg_st_reward 
+					SET collected = 'T',
+				    	is_unstake = 'T'
+					WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
 			END IF;
 		END LOOP;
 
@@ -1113,10 +1116,13 @@ BEGIN
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
 
-	FOR v_rec IN (SELECT action_id,deposit_index FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_index,deppsit_id FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
 			IF NEW.unpaid_deposit < v_rec.deposit_index THEN
-				UPDATE cg_st_reward SET collected = 'F' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
+				UPDATE cg_st_reward
+					SET collected = 'F',
+				   		is_unstake = 'F'
+					WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
 			END IF;
 		END LOOP;
 	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
@@ -1161,10 +1167,10 @@ DECLARE
 	v_rec RECORD;
 BEGIN
 
-	FOR v_rec IN (SELECT action_id,deposit_index FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id,staker_aid,reward FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
 			IF NEW.unpaid_dep_id < v_rec.deposit_index THEN
-				UPDATE cg_st_reward SET collected = 'T' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
+				UPDATE cg_st_reward SET collected = 'T' WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
 			END IF;
 		END LOOP;
 
@@ -1176,14 +1182,59 @@ DECLARE
 	v_rec RECORD;
 BEGIN
 
-
-	FOR v_rec IN (SELECT action_id,deposit_index FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id,staker_aid,reward FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
 			IF NEW.unpaid_dep_id < v_rec.deposit_index THEN
-				UPDATE cg_st_reward SET collected = 'F' WHERE deposit_index=v_rec.deposit_index AND action_id=v_rec.action_id;
+				UPDATE cg_st_reward SET collected = 'F' WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
 			END IF;
 		END LOOP;
 
 	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_st_reward_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF NEW.collected THEN
+		UPDATE cg_staker_deposit 
+			SET amount_to_claim = (amount_to_claim - NEW.reward)
+			WHERE deposit_id=NEW.deposit_id AND staker_aid=NEW.staker_aid;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_st_reward_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF OLD.collected THEN
+		UPDATE cg_staker_deposit 
+			SET amount_to_claim = (amount_to_claim + OLD.reward)
+			WHERE deposit_id=OLD.deposit_id AND staker_aid=OLD.staker_aid;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_st_reward_update() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+	IF OLD.collected <> NEW.collected THEN
+		-- executed when rewardPaid() method is called or unstake() is called
+		IF NEW.reward = OLD.reward THEN
+			IF NEW.collected THEN
+				UPDATE cg_staker_deposit
+					SET amount_to_claim=(amount_to_claim - NEW.reward)
+					WHERE staker_aid=NEW.staker_aid AND deposit_id=NEW.deposit_id;
+			END IF;
+			IF NOT NEW.collected THEN
+				UPDATE cg_staker_deposit
+					SET amount_to_claim=(amount_to_claim + NEW.reward)
+					WHERE staker_aid=NEW.staker_aid AND deposit_id=NEW.deposit_id;
+			END IF;
+		END IF;
+	END IF;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
