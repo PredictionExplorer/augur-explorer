@@ -466,7 +466,7 @@ func find_prize_num(tx_id int64) int64 {
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGBidEvent
-	var eth_evt CosmicSignatureGameBidEvent
+	var eth_evt CosmicSignatureGameBidPlaced
 
 	Info.Printf("Processing Bid event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -487,11 +487,11 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.RoundNum = log.Topics[2].Big().Int64()
-	evt.BidPrice = eth_evt.BidPrice.String()
+	evt.BidPrice = eth_evt.EthBidPrice.String()
 	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNftId.Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
-	evt.NumCSTTokens = eth_evt.NumCSTTokens.String()
+	evt.NumCSTTokens = eth_evt.CstBidPrice.String()
 	if evt.RandomWalkTokenId > -1 {
 		evt.BidType = 1;	// RandomWalk	
 	} else {
@@ -647,7 +647,7 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonationSentEvent
-	var eth_evt CharityWalletDonationSent
+	var eth_evt CharityWalletFundsTransferredToCharity
 
 	Info.Printf("Processing DonationSentEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -1006,7 +1006,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 func proc_raffle_eth_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRaffleETHWinner
-	var eth_evt CosmicSignatureGameRaffleWinnerEthPrizeAllocated
+	var eth_evt CosmicSignatureGameRaffleWinnerBidderEthPrizeAllocated
 
 	Info.Printf("Processing RaffleETHWinner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -1561,7 +1561,7 @@ func proc_transfer_event_common(log *types.Log,elog *EthereumEventLog) {
 func proc_charity_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGCharityPercentageChanged
-	var eth_evt IEthDonationsCharityEthDonationAmountPercentageChanged
+	var eth_evt CosmicSignatureGameCharityEthDonationAmountPercentageChanged 
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1592,7 +1592,7 @@ func proc_charity_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 func proc_prize_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGPrizePercentageChanged
-	var eth_evt IEthDonationsMainEthPrizeAmountPercentageChanged
+	var eth_evt CosmicSignatureGameMainEthPrizeAmountPercentageChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1623,7 +1623,7 @@ func proc_prize_percentage_changed_event(log *types.Log,elog *EthereumEventLog) 
 func proc_raffle_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRafflePercentageChanged
-	var eth_evt IMainPrizeRaffleTotalEthPrizeAmountPercentageChanged
+	var eth_evt CosmicSignatureGameRaffleTotalEthPrizeAmountForBiddersPercentageChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1654,7 +1654,7 @@ func proc_raffle_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 func proc_staking_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStakingPercentageChanged
-	var eth_evt IMainPrizeStakingTotalEthRewardAmountPercentageChanged
+	var eth_evt CosmicSignatureGameCosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1716,7 +1716,7 @@ func proc_chrono_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 func proc_num_raffle_eth_winners_bidding_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNumRaffleETHWinnersBiddingChanged 
-	var eth_evt ISystemEventsRaffleTotalEthPrizeAmountPercentageChanged
+	var eth_evt CosmicSignatureGameNumRaffleEthPrizesForBiddersChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1994,7 +1994,7 @@ func proc_marketing_wallet_address_changed_event(log *types.Log,elog *EthereumEv
 func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGCosmicTokenAddressChanged
-	var eth_evt CosmicSignatureGameTokenContractAddressChanged
+	var eth_evt CosmicSignatureGameCosmicSignatureTokenAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -2087,7 +2087,7 @@ func proc_proxy_upgraded_event(log *types.Log,elog *EthereumEventLog) {
 func proc_time_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGTimeIncreaseChanged
-	var eth_evt CosmicSignatureGameTimeIncreaseChanged
+	var eth_evt CosmicSignatureGameMainPrizeTimeIncrementInMicroSecondsChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -2180,7 +2180,7 @@ func proc_timeout_duration_to_withdraw_prize_event(log *types.Log,elog *Ethereum
 func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGPriceIncreaseChanged
-	var eth_evt CosmicSignatureGamePriceIncreaseChanged
+	var eth_evt CosmicSignatureGameNextEthBidPriceIncreaseDivisorChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())

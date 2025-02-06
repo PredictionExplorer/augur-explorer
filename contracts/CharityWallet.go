@@ -31,8 +31,8 @@ var (
 
 // CharityWalletMetaData contains all meta data concerning the CharityWallet contract.
 var CharityWalletMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationSent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"charityAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
-	Bin: "0x60806040523461002757610011610036565b61001961002c565b6108c461022a82396108c490f35b610032565b60405190565b5f80fd5b610046610041610110565b610048565b565b610051906100ba565b565b90565b60018060a01b031690565b90565b61007861007361007d92610053565b610061565b610056565b90565b61008990610064565b90565b61009590610056565b90565b6100a19061008c565b9052565b91906100b8905f60208501940190610098565b565b806100d56100cf6100ca5f610080565b61008c565b9161008c565b146100e5576100e3906101ca565b565b6101086100f15f610080565b5f918291631e4fbdf760e01b8352600483016100a5565b0390fd5b5f90565b61011861010c565b503390565b5f1c90565b60018060a01b031690565b61013961013e9161011d565b610122565b90565b61014b905461012d565b90565b5f1b90565b9061016460018060a01b039161014e565b9181191691161790565b61018261017d61018792610056565b610061565b610056565b90565b6101939061016e565b90565b61019f9061018a565b90565b90565b906101ba6101b56101c192610196565b6101a2565b8254610153565b9055565b5f0190565b6101d35f610141565b6101dd825f6101a5565b9061021161020b7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610196565b91610196565b9161021a61002c565b80610224816101c5565b0390a356fe6080604052600436101561001d575b366102a25761001b610786565b005b6100275f35610086565b80630c9be46d14610081578063715018a61461007c5780638da5cb5b14610077578063afcf2fc414610072578063b46300ec1461006d5763f2fde38b0361000e5761026f565b61023c565b610207565b61018e565b610139565b6100f7565b60e01c90565b60405190565b5f80fd5b5f80fd5b60018060a01b031690565b6100ae9061009a565b90565b6100ba816100a5565b036100c157565b5f80fd5b905035906100d2826100b1565b565b906020828203126100ed576100ea915f016100c5565b90565b610096565b5f0190565b346101255761010f61010a3660046100d4565b610380565b61011761008c565b80610121816100f2565b0390f35b610092565b5f91031261013457565b610096565b346101675761014936600461012a565b6101516103db565b61015961008c565b80610163816100f2565b0390f35b610092565b610175906100a5565b9052565b919061018c905f6020850194019061016c565b565b346101be5761019e36600461012a565b6101ba6101a961040f565b6101b161008c565b91829182610179565b0390f35b610092565b1c90565b60018060a01b031690565b6101e29060086101e793026101c3565b6101c7565b90565b906101f591546101d2565b90565b61020460015f906101ea565b90565b346102375761021736600461012a565b6102336102226101f8565b61022a61008c565b91829182610179565b0390f35b610092565b3461026a5761024c36600461012a565b610254610667565b61025c61008c565b80610266816100f2565b0390f35b610092565b3461029d576102876102823660046100d4565b61077b565b61028f61008c565b80610299816100f2565b0390f35b610092565b5f80fd5b6102b7906102b26107d4565b610333565b565b5f1b90565b906102cf60018060a01b03916102b9565b9181191691161790565b90565b6102f06102eb6102f59261009a565b6102d9565b61009a565b90565b610301906102dc565b90565b61030d906102f8565b90565b90565b9061032861032361032f92610304565b610310565b82546102be565b9055565b61033e816001610313565b6103687f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c91610304565b9061037161008c565b8061037b816100f2565b0390a2565b610389906102a6565b565b6103936107d4565b61039b6103c8565b565b90565b6103b46103af6103b99261039d565b6102d9565b61009a565b90565b6103c5906103a0565b90565b6103d96103d45f6103bc565b610822565b565b6103e361038b565b565b5f90565b5f1c90565b6103fa6103ff916103e9565b6101c7565b90565b61040c90546103ee565b90565b6104176103e5565b506104215f610402565b90565b60209181520190565b5f7f436861726974792061646472657373206e6f74207365742e0000000000000000910152565b6104616018602092610424565b61046a8161042d565b0190565b6104839060208101905f818303910152610454565b90565b1561048d57565b61049561008c565b63eac0d38960e01b8152806104ac6004820161046e565b0390fd5b6104b9906102f8565b90565b90565b6104c8906104bc565b9052565b91906104df905f602085019401906104bf565b565b905090565b6104f15f80926104e1565b0190565b6104fe906104e6565b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b9061052990610501565b810190811067ffffffffffffffff82111761054357604052565b61050b565b9061055b61055461008c565b928361051f565b565b67ffffffffffffffff811161057b57610577602091610501565b0190565b61050b565b9061059261058d8361055d565b610548565b918252565b606090565b3d5f146105b7576105ac3d610580565b903d5f602084013e5b565b6105bf610597565b906105b5565b5f7f5472616e7366657220746f2063686172697479206661696c65642e0000000000910152565b6105f9601b602092610424565b610602816105c5565b0190565b916040610637929493610630610625606083018381035f8501526105ec565b96602083019061016c565b01906104bf565b565b15610642575050565b61066361064d61008c565b928392630aa7db6360e11b845260048401610606565b0390fd5b6107146106746001610402565b6106998161069261068c6106875f6103bc565b6100a5565b916100a5565b1415610486565b6106a2306104b0565b318181906106e56106d37f67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa92610304565b926106dc61008c565b918291826104cc565b0390a25f8083836106f461008c565b90816106ff816104f5565b03925af161070b61059c565b50919091610639565b565b610727906107226107d4565b610729565b565b8061074461073e6107395f6103bc565b6100a5565b916100a5565b146107545761075290610822565b565b6107776107605f6103bc565b5f918291631e4fbdf760e01b835260048301610179565b0390fd5b61078490610716565b565b61078e610881565b34906107cf6107bd7f264f630d9efa0d07053a31163641d9fcc0adafc9d9e76f1c37c2ce3a558d2c5292610304565b926107c661008c565b918291826104cc565b0390a2565b6107dc61040f565b6107f56107ef6107ea610881565b6100a5565b916100a5565b036107fc57565b61081e610807610881565b5f91829163118cdaa760e01b835260048301610179565b0390fd5b61082b5f610402565b610835825f610313565b906108696108637f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610304565b91610304565b9161087261008c565b8061087c816100f2565b0390a3565b6108896103e5565b50339056fea26469706673582212202049af63e044dcc56881a7cd1863b4b4bcadf1ea7d9779e3ba527e8dbc5fc11864736f6c634300081c0033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsTransferredToCharity\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"charityAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	Bin: "0x60806040523461002757610011610036565b61001961002c565b6108c461022a82396108c490f35b610032565b60405190565b5f80fd5b610046610041610110565b610048565b565b610051906100ba565b565b90565b60018060a01b031690565b90565b61007861007361007d92610053565b610061565b610056565b90565b61008990610064565b90565b61009590610056565b90565b6100a19061008c565b9052565b91906100b8905f60208501940190610098565b565b806100d56100cf6100ca5f610080565b61008c565b9161008c565b146100e5576100e3906101ca565b565b6101086100f15f610080565b5f918291631e4fbdf760e01b8352600483016100a5565b0390fd5b5f90565b61011861010c565b503390565b5f1c90565b60018060a01b031690565b61013961013e9161011d565b610122565b90565b61014b905461012d565b90565b5f1b90565b9061016460018060a01b039161014e565b9181191691161790565b61018261017d61018792610056565b610061565b610056565b90565b6101939061016e565b90565b61019f9061018a565b90565b90565b906101ba6101b56101c192610196565b6101a2565b8254610153565b9055565b5f0190565b6101d35f610141565b6101dd825f6101a5565b9061021161020b7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610196565b91610196565b9161021a61002c565b80610224816101c5565b0390a356fe6080604052600436101561001d575b366102a25761001b610786565b005b6100275f35610086565b80630c9be46d14610081578063715018a61461007c5780638da5cb5b14610077578063afcf2fc414610072578063b46300ec1461006d5763f2fde38b0361000e5761026f565b61023c565b610207565b61018e565b610139565b6100f7565b60e01c90565b60405190565b5f80fd5b5f80fd5b60018060a01b031690565b6100ae9061009a565b90565b6100ba816100a5565b036100c157565b5f80fd5b905035906100d2826100b1565b565b906020828203126100ed576100ea915f016100c5565b90565b610096565b5f0190565b346101255761010f61010a3660046100d4565b610380565b61011761008c565b80610121816100f2565b0390f35b610092565b5f91031261013457565b610096565b346101675761014936600461012a565b6101516103db565b61015961008c565b80610163816100f2565b0390f35b610092565b610175906100a5565b9052565b919061018c905f6020850194019061016c565b565b346101be5761019e36600461012a565b6101ba6101a961040f565b6101b161008c565b91829182610179565b0390f35b610092565b1c90565b60018060a01b031690565b6101e29060086101e793026101c3565b6101c7565b90565b906101f591546101d2565b90565b61020460015f906101ea565b90565b346102375761021736600461012a565b6102336102226101f8565b61022a61008c565b91829182610179565b0390f35b610092565b3461026a5761024c36600461012a565b610254610667565b61025c61008c565b80610266816100f2565b0390f35b610092565b3461029d576102876102823660046100d4565b61077b565b61028f61008c565b80610299816100f2565b0390f35b610092565b5f80fd5b6102b7906102b26107d4565b610333565b565b5f1b90565b906102cf60018060a01b03916102b9565b9181191691161790565b90565b6102f06102eb6102f59261009a565b6102d9565b61009a565b90565b610301906102dc565b90565b61030d906102f8565b90565b90565b9061032861032361032f92610304565b610310565b82546102be565b9055565b61033e816001610313565b6103687f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c91610304565b9061037161008c565b8061037b816100f2565b0390a2565b610389906102a6565b565b6103936107d4565b61039b6103c8565b565b90565b6103b46103af6103b99261039d565b6102d9565b61009a565b90565b6103c5906103a0565b90565b6103d96103d45f6103bc565b610822565b565b6103e361038b565b565b5f90565b5f1c90565b6103fa6103ff916103e9565b6101c7565b90565b61040c90546103ee565b90565b6104176103e5565b506104215f610402565b90565b60209181520190565b5f7f436861726974792061646472657373206e6f74207365742e0000000000000000910152565b6104616018602092610424565b61046a8161042d565b0190565b6104839060208101905f818303910152610454565b90565b1561048d57565b61049561008c565b63eac0d38960e01b8152806104ac6004820161046e565b0390fd5b6104b9906102f8565b90565b90565b6104c8906104bc565b9052565b91906104df905f602085019401906104bf565b565b905090565b6104f15f80926104e1565b0190565b6104fe906104e6565b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b9061052990610501565b810190811067ffffffffffffffff82111761054357604052565b61050b565b9061055b61055461008c565b928361051f565b565b67ffffffffffffffff811161057b57610577602091610501565b0190565b61050b565b9061059261058d8361055d565b610548565b918252565b606090565b3d5f146105b7576105ac3d610580565b903d5f602084013e5b565b6105bf610597565b906105b5565b5f7f455448207472616e7366657220746f2063686172697479206661696c65642e00910152565b6105f9601f602092610424565b610602816105c5565b0190565b916040610637929493610630610625606083018381035f8501526105ec565b96602083019061016c565b01906104bf565b565b15610642575050565b61066361064d61008c565b928392630aa7db6360e11b845260048401610606565b0390fd5b6107146106746001610402565b6106998161069261068c6106875f6103bc565b6100a5565b916100a5565b1415610486565b6106a2306104b0565b318181906106e56106d37f1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d92610304565b926106dc61008c565b918291826104cc565b0390a25f8083836106f461008c565b90816106ff816104f5565b03925af161070b61059c565b50919091610639565b565b610727906107226107d4565b610729565b565b8061074461073e6107395f6103bc565b6100a5565b916100a5565b146107545761075290610822565b565b6107776107605f6103bc565b5f918291631e4fbdf760e01b835260048301610179565b0390fd5b61078490610716565b565b61078e610881565b34906107cf6107bd7f264f630d9efa0d07053a31163641d9fcc0adafc9d9e76f1c37c2ce3a558d2c5292610304565b926107c661008c565b918291826104cc565b0390a2565b6107dc61040f565b6107f56107ef6107ea610881565b6100a5565b916100a5565b036107fc57565b61081e610807610881565b5f91829163118cdaa760e01b835260048301610179565b0390fd5b61082b5f610402565b610835825f610313565b906108696108637f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610304565b91610304565b9161087261008c565b8061087c816100f2565b0390a3565b6108896103e5565b50339056fea2646970667358221220b70744cce05aa1abef7aa555eb96a6f5afc14d869b332c8d9a54aa807aa34d2e64736f6c634300081c0033",
 }
 
 // CharityWalletABI is the input ABI used to generate the binding from.
@@ -658,9 +658,9 @@ func (_CharityWallet *CharityWalletFilterer) ParseDonationReceived(log types.Log
 	return event, nil
 }
 
-// CharityWalletDonationSentIterator is returned from FilterDonationSent and is used to iterate over the raw logs and unpacked data for DonationSent events raised by the CharityWallet contract.
-type CharityWalletDonationSentIterator struct {
-	Event *CharityWalletDonationSent // Event containing the contract specifics and raw log
+// CharityWalletFundsTransferredToCharityIterator is returned from FilterFundsTransferredToCharity and is used to iterate over the raw logs and unpacked data for FundsTransferredToCharity events raised by the CharityWallet contract.
+type CharityWalletFundsTransferredToCharityIterator struct {
+	Event *CharityWalletFundsTransferredToCharity // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -674,7 +674,7 @@ type CharityWalletDonationSentIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *CharityWalletDonationSentIterator) Next() bool {
+func (it *CharityWalletFundsTransferredToCharityIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -683,7 +683,7 @@ func (it *CharityWalletDonationSentIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(CharityWalletDonationSent)
+			it.Event = new(CharityWalletFundsTransferredToCharity)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -698,7 +698,7 @@ func (it *CharityWalletDonationSentIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(CharityWalletDonationSent)
+		it.Event = new(CharityWalletFundsTransferredToCharity)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -714,52 +714,52 @@ func (it *CharityWalletDonationSentIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *CharityWalletDonationSentIterator) Error() error {
+func (it *CharityWalletFundsTransferredToCharityIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *CharityWalletDonationSentIterator) Close() error {
+func (it *CharityWalletFundsTransferredToCharityIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// CharityWalletDonationSent represents a DonationSent event raised by the CharityWallet contract.
-type CharityWalletDonationSent struct {
+// CharityWalletFundsTransferredToCharity represents a FundsTransferredToCharity event raised by the CharityWallet contract.
+type CharityWalletFundsTransferredToCharity struct {
 	CharityAddress common.Address
 	Amount         *big.Int
 	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterDonationSent is a free log retrieval operation binding the contract event 0x67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa.
+// FilterFundsTransferredToCharity is a free log retrieval operation binding the contract event 0x1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d.
 //
-// Solidity: event DonationSent(address indexed charityAddress, uint256 amount)
-func (_CharityWallet *CharityWalletFilterer) FilterDonationSent(opts *bind.FilterOpts, charityAddress []common.Address) (*CharityWalletDonationSentIterator, error) {
+// Solidity: event FundsTransferredToCharity(address indexed charityAddress, uint256 amount)
+func (_CharityWallet *CharityWalletFilterer) FilterFundsTransferredToCharity(opts *bind.FilterOpts, charityAddress []common.Address) (*CharityWalletFundsTransferredToCharityIterator, error) {
 
 	var charityAddressRule []interface{}
 	for _, charityAddressItem := range charityAddress {
 		charityAddressRule = append(charityAddressRule, charityAddressItem)
 	}
 
-	logs, sub, err := _CharityWallet.contract.FilterLogs(opts, "DonationSent", charityAddressRule)
+	logs, sub, err := _CharityWallet.contract.FilterLogs(opts, "FundsTransferredToCharity", charityAddressRule)
 	if err != nil {
 		return nil, err
 	}
-	return &CharityWalletDonationSentIterator{contract: _CharityWallet.contract, event: "DonationSent", logs: logs, sub: sub}, nil
+	return &CharityWalletFundsTransferredToCharityIterator{contract: _CharityWallet.contract, event: "FundsTransferredToCharity", logs: logs, sub: sub}, nil
 }
 
-// WatchDonationSent is a free log subscription operation binding the contract event 0x67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa.
+// WatchFundsTransferredToCharity is a free log subscription operation binding the contract event 0x1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d.
 //
-// Solidity: event DonationSent(address indexed charityAddress, uint256 amount)
-func (_CharityWallet *CharityWalletFilterer) WatchDonationSent(opts *bind.WatchOpts, sink chan<- *CharityWalletDonationSent, charityAddress []common.Address) (event.Subscription, error) {
+// Solidity: event FundsTransferredToCharity(address indexed charityAddress, uint256 amount)
+func (_CharityWallet *CharityWalletFilterer) WatchFundsTransferredToCharity(opts *bind.WatchOpts, sink chan<- *CharityWalletFundsTransferredToCharity, charityAddress []common.Address) (event.Subscription, error) {
 
 	var charityAddressRule []interface{}
 	for _, charityAddressItem := range charityAddress {
 		charityAddressRule = append(charityAddressRule, charityAddressItem)
 	}
 
-	logs, sub, err := _CharityWallet.contract.WatchLogs(opts, "DonationSent", charityAddressRule)
+	logs, sub, err := _CharityWallet.contract.WatchLogs(opts, "FundsTransferredToCharity", charityAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -769,8 +769,8 @@ func (_CharityWallet *CharityWalletFilterer) WatchDonationSent(opts *bind.WatchO
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(CharityWalletDonationSent)
-				if err := _CharityWallet.contract.UnpackLog(event, "DonationSent", log); err != nil {
+				event := new(CharityWalletFundsTransferredToCharity)
+				if err := _CharityWallet.contract.UnpackLog(event, "FundsTransferredToCharity", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -791,12 +791,12 @@ func (_CharityWallet *CharityWalletFilterer) WatchDonationSent(opts *bind.WatchO
 	}), nil
 }
 
-// ParseDonationSent is a log parse operation binding the contract event 0x67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa.
+// ParseFundsTransferredToCharity is a log parse operation binding the contract event 0x1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d.
 //
-// Solidity: event DonationSent(address indexed charityAddress, uint256 amount)
-func (_CharityWallet *CharityWalletFilterer) ParseDonationSent(log types.Log) (*CharityWalletDonationSent, error) {
-	event := new(CharityWalletDonationSent)
-	if err := _CharityWallet.contract.UnpackLog(event, "DonationSent", log); err != nil {
+// Solidity: event FundsTransferredToCharity(address indexed charityAddress, uint256 amount)
+func (_CharityWallet *CharityWalletFilterer) ParseFundsTransferredToCharity(log types.Log) (*CharityWalletFundsTransferredToCharity, error) {
+	event := new(CharityWalletFundsTransferredToCharity)
+	if err := _CharityWallet.contract.UnpackLog(event, "FundsTransferredToCharity", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -958,7 +958,7 @@ func (_CharityWallet *CharityWalletFilterer) ParseOwnershipTransferred(log types
 
 // ICharityWalletMetaData contains all meta data concerning the ICharityWallet contract.
 var ICharityWalletMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationSent\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
 }
 
 // ICharityWalletABI is the input ABI used to generate the binding from.
@@ -1453,151 +1453,6 @@ func (_ICharityWallet *ICharityWalletFilterer) WatchDonationReceived(opts *bind.
 func (_ICharityWallet *ICharityWalletFilterer) ParseDonationReceived(log types.Log) (*ICharityWalletDonationReceived, error) {
 	event := new(ICharityWalletDonationReceived)
 	if err := _ICharityWallet.contract.UnpackLog(event, "DonationReceived", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// ICharityWalletDonationSentIterator is returned from FilterDonationSent and is used to iterate over the raw logs and unpacked data for DonationSent events raised by the ICharityWallet contract.
-type ICharityWalletDonationSentIterator struct {
-	Event *ICharityWalletDonationSent // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *ICharityWalletDonationSentIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(ICharityWalletDonationSent)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(ICharityWalletDonationSent)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *ICharityWalletDonationSentIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *ICharityWalletDonationSentIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// ICharityWalletDonationSent represents a DonationSent event raised by the ICharityWallet contract.
-type ICharityWalletDonationSent struct {
-	CharityAddress common.Address
-	Amount         *big.Int
-	Raw            types.Log // Blockchain specific contextual infos
-}
-
-// FilterDonationSent is a free log retrieval operation binding the contract event 0x67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa.
-//
-// Solidity: event DonationSent(address indexed charityAddress, uint256 amount)
-func (_ICharityWallet *ICharityWalletFilterer) FilterDonationSent(opts *bind.FilterOpts, charityAddress []common.Address) (*ICharityWalletDonationSentIterator, error) {
-
-	var charityAddressRule []interface{}
-	for _, charityAddressItem := range charityAddress {
-		charityAddressRule = append(charityAddressRule, charityAddressItem)
-	}
-
-	logs, sub, err := _ICharityWallet.contract.FilterLogs(opts, "DonationSent", charityAddressRule)
-	if err != nil {
-		return nil, err
-	}
-	return &ICharityWalletDonationSentIterator{contract: _ICharityWallet.contract, event: "DonationSent", logs: logs, sub: sub}, nil
-}
-
-// WatchDonationSent is a free log subscription operation binding the contract event 0x67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa.
-//
-// Solidity: event DonationSent(address indexed charityAddress, uint256 amount)
-func (_ICharityWallet *ICharityWalletFilterer) WatchDonationSent(opts *bind.WatchOpts, sink chan<- *ICharityWalletDonationSent, charityAddress []common.Address) (event.Subscription, error) {
-
-	var charityAddressRule []interface{}
-	for _, charityAddressItem := range charityAddress {
-		charityAddressRule = append(charityAddressRule, charityAddressItem)
-	}
-
-	logs, sub, err := _ICharityWallet.contract.WatchLogs(opts, "DonationSent", charityAddressRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(ICharityWalletDonationSent)
-				if err := _ICharityWallet.contract.UnpackLog(event, "DonationSent", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseDonationSent is a log parse operation binding the contract event 0x67a9bd2734eac78f1ac30823ea3d8e3c8b2be225836b3a4917ed0c15508f40aa.
-//
-// Solidity: event DonationSent(address indexed charityAddress, uint256 amount)
-func (_ICharityWallet *ICharityWalletFilterer) ParseDonationSent(log types.Log) (*ICharityWalletDonationSent, error) {
-	event := new(ICharityWalletDonationSent)
-	if err := _ICharityWallet.contract.UnpackLog(event, "DonationSent", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
