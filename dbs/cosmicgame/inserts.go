@@ -1485,7 +1485,7 @@ func (sw *SQLStorageWrapper) Insert_ethcst_bid_ratio_changed_event(evt *p.CGETHC
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event(evt *p.CGRoundStartCSTAuctionLengthChanged) {
+func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event(evt *p.CGDutchAuctionDurationDivisorChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
@@ -1501,7 +1501,7 @@ func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.NewAuctionLength,
+		evt.NewValue,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_auclen table: %v\n",err))
@@ -1554,7 +1554,7 @@ func (sw *SQLStorageWrapper) Insert_marketing_reward_changed_event(evt *p.CGMark
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_erc20_token_reward_changed_event(evt *p.CGERC20TokenRewardChanged) {
+func (sw *SQLStorageWrapper) Insert_erc20_token_reward_changed_event(evt *p.CGCstRewardForBiddingChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string

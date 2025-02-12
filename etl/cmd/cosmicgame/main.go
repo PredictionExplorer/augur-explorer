@@ -84,14 +84,14 @@ const (
 	TIMEOUT_CLAIMPRIZE_CHANGED	= "37a332914fac995349420c0419b4423a19dcb762017f691442a0782ce4bf417a"
 	TIMEOUT_TO_WITHDRAW_PRIZE = "8717bb199c6bc4a5dadb21547205f9ef8ec037dda246a5526d6a6471306ea52e"
 	PRICE_INCREASE_CHANGED	= "cbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac"
-	NANOSECONDS_EXTRA_CHANGED = "678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9"
-	INITIAL_SECONDS_UNTIL_PRIZE_CHANGED = "6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305"
-	INITIAL_BID_AMOUNT_FRACTION_CHANGED = "3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628"
-	ACTIVATION_TIME_CHANGED = "584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b6"
-	ROUND_START_AUCTION_LENGTH_CHANGED = "23dabd88e0a182dcd593bec053f3867f1bd6afc77d470cbc1ef48ad189bfd676"
+	NANOSECONDS_EXTRA_CHANGED = "07417920574ce0bdfe987af0575c8793cc73a29d7830760ad459d0e569b5b79b"
+	INITIAL_SECONDS_UNTIL_PRIZE_CHANGED = "b5edd1f338b34c8f5dd3b1c5cc12f05653c495713c282bf588d34cf14fad0f89"
+//	INITIAL_BID_AMOUNT_FRACTION_CHANGED = "3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628"		DISCONTINUED
+	ROUND_ACTIVATION_TIME_CHANGED = "9a2159c1f277ddd727551baedc6a6c4cba77cc5219c8563ee3b15fb67548d89b"
+	CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED= "c95d03f6c735a9e59c760fdb88e585aafe0a31b5c034fc7838155287ee32212f" // previosly ROUND_START_AUCTION_LENGTH_CHANGED = "23dabd88e0a182dcd593bec053f3867f1bd6afc77d470cbc1ef48ad189bfd676"
 	MARKETING_REWARD_SENT	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486"
 	MARKETING_REWARD_CHANGED = "aa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f36489221"
-	ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
+	CST_REWARD_FOR_BIDDING_CHANGED = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0"	// previous: ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
 	ERC20_REWARD_MULT		= "44d50377242b2c165fd7ae3c2a9f2ccad8ecf04268512599ba6b81dedec0a59b"	//CstRewardAmountMultiplierChanged
 	MAX_MESSAGE_LENGTH		= "ba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc8"
 	TOKEN_SCRIPT_URL		= "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c"
@@ -142,12 +142,12 @@ var (
 	evt_price_increase_changed,_	= hex.DecodeString(PRICE_INCREASE_CHANGED);
 	evt_nanoseconds_extra_changed,_	= hex.DecodeString(NANOSECONDS_EXTRA_CHANGED);
 	evt_initial_seconds_until_prize_changed,_	= hex.DecodeString(INITIAL_SECONDS_UNTIL_PRIZE_CHANGED)
-	evt_initial_bid_amount_fraction_changed,_	= hex.DecodeString(INITIAL_BID_AMOUNT_FRACTION_CHANGED)
-	evt_activation_time_changed,_	= hex.DecodeString(ACTIVATION_TIME_CHANGED)
-	evt_round_start_auction_length_changed,_ = hex.DecodeString(ROUND_START_AUCTION_LENGTH_CHANGED)
+//	evt_initial_bid_amount_fraction_changed,_	= hex.DecodeString(INITIAL_BID_AMOUNT_FRACTION_CHANGED)		DISCONTINUED
+	evt_activation_time_changed,_	= hex.DecodeString(ROUND_ACTIVATION_TIME_CHANGED)
+	evt_cst_dutch_auction_duration_divisor_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED) // previously	evt_round_start_auction_length_changed
 	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
 	evt_proxy_upgraded,_	= hex.DecodeString(PROXY_UPGRADED);
-	evt_erc20_token_reward,_	= hex.DecodeString(ERC20_TOKEN_REWARD);
+	evt_cst_reward_for_bidding_changed,_	= hex.DecodeString(CST_REWARD_FOR_BIDDING_CHANGED);
 	evt_max_msg_length_changed,_	= hex.DecodeString(MAX_MESSAGE_LENGTH);
 	evt_token_script_url,_			= hex.DecodeString(TOKEN_SCRIPT_URL)
 	evt_base_uri,_					= hex.DecodeString(BASE_URI)

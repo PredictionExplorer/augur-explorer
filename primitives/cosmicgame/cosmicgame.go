@@ -669,13 +669,14 @@ type CGETHCSTBidRatioChanged struct {
 	Contract                string
 	NewETHToCSTBidRatio		string
 }
-type CGRoundStartCSTAuctionLengthChanged struct {
+//type CGRoundStartCSTAuctionLengthChanged struct {
+type CGDutchAuctionDurationDivisorChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewAuctionLength		string
+	NewValue				string
 }
 type CGERC20RewardMultiplierChanged struct {
 	EvtId                   int64
@@ -701,7 +702,8 @@ type CGMarketingRewardChanged struct {
 	Contract                string
 	NewReward				string
 }
-type CGERC20TokenRewardChanged struct {
+//previous: type CGBiddingTokenRewardChanged struct {
+type CGCstRewardForBiddingChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64

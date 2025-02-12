@@ -18,7 +18,7 @@ import (
 )
 type RPCStatus struct {
 	LastBlockNum		int64
-	Alive				bool	// if there is block difference over last 60 seconds, node is alive
+	live				bool	// if there is block difference over last 60 seconds, node is alive
 	IsOfficial			bool			// true if it is official Arbitrum node
 	OfficialLagDiff		int64			// number of blocks this RPC service lags behind official node (Arbitrum or Main Net)
 	RPCUrl				string
@@ -66,7 +66,7 @@ type AppLayerStatus struct {	// fetches last block number that was processed by 
 const (
 	WAIT_RPC_BLOCK_NUM	= 60			// seconds to wait before second getBlock() call
 	WAIT_DB_BLOCK_NUM = 60				// seconds to wait to detect incremental database update
-	WAIT_BETWEEN_UPDATES = 30			// seconds to wait after each poll for data
+	WAIT_BETWEEN_UPDATES = 60			// seconds to wait after each poll for data
 	WAIT_BETWEEN_UPDATES_DFCMD = 600	// seconds to wait after each poll for data
 )
 var (
@@ -138,7 +138,7 @@ func check_layer1() {
 	init_layer1_status_struct(&db3,os.Getenv("DB_L1_NAME_SRV3"),os.Getenv("DB_L1_HOST_SRV3"),os.Getenv("DB_L1_DBNAME_SRV3"),os.Getenv("DB_L1_USER_SRV3"),os.Getenv("DB_L1_PASS_SRV3"),1,14)
 	init_layer1_status_struct(&db4,os.Getenv("DB_L1_NAME_SRV4"),os.Getenv("DB_L1_HOST_SRV4"),os.Getenv("DB_L1_DBNAME_SRV4"),os.Getenv("DB_L1_USER_SRV4"),os.Getenv("DB_L1_PASS_SRV4"),1,15)
 
-	for {
+	or {
 		var wg_db sync.WaitGroup
 		wg_db.Add(4);
 		go check_sql_db_status_layer1(&db1,&wg_db); 
@@ -214,6 +214,6 @@ func main() {
 */
 //	check_randomwalk_resource_availability()
 //	check_cosmicgame_resource_availability()
-	send_alarm_slack(SEND_ALARMS_INTERVAL,"sample message from golang")
+//	send_alarm_slack(SEND_ALARMS_INTERVAL,"sample message from golang")
 	termbox.PollEvent()
 }

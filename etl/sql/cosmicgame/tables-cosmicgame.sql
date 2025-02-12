@@ -688,7 +688,8 @@ CREATE TABLE cg_adm_acttime ( -- ISystemEvents.sol:ActivationTimeChanged event (
 	new_atime		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_auclen ( -- ISystemEvents.sol:RoundStartCSTAuctionLengthChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_auclen ( -- ISystemEvents.sol:CstDutchAuctionDurationDivisorChanged
+	-- Previously ISystemEvents.sol:RoundStartCSTAuctionLengthChanged event (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -708,7 +709,7 @@ CREATE TABLE cg_adm_erc_rwd_mul ( -- ISystemEvents.sol:CstRewardAmountMultiplier
 	new_multiplier	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_mkt_reward ( -- ISystemEvents.sol:MarketingRewardChanged
+CREATE TABLE cg_adm_mkt_reward ( -- ISystemEvents.sol:MarketingWalletCstContributionAmountChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -718,7 +719,7 @@ CREATE TABLE cg_adm_mkt_reward ( -- ISystemEvents.sol:MarketingRewardChanged
 	new_reward		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_erc20_reward ( -- ISystemEvents.sol:TokenRewardChanged
+CREATE TABLE cg_adm_erc20_reward ( -- ISystemEvents.sol:CstRewardAmountForBiddingChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -728,7 +729,7 @@ CREATE TABLE cg_adm_erc20_reward ( -- ISystemEvents.sol:TokenRewardChanged
 	new_reward		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_msg_len ( -- ISystemEvents.sol:MaxMessageLengthChanged
+CREATE TABLE cg_adm_msg_len ( -- ISystemEvents.sol:BidMessageLengthMaxLimitChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
