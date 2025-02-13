@@ -629,13 +629,13 @@ type CGPriceIncreaseChanged struct {
 	Contract                string
 	NewPriceIncrease		string
 }
-type CGNanoSecondsExtraChanged struct {
+type CGMainPrizeMicroSecondsIncreaseChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewNanoSecondsExtra		string
+	NewMicroseconds			string
 }
 type CGInitialSecondsUntilPrizeChanged struct {
 	EvtId                   int64
@@ -788,7 +788,7 @@ type CGFundsToCharity struct {
 	CharityAddr				string
 	Amount					string
 }
-type CGDelayDuration struct {
+type CGNextRoundDelayDuration struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64

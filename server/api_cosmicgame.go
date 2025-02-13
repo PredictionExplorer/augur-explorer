@@ -3,6 +3,7 @@ import (
 	"time"
 	"os"
 	"fmt"
+	"math/big"
 	"context"
 	"encoding/json"
 
@@ -52,7 +53,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"NumRwalkTokensUsed":bw_stats.NumRwalkTokensUsed,
 		"PriceIncrease" : price_increase,
 		"TimeIncrease" : time_increase,
-		"NanosecondsExtra" : nanoseconds_extra,
+		"MainPrizeTimeIncrementInMicroSeconds" : mainprize_microseconds_inc,
 		"InitialSecondsUntilPrize" : initial_seconds,
 		"TimeoutClaimPrize" : timeout_claim,
 		"RoundStartCSTAuctionLength" : roundstart_auclen,
@@ -1575,13 +1576,13 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 		Info.Printf(err_str)
 		respond_error_json(c,err_str)
 	} else {
-		cst_price,err := contract.GetCurrentBidPriceCST(&copts);
+		cst_price,err := contract.GetNextCstBidPrice(&copts,big.NewInt(0));
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())
 			respond_error(c,err.Error());
 		} else {
-			auction_duration,seconds_elapsed,err := contract.GetCstAuctionDuration(&copts);
+			auction_duration,seconds_elapsed,err := contract.GetCstDutchAuctionDurations(&copts);
 			if err != nil {
 				Error.Printf(err.Error())
 				Info.Printf(err.Error())

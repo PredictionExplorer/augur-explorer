@@ -648,14 +648,14 @@ CREATE TABLE cg_adm_price_inc( -- ISystemEvents.sol:PriceIncreaseChanged event (
 	new_price_increase	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_nanosec_extra ( -- ISystemEvents.sol:NanoSecondsExtraChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_prize_microsec ( -- ISystemEvents.sol:MainPrizeTimeIncrementInMicroSecondsChanged event (contract CosmicGamez)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	new_nanoseconds	DECIMAL NOT NULL,
+	new_microseconds	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_inisecprize ( -- ISystemEvents.sol:InitialSecondsUntilPrizeChanged event (contract CosmicGame)

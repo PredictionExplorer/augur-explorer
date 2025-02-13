@@ -1370,13 +1370,13 @@ func (sw *SQLStorageWrapper) Insert_price_increase_changed_event(evt *p.CGPriceI
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_nanoseconds_extra_changed_event(evt *p.CGNanoSecondsExtraChanged) {
+func (sw *SQLStorageWrapper) Insert_nanoseconds_extra_changed_event(evt *p.CGMainPrizeMicroSecondsIncreaseChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_nanosec_extra (" +
+	query = "INSERT INTO cg_adm_prize_microsec (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_nanoseconds" +
+				"new_microseconds " +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"
@@ -1386,10 +1386,10 @@ func (sw *SQLStorageWrapper) Insert_nanoseconds_extra_changed_event(evt *p.CGNan
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.NewNanoSecondsExtra,
+		evt.NewMicroseconds,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_nanoseconds_extra table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_prize_microsec table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -1825,7 +1825,7 @@ func (sw *SQLStorageWrapper) Insert_funds_transferred_to_charity_event(evt *p.CG
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_delay_duration_before_next_round_changed_event(evt *p.CGDelayDuration) {
+func (sw *SQLStorageWrapper) Insert_delay_duration_before_next_round_changed_event(evt *p.CGNextRoundDelayDuration) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string

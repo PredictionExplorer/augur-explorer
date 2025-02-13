@@ -57,7 +57,7 @@ var (
 	raffle_amount				string
 	raffle_amount_eth			float64
 	round_num					int64
-	nanoseconds_extra			string
+	mainprize_microseconds_inc	string
 	last_bidder					common.Address
 	last_bidder_bid_time		int64
 	charity_balance				string
@@ -136,7 +136,7 @@ func do_reload_contract_constants() {
 	} else {
 		var err error
 		var tmp_val *big.Int
-		tmp_val,err = bwcontract.PriceIncrease(&copts)
+		tmp_val,err = bwcontract.NextEthBidPriceIncreaseDivisor(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PriceIncrease() call: %v\n",err)
 			Error.Printf(err_str)
@@ -171,21 +171,21 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			prize_percentage = -1
 		} else { prize_percentage = tmp_val.Int64() }
-		tmp_val,err = bwcontract.RaffleTotalEthPrizeAmountPercentage(&copts)
+		tmp_val,err = bwcontract.RaffleTotalEthPrizeAmountForBiddersPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at RafflePercentage() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			raffle_percentage = -1
 		} else { raffle_percentage = tmp_val.Int64() }
-		tmp_val,err = bwcontract.StakingTotalEthRewardAmountPercentage(&copts)
+		tmp_val,err = bwcontract.CosmicSignatureNftStakingTotalEthRewardAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at StakingPercentage() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			staking_percentage = -1
 		} else { staking_percentage = tmp_val.Int64() }
-		tmp_val,err = bwcontract.TimeIncrease(&copts)
+		tmp_val,err = bwcontract.MainPrizeTimeIncrementIncreaseDivisor(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at TimeIncrease() call: %v\n",err)
 			Error.Printf(err_str)
@@ -225,7 +225,7 @@ func do_reload_contract_variables() {
 	} else {
 		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-		tmp_val,err = bwcontract.GetBidPrice(&copts)
+		tmp_val,err = bwcontract.GetNextEthBidPrice(&copts,big.NewInt(0))
 		if err != nil {
 			err_str := fmt.Sprintf("Error at GetBidPrice() call: %v\n",err)
 			Error.Printf(err_str)
@@ -256,7 +256,7 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_prize_amount,f_divisor)
 			prize_amount_eth,_ = f_quo.Float64()
 		}
-		tmp_val , err = bwcontract.GetRaffleTotalEthPrizeAmount(&copts)
+		tmp_val , err = bwcontract.GetRaffleTotalEthPrizeAmountForBidders(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at RaffleAmount() call: %v\n",err)
 			Error.Printf(err_str)
@@ -275,13 +275,13 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			round_num = -1
 		} else { round_num = tmp_val.Int64() }
-		tmp_val,err = bwcontract.NanoSecondsExtra(&copts)
+		tmp_val,err = bwcontract.MainPrizeTimeIncrementInMicroSeconds(&copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at NanoSecondsExtra() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at MainPrizeTimeIncrementInMicroseconds() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-			nanoseconds_extra = "error"
-		} else { nanoseconds_extra = tmp_val.String() }
+			mainprize_microseconds_inc = "error"
+		} else { mainprize_microseconds_inc = tmp_val.String() }
 		last_bidder,err = bwcontract.LastBidderAddress(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at LastBidder() call: %v\n",err)
@@ -289,17 +289,17 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 		}
 		if round_num > -1 {
-			tmp_bidder_info,err := bwcontract.BidderInfo(&copts,big.NewInt(round_num),last_bidder)
+			tmp_bidder_info,err := bwcontract.BiddersInfo(&copts,big.NewInt(round_num),last_bidder)
 			if err != nil {
-				err_str := fmt.Sprintf("Error at BidderInfo() call: %v\n",err)
+				err_str := fmt.Sprintf("Error at BiddersInfo() call: %v\n",err)
 				Error.Printf(err_str)
 				Info.Printf(err_str)
 				last_bidder_bid_time = -1
 			} else { last_bidder_bid_time = tmp_bidder_info.LastBidTimeStamp.Int64() }
 		}
-		tmp_val,err = bwcontract.InitialSecondsUntilPrize(&copts)
+		tmp_val,err = bwcontract.InitialDurationUntilMainPrizeDivisor(&copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at InitialSecondsUntilPrize() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at ImitialDurationUntilMainPrizeDivisor() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			initial_seconds = -1
@@ -311,9 +311,9 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			timeout_claim = -1
 		} else { timeout_claim = tmp_val.Int64() }
-		tmp_val,err = bwcontract.CstAuctionLength(&copts)
+		tmp_val,err = bwcontract.CstDutchAuctionDurationDivisor(&copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at RoundStartCSTAuctionLength() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at CstDutchAuctionDurationDivisor() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			roundstart_auclen = -1
@@ -414,7 +414,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"NumRwalkTokensUsed":bw_stats.NumRwalkTokensUsed,
 		"PriceIncrease" : price_increase,
 		"TimeIncrease" : time_increase,
-		"NanosecondsExtra" : nanoseconds_extra,
+		"NanosecondsExtra" : mainprize_microseconds_inc,
 		"InitialSecondsUntilPrize" : initial_seconds,
 		"TimeoutClaimPrize" : timeout_claim,
 		"RoundStartCSTAuctionLength" : roundstart_auclen,
@@ -1757,13 +1757,13 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 		Info.Printf(err_str)
 		respond_error(c,err_str)
 	} else {
-		cst_price,err := contract.GetCurrentBidPriceCST(&copts);
+		cst_price,err := contract.GetNextCstBidPrice(&copts,big.NewInt(0));
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())
 			respond_error(c,err.Error());
 		} else {
-			auction_duration,seconds_elapsed,err := contract.GetCstAuctionDuration(&copts);
+			auction_duration,seconds_elapsed,err := contract.GetCstDutchAuctionDurations(&copts);
 			if err != nil {
 				Error.Printf(err.Error())
 				Info.Printf(err.Error())
