@@ -55,10 +55,9 @@ const basicDeploymentAdvanced = async function (
 	let cosmicGameAddr = await cosmicGameProxy.runner.provider.getStorage(cosmicGameProxyAddr,'0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc');
 	let cosmicGame = await CosmicGame.attach(cosmicGameProxyAddr);
 	let CosmicToken = await hre.ethers.getContractFactory("CosmicSignatureToken");
-	cosmicToken = await CosmicToken.connect(deployerAcct).deploy();
+	cosmicToken = await CosmicToken.connect(deployerAcct).deploy(await cosmicGameProxy.getAddress());
 	await cosmicToken.waitForDeployment();
 	let cosmicTokenAddr = await cosmicToken.getAddress();
-	await cosmicToken.connect(deployerAcct).transferOwnership(cosmicGameProxyAddr);
 
 	let CosmicSignature = await hre.ethers.getContractFactory("CosmicSignatureNft");
 	cosmicSignature = await CosmicSignature.connect(deployerAcct).deploy(cosmicGameProxyAddr);
@@ -117,7 +116,7 @@ const basicDeploymentAdvanced = async function (
 	await stakingWalletRandomWalkNft.waitForDeployment();
 	let stakingWalletRandomWalkNftAddr = await stakingWalletRandomWalkNft.getAddress();
 
-	await cosmicGameProxy.connect(deployerAcct).setTokenContract(cosmicTokenAddr);
+	await cosmicGameProxy.connect(deployerAcct).setCosmicSignatureToken(cosmicTokenAddr);
 	await cosmicGameProxy.connect(deployerAcct).setCosmicSignatureNft(cosmicSignatureAddr);
 	await cosmicGameProxy.connect(deployerAcct).setCharityAddress(charityWalletAddr);
 	await cosmicGameProxy.connect(deployerAcct).setRandomWalkNft(randomWalkNFTAddr);
@@ -125,12 +124,12 @@ const basicDeploymentAdvanced = async function (
 	await cosmicGameProxy.connect(deployerAcct).setStakingWalletCosmicSignatureNft(stakingWalletCosmicSignatureNftAddr);
 	await cosmicGameProxy.connect(deployerAcct).setStakingWalletRandomWalkNft(stakingWalletRandomWalkNftAddr);
 	await cosmicGameProxy.connect(deployerAcct).setMarketingWallet(marketingWalletAddr);
-	await cosmicGameProxy.connect(deployerAcct).setDelayDurationBeforeNextRound(1);
+	await cosmicGameProxy.connect(deployerAcct).setDelayDurationBeforeRoundActivation(1);
 	if (activationTime == 0) {
 		let latestBlock = await hre.ethers.provider.getBlock("latest");
-		await cosmicGameProxy.connect(deployerAcct).setActivationTime(0);
+		await cosmicGameProxy.connect(deployerAcct).setRoundActivationTime(0);
 	} else {
-		await cosmicGameProxy.connect(deployerAcct).setActivationTime(0);
+		await cosmicGameProxy.connect(deployerAcct).setRoundActivationTime(0);
 	}
 	/*
 	if (switchToRuntime) {
