@@ -151,7 +151,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_mainprize_microsecond_increase_changed[:4]),
+			Signature: hex.EncodeToString(evt_prize_microsecond_increase_changed[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -2033,18 +2033,19 @@ func proc_cosmic_signature_address_changed_event(log *types.Log,elog *EthereumEv
 		return
 	}
 	Info.Printf("Processing CosmicSignatureAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureNftAddressChanged",log.Data)
+/*	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureNftAddressChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event CosmicSignatureAddressChanged decode error: %v",err)
+		Error.Printf("Event CosmicSignatureNftAddressChanged decode error: %v",err)
 		os.Exit(1)
-	}
+	} DISCONTINUED */
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewCosmicSignature= eth_evt.NewValue.String()
+	evt.NewCosmicSignature = common.BytesToAddress(log.Topics[1][12:]).String()
+	eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CosmicSignatureAddressChanged{\n")
@@ -2972,6 +2973,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 		proc_cosmic_token_address_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cossig_address_changed) {
+		Info.Printf("processing nft changed event (topic=%v): %v\n",evt_cossig_address_changed,log)
 		proc_cosmic_signature_address_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_proxy_upgraded) {
@@ -2989,9 +2991,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_price_increase_changed) {
 		proc_price_increase_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nanoseconds_extra_changed) {
+/*	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nanoseconds_extra_changed) {
 		proc_nanoseconds_extra_changed_event(log,evtlog)
-	}
+	} DISCONTINUED */
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_seconds_until_prize_changed) {
 		proc_initial_seconds_until_prize_changed_event(log,evtlog)
 	}

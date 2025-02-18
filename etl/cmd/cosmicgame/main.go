@@ -140,7 +140,7 @@ var (
 	evt_timeout_claimprize_changed,_ = hex.DecodeString(TIMEOUT_CLAIMPRIZE_CHANGED);
 	evt_timeout_to_withdraw_prize,_	= hex.DecodeString(TIMEOUT_TO_WITHDRAW_PRIZE);
 	evt_price_increase_changed,_	= hex.DecodeString(PRICE_INCREASE_CHANGED);
-	evt_prize_microsec_increase_changed,_	= hex.DecodeString(MAIN_PRIZE_MICROSECOND_INCREASE);
+	evt_prize_microsecond_increase_changed,_	= hex.DecodeString(MAIN_PRIZE_MICROSECOND_INCREASE);
 	evt_initial_seconds_until_prize_changed,_	= hex.DecodeString(INITIAL_SECONDS_UNTIL_PRIZE_CHANGED)
 //	evt_initial_bid_amount_fraction_changed,_	= hex.DecodeString(INITIAL_BID_AMOUNT_FRACTION_CHANGED)		DISCONTINUED
 	evt_activation_time_changed,_	= hex.DecodeString(ROUND_ACTIVATION_TIME_CHANGED)

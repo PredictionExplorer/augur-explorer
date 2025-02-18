@@ -18,7 +18,7 @@ import (
 )
 type RPCStatus struct {
 	LastBlockNum		int64
-	live				bool	// if there is block difference over last 60 seconds, node is alive
+	Alive				bool	// if there is block difference over last 60 seconds, node is alive
 	IsOfficial			bool			// true if it is official Arbitrum node
 	OfficialLagDiff		int64			// number of blocks this RPC service lags behind official node (Arbitrum or Main Net)
 	RPCUrl				string
@@ -138,7 +138,7 @@ func check_layer1() {
 	init_layer1_status_struct(&db3,os.Getenv("DB_L1_NAME_SRV3"),os.Getenv("DB_L1_HOST_SRV3"),os.Getenv("DB_L1_DBNAME_SRV3"),os.Getenv("DB_L1_USER_SRV3"),os.Getenv("DB_L1_PASS_SRV3"),1,14)
 	init_layer1_status_struct(&db4,os.Getenv("DB_L1_NAME_SRV4"),os.Getenv("DB_L1_HOST_SRV4"),os.Getenv("DB_L1_DBNAME_SRV4"),os.Getenv("DB_L1_USER_SRV4"),os.Getenv("DB_L1_PASS_SRV4"),1,15)
 
-	or {
+	for {
 		var wg_db sync.WaitGroup
 		wg_db.Add(4);
 		go check_sql_db_status_layer1(&db1,&wg_db); 

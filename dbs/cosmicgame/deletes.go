@@ -510,7 +510,7 @@ func (sw *SQLStorageWrapper) Delete_price_increase_changed_event(evtlog_id int64
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_mainprize_microseconds_increase_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_mainprize_microseconds_increase_changed_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_prize_microsec WHERE evtlog_id=$1"

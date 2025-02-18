@@ -1370,7 +1370,7 @@ func (sw *SQLStorageWrapper) Insert_price_increase_changed_event(evt *p.CGPriceI
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_nanoseconds_extra_changed_event(evt *p.CGMainPrizeMicroSecondsIncreaseChanged) {
+func (sw *SQLStorageWrapper) Insert_mainprize_microseconds_increase_changed_event(evt *p.CGMainPrizeMicroSecondsIncreaseChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
