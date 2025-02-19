@@ -198,6 +198,9 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 
+	IF NEW.round_num <> -1 THEN
+		UPDATE cg_prize_claim SET donation_evt_id=NEW.id WHERE round_num=NEW.round_num;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -230,6 +233,9 @@ BEGIN
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
+	END IF;
+	IF OLD.round_num <> -1 THEN
+		UPDATE cg_prize_claim SET donation_evt_id=0 WHERE round_num=OLD.round_num;
 	END IF;
 
 	RETURN OLD;

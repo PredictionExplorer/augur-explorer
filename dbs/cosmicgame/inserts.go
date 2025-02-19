@@ -55,7 +55,7 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		evt.Message,
 		evt.RoundNum,
 		evt.BidType,
-		evt.NumCSTTokens,
+		evt.CstPrice,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_bid table: %v\n",err))

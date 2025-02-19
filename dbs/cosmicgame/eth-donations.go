@@ -510,7 +510,7 @@ func (sw *SQLStorageWrapper) Get_donation_with_info_record_info(record_id int64)
 	}
 	return rec
 }
-func (sw *SQLStorageWrapper) Get_donation_received_evt_id(tx_id,starting_id int64,sig string) int64 {
+func (sw *SQLStorageWrapper) Get_donation_received_evt_id_by_tx_id(tx_id int64,sig string) int64 {
 
 	var query string 
 	query = "SELECT "+
@@ -520,10 +520,9 @@ func (sw *SQLStorageWrapper) Get_donation_received_evt_id(tx_id,starting_id int6
 				"LEFT JOIN cg_donation_received d ON e.id=d.evtlog_id "+
 			"WHERE "+
 				"(e.tx_id=$1) AND "+
-				"(e.topic0_sig=$2) AND "+
-				"(e.id<$3) "+
-			"ORDER BY e.id DESC LIMIT 1"
-	res := sw.S.Db().QueryRow(query,tx_id,sig,starting_id)
+				"(e.topic0_sig=$2) "+
+			"LIMIT 1"
+	res := sw.S.Db().QueryRow(query,tx_id,sig)
 	var null_id sql.NullInt64
 	err := res.Scan(&null_id)
 	if (err!=nil) {

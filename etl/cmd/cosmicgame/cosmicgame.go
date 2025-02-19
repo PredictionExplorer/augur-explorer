@@ -319,12 +319,12 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.EthPrizeAmount.String()
 	evt.TokenId = find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
-	evt.DonationEvtId = storagew.Get_donation_received_evt_id(evt.TxId,evt.EvtId,hex.EncodeToString(evt_donation_received_event[:4]))
-	if evt.DonationEvtId == 0 {
-		Error.Printf("Failed to fetch donation received event id\n")
-		Info.Printf("Failed to fetch donation received event id\n")
-		os.Exit(1)
-	}
+//	evt.DonationEvtId = storagew.Get_donation_received_evt_id_by_tx_id(evt.TxId,hex.EncodeToString(evt_donation_received_event[:4]))
+//	if evt.DonationEvtId == 0 {
+//		Error.Printf("Failed to fetch donation received event id for txid=%v\n",evt,TxId)
+//		Info.Printf("Failed to fetch donation received event id for txid=%v\n",evt.TxId)
+//		os.Exit(1)
+//	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MainPrizeClaimed {\n")
@@ -475,9 +475,9 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BidEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BidPlaced",log.Data)
 	if err != nil {
-		Error.Printf("Event BidEvent decode error: %v",err)
+		Error.Printf("Event BidPlaced decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -486,27 +486,27 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.RoundNum = log.Topics[2].Big().Int64()
+	evt.LastBidderAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.BidPrice = eth_evt.EthBidPrice.String()
 	evt.BidType = 0; // ETH
-	evt.RandomWalkTokenId = eth_evt.RandomWalkNftId.Int64()
+	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
-	evt.NumCSTTokens = eth_evt.CstBidPrice.String()
+	evt.CstPrice = eth_evt.CstBidPrice.String()
 	if evt.RandomWalkTokenId > -1 {
 		evt.BidType = 1;	// RandomWalk	
 	} else {
-		if evt.NumCSTTokens != "-1" { evt.BidType = 2; } // Cosmic Signature Token (ERC20) bid
+		if evt.CstPrice != "-1" { evt.BidType = 2; } // Cosmic Signature Token (ERC20) bid
 	}
 	evt.PrizeTime = eth_evt.MainPrizeTime.Int64()
 	evt.Message = eth_evt.Message
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("BidEvent {\n")
+	Info.Printf("BidPlaced {\n")
 	Info.Printf("\tLastBidder: %v\n",evt.LastBidderAddr)
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tBidPrice: %v\n",evt.BidPrice)
-	Info.Printf("\tNumCSTTokens: %v\n",evt.NumCSTTokens);
+	Info.Printf("\tCstPrice: %v\n",evt.CstPrice);
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
 	Info.Printf("\tPrizeTime: %v\n",evt.PrizeTime)
 	Info.Printf("\tMessage: %v\n",evt.Message)
@@ -528,7 +528,7 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	}
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthDonated",log.Data)
 	if err != nil {
-		Error.Printf("Event DonationEvent decode error: %v",err)
+		Error.Printf("Event EthDonaed decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -537,9 +537,9 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.DonorAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
-	evt.RoundNum = eth_evt.RoundNum.Int64()
+	evt.RoundNum = log.Topics[1].Big().Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationEvent {\n")
@@ -586,10 +586,10 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.RecordId = eth_evt.EthDonationWithInfoRecordIndex.Int64();
+	evt.DonorAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.RecordId = log.Topics[3].Big().Int64()
 	evt.Amount = eth_evt.Amount.String()
-	evt.RoundNum = eth_evt.RoundNum.Int64()
+	evt.RoundNum = log.Topics[1].Big().Int64()
 	data_json,err := get_donation_data(evt.RecordId)
 	if err != nil {
 		Info.Printf("Failure to fetch donation info record: %v\n",err.Error())
@@ -1841,26 +1841,19 @@ func proc_charity_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 func proc_random_walk_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRandomWalkAddressChanged
-	var eth_evt CosmicSignatureGameRandomWalkNftAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing RandomWalkAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RandomWalkNftAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event RandomWalkAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewRandomWalk = eth_evt.NewValue.String()
-
+	evt.NewRandomWalk = common.BytesToAddress(log.Topics[1][12:]).String()
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RandomWalkAddressChanged{\n")
 	Info.Printf("\tNewRandomWalk: %v\n",evt.NewRandomWalk)
@@ -1872,25 +1865,19 @@ func proc_random_walk_address_changed_event(log *types.Log,elog *EthereumEventLo
 func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGPrizeWalletAddressChanged
-	var eth_evt CosmicSignatureGamePrizesWalletAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing EthPrizesWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PrizesWalletAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event EthPrizesWalletAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewPrizeWallet = eth_evt.NewValue.String()
+	evt.NewPrizeWallet = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("EthPrizesWalletAddressChanged{\n")
@@ -1903,25 +1890,19 @@ func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 func proc_staking_wallet_cst_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStakingWalletCSTAddressChanged
-	var eth_evt IMainPrizeStakingWalletCosmicSignatureNftAddressChanged 
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing StakingWalletCSTAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWalletCosmicSignatureNftAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event StakingWalletCosmicSignatureNftAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewStakingWalletCST = eth_evt.NewValue.String()
+	evt.NewStakingWalletCST = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("StakingWalletCSTAddressChanged{\n")
@@ -1934,25 +1915,19 @@ func proc_staking_wallet_cst_address_changed_event(log *types.Log,elog *Ethereum
 func proc_staking_wallet_rwalk_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStakingWalletRWalkAddressChanged
-	var eth_evt CosmicSignatureGameStakingWalletRandomWalkNftAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing StakingWalletRWalkAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWalletRandomWalkNftAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event StakingWalletRWalkAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewStakingWalletRWalk = eth_evt.NewValue.String()
+	evt.NewStakingWalletRWalk = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("StakingWalletRWalkAddressChanged{\n")
@@ -1965,24 +1940,18 @@ func proc_staking_wallet_rwalk_address_changed_event(log *types.Log,elog *Ethere
 func proc_marketing_wallet_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGMarketingWalletAddressChanged
-	var eth_evt CosmicSignatureGameMarketingWalletAddressChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing MarketingWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"MarketingWalletAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event MarketingWalletAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewMarketingWallet = eth_evt.NewValue.String()
+	evt.NewMarketingWallet = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MarketingWalletAddressChanged{\n")

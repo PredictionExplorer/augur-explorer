@@ -9,7 +9,7 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	winner_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	amount					DECIMAL DEFAULT 0,
-	donation_evt_id			BIGINT NOT NULL,
+	donation_evt_id			BIGINT DEFAULT -1,	-- linked by trigger upon processing DonationReceived event
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_bid (	-- CosmicSignatureGame.sol:BidEvent

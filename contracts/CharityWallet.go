@@ -31,8 +31,8 @@ var (
 
 // CharityWalletMetaData contains all meta data concerning the CharityWallet contract.
 var CharityWalletMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsTransferredToCharity\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"charityAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
-	Bin: "0x60806040523461002757610011610036565b61001961002c565b6108c461022a82396108c490f35b610032565b60405190565b5f80fd5b610046610041610110565b610048565b565b610051906100ba565b565b90565b60018060a01b031690565b90565b61007861007361007d92610053565b610061565b610056565b90565b61008990610064565b90565b61009590610056565b90565b6100a19061008c565b9052565b91906100b8905f60208501940190610098565b565b806100d56100cf6100ca5f610080565b61008c565b9161008c565b146100e5576100e3906101ca565b565b6101086100f15f610080565b5f918291631e4fbdf760e01b8352600483016100a5565b0390fd5b5f90565b61011861010c565b503390565b5f1c90565b60018060a01b031690565b61013961013e9161011d565b610122565b90565b61014b905461012d565b90565b5f1b90565b9061016460018060a01b039161014e565b9181191691161790565b61018261017d61018792610056565b610061565b610056565b90565b6101939061016e565b90565b61019f9061018a565b90565b90565b906101ba6101b56101c192610196565b6101a2565b8254610153565b9055565b5f0190565b6101d35f610141565b6101dd825f6101a5565b9061021161020b7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610196565b91610196565b9161021a61002c565b80610224816101c5565b0390a356fe6080604052600436101561001d575b366102a25761001b610786565b005b6100275f35610086565b80630c9be46d14610081578063715018a61461007c5780638da5cb5b14610077578063afcf2fc414610072578063b46300ec1461006d5763f2fde38b0361000e5761026f565b61023c565b610207565b61018e565b610139565b6100f7565b60e01c90565b60405190565b5f80fd5b5f80fd5b60018060a01b031690565b6100ae9061009a565b90565b6100ba816100a5565b036100c157565b5f80fd5b905035906100d2826100b1565b565b906020828203126100ed576100ea915f016100c5565b90565b610096565b5f0190565b346101255761010f61010a3660046100d4565b610380565b61011761008c565b80610121816100f2565b0390f35b610092565b5f91031261013457565b610096565b346101675761014936600461012a565b6101516103db565b61015961008c565b80610163816100f2565b0390f35b610092565b610175906100a5565b9052565b919061018c905f6020850194019061016c565b565b346101be5761019e36600461012a565b6101ba6101a961040f565b6101b161008c565b91829182610179565b0390f35b610092565b1c90565b60018060a01b031690565b6101e29060086101e793026101c3565b6101c7565b90565b906101f591546101d2565b90565b61020460015f906101ea565b90565b346102375761021736600461012a565b6102336102226101f8565b61022a61008c565b91829182610179565b0390f35b610092565b3461026a5761024c36600461012a565b610254610667565b61025c61008c565b80610266816100f2565b0390f35b610092565b3461029d576102876102823660046100d4565b61077b565b61028f61008c565b80610299816100f2565b0390f35b610092565b5f80fd5b6102b7906102b26107d4565b610333565b565b5f1b90565b906102cf60018060a01b03916102b9565b9181191691161790565b90565b6102f06102eb6102f59261009a565b6102d9565b61009a565b90565b610301906102dc565b90565b61030d906102f8565b90565b90565b9061032861032361032f92610304565b610310565b82546102be565b9055565b61033e816001610313565b6103687f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c91610304565b9061037161008c565b8061037b816100f2565b0390a2565b610389906102a6565b565b6103936107d4565b61039b6103c8565b565b90565b6103b46103af6103b99261039d565b6102d9565b61009a565b90565b6103c5906103a0565b90565b6103d96103d45f6103bc565b610822565b565b6103e361038b565b565b5f90565b5f1c90565b6103fa6103ff916103e9565b6101c7565b90565b61040c90546103ee565b90565b6104176103e5565b506104215f610402565b90565b60209181520190565b5f7f436861726974792061646472657373206e6f74207365742e0000000000000000910152565b6104616018602092610424565b61046a8161042d565b0190565b6104839060208101905f818303910152610454565b90565b1561048d57565b61049561008c565b63eac0d38960e01b8152806104ac6004820161046e565b0390fd5b6104b9906102f8565b90565b90565b6104c8906104bc565b9052565b91906104df905f602085019401906104bf565b565b905090565b6104f15f80926104e1565b0190565b6104fe906104e6565b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b9061052990610501565b810190811067ffffffffffffffff82111761054357604052565b61050b565b9061055b61055461008c565b928361051f565b565b67ffffffffffffffff811161057b57610577602091610501565b0190565b61050b565b9061059261058d8361055d565b610548565b918252565b606090565b3d5f146105b7576105ac3d610580565b903d5f602084013e5b565b6105bf610597565b906105b5565b5f7f455448207472616e7366657220746f2063686172697479206661696c65642e00910152565b6105f9601f602092610424565b610602816105c5565b0190565b916040610637929493610630610625606083018381035f8501526105ec565b96602083019061016c565b01906104bf565b565b15610642575050565b61066361064d61008c565b928392630aa7db6360e11b845260048401610606565b0390fd5b6107146106746001610402565b6106998161069261068c6106875f6103bc565b6100a5565b916100a5565b1415610486565b6106a2306104b0565b318181906106e56106d37f1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d92610304565b926106dc61008c565b918291826104cc565b0390a25f8083836106f461008c565b90816106ff816104f5565b03925af161070b61059c565b50919091610639565b565b610727906107226107d4565b610729565b565b8061074461073e6107395f6103bc565b6100a5565b916100a5565b146107545761075290610822565b565b6107776107605f6103bc565b5f918291631e4fbdf760e01b835260048301610179565b0390fd5b61078490610716565b565b61078e610881565b34906107cf6107bd7f264f630d9efa0d07053a31163641d9fcc0adafc9d9e76f1c37c2ce3a558d2c5292610304565b926107c661008c565b918291826104cc565b0390a2565b6107dc61040f565b6107f56107ef6107ea610881565b6100a5565b916100a5565b036107fc57565b61081e610807610881565b5f91829163118cdaa760e01b835260048301610179565b0390fd5b61082b5f610402565b610835825f610313565b906108696108637f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610304565b91610304565b9161087261008c565b8061087c816100f2565b0390a3565b6108896103e5565b50339056fea2646970667358221220b70744cce05aa1abef7aa555eb96a6f5afc14d869b332c8d9a54aa807aa34d2e64736f6c634300081c0033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"destinationAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsTransferredToCharity\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"charityAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	Bin: "0x60806040523461002757610011610036565b61001961002c565b61095261022a823961095290f35b610032565b60405190565b5f80fd5b610046610041610110565b610048565b565b610051906100ba565b565b90565b60018060a01b031690565b90565b61007861007361007d92610053565b610061565b610056565b90565b61008990610064565b90565b61009590610056565b90565b6100a19061008c565b9052565b91906100b8905f60208501940190610098565b565b806100d56100cf6100ca5f610080565b61008c565b9161008c565b146100e5576100e3906101ca565b565b6101086100f15f610080565b5f918291631e4fbdf760e01b8352600483016100a5565b0390fd5b5f90565b61011861010c565b503390565b5f1c90565b60018060a01b031690565b61013961013e9161011d565b610122565b90565b61014b905461012d565b90565b5f1b90565b9061016460018060a01b039161014e565b9181191691161790565b61018261017d61018792610056565b610061565b610056565b90565b6101939061016e565b90565b61019f9061018a565b90565b90565b906101ba6101b56101c192610196565b6101a2565b8254610153565b9055565b5f0190565b6101d35f610141565b6101dd825f6101a5565b9061021161020b7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610196565b91610196565b9161021a61002c565b80610224816101c5565b0390a356fe6080604052600436101561001d575b366103295761001b610814565b005b6100275f35610096565b80630c9be46d14610091578063715018a61461008c5780638da5cb5b14610087578063a52c101e14610082578063afcf2fc41461007d578063b46300ec146100785763f2fde38b0361000e576102f6565b6102c3565b61028e565b610217565b61019e565b610149565b610107565b60e01c90565b60405190565b5f80fd5b5f80fd5b60018060a01b031690565b6100be906100aa565b90565b6100ca816100b5565b036100d157565b5f80fd5b905035906100e2826100c1565b565b906020828203126100fd576100fa915f016100d5565b90565b6100a6565b5f0190565b346101355761011f61011a3660046100e4565b610407565b61012761009c565b8061013181610102565b0390f35b6100a2565b5f91031261014457565b6100a6565b346101775761015936600461013a565b610161610462565b61016961009c565b8061017381610102565b0390f35b6100a2565b610185906100b5565b9052565b919061019c905f6020850194019061017c565b565b346101ce576101ae36600461013a565b6101ca6101b9610496565b6101c161009c565b91829182610189565b0390f35b6100a2565b90565b6101df816101d3565b036101e657565b5f80fd5b905035906101f7826101d6565b565b906020828203126102125761020f915f016101ea565b90565b6100a6565b346102455761022f61022a3660046101f9565b6106b6565b61023761009c565b8061024181610102565b0390f35b6100a2565b1c90565b60018060a01b031690565b61026990600861026e930261024a565b61024e565b90565b9061027c9154610259565b90565b61028b60015f90610271565b90565b346102be5761029e36600461013a565b6102ba6102a961027f565b6102b161009c565b91829182610189565b0390f35b6100a2565b346102f1576102d336600461013a565b6102db610790565b6102e361009c565b806102ed81610102565b0390f35b6100a2565b346103245761030e6103093660046100e4565b610809565b61031661009c565b8061032081610102565b0390f35b6100a2565b5f80fd5b61033e90610339610862565b6103ba565b565b5f1b90565b9061035660018060a01b0391610340565b9181191691161790565b90565b61037761037261037c926100aa565b610360565b6100aa565b90565b61038890610363565b90565b6103949061037f565b90565b90565b906103af6103aa6103b69261038b565b610397565b8254610345565b9055565b6103c581600161039a565b6103ef7f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c9161038b565b906103f861009c565b8061040281610102565b0390a2565b6104109061032d565b565b61041a610862565b61042261044f565b565b90565b61043b61043661044092610424565b610360565b6100aa565b90565b61044c90610427565b90565b61046061045b5f610443565b6108b0565b565b61046a610412565b565b5f90565b5f1c90565b61048161048691610470565b61024e565b90565b6104939054610475565b90565b61049e61046c565b506104a85f610489565b90565b60209181520190565b5f7f436861726974792061646472657373206e6f74207365742e0000000000000000910152565b6104e860186020926104ab565b6104f1816104b4565b0190565b61050a9060208101905f8183039101526104db565b90565b1561051457565b61051c61009c565b63eac0d38960e01b815280610533600482016104f5565b0390fd5b610540906101d3565b9052565b9190610557905f60208501940190610537565b565b905090565b6105695f8092610559565b0190565b6105769061055e565b90565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906105a190610579565b810190811067ffffffffffffffff8211176105bb57604052565b610583565b906105d36105cc61009c565b9283610597565b565b67ffffffffffffffff81116105f3576105ef602091610579565b0190565b610583565b9061060a610605836105d5565b6105c0565b918252565b606090565b3d5f1461062f576106243d6105f8565b903d5f602084013e5b565b61063761060f565b9061062d565b151590565b5f7f455448207472616e7366657220746f2063686172697479206661696c65642e00910152565b610676601f6020926104ab565b61067f81610642565b0190565b9160406106b49294936106ad6106a2606083018381035f850152610669565b96602083019061017c565b0190610537565b565b6106c06001610489565b6106e5816106de6106d86106d35f610443565b6100b5565b916100b5565b141561050d565b8082906107276107157f1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d9261038b565b9261071e61009c565b91829182610544565b0390a26107575f80838561073961009c565b90816107448161056d565b03925af1610750610614565b501561063d565b61075f575050565b61078061076a61009c565b928392630aa7db6360e11b845260048401610683565b0390fd5b61078d9061037f565b90565b6107a261079c30610784565b316106b6565b565b6107b5906107b0610862565b6107b7565b565b806107d26107cc6107c75f610443565b6100b5565b916100b5565b146107e2576107e0906108b0565b565b6108056107ee5f610443565b5f918291631e4fbdf760e01b835260048301610189565b0390fd5b610812906107a4565b565b61081c61090f565b349061085d61084b7f264f630d9efa0d07053a31163641d9fcc0adafc9d9e76f1c37c2ce3a558d2c529261038b565b9261085461009c565b91829182610544565b0390a2565b61086a610496565b61088361087d61087861090f565b6100b5565b916100b5565b0361088a57565b6108ac61089561090f565b5f91829163118cdaa760e01b835260048301610189565b0390fd5b6108b95f610489565b6108c3825f61039a565b906108f76108f17f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09361038b565b9161038b565b9161090061009c565b8061090a81610102565b0390a3565b61091761046c565b50339056fea2646970667358221220edc8b0d700cdec00afa6ecc27fc01c5fd9de8a775abb24c29901fbd6cf13c20264736f6c634300081c0033",
 }
 
 // CharityWalletABI is the input ABI used to generate the binding from.
@@ -285,25 +285,46 @@ func (_CharityWallet *CharityWalletTransactorSession) RenounceOwnership() (*type
 	return _CharityWallet.Contract.RenounceOwnership(&_CharityWallet.TransactOpts)
 }
 
-// Send is a paid mutator transaction binding the contract method 0xb46300ec.
+// Send is a paid mutator transaction binding the contract method 0xa52c101e.
 //
-// Solidity: function send() returns()
-func (_CharityWallet *CharityWalletTransactor) Send(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _CharityWallet.contract.Transact(opts, "send")
+// Solidity: function send(uint256 amount_) returns()
+func (_CharityWallet *CharityWalletTransactor) Send(opts *bind.TransactOpts, amount_ *big.Int) (*types.Transaction, error) {
+	return _CharityWallet.contract.Transact(opts, "send", amount_)
 }
 
-// Send is a paid mutator transaction binding the contract method 0xb46300ec.
+// Send is a paid mutator transaction binding the contract method 0xa52c101e.
 //
-// Solidity: function send() returns()
-func (_CharityWallet *CharityWalletSession) Send() (*types.Transaction, error) {
-	return _CharityWallet.Contract.Send(&_CharityWallet.TransactOpts)
+// Solidity: function send(uint256 amount_) returns()
+func (_CharityWallet *CharityWalletSession) Send(amount_ *big.Int) (*types.Transaction, error) {
+	return _CharityWallet.Contract.Send(&_CharityWallet.TransactOpts, amount_)
 }
 
-// Send is a paid mutator transaction binding the contract method 0xb46300ec.
+// Send is a paid mutator transaction binding the contract method 0xa52c101e.
+//
+// Solidity: function send(uint256 amount_) returns()
+func (_CharityWallet *CharityWalletTransactorSession) Send(amount_ *big.Int) (*types.Transaction, error) {
+	return _CharityWallet.Contract.Send(&_CharityWallet.TransactOpts, amount_)
+}
+
+// Send0 is a paid mutator transaction binding the contract method 0xb46300ec.
 //
 // Solidity: function send() returns()
-func (_CharityWallet *CharityWalletTransactorSession) Send() (*types.Transaction, error) {
-	return _CharityWallet.Contract.Send(&_CharityWallet.TransactOpts)
+func (_CharityWallet *CharityWalletTransactor) Send0(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _CharityWallet.contract.Transact(opts, "send0")
+}
+
+// Send0 is a paid mutator transaction binding the contract method 0xb46300ec.
+//
+// Solidity: function send() returns()
+func (_CharityWallet *CharityWalletSession) Send0() (*types.Transaction, error) {
+	return _CharityWallet.Contract.Send0(&_CharityWallet.TransactOpts)
+}
+
+// Send0 is a paid mutator transaction binding the contract method 0xb46300ec.
+//
+// Solidity: function send() returns()
+func (_CharityWallet *CharityWalletTransactorSession) Send0() (*types.Transaction, error) {
+	return _CharityWallet.Contract.Send0(&_CharityWallet.TransactOpts)
 }
 
 // SetCharityAddress is a paid mutator transaction binding the contract method 0x0c9be46d.
@@ -958,7 +979,7 @@ func (_CharityWallet *CharityWalletFilterer) ParseOwnershipTransferred(log types
 
 // ICharityWalletMetaData contains all meta data concerning the ICharityWallet contract.
 var ICharityWalletMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donorAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationReceived\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"send\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setCharityAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
 }
 
 // ICharityWalletABI is the input ABI used to generate the binding from.
@@ -1107,25 +1128,46 @@ func (_ICharityWallet *ICharityWalletTransactorRaw) Transact(opts *bind.Transact
 	return _ICharityWallet.Contract.contract.Transact(opts, method, params...)
 }
 
-// Send is a paid mutator transaction binding the contract method 0xb46300ec.
+// Send is a paid mutator transaction binding the contract method 0xa52c101e.
 //
-// Solidity: function send() returns()
-func (_ICharityWallet *ICharityWalletTransactor) Send(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _ICharityWallet.contract.Transact(opts, "send")
+// Solidity: function send(uint256 amount_) returns()
+func (_ICharityWallet *ICharityWalletTransactor) Send(opts *bind.TransactOpts, amount_ *big.Int) (*types.Transaction, error) {
+	return _ICharityWallet.contract.Transact(opts, "send", amount_)
 }
 
-// Send is a paid mutator transaction binding the contract method 0xb46300ec.
+// Send is a paid mutator transaction binding the contract method 0xa52c101e.
 //
-// Solidity: function send() returns()
-func (_ICharityWallet *ICharityWalletSession) Send() (*types.Transaction, error) {
-	return _ICharityWallet.Contract.Send(&_ICharityWallet.TransactOpts)
+// Solidity: function send(uint256 amount_) returns()
+func (_ICharityWallet *ICharityWalletSession) Send(amount_ *big.Int) (*types.Transaction, error) {
+	return _ICharityWallet.Contract.Send(&_ICharityWallet.TransactOpts, amount_)
 }
 
-// Send is a paid mutator transaction binding the contract method 0xb46300ec.
+// Send is a paid mutator transaction binding the contract method 0xa52c101e.
+//
+// Solidity: function send(uint256 amount_) returns()
+func (_ICharityWallet *ICharityWalletTransactorSession) Send(amount_ *big.Int) (*types.Transaction, error) {
+	return _ICharityWallet.Contract.Send(&_ICharityWallet.TransactOpts, amount_)
+}
+
+// Send0 is a paid mutator transaction binding the contract method 0xb46300ec.
 //
 // Solidity: function send() returns()
-func (_ICharityWallet *ICharityWalletTransactorSession) Send() (*types.Transaction, error) {
-	return _ICharityWallet.Contract.Send(&_ICharityWallet.TransactOpts)
+func (_ICharityWallet *ICharityWalletTransactor) Send0(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _ICharityWallet.contract.Transact(opts, "send0")
+}
+
+// Send0 is a paid mutator transaction binding the contract method 0xb46300ec.
+//
+// Solidity: function send() returns()
+func (_ICharityWallet *ICharityWalletSession) Send0() (*types.Transaction, error) {
+	return _ICharityWallet.Contract.Send0(&_ICharityWallet.TransactOpts)
+}
+
+// Send0 is a paid mutator transaction binding the contract method 0xb46300ec.
+//
+// Solidity: function send() returns()
+func (_ICharityWallet *ICharityWalletTransactorSession) Send0() (*types.Transaction, error) {
+	return _ICharityWallet.Contract.Send0(&_ICharityWallet.TransactOpts)
 }
 
 // SetCharityAddress is a paid mutator transaction binding the contract method 0x0c9be46d.

@@ -43,11 +43,11 @@ type CGBidEvent struct {
 	PrizeTime			int64
 	RoundNum			int64
 	BidType				int64
-	NumCSTTokens		string
+	CstPrice			string
 	ContractAddr		string
 	LastBidderAddr		string
 	BidPrice			string
-	ERC20_Value			string
+	ERC20_Value			string	// reward of CST tokens earned for bidding
 	Message				string
 }
 type CGDonationEvent struct {
@@ -83,6 +83,7 @@ type CGDonationReceivedEvent struct {
 	ContractAddr		string
 	DonorAddr			string
 	Amount				string
+
 }
 type CGDonationSentEvent struct {
 	EvtId				int64
