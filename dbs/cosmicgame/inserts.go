@@ -1278,6 +1278,32 @@ func (sw *SQLStorageWrapper) Insert_upgraded_event(evt *p.CGUpgraded) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_admin_changed_event(evt *p.CGAdminChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	old_admin_aid:=sw.S.Lookup_or_create_address(evt.OldAdmin,evt.BlockNum,evt.TxId)
+	new_admin_aid:=sw.S.Lookup_or_create_address(evt.NewAdmin,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_admin_changed(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"old_admin_aid,new_admin_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		old_admin_aid,
+		new_admin_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_admin_changed table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_time_increase_changed_event(evt *p.CGTimeIncreaseChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

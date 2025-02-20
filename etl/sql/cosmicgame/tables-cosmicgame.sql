@@ -608,6 +608,17 @@ CREATE TABLE cg_adm_upgraded ( -- Upgraded event (openzeppelin eip-1967)
 	implementation_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_adm_admin_changed ( -- AdminChanged event (openzeppelin eip-1967)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	old_admin_aid	BIGINT NOT NULL,
+	new_admin_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_adm_time_inc( -- ISystemEvents.sol:TimeIncreaseChanged event (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

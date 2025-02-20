@@ -598,6 +598,15 @@ type CGUpgraded struct {	// openzeppelin proxy Upgraded event
 	Contract                string
 	Implementation			string
 }
+type CGAdminChanged struct {	// openzeppelin proxy AdminChanged event
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	OldAdmin				string
+	NewAdmin				string
+}
 type CGTimeIncreaseChanged struct {
 	EvtId                   int64
 	BlockNum                int64

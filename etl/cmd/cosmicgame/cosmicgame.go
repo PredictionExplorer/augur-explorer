@@ -252,6 +252,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_admin_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_marketing_reward_changed[:4]),
 			ContractAid: 0,
 		},
@@ -342,7 +346,7 @@ func find_cosmic_token_transfer(bid_evtlog_id int64) string {
 	// fetches the ERC20::Transfer event which has the id=evtlog-1 because it is
 	//		inserted right before Bid event
 	//		this function panics in case of failure because that would be an invalid database state
-	ee := storagew.S.Get_event_log(bid_evtlog_id-2)	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
+	ee := storagew.S.Get_event_log(bid_evtlog_id-1)	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
 	var log types.Log
 	err := rlp.DecodeBytes(ee.RlpLog,&log)
 	if err!= nil {
@@ -656,9 +660,9 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"DonationSent",log.Data)
+	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"FundsTransferredToCharity",log.Data)
 	if err != nil {
-		Error.Printf("Event DonationSentEvent decode error: %v",err)
+		Error.Printf("Event FundsTransferredToCharity decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -671,7 +675,7 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("DonationSentEvent {\n")
+	Info.Printf("FundsTransferredToCharity{\n")
 	Info.Printf("\tCharity: %v\n",evt.CharityAddr)
 	Info.Printf("\tAmount%v\n",evt.Amount)
 	Info.Printf("}\n")
@@ -975,7 +979,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	}
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWinnerCosmicSignatureNftAwarded",log.Data)
 	if err != nil {
-		Error.Printf("Event RaffleNftWinnerEvent decode error: %v",err)
+		Error.Printf("Event RaffleWinnerCosmicSignatureNftAwarded decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1015,9 +1019,9 @@ func proc_raffle_eth_winner_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWinnerEthPrizeAllocated",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWinnerBidderEthPrizeAllocated",log.Data)
 	if err != nil {
-		Error.Printf("Event RaffleETHWinnerEvent decode error: %v",err)
+		Error.Printf("Event RaffleWinnerBidderEthPrizeAllocated decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1032,7 +1036,7 @@ func proc_raffle_eth_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.EthPrizeAmount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("RaffleETHWinnerEvent{\n")
+	Info.Printf("RaffleWinnerBidderEthPrizeAllocated{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
@@ -1724,9 +1728,9 @@ func proc_num_raffle_eth_winners_bidding_changed_event(log *types.Log,elog *Ethe
 		return
 	}
 	Info.Printf("Processing NumRaffleETHWinnersBiddingChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleTotalEthPrizeAmountPercentageChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NumRaffleEthPrizesForBiddersChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event NumRaffleETHWinnersBiddingChanged decode error: %v",err)
+		Error.Printf("Event NumRaffleEthPrizesForBiddersChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1738,7 +1742,7 @@ func proc_num_raffle_eth_winners_bidding_changed_event(log *types.Log,elog *Ethe
 	evt.NewNumRaffleETHWinnersBidding = eth_evt.NewValue.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("NumRaffleETHWinnersBiddingChanged{\n")
+	Info.Printf("NumRaffleEthPrizesForBiddersChanged{\n")
 	Info.Printf("\tNewNumRaffleETHWinnersBidding: %v\n",evt.NewNumRaffleETHWinnersBidding)
 	Info.Printf("}\n")
 
@@ -2055,6 +2059,39 @@ func proc_proxy_upgraded_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_upgraded_event(evt.EvtId)
     storagew.Insert_upgraded_event(&evt)
 }
+func proc_admin_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGAdminChanged
+	var eth_evt IERC1967AdminChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event AdminChanged doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing AdminChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"AdminChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event AdminChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.OldAdmin = eth_evt.PreviousAdmin.String()
+	evt.NewAdmin = eth_evt.NewAdmin.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("AdminChanged{\n")
+	Info.Printf("\tOldAdmin: %v\n",evt.OldAdmin)
+	Info.Printf("\tNewAdmin: %v\n",evt.NewAdmin)
+	Info.Printf("}\n")
+
+	storagew.Delete_admin_changed_event(evt.EvtId)
+    storagew.Insert_admin_changed_event(&evt)
+}
 func proc_time_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGTimeIncreaseChanged
@@ -2314,9 +2351,9 @@ func proc_cst_dutch_auction_duration_divisor_changed_event(log *types.Log,elog *
 		return
 	}
 	Info.Printf("Processing RoundStartCstAuctionLengthChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RoundStartCstAuctionLengthChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CstDutchAuctionDurationDivisorChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event RoundStartCSTAuctionLengthChanged decode error: %v",err)
+		Error.Printf("Event CstDutchAuctionDurationDivisorChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -2328,7 +2365,7 @@ func proc_cst_dutch_auction_duration_divisor_changed_event(log *types.Log,elog *
 	evt.NewValue  = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("RoundStartCSTAuctionLengthChanged {\n")
+	Info.Printf("CstDutchAuctionDurationDivisorChanged {\n")
 	Info.Printf("\tNewAuctionLength: %v\n",evt.NewValue)
 	Info.Printf("}\n")
 
@@ -2534,7 +2571,7 @@ func proc_ownership_transferred_event(log *types.Log,elog *EthereumEventLog) {
 		contract_code = 2
 	}
 	if bytes.Equal(log.Address.Bytes(),cosmic_token_addr.Bytes()) {
-	contract_code = 3
+		contract_code = 3
 	}
 	if bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		contract_code = 4 
@@ -2622,10 +2659,10 @@ func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEv
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing BiddingCstDutchAuctionBeginningBidPriceMinLimitChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BiddingCstDutchAuctionBeginningBidPriceMinLimitChanged",log.Data)
+	Info.Printf("Processing CstDutchAuctionBeginningBidPriceMinLimitChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CstDutchAuctionBeginningBidPriceMinLimitChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event Initialized decode error: %v",err)
+		Error.Printf("Event CstDutchAuctionBeginningBidPriceMinLimitChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -2637,7 +2674,7 @@ func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEv
 	evt.CstMinLimit = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("BiddingCstDutchAuctionBeginningBidPriceMinLimitChanged{\n")
+	Info.Printf("CstDutchAuctionBeginningBidPriceMinLimitChanged {\n")
 	Info.Printf("\tNewStartingBidPriceCSTMinLimit: %v\n",evt.CstMinLimit)
 	Info.Printf("}\n")
 
@@ -2947,6 +2984,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_proxy_upgraded) {
 		proc_proxy_upgraded_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_admin_changed) {
+		proc_admin_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_time_increase_changed) {
 		proc_time_increase_changed_event(log,evtlog)
