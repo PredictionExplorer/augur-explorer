@@ -50,6 +50,21 @@ async function main() {
 			}
 		}
 	}
+	async function unstake_all_nfts() {
+		let num_a = await stakingWalletCosmicSignatureNft.actionCounter();
+		let num_unstaked = 0;
+		for (let i = 1; i <= num_a; i++) {
+			let action_rec = (await stakingWalletCosmicSignatureNft.stakeActions(i)).toObject();
+			let ownr = action_rec.nftOwnerAddress;
+			let num_s = await stakingWalletCosmicSignatureNft.numStakedNfts();
+			if (ownr == "0x0000000000000000000000000000000000000000") {
+				continue; 
+			}
+			let owner_signer = await hre.ethers.getSigner(ownr);
+			await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i,10);
+			num_unstaked=num_unstaked+1;
+		}
+	}
         [owner, addr1, addr2, addr3, addr4, addr5, ...addrs] =
         await ethers.getSigners();
     const {
@@ -197,7 +212,7 @@ async function main() {
     let prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
     let expectedprizeAmount = (prizeAmount - charityAmount) / 2n;
 
-	stake_available_nfts()
+	await stake_available_nfts()
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
     await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 4", {
         value: bidPrice
@@ -214,7 +229,7 @@ async function main() {
         gasLimit: 3000000
     });
     prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
-	stake_available_nfts();
+	await stake_available_nfts();
     let ts = await cosmicSignature.totalSupply();
     let rn = await cosmicGameProxy.roundNum();
     let oldTotalSupply = ts;
@@ -247,7 +262,7 @@ async function main() {
 		console.log("No NFT was minted for the winner. Bug!")
 		return;
 	}
-	stake_available_nfts();
+	await stake_available_nfts();
     await charityWallet.connect(addr1).send();
 
     tx = {
@@ -347,7 +362,7 @@ async function main() {
     receipt = await tx.wait();
 	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress());
 	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp2.getAddress());
-	stake_available_nfts();
+	await stake_available_nfts();
 
     await cosmicGameProxy
         .connect(owner)
@@ -459,7 +474,7 @@ async function main() {
     });
 
     await ethers.provider.send("evm_mine");
-	stake_available_nfts()
+	await stake_available_nfts()
 
     donationData =
         '{"version":1,"title":"EF donation","message":"Ethereum Foundation is a non-profit and part of a community of organizations and people working to fund protocol development, grow the ecosystem, and advocate for Ethereum.","url":"http://ethereum.org/en"}';
@@ -486,15 +501,11 @@ async function main() {
     await marketingWallet.payReward(addr3.address,hre.ethers.parseEther("5"));
     await marketingWallet.payReward(addr4.address,hre.ethers.parseEther("1"));
     await marketingWallet.payReward(addr1.address,hre.ethers.parseEther("11"));
-    for (let i = 1; i <= 20; i++) {
-        let action_rec = (await stakingWalletCosmicSignatureNft.stakeActions(i)).toObject();
-        let ownr = action_rec.nftOwnerAddress;
-		if (ownr == "0x0000000000000000000000000000000000000000") { continue; }
-        let owner_signer = await hre.ethers.getSigner(ownr);
-        await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i,2);
-    }
+	await unstake_all_nfts()
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
+	await stakingWalletCosmicSignatureNft.tryPerformMaintenance(true,owner.address)
+	await stake_available_nfts()
 
 	await samp1.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
 	await samp1.approve(await prizesWallet.getAddress(),hre.ethers.parseEther("9999999999999999"));
@@ -531,7 +542,7 @@ async function main() {
         try {
             await stakingWalletCosmicSignatureNft.connect(owner_signer).stake(i);
         } catch (e) {
-            console.log("ignoring stake() error for token " + i + ", owner " + ownr);
+            //console.log("ignoring stake() error for token " + i + ", owner " + ownr);
         }
     }
 

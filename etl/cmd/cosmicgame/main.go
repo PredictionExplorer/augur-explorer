@@ -102,6 +102,7 @@ const (
 	STARTING_CST_MIN_LIM	= "4e8c80fe79d13b8663de9f6981925ae24c498cc07b0ebd4f4789fa78ca17caff"
 	FUNDS_TO_CHARITY		= "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d"
 	DELAY_DURATION_ROUND	= "b0868a729f47ae3829aaafe3ca2975d3db2148553c854112f598be6d91ef0d28"
+	STAKING_STATE_RESET		= "8a77a30ae54ca88ceda5f17cd3679c1b868abd2c6d36b67bcbe5e9beac7ec648"
 )
 var (
 	eclient 				*ethclient.Client
@@ -163,6 +164,7 @@ var (
 	evt_funds2charity,_				= hex.DecodeString(FUNDS_TO_CHARITY)
 	evt_delay_duration_round,_		= hex.DecodeString(DELAY_DURATION_ROUND)
 	evt_round_started,_				= hex.DecodeString(ROUND_STARTED)
+	evt_staking_state_reset,_		= hex.DecodeString(STAKING_STATE_RESET)
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)

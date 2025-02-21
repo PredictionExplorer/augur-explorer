@@ -66,6 +66,7 @@ DROP TABLE IF EXISTS
 	cg_adm_base_uri_cs,
 	cg_adm_ownership,
 	cg_adm_initialized,
+	cg_adm_state_reset,
 	cg_fund_transf_err,
 	cg_erc20_transf_err,
 	cg_funds_to_charity,

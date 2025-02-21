@@ -1753,6 +1753,29 @@ func (sw *SQLStorageWrapper) Insert_initialized_event(evt *p.CGInitialized) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_state_reset_event(evt *p.CGStateReset) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_state_reset(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"num_resets" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NumResets,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_state_reset table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_cst_min_limit_event(evt *p.CGCstMinLimit) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

@@ -763,6 +763,14 @@ type CGInitialized struct {
 	Contract                string
 	Version					int64
 }
+type CGStateReset struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NumResets				int64
+}
 type CGCstMinLimit struct {
 	EvtId                   int64
 	BlockNum                int64

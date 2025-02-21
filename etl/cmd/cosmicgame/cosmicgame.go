@@ -268,6 +268,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_staking_state_reset[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_chrono_warrior[:4]),
 			ContractAid: 0,
 		},
@@ -2650,6 +2654,37 @@ func proc_initialized_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_initialized_event(evt.EvtId)
     storagew.Insert_initialized_event(&evt)
 }
+func proc_staking_state_reset_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGStateReset
+	var eth_evt IStakingWalletCosmicSignatureNftStateReset
+
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
+		Info.Printf("Event StateReset doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing StateReset event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := staking_wallet_cst_abi.UnpackIntoInterface(&eth_evt,"StateReset",log.Data)
+	if err != nil {
+		Error.Printf("Event StateReset decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NumResets= int64(eth_evt.NumStateResets.Int64())
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("StateReset{\n")
+	Info.Printf("\tNumStateResets: %v\n",evt.NumResets)
+	Info.Printf("}\n")
+
+	storagew.Delete_state_reset_event(evt.EvtId)
+    storagew.Insert_state_reset_event(&evt)
+}
 func proc_starting_bid_price_cst_min_limit_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGCstMinLimit
@@ -3039,6 +3074,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initialized) {
 		proc_initialized_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_state_reset) {
+		proc_staking_state_reset_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_min_limit) {
 		proc_starting_bid_price_cst_min_limit_event(log,evtlog)
