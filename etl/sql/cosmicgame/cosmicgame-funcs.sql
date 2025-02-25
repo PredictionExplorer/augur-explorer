@@ -199,7 +199,7 @@ BEGIN
 	END IF;
 
 	IF NEW.round_num <> -1 THEN
-		UPDATE cg_prize_claim SET donation_evt_id=NEW.id WHERE round_num=NEW.round_num;
+		UPDATE cg_prize_claim SET donation_evt_id=NEW.evtlog_id WHERE round_num=NEW.round_num;
 	END IF;
 	RETURN NEW;
 END;

@@ -699,8 +699,18 @@ CREATE TABLE cg_adm_acttime ( -- ISystemEvents.sol:ActivationTimeChanged event (
 	new_atime		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_auclen ( -- ISystemEvents.sol:CstDutchAuctionDurationDivisorChanged
+CREATE TABLE cg_adm_cst_auclen ( -- ISystemEvents.sol:CstDutchAuctionDurationDivisorChanged
 	-- Previously ISystemEvents.sol:RoundStartCSTAuctionLengthChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_len			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_eth_auclen ( -- ISystemEvents.sol:EthDutchAuctionDurationDivisorChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,

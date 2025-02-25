@@ -680,7 +680,15 @@ type CGETHCSTBidRatioChanged struct {
 	NewETHToCSTBidRatio		string
 }
 //type CGRoundStartCSTAuctionLengthChanged struct {
-type CGDutchAuctionDurationDivisorChanged struct {
+type CGCstDutchAuctionDurationDivisorChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
+type CGEthDutchAuctionDurationDivisorChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64

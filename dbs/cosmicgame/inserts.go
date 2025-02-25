@@ -1511,11 +1511,11 @@ func (sw *SQLStorageWrapper) Insert_ethcst_bid_ratio_changed_event(evt *p.CGETHC
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event(evt *p.CGDutchAuctionDurationDivisorChanged) {
+func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event(evt *p.CGCstDutchAuctionDurationDivisorChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_auclen (" +
+	query = "INSERT INTO cg_adm_cst_auclen (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_len" +
 			") VALUES (" +
@@ -1530,7 +1530,30 @@ func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event
 		evt.NewValue,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_auclen table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_auclen table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_eth_auction_duration_divisor_changed_event(evt *p.CGEthDutchAuctionDurationDivisorChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_eth_auclen (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_len" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewValue,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_eth_auclen table: %v\n",err))
 		os.Exit(1)
 	}
 }

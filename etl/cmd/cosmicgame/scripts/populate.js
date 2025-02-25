@@ -401,6 +401,9 @@ async function main() {
         .connect(owner)
         .setCosmicSignatureNft(await cosmicSignature.getAddress());
     await cosmicGameProxy.connect(owner).setCstDutchAuctionDurationDivisor(13 * 3600);
+	let tmpval = await cosmicGameProxy.ethDutchAuctionDurationDivisor();
+	tmpval = tmpval + 11n;
+	await cosmicGameProxy.connect(owner).setEthDutchAuctionDurationDivisor(tmpval);
     await cosmicGameProxy.connect(owner).setCstRewardAmountMultiplier(5);
     await cosmicGameProxy
         .connect(owner)

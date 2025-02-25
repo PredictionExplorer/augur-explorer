@@ -90,6 +90,7 @@ const (
 	INITIAL_SECONDS_UNTIL_PRIZE_CHANGED = "b5edd1f338b34c8f5dd3b1c5cc12f05653c495713c282bf588d34cf14fad0f89"
 //	INITIAL_BID_AMOUNT_FRACTION_CHANGED = "3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628"		DISCONTINUED
 	ROUND_ACTIVATION_TIME_CHANGED = "9a2159c1f277ddd727551baedc6a6c4cba77cc5219c8563ee3b15fb67548d89b"
+	ETH_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED=	"fdf6043c89a5f304289122dcc9f8bd78bb111b5d4f409e2fc2e6c141a1110b79"
 	CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED= "c95d03f6c735a9e59c760fdb88e585aafe0a31b5c034fc7838155287ee32212f" // previosly ROUND_START_AUCTION_LENGTH_CHANGED = "23dabd88e0a182dcd593bec053f3867f1bd6afc77d470cbc1ef48ad189bfd676"
 	MARKETING_REWARD_SENT	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486"
 	MARKETING_REWARD_CHANGED = "aa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f36489221"
@@ -147,6 +148,7 @@ var (
 //	evt_initial_bid_amount_fraction_changed,_	= hex.DecodeString(INITIAL_BID_AMOUNT_FRACTION_CHANGED)		DISCONTINUED
 	evt_activation_time_changed,_	= hex.DecodeString(ROUND_ACTIVATION_TIME_CHANGED)
 	evt_cst_dutch_auction_duration_divisor_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED) // previously	evt_round_start_auction_length_changed
+	evt_eth_dutch_auction_duration_divisor_changed,_ = hex.DecodeString(ETH_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED)
 	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED)
 	evt_proxy_upgraded,_	= hex.DecodeString(PROXY_UPGRADED)
 	evt_admin_changed,_		= hex.DecodeString(ADMIN_CHANGED)

@@ -172,6 +172,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_eth_dutch_auction_duration_divisor_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_donation_received_event[:4]),
 			ContractAid: 0,
 		},
@@ -2347,7 +2351,7 @@ func proc_activation_time_changed_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_cst_dutch_auction_duration_divisor_changed_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGDutchAuctionDurationDivisorChanged
+	var evt CGCstDutchAuctionDurationDivisorChanged
 	var eth_evt CosmicSignatureGameCstDutchAuctionDurationDivisorChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
@@ -2375,6 +2379,37 @@ func proc_cst_dutch_auction_duration_divisor_changed_event(log *types.Log,elog *
 
 	storagew.Delete_round_start_cst_auction_length_changed_event(evt.EvtId)
     storagew.Insert_round_start_cst_auction_length_changed_event(&evt)
+}
+func proc_eth_dutch_auction_duration_divisor_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGEthDutchAuctionDurationDivisorChanged
+	var eth_evt CosmicSignatureGameEthDutchAuctionDurationDivisorChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing EthDutchAuctionDurationDivisorChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthDutchAuctionDurationDivisorChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event EthDutchAuctionDurationDivisorChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue  = eth_evt.NewValue.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("EthDutchAuctionDurationDivisorChanged {\n")
+	Info.Printf("\tNewDivisor: %v\n",evt.NewValue)
+	Info.Printf("}\n")
+
+	storagew.Delete_eth_dutch_auction_duration_divisor_changed_event(evt.EvtId)
+    storagew.Insert_eth_auction_duration_divisor_changed_event(&evt)
 }
 func proc_marketing_reward_changed(log *types.Log,elog *EthereumEventLog) {
 
@@ -3050,6 +3085,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_dutch_auction_duration_divisor_changed) {
 		//proc_round_start_cst_auction_length_changed_event(log,evtlog) previous
 		proc_cst_dutch_auction_duration_divisor_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_dutch_auction_duration_divisor_changed) {
+		proc_eth_dutch_auction_duration_divisor_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_dutch_auction_duration_divisor_changed) {
 		proc_erc20_token_reward_changed_event(log,evtlog)

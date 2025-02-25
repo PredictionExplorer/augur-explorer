@@ -47,7 +47,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.round_num "+
 				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
 				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
-				"LEFT JOIN LATERAL (" +
+				"JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 						"JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
