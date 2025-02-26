@@ -2203,9 +2203,9 @@ func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 		return
 	}
 	Info.Printf("Processing PriceIncreaseChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PriceIncreaseChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NextEthBidPriceIncreaseDivisorChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event PriceIncreaseChanged decode error: %v",err)
+		Error.Printf("Event NextEthBidPriceIncreaseDivisorChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -2217,7 +2217,7 @@ func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.NewPriceIncrease = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("PriceIncreaseChanged{\n")
+	Info.Printf("BiddingNextEthBidPriceIncreaseDivisorChanged{\n")
 	Info.Printf("\tNewPriceIncreasse: %v\n",evt.NewPriceIncrease)
 	Info.Printf("}\n")
 
@@ -2466,7 +2466,7 @@ func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.NewReward = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("TokenRewardChanged{\n")
+	Info.Printf("CstRewardAmountForBiddingChanged{\n")
 	Info.Printf("\tNewReward: %v\n",evt.NewReward)
 	Info.Printf("}\n")
 
@@ -3089,7 +3089,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_dutch_auction_duration_divisor_changed) {
 		proc_eth_dutch_auction_duration_divisor_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_dutch_auction_duration_divisor_changed) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_reward_for_bidding_changed) {
 		proc_erc20_token_reward_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_reward_mult) {
