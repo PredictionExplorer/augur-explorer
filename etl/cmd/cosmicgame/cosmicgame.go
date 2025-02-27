@@ -1643,9 +1643,9 @@ func proc_raffle_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 		return
 	}
 	Info.Printf("Processing RafflePercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleTotalEthPrizeAmountPercentageChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleTotalEthPrizeAmountForBiddersPercentageChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event RafflePercentageChanged decode error: %v",err)
+		Error.Printf("Event RaffleTotalEthPrizeAmountForBiddersPercentageChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1657,7 +1657,7 @@ func proc_raffle_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 	evt.NewRafflePercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("RafflePercentageChanged {\n")
+	Info.Printf("RaffleTotalEthPrizeAmountForBiddersPercentageChanged{\n")
 	Info.Printf("\tNewRafflePercentage: %v\n",evt.NewRafflePercentage)
 	Info.Printf("}\n")
 
@@ -1674,9 +1674,9 @@ func proc_staking_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 		return
 	}
 	Info.Printf("Processing StakingPercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingTotalEthRewardAmountPercentageChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event StakingPercentageChanged decode error: %v",err)
+		Error.Printf("Event CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1688,7 +1688,7 @@ func proc_staking_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 	evt.NewStakingPercentage= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("StakingPercentageChanged {\n")
+	Info.Printf("CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged{\n")
 	Info.Printf("\tNewStakingPercentage: %v\n",evt.NewStakingPercentage)
 	Info.Printf("}\n")
 
@@ -1982,10 +1982,10 @@ func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventL
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing CosmicTokenAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TokenContractAddressChanged",log.Data)
+	Info.Printf("Processing CosmicSignatureTokenAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureTokenAddressChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event TokenContractAddressChanged decode error: %v",err)
+		Error.Printf("Event CosmicSignatureTokenAddressChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1997,7 +1997,7 @@ func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventL
 	evt.NewCosmicToken= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("TokenContractAddressChanged {\n")
+	Info.Printf("CosmicSignatureTokenAddressChanged{\n")
 	Info.Printf("\tNewCosmicToken: %v\n",evt.NewCosmicToken)
 	Info.Printf("}\n")
 
@@ -3049,7 +3049,6 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 		proc_cosmic_token_address_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cossig_address_changed) {
-		Info.Printf("processing nft changed event (topic=%v): %v\n",evt_cossig_address_changed,log)
 		proc_cosmic_signature_address_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_proxy_upgraded) {
@@ -3070,9 +3069,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_price_increase_changed) {
 		proc_price_increase_changed_event(log,evtlog)
 	}
-/*	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nanoseconds_extra_changed) {
-		proc_nanoseconds_extra_changed_event(log,evtlog)
-	} DISCONTINUED */
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_microsecond_increase_changed) {
+		proc_mainprize_microsecond_increase_changed(log,evtlog)
+	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_seconds_until_prize_changed) {
 		proc_initial_seconds_until_prize_changed_event(log,evtlog)
 	}
