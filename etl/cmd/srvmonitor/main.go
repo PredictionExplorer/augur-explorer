@@ -68,13 +68,14 @@ const (
 	WAIT_DB_BLOCK_NUM = 60				// seconds to wait to detect incremental database update
 	WAIT_BETWEEN_UPDATES = 60			// seconds to wait after each poll for data
 	WAIT_BETWEEN_UPDATES_DFCMD = 600	// seconds to wait after each poll for data
+	NUM_RPC_NODES		= 10			// update after adding a new RPC?_NAME variable
 )
 var (
 	Error   *log.Logger
 	Info	*log.Logger
 	storage *SQLStorage
 
-	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6,rpc7,rpc8		RPCStatus
+	rpc0,rpc1,rpc2,rpc3,rpc4,rpc5,rpc6,rpc7,rpc8,rpc9		RPCStatus
 	Official_mainnet_ptr								*RPCStatus = nil
 	Official_arbitrum_ptr								*RPCStatus = nil
 	Official_sepolia_arb_ptr							*RPCStatus = nil
@@ -113,9 +114,10 @@ func check_rpc_services() {
 	init_rpc_status_struct(&rpc6,os.Getenv("RPC6_NAME"),os.Getenv("RPC6_URL"),os.Getenv("RPC6_CHAINID"),1,7)
 	init_rpc_status_struct(&rpc7,os.Getenv("RPC7_NAME"),os.Getenv("RPC7_URL"),os.Getenv("RPC7_CHAINID"),1,8)
 	init_rpc_status_struct(&rpc8,os.Getenv("RPC8_NAME"),os.Getenv("RPC8_URL"),os.Getenv("RPC8_CHAINID"),1,9)
+	init_rpc_status_struct(&rpc9,os.Getenv("RPC9_NAME"),os.Getenv("RPC9_URL"),os.Getenv("RPC9_CHAINID"),1,10)
 	for {
 		var wg_rpcs sync.WaitGroup
-		wg_rpcs.Add(9);
+		wg_rpcs.Add(NUM_RPC_NODES);
 
 		go check_rpc_status(&rpc0,&wg_rpcs); 
 		go check_rpc_status(&rpc1,&wg_rpcs); 
@@ -126,6 +128,7 @@ func check_rpc_services() {
 		go check_rpc_status(&rpc6,&wg_rpcs); 
 		go check_rpc_status(&rpc7,&wg_rpcs); 
 		go check_rpc_status(&rpc8,&wg_rpcs); 
+		go check_rpc_status(&rpc9,&wg_rpcs); 
 		wg_rpcs.Wait() 
 		print_current_rpc_status()
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
@@ -133,10 +136,10 @@ func check_rpc_services() {
 }
 func check_layer1() {
 
-	init_layer1_status_struct(&db1,os.Getenv("DB_L1_NAME_SRV1"),os.Getenv("DB_L1_HOST_SRV1"),os.Getenv("DB_L1_DBNAME_SRV1"),os.Getenv("DB_L1_USER_SRV1"),os.Getenv("DB_L1_PASS_SRV1"),1,12)
-	init_layer1_status_struct(&db2,os.Getenv("DB_L1_NAME_SRV2"),os.Getenv("DB_L1_HOST_SRV2"),os.Getenv("DB_L1_DBNAME_SRV2"),os.Getenv("DB_L1_USER_SRV2"),os.Getenv("DB_L1_PASS_SRV2"),1,13)
-	init_layer1_status_struct(&db3,os.Getenv("DB_L1_NAME_SRV3"),os.Getenv("DB_L1_HOST_SRV3"),os.Getenv("DB_L1_DBNAME_SRV3"),os.Getenv("DB_L1_USER_SRV3"),os.Getenv("DB_L1_PASS_SRV3"),1,14)
-	init_layer1_status_struct(&db4,os.Getenv("DB_L1_NAME_SRV4"),os.Getenv("DB_L1_HOST_SRV4"),os.Getenv("DB_L1_DBNAME_SRV4"),os.Getenv("DB_L1_USER_SRV4"),os.Getenv("DB_L1_PASS_SRV4"),1,15)
+	init_layer1_status_struct(&db1,os.Getenv("DB_L1_NAME_SRV1"),os.Getenv("DB_L1_HOST_SRV1"),os.Getenv("DB_L1_DBNAME_SRV1"),os.Getenv("DB_L1_USER_SRV1"),os.Getenv("DB_L1_PASS_SRV1"),1,13)
+	init_layer1_status_struct(&db2,os.Getenv("DB_L1_NAME_SRV2"),os.Getenv("DB_L1_HOST_SRV2"),os.Getenv("DB_L1_DBNAME_SRV2"),os.Getenv("DB_L1_USER_SRV2"),os.Getenv("DB_L1_PASS_SRV2"),1,14)
+	init_layer1_status_struct(&db3,os.Getenv("DB_L1_NAME_SRV3"),os.Getenv("DB_L1_HOST_SRV3"),os.Getenv("DB_L1_DBNAME_SRV3"),os.Getenv("DB_L1_USER_SRV3"),os.Getenv("DB_L1_PASS_SRV3"),1,15)
+	init_layer1_status_struct(&db4,os.Getenv("DB_L1_NAME_SRV4"),os.Getenv("DB_L1_HOST_SRV4"),os.Getenv("DB_L1_DBNAME_SRV4"),os.Getenv("DB_L1_USER_SRV4"),os.Getenv("DB_L1_PASS_SRV4"),1,16)
 
 	for {
 		var wg_db sync.WaitGroup
@@ -206,14 +209,14 @@ func main() {
 	defer termbox.Close()
 	
 	fmt.Printf("\n\n\n\n\n\n")
-/*
+
 	go check_rpc_services()
 	go check_layer1()
 	go show_disk_usage_statistics()
 	go show_application_layer_last_blocks()
-*/
+
 //	check_randomwalk_resource_availability()
 //	check_cosmicgame_resource_availability()
-//	send_alarm_slack(SEND_ALARMS_INTERVAL,"sample message from golang")
+//	send_alarm_slack(SEND_ALARMS_INTERVAL,"sample message from golang")	Slack alarms is a todo
 	termbox.PollEvent()
 }

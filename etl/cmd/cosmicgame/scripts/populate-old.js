@@ -1,54 +1,20 @@
-const { ethers } = require("hardhat");
-require("./rpc-helpers.js");
-async function customGetSigners() {
-
-	const privateKeys = [
-		"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-		"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
-		"0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
-		"0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
-		"0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
-		"0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba"
-	];
-	const signers = privateKeys.map(key => new ethers.Wallet(key, ethers.provider));
-//	[owner, addr1, addr2, addr3, addr4, addr5, ...addrs] = await ethers.getSigners();
-	return [signers[0],signers[1],signers[2],signers[3],signers[4],signers[5]];
-
-}
-async function getCosmicSignatureGameContract(cosmicSignatureGameContractName = "CosmicSignatureGame") {
-    const cosmicSignatureGameAddr = process.env.CADDR;
-    if (typeof cosmicSignatureGameAddr === "undefined" || cosmicSignatureGameAddr.length !== 42) {
-        console.log("CADDR environment variable does not contain contract address of CosmicGame contract.");
-        process.exit(1);
-    }
-
-    const cosmicSignatureGame = await hre.ethers.getContractAt(cosmicSignatureGameContractName, cosmicSignatureGameAddr);
-
-    return cosmicSignatureGame;
-}
-async function getERC20SampleContracts(sampContractName = "Samp") {
-	// gets address of dummy token contract (for donation testing)
-    const sampContract1Addr = process.env.TSAMP1;
-    const sampContract2Addr = process.env.TSAMP2;
-    if (typeof sampContract1Addr === "undefined" || sampContract1Addr.length !== 42) {
-        console.log("TSAMP1 environment variable does not contain contract address of token sample contract.");
-        process.exit(1);
-    }
-    if (typeof sampContract2Addr === "undefined" || sampContract2Addr.length !== 42) {
-        console.log("TSAMP2 environment variable does not contain contract address of token sample contract.");
-        process.exit(1);
-    }
-
-    const sampContract1 = await hre.ethers.getContractAt(sampContractName, sampContract1Addr);
-    const sampContract2 = await hre.ethers.getContractAt(sampContractName, sampContract2Addr);
-
-    return [sampContract1,sampContract2];
-}
-async function getRandomWalkNft(game) {
-
-	
-}
-
+//const hre = require("hardhat");
+const {
+    basicDeployment
+} = require("./Deploy.js");
+const bidParamsEncoding = {
+    type: "tuple(string,int256)",
+    name: "bidparams",
+    components: [{
+            name: "msg",
+            type: "string"
+        },
+        {
+            name: "rwalk",
+            type: "int256"
+        },
+    ],
+};
 async function main() {
     async function mint_rwalk(a) {
             tokenPrice = await randomWalkNFT.getMintPrice();
@@ -99,12 +65,56 @@ async function main() {
 			num_unstaked=num_unstaked+1;
 		}
 	}
-	[owner, addr1, addr2, addr3, addr4, addr5] = await customGetSigners();
-    cosmicGameProxy = await getCosmicSignatureGameContract()
-	const [ samp1,samp2 ] = await getERC20SampleContracts();
+        [owner, addr1, addr2, addr3, addr4, addr5, ...addrs] =
+        await ethers.getSigners();
+    const {
+        cosmicGameProxy,
+        cosmicToken,
+        cosmicSignature,
+        charityWallet,
+        cosmicDAO,
+        prizesWallet,
+        randomWalkNFT,
+        stakingWalletCosmicSignatureNft,
+        stakingWalletRandomWalkNft,
+        marketingWallet,
+        implementationAddr,
+    } = await basicDeployment(owner, "", 0, "", false, true);
+    console.log("Addresses set");
+    console.log(
+        "INSERT INTO cg_contracts VALUES('" +
+        (await cosmicGameProxy.getAddress()) +
+        "','" +
+        (await cosmicSignature.getAddress()) +
+        "','" +
+        (await cosmicToken.getAddress()) +
+        "','" +
+        (await cosmicDAO.getAddress()) +
+        "','" +
+        (await charityWallet.getAddress()) +
+        "','" +
+        (await prizesWallet.getAddress()) +
+        "','" +
+        (await randomWalkNFT.getAddress()) +
+        "','" +
+        (await stakingWalletCosmicSignatureNft.getAddress()) +
+        "','" +
+        (await stakingWalletRandomWalkNft.getAddress()) +
+        "','" +
+        (await marketingWallet.getAddress()) +
+        "','" +
+        implementationAddr +
+        "')"
+    );
+	const Samp = await hre.ethers.getContractFactory("Samp");
+	const samp1 = await Samp.deploy();
+	await samp1.waitForDeployment();
+	let samp1Addr = await samp1.getAddress();
+	const samp2 = await Samp.deploy();
+	await samp2.waitForDeployment();
+	let samp2Addr = await samp2.getAddress();
 
     let donationAmount = hre.ethers.parseEther("100");
-	console.log(addr5);
     await cosmicGameProxy.connect(addr5).donateEth({
         value: donationAmount
     });

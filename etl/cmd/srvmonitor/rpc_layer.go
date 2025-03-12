@@ -144,5 +144,6 @@ func print_current_rpc_status() {
 	print_rpc_status_line(&rpc6)
 	print_rpc_status_line(&rpc7)
 	print_rpc_status_line(&rpc8)
+	print_rpc_status_line(&rpc9)
 	termbox.Flush()
 }
