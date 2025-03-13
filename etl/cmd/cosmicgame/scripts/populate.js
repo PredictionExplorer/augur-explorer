@@ -50,7 +50,7 @@ async function getRandomWalkNft(game) {
 }
 
 async function main() {
-    async function mint_rwalk(a) {
+    async function mint_rwalk(randomWalkNFT,a) {
             tokenPrice = await randomWalkNFT.getMintPrice();
             let tx = await randomWalkNFT.connect(a).mint({
                 value: tokenPrice
@@ -61,7 +61,7 @@ async function main() {
             let parsed_log = randomWalkNFT.interface.parseLog(log);
             let token_id = parsed_log.args[0];
             return token_id;
-        }
+ 	}       
 	async function stake_available_nfts() {
 		let tscst = await cosmicSignature.totalSupply();
 		for (let i = 0; i < tscst; i++) {
@@ -80,7 +80,6 @@ async function main() {
 			try {
 				await stakingWalletCosmicSignatureNft.connect(owner_signer).stake(i);
 			} catch (e) {
-			//	console.log("stake_available_nfts() stake() error: ",e);
 			}
 		}
 	}
@@ -100,11 +99,17 @@ async function main() {
 		}
 	}
 	[owner, addr1, addr2, addr3, addr4, addr5] = await customGetSigners();
-    cosmicGameProxy = await getCosmicSignatureGameContract()
+    const cosmicGameProxy = await getCosmicSignatureGameContract()
 	const [ samp1,samp2 ] = await getERC20SampleContracts();
+	const rwalkAddr = await cosmicGameProxy.randomWalkNft();
+	const randomWalkNFT = await ethers.getContractAt("RandomWalkNFT",rwalkAddr);
+	const stakingWalletCstAddr = await cosmicGameProxy.stakingWalletCosmicSignatureNft();
+	const stakingWalletCst = await ethers.getContractAt("StakingWalletCosmicSignatureNft",stakingWalletCstAddr);
+	const stakingWalletRWalkAddr = await cosmicGameProxy.stakingWalletRandomWalkNft();
+	const stakingWalletRandomWalkNft = await ethers.getContractAt("StakingWalletRandomWalkNft",stakingWalletRWalkAddr);
 
+	let token_id;
     let donationAmount = hre.ethers.parseEther("100");
-	console.log(addr5);
     await cosmicGameProxy.connect(addr5).donateEth({
         value: donationAmount
     });
@@ -121,38 +126,66 @@ async function main() {
         .donateEthWithInfo(donationData, {
             value: hre.ethers.parseEther("90")
         });
+    console.log("Donation complete");
 
 	let numStakeActions = 5
     for (let i = 0; i < numStakeActions; i++) {
-        let token_id = await mint_rwalk(addr1);
+        let token_id = await mint_rwalk(randomWalkNFT,addr1);
         await randomWalkNFT
             .connect(addr1)
             .setApprovalForAll(await stakingWalletRandomWalkNft.getAddress(), true);
-        await stakingWalletRandomWalkNft.connect(addr1).stake(token_id);
+		let txdata = stakingWalletRandomWalkNft.interface.encodeFunctionData("stake",[token_id]);
+		const tx = await addr1.sendTransaction({
+			to: await stakingWalletRandomWalkNft.getAddress(),
+			data: txdata,
+			gasLimit: 500000
+		});
+		await tx.wait();
+        //await stakingWalletRandomWalkNft.connect(addr1).stake(token_id);
     }
     for (let i = 0; i < 5; i++) {
-        let token_id = await mint_rwalk(addr2);
+        let token_id = await mint_rwalk(randomWalkNFT,addr2);
         await randomWalkNFT
             .connect(addr2)
             .setApprovalForAll(await stakingWalletRandomWalkNft.getAddress(), true);
-        await stakingWalletRandomWalkNft.connect(addr2).stake(token_id);
+		let txdata = stakingWalletRandomWalkNft.interface.encodeFunctionData("stake",[token_id]);
+		const tx = await addr2.sendTransaction({
+			to: await stakingWalletRandomWalkNft.getAddress(),
+			data: txdata,
+			gasLimit: 500000
+		});
+		await tx.wait();
+        //await stakingWalletRandomWalkNft.connect(addr2).stake(token_id);
     }
-    for (let i = 0; i < 50; i++) {
-        let token_id = await mint_rwalk(addr3);
+    for (let i = 0; i < 15; i++) {
+        let token_id = await mint_rwalk(randomWalkNFT,addr3);
         await randomWalkNFT
             .connect(addr3)
             .setApprovalForAll(await stakingWalletRandomWalkNft.getAddress(), true);
-        await stakingWalletRandomWalkNft.connect(addr3).stake(token_id);
+		let txdata = stakingWalletRandomWalkNft.interface.encodeFunctionData("stake",[token_id]);
+		const tx = await addr3.sendTransaction({
+			to: await stakingWalletRandomWalkNft.getAddress(),
+			data: txdata,
+			gasLimit: 500000
+		});
+		await tx.wait();
+        //await stakingWalletRandomWalkNft.connect(addr3).stake(token_id);
     }
-
     let prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
-    console.log("Donation complete");
 
     const contractBalance = await ethers.provider.getBalance(
         await cosmicGameProxy.getAddress()
     );
     let bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
-    await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 1", { value: bidPrice + 1000n }); // this works
+	let txdata = cosmicGameProxy.interface.encodeFunctionData("bidWithEth",[-1,"bid 1"]);
+	let tx = await addr1.sendTransaction({
+		to: await cosmicGameProxy.getAddress(),
+		data: txdata,
+		gasLimit: 500000,
+		value: bidPrice + 1000n,
+	});
+	await tx.wait();
+    //await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 1", { value: bidPrice + 1000n }); // this works
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
     await cosmicGameProxy.connect(addr2).bidWithEth(-1,"bid 1", { value: bidPrice + 1000n }); // this works
 
@@ -164,7 +197,7 @@ async function main() {
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
     await cosmicGameProxy.connect(addr1).bidWithEth(-1, "bid 2", { value: bidPrice });
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
-    let token_id = await mint_rwalk(owner);
+    token_id = await mint_rwalk(randomWalkNFT,owner);
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
     await cosmicGameProxy.connect(owner).bidWithEth(Number(token_id),"bidWithRWlk", {value: bidPrice });
 
@@ -287,7 +320,7 @@ async function main() {
         .setApprovalForAll(await cosmicGameProxy.getAddress(), true);
 
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
-    token_id = await mint_rwalk(addr1);
+    token_id = await mint_rwalk(randomWalkNFT,addr1);
 	await randomWalkNFT.connect(addr1).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr1)
@@ -295,7 +328,7 @@ async function main() {
             value: bidPrice,
         });
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
-    token_id = await mint_rwalk(addr2);
+    token_id = await mint_rwalk(randomWalkNFT,addr2);
 	await randomWalkNFT.connect(addr2).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr2)
@@ -303,7 +336,7 @@ async function main() {
             value: bidPrice,
         });
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
-    token_id = await mint_rwalk(addr3);
+    token_id = await mint_rwalk(randomWalkNFT,addr3);
 	await randomWalkNFT.connect(addr3).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr3)
@@ -311,7 +344,7 @@ async function main() {
             value: bidPrice,
         });
     bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
-    token_id = await mint_rwalk(addr3);
+    token_id = await mint_rwalk(randomWalkNFT,addr3);
 	await randomWalkNFT.connect(addr3).setApprovalForAll(await prizesWallet.getAddress(), true);
     await cosmicGameProxy
         .connect(addr3)
@@ -320,14 +353,14 @@ async function main() {
         });
     await ethers.provider.send("evm_increaseTime", [36000]);
     await ethers.provider.send("evm_mine");
-    token_id = await mint_rwalk(addr3);
+    token_id = await mint_rwalk(randomWalkNFT,addr3);
 	let cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
     await cosmicGameProxy
         .connect(addr3)
         .bidWithCstAndDonateNft(cstPrice,"cst bid + donate1", await randomWalkNFT.getAddress(), token_id);
     await ethers.provider.send("evm_increaseTime", [36000]);
     await ethers.provider.send("evm_mine");
-    token_id = await mint_rwalk(addr3);
+    token_id = await mint_rwalk(randomWalkNFT,addr3);
 	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
     await cosmicGameProxy
         .connect(addr3)
