@@ -305,7 +305,20 @@ type CGUnstakeActionCST struct {
 	Reward				string
 	Staker 				string
 }
-type CGNftStaked struct {
+type CGNftStakedCst struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	ActionId			int64
+	NftId				int64
+	NumStakedNfts		int64
+	StakerAddress		string
+	RewardPerStaker		string
+}
+type CGNftStakedRWalk struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -327,7 +340,6 @@ type CGEthDeposit struct {
 	RoundNum			int64
 	DepositTime			int64
 	DepositId			int64
-	DepositNum			int64
 	NumStakedNfts		int64
 	Amount				string
 	AmountPerStaker		string
@@ -346,7 +358,7 @@ type CGClaimReward struct {
 	Reward				string	
 	Staker				string
 }
-type CGRewardPaid struct {
+/*type CGRewardPaid struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -358,7 +370,7 @@ type CGRewardPaid struct {
 	RewardAmount		string	
 	StakerAddress		string
 	MaxUnpaidEthDepositIndex	int64
-}
+}*/
 type CGStakeActionRWalk struct {
 	EvtId				int64
 	BlockNum			int64
@@ -412,7 +424,6 @@ type CGNftUnstakedCst struct {
 	NumStakedNfts		int64
 	StakerAddress		string
 	RewardAmount		string
-	MaxUnpaidDepositIndex	int64
 }
 type CGMarketingRewardSent struct {
 	EvtId				int64

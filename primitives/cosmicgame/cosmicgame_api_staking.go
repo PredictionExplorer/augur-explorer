@@ -377,13 +377,11 @@ type CGNftUnstakedInfoRec struct {
 	StakerAddr					string
 	RewardAmount				string
 	RewardAmountEth				float64
-	MaxUnpaidDepositIndex		int64
 }
 type CGNftStakeUnstakeCombined struct {
 	Stake						CGNftStakedInfoRec
 	Unstake						CGNftUnstakedInfoRec
 	DepositId					int64
-	DepositIndex				int64
 	DepositTimeStamp			int64
 	DepositDateTime				string
 	RoundNum					int64
@@ -431,7 +429,6 @@ type CGRewardPaidRec struct {
 	StakerAddr					string
 	RewardAmount				string
 	RewardAmountEth				float64
-	UnpaidDepositIndex		int64
 }
 type CGStakingCstRewardPerTokenRec struct {
 	TokenId						int64

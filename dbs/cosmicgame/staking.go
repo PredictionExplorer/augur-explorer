@@ -1028,7 +1028,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 				"sa_id,sa_evtlog_id,sa_block_num,sa_tx_id,sa_tx_hash,sa_time_stamp,sa_date_time, "+
 				"sa_action_id,sa_token_id,sa_num_staked_nfts,"+
 				"ua_id,ua_evtlog_id,ua_block_num,ua_tx_id,ua_tx_hash,ua_time_stamp,ua_date_time, "+
-				"ua_action_id,ua_token_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,ua_unpaid_deposit,"+
+				"ua_action_id,ua_token_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,"+
 				"d.id,d.evtlog_id,d.block_num,tx.id,tx.tx_hash,EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp,"+
 				"d.deposit_id,d.round_num,d.num_staked_nfts,d.amount,d.amount/1e18,amount_per_staker/1e18,"+
 				"str.reward,"+
@@ -1042,7 +1042,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 						"sa.id sa_id,sa.evtlog_id sa_evtlog_id,sa.block_num sa_block_num,satx.id sa_tx_id,satx.tx_hash sa_tx_hash,EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT sa_time_stamp,sa.time_stamp sa_date_time, "+
 						"sa.action_id sa_action_id,sa.token_id sa_token_id,sa.num_staked_nfts sa_num_staked_nfts,"+
 						"ua.id ua_id,ua.evtlog_id ua_evtlog_id,ua.block_num ua_block_num,uatx.id ua_tx_id,uatx.tx_hash ua_tx_hash,EXTRACT(EPOCH FROM ua.time_stamp)::BIGINT ua_time_stamp,ua.time_stamp ua_date_time, "+
-						"ua.action_id ua_action_id,ua.token_id ua_token_id,ua.num_staked_nfts ua_num_staked_nfts,ua.reward ua_reward,ua.reward/1e18 ua_reward_eth,ua.unpaid_deposit ua_unpaid_deposit "+
+						"ua.action_id ua_action_id,ua.token_id ua_token_id,ua.num_staked_nfts ua_num_staked_nfts,ua.reward ua_reward,ua.reward/1e18 ua_reward_eth "+
 					"FROM cg_nft_staked_cst sa " +
 						"LEFT JOIN cg_nft_unstaked_cst ua ON ua.action_id=sa.action_id "+
 						"LEFT JOIN transaction satx ON satx.id=sa.tx_id "+
@@ -1070,7 +1070,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 	defer rows.Close()
 	for rows.Next() {
 		var rec_row p.CGNftStakeUnstakeCombined
-		var null_record_id,null_action_id,null_evtlog_id,null_block_num,null_tx_id,null_token_id,null_num_staked_nfts,null_unpaid_dep_idx,null_time_stamp sql.NullInt64
+		var null_record_id,null_action_id,null_evtlog_id,null_block_num,null_tx_id,null_token_id,null_num_staked_nfts,null_time_stamp sql.NullInt64
 		var null_tx_hash,null_reward,null_date_time sql.NullString
 		var null_reward_eth sql.NullFloat64
 		var record_id,evtlog_id,block_num,tx_id,deposit_id,time_stamp,dep_round,num_staked_nfts int64
@@ -1080,7 +1080,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 			&rec_row.Stake.RecordId,&rec_row.Stake.EvtLogId,&rec_row.Stake.BlockNum,&rec_row.Stake.TxId,&rec_row.Stake.TxHash,&rec_row.Stake.TimeStamp,&rec_row.Stake.DateTime,
 			&rec_row.Stake.ActionId,&rec_row.Stake.TokenId,&rec_row.Stake.NumStakedNFTs,
 			&null_record_id,&null_evtlog_id,&null_block_num,&null_tx_id,&null_tx_hash,&null_time_stamp,&null_date_time,
-			&null_action_id,&null_token_id,&null_num_staked_nfts,&null_reward,&null_reward_eth,&null_unpaid_dep_idx,
+			&null_action_id,&null_token_id,&null_num_staked_nfts,&null_reward,&null_reward_eth,
 			&record_id,&evtlog_id,&block_num,&tx_id,&tx_hash,&time_stamp,&date_time,
 			&deposit_id,&dep_round,&num_staked_nfts,&deposit_amount,&dep_amount_eth,&amount_per_token_eth,
 			&rec_row.Reward,&rec_row.RewardEth,
@@ -1100,7 +1100,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 		if null_action_id.Valid { rec_row.Unstake.ActionId = null_action_id.Int64 }
 		if null_token_id.Valid { rec_row.Unstake.TokenId = null_token_id.Int64 }
 		if null_num_staked_nfts.Valid { rec_row.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
-		if null_unpaid_dep_idx.Valid { rec_row.Unstake.MaxUnpaidDepositIndex = null_unpaid_dep_idx.Int64 }
 		if null_reward.Valid { rec_row.Unstake.RewardAmount = null_reward.String }
 		if null_reward_eth.Valid { rec_row.Unstake.RewardAmountEth = null_reward_eth.Float64 }
 		if deposit_id != cur_deposit_id {
@@ -1157,6 +1156,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 	}
 	return records
 }
+/*DISCONTINUED, removal pending
 func (sw *SQLStorageWrapper) Get_staking_reward_paid_records(user_aid int64) []p.CGRewardPaidRec {
 
 	records := make([]p.CGRewardPaidRec,0, 16)
@@ -1172,8 +1172,7 @@ func (sw *SQLStorageWrapper) Get_staking_reward_paid_records(user_aid int64) []p
 				"tx.id,"+
 				"tx.tx_hash,"+
 				"r.reward,"+
-				"r.reward/1e18, "+
-				"r.unpaid_dep_id "+
+				"r.reward/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_reward_paid r "+
 				"LEFT JOIN address sa ON r.staker_aid=sa.address_id "+
 				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
@@ -1210,7 +1209,7 @@ func (sw *SQLStorageWrapper) Get_staking_reward_paid_records(user_aid int64) []p
 		records = append(records,rec)
 	}
 	return records
-}
+}*/
 func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards(user_aid int64) []p.CGStakingCstRewardPerTokenRec {
 
 	var query string
@@ -1272,13 +1271,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 				"rwd.collected, "+
 				"rwd.round_num,"+
 				"rwd.deposit_id,"+
-				"rwd.deposit_index,"+
 				// stake action fields
 				"sa_id,sa_evtlog_id,sa_block_num,sa_tx_id,sa_tx_hash,sa_time_stamp,sa_date_time, "+
 				"sa_action_id,sa_num_staked_nfts,"+
 				// unstake action fields
 				"ua_id,ua_evtlog_id,ua_block_num,ua_tx_id,ua_tx_hash,ua_time_stamp,ua_date_time, "+
-				"ua_action_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,ua_unpaid_deposit, "+
+				"ua_action_id,ua_num_staked_nfts,ua_reward,ua_reward_eth "+
 				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp "+
 			"FROM cg_st_reward rwd "+
 				"INNER JOIN cg_eth_deposit d ON rwd.deposit_id=d.deposit_id "+
@@ -1287,7 +1285,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 						"sa.id sa_id,sa.evtlog_id sa_evtlog_id,sa.block_num sa_block_num,satx.id sa_tx_id,satx.tx_hash sa_tx_hash,EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT sa_time_stamp,sa.time_stamp sa_date_time, "+
 						"sa.action_id sa_action_id,sa.token_id sa_token_id,sa.num_staked_nfts sa_num_staked_nfts,"+
 						"ua.id ua_id,ua.evtlog_id ua_evtlog_id,ua.block_num ua_block_num,uatx.id ua_tx_id,uatx.tx_hash ua_tx_hash,EXTRACT(EPOCH FROM ua.time_stamp)::BIGINT ua_time_stamp,ua.time_stamp ua_date_time, "+
-						"ua.action_id ua_action_id,ua.token_id ua_token_id,ua.num_staked_nfts ua_num_staked_nfts,ua.reward ua_reward,ua.reward/1e18 ua_reward_eth,ua.unpaid_deposit ua_unpaid_deposit "+
+						"ua.action_id ua_action_id,ua.token_id ua_token_id,ua.num_staked_nfts ua_num_staked_nfts,ua.reward ua_reward,ua.reward/1e18 ua_reward_eth "+
 					"FROM cg_nft_staked_cst sa " +
 						"LEFT JOIN cg_nft_unstaked_cst ua ON ua.action_id=sa.action_id "+
 						"LEFT JOIN transaction satx ON satx.id=sa.tx_id "+
@@ -1305,7 +1303,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGNftStakeUnstakeCombined
-		var null_rec_id,null_evtlog_id,null_block_num,null_tx_id,null_timestamp,null_action_id,null_staked_nfts,null_max_deposit_id sql.NullInt64
+		var null_rec_id,null_evtlog_id,null_block_num,null_tx_id,null_timestamp,null_action_id,null_staked_nfts sql.NullInt64
 		var null_tx_hash,null_datetime,null_reward sql.NullString
 		var null_reward_eth sql.NullFloat64
 		err=rows.Scan(
@@ -1314,7 +1312,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 			&rec.Claimed,
 			&rec.RoundNum,
 			&rec.DepositId,
-			&rec.DepositIndex,
 			// stake action fields
 			&rec.Stake.RecordId,
 			&rec.Stake.EvtLogId,
@@ -1337,7 +1334,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 			&null_staked_nfts,
 			&null_reward,
 			&null_reward_eth,
-			&null_max_deposit_id,
 			&rec.DepositTimeStamp,
 			&rec.DepositDateTime,
 		)
@@ -1356,7 +1352,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 		if null_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_staked_nfts.Int64 }
 		if null_reward.Valid { rec.Unstake.RewardAmount = null_reward.String }
 		if null_reward_eth.Valid { rec.Unstake.RewardAmountEth = null_reward_eth.Float64 }
-		if null_max_deposit_id.Valid { rec.Unstake.MaxUnpaidDepositIndex = null_max_deposit_id.Int64 }
 		rec.Unstake.StakerAid = user_aid
 		rec.Stake.StakerAid = user_aid
 		records = append(records,rec)

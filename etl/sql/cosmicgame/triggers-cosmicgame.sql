@@ -45,8 +45,6 @@ CREATE TRIGGER cg_nft_unstaked_cst_insert AFTER INSERT ON cg_nft_unstaked_cst FO
 CREATE TRIGGER cg_nft_unstaked_cst_delete AFTER DELETE ON cg_nft_unstaked_cst FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_cst_delete();
 CREATE TRIGGER cg_nft_unstaked_rwalk_insert AFTER INSERT ON cg_nft_unstaked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_rwalk_insert();
 CREATE TRIGGER cg_nft_unstaked_rwalk_delete AFTER DELETE ON cg_nft_unstaked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_rwalk_delete();
-CREATE TRIGGER cg_reward_paid_insert AFTER INSERT ON cg_reward_paid FOR EACH ROW EXECUTE PROCEDURE on_reward_paid_insert();
-CREATE TRIGGER cg_reward_paid_delete AFTER DELETE ON cg_reward_paid FOR EACH ROW EXECUTE PROCEDURE on_reward_paid_delete();
 CREATE TRIGGER cg_st_reward_insert AFTER INSERT ON cg_st_reward FOR EACH ROW EXECUTE PROCEDURE on_st_reward_insert();
 CREATE TRIGGER cg_st_reward_delete AFTER DELETE ON cg_st_reward FOR EACH ROW EXECUTE PROCEDURE on_st_reward_delete();
 CREATE TRIGGER cg_st_reward_update AFTER UPDATE ON cg_st_reward FOR EACH ROW EXECUTE PROCEDURE on_st_reward_update();

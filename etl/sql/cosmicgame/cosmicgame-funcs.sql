@@ -795,8 +795,8 @@ BEGIN
 			;
 		FOR v_rec IN (SELECT count(*) AS num_toks,staker_aid FROM cg_staked_token_cst GROUP BY staker_aid)
 		LOOP
-			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,deposit_num,tokens_staked,amount_to_claim,amount_deposited)
-				VALUES(v_rec.staker_aid,NEW.deposit_id,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,tokens_staked,amount_to_claim,amount_deposited)
+				VALUES(v_rec.staker_aid,NEW.deposit_id,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
 		END LOOP;
 		FOR v_rec IN (SELECT token_id,stake_action_id,staker_aid FROM cg_staked_token_cst)
 		LOOP
@@ -808,8 +808,8 @@ BEGIN
 				INSERT INTO cg_staked_token_cst_rewards(staker_aid,token_id,stake_action_id,accumulated_reward)
 					VALUES(v_rec.staker_aid,v_rec.token_id,v_rec.stake_action_id,NEW.amount_per_staker);
 			END IF;
-			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,deposit_index,round_num,reward)
-				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.deposit_num,NEW.round_num,NEW.amount_per_staker);
+			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,round_num,reward)
+				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.round_num,NEW.amount_per_staker);
 		END LOOP;
 	END IF;
 
@@ -1092,14 +1092,12 @@ BEGIN
 		WHERE staker_aid=NEW.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
 
-	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_id FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
-			IF NEW.unpaid_deposit < v_rec.deposit_index THEN
-				UPDATE cg_st_reward 
-					SET collected = 'T',
-				    	is_unstake = 'T'
-					WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
-			END IF;
+			UPDATE cg_st_reward 
+				SET collected = 'T',
+			    	is_unstake = 'T'
+				WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
 		END LOOP;
 
 	DELETE from cg_staked_token_cst WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
@@ -1122,14 +1120,12 @@ BEGIN
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
 
-	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_id FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
-			IF NEW.unpaid_deposit < v_rec.deposit_index THEN
-				UPDATE cg_st_reward
-					SET collected = 'F',
-				   		is_unstake = 'F'
-					WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
-			END IF;
+			UPDATE cg_st_reward
+				SET collected = 'F',
+			   		is_unstake = 'F'
+				WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
 		END LOOP;
 	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
 	IF v_active_stakers IS NOT NULL THEN
@@ -1163,37 +1159,6 @@ BEGIN
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
 	-- We aren't restoring state here (To Do)
-
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_reward_paid_insert() RETURNS trigger AS  $$
-DECLARE
-	v_cnt						NUMERIC;
-	v_rec RECORD;
-BEGIN
-
-	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id,staker_aid,reward FROM cg_st_reward WHERE action_id=NEW.action_id ORDER BY deposit_id DESC,action_id DESC)
-		LOOP
-			IF NEW.unpaid_dep_id < v_rec.deposit_index THEN
-				UPDATE cg_st_reward SET collected = 'T' WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
-			END IF;
-		END LOOP;
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_reward_paid_delete() RETURNS trigger AS  $$
-DECLARE
-	v_rec RECORD;
-BEGIN
-
-	FOR v_rec IN (SELECT action_id,deposit_index,deposit_id,staker_aid,reward FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
-		LOOP
-			IF NEW.unpaid_dep_id < v_rec.deposit_index THEN
-				UPDATE cg_st_reward SET collected = 'F' WHERE deposit_id=v_rec.deposit_id AND action_id=v_rec.action_id;
-			END IF;
-		END LOOP;
 
 	RETURN OLD;
 END;

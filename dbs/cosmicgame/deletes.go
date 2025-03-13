@@ -199,61 +199,10 @@ func (sw *SQLStorageWrapper) Delete_donated_nft_claimed(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_stake_action_cst_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_stake_action_cst WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Delete_unstake_action_cst_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_unstake_action_cst WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Delete_eth_deposit_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_eth_deposit WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}
-/* DISCONTINUED, removal pending
-func (sw *SQLStorageWrapper) Delete_claim_reward_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_claim_reward WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}*/
-func (sw *SQLStorageWrapper) Delete_stake_action_rwalk_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Delete_unstake_action_rwalk_event(evtlog_id int64) {
-
-	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_unstake_action_rwalk WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -690,7 +639,7 @@ func (sw *SQLStorageWrapper) Delete_nft_unstaked_cst_event(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_reward_paid_event(evtlog_id int64) {
+/*func (sw *SQLStorageWrapper) Delete_reward_paid_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_reward_paid WHERE evtlog_id=$1"
@@ -699,7 +648,7 @@ func (sw *SQLStorageWrapper) Delete_reward_paid_event(evtlog_id int64) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
-}
+}*/
 func (sw *SQLStorageWrapper) Delete_ownership_transferred_event(evtlog_id int64) {
 
 	var query string

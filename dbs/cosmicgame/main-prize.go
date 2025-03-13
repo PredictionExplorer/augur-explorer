@@ -39,7 +39,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"dp.amount/1e18, "+
 				"dp.amount_per_staker,"+
 				"dp.amount_per_staker/1e18, "+
-				"dp.deposit_num, "+
+				"dp.deposit_id, "+
 				"dp.num_staked_nfts "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
@@ -146,7 +146,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"dp.amount/1e18,"+
 				"dp.amount_per_staker,"+
 				"dp.amount_per_staker/1e18, "+
-				"dp.deposit_num, "+
+				"dp.deposit_id, "+
 				"dp.num_staked_nfts, "+
 				"endu.erc721_token_id, "+
 				"end_a.addr, "+

@@ -308,6 +308,7 @@ func cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 		"RewardsByDeposit" : history,
 	})
 }
+/* DISCONTINUED, removal pending
 func cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -330,7 +331,7 @@ func cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
 		"UserAid" : user_aid,
 		"RewardPaidRecords" : rewards,
 	})
-}
+}*/
 func cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")

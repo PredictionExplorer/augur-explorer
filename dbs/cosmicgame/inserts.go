@@ -535,61 +535,6 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaim
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_stake_action_cst_event(evt *p.CGStakeActionCST) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_stake_action_cst (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.TokenId,
-		evt.TotalNfts,
-		staker_aid,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action_cst table: %v\n",err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_unstake_action_cst_event(evt *p.CGUnstakeActionCST) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_unstake_action_cst (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid,reward" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.TokenId,
-		evt.TotalNfts,
-		staker_aid,
-		evt.Reward,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_unstake_action_cst table: %v\n",err))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Insert_nft_unstaked_rwalk_event(evt *p.CGNftUnstakedRWalk) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
@@ -624,9 +569,9 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 	var query string
 	query = "INSERT INTO cg_nft_unstaked_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid,reward,unpaid_deposit,action_counter" +
+				"action_id,token_id,num_staked_nfts,staker_aid,reward,action_counter" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -639,7 +584,6 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 		evt.NumStakedNfts,
 		staker_aid,
 		evt.RewardAmount,
-		evt.MaxUnpaidDepositIndex,
 		evt.ActionCounter,
 	)
 	if err != nil {
@@ -653,9 +597,9 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 	var query string
 	query = "INSERT INTO cg_eth_deposit(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"deposit_time,round_num,deposit_num,deposit_id,num_staked_nfts,amount,amount_per_staker,modulo,accum_modulo" +
+				"deposit_time,round_num,deposit_id,num_staked_nfts,amount,amount_per_staker,modulo,accum_modulo" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13,$14"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -665,7 +609,6 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		contract_aid,
 		evt.DepositTime,
 		evt.RoundNum,
-		evt.DepositNum,
 		evt.DepositId,
 		evt.NumStakedNfts,
 		evt.Amount,
@@ -678,7 +621,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
+/*func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
@@ -705,61 +648,7 @@ func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_reward_paid table: %v\n",err))
 		os.Exit(1)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_stake_action_rwalk_event(evt *p.CGStakeActionRWalk) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_stake_action_rwalk (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.TokenId,
-		evt.TotalNfts,
-		staker_aid,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action_rwalk table: %v\n",err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_unstake_action_rwalk_event(evt *p.CGUnstakeActionRWalk) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_unstake_action_rwalk (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.TokenId,
-		evt.TotalNfts,
-		staker_aid,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_unstake_action_rwalk table: %v\n",err))
-		os.Exit(1)
-	}
-}
+}*/
 func (sw *SQLStorageWrapper) Insert_marketing_reward_sent_event(evt *p.CGMarketingRewardSent) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
@@ -1695,16 +1584,41 @@ func (sw *SQLStorageWrapper) Insert_base_uri_event(evt *p.CGBaseURIEvent) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_nft_staked_event(evt *p.CGNftStaked,nftType int64) {
+func (sw *SQLStorageWrapper) Insert_nft_staked_cst_event(evt *p.CGNftStakedCst) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_nft_staked_cst(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"action_id,token_id,num_staked_nfts,reward_per_staker,staker_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.ActionId,
+		evt.NftId,
+		evt.NumStakedNfts,
+		evt.RewardPerStaker,
+		staker_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_staked_cst table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_nft_staked_rwalk_event(evt *p.CGNftStakedRWalk) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
 	var table = "cg_nft_staked_cst"
-	if nftType == 2 {
-		table = "cg_nft_staked_rwalk"
-	}
 	var query string
-	query = "INSERT INTO "+table+" (" +
+	query = "INSERT INTO cg_nft_staked_rwalk("+
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +

@@ -61,7 +61,7 @@ async function main() {
 				continue; 
 			}
 			let owner_signer = await hre.ethers.getSigner(ownr);
-			await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i,10);
+			await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i);
 			num_unstaked=num_unstaked+1;
 		}
 	}
@@ -434,8 +434,8 @@ async function main() {
     await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementIncreaseDivisor(tmp);
     tmp = await cosmicGameProxy.connect(owner).timeoutDurationToClaimMainPrize();
     await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(tmp);
-    tmp = await cosmicGameProxy.nextEthBidPriceIncreaseDivisor();
-    await cosmicGameProxy.connect(owner).setNextEthBidPriceIncreaseDivisor(tmp);
+    tmp = await cosmicGameProxy.ethBidPriceIncreaseDivisor();
+    await cosmicGameProxy.connect(owner).setEthBidPriceIncreaseDivisor(tmp);
     tmp = await cosmicGameProxy.mainPrizeTimeIncrementInMicroSeconds();
     await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(tmp);
     tmp = await cosmicGameProxy.initialDurationUntilMainPrizeDivisor();
@@ -507,7 +507,7 @@ async function main() {
 	await unstake_all_nfts()
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-	await stakingWalletCosmicSignatureNft.tryPerformMaintenance(true,owner.address)
+	await stakingWalletCosmicSignatureNft.tryPerformMaintenance(owner.address)
 	await stake_available_nfts()
 
 	await samp1.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("9999999999999999"))
@@ -630,8 +630,8 @@ async function main() {
 		}
         let owner_signer = await hre.ethers.getSigner(ownr);
 		try {
-	        await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i,1);
-	        await stakingWalletCosmicSignatureNft.connect(owner_signer).payReward(i,100);
+	        await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i);
+//	        await stakingWalletCosmicSignatureNft.connect(owner_signer).payReward(i,100);
 		} catch (e) {
 		//	console.log("unstake() error: ",e);
 		}

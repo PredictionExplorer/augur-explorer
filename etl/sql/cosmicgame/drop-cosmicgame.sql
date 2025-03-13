@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS
 	cg_nft_unstaked_rwalk,
 	cg_eth_deposit,
 	cg_round_started,
-	cg_reward_paid,
+--	cg_reward_paid,
 	cg_mkt_reward,
 	cg_transfer,
 	cg_erc20_transfer,

@@ -383,6 +383,7 @@ func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 		"RewardsByDeposit" : history,
 	})
 }
+/* DISCONTINUED, removal pending
 func api_cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -410,7 +411,7 @@ func api_cosmic_game_staking_cst_reward_paid_records_by_user(c *gin.Context) {
 		"UserAid" : user_aid,
 		"RewardPaidRecords" : rewards,
 	})
-}
+}*/
 func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

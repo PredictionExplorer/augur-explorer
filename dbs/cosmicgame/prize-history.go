@@ -144,7 +144,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 								"ELSE FALSE "+
 						"END AS claimed "+
 					"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 						"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 						"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
 						"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
@@ -500,7 +500,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"sa.addr winner_addr,"+
 						"sd.staker_aid winner_aid "+
 					"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 						"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 						"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
 						"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
