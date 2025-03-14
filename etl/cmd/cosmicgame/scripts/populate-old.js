@@ -618,6 +618,7 @@ async function main() {
     for (let i = 1; i <= 5; i++) {
         await stakingWalletRandomWalkNft.connect(addr1).unstake(i);
     }
+	/*discontinued
 	numStakeActions = await stakingWalletCosmicSignatureNft.actionCounter();
     for (let i = 1; i <= numStakeActions; i++) {
         let action_rec = (await stakingWalletCosmicSignatureNft.stakeActions(i)).toObject();
@@ -635,7 +636,7 @@ async function main() {
 		} catch (e) {
 		//	console.log("unstake() error: ",e);
 		}
-    }
+    }*/
 }
 
 main()

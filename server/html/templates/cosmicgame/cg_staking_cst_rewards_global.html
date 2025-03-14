@@ -11,9 +11,10 @@
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Round Num</th>
-		<th class="market_reports">Amount (ETH)</th>
-		<th class="market_reports">Collected?</th>
+		<th class="market_reports">Deposit Amount (ETH)</th>
+		<th class="market_reports">Collected (ETH)</th>
 		<th class="market_reports">Pending to collect</th>
+		<th class="market_reports">Fully collected</th>
 	</tr>
 	{{- range $i, $change := .StakingCSTRewards}}
 		<tr class="market_reports">
@@ -22,8 +23,9 @@
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.RoundNum}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .TotalDepositAmountEth}}</td>
-			<td style="text-align: center;">{{.FullyClaimed}}</td>
-			<td style="text-align: right;" title="">{{printf "%.6f" .AmountCollectedEth}}</td>
+			<td style="text-align: center;">{{.AlreadyCollectedEth}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .PendingToCollectEth}}</td>
+			<td class="" style="text-align: center;">{{.FullyClaimed}}</td>
 		</tr>
 	{{- end}}
 </table>

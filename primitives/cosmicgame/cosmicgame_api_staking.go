@@ -297,8 +297,10 @@ type CGStakingRewardGlobal	struct {
 	ModuloF64					float64
 	RoundNum					int64
 	FullyClaimed				bool
-	AmountCollected				string
-	AmountCollectedEth			float64
+	AlreadyCollected			string
+	AlreadyCollectedEth			float64
+	PendingToCollect			string
+	PendingToCollectEth			float64
 }
 type CGUniqueStakerCST struct {
 	StakerAid					int64

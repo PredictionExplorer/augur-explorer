@@ -614,12 +614,12 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 	var query string
 	query = "WITH rwd AS ("+
 				"SELECT "+
-					"COUNT(token_id) AS num_toks_collected,"+
-					"SUM(reward) AS collected_reward," +
-					"SUM(reward)/1e18 AS collected_reward_eth,"+
+					"SUM(CASE WHEN collected='T' THEN reward ELSE 0 END) AS collected_reward," +
+					"SUM(CASE WHEN collected='T' THEN reward/1e18 ELSE 0 END) AS collected_reward_eth,"+
+					"COUNT(token_id) AS count_total,"+
+					"SUM(CASE WHEN collected='F' THEN 1 ELSE 0 END) AS count_not_collected, "+
 					"round_num "+
 				"FROM cg_st_reward "+
-				"WHERE collected='t' "+
 				"GROUP BY round_num "+
 			") "+
 			"SELECT "+
@@ -637,7 +637,11 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 				"d.amount/1e18,"+
 				"d.round_num, "+
 				"COALESCE(rwd.collected_reward,0),"+
-				"COALESCE(rwd.collected_reward_eth,0) "+
+				"COALESCE(rwd.collected_reward_eth,0), "+
+				"COALESCE((d.amount-rwd.collected_reward),0),"+
+				"COALESCE((d.amount-rwd.collected_reward)/1e18,0),"+
+				"COALESCE(rwd.count_total,0),"+
+				"COALESCE(rwd.count_not_collected,0) "+
 			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 				"LEFT JOIN rwd ON (rwd.round_num=d.round_num) "+
@@ -651,6 +655,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGStakingRewardGlobal
+		var count_not_collected,count_total int64;
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -665,12 +670,22 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 			&rec.TotalDepositAmount,
 			&rec.TotalDepositAmountEth,
 			&rec.RoundNum,
-			&rec.AmountCollected,
-			&rec.AmountCollectedEth,
+			&rec.AlreadyCollected,
+			&rec.AlreadyCollectedEth,
+			&rec.PendingToCollect,
+			&rec.PendingToCollectEth,
+			&count_total,
+			&count_not_collected,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
+		}
+		fmt.Printf("count_not_collected=%v, count_total=%v , rec.PendingToCollectEth=%v rec.AlreadyCollectedEth = %v deposit amount=%v\n",count_not_collected,count_total,rec.PendingToCollectEth,rec.AlreadyCollectedEth,rec.TotalDepositAmountEth)
+		if count_not_collected == 0 {
+			rec.FullyClaimed = true
+		} else {
+			rec.FullyClaimed = false
 		}
 		records = append(records,rec)
 	}

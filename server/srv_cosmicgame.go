@@ -136,7 +136,7 @@ func do_reload_contract_constants() {
 	} else {
 		var err error
 		var tmp_val *big.Int
-		tmp_val,err = bwcontract.NextEthBidPriceIncreaseDivisor(&copts)
+		tmp_val,err = bwcontract.EthBidPriceIncreaseDivisor(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PriceIncrease() call: %v\n",err)
 			Error.Printf(err_str)

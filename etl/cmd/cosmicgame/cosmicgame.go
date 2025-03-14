@@ -2231,16 +2231,16 @@ func proc_timeout_duration_to_withdraw_prize_event(log *types.Log,elog *Ethereum
 func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGPriceIncreaseChanged
-	var eth_evt CosmicSignatureGameNextEthBidPriceIncreaseDivisorChanged
+	var eth_evt CosmicSignatureGameEthBidPriceIncreaseDivisorChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
 	Info.Printf("Processing PriceIncreaseChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NextEthBidPriceIncreaseDivisorChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthBidPriceIncreaseDivisorChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event NextEthBidPriceIncreaseDivisorChanged decode error: %v",err)
+		Error.Printf("Event EthBidPriceIncreaseDivisorChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -2252,7 +2252,7 @@ func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.NewPriceIncrease = eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("BiddingNextEthBidPriceIncreaseDivisorChanged{\n")
+	Info.Printf("EthBidPriceIncreaseDivisorChanged{\n")
 	Info.Printf("\tNewPriceIncreasse: %v\n",evt.NewPriceIncrease)
 	Info.Printf("}\n")
 
