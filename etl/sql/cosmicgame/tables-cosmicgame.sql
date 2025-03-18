@@ -282,6 +282,7 @@ CREATE TABLE cg_nft_unstaked_rwalk ( -- StakingWalletRandomWalkNft:NftUnstaked
 	contract_aid	BIGINT NOT NULL,
 	action_id		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
 	num_staked_nfts	BIGINT NOT NULL,
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
@@ -297,6 +298,7 @@ CREATE TABLE cg_nft_unstaked_cst (-- StakingWalletCosmicSignatureNft.sol:NftUnst
 	action_counter	BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
 	staker_aid		BIGINT NOT NULL,
 	reward			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
@@ -308,9 +310,9 @@ CREATE TABLE cg_nft_staked_cst (	-- StakingWalletNftBase.sol: NftStaked
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1,
 	action_id		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
 	num_staked_nfts	BIGINT NOT NULL,
 	reward_per_staker	DECIMAL NOT NULL,
 	staker_aid		BIGINT NOT NULL,
@@ -324,9 +326,9 @@ CREATE TABLE cg_nft_staked_rwalk ( -- StakingWalletNftBase.sol NftStaked
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1,
 	action_id		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
 	num_staked_nfts	BIGINT NOT NULL,
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
@@ -341,9 +343,12 @@ CREATE TABLE cg_eth_deposit (	-- StakingWalletCosmicSignatureNft.sol:EthDepositR
 	round_num		BIGINT NOT NULL ,
 	deposit_time	TIMESTAMPTZ NOT NULL,
 	deposit_id		BIGINT NOT NULL,	-- action counter
-	num_staked_nfts	BIGINT NOT NULL,
-	amount			DECIMAL NOT NULL,
-	amount_per_staker	DECIMAL NOT NULL,	-- it is not per staker, it is per token (TODO: change field name)
+	num_staked_nfts	BIGINT NOT NULL,		-- new tokens added between previous deposit and this deposit
+	accumulated_nfts	BIGINT NOT NULL,	-- accumulated number of staked tokesn from previous deposits
+	deposit_amount		DECIMAL NOT NULL,
+	accumulated_amount	DECIMAL NOT NULL,
+	amount_per_token	DECIMAL NOT NULL,	-- this value is for current deposit, not
+	accumulated_per_token	DECIMAL NOT NULL,	-- this is the accumulated value from previous deposits to current deposit
 	modulo			DECIMAL NOT NULL,
 	accum_modulo	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)

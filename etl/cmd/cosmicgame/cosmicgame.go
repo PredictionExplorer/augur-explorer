@@ -1283,7 +1283,7 @@ func proc_cst_nft_staked_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tActionId: %v\n",evt.ActionId)
 	Info.Printf("\tTokenId: %v\n",evt.NftId)
 	Info.Printf("\tTotalNFTs: %v\n",evt.NumStakedNfts)
-	Info.Printf("\tRewardPerStakcer: %v\n",evt.RewardPerStaker)
+	Info.Printf("\tRewardPerStaker: %v\n",evt.RewardPerStaker)
 	Info.Printf("\tStaker: %v\n",evt.StakerAddress)
 	Info.Printf("}\n")
 
@@ -1362,7 +1362,7 @@ func proc_staking_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	divres:=big.NewInt(0)
 	rem:=big.NewInt(0)
 	divres.QuoRem(eth_evt.DepositAmount,eth_evt.NumStakedNfts,rem);
-	evt.AmountPerStaker = eth_evt.RewardAmountPerStakedNft.String()
+	evt.AmountPerStaker = divres.String()
 	evt.Modulo = rem.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())

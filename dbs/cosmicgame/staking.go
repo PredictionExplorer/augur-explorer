@@ -23,6 +23,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 				"st.time_stamp,"+
 				"st.action_id,"+
 				"st.token_id,"+
+				"st.round_num,"+
 				"st.num_staked_nfts,"+
 				"st.staker_aid,"+
 				"sa.addr,"+
@@ -37,6 +38,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 				"u.time_stamp,"+
 				"u.action_id,"+
 				"u.token_id, "+
+				"u.round_num,"+
 				"u.num_staked_nfts, "+
 				"u.reward,"+
 				"u.reward/1e18,"+
@@ -53,7 +55,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	row := sw.S.Db().QueryRow(query,action_id)
 	var err error
 	var null_record_id,null_evtlog_id,null_tx_id,null_unstake_ts,null_action_id sql.NullInt64
-	var null_block_num,null_token_id,null_num_staked_nfts,null_staker_aid sql.NullInt64
+	var null_block_num,null_token_id,null_round_num,null_num_staked_nfts,null_staker_aid sql.NullInt64
 	var null_unstake_date,null_tx_hash,null_staker_addr,null_reward sql.NullString
 	var null_reward_eth sql.NullFloat64
 	err=row.Scan(
@@ -67,6 +69,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 		&rec.Stake.DateTime,
 		&rec.Stake.ActionId,
 		&rec.Stake.TokenId,
+		&rec.Stake.RoundNum,
 		&rec.Stake.NumStakedNFTs,
 		&rec.Stake.StakerAid,
 		&rec.Stake.StakerAddr,
@@ -80,6 +83,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 		&null_unstake_date,
 		&null_action_id,
 		&null_token_id,
+		&null_round_num,
 		&null_num_staked_nfts,
 		&null_reward,
 		&null_reward_eth,
@@ -102,6 +106,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	if null_unstake_date.Valid { rec.Unstake.DateTime = null_unstake_date.String }
 	if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
 	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
+	if null_round_num.Valid { rec.Unstake.RoundNum = null_round_num.Int64 }
 	if null_num_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
 	if null_reward.Valid { rec.Unstake.RewardAmount = null_reward.String }
 	if null_reward_eth.Valid { rec.Unstake.RewardAmountEth = null_reward_eth.Float64 }
@@ -775,6 +780,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
+					"s.round_num,"+
 					"s.num_staked_nfts, "+
 					"s.staker_aid, "+
 					"sa.addr staker_addr "+
@@ -795,6 +801,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"u.action_id,"+
 					"u.token_id,"+
+					"u.round_num,"+
 					"u.num_staked_nfts, "+
 					"u.staker_aid," +
 					"ua.addr staker_addr "+
@@ -827,6 +834,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 			&rec.UnstakeDate,
 			&rec.ActionId,
 			&rec.TokenId,
+			&rec.RoundNum,
 			&rec.NumStakedNFTs,
 			&rec.StakerAid,
 			&rec.StakerAddr,
@@ -861,6 +869,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
+					"s.round_num,"+
 					"s.num_staked_nfts, "+
 					"s.staker_aid, "+
 					"sa.addr staker_addr "+
@@ -883,6 +892,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 					"TO_TIMESTAMP(0) AS unnstake_time,"+
 					"u.action_id,"+
 					"u.token_id,"+
+					"u.round_num,"+
 					"u.num_staked_nfts, "+
 					"u.staker_aid," +
 					"ua.addr staker_addr "+
@@ -917,6 +927,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 			&rec.UnstakeDate,
 			&rec.ActionId,
 			&rec.TokenId,
+			&rec.RoundNum,
 			&rec.NumStakedNFTs,
 			&rec.StakerAid,
 			&rec.StakerAddr,

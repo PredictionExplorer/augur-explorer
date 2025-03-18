@@ -12,6 +12,7 @@
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Action Type</th>
 		<th class="market_reports">Token ID</th>
+		<th class="market_reports">Round Num</th>
 		<th class="market_reports">Action ID</th>
 		<th class="market_reports">Staker</th>
 		<th class="market_reports">Total num staked NFT</th>
@@ -31,6 +32,7 @@
 				{{if eq .ActionType 0 }}Stake{{ else }}Unstake{{ end }}
 			</td>
 			<td style="text-align: center;" title="">{{.TokenId}}</td>
+			<td style="text-align: center;" title="">{{.RoundNum}}</td>
 			<td style="text-align: center;" title="">{{.ActionId}}</td>
 			<td style="text-align: left;" title="">
 				{{.StakerAddr}}

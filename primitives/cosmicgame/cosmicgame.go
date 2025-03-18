@@ -278,6 +278,7 @@ type CGDonatedNFTClaimed struct {	// ERC721 tokens
 	TokenId				string
 	BeneficiaryAddr		string
 }
+/*DISCONTINUED, removal pending
 type CGStakeActionCST struct {
 	EvtId				int64
 	BlockNum			int64
@@ -304,7 +305,7 @@ type CGUnstakeActionCST struct {
 	TotalNfts			int64
 	Reward				string
 	Staker 				string
-}
+}*/
 type CGNftStakedCst struct {
 	EvtId				int64
 	BlockNum			int64
@@ -371,6 +372,7 @@ type CGClaimReward struct {
 	StakerAddress		string
 	MaxUnpaidEthDepositIndex	int64
 }*/
+/* DISCONTINUED, removal pending
 type CGStakeActionRWalk struct {
 	EvtId				int64
 	BlockNum			int64
@@ -396,7 +398,7 @@ type CGUnstakeActionRWalk struct {
 	TokenId				int64
 	TotalNfts			int64
 	Staker 				string
-}
+}*/
 type CGNftUnstakedRWalk struct {
 	EvtId				int64
 	BlockNum			int64

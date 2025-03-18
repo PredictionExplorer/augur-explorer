@@ -777,11 +777,20 @@ DECLARE
 	v_mod DECIMAL;
 	v_rec RECORD;
 	v_cnt						NUMERIC;
+	v_prev_num_tokens		INT;
+	v_tokens_added			INT;
 BEGIN
 
 	IF NEW.num_staked_nfts > 0 THEN
+		SELECT num_staked_nfts FROm cg_eth_deposit ORDER BY deposit_id DESC LIMIT 1 INTO v_prev_num_tokens;
+		IF v_prev_num_tokens IS NULL THEN
+			v_prev_num_tokens:=0;
+			v_tokens_added:=NEW.num_staked_nfts;
+		ELSE
+			v_tokens_added:=NEW.num_staked_nfts-v_prev_num_tokens;
+		END IF;
 		v_mod := MOD(NEW.amount,NEW.num_staked_nfts);
-		v_amount_per_token := (NEW.amount - v_mod) / NEW.num_staked_nfts;
+		v_amount_per_token := (NEW.amount - v_mod) / v_tokens_added);
 		UPDATE cg_staker_cst
 			SET total_reward = (total_reward + (v_amount_per_token*total_tokens_staked)),
 				unclaimed_reward = (unclaimed_reward + (v_amount_per_token*total_tokens_staked))
@@ -796,20 +805,20 @@ BEGIN
 		FOR v_rec IN (SELECT count(*) AS num_toks,staker_aid FROM cg_staked_token_cst GROUP BY staker_aid)
 		LOOP
 			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,tokens_staked,amount_to_claim,amount_deposited)
-				VALUES(v_rec.staker_aid,NEW.deposit_id,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+				VALUES(v_rec.staker_aid,NEW.deposit_id,v_rec.num_toks,amount_per_token*v_rec.num_toks,amount_per_token*v_rec.num_toks);
 		END LOOP;
 		FOR v_rec IN (SELECT token_id,stake_action_id,staker_aid FROM cg_staked_token_cst)
 		LOOP
 			UPDATE cg_staked_token_cst_rewards 
-				SET accumulated_reward = (accumulated_reward + NEW.amount_per_staker)
+				SET accumulated_reward = (accumulated_reward + v_amount_per_token)
 				WHERE stake_action_id=v_rec.stake_action_id;
 			GET DIAGNOSTICS v_cnt = ROW_COUNT;
 			IF v_cnt = 0 THEN
 				INSERT INTO cg_staked_token_cst_rewards(staker_aid,token_id,stake_action_id,accumulated_reward)
-					VALUES(v_rec.staker_aid,v_rec.token_id,v_rec.stake_action_id,NEW.amount_per_staker);
+					VALUES(v_rec.staker_aid,v_rec.token_id,v_rec.stake_action_id,v_amount_per_token);
 			END IF;
 			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,round_num,reward)
-				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.round_num,NEW.amount_per_staker);
+				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.round_num,amount_per_token);
 		END LOOP;
 	END IF;
 
@@ -1004,6 +1013,7 @@ CREATE OR REPLACE FUNCTION on_nft_staked_cst_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 	v_active_stakers			INT;
+	v_round_num					INT;
 BEGIN
 
 	INSERT INTO cg_staked_token_cst(staker_aid,token_id,stake_action_id)
@@ -1022,6 +1032,10 @@ BEGIN
 	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
 	IF v_active_stakers IS NOT NULL THEN
 		UPDATE cg_stake_stats_cst SET total_num_stakers=v_active_stakers;
+	END IF;
+	SELECT round_num FROM cg_prize_claim ORDER BY round_num DESC LIMIT 1 INTO v_round_num;
+	IF v_round_num IS NOT NULL THEN
+		UPDATE cg_nft_staked_cst SET round_num=(v_round_num+1) WHERE id=NEW.id;
 	END IF;
 	RETURN NEW;
 END;
@@ -1049,6 +1063,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_staked_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
+	v_round_num					INT;
 BEGIN
 
 	INSERT INTO cg_staked_token_rwalk(staker_aid,token_id,stake_action_id)
@@ -1062,6 +1077,10 @@ BEGIN
 		INSERT INTO cg_staker_rwalk(staker_aid,total_tokens_staked,num_stake_actions) VALUES(NEW.staker_aid,1,1);
 	END IF;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+	SELECT round_num FROM cg_prize_claim ORDER BY round_num DESC LIMIT 1 INTO v_round_num;
+	IF v_round_num IS NOT NULL THEN
+		UPDATE cg_nft_staked_rwalk SET round_num=(v_round_num+1) WHERE id=NEW.id;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1084,6 +1103,7 @@ DECLARE
 	v_cnt						NUMERIC;
 	v_rec RECORD;
 	v_active_stakers			INT;
+	v_round_num					INT;
 BEGIN
 
 	UPDATE cg_staker_cst
@@ -1104,6 +1124,10 @@ BEGIN
 	SELECT COUNT(*) FROM cg_staker_cst WHERE total_tokens_staked > 0 INTO v_active_stakers;
 	IF v_active_stakers IS NOT NULL THEN
 		UPDATE cg_stake_stats_cst SET total_num_stakers=v_active_stakers;
+	END IF;
+	SELECT round_num FROM cg_prize_claim ORDER BY round_num DESC LIMIT 1 INTO v_round_num;
+	IF v_round_num IS NOT NULL THEN
+		UPDATE cg_nft_unstaked_cst SET round_num=(v_round_num+1) WHERE id=NEW.id;
 	END IF;
 	RETURN NEW;
 END;
@@ -1138,6 +1162,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_unstaked_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
+	v_round_num					INT;
 BEGIN
 
 	UPDATE cg_staker_rwalk
@@ -1146,6 +1171,10 @@ BEGIN
 		WHERE staker_aid=NEW.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
 	DELETE FROM cg_staked_token_rwalk WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
+	SELECT round_num FROM cg_prize_claim ORDER BY round_num DESC LIMIT 1 INTO v_round_num;
+	IF v_round_num IS NOT NULL THEN
+		UPDATE cg_nft_unstaked_rwalk SET round_num=(v_round_num+1) WHERE id=NEW.id;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

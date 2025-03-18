@@ -15,6 +15,7 @@ type CGStakingCSTHistoryRec struct {
 	UnstakeTimeStamp			int64
 	ActionId					int64
 	TokenId						int64
+	RoundNum					int64
 	NumStakedNFTs				int64
 	AccumNumStakedNFTs			int64
 	AmountPerHolder				string
@@ -42,6 +43,7 @@ type CGStakingRWalkHistoryRec struct {
 	UnstakeTimeStamp			int64
 	ActionId					int64
 	TokenId						int64
+	RoundNum					int64
 	NumStakedNFTs				int64
 	AccumNumStakedNFTs			int64
 	StakerAid					int64
@@ -94,6 +96,7 @@ type CGStakeActionInfoRec struct {
 	DateTime					string
 	ActionId					int64
 	TokenId						int64
+	RoundNum					int64
 	NumStakedNFTs				int64
 	UnstakeTimeStamp			int64
 	UnstakeDate					string
@@ -110,6 +113,7 @@ type CGUnstakeActionInfoRec struct {
 	DateTime					string
 	ActionId					int64
 	TokenId						int64
+	RoundNum					int64
 	NumStakedNFTs				int64
 	StakerAid					int64
 	StakerAddr					string
@@ -358,6 +362,7 @@ type CGNftStakedInfoRec struct {
 	DateTime					string
 	ActionId					int64
 	TokenId						int64
+	RoundNum					int64
 	NumStakedNFTs				int64
 	UnstakeTimeStamp			int64
 	UnstakeDate					string
@@ -374,6 +379,7 @@ type CGNftUnstakedInfoRec struct {
 	DateTime					string
 	ActionId					int64
 	TokenId						int64
+	RoundNum					int64
 	NumStakedNFTs				int64
 	StakerAid					int64
 	StakerAddr					string
