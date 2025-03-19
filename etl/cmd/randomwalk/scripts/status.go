@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -15,6 +16,11 @@ const (
 var (
 	RPC_URL string
 )
+func fmt_eth(wei *big.Int) string {
+    ether := new(big.Float).SetInt(wei)
+    eth_value := new(big.Float).Quo(ether, big.NewFloat(1e18))
+    return eth_value.Text('f', 18) // 18 decimal places to match Ethereum precision
+}
 func main() {
 
 	RPC_URL = os.Getenv("RPC_URL")
@@ -48,5 +54,27 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	time_remaining,err := rwalk_ctrct.TimeUntilWithdrawal(&copts)
+	if err != nil {
+		fmt.Printf("Error at timeUntilWithdrawal()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	withdrawal_amount,err := rwalk_ctrct.WithdrawalAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at withdrawalAmount()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	num_withdrawals,err := rwalk_ctrct.NumWithdrawals(&copts)
+	if err != nil {
+		fmt.Printf("Error at numWithdrawals()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+
 	fmt.Printf("Next token ID = %v\n",next_token_id.Int64())
+	fmt.Printf("Time remaining: %v\n",time_remaining.Int64())
+	fmt.Printf("Withdrawal amount: %v\n",fmt_eth(withdrawal_amount))
+	fmt.Printf("Num withdrawals: %v\n",num_withdrawals.Int64())
 }

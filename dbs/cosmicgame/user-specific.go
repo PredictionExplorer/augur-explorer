@@ -186,9 +186,9 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 				"s.total_raffle_eth_deposits,"+
 				"s.total_raffle_eth_deposits/1e18 eth_deposits,"+
 				"s.total_raffle_nfts, "+
-				"d.donation_amount,"+
-				"d.donation_amount/1e+18, "+
-				"d.charity_addr "+
+				"COALESCE(d.donation_amount,0),"+
+				"COALESCE(d.donation_amount,0)/1e+18, "+
+				"COALESCE(d.charity_addr,'0x0')"+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+

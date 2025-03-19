@@ -344,13 +344,13 @@ CREATE TABLE cg_eth_deposit (	-- StakingWalletCosmicSignatureNft.sol:EthDepositR
 	deposit_time	TIMESTAMPTZ NOT NULL,
 	deposit_id		BIGINT NOT NULL,	-- action counter
 	num_staked_nfts	BIGINT NOT NULL,		-- new tokens added between previous deposit and this deposit
-	accumulated_nfts	BIGINT NOT NULL,	-- accumulated number of staked tokesn from previous deposits
+	accumulated_nfts	BIGINT DEFAULT 0,	-- accumulated number of staked tokesn from previous deposits
 	deposit_amount		DECIMAL NOT NULL,
-	accumulated_amount	DECIMAL NOT NULL,
+	accumulated_amount	DECIMAL DEFAULT 0,
 	amount_per_token	DECIMAL NOT NULL,	-- this value is for current deposit, not
-	accumulated_per_token	DECIMAL NOT NULL,	-- this is the accumulated value from previous deposits to current deposit
+	accumulated_per_token	DECIMAL DEFAULT 0,	-- this is the accumulated value from previous deposits to current deposit
 	modulo			DECIMAL NOT NULL,
-	accum_modulo	DECIMAL NOT NULL,
+	accum_modulo	DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_round_started (	-- CosmicSignatureGame.sol:FirstBidPlacedInRound
@@ -363,18 +363,6 @@ CREATE TABLE cg_round_started (	-- CosmicSignatureGame.sol:FirstBidPlacedInRound
 	round_num		BIGINT NOT NULL,
 	start_ts		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
-);
-CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This is the smallest reward unit (from which other accumulators are composed)
-	-- This table is internal, it is populated via SQL triggers
-	staker_aid		BIGINT NOT NULL,
-	action_id		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	deposit_id		BIGINT NOT NULL,
-	round_num		BIGINT NOT NULL,
-	reward			DECIMAL NOT NULL,
-	collected		BOOLEAN DEFAULT 'F',
-	is_unstake		BOOLEAN DEFAULT 'F',	-- true if reward is generated on unstake() transaction
-	UNIQUE(action_id,deposit_id)
 );
 --CREATE TABLE cg_reward_paid (	-- StakingWalletCosmicSignatureNft.sol: RewardPaid (staking)
 --	id				BIGSERIAL PRIMARY KEY,
@@ -889,6 +877,18 @@ CREATE TABLE cg_winner ( -- collects statistics per winer of prize
 	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
 	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs
 );
+CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This is the smallest reward unit (from which other accumulators are composed)
+	-- This table is internal, it is populated via SQL triggers
+	staker_aid		BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	deposit_id		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
+	collected		BOOLEAN DEFAULT 'F',
+	is_unstake		BOOLEAN DEFAULT 'F',	-- true if reward is generated on unstake() transaction
+	UNIQUE(action_id,deposit_id)
+);
 CREATE TABLE cg_staker_cst ( -- counts statistics per user for staking CosmicSignature tokens
 	staker_aid				BIGINT PRIMARY KEY,
 	total_tokens_staked		BIGINT DEFAULT 0,
@@ -898,11 +898,6 @@ CREATE TABLE cg_staker_cst ( -- counts statistics per user for staking CosmicSig
 	unclaimed_reward		DECIMAL DEFAULT 0,
 	num_tokens_minted		BIGINT DEFAULT 0	-- this field is no longer used
 );
-CREATE TABLE cg_donor (--counts statistics for unique donors (who donate ETH to cosmic game)
-	donor_aid				BIGINT PRIMARY KEY,
-	count_donations			BIGINT DEFAULT 0,
-	total_eth_donated		DECIMAL DEFAULT 0
-);
 CREATE TABLE cg_staker_deposit (-- accumulates rewards per staker (this is for CST staking wallet only)
 	staker_aid				BIGINT NOT NULL,
 	deposit_id				BIGINT NOT NULL, 
@@ -911,7 +906,7 @@ CREATE TABLE cg_staker_deposit (-- accumulates rewards per staker (this is for C
 	amount_to_claim			DECIMAL DEFAULT 0,
 	PRIMARY KEY(staker_aid,deposit_id)
 );
-CREATE TABLE cg_staked_token_cst (
+CREATE TABLE cg_staked_token_cst (	-- accumulates rewards per token (this table is NOT redundant with cg_st_reward (check count(*) on both)
 	staker_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	stake_action_id			BIGINT NOT NULL,
@@ -940,6 +935,11 @@ CREATE TABLE cg_staked_token_rwalk (
 	stake_action_id			BIGINT NOT NULL,
 	PRIMARY KEY(token_id),
 	UNIQUE(stake_action_id)
+);
+CREATE TABLE cg_donor (--counts statistics for unique donors (who donate ETH to cosmic game)
+	donor_aid				BIGINT PRIMARY KEY,
+	count_donations			BIGINT DEFAULT 0,
+	total_eth_donated		DECIMAL DEFAULT 0
 );
 CREATE TABLE cg_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,

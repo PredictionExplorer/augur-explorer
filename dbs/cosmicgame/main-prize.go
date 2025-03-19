@@ -35,8 +35,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"d.donation_amount,"+
 				"d.donation_amount/1e18 AS amount_eth, "+
 				"d.charity_addr, "+
-				"dp.amount,"+
-				"dp.amount/1e18, "+
+				"dp.deposit_amount,"+
+				"dp.deposit_amount/1e18, "+
 				"dp.amount_per_staker,"+
 				"dp.amount_per_staker/1e18, "+
 				"dp.deposit_id, "+
@@ -142,8 +142,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"d.donation_amount, "+
 				"d.donation_amount/1e+18,"+
 				"d.charity_addr, "+
-				"dp.amount, "+
-				"dp.amount/1e18,"+
+				"dp.deposit_amount, "+
+				"dp.deposit_amount/1e18,"+
 				"dp.amount_per_staker,"+
 				"dp.amount_per_staker/1e18, "+
 				"dp.deposit_id, "+

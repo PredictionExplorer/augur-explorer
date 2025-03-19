@@ -778,34 +778,39 @@ DECLARE
 	v_rec RECORD;
 	v_cnt						NUMERIC;
 	v_prev_num_tokens		INT;
+	v_prev_amount			DECIMAL;
+	v_prev_amount_per_token	DECIMAL;
 	v_tokens_added			INT;
 BEGIN
 
 	IF NEW.num_staked_nfts > 0 THEN
-		SELECT num_staked_nfts FROm cg_eth_deposit ORDER BY deposit_id DESC LIMIT 1 INTO v_prev_num_tokens;
+		SELECT accumulated_nfts,accumulated_amount,accumulated_per_token FROM cg_eth_deposit ORDER BY deposit_id DESC OFFSET 1 LIMIT 1 INTO v_prev_num_tokens,v_prev_amount,v_prev_amount_per_token;
 		IF v_prev_num_tokens IS NULL THEN
 			v_prev_num_tokens:=0;
 			v_tokens_added:=NEW.num_staked_nfts;
 		ELSE
 			v_tokens_added:=NEW.num_staked_nfts-v_prev_num_tokens;
 		END IF;
-		v_mod := MOD(NEW.amount,NEW.num_staked_nfts);
-		v_amount_per_token := (NEW.amount - v_mod) / v_tokens_added);
+		IF v_prev_amount IS NULL THEN
+			v_prev_amount:=0;
+		END IF;
+		v_mod := MOD(NEW.deposit_amount,NEW.num_staked_nfts);
+		v_amount_per_token := (NEW.deposit_amount - v_mod) / v_tokens_added;
 		UPDATE cg_staker_cst
 			SET total_reward = (total_reward + (v_amount_per_token*total_tokens_staked)),
 				unclaimed_reward = (unclaimed_reward + (v_amount_per_token*total_tokens_staked))
 			WHERE total_tokens_staked > 0;
 		UPDATE cg_stake_stats_cst
 			SET
-				total_reward_amount = (total_reward_amount + (NEW.amount - v_mod)),
-				total_unclaimed_reward = (total_unclaimed_reward + (NEW.amount - v_mod)),
+				total_reward_amount = (total_reward_amount + (NEW.deposit_amount - v_mod)),
+				total_unclaimed_reward = (total_unclaimed_reward + (NEW.deposit_amount - v_mod)),
 				num_deposits = (num_deposits + 1),
 				total_modulo = (total_modulo + v_mod)
 			;
 		FOR v_rec IN (SELECT count(*) AS num_toks,staker_aid FROM cg_staked_token_cst GROUP BY staker_aid)
 		LOOP
 			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,tokens_staked,amount_to_claim,amount_deposited)
-				VALUES(v_rec.staker_aid,NEW.deposit_id,v_rec.num_toks,amount_per_token*v_rec.num_toks,amount_per_token*v_rec.num_toks);
+				VALUES(v_rec.staker_aid,NEW.deposit_id,v_rec.num_toks,v_amount_per_token*v_rec.num_toks,v_amount_per_token*v_rec.num_toks);
 		END LOOP;
 		FOR v_rec IN (SELECT token_id,stake_action_id,staker_aid FROM cg_staked_token_cst)
 		LOOP
@@ -818,8 +823,16 @@ BEGIN
 					VALUES(v_rec.staker_aid,v_rec.token_id,v_rec.stake_action_id,v_amount_per_token);
 			END IF;
 			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,round_num,reward)
-				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.round_num,amount_per_token);
+				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.round_num,v_amount_per_token);
 		END LOOP;
+		UPDATE cg_eth_deposit 
+			SET 
+				
+				accumulated_amount = (v_prev_amount + NEW.deposit_amount),
+				accumulated_per_token = (v_prev_amount_per_token + v_amount_per_token),
+				accumulated_nfts = num_staked_nfts,
+				num_staked_nfts = v_tokens_added
+			WHERE id=NEW.id;
 	END IF;
 
 	RETURN NEW;
@@ -829,23 +842,28 @@ CREATE OR REPLACE FUNCTION on_eth_deposit_delete() RETURNS trigger AS  $$
 DECLARE
 	v_amount_per_token DECIMAL;
 	v_mod DECIMAL;
+	v_rec RECORD;
 BEGIN
 
 	IF OLD.num_staked_nfts > 0 THEN
-		v_mod := MOD(OLD.amount,OLD.num_staked_nfts);
-		v_amount_per_token := (OLD.amount - v_mod) / OLD.num_staked_nfts;
-		UPDATE cg_staker_cst
-			SET total_reward = (total_reward -  (v_amount_per_token*total_tokens_staked)),
-				unclaimed_reward = (unclaimed_reward -  (v_amount_per_token*total_tokens_staked))
-			WHERE total_tokens_staked > 0;
+		v_mod := MOD(OLD.deposit_amount,OLD.num_staked_nfts);
+		v_amount_per_token := (OLD.deposit_amount - v_mod) / OLD.num_staked_nfts;
+		FOR v_rec IN (SELECT count(token_id) AS num_toks,staker_aid FROM cg_staked_token_cst GROUP BY staker_aid)
+		LOOP
+			UPDATE cg_staker_cst
+				SET total_reward = (total_reward -  (v_amount_per_token*v_rec.num_toks)),
+					unclaimed_reward = (unclaimed_reward -  (v_amount_per_token*v_rec.num_toks))
+				WHERE total_tokens_staked > 0;
+		END LOOP;
 		UPDATE cg_stake_stats_cst
 			SET 
-				total_reward_amount = (total_reward_amount - (OLD.amount - v_mod)),
-				total_unclaimed_reward = (total_unclaimed_reward - (OLD.amount - v_mod)),
+				total_reward_amount = (total_reward_amount - (OLD.deposit_amount - v_mod)),
+				total_unclaimed_reward = (total_unclaimed_reward - (OLD.deposit_amount - v_mod)),
 				num_deposits = (num_deposits - 1),
 				total_modulo = (total_modulo - v_mod)
 			;
 		DELETE FROM cg_staker_deposit WHERE deposit_id=OLD.deposit_id;
+		DELETE FROM cg_st_reward WHERE deposit_id=OLD.deposit_id;
 	ELSE   
 	END IF;
 
