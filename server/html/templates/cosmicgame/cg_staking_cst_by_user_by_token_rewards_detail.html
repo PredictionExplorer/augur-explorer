@@ -8,7 +8,6 @@
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">DepositId</th>
-		<th class="market_reports">DepositIndex</th>
 		<th class="market_reports">Reward (ETH)</th>
 		<th class="market_reports">RoundNum</th>
 		<th class="market_reports">Datetime</th>
@@ -17,7 +16,6 @@
 	{{- range $i, $change := .RewardsByTokenDetails}}
 		<tr class="market_reports">
 			<td style="text-align: center">{{.DepositId}}</td>
-			<td style="text-align: center">{{.DepositIndex}}</td>
 			<td style="text-align: center;" title="">{{ printf "%.6f" .RewardEth}}</td>
 			<td style="text-align: center">{{.RoundNum}}</td>
 			<td style="text-align: center">{{.DepositDateTime}}</td>

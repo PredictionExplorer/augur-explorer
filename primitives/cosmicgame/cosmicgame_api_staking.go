@@ -119,6 +119,8 @@ type CGUnstakeActionInfoRec struct {
 	StakerAddr					string
 	RewardAmount				string
 	RewardAmountEth				float64
+	RewardPerToken				string
+	RewardPerTokenEth			float64
 }
 type CGStakeUnstakeCombined struct {
 	Stake						CGStakeActionInfoRec
@@ -385,6 +387,8 @@ type CGNftUnstakedInfoRec struct {
 	StakerAddr					string
 	RewardAmount				string
 	RewardAmountEth				float64
+	RewardPerToken				string
+	RewardPerTokenEth			float64
 }
 type CGNftStakeUnstakeCombined struct {
 	Stake						CGNftStakedInfoRec

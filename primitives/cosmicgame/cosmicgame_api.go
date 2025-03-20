@@ -81,7 +81,7 @@ type CGRoundRec struct {
 	CharityAddress				string
 	CharityAmount				string
 	CharityAmountETH			float64
-	StakingDepositNum			int64
+	StakingDepositId			int64
 	StakingDepositAmount		string
 	StakingDepositAmountEth		float64
 	StakingPerToken				string

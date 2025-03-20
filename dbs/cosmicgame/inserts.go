@@ -569,9 +569,9 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 	var query string
 	query = "INSERT INTO cg_nft_unstaked_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid,reward,action_counter" +
+				"action_id,token_id,num_staked_nfts,staker_aid,reward,reward_per_tok,action_counter" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -584,6 +584,7 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 		evt.NumStakedNfts,
 		staker_aid,
 		evt.RewardAmount,
+		evt.RewardPerToken,
 		evt.ActionCounter,
 	)
 	if err != nil {

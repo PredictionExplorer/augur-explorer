@@ -301,6 +301,7 @@ CREATE TABLE cg_nft_unstaked_cst (-- StakingWalletCosmicSignatureNft.sol:NftUnst
 	round_num		BIGINT DEFAULT -1,
 	staker_aid		BIGINT NOT NULL,
 	reward			DECIMAL NOT NULL,
+	reward_per_tok	DECIMAL NOT NULL, -- reward per token at the time of unstake
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_nft_staked_cst (	-- StakingWalletNftBase.sol: NftStaked

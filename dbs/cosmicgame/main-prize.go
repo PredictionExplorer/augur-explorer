@@ -37,8 +37,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"d.charity_addr, "+
 				"dp.deposit_amount,"+
 				"dp.deposit_amount/1e18, "+
-				"dp.amount_per_staker,"+
-				"dp.amount_per_staker/1e18, "+
+				"dp.amount_per_token,"+
+				"dp.amount_per_token/1e18, "+
 				"dp.deposit_id, "+
 				"dp.num_staked_nfts "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
@@ -108,7 +108,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 		if null_dep_amount_eth.Valid { rec.StakingDepositAmountEth = null_dep_amount_eth.Float64 }
 		if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
 		if null_dep_amount_per_token_eth.Valid { rec.StakingPerTokenEth = null_dep_amount_per_token_eth.Float64 }
-		if null_dep_deposit_num.Valid { rec.StakingDepositNum = null_dep_deposit_num.Int64} else {rec.StakingDepositNum = -1}
+		if null_dep_deposit_num.Valid { rec.StakingDepositId = null_dep_deposit_num.Int64} else {rec.StakingDepositId = -1}
 		if null_num_staked_nfts.Valid { rec.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 
 		records = append(records,rec)
@@ -144,8 +144,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"d.charity_addr, "+
 				"dp.deposit_amount, "+
 				"dp.deposit_amount/1e18,"+
-				"dp.amount_per_staker,"+
-				"dp.amount_per_staker/1e18, "+
+				"dp.amount_per_token,"+
+				"dp.amount_per_token/1e18, "+
 				"dp.deposit_id, "+
 				"dp.num_staked_nfts, "+
 				"endu.erc721_token_id, "+
@@ -256,7 +256,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	if null_dep_amount_eth.Valid { rec.StakingDepositAmountEth = null_dep_amount_eth.Float64 }
 	if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
 	if null_dep_amount_per_token_eth.Valid { rec.StakingPerTokenEth = null_dep_amount_per_token_eth.Float64 }
-	if null_dep_deposit_num.Valid { rec.StakingDepositNum = null_dep_deposit_num.Int64} else {rec.StakingDepositNum = -1}
+	if null_dep_deposit_num.Valid { rec.StakingDepositId = null_dep_deposit_num.Int64} else {rec.StakingDepositId = -1}
 	if null_num_staked_nfts.Valid { rec.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 	if null_endurance_tid.Valid { rec.EnduranceWinnerAddr = null_endurance_addr.String; rec.EnduranceERC721TokenId=null_endurance_tid.Int64 }
 	if null_lastcst_tid.Valid { rec.LastCstBidderAddr = null_lastcst_addr.String; rec.LastCstBidderERC721TokenId=null_lastcst_tid.Int64 }

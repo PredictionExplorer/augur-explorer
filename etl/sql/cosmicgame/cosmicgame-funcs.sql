@@ -795,7 +795,7 @@ BEGIN
 			v_prev_amount:=0;
 		END IF;
 		v_mod := MOD(NEW.deposit_amount,NEW.num_staked_nfts);
-		v_amount_per_token := (NEW.deposit_amount - v_mod) / v_tokens_added;
+		v_amount_per_token := (NEW.deposit_amount - v_mod) / NEW.num_staked_nfts;
 		UPDATE cg_staker_cst
 			SET total_reward = (total_reward + (v_amount_per_token*total_tokens_staked)),
 				unclaimed_reward = (unclaimed_reward + (v_amount_per_token*total_tokens_staked))
@@ -866,61 +866,6 @@ BEGIN
 		DELETE FROM cg_st_reward WHERE deposit_id=OLD.deposit_id;
 	ELSE   
 	END IF;
-
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_claim_reward_insert() RETURNS trigger AS  $$
-DECLARE
-	v_cnt						NUMERIC;
-BEGIN
-
-	UPDATE cg_stake_stats_cst
-		SET total_unclaimed_reward = (total_unclaimed_reward - NEW.reward);
-	UPDATE cg_staker_cst
-		SET unclaimed_reward = (unclaimed_reward - NEW.reward)
-		WHERE staker_aid=NEW.staker_aid;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_claim_reward_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE cg_stake_stats_cst
-		SET total_unclaimed_reward = (total_unclaimed_reward + OLD.reward);
-	UPDATE cg_staker_cst
-		SET unclaimed_reward = (unclaimed_reward + OLD.reward)
-		WHERE staker_aid=OLD.staker_aid;
-
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_unstake_action_cst_insert() RETURNS trigger AS  $$
-DECLARE
-	v_cnt						NUMERIC;
-BEGIN
-
-	UPDATE cg_staker_cst
-		SET	total_tokens_staked = (total_tokens_staked - 1),
-			num_unstake_actions = (num_unstake_actions + 1)
-		WHERE staker_aid=NEW.staker_aid;
-	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
-
-	DELETE from cg_staked_token_cst WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_unstake_action_cst_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE cg_staker_cst
-		SET total_tokens_staked = (total_tokens_staked + 1),
-			num_unstake_actions = (num_unstake_actions - 1)
-		WHERE staker_aid=OLD.staker_aid;
-	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
-	-- We aren't restoring state here (To Do)
 
 	RETURN OLD;
 END;
@@ -1001,19 +946,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_stake_action_rwalk_insert() RETURNS trigger AS  $$
-DECLARE
-	v_cnt						NUMERIC;
-BEGIN
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_stake_action_rwalk_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_unstake_action_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
@@ -1245,11 +1177,21 @@ BEGIN
 				UPDATE cg_staker_deposit
 					SET amount_to_claim=(amount_to_claim - NEW.reward)
 					WHERE staker_aid=NEW.staker_aid AND deposit_id=NEW.deposit_id;
+				UPDATE cg_staker_cst
+					SET unclaimed_reward = (unclaimed_reward - NEW.reward)
+					WHERE staker_aid=NEW.staker_aid;
+				UPDATE cg_stake_stats_cst
+					SET total_unclaimed_reward = (total_unclaimed_reward - NEW.reward);
 			END IF;
 			IF NOT NEW.collected THEN
 				UPDATE cg_staker_deposit
 					SET amount_to_claim=(amount_to_claim + NEW.reward)
 					WHERE staker_aid=NEW.staker_aid AND deposit_id=NEW.deposit_id;
+				UPDATE cg_staker_cst
+					SET unclaimed_reward = (unclaimed_reward + NEW.reward)
+					WHERE staker_aid=NEW.staker_aid;
+				UPDATE cg_stake_stats_cst
+					SET total_unclaimed_reward = (total_unclaimed_reward + NEW.reward);
 			END IF;
 		END IF;
 	END IF;

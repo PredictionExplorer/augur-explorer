@@ -42,6 +42,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 				"u.num_staked_nfts, "+
 				"u.reward,"+
 				"u.reward/1e18,"+
+				"u.reward_per_tok,"+
+				"u.reward_per_tok/1e18,"+
 				"u.staker_aid, "+
 				"ua.addr "+
 			"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst st "+
@@ -56,8 +58,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	var err error
 	var null_record_id,null_evtlog_id,null_tx_id,null_unstake_ts,null_action_id sql.NullInt64
 	var null_block_num,null_token_id,null_round_num,null_num_staked_nfts,null_staker_aid sql.NullInt64
-	var null_unstake_date,null_tx_hash,null_staker_addr,null_reward sql.NullString
-	var null_reward_eth sql.NullFloat64
+	var null_unstake_date,null_tx_hash,null_staker_addr,null_reward,null_reward_per_tok sql.NullString
+	var null_reward_eth,null_reward_per_tok_eth sql.NullFloat64
 	err=row.Scan(
 		// stake action fields
 		&rec.Stake.RecordId,
@@ -87,6 +89,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 		&null_num_staked_nfts,
 		&null_reward,
 		&null_reward_eth,
+		&null_reward_per_tok,
+		&null_reward_per_tok_eth,
 		&null_staker_aid,
 		&null_staker_addr,
 	)
@@ -110,6 +114,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	if null_num_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
 	if null_reward.Valid { rec.Unstake.RewardAmount = null_reward.String }
 	if null_reward_eth.Valid { rec.Unstake.RewardAmountEth = null_reward_eth.Float64 }
+	if null_reward_per_tok.Valid { rec.Unstake.RewardPerToken = null_reward_per_tok.String }
+	if null_reward_per_tok_eth.Valid { rec.Unstake.RewardPerTokenEth = null_reward_per_tok_eth.Float64 }
 	if null_staker_aid.Valid { rec.Unstake.StakerAid = null_staker_aid.Int64 }
 	if null_staker_addr.Valid { rec.Unstake.StakerAddr = null_staker_addr.String }
 	return true,rec
@@ -232,7 +238,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
 				"d.deposit_id,"+
-				"d.num_staked_nfts,"+
+				"d.accumulated_nfts,"+
 				"d.deposit_amount,"+
 				"d.deposit_amount/1e18,"+
 				"sd.tokens_staked,"+
@@ -243,8 +249,8 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"rwd.pending_reward,"+
 				"rwd.pending_reward_eth, "+
 				"rwd.num_toks_to_collect,"+
-				"d.deposit_amount/d.num_staked_nfts,"+
-				"(d.deposit_amount/d.num_staked_nfts)/1e18 "+
+				"d.deposit_amount/d.accumulated_nfts,"+
+				"(d.deposit_amount/d.accumulated_nfts)/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
 				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
@@ -326,15 +332,15 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
 				"d.deposit_id,"+
-				"d.num_staked_nfts,"+
+				"d.accumulated_nfts,"+
 				"d.deposit_amount,"+
 				"d.deposit_amount/1e18,"+
 				"sd.tokens_staked,"+
 				"sd.amount_to_claim,"+
 				"sd.amount_to_claim/1e18,"+
 				"rwd.num_toks_collected,"+
-				"d.deposit_amount/num_staked_nfts,"+
-				"(d.deposit_amount/num_staked_nfts)/1e18, "+
+				"d.deposit_amount/accumulated_nfts,"+
+				"(d.deposit_amount/accumulated_nfts)/1e18, "+
 				"modulo,"+
 				"modulo/1e+18, "+
 				"d.round_num, "+
@@ -637,7 +643,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 				"d.time_stamp,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
-				"d.num_staked_nfts,"+
+				"d.accumulated_nfts,"+
 				"d.deposit_amount,"+
 				"d.deposit_amount/1e18,"+
 				"d.round_num, "+
@@ -710,11 +716,11 @@ func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) [
 				"t.tx_hash,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT, "+
 				"d.deposit_time, "+
-				"d.num_staked_nfts,"+
+				"d.accumulated_nfts,"+
 				"d.deposit_amount,"+
 				"d.deposit_amount/1e18 AS amount_eth,"+
-				"d.amount_per_staker,"+
-				"d.amount_per_staker/1e18 AS amount_eth, "+
+				"d.amount_per_token,"+
+				"d.amount_per_token/1e18 AS amount_eth, "+
 				"sd.staker_aid, "+
 				"sa.addr,"+
 				"sd.tokens_staked,"+
@@ -1056,7 +1062,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 				"ua_id,ua_evtlog_id,ua_block_num,ua_tx_id,ua_tx_hash,ua_time_stamp,ua_date_time, "+
 				"ua_action_id,ua_token_id,ua_num_staked_nfts,ua_reward,ua_reward_eth,"+
 				"d.id,d.evtlog_id,d.block_num,tx.id,tx.tx_hash,EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp,"+
-				"d.deposit_id,d.round_num,d.num_staked_nfts,d.deposit_amount,d.deposit_amount/1e18,amount_per_staker/1e18,"+
+				"d.deposit_id,d.round_num,d.num_staked_nfts,d.deposit_amount,d.deposit_amount/1e18,amount_per_token/1e18,"+
 				"str.reward,"+
 				"str.reward/1e18,"+
 				"str.collected "+
@@ -1302,7 +1308,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 				"sa_action_id,sa_num_staked_nfts,"+
 				// unstake action fields
 				"ua_id,ua_evtlog_id,ua_block_num,ua_tx_id,ua_tx_hash,ua_time_stamp,ua_date_time, "+
-				"ua_action_id,ua_num_staked_nfts,ua_reward,ua_reward_eth "+
+				"ua_action_id,ua_num_staked_nfts,ua_reward,ua_reward_eth, "+
 				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,d.time_stamp "+
 			"FROM cg_st_reward rwd "+
 				"INNER JOIN cg_eth_deposit d ON rwd.deposit_id=d.deposit_id "+

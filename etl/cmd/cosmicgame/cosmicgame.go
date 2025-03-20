@@ -1483,6 +1483,7 @@ func proc_nft_unstaked_cst_event(log *types.Log,elog *EthereumEventLog) {
 	evt.StakerAddress = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.NumStakedNfts = eth_evt.NumStakedNfts.Int64()
 	evt.RewardAmount = eth_evt.RewardAmount.String()
+	evt.RewardPerToken = eth_evt.RewardAmountPerStakedNft.String()
 	evt.ActionCounter = eth_evt.ActionCounter.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -1491,7 +1492,8 @@ func proc_nft_unstaked_cst_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tNftId: %v\n",evt.NftId)
 	Info.Printf("\tNumStakedNfts: %v\n",evt.NumStakedNfts)
 	Info.Printf("\tStakerAddress: %v\n",evt.StakerAddress)
-	Info.Printf("\tRewardAmount: %v\n",evt.RewardAmount)
+	Info.Printf("\tRewardAmount (total): %v\n",evt.RewardAmount)
+	Info.Printf("\tRewardPerToken: %v\n",evt.RewardPerToken)
 	Info.Printf("\tActionCounter: %v\n",evt.ActionCounter)
 	Info.Printf("}\n")
 

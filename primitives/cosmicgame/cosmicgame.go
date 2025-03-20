@@ -426,6 +426,7 @@ type CGNftUnstakedCst struct {
 	NumStakedNfts		int64
 	StakerAddress		string
 	RewardAmount		string
+	RewardPerToken		string
 }
 type CGMarketingRewardSent struct {
 	EvtId				int64
