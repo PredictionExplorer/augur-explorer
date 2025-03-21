@@ -83,8 +83,7 @@ func print_application_layer_status_line(status *AppLayerStatus) {
 	printAtPosition(status.X+45,status.Y,official_diff,termbox.ColorBlue,termbox.ColorDefault)
 }
 func print_current_application_layer_status() {
-	printAtPosition(90, 0, "---- Last Block Numbers for App layer ---",termbox.ColorWhite,termbox.ColorDefault)
-	printAtPosition(100, 1, "( Postgres database)",termbox.ColorWhite,termbox.ColorDefault)
+	printAtPosition(1, 24, "----------- Last Block Numbers in Postgres ----------",termbox.ColorWhite,termbox.ColorDefault)
 	print_application_layer_status_line(&cosmic_app1)
 	print_application_layer_status_line(&cosmic_app2)
 	print_application_layer_status_line(&rwalk_app1)

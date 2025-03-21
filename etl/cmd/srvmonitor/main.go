@@ -63,6 +63,16 @@ type AppLayerStatus struct {	// fetches last block number that was processed by 
 	X					int
 	Y					int
 }
+type WebApiStatus struct {	// the API server that attends HTTP requests (ex. http://[ip]:[port]/api/cosmicgame/statistics/dashboard)
+	Title				string
+	Host				string
+	Port				string
+	URI					string
+	Alive				bool
+	ErrStr				string
+	X					int
+	Y					int
+}
 const (
 	WAIT_RPC_BLOCK_NUM	= 60			// seconds to wait before second getBlock() call
 	WAIT_DB_BLOCK_NUM = 60				// seconds to wait to detect incremental database update
@@ -79,10 +89,11 @@ var (
 	Official_mainnet_ptr								*RPCStatus = nil
 	Official_arbitrum_ptr								*RPCStatus = nil
 	Official_sepolia_arb_ptr							*RPCStatus = nil
-	db1,db2,db3,db4								Layer1Status
-	df1,df2,df3								DfStatus
-	rwalk_app1,rwalk_app2					AppLayerStatus
-	cosmic_app1,cosmic_app2					AppLayerStatus
+	db1,db2,db3,db4										Layer1Status
+	df1,df2,df3											DfStatus
+	web1,web2,web3,web4									WebApiStatus
+	rwalk_app1,rwalk_app2								AppLayerStatus
+	cosmic_app1,cosmic_app2								AppLayerStatus
 
 	globErr1								string
 	globErr2								string
@@ -153,11 +164,29 @@ func check_layer1() {
 		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
 	}
 }
+func check_web_api() {
+
+	init_web_api_status_struct(&web1,os.Getenv("SRV1_WEB_API_NAME"),os.Getenv("SRV1_WEB_API_HOST"),os.Getenv("SRV1_WEB_API_PORT"),os.Getenv("SRV1_WEB_API_URI"),1,31)
+	init_web_api_status_struct(&web2,os.Getenv("SRV2_WEB_API_NAME"),os.Getenv("SRV2_WEB_API_HOST"),os.Getenv("SRV2_WEB_API_PORT"),os.Getenv("SRV2_WEB_API_URI"),1,32)
+	init_web_api_status_struct(&web3,os.Getenv("SRV3_WEB_API_NAME"),os.Getenv("SRV3_WEB_API_HOST"),os.Getenv("SRV3_WEB_API_PORT"),os.Getenv("SRV3_WEB_API_URI"),1,33)
+	init_web_api_status_struct(&web4,os.Getenv("SRV4_WEB_API_NAME"),os.Getenv("SRV4_WEB_API_HOST"),os.Getenv("SRV4_WEB_API_PORT"),os.Getenv("SRV4_WEB_API_URI"),1,34)
+	for {
+		var wg_db sync.WaitGroup
+		wg_db.Add(4);
+		go check_web_api_status(&web1,&wg_db); 
+		go check_web_api_status(&web2,&wg_db); 
+		go check_web_api_status(&web3,&wg_db); 
+		go check_web_api_status(&web4,&wg_db); 
+		wg_db.Wait() 
+		print_current_web_api_status()
+		time.Sleep(WAIT_BETWEEN_UPDATES * time.Second)
+	}
+}
 func show_disk_usage_statistics() {
 
-	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_USER"),os.Getenv("SSH_CMD_DF_SRV1_IP"),os.Getenv("SSH_CMD_DF_SRV1_DEVICES"),1,20)
-	init_df_status_struct(&df2,os.Getenv("SSH_CMD_DF_SRV2_NAME"),os.Getenv("SSH_CMD_DF_SRV2_USER"),os.Getenv("SSH_CMD_DF_SRV2_IP"),os.Getenv("SSH_CMD_DF_SRV2_DEVICES"),25,20)
-	init_df_status_struct(&df3,os.Getenv("SSH_CMD_DF_SRV3_NAME"),os.Getenv("SSH_CMD_DF_SRV3_USER"),os.Getenv("SSH_CMD_DF_SRV3_IP"),os.Getenv("SSH_CMD_DF_SRV3_DEVICES"),50,20)
+	init_df_status_struct(&df1,os.Getenv("SSH_CMD_DF_SRV1_NAME"),os.Getenv("SSH_CMD_DF_SRV1_USER"),os.Getenv("SSH_CMD_DF_SRV1_IP"),os.Getenv("SSH_CMD_DF_SRV1_DEVICES"),1,18)
+	init_df_status_struct(&df2,os.Getenv("SSH_CMD_DF_SRV2_NAME"),os.Getenv("SSH_CMD_DF_SRV2_USER"),os.Getenv("SSH_CMD_DF_SRV2_IP"),os.Getenv("SSH_CMD_DF_SRV2_DEVICES"),25,18)
+	init_df_status_struct(&df3,os.Getenv("SSH_CMD_DF_SRV3_NAME"),os.Getenv("SSH_CMD_DF_SRV3_USER"),os.Getenv("SSH_CMD_DF_SRV3_IP"),os.Getenv("SSH_CMD_DF_SRV3_DEVICES"),50,18)
 	for {
 		var wg sync.WaitGroup
 		wg.Add(3);
@@ -169,10 +198,10 @@ func show_disk_usage_statistics() {
 	}
 }
 func show_application_layer_last_blocks() {
-	init_application_layer_status_struct(&cosmic_app1,os.Getenv("APP_STATUS_SRV1_TITLE"),os.Getenv("APP_STATUS_SRV1_HOST"),os.Getenv("APP_STATUS_SRV1_DBNAME"),os.Getenv("APP_STATUS_SRV1_USER"),os.Getenv("APP_STATUS_SRV1_PASS"),"cg_proc_status",92,2)
-	init_application_layer_status_struct(&cosmic_app2,os.Getenv("APP_STATUS_SRV2_TITLE"),os.Getenv("APP_STATUS_SRV2_HOST"),os.Getenv("APP_STATUS_SRV2_DBNAME"),os.Getenv("APP_STATUS_SRV2_USER"),os.Getenv("APP_STATUS_SRV2_PASS"),"cg_proc_status",92,3)
-	init_application_layer_status_struct(&rwalk_app1,os.Getenv("APP_STATUS_SRV3_TITLE"),os.Getenv("APP_STATUS_SRV3_HOST"),os.Getenv("APP_STATUS_SRV3_DBNAME"),os.Getenv("APP_STATUS_SRV3_USER"),os.Getenv("APP_STATUS_SRV3_PASS"),"rw_proc_status",92,4)
-	init_application_layer_status_struct(&rwalk_app2,os.Getenv("APP_STATUS_SRV4_TITLE"),os.Getenv("APP_STATUS_SRV4_HOST"),os.Getenv("APP_STATUS_SRV4_DBNAME"),os.Getenv("APP_STATUS_SRV4_USER"),os.Getenv("APP_STATUS_SRV4_PASS"),"rw_proc_status",92,5)
+	init_application_layer_status_struct(&cosmic_app1,os.Getenv("APP_STATUS_SRV1_TITLE"),os.Getenv("APP_STATUS_SRV1_HOST"),os.Getenv("APP_STATUS_SRV1_DBNAME"),os.Getenv("APP_STATUS_SRV1_USER"),os.Getenv("APP_STATUS_SRV1_PASS"),"cg_proc_status",1,25)
+	init_application_layer_status_struct(&cosmic_app2,os.Getenv("APP_STATUS_SRV2_TITLE"),os.Getenv("APP_STATUS_SRV2_HOST"),os.Getenv("APP_STATUS_SRV2_DBNAME"),os.Getenv("APP_STATUS_SRV2_USER"),os.Getenv("APP_STATUS_SRV2_PASS"),"cg_proc_status",1,26)
+	init_application_layer_status_struct(&rwalk_app1,os.Getenv("APP_STATUS_SRV3_TITLE"),os.Getenv("APP_STATUS_SRV3_HOST"),os.Getenv("APP_STATUS_SRV3_DBNAME"),os.Getenv("APP_STATUS_SRV3_USER"),os.Getenv("APP_STATUS_SRV3_PASS"),"rw_proc_status",1,27)
+	init_application_layer_status_struct(&rwalk_app2,os.Getenv("APP_STATUS_SRV4_TITLE"),os.Getenv("APP_STATUS_SRV4_HOST"),os.Getenv("APP_STATUS_SRV4_DBNAME"),os.Getenv("APP_STATUS_SRV4_USER"),os.Getenv("APP_STATUS_SRV4_PASS"),"rw_proc_status",1,28)
 
 	for {
 		var wg sync.WaitGroup
@@ -214,6 +243,7 @@ func main() {
 	go check_layer1()
 	go show_disk_usage_statistics()
 	go show_application_layer_last_blocks()
+	go check_web_api()
 
 //	check_randomwalk_resource_availability()
 //	check_cosmicgame_resource_availability()
