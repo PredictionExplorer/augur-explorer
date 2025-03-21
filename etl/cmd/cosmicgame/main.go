@@ -47,15 +47,12 @@ const (
 	LASTCST_BIDDER_WINNER	= "3901b6430c99dc290ee88ff84c4de6091ad7eac335b58e92ef5cbb0793abf4f6"
 	CHRONO_WARRIOR			= "4325f4809052852398280e22eac8be724fa5616bd6cad1bc20fdcbcd114a3d75"	//ChronoWarriorPrizeAllocated
 	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
-	//STAKE_ACTION_EVENT		= "cd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8"
 	CST_NFT_STAKED_EVENT		= "e09cd972bcd125457d8f8a684b2b67ec513fbb7f770001bbebd7c22b41ad9da8"
 	RWALK_NFT_STAKED_EVENT		= "62773741191803b5cec48480156933243e422a1fb1ea9967dab3ee30df2da95f"
-//	UNSTAKE_ACTION_EVENT	= "678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96"
 	NFT_UNSTAKED_RWALK		= "08e7047cd3ef25f4a72589ed1d73eb0af1ca8a5957f9539e126dff45870979cc"
 	NFT_UNSTAKED_CST		= "ec478a78e4e3931ff728a54eeb6875304c891fa5fa253337b60d37fdc5e1feaf"
 	STAKING_ETH_DEPOSIT_EVENT= "26726e1a40953e6b9e06e1c1a1f53422299c7e00d2cc5d986bd4723796ca4588"
 	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
-//	REWARD_PAID_EVENT		= "f9bac74bc321a00ef2afeb1f44684e20e22f567699a5840df47967ea88c5b449"
 	FUND_TRANSFER_ERR		= "154fb6c686c977314af35b730a16b83facda5265b2abec7237c730f63e42215a"
 	ERC20_TRANSFER_ERR		= "f7fce645f12ae266a329c431e96ebea892316a1415809056621ffeea04efd4ab"
 	ROUND_STARTED			= "028a52641badd593b7f30072734c0b97e449213f55b5c3663756427340accd3c"	//FirstBidPlacedInRound
@@ -88,14 +85,13 @@ const (
 	PRICE_INCREASE_CHANGED	= "deb71e1d117914859ddde484a9810084d9ee399077d5cd8dcbdf8770d33d8ae4"	//EthBidPriceIncreaseDivisorChanged
 	MAIN_PRIZE_MICROSECOND_INCREASE= "07417920574ce0bdfe987af0575c8793cc73a29d7830760ad459d0e569b5b79b"//	NANOSECONDS_EXTRA_CHANGED = "07417920574ce0bdfe987af0575c8793cc73a29d7830760ad459d0e569b5b79b" // the variable was renamed to mainPrizeTimeIncrementInMicroSeconds
 	INITIAL_SECONDS_UNTIL_PRIZE_CHANGED = "b5edd1f338b34c8f5dd3b1c5cc12f05653c495713c282bf588d34cf14fad0f89"
-//	INITIAL_BID_AMOUNT_FRACTION_CHANGED = "3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628"		DISCONTINUED
 	ROUND_ACTIVATION_TIME_CHANGED = "9a2159c1f277ddd727551baedc6a6c4cba77cc5219c8563ee3b15fb67548d89b"
 	ETH_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED=	"fdf6043c89a5f304289122dcc9f8bd78bb111b5d4f409e2fc2e6c141a1110b79"
 	CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED= "c95d03f6c735a9e59c760fdb88e585aafe0a31b5c034fc7838155287ee32212f" // previosly ROUND_START_AUCTION_LENGTH_CHANGED = "23dabd88e0a182dcd593bec053f3867f1bd6afc77d470cbc1ef48ad189bfd676"
 	MARKETING_REWARD_SENT	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486"
 	MARKETING_REWARD_CHANGED = "2652e6657dd1ed89d7bdcb70f8827cc8449ac4536ebf604dbb2465cdad264020" //MarketingWalletCstContributionAmountChanged
 	CST_REWARD_FOR_BIDDING_CHANGED = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0"	// previous: ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
-	ERC20_REWARD_MULT		= "44d50377242b2c165fd7ae3c2a9f2ccad8ecf04268512599ba6b81dedec0a59b"	//CstRewardAmountMultiplierChanged
+	ERC20_REWARD_MULT		= "9de7adda7fb7d13e10aac4b298c3ba3b724da9f964c6889e59883542c95d6615"	//CstPrizeAmountMultiplierChanged
 	MAX_MESSAGE_LENGTH		= "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8"	//BidMessageLengthMaxLimitChanged
 	TOKEN_SCRIPT_URL		= "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c"
 	BASE_URI				= "bdfd815215fcee5bb949c941ab489c7ead076a7c8acd3527cd1b50f613ac67e6"
@@ -103,7 +99,6 @@ const (
 	STARTING_CST_MIN_LIM	= "4e8c80fe79d13b8663de9f6981925ae24c498cc07b0ebd4f4789fa78ca17caff"
 	FUNDS_TO_CHARITY		= "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d"
 	DELAY_DURATION_ROUND	= "b0868a729f47ae3829aaafe3ca2975d3db2148553c854112f598be6d91ef0d28"
-//	STAKING_STATE_RESET		= "8a77a30ae54ca88ceda5f17cd3679c1b868abd2c6d36b67bcbe5e9beac7ec648"
 
 )
 var (
@@ -146,7 +141,6 @@ var (
 	evt_price_increase_changed,_	= hex.DecodeString(PRICE_INCREASE_CHANGED)
 	evt_prize_microsecond_increase_changed,_	= hex.DecodeString(MAIN_PRIZE_MICROSECOND_INCREASE)
 	evt_initial_seconds_until_prize_changed,_	= hex.DecodeString(INITIAL_SECONDS_UNTIL_PRIZE_CHANGED)
-//	evt_initial_bid_amount_fraction_changed,_	= hex.DecodeString(INITIAL_BID_AMOUNT_FRACTION_CHANGED)		DISCONTINUED
 	evt_activation_time_changed,_	= hex.DecodeString(ROUND_ACTIVATION_TIME_CHANGED)
 	evt_cst_dutch_auction_duration_divisor_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED) // previously	evt_round_start_auction_length_changed
 	evt_eth_dutch_auction_duration_divisor_changed,_ = hex.DecodeString(ETH_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED)
@@ -167,7 +161,6 @@ var (
 	evt_funds2charity,_				= hex.DecodeString(FUNDS_TO_CHARITY)
 	evt_delay_duration_round,_		= hex.DecodeString(DELAY_DURATION_ROUND)
 	evt_round_started,_				= hex.DecodeString(ROUND_STARTED)
-	//evt_staking_state_reset,_		= hex.DecodeString(STAKING_STATE_RESET)
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)
@@ -190,7 +183,6 @@ var (
 	evt_rwalk_nft_staked,_		= hex.DecodeString(RWALK_NFT_STAKED_EVENT)
 	evt_nft_unstaked_rwalk,_= hex.DecodeString(NFT_UNSTAKED_RWALK)
 	evt_nft_unstaked_cst,_	= hex.DecodeString(NFT_UNSTAKED_CST)
-//	evt_reward_paid,_		= hex.DecodeString(REWARD_PAID_EVENT)
 	evt_staking_eth_deposit,_		= hex.DecodeString(STAKING_ETH_DEPOSIT_EVENT)
 
 	// MarketingWallet events
@@ -328,7 +320,6 @@ func main() {
 	storagew.S.Log_msg("Log initialized\n")
 
 	cosmic_game_abi = get_abi(CosmicSignatureGameABI)
-//	blogic_abi = get_abi(BusinessLogicABI);
 	cosmic_signature_abi = get_abi(CosmicSignatureNftABI)
 	cosmic_token_abi = get_abi(CosmicSignatureTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);

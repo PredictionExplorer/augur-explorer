@@ -404,7 +404,7 @@ async function main() {
 	let tmpval = await cosmicGameProxy.ethDutchAuctionDurationDivisor();
 	tmpval = tmpval + 11n;
 	await cosmicGameProxy.connect(owner).setEthDutchAuctionDurationDivisor(tmpval);
-    await cosmicGameProxy.connect(owner).setCstRewardAmountMultiplier(5);
+    await cosmicGameProxy.connect(owner).setCstPrizeAmountMultiplier(5);
     await cosmicGameProxy
         .connect(owner)
         .setCstDutchAuctionBeginningBidPriceMinLimit(150000000000000000000n);
@@ -429,7 +429,7 @@ async function main() {
     await cosmicGameProxy
         .connect(owner)
         .setStakingWalletRandomWalkNft(await stakingWalletRandomWalkNft.getAddress());
-    await cosmicGameProxy.connect(owner).setCstRewardAmountMultiplier(999);
+    await cosmicGameProxy.connect(owner).setCstPrizeAmountMultiplier(999);
     let tmp = await cosmicGameProxy.mainPrizeTimeIncrementIncreaseDivisor();
     await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementIncreaseDivisor(tmp);
     tmp = await cosmicGameProxy.connect(owner).timeoutDurationToClaimMainPrize();
@@ -618,25 +618,6 @@ async function main() {
     for (let i = 1; i <= 5; i++) {
         await stakingWalletRandomWalkNft.connect(addr1).unstake(i);
     }
-	/*discontinued
-	numStakeActions = await stakingWalletCosmicSignatureNft.actionCounter();
-    for (let i = 1; i <= numStakeActions; i++) {
-        let action_rec = (await stakingWalletCosmicSignatureNft.stakeActions(i)).toObject();
-        let ownr = action_rec.nftOwnerAddress;
-		if (ownr == "0x0000000000000000000000000000000000000000") { continue; }
-		if (ownr == addr1.address) {
-			// make some address keeping its tokens
-			continue;
-		} else {
-		}
-        let owner_signer = await hre.ethers.getSigner(ownr);
-		try {
-	        await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i);
-//	        await stakingWalletCosmicSignatureNft.connect(owner_signer).payReward(i,100);
-		} catch (e) {
-		//	console.log("unstake() error: ",e);
-		}
-    }*/
 }
 
 main()

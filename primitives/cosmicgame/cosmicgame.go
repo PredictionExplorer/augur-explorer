@@ -239,19 +239,6 @@ type CGChronoWarrior struct {
 	Round				int64
 	Amount				string
 }
-/*
-type CGRaffleNFTClaimed struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	WinnerAddr			string
-	WinnerEvtlogId		int64
-	TokenId				int64
-}
-*/
 type CGDonatedTokenClaimed struct {	// ERC20 tokens
 	EvtId				int64
 	BlockNum			int64
@@ -278,34 +265,6 @@ type CGDonatedNFTClaimed struct {	// ERC721 tokens
 	TokenId				string
 	BeneficiaryAddr		string
 }
-/*DISCONTINUED, removal pending
-type CGStakeActionCST struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	RoundNum			int64
-	ActionId			int64
-	TokenId				int64
-	TotalNfts			int64
-	Staker 				string
-}
-type CGUnstakeActionCST struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	RoundNum			int64
-	ActionId			int64
-	TokenId				int64
-	TotalNfts			int64
-	Reward				string
-	Staker 				string
-}*/
 type CGNftStakedCst struct {
 	EvtId				int64
 	BlockNum			int64
@@ -359,46 +318,6 @@ type CGClaimReward struct {
 	Reward				string	
 	Staker				string
 }
-/*type CGRewardPaid struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	ActionId			int64
-	NftId				int64
-	RewardAmount		string	
-	StakerAddress		string
-	MaxUnpaidEthDepositIndex	int64
-}*/
-/* DISCONTINUED, removal pending
-type CGStakeActionRWalk struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	RoundNum			int64
-	ActionId			int64
-	TokenId				int64
-	TotalNfts			int64
-	Staker 				string
-}
-type CGUnstakeActionRWalk struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	RoundNum			int64
-	ActionId			int64
-	TokenId				int64
-	TotalNfts			int64
-	Staker 				string
-}*/
 type CGNftUnstakedRWalk struct {
 	EvtId				int64
 	BlockNum			int64
@@ -531,14 +450,6 @@ type CGNumRaffleNFTWinnersStakingRWalkChanged struct {
 	TimeStamp               int64
 	Contract                string
 	NewNumRaffleNFTWinnersStakingRWalk int64
-}
-type CGSystemModeChanged struct {
-	EvtId                   int64
-	BlockNum                int64
-	TxId                    int64
-	TimeStamp               int64
-	Contract                string
-	NewSystemMode			int64
 }
 type CGCharityAddressChanged struct {
 	EvtId                   int64
@@ -693,7 +604,6 @@ type CGETHCSTBidRatioChanged struct {
 	Contract                string
 	NewETHToCSTBidRatio		string
 }
-//type CGRoundStartCSTAuctionLengthChanged struct {
 type CGCstDutchAuctionDurationDivisorChanged struct {
 	EvtId                   int64
 	BlockNum                int64
@@ -734,7 +644,6 @@ type CGMarketingRewardChanged struct {
 	Contract                string
 	NewReward				string
 }
-//previous: type CGBiddingTokenRewardChanged struct {
 type CGCstRewardForBiddingChanged struct {
 	EvtId                   int64
 	BlockNum                int64
@@ -784,14 +693,6 @@ type CGInitialized struct {
 	TimeStamp               int64
 	Contract                string
 	Version					int64
-}
-type CGStateReset struct {
-	EvtId                   int64
-	BlockNum                int64
-	TxId                    int64
-	TimeStamp               int64
-	Contract                string
-	NumResets				int64
 }
 type CGCstMinLimit struct {
 	EvtId                   int64
