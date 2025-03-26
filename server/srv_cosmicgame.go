@@ -56,6 +56,8 @@ var (
 	prize_amount_eth			float64
 	raffle_amount				string
 	raffle_amount_eth			float64
+	staking_amount				string
+	staking_amount_eth			float64
 	round_num					int64
 	mainprize_microseconds_inc	string
 	last_bidder					common.Address
@@ -256,6 +258,18 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_prize_amount,f_divisor)
 			prize_amount_eth,_ = f_quo.Float64()
 		}
+		tmp_val , err = bwcontract.GetCosmicSignatureNftStakingTotalEthRewardAmount(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at GetCosmicSignatureNftStakingTotalEthRewardAmount() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			staking_amount = "error"
+		} else {
+			staking_amount = tmp_val.String()
+			f_staking_amount:= big.NewFloat(0.0).SetInt(tmp_val)
+			f_quo := big.NewFloat(0.0).Quo(f_staking_amount,f_divisor)
+			staking_amount_eth,_ = f_quo.Float64()
+		}
 		tmp_val , err = bwcontract.GetRaffleTotalEthPrizeAmountForBidders(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at RaffleAmount() call: %v\n",err)
@@ -404,6 +418,8 @@ func cosmic_game_index_page(c *gin.Context) {
 		"PrizeAmountEth" : prize_amount_eth,
 		"RaffleAmount" : raffle_amount,
 		"RaffleAmountEth" : raffle_amount_eth,
+		"StakingAmount" : staking_amount,
+		"StakingAmountEth" : staking_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
 		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,

@@ -259,6 +259,12 @@ func main() {
 		fmt.Printf("Error at GetInitialDurationUntilMainPrize(): %v\n",err)
 		os.Exit(1)
 	}
+	activation_time,err := cosmic_game_ctrct.RoundActivationTime(&copts)
+	if err != nil {
+		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
+		os.Exit(1)
+	}
+
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
 	fmt.Printf("Bid Price = %v\n",bid_price.String())
@@ -291,4 +297,5 @@ func main() {
 	fmt.Printf("Price increase (on bid) = %v\n",price_increase)
 	fmt.Printf("Time increment (on claimPrize()): %v\n",time_increment)
 	fmt.Printf("First bid time increment = %v\n",first_bid_time_increment.String())
+	fmt.Printf("Round activation time = %v\n",activation_time.String())
 }

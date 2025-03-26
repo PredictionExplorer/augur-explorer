@@ -43,6 +43,8 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"PrizeAmountEth" : prize_amount_eth,
 		"RaffleAmount" : raffle_amount,
 		"RaffleAmountEth" : raffle_amount_eth,
+		"StakingAmount" : staking_amount,
+		"StakingAmountEth" : staking_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
 		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,
