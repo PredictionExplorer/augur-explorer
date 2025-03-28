@@ -2,9 +2,11 @@
 // Because "hardhat.config.js" imports us, an attempt to import "hardhat" here would throw an error.
 // So we must do things differently here.
 // [/Comment-202409255]
-// const hre = require("hardhat");
-const { HardhatContext } = require("hardhat/internal/context");
-
+//const hre = require("hardhat");
+//const { HardhatContext } = require("hardhat/internal/context");
+//const { getHardhatRuntimeEnvironment } = require("hardhat/plugins");
+//const hre = getHardhatRuntimeEnvironment();
+const hre = require("hardhat");
 const basicDeployment = async function (
 	deployerAcct,
 	randomWalkAddr,
@@ -38,7 +40,7 @@ const basicDeploymentAdvanced = async function (
 	}
 
 	// Comment-202409255 applies.
-	const hre = HardhatContext.getHardhatContext().environment;
+//	const hre = HardhatContext.getHardhatContext().environment;
 
 	let cosmicGameProxy, cosmicToken, cosmicSignature, charityWallet, cosmicDAO, randomWalkNFT, prizesWallet;
 	let CosmicGame = await hre.ethers.getContractFactory(cgpName);

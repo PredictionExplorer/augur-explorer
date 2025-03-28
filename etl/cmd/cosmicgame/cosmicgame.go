@@ -1122,14 +1122,14 @@ func proc_lastcst_bidder_winner_event(log *types.Log,elog *EthereumEventLog) {
 func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGChronoWarrior
-	var eth_evt ICosmicSignatureGameChronoWarriorPrizeAllocated
+	var eth_evt ICosmicSignatureGameChronoWarriorEthPrizeAllocated
 	Info.Printf("Processing ChronoWarrio winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ChronoWarriorPrizeAllocated",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ChronoWarriorEthPrizeAllocated",log.Data)
 	if err != nil {
 		Error.Printf("Event ChronoWarriorPrizePaid decode error: %v",err)
 		os.Exit(1)
