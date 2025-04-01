@@ -103,13 +103,13 @@ func update_global_errors(new_error string) {
 	Info.Printf("%v\n",new_error)
 	if len(globErr1) == 0 { 
 		globErr1 = new_error
-		printAtPosition(1,26,fmt.Sprintf("%v",globErr1),termbox.ColorYellow,termbox.ColorDefault)
+		printAtPosition(1,35,fmt.Sprintf("%v",globErr1),termbox.ColorYellow,termbox.ColorDefault)
 		termbox.Flush()
 		return 
 	}
 	if len(globErr2) == 0 { 
 		globErr2 = new_error
-		printAtPosition(1,27,fmt.Sprintf("%v",globErr2),termbox.ColorYellow,termbox.ColorDefault)
+		printAtPosition(1,36,fmt.Sprintf("%v",globErr2),termbox.ColorYellow,termbox.ColorDefault)
 		termbox.Flush()
 		return 
 	}
