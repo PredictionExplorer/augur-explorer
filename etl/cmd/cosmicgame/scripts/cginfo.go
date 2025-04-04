@@ -242,9 +242,18 @@ func main() {
 		fmt.Printf("Error at EthBidPriceIncreaseDivisor(): %v\n",err)
 		os.Exit(1)
 	}
+	fmt.Printf("eth_bid_price_increase_divisor = %v\n",eth_bid_price_increase_divisor)
 	price_increase := convert_to_percentage(eth_bid_price_increase_divisor)
+
+	initial_duration_divisor,err := cosmic_game_ctrct.InitialDurationUntilMainPrizeDivisor(&copts)
 	if err != nil {
-		fmt.Printf("Error at EthBidPriceIncreaseDivisor(): %v\n",err)
+		fmt.Printf("Error at initialDurationUntilMainPrizeDivisor(): %v\n",err)
+		os.Exit(1)
+	}
+	initial_duration_inc := convert_to_percentage(initial_duration_divisor)
+	initial_duration_seconds,err := cosmic_game_ctrct.GetInitialDurationUntilMainPrize(&copts)
+	if err != nil {
+		fmt.Printf("Error at getInitialDurationUntilMainPrize(): %v\n",err)
 		os.Exit(1)
 	}
 
@@ -254,11 +263,6 @@ func main() {
 		os.Exit(1)
 	}
 	time_increment := float64(time_inc_microsec.Int64())/float64(1000000);
-	first_bid_time_increment,err := cosmic_game_ctrct.GetInitialDurationUntilMainPrize(&copts)
-	if err != nil {
-		fmt.Printf("Error at GetInitialDurationUntilMainPrize(): %v\n",err)
-		os.Exit(1)
-	}
 	activation_time,err := cosmic_game_ctrct.RoundActivationTime(&copts)
 	if err != nil {
 		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
@@ -294,8 +298,9 @@ func main() {
 	fmt.Printf("Delay until Activation = %v\n",delay_until_activation)
 	fmt.Printf("CST Auction duration %v of %v\n",cst_auction_elapsed.String(),cst_auction_duration.String())
 	fmt.Printf("ETH Auction duration %v of %v\n",eth_auction_elapsed.String(),eth_auction_duration.String())
-	fmt.Printf("Price increase (on bid) = %v\n",price_increase)
+	fmt.Printf("Price increase (on bid) = %v%%\n",price_increase)
+	fmt.Printf("First bid time bump %v%% (divisor=%v)\n",initial_duration_inc,initial_duration_divisor)
+	fmt.Printf("First bid time bump %v sseconds\n",initial_duration_seconds)
 	fmt.Printf("Time increment (on claimPrize()): %v\n",time_increment)
-	fmt.Printf("First bid time increment = %v\n",first_bid_time_increment.String())
 	fmt.Printf("Round activation time = %v\n",activation_time.String())
 }

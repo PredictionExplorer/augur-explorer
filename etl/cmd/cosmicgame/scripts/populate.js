@@ -112,10 +112,17 @@ async function main() {
 	const stakingWalletCst = await ethers.getContractAt("StakingWalletCosmicSignatureNft",stakingWalletCstAddr);
 	const stakingWalletRWalkAddr = await cosmicGameProxy.stakingWalletRandomWalkNft();
 	const stakingWalletRWalk= await ethers.getContractAt("StakingWalletRandomWalkNft",stakingWalletRWalkAddr);
+
+	tx = await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(120);
+	await tx.wait()
+	tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(300000000);
+	await tx.wait()
+	tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(1000000);
+	await tx.wait()
 	console.log("Transacting with CosmicGame contract "+cosmicGameAddr)
 	await cosmicGameProxy.connect(owner).setDelayDurationBeforeRoundActivation(5);
 	console.log("Adjusted activation delay to 5 seconds")
-    let rn = await cosmicGameProxy.roundNum();
+	let rn = await cosmicGameProxy.roundNum();
 	console.log("Round num = "+Number(rn))
 	let tx;
 	let token_id;
