@@ -17,6 +17,11 @@ const (
 var (
 	RPC_URL string
 )
+func fmt_eth(wei *big.Int) string {
+    ether := new(big.Float).SetInt(wei)
+    eth_value := new(big.Float).Quo(ether, big.NewFloat(1e18))
+    return eth_value.Text('f', 18) // 18 decimal places to match Ethereum precision
+}
 func convert_to_percentage(in *big.Int) (float64) {
 
 	one := big.NewFloat(1)
@@ -75,7 +80,14 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	bid_price,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts,big.NewInt(0))
+	next_bid_price,err := cosmic_game_ctrct.NextEthBidPrice(&copts)
+	if err != nil {
+		fmt.Printf("Error at (next) bidprice()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+
+	bid_price_auction,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts,big.NewInt(0))
 	if err != nil {
 		fmt.Printf("Error at BidPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -271,9 +283,10 @@ func main() {
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
-	fmt.Printf("Bid Price = %v\n",bid_price.String())
+	fmt.Printf("Next Bid Price = %v\n",fmt_eth(next_bid_price))
+	fmt.Printf("Next bid price auction %v\n",fmt_eth(bid_price_auction))
 	fmt.Printf("RoundNum = %v\n",round_num.String())
-	fmt.Printf("PrizeAmount = %v\n",prize_amount.String())
+	fmt.Printf("PrizeAmount = %v\n",fmt_eth(prize_amount))
 	fmt.Printf("PrizePercentage = %v\n",prize_percentage.String())
 	fmt.Printf("RafflePercentage = %v\n",raffle_percentage.String())
 	fmt.Printf("ETHWinnersBidding = %v\n",eth_bidders);

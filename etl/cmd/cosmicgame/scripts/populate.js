@@ -100,6 +100,7 @@ async function main() {
 			num_unstaked=num_unstaked+1;
 		}
 	}
+	let tx;
 	[owner, addr1, addr2, addr3, addr4, addr5] = await customGetSigners();
     const cosmicGameProxy = await getCosmicSignatureGameContract()
 	const cosmicGameAddr = await cosmicGameProxy.getAddress()
@@ -113,18 +114,17 @@ async function main() {
 	const stakingWalletRWalkAddr = await cosmicGameProxy.stakingWalletRandomWalkNft();
 	const stakingWalletRWalk= await ethers.getContractAt("StakingWalletRandomWalkNft",stakingWalletRWalkAddr);
 
-	tx = await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(120);
+	tx = await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(120,{gasLimit:1000000});
 	await tx.wait()
-	tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(300000000);
+	tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(300000000,{gasLimit:1000000});
 	await tx.wait()
-	tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(1000000);
+	tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(1000000,{gasLimit:1000000});
 	await tx.wait()
 	console.log("Transacting with CosmicGame contract "+cosmicGameAddr)
 	await cosmicGameProxy.connect(owner).setDelayDurationBeforeRoundActivation(5);
 	console.log("Adjusted activation delay to 5 seconds")
 	let rn = await cosmicGameProxy.roundNum();
 	console.log("Round num = "+Number(rn))
-	let tx;
 	let token_id;
     let donationAmount = hre.ethers.parseEther("100");
     await cosmicGameProxy.connect(addr5).donateEth({
@@ -146,7 +146,6 @@ async function main() {
         });
     console.log("Donation complete");
 
-/*
 	console.log("Starting RWalk staking transactions")
 	console.log("Starting RWalk transactions for addr "+addr1.address)
 	let numStakeActions = 5
@@ -197,7 +196,7 @@ async function main() {
         //await stakingWalletRandomWalkNft.connect(addr3).stake(token_id);
     }
 	console.log("Finished RWalk staking transactions for addr "+addr3.address)
-	*/
+
     let prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
 
 	let delayDur = await cosmicGameProxy.delayDurationBeforeRoundActivation()
