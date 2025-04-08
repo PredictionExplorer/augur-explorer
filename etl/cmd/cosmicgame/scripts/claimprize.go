@@ -16,8 +16,8 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	//CHAIN_ID		int64 = 31337
-	CHAIN_ID		int64 = 421614
+	CHAIN_ID		int64 = 31337
+//	CHAIN_ID		int64 = 421614
 )
 var (
 	RPC_URL string
@@ -96,7 +96,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.ClaimPrize(txopts)
+	tx,err := cosmic_game_ctrct.ClaimMainPrize(txopts)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

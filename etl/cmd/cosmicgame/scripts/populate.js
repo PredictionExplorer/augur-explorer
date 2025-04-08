@@ -104,6 +104,7 @@ async function main() {
 	[owner, addr1, addr2, addr3, addr4, addr5] = await customGetSigners();
     const cosmicGameProxy = await getCosmicSignatureGameContract()
 	const cosmicGameAddr = await cosmicGameProxy.getAddress()
+	console.log("CosmicGame address: "+cosmicGameAddr);
 	const [ samp1,samp2 ] = await getERC20SampleContracts();
 	const cosmicSignatureNftAddr = await cosmicGameProxy.nft();
 	const cosmicSignatureNft = await ethers.getContractAt("CosmicSignatureNft",cosmicSignatureNftAddr)
@@ -116,6 +117,8 @@ async function main() {
 
 	tx = await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(120,{gasLimit:1000000});
 	await tx.wait()
+    var timeout = await cosmicgame.timeoutDurationToClaimMainPrize();
+	console.log("timeout to claim prize = ",timeout)
 	tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(300000000,{gasLimit:1000000});
 	await tx.wait()
 	tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(1000000,{gasLimit:1000000});

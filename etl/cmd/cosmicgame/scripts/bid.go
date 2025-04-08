@@ -18,8 +18,8 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-//	CHAIN_ID		int64 = 31337
-	CHAIN_ID		int64 = 421614
+	CHAIN_ID		int64 = 31337
+//	CHAIN_ID		int64 = 421614
 //	CHAIN_ID		int64 = 11155111
 )
 var (
@@ -62,7 +62,7 @@ func main() {
 	}
 
 	var copts bind.CallOpts
-	bid_price,err := cosmic_game_ctrct.GetBidPrice(&copts)
+	bid_price,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts,big.NewInt(0))
 	if err != nil {
 		fmt.Printf("Error at BidPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -94,19 +94,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	record := struct {
-		Message string
-		RandomWalkNFTId *big.Int
-	}{
-		"",
-		big.NewInt(-1),
-	}
-	packed, err:=params.Pack(&record)
-	if err != nil {
-		fmt.Printf("Error packing BidParams: %v\n",err)
-		os.Exit(1)
-	}
-
 	big_chain_id := big.NewInt(CHAIN_ID)
 	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
@@ -130,7 +117,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.Bid(txopts,packed)
+	tx,err := cosmic_game_ctrct.BidWithEth(txopts,big.NewInt(-1),"")
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

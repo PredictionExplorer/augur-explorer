@@ -131,7 +131,10 @@ const basicDeploymentAdvanced = async function (
 		let latestBlock = await hre.ethers.provider.getBlock("latest");
 		await cosmicGameProxy.connect(deployerAcct).setRoundActivationTime(0);
 	} else {
-		await cosmicGameProxy.connect(deployerAcct).setRoundActivationTime(0);
+		const latestBlock = await hre.ethers.provider.getBlock("latest");
+		roundActivationTime = latestBlock.timestamp + 3600;
+		console.log("Setting activartion time to "+roundActivationTime)
+		await (await cosmicGameProxy.setRoundActivationTime(roundActivationTime)).wait();
 	}
 	/*
 	if (switchToRuntime) {

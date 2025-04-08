@@ -79,7 +79,7 @@ async function main() {
         stakingWalletRandomWalkNft,
         marketingWallet,
         implementationAddr,
-    } = await basicDeployment(owner, "", 0, "", false, true);
+    } = await basicDeployment(owner, "", 1, "", false, true);
     console.log("Addresses set");
     console.log(
         "INSERT INTO cg_contracts VALUES('" +
@@ -106,6 +106,17 @@ async function main() {
         implementationAddr +
         "')"
     );
+	let tx;
+	tx = await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(120,{gasLimit:1000000});
+	await tx.wait()
+	tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(300000000,{gasLimit:1000000});
+    await tx.wait()
+	tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(1000000,{gasLimit:1000000});
+	await tx.wait()
+	const latestBlock = await hre.ethers.provider.getBlock("latest");
+	const roundActivationTime = latestBlock.timestamp + 1;
+	console.log("Setting activartion time to "+roundActivationTime)
+	await (await cosmicGameProxy.setRoundActivationTime(roundActivationTime)).wait();
 	const Samp = await hre.ethers.getContractFactory("Samp");
 	const samp1 = await Samp.deploy();
 	await samp1.waitForDeployment();
