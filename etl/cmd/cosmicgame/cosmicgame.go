@@ -345,7 +345,15 @@ func find_cosmic_token_transfer(bid_evtlog_id int64) string {
 	// fetches the ERC20::Transfer event which has the id=evtlog-1 because it is
 	//		inserted right before Bid event
 	//		this function panics in case of failure because that would be an invalid database state
-	ee := storagew.S.Get_event_log(bid_evtlog_id-1)	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
+	elog_ids := storagew.S.Get_evtlogs_by_signature_only_in_range(hex.EncodeToString(evt_transfer[:4]),bid_evtlog_id-3,bid_evtlog_id-1)	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
+	if len(elog_ids) == 0 {
+		err_str := fmt.Sprintf("Couldn't find any event logs of erc transfer in BidPlaced event (id search range: [%v-%v]",bid_evtlog_id-3,bid_evtlog_id-1)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+
+	ee := storagew.S.Get_event_log(elog_ids[0])
 	var log types.Log
 	err := rlp.DecodeBytes(ee.RlpLog,&log)
 	if err!= nil {
