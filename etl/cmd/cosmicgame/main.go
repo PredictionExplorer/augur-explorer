@@ -211,6 +211,7 @@ var (
 	staking_wallet_rwalk_addr		common.Address
 	marketing_wallet_addr	common.Address
 	cosmic_sig_aid			int64
+	cosmic_tok_aid			int64
 
 	cg_contracts			CosmicGameContractAddrs
 	storagew				SQLStorageWrapper
@@ -334,6 +335,11 @@ func main() {
 	cosmic_sig_aid,err  = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicSignatureAddr)
 	if err != nil {
 		fmt.Printf("Lookup of CosmicSignatureAddr failed: %v",err)
+		os.Exit(1)
+	}
+	cosmic_tok_aid,err  = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicTokenAddr)
+	if err != nil {
+		fmt.Printf("Lookup of CosmicTokenAddr failed: %v",err)
 		os.Exit(1)
 	}
 	cosmic_game_addr = common.HexToAddress(cg_contracts.CosmicGameAddr)

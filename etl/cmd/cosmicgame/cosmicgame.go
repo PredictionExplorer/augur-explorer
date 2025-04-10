@@ -341,23 +341,24 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_prize_claim_event(evt.EvtId)
 	storagew.Insert_prize_claim_event(&evt)
 }
-func find_cosmic_token_transfer(bid_evtlog_id int64) string {
+func find_cosmic_token_transfer(bid_evtlog_id,tx_id int64) string {
 	// fetches the ERC20::Transfer event which has the id=evtlog-1 because it is
 	//		inserted right before Bid event
 	//		this function panics in case of failure because that would be an invalid database state
-	elog_ids := storagew.S.Get_evtlogs_by_signature_only_in_range(hex.EncodeToString(evt_transfer[:4]),bid_evtlog_id-3,bid_evtlog_id-1)	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
+	elog_ids := storagew.S.Get_specific_event_logs_by_tx_backwards_from_id(tx_id,cosmic_tok_aid,bid_evtlog_id,hex.EncodeToString(evt_transfer[:4]))
+//	elog_ids,err := storagew.S.Get_events_by_sig_and_tx_id(tx_id,bid_evtlog_id,hex.EncodeToString(evt_transfer[:4]))	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
 	if len(elog_ids) == 0 {
-		err_str := fmt.Sprintf("Couldn't find any event logs of erc transfer in BidPlaced event (id search range: [%v-%v]",bid_evtlog_id-3,bid_evtlog_id-1)
+		err_str := fmt.Sprintf("Couldn't find any event logs of erc transfer in BidPlaced event (tx_id=%v)\n",tx_id)
 		Info.Printf(err_str)
 		Error.Printf(err_str)
 		os.Exit(1)
 	}
-
-	ee := storagew.S.Get_event_log(elog_ids[0])
+	ee := elog_ids[0]
+	Info.Printf("ee=%+v\n",ee)
 	var log types.Log
-	err := rlp.DecodeBytes(ee.RlpLog,&log)
+	err := rlp.DecodeBytes(ee,&log)
 	if err!= nil {
-		err_str := fmt.Sprintf("RLP Decode error at find_cosmic_signature_token_transfer(): %v",err)
+		err_str := fmt.Sprintf("RLP Decode error at find_cosmic_signature_token_transfer(): %v\n",err)
 		Info.Printf(err_str)
 		Error.Printf(err_str)
 		os.Exit(1)
@@ -365,7 +366,7 @@ func find_cosmic_token_transfer(bid_evtlog_id int64) string {
 	var eth_evt ERC20Transfer
 	err = erc20_abi.UnpackIntoInterface(&eth_evt,"Transfer",log.Data)
 	if err != nil {
-		err_str := fmt.Sprintf("Event Transfer decode error at find_cosmic_signature_token_transfer(): %v",err)
+		err_str := fmt.Sprintf("Event Transfer decode error at find_cosmic_signature_token_transfer(): %v\n",err)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 		Info.Printf("%+v",log)
@@ -502,7 +503,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.BidPrice = eth_evt.PaidEthPrice.String()
 	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
-	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
+	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId,evt.TxId)
 	evt.CstPrice = eth_evt.PaidCstPrice.String()
 	if evt.RandomWalkTokenId > -1 {
 		evt.BidType = 1;	// RandomWalk	
