@@ -275,6 +275,13 @@ func main() {
 		os.Exit(1)
 	}
 	time_increment := float64(time_inc_microsec.Int64())/float64(1000000);
+	time_inc_on_bid,err := cosmic_game_ctrct.GetMainPrizeTimeIncrement(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetMainPrizeTimeIncrement(): %v\n",err)
+		os.Exit(1)
+	}
+
+
 	activation_time,err := cosmic_game_ctrct.RoundActivationTime(&copts)
 	if err != nil {
 		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
@@ -321,6 +328,8 @@ func main() {
 	fmt.Printf("First bid time bump %v%% (divisor=%v)\n",initial_duration_inc,initial_duration_divisor)
 	fmt.Printf("First bid time bump %v sseconds\n",initial_duration_seconds)
 	fmt.Printf("Time increment (on claimPrize()): %v\n",time_increment)
+	fmt.Printf("Time increment on bid: %v\n",time_inc_on_bid.Int64())
+	fmt.Printf("Time increment in microseconds: %v\n",time_inc_microsec)
 	fmt.Printf("Round activation time = %v\n",activation_time.String())
 	fmt.Printf("Seconds to round start= %v (%v - %v)\n",secs_to_start,block_time,activation_time.Int64())
 }

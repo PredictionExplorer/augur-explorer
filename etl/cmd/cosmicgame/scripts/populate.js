@@ -140,9 +140,9 @@ async function main() {
 		await tx.wait()
 		var timeout = await cosmicGameProxy.timeoutDurationToClaimMainPrize();
 		console.log("timeout to claim prize = ",timeout)
-		tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(300000000,{gasLimit:1000000});
+		tx = await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(30000000,{gasLimit:1000000});
 		await tx.wait()
-		tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(1000000,{gasLimit:1000000});
+		tx = await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(20000000,{gasLimit:1000000});
 		await tx.wait()
 	}
 	console.log("Transacting with CosmicGame contract "+cosmicGameAddr)
@@ -230,6 +230,12 @@ async function main() {
 	console.log("activation time = "+actTime);
 	latestBlock = await ethers.provider.getBlock("latest");
 	console.log("current chain timestamp = "+latestBlock.timestamp);
+ 	let tdiff = Number(actTime) - Number(latestBlock.timestamp);
+	if (tdiff > 0) {
+		tx = await cosmicGameProxy.setRoundActivationTime(latestBlock.timestamp);
+		await tx.wait();
+	}
+	console.log("time to activation = "+tdiff);
 	console.log("Starting bid transactions for round 0")
     const contractBalance = await ethers.provider.getBalance(
         await cosmicGameProxy.getAddress()
