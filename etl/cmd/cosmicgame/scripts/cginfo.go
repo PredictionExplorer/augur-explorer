@@ -280,7 +280,13 @@ func main() {
 		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
 		os.Exit(1)
 	}
-
+	lblock, err := eclient.BlockByNumber(context.Background(), nil)
+	if err != nil {
+		fmt.Printf("Error at BlockByNumber(latest): %v\n",err)
+		os.Exit(1)
+	}
+	block_time := int64(lblock.Time())
+	secs_to_start := activation_time.Int64() - block_time;
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
 	fmt.Printf("Next Bid Price = %v\n",fmt_eth(next_bid_price))
@@ -316,4 +322,5 @@ func main() {
 	fmt.Printf("First bid time bump %v sseconds\n",initial_duration_seconds)
 	fmt.Printf("Time increment (on claimPrize()): %v\n",time_increment)
 	fmt.Printf("Round activation time = %v\n",activation_time.String())
+	fmt.Printf("Seconds to round start= %v (%v - %v)\n",secs_to_start,block_time,activation_time.Int64())
 }
