@@ -15,10 +15,6 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
-const (
-	CHAIN_ID		int64 = 31337
-//	CHAIN_ID		int64 = 421614
-)
 var (
 	RPC_URL string
 	token_addr		common.Address
@@ -29,6 +25,11 @@ func main() {
 	eclient, err := ethclient.Dial(RPC_URL)
 	if err!=nil {
 		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
+		os.Exit(1)
+	}
+	chain_id,err := eclient.ChainID(context.Background())
+	if err != nil {
+		fmt.Printf("Error getting chain id : %v\n",err)
 		os.Exit(1)
 	}
 
@@ -74,8 +75,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	big_chain_id := big.NewInt(CHAIN_ID)
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
+	fmt.Printf("Using chain_id=%v\n",chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in weia
@@ -85,7 +85,7 @@ func main() {
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
+		signer := types.NewEIP155Signer(chain_id)
 		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
 		if err != nil {
 			fmt.Printf("Error signing: %v\n",err)
@@ -97,7 +97,9 @@ func main() {
 	txopts.Signer = signfunc
 
 	tx,err := cosmic_game_ctrct.ClaimMainPrize(txopts)
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	if tx != nil {
+		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	}
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
 		os.Exit(1)

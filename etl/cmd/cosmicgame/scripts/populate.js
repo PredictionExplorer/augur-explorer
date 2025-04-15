@@ -1,19 +1,25 @@
 const { ethers } = require("hardhat");
 require("./rpc-helpers.js");
 async function customGetSigners() {
+    const privateKeys = [
+        "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+        "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+        "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
+        "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba"
+    ];
 
-	const privateKeys = [
-		"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-		"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
-		"0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
-		"0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
-		"0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
-		"0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba"
-	];
-	const signers = privateKeys.map(key => new ethers.Wallet(key, ethers.provider));
-//	[owner, addr1, addr2, addr3, addr4, addr5, ...addrs] = await ethers.getSigners();
-	return [signers[0],signers[1],signers[2],signers[3],signers[4],signers[5]];
+    const signers = privateKeys.map(key => new ethers.Wallet(key, ethers.provider));
 
+    // Build address → signer lookup map
+    const signerMap = {};
+    for (const signer of signers) {
+        const address = await signer.getAddress();
+        signerMap[address.toLowerCase()] = signer;
+    }
+
+    return { signers, signerMap };
 }
 async function getCosmicSignatureGameContract(cosmicSignatureGameContractName = "CosmicSignatureGame") {
     const cosmicSignatureGameAddr = process.env.CADDR;
@@ -81,22 +87,27 @@ async function main() {
             return token_id;
  	}       
 	async function stake_available_nfts(csig,stakingw) {
+		let { signerMap } = customGetSigners()
 		let tscst = await csig.totalSupply();
 		for (let i = 0; i < tscst; i++) {
+			console.log("staking ",i," of ",Number(tscst))
 			let ownr = await csig.ownerOf(i);
 			if (ownr == (await stakingw.getAddress())) {
 				continue; // already staked
 			}
-			let owner_signer = await hre.ethers.getSigner(ownr);
+			let owner_signer = await signerMap[ownr.toLowerCase()];
 			if (owner_signer === undefined) {
 			} else {
 			}
 			try {
-	            csig.connect(owner_signer).setApprovalForAll(await stakingw.getAddress(), true);
+	            let tx = await csig.connect(owner_signer).setApprovalForAll(await stakingw.getAddress(), true);
+				await tx.wait()
 			} catch (e) {
 			}
 			try {
 				let tx = await stakingw.connect(owner_signer).stake(i);
+				await tx.wait()
+				console.log("tx for claim prize:",tx)
 				await tx.wait()
 			} catch (e) {
 			}
@@ -119,7 +130,7 @@ async function main() {
 		}
 	}
 	let tx;
-	[owner, addr1, addr2, addr3, addr4, addr5] = await customGetSigners();
+	const [owner, addr1, addr2, addr3, addr4, addr5] = (await customGetSigners()).signers;
     const cosmicGameProxy = await getCosmicSignatureGameContract()
 	const cosmicGameAddr = await cosmicGameProxy.getAddress()
 	console.log("CosmicGame address: "+cosmicGameAddr);
@@ -136,6 +147,7 @@ async function main() {
 	let latestBlock = await ethers.provider.getBlock("latest");
 	let rActTime = await cosmicGameProxy.roundActivationTime();
 	if ((Number(latestBlock.timestamp) - Number(rActTime)) <  0) {
+		console.log("Activation time is not met yet, setting parameters.",(Number(latestBlock.timestamp)-Number(rActTime)))
 		tx = await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(120,{gasLimit:1000000});
 		await tx.wait()
 		var timeout = await cosmicGameProxy.timeoutDurationToClaimMainPrize();
@@ -311,10 +323,11 @@ async function main() {
 	console.log("lastBidder = "+lastBidder)
 	console.log("addr5 address = ",addr5,addr5.address)
 	await waitUntilPrizeTimeZero(cosmicGameProxy)
-	console.log("Sending claimPrize() tx for round 0")
+	console.log("Sending claimPrize() tx for round "+Number(rn))
     tx = await cosmicGameProxy.connect(addr5).claimMainPrize({
-        gasLimit: 5000000
+        gasLimit: 6000000
     });
+	console.log("tx for claim prize:",tx)
 	await tx.wait()
 	console.log("Claimed prize for "+prizeAmount)
     let prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
