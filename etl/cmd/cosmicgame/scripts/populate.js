@@ -792,7 +792,7 @@ async function main() {
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
 	await waitUntilPrizeTimeZero(cosmicGameProxy)
     tx = await cosmicGameProxy.connect(addr1).claimMainPrize({
-        gasLimit: 3000000, gasLimit: 1000000
+        gasLimit: 3000000
     });
 	await tx.wait()
     donationAmount = hre.ethers.parseEther("500");
