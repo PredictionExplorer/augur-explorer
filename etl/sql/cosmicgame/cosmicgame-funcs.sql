@@ -617,16 +617,22 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_donated_nft_claimed_insert() RETURNS trigger AS  $$
 DECLARE
-	v_cnt						NUMERIC;
+	v_cnt						BIGINT;
+	new_unclaimed_value			BIGINT;
 BEGIN
 
 	UPDATE cg_winner
 		SET
 			unclaimed_nfts = (unclaimed_nfts - 1)
-		WHERE winner_aid = NEW.winner_aid;
+		WHERE winner_aid = NEW.winner_aid
+		RETURNING unclaimed_nfts INTO new_unclaimed_value;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid,unclaimed_nfts) VALUES(NEW.winner_aid,1);
+		RAISE EXCEPTION 'on_donated_nft_claimed_insert() we are about to get negative unlacimed_nfts field because record does not exist, round_num=%',NEW.round_num;
+		--INSERT INTO cg_winner(winner_aid,unclaimed_nfts) VALUES(NEW.winner_aid,1);
+	END IF;
+	IF new_unclaimed_value < 0 THEN
+		RAISE EXCEPTION 'unclaimed_nfts got negative value on round %',NEW.round_num;
 	END IF;
 	RETURN NEW;
 END;
@@ -638,7 +644,7 @@ BEGIN
 	UPDATE cg_winner
 		SET
 			unclaimed_nfts = (unclaimed_nfts + 1)
-		WHERE winner_aid = OLD .winner_aid;
+		WHERE winner_aid = OLD.winner_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

@@ -1224,11 +1224,11 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.TokenAddr = eth_evt.NftAddress.String()
 	evt.RoundNum = log.Topics[1].Big().Int64()
+	evt.BeneficiaryAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.TokenId = eth_evt.NftId.String()
 	evt.Index = eth_evt.Index.Int64()
-	evt.BeneficiaryAddr = eth_evt.BeneficiaryAddress.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonatedNFTClaimedEvent{\n")

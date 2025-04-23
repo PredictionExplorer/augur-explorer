@@ -14,9 +14,9 @@ CREATE TRIGGER cg_prize_withdrawal_insert AFTER INSERT ON cg_prize_withdrawal FO
 CREATE TRIGGER cg_prize_withdrawal_delete AFTER DELETE ON cg_prize_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_prize_withdrawal_delete();
 CREATE TRIGGER cg_raffle_nft_winner_insert AFTER INSERT ON cg_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_insert();
 CREATE TRIGGER cg_raffle_nft_winner_delete AFTER DELETE ON cg_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_delete();
-CREATE TRIGGER cg_transer_insert AFTER INSERT ON cg_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_insert();
+CREATE TRIGGER cg_transfer_insert AFTER INSERT ON cg_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_insert();
 CREATE TRIGGER cg_transfer_delete AFTER DELETE ON cg_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_delete();
-CREATE TRIGGER cg_erc20_transer_insert AFTER INSERT ON cg_erc20_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc20_transfer_insert();
+CREATE TRIGGER cg_erc20_transfer_insert AFTER INSERT ON cg_erc20_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc20_transfer_insert();
 CREATE TRIGGER cg_erc20_transfer_delete AFTER DELETE ON cg_erc20_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc20_transfer_delete();
 CREATE TRIGGER cg_donated_nft_claimed_insert AFTER INSERT ON cg_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_insert();
 CREATE TRIGGER cg_donated_nft_claimed_delete AFTER DELETE ON cg_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_delete();

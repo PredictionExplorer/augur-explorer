@@ -862,7 +862,7 @@ CREATE TABLE cg_winner ( -- collects statistics per winer of prize
 	prizes_count			BIGINT DEFAULT 0,
 	prizes_sum				DECIMAL DEFAULT 0,
 	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
-	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs
+	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs (erc721)
 );
 CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This is the smallest reward unit (from which other accumulators are composed)
 	-- This table is internal, it is populated via SQL triggers
