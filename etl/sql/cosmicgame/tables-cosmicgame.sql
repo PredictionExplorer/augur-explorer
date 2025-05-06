@@ -698,6 +698,16 @@ CREATE TABLE cg_adm_eth_auclen ( -- ISystemEvents.sol:EthDutchAuctionDurationDiv
 	new_len			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_adm_eth_auc_endprice ( -- ISystemEvents.sol:EthDutchAuctionEndingBidPriceDivisorChanged
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_len			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_adm_erc_rwd_mul ( -- ISystemEvents.sol:CstRewardAmountMultiplierChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

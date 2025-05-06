@@ -527,7 +527,7 @@ type CGAdminEvent struct {
 										//			4		StakingPercentageChanged
 										//			5		numRaffleETHWinnersBidding
 										//			6		numRaffleNFTWinnersBidding
-										//			7		Unused
+										//			7		DelayDurationBeforeRoundActivationChanged
 										//			8		NumRaffleNFTWinnersStakingRWalkChanged
 										//			9		CharityAddressChanged
 										//			10		RandomWalkAddressChanged
@@ -556,6 +556,9 @@ type CGAdminEvent struct {
 										//			33		Initialized (Initialized event, openzeppelin)
 										//			34		OwnershipTransferred
 										//			35		TimeoutDurationToWithdrawPrizesChanged
+										//			36		EthDutchAuctionDurationDivisorChanged
+										//			37		EthDutchAuctionEndingBidPriceDivisorChanged
+										//			38		ChronoWarriorEthPrizeAmountPercentageChanged
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64

@@ -54,6 +54,9 @@
 				 {{ if eq 33 .RecordType}}Initialized{{end}}
 				 {{ if eq 34 .RecordType}}OwnershipTransferred{{end}}
 				 {{ if eq 35 .RecordType}}TimeoutDurationToWithdrawPrizesChanged{{end}}
+				 {{ if eq 36 .RecordType}}EthDutchAuctionDurationDivisorChanged{{end}}
+				 {{ if eq 37 .RecordType}}EthDutchAuctionEndingBidPriceDivisorChanged{{end}}
+				 {{ if eq 38 .RecordType}}ChronoWarriorEthPrizeAmountPercentageChanged{{end}}
 			</td>
 			<td style="text-align: center;">{{.BlockNum}}</td>
 			<td style="text-align: left;">{{.DateTime}};</td>
@@ -93,6 +96,10 @@
 				 {{ if eq 32 .RecordType}}{{.StringValue}}{{end}}
 				 {{ if eq 33 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 34 .RecordType}}{{.AddressValue}}{{end}}
+				 {{ if eq 35 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 36 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 37 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 38 .RecordType}}{{.IntegerValue}}{{end}}
 			</td>
 		</tr>
 	{{- end}}

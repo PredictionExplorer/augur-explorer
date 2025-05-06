@@ -415,6 +415,9 @@ async function main() {
 	let tmpval = await cosmicGameProxy.ethDutchAuctionDurationDivisor();
 	tmpval = tmpval + 11n;
 	await cosmicGameProxy.connect(owner).setEthDutchAuctionDurationDivisor(tmpval);
+	tmpval = await cosmicGameProxy.ethDutchAuctionEndingBidPriceDivisor();
+	tmpval = tmpval + 40n;
+	await cosmicGameProxy.connect(owner).setEthDutchAuctionEndingBidPriceDivisor(tmpval);
     await cosmicGameProxy.connect(owner).setCstPrizeAmountMultiplier(5);
     await cosmicGameProxy
         .connect(owner)

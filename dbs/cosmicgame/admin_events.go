@@ -716,6 +716,57 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"FROM "+sw.S.SchemaName()+".cg_adm_timeout_withdraw r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"36 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_len AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_eth_auclen r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"37 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_len AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_eth_auc_endprice r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"38 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.percentage AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_chrono_pcent r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				")" +
 			") everything "+
 			"ORDER BY evtlog_id "

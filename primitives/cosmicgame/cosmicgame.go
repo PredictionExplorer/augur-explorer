@@ -620,6 +620,14 @@ type CGEthDutchAuctionDurationDivisorChanged struct {
 	Contract                string
 	NewValue				string
 }
+type CGEthDutchAuctionEndingBidPriceDivisorChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
 type CGERC20RewardMultiplierChanged struct {
 	EvtId                   int64
 	BlockNum                int64
