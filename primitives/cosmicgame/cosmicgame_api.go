@@ -56,13 +56,16 @@ type CGBidRec struct {
 	BidType						int64
 	NumCSTTokens				string
 	NumCSTTokensEth				float64
-	ERC20_Amount				string
-	ERC20_AmountEth				float64	// divided by 1e18
+	ERC20RewardAmount			string
+	ERC20RewardAmountEth		float64	// divided by 1e18
 	NFTDonationTokenId			int64
 	NFTDonationTokenAddr		string
 	NFTTokenURI					string
 	ImageURL					string
 	Message						string
+	DonatedERC20TokenAddr				string
+	DonatedERC20TokenAmount		string
+	DonatedERC20TokenAmountEth	float64
 }
 type CGRoundRec struct {
 	EvtLogId					int64
@@ -543,7 +546,7 @@ type CGAdminEvent struct {
 										//			20		PriceIncreaseChanged
 										//			21		NanoSecondsExtraChanged
 										//			22		InitialSecondsUntilPrizeChanged
-										//			23		InitialBidAmountFractionChanged
+										//			23		[unused]
 										//			24		ActivationTimeChanged
 										//			25		RoundStartCSTAuctionLengthChanged
 										//			26		Erc20RewardMultiplierChanged

@@ -8,6 +8,24 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
+func (sw *SQLStorageWrapper) Get_bid_id_by_evtlog(evtlog_id int64) (int64) {
+
+	var query string
+	query = "SELECT b.id FROM cg_bid b WHERE b.evtlog_id=$1"
+
+	row := sw.S.Db().QueryRow(query,evtlog_id)
+	var err error
+	var output int64
+	err=row.Scan(&output)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return -1
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return output
+}
 func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 
 	if limit == 0 { limit = 1000000 }
@@ -66,8 +84,8 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 			&rec.BidPrice,
 			&rec.BidPriceEth,
 			&rec.RWalkNFTId,
-			&rec.ERC20_Amount,
-			&rec.ERC20_AmountEth,
+			&rec.ERC20RewardAmount,
+			&rec.ERC20RewardAmountEth,
 			&null_token_id,
 			&null_tok_addr,
 			&rec.Message,
@@ -140,8 +158,8 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 		&rec.BidPrice,
 		&rec.BidPriceEth,
 		&rec.RWalkNFTId,
-		&rec.ERC20_Amount,
-		&rec.ERC20_AmountEth,
+		&rec.ERC20RewardAmount,
+		&rec.ERC20RewardAmountEth,
 		&null_token_id,
 		&null_tok_addr,
 		&null_token_uri,
@@ -192,7 +210,10 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 				"b.round_num, "+
 				"b.num_cst_tokens, "+
 				"b.num_cst_tokens/1e18, "+
-				"b.bid_type "+
+				"b.bid_type, "+
+				"d2.tok_addr, "+
+				"d2.amount, "+
+				"d2.amount/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -201,9 +222,13 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 						"FROM "+sw.S.SchemaName()+".cg_nft_donation d "+
 						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
 				") d ON b.id=d.bid_id "+
+				"LEFT JOIN LATERAL (" +
+					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.amount "+
+						"FROM "+sw.S.SchemaName()+".cg_erc20_donation d "+
+						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
+				") d2 ON b.id=d2.bid_id "+
 			"WHERE b.round_num=$1 "+
 			"ORDER BY b.id "+order_by+" OFFSET $2 LIMIT $3"
-
 	rows,err := sw.S.Db().Query(query,round_num,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -215,6 +240,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 		var rec p.CGBidRec
 		var null_token_id sql.NullInt64
 		var null_tok_addr,null_token_uri sql.NullString
+		var null_donated_erc20_addr,null_donated_erc20_amount sql.NullString
+		var null_donated_erc20_amount_eth sql.NullFloat64
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -227,8 +254,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 			&rec.BidPrice,
 			&rec.BidPriceEth,
 			&rec.RWalkNFTId,
-			&rec.ERC20_Amount,
-			&rec.ERC20_AmountEth,
+			&rec.ERC20RewardAmount,
+			&rec.ERC20RewardAmountEth,
 			&null_token_id,
 			&null_tok_addr,
 			&null_token_uri,
@@ -237,6 +264,9 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 			&rec.NumCSTTokens,
 			&rec.NumCSTTokensEth,
 			&rec.BidType,
+			&null_donated_erc20_addr,
+			&null_donated_erc20_amount,
+			&null_donated_erc20_amount_eth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -246,6 +276,9 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 		if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
 		if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
 		if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
+		if null_donated_erc20_addr.Valid { rec.DonatedERC20TokenAddr = null_donated_erc20_addr.String }
+		if null_donated_erc20_amount.Valid { rec.DonatedERC20TokenAmount = null_donated_erc20_amount.String }
+		if null_donated_erc20_amount_eth.Valid { rec.DonatedERC20TokenAmountEth = null_donated_erc20_amount_eth.Float64 }
 		records = append(records,rec)
 	}
 

@@ -53,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cst_price,err := cosmic_game_ctrct.GetCurrentBidPriceCST(&copts)
+	cst_price,err := cosmic_game_ctrct.GetNextCstBidPrice(&copts,big.NewInt(0))
 	fmt.Printf("CST price = %v\n",cst_price.String())
 
 	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
@@ -100,7 +100,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.BidWithCst(txopts,cst_price,"bid with CST from golang")
+	tx,err := cosmic_game_ctrct.BidWithCst(txopts,cst_price,"")
 	if tx != nil {
 		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	}

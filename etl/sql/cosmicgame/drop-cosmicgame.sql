@@ -53,7 +53,6 @@ DROP TABLE IF EXISTS
 	cg_adm_timeout_withdraw,
 	cg_adm_price_inc,
 	cg_adm_inisecprize,
-	cg_adm_bidfraction,
 	cg_adm_acttime,
 	cg_adm_cst_auclen,
 	cg_adm_eth_auclen,
