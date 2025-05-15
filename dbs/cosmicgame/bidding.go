@@ -131,7 +131,10 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 				"b.round_num, "+
 				"b.num_cst_tokens, "+
 				"b.num_cst_tokens/1e18, "+
-				"b.bid_type "+
+				"b.bid_type, "+
+				"d2.tok_addr, "+
+				"d2.amount, "+
+				"d2.amount/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -140,12 +143,19 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 						"FROM "+sw.S.SchemaName()+".cg_nft_donation d "+
 						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
 				") d ON b.id=d.bid_id "+
+				"LEFT JOIN LATERAL (" +
+					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.amount "+
+						"FROM "+sw.S.SchemaName()+".cg_erc20_donation d "+
+						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
+				") d2 ON b.id=d2.bid_id "+
 			"WHERE b.evtlog_id=$1"
 
 	row := sw.S.Db().QueryRow(query,evtlog_id)
 	var err error
 	var null_token_id sql.NullInt64
 	var null_tok_addr,null_token_uri sql.NullString
+	var null_donated_erc20_addr,null_donated_erc20_amount sql.NullString
+	var null_donated_erc20_amount_eth sql.NullFloat64
 	err=row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -168,6 +178,9 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 		&rec.NumCSTTokens,
 		&rec.NumCSTTokensEth,
 		&rec.BidType,
+		&null_donated_erc20_addr,
+		&null_donated_erc20_amount,
+		&null_donated_erc20_amount_eth,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -180,6 +193,9 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 	if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
 	if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
 	if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
+	if null_donated_erc20_addr.Valid { rec.DonatedERC20TokenAddr = null_donated_erc20_addr.String }
+	if null_donated_erc20_amount.Valid { rec.DonatedERC20TokenAmount = null_donated_erc20_amount.String }
+	if null_donated_erc20_amount_eth.Valid { rec.DonatedERC20TokenAmountEth = null_donated_erc20_amount_eth.Float64 }
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,limit int) ([]p.CGBidRec,int64) {
