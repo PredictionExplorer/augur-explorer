@@ -424,6 +424,88 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_endurance_winner_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE cg_raffle_nft_winner_stats
+		SET
+			num_won = (num_won + 1)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_raffle_nft_winner_stats(winner_aid,num_won)
+			VALUES(NEW.winner_aid,1);
+	END IF;
+	UPDATE cg_round_stats
+		SET
+			total_raffle_nfts = (total_raffle_nfts + 1)
+		WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num,total_raffle_nfts) VALUES(NEW.round_num,1);
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_endurance_winner_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_raffle_nft_winner_stats
+		SET
+			num_won = (num_won - 1)
+		WHERE winner_aid = OLD.winner_aid;
+	UPDATE cg_round_stats
+		SET
+			total_raffle_nfts = (total_raffle_nfts - 1)
+		WHERE round_num=OLD.round_num;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_lastcst_winner_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE cg_raffle_nft_winner_stats
+		SET
+			num_won = (num_won + 1)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_raffle_nft_winner_stats(winner_aid,num_won)
+			VALUES(NEW.winner_aid,1);
+	END IF;
+	UPDATE cg_round_stats
+		SET
+			total_raffle_nfts = (total_raffle_nfts + 1)
+		WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num,total_raffle_nfts) VALUES(NEW.round_num,1);
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_lastcst_winner_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_raffle_nft_winner_stats
+		SET
+			num_won = (num_won - 1)
+		WHERE winner_aid = OLD.winner_aid;
+	UPDATE cg_round_stats
+		SET
+			total_raffle_nfts = (total_raffle_nfts - 1)
+		WHERE round_num=OLD.round_num;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_erc721transfer_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;

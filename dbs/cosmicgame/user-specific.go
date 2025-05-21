@@ -82,7 +82,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	if null_raffle_sum_winnings.Valid { rec.SumRaffleEthWinnings = null_raffle_sum_winnings.Float64 }
 	if null_raffle_sum_withdrawal.Valid { rec.SumRaffleEthWithdrawal = null_raffle_sum_withdrawal.Float64 }
 	if null_raffles_count.Valid { rec.NumRaffleEthWinnings = null_raffles_count.Int64 }
-	if null_raffle_nft_won.Valid { rec.RaffleNFTWon = null_raffle_nft_won.Int64 }
+	if null_raffle_nft_won.Valid { rec.NumNFTsAsPrizeReceived = null_raffle_nft_won.Int64 }
 	if null_unclaimed_nfts.Valid { rec.UnclaimedNFTs = null_unclaimed_nfts.Int64 }
 	if null_total_tokens.Valid { rec.TotalCSTokensWon= null_total_tokens.Int64 }
 	if null_erc20_transfs.Valid { rec.CosmicTokenNumTransfers = null_erc20_transfs.Int64 }

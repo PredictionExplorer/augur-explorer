@@ -592,7 +592,7 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 		return
 	}
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EthDonatedWithInfo",log.Data)
-	f err != nil {
+	if err != nil {
 		Error.Printf("Event DonationWithInfoEvent decode error: %v",err)
 		os.Exit(1)
 	}
