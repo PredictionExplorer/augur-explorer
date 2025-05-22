@@ -73,6 +73,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	cst_reward,err := cosmic_game_ctrct.CstRewardAmountForBidding(&copts)
+	if err != nil {
+		fmt.Printf("Error at CstRewardAmountForBidding()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 
 	time_until_prize,err := cosmic_game_ctrct.GetDurationUntilMainPrize(&copts)
 	if err != nil {
@@ -325,6 +331,7 @@ func main() {
 	fmt.Printf("CST Auction duration %v of %v\n",cst_auction_elapsed.String(),cst_auction_duration.String())
 	fmt.Printf("ETH Auction duration %v of %v\n",eth_auction_elapsed.String(),eth_auction_duration.String())
 	fmt.Printf("Price increase (on bid) = %v%%\n",price_increase)
+	fmt.Printf("CST Reward = %v\n",fmt_eth(cst_reward))
 	fmt.Printf("First bid time bump %v%% (divisor=%v)\n",initial_duration_inc,initial_duration_divisor)
 	fmt.Printf("First bid time bump %v sseconds\n",initial_duration_seconds)
 	fmt.Printf("Time increment (on claimPrize()): %v\n",time_increment)

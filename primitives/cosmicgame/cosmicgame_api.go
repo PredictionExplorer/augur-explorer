@@ -116,7 +116,8 @@ type CGUserInfo struct {
 	SumRaffleEthWinnings		float64
 	SumRaffleEthWithdrawal		float64
 	NumRaffleEthWinnings		int64
-	NumNFTsAsPrizeReceived		int64
+	RaffleNFTsCount				int64
+	RewardNFTsCount				int64	// RaffleNftsCount + endurance count + chrono + lastcstbidder count + main prize NFT
 	UnclaimedNFTs				int64
 	TotalCSTokensWon			int64	// prizes + raffles
 	CosmicTokenNumTransfers		int64

@@ -358,7 +358,6 @@ func find_cosmic_token_transfer(bid_evtlog_id,tx_id int64) string {
 		os.Exit(1)
 	}
 	ee := elog_ids[0]
-	Info.Printf("ee=%+v\n",ee)
 	var log types.Log
 	err := rlp.DecodeBytes(ee,&log)
 	if err!= nil {

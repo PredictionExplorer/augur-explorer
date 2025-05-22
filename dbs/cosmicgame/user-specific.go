@@ -22,6 +22,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"rw.withdrawal_sum/1e18 withdrawal_sum, "+
 				"rw.raffles_count, "+
 				"rn.num_won raffle_nft_won, "+
+				"p.tokens_count,"+
 				"p.unclaimed_nfts, "+
 				"p.tokens_count, "+
 				"trs.erc20_num_transfers, "+
@@ -41,7 +42,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	var null_num_bids,null_prizes_count sql.NullInt64
 	var null_max_bid,null_max_win sql.NullFloat64
 	var null_raffle_sum_winnings,null_raffle_sum_withdrawal sql.NullFloat64
-	var null_raffles_count,null_raffle_nft_won sql.NullInt64
+	var null_raffles_count,null_raffle_nft_won,null_reward_nfts sql.NullInt64
 	var null_unclaimed_nfts,null_total_tokens sql.NullInt64
 	var null_erc20_transfs,null_erc721_transfs sql.NullInt64
 	var null_count_donations sql.NullInt64
@@ -61,6 +62,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 		&null_raffle_sum_withdrawal,
 		&null_raffles_count,
 		&null_raffle_nft_won,
+		&null_reward_nfts,
 		&null_unclaimed_nfts,
 		&null_total_tokens,
 		&null_erc20_transfs,
@@ -82,7 +84,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	if null_raffle_sum_winnings.Valid { rec.SumRaffleEthWinnings = null_raffle_sum_winnings.Float64 }
 	if null_raffle_sum_withdrawal.Valid { rec.SumRaffleEthWithdrawal = null_raffle_sum_withdrawal.Float64 }
 	if null_raffles_count.Valid { rec.NumRaffleEthWinnings = null_raffles_count.Int64 }
-	if null_raffle_nft_won.Valid { rec.NumNFTsAsPrizeReceived = null_raffle_nft_won.Int64 }
+	if null_raffle_nft_won.Valid { rec.RaffleNFTsCount = null_raffle_nft_won.Int64 }
+	if null_reward_nfts.Valid { rec.RewardNFTsCount = null_reward_nfts.Int64 }
 	if null_unclaimed_nfts.Valid { rec.UnclaimedNFTs = null_unclaimed_nfts.Int64 }
 	if null_total_tokens.Valid { rec.TotalCSTokensWon= null_total_tokens.Int64 }
 	if null_erc20_transfs.Valid { rec.CosmicTokenNumTransfers = null_erc20_transfs.Int64 }

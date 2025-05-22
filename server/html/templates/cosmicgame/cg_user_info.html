@@ -159,12 +159,13 @@
 		<td class="market_reports">Number of Raffle NFTs won</td>
 		<td class="market_reports">
 			<a href="/black/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}">
-				{{.UserInfo.RaffleNFTWon}}
+				{{.UserInfo.RaffleNFTsCount}}
 			</a>
 			&nbsp;&nbsp;
 			<a href="/black/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}">
 				<small>Raffle NFT winnings</small>
 			</a>
+			Total NFTs rewarded = {{.UserInfo.RewardNFTsCount}}
 		</td>
 	</tr>
 	<tr class="market_reports">
@@ -349,7 +350,7 @@
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>
-			<td style="text-align: right;" title="">{{printf "%.4f" .ERC20_AmountEth}}</td>
+			<td style="text-align: right;" title="">{{printf "%.4f" .ERC20RewardAmountEth}}</td>
 			<td style="text-align: right;" title="">{{ .RWalkNFTId }}</td>
 		</tr>
 	{{- end}}
