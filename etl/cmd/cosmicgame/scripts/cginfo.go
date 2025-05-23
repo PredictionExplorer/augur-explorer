@@ -123,6 +123,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	chrono_percentage,err := cosmic_game_ctrct.ChronoWarriorEthPrizeAmountPercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at ChronoWarriorEthPrizeAmountPercentage()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	eth_bidders,err := cosmic_game_ctrct.RaffleTotalEthPrizeAmountForBiddersPercentage(&copts)
 	if err != nil {
 		fmt.Printf("Error at NumRaffleETHWinnersBidding()(): %v\n",err)
@@ -308,6 +314,7 @@ func main() {
 	fmt.Printf("PrizeAmount = %v\n",fmt_eth(prize_amount))
 	fmt.Printf("PrizePercentage = %v\n",prize_percentage.String())
 	fmt.Printf("RafflePercentage = %v\n",raffle_percentage.String())
+	fmt.Printf("ChronoPercentage = %v\n",chrono_percentage.String())
 	fmt.Printf("ETHWinnersBidding = %v\n",eth_bidders);
 	fmt.Printf("NFTWinnersBidding = %v\n",nft_bidders);
 	fmt.Printf("NFTWinnersStaking = %v\n",nft_stakers);

@@ -62,6 +62,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
+		"ChronoWarriorPercentage" : chrono_percentage,
 		"StakignPercentage" : staking_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,

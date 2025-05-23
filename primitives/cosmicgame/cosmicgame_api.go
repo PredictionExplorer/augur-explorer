@@ -519,7 +519,7 @@ type CGSystemModeRec struct {
 	TimeStamp					int64
 	DateTime					string
 	NextEvtLogId				int64
-	oundNum					int64
+	RoundNum					int64
 }
 type CGAdminEvent struct {
 	RecordType					int64	// Type codes:
@@ -539,7 +539,7 @@ type CGAdminEvent struct {
 										//			13		StakingWalletRWalkAddressChanged
 										//			14		MarketingWalletAddressChanged
 										//			15		CosmicTokenAddressChanged
-										//		16		CosmicSignatureAddressChanged
+										//			16		CosmicSignatureAddressChanged
 										//			17		Upgraded
 										//			18		TimeIncreaseChanged
 										//			19		TimeoutClaimPrizeChanged

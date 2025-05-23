@@ -39,6 +39,7 @@ var (
 	token_reward				string
 	prize_percentage			int64
 	raffle_percentage			int64
+	chrono_percentage			int64
 	staking_percentage			int64
 	time_increase				string
 	initial_seconds				int64
@@ -180,6 +181,13 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			raffle_percentage = -1
 		} else { raffle_percentage = tmp_val.Int64() }
+		tmp_val,err = bwcontract.ChronoWarriorEthPrizeAmountPercentage(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at ChronoWarriorEthPrizeAmountPercentage(() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			chrono_percentage = -1
+		} else { chrono_percentage = tmp_val.Int64() }
 		tmp_val,err = bwcontract.CosmicSignatureNftStakingTotalEthRewardAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at StakingPercentage() call: %v\n",err)
@@ -437,6 +445,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
+		"ChronoWarriorPercentage" : chrono_percentage,
 		"StakingPercentage" : staking_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
