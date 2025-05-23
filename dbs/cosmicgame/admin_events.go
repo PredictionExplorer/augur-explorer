@@ -524,7 +524,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.new_len AS int_value, "+
 						"0 AS float_value, "+
 						"'' AS string_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_auclen r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_cst_auclen r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
