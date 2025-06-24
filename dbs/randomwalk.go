@@ -814,6 +814,10 @@ func (ss *SQLStorage) Get_rw_token_transfers_by_tx_hash(tx_hash string) []p.RW_T
 	for rows.Next() {
 		var rec p.RW_TransferEntry
 		err=rows.Scan(&rec.From,&rec.To,&rec.TokenId)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records

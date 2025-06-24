@@ -1357,6 +1357,19 @@ func (ss *SQLStorage) Get_rwalk_token_info(rwalk_aid int64,token_id int64) (p.RW
 	}
 	return output,nil
 }
+func (ss *SQLStorage) Check_rwalk_token_exists(token_id int64) (bool,error) {
+
+	var query string
+	query = "SELECT token_id FROM rw_mint_evt m WHERE token_id=$2"
+	res := ss.db.QueryRow(query,token_id)
+	err := res.Scan(&token_id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false,err
+		}
+	}
+	return true,nil
+}
 func (ss *SQLStorage) Get_rwalk_mint_intervals(rwalk_aid int64) []p.RW_API_MintInterval {
 	// gets mint number and time elapsed between mints (for scatter plot)
 

@@ -4,96 +4,100 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
+	"math/big"
+    "os/signal"
+    "syscall"
+	"context"
 	"path/filepath"
 
-	"github.com/PredictionExplorer/augur-explorer/dbs"
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/common"
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
-
+const (
+	DELETER_LOG          = "deleter.log"
+	NUM_BLOCKS_NO_DELETE	= 1000000
+)
+var (
+	eclient 				*ethclient.Client
+    rpcclient *rpc.Client
+	Info                    *log.Logger
+	Error                   *log.Logger
+	storage 				*SQLStorage
+	RPC_URL                  = os.Getenv("RPC_URL")
+)
 func main() {
-	// Set up logging
-	log_dir := filepath.Join(os.TempDir(), "deleter_logs")
-	os.MkdirAll(log_dir, 0755)
-	log_file := filepath.Join(log_dir, "deleter.log")
+	
+	var err error
 
-	// Create logger
-	Info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
+	// Set up logging
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	log_file := filepath.Join(log_dir, "deleter.log")
+	Info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+	rpcclient, err = rpc.DialContext(context.Background(), RPC_URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
+	eclient = ethclient.NewClient(rpcclient)
 
 	// Initialize storage
-	storage := dbs.Connect_to_storage(Info)
-	storage.Db_set_schema_name("public")
+	storage := Connect_to_storage(Info)
 	storage.Init_log(log_file)
 	storage.Log_msg("Log initialized\n")
 
-	// Check if status record exists
-	var exists bool
-	check_query := `SELECT EXISTS(SELECT 1 FROM d_status WHERE id = 1)`
-	err := storage.Db().QueryRow(check_query).Scan(&exists)
-	if err != nil {
-		fmt.Printf("Error checking status record: %v\n", err)
+	statuses:=storage.Get_deleter_status()
+
+	c := make(chan os.Signal)
+	exit_chan := make(chan bool)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		Info.Printf("Got SIGINT signal, will exit after processing is over." +
+					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
+		exit_chan <- true
+	}() 
+	if len(statuses) == 0 {
+		fmt.Printf("No contracts were registered in 'd_status' table, exiting\n")
 		os.Exit(1)
 	}
-	if !exists {
-		fmt.Printf("Error: no status record found in d_status table. Please initialize the table first.\n")
-		os.Exit(1)
-	}
 
-	// Event signatures to exclude (these events will be kept)
-	keep_signatures := []string{
-		// Add your event signatures here, e.g.:
-		// "0x1234...",
-	}
-
-	// Prepare the query to fetch events
-	// We'll fetch events where topic0_sig is NOT IN our keep list
-	query_str := `
-		SELECT id, block_num, tx_id, topic0_sig 
-		FROM evt_log 
-		WHERE topic0_sig NOT IN ($1)
-		ORDER BY id
-		LIMIT 1000
-	`
-
-	// Execute the query
-	rows, err := storage.Db().Query(query_str, keep_signatures[0]) // For now, just using first signature as example
-	if err != nil {
-		fmt.Printf("Error querying database: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
-
-	// Process results
-	for rows.Next() {
-		var (
-			row_id       int64
-			block_num    int64
-			tx_id        int64
-			topic0_sig   string
-		)
-		err := rows.Scan(&row_id, &block_num, &tx_id, &topic0_sig)
-		if err != nil {
-			fmt.Printf("Error scanning row: %v\n", err)
-			continue
+	for {
+		select {
+			case exit_flag := <-exit_chan:
+			if exit_flag {
+				Info.Println("Exiting by user request.")
+				os.Exit(0)
+			}
+			default:
 		}
-		
-		// Print the event details
-		fmt.Printf("Found event: ID=%d, Block=%d, TxID=%d, Topic0=%s\n", 
-			row_id, block_num, tx_id, topic0_sig)
-		
-		// Update status in d_status table
-		update_query := `
-			UPDATE d_status
-			SET last_evtlog_id = $1, block_num = $2
-			WHERE id = 1
-		`
-		_, err = storage.Db().Exec(update_query, row_id, block_num)
-		if err != nil {
-			fmt.Printf("Error updating status: %v\n", err)
-			os.Exit(1)
-		}
-	}
 
-	if err = rows.Err(); err != nil {
-		fmt.Printf("Error iterating rows: %v\n", err)
-		os.Exit(1)
+		for i:=0; i<len(statuses); i++ {
+			last_block_num := statuses[i].LastBlockNum
+			filter :=  ethereum.FilterQuery{}
+			filter.FromBlock = big.NewInt(last_block_num)
+			filter.ToBlock = big.NewInt(last_block_num)
+			filter.Addresses = []common.Address{statuses[i].ContractEthAddr}
+			logs,err := eclient.FilterLogs(context.Background(),filter)
+			if err != nil {
+				Info.Printf("Error at ethclient.Filter(): %v\n",err)
+				fmt.Printf("Error at ethclient.Filter(): %v\n",err)
+				os.Exit(1)
+			}
+			for j:=0; j<len(logs); j++ {
+				delete_to_block := int64(logs[i].BlockNumber)
+				for k:=last_block_num; k<delete_to_block; k++ {	// we delete 1 block per query since it is a time consuming op
+					fmt.Printf("Deleting block %v (delete_to_block=%v)\n",k,delete_to_block)
+				}
+			}
+		}
+
+		time.Sleep(1 * time.Second) 
 	}
 }

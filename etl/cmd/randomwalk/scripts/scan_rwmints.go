@@ -4,6 +4,7 @@ import (
 	"os"
 	"log"
 	"fmt"
+	"time"
 	"math/big"
 	"context"
 	"encoding/hex"
@@ -35,14 +36,25 @@ var (
 )
 func process_log(log *types.Log) {
 	
-	fmt.Printf("processing log %+v\n",log)
+	//fmt.Printf("processing log %+v\n",log)
 	var evt RW_MintEvent
 	evt.TokenId = log.Topics[1].Big().Int64()
 	evt.Owner = common.BytesToAddress(log.Topics[2][12:]).String()
-	fmt.Printf(
-		"Block %v: RWMint token id %v  tx %v\n",
-		log.BlockNumber,evt.TokenId,log.TxHash.String(),
-	)
+//	fmt.Printf(
+//		"Block %v: RWMint token id %v  tx %v\n",
+//		log.BlockNumber,evt.TokenId,log.TxHash.String(),
+//	)
+  again:
+	exists,err := storage.Check_rwalk_token_exists(evt.TokenId)
+	if err != nil {
+		fmt.Printf("Error accessing database: %v\n",err)
+		time.Sleep(1 * time.Second)
+		goto again
+	}
+	if !exists {
+		fmt.Printf("Token %v DOES NOT exist in the DB\n",evt.TokenId)
+	}
+//	fmt.Printf("Token %v\n",evt.TokenId)
 }
 func main() {
 
