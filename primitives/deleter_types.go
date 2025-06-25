@@ -2,8 +2,7 @@ package primitives
 import (
 	"github.com/ethereum/go-ethereum/common"
 )
-type Deleter_status struct {
-	LastBlockNum		int64
+type Deleter_contracts struct {
 	ContractAid			int64
 	ContractAddr		string
 	Info				string

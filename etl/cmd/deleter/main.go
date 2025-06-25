@@ -4,56 +4,41 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
-	"math/big"
     "os/signal"
     "syscall"
-	"context"
 	"path/filepath"
 
-	ethereum "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/common"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const (
 	DELETER_LOG          = "deleter.log"
-	NUM_BLOCKS_NO_DELETE	= 1000000
+	NUM_BLOCKS_NO_DELETE	= 1000000	// leaves this number of blocks after head of the chain
+	NUM_BLOCKS_TO_SCAN	= 10000
 )
 var (
-	eclient 				*ethclient.Client
-    rpcclient *rpc.Client
 	Info                    *log.Logger
 	Error                   *log.Logger
 	storage 				*SQLStorage
-	RPC_URL                  = os.Getenv("RPC_URL")
 )
 func main() {
-	
-	var err error
-
-	// Set up logging
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
-	log_file := filepath.Join(log_dir, "deleter.log")
-	Info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-
-	rpcclient, err = rpc.DialContext(context.Background(), RPC_URL)
+	log_file_name := filepath.Join(log_dir, "deleter.log")
+	logfile, err := os.OpenFile(log_file_name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("Err at log file creation: %v\n",err)
+		os.Exit(1)
 	}
-	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
-	eclient = ethclient.NewClient(rpcclient)
+	Info = log.New(logfile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// Initialize storage
 	storage := Connect_to_storage(Info)
-	storage.Init_log(log_file)
+//	storage.Init_log(log_file)
 	storage.Log_msg("Log initialized\n")
 
-	statuses:=storage.Get_deleter_status()
-
+	contracts:=storage.Get_deleter_contracts()
+	first_block_num := storage.Get_first_block_num()
+	last_block_num,_ := storage.Get_last_block_num()
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -63,8 +48,19 @@ func main() {
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}() 
-	if len(statuses) == 0 {
+	if len(contracts) == 0 {
 		fmt.Printf("No contracts were registered in 'd_status' table, exiting\n")
+		os.Exit(1)
+	}
+	in_statement := fmt.Sprintf("%d",contracts[0].ContractAid)
+	for i:=1; i<len(contracts); i++ {
+		in_statement = fmt.Sprintf("%s,%s",in_statement,fmt.Sprintf("%d",contracts[i].ContractAid))
+	}
+	cur_block_num := storage.Get_deleter_status()
+	if cur_block_num < first_block_num { cur_block_num = first_block_num; }
+	Info.Printf("first_block_bum=%v cur_block_num=%v, limit block num =%v\n",first_block_num,cur_block_num,(last_block_num-NUM_BLOCKS_NO_DELETE))
+	if (cur_block_num  > (last_block_num - NUM_BLOCKS_NO_DELETE)) {
+		Info.Printf("Skipping delete due to NUM_BLOCKS_NO_DELETE condition\n")
 		os.Exit(1)
 	}
 
@@ -77,27 +73,23 @@ func main() {
 			}
 			default:
 		}
-
-		for i:=0; i<len(statuses); i++ {
-			last_block_num := statuses[i].LastBlockNum
-			filter :=  ethereum.FilterQuery{}
-			filter.FromBlock = big.NewInt(last_block_num)
-			filter.ToBlock = big.NewInt(last_block_num)
-			filter.Addresses = []common.Address{statuses[i].ContractEthAddr}
-			logs,err := eclient.FilterLogs(context.Background(),filter)
-			if err != nil {
-				Info.Printf("Error at ethclient.Filter(): %v\n",err)
-				fmt.Printf("Error at ethclient.Filter(): %v\n",err)
-				os.Exit(1)
-			}
-			for j:=0; j<len(logs); j++ {
-				delete_to_block := int64(logs[i].BlockNumber)
-				for k:=last_block_num; k<delete_to_block; k++ {	// we delete 1 block per query since it is a time consuming op
-					fmt.Printf("Deleting block %v (delete_to_block=%v)\n",k,delete_to_block)
-				}
-			}
+		num_tx_to_our_contracts := storage.Get_deleter_count_non_deleteable_transactions_by_tx_to(cur_block_num,in_statement)
+		if (num_tx_to_our_contracts > 0) {
+			Info.Printf("Block %v can't be deleted (tx.To used)\n",cur_block_num)
+			cur_block_num = cur_block_num + 1
+			storage.Update_deleter_status(cur_block_num)
+			continue
 		}
-
-		time.Sleep(1 * time.Second) 
+		num_events_our_contracts := storage.Get_deleter_count_non_deleteable_transactions_by_events_emitted(cur_block_num,in_statement)
+		if (num_events_our_contracts > 0) {
+			Info.Printf("Block %v can't be deleted (events used)\n",cur_block_num)
+			cur_block_num = cur_block_num + 1
+			storage.Update_deleter_status(cur_block_num)
+			continue
+		}
+		// block must be deleted (it contains none of our data)
+		storage.Deleter_do_delete_block_transactions(cur_block_num)
+		storage.Update_deleter_status(cur_block_num)
+		cur_block_num = cur_block_num + 1
 	}
 }
