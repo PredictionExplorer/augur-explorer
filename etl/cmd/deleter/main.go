@@ -6,6 +6,7 @@ import (
 	"os"
     "os/signal"
     "syscall"
+	"sync"
 	"path/filepath"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -15,12 +16,30 @@ const (
 	DELETER_LOG          = "deleter.log"
 	NUM_BLOCKS_NO_DELETE	= 1000000	// leaves this number of blocks after head of the chain
 	NUM_BLOCKS_TO_SCAN	= 10000
+	NUM_WORKERS				= 10
 )
 var (
 	Info                    *log.Logger
 	Error                   *log.Logger
 	storage 				*SQLStorage
+	wg 						sync.WaitGroup
+	in_statement			string
 )
+func process_single_block(bnum int64) {
+	defer wg.Done()
+	num_tx_to_our_contracts := storage.Get_deleter_count_non_deleteable_transactions_by_tx_to(bnum,in_statement)
+	if (num_tx_to_our_contracts > 0) {
+		Info.Printf("Block %v can't be deleted (tx.To used)\n",bnum)
+		return
+	}
+	num_events_our_contracts := storage.Get_deleter_count_non_deleteable_transactions_by_events_emitted(bnum,in_statement)
+	if (num_events_our_contracts > 0) {
+		Info.Printf("Block %v can't be deleted (events used)\n",bnum)
+		return
+	}
+	// block must be deleted (it contains none of our data)
+	storage.Deleter_do_delete_block_transactions(bnum)
+}
 func main() {
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
@@ -32,14 +51,13 @@ func main() {
 	}
 	Info = log.New(logfile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	storage := Connect_to_storage(Info)
-//	storage.Init_log(log_file)
+	storage = Connect_to_storage(Info)
 	storage.Log_msg("Log initialized\n")
 
 	contracts:=storage.Get_deleter_contracts()
 	first_block_num := storage.Get_first_block_num()
 	last_block_num,_ := storage.Get_last_block_num()
-	c := make(chan os.Signal)
+	c := make(chan os.Signal,1)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -52,7 +70,7 @@ func main() {
 		fmt.Printf("No contracts were registered in 'd_status' table, exiting\n")
 		os.Exit(1)
 	}
-	in_statement := fmt.Sprintf("%d",contracts[0].ContractAid)
+	in_statement = fmt.Sprintf("%d",contracts[0].ContractAid)
 	for i:=1; i<len(contracts); i++ {
 		in_statement = fmt.Sprintf("%s,%s",in_statement,fmt.Sprintf("%d",contracts[i].ContractAid))
 	}
@@ -73,23 +91,12 @@ func main() {
 			}
 			default:
 		}
-		num_tx_to_our_contracts := storage.Get_deleter_count_non_deleteable_transactions_by_tx_to(cur_block_num,in_statement)
-		if (num_tx_to_our_contracts > 0) {
-			Info.Printf("Block %v can't be deleted (tx.To used)\n",cur_block_num)
-			cur_block_num = cur_block_num + 1
-			storage.Update_deleter_status(cur_block_num)
-			continue
+		for i:=int64(0);i<NUM_WORKERS;i++ {
+			wg.Add(1)
+			go process_single_block(cur_block_num + i)
 		}
-		num_events_our_contracts := storage.Get_deleter_count_non_deleteable_transactions_by_events_emitted(cur_block_num,in_statement)
-		if (num_events_our_contracts > 0) {
-			Info.Printf("Block %v can't be deleted (events used)\n",cur_block_num)
-			cur_block_num = cur_block_num + 1
-			storage.Update_deleter_status(cur_block_num)
-			continue
-		}
-		// block must be deleted (it contains none of our data)
-		storage.Deleter_do_delete_block_transactions(cur_block_num)
+		wg.Wait()
+		cur_block_num = cur_block_num + NUM_WORKERS
 		storage.Update_deleter_status(cur_block_num)
-		cur_block_num = cur_block_num + 1
 	}
 }
