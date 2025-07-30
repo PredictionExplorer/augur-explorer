@@ -8,6 +8,7 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	round_num				BIGINT NOT NULL,
 	winner_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
+	timeout					BIGINT NOT NULL,	-- timeoutTimeToWithdrawSecondaryPrizes
 	amount					DECIMAL DEFAULT 0,
 	donation_evt_id			BIGINT DEFAULT -1,	-- linked by trigger upon processing DonationReceived event
 	UNIQUE(evtlog_id)

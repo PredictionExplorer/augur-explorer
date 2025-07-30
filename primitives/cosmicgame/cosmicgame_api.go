@@ -76,6 +76,7 @@ type CGRoundRec struct {
 	DateTime					string
 	WinnerAid					int64
 	WinnerAddr					string
+	Timeout						int64
 	Amount						string
 	AmountEth					float64	// divided by 1e18
 	RoundNum					uint64

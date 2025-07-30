@@ -21,6 +21,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"p.time_stamp,"+
 				"p.winner_aid,"+
 				"wa.addr,"+
+				"p.timeout,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
 				"p.round_num,"+
@@ -78,6 +79,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&rec.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.Timeout,
 			&rec.Amount,
 			&rec.AmountEth,
 			&rec.RoundNum,

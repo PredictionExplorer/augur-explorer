@@ -30,6 +30,7 @@ type CGPrizeClaimEvent struct {
 	RoundNum			int64
 	TokenId				int64
 	WinnerAddr			string
+	Timeout				int64
 	Amount				string
 	DonationEvtId		int64
 }

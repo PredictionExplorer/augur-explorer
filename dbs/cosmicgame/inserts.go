@@ -13,8 +13,8 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_claim("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"round_num,token_id,winner_aid,amount,donation_evt_id"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+					"round_num,token_id,winner_aid,timeout,amount,donation_evt_id"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -24,6 +24,7 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) 
 		evt.RoundNum,
 		evt.TokenId,
 		winner_aid,
+		evt.Timeout,
 		evt.Amount,
 		evt.DonationEvtId,
 	)
