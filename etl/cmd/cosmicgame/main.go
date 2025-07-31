@@ -26,7 +26,7 @@ const (
 	DEFAULT_DB_LOG			= "db.log"
 	IMGGEN_PATH				= "v2/etl/cmd/cosmicgame/imggen_monitor/imggen_exec" // relative to $HOME
 
-	PRIZE_CLAIM_EVENT		= "4e6dc8ff50108e18c5ebeabb472c87e32464277e1aafd81888c8ac1b4cdde672"
+	PRIZE_CLAIM_EVENT		= "003b5ce6ce84e57684194d9d829dc86a9c32a488d3a979653dc27902709e8494"
 	BID_EVENT				= "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549"
 	DONATION_EVENT			= "e32cacf203d00685e2b4d8b0a90e7cd8f3f8a208fdf116f4bb36abe08b7d548e"
 	DONATION_WITH_INFO_EVENT= "a08049565b10d44a06dca9bf05685b39bc370352043c5a003e8d35d45ebdc53f"
@@ -60,6 +60,7 @@ const (
 	/// Admin events
 	PROXY_UPGRADED			= "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b"
 	ADMIN_CHANGED			= "7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f"	// AdminChanged (ERC1967Utils.sol)
+	TREASURER_CHANGED		= "df73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e"	// TreasurerAddressChanged
 	INITIALIZED				= "c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"
 	CHARITY_PERCENTAGE_CHANGED		= "fe65b6d5007c66dadebc5095104ccd672c070f396dfdcfe1ee7f54201b9efa6d" //CharityEthDonationAmountPercentageChanged
 	PRIZE_PERCENTAGE_CHANGED	= "b5a05ec7911dd5450a7fa4ae54d50d9d83af6e256db8fc76c82edd7b659cf8bc"
@@ -189,6 +190,7 @@ var (
 
 	// MarketingWallet events
 	evt_marketing_reward_sent,_		= hex.DecodeString(MARKETING_REWARD_SENT)
+	evt_treasurer_changed,_		= hex.DecodeString(TREASURER_CHANGED)
 
 	inspected_events []InspectedEvent
 

@@ -500,6 +500,14 @@ type CGMarketingWalletAddressChanged struct {
 	Contract                string
 	NewMarketingWallet				string
 }
+type CGTreasurerAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewTreasurer			string
+}
 type CGCosmicTokenAddressChanged struct {
 	EvtId                   int64
 	BlockNum                int64

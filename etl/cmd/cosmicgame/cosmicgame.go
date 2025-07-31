@@ -127,6 +127,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_treasurer_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_costok_address_changed[:4]),
 			ContractAid: 0,
 		},
@@ -325,7 +329,9 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.RoundNum= log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.EthPrizeAmount.String()
-	evt.TokenId = find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
+	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.Timeout = eth_evt.TimeoutTimeToWithdrawSecondaryPrizes.Int64()
+//	find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
 //	evt.DonationEvtId = storagew.Get_donation_received_evt_id_by_tx_id(evt.TxId,hex.EncodeToString(evt_donation_received_event[:4]))
 //	if evt.DonationEvtId == 0 {
 //		Error.Printf("Failed to fetch donation received event id for txid=%v\n",evt,TxId)
@@ -340,6 +346,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tDonationEvtId: %v\n",evt.DonationEvtId)
+	Info.Printf("\tTimeout to withdraw: %v\n",evt.Timeout)
 	Info.Printf("}\n")
 
 	storagew.Delete_prize_claim_event(evt.EvtId)
@@ -1953,6 +1960,29 @@ func proc_marketing_wallet_address_changed_event(log *types.Log,elog *EthereumEv
 	storagew.Delete_cosmic_game_marketing_wallet_address_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_marketing_wallet_address_changed_event(&evt)
 }
+func proc_treasurer_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGTreasurerAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		return
+	}
+	Info.Printf("Processing TreasurerAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewTreasurer = common.BytesToAddress(log.Topics[1][12:]).String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TreasurerAddressChanged{\n")
+	Info.Printf("\tNewTreasurer: %v\n",evt.NewTreasurer)
+	Info.Printf("}\n")
+
+	storagew.Delete_treasurer_address_changed_event(evt.EvtId)
+    storagew.Insert_treasurer_address_changed_event(&evt)
+}
 func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGCosmicTokenAddressChanged
@@ -2957,6 +2987,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_address_changed) {
 		proc_marketing_wallet_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_treasurer_changed) {
+		proc_treasurer_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_costok_address_changed) {
 		proc_cosmic_token_address_changed_event(log,evtlog)

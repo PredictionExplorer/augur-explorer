@@ -37,7 +37,7 @@ type ICosmicSignatureTokenMintSpec struct {
 
 // IMarketingWalletMetaData contains all meta data concerning the IMarketingWallet contract.
 var IMarketingWalletMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardPaid\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"internalType\":\"structICosmicSignatureToken.MintSpec[]\",\"name\":\"specs_\",\"type\":\"tuple[]\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"marketerAddresses_\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"marketerAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardPaid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"TreasurerAddressChanged\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"internalType\":\"structICosmicSignatureToken.MintSpec[]\",\"name\":\"specs_\",\"type\":\"tuple[]\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"marketerAddresses_\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"marketerAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setTreasurerAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // IMarketingWalletABI is the input ABI used to generate the binding from.
@@ -249,6 +249,27 @@ func (_IMarketingWallet *IMarketingWalletTransactorSession) PayReward(marketerAd
 	return _IMarketingWallet.Contract.PayReward(&_IMarketingWallet.TransactOpts, marketerAddress_, amount_)
 }
 
+// SetTreasurerAddress is a paid mutator transaction binding the contract method 0xa351f75a.
+//
+// Solidity: function setTreasurerAddress(address newValue_) returns()
+func (_IMarketingWallet *IMarketingWalletTransactor) SetTreasurerAddress(opts *bind.TransactOpts, newValue_ common.Address) (*types.Transaction, error) {
+	return _IMarketingWallet.contract.Transact(opts, "setTreasurerAddress", newValue_)
+}
+
+// SetTreasurerAddress is a paid mutator transaction binding the contract method 0xa351f75a.
+//
+// Solidity: function setTreasurerAddress(address newValue_) returns()
+func (_IMarketingWallet *IMarketingWalletSession) SetTreasurerAddress(newValue_ common.Address) (*types.Transaction, error) {
+	return _IMarketingWallet.Contract.SetTreasurerAddress(&_IMarketingWallet.TransactOpts, newValue_)
+}
+
+// SetTreasurerAddress is a paid mutator transaction binding the contract method 0xa351f75a.
+//
+// Solidity: function setTreasurerAddress(address newValue_) returns()
+func (_IMarketingWallet *IMarketingWalletTransactorSession) SetTreasurerAddress(newValue_ common.Address) (*types.Transaction, error) {
+	return _IMarketingWallet.Contract.SetTreasurerAddress(&_IMarketingWallet.TransactOpts, newValue_)
+}
+
 // IMarketingWalletRewardPaidIterator is returned from FilterRewardPaid and is used to iterate over the raw logs and unpacked data for RewardPaid events raised by the IMarketingWallet contract.
 type IMarketingWalletRewardPaidIterator struct {
 	Event *IMarketingWalletRewardPaid // Event containing the contract specifics and raw log
@@ -394,10 +415,154 @@ func (_IMarketingWallet *IMarketingWalletFilterer) ParseRewardPaid(log types.Log
 	return event, nil
 }
 
+// IMarketingWalletTreasurerAddressChangedIterator is returned from FilterTreasurerAddressChanged and is used to iterate over the raw logs and unpacked data for TreasurerAddressChanged events raised by the IMarketingWallet contract.
+type IMarketingWalletTreasurerAddressChangedIterator struct {
+	Event *IMarketingWalletTreasurerAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *IMarketingWalletTreasurerAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(IMarketingWalletTreasurerAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(IMarketingWalletTreasurerAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *IMarketingWalletTreasurerAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *IMarketingWalletTreasurerAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// IMarketingWalletTreasurerAddressChanged represents a TreasurerAddressChanged event raised by the IMarketingWallet contract.
+type IMarketingWalletTreasurerAddressChanged struct {
+	NewValue common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterTreasurerAddressChanged is a free log retrieval operation binding the contract event 0xdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e.
+//
+// Solidity: event TreasurerAddressChanged(address indexed newValue)
+func (_IMarketingWallet *IMarketingWalletFilterer) FilterTreasurerAddressChanged(opts *bind.FilterOpts, newValue []common.Address) (*IMarketingWalletTreasurerAddressChangedIterator, error) {
+
+	var newValueRule []interface{}
+	for _, newValueItem := range newValue {
+		newValueRule = append(newValueRule, newValueItem)
+	}
+
+	logs, sub, err := _IMarketingWallet.contract.FilterLogs(opts, "TreasurerAddressChanged", newValueRule)
+	if err != nil {
+		return nil, err
+	}
+	return &IMarketingWalletTreasurerAddressChangedIterator{contract: _IMarketingWallet.contract, event: "TreasurerAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchTreasurerAddressChanged is a free log subscription operation binding the contract event 0xdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e.
+//
+// Solidity: event TreasurerAddressChanged(address indexed newValue)
+func (_IMarketingWallet *IMarketingWalletFilterer) WatchTreasurerAddressChanged(opts *bind.WatchOpts, sink chan<- *IMarketingWalletTreasurerAddressChanged, newValue []common.Address) (event.Subscription, error) {
+
+	var newValueRule []interface{}
+	for _, newValueItem := range newValue {
+		newValueRule = append(newValueRule, newValueItem)
+	}
+
+	logs, sub, err := _IMarketingWallet.contract.WatchLogs(opts, "TreasurerAddressChanged", newValueRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(IMarketingWalletTreasurerAddressChanged)
+				if err := _IMarketingWallet.contract.UnpackLog(event, "TreasurerAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTreasurerAddressChanged is a log parse operation binding the contract event 0xdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e.
+//
+// Solidity: event TreasurerAddressChanged(address indexed newValue)
+func (_IMarketingWallet *IMarketingWalletFilterer) ParseTreasurerAddressChanged(log types.Log) (*IMarketingWalletTreasurerAddressChanged, error) {
+	event := new(IMarketingWalletTreasurerAddressChanged)
+	if err := _IMarketingWallet.contract.UnpackLog(event, "TreasurerAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // MarketingWalletMetaData contains all meta data concerning the MarketingWallet contract.
 var MarketingWalletMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"contractCosmicSignatureToken\",\"name\":\"token_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardPaid\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"internalType\":\"structICosmicSignatureToken.MintSpec[]\",\"name\":\"specs_\",\"type\":\"tuple[]\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"marketerAddresses_\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"marketerAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicSignatureToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x60a06040523461004d5761001961001461011e565b61025e565b610021610052565b610ddf610404823960805181818161030b0152818161062b015281816109750152610bfa0152610ddf90f35b610058565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100849061005c565b810190811060018060401b0382111761009c57604052565b610066565b906100b46100ad610052565b928361007a565b565b5f80fd5b60018060a01b031690565b6100ce906100ba565b90565b6100da906100c5565b90565b6100e6816100d1565b036100ed57565b5f80fd5b905051906100fe826100dd565b565b9060208282031261011957610116915f016100f1565b90565b6100b6565b61013c6111e380380380610131816100a1565b928339810190610100565b90565b90565b61015661015161015b926100ba565b61013f565b6100ba565b90565b61016790610142565b90565b6101739061015e565b90565b90565b61018d61018861019292610176565b61013f565b6100ba565b90565b61019e90610179565b90565b60209181520190565b5f7f5468652070726f76696465642061646472657373206973207a65726f2e000000910152565b6101de601d6020926101a1565b6101e7816101aa565b0190565b6102009060208101905f8183039101526101d1565b90565b61020c8161016a565b61022661022061021b5f610195565b6100c5565b916100c5565b146102365761023490610259565b565b61023e610052565b63eac0d38960e01b815280610255600482016101eb565b0390fd5b608052565b6102779061027261026d610312565b610279565b610203565b565b61028290610284565b565b61028d9061028f565b565b610298906102bc565b565b6102a3906100c5565b9052565b91906102ba905f6020850194019061029a565b565b806102d76102d16102cc5f610195565b6100c5565b916100c5565b146102e7576102e5906103a4565b565b61030a6102f35f610195565b5f918291631e4fbdf760e01b8352600483016102a7565b0390fd5b5f90565b61031a61030e565b503390565b5f1c90565b60018060a01b031690565b61033b6103409161031f565b610324565b90565b61034d905461032f565b90565b5f1b90565b9061036660018060a01b0391610350565b9181191691161790565b6103799061015e565b90565b90565b9061039461038f61039b92610370565b61037c565b8254610355565b9055565b5f0190565b6103ad5f610343565b6103b7825f61037f565b906103eb6103e57f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610370565b91610370565b916103f4610052565b806103fe8161039f565b0390a356fe60806040526004361015610013575b610473565b61001d5f3561008c565b8063715018a6146100875780638b8afcd7146100825780638da5cb5b1461007d578063c603317f14610078578063f2fde38b14610073578063fc0c546a1461006e5763ffcbf0b40361000e5761043f565b610386565b6102d6565b610284565b6101ce565b610178565b6100b4565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f9103126100aa57565b61009c565b5f0190565b346100e2576100c43660046100a0565b6100cc6104c7565b6100d4610092565b806100de816100af565b0390f35b610098565b5f80fd5b60018060a01b031690565b6100ff906100eb565b90565b61010b816100f6565b0361011257565b5f80fd5b9050359061012382610102565b565b90565b61013181610125565b0361013857565b5f80fd5b9050359061014982610128565b565b91906040838203126101735780610167610170925f8601610116565b9360200161013c565b90565b61009c565b346101a75761019161018b36600461014b565b906106c0565b610199610092565b806101a3816100af565b0390f35b610098565b6101b5906100f6565b9052565b91906101cc905f602085019401906101ac565b565b346101fe576101de3660046100a0565b6101fa6101e9610701565b6101f1610092565b918291826101b9565b0390f35b610098565b5f80fd5b5f80fd5b5f80fd5b909182601f830112156102495781359167ffffffffffffffff831161024457602001926040830284011161023f57565b61020b565b610207565b610203565b9060208282031261027f575f82013567ffffffffffffffff811161027a57610276920161020f565b9091565b6100e7565b61009c565b346102b35761029d61029736600461024e565b90610a19565b6102a5610092565b806102af816100af565b0390f35b610098565b906020828203126102d1576102ce915f01610116565b90565b61009c565b34610304576102ee6102e93660046102b8565b610a8a565b6102f6610092565b80610300816100af565b0390f35b610098565b7f000000000000000000000000000000000000000000000000000000000000000090565b90565b61034461033f610349926100eb565b61032d565b6100eb565b90565b61035590610330565b90565b6103619061034c565b90565b61036d90610358565b9052565b9190610384905f60208501940190610364565b565b346103b6576103963660046100a0565b6103b26103a1610309565b6103a9610092565b91829182610371565b0390f35b610098565b909182601f830112156103f55781359167ffffffffffffffff83116103f05760200192602083028401116103eb57565b61020b565b610207565b610203565b9160408383031261043a575f83013567ffffffffffffffff811161043557610427836104329286016103bb565b93909460200161013c565b90565b6100e7565b61009c565b3461046e576104586104523660046103fa565b91610c9f565b610460610092565b8061046a816100af565b0390f35b610098565b5f80fd5b61047f610cac565b6104876104b4565b565b90565b6104a061049b6104a592610489565b61032d565b6100eb565b90565b6104b19061048c565b90565b6104c56104c05f6104a8565b610d3d565b565b6104cf610477565b565b906104e3916104de610cac565b6105dd565b565b6104ee9061034c565b90565b6104fa90610125565b9052565b9190610511905f602085019401906104f1565b565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b9061053f90610517565b810190811067ffffffffffffffff82111761055957604052565b610521565b60e01b90565b151590565b61057281610564565b0361057957565b5f80fd5b9050519061058a82610569565b565b906020828203126105a5576105a2915f0161057d565b90565b61009c565b9160206105cb9294936105c460408201965f8301906101ac565b01906104f1565b565b6105d5610092565b3d5f823e3d90fd5b906020908281906106236106117fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926104e5565b9261061a610092565b918291826104fe565b0390a261064f7f0000000000000000000000000000000000000000000000000000000000000000610358565b6106725f63a9059cbb95939561067d610666610092565b9788968795869461055e565b8452600484016105aa565b03925af180156106bb5761068f575b50565b6106af9060203d81116106b4575b6106a78183610535565b81019061058c565b61068c565b503d61069d565b6105cd565b906106ca916104d1565b565b5f90565b5f1c90565b60018060a01b031690565b6106ec6106f1916106d0565b6106d5565b90565b6106fe90546106e0565b90565b6107096106cc565b506107135f6106f4565b90565b9061072891610723610cac565b6108d4565b565b5090565b61074261073d61074792610489565b61032d565b610125565b90565b634e487b7160e01b5f52601160045260245ffd5b61076790610125565b5f8114610775576001900390565b61074a565b634e487b7160e01b5f52603260045260245ffd5b919081101561079e576040020190565b61077a565b356107ad81610102565b90565b356107ba81610128565b90565b5f9103126107c757565b61009c565b60209181520190565b90565b506107e7906020810190610116565b90565b6107f3906100f6565b9052565b5061080690602081019061013c565b90565b61081290610125565b9052565b9060206108416108499361083861082f5f8301836107d8565b5f8601906107ea565b828101906107f7565b910190610809565b565b9061085881604093610816565b0190565b5090565b60400190565b916108748261087a926107cc565b926107d5565b90815f905b82821061088d575050505090565b909192936108af6108a96001926108a4888661085c565b61084b565b95610860565b92019092919261087f565b90916108d19260208301925f818503910152610866565b90565b6108df81839061072a565b5b806108f36108ed5f61072e565b91610125565b111561096f576109029061075e565b9261090f8284869161078e565b610926602061091f5f84016107a3565b92016107b0565b906109666109547fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926104e5565b9261095d610092565b918291826104fe565b0390a2926108e0565b506109997f0000000000000000000000000000000000000000000000000000000000000000610358565b91638d6bd91c919092803b15610a14576109c65f80946109d16109ba610092565b9788968795869461055e565b8452600484016108ba565b03925af18015610a0f576109e3575b50565b610a02905f3d8111610a08575b6109fa8183610535565b8101906107bd565b5f6109e0565b503d6109f0565b6105cd565b610513565b90610a2391610716565b565b610a3690610a31610cac565b610a38565b565b80610a53610a4d610a485f6104a8565b6100f6565b916100f6565b14610a6357610a6190610d3d565b565b610a86610a6f5f6104a8565b5f918291631e4fbdf760e01b8352600483016101b9565b0390fd5b610a9390610a25565b565b90610aa89291610aa3610cac565b610b62565b565b5090565b9190811015610abe576020020190565b61077a565b60209181520190565b90565b90610adc816020936107ea565b0190565b60200190565b91610af482610afa92610ac3565b92610acc565b90815f905b828210610b0d575050505090565b90919293610b2f610b29600192610b2488866107d8565b610acf565b95610ae0565b920190929192610aff565b939290610b58602091610b609460408801918883035f8a0152610ae6565b9401906104f1565b565b909192610b70828490610aaa565b5b80610b84610b7e5f61072e565b91610125565b1115610bf257610b939061075e565b90610ba8610ba384868591610aae565b6107a3565b8590610be9610bd77fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926104e5565b92610be0610092565b918291826104fe565b0390a290610b71565b509291610c1e7f0000000000000000000000000000000000000000000000000000000000000000610358565b630a8e30d992919392813b15610c9a575f610c4c91610c578296610c40610092565b9889978896879561055e565b855260048501610b3a565b03925af18015610c9557610c69575b50565b610c88905f3d8111610c8e575b610c808183610535565b8101906107bd565b5f610c66565b503d610c76565b6105cd565b610513565b90610caa9291610a95565b565b610cb4610701565b610ccd610cc7610cc2610d9c565b6100f6565b916100f6565b03610cd457565b610cf6610cdf610d9c565b5f91829163118cdaa760e01b8352600483016101b9565b0390fd5b5f1b90565b90610d1060018060a01b0391610cfa565b9181191691161790565b90565b90610d32610d2d610d39926104e5565b610d1a565b8254610cff565b9055565b610d465f6106f4565b610d50825f610d1d565b90610d84610d7e7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936104e5565b916104e5565b91610d8d610092565b80610d97816100af565b0390a3565b610da46106cc565b50339056fea26469706673582212204b511164a946372f6e52a60db43b9beb3ff6b4284bcae23382ec65323095e5fc64736f6c634300081c0033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"contractCosmicSignatureToken\",\"name\":\"token_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"callerAddress\",\"type\":\"address\"}],\"name\":\"UnauthorizedCaller\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardPaid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newValue\",\"type\":\"address\"}],\"name\":\"TreasurerAddressChanged\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"internalType\":\"structICosmicSignatureToken.MintSpec[]\",\"name\":\"specs_\",\"type\":\"tuple[]\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"marketerAddresses_\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"marketerAddress_\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount_\",\"type\":\"uint256\"}],\"name\":\"payReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newValue_\",\"type\":\"address\"}],\"name\":\"setTreasurerAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicSignatureToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"treasurerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x60a06040523461004d5761001961001461011e565b6101f8565b610021610052565b6110a861042082396080518181816103d7015281816106f701528181610af80152610d7d01526110a890f35b610058565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100849061005c565b810190811060018060401b0382111761009c57604052565b610066565b906100b46100ad610052565b928361007a565b565b5f80fd5b60018060a01b031690565b6100ce906100ba565b90565b6100da906100c5565b90565b6100e6816100d1565b036100ed57565b5f80fd5b905051906100fe826100dd565b565b9060208282031261011957610116915f016100f1565b90565b6100b6565b61013c6114c880380380610131816100a1565b928339810190610100565b90565b90565b61015661015161015b926100ba565b61013f565b6100ba565b90565b61016790610142565b90565b6101739061015e565b90565b6101909061018b6101868261016a565b610346565b6101e1565b565b5f1b90565b906101a860018060a01b0391610192565b9181191691161790565b6101bb9061015e565b90565b90565b906101d66101d16101dd926101b2565b6101be565b8254610197565b9055565b6101f36101ec6102d7565b60016101c1565b608052565b6102119061020c6102076102d7565b610213565b610176565b565b61021c9061021e565b565b61022790610229565b565b61023290610281565b565b90565b61024b61024661025092610234565b61013f565b6100ba565b90565b61025c90610237565b90565b610268906100c5565b9052565b919061027f905f6020850194019061025f565b565b8061029c6102966102915f610253565b6100c5565b916100c5565b146102ac576102aa906103c0565b565b6102cf6102b85f610253565b5f918291631e4fbdf760e01b83526004830161026c565b0390fd5b5f90565b6102df6102d3565b503390565b60209181520190565b5f7f5468652070726f76696465642061646472657373206973207a65726f2e000000910152565b610321601d6020926102e4565b61032a816102ed565b0190565b6103439060208101905f818303910152610314565b90565b61036061035a6103555f610253565b6100c5565b916100c5565b1461036757565b61036f610052565b63eac0d38960e01b8152806103866004820161032e565b0390fd5b5f1c90565b60018060a01b031690565b6103a66103ab9161038a565b61038f565b90565b6103b8905461039a565b90565b5f0190565b6103c95f6103ae565b6103d3825f6101c1565b906104076104017f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936101b2565b916101b2565b91610410610052565b8061041a816103bb565b0390a356fe60806040526004361015610013575b61053f565b61001d5f356100ac565b80636b34a45a146100a7578063715018a6146100a25780638b8afcd71461009d5780638da5cb5b14610098578063a351f75a14610093578063c603317f1461008e578063f2fde38b14610089578063fc0c546a146100845763ffcbf0b40361000e5761050b565b610452565b6103a2565b61036e565b6102ba565b610267565b610233565b610186565b61014c565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f9103126100ca57565b6100bc565b1c90565b60018060a01b031690565b6100ee9060086100f393026100cf565b6100d3565b90565b9061010191546100de565b90565b61011060015f906100f6565b90565b60018060a01b031690565b61012790610113565b90565b6101339061011e565b9052565b919061014a905f6020850194019061012a565b565b3461017c5761015c3660046100c0565b610178610167610104565b61016f6100b2565b91829182610137565b0390f35b6100b8565b5f0190565b346101b4576101963660046100c0565b61019e610593565b6101a66100b2565b806101b081610181565b0390f35b6100b8565b5f80fd5b6101c68161011e565b036101cd57565b5f80fd5b905035906101de826101bd565b565b90565b6101ec816101e0565b036101f357565b5f80fd5b90503590610204826101e3565b565b919060408382031261022e578061022261022b925f86016101d1565b936020016101f7565b90565b6100bc565b346102625761024c610246366004610206565b9061078c565b6102546100b2565b8061025e81610181565b0390f35b6100b8565b34610297576102773660046100c0565b6102936102826107c2565b61028a6100b2565b91829182610137565b0390f35b6100b8565b906020828203126102b5576102b2915f016101d1565b90565b6100bc565b346102e8576102d26102cd36600461029c565b61088e565b6102da6100b2565b806102e481610181565b0390f35b6100b8565b5f80fd5b5f80fd5b5f80fd5b909182601f830112156103335781359167ffffffffffffffff831161032e57602001926040830284011161032957565b6102f5565b6102f1565b6102ed565b90602082820312610369575f82013567ffffffffffffffff81116103645761036092016102f9565b9091565b6101b9565b6100bc565b3461039d57610387610381366004610338565b90610b9c565b61038f6100b2565b8061039981610181565b0390f35b6100b8565b346103d0576103ba6103b536600461029c565b610c0d565b6103c26100b2565b806103cc81610181565b0390f35b6100b8565b7f000000000000000000000000000000000000000000000000000000000000000090565b90565b61041061040b61041592610113565b6103f9565b610113565b90565b610421906103fc565b90565b61042d90610418565b90565b61043990610424565b9052565b9190610450905f60208501940190610430565b565b34610482576104623660046100c0565b61047e61046d6103d5565b6104756100b2565b9182918261043d565b0390f35b6100b8565b909182601f830112156104c15781359167ffffffffffffffff83116104bc5760200192602083028401116104b757565b6102f5565b6102f1565b6102ed565b91604083830312610506575f83013567ffffffffffffffff8111610501576104f3836104fe928601610487565b9390946020016101f7565b90565b6101b9565b6100bc565b3461053a5761052461051e3660046104c6565b91610e22565b61052c6100b2565b8061053681610181565b0390f35b6100b8565b5f80fd5b61054b610e2f565b610553610580565b565b90565b61056c61056761057192610555565b6103f9565b610113565b90565b61057d90610558565b90565b61059161058c5f610574565b610e7d565b565b61059b610543565b565b906105af916105aa610f71565b6106a9565b565b6105ba90610418565b90565b6105c6906101e0565b9052565b91906105dd905f602085019401906105bd565b565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b9061060b906105e3565b810190811067ffffffffffffffff82111761062557604052565b6105ed565b60e01b90565b151590565b61063e81610630565b0361064557565b5f80fd5b9050519061065682610635565b565b906020828203126106715761066e915f01610649565b90565b6100bc565b91602061069792949361069060408201965f83019061012a565b01906105bd565b565b6106a16100b2565b3d5f823e3d90fd5b906020908281906106ef6106dd7fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926105b1565b926106e66100b2565b918291826105ca565b0390a261071b7f0000000000000000000000000000000000000000000000000000000000000000610424565b61073e5f63a9059cbb9593956107496107326100b2565b9788968795869461062a565b845260048401610676565b03925af180156107875761075b575b50565b61077b9060203d8111610780575b6107738183610601565b810190610658565b610758565b503d610769565b610699565b906107969161059d565b565b5f90565b5f1c90565b6107ad6107b29161079c565b6100d3565b90565b6107bf90546107a1565b90565b6107ca610798565b506107d45f6107b5565b90565b6107e8906107e3610e2f565b6107ea565b565b6107fc906107f781611021565b610841565b565b5f1b90565b9061081460018060a01b03916107fe565b9181191691161790565b90565b9061083661083161083d926105b1565b61081e565b8254610803565b9055565b61084c816001610821565b6108767fdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e916105b1565b9061087f6100b2565b8061088981610181565b0390a2565b610897906107d7565b565b906108ab916108a6610f71565b610a57565b565b5090565b6108c56108c06108ca92610555565b6103f9565b6101e0565b90565b634e487b7160e01b5f52601160045260245ffd5b6108ea906101e0565b5f81146108f8576001900390565b6108cd565b634e487b7160e01b5f52603260045260245ffd5b9190811015610921576040020190565b6108fd565b35610930816101bd565b90565b3561093d816101e3565b90565b5f91031261094a57565b6100bc565b60209181520190565b90565b5061096a9060208101906101d1565b90565b6109769061011e565b9052565b506109899060208101906101f7565b90565b610995906101e0565b9052565b9060206109c46109cc936109bb6109b25f83018361095b565b5f86019061096d565b8281019061097a565b91019061098c565b565b906109db81604093610999565b0190565b5090565b60400190565b916109f7826109fd9261094f565b92610958565b90815f905b828210610a10575050505090565b90919293610a32610a2c600192610a2788866109df565b6109ce565b956109e3565b920190929192610a02565b9091610a549260208301925f8185039101526109e9565b90565b610a628183906108ad565b5b80610a76610a705f6108b1565b916101e0565b1115610af257610a85906108e1565b92610a9282848691610911565b610aa96020610aa25f8401610926565b9201610933565b90610ae9610ad77fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926105b1565b92610ae06100b2565b918291826105ca565b0390a292610a63565b50610b1c7f0000000000000000000000000000000000000000000000000000000000000000610424565b91638d6bd91c919092803b15610b9757610b495f8094610b54610b3d6100b2565b9788968795869461062a565b845260048401610a3d565b03925af18015610b9257610b66575b50565b610b85905f3d8111610b8b575b610b7d8183610601565b810190610940565b5f610b63565b503d610b73565b610699565b6105df565b90610ba691610899565b565b610bb990610bb4610e2f565b610bbb565b565b80610bd6610bd0610bcb5f610574565b61011e565b9161011e565b14610be657610be490610e7d565b565b610c09610bf25f610574565b5f918291631e4fbdf760e01b835260048301610137565b0390fd5b610c1690610ba8565b565b90610c2b9291610c26610f71565b610ce5565b565b5090565b9190811015610c41576020020190565b6108fd565b60209181520190565b90565b90610c5f8160209361096d565b0190565b60200190565b91610c7782610c7d92610c46565b92610c4f565b90815f905b828210610c90575050505090565b90919293610cb2610cac600192610ca7888661095b565b610c52565b95610c63565b920190929192610c82565b939290610cdb602091610ce39460408801918883035f8a0152610c69565b9401906105bd565b565b909192610cf3828490610c2d565b5b80610d07610d015f6108b1565b916101e0565b1115610d7557610d16906108e1565b90610d2b610d2684868591610c31565b610926565b8590610d6c610d5a7fe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486926105b1565b92610d636100b2565b918291826105ca565b0390a290610cf4565b509291610da17f0000000000000000000000000000000000000000000000000000000000000000610424565b630a8e30d992919392813b15610e1d575f610dcf91610dda8296610dc36100b2565b9889978896879561062a565b855260048501610cbd565b03925af18015610e1857610dec575b50565b610e0b905f3d8111610e11575b610e038183610601565b810190610940565b5f610de9565b503d610df9565b610699565b6105df565b90610e2d9291610c18565b565b610e376107c2565b610e50610e4a610e45611065565b61011e565b9161011e565b03610e5757565b610e79610e62611065565b5f91829163118cdaa760e01b835260048301610137565b0390fd5b610e865f6107b5565b610e90825f610821565b90610ec4610ebe7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936105b1565b916105b1565b91610ecd6100b2565b80610ed781610181565b0390a3565b60209181520190565b60207f6f2063616c6c2074686973206d6574686f642e00000000000000000000000000917f4f6e6c7920746865207472657375726572206973207065726d697474656420745f8201520152565b610f3f6033604092610edc565b610f4881610ee5565b0190565b9190610f6f906020610f67604086018681035f880152610f32565b94019061012a565b565b610f79611065565b610f94610f8e610f8960016107b5565b61011e565b9161011e565b03610f9b57565b610fc4610fa6611065565b610fae6100b2565b91829163ced50f6760e01b835260048301610f4c565b0390fd5b5f7f5468652070726f76696465642061646472657373206973207a65726f2e000000910152565b610ffc601d602092610edc565b61100581610fc8565b0190565b61101e9060208101905f818303910152610fef565b90565b61103b6110356110305f610574565b61011e565b9161011e565b1461104257565b61104a6100b2565b63eac0d38960e01b81528061106160048201611009565b0390fd5b61106d610798565b50339056fea26469706673582212203eaf6efa06b3df4b2c1eca1186cf2df82e0bb564cebbe403fb3c85d42c05d27e64736f6c634300081d0033",
 }
 
 // MarketingWalletABI is the input ABI used to generate the binding from.
@@ -629,6 +794,37 @@ func (_MarketingWallet *MarketingWalletCallerSession) Token() (common.Address, e
 	return _MarketingWallet.Contract.Token(&_MarketingWallet.CallOpts)
 }
 
+// TreasurerAddress is a free data retrieval call binding the contract method 0x6b34a45a.
+//
+// Solidity: function treasurerAddress() view returns(address)
+func (_MarketingWallet *MarketingWalletCaller) TreasurerAddress(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _MarketingWallet.contract.Call(opts, &out, "treasurerAddress")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// TreasurerAddress is a free data retrieval call binding the contract method 0x6b34a45a.
+//
+// Solidity: function treasurerAddress() view returns(address)
+func (_MarketingWallet *MarketingWalletSession) TreasurerAddress() (common.Address, error) {
+	return _MarketingWallet.Contract.TreasurerAddress(&_MarketingWallet.CallOpts)
+}
+
+// TreasurerAddress is a free data retrieval call binding the contract method 0x6b34a45a.
+//
+// Solidity: function treasurerAddress() view returns(address)
+func (_MarketingWallet *MarketingWalletCallerSession) TreasurerAddress() (common.Address, error) {
+	return _MarketingWallet.Contract.TreasurerAddress(&_MarketingWallet.CallOpts)
+}
+
 // PayManyRewards is a paid mutator transaction binding the contract method 0xc603317f.
 //
 // Solidity: function payManyRewards((address,uint256)[] specs_) returns()
@@ -711,6 +907,27 @@ func (_MarketingWallet *MarketingWalletSession) RenounceOwnership() (*types.Tran
 // Solidity: function renounceOwnership() returns()
 func (_MarketingWallet *MarketingWalletTransactorSession) RenounceOwnership() (*types.Transaction, error) {
 	return _MarketingWallet.Contract.RenounceOwnership(&_MarketingWallet.TransactOpts)
+}
+
+// SetTreasurerAddress is a paid mutator transaction binding the contract method 0xa351f75a.
+//
+// Solidity: function setTreasurerAddress(address newValue_) returns()
+func (_MarketingWallet *MarketingWalletTransactor) SetTreasurerAddress(opts *bind.TransactOpts, newValue_ common.Address) (*types.Transaction, error) {
+	return _MarketingWallet.contract.Transact(opts, "setTreasurerAddress", newValue_)
+}
+
+// SetTreasurerAddress is a paid mutator transaction binding the contract method 0xa351f75a.
+//
+// Solidity: function setTreasurerAddress(address newValue_) returns()
+func (_MarketingWallet *MarketingWalletSession) SetTreasurerAddress(newValue_ common.Address) (*types.Transaction, error) {
+	return _MarketingWallet.Contract.SetTreasurerAddress(&_MarketingWallet.TransactOpts, newValue_)
+}
+
+// SetTreasurerAddress is a paid mutator transaction binding the contract method 0xa351f75a.
+//
+// Solidity: function setTreasurerAddress(address newValue_) returns()
+func (_MarketingWallet *MarketingWalletTransactorSession) SetTreasurerAddress(newValue_ common.Address) (*types.Transaction, error) {
+	return _MarketingWallet.Contract.SetTreasurerAddress(&_MarketingWallet.TransactOpts, newValue_)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -1032,10 +1249,154 @@ func (_MarketingWallet *MarketingWalletFilterer) ParseRewardPaid(log types.Log) 
 	return event, nil
 }
 
+// MarketingWalletTreasurerAddressChangedIterator is returned from FilterTreasurerAddressChanged and is used to iterate over the raw logs and unpacked data for TreasurerAddressChanged events raised by the MarketingWallet contract.
+type MarketingWalletTreasurerAddressChangedIterator struct {
+	Event *MarketingWalletTreasurerAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *MarketingWalletTreasurerAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(MarketingWalletTreasurerAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(MarketingWalletTreasurerAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *MarketingWalletTreasurerAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *MarketingWalletTreasurerAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// MarketingWalletTreasurerAddressChanged represents a TreasurerAddressChanged event raised by the MarketingWallet contract.
+type MarketingWalletTreasurerAddressChanged struct {
+	NewValue common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterTreasurerAddressChanged is a free log retrieval operation binding the contract event 0xdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e.
+//
+// Solidity: event TreasurerAddressChanged(address indexed newValue)
+func (_MarketingWallet *MarketingWalletFilterer) FilterTreasurerAddressChanged(opts *bind.FilterOpts, newValue []common.Address) (*MarketingWalletTreasurerAddressChangedIterator, error) {
+
+	var newValueRule []interface{}
+	for _, newValueItem := range newValue {
+		newValueRule = append(newValueRule, newValueItem)
+	}
+
+	logs, sub, err := _MarketingWallet.contract.FilterLogs(opts, "TreasurerAddressChanged", newValueRule)
+	if err != nil {
+		return nil, err
+	}
+	return &MarketingWalletTreasurerAddressChangedIterator{contract: _MarketingWallet.contract, event: "TreasurerAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchTreasurerAddressChanged is a free log subscription operation binding the contract event 0xdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e.
+//
+// Solidity: event TreasurerAddressChanged(address indexed newValue)
+func (_MarketingWallet *MarketingWalletFilterer) WatchTreasurerAddressChanged(opts *bind.WatchOpts, sink chan<- *MarketingWalletTreasurerAddressChanged, newValue []common.Address) (event.Subscription, error) {
+
+	var newValueRule []interface{}
+	for _, newValueItem := range newValue {
+		newValueRule = append(newValueRule, newValueItem)
+	}
+
+	logs, sub, err := _MarketingWallet.contract.WatchLogs(opts, "TreasurerAddressChanged", newValueRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(MarketingWalletTreasurerAddressChanged)
+				if err := _MarketingWallet.contract.UnpackLog(event, "TreasurerAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTreasurerAddressChanged is a log parse operation binding the contract event 0xdf73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e.
+//
+// Solidity: event TreasurerAddressChanged(address indexed newValue)
+func (_MarketingWallet *MarketingWalletFilterer) ParseTreasurerAddressChanged(log types.Log) (*MarketingWalletTreasurerAddressChanged, error) {
+	event := new(MarketingWalletTreasurerAddressChanged)
+	if err := _MarketingWallet.contract.UnpackLog(event, "TreasurerAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // StorageSlotMetaData contains all meta data concerning the StorageSlot contract.
 var StorageSlotMetaData = &bind.MetaData{
 	ABI: "[]",
-	Bin: "0x608060405234601d57600e6021565b603e602c823930815050603e90f35b6027565b60405190565b5f80fdfe60806040525f80fdfea2646970667358221220b8186e5d264edd4db6aba734d9e4fc5100dbadc5df307aa34e9c95a01c453cfd64736f6c634300081c0033",
+	Bin: "0x608060405234601d57600e6021565b603e602c823930815050603e90f35b6027565b60405190565b5f80fdfe60806040525f80fdfea2646970667358221220028f8807dca3f4b7ce909f06ba1286f50697d85d2839d3d84bfc33396bd78ef964736f6c634300081d0033",
 }
 
 // StorageSlotABI is the input ABI used to generate the binding from.
@@ -1208,7 +1569,7 @@ func (_StorageSlot *StorageSlotTransactorRaw) Transact(opts *bind.TransactOpts, 
 // TimeMetaData contains all meta data concerning the Time contract.
 var TimeMetaData = &bind.MetaData{
 	ABI: "[]",
-	Bin: "0x608060405234601d57600e6021565b603e602c823930815050603e90f35b6027565b60405190565b5f80fdfe60806040525f80fdfea2646970667358221220b5c0af42af6220cea477ba94ec4920b2bfce70c9785976772f91319f68b1a6d964736f6c634300081c0033",
+	Bin: "0x608060405234601d57600e6021565b603e602c823930815050603e90f35b6027565b60405190565b5f80fdfe60806040525f80fdfea2646970667358221220a85ca47f50ba7a67b6f93406ca59044e215242f2a5a20f7717e54e35e5f3b05864736f6c634300081d0033",
 }
 
 // TimeABI is the input ABI used to generate the binding from.

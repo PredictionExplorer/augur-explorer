@@ -371,8 +371,16 @@ async function main() {
         gasLimit: 3000000
     });
     receipt = await tx.wait();
-	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress());
-	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp2.getAddress());
+	try {
+		prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress(),10000000000000000000n);
+	} catch (eee) {
+		console.log(eee);
+	}
+	try {
+		prizesWallet.connect(addr3).claimDonatedToken(rn,await samp2.getAddress(),10000000000000000000n);
+	} catch (eee) {
+		console.log(eee);
+	}
 	await stake_available_nfts();
 
     await cosmicGameProxy
@@ -545,7 +553,7 @@ async function main() {
         gasLimit: 3000000
     });
 
-	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress());	// only claim one of the tokens (samp1, not samp2)
+	prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress(),11000000000000000000n);	// only claim one of the tokens (samp1, not samp2)
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
 
     ts = await cosmicSignature.totalSupply();
