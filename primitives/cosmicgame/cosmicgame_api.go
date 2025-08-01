@@ -76,7 +76,7 @@ type CGRoundRec struct {
 	DateTime					string
 	WinnerAid					int64
 	WinnerAddr					string
-	Timeout						int64
+	TimeoutTs					int64
 	Amount						string
 	AmountEth					float64	// divided by 1e18
 	RoundNum					uint64
@@ -547,7 +547,7 @@ type CGAdminEvent struct {
 										//			20		PriceIncreaseChanged
 										//			21		NanoSecondsExtraChanged
 										//			22		InitialSecondsUntilPrizeChanged
-										//			23		[unused]
+										//			23		TreasurerAddressChanged
 										//			24		ActivationTimeChanged
 										//			25		RoundStartCSTAuctionLengthChanged
 										//			26		Erc20RewardMultiplierChanged

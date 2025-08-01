@@ -117,6 +117,12 @@ async function main() {
 	const roundActivationTime = latestBlock.timestamp + 1;
 	console.log("Setting activartion time to "+roundActivationTime)
 	await (await cosmicGameProxy.setRoundActivationTime(roundActivationTime)).wait();
+
+	let taddr = await marketingWallet.treasurerAddress();
+	console.log("treasurer:",taddr);
+	console.log("owner:",owner.address);
+	await marketingWallet.connect(owner).setTreasurerAddress(addr3.address);
+
 	const Samp = await hre.ethers.getContractFactory("Samp");
 	const samp1 = await Samp.deploy();
 	await samp1.waitForDeployment();
@@ -510,22 +516,22 @@ async function main() {
         value: hre.ethers.parseEther("8"),
     });
 
-    await marketingWallet.payReward(addr1.address,hre.ethers.parseEther("7"));
+    await marketingWallet.connect(addr3).payReward(addr1.address,hre.ethers.parseEther("7"));
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-    await marketingWallet.payReward(addr3.address,hre.ethers.parseEther("7"));
+    await marketingWallet.connect(addr3).payReward(addr2.address,hre.ethers.parseEther("7"));
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-    await marketingWallet.payReward(addr2.address,hre.ethers.parseEther("2"));
+    await marketingWallet.connect(addr3).payReward(addr2.address,hre.ethers.parseEther("2"));
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-    await marketingWallet.payReward(addr1.address,hre.ethers.parseEther("6"));
+    await marketingWallet.connect(addr3).payReward(addr1.address,hre.ethers.parseEther("6"));
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-    await marketingWallet.payReward(addr2.address,hre.ethers.parseEther("5"));
+    await marketingWallet.connect(addr3).payReward(addr2.address,hre.ethers.parseEther("5"));
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-    await marketingWallet.payReward(addr2.address,hre.ethers.parseEther("5"));
+    await marketingWallet.connect(addr3).payReward(addr2.address,hre.ethers.parseEther("5"));
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
-    await marketingWallet.payReward(addr3.address,hre.ethers.parseEther("5"));
-    await marketingWallet.payReward(addr4.address,hre.ethers.parseEther("1"));
-    await marketingWallet.payReward(addr1.address,hre.ethers.parseEther("11"));
+    await marketingWallet.connect(addr3).payReward(addr3.address,hre.ethers.parseEther("5"));
+    await marketingWallet.connect(addr3).payReward(addr4.address,hre.ethers.parseEther("1"));
+    await marketingWallet.connect(addr3).payReward(addr1.address,hre.ethers.parseEther("11"));
 	await unstake_all_nfts()
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     await ethers.provider.send("evm_mine"); // mine empty block as spacing

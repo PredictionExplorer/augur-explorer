@@ -41,7 +41,7 @@
 				 {{ if eq 20 .RecordType}}PriceIncreaseChanged{{end}}
 				 {{ if eq 21 .RecordType}}NanoSecondsExtraChanged{{end}}
 				 {{ if eq 22 .RecordType}}InitialSecondsUntilPrizeChanged{{end}}
-				 {{ if eq 23 .RecordType}}InitialBidAmountFractionChanged{{end}}
+				 {{ if eq 23 .RecordType}}TreasurerAddressChanged{{end}}
 				 {{ if eq 24 .RecordType}}ActivationTimeChanged{{end}}
 				 {{ if eq 25 .RecordType}}RoundStartCSTAuctionLengthChanged{{end}}
 				 {{ if eq 26 .RecordType}}Erc20RewardMultiplierChanged{{end}}
@@ -84,7 +84,7 @@
 				 {{ if eq 20 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 21 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 22 .RecordType}}{{.IntegerValue}}{{end}}
-				 {{ if eq 23 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 23 .RecordType}}{{.AddressValue}}{{end}}
 				 {{ if eq 24 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 25 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 26 .RecordType}}{{.IntegerValue}}{{end}}

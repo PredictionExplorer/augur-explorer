@@ -1964,7 +1964,7 @@ func proc_treasurer_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGTreasurerAddressChanged
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),marketing_wallet_addr.Bytes()) {
 		return
 	}
 	Info.Printf("Processing TreasurerAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
