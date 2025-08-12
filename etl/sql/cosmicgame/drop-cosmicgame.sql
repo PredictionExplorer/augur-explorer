@@ -31,6 +31,7 @@ DROP TABLE IF EXISTS
 	cg_erc20_transfer,
 	cg_costok_owner,
 	cg_adm_charity_pcent,
+	cg_adm_treasurer_addr,
 	cg_adm_main_prize_pcent,
 	cg_adm_raffle_pcent,
 	cg_adm_stake_pcent,
