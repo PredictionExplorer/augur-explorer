@@ -93,7 +93,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	bid_price_auction,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts,big.NewInt(0))
+	bid_price_auction,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts)
+	if err != nil {
+		fmt.Printf("Error at BidPrice()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	cst_price,err := cosmic_game_ctrct.GetNextCstBidPrice(&copts)
 	if err != nil {
 		fmt.Printf("Error at BidPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -203,7 +209,7 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	num_donated_nfts,err := prizes_wallet.NumDonatedNfts(&copts)
+	num_donated_nfts,err := prizes_wallet.NextDonatedNftIndex(&copts)
 	if err != nil {
 		fmt.Printf("Error at numDonatedNFTs()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -308,8 +314,9 @@ func main() {
 	secs_to_start := activation_time.Int64() - block_time;
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
-	fmt.Printf("Next Bid Price = %v\n",fmt_eth(next_bid_price))
-	fmt.Printf("Next bid price auction %v\n",fmt_eth(bid_price_auction))
+	fmt.Printf("Bid Price = %v\n",fmt_eth(next_bid_price))
+	fmt.Printf("Bid Price auction %v\n",fmt_eth(bid_price_auction))
+	fmt.Printf("CST Price = %v\n",fmt_eth(cst_price))
 	fmt.Printf("RoundNum = %v\n",round_num.String())
 	fmt.Printf("PrizeAmount = %v\n",fmt_eth(prize_amount))
 	fmt.Printf("PrizePercentage = %v\n",prize_percentage.String())

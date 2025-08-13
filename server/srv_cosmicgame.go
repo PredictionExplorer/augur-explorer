@@ -235,7 +235,7 @@ func do_reload_contract_variables() {
 	} else {
 		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-		tmp_val,err = bwcontract.GetNextEthBidPrice(&copts,big.NewInt(0))
+		tmp_val,err = bwcontract.GetNextEthBidPrice(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at GetBidPrice() call: %v\n",err)
 			Error.Printf(err_str)
@@ -1777,7 +1777,7 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 		Info.Printf(err_str)
 		respond_error(c,err_str)
 	} else {
-		cst_price,err := contract.GetNextCstBidPrice(&copts,big.NewInt(0));
+		cst_price,err := contract.GetNextCstBidPrice(&copts);
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())
@@ -1812,7 +1812,7 @@ func cosmic_game_get_eth_price(c *gin.Context) {
 		Info.Printf(err_str)
 		respond_error(c,err_str)
 	} else {
-		cst_price,err := contract.GetNextEthBidPrice(&copts,big.NewInt(0));
+		cst_price,err := contract.GetNextEthBidPrice(&copts);
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())

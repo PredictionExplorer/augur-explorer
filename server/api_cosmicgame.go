@@ -3,7 +3,6 @@ import (
 	"time"
 	"os"
 	"fmt"
-	"math/big"
 	"context"
 	"encoding/json"
 
@@ -1574,7 +1573,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 		Info.Printf(err_str)
 		respond_error_json(c,err_str)
 	} else {
-		cst_price,err := contract.GetNextCstBidPrice(&copts,big.NewInt(0));
+		cst_price,err := contract.GetNextCstBidPrice(&copts);
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())
@@ -1610,7 +1609,7 @@ func api_cosmic_game_get_eth_price(c *gin.Context) {
 		Info.Printf(err_str)
 		respond_error_json(c,err_str)
 	} else {
-		eth_price,err := contract.GetNextEthBidPrice(&copts,big.NewInt(0));
+		eth_price,err := contract.GetNextEthBidPrice(&copts);
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())
