@@ -747,6 +747,9 @@ func proc_erc20_donated_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
 	evt.BidId = storagew.Get_bid_id_by_evtlog(evt.EvtId-1)
+	if evt.BidId == -1 {	// if BidId = -1 , it could be that EvtId - 1 falls on Approval event, so Bid event will be EvtId - 2
+		evt.BidId = storagew.Get_bid_id_by_evtlog(evt.EvtId-2)
+	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenDonated{\n")
@@ -812,7 +815,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 	if !bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
-	}
+	
 	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event CharityAddressChanged decode error: %v",err)

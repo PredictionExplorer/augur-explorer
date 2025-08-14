@@ -17,7 +17,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	CHAIN_ID		int64 = 31337
+//	CHAIN_ID		int64 = 31337
 //	CHAIN_ID		int64 = 421614
 //	CHAIN_ID		int64 = 11155111
 )
@@ -39,6 +39,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	big_chain_id, err := eclient.NetworkID(context.Background()) // Get current network ID
+	if err != nil {
+		fmt.Printf("Error getting network ID: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err != nil {
+		fmt.Printf("Error getting network ID: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	from_pkey_str := os.Args[1]
 	if len(from_pkey_str) != 64 {
 		fmt.Printf("Sender's private key is not 66 characters long\n")
@@ -83,7 +94,6 @@ func main() {
 		fmt.Printf("Error getting suggested gas price: %v\n",err)
 		os.Exit(1)
 	}
-	big_chain_id := big.NewInt(CHAIN_ID)
 	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))

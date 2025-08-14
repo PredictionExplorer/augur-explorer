@@ -215,11 +215,17 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	timeout,err := cosmic_game_ctrct.TimeoutDurationToClaimMainPrize(&copts)
+	timeout_main_prize,err := cosmic_game_ctrct.TimeoutDurationToClaimMainPrize(&copts)
 	if err != nil {
-		fmt.Printf("Error at timeoutClaimPrize(): %v\n",err)
+		fmt.Printf("Error at TimeoutDurationToClaimMainPrize(): %v\n",err)
 		fmt.Printf("Aborting\n")
-		//os.Exit(1)
+		os.Exit(1)
+	}
+	timeout_claim,err := prizes_wallet.TimeoutDurationToWithdrawPrizes(&copts)
+	if err != nil {
+		fmt.Printf("Error at TimeoutDurationToWithdrawPrizes(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
 	}
 	owneraddr,err := cosmic_game_ctrct.Owner(&copts)
 	if err != nil {
@@ -334,7 +340,8 @@ func main() {
 	fmt.Printf("Contract balance = %v\n",balance.String())
 	fmt.Printf("Num donated NFTs = %v\n",num_donated_nfts.String());
 	fmt.Printf("Num raffle participants = %v\n",num_raffle_participants.Int64())
-	fmt.Printf("Claimprize timeout = %v\n",timeout.String())
+	fmt.Printf("MainPrize claim timeout = %v\n",timeout_main_prize.String())
+	fmt.Printf("PrizesWallet claim timeout = %v\n",timeout_claim.String())
 	fmt.Printf("Owner = %v\n",owneraddr.String())
 	fmt.Printf("Endurance champion = %v\n",current_champions.EnduranceChampionAddress.String())
 	fmt.Printf("Endurance champion duration = %v\n",current_champions.EnduranceChampionDuration.Int64())
