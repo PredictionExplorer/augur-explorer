@@ -27,7 +27,8 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_round(round_num int64) []p.C
 				"tok.amount, "+
 				"tok.amount/1e18, "+
 				"tc.winner_aid,"+
-				"wa.addr "+
+				"wa.addr, "+
+				"tc.id "+
 			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address da ON tok.donor_aid=da.address_id "+
@@ -47,6 +48,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_round(round_num int64) []p.C
 		var rec p.CGERC20Donation
 		var null_winner_addr sql.NullString
 		var null_winner_aid sql.NullInt64
+		var null_erc20_claimed sql.NullInt64
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -64,6 +66,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_round(round_num int64) []p.C
 			&rec.AmountEth,
 			&null_winner_aid,
 			&null_winner_addr,
+			&null_erc20_claimed,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -71,6 +74,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_round(round_num int64) []p.C
 		}
 		if null_winner_aid.Valid { rec.Claimed = true; rec.WinnerAid=null_winner_aid.Int64 }
 		if null_winner_addr.Valid { rec.WinnerAddr = null_winner_addr.String }
+		if null_erc20_claimed.Valid { rec.Claimed = true }
 		records = append(records,rec)
 	}
 	return records
@@ -94,7 +98,8 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_global(offset, limit int) []p.C
 				"tok.amount, "+
 				"tok.amount/1e18, "+
 				"tc.winner_aid,"+
-				"wa.addr "+
+				"wa.addr, "+
+				"tc.id "+
 			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address da ON tok.donor_aid=da.address_id "+
@@ -114,6 +119,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_global(offset, limit int) []p.C
 		var rec p.CGERC20Donation
 		var null_winner_addr sql.NullString
 		var null_winner_aid sql.NullInt64
+		var null_erc20_claimed sql.NullInt64
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -131,13 +137,15 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_global(offset, limit int) []p.C
 			&rec.AmountEth,
 			&null_winner_aid,
 			&null_winner_addr,
+			&null_erc20_claimed,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_winner_aid.Valid { rec.Claimed = true; rec.WinnerAid=null_winner_aid.Int64 }
+		if null_winner_aid.Valid { rec.WinnerAid=null_winner_aid.Int64 }
 		if null_winner_addr.Valid { rec.WinnerAddr = null_winner_addr.String }
+		if null_erc20_claimed.Valid { rec.Claimed = true }
 		records = append(records,rec)
 	}
 	return records

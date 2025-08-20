@@ -260,13 +260,13 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 		return
 	}
 
-	donations := arb_storagew.Get_erc20_donations_by_user(user_aid)
+	donated_prizes := arb_storagew.Get_erc20_donated_prizes_erc20_by_winner(user_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"DonationsERC20ByUser" : donations,
+		"DonatedPrizesERC20ByWinner" : donated_prizes,
 		"UserAddr": p_user_addr,
 		"UserAid": user_aid,
 	})

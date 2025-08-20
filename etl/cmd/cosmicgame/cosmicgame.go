@@ -815,7 +815,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 	if !bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
-	
+	}
 	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event CharityAddressChanged decode error: %v",err)
@@ -1203,7 +1203,8 @@ func proc_donated_token_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenAddr = eth_evt.TokenAddress.String()
 	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.Amount = eth_evt.Amount.String()
-	evt.BeneficiaryAddr = eth_evt.BeneficiaryAddress.String()
+	evt.BeneficiaryAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonatedTokenClaimedEvent{\n")

@@ -15,7 +15,7 @@
 		<th class="market_reports">Winer</th>
 		<th class="market_reports">Claimed</th>
 	</tr>
-	{{- range $i, $change := .DonationsERC20ByUser}}
+	{{- range $i, $change := .DonatedPrizesERC20ByWinner}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">

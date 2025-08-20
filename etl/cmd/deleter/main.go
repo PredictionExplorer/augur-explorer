@@ -77,12 +77,12 @@ func main() {
 	cur_block_num := storage.Get_deleter_status()
 	if cur_block_num < first_block_num { cur_block_num = first_block_num; }
 	Info.Printf("first_block_bum=%v cur_block_num=%v, limit block num =%v\n",first_block_num,cur_block_num,(last_block_num-NUM_BLOCKS_NO_DELETE))
-	if (cur_block_num  > (last_block_num - NUM_BLOCKS_NO_DELETE)) {
-		Info.Printf("Skipping delete due to NUM_BLOCKS_NO_DELETE condition\n")
-		os.Exit(1)
-	}
 
 	for {
+		if (cur_block_num  > (last_block_num - NUM_BLOCKS_NO_DELETE)) {
+			Info.Printf("Skipping delete due to NUM_BLOCKS_NO_DELETE condition\n")
+			os.Exit(1)
+		}
 		select {
 			case exit_flag := <-exit_chan:
 			if exit_flag {

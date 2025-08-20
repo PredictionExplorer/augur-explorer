@@ -1412,7 +1412,7 @@ func (sw *SQLStorageWrapper) Get_user_notif_red_box_rewards(winner_aid int64) p.
 	}
 	return output
 }
-func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(user_aid int64) []p.CGERC20Donation {
+func (sw *SQLStorageWrapper) Get_erc20_donated_prizes_erc20_by_winner(user_aid int64) []p.CGERC20Donation {
 
 	var query string
 	query = "SELECT "+
@@ -1431,7 +1431,8 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(user_aid int64) []p.CGE
 				"tok.amount, "+
 				"tok.amount/1e18, "+
 				"tc.winner_aid,"+
-				"wa.addr "+
+				"wa.addr, "+
+				"tc.id "+
 			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
 				"INNER JOIN cg_prize_claim p ON p.round_num=tok.round_num "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
@@ -1441,7 +1442,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(user_aid int64) []p.CGE
 				"LEFT JOIN address wa ON wa.address_id = tc.winner_aid "+
 			"WHERE p.winner_aid = $1 " +
 			"ORDER BY tok.id DESC"
-
+	fmt.Printf("q=%v\nuser_aid=%v\n",query,user_aid)
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1453,6 +1454,7 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(user_aid int64) []p.CGE
 		var rec p.CGERC20Donation
 		var null_winner_addr sql.NullString
 		var null_winner_aid sql.NullInt64
+		var null_erc20_claimed sql.NullInt64
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -1470,13 +1472,15 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(user_aid int64) []p.CGE
 			&rec.AmountEth,
 			&null_winner_aid,
 			&null_winner_addr,
+			&null_erc20_claimed,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_winner_aid.Valid { rec.Claimed = true; rec.WinnerAid=null_winner_aid.Int64 }
+		if null_winner_aid.Valid { rec.WinnerAid=null_winner_aid.Int64 }
 		if null_winner_addr.Valid { rec.WinnerAddr = null_winner_addr.String }
+		if null_erc20_claimed.Valid { rec.Claimed = true }
 		records = append(records,rec)
 	}
 	return records
