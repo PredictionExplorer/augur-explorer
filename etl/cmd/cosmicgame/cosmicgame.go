@@ -1196,7 +1196,7 @@ func proc_donated_token_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	}
 
 	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
+	vt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp

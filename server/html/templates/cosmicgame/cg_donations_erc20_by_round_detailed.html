@@ -4,19 +4,20 @@
 	<title>ERC20 donations for Round {{.RoundNum}}</title>
 </head>
 <body>
-	<h3 class="page_title">ERC20 Donations<h3>
+	<h3 class="page_title">ERC20 Donations Round {.RoundNum}<h3>
 <table>
 	<tr class="market_reports">
+		<th class="market_reports">Round</th>
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Donor</th>
 		<th class="market_reports">Token Address</th>
 		<th class="market_reports">Amount</th>
 		<th class="market_reports">Winer</th>
-		<th class="market_reports">Claimed</th>
 	</tr>
 	{{- range $i, $change := .DonationsERC20ByRoundDetailed}}
 		<tr class="market_reports">
+			<td style="text-align: right;" title="">{{.RoundNum}}</td>
 			<td class="" title="{{.TimeStamp}}">
 				<a href="/black/cosmicgame/donations/erc20/info/{{.RecordId}}">
 					{{.BlockNum}}
@@ -29,7 +30,6 @@
 			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
 			<td style="text-align: right;" title="">{{ printf "%6f" .AmountEth}}</td>
 			<td style="text-align: right;" title="">{{.WinnerAddr}}</td>
-			<td style="text-align: right;" title="">{{.Claimed}}</td>
 		</tr>
 	{{- end}}
 </table>

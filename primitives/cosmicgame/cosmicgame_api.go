@@ -224,6 +224,27 @@ type CGERC20Donation struct {
 	AmountEth					float64
 	WinnerAid					int64
 	WinnerAddr					string
+//	Claimed						bool
+}
+type CGSummarizedERC20Donation struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	RoundNum					int64
+	TokenAid					int64
+	TokenAddr					string
+	AmountDonated				string
+	AmountDonatedEth			float64
+	AmountClaimed				string
+	AmountClaimedEth			float64
+	DonateClaimDiff				string
+	DonateClaimDiffEth			float64
+	WinnerAid					int64
+	WinnerAddr					string
 	Claimed						bool
 }
 type CGNFTDonation struct {

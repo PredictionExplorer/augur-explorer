@@ -10,11 +10,9 @@
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Round</th>
-		<th class="market_reports">Donor</th>
 		<th class="market_reports">Token Address</th>
 		<th class="market_reports">Amount</th>
 		<th class="market_reports">Winer</th>
-		<th class="market_reports">Claimed</th>
 	</tr>
 	{{- range $i, $change := .DonationsERC20}}
 		<tr class="market_reports">
@@ -25,13 +23,9 @@
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: center;" title="">{{.RoundNum}}</td>
-			<td class="addr" title="{{.DonorAid}}">
-				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
-			</td>
 			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
 			<td style="text-align: right;" title="">{{ printf "%6f" .AmountEth}}</td>
 			<td style="text-align: right;" title="">{{.WinnerAddr}}</td>
-			<td style="text-align: right;" title="">{{.Claimed}}</td>
 		</tr>
 	{{- end}}
 </table>

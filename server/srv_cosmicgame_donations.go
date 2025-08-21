@@ -160,7 +160,7 @@ func cosmic_game_donations_cg_both_all(c *gin.Context) {
 		"CosmicGameDonations" : donations,
 	})
 }
-func cosmic_game_donations_erc20_by_round(c *gin.Context) {
+func cosmic_game_donations_erc20_by_round_detailed(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -178,9 +178,33 @@ func cosmic_game_donations_erc20_by_round(c *gin.Context) {
 		respond_error(c,"'round_num' parameter is not set")
 		return
 	}
-	donations := arb_storagew.Get_erc20_donations_by_round(round_num)
-	c.HTML(http.StatusOK, "cg_donations_erc20_by_round.html", gin.H{
-		"DonationsERC20" : donations,
+	donations := arb_storagew.Get_erc20_donations_by_round_detailed(round_num)
+	c.HTML(http.StatusOK, "cg_donations_erc20_by_round_detailed.html", gin.H{
+		"DonationsERC20ByRoundDetailed" : donations,
+		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_erc20_by_round_summarized(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_by_round_summarized(round_num)
+	c.HTML(http.StatusOK, "cg_donations_erc20_by_round_summarized.html", gin.H{
+		"DonationsERC20ByRoundSummarized" : donations,
 		"RoundNum": round_num,
 	})
 }
