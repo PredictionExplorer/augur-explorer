@@ -604,13 +604,18 @@ async function main() {
 
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     bidPrice = await cosmicGameProxy.getNextEthBidPrice();
-    await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid eth", {value: bidPrice });
+    await cosmicGameProxy.connect(addr2).bidWithEth(-1,"opening bid (addr2)", {value: bidPrice });
 	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
-    await cosmicGameProxy.connect(addr1).bidWithCst(cstPrice,"CST bid addr1");
+    await cosmicGameProxy.connect(addr1).bidWithCst(cstPrice,"CST bid (addr1)");
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     await ethers.provider.send("evm_mine");
-    tx = await cosmicGameProxy.connect(addr1).claimMainPrize({
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
+    await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid (addr3)", {value: bidPrice });
+    prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
+    await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
+    await ethers.provider.send("evm_mine");
+    tx = await cosmicGameProxy.connect(addr3).claimMainPrize({
         gasLimit: 3000000
     });
 
