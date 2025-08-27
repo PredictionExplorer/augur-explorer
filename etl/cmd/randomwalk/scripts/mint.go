@@ -19,7 +19,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	CHAIN_ID		int64 = 31337
+//	CHAIN_ID		int64 = 31337
 //	CHAIN_ID		int64 = 421614
 )
 var (
@@ -58,6 +58,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	big_chain_id, err := eclient.NetworkID(context.Background()) // Get current network ID
+	if err != nil {
+		fmt.Printf("Error getting network ID: %v\n", err)
+		os.Exit(1)
+	}
 	rwalk_ctrct,err := NewRWalk(rwalk_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate RWalk contract: %v\n",err)
@@ -86,7 +91,6 @@ func main() {
 		fmt.Printf("Error getting suggested gas price: %v\n",err)
 		os.Exit(1)
 	}
-	big_chain_id := big.NewInt(CHAIN_ID)
 	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))

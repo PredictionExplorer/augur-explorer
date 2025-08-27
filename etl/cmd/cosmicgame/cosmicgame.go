@@ -1196,7 +1196,7 @@ func proc_donated_token_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	}
 
 	evt.EvtId=elog.EvtId
-	vt.BlockNum = elog.BlockNum
+	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
@@ -1836,7 +1836,7 @@ func proc_charity_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewCharity = eth_evt.NewValue.String()
+	evt.NewCharity = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CharityAddressChanged{\n")
@@ -2007,7 +2007,8 @@ func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventL
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewCosmicToken= eth_evt.NewValue.String()
+	evt.NewCosmicToken = eth_evt.NewValue.String()
+	evt.NewCosmicToken = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CosmicSignatureTokenAddressChanged{\n")
