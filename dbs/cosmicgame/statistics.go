@@ -310,7 +310,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 		&stats.TotalDonatedAmount,
 		&stats.TotalDonatedAmountEth,
 	)
-	fmt.Printf("total donated count = %v\n",stats.TotalDonatedCount)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return stats

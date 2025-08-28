@@ -1432,10 +1432,10 @@ func (sw *SQLStorageWrapper) Get_erc20_donated_prizes_erc20_by_winner(user_aid i
 				"tokaddr.addr, "+
 				"dt20.total_amount, "+
 				"dt20.total_amount/1e18, "+
-				"claim.total, "+
-				"claim.total/1e18, "+
-				"dt20.total_amount-claim.total,"+
-				"(dt20.total_amount-claim.total)/1e18,"+
+				"COALESCE(claim.total,0), "+
+				"COALESCE(claim.total,0)/1e18, "+
+				"dt20.total_amount-COALESCE(claim.total,0),"+
+				"(dt20.total_amount-COALESCE(claim.total,0))/1e18,"+
 				"dt20.winner_aid,"+
 				"wa.addr, "+
 				"dt20.claimed "+
