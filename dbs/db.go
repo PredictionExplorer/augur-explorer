@@ -93,7 +93,6 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	ss := new(SQLStorage)
 	ss.db = db
 	ss.Info = info_log
-	ss.Info.Printf("DB: connected to %v:%v",host,port)
 	return ss
 }
 func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQLStorage {
@@ -132,8 +131,6 @@ func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQ
 	ss.db = db
 	ss.Info = info_log
 	ss.Db_set_schema_name(schema_name)
-	spath:=ss.Get_search_path()
-	ss.Info.Printf("DB: connected to %v:%v (search_path=%v)",host,port,spath)
 	return ss
 }
 func (ss *SQLStorage) Init_log(fname string) {

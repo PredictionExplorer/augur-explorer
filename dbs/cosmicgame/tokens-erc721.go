@@ -405,3 +405,35 @@ func (sw *SQLStorageWrapper) Get_named_tokens() []p.CGTokenSearchResult {
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_erc721_token_total() int64 {
+
+	var query string
+	query = "SELECT COUNT(*) FROM "+sw.S.SchemaName()+".cg_mint_event"
+	row := sw.S.Db().QueryRow(query)
+	var num_toks int64
+	err := row.Scan(&num_toks)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return num_toks
+}
+func (sw *SQLStorageWrapper) Get_erc721_token_seed(token_id int64) string {
+
+	var query string
+	query = "SELECT seed FROM "+sw.S.SchemaName()+".cg_mint_event WHERE token_id=$1"
+	row := sw.S.Db().QueryRow(query,token_id)
+	var seed string
+	err := row.Scan(&seed)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return ""
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return seed
+}
