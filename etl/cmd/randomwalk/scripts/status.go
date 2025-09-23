@@ -72,9 +72,16 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	base_uri,err := rwalk_ctrct.TokenURI(&copts,big.NewInt(0))
+	if err != nil {
+		fmt.Printf("Error at TokenURI()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 
 	fmt.Printf("Next token ID = %v\n",next_token_id.Int64())
 	fmt.Printf("Time remaining: %v\n",time_remaining.Int64())
 	fmt.Printf("Withdrawal amount: %v\n",fmt_eth(withdrawal_amount))
 	fmt.Printf("Num withdrawals: %v\n",num_withdrawals.Int64())
+	fmt.Printf("Base uri: %v\n",base_uri)
 }
