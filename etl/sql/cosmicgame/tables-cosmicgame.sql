@@ -13,6 +13,12 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	donation_evt_id			BIGINT DEFAULT -1,	-- linked by trigger upon processing DonationReceived event
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_prize( -- Generic prize record , that unifies all prizes , populated automatically with triggers
+	round_num				BIGING NOT NULL,
+	winner_index			BIGINT SMALLINT NOT NULL,
+	ptype					SMALLINT DEFAULT -1, -- provided by each prize winning event Codes: 0-main prize, 1-raffle ETH, 2 - Raffle NFT, 3 - Endurance Champion , 4 - Chrono Warrior, 5 - Staking Deposit, 6 - Staking NFT (Rwalk) , 7 - CST (ERC20) mint
+	PRIMARY KEY(round_num,winner_index)
+);
 CREATE TABLE cg_bid (	-- CosmicSignatureGame.sol:BidEvent
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

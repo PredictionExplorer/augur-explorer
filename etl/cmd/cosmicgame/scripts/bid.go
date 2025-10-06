@@ -55,6 +55,11 @@ func main() {
 
 	cosmic_game_addr := common.HexToAddress(os.Args[2])
 
+	big_chain_id, err := eclient.NetworkID(context.Background()) // Get current network ID
+	if err != nil {
+		fmt.Printf("Error getting network ID: %v\n", err)
+		os.Exit(1)
+	}
 	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
@@ -62,7 +67,7 @@ func main() {
 	}
 
 	var copts bind.CallOpts
-	bid_price,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts,big.NewInt(0))
+	bid_price,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts)
 	if err != nil {
 		fmt.Printf("Error at BidPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
@@ -94,7 +99,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	big_chain_id := big.NewInt(CHAIN_ID)
 	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))

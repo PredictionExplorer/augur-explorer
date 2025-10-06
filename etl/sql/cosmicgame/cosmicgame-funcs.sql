@@ -127,6 +127,7 @@ BEGIN
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = 0;
 	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,0);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -169,6 +170,7 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 	UPDATE cg_erc20_donation_stats SET winner_aid=0 WHERE round_num=OLD.round_num;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -339,6 +341,7 @@ BEGIN
 			VALUES(NEW.round_num,NEW.amount);
 	END IF;
 	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount);
+	INSERT INTO cg_prize_rec(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -356,6 +359,7 @@ BEGIN
 			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
 		WHERE round_num=OLD.round_num;
 	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount);
+	DELETE FROM cg_prize_rec WHERE round_num=OLD.round_num AND winer_index=OLD.winner_index;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -401,6 +405,7 @@ BEGIN
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints + 1);
 		END IF;
 	END IF;
+	INSERT INTO cg_prize_rec(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,2);
 
 	RETURN NEW;
 END;
@@ -429,6 +434,7 @@ BEGIN
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints - 1);
 		END IF;
 	END IF;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

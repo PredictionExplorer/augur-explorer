@@ -1,6 +1,7 @@
 
 DROP TABLE IF EXISTS
 	cg_prize_claim,
+	cg_prize,
 	cg_bid,
 	cg_donation,
 	cg_donation_wi,
