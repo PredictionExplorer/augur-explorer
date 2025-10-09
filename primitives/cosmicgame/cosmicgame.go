@@ -25,7 +25,6 @@ type CGPrizeClaimEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
 	TokenId				int64
@@ -39,7 +38,6 @@ type CGBidEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	RandomWalkTokenId	int64
 	PrizeTime			int64
 	RoundNum			int64
@@ -56,7 +54,6 @@ type CGDonationEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	DonorAddr			string
 	RoundNum			int64
@@ -67,7 +64,6 @@ type CGDonationWithInfoEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	DonorAddr			string
 	RoundNum			int64
@@ -79,19 +75,16 @@ type CGDonationReceivedEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	RoundNum			int64
 	ContractAddr		string
 	DonorAddr			string
 	Amount				string
-
 }
 type CGDonationSentEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	CharityAddr			string
 	Amount				string
@@ -101,7 +94,6 @@ type CGERC20DonationEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	TokenAddr			string
 	RoundNum			int64
@@ -114,7 +106,6 @@ type CGNFTDonationEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	TokenAddr			string
 	RoundNum			int64
@@ -129,7 +120,6 @@ type CGCharityUpdatedEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	NewCharityAddr		string
 }
@@ -138,7 +128,6 @@ type CGTokenNameEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	TokenId				int64
 	TokenName			string
@@ -148,20 +137,17 @@ type CGMintEvent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	TokenId				int64
 	OwnerAddr			string
 	Seed				string
 	RoundNum			int64
-	MintType			int64
 }
 type CGPrizesEthDeposit struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
@@ -173,7 +159,6 @@ type CGPrizesEthWithdrawal struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Amount				string
@@ -183,7 +168,6 @@ type CGRaffleNFTWinner struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
@@ -197,7 +181,6 @@ type CGRaffleETHWinner struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
@@ -209,7 +192,6 @@ type CGEnduranceWinner struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
@@ -222,7 +204,6 @@ type CGLastBidderWinner struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
@@ -235,7 +216,6 @@ type CGChronoWarrior struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
@@ -246,7 +226,6 @@ type CGDonatedTokenClaimed struct {	// ERC20 tokens
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
 	Index				int64
@@ -259,7 +238,6 @@ type CGDonatedNFTClaimed struct {	// ERC721 tokens
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
 	Index				int64
@@ -272,7 +250,6 @@ type CGNftStakedCst struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	ActionId			int64
 	NftId				int64
@@ -285,7 +262,6 @@ type CGNftStakedRWalk struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	ActionId			int64
 	NftId				int64
@@ -297,7 +273,6 @@ type CGEthDeposit struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
 	DepositTime			int64
@@ -308,24 +283,11 @@ type CGEthDeposit struct {
 	AccumModulo			string
 	Modulo				string
 }
-type CGClaimReward struct {
-	EvtId				int64
-	BlockNum			int64
-	TimeStamp			int64
-	TxId				int64
-	LogIndex			int64
-	ContractAddr		string
-	ActionId			int64
-	DepositId			int64
-	Reward				string	
-	Staker				string
-}
 type CGNftUnstakedRWalk struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
 	ActionId			int64
@@ -338,7 +300,6 @@ type CGNftUnstakedCst struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
 	ActionId			int64
@@ -354,7 +315,6 @@ type CGMarketingRewardSent struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
-	LogIndex			int64
 	ContractAddr		string
 	ActionId			int64
 	DepositId			int64
@@ -645,14 +605,6 @@ type CGERC20RewardMultiplierChanged struct {
 	TimeStamp               int64
 	Contract                string
 	NewMultiplier			string
-}
-type CGStartingBidPriceCSTMinLimitChanged struct {
-	EvtId                   int64
-	BlockNum                int64
-	TxId                    int64
-	TimeStamp               int64
-	Contract                string
-	NewPrice				string
 }
 type CGMarketingRewardChanged struct {
 	EvtId                   int64
