@@ -306,8 +306,8 @@ func (sw *SQLStorageWrapper) Insert_prize_deposit(evt *p.CGPrizesEthDeposit) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_deposit ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"winner_aid,round_num,winner_index,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -316,6 +316,7 @@ func (sw *SQLStorageWrapper) Insert_prize_deposit(evt *p.CGPrizesEthDeposit) {
 		contract_aid,
 		winner_aid,
 		evt.Round,
+		evt.WinnerIndex,
 		evt.Amount,
 	)
 	if err != nil {

@@ -14,9 +14,22 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_prize( -- Generic prize record , that unifies all prizes , populated automatically with triggers
-	round_num				BIGING NOT NULL,
-	winner_index			BIGINT SMALLINT NOT NULL,
-	ptype					SMALLINT DEFAULT -1, -- provided by each prize winning event Codes: 0-main prize, 1-raffle ETH, 2 - Raffle NFT, 3 - Endurance Champion , 4 - Chrono Warrior, 5 - Staking Deposit, 6 - Staking NFT (Rwalk) , 7 - CST (ERC20) mint
+	round_num				BIGINT NOT NULL,
+	winner_index			BIGINT NOT NULL,
+	ptype					SMALLINT DEFAULT -1, -- provided by each prize winning event Codes: 
+														-- 0 - Main Prize CS NFT
+														-- 1 - Main Prize ETH
+														-- 2 - Raffle ETH (for bidders)
+														-- 3 - Raffle CS NFT (for bidders)
+														-- 4 - Endurance Champion CS NFT
+														-- 5 - Chrono Warrior ETH
+														-- 6 - Staking Deposit ETH (for CS NFT stakers)
+														-- 7 - Raffle CS NFT (for RandomWalk stakers)
+														-- 8 - CST ERC20 mint (for bidders via bid rewards)
+														-- 9 - Last CST Bidder CS NFT
+														-- 10 - Last CST Bidder ERC20 (CST)
+														-- 11 - Endurance Champion ERC20 (CST)
+														-- 12 - Marketing Wallet ERC20 (CST)
 	PRIMARY KEY(round_num,winner_index)
 );
 CREATE TABLE cg_bid (	-- CosmicSignatureGame.sol:BidEvent
@@ -165,6 +178,7 @@ CREATE TABLE cg_prize_deposit (	--PrizesWallet.sol:EthReceived(not to confuse wi
 	contract_aid	BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
+	winner_index	BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
 	claimed			BOOLEAN DEFAULT 'F',	-- upon withdrawal is set to TRUE
 	withdrawal_id	BIGINT DEFAULT 0, -- at withdrawal set to evtlog_id of bw_raffle_Withdrawal
@@ -248,6 +262,7 @@ CREATE TABLE cg_chrono_warrior (	-- CosmicSignatureGame.sol:ChronoWarriorPrizeAl
 	contract_aid	BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
+	winner_index	BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
 	UNIQUE(round_num),
 	UNIQUE(evtlog_id)

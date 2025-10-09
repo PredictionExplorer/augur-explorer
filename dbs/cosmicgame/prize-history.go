@@ -42,10 +42,11 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
-						"-1 AS winner_index, "+
+						"rd.winner_index, "+
 						"rd.claimed "+
 					"FROM cg_prize_deposit rd "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+						"INNER JOIN cg_raffle_eth_winner rew ON (rew.round_num=rd.round_num AND rew.winner_idx=rd.winner_index) "+
 					"WHERE rd.winner_aid=$1  "+
 				") UNION ALL (" +
 					"SELECT "+
@@ -296,23 +297,24 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 				") UNION ALL (" +
 					"SELECT "+
 						"12 AS record_type,"+
-						"p.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
+						"cw.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
+						"rd.time_stamp AS date_time, "+
+						"rd.block_num,"+
+						"rd.tx_id,"+
 						"t.tx_hash,"+
-						"p.round_num,"+
-						"p.amount AS amount,"+
-						"p.amount/1e18 AS amount_eth,"+
+						"rd.round_num,"+
+						"rd.amount AS amount,"+
+						"rd.amount/1e18 AS amount_eth,"+
 						"'' token_addr, " +
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
-						"-1 AS winner_index,"+
+						"rd.winner_index,"+
 						"'T' as claimed "+
-					"FROM cg_chrono_warrior p "+
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-					"WHERE p.winner_aid=$1 "+
+					"FROM cg_prize_deposit rd "+
+						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+						"INNER JOIN cg_chrono_warrior cw ON (cw.round_num=rd.round_num AND cw.winner_index=rd.winner_index) "+
+					"WHERE rd.winner_aid=$1 "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -667,25 +669,26 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 				") UNION ALL (" +
 					"SELECT "+
 						"12 AS record_type,"+
-						"w.evtlog_id,"+
-						"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT AS tstmp, "+
-						"w.time_stamp AS date_time, "+
-						"w.block_num,"+
-						"w.tx_id,"+
+						"cw.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
+						"rd.time_stamp AS date_time, "+
+						"rd.block_num,"+
+						"rd.tx_id,"+
 						"t.tx_hash,"+
-						"w.round_num,"+
-						"w.amount, "+
-						"w.amount/1e18 AS amount_eth,"+
+						"rd.round_num,"+
+						"rd.amount, "+
+						"rd.amount/1e18 AS amount_eth,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
-						"-1 AS winner_index, "+
+						"rd.winner_index, "+
 						"'T' AS claimed, "+
 						"wa.addr winner_addr," +
-						"w.winner_aid "+
-					"FROM cg_chrono_warrior w "+
-						"LEFT JOIN transaction t ON t.id=w.tx_id "+
-						"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
+						"rd.winner_aid "+
+					"FROM cg_prize_deposit rd "+
+						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+						"INNER JOIN cg_chrono_warrior cw ON (cw.round_num=rd.round_num AND cw.winner_index=rd.winner_index) "+
+						"LEFT JOIN address wa ON rd.winner_aid=wa.address_id "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +

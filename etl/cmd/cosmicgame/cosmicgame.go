@@ -942,12 +942,14 @@ func proc_prizes_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.Round = log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.WinnerIndex = eth_evt.WinnerIndex.Int64()
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("EthReceived{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
+	Info.Printf("\tWinnerIndex:%v\n",evt.WinnerIndex)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 

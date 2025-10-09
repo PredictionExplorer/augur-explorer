@@ -165,6 +165,7 @@ type CGPrizesEthDeposit struct {
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
+	WinnerIndex			int64
 	Amount				string
 }
 type CGPrizesEthWithdrawal struct {
