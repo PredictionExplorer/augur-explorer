@@ -9,8 +9,6 @@ type CGStakingCSTHistoryRec struct {
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
-	UnstakeEvtLogId				int64
-	UnstakeBlockNum				int64
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -18,8 +16,6 @@ type CGStakingCSTHistoryRec struct {
 	RoundNum					int64
 	NumStakedNFTs				int64
 	AccumNumStakedNFTs			int64
-	AmountPerHolder				string
-	AmountPerHolderEth			float64
 	Modulo						string
 	ModuloF64					float64
 	Claimed						bool
@@ -35,8 +31,6 @@ type CGStakingRWalkHistoryRec struct {
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
-	UnstakeEvtLogId				int64
-	UnstakeBlockNum				int64
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -63,8 +57,6 @@ type CGStakeActionCSTRec struct {
 	ActionId					int64
 	TokenId						int64
 	NumStakedNFTs				int64
-	AmountPerHolder				string
-	AmountPerHolderEth			float64
 	Modulo						string
 	ModuloF64					float64
 	Claimed						bool
@@ -85,6 +77,7 @@ type CGStakeActionRWalkRec struct {
 	NumStakedNFTs				int64
 }
 type CGStakeActionInfoRec struct {
+	ActionType					int64
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -96,12 +89,11 @@ type CGStakeActionInfoRec struct {
 	TokenId						int64
 	RoundNum					int64
 	NumStakedNFTs				int64
-	UnstakeTimeStamp			int64
-	UnstakeDate					string
 	StakerAid					int64
 	StakerAddr					string
 }
 type CGUnstakeActionInfoRec struct {
+	ActionType					int64
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -113,12 +105,12 @@ type CGUnstakeActionInfoRec struct {
 	TokenId						int64
 	RoundNum					int64
 	NumStakedNFTs				int64
-	StakerAid					int64
-	StakerAddr					string
 	RewardAmount				string
 	RewardAmountEth				float64
 	RewardPerToken				string
 	RewardPerTokenEth			float64
+	StakerAid					int64
+	StakerAddr					string
 }
 type CGStakeUnstakeCombined struct {
 	Stake						CGStakeActionInfoRec
@@ -144,19 +136,6 @@ type CGStakedTokenRWalkRec struct {
 	UserAddr					string
 	UserAid						int64
 }
-type CGActionIdsForDeposit struct {
-	RecordId					int64
-	DepositId					int64
-	UserAid						int64
-	StakeActionId				int64
-	TokenId						int64
-	Claimed						bool
-	StakeActionTimeStamp		int64
-	CurChainTimeStamp			int64
-	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
-	Amount						string
-	AmountEth					float64
-}
 type CGActionIdsForDepositWithClaimInfo struct {
 	RecordId					int64
 	DepositId					int64
@@ -171,20 +150,6 @@ type CGActionIdsForDepositWithClaimInfo struct {
 	ClaimTxHash					string
 	ClaimRewardAmount			string
 	ClaimRewardAmountEth		float64
-}
-type CGStakingRewardRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	RoundNum					int64
-	Amount						string
-	AmountEth					float64
-	StakerAid					int64
-	StakerAddr					string
 }
 type CGEthDepositAsReward struct {
 	RecordId					int64
@@ -206,24 +171,6 @@ type CGEthDepositAsReward struct {
 	StakerAmount				string
 	StakerAmountEth				float64
 	StakerNumStakedNFTs			int64
-}
-type CGEthDepositRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	DepositDate					string
-	DepositTimeStamp			int64
-	NumStakedNFTs				int64
-	Amount						string
-	AmountEth					float64
-	AmountPerHolder				string
-	AmountPerHolderEth			float64
-	Modulo						string
-	ModuloF64					float64
 }
 type CGRewardToClaim struct {
 	RecordId					int64
@@ -362,12 +309,8 @@ type CGNftStakedInfoRec struct {
 	DateTime					string
 	ActionId					int64
 	TokenId						int64
-	RoundNum					int64
 	NumStakedNFTs				int64
-	UnstakeTimeStamp			int64
-	UnstakeDate					string
 	StakerAid					int64
-	StakerAddr					string
 }
 type CGNftUnstakedInfoRec struct {
 	RecordId					int64
@@ -379,14 +322,10 @@ type CGNftUnstakedInfoRec struct {
 	DateTime					string
 	ActionId					int64
 	TokenId						int64
-	RoundNum					int64
 	NumStakedNFTs				int64
-	StakerAid					int64
-	StakerAddr					string
 	RewardAmount				string
 	RewardAmountEth				float64
-	RewardPerToken				string
-	RewardPerTokenEth			float64
+	StakerAid					int64
 }
 type CGNftStakeUnstakeCombined struct {
 	Stake						CGNftStakedInfoRec
@@ -413,7 +352,6 @@ type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of d
 	DepositAmount				string
 	DepositAmountEth			float64
 	YourTokensStaked			int64
-	YourClaimableAmount			string
 	YourClaimableAmountEth		float64
 	NumTokensCollected			int64
 	AmountPerToken				string
@@ -421,7 +359,6 @@ type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of d
 	Modulo						string
 	ModuloF64					float64
 	FullyClaimed				bool
-	ClaimedAmount				string
 	ClaimedAmountEth			float64
 	Actions						[]CGNftStakeUnstakeCombined
 }

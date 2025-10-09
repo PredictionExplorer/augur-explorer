@@ -291,18 +291,6 @@ type CGPrizeDepositRec struct {
 	ClaimTimeStamp				int64
 	ClaimDateTime				string
 }
-type CGRaffleWithdrawalRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	WinnerAddr					string
-	WinnerAid					int64
-	Amount						float64
-}
 type CGRaffleNFTWinnerRec struct {
 	RecordId					int64
 	EvtLogId					int64
@@ -318,34 +306,6 @@ type CGRaffleNFTWinnerRec struct {
 	WinnerIndex					int64
 	IsRWalk						bool
 	IsStaker					bool
-}
-type CGEnduranceNFTWinnerRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	WinnerAddr					string
-	WinnerAid					int64
-	RoundNum					int64
-	TokenId						int64
-	WinnerIndex					int64
-}
-type CGLastCStNFTWinnerRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	WinnerAddr					string
-	WinnerAid					int64
-	RoundNum					int64
-	TokenId						int64
-	WinnerIndex					int64
 }
 type CGDonatedNFTClaimRec struct {
 	RecordId					int64
@@ -373,7 +333,6 @@ type CGCosmicSignatureMintRec struct {
 	DateTime					string
 	TxId						int64
 	TxHash						string
-	LogIndex					int64
 	ContractAddr				string
 	TokenId						int64
 	WinnerAid					int64
