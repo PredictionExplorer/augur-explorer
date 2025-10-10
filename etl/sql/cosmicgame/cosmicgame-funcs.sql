@@ -127,7 +127,13 @@ BEGIN
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = 0;
 	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
+	
+	-- Insert TWO records in cg_prize table for Main Prize
+	-- 1) Main Prize ETH (ptype=0)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,0);
+	-- 2) Main Prize CS NFT (ptype=1)
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,1);
+	
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -170,7 +176,13 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 	UPDATE cg_erc20_donation_stats SET winner_aid=0 WHERE round_num=OLD.round_num;
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index;
+	
+	-- Remove BOTH corresponding records from cg_prize table
+	-- 1) Main Prize ETH (ptype=0)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index AND ptype=0;
+	-- 2) Main Prize CS NFT (ptype=1)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index AND ptype=1;
+	
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -209,6 +221,11 @@ BEGIN
 	IF NEW.round_num <> -1 THEN
 		UPDATE cg_prize_claim SET donation_evt_id=NEW.evtlog_id WHERE round_num=NEW.round_num;
 	END IF;
+
+	-- Insert record in cg_prize table with ptype=9 for CharityWallet deposit
+	-- Using winner_index=0 to indicate this is a general charity donation, not a specific winner's prize
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,9);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -245,6 +262,9 @@ BEGIN
 	IF OLD.round_num <> -1 THEN
 		UPDATE cg_prize_claim SET donation_evt_id=0 WHERE round_num=OLD.round_num;
 	END IF;
+
+	-- Remove corresponding record from cg_prize table
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=9;
 
 	RETURN OLD;
 END;
@@ -341,7 +361,7 @@ BEGIN
 			VALUES(NEW.round_num,NEW.amount);
 	END IF;
 	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount);
-	INSERT INTO cg_prize_rec(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,1);
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -359,7 +379,7 @@ BEGIN
 			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
 		WHERE round_num=OLD.round_num;
 	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount);
-	DELETE FROM cg_prize_rec WHERE round_num=OLD.round_num AND winer_index=OLD.winner_index;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winer_index=OLD.winner_index;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -405,7 +425,14 @@ BEGIN
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints + 1);
 		END IF;
 	END IF;
-	INSERT INTO cg_prize_rec(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,2);
+	-- Insert record in cg_prize table with conditional ptype based on is_rwalk field
+	-- If is_rwalk=true: ptype=8 (Raffle CS NFT for RandomWalk stakers)
+	-- If is_rwalk=false: ptype=3 (Raffle CS NFT for bidders)
+	IF NEW.is_rwalk THEN
+		INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,8);
+	ELSE
+		INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,3);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -434,7 +461,14 @@ BEGIN
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints - 1);
 		END IF;
 	END IF;
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index;
+	-- Remove corresponding record from cg_prize table with conditional ptype based on is_rwalk field
+	-- If is_rwalk=true: ptype=8 (Raffle CS NFT for RandomWalk stakers)
+	-- If is_rwalk=false: ptype=3 (Raffle CS NFT for bidders)
+	IF OLD.is_rwalk THEN
+		DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=8;
+	ELSE
+		DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=3;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -452,6 +486,12 @@ BEGIN
 		INSERT INTO cg_round_stats(round_num,total_reward_nfts) VALUES(NEW.round_num,1);
 	END IF;
 
+	-- Insert TWO records in cg_prize table for Endurance Champion prizes
+	-- 1) ERC721 CS NFT prize (ptype=4)
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,4);
+	-- 2) ERC20 CST token prize (ptype=5)
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,5);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -463,6 +503,13 @@ BEGIN
 		SET
 			total_reward_nfts = (total_reward_nfts - 1)
 		WHERE round_num=OLD.round_num;
+
+	-- Remove BOTH corresponding records from cg_prize table
+	-- 1) ERC721 CS NFT prize (ptype=4)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=4;
+	-- 2) ERC20 CST token prize (ptype=5)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=5;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -480,6 +527,12 @@ BEGIN
 		INSERT INTO cg_round_stats(round_num,total_reward_nfts) VALUES(NEW.round_num,1);
 	END IF;
 
+	-- Insert TWO records in cg_prize table for Last CST Bidder prizes
+	-- 1) ERC721 CS NFT prize (ptype=9)
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,9);
+	-- 2) ERC20 CST token prize (ptype=10)
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,10);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -491,6 +544,13 @@ BEGIN
 		SET
 			total_reward_nfts = (total_reward_nfts - 1)
 		WHERE round_num=OLD.round_num;
+
+	-- Remove BOTH corresponding records from cg_prize table
+	-- 1) ERC721 CS NFT prize (ptype=9)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=9;
+	-- 2) ERC20 CST token prize (ptype=10)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=10;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -911,6 +971,10 @@ BEGIN
 			WHERE id=NEW.id;
 	END IF;
 
+	-- Insert record in cg_prize table with ptype=7 for Staking Deposit ETH (for CS NFT stakers)
+	-- Using winner_index=0 to indicate this is a general staking reward, not a specific winner's prize
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,7);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -943,6 +1007,9 @@ BEGIN
 	ELSE   
 	END IF;
 
+	-- Remove corresponding record from cg_prize table
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=7;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -955,6 +1022,12 @@ BEGIN
 		SET	total_mkt_rewards= (total_mkt_rewards + NEW.amount),
 			num_mkt_rewards = (num_mkt_rewards + 1)
 		;
+
+	-- Insert record in cg_prize table with ptype=12 for Marketing Wallet ERC20 (CST)
+	-- Using winner_index=0 to indicate this is a general marketing reward, not a specific winner's prize
+	-- Using round_num=0 to indicate this is not tied to a specific round
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(0,0,12);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -966,6 +1039,10 @@ BEGIN
 		SET	total_mkt_rewards= (total_mkt_rewards - OLD.amount),
 			num_mkt_rewards = (num_mkt_rewards - 1)
 		;
+
+	-- Remove corresponding record from cg_prize table
+	DELETE FROM cg_prize WHERE round_num=0 AND winner_index=0 AND ptype=12;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -1272,5 +1349,40 @@ BEGIN
 		END IF;
 	END IF;
 	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_chrono_warrior_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE cg_round_stats
+		SET
+			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount)
+		WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits) VALUES(NEW.round_num,NEW.amount);
+	END IF;
+
+	-- Insert record in cg_prize table with ptype=6 for Chrono Warrior ETH
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,6);
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_chrono_warrior_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_round_stats
+		SET
+			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
+		WHERE round_num=OLD.round_num;
+
+	-- Remove corresponding record from cg_prize table
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index AND ptype=6;
+
+	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

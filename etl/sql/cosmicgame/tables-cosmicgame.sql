@@ -17,20 +17,20 @@ CREATE TABLE cg_prize( -- Generic prize record , that unifies all prizes , popul
 	round_num				BIGINT NOT NULL,
 	winner_index			BIGINT NOT NULL,
 	ptype					SMALLINT DEFAULT -1, -- provided by each prize winning event Codes: 
-														-- 0 - Main Prize CS NFT
-														-- 1 - Main Prize ETH
+														-- 0 - Main Prize ETH
+														-- 1 - Main Prize CS NFT
 														-- 2 - Raffle ETH (for bidders)
 														-- 3 - Raffle CS NFT (for bidders)
 														-- 4 - Endurance Champion CS NFT
-														-- 5 - Chrono Warrior ETH
-														-- 6 - Staking Deposit ETH (for CS NFT stakers)
-														-- 7 - Raffle CS NFT (for RandomWalk stakers)
-														-- 8 - CST ERC20 mint (for bidders via bid rewards)
-														-- 9 - Last CST Bidder CS NFT
-														-- 10 - Last CST Bidder ERC20 (CST)
-														-- 11 - Endurance Champion ERC20 (CST)
+														-- 5 - Endurance Champion ERC20 (CST)
+														-- 6 - Chrono Warrior ETH
+														-- 7 - Staking Deposit ETH (for CS NFT stakers)
+														-- 8 - Raffle CS NFT (for RandomWalk stakers)
+														-- 9 - CharityWallet deposit
+														-- 10 - Last CST Bidder CS NFT (ERC721)
+														-- 11 - Last CST Bidder ERC20 (CST)
 														-- 12 - Marketing Wallet ERC20 (CST)
-	PRIMARY KEY(round_num,winner_index)
+	PRIMARY KEY(round_num,winner_index,ptype)
 );
 CREATE TABLE cg_bid (	-- CosmicSignatureGame.sol:BidEvent
 	id				BIGSERIAL PRIMARY KEY,
