@@ -464,7 +464,7 @@ async function main() {
     let iAddr = await ethers.AbiCoder.defaultAbiCoder()
         .decode(["address"], iAddrBytes)
         .toString();
-    await cosmicGameProxy.connect(owner).upgradeTo(iAddr);
+    await cosmicGameProxy.connect(owner).upgradeToAndCall(iAddr,"0x");
     await cosmicGameProxy
         .connect(owner)
         .setStakingWalletCosmicSignatureNft(await stakingWalletCosmicSignatureNft.getAddress());

@@ -1,3 +1,4 @@
+
 .gitignore
 etl/etl
 etl/dmesh/dmesh
@@ -49,6 +50,7 @@ etl/cmd/uniswapv3/tests/localnet/encode_price
 etl/cmd/uniswapv3/tests/localnet/erc20decimals
 statserv/statserv
 etl/cmd/randomwalk/randomwalk
+etl/cmd/randomwalk/scripts/transfer
 etl/cmd/balancerv2/swaps/accum_swaps
 etl/tools/load_abi
 etl/cmd/uniswapv3/tests/localnet/test_lastline
@@ -82,6 +84,8 @@ etl/cmd/randomwalk/scripts/ownerof
 etl/cmd/randomwalk/scripts/status
 etl/cmd/randomwalk/scripts/price
 etl/cmd/randomwalk/rwalkalarm/rwalkalarmd
+etl/cmd/randomwalk/scripts/scan_rwmints
+etl/cmd/randomwalk/scripts/statusmkt
 etl/cmd/layer1/layer1
 etl/cmd/cosmicgame/cosmicgame
 etl/cmd/cosmicgame/scripts/cginfo
@@ -118,6 +122,21 @@ etl/cmd/cosmicgame/scripts/chown
 etl/cmd/cosmicgame/scripts/owner
 etl/cmd/cosmicgame/scripts/stunstake
 etl/cmd/cosmicgame/scripts/tokownerof
+etl/cmd/cosmicgame/scripts/autobid
+etl/cmd/cosmicgame/scripts/stakerwalk
+etl/cmd/cosmicgame/scripts/setactivation
+etl/cmd/cosmicgame/scripts/sendeth
+etl/cmd/cosmicgame/scripts/img_upload
 etl/cmd/cosmicgame/imggen_monitor/imggen_exec
 etl/cmd/cosmicgame/imggen_monitor/imggen_monitor
+etl/cmd/cosmicgame/scripts/ethbal
+etl/cmd/cosmicgame/scripts/erc20bal
+etl/cmd/cosmicgame/scripts/dwi-records
+etl/cmd/cosmicgame/scripts/donate-wi
+etl/cmd/cosmicgame/scripts/claimdonated
+etl/cmd/cosmicgame/scripts/bidts
+etl/cmd/cosmicgame/scripts/autobid2
 etl/cmd/beacon/beacon
+etl/cmd/srvmonitor/srvmonitor
+etl/cmd/deleter/deleter
+
