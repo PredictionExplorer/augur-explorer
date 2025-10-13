@@ -219,7 +219,10 @@ type CGChronoWarrior struct {
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
-	Amount				string
+	WinnerIndex			int64
+	EthAmount			string
+	CstAmount			string
+	NftId				int64
 }
 type CGDonatedTokenClaimed struct {	// ERC20 tokens
 	EvtId				int64

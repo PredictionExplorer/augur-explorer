@@ -253,7 +253,7 @@ CREATE TABLE cg_lastcst_winner (	-- CosmicSignatureGame.sol:LastCstBidderPrizePa
 	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_chrono_warrior (	-- CosmicSignatureGame.sol:ChronoWarriorPrizeAllocated
+CREATE TABLE cg_chrono_warrior (	-- CosmicSignatureGame.sol:ChronoWarriorPrizePaid
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -263,7 +263,9 @@ CREATE TABLE cg_chrono_warrior (	-- CosmicSignatureGame.sol:ChronoWarriorPrizeAl
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
 	winner_index	BIGINT NOT NULL,
-	amount			DECIMAL NOT NULL,
+	eth_amount		DECIMAL NOT NULL,
+	cst_amount		DECIMAL NOT NULL,
+	nft_id			BIGINT NOT NULL,
 	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );

@@ -942,7 +942,7 @@ func proc_prizes_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.Round = log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
-	evt.WinnerIndex = eth_evt.WinnerIndex.Int64()
+	evt.WinnerIndex = eth_evt.PrizeWinnerIndex.Int64()
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -993,7 +993,7 @@ func proc_eth_prize_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRaffleNFTWinner
-	var eth_evt CosmicSignatureGameRaffleWinnerCosmicSignatureNftAwarded
+	var eth_evt CosmicSignatureGameRaffleWinnerPrizePaid
 
 	Info.Printf("Processing RaffleNFTWinner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -1001,7 +1001,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWinnerCosmicSignatureNftAwarded",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWinnerPrizePaid",log.Data)
 	if err != nil {
 		Error.Printf("Event RaffleWinnerCosmicSignatureNftAwarded decode error: %v",err)
 		os.Exit(1)
@@ -1148,14 +1148,14 @@ func proc_lastcst_bidder_winner_event(log *types.Log,elog *EthereumEventLog) {
 func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGChronoWarrior
-	var eth_evt ICosmicSignatureGameChronoWarriorEthPrizeAllocated
-	Info.Printf("Processing ChronoWarrio winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	var eth_evt ICosmicSignatureGameChronoWarriorPrizePaid
+	Info.Printf("Processing ChronoWarrior prize event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ChronoWarriorEthPrizeAllocated",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ChronoWarriorPrizePaid",log.Data)
 	if err != nil {
 		Error.Printf("Event ChronoWarriorPrizePaid decode error: %v",err)
 		os.Exit(1)
@@ -1168,13 +1168,19 @@ func proc_chrono_warrior_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Round = log.Topics[1].Big().Int64()
-	evt.Amount = eth_evt.EthPrizeAmount.String()
+	evt.WinnerIndex = eth_evt.WinnerIndex.Int64()
+	evt.EthAmount = eth_evt.EthPrizeAmount.String()
+	evt.CstAmount = eth_evt.CstPrizeAmount.String()
+	evt.NftId = log.Topics[3].Big().Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("ChronoWarriorPrizePaid {\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
-	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tWinnerIndex:%v\n",evt.WinnerIndex)
+	Info.Printf("\tEthAmount: %v\n",evt.EthAmount)
+	Info.Printf("\tCstAmount: %v\n",evt.CstAmount)
+	Info.Printf("\tNftId: %v\n",evt.NftId)
 	Info.Printf("}\n")
 
 	storagew.Delete_chrono_warrior_event(evt.EvtId)
@@ -2473,13 +2479,13 @@ func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog
 func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGERC20RewardMultiplierChanged
-	var eth_evt BiddingCstPrizeAmountMultiplierChanged
+	var eth_evt BiddingCstPrizeAmountChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		return
 	}
-	Info.Printf("Processing PrizeMultiplierChanged (ERC20 multiplier)event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CstPrizeAmountMultiplierChanged",log.Data)
+	Info.Printf("Processing CstPrizeAmountChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CstPrizeAmountChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event CstPrizeAmountMultiplierChanged decode error: %v",err)
 		os.Exit(1)

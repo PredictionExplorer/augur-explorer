@@ -464,8 +464,8 @@ func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_chrono_warrior("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"winner_aid,round_num,winner_index,eth_amount,cst_amount,nft_id"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -474,7 +474,10 @@ func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior)
 		contract_aid,
 		winner_aid,
 		evt.Round,
-		evt.Amount,
+		evt.WinnerIndex,
+		evt.EthAmount,
+		evt.CstAmount,
+		evt.NftId,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_chrono_warrior table: %v\n",err))
