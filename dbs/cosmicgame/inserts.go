@@ -13,8 +13,8 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_claim("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"round_num,token_id,winner_aid,timeout,amount,donation_evt_id"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
+					"round_num,token_id,winner_aid,timeout,amount,cst_amount,donation_evt_id"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -26,6 +26,7 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) 
 		winner_aid,
 		evt.Timeout,
 		evt.Amount,
+		evt.CstAmount,
 		evt.DonationEvtId,
 	)
 	if err != nil {
@@ -356,8 +357,8 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_nft_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,token_id,winner_idx,is_rwalk,is_staker"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
+					"winner_aid,round_num,token_id,winner_idx,cst_amount,is_rwalk,is_staker"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -368,6 +369,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 		evt.Round,
 		evt.TokenId,
 		evt.WinnerIndex,
+		evt.CstAmount,
 		evt.IsRandomWalk,
 		evt.IsStaker,
 	)

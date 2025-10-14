@@ -14,6 +14,8 @@ CREATE TRIGGER cg_prize_withdrawal_insert AFTER INSERT ON cg_prize_withdrawal FO
 CREATE TRIGGER cg_prize_withdrawal_delete AFTER DELETE ON cg_prize_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_prize_withdrawal_delete();
 CREATE TRIGGER cg_raffle_nft_winner_insert AFTER INSERT ON cg_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_insert();
 CREATE TRIGGER cg_raffle_nft_winner_delete AFTER DELETE ON cg_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_delete();
+CREATE TRIGGER cg_raffle_eth_winner_insert AFTER INSERT ON cg_raffle_eth_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_eth_winner_insert();
+CREATE TRIGGER cg_raffle_eth_winner_delete AFTER DELETE ON cg_raffle_eth_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_eth_winner_delete();
 CREATE TRIGGER cg_endurance_winner_insert AFTER INSERT ON cg_endurance_winner FOR EACH ROW EXECUTE PROCEDURE on_endurance_winner_insert();
 CREATE TRIGGER cg_endurance_winner_delete AFTER DELETE ON cg_endurance_winner FOR EACH ROW EXECUTE PROCEDURE on_endurance_winner_delete();
 CREATE TRIGGER cg_chrono_warrior_insert AFTER INSERT ON cg_chrono_warrior FOR EACH ROW EXECUTE PROCEDURE on_chrono_warrior_insert();

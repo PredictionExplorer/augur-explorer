@@ -9,7 +9,8 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	winner_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	timeout					BIGINT NOT NULL,	-- timeoutTimeToWithdrawSecondaryPrizes
-	amount					DECIMAL DEFAULT 0,
+	amount					DECIMAL DEFAULT 0,	-- ethPrizeAmount
+	cst_amount				DECIMAL DEFAULT 0,	-- cstPrizeAmount
 	donation_evt_id			BIGINT DEFAULT -1,	-- linked by trigger upon processing DonationReceived event
 	UNIQUE(evtlog_id)
 );
@@ -18,18 +19,23 @@ CREATE TABLE cg_prize( -- Generic prize record , that unifies all prizes , popul
 	winner_index			BIGINT NOT NULL,
 	ptype					SMALLINT DEFAULT -1, -- provided by each prize winning event Codes: 
 														-- 0 - Main Prize ETH
-														-- 1 - Main Prize CS NFT
-														-- 2 - Raffle ETH (for bidders)
-														-- 3 - Raffle CS NFT (for bidders)
-														-- 4 - Endurance Champion CS NFT
-														-- 5 - Endurance Champion ERC20 (CST)
-														-- 6 - Chrono Warrior ETH
-														-- 7 - Staking Deposit ETH (for CS NFT stakers)
-														-- 8 - Raffle CS NFT (for RandomWalk stakers)
-														-- 9 - CharityWallet deposit
-														-- 10 - Last CST Bidder CS NFT (ERC721)
-														-- 11 - Last CST Bidder ERC20 (CST)
-														-- 12 - Marketing Wallet ERC20 (CST)
+														-- 1 - Main Prize CST (ERC20)
+														-- 2 - Main Prize CS NFT
+														-- 3 - Raffle ETH (for bidders)
+														-- 4 - Raffle CST (for bidders)
+														-- 5 - Raffle CS NFT (for bidders)
+														-- 6 - Raffle CST (for RandomWalk stakers)
+														-- 7 - Raffle CS NFT (for RandomWalk stakers)
+														-- 8 - Endurance Champion CS NFT
+														-- 9 - Endurance Champion ERC20 (CST)
+														-- 10 - Chrono Warrior ETH
+														-- 11 - Chrono Warrior CST (ERC20)
+														-- 12 - Chrono Warrior CS NFT
+														-- 13 - Staking Deposit ETH (for CS NFT stakers)
+														-- 14 - CharityWallet deposit
+														-- 15 - Last CST Bidder CS NFT (ERC721)
+														-- 16 - Last CST Bidder ERC20 (CST)
+														-- 17 - Marketing Wallet ERC20 (CST)
 	PRIMARY KEY(round_num,winner_index,ptype)
 );
 CREATE TABLE cg_bid (	-- CosmicSignatureGame.sol:BidEvent
@@ -195,7 +201,7 @@ CREATE TABLE cg_prize_withdrawal (	-- PrizesWallet.sol:EthWithdrawn
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_raffle_nft_winner (	-- CosmicSignatureGame.sol:RaffleWinnerCosmicSignatureNftAwarded
+CREATE TABLE cg_raffle_nft_winner (	-- CosmicSignatureGame.sol:RaffleWinnerPrizePaid
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -206,6 +212,7 @@ CREATE TABLE cg_raffle_nft_winner (	-- CosmicSignatureGame.sol:RaffleWinnerCosmi
 	round_num		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	winner_idx		BIGINT NOT NULL,
+	cst_amount		DECIMAL NOT NULL,
 	is_rwalk		BOOLEAN NOT NULL,
 	is_staker		BOOLEAN NOT NULL,
 	UNIQUE(evtlog_id)

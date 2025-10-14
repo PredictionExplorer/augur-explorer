@@ -329,6 +329,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.RoundNum= log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.EthPrizeAmount.String()
+	evt.CstAmount = eth_evt.CstPrizeAmount.String()
 	evt.TokenId = log.Topics[3].Big().Int64()
 	evt.Timeout = eth_evt.TimeoutTimeToWithdrawSecondaryPrizes.Int64()
 //	find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
@@ -344,6 +345,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tWinner%v\n",evt.WinnerAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tCstAmount: %v\n",evt.CstAmount)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tDonationEvtId: %v\n",evt.DonationEvtId)
 	Info.Printf("\tTimeout to withdraw: %v\n",evt.Timeout)
@@ -1016,6 +1018,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Round = log.Topics[1].Big().Int64()
 	evt.TokenId = log.Topics[3].Big().Int64()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
+	evt.CstAmount = eth_evt.CstPrizeAmount.String()
 	evt.IsRandomWalk = eth_evt.WinnerIsRandomWalkNftStaker
 	evt.IsStaker = evt.IsRandomWalk
 
@@ -1025,6 +1028,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRound:%v\n",evt.Round)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
+	Info.Printf("\tCstAmount: %v\n",evt.CstAmount)
 	Info.Printf("\tIsStaker: %v\n",evt.IsStaker);
 	Info.Printf("\tIsRandomWalk: %v\n",evt.IsRandomWalk)
 	Info.Printf("}\n")

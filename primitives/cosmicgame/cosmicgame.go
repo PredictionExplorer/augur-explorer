@@ -31,6 +31,7 @@ type CGPrizeClaimEvent struct {
 	WinnerAddr			string
 	Timeout				int64
 	Amount				string
+	CstAmount			string
 	DonationEvtId		int64
 }
 type CGBidEvent struct {
@@ -172,6 +173,7 @@ type CGRaffleNFTWinner struct {
 	WinnerAddr			string
 	Round				int64
 	WinnerIndex			int64
+	CstAmount			string
 	TokenId				int64
 	IsRandomWalk		bool
 	IsStaker			bool
