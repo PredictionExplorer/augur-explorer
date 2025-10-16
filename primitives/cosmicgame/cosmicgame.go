@@ -603,13 +603,13 @@ type CGEthDutchAuctionEndingBidPriceDivisorChanged struct {
 	Contract                string
 	NewValue				string
 }
-type CGERC20RewardMultiplierChanged struct {
+type CGStaticCstReward struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewMultiplier			string
+	NewReward				string
 }
 type CGMarketingRewardChanged struct {
 	EvtId                   int64

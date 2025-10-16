@@ -559,7 +559,7 @@ func (sw *SQLStorageWrapper) Delete_eth_dutch_auction_ending_bidprice_divisor_ch
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_erc20_reward_multiplier_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_static_cst_reward_changed_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_erc_rwd_mul WHERE evtlog_id=$1"

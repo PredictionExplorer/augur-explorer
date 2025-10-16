@@ -26,7 +26,7 @@ const (
 	DEFAULT_DB_LOG			= "db.log"
 	IMGGEN_PATH				= "v2/etl/cmd/cosmicgame/imggen_monitor/imggen_exec" // relative to $HOME
 
-	PRIZE_CLAIM_EVENT		= "003b5ce6ce84e57684194d9d829dc86a9c32a488d3a979653dc27902709e8494"
+	PRIZE_CLAIM_EVENT		= "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591"	//MainPrizeClaimed
 	BID_EVENT				= "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549"
 	DONATION_EVENT			= "e32cacf203d00685e2b4d8b0a90e7cd8f3f8a208fdf116f4bb36abe08b7d548e"
 	DONATION_WITH_INFO_EVENT= "a08049565b10d44a06dca9bf05685b39bc370352043c5a003e8d35d45ebdc53f"
@@ -39,7 +39,7 @@ const (
 	ERC20_DONATED			= "3f94f6171c96ab491d8c268f80da5e460b148878065711a0bb099bbc297615af"	// PrizesWallet:TokenDonated
 	DONATED_TOKEN_CLAIMED	= "af1adae2e1e983ca738335dc2e37194114142793f394ac934a45ea632a8a5bd0"	// PrizesWallet:DonatedTokenClaimed
 	DONATED_NFT_CLAIMED		= "03c2b6e01c9ca39e4073132f279b61b987d41a82b08cea3dd4a2fabc37067ac3"
-	ETH_PRIZE_DEPOSIT_EVENT		= "999946acc98c7b7dacc26921697d55abbcb1637484b0a73040f0b06287e43326"
+	ETH_PRIZE_DEPOSIT_EVENT		= "8e369548f9ef214c7c1823c098a23763321fd761ac5cf78958e1db1b3648e7a2"	//EthReceived (PrizesWallet)
 	ETH_PRIZE_WITHDRAWAL_EVENT = "4f43b861ba36494acfe938f3815fba7fac6981bdc611b6ccdc14c08f59292383"
 	RAFFLE_ETH_WINNER		= "9c62e2cb8cbd10bf3b8a5760977d719fc3475fa67cb7ef9d2e1701f275e885c4"
 	RAFFLE_NFT_WINNER		= "27c21fe4cea1a3367aa491829dd4dd824296c00910626150464cba8ea5ebb3f4"	//RaffleWinnerPrizePaid
@@ -93,7 +93,7 @@ const (
 	MARKETING_REWARD_SENT	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486"
 	MARKETING_REWARD_CHANGED = "2652e6657dd1ed89d7bdcb70f8827cc8449ac4536ebf604dbb2465cdad264020" //MarketingWalletCstContributionAmountChanged
 	CST_REWARD_FOR_BIDDING_CHANGED = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0"	// previous: ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
-	ERC20_REWARD_MULT		= "9de7adda7fb7d13e10aac4b298c3ba3b724da9f964c6889e59883542c95d6615"	//CstPrizeAmountMultiplierChanged
+	STATIC_CST_REWARD		= "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d"	//CstPrizeAmountChanged
 	MAX_MESSAGE_LENGTH		= "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8"	//BidMessageLengthMaxLimitChanged
 	TOKEN_SCRIPT_URL		= "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c"
 	BASE_URI				= "bdfd815215fcee5bb949c941ab489c7ead076a7c8acd3527cd1b50f613ac67e6"
@@ -160,7 +160,7 @@ var (
 	evt_cst_min_limit,_				= hex.DecodeString(STARTING_CST_MIN_LIM)
 	evt_fund_transf_err,_		= hex.DecodeString(FUND_TRANSFER_ERR)
 	evt_erc20_transf_err,_			= hex.DecodeString(ERC20_TRANSFER_ERR)
-	evt_erc20_reward_mult,_				= hex.DecodeString(ERC20_REWARD_MULT)
+	evt_static_cst_reward,_				= hex.DecodeString(STATIC_CST_REWARD)
 	evt_funds2charity,_				= hex.DecodeString(FUNDS_TO_CHARITY)
 	evt_delay_duration_round,_		= hex.DecodeString(DELAY_DURATION_ROUND)
 	evt_round_started,_				= hex.DecodeString(ROUND_STARTED)

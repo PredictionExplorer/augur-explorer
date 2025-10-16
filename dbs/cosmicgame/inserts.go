@@ -1501,13 +1501,13 @@ func (sw *SQLStorageWrapper) Insert_eth_dutch_auction_ending_bidprice_divisor_ch
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_erc20_reward_multiplier_changed_event(evt *p.CGERC20RewardMultiplierChanged) {
+func (sw *SQLStorageWrapper) Insert_static_cst_reward_changed_event(evt *p.CGStaticCstReward) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO cg_adm_erc_rwd_mul(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_multiplier" +
+				"new_reward" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"
@@ -1517,7 +1517,7 @@ func (sw *SQLStorageWrapper) Insert_erc20_reward_multiplier_changed_event(evt *p
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.NewMultiplier,
+		evt.NewReward,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_erc_rwd_mul table: %v\n",err))

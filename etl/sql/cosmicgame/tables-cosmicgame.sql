@@ -739,14 +739,14 @@ CREATE TABLE cg_adm_eth_auc_endprice ( -- ISystemEvents.sol:EthDutchAuctionEndin
 	new_len			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_erc_rwd_mul ( -- ISystemEvents.sol:CstRewardAmountMultiplierChanged
+CREATE TABLE cg_adm_erc_rwd_mul ( -- ISystemEvents.sol:CstPrizeAmountChanged
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	new_multiplier	DECIMAL NOT NULL,
+	new_reward		DECIMAL NOT NULL,	-- static CST prize amount (no longer multiplier)
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_mkt_reward ( -- ISystemEvents.sol:MarketingWalletCstContributionAmountChanged

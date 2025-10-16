@@ -239,7 +239,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_erc20_reward_mult[:4]),
+			Signature: hex.EncodeToString(evt_static_cst_reward[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -2480,9 +2480,9 @@ func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog
 	storagew.Delete_erc20_token_reward_changed_event(evt.EvtId)
     storagew.Insert_erc20_token_reward_changed_event(&evt)
 }
-func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEventLog) {
+func proc_static_cst_reward_changed_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGERC20RewardMultiplierChanged
+	var evt CGStaticCstReward
 	var eth_evt BiddingCstPrizeAmountChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
@@ -2491,7 +2491,7 @@ func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEve
 	Info.Printf("Processing CstPrizeAmountChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CstPrizeAmountChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event CstPrizeAmountMultiplierChanged decode error: %v",err)
+		Error.Printf("Event CstPrizeAmountChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -2500,15 +2500,15 @@ func proc_erc20_reward_multiplier_changed_event(log *types.Log,elog *EthereumEve
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewMultiplier= eth_evt.NewValue.String()
+	evt.NewReward= eth_evt.NewValue.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("cstPrizeMultiplierChanged{\n")
-	Info.Printf("\tNewMultiplier: %v\n",evt.NewMultiplier)
+	Info.Printf("CstPrizeAmountChanged{\n")
+	Info.Printf("\tNewReward: %v\n",evt.NewReward)
 	Info.Printf("}\n")
 
-	storagew.Delete_erc20_reward_multiplier_changed_event(evt.EvtId)
-    storagew.Insert_erc20_reward_multiplier_changed_event(&evt)
+	storagew.Delete_static_cst_reward_changed_event(evt.EvtId)
+    storagew.Insert_static_cst_reward_changed_event(&evt)
 }
 func proc_max_msg_length_changed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -3053,8 +3053,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cst_reward_for_bidding_changed) {
 		proc_erc20_token_reward_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_reward_mult) {
-		proc_erc20_reward_multiplier_changed_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_static_cst_reward) {
+		proc_static_cst_reward_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_max_msg_length_changed) {
 		proc_max_msg_length_changed_event(log,evtlog)
