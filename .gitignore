@@ -139,4 +139,5 @@ etl/cmd/cosmicgame/scripts/autobid2
 etl/cmd/beacon/beacon
 etl/cmd/srvmonitor/srvmonitor
 etl/cmd/deleter/deleter
-
+etl/cmd/clmon/archive/
+etl/cmd/clmon/main
