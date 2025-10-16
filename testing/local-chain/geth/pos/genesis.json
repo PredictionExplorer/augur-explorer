@@ -1,0 +1,17 @@
+{
+  "config": {
+    "chainId": 11155111,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "istanbulBlock": 0,
+	"terminalTotalDifficulty": 0,
+    "ethash": {}
+  },
+  "difficulty": "0x1",
+  "gasLimit": "0x1C9C380",
+  "alloc": {}
+}
