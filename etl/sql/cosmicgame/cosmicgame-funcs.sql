@@ -226,10 +226,6 @@ BEGIN
 		UPDATE cg_prize_claim SET donation_evt_id=NEW.evtlog_id WHERE round_num=NEW.round_num;
 	END IF;
 
-	-- Insert record in cg_prize table with ptype=14 for CharityWallet deposit
-	-- Using winner_index=0 to indicate this is a general charity donation, not a specific winner's prize
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,14);
-
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -266,9 +262,6 @@ BEGIN
 	IF OLD.round_num <> -1 THEN
 		UPDATE cg_prize_claim SET donation_evt_id=0 WHERE round_num=OLD.round_num;
 	END IF;
-
-	-- Remove corresponding record from cg_prize table
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=14;
 
 	RETURN OLD;
 END;
@@ -365,7 +358,8 @@ BEGIN
 			VALUES(NEW.round_num,NEW.amount);
 	END IF;
 	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount);
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,3);
+	-- Note: cg_prize records are created by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
+	-- Not inserting here to avoid duplicates
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -383,7 +377,8 @@ BEGIN
 			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
 		WHERE round_num=OLD.round_num;
 	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount);
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index AND ptype=3;
+	-- Note: cg_prize records are deleted by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
+	-- Not deleting here to avoid issues
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -1031,11 +1026,6 @@ BEGIN
 			num_mkt_rewards = (num_mkt_rewards + 1)
 		;
 
-	-- Insert record in cg_prize table with ptype=17 for Marketing Wallet ERC20 (CST)
-	-- Using winner_index=0 to indicate this is a general marketing reward, not a specific winner's prize
-	-- Using round_num=0 to indicate this is not tied to a specific round
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(0,0,17);
-
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1047,9 +1037,6 @@ BEGIN
 		SET	total_mkt_rewards= (total_mkt_rewards - OLD.amount),
 			num_mkt_rewards = (num_mkt_rewards - 1)
 		;
-
-	-- Remove corresponding record from cg_prize table
-	DELETE FROM cg_prize WHERE round_num=0 AND winner_index=0 AND ptype=17;
 
 	RETURN OLD;
 END;
@@ -1366,11 +1353,11 @@ BEGIN
 
 	UPDATE cg_round_stats
 		SET
-			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount)
+			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.eth_amount)
 		WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits) VALUES(NEW.round_num,NEW.amount);
+		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits) VALUES(NEW.round_num,NEW.eth_amount);
 	END IF;
 
 	-- Insert THREE records in cg_prize table for Chrono Warrior prizes
@@ -1390,7 +1377,7 @@ BEGIN
 
 	UPDATE cg_round_stats
 		SET
-			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
+			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.eth_amount)
 		WHERE round_num=OLD.round_num;
 
 	-- Remove THREE corresponding records from cg_prize table

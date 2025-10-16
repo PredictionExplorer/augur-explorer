@@ -32,10 +32,8 @@ CREATE TABLE cg_prize( -- Generic prize record , that unifies all prizes , popul
 														-- 11 - Chrono Warrior CST (ERC20)
 														-- 12 - Chrono Warrior CS NFT
 														-- 13 - Staking Deposit ETH (for CS NFT stakers)
-														-- 14 - CharityWallet deposit
 														-- 15 - Last CST Bidder CS NFT (ERC721)
 														-- 16 - Last CST Bidder ERC20 (CST)
-														-- 17 - Marketing Wallet ERC20 (CST)
 	PRIMARY KEY(round_num,winner_index,ptype)
 );
 CREATE TABLE cg_bid (	-- CosmicSignatureGame.sol:BidEvent
