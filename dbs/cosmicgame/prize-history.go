@@ -11,314 +11,73 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 	
 	var query string
 	query = "SELECT "+
-				"record_type,"+
-				"evtlog_id,"+
-				"tstmp,"+
-				"date_time,"+
-				"block_num,"+
-				"tx_id,"+
-				"tx_hash,"+
-				"round_num,"+
-				"amount,"+
-				"amount_eth,"+
-				"token_addr,"+
-				"token_id," +
-				"token_uri,"+
-				"winner_index, "+
-				"claimed "+
-			"FROM (" +
-				"(" +
-					"SELECT "+
-						"0 AS record_type,"+
-						"rd.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
-						"rd.time_stamp AS date_time, "+
-						"rd.block_num,"+
-						"rd.tx_id,"+
-						"t.tx_hash,"+
-						"rd.round_num,"+
-						"rd.amount, "+
-						"rd.amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"rd.winner_index, "+
-						"rd.claimed "+
-					"FROM cg_prize_deposit rd "+
-						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-						"INNER JOIN cg_raffle_eth_winner rew ON (rew.round_num=rd.round_num AND rew.winner_idx=rd.winner_index) "+
-					"WHERE rd.winner_aid=$1  "+
-				") UNION ALL (" +
-					"SELECT "+
-						"1 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_raffle_nft_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) AND (is_rwalk=FALSE) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"2 AS record_type,"+
-						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"ta.addr token_addr, " +
-						"d.token_id,"+
-						"d.token_uri,"+
-						"d.idx winner_index,"+
-						"c.id IS NOT NULL as claimed "+
-					"FROM cg_prize_claim p "+
-						"JOIN cg_nft_donation d ON p.round_num=d.round_num "+ 
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
-						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.round_num) AND (d.idx=c.idx) "+
-					"WHERE p.winner_aid=$1 "+
-				") UNION ALL (" +
-					"SELECT "+
-						"3 AS record_type,"+
-						"p.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.round_num,"+
-						"p.amount,"+
-						"p.amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, " +
-						"p.token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index,"+
-						"'T' AS claimed "+
-					"FROM cg_prize_claim p "+
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-					"WHERE p.winner_aid=$1 "+
-				") UNION ALL (" +
-					"WITH rwd AS ("+
-						"SELECT "+
-							"COUNT(token_id) AS num_toks_collected,"+
-							"SUM(reward) AS collected_reward," +
-							"SUM(reward)/1e18 AS collected_reward_eth,"+
-							"deposit_id, "+
-							"staker_aid "+
-						"FROM cg_st_reward "+
-						"GROUP BY staker_aid,deposit_id "+
-					") "+
-					"SELECT "+
-						"4 AS record_type,"+
-						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
-						"d.time_stamp,"+
-						"d.block_num,"+
-						"tx.id,"+
-						"tx.tx_hash,"+
-						"d.round_num, "+
-						"sd.amount_to_claim,"+
-						"sd.amount_to_claim/1e18,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index, "+
-						"CASE "+
-							"WHEN "+
-								"COALESCE(rwd.collected_reward,0)=COALESCE(sd.amount_to_claim,0)"+
-								"THEN TRUE "+
-								"ELSE FALSE "+
-						"END AS claimed "+
-					"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
-						"INNER JOIN transaction tx ON tx.id=d.tx_id " +
-						"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
-						"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
-					"WHERE sd.staker_aid=$1 "+
-					"ORDER BY d.id DESC,sd.staker_aid " +
-				") UNION ALL (" +
-					"SELECT "+
-						"5 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_raffle_nft_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) AND (is_rwalk=TRUE) AND (is_staker=TRUE) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"6 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_raffle_nft_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) AND (is_rwalk=FALSE) AND (is_staker=TRUE) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"7 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.erc721_token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_endurance_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"8 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.erc721_token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_lastcst_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"9 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"erc20_amount AS amount,"+
-						"erc20_amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_endurance_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"10 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"erc20_amount AS amount,"+
-						"erc20_amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed "+
-					"FROM cg_lastcst_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"11 AS record_type,"+
-						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.round_num,"+
-						"d.amount AS amount,"+
-						"d.amount/1e18 AS amount_eth,"+
-						"ta.addr token_addr, " +
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index,"+
-						"c.id IS NOT NULL as claimed "+
-					"FROM cg_prize_claim p "+
-						"JOIN cg_erc20_donation d ON p.round_num=d.round_num "+ 
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
-						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.round_num) AND (c.token_aid=d.token_aid)"+
-					"WHERE p.winner_aid=$1 "+
-				") UNION ALL (" +
-					"SELECT "+
-						"12 AS record_type,"+
-						"cw.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
-						"rd.time_stamp AS date_time, "+
-						"rd.block_num,"+
-						"rd.tx_id,"+
-						"t.tx_hash,"+
-						"rd.round_num,"+
-						"rd.amount AS amount,"+
-						"rd.amount/1e18 AS amount_eth,"+
-						"'' token_addr, " +
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"rd.winner_index,"+
-						"'T' as claimed "+
-					"FROM cg_prize_deposit rd "+
-						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-						"INNER JOIN cg_chrono_warrior cw ON (cw.round_num=rd.round_num AND cw.winner_index=rd.winner_index) "+
-					"WHERE rd.winner_aid=$1 "+
-				") "+
-			") everything " +
-			"ORDER BY evtlog_id DESC " +
-			"OFFSET $2 LIMIT $3"
+				"p.ptype AS record_type,"+
+				"COALESCE(pc.evtlog_id, rew.evtlog_id, rnw.evtlog_id, ew.evtlog_id, lw.evtlog_id, cw.evtlog_id, ed.evtlog_id) AS evtlog_id,"+
+				"COALESCE(EXTRACT(EPOCH FROM pc.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rew.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rnw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM ew.time_stamp)::BIGINT, EXTRACT(EPOCH FROM lw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM cw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM ed.time_stamp)::BIGINT) AS tstmp,"+
+				"COALESCE(pc.time_stamp, rew.time_stamp, rnw.time_stamp, ew.time_stamp, lw.time_stamp, cw.time_stamp, ed.time_stamp) AS date_time,"+
+				"COALESCE(pc.block_num, rew.block_num, rnw.block_num, ew.block_num, lw.block_num, cw.block_num, ed.block_num) AS block_num,"+
+				"COALESCE(tc.id, trew.id, trnw.id, tew.id, tlw.id, tcw.id, ted.id) AS tx_id,"+
+				"COALESCE(tc.tx_hash, trew.tx_hash, trnw.tx_hash, tew.tx_hash, tlw.tx_hash, tcw.tx_hash, ted.tx_hash) AS tx_hash,"+
+				"p.round_num,"+
+				"CASE "+
+					"WHEN p.ptype = 0 THEN pc.amount "+
+					"WHEN p.ptype = 1 THEN pc.cst_amount "+
+					"WHEN p.ptype = 3 THEN rew.amount "+
+					"WHEN p.ptype IN (4,6) THEN rnw.cst_amount "+
+					"WHEN p.ptype IN (9,16) THEN COALESCE(ew.erc20_amount, lw.erc20_amount) "+
+					"WHEN p.ptype = 10 THEN cw.eth_amount "+
+					"WHEN p.ptype = 11 THEN cw.cst_amount "+
+					"WHEN p.ptype = 13 THEN ed.deposit_amount "+
+					"ELSE '0' "+
+				"END AS amount,"+
+				"CASE "+
+					"WHEN p.ptype = 0 THEN pc.amount/1e18 "+
+					"WHEN p.ptype = 1 THEN pc.cst_amount/1e18 "+
+					"WHEN p.ptype = 3 THEN rew.amount/1e18 "+
+					"WHEN p.ptype IN (4,6) THEN rnw.cst_amount/1e18 "+
+					"WHEN p.ptype IN (9,16) THEN COALESCE(ew.erc20_amount, lw.erc20_amount)/1e18 "+
+					"WHEN p.ptype = 10 THEN cw.eth_amount/1e18 "+
+					"WHEN p.ptype = 11 THEN cw.cst_amount/1e18 "+
+					"WHEN p.ptype = 13 THEN ed.deposit_amount/1e18 "+
+					"ELSE 0 "+
+				"END AS amount_eth,"+
+				"'' AS token_addr,"+
+				"CASE "+
+					"WHEN p.ptype = 2 THEN pc.token_id "+
+					"WHEN p.ptype IN (5,7) THEN rnw.token_id "+
+					"WHEN p.ptype = 8 THEN ew.erc721_token_id "+
+					"WHEN p.ptype = 12 THEN cw.nft_id "+
+					"WHEN p.ptype = 15 THEN lw.erc721_token_id "+
+					"ELSE -1 "+
+				"END AS token_id,"+
+				"'' AS token_uri,"+
+			"p.winner_index,"+
+			"'T' AS claimed "+
+		"FROM "+sw.S.SchemaName()+".cg_prize p "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON (p.round_num = pc.round_num AND p.ptype IN (0,1,2)) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction tc ON tc.id = pc.tx_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_eth_winner rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 3) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction trew ON trew.id = rew.tx_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_winner rnw ON (p.round_num = rnw.round_num AND p.winner_index = rnw.winner_idx AND p.ptype IN (4,5,6,7)) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction trnw ON trnw.id = rnw.tx_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_endurance_winner ew ON (p.round_num = ew.round_num AND p.winner_index = ew.winner_idx AND p.ptype IN (8,9)) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction tew ON tew.id = ew.tx_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index AND p.ptype IN (10,11,12)) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction tcw ON tcw.id = cw.tx_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 13) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction ted ON ted.id = ed.tx_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (15,16)) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".transaction tlw ON tlw.id = lw.tx_id "+
+		"WHERE ("+
+				"(p.ptype IN (0,1,2) AND pc.winner_aid = $1) OR "+
+				"(p.ptype = 3 AND rew.winner_aid = $1) OR "+
+				"(p.ptype IN (4,5,6,7) AND rnw.winner_aid = $1) OR "+
+				"(p.ptype IN (8,9) AND ew.winner_aid = $1) OR "+
+				"(p.ptype IN (10,11,12) AND cw.winner_aid = $1) OR "+
+				"(p.ptype IN (15,16) AND lw.winner_aid = $1)"+
+			") "+
+		"ORDER BY p.round_num DESC, p.winner_index, p.ptype "+
+		"OFFSET $2 LIMIT $3"
 	rows,err := sw.S.Db().Query(query,winner_aid,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -357,341 +116,72 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 	
 	var query string
 	query = "SELECT "+
-				"record_type,"+
-				"evtlog_id,"+
-				"tstmp,"+
-				"date_time,"+
-				"block_num,"+
-				"tx_id,"+
-				"tx_hash,"+
-				"round_num,"+
-				"amount,"+
-				"amount_eth,"+
-				"token_addr,"+
-				"token_id," +
-				"token_uri,"+
-				"winner_index, "+
-				"claimed, "+
-				"winner_addr,"+
-				"winner_aid "+
-			"FROM (" +
-				"(" +
-					"SELECT "+
-						"0 AS record_type,"+
-						"rd.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
-						"rd.time_stamp AS date_time, "+
-						"rd.block_num,"+
-						"rd.tx_id,"+
-						"t.tx_hash,"+
-						"rd.round_num,"+
-						"rd.amount, "+
-						"rd.amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index, "+
-						"rd.claimed, "+
-						"wa.addr winner_addr," +
-						"rd.winner_aid "+
-					"FROM cg_prize_deposit rd "+
-						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-						"LEFT JOIN address wa ON rd.winner_aid=wa.address_id "+
-				") UNION ALL (" +
-					"SELECT "+
-						"1 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_raffle_nft_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-					"WHERE (is_rwalk=FALSE) AND (is_staker=FALSE) " +
-				") UNION ALL (" +
-					"SELECT "+
-						"2 AS record_type,"+
-						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"ta.addr token_addr, " +
-						"d.token_id,"+
-						"d.token_uri,"+
-						"d.idx winner_index,"+
-						"c.id IS NOT NULL as claimed, "+
-						"wa.addr winner_addr,"+
-						"p.winner_aid "+
-					"FROM cg_prize_claim p "+
-						"JOIN cg_nft_donation d ON p.round_num=d.round_num "+ 
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
-						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.round_num) AND (d.idx=c.idx) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"3 AS record_type,"+
-						"p.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.round_num,"+
-						"p.amount,"+
-						"p.amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, " +
-						"p.token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index,"+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"p.winner_aid "+
-					"FROM cg_prize_claim p "+
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-				") UNION ALL (" +
-					"WITH rwd AS ("+
-						"SELECT "+
-							"COUNT(token_id) AS num_toks_collected,"+
-							"SUM(reward) AS collected_reward," +
-							"SUM(reward)/1e18 AS collected_reward_eth,"+
-							"deposit_id, "+
-							"staker_aid "+
-						"FROM cg_st_reward "+
-						"GROUP BY staker_aid,deposit_id "+
-					") "+
-					"SELECT "+
-						"4 AS record_type,"+
-						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
-						"d.time_stamp,"+
-						"d.block_num,"+
-						"tx.id,"+
-						"tx.tx_hash,"+
-						"d.round_num, "+
-						"sd.amount_to_claim,"+
-						"sd.amount_to_claim/1e18,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index, "+
-						"CASE "+
-							"WHEN "+
-								"COALESCE(rwd.collected_reward,0)=COALESCE(sd.amount_to_claim,0)"+
-								"THEN TRUE "+
-								"ELSE FALSE "+
-						"END AS claimed, "+
-						"sa.addr winner_addr,"+
-						"sd.staker_aid winner_aid "+
-					"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
-						"INNER JOIN transaction tx ON tx.id=d.tx_id " +
-						"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
-						"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
-					"ORDER BY d.id DESC,sd.staker_aid " +
-				") UNION ALL (" +
-					"SELECT "+
-						"5 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_raffle_nft_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-					"WHERE (is_rwalk=TRUE) AND (is_staker=TRUE) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"6 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_raffle_nft_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-					"WHERE (is_rwalk=FALSE) AND (is_staker=TRUE) "+
-				") UNION ALL (" +
-					"SELECT "+
-						"7 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.erc721_token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_endurance_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-				") UNION ALL (" +
-					"SELECT "+
-						"8 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"0 AS amount,"+
-						"0 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"rn.erc721_token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_lastcst_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-				") UNION ALL (" +
-					"SELECT "+
-						"9 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"erc20_amount AS amount,"+
-						"erc20_amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 as token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_endurance_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-				") UNION ALL (" +
-					"SELECT "+
-						"10 AS record_type,"+
-						"rn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
-						"rn.time_stamp AS date_time, "+
-						"rn.block_num,"+
-						"rn.tx_id,"+
-						"t.tx_hash,"+
-						"rn.round_num,"+
-						"erc20_amount AS amount,"+
-						"erc20_amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 as token_id," +
-						"'' AS token_uri,"+
-						"rn.winner_idx, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr,"+
-						"rn.winner_aid "+
-					"FROM cg_lastcst_winner rn "+
-						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
-				") UNION ALL (" +
-					"SELECT "+
-						"11 AS record_type,"+
-						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.round_num,"+
-						"d.amount AS amount,"+
-						"d.amount/1e18 AS amount_eth,"+
-						"ta.addr token_addr, " +
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index,"+
-						"c.id IS NOT NULL as claimed, "+
-						"wa.addr winner_addr,"+
-						"p.winner_aid "+
-					"FROM cg_prize_claim p "+
-						"JOIN cg_erc20_donation d ON p.round_num=d.round_num "+ 
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
-						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-						"LEFT JOIN cg_donated_tok_claimed c ON (c.round_num=p.round_num) AND (c.token_aid=d.token_aid)"+
-				") UNION ALL (" +
-					"SELECT "+
-						"12 AS record_type,"+
-						"cw.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
-						"rd.time_stamp AS date_time, "+
-						"rd.block_num,"+
-						"rd.tx_id,"+
-						"t.tx_hash,"+
-						"rd.round_num,"+
-						"rd.amount, "+
-						"rd.amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, "+
-						"-1 AS token_id,"+
-						"'' AS token_uri,"+
-						"rd.winner_index, "+
-						"'T' AS claimed, "+
-						"wa.addr winner_addr," +
-						"rd.winner_aid "+
-					"FROM cg_prize_deposit rd "+
-						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-						"INNER JOIN cg_chrono_warrior cw ON (cw.round_num=rd.round_num AND cw.winner_index=rd.winner_index) "+
-						"LEFT JOIN address wa ON rd.winner_aid=wa.address_id "+
-				") "+
-			") everything " +
-			"ORDER BY evtlog_id DESC " +
+				"p.ptype AS record_type,"+
+				"COALESCE(pc.evtlog_id, rew.evtlog_id, rnw.evtlog_id, ew.evtlog_id, lw.evtlog_id, cw.evtlog_id, ed.evtlog_id) AS evtlog_id,"+
+				"COALESCE(EXTRACT(EPOCH FROM pc.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rew.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rnw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM ew.time_stamp)::BIGINT, EXTRACT(EPOCH FROM lw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM cw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM ed.time_stamp)::BIGINT) AS tstmp,"+
+				"COALESCE(pc.time_stamp, rew.time_stamp, rnw.time_stamp, ew.time_stamp, lw.time_stamp, cw.time_stamp, ed.time_stamp) AS date_time,"+
+				"COALESCE(pc.block_num, rew.block_num, rnw.block_num, ew.block_num, lw.block_num, cw.block_num, ed.block_num) AS block_num,"+
+				"COALESCE(tc.id, trew.id, trnw.id, tew.id, tlw.id, tcw.id, ted.id) AS tx_id,"+
+				"COALESCE(tc.tx_hash, trew.tx_hash, trnw.tx_hash, tew.tx_hash, tlw.tx_hash, tcw.tx_hash, ted.tx_hash) AS tx_hash,"+
+				"p.round_num,"+
+				"CASE "+
+					"WHEN p.ptype = 0 THEN pc.amount "+
+					"WHEN p.ptype = 1 THEN pc.cst_amount "+
+					"WHEN p.ptype = 3 THEN rew.amount "+
+					"WHEN p.ptype IN (4,6) THEN rnw.cst_amount "+
+					"WHEN p.ptype IN (9,16) THEN COALESCE(ew.erc20_amount, lw.erc20_amount) "+
+					"WHEN p.ptype = 10 THEN cw.eth_amount "+
+					"WHEN p.ptype = 11 THEN cw.cst_amount "+
+					"WHEN p.ptype = 13 THEN ed.deposit_amount "+
+					"ELSE '0' "+
+				"END AS amount,"+
+				"CASE "+
+					"WHEN p.ptype = 0 THEN pc.amount/1e18 "+
+					"WHEN p.ptype = 1 THEN pc.cst_amount/1e18 "+
+					"WHEN p.ptype = 3 THEN rew.amount/1e18 "+
+					"WHEN p.ptype IN (4,6) THEN rnw.cst_amount/1e18 "+
+					"WHEN p.ptype IN (9,16) THEN COALESCE(ew.erc20_amount, lw.erc20_amount)/1e18 "+
+					"WHEN p.ptype = 10 THEN cw.eth_amount/1e18 "+
+					"WHEN p.ptype = 11 THEN cw.cst_amount/1e18 "+
+					"WHEN p.ptype = 13 THEN ed.deposit_amount/1e18 "+
+					"ELSE 0 "+
+				"END AS amount_eth,"+
+				"'' AS token_addr,"+
+				"CASE "+
+					"WHEN p.ptype = 2 THEN pc.token_id "+
+					"WHEN p.ptype IN (5,7) THEN rnw.token_id "+
+					"WHEN p.ptype = 8 THEN ew.erc721_token_id "+
+					"WHEN p.ptype = 12 THEN cw.nft_id "+
+					"WHEN p.ptype = 15 THEN lw.erc721_token_id "+
+					"ELSE -1 "+
+				"END AS token_id,"+
+				"'' AS token_uri,"+
+				"p.winner_index,"+
+			"'T' AS claimed,"+
+			"CASE WHEN p.ptype = 13 THEN '(All CS NFT Stakers)' ELSE COALESCE(wa_pc.addr, wa_rew.addr, wa_rnw.addr, wa_ew.addr, wa_lw.addr, wa_cw.addr, '') END AS winner_addr,"+
+			"COALESCE(pc.winner_aid, rew.winner_aid, rnw.winner_aid, ew.winner_aid, lw.winner_aid, cw.winner_aid, 0) AS winner_aid "+
+			"FROM "+sw.S.SchemaName()+".cg_prize p "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON (p.round_num = pc.round_num AND p.ptype IN (0,1,2)) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction tc ON tc.id = pc.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address wa_pc ON pc.winner_aid = wa_pc.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_eth_winner rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 3) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction trew ON trew.id = rew.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address wa_rew ON rew.winner_aid = wa_rew.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_winner rnw ON (p.round_num = rnw.round_num AND p.winner_index = rnw.winner_idx AND p.ptype IN (4,5,6,7)) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction trnw ON trnw.id = rnw.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address wa_rnw ON rnw.winner_aid = wa_rnw.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_endurance_winner ew ON (p.round_num = ew.round_num AND p.winner_index = ew.winner_idx AND p.ptype IN (8,9)) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction tew ON tew.id = ew.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address wa_ew ON ew.winner_aid = wa_ew.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index AND p.ptype IN (10,11,12)) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction tcw ON tcw.id = cw.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address wa_cw ON cw.winner_aid = wa_cw.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 13) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction ted ON ted.id = ed.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (15,16)) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction tlw ON tlw.id = lw.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address wa_lw ON lw.winner_aid = wa_lw.address_id "+
+			"ORDER BY p.round_num DESC, p.winner_index, p.ptype "+
 			"OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)

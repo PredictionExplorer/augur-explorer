@@ -45,20 +45,24 @@
 		<td><a class="addr" href="/black/cosmicgame/user/info/{{.PrizeInfo.WinnerAddr}}">{{.RoundInfo.WinnerAddr}}</a></td>
 	</tr>
 	<tr>
-		<td>Prize Amount</td>
+		<td>Main Prize ETH Amount</td>
 		<td>{{.RoundInfo.AmountEth}} ETH</td>
+	</tr>
+	<tr>
+		<td>Main Prize CST Amount</td>
+		<td>{{.RoundInfo.MainPrizeCstAmountEth}} CST</td>
+	</tr>
+	<tr>
+		<td>Main Prize NFT Token ID</td>
+		<td>{{.RoundInfo.TokenId}}</td>
 	</tr>
 	<tr>
 		<td>Timeout Timestamp</td>
 		<td>{{.RoundInfo.TimeoutTs}}</td>
 	</tr>
 	<tr>
-		<td>Prized Token ID</td>
-		<td>{{.RoundInfo.TokenId}}</td>
-	</tr>
-	<tr>
 		<td>Seed</td>
-		<td>{{.RoundInfo.Seed}} (ETH)</td>
+		<td>{{.RoundInfo.Seed}}</td>
 	</tr>
 	<tr>
 		<td>Charity Address</td>
@@ -93,8 +97,16 @@
 		<td>{{.RoundInfo.ChronoWarriorAddr}}</td>
 	</tr>
 	<tr>
-		<td>Chrono Warrior Amount</td>
-		<td>{{.RoundInfo.ChronoWarriorAmountEth}}</td>
+		<td>Chrono Warrior ETH Amount</td>
+		<td>{{.RoundInfo.ChronoWarriorEthAmountEth}} ETH</td>
+	</tr>
+	<tr>
+		<td>Chrono Warrior CST Amount</td>
+		<td>{{.RoundInfo.ChronoWarriorCstAmountEth}} CST</td>
+	</tr>
+	<tr>
+		<td>Chrono Warrior NFT Token ID</td>
+		<td>{{.RoundInfo.ChronoWarriorNftId}}</td>
 	</tr>
 
 	<tr>
@@ -133,13 +145,16 @@
 		</td>
 	</tr>
 </table>
-<h3> Raffle NFT Winners</h3>
+<h3> Raffle NFT Winners (Bidders)</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
+		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
+		<th class="market_reports">NFT Token ID</th>
+		<th class="market_reports">CST Amount</th>
 	</tr>
 	{{- range $i, $change := .RoundInfo.RaffleNFTWinners}}
 		<tr class="market_reports">
@@ -150,17 +165,23 @@
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: center;">{{ .WinnerIndex }}</td>
+			<td style="text-align: center;">{{ .RoundNum }}</td>
+			<td style="text-align: center;">{{ .TokenId }}</td>
+			<td style="text-align: right;">{{ printf "%.4f" .CstAmountEth }} CST</td>
 		</tr>
 	{{- end}}
 </table>
-<h3> Staking NFT Winners</h3>
+<h3> Staking NFT Winners (RandomWalk Stakers)</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
+		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
+		<th class="market_reports">NFT Token ID</th>
+		<th class="market_reports">CST Amount</th>
 	</tr>
 	{{- range $i, $change := .RoundInfo.StakingNFTWinners}}
 		<tr class="market_reports">
@@ -171,19 +192,22 @@
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: center;">{{ .WinnerIndex }}</td>
+			<td style="text-align: center;">{{ .RoundNum }}</td>
+			<td style="text-align: center;">{{ .TokenId }}</td>
+			<td style="text-align: right;">{{ printf "%.4f" .CstAmountEth }} CST</td>
 		</tr>
 	{{- end}}
 </table>
-<h3>Raffle ETH Deposits</h3>
+<h3>Raffle ETH Deposits (Bidders)</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
+		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
 		<th class="market_reports">Amount (ETH)</th>
-
 	</tr>
 	{{- range $i, $change := .RoundInfo.RaffleETHDeposits}}
 		<tr class="market_reports">
@@ -194,8 +218,9 @@
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
+			<td style="text-align: center;">{{ .WinnerIndex }}</td>
+			<td style="text-align: center;">{{ .RoundNum }}</td>
+			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
 		</tr>
 	{{- end}}
 </table>
@@ -224,6 +249,29 @@
             <td style="text-align: right;" title="">{{.TokenAddr}}</td>
             <td style="text-align: right;" title="">{{.NFTTokenId}}</td>
             <td style="text-align: right;" title="">{{.NFTTokenURI}}</td>
+		</tr>
+	{{- end}}
+</table>
+<h3>Donated ERC20 Tokens</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Donor</th>
+		<th class="market_reports">Token Address</th>
+		<th class="market_reports">Amount</th>
+	</tr>
+	{{- range $i, $change := .DonatedERC20s}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.DonorAid}}">
+				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
+			<td style="text-align: right;" title="">{{printf "%.4f" .AmountEth}}</td>
 		</tr>
 	{{- end}}
 </table>

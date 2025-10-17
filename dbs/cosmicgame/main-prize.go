@@ -45,14 +45,14 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-				"LEFT JOIN cg_mint_event m ON m.token_id=p.round_num "+
+				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
-				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
-				"JOIN LATERAL (" +
-					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
-						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
-						"JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
-				") d ON p.donation_evt_id=d.evtlog_id "+
+			"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
+			"LEFT JOIN LATERAL (" +
+				"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
+					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
+			") d ON p.donation_evt_id=d.evtlog_id "+
 			"ORDER BY p.id DESC "+
 			"OFFSET $1 LIMIT $2"
 
@@ -68,6 +68,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
+	var null_charity_amount,null_charity_addr sql.NullString
+	var null_charity_amount_eth sql.NullFloat64
 	for rows.Next() {
 		var rec p.CGRoundRec
 		err=rows.Scan(
@@ -91,9 +93,9 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&rec.RoundStats.TotalRaffleEthDeposits,
 			&rec.RoundStats.TotalRaffleEthDepositsEth,
 			&rec.RoundStats.TotalRaffleNFTs,
-			&rec.CharityAmount,
-			&rec.CharityAmountETH,
-			&rec.CharityAddress,
+			&null_charity_amount,
+			&null_charity_amount_eth,
+			&null_charity_addr,
 			&null_dep_amount,
 			&null_dep_amount_eth,
 			&null_dep_amount_per_tok,
@@ -106,6 +108,9 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			os.Exit(1)
 		}
 		if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
+		if null_charity_amount.Valid { rec.CharityAmount = null_charity_amount.String }
+		if null_charity_amount_eth.Valid { rec.CharityAmountETH = null_charity_amount_eth.Float64 }
+		if null_charity_addr.Valid { rec.CharityAddress = null_charity_addr.String }
 		if null_dep_amount.Valid { rec.StakingDepositAmount = null_dep_amount.String }
 		if null_dep_amount_eth.Valid { rec.StakingDepositAmountEth = null_dep_amount_eth.Float64 }
 		if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
@@ -133,6 +138,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"p.timeout,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
+				"p.cst_amount, " +
+				"p.cst_amount/1e18 cst_amount_eth, " +
 				"p.round_num,"+
 				"p.token_id,"+
 				"m.seed, "+
@@ -158,13 +165,16 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"w_a.addr,"+
 				"endu.erc20_amount,"+
 				"endu.erc20_amount/1e18, "+
-				"top.erc20_amount,"+
-				"top.erc20_amount/1e18, "+
-				"w.amount,"+
-				"w.amount/1e18, "+
-				"s.donations_round_count,"+
-				"s.donations_round_total,"+
-				"s.donations_round_total/1e18 "+
+			"top.erc20_amount,"+
+			"top.erc20_amount/1e18, "+
+			"w.eth_amount,"+
+			"w.eth_amount/1e18, "+
+			"w.cst_amount,"+
+			"w.cst_amount/1e18, "+
+			"w.nft_id,"+
+			"s.donations_round_count,"+
+			"s.donations_round_total,"+
+			"s.donations_round_total/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
@@ -178,11 +188,11 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
 				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
 				"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
-				"LEFT JOIN LATERAL (" +
-					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
-						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
-						"JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
-				") d ON p.donation_evt_id=d.evtlog_id "+
+			"LEFT JOIN LATERAL (" +
+				"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
+					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
+			") d ON p.donation_evt_id=d.evtlog_id "+
 			"WHERE p.round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
@@ -190,10 +200,14 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
-	var null_endurance_tid,null_lastcst_tid sql.NullInt64
+	var null_main_cst_amount sql.NullString
+	var null_main_cst_amount_eth sql.NullFloat64
+	var null_charity_amount,null_charity_addr sql.NullString
+	var null_charity_amount_eth sql.NullFloat64
+	var null_endurance_tid,null_lastcst_tid,null_warrior_nft_id sql.NullInt64
 	var null_endurance_addr,null_lastcst_addr,null_warrior_addr sql.NullString
-	var null_endurance_erc20_amount,null_lastcst_erc20_amount,null_warrior_amount sql.NullString
-	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float,null_warrior_amount_float sql.NullFloat64
+	var null_endurance_erc20_amount,null_lastcst_erc20_amount,null_warrior_eth_amount,null_warrior_cst_amount sql.NullString
+	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float,null_warrior_eth_amount_float,null_warrior_cst_amount_float sql.NullFloat64
 	err := row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -206,6 +220,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		&rec.TimeoutTs,
 		&rec.Amount,
 		&rec.AmountEth,
+		&null_main_cst_amount,
+		&null_main_cst_amount_eth,
 		&rec.RoundNum,
 		&rec.TokenId,
 		&null_seed,
@@ -215,9 +231,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		&rec.RoundStats.TotalRaffleEthDeposits,
 		&rec.RoundStats.TotalRaffleEthDepositsEth,
 		&rec.RoundStats.TotalRaffleNFTs,
-		&rec.CharityAmount,
-		&rec.CharityAmountETH,
-		&rec.CharityAddress,
+		&null_charity_amount,
+		&null_charity_amount_eth,
+		&null_charity_addr,
 		&null_dep_amount,
 		&null_dep_amount_eth,
 		&null_dep_amount_per_tok,
@@ -233,8 +249,11 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		&null_endurance_erc20_amount_float,
 		&null_lastcst_erc20_amount,
 		&null_lastcst_erc20_amount_float,
-		&null_warrior_amount,
-		&null_warrior_amount_float,
+		&null_warrior_eth_amount,
+		&null_warrior_eth_amount_float,
+		&null_warrior_cst_amount,
+		&null_warrior_cst_amount_float,
+		&null_warrior_nft_id,
 		&rec.RoundStats.TotalDonatedCount,
 		&rec.RoundStats.TotalDonatedAmount,
 		&rec.RoundStats.TotalDonatedAmountEth,
@@ -247,6 +266,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		os.Exit(1)
 	}
 	if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
+	if null_charity_amount.Valid { rec.CharityAmount = null_charity_amount.String }
+	if null_charity_amount_eth.Valid { rec.CharityAmountETH = null_charity_amount_eth.Float64 }
+	if null_charity_addr.Valid { rec.CharityAddress = null_charity_addr.String }
 
 	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(round_num,false)
 	staking_nft_winners := sw.Get_raffle_nft_winners_by_round(round_num,true)
@@ -264,10 +286,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	if null_num_staked_nfts.Valid { rec.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 	if null_endurance_tid.Valid { rec.EnduranceWinnerAddr = null_endurance_addr.String; rec.EnduranceERC721TokenId=null_endurance_tid.Int64 }
 	if null_lastcst_tid.Valid { rec.LastCstBidderAddr = null_lastcst_addr.String; rec.LastCstBidderERC721TokenId=null_lastcst_tid.Int64 }
+	if null_main_cst_amount.Valid { rec.MainPrizeCstAmount = null_main_cst_amount.String; rec.MainPrizeCstAmountEth = null_main_cst_amount_eth.Float64 }
 	if null_endurance_erc20_amount.Valid { rec.EnduranceERC20Amount = null_endurance_erc20_amount.String; rec.EnduranceERC20AmountEth = null_endurance_erc20_amount_float.Float64 }
 	if null_lastcst_erc20_amount.Valid { rec.LastCstBidderERC20Amount = null_lastcst_erc20_amount.String; rec.LastCstBidderERC20AmountEth = null_lastcst_erc20_amount_float.Float64 }
-	if null_warrior_amount.Valid { rec.ChronoWarriorAmount = null_warrior_amount.String }
-	if null_warrior_amount_float.Valid { rec.ChronoWarriorAmountEth = null_warrior_amount_float.Float64 }
+	if null_warrior_eth_amount.Valid { rec.ChronoWarriorEthAmount = null_warrior_eth_amount.String; rec.ChronoWarriorEthAmountEth = null_warrior_eth_amount_float.Float64 }
+	if null_warrior_cst_amount.Valid { rec.ChronoWarriorCstAmount = null_warrior_cst_amount.String; rec.ChronoWarriorCstAmountEth = null_warrior_cst_amount_float.Float64 }
+	if null_warrior_nft_id.Valid { rec.ChronoWarriorNftId = null_warrior_nft_id.Int64 }
 	if null_warrior_addr.Valid { rec.ChronoWarriorAddr = null_warrior_addr.String }
 
 	return true,rec

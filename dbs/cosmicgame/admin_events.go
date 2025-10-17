@@ -141,7 +141,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.percentage AS int_value, "+
 						"0 AS float_value, "+
 						"'' AS string_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_prize_pcent r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_main_prize_pcent r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
@@ -468,12 +468,12 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"t.id tx_id,"+
 						"t.tx_hash,"+
 						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
-						"r.time_stamp AS date_time, "+
-						"'' AS addr_value, "+
-						"r.new_nanoseconds AS int_value, "+
-						"0 AS float_value, "+
-						"'' AS string_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_nanosec_extra r "+
+					"r.time_stamp AS date_time, "+
+					"'' AS addr_value, "+
+					"r.new_microseconds AS int_value, "+
+					"0 AS float_value, "+
+					"'' AS string_value "+
+				"FROM "+sw.S.SchemaName()+".cg_adm_prize_microsec r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
@@ -557,8 +557,8 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.time_stamp AS date_time, "+
 						"'' AS addr_value," +
 						"0 AS int_value, "+
-						"r.new_multiplier/1e18 AS float_value, "+
-						"r.new_multiplier::TEXT AS string_value "+
+					"r.new_reward/1e18 AS float_value, "+
+					"r.new_reward::TEXT AS string_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_erc_rwd_mul r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+

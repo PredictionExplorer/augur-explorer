@@ -19,21 +19,24 @@
 	</tr>
 	{{- range $i, $change := .GlobalPrizeHistory}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{ if eq 0 .RecordType}}Raffle ETH Deposit{{end}}
-				{{ if eq 1 .RecordType}}CS NFT Token{{end}}
-				{{ if eq 2 .RecordType}}Donated NFT{{end}}
-				{{ if eq 3 .RecordType}}Main Prize{{end}}
-				{{ if eq 4 .RecordType}}CST Staking ETH Deposit{{end}}
-				{{ if eq 5 .RecordType}}RWalk Staking Raffle Token{{end}}
-				{{ if eq 6 .RecordType}}CST Staking Raffle Token{{end}}
-				{{ if eq 7 .RecordType}}Endurance Champion NFT Prize{{end}}
-				{{ if eq 8 .RecordType}}Last CST Bidder NFT Prize{{end}}
-				{{ if eq 9 .RecordType}}Endurance Champion ERC20 Prize{{end}}
-				{{ if eq 10 .RecordType}}Last CST BidderERC20 Prize{{end}}
-				{{ if eq 11 .RecordType}}Donated ERC20 Token{{end}}
-				{{ if eq 12 .RecordType}}Chrono Warrior Prize{{end}}
-			</td>
+		<td class="" title="{{.TimeStamp}}">
+			{{ if eq 0 .RecordType}}Main Prize ETH{{end}}
+			{{ if eq 1 .RecordType}}Main Prize CST (ERC20){{end}}
+			{{ if eq 2 .RecordType}}Main Prize CS NFT{{end}}
+			{{ if eq 3 .RecordType}}Raffle ETH (for bidders){{end}}
+			{{ if eq 4 .RecordType}}Raffle CST (for bidders){{end}}
+			{{ if eq 5 .RecordType}}Raffle CS NFT (for bidders){{end}}
+			{{ if eq 6 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
+			{{ if eq 7 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
+			{{ if eq 8 .RecordType}}Endurance Champion CS NFT{{end}}
+			{{ if eq 9 .RecordType}}Endurance Champion ERC20 (CST){{end}}
+			{{ if eq 10 .RecordType}}Chrono Warrior ETH{{end}}
+			{{ if eq 11 .RecordType}}Chrono Warrior CST (ERC20){{end}}
+			{{ if eq 12 .RecordType}}Chrono Warrior CS NFT{{end}}
+			{{ if eq 13 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
+			{{ if eq 15 .RecordType}}Last CST Bidder CS NFT (ERC721){{end}}
+			{{ if eq 16 .RecordType}}Last CST Bidder ERC20 (CST){{end}}
+		</td>
 			<td class="" style="text-align: center;">
 				{{.BlockNum}}
 			</td>

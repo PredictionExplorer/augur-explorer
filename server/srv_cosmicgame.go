@@ -625,9 +625,11 @@ func cosmic_game_round_info(c *gin.Context) {
 		})
 	} else {
 		nft_donations := arb_storagew.Get_nft_donations_by_prize(prize_num)
+		erc20_donations := arb_storagew.Get_erc20_donations_by_round_detailed(prize_num)
 		c.HTML(http.StatusOK, "cg_round_info.html", gin.H{
 			"RoundInfo" : prize_info,
 			"DonatedNFTs" : nft_donations,
+			"DonatedERC20s" : erc20_donations,
 		})
 	}
 }

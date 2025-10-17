@@ -962,6 +962,8 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_global(offset,limit int) []
 				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
 				"w.time_stamp,"+
 				"w.token_id,"+
+				"w.cst_amount,"+
+				"w.cst_amount/1e18 cst_amount_eth,"+
 				"w.winner_idx,"+
 				"w.round_num,"+
 				"w.winner_aid,"+
@@ -990,6 +992,8 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_global(offset,limit int) []
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.TokenId,
+			&rec.CstAmount,
+			&rec.CstAmountEth,
 			&rec.WinnerIndex,
 			&rec.RoundNum,
 			&rec.WinnerAid,
@@ -1013,6 +1017,8 @@ func (sw *SQLStorageWrapper) Get_staking_cst_mints_global(offset,limit int) []p.
 				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
 				"w.time_stamp,"+
 				"w.token_id,"+
+				"w.cst_amount,"+
+				"w.cst_amount/1e18 cst_amount_eth,"+
 				"w.winner_idx,"+
 				"w.round_num,"+
 				"w.winner_aid,"+
@@ -1041,6 +1047,8 @@ func (sw *SQLStorageWrapper) Get_staking_cst_mints_global(offset,limit int) []p.
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.TokenId,
+			&rec.CstAmount,
+			&rec.CstAmountEth,
 			&rec.WinnerIndex,
 			&rec.RoundNum,
 			&rec.WinnerAid,

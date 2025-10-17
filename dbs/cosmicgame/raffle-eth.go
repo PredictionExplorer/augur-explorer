@@ -20,11 +20,12 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 				"t.tx_hash,"+
 				"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
 				"rd.time_stamp AS date_time, "+
-				"wa.addr,"+
-				"rd.winner_aid,"+
-				"rd.round_num,"+
-				"rd.amount/1e18 AS amount_eth,"+
-				"rd.claimed, "+
+			"wa.addr,"+
+			"rd.winner_aid,"+
+			"rd.winner_index,"+
+			"rd.round_num,"+
+			"rd.amount/1e18 AS amount_eth,"+
+			"rd.claimed, "+
 				"EXTRACT(EPOCH FROM rw.time_stamp)::BIGINT AS tstmp, "+
 				"rw.time_stamp "+
 			"FROM cg_prize_deposit rd "+
@@ -52,22 +53,23 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 			&rec.TxId,
 			&rec.TxHash,
 			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.WinnerAddr,
-			&rec.WinnerAid,
-			&rec.RoundNum,
-			&rec.Amount,
-			&rec.Claimed,
-			&null_ts,
-			&null_date,
-		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		if null_ts.Valid { rec.ClaimTimeStamp = null_ts.Int64 }
-		if null_date.Valid { rec.ClaimDateTime = null_date.String }
-		records = append(records,rec)
+		&rec.DateTime,
+		&rec.WinnerAddr,
+		&rec.WinnerAid,
+		&rec.WinnerIndex,
+		&rec.RoundNum,
+		&rec.Amount,
+		&rec.Claimed,
+		&null_ts,
+		&null_date,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	if null_ts.Valid { rec.ClaimTimeStamp = null_ts.Int64 }
+	if null_date.Valid { rec.ClaimDateTime = null_date.String }
+	records = append(records,rec)
 	}
 	return records
 }
@@ -83,15 +85,16 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 				"t.tx_hash,"+
 				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
 				"p.time_stamp,"+
-				"p.winner_aid,"+
-				"wa.addr,"+
-				"p.round_num, "+
-				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
-				"LEFT JOIN transaction t ON t.id=p.tx_id "+
-				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"ORDER BY p.id DESC "+
-			"OFFSET $1 LIMIT $2"
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num, "+
+			"p.amount/1e18 amount_eth "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+		"ORDER BY p.id DESC "+
+		"OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
@@ -112,6 +115,7 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 			&rec.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.WinnerIndex,
 			&rec.RoundNum,
 			&rec.Amount,
 		)
@@ -134,15 +138,16 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 				"t.tx_hash,"+
 				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
 				"p.time_stamp,"+
-				"p.winner_aid,"+
-				"wa.addr,"+
-				"p.round_num,"+
-				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
-				"LEFT JOIN transaction t ON t.id=p.tx_id "+
-				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"WHERE p.round_num = $1 " +
-			"ORDER BY p.id DESC "
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num,"+
+			"p.amount/1e18 amount_eth "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+		"WHERE p.round_num = $1 " +
+		"ORDER BY p.id DESC "
 
 	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
@@ -163,6 +168,7 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 			&rec.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.WinnerIndex,
 			&rec.RoundNum,
 			&rec.Amount,
 		)

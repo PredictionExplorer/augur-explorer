@@ -91,6 +91,8 @@ type CGRoundRec struct {
 	StakingPerToken				string
 	StakingPerTokenEth			float64
 	StakingNumStakedTokens		int64
+	MainPrizeCstAmount			string
+	MainPrizeCstAmountEth		float64
 	EnduranceWinnerAddr			string
 	EnduranceERC721TokenId			int64
 	LastCstBidderAddr			string
@@ -100,8 +102,11 @@ type CGRoundRec struct {
 	LastCstBidderERC20Amount	string
 	LastCstBidderERC20AmountEth	float64
 	ChronoWarriorAddr			string
-	ChronoWarriorAmount			string
-	ChronoWarriorAmountEth		float64
+	ChronoWarriorEthAmount		string
+	ChronoWarriorEthAmountEth	float64
+	ChronoWarriorCstAmount		string
+	ChronoWarriorCstAmountEth	float64
+	ChronoWarriorNftId			int64
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	StakingNFTWinners			[]CGRaffleNFTWinnerRec
@@ -285,6 +290,7 @@ type CGPrizeDepositRec struct {
 	RecordType					int64		// 0 - undefined ; 1 - Raffle Deposit ; 2 - Chronor Warrior
 	WinnerAddr					string
 	WinnerAid					int64
+	WinnerIndex					int64
 	RoundNum					int64
 	Amount						float64
 	Claimed						bool
@@ -303,6 +309,8 @@ type CGRaffleNFTWinnerRec struct {
 	WinnerAid					int64
 	RoundNum					int64
 	TokenId						int64
+	CstAmount					string
+	CstAmountEth				float64
 	WinnerIndex					int64
 	IsRWalk						bool
 	IsStaker					bool

@@ -25,6 +25,8 @@ func query_nft_winners(is_staker bool) string {
 				"wa.addr,"+
 				"p.round_num, "+
 				"p.token_id, "+
+				"p.cst_amount, "+
+				"p.cst_amount/1e18 cst_amount_eth, "+
 				"p.winner_idx, "+
 				"p.is_rwalk,"+
 				"p.is_staker "+
@@ -59,6 +61,8 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64,is_
 			&rec.WinnerAddr,
 			&rec.RoundNum,
 			&rec.TokenId,
+			&rec.CstAmount,
+			&rec.CstAmountEth,
 			&rec.WinnerIndex,
 			&rec.IsRWalk,
 			&rec.IsStaker,
@@ -86,6 +90,8 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaff
 				"wa.addr,"+
 				"p.round_num, "+
 				"p.token_id, "+
+				"p.cst_amount, "+
+				"p.cst_amount/1e18 cst_amount_eth, "+
 				"p.winner_idx, "+
 				"p.is_rwalk,"+
 				"p.is_staker "+
@@ -115,6 +121,8 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaff
 			&rec.WinnerAddr,
 			&rec.RoundNum,
 			&rec.TokenId,
+			&rec.CstAmount,
+			&rec.CstAmountEth,
 			&rec.WinnerIndex,
 			&rec.IsRWalk,
 			&rec.IsStaker,
