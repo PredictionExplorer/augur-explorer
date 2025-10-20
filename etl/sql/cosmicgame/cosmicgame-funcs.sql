@@ -531,10 +531,10 @@ BEGIN
 	END IF;
 
 	-- Insert TWO records in cg_prize table for Last CST Bidder prizes
-	-- 1) ERC721 CS NFT prize (ptype=15)
+	-- 1) ERC721 CS NFT prize (ptype=14)
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,14);
+	-- 2) ERC20 CST token prize (ptype=15)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,15);
-	-- 2) ERC20 CST token prize (ptype=16)
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,16);
 
 	RETURN NEW;
 END;
@@ -549,10 +549,10 @@ BEGIN
 		WHERE round_num=OLD.round_num;
 
 	-- Remove BOTH corresponding records from cg_prize table
-	-- 1) ERC721 CS NFT prize (ptype=15)
+	-- 1) ERC721 CS NFT prize (ptype=14)
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=14;
+	-- 2) ERC20 CST token prize (ptype=15)
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=15;
-	-- 2) ERC20 CST token prize (ptype=16)
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=16;
 
 	RETURN OLD;
 END;

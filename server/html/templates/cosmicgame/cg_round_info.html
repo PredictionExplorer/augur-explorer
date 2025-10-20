@@ -275,6 +275,56 @@
 		</tr>
 	{{- end}}
 </table>
+<h3>All Prizes for This Round</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Prize Type</th>
+		<th class="market_reports">Winner Address</th>
+		<th class="market_reports">ETH Amount</th>
+		<th class="market_reports">CST Amount</th>
+		<th class="market_reports">NFT Token ID</th>
+	</tr>
+	{{- range $i, $change := .RoundInfo.AllPrizes}}
+		<tr class="market_reports">
+			<td class="">
+				{{ if eq 0 .RecordType}}Main Prize ETH{{end}}
+				{{ if eq 1 .RecordType}}Main Prize CST (ERC20){{end}}
+				{{ if eq 2 .RecordType}}Main Prize CS NFT{{end}}
+				{{ if eq 3 .RecordType}}Raffle ETH (for bidders){{end}}
+				{{ if eq 4 .RecordType}}Raffle CST (for bidders){{end}}
+				{{ if eq 5 .RecordType}}Raffle CS NFT (for bidders){{end}}
+				{{ if eq 6 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
+				{{ if eq 7 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
+				{{ if eq 8 .RecordType}}Endurance Champion CS NFT{{end}}
+				{{ if eq 9 .RecordType}}Endurance Champion ERC20 (CST){{end}}
+				{{ if eq 10 .RecordType}}Chrono Warrior ETH{{end}}
+				{{ if eq 11 .RecordType}}Chrono Warrior CST (ERC20){{end}}
+				{{ if eq 12 .RecordType}}Chrono Warrior CS NFT{{end}}
+				{{ if eq 13 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
+				{{ if eq 14 .RecordType}}Last CST Bidder CS NFT (ERC721){{end}}
+				{{ if eq 15 .RecordType}}Last CST Bidder ERC20 (CST){{end}}
+			</td>
+			<td class="addr">
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td style="text-align: right;">
+				{{ if or (eq 0 .RecordType) (eq 3 .RecordType) (eq 10 .RecordType) (eq 13 .RecordType) }}
+					{{ printf "%.5f" .AmountEth }} ETH
+				{{ end }}
+			</td>
+			<td style="text-align: right;">
+				{{ if or (eq 1 .RecordType) (eq 4 .RecordType) (eq 6 .RecordType) (eq 9 .RecordType) (eq 11 .RecordType) (eq 15 .RecordType) }}
+					{{ printf "%.5f" .AmountEth }} CST
+				{{ end }}
+			</td>
+			<td style="text-align: center;">
+				{{ if or (eq 2 .RecordType) (eq 5 .RecordType) (eq 7 .RecordType) (eq 8 .RecordType) (eq 12 .RecordType) (eq 14 .RecordType) }}
+					{{ .TokenId }}
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
 <br/><br/>
 <code>
 	API: /api/cosmicgame/rounds/info/[prize_num]<br/>

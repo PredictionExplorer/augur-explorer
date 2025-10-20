@@ -66,7 +66,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 			"LEFT JOIN "+sw.S.SchemaName()+".transaction tcw ON tcw.id = cw.tx_id "+
 			"LEFT JOIN "+sw.S.SchemaName()+".cg_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 13) "+
 			"LEFT JOIN "+sw.S.SchemaName()+".transaction ted ON ted.id = ed.tx_id "+
-			"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (15,16)) "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (14,15)) "+
 			"LEFT JOIN "+sw.S.SchemaName()+".transaction tlw ON tlw.id = lw.tx_id "+
 		"WHERE ("+
 				"(p.ptype IN (0,1,2) AND pc.winner_aid = $1) OR "+
@@ -74,7 +74,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 				"(p.ptype IN (4,5,6,7) AND rnw.winner_aid = $1) OR "+
 				"(p.ptype IN (8,9) AND ew.winner_aid = $1) OR "+
 				"(p.ptype IN (10,11,12) AND cw.winner_aid = $1) OR "+
-				"(p.ptype IN (15,16) AND lw.winner_aid = $1)"+
+				"(p.ptype IN (14,15) AND lw.winner_aid = $1)"+
 			") "+
 		"ORDER BY p.round_num DESC, p.winner_index, p.ptype "+
 		"OFFSET $2 LIMIT $3"
@@ -178,7 +178,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 				"LEFT JOIN "+sw.S.SchemaName()+".address wa_cw ON cw.winner_aid = wa_cw.address_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".cg_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 13) "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction ted ON ted.id = ed.tx_id "+
-				"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (15,16)) "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (14,15)) "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction tlw ON tlw.id = lw.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address wa_lw ON lw.winner_aid = wa_lw.address_id "+
 			"ORDER BY p.round_num DESC, p.winner_index, p.ptype "+

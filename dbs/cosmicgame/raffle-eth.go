@@ -131,23 +131,24 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 
 	var query string
 	query =  "SELECT " +
-				"p.id,"+
-				"p.evtlog_id,"+
-				"p.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
-				"p.time_stamp,"+
-			"p.winner_aid,"+
-			"wa.addr,"+
-			"p.winner_index,"+
-			"p.round_num,"+
-			"p.amount/1e18 amount_eth "+
-		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
-			"LEFT JOIN transaction t ON t.id=p.tx_id "+
-			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-		"WHERE p.round_num = $1 " +
-		"ORDER BY p.id DESC "
+			"p.id,"+
+			"p.evtlog_id,"+
+			"p.block_num,"+
+			"t.id,"+
+			"t.tx_hash,"+
+			"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+			"p.time_stamp,"+
+		"p.winner_aid,"+
+		"wa.addr,"+
+		"p.winner_index,"+
+		"p.round_num,"+
+		"p.amount/1e18 amount_eth "+
+	"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+		"INNER JOIN "+sw.S.SchemaName()+".cg_prize pr ON (pr.round_num = p.round_num AND pr.winner_index = p.winner_index AND pr.ptype = 3) "+
+		"LEFT JOIN transaction t ON t.id=p.tx_id "+
+		"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+	"WHERE p.round_num = $1 " +
+	"ORDER BY p.winner_index "
 
 	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {

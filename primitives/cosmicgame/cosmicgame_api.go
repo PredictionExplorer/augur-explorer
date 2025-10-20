@@ -111,6 +111,7 @@ type CGRoundRec struct {
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	StakingNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGPrizeDepositRec
+	AllPrizes					[]CGPrizeHistory
 }
 type CGUserInfo struct {
 	AddressId					int64
@@ -364,8 +365,7 @@ type CGCosmicSignatureMintRec struct {
 }
 type CGRoundStats struct {
 	RoundNum					int64
-	T
-otalBids					int64
+	TotalBids					int64
 	TotalDonatedNFTs			int64
 	NumERC20Donations			int64
 	TotalRaffleEthDeposits		string
