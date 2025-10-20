@@ -11,8 +11,10 @@
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
+		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
 		<th class="market_reports">Amount (ETH)</th>
+		<th class="market_reports">Claimed</th>
 	</tr>
 	{{- range $i, $change := .RaffleDeposits}}
 		<tr class="market_reports">
@@ -23,8 +25,10 @@
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
+			<td style="text-align: center;">{{ .WinnerIndex }}</td>
+			<td style="text-align: center;">{{ .RoundNum }}</td>
+			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
+			<td style="text-align: center;">{{ .Claimed }}</td>
 		</tr>
 	{{- end}}
 </table>

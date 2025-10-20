@@ -364,7 +364,8 @@ type CGCosmicSignatureMintRec struct {
 }
 type CGRoundStats struct {
 	RoundNum					int64
-	TotalBids					int64
+	T
+otalBids					int64
 	TotalDonatedNFTs			int64
 	NumERC20Donations			int64
 	TotalRaffleEthDeposits		string

@@ -161,6 +161,7 @@ type CGPrizesEthWithdrawal struct {
 	TimeStamp			int64
 	TxId				int64
 	ContractAddr		string
+	Round				int64
 	WinnerAddr			string
 	Amount				string
 }

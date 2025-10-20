@@ -333,14 +333,15 @@ func (sw *SQLStorageWrapper) Insert_prize_withdrawal(evt *p.CGPrizesEthWithdrawa
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_withdrawal("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
+					"round_num,winner_aid,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
 		contract_aid,
+		evt.Round,
 		winner_aid,
 		evt.Amount,
 	)

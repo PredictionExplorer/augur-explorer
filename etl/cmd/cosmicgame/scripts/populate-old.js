@@ -65,6 +65,30 @@ async function main() {
 			num_unstaked=num_unstaked+1;
 		}
 	}
+	async function withdrawAllUnclaimedDeposits() {
+    // Query all unclaimed deposits
+    let filter = prizesWallet.filters.EthReceived();
+    let events = await prizesWallet.queryFilter(filter);
+
+    let withdrawal_done = {};
+
+    for (let event of events) {
+        let winner_address = event.args.prizeWinnerAddress;
+        let round_num = event.args.roundNum;
+        let withdrawal_key = `${winner_address}_${round_num}`;
+
+        if (withdrawal_done[withdrawal_key]) continue;
+
+        // Check if already withdrawn (query blockchain state)
+        try {
+            let winner_signer = await hre.ethers.getSigner(winner_address);
+            await prizesWallet.connect(winner_signer).withdrawEth(round_num);
+            withdrawal_done[withdrawal_key] = 1;
+        } catch (e) {
+            // Already withdrawn or no balance
+        }
+    }
+}
         [owner, addr1, addr2, addr3, addr4, addr5, ...addrs] =
         await ethers.getSigners();
     const {
@@ -494,20 +518,25 @@ async function main() {
 
     await prizesWallet.connect(addr3).claimDonatedNft(0n);
     await prizesWallet.connect(addr3).claimDonatedNft(1n);
+/*
     topic_sig = prizesWallet.interface.getEvent("EthReceived").topicHash;
     deposit_logs = receipt.logs.filter((x) => x.topics.indexOf(topic_sig) >= 0);
     let withdrawal_done = [];
     for (let i = 0; i < deposit_logs.length; i++) {
         let wlog = prizesWallet.interface.parseLog(deposit_logs[i]);
         let winner_signer = await hre.ethers.getSigner(wlog.args.prizeWinnerAddress);
-        if (typeof withdrawal_done[wlog.args.winner] === "undefined") {
-            await prizesWallet.connect(winner_signer).withdrawEth();
-            withdrawal_done[wlog.args.winner] = 1;
-        } else {
-            // skip
-        }
+    	let tmp_rn = await cosmicGameProxy.roundNum();
+		for (let j = 0; j < Number(tmp_rn); j++) {
+			if (typeof withdrawal_done[wlog.args.winner] === "undefined") {
+				await prizesWallet.connect(winner_signer).withdrawEth(j);
+				withdrawal_done[wlog.args.winner] = 1;
+			} else {
+				// skip
+			}
+		}
     }
-
+*/
+	withdrawAllUnclaimedDeposits();
     bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     await cosmicGameProxy.connect(addr1).bidWithEth(-1,"", { value: bidPrice  });
     bidPrice = await cosmicGameProxy.getNextEthBidPrice();

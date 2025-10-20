@@ -980,11 +980,13 @@ func proc_eth_prize_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Round = log.Topics[1].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PrizeWithdrawn {\n")
+	Info.Printf("\tRound: %v\n",evt.Round)
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")

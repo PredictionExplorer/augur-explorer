@@ -195,6 +195,7 @@ CREATE TABLE cg_prize_withdrawal (	-- PrizesWallet.sol:EthWithdrawn
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)

@@ -832,7 +832,12 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_raffle_winner_stats(winner_aid,withdrawal_sum) VALUES(NEW.winner_aid,NEW.amount);
 	END IF;
-	UPDATE cg_prize_deposit SET claimed=TRUE,withdrawal_id=NEW.evtlog_id WHERE (evtlog_id<NEW.evtlog_id) AND (withdrawal_id=0) AND (winner_aid=NEW.winner_aid);
+	-- Mark deposits as claimed for this specific round (per-round withdrawal)
+	UPDATE cg_prize_deposit 
+		SET claimed=TRUE, withdrawal_id=NEW.evtlog_id 
+		WHERE (round_num=NEW.round_num) 
+		AND (withdrawal_id=0) 
+		AND (winner_aid=NEW.winner_aid);
 	UPDATE cg_glob_stats SET total_raffle_eth_withdrawn = (total_raffle_eth_withdrawn + NEW.amount);
 	RETURN NEW;
 END;
@@ -844,9 +849,14 @@ BEGIN
 	UPDATE cg_raffle_winner_stats
 		SET
 			withdrawal_sum = (withdrawal_sum - OLD.amount),
-			amount_sum = (amount_sum - OLD.amount)
+			amount_sum = (amount_sum + OLD.amount)
 		WHERE winner_aid = OLD.winner_aid;
-	UPDATE cg_prize_deposit SET claimed=FALSE,withdrawal_id=0 WHERE withdrawal_id = OLD.evtlog_id;
+	-- Unclaim deposits for this specific round
+	UPDATE cg_prize_deposit 
+		SET claimed=FALSE, withdrawal_id=0 
+		WHERE (round_num=OLD.round_num) 
+		AND (withdrawal_id = OLD.evtlog_id) 
+		AND (winner_aid=OLD.winner_aid);
 	UPDATE cg_glob_stats SET total_raffle_eth_withdrawn = (total_raffle_eth_withdrawn - OLD.amount);
 	RETURN OLD;
 END;
