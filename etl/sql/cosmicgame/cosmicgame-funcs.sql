@@ -127,6 +127,7 @@ BEGIN
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = 0;
 	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
 	
 	-- Insert THREE records in cg_prize table for Main Prize
 	-- 1) Main Prize ETH (ptype=0)
@@ -178,6 +179,7 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 	UPDATE cg_erc20_donation_stats SET winner_aid=0 WHERE round_num=OLD.round_num;
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.cst_amount);
 	
 	-- Remove THREE corresponding records from cg_prize table
 	-- 1) Main Prize ETH (ptype=0)
@@ -338,28 +340,8 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_raffle_winner_stats
-		SET
-			amount_sum	 = (amount_sum + NEW.amount),
-			raffles_count = (raffles_count + 1)
-		WHERE winner_aid = NEW.winner_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_raffle_winner_stats(winner_aid,amount_sum,raffles_count)
-			VALUES(NEW.winner_aid,NEW.amount,1);
-	END IF;
-	UPDATE cg_round_stats
-		SET
-			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount)
-		WHERE round_num=NEW.round_num;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits)
-			VALUES(NEW.round_num,NEW.amount);
-	END IF;
-	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount);
-	-- Note: cg_prize records are created by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
-	-- Not inserting here to avoid duplicates
+	-- Note: Statistics are updated by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
+	-- Not updating stats here to avoid double-counting
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -367,18 +349,8 @@ CREATE OR REPLACE FUNCTION on_prize_deposit_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE cg_raffle_winner_stats
-		SET
-			amount_sum	 = (amount_sum - OLD.amount),
-			raffles_count = (raffles_count - 1)
-		WHERE winner_aid = OLD.winner_aid;
-	UPDATE cg_round_stats
-		SET
-			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
-		WHERE round_num=OLD.round_num;
-	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount);
-	-- Note: cg_prize records are deleted by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
-	-- Not deleting here to avoid issues
+	-- Note: Statistics are updated by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
+	-- Not updating stats here to avoid double-counting
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -424,6 +396,10 @@ BEGIN
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints + 1);
 		END IF;
 	END IF;
+	
+	-- Update CST prize total
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
+	
 	-- Insert TWO records in cg_prize table with conditional ptype based on is_rwalk field
 	IF NEW.is_rwalk THEN
 		-- For RandomWalk stakers: CST (ptype=13) and CS NFT (ptype=14)
@@ -462,6 +438,10 @@ BEGIN
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints - 1);
 		END IF;
 	END IF;
+	
+	-- Update CST prize total
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.cst_amount);
+	
 	-- Remove TWO corresponding records from cg_prize table with conditional ptype based on is_rwalk field
 	IF OLD.is_rwalk THEN
 		-- For RandomWalk stakers: CST (ptype=13) and CS NFT (ptype=14)
@@ -488,6 +468,8 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,total_reward_nfts) VALUES(NEW.round_num,1);
 	END IF;
+	
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
 
 	-- Insert TWO records in cg_prize table for Endurance Champion prizes
 	-- 1) ERC721 CS NFT prize (ptype=5)
@@ -506,6 +488,8 @@ BEGIN
 		SET
 			total_reward_nfts = (total_reward_nfts - 1)
 		WHERE round_num=OLD.round_num;
+	
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
 
 	-- Remove BOTH corresponding records from cg_prize table
 	-- 1) ERC721 CS NFT prize (ptype=5)
@@ -529,6 +513,8 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,total_reward_nfts) VALUES(NEW.round_num,1);
 	END IF;
+	
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
 
 	-- Insert TWO records in cg_prize table for Last CST Bidder prizes
 	-- 1) ERC721 CS NFT prize (ptype=3)
@@ -547,6 +533,8 @@ BEGIN
 		SET
 			total_reward_nfts = (total_reward_nfts - 1)
 		WHERE round_num=OLD.round_num;
+	
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
 
 	-- Remove BOTH corresponding records from cg_prize table
 	-- 1) ERC721 CS NFT prize (ptype=3)
@@ -1361,14 +1349,8 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_round_stats
-		SET
-			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.eth_amount)
-		WHERE round_num=NEW.round_num;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits) VALUES(NEW.round_num,NEW.eth_amount);
-	END IF;
+	UPDATE cg_glob_stats SET total_chrono_warrior_eth_deposits = (total_chrono_warrior_eth_deposits + NEW.eth_amount);
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
 
 	-- Insert THREE records in cg_prize table for Chrono Warrior prizes
 	-- 1) Chrono Warrior ETH (ptype=7)
@@ -1385,10 +1367,8 @@ CREATE OR REPLACE FUNCTION on_chrono_warrior_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE cg_round_stats
-		SET
-			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.eth_amount)
-		WHERE round_num=OLD.round_num;
+	UPDATE cg_glob_stats SET total_chrono_warrior_eth_deposits = (total_chrono_warrior_eth_deposits - OLD.eth_amount);
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.cst_amount);
 
 	-- Remove THREE corresponding records from cg_prize table
 	-- 1) Chrono Warrior ETH (ptype=7)
@@ -1406,6 +1386,16 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
+	UPDATE cg_raffle_winner_stats
+		SET
+			amount_sum = (amount_sum + NEW.amount),
+			raffles_count = (raffles_count + 1)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_raffle_winner_stats(winner_aid,amount_sum,raffles_count) VALUES(NEW.winner_aid,NEW.amount,1);
+	END IF;
+
 	UPDATE cg_round_stats
 		SET
 			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount)
@@ -1414,6 +1404,8 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits) VALUES(NEW.round_num,NEW.amount);
 	END IF;
+
+	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount);
 
 	-- Insert record in cg_prize table with ptype=10 for Raffle ETH (for bidders)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,10);
@@ -1425,10 +1417,18 @@ CREATE OR REPLACE FUNCTION on_raffle_eth_winner_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	UPDATE cg_raffle_winner_stats
+		SET
+			amount_sum = (amount_sum - OLD.amount),
+			raffles_count = (raffles_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
+
 	UPDATE cg_round_stats
 		SET
 			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
 		WHERE round_num=OLD.round_num;
+
+	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount);
 
 	-- Remove corresponding record from cg_prize table
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=10;

@@ -28,6 +28,8 @@ type CGStatistics struct {
 	TotalNamedTokens			int64
 	TotalRaffleEthDeposits		float64
 	TotalRaffleEthWithdrawn		float64
+	TotalChronoWarriorEthDeposits float64
+	TotalCSTGivenInPrizes		float64
 	NumWinnersWithPendingRaffleWithdrawal int64
 	TotalNFTDonated				int64
 	TotalCSTConsumed			string

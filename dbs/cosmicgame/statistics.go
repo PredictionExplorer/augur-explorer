@@ -26,9 +26,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"num_wins, "+
 				"num_rwalk_used, "+
 				"num_mints, "+
-				"total_raffle_eth_deposits/1e18, "+
-				"total_raffle_eth_withdrawn/1e18, "+
-				"total_nft_donated,"+
+			"total_raffle_eth_deposits/1e18, "+
+			"total_raffle_eth_withdrawn/1e18, "+
+			"total_chrono_warrior_eth_deposits/1e18, "+
+			"total_cst_given_in_prizes/1e18, "+
+			"total_nft_donated,"+
 				"num_bids_cst,"+
 				"total_cst_consumed,"+
 				"total_cst_consumed/1e18, "+
@@ -55,6 +57,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&stats.NumCSTokenMints,
 		&stats.TotalRaffleEthDeposits,
 		&stats.TotalRaffleEthWithdrawn,
+		&stats.TotalChronoWarriorEthDeposits,
+		&stats.TotalCSTGivenInPrizes,
 		&stats.TotalNFTDonated,
 		&stats.NumBidsCST,
 		&stats.TotalCSTConsumed,

@@ -231,10 +231,22 @@
 				<td class="market_reports">Prize Percentage</td>
 				<td class="market_reports">{{.PrizePercentage}} %</td>
 			</tr>
-			<tr class="market_reports">
-				<td class="market_reports">Raffle Percentage</td>
-				<td class="market_reports">{{.RafflePercentage}} %</td>
-			</tr>
+		<tr class="market_reports">
+			<td class="market_reports">Raffle Percentage</td>
+			<td class="market_reports">{{.RafflePercentage}} %</td>
+		</tr>
+		<tr class="market_reports">
+			<td class="market_reports">Total Raffle ETH Deposits</td>
+			<td class="market_reports">{{printf "%.4f" .MainStats.TotalRaffleEthDeposits}} ETH</td>
+		</tr>
+		<tr class="market_reports">
+			<td class="market_reports">Total Chrono Warrior ETH Deposits</td>
+			<td class="market_reports">{{printf "%.4f" .MainStats.TotalChronoWarriorEthDeposits}} ETH</td>
+		</tr>
+		<tr class="market_reports">
+			<td class="market_reports">Total CST Given in Prizes</td>
+			<td class="market_reports">{{printf "%.2f" .MainStats.TotalCSTGivenInPrizes}} CST</td>
+		</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Staking Percentage</td>
 				<td class="market_reports">{{.StakingPercentage}} %</td>
