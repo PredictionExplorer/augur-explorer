@@ -26,36 +26,36 @@
 	</tr>
 	{{- range $i, $change := .Rounds}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.DateTime}}</a>
+			<td class="" title="{{.ClaimPrizeTx.TimeStamp}}">
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.DateTime}}</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.MainPrize.WinnerAddr}}">{{.MainPrize.WinnerAddr}}</a>
 			</td>
 			<td class="" style="text-align:center;">{{.RoundNum}}</td>
-			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}} ETH </td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td style="text-align: right;" title="{{.MainPrize.Seed}}">{{printf "%.6f" .MainPrize.EthAmountEth}} ETH </td>
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/nft/by_round/{{.RoundNum}}">&nbsp;&nbsp;Donated NFTs</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/erc20/by_round/detailed/{{.RoundNum}}">&nbsp;&nbsp;Donated ERC20</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/eth/both/by_round/{{.RoundNum}}">&nbsp;&nbsp;Donated ETH</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/bid/list/by_round/{{.RoundNum}}/0/0/100000">&nbsp;&nbsp;Bid list</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/raffle/deposits/by_round/{{.RoundNum}}">&nbsp;&nbsp;Raffle ETH</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/raffle/nft/by_round/{{.RoundNum}}">&nbsp;&nbsp;Raffle NFTs</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/staking/cst/rewards/by_round/{{.RoundNum}}">&nbsp;&nbsp;Staking</a>
 			</td>
-			<td class="addr" title="{{.WinnerAid}}">
+			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/eth/simple/by_round/{{.RoundNum}}">&nbsp;&nbsp;DS</a>
 				<a href="/black/cosmicgame/donations/eth/with_info/by_round/{{.RoundNum}}">&nbsp;&nbsp;DWI</a>
 			</td>

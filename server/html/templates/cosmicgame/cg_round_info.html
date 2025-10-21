@@ -8,7 +8,7 @@
 <table>
 	<tr>
 		<td>EvtLog ID</td>
-		<td>{{.RoundInfo.EvtLogId}}
+		<td>{{.RoundInfo.ClaimPrizeTx.EvtLogId}}
 	</tr>
 	<tr>
 		<td>BlockNum</td>
@@ -16,22 +16,22 @@
 	</tr>
 	<tr>
 		<td>TxId</td>
-		<td>{{.RoundInfo.TxId}}</td>
+		<td>{{.RoundInfo.ClaimPrizeTx.TxId}}</td>
 	</tr>
 	<tr>
 		<td>TxHash</td>
-		<td>{{.RoundInfo.TxHash}}</td>
+		<td>{{.RoundInfo.ClaimPrizeTx.TxHash}}</td>
 	</td>
 	<tr>
 		<td>TimeStamp</td>
 		<td>
-			{{.RoundInfo.TimeStamp}}
+			{{.RoundInfo.ClaimPrizeTx.TimeStamp}}
 		</td>
 	</tr>
 	<tr>
 		<td>DateTime</td>
 		<td>
-			{{.RoundInfo.DateTime}}
+			{{.RoundInfo.ClaimPrizeTx.DateTime}}
 		</td>
 	</tr>
 	<tr>
@@ -42,71 +42,71 @@
 	</tr>
 	<tr>
 		<td>Winner Address</td>
-		<td><a class="addr" href="/black/cosmicgame/user/info/{{.PrizeInfo.WinnerAddr}}">{{.RoundInfo.WinnerAddr}}</a></td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.PrizeInfo.WinnerAddr}}">{{.RoundInfo.MainPrize.WinnerAddr}}</a></td>
 	</tr>
 	<tr>
 		<td>Main Prize ETH Amount</td>
-		<td>{{.RoundInfo.AmountEth}} ETH</td>
+		<td>{{.RoundInfo.MainPrize.EthAmountEth}} ETH</td>
 	</tr>
 	<tr>
 		<td>Main Prize CST Amount</td>
-		<td>{{.RoundInfo.MainPrizeCstAmountEth}} CST</td>
+		<td>{{.RoundInfo.MainPrize.CstAmountEth}} CST</td>
 	</tr>
 	<tr>
 		<td>Main Prize NFT Token ID</td>
-		<td>{{.RoundInfo.TokenId}}</td>
+		<td>{{.RoundInfo.MainPrize.NftTokenId}}</td>
 	</tr>
 	<tr>
 		<td>Timeout Timestamp</td>
-		<td>{{.RoundInfo.TimeoutTs}}</td>
+		<td>{{.RoundInfo.MainPrize.TimeoutTs}}</td>
 	</tr>
 	<tr>
 		<td>Seed</td>
-		<td>{{.RoundInfo.Seed}}</td>
+		<td>{{.RoundInfo.MainPrize.Seed}}</td>
 	</tr>
 	<tr>
 		<td>Charity Address</td>
-		<td>{{.RoundInfo.CharityAddress}}</td>
+		<td>{{.RoundInfo.CharityDeposit.CharityAddress}}</td>
 	</tr>
 	<tr>
 		<td>Amount deposited to charity wallet</td>
-		<td>{{.RoundInfo.CharityAmountETH}}</td>
+		<td>{{.RoundInfo.CharityDeposit.CharityAmountETH}}</td>
 	</tr>
 	<tr>
 		<td>Staking Deposit ID</td>
-		<td>{{.RoundInfo.StakingDepositId}}</td>
+		<td>{{.RoundInfo.StakingDeposit.StakingDepositId}}</td>
 	</tr>
 	<tr>
 		<td>Endurance Champion prize winner (CST)</td>
-		<td>{{.RoundInfo.EnduranceWinnerAddr}} , token {{.RoundInfo.EnduranceERC721TokenId}}</td>
+		<td>{{.RoundInfo.EnduranceChampion.WinnerAddr}} , token {{.RoundInfo.EnduranceChampion.NftTokenId}}</td>
 	</tr>
 	<tr>
 		<td>Endurance Champion prize winner (ERC20)</td>
-		<td>{{.RoundInfo.EnduranceWinnerAddr}} , {{.RoundInfo.EnduranceERC20AmountEth}}</td>
+		<td>{{.RoundInfo.EnduranceChampion.WinnerAddr}} , {{.RoundInfo.EnduranceChampion.CstAmountEth}}</td>
 	</tr>
 	<tr>
 		<td>Last CST Bidder prize winner</td>
-		<td>{{.RoundInfo.LastCstBidderAddr}} , token {{.RoundInfo.LastCstBidderERC721TokenId}}</td>
+		<td>{{.RoundInfo.LastCstBidder.WinnerAddr}} , token {{.RoundInfo.LastCstBidder.NftTokenId}}</td>
 	</tr>
 	<tr>
 		<td>Last CST Bidder prize winner (ERC20)</td>
-		<td>{{.RoundInfo.LastCstBidderAddr}} , {{.RoundInfo.LastCstBidderERC20AmountEth}}</td>
+		<td>{{.RoundInfo.LastCstBidder.WinnerAddr}} , {{.RoundInfo.LastCstBidder.CstAmountEth}}</td>
 	</tr>
 	<tr>
 		<td>Chrono Warrior</td>
-		<td>{{.RoundInfo.ChronoWarriorAddr}}</td>
+		<td>{{.RoundInfo.ChronoWarrior.WinnerAddr}}</td>
 	</tr>
 	<tr>
 		<td>Chrono Warrior ETH Amount</td>
-		<td>{{.RoundInfo.ChronoWarriorEthAmountEth}} ETH</td>
+		<td>{{.RoundInfo.ChronoWarrior.EthAmountEth}} ETH</td>
 	</tr>
 	<tr>
 		<td>Chrono Warrior CST Amount</td>
-		<td>{{.RoundInfo.ChronoWarriorCstAmountEth}} CST</td>
+		<td>{{.RoundInfo.ChronoWarrior.CstAmountEth}} CST</td>
 	</tr>
 	<tr>
 		<td>Chrono Warrior NFT Token ID</td>
-		<td>{{.RoundInfo.ChronoWarriorNftId}}</td>
+		<td>{{.RoundInfo.ChronoWarrior.NftTokenId}}</td>
 	</tr>
 
 	<tr>
@@ -139,7 +139,7 @@
 				</tr>
 				<tr>
 					<td>Staking Deposit (ETH)</td>
-					<td>{{ printf "%.4f" .RoundInfo.StakingDepositAmountEth }}</td>
+					<td>{{ printf "%.4f" .RoundInfo.StakingDeposit.StakingDepositAmountEth }}</td>
 				</tr>
 			</table>
 		</td>
@@ -286,39 +286,39 @@
 	</tr>
 	{{- range $i, $change := .RoundInfo.AllPrizes}}
 		<tr class="market_reports">
-			<td class="">
-				{{ if eq 0 .RecordType}}Main Prize ETH{{end}}
-				{{ if eq 1 .RecordType}}Main Prize CST (ERC20){{end}}
-				{{ if eq 2 .RecordType}}Main Prize CS NFT{{end}}
-				{{ if eq 3 .RecordType}}Raffle ETH (for bidders){{end}}
-				{{ if eq 4 .RecordType}}Raffle CST (for bidders){{end}}
-				{{ if eq 5 .RecordType}}Raffle CS NFT (for bidders){{end}}
-				{{ if eq 6 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
-				{{ if eq 7 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
-				{{ if eq 8 .RecordType}}Endurance Champion CS NFT{{end}}
-				{{ if eq 9 .RecordType}}Endurance Champion ERC20 (CST){{end}}
-				{{ if eq 10 .RecordType}}Chrono Warrior ETH{{end}}
-				{{ if eq 11 .RecordType}}Chrono Warrior CST (ERC20){{end}}
-				{{ if eq 12 .RecordType}}Chrono Warrior CS NFT{{end}}
-				{{ if eq 13 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
-				{{ if eq 14 .RecordType}}Last CST Bidder CS NFT (ERC721){{end}}
-				{{ if eq 15 .RecordType}}Last CST Bidder ERC20 (CST){{end}}
-			</td>
+		<td class="">
+			{{ if eq 0 .RecordType}}Main Prize ETH{{end}}
+			{{ if eq 1 .RecordType}}Main Prize CST (ERC20){{end}}
+			{{ if eq 2 .RecordType}}Main Prize CS NFT{{end}}
+			{{ if eq 3 .RecordType}}Last CST Bidder CS NFT (ERC721){{end}}
+			{{ if eq 4 .RecordType}}Last CST Bidder ERC20 (CST){{end}}
+			{{ if eq 5 .RecordType}}Endurance Champion CS NFT{{end}}
+			{{ if eq 6 .RecordType}}Endurance Champion ERC20 (CST){{end}}
+			{{ if eq 7 .RecordType}}Chrono Warrior ETH{{end}}
+			{{ if eq 8 .RecordType}}Chrono Warrior CST (ERC20){{end}}
+			{{ if eq 9 .RecordType}}Chrono Warrior CS NFT{{end}}
+			{{ if eq 10 .RecordType}}Raffle ETH (for bidders){{end}}
+			{{ if eq 11 .RecordType}}Raffle CST (for bidders){{end}}
+			{{ if eq 12 .RecordType}}Raffle CS NFT (for bidders){{end}}
+			{{ if eq 13 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
+			{{ if eq 14 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
+			{{ if eq 15 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
+		</td>
 			<td class="addr">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td style="text-align: right;">
-				{{ if or (eq 0 .RecordType) (eq 3 .RecordType) (eq 10 .RecordType) (eq 13 .RecordType) }}
+				{{ if or (eq 0 .RecordType) (eq 7 .RecordType) (eq 10 .RecordType) (eq 15 .RecordType) }}
 					{{ printf "%.5f" .AmountEth }} ETH
 				{{ end }}
 			</td>
 			<td style="text-align: right;">
-				{{ if or (eq 1 .RecordType) (eq 4 .RecordType) (eq 6 .RecordType) (eq 9 .RecordType) (eq 11 .RecordType) (eq 15 .RecordType) }}
+				{{ if or (eq 1 .RecordType) (eq 4 .RecordType) (eq 6 .RecordType) (eq 8 .RecordType) (eq 11 .RecordType) (eq 13 .RecordType) }}
 					{{ printf "%.5f" .AmountEth }} CST
 				{{ end }}
 			</td>
 			<td style="text-align: center;">
-				{{ if or (eq 2 .RecordType) (eq 5 .RecordType) (eq 7 .RecordType) (eq 8 .RecordType) (eq 12 .RecordType) (eq 14 .RecordType) }}
+				{{ if or (eq 2 .RecordType) (eq 3 .RecordType) (eq 5 .RecordType) (eq 9 .RecordType) (eq 12 .RecordType) (eq 14 .RecordType) }}
 					{{ .TokenId }}
 				{{ end }}
 			</td>

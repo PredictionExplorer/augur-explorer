@@ -359,16 +359,35 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 
 	var query string
 	query = "SELECT "+
-				"w.winner_aid,"+
-				"a.addr,"+
-				"w.prizes_count,"+
-				"w.max_win_amount,"+
-				"w.max_win_amount/1e18 max_win_eth, "+
-				"w.prizes_sum/1e18 prizes_sum_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_winner w "+
-				"LEFT JOIN address a ON w.winner_aid=a.address_id " +
-			"WHERE w.prizes_count > 0 " +
-			"ORDER BY prizes_count DESC "
+				"winner_aid,"+
+				"winner_addr,"+
+				"COUNT(*) AS prizes_count,"+
+				"0 AS max_win_amount,"+
+				"0 AS max_win_eth,"+
+				"0 AS prizes_sum_eth "+
+			"FROM ("+
+				"SELECT DISTINCT "+
+					"COALESCE(pc.winner_aid, rew.winner_aid, rnw.winner_aid, ew.winner_aid, lw.winner_aid, cw.winner_aid) AS winner_aid,"+
+					"COALESCE(wa_pc.addr, wa_rew.addr, wa_rnw.addr, wa_ew.addr, wa_lw.addr, wa_cw.addr) AS winner_addr,"+
+					"p.round_num,"+
+					"p.ptype "+
+				"FROM "+sw.S.SchemaName()+".cg_prize p "+
+					"LEFT JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON (p.round_num = pc.round_num AND p.ptype IN (0,1,2)) "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address wa_pc ON pc.winner_aid = wa_pc.address_id "+
+					"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_eth_winner rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10) "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address wa_rew ON rew.winner_aid = wa_rew.address_id "+
+					"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_winner rnw ON (p.round_num = rnw.round_num AND p.winner_index = rnw.winner_idx AND p.ptype IN (11,12,13,14)) "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address wa_rnw ON rnw.winner_aid = wa_rnw.address_id "+
+					"LEFT JOIN "+sw.S.SchemaName()+".cg_endurance_winner ew ON (p.round_num = ew.round_num AND p.winner_index = ew.winner_idx AND p.ptype IN (5,6)) "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address wa_ew ON ew.winner_aid = wa_ew.address_id "+
+					"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (3,4)) "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address wa_lw ON lw.winner_aid = wa_lw.address_id "+
+					"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index AND p.ptype IN (7,8,9)) "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address wa_cw ON cw.winner_aid = wa_cw.address_id "+
+				"WHERE p.ptype != 15"+
+			") unique_prizes "+
+			"GROUP BY winner_aid, winner_addr "+
+			"ORDER BY prizes_count DESC"
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -366,12 +366,12 @@
 	</tr>
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.BlockNum}}</a>
+			<td class="" title="{{.ClaimPrizeTx.TimeStamp}}">
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.BlockNum}}</a>
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
-			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
-			<td style="text-align: right;" title="">{{.Seed}}</td>
+			<td class="" title="{{.ClaimPrizeTx.TimeStamp}}">{{.ClaimPrizeTx.DateTime}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .MainPrize.EthAmountEth}}</td>
+			<td style="text-align: right;" title="">{{.MainPrize.Seed}}</td>
 		</tr>
 	{{- end}}
 </table>

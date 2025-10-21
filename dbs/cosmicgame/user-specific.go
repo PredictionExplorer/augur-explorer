@@ -216,33 +216,33 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 	for rows.Next() {
 		var rec p.CGRoundRec
 		err=rows.Scan(
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.WinnerAid,
-			&rec.WinnerAddr,
-			&rec.Amount,
-			&rec.AmountEth,
+			&rec.ClaimPrizeTx.EvtLogId,
+			&rec.ClaimPrizeTx.BlockNum,
+			&rec.ClaimPrizeTx.TxId,
+			&rec.ClaimPrizeTx.TxHash,
+			&rec.ClaimPrizeTx.TimeStamp,
+			&rec.ClaimPrizeTx.DateTime,
+			&rec.MainPrize.WinnerAid,
+			&rec.MainPrize.WinnerAddr,
+			&rec.MainPrize.EthAmount,
+			&rec.MainPrize.EthAmountEth,
 			&rec.RoundNum,
-			&rec.TokenId,
+			&rec.MainPrize.NftTokenId,
 			&null_seed,
 			&rec.RoundStats.TotalBids,
 			&rec.RoundStats.TotalDonatedNFTs,
 			&rec.RoundStats.TotalRaffleEthDeposits,
 			&rec.RoundStats.TotalRaffleEthDepositsEth,
 			&rec.RoundStats.TotalRaffleNFTs,
-			&rec.CharityAmount,
-			&rec.CharityAmountETH,
-			&rec.CharityAddress,
+			&rec.CharityDeposit.CharityAmount,
+			&rec.CharityDeposit.CharityAmountETH,
+			&rec.CharityDeposit.CharityAddress,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
+		if null_seed.Valid { rec.MainPrize.Seed = null_seed.String } else {rec.MainPrize.Seed = "???"}
 		records = append(records,rec)
 	}
 	return records

@@ -67,46 +67,67 @@ type CGBidRec struct {
 	DonatedERC20TokenAmount		string
 	DonatedERC20TokenAmountEth	float64
 }
-type CGRoundRec struct {
+type CGClaimPrizeTx struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
+}
+type CGMainPrizeInfo struct {
 	WinnerAid					int64
 	WinnerAddr					string
 	TimeoutTs					int64
-	Amount						string
-	AmountEth					float64	// divided by 1e18
-	RoundNum					uint64
-	TokenId						uint64
+	EthAmount					string
+	EthAmountEth				float64
+	CstAmount					string
+	CstAmountEth				float64
+	NftTokenId					uint64
 	Seed						string
+}
+type CGCharityDeposit struct {
 	CharityAddress				string
 	CharityAmount				string
 	CharityAmountETH			float64
+}
+type CGStakingDeposit struct {
 	StakingDepositId			int64
 	StakingDepositAmount		string
 	StakingDepositAmountEth		float64
 	StakingPerToken				string
 	StakingPerTokenEth			float64
 	StakingNumStakedTokens		int64
-	MainPrizeCstAmount			string
-	MainPrizeCstAmountEth		float64
-	EnduranceWinnerAddr			string
-	EnduranceERC721TokenId			int64
-	LastCstBidderAddr			string
-	LastCstBidderERC721TokenId				int64
-	EnduranceERC20Amount		string
-	EnduranceERC20AmountEth		float64
-	LastCstBidderERC20Amount	string
-	LastCstBidderERC20AmountEth	float64
-	ChronoWarriorAddr			string
-	ChronoWarriorEthAmount		string
-	ChronoWarriorEthAmountEth	float64
-	ChronoWarriorCstAmount		string
-	ChronoWarriorCstAmountEth	float64
-	ChronoWarriorNftId			int64
+}
+type CGEnduranceChampionPrize struct {
+	WinnerAddr					string
+	NftTokenId					int64
+	CstAmount					string
+	CstAmountEth				float64
+}
+type CGLastCSTBidderPrize struct {
+	WinnerAddr					string
+	NftTokenId					int64
+	CstAmount					string
+	CstAmountEth				float64
+}
+type CGChronoWarriorPrize struct {
+	WinnerAddr					string
+	EthAmount					string
+	EthAmountEth				float64
+	CstAmount					string
+	CstAmountEth				float64
+	NftTokenId					int64
+}
+type CGRoundRec struct {
+	RoundNum					uint64
+	ClaimPrizeTx				CGClaimPrizeTx
+	MainPrize					CGMainPrizeInfo
+	CharityDeposit				CGCharityDeposit
+	StakingDeposit				CGStakingDeposit
+	EnduranceChampion			CGEnduranceChampionPrize
+	LastCstBidder				CGLastCSTBidderPrize
+	ChronoWarrior				CGChronoWarriorPrize
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	StakingNFTWinners			[]CGRaffleNFTWinnerRec
