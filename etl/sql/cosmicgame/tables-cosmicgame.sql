@@ -884,6 +884,9 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	total_nft_donated			BIGINT DEFAULT 0,
 	num_erc20_donations			BIGINT DEFAULT 0,		-- number of donations made during the round (ERC20 tokens)
 	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
+	chrono_warrior_prize_eth	DECIMAL DEFAULT 0,
+	total_cst_paid_in_prizes	DECIMAL DEFAULT 0,
+	total_nfts_minted			BIGINT DEFAULT 0,
 	total_raffle_nfts			BIGINT DEFAULT 0,		-- counts only raffle NFTs
 	total_reward_nfts			BIGINT DEFAULT 0,		-- counts raffle NFTs + endurance + lastcstbidder
 	donations_round_total		DECIMAL DEFAULT 0,		-- total donations for current round (reset on claimPrize())

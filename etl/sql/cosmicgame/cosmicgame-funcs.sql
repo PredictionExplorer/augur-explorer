@@ -129,6 +129,10 @@ BEGIN
 	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
 	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	
 	-- Insert THREE records in cg_prize table for Main Prize
 	-- 1) Main Prize ETH (ptype=0)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,0);
@@ -180,6 +184,10 @@ BEGIN
 	END IF;
 	UPDATE cg_erc20_donation_stats SET winner_aid=0 WHERE round_num=OLD.round_num;
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.cst_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes - OLD.cst_amount) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - 1) WHERE round_num = OLD.round_num;
 	
 	-- Remove THREE corresponding records from cg_prize table
 	-- 1) Main Prize ETH (ptype=0)
@@ -400,6 +408,10 @@ BEGIN
 	-- Update CST prize total
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
 	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	
 	-- Insert TWO records in cg_prize table with conditional ptype based on is_rwalk field
 	IF NEW.is_rwalk THEN
 		-- For RandomWalk stakers: CST (ptype=13) and CS NFT (ptype=14)
@@ -442,6 +454,10 @@ BEGIN
 	-- Update CST prize total
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.cst_amount);
 	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes - OLD.cst_amount) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - 1) WHERE round_num = OLD.round_num;
+	
 	-- Remove TWO corresponding records from cg_prize table with conditional ptype based on is_rwalk field
 	IF OLD.is_rwalk THEN
 		-- For RandomWalk stakers: CST (ptype=13) and CS NFT (ptype=14)
@@ -470,6 +486,10 @@ BEGIN
 	END IF;
 	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.erc20_amount) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
 
 	-- Insert TWO records in cg_prize table for Endurance Champion prizes
 	-- 1) ERC721 CS NFT prize (ptype=5)
@@ -490,6 +510,10 @@ BEGIN
 		WHERE round_num=OLD.round_num;
 	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes - OLD.erc20_amount) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - 1) WHERE round_num = OLD.round_num;
 
 	-- Remove BOTH corresponding records from cg_prize table
 	-- 1) ERC721 CS NFT prize (ptype=5)
@@ -515,6 +539,10 @@ BEGIN
 	END IF;
 	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.erc20_amount) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
 
 	-- Insert TWO records in cg_prize table for Last CST Bidder prizes
 	-- 1) ERC721 CS NFT prize (ptype=3)
@@ -535,6 +563,10 @@ BEGIN
 		WHERE round_num=OLD.round_num;
 	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes - OLD.erc20_amount) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - 1) WHERE round_num = OLD.round_num;
 
 	-- Remove BOTH corresponding records from cg_prize table
 	-- 1) ERC721 CS NFT prize (ptype=3)
@@ -740,21 +772,57 @@ CREATE OR REPLACE FUNCTION on_donated_nft_claimed_insert() RETURNS trigger AS  $
 DECLARE
 	v_cnt						BIGINT;
 	new_unclaimed_value			BIGINT;
+	v_round_winner_aid			BIGINT;
+	v_timeout_ts				BIGINT;
+	v_claim_ts					BIGINT;
 BEGIN
 
-	UPDATE cg_winner
-		SET
-			unclaimed_nfts = (unclaimed_nfts - 1)
-		WHERE winner_aid = NEW.winner_aid
-		RETURNING unclaimed_nfts INTO new_unclaimed_value;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		RAISE EXCEPTION 'on_donated_nft_claimed_insert() we are about to get negative unlacimed_nfts field because record does not exist, round_num=%',NEW.round_num;
-		--INSERT INTO cg_winner(winner_aid,unclaimed_nfts) VALUES(NEW.winner_aid,1);
+	-- Check if the claimer is the winner of this round
+	SELECT winner_aid, timeout FROM cg_prize_claim WHERE round_num = NEW.round_num INTO v_round_winner_aid, v_timeout_ts;
+	
+	IF v_round_winner_aid IS NULL THEN
+		-- Round hasn't been won yet - this claim event is being processed before the prize claim event
+		-- This can happen if events from different contracts are processed out of order
+		-- We'll skip unclaimed_nfts tracking for now - it will be corrected when prize claim is processed
+		RAISE NOTICE 'on_donated_nft_claimed_insert() no winner found yet for round_num=%. Claimer winner_aid=%, idx=%, evtlog_id=%. Available rounds in cg_prize_claim: %. Skipping unclaimed_nfts tracking - will be reconciled when MainPrizeClaimed is processed.',
+			NEW.round_num,
+			NEW.winner_aid,
+			NEW.idx,
+			NEW.evtlog_id,
+			(SELECT STRING_AGG(round_num::TEXT, ',') FROM cg_prize_claim);
+		-- Return without updating unclaimed_nfts
+		RETURN NEW;
 	END IF;
-	IF new_unclaimed_value < 0 THEN
-		RAISE EXCEPTION 'unclaimed_nfts got negative value on round %',NEW.round_num;
+	
+	-- Get the claim timestamp
+	SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT FROM cg_donated_nft_claimed WHERE id = NEW.id INTO v_claim_ts;
+	
+	-- Only update unclaimed_nfts tracking if:
+	-- 1. Claimer IS the round winner, OR
+	-- 2. Timeout has NOT expired (within timeout period, only winner can claim)
+	IF v_round_winner_aid = NEW.winner_aid THEN
+		-- Winner is claiming their own NFTs - decrement tracking
+		UPDATE cg_winner
+			SET
+				unclaimed_nfts = (unclaimed_nfts - 1)
+			WHERE winner_aid = NEW.winner_aid
+			RETURNING unclaimed_nfts INTO new_unclaimed_value;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			RAISE EXCEPTION 'on_donated_nft_claimed_insert() winner record does not exist for winner_aid=%, round_num=%',NEW.winner_aid,NEW.round_num;
+		END IF;
+		IF new_unclaimed_value < 0 THEN
+			RAISE EXCEPTION 'unclaimed_nfts went negative (value=%) for winner_aid=% on round_num=%. This indicates donated NFTs were not properly credited during prize claim.',new_unclaimed_value,NEW.winner_aid,NEW.round_num;
+		END IF;
+	ELSIF v_claim_ts < v_timeout_ts THEN
+		-- Non-winner claiming before timeout expired - not allowed
+		RAISE EXCEPTION 'on_donated_nft_claimed_insert() non-winner (winner_aid=%) tried to claim NFT from round_num=% before timeout. Actual winner=%, timeout_ts=%, claim_ts=%',NEW.winner_aid,NEW.round_num,v_round_winner_aid,v_timeout_ts,v_claim_ts;
+	ELSE
+		-- Non-winner claiming after timeout - allowed per Solidity logic
+		-- Don't update unclaimed_nfts tracking since this is a timeout claim, not a winner claim
+		-- This is valid behavior according to PrizesWallet.sol
 	END IF;
+	
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1351,6 +1419,11 @@ BEGIN
 
 	UPDATE cg_glob_stats SET total_chrono_warrior_eth_deposits = (total_chrono_warrior_eth_deposits + NEW.eth_amount);
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET chrono_warrior_prize_eth = (chrono_warrior_prize_eth + NEW.eth_amount) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
 
 	-- Insert THREE records in cg_prize table for Chrono Warrior prizes
 	-- 1) Chrono Warrior ETH (ptype=7)
@@ -1369,6 +1442,11 @@ BEGIN
 
 	UPDATE cg_glob_stats SET total_chrono_warrior_eth_deposits = (total_chrono_warrior_eth_deposits - OLD.eth_amount);
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.cst_amount);
+	
+	-- Update round stats
+	UPDATE cg_round_stats SET chrono_warrior_prize_eth = (chrono_warrior_prize_eth - OLD.eth_amount) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes - OLD.cst_amount) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - 1) WHERE round_num = OLD.round_num;
 
 	-- Remove THREE corresponding records from cg_prize table
 	-- 1) Chrono Warrior ETH (ptype=7)
