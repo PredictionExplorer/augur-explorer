@@ -48,11 +48,13 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
 			"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
-			"LEFT JOIN LATERAL (" +
-				"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
+			"LEFT JOIN ("+
+				"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
 					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 					"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
-			") d ON p.donation_evt_id=d.evtlog_id "+
+					"WHERE round_num >= 0 "+
+					"GROUP BY round_num "+
+			") d ON p.round_num = d.round_num "+
 			"ORDER BY p.id DESC "+
 			"OFFSET $1 LIMIT $2"
 
@@ -187,13 +189,15 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"LEFT JOIN cg_chrono_warrior w ON w.round_num = p.round_num "+
 				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
 				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
-				"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
-			"LEFT JOIN LATERAL (" +
-				"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
+			"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
+			"LEFT JOIN ("+
+				"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
 					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 					"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
-			") d ON p.donation_evt_id=d.evtlog_id "+
-			"WHERE p.round_num=$1"
+					"WHERE round_num >= 0 "+
+					"GROUP BY round_num "+
+			") d ON p.round_num = d.round_num "+
+		"WHERE p.round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
 	var null_seed sql.NullString

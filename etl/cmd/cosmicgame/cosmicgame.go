@@ -347,7 +347,6 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tCstAmount: %v\n",evt.CstAmount)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
-	Info.Printf("\tDonationEvtId: %v\n",evt.DonationEvtId)
 	Info.Printf("\tTimeout to withdraw: %v\n",evt.Timeout)
 	Info.Printf("}\n")
 

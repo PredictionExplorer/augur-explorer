@@ -196,12 +196,14 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
-				"LEFT JOIN LATERAL (" +
-					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
-						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
-						"JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
-				") d ON p.donation_evt_id=d.evtlog_id "+
+			"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
+			"LEFT JOIN ("+
+				"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
+					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
+					"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
+					"WHERE round_num >= 0 "+
+					"GROUP BY round_num "+
+			") d ON p.round_num = d.round_num "+
 			"WHERE winner_aid=$1 "+
 			"ORDER BY p.id DESC"
 

@@ -11,7 +11,6 @@ CREATE TABLE cg_prize_claim( --CosmicSignatureGame.sol:MainPrizeClaimed event
 	timeout					BIGINT NOT NULL,	-- timeoutTimeToWithdrawSecondaryPrizes
 	amount					DECIMAL DEFAULT 0,	-- ethPrizeAmount
 	cst_amount				DECIMAL DEFAULT 0,	-- cstPrizeAmount
-	donation_evt_id			BIGINT DEFAULT -1,	-- linked by trigger upon processing DonationReceived event
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_prize( -- Generic prize record , that unifies all prizes , populated automatically with triggers
@@ -887,8 +886,8 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	chrono_warrior_prize_eth	DECIMAL DEFAULT 0,
 	total_cst_paid_in_prizes	DECIMAL DEFAULT 0,
 	total_nfts_minted			BIGINT DEFAULT 0,
+	num_contracts_donated_erc20	BIGINT DEFAULT 0,		-- number of unique ERC20 token contracts that donated in this round
 	total_raffle_nfts			BIGINT DEFAULT 0,		-- counts only raffle NFTs
-	total_reward_nfts			BIGINT DEFAULT 0,		-- counts raffle NFTs + endurance + lastcstbidder
 	donations_round_total		DECIMAL DEFAULT 0,		-- total donations for current round (reset on claimPrize())
 	donations_round_count		BIGINT DEFAULT 0,		-- total number of donations for the current round
 	total_eth_in_bids			DECIMAL DEFAULT 0,		-- sum of ETH in all bids

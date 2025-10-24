@@ -126,12 +126,27 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = 0;
-	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
-	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		RAISE EXCEPTION 'on_prize_claim_insert() failed to update cur_num_bids in cg_glob_stats';
+	END IF;
 	
-	-- Update round stats
-	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount) WHERE round_num = NEW.round_num;
-	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	UPDATE cg_erc20_donation_stats SET winner_aid=NEW.winner_aid WHERE round_num=NEW.round_num;
+	-- Note: This UPDATE may affect 0 rows if there are no ERC20 donations for this round (OK)
+	
+	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		RAISE EXCEPTION 'on_prize_claim_insert() failed to update total_cst_given_in_prizes in cg_glob_stats';
+	END IF;
+	
+	-- Update round stats (create round record if it doesn't exist)
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount), total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.cst_amount, 1);
+		RAISE NOTICE 'on_prize_claim_insert() created new round_stats record for round_num=%', NEW.round_num;
+	END IF;
 	
 	-- Insert THREE records in cg_prize table for Main Prize
 	-- 1) Main Prize ETH (ptype=0)
@@ -232,10 +247,6 @@ BEGIN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
 
-	IF NEW.round_num <> -1 THEN
-		UPDATE cg_prize_claim SET donation_evt_id=NEW.evtlog_id WHERE round_num=NEW.round_num;
-	END IF;
-
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -269,10 +280,6 @@ BEGIN
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'cg_glob_stats table wasnt initialized (no record found)';
 	END IF;
-	IF OLD.round_num <> -1 THEN
-		UPDATE cg_prize_claim SET donation_evt_id=0 WHERE round_num=OLD.round_num;
-	END IF;
-
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -284,7 +291,9 @@ BEGIN
 	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount + NEW.amount) WHERE round_num=NEW.round_num AND token_aid=NEW.token_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
+		-- New token contract for this round - increment unique contract count
 		INSERT INTO cg_erc20_donation_stats(token_aid,round_num,total_amount) VALUES (NEW.token_aid,NEW.round_num,NEW.amount);
+		UPDATE cg_round_stats SET num_contracts_donated_erc20 = (num_contracts_donated_erc20 + 1) WHERE round_num=NEW.round_num;
 	END IF;
 	UPDATE cg_round_stats SET num_erc20_donations = (num_erc20_donations + 1) WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -298,9 +307,17 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_erc20_donation_delete() RETURNS trigger AS  $$
 DECLARE
 	v_cnt					NUMERIC;
+	v_remaining_amount		DECIMAL;
 BEGIN
 
-	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount - OLD.amount) WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid;
+	UPDATE cg_erc20_donation_stats SET total_amount = (total_amount - OLD.amount) WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid RETURNING total_amount INTO v_remaining_amount;
+	
+	-- If this was the last donation for this token contract in this round, decrement unique contract count
+	IF v_remaining_amount = 0 THEN
+		DELETE FROM cg_erc20_donation_stats WHERE round_num=OLD.round_num AND token_aid=OLD.token_aid;
+		UPDATE cg_round_stats SET num_contracts_donated_erc20 = (num_contracts_donated_erc20 - 1) WHERE round_num=OLD.round_num;
+	END IF;
+	
 	UPDATE cg_round_stats SET num_erc20_donations = (num_erc20_donations - 1) WHERE round_num=OLD.round_num;
 	UPDATE cg_glob_stats SET total_erc20_donations = (total_erc20_donations - 1);
 	RETURN OLD;
@@ -378,8 +395,7 @@ BEGIN
 	END IF;
 	UPDATE cg_round_stats
 		SET
-			total_raffle_nfts = (total_raffle_nfts + 1),
-			total_reward_nfts = (total_reward_nfts + 1)
+			total_raffle_nfts = (total_raffle_nfts + 1)
 		WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -409,8 +425,11 @@ BEGIN
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
 	
 	-- Update round stats
-	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount) WHERE round_num = NEW.round_num;
-	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount), total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.cst_amount, 1);
+	END IF;
 	
 	-- Insert TWO records in cg_prize table with conditional ptype based on is_rwalk field
 	IF NEW.is_rwalk THEN
@@ -436,8 +455,7 @@ BEGIN
 		WHERE winner_aid = OLD.winner_aid;
 	UPDATE cg_round_stats
 		SET
-			total_raffle_nfts = (total_raffle_nfts - 1),
-			total_reward_nfts = (total_reward_nfts - 1)
+			total_raffle_nfts = (total_raffle_nfts - 1)
 		WHERE round_num=OLD.round_num;
 	IF OLD.is_staker THEN
 		IF OLD.is_rwalk THEN
@@ -476,20 +494,14 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_round_stats
-		SET
-			total_reward_nfts = (total_reward_nfts + 1)
-		WHERE round_num=NEW.round_num;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_round_stats(round_num,total_reward_nfts) VALUES(NEW.round_num,1);
-	END IF;
-	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
 	
 	-- Update round stats
-	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.erc20_amount) WHERE round_num = NEW.round_num;
-	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.erc20_amount), total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.erc20_amount, 1);
+	END IF;
 
 	-- Insert TWO records in cg_prize table for Endurance Champion prizes
 	-- 1) ERC721 CS NFT prize (ptype=5)
@@ -506,7 +518,7 @@ BEGIN
 
 	UPDATE cg_round_stats
 		SET
-			total_reward_nfts = (total_reward_nfts - 1)
+			total_nfts_minted = (total_nfts_minted - 1)
 		WHERE round_num=OLD.round_num;
 	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
@@ -529,20 +541,14 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_round_stats
-		SET
-			total_reward_nfts = (total_reward_nfts + 1)
-		WHERE round_num=NEW.round_num;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_round_stats(round_num,total_reward_nfts) VALUES(NEW.round_num,1);
-	END IF;
-	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
 	
 	-- Update round stats
-	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.erc20_amount) WHERE round_num = NEW.round_num;
-	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.erc20_amount), total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.erc20_amount, 1);
+	END IF;
 
 	-- Insert TWO records in cg_prize table for Last CST Bidder prizes
 	-- 1) ERC721 CS NFT prize (ptype=3)
@@ -559,7 +565,7 @@ BEGIN
 
 	UPDATE cg_round_stats
 		SET
-			total_reward_nfts = (total_reward_nfts - 1)
+			total_nfts_minted = (total_nfts_minted - 1)
 		WHERE round_num=OLD.round_num;
 	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
@@ -1421,9 +1427,11 @@ BEGIN
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.cst_amount);
 	
 	-- Update round stats
-	UPDATE cg_round_stats SET chrono_warrior_prize_eth = (chrono_warrior_prize_eth + NEW.eth_amount) WHERE round_num = NEW.round_num;
-	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount) WHERE round_num = NEW.round_num;
-	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	UPDATE cg_round_stats SET chrono_warrior_prize_eth = (chrono_warrior_prize_eth + NEW.eth_amount), total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount), total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num, chrono_warrior_prize_eth, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.eth_amount, NEW.cst_amount, 1);
+	END IF;
 
 	-- Insert THREE records in cg_prize table for Chrono Warrior prizes
 	-- 1) Chrono Warrior ETH (ptype=7)

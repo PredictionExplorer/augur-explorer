@@ -32,7 +32,6 @@ type CGPrizeClaimEvent struct {
 	Timeout				int64
 	Amount				string
 	CstAmount			string
-	DonationEvtId		int64
 }
 type CGBidEvent struct {
 	EvtId				int64
