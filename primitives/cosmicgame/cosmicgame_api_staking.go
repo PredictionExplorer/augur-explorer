@@ -168,9 +168,13 @@ type CGEthDepositAsReward struct {
 	AmountPerTokenEth			float64
 	StakerAid					int64
 	StakerAddr					string
+	StakerNumStakedNFTs			int64
 	StakerAmount				string
 	StakerAmountEth				float64
-	StakerNumStakedNFTs			int64
+	AmountCollected				string
+	AmountCollectedEth			float64
+	AmountPendingToClaim		string
+	AmountPendingToClaimEth		float64
 }
 type CGRewardToClaim struct {
 	RecordId					int64

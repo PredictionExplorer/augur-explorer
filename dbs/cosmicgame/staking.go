@@ -707,30 +707,34 @@ func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) [
 	records := make([]p.CGEthDepositAsReward,0, 32)
 	var query string
 	query = "SELECT "+
-				"d.id,"+
-				"d.evtlog_id,"+
-				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
-				"d.time_stamp AS date_time, "+
-				"d.block_num,"+
-				"d.tx_id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT, "+
-				"d.deposit_time, "+
-				"d.accumulated_nfts,"+
-				"d.deposit_amount,"+
-				"d.deposit_amount/1e18 AS amount_eth,"+
-				"d.amount_per_token,"+
-				"d.amount_per_token/1e18 AS amount_eth, "+
-				"sd.staker_aid, "+
-				"sa.addr,"+
-				"sd.tokens_staked,"+
-				"sd.amount_to_claim, "+
-				"sd.amount_to_claim/1e18  "+
-			"FROM cg_staker_deposit sd "+
-				"LEFT JOIN cg_staking_eth_deposit d ON sd.deposit_id=d.deposit_id "+
-				"LEFT JOIN address sa ON sd.staker_aid = sa.address_id "+
-				"LEFT JOIN transaction t ON t.id=d.tx_id "+
-			"WHERE d.round_num=$1 "
+			"d.id,"+
+			"d.evtlog_id,"+
+			"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
+			"d.time_stamp AS date_time, "+
+			"d.block_num,"+
+			"d.tx_id,"+
+			"t.tx_hash,"+
+			"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT, "+
+			"d.deposit_time, "+
+			"d.accumulated_nfts,"+
+			"d.deposit_amount,"+
+			"d.deposit_amount/1e18 AS deposit_amount_eth,"+
+			"d.amount_per_token,"+
+			"d.amount_per_token/1e18 AS amount_per_token_eth, "+
+			"sd.staker_aid, "+
+			"sa.addr,"+
+			"sd.tokens_staked,"+
+			"sd.amount_deposited,"+
+			"sd.amount_deposited/1e18 AS amount_deposited_eth,"+
+			"(sd.amount_deposited - sd.amount_to_claim),"+
+			"(sd.amount_deposited - sd.amount_to_claim)/1e18 AS amount_collected_eth,"+
+			"sd.amount_to_claim, "+
+			"sd.amount_to_claim/1e18 AS amount_to_claim_eth "+
+		"FROM cg_staker_deposit sd "+
+			"LEFT JOIN cg_staking_eth_deposit d ON sd.deposit_id=d.deposit_id "+
+			"LEFT JOIN address sa ON sd.staker_aid = sa.address_id "+
+			"LEFT JOIN transaction t ON t.id=d.tx_id "+
+		"WHERE d.round_num=$1 "
 
 	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
@@ -760,6 +764,10 @@ func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) [
 			&rec.StakerNumStakedNFTs,
 			&rec.StakerAmount,
 			&rec.StakerAmountEth,
+			&rec.AmountCollected,
+			&rec.AmountCollectedEth,
+			&rec.AmountPendingToClaim,
+			&rec.AmountPendingToClaimEth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

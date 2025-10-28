@@ -16,7 +16,7 @@
 	{{- range $i, $change := .UniqueWinners}}
 		<tr class="market_reports">
 			<td class="" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+				<a href="/black/cosmicgame/prizes/history/by_user/{{.WinnerAddr}}/0/10000">{{.WinnerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.PrizesCount}}</td>
 			<td class="addr" title="{{.MaxWinAmount}}">{{ printf "%.6f" .MaxWinAmountEth }}</td>

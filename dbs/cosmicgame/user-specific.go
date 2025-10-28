@@ -504,11 +504,11 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_chrono_warrior_by_user(winner_ai
 				"t.tx_hash,"+
 				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
 				"p.time_stamp,"+
-				"p.winner_aid,"+
-				"wa.addr,"+
-				"p.round_num,"+
-				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_chrono_warrior_prize p "+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.round_num,"+
+			"p.eth_amount/1e18 amount_eth "+
+		"FROM "+sw.S.SchemaName()+".cg_chrono_warrior_prize p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid = $1 " +

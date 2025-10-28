@@ -187,17 +187,33 @@ async function withdrawAllUnclaimedDeposits() {
     const events = await prizesWallet.queryFilter(filter);
     const withdrawalDone = {};
     
+    // Leave some deposits unclaimed for testing
+    // Skip last 3 rounds to keep some unclaimed rewards
+    const currentRound = Number(await cosmicGameProxy.roundNum());
+    const roundsToSkip = [
+        currentRound - 1,  // Skip last round
+        currentRound - 2,  // Skip second-to-last round
+        currentRound - 3,  // Skip third-to-last round
+    ];
+    
     for (const event of events) {
         const winnerAddress = event.args.prizeWinnerAddress;
-        const roundNum = event.args.roundNum;
+        const roundNum = Number(event.args.roundNum);
         const withdrawalKey = `${winnerAddress}_${roundNum}`;
         
         if (withdrawalDone[withdrawalKey]) continue;
+        
+        // Skip withdrawals for the last 3 rounds to leave unclaimed rewards
+        if (roundsToSkip.includes(roundNum)) {
+            console.log(`Skipping withdrawal for round ${roundNum} (leaving unclaimed for testing)`);
+            continue;
+        }
         
         try {
             const winnerSigner = await hre.ethers.getSigner(winnerAddress);
             await prizesWallet.connect(winnerSigner).withdrawEth(roundNum);
             withdrawalDone[withdrawalKey] = true;
+            console.log(`Withdrawn round ${roundNum} for ${winnerAddress}`);
         } catch (e) {
             // Already withdrawn or no balance
         }
@@ -628,13 +644,33 @@ async function main() {
     // Pay marketing rewards
     await payMarketingRewards(addr3);
     
-    // Unstake all NFTs
-    await unstakeAllNfts();
+    // Unstake only 2 NFTs to test collection, leaving most staked with unclaimed rewards
+    const numActions = await stakingWalletCosmicSignatureNft.actionCounter();
+    const numToUnstake = 2; // Only unstake 2 NFTs, leaving the rest with unclaimed rewards
+    
+    for (let i = 1; i <= numToUnstake && i <= numActions; i++) {
+        const actionRec = (await stakingWalletCosmicSignatureNft.stakeActions(i)).toObject();
+        const owner = actionRec.nftOwnerAddress;
+        
+        if (owner === "0x0000000000000000000000000000000000000000") continue;
+        
+        try {
+            const ownerSigner = await hre.ethers.getSigner(owner);
+            await stakingWalletCosmicSignatureNft.connect(ownerSigner).unstake(i);
+            console.log(`Unstaked action ${i} - rewards will be marked as collected`);
+        } catch (e) {
+            // Already unstaked or error
+        }
+    }
+    console.log(`Unstaked only ${numToUnstake} out of ${numActions} staking actions`);
+    
     await ethers.provider.send("evm_mine");
     await ethers.provider.send("evm_mine");
     
-    // Perform maintenance
-    await stakingWalletCosmicSignatureNft.tryPerformMaintenance(owner.address);
+    // Skip maintenance call since we're leaving NFTs staked (tryPerformMaintenance requires all NFTs unstaked)
+    // await stakingWalletCosmicSignatureNft.tryPerformMaintenance(owner.address);
+    console.log("Skipped tryPerformMaintenance - NFTs remain staked with unclaimed rewards");
+    
     await stakeAvailableNfts();
     
     console.log("=== ROUND 4 ===");

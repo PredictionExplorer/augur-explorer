@@ -92,16 +92,19 @@ DECLARE
 	v_cnt					NUMERIC;
 BEGIN
 
-	SELECT
-			MAX(amount),
- 			COUNT(*) as prizes_count,
-			SUM(amount) as prizes_sum
+	-- Main Prize adds 3 prizes (ETH, CST, NFT)
+	v_prizes_count := 3;
+	
+	-- Get max prize amount and sum from Main Prize only (for backward compatibility)
+	SELECT MAX(amount), SUM(amount)
 		FROM cg_prize_claim
 		WHERE winner_aid=NEW.winner_aid
-		INTO v_max_prize,v_prizes_count,v_prizes_sum;
+		INTO v_max_prize, v_prizes_sum;
 	IF v_max_prize IS NULL THEN
 		v_max_prize := 0;
 		v_prizes_sum := 0;
+	END IF;
+	IF v_prizes_count IS NULL THEN
 		v_prizes_count := 0;
 	END IF;
 	SELECT total_nft_donated FROM cg_round_stats WHERE round_num=NEW.round_num INTO v_donated_nfts;
@@ -110,7 +113,7 @@ BEGIN
 	END IF;
 	UPDATE cg_winner
 		SET
-			prizes_count = v_prizes_count,
+			prizes_count = (prizes_count + v_prizes_count),
 			max_win_amount	 = v_max_prize,
 			prizes_sum = v_prizes_sum,
 			unclaimed_nfts = (unclaimed_nfts + v_donated_nfts)
@@ -441,6 +444,13 @@ BEGIN
 		INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,11);
 		INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,12);
 	END IF;
+	
+	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
+	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -508,6 +518,13 @@ BEGIN
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,5);
 	-- 2) ERC20 CST token prize (ptype=6)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,6);
+	
+	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
+	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -555,6 +572,13 @@ BEGIN
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,3);
 	-- 2) ERC20 CST token prize (ptype=4)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,4);
+	
+	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
+	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -1440,6 +1464,13 @@ BEGIN
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,8);
 	-- 3) Chrono Warrior CS NFT (ptype=9)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,9);
+	
+	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
+	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -1495,6 +1526,13 @@ BEGIN
 
 	-- Insert record in cg_prize table with ptype=10 for Raffle ETH (for bidders)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,10);
+	
+	-- Update winner prize count (Raffle ETH = 1 prize)
+	UPDATE cg_winner SET prizes_count = (prizes_count + 1) WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 1);
+	END IF;
 
 	RETURN NEW;
 END;
