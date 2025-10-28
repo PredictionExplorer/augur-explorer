@@ -13,6 +13,7 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
+		<th class="market_reports">Prize Type</th>
 		<th class="market_reports">Amount (ETH)</th>
 	</tr>
 	{{- range $i, $change := .UnclaimedDeposits}}
@@ -26,6 +27,10 @@
 			</td>
 			<td style="text-align: center;">{{ .WinnerIndex }}</td>
 			<td style="text-align: center;">{{ .RoundNum }}</td>
+			<td class="">
+				{{ if eq 7 .RecordType}}Chrono Warrior ETH{{end}}
+				{{ if eq 10 .RecordType}}Raffle ETH (for bidders){{end}}
+			</td>
 			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
 		</tr>
 	{{- end}}
