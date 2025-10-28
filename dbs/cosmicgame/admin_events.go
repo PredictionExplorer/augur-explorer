@@ -25,7 +25,7 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 					"s.time_stamp date_time,"+
 					"s.round_num, "+
 					"0 AS rec_type "+
-				"FROM cg_round_started s"+
+				"FROM cg_first_bid s"+
 			") UNION ALL ("+
 				"SELECT "+
 					"p.evtlog_id," +
@@ -260,7 +260,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"0 AS int_value, "+
 						"0 AS float_value, "+
 						"'' AS string_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_charity_addr r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_charity_wallet r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"LEFT JOIN address a ON a.address_id = r.new_charity_aid "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+

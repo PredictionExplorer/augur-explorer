@@ -415,7 +415,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_token_ids(winner_aid int64) []int64 {
 	var query string
 	query = "SELECT "+
 				"p.token_id, "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner w "+
+			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_prize w "+
 				"LEFT JOIN cg_raffle_nft_claimed c ON c.nft_winner_evtlog_id=w.evtlog_id "+
 			"WHERE w.winner_aid=$1  AND c.nft_winner_vetlog_id IS NULL "+
 			"ORDER BY w.id"
@@ -455,7 +455,7 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winnings_by_user(winner_aid int64) [
 				"p.winner_idx, "+
 				"p.is_rwalk,"+
 				"p.is_staker "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner p "+
+			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_prize p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid=$1 "+
@@ -508,7 +508,7 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_chrono_warrior_by_user(winner_ai
 				"wa.addr,"+
 				"p.round_num,"+
 				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_chrono_warrior p "+
+			"FROM "+sw.S.SchemaName()+".cg_chrono_warrior_prize p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid = $1 " +
@@ -562,7 +562,7 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_raffle_eth_by_user(winner_aid in
 				"wa.addr,"+
 				"p.round_num,"+
 				"p.amount/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_eth_winner p "+
+			"FROM "+sw.S.SchemaName()+".cg_raffle_eth_prize p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid = $1 " +
@@ -697,9 +697,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_nft_staked_cst sa ON sa.token_id=m.token_id "+
 				"LEFT JOIN cg_nft_unstaked_cst ua ON ua.token_id=m.token_id "+
-				"LEFT JOIN cg_lastcst_winner cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num) "+
-				"LEFT JOIN cg_endurance_winner endu ON (m.token_id=endu.erc721_token_id AND m.round_num=endu.round_num) "+
-				"LEFT JOIN cg_raffle_nft_winner rnw ON (m.token_id=rnw.token_id AND m.round_num=rnw.round_num) "+
+				"LEFT JOIN cg_lastcst_prize cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num) "+
+				"LEFT JOIN cg_endurance_prize endu ON (m.token_id=endu.erc721_token_id AND m.round_num=endu.round_num) "+
+				"LEFT JOIN cg_raffle_nft_prize rnw ON (m.token_id=rnw.token_id AND m.round_num=rnw.round_num) "+
 			"WHERE m.cur_owner_aid=$1 "+
 			"ORDER BY m.id DESC "+
 			"OFFSET $2 LIMIT $3"
@@ -848,7 +848,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_transfers_by_user(user_aid int
 				"ta.addr,"+
 				"t.otype, "+
 				"t.token_id "+
-			"FROM "+sw.S.SchemaName()+".cg_transfer t "+
+			"FROM "+sw.S.SchemaName()+".cg_erc721_transfer t "+
 				"LEFT JOIN transaction tx ON tx.id=t.tx_id "+
 				"LEFT JOIN address fa ON t.from_aid=fa.address_id "+
 				"LEFT JOIN address ta ON t.to_aid=ta.address_id "+
@@ -1072,7 +1072,7 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_by_user(user_aid int64) []p
 				"w.round_num,"+
 				"w.winner_aid,"+
 				"wa.addr "+
-			"FROM cg_raffle_nft_winner w "+
+			"FROM cg_raffle_nft_prize w "+
 				"LEFT JOIN transaction t ON t.id=w.tx_id "+
 				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
 			"WHERE is_rwalk=TRUE AND is_staker=TRUE AND w.winner_aid=$1 "+
@@ -1122,7 +1122,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_mints_by_user(user_aid int64) []p.C
 				"w.round_num,"+
 				"w.winner_aid,"+
 				"wa.addr "+
-			"FROM cg_raffle_nft_winner w "+
+			"FROM cg_raffle_nft_prize w "+
 				"LEFT JOIN transaction t ON t.id=w.tx_id "+
 				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
 			"WHERE is_rwalk=FALSE AND is_staker=TRUE AND w.winner_aid=$1 "+

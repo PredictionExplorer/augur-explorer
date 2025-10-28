@@ -365,7 +365,7 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	-- Note: Statistics are updated by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
+	-- Note: Statistics are updated by specific prize event triggers (cg_raffle_eth_prize, cg_chrono_warrior_prize, etc.)
 	-- Not updating stats here to avoid double-counting
 	RETURN NEW;
 END;
@@ -374,7 +374,7 @@ CREATE OR REPLACE FUNCTION on_prize_deposit_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	-- Note: Statistics are updated by specific prize event triggers (cg_raffle_eth_winner, cg_chrono_warrior, etc.)
+	-- Note: Statistics are updated by specific prize event triggers (cg_raffle_eth_prize, cg_chrono_warrior_prize, etc.)
 	-- Not updating stats here to avoid double-counting
 	RETURN OLD;
 END;
@@ -995,7 +995,7 @@ DECLARE
 BEGIN
 
 	IF NEW.num_staked_nfts > 0 THEN
-		SELECT accumulated_nfts,accumulated_amount,accumulated_per_token FROM cg_eth_deposit ORDER BY deposit_id DESC OFFSET 1 LIMIT 1 INTO v_prev_num_tokens,v_prev_amount,v_prev_amount_per_token;
+		SELECT accumulated_nfts,accumulated_amount,accumulated_per_token FROM cg_staking_eth_deposit ORDER BY deposit_id DESC OFFSET 1 LIMIT 1 INTO v_prev_num_tokens,v_prev_amount,v_prev_amount_per_token;
 		IF v_prev_num_tokens IS NULL THEN
 			v_prev_num_tokens:=0;
 			v_tokens_added:=NEW.num_staked_nfts;
@@ -1036,7 +1036,7 @@ BEGIN
 			INSERT INTO cg_st_reward(staker_aid,action_id,token_id,deposit_id,round_num,reward)
 				VALUES(v_rec.staker_aid,v_rec.stake_action_id,v_rec.token_id,NEW.deposit_id,NEW.round_num,v_amount_per_token);
 		END LOOP;
-		UPDATE cg_eth_deposit 
+		UPDATE cg_staking_eth_deposit 
 			SET 
 				
 				accumulated_amount = (v_prev_amount + NEW.deposit_amount),

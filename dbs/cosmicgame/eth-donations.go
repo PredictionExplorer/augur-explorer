@@ -171,7 +171,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_list(offset,lim
 				"d.amount, "+
 				"d.amount/1e18 amount_eth,  " +
 				"d.round_num "+
-			"FROM "+sw.S.SchemaName()+".cg_donation d "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_donated d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
 			"ORDER BY d.id DESC " +
@@ -221,7 +221,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_by_round(round_
 				"d.amount, "+
 				"d.amount/1e18 amount_eth, " +
 				"d.round_num "+
-			"FROM "+sw.S.SchemaName()+".cg_donation d "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_donated d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
 			"WHERE d.round_num = $1 "+
@@ -273,7 +273,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_with_info_simple_list(
 				"d.round_num, "+
 				"d.record_id,"+
 				"dj.data "+
-			"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_donated_wi d "+
 				"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -328,7 +328,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_with_info_by_round(rou
 				"d.round_num, "+
 				"d.record_id,"+
 				"dj.data "+
-			"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_donated_wi d "+
 				"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -401,7 +401,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_by_user(user_aid int64
 						"d.round_num, "+
 						"-1 AS record_id,"+
 						"'' AS json_data "+
-					"FROM "+sw.S.SchemaName()+".cg_donation d "+
+					"FROM "+sw.S.SchemaName()+".cg_eth_donated d "+
 						"LEFT JOIN transaction t ON t.id=tx_id "+
 						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
 					"WHERE d.donor_aid = $1 "+
@@ -421,7 +421,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_by_user(user_aid int64
 						"d.round_num, "+
 						"d.record_id,"+
 						"dj.data json_data "+
-					"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+					"FROM "+sw.S.SchemaName()+".cg_eth_donated_wi d "+
 						"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
 						"LEFT JOIN transaction t ON t.id=tx_id "+
 						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -479,7 +479,7 @@ func (sw *SQLStorageWrapper) Get_donation_with_info_record_info(record_id int64)
 				"d.round_num, "+
 				"d.record_id,"+
 				"dj.data "+
-			"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_donated_wi d "+
 				"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -620,7 +620,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_both_by_round(round_nu
 						"d.round_num, "+
 						"-1 AS record_id,"+
 						"'' AS json_data "+
-					"FROM "+sw.S.SchemaName()+".cg_donation d "+
+					"FROM "+sw.S.SchemaName()+".cg_eth_donated d "+
 						"LEFT JOIN transaction t ON t.id=tx_id "+
 						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
 					"WHERE d.round_num = $1 "+
@@ -640,7 +640,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_both_by_round(round_nu
 						"d.round_num, "+
 						"d.record_id,"+
 						"dj.data json_data "+
-					"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+					"FROM "+sw.S.SchemaName()+".cg_eth_donated_wi d "+
 						"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
 						"LEFT JOIN transaction t ON t.id=tx_id "+
 						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -716,7 +716,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_both_all() []p.CGDonat
 						"d.round_num, "+
 						"-1 AS record_id,"+
 						"'' AS json_data "+
-					"FROM "+sw.S.SchemaName()+".cg_donation d "+
+					"FROM "+sw.S.SchemaName()+".cg_eth_donated d "+
 						"LEFT JOIN transaction t ON t.id=tx_id "+
 						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
 				") UNION ALL (" +
@@ -735,7 +735,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_both_all() []p.CGDonat
 						"d.round_num, "+
 						"d.record_id,"+
 						"dj.data json_data "+
-					"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+					"FROM "+sw.S.SchemaName()+".cg_eth_donated_wi d "+
 						"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
 						"LEFT JOIN transaction t ON t.id=tx_id "+
 						"LEFT JOIN address da ON d.donor_aid=da.address_id "+

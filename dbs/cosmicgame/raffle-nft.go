@@ -30,7 +30,7 @@ func query_nft_winners(is_staker bool) string {
 				"p.winner_idx, "+
 				"p.is_rwalk,"+
 				"p.is_staker "+
-			"FROM cg_raffle_nft_winner p "+
+			"FROM cg_raffle_nft_prize p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.round_num=$1 AND p.is_staker= " + staking_condition +
@@ -95,7 +95,7 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaff
 				"p.winner_idx, "+
 				"p.is_rwalk,"+
 				"p.is_staker "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner p "+
+			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_prize p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"ORDER BY p.id DESC "+

@@ -47,7 +47,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
-			"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
+			"LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num " +
 			"LEFT JOIN ("+
 				"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
 					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
@@ -181,12 +181,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.round_num " +
+				"LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num " +
 				"LEFT JOIN cg_round_stats s ON s.round_num=p.round_num "+
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
-				"LEFT JOIN cg_endurance_winner endu ON endu.round_num=p.round_num "+
-				"LEFT JOIN cg_lastcst_winner top ON top.round_num=p.round_num "+
-				"LEFT JOIN cg_chrono_warrior w ON w.round_num = p.round_num "+
+				"LEFT JOIN cg_endurance_prize endu ON endu.round_num=p.round_num "+
+				"LEFT JOIN cg_lastcst_prize top ON top.round_num=p.round_num "+
+				"LEFT JOIN cg_chrono_warrior_prize w ON w.round_num = p.round_num "+
 				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
 				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
 			"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
@@ -359,25 +359,25 @@ func (sw *SQLStorageWrapper) Get_all_prizes_for_round(round_num int64) []p.CGPri
 			"LEFT JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON (p.round_num = pc.round_num AND p.ptype IN (0,1,2)) "+
 			"LEFT JOIN "+sw.S.SchemaName()+".transaction tc ON tc.id = pc.tx_id "+
 			"LEFT JOIN "+sw.S.SchemaName()+".address wa_pc ON pc.winner_aid = wa_pc.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_winner lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (3,4)) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_lastcst_prize lw ON (p.round_num = lw.round_num AND p.winner_index = lw.winner_idx AND p.ptype IN (3,4)) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction tlw ON tlw.id = lw.tx_id "+
 		"LEFT JOIN "+sw.S.SchemaName()+".address wa_lw ON lw.winner_aid = wa_lw.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_endurance_winner ew ON (p.round_num = ew.round_num AND p.winner_index = ew.winner_idx AND p.ptype IN (5,6)) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_endurance_prize ew ON (p.round_num = ew.round_num AND p.winner_index = ew.winner_idx AND p.ptype IN (5,6)) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction tew ON tew.id = ew.tx_id "+
 		"LEFT JOIN "+sw.S.SchemaName()+".address wa_ew ON ew.winner_aid = wa_ew.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index AND p.ptype IN (7,8,9)) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index AND p.ptype IN (7,8,9)) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction tcw ON tcw.id = cw.tx_id "+
 		"LEFT JOIN "+sw.S.SchemaName()+".address wa_cw ON cw.winner_aid = wa_cw.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_eth_winner rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_eth_prize rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction trew ON trew.id = rew.tx_id "+
 		"LEFT JOIN "+sw.S.SchemaName()+".address wa_rew ON rew.winner_aid = wa_rew.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_winner rnw_bidder ON (p.round_num = rnw_bidder.round_num AND p.winner_index = rnw_bidder.winner_idx AND p.ptype IN (11,12) AND rnw_bidder.is_rwalk = false) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_prize rnw_bidder ON (p.round_num = rnw_bidder.round_num AND p.winner_index = rnw_bidder.winner_idx AND p.ptype IN (11,12) AND rnw_bidder.is_rwalk = false) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction trnw_bidder ON trnw_bidder.id = rnw_bidder.tx_id "+
 		"LEFT JOIN "+sw.S.SchemaName()+".address wa_rnw_bidder ON rnw_bidder.winner_aid = wa_rnw_bidder.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_winner rnw_rwalk ON (p.round_num = rnw_rwalk.round_num AND p.winner_index = rnw_rwalk.winner_idx AND p.ptype IN (13,14) AND rnw_rwalk.is_rwalk = true) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_raffle_nft_prize rnw_rwalk ON (p.round_num = rnw_rwalk.round_num AND p.winner_index = rnw_rwalk.winner_idx AND p.ptype IN (13,14) AND rnw_rwalk.is_rwalk = true) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction trnw_rwalk ON trnw_rwalk.id = rnw_rwalk.tx_id "+
 		"LEFT JOIN "+sw.S.SchemaName()+".address wa_rnw_rwalk ON rnw_rwalk.winner_aid = wa_rnw_rwalk.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15) "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction ted ON ted.id = ed.tx_id "+
 		"WHERE p.round_num = $1 "+
 			"ORDER BY p.ptype, p.winner_index"

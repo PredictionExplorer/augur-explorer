@@ -31,11 +31,11 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_donation_event[:4]),
+			Signature: hex.EncodeToString(evt_eth_donated_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_donation_with_info_event[:4]),
+			Signature: hex.EncodeToString(evt_eth_donated_wi_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -47,19 +47,19 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_nft_winner[:4]),
+			Signature: hex.EncodeToString(evt_raffle_nft_prize_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_eth_winner[:4]),
+			Signature: hex.EncodeToString(evt_raffle_eth_prize_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_endurance_winner[:4]),
+			Signature: hex.EncodeToString(evt_endurance_prize_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_lastcst_bidder_winner[:4]),
+			Signature: hex.EncodeToString(evt_lastcst_bidder_prize_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -103,7 +103,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_charity_address_changed[:4]),
+			Signature: hex.EncodeToString(evt_charity_wallet_changed[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -187,7 +187,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_charity_updated[:4]),
+			Signature: hex.EncodeToString(evt_charity_receiver_changed[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -275,7 +275,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_chrono_warrior[:4]),
+			Signature: hex.EncodeToString(evt_chrono_warrior_prize_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -299,7 +299,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_round_started[:4]),
+			Signature: hex.EncodeToString(evt_first_bid_event[:4]),
 			ContractAid: 0,
 		},
 	)
@@ -806,37 +806,63 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_nft_donation_event(evt.EvtId)
 	storagew.Insert_nft_donation_event(&evt)
 }
-func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
-
-	var evt CGCharityUpdatedEvent
-	var eth_evt CharityWalletCharityAddressChanged
-
-	Info.Printf("Processing CharityUpdatedEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-
-	if !bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
-		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+func proc_charity_address_changed_unified(log *types.Log,elog *EthereumEventLog) {
+	// This event is emitted by TWO different contracts with the same signature
+	// Distinguish by contract address
+	
+	if bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
+		// CharityWallet contract: Sets who receives charity funds
+		var evt CGCharityUpdatedEvent
+		var eth_evt CharityWalletCharityAddressChanged
+		
+		Info.Printf("Processing CharityReceiverChanged (from CharityWallet) event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+		
+		err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
+		if err != nil {
+			Error.Printf("Event CharityAddressChanged (CharityWallet) decode error: %v",err)
+			os.Exit(1)
+		}
+		
+		evt.EvtId=elog.EvtId
+		evt.BlockNum = elog.BlockNum
+		evt.TxId = elog.TxId
+		evt.ContractAddr = log.Address.String()
+		evt.TimeStamp = elog.TimeStamp
+		evt.NewCharityAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+		
+		Info.Printf("CharityReceiverChanged: %v\n",evt.NewCharityAddr)
+		
+		storagew.Delete_charity_updated(evt.EvtId)
+		storagew.Insert_charity_updated_event(&evt)
+		
+	} else if bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		// CosmicGame contract: Sets which CharityWallet contract to use
+		var evt CGCharityAddressChanged
+		var eth_evt CosmicSignatureGameCharityAddressChanged
+		
+		Info.Printf("Processing CharityWalletChanged (from CosmicGame) event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+		
+		err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
+		if err != nil {
+			Error.Printf("Event CharityAddressChanged (CosmicGame) decode error: %v",err)
+			os.Exit(1)
+		}
+		
+		evt.EvtId=elog.EvtId
+		evt.BlockNum = elog.BlockNum
+		evt.TxId = elog.TxId
+		evt.Contract = log.Address.String()
+		evt.TimeStamp = elog.TimeStamp
+		evt.NewCharity = common.BytesToAddress(log.Topics[1][12:]).String()
+		
+		Info.Printf("CharityWalletChanged: %v\n",evt.NewCharity)
+		
+		storagew.Delete_cosmic_game_charity_address_changed_event(evt.EvtId)
+		storagew.Insert_cosmic_game_charity_address_changed_event(&evt)
+	} else {
+		Info.Printf("CharityAddressChanged from unknown contract %v, skipping\n",log.Address.String())
 		return
 	}
-	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event CharityAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
-
-	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
-	evt.ContractAddr = log.Address.String()
-	evt.TimeStamp = elog.TimeStamp
-	evt.NewCharityAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-
-	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("CharityAddressChanged {\n")
-	Info.Printf("\tNewValue: %v\n",evt.NewCharityAddr)
-	Info.Printf("}\n")
-
-	storagew.Delete_charity_updated(evt.EvtId)
-	storagew.Insert_charity_updated_event(&evt)
 }
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -1828,36 +1854,6 @@ func proc_num_raffle_nft_winners_staking_rwalk_changed_event(log *types.Log,elog
 
 	storagew.Delete_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(&evt)
-}
-func proc_charity_address_changed_event(log *types.Log,elog *EthereumEventLog) {
-
-	var evt CGCharityAddressChanged
-	var eth_evt CosmicSignatureGameCharityAddressChanged
-
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
-		return
-	}
-	Info.Printf("Processing CharityAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event CharityAddressChanged decode error: %v",err)
-		os.Exit(1)
-	}
-
-	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
-	evt.TimeStamp = elog.TimeStamp
-	evt.NewCharity = common.BytesToAddress(log.Topics[1][12:]).String()
-
-	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("CharityAddressChanged{\n")
-	Info.Printf("\tNewCharity: %v\n",evt.NewCharity)
-	Info.Printf("}\n")
-
-	storagew.Delete_cosmic_game_charity_address_changed_event(evt.EvtId)
-    storagew.Insert_cosmic_game_charity_address_changed_event(&evt)
 }
 func proc_random_walk_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2889,10 +2885,10 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_bid_event) {
 		proc_bid_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_event) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_donated_event) {
 		proc_donation_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_with_info_event) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_donated_wi_event) {
 		proc_donation_with_info_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_received_event) {
@@ -2907,8 +2903,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_donated) {
 		proc_erc20_donated_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_updated) {
-		proc_charity_updated_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_receiver_changed) {
+		proc_charity_address_changed_unified(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_name_event) {
 		proc_token_name_event(log,evtlog)
@@ -2922,19 +2918,19 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_prize_withdrawal) {
 		proc_eth_prize_withdrawal_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_eth_winner) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_eth_prize_event) {
 		proc_raffle_eth_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_winner) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_prize_event) {
 		proc_raffle_nft_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_winner) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_prize_event) {
 	proc_endurance_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_lastcst_bidder_winner) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_lastcst_bidder_prize_event) {
 		proc_lastcst_bidder_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_chrono_warrior) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_chrono_warrior_prize_event) {
 		proc_chrono_warrior_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_token_claimed) {
@@ -2988,8 +2984,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_staking_rwalk_changed) {
 		proc_num_raffle_nft_winners_staking_rwalk_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_address_changed) {
-		proc_charity_address_changed_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_wallet_changed) {
+		proc_charity_address_changed_unified(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_rwalk_address_changed) {
 		proc_random_walk_address_changed_event(log,evtlog)
@@ -3091,7 +3087,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_delay_duration_round) {
 		proc_delay_duration_before_next_round_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_started) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_first_bid_event) {
 		proc_round_started_event(log,evtlog)
 	}
 }

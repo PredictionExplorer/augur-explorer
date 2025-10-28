@@ -37,9 +37,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_lastcst_winner cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num) "+
-				"LEFT JOIN cg_endurance_winner endu ON (m.token_id=endu.erc721_token_id AND m.round_num=endu.round_num) "+
-				"LEFT JOIN cg_raffle_nft_winner rnw ON (m.token_id=rnw.token_id AND m.round_num=rnw.round_num) "+
+				"LEFT JOIN cg_lastcst_prize cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num) "+
+				"LEFT JOIN cg_endurance_prize endu ON (m.token_id=endu.erc721_token_id AND m.round_num=endu.round_num) "+
+				"LEFT JOIN cg_raffle_nft_prize rnw ON (m.token_id=rnw.token_id AND m.round_num=rnw.round_num) "+
 			"ORDER BY m.id DESC "+
 			"OFFSET $1 LIMIT $2"
 	rows,err := sw.S.Db().Query(query,offset,limit)
@@ -129,9 +129,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"LEFT JOIN cg_staked_token_cst st ON (m.token_id=st.token_id)"+
 				"LEFT JOIN cg_nft_staked_cst sa ON sa.token_id = m.token_id "+
 				"LEFT JOIN cg_nft_unstaked_cst u ON u.token_id=m.token_id "+
-				"LEFT JOIN cg_lastcst_winner cst ON m.token_id=cst.erc721_token_id "+
-				"LEFT JOIN cg_endurance_winner endu ON m.token_id=endu.erc721_token_id "+
-				"LEFT JOIN cg_raffle_nft_winner rnw ON m.token_id=rnw.token_id "+
+				"LEFT JOIN cg_lastcst_prize cst ON m.token_id=cst.erc721_token_id "+
+				"LEFT JOIN cg_endurance_prize endu ON m.token_id=endu.erc721_token_id "+
+				"LEFT JOIN cg_raffle_nft_prize rnw ON m.token_id=rnw.token_id "+
 				"LEFT JOIN address sta ON st.staker_aid = sta.address_id "+
 			"WHERE m.token_id=$1"
 
@@ -260,7 +260,7 @@ func (sw *SQLStorageWrapper) Get_cst_ownership_transfers(token_id int64,offset,l
 				"ta.addr,"+
 				"t.token_id,"+
 				"t.otype "+
-			"FROM "+sw.S.SchemaName()+".cg_transfer t "+
+			"FROM "+sw.S.SchemaName()+".cg_erc721_transfer t "+
 				"LEFT JOIN transaction tx ON tx.id=t.tx_id "+
 				"LEFT JOIN address fa ON t.from_aid=fa.address_id "+
 				"LEFT JOIN address ta ON t.to_aid=ta.address_id "+

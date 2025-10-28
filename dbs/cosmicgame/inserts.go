@@ -68,7 +68,7 @@ func (sw *SQLStorageWrapper) Insert_donation_event(evt *p.CGDonationEvent ) {
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donation("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_eth_donated("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"donor_aid,round_num,amount"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
@@ -83,7 +83,7 @@ func (sw *SQLStorageWrapper) Insert_donation_event(evt *p.CGDonationEvent ) {
 		evt.Amount,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_donated table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -92,7 +92,7 @@ func (sw *SQLStorageWrapper) Insert_donation_with_info_event(evt *p.CGDonationWi
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donation_wi("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_eth_donated_wi("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"donor_aid,round_num,record_id,amount"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
@@ -108,7 +108,7 @@ func (sw *SQLStorageWrapper) Insert_donation_with_info_event(evt *p.CGDonationWi
 		evt.Amount,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation_wi table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_donated_wi table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -232,7 +232,7 @@ func (sw *SQLStorageWrapper) Insert_charity_updated_event(evt *p.CGCharityUpdate
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	new_charity_aid := sw.S.Lookup_or_create_address(evt.NewCharityAddr,0, 0)
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_charity_updated("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_charity_receiver_changed("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"charity_aid"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6)"
@@ -245,7 +245,7 @@ func (sw *SQLStorageWrapper) Insert_charity_updated_event(evt *p.CGCharityUpdate
 		new_charity_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_charity_updated table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_charity_receiver_changed table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -355,7 +355,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_nft_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_nft_prize ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,round_num,token_id,winner_idx,cst_amount,is_rwalk,is_staker"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
@@ -374,7 +374,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 		evt.IsStaker,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_nft_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_nft_prize table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -384,7 +384,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_eth_winner(evt *p.CGRaffleETHWinner) 
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_eth_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_eth_prize ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,round_num,winner_idx,amount"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
@@ -400,7 +400,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_eth_winner(evt *p.CGRaffleETHWinner) 
 		evt.Amount,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_eth_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_eth_prize table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -410,7 +410,7 @@ func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_endurance_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_endurance_prize ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
@@ -427,7 +427,7 @@ func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 		evt.WinnerIndex,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_prize table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -437,7 +437,7 @@ func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWin
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_lastcst_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_lastcst_prize ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
@@ -454,7 +454,7 @@ func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWin
 		evt.WinnerIndex,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_lastcst_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_lastcst_prize table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -464,7 +464,7 @@ func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_chrono_warrior("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_chrono_warrior_prize("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,round_num,winner_index,eth_amount,cst_amount,nft_id"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
@@ -482,7 +482,7 @@ func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior)
 		evt.NftId,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_chrono_warrior table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_chrono_warrior_prize table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -603,7 +603,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_eth_deposit(" +
+	query = "INSERT INTO cg_staking_eth_deposit(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
 			") VALUES (" +
@@ -625,7 +625,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		evt.AccumModulo,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_deposit table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_staking_eth_deposit table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -695,7 +695,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_signature_transfer_event(evt *p.CGERC
 		otype = 2
 	}
 	var query string
-	query = "INSERT INTO cg_transfer(" +
+	query = "INSERT INTO cg_erc721_transfer(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"token_id,from_aid,to_aid,otype" +
 			") VALUES (" +
@@ -713,7 +713,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_signature_transfer_event(evt *p.CGERC
 		otype,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_transfer table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc721_transfer table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -964,7 +964,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_address_changed_event(ev
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_charity_aid:=sw.S.Lookup_or_create_address(evt.NewCharity,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_charity_addr(" +
+	query = "INSERT INTO cg_adm_charity_wallet(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_charity_aid" +
 			") VALUES (" +
@@ -979,7 +979,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_address_changed_event(ev
 		new_charity_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_charity_addr table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_charity_wallet table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -1870,7 +1870,7 @@ func (sw *SQLStorageWrapper) Insert_round_started_event(evt *p.CGRoundStarted) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_round_started(" +
+	query = "INSERT INTO cg_first_bid(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"round_num,start_ts" +
 			") VALUES (" +
@@ -1886,7 +1886,7 @@ func (sw *SQLStorageWrapper) Insert_round_started_event(evt *p.CGRoundStarted) {
 		evt.StartTimestamp,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_round_started table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_first_bid table: %v\n",err))
 		os.Exit(1)
 	}
 }

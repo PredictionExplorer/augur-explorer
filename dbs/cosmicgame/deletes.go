@@ -32,7 +32,7 @@ func (sw *SQLStorageWrapper) Delete_bid(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_donation_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_donation WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_eth_donated WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -42,7 +42,7 @@ func (sw *SQLStorageWrapper) Delete_donation_event(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_donation_with_info_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_donation_wi WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_eth_donated_wi WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -92,7 +92,7 @@ func (sw *SQLStorageWrapper) Delete_nft_donation_event(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_charity_updated(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_charity_updated WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_charity_receiver_changed WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -142,7 +142,7 @@ func (sw *SQLStorageWrapper) Delete_prize_withdrawal(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_raffle_nft_winner(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_raffle_nft_prize WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -152,7 +152,7 @@ func (sw *SQLStorageWrapper) Delete_raffle_nft_winner(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_raffle_eth_winner(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_raffle_eth_winner WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_raffle_eth_prize WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -162,7 +162,7 @@ func (sw *SQLStorageWrapper) Delete_raffle_eth_winner(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_endurance_winner(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_endurance_winner WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_endurance_prize WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -172,7 +172,7 @@ func (sw *SQLStorageWrapper) Delete_endurance_winner(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_lastcst_bidder_winner(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_lastcst_winner WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_lastcst_prize WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -202,7 +202,7 @@ func (sw *SQLStorageWrapper) Delete_donated_nft_claimed(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_eth_deposit_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_eth_deposit WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_staking_eth_deposit WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -222,7 +222,7 @@ func (sw *SQLStorageWrapper) Delete_marketing_reward_sent_event(evtlog_id int64)
 func (sw *SQLStorageWrapper) Delete_cosmic_signature_transfer_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_transfer WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_erc721_transfer WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -332,7 +332,7 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_chrono_percentage_changed_event(
 func (sw *SQLStorageWrapper) Delete_cosmic_game_charity_address_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_charity_addr WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_charity_wallet WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -702,7 +702,7 @@ func (sw *SQLStorageWrapper) Delete_state_reset_event(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_chrono_warrior_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_chrono_warrior WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_chrono_warrior_prize WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -762,7 +762,7 @@ func (sw *SQLStorageWrapper) Delete_delay_duration_before_next_round_changed_eve
 func (sw *SQLStorageWrapper) Delete_round_started_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_round_started WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_first_bid WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
