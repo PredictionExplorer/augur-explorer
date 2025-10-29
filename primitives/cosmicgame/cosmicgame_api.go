@@ -51,15 +51,19 @@ type CGBidRec struct {
 	DateTime					string
 	BidderAid					int64
 	BidderAddr					string
-	BidPrice					string
-	BidPriceEth					float64	// divided by 1e18
+	EthPrice					string
+	EthPriceEth					float64	// divided by 1e18 (or -1 if CST bid)
+	CstPrice					string
+	CstPriceEth					float64	// divided by 1e18 (or -1 if ETH bid)
 	RWalkNFTId					int64
 	RoundNum					int64
 	BidType						int64
-	NumCSTTokens				string
-	NumCSTTokensEth				float64
-	ERC20RewardAmount			string
-	ERC20RewardAmountEth		float64	// divided by 1e18
+	BidPosition					int64
+	PrizeTime					int64
+	PrizeTimeDate				string
+	TimeUntilPrize				int64	// Seconds until prize (0 if already ended)
+	CSTReward				string
+	CSTRewardEth				float64
 	NFTDonationTokenId			int64
 	NFTDonationTokenAddr		string
 	NFTTokenURI					string

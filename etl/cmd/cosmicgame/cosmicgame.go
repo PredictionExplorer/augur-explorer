@@ -511,7 +511,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.RoundNum = log.Topics[1].Big().Int64()
-	evt.BidPrice = eth_evt.PaidEthPrice.String()
+	evt.EthPrice = eth_evt.PaidEthPrice.String()
 	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId,evt.TxId)
@@ -528,7 +528,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("BidPlaced {\n")
 	Info.Printf("\tLastBidder: %v\n",evt.LastBidderAddr)
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
-	Info.Printf("\tBidPrice: %v\n",evt.BidPrice)
+	Info.Printf("\tBidPrice: %v\n",evt.EthPrice)
 	Info.Printf("\tCstPrice: %v\n",evt.CstPrice);
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
 	Info.Printf("\tPrizeTime: %v\n",evt.PrizeTime)

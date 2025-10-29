@@ -46,10 +46,11 @@ CREATE TABLE cg_bid ( -- ICosmicSignatureGame.sol:BidPlaced
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
 	round_num		BIGINT NOT NULL,
 	bid_type		SMALLINT NOT NULL,  --  0 = ETH, 1 = RandomWalk, 2 = CST
-	num_cst_tokens	DECIMAL NOT NULL,
+	bid_position	BIGINT NOT NULL,	-- Position of this bid within the round (1st, 2nd, 3rd, etc.)
 	prize_time		TIMESTAMPTZ NOT NULL,
-	bid_price		DECIMAL NOT NULL,
-	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
+	eth_price		DECIMAL NOT NULL,	-- PaidEthPrice (or -1 if CST bid)
+	cst_price		DECIMAL NOT NULL,	-- PaidCstPrice (or -1 if ETH bid)
+	cst_reward		DECIMAL DEFAULT 0,	-- CST reward amount for this bid (from cstRewardAmountForBidding at time of bid)
 	msg				TEXT,
 	UNIQUE(evtlog_id)
 );
@@ -1000,6 +1001,7 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
 	total_chrono_warrior_eth_deposits DECIMAL DEFAULT 0,
 	total_cst_given_in_prizes DECIMAL DEFAULT 0,
+	cst_reward_for_bidding DECIMAL DEFAULT 0,
 	total_nft_donated		BIGINT DEFAULT 0,
 	total_erc20_donations	BIGINT DEFAULT 0,		-- the number of donations, not the number of tokens
 	total_cst_consumed		DECIMAL DEFAULT 0,		-- or burned, sum of the tokens that was burned as bid price

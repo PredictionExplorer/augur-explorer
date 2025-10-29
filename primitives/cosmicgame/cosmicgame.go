@@ -42,10 +42,10 @@ type CGBidEvent struct {
 	PrizeTime			int64
 	RoundNum			int64
 	BidType				int64
-	CstPrice			string
 	ContractAddr		string
 	LastBidderAddr		string
-	BidPrice			string
+	EthPrice			string	// PaidEthPrice (or -1 for CST bids)
+	CstPrice			string	// PaidCstPrice (or -1 for ETH bids)
 	ERC20_Value			string	// reward of CST tokens earned for bidding
 	Message				string
 }

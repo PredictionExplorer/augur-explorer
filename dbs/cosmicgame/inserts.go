@@ -38,11 +38,38 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	bidder_aid := sw.S.Lookup_or_create_address(evt.LastBidderAddr,0, 0)
 	var query string
+	// Calculate bid position for this round
+	var bid_position int64 = 1
+	row := sw.S.Db().QueryRow("SELECT COALESCE(MAX(bid_position), 0) + 1 FROM "+sw.S.SchemaName()+".cg_bid WHERE round_num = $1", evt.RoundNum)
+	err := row.Scan(&bid_position)
+	if err != nil || bid_position == 0 {
+		bid_position = 1 // First bid in round
+	}
+	
+	// Get current cst_reward_for_bidding from settings
+	var cst_reward string
+	row = sw.S.Db().QueryRow("SELECT cst_reward_for_bidding FROM "+sw.S.SchemaName()+".cg_glob_stats LIMIT 1")
+	err = row.Scan(&cst_reward)
+	if err != nil {
+		cst_reward = "0" // Default if not set
+	}
+	
+	// Determine eth_price and cst_price based on bid type
+	eth_price := evt.EthPrice
+	cst_price := evt.CstPrice
+	if evt.BidType == 2 { // CST bid
+		eth_price = "-1"
+		// cst_price already set
+	} else { // ETH or RandomWalk bid
+		// eth_price already set
+		cst_price = "-1"
+	}
+	
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_bid("+
-					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount,prize_time,msg,round_num,bid_type,num_cst_tokens"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,TO_TIMESTAMP($10),$11,$12,$13,$14)"
-	_,err := sw.S.Db().Exec(query,
+			"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+			"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,prize_time,msg,round_num,bid_type,bid_position"+
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,TO_TIMESTAMP($11),$12,$13,$14,$15)"
+	_,err = sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -50,13 +77,14 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		contract_aid,
 		bidder_aid,
 		evt.RandomWalkTokenId,
-		evt.BidPrice,
-		evt.ERC20_Value,
+		eth_price,
+		cst_price,
+		cst_reward,
 		evt.PrizeTime,
 		evt.Message,
 		evt.RoundNum,
 		evt.BidType,
-		evt.CstPrice,
+		bid_position,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_bid table: %v\n",err))

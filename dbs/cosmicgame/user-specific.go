@@ -251,47 +251,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGRo
 }
 func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 
-	var query string
-	query =  "SELECT " +
-				"b.evtlog_id,"+
-				"b.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT,"+
-				"b.time_stamp,"+
-				"b.bidder_aid,"+
-				"ba.addr,"+
-				"b.bid_price,"+
-				"b.bid_price/1e18 bid_price_eth, " +
-				"b.rwalk_nft_id,"+
-				"b.erc20_amount,"+
-				"b.erc20_amount/1e18 erc20_amount_eth, "+
-				"d.token_id,"+
-				"d.tok_addr, "+
-				"d.token_uri, "+
-				"b.msg, "+
-				"b.round_num, "+
-				"b.num_cst_tokens, "+
-				"b.num_cst_tokens/1e18, "+
-				"b.bid_type, "+
-				"d2.tok_addr, "+
-				"d2.amount, "+
-				"d2.amount/1e18 "+
-			"FROM "+sw.S.SchemaName()+".cg_bid b "+
-				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
-				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
-				"LEFT JOIN LATERAL (" +
-					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.token_uri "+
-						"FROM "+sw.S.SchemaName()+".cg_nft_donation d "+
-						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
-				") d ON b.id=d.bid_id "+
-				"LEFT JOIN LATERAL (" +
-					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.amount "+
-						"FROM "+sw.S.SchemaName()+".cg_erc20_donation d "+
-						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
-				") d2 ON b.id=d2.bid_id "+
-			"WHERE b.bidder_aid=$1 "+
-			"ORDER BY b.id DESC"
+	query := sw.buildBidSelectQuery("b.bidder_aid=$1", "b.id DESC", "")
 
 	rows,err := sw.S.Db().Query(query,bidder_aid)
 	if (err!=nil) {
@@ -314,24 +274,28 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.BidderAid,
-			&rec.BidderAddr,
-			&rec.BidPrice,
-			&rec.BidPriceEth,
-			&rec.RWalkNFTId,
-			&rec.ERC20RewardAmount,
-			&rec.ERC20RewardAmountEth,
-			&null_token_id,
-			&null_tok_addr,
-			&null_token_uri,
-			&rec.Message,
-			&rec.RoundNum,
-			&rec.NumCSTTokens,
-			&rec.NumCSTTokensEth,
-			&rec.BidType,
-			&null_donated_erc20_addr,
-			&null_donated_erc20_amount,
-			&null_donated_erc20_amount_eth,
-		)
+		&rec.BidderAddr,
+		&rec.EthPrice,
+		&rec.EthPriceEth,
+		&rec.CstPrice,
+		&rec.CstPriceEth,
+		&rec.RWalkNFTId,
+		&null_token_id,
+		&null_tok_addr,
+		&null_token_uri,
+		&rec.Message,
+		&rec.RoundNum,
+		&rec.CSTReward,
+		&rec.CSTRewardEth,
+		&rec.BidType,
+		&rec.PrizeTime,
+		&rec.PrizeTimeDate,
+		&rec.TimeUntilPrize,
+		&rec.BidPosition,
+		&null_donated_erc20_addr,
+		&null_donated_erc20_amount,
+		&null_donated_erc20_amount_eth,
+	)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)

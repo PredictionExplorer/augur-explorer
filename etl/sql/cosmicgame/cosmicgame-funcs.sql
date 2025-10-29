@@ -4,7 +4,7 @@ DECLARE
 	v_cnt					NUMERIC;
 BEGIN
 
-	SELECT MAX(bid_price) FROM cg_bid INTO v_max_bid WHERE bidder_aid = NEW.bidder_aid;
+	SELECT MAX(eth_price) FROM cg_bid INTO v_max_bid WHERE bidder_aid = NEW.bidder_aid;
 	IF v_max_bid IS NULL THEN
 		v_max_bid := 0;
 	END IF;
@@ -29,14 +29,14 @@ BEGIN
 		IF NEW.bid_type = 2 THEN
 			UPDATE cg_glob_stats SET
 				num_bids_cst = (num_bids_cst + 1),
-				total_cst_consumed = (total_cst_consumed + NEW.num_cst_tokens);
+				total_cst_consumed = (total_cst_consumed + NEW.cst_reward);
 		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids + 1);
 	UPDATE cg_round_stats SET 
 			total_bids = (total_bids + 1),
-			total_cst_in_bids = (total_cst_in_bids + NEW.num_cst_tokens),
-			total_eth_in_Bids = (total_eth_in_bids + NEW.bid_price)
+			total_cst_in_bids = (total_cst_in_bids + NEW.cst_reward),
+			total_eth_in_Bids = (total_eth_in_bids + NEW.eth_price)
 	   	WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -51,7 +51,7 @@ DECLARE
 	v_cnt					NUMERIC;
 BEGIN
 
-	SELECT MAX(bid_price) FROM cg_bid INTO v_max_bid WHERE bidder_aid = OLD.bidder_aid;
+	SELECT MAX(eth_price) FROM cg_bid INTO v_max_bid WHERE bidder_aid = OLD.bidder_aid;
 	IF v_max_bid IS NULL THEN
 		v_max_bid := 0;
 	END IF;
@@ -71,14 +71,14 @@ BEGIN
 		IF OLD.bid_type = 2 THEN
 			UPDATE cg_glob_stats SET 
 				num_bids_cst = (num_bids_cst - 1),
-				total_cst_consumed = (total_cst_consumed - OLD.num_cst_tokens);
+				total_cst_consumed = (total_cst_consumed - OLD.cst_reward);
 		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids - 1) WHERE cur_num_bids>0;
 	UPDATE cg_round_stats SET 
 			total_bids = (total_bids - 1),
-			total_cst_in_bids = (total_cst_in_bids + NEW.num_cst_tokens),
-			total_eth_in_Bids = (total_eth_in_bids + NEW.bid_price)
+			total_cst_in_bids = (total_cst_in_bids + NEW.cst_reward),
+			total_eth_in_Bids = (total_eth_in_bids + NEW.eth_price)
 		WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
@@ -1560,3 +1560,10 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc20_reward_insert() RETURNS trigger AS $$
+BEGIN
+	UPDATE cg_glob_stats SET cst_reward_for_bidding = NEW.new_reward;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER erc20_reward_insert AFTER INSERT ON cg_adm_erc20_reward FOR EACH ROW EXECUTE FUNCTION on_erc20_reward_insert();
