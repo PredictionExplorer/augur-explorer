@@ -627,110 +627,22 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims_by_user(winner_aid int64) []
 func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int64,offset,limit int) []p.CGCosmicSignatureMintRec {
 
 	if limit == 0 { limit = 1000000 }
-	var query string
-	query = "SELECT "+
-				"m.evtlog_id,"+
-				"m.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT,"+
-				"m.time_stamp,"+
-				"m.owner_aid,"+
-				"wa.addr,"+
-				"m.cur_owner_aid,"+
-				"oa.addr,"+
-				"m.seed, "+
-				"m.token_id,"+
-				"m.token_name,"+
-				"m.round_num,"+
-				"p.round_num, "+
-				"sa.action_id,"+
-				"EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT,"+
-				"sa.time_stamp,"+
-				"ua.action_id,"+
-				"EXTRACT(EPOCH FROM ua.time_stamp)::BIGINT,"+
-				"ua.time_stamp, "+
-				"cst.erc721_token_id,"+
-				"endu.erc721_token_id, "+
-				"rnw.is_staker, "+
-				"rnw.id "+
-			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
-				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
-				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
-				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_nft_staked_cst sa ON sa.token_id=m.token_id "+
-				"LEFT JOIN cg_nft_unstaked_cst ua ON ua.token_id=m.token_id "+
-				"LEFT JOIN cg_lastcst_prize cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num) "+
-				"LEFT JOIN cg_endurance_prize endu ON (m.token_id=endu.erc721_token_id AND m.round_num=endu.round_num) "+
-				"LEFT JOIN cg_raffle_nft_prize rnw ON (m.token_id=rnw.token_id AND m.round_num=rnw.round_num) "+
-			"WHERE m.cur_owner_aid=$1 "+
-			"ORDER BY m.id DESC "+
-			"OFFSET $2 LIMIT $3"
-
-	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+	query := sw.buildNFTSelectQuery("m.cur_owner_aid=$1", "m.id DESC", "OFFSET $2 LIMIT $3")
+	rows, err := sw.S.Db().Query(query, user_aid, offset, limit)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 		os.Exit(1)
 	}
-	records := make([]p.CGCosmicSignatureMintRec,0, 64)
+	
+	records := make([]p.CGCosmicSignatureMintRec, 0, 64)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGCosmicSignatureMintRec
-		var null_prize_num sql.NullInt64
-		var null_stake_action_id,null_stake_timestamp sql.NullInt64
-		var null_unstake_action_id,null_unstake_timestamp sql.NullInt64
-		var null_stake_date,null_unstake_date sql.NullString
-		var null_endu_token_id,null_stel_token_id,null_raffle_id sql.NullInt64
-		var null_staked sql.NullBool
-		err=rows.Scan(
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.WinnerAid,
-			&rec.WinnerAddr,
-			&rec.CurOwnerAid,
-			&rec.CurOwnerAddr,
-			&rec.Seed,
-			&rec.TokenId,
-			&rec.TokenName,
-			&rec.RoundNum,
-			&null_prize_num,
-			&null_stake_action_id,
-			&null_stake_timestamp,
-			&null_stake_date,
-			&null_unstake_action_id,
-			&null_unstake_timestamp,
-			&null_unstake_date,
-			&null_stel_token_id,
-			&null_endu_token_id,
-			&null_staked,
-			&null_raffle_id,
-		)
+		rec, err := scanNFTRecord(rows)
 		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 			os.Exit(1)
 		}
-		// RecordType must be in sync with user-specific.go file, abstracting to dedicated function is a todo 
-		rec.RecordType = 3  // main prize
-		if null_raffle_id.Valid { rec.RecordType = 1 }  // raffle NFT winer
-		if null_staked.Valid {
-			if null_staked.Bool {rec.RecordType = 2 }   // nft won due to staking (RWalk)
-		}
-		if null_endu_token_id.Valid { rec.RecordType = 4 } // endurance champion
-		if null_stel_token_id.Valid { rec.RecordType = 5 }  // stellar spender
-
-		if null_stake_action_id.Valid { rec.StakeActionId = null_stake_action_id.Int64 } else {rec.StakeActionId = -1 }
-		if null_stake_timestamp.Valid { rec.StakeDateTime = null_stake_date.String }
-		if null_unstake_action_id.Valid { rec.UnstakeActionId = null_unstake_action_id.Int64 } else {rec.UnstakeActionId = -1}
-		if null_unstake_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_unstake_timestamp.Int64 } else { rec.ActualUnstakeTimeStamp = -1}
-		if null_unstake_date.Valid { rec.ActualUnstakeDateTime = null_unstake_date.String } 
-		if (rec.StakeActionId > -1) && (rec.UnstakeActionId > -1) { rec.WasUnstaked = true }
-		if (rec.StakeActionId > -1) && (rec.UnstakeActionId == -1) { rec.Staked = true }
-		records = append(records,rec)
+		records = append(records, rec)
 	}
 	return records
 }
