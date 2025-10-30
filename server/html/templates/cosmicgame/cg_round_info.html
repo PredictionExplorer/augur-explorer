@@ -8,30 +8,30 @@
 <table>
 	<tr>
 		<td>EvtLog ID</td>
-		<td>{{.RoundInfo.ClaimPrizeTx.EvtLogId}}
+		<td>{{.RoundInfo.ClaimPrizeTx.Tx.EvtLogId}}
 	</tr>
 	<tr>
 		<td>BlockNum</td>
-		<td>{{.RoundsInfo.BlockNum}}</td>
+		<td>{{.RoundInfo.ClaimPrizeTx.Tx.BlockNum}}</td>
 	</tr>
 	<tr>
 		<td>TxId</td>
-		<td>{{.RoundInfo.ClaimPrizeTx.TxId}}</td>
+		<td>{{.RoundInfo.ClaimPrizeTx.Tx.TxId}}</td>
 	</tr>
 	<tr>
 		<td>TxHash</td>
-		<td>{{.RoundInfo.ClaimPrizeTx.TxHash}}</td>
+		<td>{{.RoundInfo.ClaimPrizeTx.Tx.TxHash}}</td>
 	</td>
 	<tr>
 		<td>TimeStamp</td>
 		<td>
-			{{.RoundInfo.ClaimPrizeTx.TimeStamp}}
+			{{.RoundInfo.ClaimPrizeTx.Tx.TimeStamp}}
 		</td>
 	</tr>
 	<tr>
 		<td>DateTime</td>
 		<td>
-			{{.RoundInfo.ClaimPrizeTx.DateTime}}
+			{{.RoundInfo.ClaimPrizeTx.Tx.DateTime}}
 		</td>
 	</tr>
 	<tr>
@@ -158,10 +158,10 @@
 	</tr>
 	{{- range $i, $change := .RoundInfo.RaffleNFTWinners}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
@@ -185,10 +185,10 @@
 	</tr>
 	{{- range $i, $change := .RoundInfo.StakingNFTWinners}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
@@ -211,10 +211,10 @@
 	</tr>
 	{{- range $i, $change := .RoundInfo.RaffleETHDeposits}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
@@ -238,10 +238,10 @@
 	</tr>
 	{{- range $i, $change := .DonatedNFTs}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			            <td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			            <td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
             <td class="" style="text-align: center;">{{.Index}}</td>
             <td class="addr" title="{{.DonorAid}}">
                 <a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
@@ -263,10 +263,10 @@
 	</tr>
 	{{- range $i, $change := .DonatedERC20s}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td class="addr" title="{{.DonorAid}}">
 				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
 			</td>

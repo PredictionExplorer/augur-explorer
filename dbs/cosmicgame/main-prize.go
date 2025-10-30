@@ -75,12 +75,12 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 	for rows.Next() {
 		var rec p.CGRoundRec
 		err=rows.Scan(
-			&rec.ClaimPrizeTx.EvtLogId,
-			&rec.ClaimPrizeTx.BlockNum,
-			&rec.ClaimPrizeTx.TxId,
-			&rec.ClaimPrizeTx.TxHash,
-			&rec.ClaimPrizeTx.TimeStamp,
-			&rec.ClaimPrizeTx.DateTime,
+			&rec.ClaimPrizeTx.Tx.EvtLogId,
+			&rec.ClaimPrizeTx.Tx.BlockNum,
+			&rec.ClaimPrizeTx.Tx.TxId,
+			&rec.ClaimPrizeTx.Tx.TxHash,
+			&rec.ClaimPrizeTx.Tx.TimeStamp,
+			&rec.ClaimPrizeTx.Tx.DateTime,
 			&rec.MainPrize.WinnerAid,
 			&rec.MainPrize.WinnerAddr,
 			&rec.MainPrize.TimeoutTs,
@@ -213,12 +213,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	var null_endurance_erc20_amount,null_lastcst_erc20_amount,null_warrior_eth_amount,null_warrior_cst_amount sql.NullString
 	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float,null_warrior_eth_amount_float,null_warrior_cst_amount_float sql.NullFloat64
 	err := row.Scan(
-		&rec.ClaimPrizeTx.EvtLogId,
-		&rec.ClaimPrizeTx.BlockNum,
-		&rec.ClaimPrizeTx.TxId,
-		&rec.ClaimPrizeTx.TxHash,
-		&rec.ClaimPrizeTx.TimeStamp,
-		&rec.ClaimPrizeTx.DateTime,
+		&rec.ClaimPrizeTx.Tx.EvtLogId,
+		&rec.ClaimPrizeTx.Tx.BlockNum,
+		&rec.ClaimPrizeTx.Tx.TxId,
+		&rec.ClaimPrizeTx.Tx.TxHash,
+		&rec.ClaimPrizeTx.Tx.TimeStamp,
+		&rec.ClaimPrizeTx.Tx.DateTime,
 		&rec.MainPrize.WinnerAid,
 		&rec.MainPrize.WinnerAddr,
 		&rec.MainPrize.TimeoutTs,
@@ -393,12 +393,12 @@ func (sw *SQLStorageWrapper) Get_all_prizes_for_round(round_num int64) []p.CGPri
 		var rec p.CGPrizeHistory
 		err=rows.Scan(
 			&rec.RecordType,
-			&rec.EvtLogId,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
 			&rec.RoundNum,
 			&rec.Amount,
 			&rec.AmountEth,

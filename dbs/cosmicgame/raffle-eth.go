@@ -49,13 +49,13 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 		var null_ts sql.NullInt64
 		var null_date sql.NullString
 		err=rows.Scan(
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-		&rec.DateTime,
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 		&rec.WinnerAddr,
 		&rec.WinnerAid,
 		&rec.WinnerIndex,
@@ -109,13 +109,13 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 	for rows.Next() {
 		var rec p.CGPrizeDepositRec
 		err=rows.Scan(
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.WinnerIndex,
@@ -163,13 +163,13 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 	for rows.Next() {
 		var rec p.CGPrizeDepositRec
 		err=rows.Scan(
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.WinnerIndex,

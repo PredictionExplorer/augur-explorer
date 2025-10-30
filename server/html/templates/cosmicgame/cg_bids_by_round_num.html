@@ -22,10 +22,10 @@
 	</tr>
 	{{- range $i, $change := .BidsByRound}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/bid/info/{{.EvtLogId}}">{{.BlockNum}}</a>
+			<td class="" title="{{.Tx.TimeStamp}}">
+				<a href="/black/cosmicgame/bid/info/{{.Tx.EvtLogId}}">{{.Tx.BlockNum}}</a>
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td style="text-align: center;" title="">{{ .RoundNum }}</td>
 			<td class="addr" title="{{.BidderAid}}">
 				<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>

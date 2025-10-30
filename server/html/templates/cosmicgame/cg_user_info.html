@@ -345,10 +345,10 @@
 	</tr>
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/bid/info/{{.EvtLogId}}">{{.BlockNum}}</a>
+			<td class="" title="{{.Tx.TimeStamp}}">
+				<a href="/black/cosmicgame/bid/info/{{.Tx.EvtLogId}}">{{.Tx.BlockNum}}</a>
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .EthPriceEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .CSTRewardEth}}</td>
 			<td style="text-align: right;" title="">{{ .RWalkNFTId }}</td>
@@ -366,10 +366,10 @@
 	</tr>
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
-			<td class="" title="{{.ClaimPrizeTx.TimeStamp}}">
-				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.BlockNum}}</a>
+			<td class="" title="{{.ClaimPrizeTx.Tx.TimeStamp}}">
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.BlockNum}}</a>
 			</td>
-			<td class="" title="{{.ClaimPrizeTx.TimeStamp}}">{{.ClaimPrizeTx.DateTime}}</td>
+			<td class="" title="{{.ClaimPrizeTx.Tx.TimeStamp}}">{{.ClaimPrizeTx.Tx.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .MainPrize.EthAmountEth}}</td>
 			<td style="text-align: right;" title="">{{.MainPrize.Seed}}</td>
 		</tr>

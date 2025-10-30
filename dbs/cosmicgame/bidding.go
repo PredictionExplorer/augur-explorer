@@ -52,12 +52,12 @@ func scanBidRecord(rows *sql.Rows) (p.CGBidRec, error) {
 	var null_donated_erc20_amount_eth sql.NullFloat64
 	
 	err := rows.Scan(
-		&rec.EvtLogId,
-		&rec.BlockNum,
-		&rec.TxId,
-		&rec.TxHash,
-		&rec.TimeStamp,
-		&rec.DateTime,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 		&rec.BidderAid,
 		&rec.BidderAddr,
 		&rec.EthPrice,

@@ -18,10 +18,10 @@
 	</tr>
 	{{- range $i, $change := .RaffleDeposits}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>

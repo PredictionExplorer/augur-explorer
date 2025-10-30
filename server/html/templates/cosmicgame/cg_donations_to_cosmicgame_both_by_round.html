@@ -18,12 +18,12 @@
 	</tr>
 	{{- range $i, $change := .CosmicGameDonations}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}</a>
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}</a>
 			</td>
-			<td class="" title="{{.TimeStamp}}">
+			<td class="" title="{{.Tx.TimeStamp}}">
 				<a href="/black/cosmicgame/donations/eth/with_info/info/{{.CGRecordId}}">
-				{{.DateTime}}
+				{{.Tx.DateTime}}
 				</a>
 			</td>
 			<td class="">

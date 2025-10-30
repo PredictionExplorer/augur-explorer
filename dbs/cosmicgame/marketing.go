@@ -39,12 +39,12 @@ func (sw *SQLStorageWrapper) Get_marketing_reward_history_global(offset,limit in
 		var rec p.CGMarketingRewardRec
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.Amount,
 			&rec.AmountEth,
 			&rec.MarketerAid,

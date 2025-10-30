@@ -62,8 +62,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	var null_reward_eth, null_reward_per_tok_eth sql.NullFloat64
 	
 	err := row.Scan(
-		&rec.Stake.RecordId, &rec.Stake.EvtLogId, &rec.Stake.BlockNum, &rec.Stake.TxId, &rec.Stake.TxHash,
-		&rec.Stake.TimeStamp, &rec.Stake.DateTime, &rec.Stake.ActionId, &rec.Stake.TokenId,
+		&rec.Stake.RecordId, &rec.Stake.Tx.EvtLogId, &rec.Stake.Tx.BlockNum, &rec.Stake.Tx.TxId, &rec.Stake.Tx.TxHash,
+		&rec.Stake.Tx.TimeStamp, &rec.Stake.Tx.DateTime, &rec.Stake.ActionId, &rec.Stake.TokenId,
 		&rec.Stake.RoundNum, &rec.Stake.NumStakedNFTs, &rec.Stake.StakerAid, &rec.Stake.StakerAddr,
 		&null_record_id, &null_evtlog_id, &null_block_num, &null_tx_id, &null_tx_hash,
 		&null_unstake_ts, &null_unstake_date, &null_action_id, &null_token_id,
@@ -80,12 +80,12 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	
 	// Handle unstake nulls
 	if null_record_id.Valid { rec.Unstake.RecordId = null_record_id.Int64 }
-	if null_evtlog_id.Valid { rec.Unstake.EvtLogId = null_evtlog_id.Int64 }
-	if null_block_num.Valid { rec.Unstake.BlockNum = null_block_num.Int64 }
-	if null_tx_id.Valid { rec.Unstake.TxId = null_tx_id.Int64 }
-	if null_tx_hash.Valid { rec.Unstake.TxHash = null_tx_hash.String }
-	if null_unstake_ts.Valid { rec.Unstake.TimeStamp = null_unstake_ts.Int64 }
-	if null_unstake_date.Valid { rec.Unstake.DateTime = null_unstake_date.String }
+	if null_evtlog_id.Valid { rec.Unstake.Tx.EvtLogId = null_evtlog_id.Int64 }
+	if null_block_num.Valid { rec.Unstake.Tx.BlockNum = null_block_num.Int64 }
+	if null_tx_id.Valid { rec.Unstake.Tx.TxId = null_tx_id.Int64 }
+	if null_tx_hash.Valid { rec.Unstake.Tx.TxHash = null_tx_hash.String }
+	if null_unstake_ts.Valid { rec.Unstake.Tx.TimeStamp = null_unstake_ts.Int64 }
+	if null_unstake_date.Valid { rec.Unstake.Tx.DateTime = null_unstake_date.String }
 	if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
 	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
 	if null_round_num.Valid { rec.Unstake.RoundNum = null_round_num.Int64 }
@@ -111,8 +111,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 	var null_reward_eth, null_reward_per_tok_eth sql.NullFloat64
 	
 	err := row.Scan(
-		&rec.Stake.RecordId, &rec.Stake.EvtLogId, &rec.Stake.BlockNum, &rec.Stake.TxId, &rec.Stake.TxHash,
-		&rec.Stake.TimeStamp, &rec.Stake.DateTime, &rec.Stake.ActionId, &rec.Stake.TokenId,
+		&rec.Stake.RecordId, &rec.Stake.Tx.EvtLogId, &rec.Stake.Tx.BlockNum, &rec.Stake.Tx.TxId, &rec.Stake.Tx.TxHash,
+		&rec.Stake.Tx.TimeStamp, &rec.Stake.Tx.DateTime, &rec.Stake.ActionId, &rec.Stake.TokenId,
 		&rec.Stake.RoundNum, &rec.Stake.NumStakedNFTs, &rec.Stake.StakerAid, &rec.Stake.StakerAddr,
 		&null_record_id, &null_evtlog_id, &null_block_num, &null_tx_id, &null_tx_hash,
 		&null_unstake_ts, &null_unstake_date, &null_action_id, &null_token_id,
@@ -127,12 +127,12 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 		os.Exit(1)
 	}
 	if null_record_id.Valid { rec.Unstake.RecordId = null_record_id.Int64 }
-	if null_evtlog_id.Valid { rec.Unstake.EvtLogId = null_evtlog_id.Int64 }
-	if null_block_num.Valid { rec.Unstake.BlockNum = null_block_num.Int64 }
-	if null_tx_id.Valid { rec.Unstake.TxId = null_tx_id.Int64 }
-	if null_tx_hash.Valid { rec.Unstake.TxHash = null_tx_hash.String }
-	if null_unstake_ts.Valid { rec.Unstake.TimeStamp = null_unstake_ts.Int64 }
-	if null_unstake_date.Valid { rec.Unstake.DateTime = null_unstake_date.String }
+	if null_evtlog_id.Valid { rec.Unstake.Tx.EvtLogId = null_evtlog_id.Int64 }
+	if null_block_num.Valid { rec.Unstake.Tx.BlockNum = null_block_num.Int64 }
+	if null_tx_id.Valid { rec.Unstake.Tx.TxId = null_tx_id.Int64 }
+	if null_tx_hash.Valid { rec.Unstake.Tx.TxHash = null_tx_hash.String }
+	if null_unstake_ts.Valid { rec.Unstake.Tx.TimeStamp = null_unstake_ts.Int64 }
+	if null_unstake_date.Valid { rec.Unstake.Tx.DateTime = null_unstake_date.String }
 	if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
 	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
 	if null_round_num.Valid { rec.Unstake.RoundNum = null_round_num.Int64 }
@@ -202,12 +202,12 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 		var null_pending_num_toks sql.NullInt64
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
 			&rec.DepositId,
@@ -296,12 +296,12 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 		var rec p.CGCollectedReward	
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
 			&rec.DepositId,
@@ -378,12 +378,12 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCST
 		var null_prize_num sql.NullInt64
 		err=rows.Scan(
 			&rec.TokenInfo.RecordId,
-			&rec.TokenInfo.EvtLogId,
-			&rec.TokenInfo.BlockNum,
-			&rec.TokenInfo.TxId,
-			&rec.TokenInfo.TxHash,
-			&rec.TokenInfo.TimeStamp,
-			&rec.TokenInfo.DateTime,
+			&rec.TokenInfo.Tx.EvtLogId,
+			&rec.TokenInfo.Tx.BlockNum,
+			&rec.TokenInfo.Tx.TxId,
+			&rec.TokenInfo.Tx.TxHash,
+			&rec.TokenInfo.Tx.TimeStamp,
+			&rec.TokenInfo.Tx.DateTime,
 			&rec.TokenInfo.WinnerAid,
 			&rec.TokenInfo.WinnerAddr,
 			&rec.TokenInfo.CurOwnerAid,
@@ -600,12 +600,12 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 		var count_not_collected,count_total int64;
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
 			&rec.NumStakedNFTs,
@@ -677,12 +677,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) [
 		var rec p.CGEthDepositAsReward
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
 			&rec.NumStakedNFTsTotal,
@@ -769,12 +769,12 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 		err=rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.UnstakeTimeStamp,
 			&rec.UnstakeDate,
 			&rec.ActionId,
@@ -862,12 +862,12 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 		err=rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.UnstakeTimeStamp,
 			&rec.UnstakeDate,
 			&rec.ActionId,
@@ -924,12 +924,12 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_global(offset,limit int) []
 		var rec p.CGRaffleNFTWinnerRec
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.TokenId,
 			&rec.CstAmount,
 			&rec.CstAmountEth,
@@ -979,12 +979,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_mints_global(offset,limit int) []p.
 		var rec p.CGRaffleNFTWinnerRec
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.TokenId,
 			&rec.CstAmount,
 			&rec.CstAmountEth,
@@ -1056,7 +1056,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 		var tx_hash,date_time,deposit_amount string
 		var dep_amount_eth,amount_per_token_eth float64
 		err=rows.Scan(
-			&rec_row.Stake.RecordId,&rec_row.Stake.EvtLogId,&rec_row.Stake.BlockNum,&rec_row.Stake.TxId,&rec_row.Stake.TxHash,&rec_row.Stake.TimeStamp,&rec_row.Stake.DateTime,
+			&rec_row.Stake.RecordId,&rec_row.Stake.Tx.EvtLogId,&rec_row.Stake.Tx.BlockNum,&rec_row.Stake.Tx.TxId,&rec_row.Stake.Tx.TxHash,&rec_row.Stake.Tx.TimeStamp,&rec_row.Stake.Tx.DateTime,
 			&rec_row.Stake.ActionId,&rec_row.Stake.TokenId,&rec_row.Stake.NumStakedNFTs,
 			&null_record_id,&null_evtlog_id,&null_block_num,&null_tx_id,&null_tx_hash,&null_time_stamp,&null_date_time,
 			&null_action_id,&null_token_id,&null_num_staked_nfts,&null_reward,&null_reward_eth,
@@ -1070,12 +1070,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 			os.Exit(1)
 		}
 		if null_record_id.Valid { rec_row.Unstake.RecordId = null_record_id.Int64; rec_row.Unstake.StakerAid = user_aid; }
-		if null_evtlog_id.Valid { rec_row.Unstake.EvtLogId = null_evtlog_id.Int64 }
-		if null_block_num.Valid { rec_row.Unstake.BlockNum = null_block_num.Int64 }
-		if null_tx_id.Valid { rec_row.Unstake.TxId = null_tx_id.Int64 }
-		if null_tx_hash.Valid { rec_row.Unstake.TxHash = null_tx_hash.String }
-		if null_time_stamp.Valid { rec_row.Unstake.TimeStamp = null_time_stamp.Int64 }
-		if null_date_time.Valid { rec_row.Unstake.DateTime = null_date_time.String }
+		if null_evtlog_id.Valid { rec_row.Unstake.Tx.EvtLogId = null_evtlog_id.Int64 }
+		if null_block_num.Valid { rec_row.Unstake.Tx.BlockNum = null_block_num.Int64 }
+		if null_tx_id.Valid { rec_row.Unstake.Tx.TxId = null_tx_id.Int64 }
+		if null_tx_hash.Valid { rec_row.Unstake.Tx.TxHash = null_tx_hash.String }
+		if null_time_stamp.Valid { rec_row.Unstake.Tx.TimeStamp = null_time_stamp.Int64 }
+		if null_date_time.Valid { rec_row.Unstake.Tx.DateTime = null_date_time.String }
 		if null_action_id.Valid { rec_row.Unstake.ActionId = null_action_id.Int64 }
 		if null_token_id.Valid { rec_row.Unstake.TokenId = null_token_id.Int64 }
 		if null_num_staked_nfts.Valid { rec_row.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
@@ -1099,12 +1099,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 				actions = make([]p.CGNftStakeUnstakeCombined,0, 16)
 			}
 			rec.RecordId = record_id
-			rec.EvtLogId = evtlog_id
-			rec.BlockNum = block_num
-			rec.TxId = tx_id
-			rec.TxHash = tx_hash
-			rec.TimeStamp = time_stamp
-			rec.DateTime  = date_time
+			rec.Tx.EvtLogId = evtlog_id
+			rec.Tx.BlockNum = block_num
+			rec.Tx.TxId = tx_id
+			rec.Tx.TxHash = tx_hash
+			rec.Tx.TimeStamp = time_stamp
+			rec.Tx.DateTime  = date_time
 			rec.DepositId = deposit_id
 			rec.DepositRoundNum = dep_round
 			rec.NumStakedNFTs = num_staked_nfts
@@ -1293,12 +1293,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 			&rec.DepositId,
 			// stake action fields
 			&rec.Stake.RecordId,
-			&rec.Stake.EvtLogId,
-			&rec.Stake.BlockNum,
-			&rec.Stake.TxId,
-			&rec.Stake.TxHash,
-			&rec.Stake.TimeStamp,
-			&rec.Stake.DateTime,
+			&rec.Stake.Tx.EvtLogId,
+			&rec.Stake.Tx.BlockNum,
+			&rec.Stake.Tx.TxId,
+			&rec.Stake.Tx.TxHash,
+			&rec.Stake.Tx.TimeStamp,
+			&rec.Stake.Tx.DateTime,
 			&rec.Stake.ActionId,
 			&rec.Stake.NumStakedNFTs,
 			// unstake action fields
@@ -1321,12 +1321,12 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards_details_fo
 			os.Exit(1)
 		}
 		if null_rec_id.Valid { rec.Unstake.RecordId =  null_rec_id.Int64 }
-		if null_evtlog_id.Valid { rec.Unstake.EvtLogId = null_evtlog_id.Int64 }
-		if null_block_num.Valid { rec.Unstake.BlockNum = null_block_num.Int64 }
-		if null_tx_id.Valid { rec.Unstake.TxId = null_tx_id.Int64 }
-		if null_tx_hash.Valid { rec.Unstake.TxHash = null_tx_hash.String }
-		if null_timestamp.Valid { rec.Unstake.TimeStamp = null_timestamp.Int64 }
-		if null_datetime.Valid { rec.Unstake.DateTime = null_datetime.String }
+		if null_evtlog_id.Valid { rec.Unstake.Tx.EvtLogId = null_evtlog_id.Int64 }
+		if null_block_num.Valid { rec.Unstake.Tx.BlockNum = null_block_num.Int64 }
+		if null_tx_id.Valid { rec.Unstake.Tx.TxId = null_tx_id.Int64 }
+		if null_tx_hash.Valid { rec.Unstake.Tx.TxHash = null_tx_hash.String }
+		if null_timestamp.Valid { rec.Unstake.Tx.TimeStamp = null_timestamp.Int64 }
+		if null_datetime.Valid { rec.Unstake.Tx.DateTime = null_datetime.String }
 		if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
 		if null_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_staked_nfts.Int64 }
 		if null_reward.Valid { rec.Unstake.RewardAmount = null_reward.String }

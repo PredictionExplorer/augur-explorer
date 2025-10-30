@@ -45,13 +45,13 @@ func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.CGNFTDonati
 	for rows.Next() {
 		var rec p.CGNFTDonation
 		err=rows.Scan(
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 			&rec.DonorAid,
 			&rec.DonorAddr,
 			&rec.NFTTokenId,
@@ -96,12 +96,12 @@ func (sw *SQLStorageWrapper) Get_NFT_donation_info(id int64) (bool,p.CGNFTDonati
 	var rec p.CGNFTDonation
 	rec.RecordId = id
 	err=row.Scan(
-		&rec.EvtLogId,
-		&rec.BlockNum,
-		&rec.TxId,
-		&rec.TxHash,
-		&rec.TimeStamp,
-		&rec.DateTime,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 		&rec.DonorAid,
 		&rec.DonorAddr,
 		&rec.NFTTokenId,
@@ -157,11 +157,11 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims(offset,limit int) []p.CGDona
 		var rec p.CGDonatedNFTClaimRec
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.RoundNum,
 			&rec.TokenAddr,
 			&rec.NFTTokenId,
@@ -215,13 +215,13 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(round_num int64) []p.CGN
 	for rows.Next() {
 		var rec p.CGNFTDonation
 		err=rows.Scan(
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 			&rec.RoundNum,
 			&rec.DonorAid,
 			&rec.DonorAddr,
@@ -276,13 +276,13 @@ func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(round_num int64
 	for rows.Next() {
 		var rec p.CGNFTDonation
 		err=rows.Scan(
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 			&rec.RoundNum,
 			&rec.DonorAid,
 			&rec.DonorAddr,

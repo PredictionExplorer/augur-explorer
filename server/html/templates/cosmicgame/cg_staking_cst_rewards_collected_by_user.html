@@ -19,10 +19,10 @@
 	</tr>
 	{{- range $i, $change := .CollectedStakingCSTRewards}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td style="text-align: center;" title="">
 				<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
 				{{.DepositId}}

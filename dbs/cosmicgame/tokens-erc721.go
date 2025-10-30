@@ -71,12 +71,12 @@ func scanNFTRecord(rows *sql.Rows) (p.CGCosmicSignatureMintRec, error) {
 	var null_stake_date, null_unstake_date sql.NullString
 	
 	err := rows.Scan(
-		&rec.EvtLogId,
-		&rec.BlockNum,
-		&rec.TxId,
-		&rec.TxHash,
-		&rec.TimeStamp,
-		&rec.DateTime,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 		&rec.WinnerAid,
 		&rec.WinnerAddr,
 		&rec.CurOwnerAid,
@@ -224,12 +224,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	var null_endu_token_id,null_stel_token_id sql.NullInt64
 	row := sw.S.Db().QueryRow(query,token_id)
 	err=row.Scan(
-		&rec.EvtLogId,
-		&rec.BlockNum,
-		&rec.TxId,
-		&rec.TxHash,
-		&rec.TimeStamp,
-		&rec.DateTime,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
 		&rec.WinnerAid,
 		&rec.WinnerAddr,
 		&rec.CurOwnerAid,
@@ -305,12 +305,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id in
 	for rows.Next() {
 		var rec p.CGTokenName
 		err=rows.Scan(
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.TokenId,
 			&rec.TokenName,
 		)
@@ -359,12 +359,12 @@ func (sw *SQLStorageWrapper) Get_cst_ownership_transfers(token_id int64,offset,l
 		var rec p.CGTransfer
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
 			&rec.FromAid,
 			&rec.FromAddr,
 			&rec.ToAid,

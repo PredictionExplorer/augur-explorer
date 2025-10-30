@@ -51,13 +51,13 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64,is_
 	for rows.Next() {
 		var rec p.CGRaffleNFTWinnerRec
 		err=rows.Scan(
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.WinnerAid,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+		&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.RoundNum,
 			&rec.TokenId,
@@ -111,13 +111,13 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaff
 	for rows.Next() {
 		var rec p.CGRaffleNFTWinnerRec
 		err=rows.Scan(
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.WinnerAid,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+		&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.RoundNum,
 			&rec.TokenId,

@@ -1,26 +1,26 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Bid record for event id={{.BidInfo.EvtLogId}}</title>
+	<title>Bid record for event id={{.BidInfo.Tx.EvtLogId}}</title>
 </head>
 <body>
 	<h3 class="page_title">Bid Info<h3>
 <table>
 	<tr>
 		<td>EvtLog ID</td>
-		<td>{{.BidInfo.EvtLogId}}
+		<td>{{.BidInfo.Tx.EvtLogId}}
 	</tr>
 	<tr>
 		<td>BlockNum</td>
-		<td>{{.BidInfo.BlockNum}}</td>
+		<td>{{.BidInfo.Tx.BlockNum}}</td>
 	</tr>
 	<tr>
 		<td>TxId</td>
-		<td>{{.BidInfo.TxId}}</td>
+		<td>{{.BidInfo.Tx.TxId}}</td>
 	</tr>
 	<tr>
 		<td>TxHash</td>
-		<td>{{.BidInfo.TxHash}}</td>
+		<td>{{.BidInfo.Tx.TxHash}}</td>
 	</td>
 	<tr>
 		<td>Round Num</td>
@@ -31,13 +31,13 @@
 	<tr>
 		<td>TimeStamp</td>
 		<td>
-			{{.BidInfo.TimeStamp}}
+			{{.BidInfo.Tx.TimeStamp}}
 		</td>
 	</tr>
 	<tr>
 		<td>DateTime</td>
 		<td>
-			{{.BidInfo.DateTime}}
+			{{.BidInfo.Tx.DateTime}}
 		</td>
 	</tr>
 	<tr>
@@ -86,6 +86,6 @@
 <code>
 	API: /api/cosmicgame/bid/info/[evtlog_id]<br/>
 
-	Example: /api/cosmicgame/bid/info/{{.BidInfo.EvtLogId}}
+	Example: /api/cosmicgame/bid/info/{{.BidInfo.Tx.EvtLogId}}
 </code>
 </body>

@@ -27,8 +27,8 @@
 	</tr>
 	{{- range $i, $change := .CosmicSignatureTokenList}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.DateTime}}</a>
+			<td class="" title="{{.Tx.TimeStamp}}">
+				<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.Tx.DateTime}}</a>
 			</td>
 			<td class="" style="text-align:center;">{{.TokenId}}</td>
 			<td class="addr" title="{{.WinnerAid}}">

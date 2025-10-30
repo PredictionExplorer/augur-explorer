@@ -12,15 +12,15 @@
 	</tr>
 	{{- range $i, $change := .RewardsByDeposit}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
+			<td class="" title="{{.Tx.TimeStamp}}">
 				<table class="market_reports">
 					<tr>
 						<td>Block Num</td>
-						<td>{{.BlockNum}}</th>
+						<td>{{.Tx.BlockNum}}</th>
 					</tr>
 					<tr>
 						<td>Datetime </td>
-						<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+						<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 					</tr>
 					<tr>
 						<td>Deposit Id</td>

@@ -16,15 +16,15 @@
 	{{- range $i, $change := .StakedTokensCST}}
 		<tr class="market_reports">
 			<td class="" >
-				{{.TokenInfo.BlockNum}}
+				{{.TokenInfo.Tx.BlockNum}}
 			</td>
 			<td style="text-align: center;" title="">{{.StakeDateTime}}</td>
 			<td style="text-align: center;" title="">
 				<a href="/black/cosmicgame/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>
 			</td>
 			<td style="text-align: center;" title="">
-				<a href="/black/cosmicgame/staking/cst/actions/info/{{.TokenInfo.StakeActionId}}">
-				{{.TokenInfo.StakeActionId}}
+				<a href="/black/cosmicgame/staking/cst/actions/info/{{.StakeActionId}}">
+				{{.StakeActionId}}
 				</a>
 			</td>
 		</tr>

@@ -20,13 +20,13 @@
 	</tr>
 	{{- range $i, $change := .StakingCSTActions}}
 		<tr class="market_reports">
-			<td class=""> {{.EvtLogId}}</td>
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class=""> {{.Tx.EvtLogId}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">
+			<td class="" title="{{.Tx.TimeStamp}}">
 				<a href="/black/cosmicgame/staking/cst/actions/info/{{.ActionId}}">
-				{{.DateTime}}
+				{{.Tx.DateTime}}
 				</a>
 			</td>
 			<td style="text-align: center;" title="">

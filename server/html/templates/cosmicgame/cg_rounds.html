@@ -26,8 +26,8 @@
 	</tr>
 	{{- range $i, $change := .Rounds}}
 		<tr class="market_reports">
-			<td class="" title="{{.ClaimPrizeTx.TimeStamp}}">
-				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.DateTime}}</a>
+			<td class="" title="{{.ClaimPrizeTx.Tx.TimeStamp}}">
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.DateTime}}</a>
 			</td>
 			<td class="addr" title="{{.MainPrize.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.MainPrize.WinnerAddr}}">{{.MainPrize.WinnerAddr}}</a>

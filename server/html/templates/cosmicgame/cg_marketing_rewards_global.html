@@ -14,8 +14,8 @@
 	</tr>
 	{{- range $i, $change := .MarketingRewards}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.BlockNum}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td class="addr" title="{{.MarketerAid}}">
 				<a href="/black/cosmicgame/marketing/rewards/by_user/{{.MarketerAddr}}">{{.MarketerAddr}}</a>
 			</td>

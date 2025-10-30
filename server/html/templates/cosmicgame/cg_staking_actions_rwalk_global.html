@@ -20,12 +20,12 @@
 	</tr>
 	{{- range $i, $change := .GlobalStakingActionsRWalk}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">
+			<td class="" title="{{.Tx.TimeStamp}}">
 				<a href="/black/cosmicgame/staking/rwalk/actions/info/{{.ActionId}}">
-				{{.DateTime}}
+				{{.Tx.DateTime}}
 				</a>
 			</td>
 			<td style="text-align: center;" title="">

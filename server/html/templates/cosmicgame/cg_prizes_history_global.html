@@ -19,7 +19,7 @@
 	</tr>
 	{{- range $i, $change := .GlobalPrizeHistory}}
 		<tr class="market_reports">
-		<td class="" title="{{.TimeStamp}}">
+		<td class="" title="{{.Tx.TimeStamp}}">
 			{{ if eq 0 .RecordType}}Main Prize ETH{{end}}
 			{{ if eq 1 .RecordType}}Main Prize CST (ERC20){{end}}
 			{{ if eq 2 .RecordType}}Main Prize CS NFT{{end}}
@@ -38,9 +38,9 @@
 			{{ if eq 15 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
 		</td>
 			<td class="" style="text-align: center;">
-				{{.BlockNum}}
+				{{.Tx.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .AmountEth}}</td>
 			<td style="text-align: right;" title="">{{ .TokenId }}</td>

@@ -12,30 +12,30 @@
 	</tr>
 	<tr>
 		<td>EvtLog ID</td>
-		<td>{{.TokenInfo.EvtLogId}}
+		<td>{{.TokenInfo.Tx.EvtLogId}}
 	</tr>
 	<tr>
 		<td>BlockNum</td>
-		<td>{{.TokenInfo.BlockNum}}</td>
+		<td>{{.TokenInfo.Tx.BlockNum}}</td>
 	</tr>
 	<tr>
 		<td>TxId</td>
-		<td>{{.TokenInfo.TxId}}</td>
+		<td>{{.TokenInfo.Tx.TxId}}</td>
 	</tr>
 	<tr>
 		<td>TxHash</td>
-		<td>{{.TokenInfo.TxHash}}</td>
+		<td>{{.TokenInfo.Tx.TxHash}}</td>
 	</td>
 	<tr>
 		<td>TimeStamp</td>
 		<td>
-			{{.TokenInfo.TimeStamp}}
+			{{.TokenInfo.Tx.TimeStamp}}
 		</td>
 	</tr>
 	<tr>
 		<td>DateTime</td>
 		<td>
-			{{.TokenInfo.DateTime}}
+			{{.TokenInfo.Tx.DateTime}}
 		</td>
 	</tr>
 	<tr>
@@ -96,9 +96,9 @@
     {{- range $i, $change := .TokenNameHistory}}
         <tr class="market_reports">
             <td class="" style="text-align: center;">
-                {{.BlockNum}}
+                {{.Tx.BlockNum}}
             </td>
-            <td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+            <td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
             <td style="text-align: right;" title="">{{ .TokenName}}</td>
         </tr>
     {{- end}}
@@ -114,9 +114,9 @@
     {{- range $i, $change := .TokenTransfers}}
         <tr class="market_reports">
             <td class="" style="text-align: center;">
-                {{.BlockNum}}
+                {{.Tx.BlockNum}}
             </td>
-            <td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+            <td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
             <td class="addr" title="{{.FromAid}}">
                 <a href="/black/cosmicgame/user/info/{{.FromAddr}}">{{.FromAddr}}</a>
             </td>

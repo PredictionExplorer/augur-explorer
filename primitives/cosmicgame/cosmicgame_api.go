@@ -1,5 +1,15 @@
 package cosmicgame
 
+// Transaction contains common transaction/event fields
+type Transaction struct {
+	EvtLogId  int64
+	BlockNum  int64
+	TxId      int64
+	TxHash    string
+	TimeStamp int64
+	DateTime  string
+}
+
 type CGStatistics struct {
 	TotalBids					uint64
 	CurNumBids					uint64
@@ -43,12 +53,7 @@ type CGStatistics struct {
 	StakeStatisticsRWalk		CGStakeStatsRWalk
 }
 type CGBidRec struct {
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	BidderAid					int64
 	BidderAddr					string
 	EthPrice					string
@@ -74,12 +79,7 @@ type CGBidRec struct {
 	DonatedERC20TokenAmountEth	float64
 }
 type CGClaimPrizeTx struct {
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 }
 type CGMainPrizeInfo struct {
 	WinnerAid					int64
@@ -161,12 +161,7 @@ type CGUserInfo struct {
 	StakingStatistics		UserStakingInfo
 }
 type CGCharityDonation struct {
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DonorAid					int64
 	DonorAddr					string
 	Amount						string
@@ -175,12 +170,7 @@ type CGCharityDonation struct {
 	RoundNum					int64
 }
 type CGCosmicGameDonationSimple struct {
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DonorAid					int64
 	DonorAddr					string
 	Amount						string
@@ -188,12 +178,7 @@ type CGCosmicGameDonationSimple struct {
 	RoundNum					int64
 }
 type CGCosmicGameDonationWithInfo struct {
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DonorAid					int64
 	DonorAddr					string
 	Amount						string
@@ -204,12 +189,7 @@ type CGCosmicGameDonationWithInfo struct {
 }
 type CGDonationCombinedRec struct {
 	RecordType					int64	// 0 - simple donation, 1 - donation with info
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DonorAid					int64
 	DonorAddr					string
 	Amount						string
@@ -242,12 +222,7 @@ type CGUniqueDonor struct {
 }
 type CGERC20Donation struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	RoundNum					int64
 	DonorAid					int64
 	DonorAddr					string
@@ -261,12 +236,7 @@ type CGERC20Donation struct {
 }
 type CGSummarizedERC20Donation struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	RoundNum					int64
 	TokenAid					int64
 	TokenAddr					string
@@ -282,12 +252,7 @@ type CGSummarizedERC20Donation struct {
 }
 type CGNFTDonation struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	RoundNum					int64
 	DonorAid					int64
 	DonorAddr					string
@@ -309,12 +274,7 @@ type CGRecordCounters struct {
 }
 type CGPrizeDepositRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	RecordType					int64		// 0 - undefined ; 1 - Raffle Deposit ; 2 - Chronor Warrior
 	WinnerAddr					string
 	WinnerAid					int64
@@ -327,12 +287,7 @@ type CGPrizeDepositRec struct {
 }
 type CGRaffleNFTWinnerRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	WinnerAddr					string
 	WinnerAid					int64
 	RoundNum					int64
@@ -345,12 +300,7 @@ type CGRaffleNFTWinnerRec struct {
 }
 type CGDonatedNFTClaimRec struct {
 	RecordId					int64
-	EvtId						int64
-	BlockNum					int64
-	TimeStamp					int64
-	DateTime					string
-	TxId						int64
-	TxHash						string
+	Tx							Transaction
 	RoundNum					int64
 	Index						int64
 	TokenAddr					string
@@ -363,12 +313,7 @@ type CGDonatedNFTClaimRec struct {
 }
 type CGCosmicSignatureMintRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TimeStamp					int64
-	DateTime					string
-	TxId						int64
-	TxHash						string
+	Tx							Transaction
 	ContractAddr				string
 	TokenId						int64
 	WinnerAid					int64
@@ -410,13 +355,8 @@ type CGClaimInfo struct {
 	DonatedERC20Tokens			[]ERC20DonatedTokensInfo
 }
 type CGPrizeHistory struct {
-	EvtLogId					int64
+	Tx							Transaction
 	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - LastCst Bid NFT winner, 9 - Endurance ERC20 winner, 10 - LastCst Bid ERC20 winner , 11 - Donated ERC20 token , 12 - Chrono Warrior 
-	TimeStamp					int64
-	DateTime					string
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
 	RoundNum					int64
 	Amount						string
 	AmountEth					float64
@@ -429,23 +369,13 @@ type CGPrizeHistory struct {
 	WinnerAid					int64
 }
 type CGTokenName struct {
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	TokenId						int64
 	TokenName					string
 }
 type CGTransfer struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	TokenId						int64
 	FromAddr					string
 	ToAddr						string
@@ -455,12 +385,7 @@ type CGTransfer struct {
 }
 type CGCharityWithdrawal struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DestinationAddr				string
 	Amount						string
 	AmountEth					float64
@@ -488,12 +413,7 @@ type CGCosmicTokenHolderRec struct {
 }
 type CGERC20TransferRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	FromAddr					string
 	ToAddr						string
 	FromAid						int64
@@ -517,12 +437,7 @@ type CGRWalkUsed struct {
 }
 type CGMarketingRewardRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	Amount						string
 	AmountEth					float64
 	MarketerAid					int64

@@ -3,12 +3,7 @@ package cosmicgame
 type CGStakingCSTHistoryRec struct {
 	ActionType					int64
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -25,12 +20,7 @@ type CGStakingCSTHistoryRec struct {
 type CGStakingRWalkHistoryRec struct {
 	ActionType					int64
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -46,12 +36,7 @@ type CGStakingRWalkHistoryRec struct {
 type CGStakeActionCSTRec struct {
 	ActionType					int64
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -64,12 +49,7 @@ type CGStakeActionCSTRec struct {
 type CGStakeActionRWalkRec struct {
 	ActionType					int64
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -79,12 +59,7 @@ type CGStakeActionRWalkRec struct {
 type CGStakeActionInfoRec struct {
 	ActionType					int64
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	ActionId					int64
 	TokenId						int64
 	RoundNum					int64
@@ -95,12 +70,7 @@ type CGStakeActionInfoRec struct {
 type CGUnstakeActionInfoRec struct {
 	ActionType					int64
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	ActionId					int64
 	TokenId						int64
 	RoundNum					int64
@@ -153,12 +123,7 @@ type CGActionIdsForDepositWithClaimInfo struct {
 }
 type CGEthDepositAsReward struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DepositDate					string
 	DepositTimeStamp			int64
 	NumStakedNFTsTotal			int64
@@ -178,12 +143,7 @@ type CGEthDepositAsReward struct {
 }
 type CGRewardToClaim struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DepositDate					string
 	DepositTimeStamp			int64
 	DepositId					int64
@@ -205,12 +165,7 @@ type CGRewardToClaim struct {
 }
 type CGCollectedReward struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DepositDate					string
 	DepositTimeStamp			int64
 	DepositId					int64
@@ -234,12 +189,7 @@ type CGCollectedReward struct {
 }
 type CGStakingRewardGlobal	struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DepositDate					string
 	DepositTimeStamp			int64
 	DepositId					int64
@@ -305,12 +255,7 @@ type CGStakeStatsRWalk struct {
 }
 type CGNftStakedInfoRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	ActionId					int64
 	TokenId						int64
 	NumStakedNFTs				int64
@@ -318,12 +263,7 @@ type CGNftStakedInfoRec struct {
 }
 type CGNftUnstakedInfoRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	ActionId					int64
 	TokenId						int64
 	NumStakedNFTs				int64
@@ -344,12 +284,7 @@ type CGNftStakeUnstakeCombined struct {
 }
 type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of deposits-rewards
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	DepositId					int64
 	DepositRoundNum				int64
 	NumStakedNFTs				int64
@@ -368,12 +303,7 @@ type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of d
 }
 type CGRewardPaidRec struct {
 	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
+	Tx							Transaction
 	ActionId					int64
 	TokenId						int64
 	StakerAid					int64
