@@ -278,6 +278,30 @@ func api_cosmic_game_user_info(c *gin.Context) {
 	erc20_donations := arb_storagew.Get_erc20_donations_by_user(user_aid)
 	eth_donations := arb_storagew.Get_donations_to_cosmic_game_by_user(user_aid)
 	
+	// Get marketing rewards awarded to user
+	marketing_rewards := arb_storagew.Get_marketing_rewards_by_user(user_aid)
+	
+	// Get unclaimed assets from PrizesWallet
+	unclaimed_eth := arb_storagew.Get_unclaimed_prize_eth_deposits(user_aid, 0, 1000)
+	unclaimed_nfts := arb_storagew.Get_unclaimed_donated_nft_by_user(user_aid)
+	
+	// Get claimed donated assets
+	claimed_nfts := arb_storagew.Get_donated_nft_claims_by_user(user_aid)
+	claimed_tokens := arb_storagew.Get_erc20_donated_prizes_erc20_by_winner(user_aid)
+	
+	// Get staking data
+	staked_cst := arb_storagew.Get_staked_tokens_cst_by_user(user_aid)
+	staked_rwalk := arb_storagew.Get_staked_tokens_rwalk_by_user(user_aid)
+	stake_actions_cst := arb_storagew.Get_staking_actions_cst_by_user(user_aid, 0, 1000)
+	stake_actions_rwalk := arb_storagew.Get_staking_actions_rwalk_by_user(user_aid, 0, 1000)
+	
+	// Get token transfer history
+	erc20_transfers := arb_storagew.Get_cosmic_token_transfers_by_user(user_aid, 0, 1000)
+	erc721_transfers := arb_storagew.Get_cosmic_signature_transfers_by_user(user_aid, 0, 1000)
+	
+	// Get owned Cosmic Signature NFTs (where user is current owner)
+	owned_cst_nfts := arb_storagew.Get_cosmic_signature_nft_list_by_user(user_aid, 0, 1000)
+	
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -292,6 +316,24 @@ func api_cosmic_game_user_info(c *gin.Context) {
 			"ERC20Donations": erc20_donations,
 		},
 		"ETHDonationsMade": eth_donations,
+		"MarketingRewardsAwarded": marketing_rewards,
+		"DonatedNFTsClaimed": claimed_nfts,
+		"DonatedTokensClaimed": claimed_tokens,
+		"UnclaimedAssets": gin.H{
+			"ETHPrizes": unclaimed_eth,
+			"DonatedNFTs": unclaimed_nfts,
+		},
+		"CurrentlyStakedTokens": gin.H{
+			"CST": staked_cst,
+			"RWalk": staked_rwalk,
+		},
+		"StakingActions": gin.H{
+			"CST": stake_actions_cst,
+			"RWalk": stake_actions_rwalk,
+		},
+		"ERC20Transfers": erc20_transfers,
+		"ERC721Transfers": erc721_transfers,
+		"CosmicSignatureTokensOwned": owned_cst_nfts,
 	})
 }
 func api_cosmic_game_charity_cosmicgame_deposits(c *gin.Context) {
