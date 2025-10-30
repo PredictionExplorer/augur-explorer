@@ -271,12 +271,21 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	if null_au_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_au_timestamp.Int64 }
 	if null_au_datetime.Valid { rec.ActualUnstakeDateTime = null_au_datetime.String }
 	if null_staked_owner_addr.Valid { rec.StakedOwnerAddr = null_staked_owner_addr.String }
-	if null_staked.Valid { rec.Staked = null_staked.Bool } else {rec.Staked = false}
+	// Note: null_staked comes from rnw.is_staker which means "winner WAS a staker when they won"
+	// It does NOT indicate whether the token is currently staked, so we don't use it here.
 	if null_staker_aid.Valid { rec.StakedOwnerAid = null_staker_aid.Int64 } else { rec.StakedOwnerAid = -1 }
 	if null_sa_timestamp.Valid { rec.StakeTimeStamp = null_sa_timestamp.Int64 } else { rec.StakeTimeStamp = -1}
 	if null_sa_datetime.Valid { rec.StakeDateTime = null_sa_datetime.String} 
 	if (rec.StakeActionId > -1) && (rec.UnstakeActionId > -1) { rec.WasUnstaked = true }
-	if (rec.StakeActionId > -1) && (rec.UnstakeActionId == -1) { rec.Staked = true }
+	// Token is staked if it's in cg_staked_token_cst (null_staker_aid.Valid)
+	// OR if there's a stake action with no corresponding unstake action
+	if null_staker_aid.Valid {
+		rec.Staked = true
+	} else if (rec.StakeActionId > -1) && (rec.UnstakeActionId == -1) {
+		rec.Staked = true
+	} else {
+		rec.Staked = false
+	}
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id int64) []p.CGTokenName {

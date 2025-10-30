@@ -270,7 +270,14 @@ func api_cosmic_game_user_info(c *gin.Context) {
 		return
 	}
 	bids := arb_storagew.Get_bids_by_user(user_aid)
-	prizes := arb_storagew.Get_prize_claims_by_user(user_aid)
+	main_prize_claims := arb_storagew.Get_prize_claims_by_user(user_aid)
+	prize_history := arb_storagew.Get_prize_history_detailed_by_user(user_aid, 0, 1000)
+	
+	// Get donations made by user
+	nft_donations := arb_storagew.Get_nft_donations_by_user(user_aid)
+	erc20_donations := arb_storagew.Get_erc20_donations_by_user(user_aid)
+	eth_donations := arb_storagew.Get_donations_to_cosmic_game_by_user(user_aid)
+	
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -278,7 +285,13 @@ func api_cosmic_game_user_info(c *gin.Context) {
 		"error" : err_str,
 		"UserInfo" : user_info,
 		"Bids" : bids,
-		"Prizes" : prizes,
+		"MainPrizeClaims" : main_prize_claims,
+		"PrizeHistory" : prize_history,
+		"TokenDonationsMade": gin.H{
+			"NFTDonations": nft_donations,
+			"ERC20Donations": erc20_donations,
+		},
+		"ETHDonationsMade": eth_donations,
 	})
 }
 func api_cosmic_game_charity_cosmicgame_deposits(c *gin.Context) {

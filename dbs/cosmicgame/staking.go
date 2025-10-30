@@ -229,9 +229,6 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-	//	if null_collected.Valid {rec.YourCollectedAmount = null_collected.String }
-	//	if null_collected_eth.Valid { rec.YourCollectedAmountEth = null_collected_eth.Float64 }
-	//	rec.PendingToClaimEth = rec.YourAmountToClaimEth - rec.YourCollectedAmountEth
 		if null_pending_reward.Valid { rec.PendingToClaim = null_pending_reward.String }
 		if null_pending_reward_eth.Valid { rec.PendingToClaimEth = null_pending_reward_eth.Float64 }
 		if null_pending_num_toks.Valid { rec.NumUnclaimedTokens = null_pending_num_toks.Int64 }
@@ -463,17 +460,6 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 
 	records := make([]p.CGActionIdsForDepositWithClaimInfo,0, 16)
 	var query string
-	/*query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_staking_eth_deposit d WHERE deposit_id=$1"
-	row := sw.S.Db().QueryRow(query,deposit_id)
-	var null_ts sql.NullInt64
-	err:=row.Scan(&null_ts)
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			return records
-		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_action_ids_for_deposit(): %v, q=%v",err,query))
-		os.Exit(1)
-	}*/
 
 	query = "SELECT "+
 				"d.id,"+
@@ -790,8 +776,6 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 		}
 		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
 		rec.AccumNumStakedNFTs = accum_staked_nfts
-//		rec.LastBlockTS = last_ts		DISCONTINUED, removal pending
-//		rec.UnstakeExpirationDiff = -1	DISCONTINUED, removal pending
 		records = append(records,rec)
 	}
 	return records
@@ -1135,60 +1119,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 	}
 	return records
 }
-/*DISCONTINUED, removal pending
-func (sw *SQLStorageWrapper) Get_staking_reward_paid_records(user_aid int64) []p.CGRewardPaidRec {
-
-	records := make([]p.CGRewardPaidRec,0, 16)
-	var query string
-
-	query = "SELECT "+
-				"r.id,"+
-				"r.action_id, "+
-				"r.token_id, "+
-				"r.block_num, "+
-				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT,"+
-				"r.time_stamp,"+
-				"tx.id,"+
-				"tx.tx_hash,"+
-				"r.reward,"+
-				"r.reward/1e18 "+
-			"FROM "+sw.S.SchemaName()+".cg_reward_paid r "+
-				"LEFT JOIN address sa ON r.staker_aid=sa.address_id "+
-				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
-			"WHERE "+
-				"r.staker_aid = $1 "+
-			"ORDER BY r.evtlog_id DESC "
-
-	rows,err := sw.S.Db().Query(query,user_aid)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.CGRewardPaidRec
-		err=rows.Scan(
-			&rec.RecordId,
-			&rec.ActionId,
-			&rec.TokenId,
-			&rec.BlockNum,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.RewardAmount,
-			&rec.RewardAmountEth,
-			&rec.UnpaidDepositIndex,
-		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		rec.StakerAid = user_aid
-		records = append(records,rec)
-	}
-	return records
-}*/
 func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_token_rewards(user_aid int64) []p.CGStakingCstRewardPerTokenRec {
 
 	var query string

@@ -266,3 +266,60 @@ func (sw *SQLStorageWrapper) Get_erc20_donation_info(id int64) (bool,p.CGERC20Do
 	}
 	return true,rec
 }
+func (sw *SQLStorageWrapper) Get_erc20_donations_by_user(donor_aid int64) []p.CGERC20Donation {
+
+	var query string
+	query = "SELECT "+
+				"tok.id,"+
+				"tok.evtlog_id,"+
+				"tok.block_num,"+
+				"tok.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM tok.time_stamp)::BIGINT,"+
+				"tok.time_stamp,"+
+				"tok.round_num,"+
+				"tok.donor_aid,"+
+				"da.addr, "+
+				"tokaddr.address_id,"+
+				"tokaddr.addr, "+
+				"tok.amount, "+
+				"tok.amount/1e18 "+
+			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON tok.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address tokaddr ON tok.token_aid=tokaddr.address_id "+
+			"WHERE tok.donor_aid=$1 "+
+			"ORDER BY tok.id DESC"
+	rows,err := sw.S.Db().Query(query,donor_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGERC20Donation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGERC20Donation
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
+			&rec.RoundNum,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.TokenAid,
+			&rec.TokenAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

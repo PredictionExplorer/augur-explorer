@@ -331,3 +331,63 @@ func (sw *SQLStorageWrapper) Get_donated_token_distribution() []p.CGDonatedToken
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_nft_donations_by_user(donor_aid int64) []p.CGNFTDonation {
+
+	var query string
+	query = "SELECT "+
+				"d.id,"+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr, "+
+				"d.token_id, "+
+				"d.round_num,"+
+				"nft.address_id,"+
+				"d.idx,"+
+				"nft.addr, "+
+				"d.token_uri "+
+			"FROM "+sw.S.SchemaName()+".cg_nft_donation d "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON d.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address nft ON d.token_aid=nft.address_id "+
+			"WHERE d.donor_aid=$1 "+
+			"ORDER BY d.id DESC"
+
+	rows,err := sw.S.Db().Query(query,donor_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGNFTDonation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGNFTDonation
+		err=rows.Scan(
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.NFTTokenId,
+			&rec.RoundNum,
+			&rec.TokenAddressId,
+			&rec.Index,
+			&rec.TokenAddr,
+			&rec.NFTTokenURI,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
