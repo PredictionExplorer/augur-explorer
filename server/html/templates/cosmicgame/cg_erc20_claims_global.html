@@ -1,0 +1,50 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ERC20 Token Claims</title>
+</head>
+<body>
+	<h3 class="page_title">ERC20 Token Claims (All)<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Token Address</th>
+		<th class="market_reports">Amount</th>
+		<th class="market_reports">Winner (Claimed By)</th>
+		<th class="market_reports">Donor (Original)</th>
+	</tr>
+	{{- range $i, $change := .ERC20Claims}}
+		<tr class="market_reports">
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
+			</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
+			<td style="text-align: center;" title="">
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.RoundNum}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
+			<td style="text-align: right;" title="">{{ printf "%.6f" .AmountEth}}</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td class="addr" title="">
+				{{if .DonorAddr}}
+					<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+				{{else}}
+					<i>Multiple donors</i>
+				{{end}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/donations/erc20/claims/[offset]/[limit]</br>
+
+	Example: /api/cosmicgame/donations/erc20/claims/{{.Offset}}/{{.Limit}}
+</code>
+</body>
+</html>
+

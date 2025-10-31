@@ -207,6 +207,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/donations/charity/withdrawals",api_cosmic_game_charity_donations_withdrawals)
 	r.GET("/api/cosmicgame/donations/nft/list/:offset/:limit",api_cosmic_game_donations_nft_list)
 	r.GET("/api/cosmicgame/donations/nft/info/:record_id",api_cosmic_game_donated_nft_info)
+	r.GET("/api/cosmicgame/donations/nft/by_user/:user_addr",api_cosmic_game_nft_donations_by_user)  // NEW: Donor perspective
 	r.GET("/api/cosmicgame/donations/nft/claims/:offset/:limit",api_cosmic_game_donated_nft_claims_all)
 	r.GET("/api/cosmicgame/donations/nft/claims/by_user/:user_addr",api_cosmic_game_donated_nft_claims_by_user)
 	r.GET("/api/cosmicgame/donations/nft/statistics",api_cosmic_game_nft_donation_stats)
@@ -215,9 +216,14 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/donations/nft/unclaimed/by_user/:user_addr",api_cosmic_game_unclaimed_donated_nfts_by_user)
 	r.GET("/api/cosmicgame/donations/erc20/by_round/detailed/:round_num",api_cosmic_game_donations_erc20_by_round_detailed)
 	r.GET("/api/cosmicgame/donations/erc20/by_round/summarized/:round_num",api_cosmic_game_donations_erc20_by_round_summarized)
-	r.GET("/api/cosmicgame/donations/erc20/by_user/:user_addr",api_cosmic_game_donations_erc20_by_user)
+	r.GET("/api/cosmicgame/donations/erc20/donated/by_user/:user_addr",api_cosmic_game_donations_erc20_donated_by_user)  // NEW: Donor perspective
+	r.GET("/api/cosmicgame/donations/erc20/by_user/:user_addr",api_cosmic_game_donations_erc20_by_user)  // WINNER PERSPECTIVE: Returns claimable prizes (kept for backward compatibility, but semantically confusing)
 	r.GET("/api/cosmicgame/donations/erc20/global/:offset/:limit",api_cosmic_game_donations_erc20_global)
 	r.GET("/api/cosmicgame/donations/erc20/info/:record_id",api_cosmic_game_donated_erc20_info)
+	// NEW: ERC20 Claims tracking
+	r.GET("/api/cosmicgame/donations/erc20/claims/:offset/:limit",api_cosmic_game_erc20_claims_global)
+	r.GET("/api/cosmicgame/donations/erc20/claims/by_user/:user_addr",api_cosmic_game_erc20_claims_by_user)
+	r.GET("/api/cosmicgame/donations/erc20/claims/by_round/:round_num",api_cosmic_game_erc20_claims_by_round)
 	r.GET("/api/cosmicgame/raffle/deposits/list/:offset/:limit",api_cosmic_game_prize_deposits_list)
 	r.GET("/api/cosmicgame/raffle/deposits/by_round/:round_num",api_cosmic_game_prize_deposits_by_round)
 	r.GET("/api/cosmicgame/raffle/nft/all/list/:offset/:limit",api_cosmic_game_raffle_nft_winners_list)

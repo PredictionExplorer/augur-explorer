@@ -311,6 +311,19 @@ type CGDonatedNFTClaimRec struct {
 	WinnerAddr					string
 	DonorAddr					string
 }
+type CGERC20ClaimRec struct {
+	RecordId					int64
+	Tx							Transaction
+	RoundNum					int64
+	Index						int64
+	TokenAid					int64
+	TokenAddr					string
+	Amount						string
+	AmountEth					float64
+	WinnerAid					int64
+	WinnerAddr					string
+	DonorAddr					string
+}
 type CGCosmicSignatureMintRec struct {
 	RecordId					int64
 	Tx							Transaction

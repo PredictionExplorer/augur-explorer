@@ -1,29 +1,36 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>ERC20 donations by User {{.UserAddr}}</title>
+	<title>ERC20 Prizes WON by {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">ERC20 Donations by User {{.UserAddr}}  <h3>
+	<h3 class="page_title">ERC20 Prizes Available to {{.UserAddr}} (Winner Perspective) <h3>
+	<p><i>⚠️ Note: This shows ERC20 tokens YOU WON and can claim (summarized). 
+	To see tokens you DONATED, use <a href="/black/cosmicgame/donations/erc20/donated/by_user/{{.UserAddr}}">ERC20 Donations</a>.
+	To see tokens you already CLAIMED, use <a href="/black/cosmicgame/donations/erc20/claims/by_user/{{.UserAddr}}">ERC20 Claims</a></i></p>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Token Address</th>
-		<th class="market_reports">Amount</th>
-		<th class="market_reports">Winer</th>
-		<th class="market_reports">Claimed</th>
+		<th class="market_reports">Amount Donated</th>
+		<th class="market_reports">Amount Claimed</th>
+		<th class="market_reports">Remaining</th>
+		<th class="market_reports">Status</th>
 	</tr>
 	{{- range $i, $change := .DonatedPrizesERC20ByWinner}}
 		<tr class="market_reports">
 			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.Tx.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
 			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
-			<td style="text-align: right;" title="">{{ printf "%6f" .AmountDonatedEth}}</td>
-			<td style="text-align: right;" title="">{{.WinnerAddr}}</td>
-			<td style="text-align: right;" title="">{{.Claimed}}</td>
+			<td style="text-align: right;" title="">{{ printf "%.6f" .AmountDonatedEth}}</td>
+			<td style="text-align: right;" title="">{{ printf "%.6f" .AmountClaimedEth}}</td>
+			<td style="text-align: right;" title="">{{ printf "%.6f" .DonateClaimDiffEth}}</td>
+			<td style="text-align: center;" title="">
+				{{if .Claimed}}✅ Claimed{{else}}⏳ Unclaimed{{end}}
+			</td>
 		</tr>
 	{{- end}}
 </table>

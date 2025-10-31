@@ -274,3 +274,100 @@ func cosmic_game_donations_erc20_info(c *gin.Context) {
 		})
 	}
 }
+func cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
+	// DONOR PERSPECTIVE: Shows tokens THIS USER donated
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_donations_erc20_donated_by_user.html", gin.H{
+		"DonationsERC20ByDonor" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}
+func cosmic_game_erc20_claims_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	claims := arb_storagew.Get_erc20_donated_token_claims_global(offset,limit)
+	c.HTML(http.StatusOK, "cg_erc20_claims_global.html", gin.H{
+		"ERC20Claims" : claims,
+		"Offset": offset,
+		"Limit": limit,
+	})
+}
+func cosmic_game_erc20_claims_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	claims := arb_storagew.Get_erc20_donated_token_claims_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_erc20_claims_by_user.html", gin.H{
+		"ERC20ClaimsByWinner" : claims,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}
+func cosmic_game_nft_donations_by_user(c *gin.Context) {
+	// DONOR PERSPECTIVE: Shows NFTs THIS USER donated
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	donations := arb_storagew.Get_nft_donations_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_nft_donations_by_user.html", gin.H{
+		"NFTDonationsByDonor" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}

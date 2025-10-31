@@ -321,16 +321,91 @@
 		</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports" title="">Donations by User</td>
+		<td class="market_reports" title="">🎁 Donations Made (Donor)</td>
 		<td class="market_reports">
-		<nav style="float: right;">
-			<ul>
-			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/donations/eth/by_user/{{.UserInfo.Address}}">Donations of User</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-			</ul>
-			</nav>
+			<table>
+				<tr>
+					<td style="text-align: center">ETH</td>
+					<td style="text-align: center">ERC20</td>
+					<td style="text-align: center">NFT</td>
+				</tr>
+				<tr>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 12em;">
+								<a class="btn_link" href="/black/cosmicgame/donations/eth/by_user/{{.UserInfo.Address}}">ETH Donated</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 12em;">
+								<a class="btn_link" href="/black/cosmicgame/donations/erc20/donated/by_user/{{.UserInfo.Address}}">ERC20 Donated</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 12em;">
+								<a class="btn_link" href="/black/cosmicgame/donations/nft/by_user/{{.UserInfo.Address}}">NFT Donated</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports" title="">🏆 Prizes Claimed (Winner)</td>
+		<td class="market_reports">
+			<table>
+				<tr>
+					<td style="text-align: center">ERC20 Won</td>
+					<td style="text-align: center">ERC20 Claimed</td>
+					<td style="text-align: center">NFT Claimed</td>
+				</tr>
+				<tr>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 12em;">
+								<a class="btn_link" href="/black/cosmicgame/donations/erc20/by_user/{{.UserInfo.Address}}">ERC20 Prizes</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 12em;">
+								<a class="btn_link" href="/black/cosmicgame/donations/erc20/claims/by_user/{{.UserInfo.Address}}">ERC20 Claims</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 12em;">
+								<a class="btn_link" href="/black/cosmicgame/donations/nft/claims/by_user/{{.UserInfo.Address}}">NFT Claims</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+				</tr>
+			</table>
 		</td>
 	</tr>
 </table>

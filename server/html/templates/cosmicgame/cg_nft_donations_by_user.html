@@ -1,0 +1,45 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>NFT Donations by {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">NFTs DONATED by {{.UserAddr}} (Donor Perspective)<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Token Address</th>
+		<th class="market_reports">NFT Id</th>
+		<th class="market_reports">NFT URI</th>
+	</tr>
+	{{- range $i, $change := .NFTDonationsByDonor}}
+		<tr class="market_reports">
+			<td class="" title="{{.Tx.TimeStamp}}">
+				<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">
+					{{.Tx.BlockNum}}
+				</a>
+			</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
+			<td style="text-align: center;" title="">
+				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.RoundNum}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
+			<td style="text-align: center;" title="">{{.NFTTokenId}}</td>
+			<td style="text-align: right;" title="">{{.NFTTokenURI}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/donations/nft/by_user/[user_addr]</br>
+
+	Example: /api/cosmicgame/donations/nft/by_user/{{.UserAddr}}
+</code>
+<br/><br/>
+<p><i>Note: This shows NFTs YOU donated. To see NFTs you claimed as a winner, use 
+<a href="/black/cosmicgame/donations/nft/claims/by_user/{{.UserAddr}}">NFT Claims</a></i></p>
+</body>
+</html>
+

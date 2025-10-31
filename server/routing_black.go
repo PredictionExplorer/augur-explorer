@@ -195,6 +195,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/donations/charity/withdrawals",cosmic_game_charity_donations_withdrawals)
 	r.GET("/black/cosmicgame/donations/nft/list",cosmic_game_donations_nft)
 	r.GET("/black/cosmicgame/donations/nft/info/:record_id",cosmic_game_donations_nft_info)
+	r.GET("/black/cosmicgame/donations/nft/by_user/:user_addr",cosmic_game_nft_donations_by_user)  // NEW: Donor perspective
 	r.GET("/black/cosmicgame/donations/nft/claims/:offset/:limit",cosmic_game_donated_nft_claims_all)
 	r.GET("/black/cosmicgame/donations/nft/claims/by_user/:user_addr",cosmic_game_donated_nft_claims_by_user)
 	r.GET("/black/cosmicgame/donations/nft/statistics",cosmic_game_nft_donation_stats)
@@ -203,9 +204,13 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/donations/nft/unclaimed/by_user/:user_addr",cosmic_game_unclaimed_donated_nfts_by_user)
 	r.GET("/black/cosmicgame/donations/erc20/by_round/detailed/:round_num",cosmic_game_donations_erc20_by_round_detailed)
 	r.GET("/black/cosmicgame/donations/erc20/by_round/summarized/:round_num",cosmic_game_donations_erc20_by_round_summarized)
-	r.GET("/black/cosmicgame/donations/erc20/by_user/:user_addr",cosmic_game_donations_erc20_by_user)
+	r.GET("/black/cosmicgame/donations/erc20/donated/by_user/:user_addr",cosmic_game_donations_erc20_donated_by_user)  // NEW: Donor perspective
+	r.GET("/black/cosmicgame/donations/erc20/by_user/:user_addr",cosmic_game_donations_erc20_by_user)  // Winner perspective (kept for backward compat)
 	r.GET("/black/cosmicgame/donations/erc20/global",cosmic_game_donations_erc20_global)
 	r.GET("/black/cosmicgame/donations/erc20/info/:record_id",cosmic_game_donations_erc20_info)
+	// NEW: ERC20 Claims tracking
+	r.GET("/black/cosmicgame/donations/erc20/claims/:offset/:limit",cosmic_game_erc20_claims_global)
+	r.GET("/black/cosmicgame/donations/erc20/claims/by_user/:user_addr",cosmic_game_erc20_claims_by_user)
 	r.GET("/black/cosmicgame/raffle/deposits/list/:offset/:limit",cosmic_game_prize_deposits_list)
 	r.GET("/black/cosmicgame/raffle/deposits/by_round/:round_num",cosmic_game_prize_deposits_by_round)
 	r.GET("/black/cosmicgame/raffle/nft/all/list/:offset/:limit",cosmic_game_raffle_nft_winners_list)
