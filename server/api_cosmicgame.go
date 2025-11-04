@@ -604,9 +604,19 @@ func api_cosmic_game_prize_deposits_list(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
 	}
 
 	deposits := arb_storagew.Get_prize_eth_deposits_list(offset,limit)
@@ -619,6 +629,202 @@ func api_cosmic_game_prize_deposits_list(c *gin.Context) {
 		"RaffleDeposits" : deposits,
 		"Offset" : offset,
 		"Limit" : limit,
+	})
+}
+func api_cosmic_game_all_eth_deposits_list(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
+	}
+
+	deposits := arb_storagew.Get_prize_eth_deposits_list(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"AllDeposits" : deposits,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+func api_cosmic_game_raffle_eth_deposits_list(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
+	}
+
+	deposits := arb_storagew.Get_raffle_eth_deposits_list(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"RaffleDeposits" : deposits,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+func api_cosmic_game_chronowarrior_eth_deposits_list(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
+	}
+
+	deposits := arb_storagew.Get_chronowarrior_eth_deposits_list(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"ChronoWarriorDeposits" : deposits,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+// Unified URI scheme handlers - per-user
+func api_cosmic_game_unified_eth_all_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_all_eth_deposits_by_user(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"AllDeposits" : deposits,
+	})
+}
+func api_cosmic_game_unified_eth_raffle_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_raffle_eth_deposits_by_user(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"RaffleDeposits" : deposits,
+	})
+}
+func api_cosmic_game_unified_eth_chronowarrior_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_chronowarrior_eth_deposits_by_user(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"ChronoWarriorDeposits" : deposits,
 	})
 }
 func api_cosmic_game_prize_deposits_by_round(c *gin.Context) {
@@ -661,9 +867,19 @@ func api_cosmic_game_raffle_nft_winners_list(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
 	}
 
 	winners := arb_storagew.Get_raffle_nft_winners(offset,limit)
@@ -924,9 +1140,19 @@ func api_cosmic_game_donated_nft_claims_all(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
 	}
 
 	claims := arb_storagew.Get_donated_nft_claims(offset,limit)
@@ -1727,10 +1953,21 @@ func api_cosmic_game_sysmode_changes(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
 	}
+
 	system_mode_changes := arb_storagew.Get_system_mode_change_event_list(offset,limit)
 
 	var req_status int = 1

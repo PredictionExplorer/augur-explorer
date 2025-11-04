@@ -1,11 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Raffle ETH Deposits</title>
+	<title>All ETH Deposits (Raffle + Chrono Warrior)</title>
 </head>
 <body>
-	<h3 class="page_title">Raffle ETH Deposits</h3>
-	<h3 class="page_title">Round: {{.RoundNum}}</h3>
+	<h3 class="page_title">All ETH Deposits (Raffle + Chrono Warrior)<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -17,7 +16,7 @@
 		<th class="market_reports">Amount (ETH)</th>
 		<th class="market_reports">Claimed</th>
 	</tr>
-	{{- range $i, $change := .RaffleDeposits}}
+	{{- range $i, $change := .AllDeposits}}
 		<tr class="market_reports">
 			<td class="" title="{{.Tx.TimeStamp}}">
 				{{.Tx.BlockNum}}
@@ -36,8 +35,10 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/raffle/deposits/by_round/[round_num]</br>
+	API: /api/cosmicgame/eth_deposits/all/list/[offset]/[limit]</br>
 
-	Example: /api/cosmicgame/raffle/deposits/by_round/{{.RoundNum}}
+	Example: /api/cosmicgame/eth_deposits/all/list/0/1000000
 </code>
 </body>
+</html>
+

@@ -394,9 +394,20 @@ func api_cosmic_game_erc20_claims_global(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_json(c)
+		if !success {
+			return
+		}
 	}
 
 	claims := arb_storagew.Get_erc20_donated_token_claims_global(offset,limit)

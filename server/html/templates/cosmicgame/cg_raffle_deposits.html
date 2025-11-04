@@ -12,6 +12,7 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
+		<th class="market_reports">Type</th>
 		<th class="market_reports">Amount (ETH)</th>
 		<th class="market_reports">Claimed</th>
 	</tr>
@@ -21,13 +22,14 @@
 				{{.Tx.BlockNum}}
 			</td>
 			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
-			</td>
-			<td style="text-align: center;">{{ .WinnerIndex }}</td>
-			<td style="text-align: center;">{{ .RoundNum }}</td>
-			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
-			<td style="text-align: center;">{{ .Claimed }}</td>
+		<td class="addr" title="{{.WinnerAid}}">
+			<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+		</td>
+		<td style="text-align: center;">{{ .WinnerIndex }}</td>
+		<td style="text-align: center;">{{ .RoundNum }}</td>
+		<td style="text-align: center;">{{if eq .RecordType 7}}Chrono Warrior{{else}}Raffle{{end}}</td>
+		<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
+		<td style="text-align: center;">{{ .Claimed }}</td>
 		</tr>
 	{{- end}}
 </table>

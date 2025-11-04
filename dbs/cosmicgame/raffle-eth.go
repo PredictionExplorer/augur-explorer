@@ -92,10 +92,13 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 			"wa.addr,"+
 			"p.winner_index,"+
 			"p.round_num, "+
-			"p.amount/1e18 amount_eth "+
+			"p.amount/1e18 amount_eth, "+
+			"p.claimed, "+
+			"CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type "+
 		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
 			"LEFT JOIN transaction t ON t.id=p.tx_id "+
 			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
 		"ORDER BY p.id DESC "+
 		"OFFSET $1 LIMIT $2"
 
@@ -121,6 +124,8 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 			&rec.WinnerIndex,
 			&rec.RoundNum,
 			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -145,11 +150,14 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 		"wa.addr,"+
 		"p.winner_index,"+
 		"p.round_num,"+
-		"p.amount/1e18 amount_eth "+
+		"p.amount/1e18 amount_eth, "+
+		"p.claimed, "+
+		"CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type "+
 	"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
 		"INNER JOIN "+sw.S.SchemaName()+".cg_prize pr ON (pr.round_num = p.round_num AND pr.winner_index = p.winner_index AND pr.ptype = 10) "+
 		"LEFT JOIN transaction t ON t.id=p.tx_id "+
 		"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
 	"WHERE p.round_num = $1 " +
 	"ORDER BY p.winner_index "
 
@@ -175,6 +183,8 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 			&rec.WinnerIndex,
 			&rec.RoundNum,
 			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -185,3 +195,297 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 	return records
 
 }
+func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_list(offset,limit int) []p.CGPrizeDepositRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num, "+
+			"p.amount/1e18 amount_eth, "+
+			"p.claimed, "+
+			"10 AS record_type "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
+		"WHERE cw.round_num IS NULL "+
+		"ORDER BY p.id DESC "+
+		"OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGPrizeDepositRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGPrizeDepositRec
+		err=rows.Scan(
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_chronowarrior_eth_deposits_list(offset,limit int) []p.CGPrizeDepositRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num, "+
+			"p.amount/1e18 amount_eth, "+
+			"p.claimed, "+
+			"7 AS record_type "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"INNER JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
+		"ORDER BY p.id DESC "+
+		"OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGPrizeDepositRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGPrizeDepositRec
+		err=rows.Scan(
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_all_eth_deposits_by_user(winner_aid int64) []p.CGPrizeDepositRec {
+
+	var query string
+	query = "SELECT "+
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num, "+
+			"p.amount/1e18 amount_eth, "+
+			"p.claimed, "+
+			"CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
+		"WHERE p.winner_aid=$1 "+
+		"ORDER BY p.id DESC"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGPrizeDepositRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGPrizeDepositRec
+		err=rows.Scan(
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_by_user(winner_aid int64) []p.CGPrizeDepositRec {
+
+	var query string
+	query = "SELECT "+
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num, "+
+			"p.amount/1e18 amount_eth, "+
+			"p.claimed, "+
+			"10 AS record_type "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
+		"WHERE p.winner_aid=$1 AND cw.round_num IS NULL "+
+		"ORDER BY p.id DESC"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGPrizeDepositRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGPrizeDepositRec
+		err=rows.Scan(
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_chronowarrior_eth_deposits_by_user(winner_aid int64) []p.CGPrizeDepositRec {
+
+	var query string
+	query = "SELECT "+
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.winner_index,"+
+			"p.round_num, "+
+			"p.amount/1e18 amount_eth, "+
+			"p.claimed, "+
+			"7 AS record_type "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
+			"LEFT JOIN transaction t ON t.id=p.tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"INNER JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
+		"WHERE p.winner_aid=$1 "+
+		"ORDER BY p.id DESC"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGPrizeDepositRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGPrizeDepositRec
+		err=rows.Scan(
+		&rec.RecordId,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		&rec.Tx.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.Claimed,
+			&rec.RecordType,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+

@@ -1,0 +1,39 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Chrono Warrior ETH Deposits (User View)</title>
+</head>
+<body>
+	<h3 class="page_title">Chrono Warrior ETH Deposits</h3>
+	<h4 class="page_title">User: {{.UserAddr}}</h4>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Winner Index</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Amount (ETH)</th>
+		<th class="market_reports">Claimed</th>
+	</tr>
+	{{- range $i, $change := .ChronoWarriorDeposits}}
+		<tr class="market_reports">
+			<td class="" title="{{.Tx.TimeStamp}}">
+				{{.Tx.BlockNum}}
+			</td>
+			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
+			<td style="text-align: center;">{{ .WinnerIndex }}</td>
+			<td style="text-align: center;">{{ .RoundNum }}</td>
+			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
+			<td style="text-align: center;">{{ .Claimed }}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/prizes/eth/chronowarrior/by_user/[user_addr]</br>
+
+	Example: /api/cosmicgame/prizes/eth/chronowarrior/by_user/{{.UserAddr}}
+</code>
+</body>
+</html>
+
