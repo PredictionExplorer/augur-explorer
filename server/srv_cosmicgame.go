@@ -966,6 +966,229 @@ func cosmic_game_chronowarrior_eth_deposits_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
+// === NEW: Simplified Prize ETH Handlers (Option B: One-Level Nested) ===
+func cosmic_game_prizes_eth_all(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_html(c)
+		if !success {
+			return
+		}
+	}
+
+	deposits := arb_storagew.Get_prize_eth_deposits_list(offset, limit)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_all.html", gin.H{
+		"AllDeposits": deposits,
+		"Offset":      offset,
+		"Limit":       limit,
+	})
+}
+
+func cosmic_game_prizes_eth_raffle(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_html(c)
+		if !success {
+			return
+		}
+	}
+
+	deposits := arb_storagew.Get_raffle_eth_deposits_list(offset, limit)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_raffle.html", gin.H{
+		"RaffleDeposits": deposits,
+		"Offset":         offset,
+		"Limit":          limit,
+	})
+}
+
+func cosmic_game_prizes_eth_chronowarrior(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_html(c)
+		if !success {
+			return
+		}
+	}
+
+	deposits := arb_storagew.Get_chronowarrior_eth_deposits_list(offset, limit)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_chronowarrior.html", gin.H{
+		"ChronoWarriorDeposits": deposits,
+		"Offset":                offset,
+		"Limit":                 limit,
+	})
+}
+
+func cosmic_game_prizes_eth_round(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	p_round_num := c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num, success = parse_int_from_remote_or_error(c, HTTP, &p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c, "'round_num' parameter is not set")
+		return
+	}
+
+	deposits := arb_storagew.Get_prize_deposits_by_round(round_num)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_round.html", gin.H{
+		"Deposits": deposits,
+		"RoundNum": round_num,
+	})
+}
+
+func cosmic_game_prizes_eth_user(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	p_user_addr := c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c, "'user_addr' parameter is not set")
+		return
+	}
+
+	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c, "Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_all_eth_deposits_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_user.html", gin.H{
+		"UserAddr":    p_user_addr,
+		"AllDeposits": deposits,
+	})
+}
+
+func cosmic_game_prizes_eth_user_raffle(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	p_user_addr := c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c, "'user_addr' parameter is not set")
+		return
+	}
+
+	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c, "Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_raffle_eth_deposits_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_user_raffle.html", gin.H{
+		"UserAddr":       p_user_addr,
+		"RaffleDeposits": deposits,
+	})
+}
+
+func cosmic_game_prizes_eth_user_chronowarrior(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	p_user_addr := c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c, "'user_addr' parameter is not set")
+		return
+	}
+
+	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c, "Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_chronowarrior_eth_deposits_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_user_chronowarrior.html", gin.H{
+		"UserAddr":              p_user_addr,
+		"ChronoWarriorDeposits": deposits,
+	})
+}
+
+func cosmic_game_prizes_eth_user_unclaimed(c *gin.Context) {
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c, "Database link wasn't configured")
+		return
+	}
+
+	p_user_addr := c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c, "'user_addr' parameter is not set")
+		return
+	}
+
+	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c, "Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_unclaimed_prize_eth_deposits(user_aid, 0, 10000)
+
+	c.HTML(http.StatusOK, "cg_prizes_eth_user_unclaimed.html", gin.H{
+		"UserAddr":          p_user_addr,
+		"UnclaimedDeposits": deposits,
+	})
+}
+// === END: Simplified Prize ETH Handlers ===
+
 // Unified URI scheme handlers - per-user
 func cosmic_game_unified_eth_all_by_user(c *gin.Context) {
 

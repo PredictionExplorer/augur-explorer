@@ -37,8 +37,11 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/prizes/deposits/unclaimed/by_user/[user_addr]/[offset]/[limit]</br>
-
-	Example: /api/cosmicgame/prizes/deposits/unclaimed/by_user/{{.UserAddr}}/0/100000
+	<strong>Simplified API (NEW):</strong><br/>
+	/api/cosmicgame/prizes/eth/user_unclaimed/[user_addr]<br/>
+	<br/>
+	Example: /api/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}<br/>
+	<br/>
+	<small>Old API (deprecated): /api/cosmicgame/prizes/deposits/unclaimed/by_user/[user_addr]/[offset]/[limit]</small>
 </code>
 </body>

@@ -25,7 +25,7 @@
 			{{ printf "%.8f" .Winnings.ETHRaffleToClaim}}
 			{{ if lt 0.0 .Winnings.ETHRaffleToClaim }}
 			(
-			<a href="/black/cosmicgame/prizes/deposits/unclaimed/by_user/{{.UserAddr}}">
+			<a href="/black/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}">
 				List of unclaimed deposits
 			</a>
 			)

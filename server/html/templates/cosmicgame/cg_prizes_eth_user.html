@@ -1,11 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>All ETH Deposits (User View)</title>
+	<title>All ETH Prize Deposits for {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">All ETH Deposits (Raffle + Chrono Warrior)</h3>
-	<h4 class="page_title">User: {{.UserAddr}}</h4>
+	<h3 class="page_title">All ETH Prize Deposits for User {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -22,24 +21,21 @@
 				{{.Tx.BlockNum}}
 			</td>
 			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td style="text-align: center;">{{ .WinnerIndex }}</td>
-			<td style="text-align: center;">{{ .RoundNum }}</td>
-			<td style="text-align: center;">{{if eq .RecordType 7}}Chrono Warrior{{else}}Raffle{{end}}</td>
-			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
-			<td style="text-align: center;">{{ .Claimed }}</td>
+		<td style="text-align: center;">{{ .WinnerIndex }}</td>
+		<td style="text-align: center;">{{ .RoundNum }}</td>
+		<td style="text-align: center;">{{if eq .RecordType 7}}Chrono Warrior{{else}}Raffle{{end}}</td>
+		<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
+		<td style="text-align: center;">{{ .Claimed }}</td>
 		</tr>
 	{{- end}}
 </table>
 <br/><br/>
 <code>
 	<strong>Simplified API (NEW):</strong><br/>
-	/api/cosmicgame/prizes/eth/user/[user_addr]<br/>
+	/api/cosmicgame/prizes/eth/user/[user_address]<br/>
 	<br/>
-	Example: /api/cosmicgame/prizes/eth/user/{{.UserAddr}}<br/>
-	<br/>
-	<small>Old API (deprecated): /api/cosmicgame/prizes/eth/all/by_user/[user_addr]</small>
+	Example: /api/cosmicgame/prizes/eth/user/{{.UserAddr}}
 </code>
 </body>
 </html>
-
 

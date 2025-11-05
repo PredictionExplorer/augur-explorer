@@ -1,11 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Raffle ETH Deposits</title>
+	<title>Raffle ETH Prize Deposits</title>
 </head>
 <body>
-	<h3 class="page_title">Raffle ETH Deposits</h3>
-	<h3 class="page_title">Round: {{.RoundNum}}</h3>
+	<h3 class="page_title">Raffle ETH Prize Deposits<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -13,7 +12,6 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Winner Index</th>
 		<th class="market_reports">Round</th>
-		<th class="market_reports">Type</th>
 		<th class="market_reports">Amount (ETH)</th>
 		<th class="market_reports">Claimed</th>
 	</tr>
@@ -28,7 +26,6 @@
 		</td>
 		<td style="text-align: center;">{{ .WinnerIndex }}</td>
 		<td style="text-align: center;">{{ .RoundNum }}</td>
-		<td style="text-align: center;">{{if eq .RecordType 7}}Chrono Warrior{{else}}Raffle{{end}}</td>
 		<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
 		<td style="text-align: center;">{{ .Claimed }}</td>
 		</tr>
@@ -37,10 +34,11 @@
 <br/><br/>
 <code>
 	<strong>Simplified API (NEW):</strong><br/>
-	/api/cosmicgame/prizes/eth/round/[round_num]<br/>
+	/api/cosmicgame/prizes/eth/raffle<br/>
+	/api/cosmicgame/prizes/eth/raffle/[offset]/[limit]<br/>
 	<br/>
-	Example: /api/cosmicgame/prizes/eth/round/{{.RoundNum}}<br/>
-	<br/>
-	<small>Old API (deprecated): /api/cosmicgame/raffle/deposits/by_round/[round_num]</small>
+	Example: /api/cosmicgame/prizes/eth/raffle/0/1000000
 </code>
 </body>
+</html>
+
