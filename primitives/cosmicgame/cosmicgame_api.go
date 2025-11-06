@@ -369,7 +369,7 @@ type CGClaimInfo struct {
 }
 type CGPrizeHistory struct {
 	Tx							Transaction
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - LastCst Bid NFT winner, 9 - Endurance ERC20 winner, 10 - LastCst Bid ERC20 winner , 11 - Donated ERC20 token , 12 - Chrono Warrior 
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - LastCst Bid NFT winner, 9 - Endurance ERC20 winner, 10 - LastCst Bid ERC20 winner , 11 - Donated ERC20 token , 12 - Chrono Warrior, 16 - Donated NFT (timeout), 17 - Donated ERC20 (timeout), 18 - Raffle ETH (timeout)
 	RoundNum					int64
 	Amount						string
 	AmountEth					float64
@@ -378,6 +378,7 @@ type CGPrizeHistory struct {
 	TokenId						int64
 	TokenURI					string
 	Claimed						bool
+	IsTimeoutClaim				bool		// True if prize was claimed after timeout by non-winner
 	WinnerAddr					string
 	WinnerAid					int64
 }

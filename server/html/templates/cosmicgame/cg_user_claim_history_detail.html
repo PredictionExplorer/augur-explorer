@@ -35,10 +35,13 @@
 			{{ if eq 10 .RecordType}}Raffle ETH (for bidders){{end}}
 			{{ if eq 11 .RecordType}}Raffle CST (for bidders){{end}}
 			{{ if eq 12 .RecordType}}Raffle CS NFT (for bidders){{end}}
-			{{ if eq 13 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
-			{{ if eq 14 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
-			{{ if eq 15 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
-		</td>
+		{{ if eq 13 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
+		{{ if eq 14 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
+		{{ if eq 15 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
+		{{ if eq 16 .RecordType}}Donated NFT ⏰{{end}}
+		{{ if eq 17 .RecordType}}Donated ERC20 ⏰{{end}}
+		{{ if eq 18 .RecordType}}Raffle ETH ⏰{{end}}
+	</td>
 			<td class="" style="text-align: center;">
 				{{.Tx.BlockNum}}
 			</td>

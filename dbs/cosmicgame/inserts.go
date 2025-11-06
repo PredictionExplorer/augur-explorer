@@ -356,12 +356,13 @@ func (sw *SQLStorageWrapper) Insert_prize_withdrawal(evt *p.CGPrizesEthWithdrawa
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+	beneficiary_aid := sw.S.Lookup_or_create_address(evt.BeneficiaryAddr,0, 0)
 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_withdrawal("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"round_num,winner_aid,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"round_num,winner_aid,beneficiary_aid,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -370,6 +371,7 @@ func (sw *SQLStorageWrapper) Insert_prize_withdrawal(evt *p.CGPrizesEthWithdrawa
 		contract_aid,
 		evt.Round,
 		winner_aid,
+		beneficiary_aid,
 		evt.Amount,
 	)
 	if err != nil {

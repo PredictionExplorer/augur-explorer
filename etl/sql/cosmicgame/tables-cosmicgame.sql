@@ -197,6 +197,7 @@ CREATE TABLE cg_prize_withdrawal ( -- IPrizesWallet.sol:EthWithdrawn
 	contract_aid	BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
+	beneficiary_aid	BIGINT NOT NULL,	-- Who actually claimed (can differ from winner after timeout)
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );

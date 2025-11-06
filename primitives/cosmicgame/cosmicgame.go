@@ -162,6 +162,7 @@ type CGPrizesEthWithdrawal struct {
 	ContractAddr		string
 	Round				int64
 	WinnerAddr			string
+	BeneficiaryAddr		string	// Who actually claimed (can be different from winner after timeout)
 	Amount				string
 }
 type CGRaffleNFTWinner struct {

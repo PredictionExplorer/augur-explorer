@@ -55,7 +55,8 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 				"END AS token_id,"+
 			"'' AS token_uri,"+
 		"p.winner_index,"+
-		"CASE WHEN p.ptype = 10 THEN pd.claimed ELSE TRUE END AS claimed "+
+		"CASE WHEN p.ptype = 10 THEN pd.claimed ELSE TRUE END AS claimed,"+
+		"FALSE AS is_timeout_claim "+
 	"FROM "+sw.S.SchemaName()+".cg_prize p "+
 		"LEFT JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON (p.round_num = pc.round_num AND p.ptype IN (0,1,2)) "+
 		"LEFT JOIN "+sw.S.SchemaName()+".transaction tc ON tc.id = pc.tx_id "+
@@ -81,7 +82,84 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 				"(p.ptype IN (11,12) AND rnw_bidder.winner_aid = $1) OR "+
 				"(p.ptype IN (13,14) AND rnw_rwalk.winner_aid = $1)"+
 			") "+
-		"ORDER BY p.round_num DESC, p.winner_index, p.ptype "+
+		
+		"UNION "+
+		
+		// Add timeout-claimed ETH prizes (where user is beneficiary but not winner)
+		"SELECT "+
+			"18 AS record_type,"+  // ETH timeout claim (different from normal type 10)
+			"pw.evtlog_id,"+
+			"EXTRACT(EPOCH FROM pw.time_stamp)::BIGINT AS tstmp,"+
+			"pw.time_stamp AS date_time,"+
+			"pw.block_num,"+
+			"t.id AS tx_id,"+
+			"t.tx_hash,"+
+			"pw.round_num,"+
+			"pw.amount,"+
+			"pw.amount/1e18 AS amount_eth,"+
+			"'' AS token_addr,"+
+			"-1 AS token_id,"+
+			"'' AS token_uri,"+
+			"0 AS winner_index,"+  // Winner index not available in withdrawal table
+			"TRUE AS claimed,"+
+			"TRUE AS is_timeout_claim "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_withdrawal pw "+
+			"JOIN "+sw.S.SchemaName()+".transaction t ON t.id = pw.tx_id "+
+		"WHERE pw.beneficiary_aid = $1 AND pw.beneficiary_aid != pw.winner_aid "+
+		
+		"UNION "+
+		
+		// Add timeout-claimed donated NFTs (where user is beneficiary but not round winner)
+		"SELECT "+
+			"16 AS record_type,"+  // Custom type for timeout-claimed donated NFT
+			"nc.evtlog_id,"+
+			"EXTRACT(EPOCH FROM nc.time_stamp)::BIGINT AS tstmp,"+
+			"nc.time_stamp AS date_time,"+
+			"nc.block_num,"+
+			"t.id AS tx_id,"+
+			"t.tx_hash,"+
+			"nc.round_num,"+
+			"'0' AS amount,"+
+			"0 AS amount_eth,"+
+			"wa_token.addr AS token_addr,"+
+			"nc.token_id,"+
+			"'' AS token_uri,"+
+			"nc.idx AS winner_index,"+  // Using NFT index
+			"TRUE AS claimed,"+
+			"TRUE AS is_timeout_claim "+
+		"FROM "+sw.S.SchemaName()+".cg_donated_nft_claimed nc "+
+			"JOIN "+sw.S.SchemaName()+".transaction t ON t.id = nc.tx_id "+
+			"JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON pc.round_num = nc.round_num "+
+			"JOIN "+sw.S.SchemaName()+".address wa_token ON nc.token_aid = wa_token.address_id "+
+		"WHERE nc.winner_aid = $1 AND nc.winner_aid != pc.winner_aid "+
+		
+		"UNION "+
+		
+		// Add timeout-claimed donated ERC20 (where user is beneficiary but not round winner)
+		"SELECT "+
+			"17 AS record_type,"+  // Custom type for timeout-claimed donated ERC20
+			"tc.evtlog_id,"+
+			"EXTRACT(EPOCH FROM tc.time_stamp)::BIGINT AS tstmp,"+
+			"tc.time_stamp AS date_time,"+
+			"tc.block_num,"+
+			"t.id AS tx_id,"+
+			"t.tx_hash,"+
+			"tc.round_num,"+
+			"tc.amount AS amount,"+
+			"tc.amount/1e18 AS amount_eth,"+
+			"wa_token.addr AS token_addr,"+
+			"-1 AS token_id,"+
+			"'' AS token_uri,"+
+			"0 AS winner_index,"+
+			"TRUE AS claimed,"+
+			"TRUE AS is_timeout_claim "+
+		"FROM "+sw.S.SchemaName()+".cg_donated_tok_claimed tc "+
+			"JOIN "+sw.S.SchemaName()+".transaction t ON t.id = tc.tx_id "+
+			"JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON pc.round_num = tc.round_num "+
+			"JOIN "+sw.S.SchemaName()+".address wa_token ON tc.token_aid = wa_token.address_id "+
+		"WHERE tc.winner_aid = $1 AND tc.winner_aid != pc.winner_aid "+
+		
+		"ORDER BY round_num DESC, winner_index, record_type "+
 		"OFFSET $2 LIMIT $3"
 	rows,err := sw.S.Db().Query(query,winner_aid,offset,limit)
 	if (err!=nil) {
@@ -108,6 +186,7 @@ func (sw *SQLStorageWrapper) Get_prize_history_detailed_by_user(winner_aid int64
 			&rec.TokenURI,
 			&rec.WinnerIndex,
 			&rec.Claimed,
+			&rec.IsTimeoutClaim,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -168,6 +247,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 			"'' AS token_uri,"+
 			"p.winner_index,"+
 		"CASE WHEN p.ptype = 10 THEN pd.claimed ELSE TRUE END AS claimed,"+
+		"FALSE AS is_timeout_claim,"+
 		"CASE WHEN p.ptype = 15 THEN '(All CS NFT Stakers)' ELSE COALESCE(wa_pc.addr, wa_lw.addr, wa_ew.addr, wa_cw.addr, wa_rew.addr, wa_rnw_bidder.addr, wa_rnw_rwalk.addr, '') END AS winner_addr,"+
 			"COALESCE(pc.winner_aid, lw.winner_aid, ew.winner_aid, cw.winner_aid, rew.winner_aid, rnw_bidder.winner_aid, rnw_rwalk.winner_aid, 0) AS winner_aid "+
 		"FROM "+sw.S.SchemaName()+".cg_prize p "+
@@ -195,7 +275,93 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 				"LEFT JOIN "+sw.S.SchemaName()+".address wa_rnw_rwalk ON rnw_rwalk.winner_aid = wa_rnw_rwalk.address_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15) "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction ted ON ted.id = ed.tx_id "+
-			"ORDER BY p.round_num DESC, p.winner_index, p.ptype "+
+			
+			"UNION "+
+			
+		// Add timeout-claimed ETH prizes (global view)
+		"SELECT "+
+			"18 AS record_type,"+  // ETH timeout claim
+				"pw.evtlog_id,"+
+				"EXTRACT(EPOCH FROM pw.time_stamp)::BIGINT AS tstmp,"+
+				"pw.time_stamp AS date_time,"+
+				"pw.block_num,"+
+				"t.id AS tx_id,"+
+				"t.tx_hash,"+
+				"pw.round_num,"+
+				"pw.amount,"+
+				"pw.amount/1e18 AS amount_eth,"+
+				"'' AS token_addr,"+
+				"-1 AS token_id,"+
+				"'' AS token_uri,"+
+				"0 AS winner_index,"+
+				"TRUE AS claimed,"+
+				"TRUE AS is_timeout_claim,"+
+				"wa_winner.addr AS winner_addr,"+
+				"pw.winner_aid "+
+			"FROM "+sw.S.SchemaName()+".cg_prize_withdrawal pw "+
+				"JOIN "+sw.S.SchemaName()+".transaction t ON t.id = pw.tx_id "+
+				"JOIN "+sw.S.SchemaName()+".address wa_winner ON pw.winner_aid = wa_winner.address_id "+
+			"WHERE pw.beneficiary_aid != pw.winner_aid "+
+			
+			"UNION "+
+			
+			// Add timeout-claimed donated NFTs (global view)
+			"SELECT "+
+				"16 AS record_type,"+
+				"nc.evtlog_id,"+
+				"EXTRACT(EPOCH FROM nc.time_stamp)::BIGINT AS tstmp,"+
+				"nc.time_stamp AS date_time,"+
+				"nc.block_num,"+
+				"t.id AS tx_id,"+
+				"t.tx_hash,"+
+				"nc.round_num,"+
+				"'0' AS amount,"+
+				"0 AS amount_eth,"+
+				"wa_token.addr AS token_addr,"+
+				"nc.token_id,"+
+				"'' AS token_uri,"+
+				"nc.idx AS winner_index,"+
+				"TRUE AS claimed,"+
+				"TRUE AS is_timeout_claim,"+
+				"wa_beneficiary.addr AS winner_addr,"+  // Show beneficiary as winner for these records
+				"nc.winner_aid "+
+			"FROM "+sw.S.SchemaName()+".cg_donated_nft_claimed nc "+
+				"JOIN "+sw.S.SchemaName()+".transaction t ON t.id = nc.tx_id "+
+				"JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON pc.round_num = nc.round_num "+
+				"JOIN "+sw.S.SchemaName()+".address wa_token ON nc.token_aid = wa_token.address_id "+
+				"JOIN "+sw.S.SchemaName()+".address wa_beneficiary ON nc.winner_aid = wa_beneficiary.address_id "+
+			"WHERE nc.winner_aid != pc.winner_aid "+
+			
+			"UNION "+
+			
+			// Add timeout-claimed donated ERC20 (global view)
+			"SELECT "+
+				"17 AS record_type,"+
+				"tc.evtlog_id,"+
+				"EXTRACT(EPOCH FROM tc.time_stamp)::BIGINT AS tstmp,"+
+				"tc.time_stamp AS date_time,"+
+				"tc.block_num,"+
+				"t.id AS tx_id,"+
+				"t.tx_hash,"+
+				"tc.round_num,"+
+				"tc.amount AS amount,"+
+				"tc.amount/1e18 AS amount_eth,"+
+				"wa_token.addr AS token_addr,"+
+				"-1 AS token_id,"+
+				"'' AS token_uri,"+
+				"0 AS winner_index,"+
+				"TRUE AS claimed,"+
+				"TRUE AS is_timeout_claim,"+
+				"wa_beneficiary.addr AS winner_addr,"+  // Show beneficiary as winner for these records
+				"tc.winner_aid "+
+			"FROM "+sw.S.SchemaName()+".cg_donated_tok_claimed tc "+
+				"JOIN "+sw.S.SchemaName()+".transaction t ON t.id = tc.tx_id "+
+				"JOIN "+sw.S.SchemaName()+".cg_prize_claim pc ON pc.round_num = tc.round_num "+
+				"JOIN "+sw.S.SchemaName()+".address wa_token ON tc.token_aid = wa_token.address_id "+
+				"JOIN "+sw.S.SchemaName()+".address wa_beneficiary ON tc.winner_aid = wa_beneficiary.address_id "+
+			"WHERE tc.winner_aid != pc.winner_aid "+
+			
+			"ORDER BY round_num DESC, winner_index, record_type "+
 			"OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
@@ -223,6 +389,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 			&rec.TokenURI,
 			&rec.WinnerIndex,
 			&rec.Claimed,
+			&rec.IsTimeoutClaim,
 			&rec.WinnerAddr,
 			&rec.WinnerAid,
 		)

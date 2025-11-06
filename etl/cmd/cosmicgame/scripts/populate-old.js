@@ -465,6 +465,17 @@ async function main() {
     const samp2 = await Samp.deploy();
     await samp2.waitForDeployment();
     
+    // Distribute Samp tokens (owner has all from deployment)
+    console.log("Distributing Samp ERC20 tokens...");
+    const sampAmount = hre.ethers.parseEther("50000");
+    await samp1.connect(owner).transfer(addr1.address, sampAmount);
+    await samp1.connect(owner).transfer(addr2.address, sampAmount);
+    await samp1.connect(owner).transfer(addr3.address, sampAmount);
+    await samp2.connect(owner).transfer(addr1.address, sampAmount);
+    await samp2.connect(owner).transfer(addr2.address, sampAmount);
+    await samp2.connect(owner).transfer(addr3.address, sampAmount);
+    console.log("✓ Distributed 50000 samp1 and samp2 to addr1, addr2, addr3");
+    
     console.log("=== ROUND 0 ===");
     
     // Initial donations
@@ -563,6 +574,16 @@ async function main() {
     await samp1.connect(addr3).approve(await cosmicGameProxy.getAddress(), hre.ethers.parseEther("9999999999999999"));
     
     console.log("Testing CST bid + ERC20 donation combo");
+    
+    // DEBUG: Check balances before bidding
+    const addr3CstBal = await cosmicToken.balanceOf(addr3.address);
+    const addr3Samp1Bal = await samp1.balanceOf(addr3.address);
+    const cstBidPrice = await cosmicGameProxy.getNextCstBidPrice();
+    console.log(`DEBUG addr3 CST balance: ${hre.ethers.formatEther(addr3CstBal)} CST`);
+    console.log(`DEBUG CST bid price: ${hre.ethers.formatEther(cstBidPrice)} CST`);
+    console.log(`DEBUG addr3 samp1 balance: ${hre.ethers.formatEther(addr3Samp1Bal)} samp1`);
+    console.log(`DEBUG Can afford? CST=${addr3CstBal >= cstBidPrice}, samp1=${addr3Samp1Bal >= hre.ethers.parseEther("75")}`);
+    
     await cosmicGameProxy.connect(addr3).bidWithCstAndDonateToken(
         cstPriceForCombo * 2n,  // priceMaxLimit
         "CST bid with ERC20 donation",
@@ -587,11 +608,12 @@ async function main() {
     await cosmicGameProxy.connect(owner).setDelayDurationBeforeRoundActivation(1000);
     await advanceTimeAndClaim(addr3);
     
-    // Claim donated tokens
+    // Claim donated tokens (only claim samp1, leave samp2 for timeout test)
     const roundNum = await cosmicGameProxy.roundNum();
     try {
         await prizesWallet.connect(addr3).claimDonatedToken(roundNum - 1n, await samp1.getAddress(), CONFIG.erc20Donations.round2);
-        await prizesWallet.connect(addr3).claimDonatedToken(roundNum - 1n, await samp2.getAddress(), CONFIG.erc20Donations.round2);
+        // NOTE: NOT claiming samp2 from Round 3 - leaving it for addr5 to claim after timeout
+        console.log("Claimed samp1 from Round 3, left samp2 unclaimed for timeout test");
     } catch (e) {
         console.log("Error claiming donated tokens:", e.message);
     }
@@ -652,9 +674,11 @@ async function main() {
     await ethers.provider.send("evm_increaseTime", [1001]);
     await ethers.provider.send("evm_mine");
     
-    // Claim donated NFTs
+    // Claim donated NFTs (only claim 0 and 1, leave 2, 3, 4 for timeout test)
     await prizesWallet.connect(addr3).claimDonatedNft(0n);
     await prizesWallet.connect(addr3).claimDonatedNft(1n);
+    // NOTE: NFT indexes 2, 3, 4 are intentionally LEFT UNCLAIMED
+    // so addr5 can claim them after timeout (see timeout claiming section)
     
     // Withdraw unclaimed deposits
     await withdrawAllUnclaimedDeposits();
@@ -667,10 +691,20 @@ async function main() {
     const currentRoundNum = Number(await cosmicGameProxy.roundNum());
     const withdrawalTimeout = await prizesWallet.timeoutDurationToWithdrawPrizes();
     
-    // Fast-forward past the timeout period
-    console.log(`Fast-forwarding ${Number(withdrawalTimeout)} seconds past timeout...`);
-    await ethers.provider.send("evm_increaseTime", [Number(withdrawalTimeout) + 100]);
-    await ethers.provider.send("evm_mine");
+    // Get the timeout time for round 1 (earliest unclaimed round)
+    const round1TimeoutTime = await prizesWallet.roundTimeoutTimesToWithdrawPrizes(1);
+    const currentBlockTime = (await ethers.provider.getBlock('latest')).timestamp;
+    const timeToWait = Number(round1TimeoutTime) - currentBlockTime + 100;
+    
+    console.log(`Round 1 timeout expires at: ${round1TimeoutTime}`);
+    console.log(`Current blockchain time: ${currentBlockTime}`);
+    console.log(`Need to wait: ${timeToWait} seconds`);
+    
+    if (timeToWait > 0) {
+        await ethers.provider.send("evm_increaseTime", [timeToWait]);
+        await ethers.provider.send("evm_mine");
+        console.log(`✓ Fast-forwarded past timeout`);
+    }
     
     // Find unclaimed ETH deposits (withdrawAllUnclaimedDeposits skipped last 3 rounds)
     // Let addr5 claim prizes that belong to other winners (after timeout)
@@ -683,13 +717,13 @@ async function main() {
         const originalWinner = event.args.prizeWinnerAddress;
         
         // Check if this prize is still unclaimed
-        const balance = await prizesWallet.getEthBalanceAmount(eventRound, originalWinner);
+        const balance = await prizesWallet["getEthBalanceAmount(uint256,address)"](eventRound, originalWinner);
         
         if (balance > 0n && originalWinner !== addr5.address) {
             // addr5 (non-winner) claims the prize after timeout
             console.log(`addr5 claiming round ${eventRound} prize (original winner: ${originalWinner.substring(0, 10)}...)`);
             try {
-                await prizesWallet.connect(addr5).withdrawEth(eventRound, originalWinner);
+                await prizesWallet.connect(addr5)["withdrawEth(uint256,address)"](eventRound, originalWinner);
                 console.log(`  ✓ Generated EthWithdrawn event: beneficiary=${addr5.address.substring(0, 10)}... ≠ winner=${originalWinner.substring(0, 10)}...`);
                 claimedByNonWinner++;
                 if (claimedByNonWinner >= 2) break; // Test 2 examples
@@ -700,27 +734,50 @@ async function main() {
     }
     
     // Test timeout claiming for donated ERC20 tokens
-    // Find rounds with unclaimed donated tokens where winner didn't claim
-    for (let r = 2; r < currentRoundNum; r++) {
+    // Round 3 has ERC20 donations, need to wait for Round 3's timeout
+    const round3TimeoutTime = await prizesWallet.roundTimeoutTimesToWithdrawPrizes(3);
+    const currentTime = (await ethers.provider.getBlock('latest')).timestamp;
+    const timeToWaitR3 = Number(round3TimeoutTime) - currentTime + 100;
+    
+    console.log(`\nRound 3 timeout (for NFT/ERC20) expires at: ${round3TimeoutTime}`);
+    console.log(`Current time: ${currentTime}`);
+    console.log(`Additional time to wait for Round 3: ${timeToWaitR3} seconds`);
+    
+    if (timeToWaitR3 > 0) {
+        await ethers.provider.send("evm_increaseTime", [timeToWaitR3]);
+        await ethers.provider.send("evm_mine");
+        console.log(`✓ Fast-forwarded past Round 3 timeout`);
+    }
+    
+    // Now claim ERC20 donations from Round 3 (samp2 was left unclaimed)
+    console.log("\nAttempting ERC20 timeout claims...");
+    for (let r = 2; r <= 3; r++) {
         const mainWinner = await prizesWallet.mainPrizeBeneficiaryAddresses(r);
+        console.log(`  Round ${r}: main winner = ${mainWinner.substring(0, 10)}...`);
+        
         if (mainWinner !== ethers.ZeroAddress && mainWinner !== addr5.address) {
             try {
-                const balance = await prizesWallet.getDonatedTokenBalanceAmount(r, await samp2.getAddress());
-                if (balance > 0n) {
-                    console.log(`addr5 claiming round ${r} donated ERC20 (original winner: ${mainWinner.substring(0, 10)}...)`);
+                const samp2Balance = await prizesWallet.getDonatedTokenBalanceAmount(r, await samp2.getAddress());
+                console.log(`  Round ${r} samp2 balance: ${hre.ethers.formatEther(samp2Balance)} samp2`);
+                
+                if (samp2Balance > 0n) {
+                    console.log(`addr5 claiming round ${r} donated samp2 (original winner: ${mainWinner.substring(0, 10)}...)`);
                     await prizesWallet.connect(addr5).claimDonatedToken(r, await samp2.getAddress(), 0n);
-                    console.log(`  ✓ Generated DonatedTokenClaimed event: beneficiary=${addr5.address.substring(0, 10)}... ≠ winner=${mainWinner.substring(0, 10)}...`);
+                    console.log(`  ✓ SUCCESS! DonatedTokenClaimed event: round=${r}, beneficiary=addr5 ≠ winner=${mainWinner.substring(0, 10)}...`);
                     break; // Only test once
+                } else {
+                    console.log(`  Round ${r} samp2 already claimed, checking next round...`);
                 }
             } catch (e) {
-                // No balance or already claimed
+                console.log(`  ✗ ERC20 claim failed: ${e.message.substring(0, 100)}`);
             }
         }
     }
     
-    // Test timeout claiming for donated NFTs
-    // Find unclaimed donated NFTs (we claimed 0 and 1, so 2 and 3 should be available)
+    // Test timeout claiming for donated NFTs from Round 3
     const nextNftIndex = await prizesWallet.nextDonatedNftIndex();
+    console.log(`Checking ${nextNftIndex} donated NFTs for timeout claims...`);
+    
     for (let i = 2; i < nextNftIndex; i++) {
         try {
             const nft = await prizesWallet.donatedNfts(i);
@@ -731,14 +788,18 @@ async function main() {
                 const mainWinner = await prizesWallet.mainPrizeBeneficiaryAddresses(nftRound);
                 
                 if (mainWinner !== addr5.address) {
-                    console.log(`addr5 claiming donated NFT index ${i} (original winner: ${mainWinner.substring(0, 10)}...)`);
-                    await prizesWallet.connect(addr5).claimDonatedNft(i);
-                    console.log(`  ✓ Generated DonatedNftClaimed event: beneficiary=${addr5.address.substring(0, 10)}... ≠ winner=${mainWinner.substring(0, 10)}...`);
-                    break; // Only test once
+                    console.log(`addr5 claiming donated NFT index ${i} from ROUND ${nftRound} (original winner: ${mainWinner.substring(0, 10)}...)`);
+                    try {
+                        await prizesWallet.connect(addr5).claimDonatedNft(i);
+                        console.log(`  ✓ SUCCESS! DonatedNftClaimed event: round=${nftRound}, beneficiary=addr5 ≠ winner=${mainWinner.substring(0, 10)}...`);
+                        break; // Only test once (we got what we needed)
+                    } catch (claimError) {
+                        console.log(`  ✗ NFT claim failed: ${claimError.message.substring(0, 100)}`);
+                    }
                 }
             }
         } catch (e) {
-            // NFT doesn't exist or already claimed
+            console.log(`  ✗ Error checking NFT ${i}: ${e.message.substring(0, 80)}`);
         }
     }
     
@@ -874,7 +935,7 @@ async function main() {
         
         // Find rounds where addr1 has unclaimed ETH
         for (let r = 0; r < finalRoundNum; r++) {
-            const balance = await prizesWallet.getEthBalanceAmount(r, addr1.address);
+            const balance = await prizesWallet["getEthBalanceAmount(uint256,address)"](r, addr1.address);
             if (balance > 0n) {
                 roundsWithPrizes.push(r);
             }
@@ -892,41 +953,9 @@ async function main() {
     }
     
     // Test batch donated NFT claiming (claimManyDonatedNfts)
-    try {
-        const unclaimedNftIndexes = [];
-        const nextNftIdx = await prizesWallet.nextDonatedNftIndex();
-        
-        // Find unclaimed NFTs
-        for (let i = 0; i < nextNftIdx; i++) {
-            const nft = await prizesWallet.donatedNfts(i);
-            const nftObj = nft.toObject();
-            if (nftObj.nftAddress !== ethers.ZeroAddress) {
-                unclaimedNftIndexes.push(i);
-                if (unclaimedNftIndexes.length >= 2) break; // Test with 2
-            }
-        }
-        
-        if (unclaimedNftIndexes.length >= 2) {
-            console.log(`Batch-claiming ${unclaimedNftIndexes.length} donated NFTs: indexes ${unclaimedNftIndexes}`);
-            // addr5 already claimed these after timeout, so let's try with addr3 on unclaimed ones
-            // Or if addr5 claimed them, we skip this
-            // Find who can claim them
-            const firstNft = await prizesWallet.donatedNfts(unclaimedNftIndexes[0]);
-            const firstNftObj = firstNft.toObject();
-            const roundForNft = Number(firstNftObj.roundNum);
-            const mainWinner = await prizesWallet.mainPrizeBeneficiaryAddresses(roundForNft);
-            
-            if (mainWinner !== ethers.ZeroAddress) {
-                const winnerSigner = await hre.ethers.getSigner(mainWinner);
-                await prizesWallet.connect(winnerSigner).claimManyDonatedNfts(unclaimedNftIndexes);
-                console.log(`  ✓ Generated ${unclaimedNftIndexes.length} DonatedNftClaimed events in ONE transaction`);
-            }
-        } else {
-            console.log(`  ⚠️ Only ${unclaimedNftIndexes.length} unclaimed NFT(s), skipping batch claim test`);
-        }
-    } catch (e) {
-        console.log(`  ✗ Batch NFT claiming error: ${e.message}`);
-    }
+    // DISABLED: Conflicts with timeout claiming test
+    // If we batch-claim with mainWinner, we can't test timeout claiming by non-winner
+    console.log(`  ⚠️ Batch NFT claiming skipped (NFTs left for timeout test)`);
     
     console.log("=== Batch Operations Complete ===\n");
     // === END: Batch Operations ===
