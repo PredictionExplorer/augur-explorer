@@ -129,75 +129,81 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	var rec p.CGRoundRec
 	var query string
 	query = "SELECT "+
-				"p.evtlog_id,"+
-				"p.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
-				"p.time_stamp,"+
-				"p.winner_aid,"+
-				"wa.addr,"+
-				"p.timeout,"+
-				"p.amount, "+
-				"p.amount/1e18 amount_eth, " +
-				"p.cst_amount, " +
-				"p.cst_amount/1e18 cst_amount_eth, " +
-				"p.round_num,"+
-				"p.token_id,"+
-				"m.seed, "+
-				"s.total_bids,"+
-				"s.total_nft_donated, "+
-				"s.num_erc20_donations,"+
-				"s.total_raffle_eth_deposits, "+
-				"s.total_raffle_eth_deposits/1e18,"+
-				"s.total_raffle_nfts, "+
-				"d.donation_amount, "+
-				"d.donation_amount/1e+18,"+
-				"d.charity_addr, "+
-				"dp.deposit_amount, "+
-				"dp.deposit_amount/1e18,"+
-				"dp.amount_per_token,"+
-				"dp.amount_per_token/1e18, "+
-				"dp.deposit_id, "+
-				"dp.num_staked_nfts, "+
-				"endu.erc721_token_id, "+
-				"end_a.addr, "+
-				"top.erc721_token_id,"+
-				"top_a.addr, "+
-				"w_a.addr,"+
-				"endu.erc20_amount,"+
-				"endu.erc20_amount/1e18, "+
-			"top.erc20_amount,"+
-			"top.erc20_amount/1e18, "+
-			"w.eth_amount,"+
-			"w.eth_amount/1e18, "+
-			"w.cst_amount,"+
-			"w.cst_amount/1e18, "+
-			"w.nft_id,"+
-			"s.donations_round_count,"+
-			"s.donations_round_total,"+
-			"s.donations_round_total/1e18 "+
-			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
-				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num " +
-				"LEFT JOIN cg_round_stats s ON s.round_num=p.round_num "+
-				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
-				"LEFT JOIN cg_endurance_prize endu ON endu.round_num=p.round_num "+
-				"LEFT JOIN cg_lastcst_prize top ON top.round_num=p.round_num "+
-				"LEFT JOIN cg_chrono_warrior_prize w ON w.round_num = p.round_num "+
-				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
-				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
-			"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
-			"LEFT JOIN ("+
-				"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
-					"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
-					"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
-					"WHERE round_num >= 0 "+
-					"GROUP BY round_num "+
-			") d ON p.round_num = d.round_num "+
-		"WHERE p.round_num=$1"
+			"p.evtlog_id,"+
+			"p.block_num,"+
+			"t.id,"+
+			"t.tx_hash,"+
+			"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+			"p.time_stamp,"+
+			"p.winner_aid,"+
+			"wa.addr,"+
+			"p.timeout,"+
+			"p.amount, "+
+			"p.amount/1e18 amount_eth, " +
+			"p.cst_amount, " +
+			"p.cst_amount/1e18 cst_amount_eth, " +
+			"p.round_num,"+
+			"p.token_id,"+
+			"m.seed, "+
+			"s.total_bids,"+
+			"s.total_nft_donated, "+
+			"s.num_erc20_donations,"+
+			"s.total_raffle_eth_deposits, "+
+			"s.total_raffle_eth_deposits/1e18,"+
+			"s.total_raffle_nfts, "+
+			"d.donation_amount, "+
+			"d.donation_amount/1e+18,"+
+			"d.charity_addr, "+
+			"dp.deposit_amount, "+
+			"dp.deposit_amount/1e18,"+
+			"dp.amount_per_token,"+
+			"dp.amount_per_token/1e18, "+
+			"dp.deposit_id, "+
+			"dp.num_staked_nfts, "+
+			"endu.erc721_token_id, "+
+			"end_a.addr, "+
+			"top.erc721_token_id,"+
+			"top_a.addr, "+
+			"w_a.addr,"+
+			"endu.erc20_amount,"+
+			"endu.erc20_amount/1e18, "+
+		"top.erc20_amount,"+
+		"top.erc20_amount/1e18, "+
+		"w.eth_amount,"+
+		"w.eth_amount/1e18, "+
+		"w.cst_amount,"+
+		"w.cst_amount/1e18, "+
+		"w.nft_id,"+
+		"s.donations_round_count,"+
+		"s.donations_round_total,"+
+		"s.donations_round_total/1e18, "+
+		"s.param_window_start_time,"+
+		"s.activation_time,"+
+		"s.param_window_duration_seconds,"+
+		"s.round_start_time,"+
+		"s.round_end_time,"+
+		"s.round_duration_seconds "+
+		"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
+			"LEFT JOIN transaction t ON t.id=tx_id "+
+			"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
+			"LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num " +
+			"LEFT JOIN cg_round_stats s ON s.round_num=p.round_num "+
+			"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
+			"LEFT JOIN cg_endurance_prize endu ON endu.round_num=p.round_num "+
+			"LEFT JOIN cg_lastcst_prize top ON top.round_num=p.round_num "+
+			"LEFT JOIN cg_chrono_warrior_prize w ON w.round_num = p.round_num "+
+			"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
+			"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
+		"LEFT JOIN address w_a ON w.winner_aid=w_a.address_id "+
+		"LEFT JOIN ("+
+			"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
+				"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address cha ON d.contract_aid=cha.address_id "+
+				"WHERE round_num >= 0 "+
+				"GROUP BY round_num "+
+		") d ON p.round_num = d.round_num "+
+	"WHERE p.round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
 	var null_seed sql.NullString
@@ -212,6 +218,13 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	var null_endurance_addr,null_lastcst_addr,null_warrior_addr sql.NullString
 	var null_endurance_erc20_amount,null_lastcst_erc20_amount,null_warrior_eth_amount,null_warrior_cst_amount sql.NullString
 	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float,null_warrior_eth_amount_float,null_warrior_cst_amount_float sql.NullFloat64
+	// Round timing fields (nullable)
+	var null_param_window_start sql.NullString
+	var null_activation_time sql.NullString
+	var null_param_window_duration sql.NullInt64
+	var null_round_start_time sql.NullString
+	var null_round_end_time sql.NullString
+	var null_round_duration sql.NullInt64
 	err := row.Scan(
 		&rec.ClaimPrizeTx.Tx.EvtLogId,
 		&rec.ClaimPrizeTx.Tx.BlockNum,
@@ -261,6 +274,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		&rec.RoundStats.TotalDonatedCount,
 		&rec.RoundStats.TotalDonatedAmount,
 		&rec.RoundStats.TotalDonatedAmountEth,
+		&null_param_window_start,
+		&null_activation_time,
+		&null_param_window_duration,
+		&null_round_start_time,
+		&null_round_end_time,
+		&null_round_duration,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -299,6 +318,14 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	if null_warrior_cst_amount.Valid { rec.ChronoWarrior.CstAmount = null_warrior_cst_amount.String; rec.ChronoWarrior.CstAmountEth = null_warrior_cst_amount_float.Float64 }
 	if null_warrior_nft_id.Valid { rec.ChronoWarrior.NftTokenId = null_warrior_nft_id.Int64 }
 	if null_warrior_addr.Valid { rec.ChronoWarrior.WinnerAddr = null_warrior_addr.String }
+
+	// Populate round timing fields
+	if null_param_window_start.Valid { rec.RoundStats.ParamWindowStartTime = null_param_window_start.String }
+	if null_activation_time.Valid { rec.RoundStats.ActivationTime = null_activation_time.String }
+	if null_param_window_duration.Valid { rec.RoundStats.ParamWindowDurationSeconds = null_param_window_duration.Int64 }
+	if null_round_start_time.Valid { rec.RoundStats.RoundStartTime = null_round_start_time.String }
+	if null_round_end_time.Valid { rec.RoundStats.RoundEndTime = null_round_end_time.String }
+	if null_round_duration.Valid { rec.RoundStats.RoundDurationSeconds = null_round_duration.Int64 }
 
 	return true,rec
 }

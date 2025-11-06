@@ -110,6 +110,40 @@
 	</tr>
 
 	<tr>
+		<td>Round Timing</td>
+		<td>
+			<table>
+				{{ if .RoundInfo.RoundStats.ParamWindowStartTime }}
+				<tr>
+					<td>Parameter Window Start:</td>
+					<td>{{.RoundInfo.RoundStats.ParamWindowStartTime}}</td>
+				</tr>
+				<tr>
+					<td>Activation Time Set:</td>
+					<td>{{.RoundInfo.RoundStats.ActivationTime}}</td>
+				</tr>
+				<tr>
+					<td>Parameter Window Duration:</td>
+					<td>{{.RoundInfo.RoundStats.ParamWindowDurationSeconds}} seconds</td>
+				</tr>
+				{{ end }}
+				<tr>
+					<td>Round Started (First Bid):</td>
+					<td>{{.RoundInfo.RoundStats.RoundStartTime}}</td>
+				</tr>
+				<tr>
+					<td>Round Ended (Prize Claimed):</td>
+					<td>{{.RoundInfo.RoundStats.RoundEndTime}}</td>
+				</tr>
+				<tr>
+					<td>Round Duration:</td>
+					<td>{{.RoundInfo.RoundStats.RoundDurationSeconds}} seconds</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+
+	<tr>
 		<td>Statistics</td>
 		<td>
 			<table>

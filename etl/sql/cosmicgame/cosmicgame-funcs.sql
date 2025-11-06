@@ -1567,3 +1567,113 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE TRIGGER erc20_reward_insert AFTER INSERT ON cg_adm_erc20_reward FOR EACH ROW EXECUTE FUNCTION on_erc20_reward_insert();
+-- ============================================================================
+-- Round Timing Trigger Functions
+-- Purpose: Automatically track round lifecycle timing including parameter windows
+-- Date: 2025-11-06
+-- ============================================================================
+
+-- Trigger function for cg_first_bid (FirstBidPlacedInRound event)
+-- Sets round_start_time when the first bid is placed
+CREATE OR REPLACE FUNCTION on_first_bid_update_round_timing() RETURNS trigger AS $$
+BEGIN
+	-- When FirstBidPlacedInRound event fires, set the round_start_time
+	-- Use start_ts (Unix timestamp) instead of time_stamp which may be incorrectly populated
+	UPDATE cg_round_stats
+	SET round_start_time = TO_TIMESTAMP(NEW.start_ts)
+	WHERE round_num = NEW.round_num;
+	
+	-- If round_stats doesn't exist yet, create it
+	IF NOT FOUND THEN
+		INSERT INTO cg_round_stats(round_num, round_start_time)
+		VALUES (NEW.round_num, TO_TIMESTAMP(NEW.start_ts));
+	END IF;
+	
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger function for cg_prize_claim
+-- Sets round_end_time and param_window_start_time for next round
+CREATE OR REPLACE FUNCTION on_prize_claim_update_round_timing() RETURNS trigger AS $$
+DECLARE
+	v_start_time TIMESTAMPTZ;
+	v_next_round_num BIGINT;
+BEGIN
+	-- Get the round start time for duration calculation
+	SELECT round_start_time INTO v_start_time
+	FROM cg_round_stats
+	WHERE round_num = NEW.round_num;
+	
+	-- Update current round's end time and calculate duration
+	UPDATE cg_round_stats
+	SET 
+		round_end_time = NEW.time_stamp,
+		round_duration_seconds = CASE 
+			WHEN round_start_time IS NOT NULL 
+			THEN EXTRACT(EPOCH FROM (NEW.time_stamp - round_start_time))::BIGINT
+			ELSE NULL
+		END
+	WHERE round_num = NEW.round_num;
+	
+	-- If round_stats doesn't exist yet, create it
+	IF NOT FOUND THEN
+		INSERT INTO cg_round_stats(round_num, round_end_time)
+		VALUES (NEW.round_num, NEW.time_stamp);
+	END IF;
+	
+	-- Set the param_window_start_time for the NEXT round
+	-- (parameter setting window starts when current round ends)
+	v_next_round_num := NEW.round_num + 1;
+	
+	UPDATE cg_round_stats
+	SET param_window_start_time = NEW.time_stamp
+	WHERE round_num = v_next_round_num;
+	
+	-- If next round doesn't exist yet, create it
+	IF NOT FOUND THEN
+		INSERT INTO cg_round_stats(round_num, param_window_start_time)
+		VALUES (v_next_round_num, NEW.time_stamp);
+	END IF;
+	
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger function for cg_adm_acttime
+-- Sets activation_time and calculates param_window_duration
+CREATE OR REPLACE FUNCTION on_activation_time_set_update_round_timing() RETURNS trigger AS $$
+DECLARE
+	v_round_num BIGINT;
+	v_param_start TIMESTAMPTZ;
+BEGIN
+	-- Get the round number from the most recent prize claim + 1
+	-- (activation time is set for the NEXT round)
+	SELECT COALESCE(MAX(round_num), 0) + 1 INTO v_round_num
+	FROM cg_prize_claim;
+	
+	-- Get param window start time
+	SELECT param_window_start_time INTO v_param_start
+	FROM cg_round_stats
+	WHERE round_num = v_round_num;
+	
+	-- Update the round with activation_time and calculate param window duration
+	UPDATE cg_round_stats
+	SET 
+		activation_time = TO_TIMESTAMP(NEW.new_atime),
+		param_window_duration_seconds = CASE
+			WHEN param_window_start_time IS NOT NULL
+			THEN EXTRACT(EPOCH FROM (TO_TIMESTAMP(NEW.new_atime) - param_window_start_time))::BIGINT
+			ELSE NULL
+		END
+	WHERE round_num = v_round_num;
+	
+	-- If round_stats doesn't exist yet, create it
+	IF NOT FOUND THEN
+		INSERT INTO cg_round_stats(round_num, activation_time)
+		VALUES (v_round_num, TO_TIMESTAMP(NEW.new_atime));
+	END IF;
+	
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

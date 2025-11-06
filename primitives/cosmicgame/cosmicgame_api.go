@@ -359,6 +359,13 @@ type CGRoundStats struct {
 	TotalDonatedCount			int64
 	TotalDonatedAmount			string
 	TotalDonatedAmountEth		float64
+	// Round timing fields (added 2025-11-06)
+	ParamWindowStartTime		string	// ISO 8601 format
+	ActivationTime				string	// ISO 8601 format
+	ParamWindowDurationSeconds	int64
+	RoundStartTime				string	// ISO 8601 format
+	RoundEndTime				string	// ISO 8601 format
+	RoundDurationSeconds		int64
 }
 type CGClaimInfo struct {
 	ETHRaffleToClaim			float64

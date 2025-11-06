@@ -56,3 +56,7 @@ CREATE TRIGGER cg_nft_unstaked_rwalk_delete AFTER DELETE ON cg_nft_unstaked_rwal
 CREATE TRIGGER cg_st_reward_insert AFTER INSERT ON cg_st_reward FOR EACH ROW EXECUTE PROCEDURE on_st_reward_insert();
 CREATE TRIGGER cg_st_reward_delete AFTER DELETE ON cg_st_reward FOR EACH ROW EXECUTE PROCEDURE on_st_reward_delete();
 CREATE TRIGGER cg_st_reward_update AFTER UPDATE ON cg_st_reward FOR EACH ROW EXECUTE PROCEDURE on_st_reward_update();
+-- Round timing triggers (added 2025-11-06)
+CREATE TRIGGER trigger_first_bid_update_round_timing AFTER INSERT ON cg_first_bid FOR EACH ROW EXECUTE PROCEDURE on_first_bid_update_round_timing();
+CREATE TRIGGER trigger_prize_claim_update_round_timing AFTER INSERT ON cg_prize_claim FOR EACH ROW EXECUTE PROCEDURE on_prize_claim_update_round_timing();
+CREATE TRIGGER trigger_activation_time_update_round_timing AFTER INSERT ON cg_adm_acttime FOR EACH ROW EXECUTE PROCEDURE on_activation_time_set_update_round_timing();
