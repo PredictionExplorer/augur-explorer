@@ -1,0 +1,44 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Marketing Wallet Current Configuration</title>
+</head>
+<body>
+	<h3 class="page_title">Marketing Wallet Current Configuration</h3>
+<table>
+	<tr>
+		<td>Marketing Wallet Contract Address</td>
+		<td>{{ .MarketingWalletAddr }}</td>
+	</tr>
+	<tr>
+		<td>Treasurer Address</td>
+		<td class="addr">{{ .TreasurerAddr }}</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><i>The treasurer has permission to distribute CST rewards to marketers</i></td>
+	</tr>
+	<tr>
+		<td>Token Contract Address (CST)</td>
+		<td class="addr">{{ .TokenAddr }}</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><i>CosmicSignatureToken (CST) used for marketing rewards</i></td>
+	</tr>
+	<tr>
+		<td>Contract Owner Address</td>
+		<td class="addr">{{ .OwnerAddr }}</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><i>The owner has permission to change the treasurer address</i></td>
+	</tr>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/marketing/config/current
+</code>
+</body>
+</html>
+

@@ -431,6 +431,39 @@ type CGCosmicTokenHolderRec struct {
 	OwnerAddr					string
 	Balance						string
 	BalanceFloat				float64
+	PercentOfSupply				float64
+}
+type CGCosmicTokenStats struct {
+	// Supply metrics
+	TotalSupply					string
+	TotalSupplyEth				float64
+	TotalHolders				int64
+	
+	// How CST enters the game (sources)
+	EarnedFromBidding			string
+	EarnedFromBiddingEth		float64
+	EarnedFromStakingNFTs		string
+	EarnedFromStakingNFTsEth	float64
+	DistributedToMarketers		string
+	DistributedToMarketersEth	float64
+	GivenAsMainPrizes			string
+	GivenAsMainPrizesEth		float64
+	GivenAsRafflePrizes			string
+	GivenAsRafflePrizesEth		float64
+	GivenAsChronoWarriorPrizes	string
+	GivenAsChronoWarriorPrizesEth	float64
+	
+	// How CST leaves the game (burns)
+	ConsumedInBids				string
+	ConsumedInBidsEth			float64
+	
+	// Activity metrics
+	TotalMints					int64
+	TotalBurns					int64
+	TotalTransfers				int64
+	
+	// Top holders
+	TopHolders					[]CGCosmicTokenHolderRec
 }
 type CGERC20TransferRec struct {
 	RecordId					int64

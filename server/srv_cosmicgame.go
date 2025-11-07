@@ -2089,6 +2089,71 @@ func cosmic_game_cosmic_token_balances(c *gin.Context) {
 		"CosmicTokenBalances" : balances,
 	})
 }
+func cosmic_game_cosmic_token_statistics(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	
+	stats := arb_storagew.Get_cosmic_token_statistics()
+	
+	// Read contract info from blockchain
+	var copts bind.CallOpts
+	contract,err := NewCosmicSignatureToken(cosmic_token_addr,eclient)
+	if err != nil {
+		err_str := fmt.Sprintf("Can't instantiate CosmicSignatureToken contract: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	token_name,err := contract.Name(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading token name: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	token_symbol,err := contract.Symbol(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading token symbol: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	decimals,err := contract.Decimals(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading decimals: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	game_addr,err := contract.Game(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading game address: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	c.HTML(http.StatusOK, "cg_cosmic_token_statistics.html", gin.H{
+		"TokenName": token_name,
+		"TokenSymbol": token_symbol,
+		"TokenDecimals": decimals,
+		"GameContractAddr": game_addr.String(),
+		"CosmicTokenAddr": cosmic_token_addr.String(),
+		"Stats": stats,
+	})
+}
 func cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
