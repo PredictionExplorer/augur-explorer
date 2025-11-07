@@ -246,6 +246,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/staking/rwalk/staked_tokens/by_user/:user_addr",cosmic_game_staked_tokens_rwalk_by_user)
 	r.GET("/black/cosmicgame/marketing/rewards/global",cosmic_game_marketing_rewards_global)
 	r.GET("/black/cosmicgame/marketing/rewards/by_user/:user_addr",cosmic_game_marketing_rewards_by_user)
+	r.GET("/black/cosmicgame/marketing/config/current",cosmic_game_marketing_config_current)
 	r.GET("/black/cosmicgame/time/current",cosmic_game_time_current)
 	r.GET("/black/cosmicgame/time/until_prize",cosmic_game_time_until_prize)
 	r.GET("/black/cosmicgame/dev/donate_nft",cosmic_game_dev_donate_nft)

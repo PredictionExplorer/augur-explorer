@@ -1873,6 +1873,64 @@ func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 		"UserMarketingRewards" : rewards,
 	})
 }
+func api_cosmic_game_marketing_config_current(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	
+	var copts bind.CallOpts
+	contract,err := NewMarketingWallet(marketing_wallet_addr,eclient)
+	if err != nil {
+		err_str := fmt.Sprintf("Can't instantiate MarketingWallet contract: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error_json(c,err_str)
+		return
+	}
+	
+	// Read current treasurer address
+	treasurer_addr,err := contract.TreasurerAddress(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading TreasurerAddress: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error_json(c,err_str)
+		return
+	}
+	
+	// Read token contract address
+	token_addr,err := contract.Token(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading Token address: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error_json(c,err_str)
+		return
+	}
+	
+	// Read owner address
+	owner_addr,err := contract.Owner(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading Owner address: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error_json(c,err_str)
+		return
+	}
+	
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketingWalletAddr": marketing_wallet_addr.String(),
+		"TreasurerAddr": treasurer_addr.String(),
+		"TokenAddr": token_addr.String(),
+		"OwnerAddr": owner_addr.String(),
+	})
+}
 func api_cosmic_game_get_cst_price(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

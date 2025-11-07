@@ -31,6 +31,7 @@ var (
 	cosmic_signature_addr		common.Address
 	cosmic_token_addr			common.Address
 	charity_wallet_addr			common.Address
+	marketing_wallet_addr		common.Address
 
 	// contract constants (variables not frequently modified, and only by the owner)
 	price_increase				string
@@ -95,6 +96,7 @@ func cosmic_game_init() {
 	cosmic_signature_addr = common.HexToAddress(bw_caddrs.CosmicSignatureAddr)
 	cosmic_token_addr = common.HexToAddress(bw_caddrs.CosmicTokenAddr)
 	charity_wallet_addr = common.HexToAddress(bw_caddrs.CharityWalletAddr)
+	marketing_wallet_addr = common.HexToAddress(bw_caddrs.MarketingWalletAddr)
 	do_reload_contract_variables()
 	do_reload_database_variables()
 	go reload_database_variables_goroutine()
@@ -2194,6 +2196,59 @@ func cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UserMarketingRewards" : rewards,
+	})
+}
+func cosmic_game_marketing_config_current(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	
+	var copts bind.CallOpts
+	contract,err := NewMarketingWallet(marketing_wallet_addr,eclient)
+	if err != nil {
+		err_str := fmt.Sprintf("Can't instantiate MarketingWallet contract: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	// Read current treasurer address
+	treasurer_addr,err := contract.TreasurerAddress(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading TreasurerAddress: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	// Read token contract address
+	token_addr,err := contract.Token(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading Token address: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	// Read owner address
+	owner_addr,err := contract.Owner(&copts)
+	if err != nil {
+		err_str := fmt.Sprintf("Error reading Owner address: %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error(c,err_str)
+		return
+	}
+	
+	c.HTML(http.StatusOK, "cg_marketing_config_current.html", gin.H{
+		"MarketingWalletAddr": marketing_wallet_addr.String(),
+		"TreasurerAddr": treasurer_addr.String(),
+		"TokenAddr": token_addr.String(),
+		"OwnerAddr": owner_addr.String(),
 	})
 }
 func cosmic_game_get_cst_price(c *gin.Context) {

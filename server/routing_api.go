@@ -268,6 +268,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/staking/rwalk/staked_tokens/by_user/:user_addr",api_cosmic_game_staked_tokens_rwalk_by_user)
 	r.GET("/api/cosmicgame/marketing/rewards/global/:offset/:limit",api_cosmic_game_marketing_rewards_global)
 	r.GET("/api/cosmicgame/marketing/rewards/by_user/:user_addr/:offset/:limit",api_cosmic_game_marketing_rewards_by_user)
+	r.GET("/api/cosmicgame/marketing/config/current",api_cosmic_game_marketing_config_current)
 	r.GET("/api/cosmicgame/time/current",api_cosmic_game_time_current)
 	r.GET("/api/cosmicgame/time/until_prize",api_cosmic_game_time_until_prize)
 	r.GET("/api/cosmicgame/system/modelist",api_cosmic_game_sysmode_changes)
