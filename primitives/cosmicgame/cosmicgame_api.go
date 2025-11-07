@@ -153,12 +153,11 @@ type CGUserInfo struct {
 	RaffleNFTsCount				int64
 	RewardNFTsCount				int64	// RaffleNftsCount + endurance count + chrono + lastcstbidder count + main prize NFT
 	UnclaimedNFTs				int64
-	TotalCSTokensWon			int64	// prizes + raffles
-	CosmicTokenNumTransfers		int64
+	TotalCSTokensWon			int64	// prizes + raffles (ERC721 NFT count, not CST!)
 	CosmicSignatureNumTransfers	int64
 	TotalDonatedCount			int64
 	TotalDonatedAmountEth		float64
-	StakingStatistics		UserStakingInfo
+	StakingStatisticsRWalk		CGStakeStatsRWalk
 }
 type CGCharityDonation struct {
 	Tx							Transaction
@@ -439,11 +438,9 @@ type CGCosmicTokenStats struct {
 	TotalSupplyEth				float64
 	TotalHolders				int64
 	
-	// How CST enters the game (sources)
+	// How CST (ERC20) enters the game (sources)
 	EarnedFromBidding			string
 	EarnedFromBiddingEth		float64
-	EarnedFromStakingNFTs		string
-	EarnedFromStakingNFTsEth	float64
 	DistributedToMarketers		string
 	DistributedToMarketersEth	float64
 	GivenAsMainPrizes			string
@@ -464,6 +461,39 @@ type CGCosmicTokenStats struct {
 	
 	// Top holders
 	TopHolders					[]CGCosmicTokenHolderRec
+}
+type CGUserCosmicTokenSummary struct {
+	UserAddr					string
+	UserAid						int64
+	CurrentBalance				string
+	CurrentBalanceEth			float64
+	
+	// CST (ERC20) Earnings breakdown
+	TotalEarned					string
+	TotalEarnedEth				float64
+	EarnedFromBidding			string
+	EarnedFromBiddingEth		float64
+	EarnedFromMainPrizes		string
+	EarnedFromMainPrizesEth		float64
+	EarnedFromRafflePrizes		string
+	EarnedFromRafflePrizesEth	float64
+	EarnedFromChronoWarrior		string
+	EarnedFromChronoWarriorEth	float64
+	EarnedFromMarketing			string
+	EarnedFromMarketingEth		float64
+	
+	// CST (ERC20) Spending
+	ConsumedInBids				string
+	ConsumedInBidsEth			float64
+	
+	// Net CST flow
+	NetCSTFlow					string
+	NetCSTFlowEth				float64
+	
+	// Activity
+	NumTransfers				int64
+	NumMints					int64
+	NumBurns					int64
 }
 type CGERC20TransferRec struct {
 	RecordId					int64

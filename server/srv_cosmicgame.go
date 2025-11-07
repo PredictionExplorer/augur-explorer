@@ -664,30 +664,6 @@ func cosmic_game_user_info(c *gin.Context) {
 		})
 		return
 	}
-	ct_contract,err := NewERC20(cosmic_token_addr,eclient);
-	if err != nil {
-		err_str := fmt.Sprintf("Error at instantiation of ERC20 contract: %v\n",err)
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("%v",err_str),
-		})
-		return
-	}
-	addr := common.HexToAddress(p_user_addr)
-	var copts bind.CallOpts
-	ct_balance,err := ct_contract.BalanceOf(&copts,addr)
-	if err != nil {
-		err_str := fmt.Sprintf("Error at BalanceOf() call: %v\n",err)
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("%v",err_str),
-		})
-		return
-	}
-	f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-	f_balance_eth := big.NewFloat(0.0).SetInt(ct_balance)
-	f_quo := big.NewFloat(0.0).Quo(f_balance_eth,f_divisor)
-	bal_eth,_ := f_quo.Float64()
 
 	bids := arb_storagew.Get_bids_by_user(user_aid)
 	prizes := arb_storagew.Get_prize_claims_by_user(user_aid)
@@ -695,8 +671,6 @@ func cosmic_game_user_info(c *gin.Context) {
 		"UserInfo" : user_info,
 		"Bids" : bids,
 		"Prizes" : prizes,
-		"CTBalance" : ct_balance.String(),
-		"CTBalanceEth" : bal_eth,
 	})
 }
 func cosmic_game_charity_donations_deposits(c *gin.Context) {
@@ -2152,6 +2126,33 @@ func cosmic_game_cosmic_token_statistics(c *gin.Context) {
 		"GameContractAddr": game_addr.String(),
 		"CosmicTokenAddr": cosmic_token_addr.String(),
 		"Stats": stats,
+	})
+}
+func cosmic_game_cosmic_token_summary_by_user(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	
+	summary := arb_storagew.Get_user_cosmic_token_summary(user_aid)
+	summary.UserAddr = p_user_addr
+	
+	c.HTML(http.StatusOK, "cg_user_cosmic_token_summary.html", gin.H{
+		"Summary": summary,
 	})
 }
 func cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {

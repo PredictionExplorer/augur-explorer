@@ -25,7 +25,6 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"p.tokens_count,"+
 				"p.unclaimed_nfts, "+
 				"p.tokens_count, "+
-				"trs.erc20_num_transfers, "+
 				"trs.erc721_num_transfers, "+
 				"d.count_donations,"+
 				"d.total_eth_donated/1e18 "+
@@ -44,7 +43,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	var null_raffle_sum_winnings,null_raffle_sum_withdrawal sql.NullFloat64
 	var null_raffles_count,null_raffle_nft_won,null_reward_nfts sql.NullInt64
 	var null_unclaimed_nfts,null_total_tokens sql.NullInt64
-	var null_erc20_transfs,null_erc721_transfs sql.NullInt64
+	var null_erc721_transfs sql.NullInt64
 	var null_count_donations sql.NullInt64
 	var null_total_eth_donated sql.NullFloat64
 
@@ -65,7 +64,6 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 		&null_reward_nfts,
 		&null_unclaimed_nfts,
 		&null_total_tokens,
-		&null_erc20_transfs,
 		&null_erc721_transfs,
 		&null_count_donations,
 		&null_total_eth_donated,
@@ -88,54 +86,12 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	if null_reward_nfts.Valid { rec.RewardNFTsCount = null_reward_nfts.Int64 }
 	if null_unclaimed_nfts.Valid { rec.UnclaimedNFTs = null_unclaimed_nfts.Int64 }
 	if null_total_tokens.Valid { rec.TotalCSTokensWon= null_total_tokens.Int64 }
-	if null_erc20_transfs.Valid { rec.CosmicTokenNumTransfers = null_erc20_transfs.Int64 }
 	if null_erc721_transfs.Valid { rec.CosmicSignatureNumTransfers = null_erc721_transfs.Int64 }
 	if null_count_donations.Valid { rec.TotalDonatedCount = null_count_donations.Int64 }
 	if null_total_eth_donated.Valid { rec.TotalDonatedAmountEth = null_total_eth_donated.Float64 }
 
-	query = "SELECT "+
-				"s.total_tokens_staked,"+
-				"s.num_stake_actions,"+
-				"s.num_unstake_actions,"+
-				"s.total_reward,"+
-				"total_reward/1e18,"+
-				"unclaimed_reward,"+
-				"unclaimed_reward/1e18, "+
-				"num_tokens_minted "+
-			"FROM cg_staker_cst s "+
-			"WHERE staker_aid=$1"
-	row = sw.S.Db().QueryRow(query,user_aid)
-	{
-		// we use a code block because null_*** variables have same names in both code blocks, to ensure they are empty
-		var err error
-		var null_total_tokens_staked,null_num_stake_actions,null_num_unstake_actions,null_num_tokens_minted sql.NullInt64
-		var null_total_reward,null_unclaimed_reward sql.NullString
-		var null_total_reward_eth,null_unclaimed_reward_eth sql.NullFloat64
-		err=row.Scan(
-			&null_total_tokens_staked,
-			&null_num_stake_actions,
-			&null_num_unstake_actions,
-			&null_total_reward,
-			&null_total_reward_eth,
-			&null_unclaimed_reward,
-			&null_unclaimed_reward_eth,
-			&null_num_tokens_minted,
-		)
-		if (err!=nil) {
-			if err != sql.ErrNoRows {
-				sw.S.Log_msg(fmt.Sprintf("Error in staker_cst query in Get_user_info(): %v, q=%v",err,query))
-				os.Exit(1)
-			}
-		}
-		if null_total_tokens_staked.Valid { rec.StakingStatistics.CSTStakingInfo.TotalTokensStaked = null_total_tokens_staked.Int64 }
-		if null_num_stake_actions.Valid { rec.StakingStatistics.CSTStakingInfo.TotalNumStakeActions = null_num_stake_actions.Int64 }
-		if null_num_unstake_actions.Valid { rec.StakingStatistics.CSTStakingInfo.TotalNumUnstakeActions = null_num_unstake_actions.Int64 }
-		if null_total_reward.Valid { rec.StakingStatistics.CSTStakingInfo.TotalReward = null_total_reward.String }
-		if null_total_reward_eth.Valid { rec.StakingStatistics.CSTStakingInfo.TotalRewardEth = null_total_reward_eth.Float64 }
-		if null_unclaimed_reward.Valid { rec.StakingStatistics.CSTStakingInfo.UnclaimedReward = null_unclaimed_reward.String }
-		if null_unclaimed_reward_eth.Valid { rec.StakingStatistics.CSTStakingInfo.UnclaimedRewardEth = null_unclaimed_reward_eth.Float64 }
-		if null_num_tokens_minted.Valid { rec.StakingStatistics.CSTStakingInfo.TotalTokensMinted = null_num_tokens_minted.Int64 }
-	}
+	// CST staking info moved to /ct/summary/by_user endpoint
+	
 	query = "SELECT "+
 				"s.total_tokens_staked,"+
 				"s.num_stake_actions,"+
@@ -160,10 +116,10 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				os.Exit(1)
 			}
 		}
-		if null_total_tokens_staked.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalTokensStaked = null_total_tokens_staked.Int64 }
-		if null_num_stake_actions.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalNumStakeActions = null_num_stake_actions.Int64 }
-		if null_num_unstake_actions.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalNumUnstakeActions = null_num_unstake_actions.Int64 }
-		if null_num_tokens_minted.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalTokensMinted = null_num_tokens_minted.Int64 }
+		if null_total_tokens_staked.Valid { rec.StakingStatisticsRWalk.TotalTokensStaked = null_total_tokens_staked.Int64 }
+		if null_num_stake_actions.Valid { rec.StakingStatisticsRWalk.TotalNumStakeActions = null_num_stake_actions.Int64 }
+		if null_num_unstake_actions.Valid { rec.StakingStatisticsRWalk.TotalNumUnstakeActions = null_num_unstake_actions.Int64 }
+		if null_num_tokens_minted.Valid { rec.StakingStatisticsRWalk.TotalTokensMinted = null_num_tokens_minted.Int64 }
 	}
 	return true,rec
 }

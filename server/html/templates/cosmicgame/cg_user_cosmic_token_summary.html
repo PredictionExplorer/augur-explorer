@@ -1,0 +1,99 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>CosmicToken (CST) Summary for {{.Summary.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">CosmicToken (CST) Summary for User</h3>
+
+<h4>User & Balance</h4>
+<table>
+	<tr>
+		<td>User Address</td>
+		<td class="addr">
+			<a href="/black/cosmicgame/user/info/{{.Summary.UserAddr}}">{{.Summary.UserAddr}}</a>
+		</td>
+	</tr>
+	<tr>
+		<td>Current CST Balance</td>
+		<td style="text-align: right;">{{ printf "%.4f" .Summary.CurrentBalanceEth }} CST</td>
+	</tr>
+</table>
+
+<h4>CST Earnings Breakdown</h4>
+<table>
+	<tr>
+		<td><b>Total CST Earned</b></td>
+		<td style="text-align: right;"><b>{{ printf "%.4f" .Summary.TotalEarnedEth }} CST</b></td>
+	</tr>
+	<tr>
+		<td>Earned from Bidding Rewards</td>
+		<td style="text-align: right;">{{ printf "%.4f" .Summary.EarnedFromBiddingEth }} CST</td>
+	</tr>
+	<tr>
+		<td>Earned from Main Prizes</td>
+		<td style="text-align: right;">{{ printf "%.4f" .Summary.EarnedFromMainPrizesEth }} CST</td>
+	</tr>
+	<tr>
+		<td>Earned from Raffle Prizes</td>
+		<td style="text-align: right;">{{ printf "%.4f" .Summary.EarnedFromRafflePrizesEth }} CST</td>
+	</tr>
+	<tr>
+		<td>Earned from Chrono Warrior Prizes</td>
+		<td style="text-align: right;">{{ printf "%.4f" .Summary.EarnedFromChronoWarriorEth }} CST</td>
+	</tr>
+	<tr>
+		<td>Earned from Marketing Rewards</td>
+		<td style="text-align: right;">
+			<a href="/black/cosmicgame/marketing/rewards/by_user/{{.Summary.UserAddr}}">
+				{{ printf "%.4f" .Summary.EarnedFromMarketingEth }} CST
+			</a>
+		</td>
+	</tr>
+</table>
+
+<h4>CST Spending</h4>
+<table>
+	<tr>
+		<td>Consumed in Bids (Burned)</td>
+		<td style="text-align: right;">{{ printf "%.4f" .Summary.ConsumedInBidsEth }} CST</td>
+	</tr>
+</table>
+
+<h4>Net CST Flow</h4>
+<table>
+	<tr>
+		<td><b>Net CST (Earned - Consumed)</b></td>
+		<td style="text-align: right;"><b>{{ printf "%.4f" .Summary.NetCSTFlowEth }} CST</b></td>
+	</tr>
+</table>
+
+<h4>Activity</h4>
+<table>
+	<tr>
+		<td>Total CST Transfers</td>
+		<td>
+			<a href="/black/cosmicgame/ct/transfers/by_user/{{.Summary.UserAddr}}">
+				{{ .Summary.NumTransfers }}
+			</a>
+		</td>
+	</tr>
+	<tr>
+		<td>CST Minted to User</td>
+		<td>{{ .Summary.NumMints }}</td>
+	</tr>
+	<tr>
+		<td>CST Burned by User</td>
+		<td>{{ .Summary.NumBurns }}</td>
+	</tr>
+</table>
+
+<br/><br/>
+<code>
+	API: /api/cosmicgame/ct/summary/by_user/[user_addr]</br>
+
+	Example: /api/cosmicgame/ct/summary/by_user/{{.Summary.UserAddr}}
+</code>
+</body>
+</html>
+
