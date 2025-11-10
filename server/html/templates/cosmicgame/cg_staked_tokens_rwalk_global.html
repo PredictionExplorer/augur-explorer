@@ -1,35 +1,55 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Tokens staked globally in StakingWalletRWalk </title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Staked RWalk Tokens Global</title>
 </head>
 <body>
-	<h3 class="page_title">Tokens staked globally in StakingWalletRWalk(for all users)<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Stake ActionId</th>
-		<th class="market_reports">Stake Datetime</th>
-		<th class="market_reports">TokenId</th>
-		<th class="market_reports">User</th>
-	</tr>
-	{{- range $i, $change := .StakedTokensRWalk}}
-		<tr class="market_reports">
-			<td style="text-align: center;">{{.StakeBlockNum}}</td>
-			<td style="text-align: center;">{{.StakeActionId}}</td>
-			<td style="text-align: center;" title="">{{.StakeDateTime}}</td>
-			<td style="text-align: center;" title="">{{.StakedTokenId}}
-			</td>
-			<td style="text-align: left;" class="addr"  title="">
-				<a href="/black/cosmicgame/staking/rwalk/staked_tokens/by_user/{{.UserAddr}}">{{.UserAddr}}</a>
-			</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/staking/rwalk/staked_tokens/all</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🚶 Globally Staked RandomWalk Tokens</h1>
+			<div class="subtitle">All tokens currently staked in StakingWalletRWalk</div>
+		</div>
 
-	Example: /api/cosmicgame/staking/rwalk/staked_tokens/all
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Block</th>
+					<th class="center">Action ID</th>
+					<th>Stake DateTime</th>
+					<th class="center">Token ID</th>
+					<th>User</th>
+				</tr>
+				{{- range $i, $change := .StakedTokensRWalk}}
+					<tr>
+						<td class="center">{{.StakeBlockNum}}</td>
+						<td class="center">{{.StakeActionId}}</td>
+						<td>{{.StakeDateTime}}</td>
+						<td class="center">{{.StakedTokenId}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/staking/rwalk/staked_tokens/by_user/{{.UserAddr}}">{{.UserAddr}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/rwalk/staked_tokens/all</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/rwalk/staked_tokens/all</code>
+		</div>
+	</div>
 </body>
+</html>

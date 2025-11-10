@@ -1,28 +1,49 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Marketing Rewards for user {{.UserAddr}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Marketing Rewards by User</title>
 </head>
 <body>
-	<h3 class="page_title">Marketing Rewards for user {{.UserAddr}}<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Amount</th>
-	</tr>
-	{{- range $i, $change := .UserMarketingRewards}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.BlockNum}}</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td style="text-align: right;" title="">{{printf "%.2f" .AmountEth}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/marketing/rewards/by_user/[user_addr]/[offset]/[limit]</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📢 Marketing Rewards</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
 
-	Example: /api/cosmicgame/marketing/rewards/by_user/{{.UserAddr}}/0/10000
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .UserMarketingRewards}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}} ETH</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/marketing/rewards/by_user/[user_addr]/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/marketing/rewards/by_user/{{.UserAddr}}/0/10000</code>
+		</div>
+	</div>
 </body>
+</html>

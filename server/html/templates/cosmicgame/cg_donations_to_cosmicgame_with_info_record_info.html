@@ -1,67 +1,82 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Donation With-Info Record Info for record_id={{.RecordId}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Donation With-Info Record Details</title>
 </head>
 <body>
-	<h3 class="page_title">
-		Donation With-Info Record Info for record_id={{.RecordId}}
-	<h3>
-<table>
-	<tr>
-		<td>Record ID</td>
-		<td>{{.ETHDonation.CGRecordId}}
-	</tr>
-	<tr>
-		<td>EvtLog ID</td>
-		<td>{{.ETHDonation.Tx.EvtLogId}}
-	</tr>
-	<tr>
-		<td>BlockNum</td>
-		<td>{{.ETHDonation.Tx.BlockNum}}</td>
-	</tr>
-	<tr>
-		<td>TxId</td>
-		<td>{{.ETHDonation.Tx.TxId}}</td>
-	</tr>
-	<tr>
-		<td>TxHash</td>
-		<td>{{.ETHDonation.Tx.TxHash}}</td>
-	</td>
-	<tr>
-		<td>TimeStamp</td>
-		<td>
-			{{.ETHDonation.Tx.TimeStamp}}
-		</td>
-	</tr>
-	<tr>
-		<td>DateTime</td>
-		<td>
-			{{.ETHDonation.Tx.DateTime}}
-		</td>
-	</tr>
-	<tr>
-		<td>Amount</td>
-		<td>{{.ETHDonation.Amount}}	</td>
-	</tr>
-	<tr>
-		<td>AmountETH</td>
-		<td>&nbsp;&nbsp;{{ printf "%.2f" .ETHDonation.AmountEth}}</td>
-	</tr>
-	<tr>
-		<td>DataJson</td>
-		<td>
-			<code>
-			{{.ETHDonation.DataJson}}
-			</code>
-		</td>
-	</tr>
-</table>
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/donations/eth/with_info/info/[record_id]<br/>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 Donation With-Info Record Details</h1>
+			<div class="subtitle">Record ID: {{.RecordId}}</div>
+		</div>
 
-	Example: /api/cosmicgame/donations/eth/with_info/info/{{.RecordId}}
-</code>
+		<div class="section-card">
+			<div class="section-header">Transaction Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Record ID</div>
+					<div class="detail-value">{{.ETHDonation.CGRecordId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.ETHDonation.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.ETHDonation.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction ID</div>
+					<div class="detail-value">{{.ETHDonation.Tx.TxId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.ETHDonation.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.ETHDonation.Tx.DateTime}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Donation Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Amount (Wei)</div>
+					<div class="detail-value monospace">{{.ETHDonation.Amount}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Amount (ETH)</div>
+					<div class="detail-value">{{printf "%.6f" .ETHDonation.AmountEth}} ETH</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Data JSON</div>
+					<div class="detail-value">
+						<pre style="background: #000; padding: 1em; border-radius: 4px; margin-top: 0.5em; overflow-x: auto;">{{.ETHDonation.DataJson}}</pre>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/eth/with_info/info/[record_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/eth/with_info/info/{{.RecordId}}</code>
+		</div>
+	</div>
 </body>
+</html>

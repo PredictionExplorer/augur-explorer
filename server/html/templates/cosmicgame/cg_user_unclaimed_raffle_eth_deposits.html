@@ -1,47 +1,66 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Unclaimed Raffle ETH Deposits by User</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Unclaimed Raffle ETH Deposits</title>
 </head>
 <body>
-	<h3 class="page_title">Unclaimed Raffle ETH Deposits by User<h3>
-	<h3 class="page_title">User {{.UserAddr}} </h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Winner</th>
-		<th class="market_reports">Winner Index</th>
-		<th class="market_reports">Round</th>
-		<th class="market_reports">Prize Type</th>
-		<th class="market_reports">Amount (ETH)</th>
-	</tr>
-	{{- range $i, $change := .UnclaimedDeposits}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
-			</td>
-			<td style="text-align: center;">{{ .WinnerIndex }}</td>
-			<td style="text-align: center;">{{ .RoundNum }}</td>
-			<td class="">
-				{{ if eq 7 .RecordType}}Chrono Warrior ETH{{end}}
-				{{ if eq 10 .RecordType}}Raffle ETH (for bidders){{end}}
-			</td>
-			<td style="text-align: right;">{{printf "%.4f" .Amount}} ETH</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	<strong>Simplified API (NEW):</strong><br/>
-	/api/cosmicgame/prizes/eth/user_unclaimed/[user_addr]<br/>
-	<br/>
-	Example: /api/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}<br/>
-	<br/>
-	<small>Old API (deprecated): /api/cosmicgame/prizes/deposits/unclaimed/by_user/[user_addr]/[offset]/[limit]</small>
-</code>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⏳ Unclaimed Raffle ETH Deposits</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Winner Index</th>
+					<th class="center">Round</th>
+					<th class="center">Prize Type</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .UnclaimedDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">
+							{{ if eq 7 .RecordType}}
+								<span class="badge badge-warning">Chrono Warrior</span>
+							{{else}}
+								<span class="badge badge-info">Raffle ETH</span>
+							{{end}}
+						</td>
+						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>Simplified API (NEW):</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/user_unclaimed/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}</code><br/><br/>
+			<small style="color: #888;">Old API (deprecated): /api/cosmicgame/prizes/deposits/unclaimed/by_user/[user_addr]/[offset]/[limit]</small>
+		</div>
+	</div>
 </body>
+</html>

@@ -1,34 +1,53 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Deposits to CharityWallet made outside of CosmicGame system</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Voluntary Charity Deposits</title>
 </head>
 <body>
-	<h3 class="page_title">Deposits To Charity Wallet made outside of CosmicGame system<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Donor</th>
-		<th class="market_reports">Donation amount (ETH)</th>
-	</tr>
-	{{- range $i, $change := .CharityDeposits}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.DonorAid}}">
-				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
-			</td>
-			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/donations/charity/voluntary</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>❤️ Voluntary Charity Deposits</h1>
+			<div class="subtitle">Deposits made voluntarily outside of the CosmicGame system</div>
+		</div>
 
-	Example: /api/cosmicgame/donations/charity/voluntary
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Donor</th>
+					<th class="right">Amount (ETH)</th>
+				</tr>
+				{{- range $i, $change := .CharityDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/charity/voluntary</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/charity/voluntary</code>
+		</div>
+	</div>
 </body>
+</html>

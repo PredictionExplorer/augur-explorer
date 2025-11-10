@@ -1,38 +1,59 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>NFT Winnings of User {{.UserInfo.Address}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>User NFT Raffle Winnings</title>
 </head>
 <body>
-	<h3 class="page_title">NFT Winnings of User {{.UserInfo.Address}}<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Winner</th>
-		<th class="market_reports">Round</th>
-		<th class="market_reports">Index</th>
-		<th class="market_reports">TokenId</th>
-	</tr>
-	{{- range $i, $change := .UserRaffleNFTWinnings}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
-			</td>
-			<td style="text-align: center;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: center;" title="">{{ .WinnerIndex }}</td>
-			<td style="text-align: center;" title="">{{ .TokenId }}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/raffle/nft/by_user/[user_addr]</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎲 NFT Raffle Winnings</h1>
+			<div class="address-display">{{.UserInfo.Address}}</div>
+		</div>
 
-	Example: /api/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Round</th>
+					<th class="center">Index</th>
+					<th class="center">Token ID</th>
+				</tr>
+				{{- range $i, $change := .UserRaffleNFTWinnings}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">
+							<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.TokenId}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/raffle/nft/by_user/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}</code>
+		</div>
+	</div>
 </body>
+</html>

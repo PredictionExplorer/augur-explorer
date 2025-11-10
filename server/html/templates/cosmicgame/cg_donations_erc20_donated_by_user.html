@@ -1,44 +1,63 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>ERC20 Tokens Donated by {{.UserAddr}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>ERC20 Donated by User</title>
 </head>
 <body>
-	<h3 class="page_title">ERC20 Tokens DONATED by {{.UserAddr}} (Donor Perspective)<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Round</th>
-		<th class="market_reports">Token Address</th>
-		<th class="market_reports">Amount</th>
-	</tr>
-	{{- range $i, $change := .DonationsERC20ByDonor}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				<a href="/black/cosmicgame/donations/erc20/info/{{.RecordId}}">
-					{{.Tx.BlockNum}}
-				</a>
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td style="text-align: center;" title="">
-				<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.RoundNum}}</a>
-			</td>
-			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
-			<td style="text-align: right;" title="">{{ printf "%.6f" .AmountEth}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/donations/erc20/donated/by_user/[user_addr]</br>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💎 ERC20 Tokens DONATED by User</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+			<div class="subtitle" style="margin-top: 1em;">Donor Perspective</div>
+		</div>
 
-	Example: /api/cosmicgame/donations/erc20/donated/by_user/{{.UserAddr}}
-</code>
-<br/><br/>
-<p><i>Note: This shows tokens YOU donated. To see tokens you can claim as a winner, use 
-<a href="/black/cosmicgame/donations/erc20/claims/by_user/{{.UserAddr}}">ERC20 Claims</a></i></p>
+		<div class="alert alert-info">
+			<strong>Note:</strong> This shows tokens YOU donated. To see tokens you can claim as a winner, use 
+			<a href="/black/cosmicgame/donations/erc20/claims/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Claims</a>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th>Token Address</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .DonationsERC20ByDonor}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/donations/erc20/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">
+							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.RoundNum}}</a>
+						</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/donated/by_user/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/donated/by_user/{{.UserAddr}}</code>
+		</div>
+	</div>
 </body>
 </html>
-
-

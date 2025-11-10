@@ -2,19 +2,38 @@
 <head>
 	<title>CosmicGame Current Timestamp</title>
 	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
 </head>
 
 <body>
-	<br/>
-	<div>
-	Current timestamp : {{.CurrentTimeStamp}}
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⏰ Current Timestamp</h1>
+		</div>
+
+		<div class="section-card">
+			<div class="stat-card">
+				<div class="stat-label">Current Timestamp</div>
+				<div class="stat-value" style="font-size: 1.5em;">{{.CurrentTimeStamp}}</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/time/current</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/time/current</code>
+		</div>
 	</div>
-	<br/><br/>
-<code style="float: right">
-	API: /api/cosmicgame/time/current<br/>
-
-	Example: /api/cosmicgame/time/current
-</code>
-
 </body>
 </html>

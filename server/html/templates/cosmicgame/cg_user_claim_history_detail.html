@@ -1,65 +1,83 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>User winnings for {{.UserAddr}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>User Winnings History</title>
 </head>
 <body>
-	<h3 class="page_title">History of winnings<h3>
-	<h3 class="page_title">User {{.UserAddr}} </h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">RecordType</th>
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Round</th>
-		<th class="market_reports">Amount (ETH)</th>
-		<th class="market_reports">Token Addr</th>
-		<th class="market_reports">Token Id</th>
-		<th class="market_reports">Winner Idx</th>
-		<th class="market_reports">Claimed</th>
-		<th class="market_reports"></th>
-	</tr>
-	{{- range $i, $change := .ClaimHistory}}
-		<tr class="market_reports">
-		<td class="" title="{{.Tx.TimeStamp}}">
-			{{ if eq 0 .RecordType}}Main Prize ETH{{end}}
-			{{ if eq 1 .RecordType}}Main Prize CST (ERC20){{end}}
-			{{ if eq 2 .RecordType}}Main Prize CS NFT{{end}}
-			{{ if eq 3 .RecordType}}Last CST Bidder CS NFT (ERC721){{end}}
-			{{ if eq 4 .RecordType}}Last CST Bidder ERC20 (CST){{end}}
-			{{ if eq 5 .RecordType}}Endurance Champion CS NFT{{end}}
-			{{ if eq 6 .RecordType}}Endurance Champion ERC20 (CST){{end}}
-			{{ if eq 7 .RecordType}}Chrono Warrior ETH{{end}}
-			{{ if eq 8 .RecordType}}Chrono Warrior CST (ERC20){{end}}
-			{{ if eq 9 .RecordType}}Chrono Warrior CS NFT{{end}}
-			{{ if eq 10 .RecordType}}Raffle ETH (for bidders){{end}}
-			{{ if eq 11 .RecordType}}Raffle CST (for bidders){{end}}
-			{{ if eq 12 .RecordType}}Raffle CS NFT (for bidders){{end}}
-		{{ if eq 13 .RecordType}}Raffle CST (for RandomWalk stakers){{end}}
-		{{ if eq 14 .RecordType}}Raffle CS NFT (for RandomWalk stakers){{end}}
-		{{ if eq 15 .RecordType}}Staking Deposit ETH (for CS NFT stakers){{end}}
-		{{ if eq 16 .RecordType}}Donated NFT ⏰{{end}}
-		{{ if eq 17 .RecordType}}Donated ERC20 ⏰{{end}}
-		{{ if eq 18 .RecordType}}Raffle ETH ⏰{{end}}
-	</td>
-			<td class="" style="text-align: center;">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td style="text-align: center;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: right;" title="">{{printf "%.4f" .AmountEth}}</td>
-			<td style="text-align: right;" title="">{{ .TokenAddress }}</td>
-			<td style="text-align: center;" title="">{{ .TokenId }}</td>
-			<td style="text-align: center;" title="">{{ .WinnerIndex}}</td>
-			<td style="text-align: center;" title="">{{ .Claimed}}</td>
-			<td style="text-align: right;" title="">{{ .TokenURI}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/prizes/history/by_user/[user_addr]/[offset]/[limit]</br>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🏆 History of Winnings</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
 
-	Example: /api/cosmicgame/prizes/history/by_user/{{.UserAddr}}/0/100000
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Prize Type</th>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th class="right">Amount (ETH)</th>
+					<th>Token Addr</th>
+					<th class="center">Token ID</th>
+					<th class="center">Winner Idx</th>
+					<th class="center">Claimed</th>
+				</tr>
+				{{- range $i, $change := .ClaimHistory}}
+					<tr>
+						<td>
+							{{ if eq 0 .RecordType}}<span class="badge badge-warning">Main Prize ETH</span>{{end}}
+							{{ if eq 1 .RecordType}}<span class="badge badge-info">Main Prize CST</span>{{end}}
+							{{ if eq 2 .RecordType}}<span class="badge badge-success">Main Prize NFT</span>{{end}}
+							{{ if eq 3 .RecordType}}<span class="badge badge-default">Last CST Bidder NFT</span>{{end}}
+							{{ if eq 4 .RecordType}}<span class="badge badge-info">Last CST Bidder CST</span>{{end}}
+							{{ if eq 5 .RecordType}}<span class="badge badge-success">Endurance Champion NFT</span>{{end}}
+							{{ if eq 6 .RecordType}}<span class="badge badge-info">Endurance Champion CST</span>{{end}}
+							{{ if eq 7 .RecordType}}<span class="badge badge-warning">Chrono Warrior ETH</span>{{end}}
+							{{ if eq 8 .RecordType}}<span class="badge badge-info">Chrono Warrior CST</span>{{end}}
+							{{ if eq 9 .RecordType}}<span class="badge badge-success">Chrono Warrior NFT</span>{{end}}
+							{{ if eq 10 .RecordType}}<span class="badge badge-warning">Raffle ETH (Bidders)</span>{{end}}
+							{{ if eq 11 .RecordType}}<span class="badge badge-info">Raffle CST (Bidders)</span>{{end}}
+							{{ if eq 12 .RecordType}}<span class="badge badge-success">Raffle NFT (Bidders)</span>{{end}}
+							{{ if eq 13 .RecordType}}<span class="badge badge-info">Raffle CST (RWalk)</span>{{end}}
+							{{ if eq 14 .RecordType}}<span class="badge badge-success">Raffle NFT (RWalk)</span>{{end}}
+							{{ if eq 15 .RecordType}}<span class="badge badge-warning">Staking Deposit ETH</span>{{end}}
+							{{ if eq 16 .RecordType}}<span class="badge badge-default">Donated NFT ⏰</span>{{end}}
+							{{ if eq 17 .RecordType}}<span class="badge badge-default">Donated ERC20 ⏰</span>{{end}}
+							{{ if eq 18 .RecordType}}<span class="badge badge-default">Raffle ETH ⏰</span>{{end}}
+						</td>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="monospace">{{.TokenAddress}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">
+							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/prizes/history/by_user/[user_addr]/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/prizes/history/by_user/{{.UserAddr}}/0/100000</code>
+		</div>
+	</div>
 </body>
+</html>

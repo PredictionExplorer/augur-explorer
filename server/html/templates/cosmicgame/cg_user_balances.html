@@ -1,40 +1,47 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
 	<title>User Balances</title>
 </head>
 <body>
-	<h3 class="page_title">User Balances<h3>
-<table>
-	<tr class="market_reports">
-		<td class="addr" style="text-align: left;">
-			User Address
-		</td>
-		<td style="text-align: right;" title="">
-			{{.UserAddr}}
-		</td>
-	</tr>
-	<tr class="market_reports">
-		<td class="addr" style="text-align: left;">
-		ETH Balance	
-		</td>
-		<td style="text-align: right;" title="">
-			{{.ETH_Balance}}
-		</td>
-	</tr>
-	<tr class="market_reports">
-		<td class="addr" style="text-align: left;">
-		CosmicToken ERC20 Balance	
-		</td>
-		<td style="text-align: right;" title="">
-			{{.CosmicTokenBalance}}
-		</td>
-	</tr>
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/user/balances/[user_addr]</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 User Balances</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
 
-	Example: /api/cosmicgame/user/balances/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-</code>
+		<div class="section-card">
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">ETH Balance</div>
+					<div class="stat-value">{{printf "%.6f" .ETH_Balance}}</div>
+					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">CosmicToken Balance</div>
+					<div class="stat-value">{{printf "%.2f" .CosmicTokenBalance}}</div>
+					<div class="stat-sublabel">CST (ERC20)</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/user/balances/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/user/balances/{{.UserAddr}}</code>
+		</div>
+	</div>
 </body>
+</html>

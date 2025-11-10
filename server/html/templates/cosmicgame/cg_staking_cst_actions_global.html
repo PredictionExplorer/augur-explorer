@@ -1,58 +1,77 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Global Stake/Unstake actions in StakingWallet CST</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Global CST Staking Actions</title>
 </head>
 <body>
-	<h3 class="page_title">Global Stake/Unstake actions in StakingWallet CST<h3>
-	Last Block timestamp: {{.LastTS}}
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">EvtLogId</th>
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Action Type</th>
-		<th class="market_reports">Token ID</th>
-		<th class="market_reports">Round Num</th>
-		<th class="market_reports">Action ID</th>
-		<th class="market_reports">Staker</th>
-		<th class="market_reports">Total num staked NFT</th>
-	</tr>
-	{{- range $i, $change := .StakingCSTActions}}
-		<tr class="market_reports">
-			<td class=""> {{.Tx.EvtLogId}}</td>
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">
-				<a href="/black/cosmicgame/staking/cst/actions/info/{{.ActionId}}">
-				{{.Tx.DateTime}}
-				</a>
-			</td>
-			<td style="text-align: center;" title="">
-				{{if eq .ActionType 0 }}Stake{{ else }}Unstake{{ end }}
-			</td>
-			<td style="text-align: center;" title="">{{.TokenId}}</td>
-			<td style="text-align: center;" title="">{{.RoundNum}}</td>
-			<td style="text-align: center;" title="">{{.ActionId}}</td>
-			<td style="text-align: left;" title="">
-				 <a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.StakerAddr}}">
-				{{.StakerAddr}}
-				</a>
-			</td>
-			<td style="text-align: right;" title="">
-				{{ if eq .NumStakedNFTs 0 }} <font color=red>{{ end }}
-				{{.NumStakedNFTs}}
-				{{ if eq .NumStakedNFTs 0 }} </font>{{ end }}
-			</td>
-			</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/staking/cst/actions/global/:offset/:limit</br>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 Global CST Staking Actions</h1>
+			<div class="subtitle">All Stake/Unstake actions in StakingWallet CST</div>
+		</div>
 
-	Example: /api/cosmicgame/staking/cst/actions/global/0/100000
-</code>
+		<div class="section-card">
+			<div class="alert alert-info">
+				Last Block Timestamp: <strong>{{.LastTS}}</strong>
+			</div>
+
+			<table class="data-table">
+				<tr>
+					<th>EvtLog ID</th>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Action Type</th>
+					<th class="center">Token ID</th>
+					<th class="center">Round</th>
+					<th class="center">Action ID</th>
+					<th>Staker</th>
+					<th class="right">Total Staked NFTs</th>
+				</tr>
+				{{- range $i, $change := .StakingCSTActions}}
+					<tr>
+						<td>{{.Tx.EvtLogId}}</td>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>
+							<a href="/black/cosmicgame/staking/cst/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>
+						</td>
+						<td class="center">
+							{{if eq .ActionType 0}}
+								<span class="badge badge-success">Stake</span>
+							{{else}}
+								<span class="badge badge-warning">Unstake</span>
+							{{end}}
+						</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.ActionId}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.StakerAddr}}">{{.StakerAddr}}</a>
+						</td>
+						<td class="right" {{if eq .NumStakedNFTs 0}}style="color: #ff4444;"{{end}}>
+							{{.NumStakedNFTs}}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/actions/global/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/actions/global/0/100000</code>
+		</div>
+	</div>
 </body>
+</html>

@@ -1,38 +1,57 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Claims of donated NFTs</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Donated NFT Claims</title>
 </head>
 <body>
-	<h3 class="page_title">Claims of donated NFTs<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Winner</th>
-		<th class="market_reports">Donor</th>
-		<th class="market_reports">TokenID</th>
-	</tr>
-	{{- range $i, $change := .DonatedNFTClaims}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
-			</td>
-			<td class="addr">
-				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
-			</td>
-			<td class="" style="text-align: center;">{{.NFTTokenId}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/donations/nft/claims/[offset]/[limit]</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎁 Claims of Donated NFTs</h1>
+			<div class="subtitle">All NFT claims across all rounds</div>
+		</div>
 
-	Example: /api/cosmicgame/donations/nft/claims/0/1000000
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th>Donor</th>
+					<th class="center">Token ID</th>
+				</tr>
+				{{- range $i, $change := .DonatedNFTClaims}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="center">{{.NFTTokenId}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/claims/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/claims/0/1000000</code>
+		</div>
+	</div>
 </body>
+</html>

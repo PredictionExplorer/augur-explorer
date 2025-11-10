@@ -1,42 +1,63 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>ERC20 donations for Round {{.RoundNum}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>ERC20 Donations - Round {{.RoundNum}}</title>
 </head>
 <body>
-	<h3 class="page_title">ERC20 Donations Round {.RoundNum}<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Round</th>
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Donor</th>
-		<th class="market_reports">Token Address</th>
-		<th class="market_reports">Amount</th>
-		<th class="market_reports">Winer</th>
-	</tr>
-	{{- range $i, $change := .DonationsERC20ByRoundDetailed}}
-		<tr class="market_reports">
-			<td style="text-align: right;" title="">{{.RoundNum}}</td>
-			<td class="" title="{{.Tx.TimeStamp}}">
-				<a href="/black/cosmicgame/donations/erc20/info/{{.RecordId}}">
-					{{.Tx.BlockNum}}
-				</a>
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.DonorAid}}">
-				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
-			</td>
-			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
-			<td style="text-align: right;" title="">{{ printf "%6f" .AmountEth}}</td>
-			<td style="text-align: right;" title="">{{.WinnerAddr}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/donations/erc20/by_round/[round_num]</br>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💎 ERC20 Donations for Round #{{.RoundNum}}</h1>
+			<div class="subtitle">Detailed view of all ERC20 donations for this round</div>
+		</div>
 
-	Example: /api/cosmicgame/donations/erc20/by_round/{{.RoundNum}}
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Round</th>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Donor</th>
+					<th>Token Address</th>
+					<th class="right">Amount</th>
+					<th>Winner</th>
+				</tr>
+				{{- range $i, $change := .DonationsERC20ByRoundDetailed}}
+					<tr>
+						<td class="center">{{.RoundNum}}</td>
+						<td>
+							<a href="/black/cosmicgame/donations/erc20/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/by_round/[round_num]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/by_round/{{.RoundNum}}</code>
+		</div>
+	</div>
 </body>
+</html>

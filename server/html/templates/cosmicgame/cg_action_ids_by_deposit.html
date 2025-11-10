@@ -1,36 +1,59 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>ActionIDs for deposit{{.DepositId}} , user {{.UserAddr}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Action IDs for Deposit</title>
 </head>
 <body>
-	<h3 class="page_title">ActionIDs for Deposit {{.DepositId}}, user {{.UserAddr}}<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">ActionId</th>
-		<th class="market_reports">TokenId</th>
-		<th class="market_reports">Claimed</th>
-		<th class="market_reports">ClaimBlockNum</th>
-		<th class="market_reports">ClaimTx</th>
-		<th class="market_reports">ClaimDateTime</th>
-		<th class="market_reports">ClaimReward</th>
-	</tr>
-	{{- range $i, $change := .ActionIdsWithClaimInfo}}
-		<tr class="market_reports">
-			<td style="text-align: center;">{{.StakeActionId}}</td>
-			<td style="text-align: center;">{{.TokenId}}</td>
-			<td style="text-align: center;">{{.Claimed}}</td>
-			<td style="text-align: center;">{{.ClaimBlockNum}}</td>
-			<td style="text-align: left;">{{.ClaimTxHash}}</td>
-			<td style="text-align: left;">&nbsp;&nbsp;{{.ClaimDateTime}}</td>
-			<td style="text-align: right;">{{ printf "%.4f" .ClaimRewardAmountEth}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/[user_addr]/[deposit_id]</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📋 Action IDs for Deposit #{{.DepositId}}</h1>
+			<div class="address-display">User: {{.UserAddr}}</div>
+		</div>
 
-	Example: /api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{.UserAddr}}/{{.DepositId}}
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Action ID</th>
+					<th class="center">Token ID</th>
+					<th class="center">Claimed</th>
+					<th class="center">Claim Block</th>
+					<th>Claim Tx Hash</th>
+					<th>Claim DateTime</th>
+					<th class="right">Reward (ETH)</th>
+				</tr>
+				{{- range $i, $change := .ActionIdsWithClaimInfo}}
+					<tr>
+						<td class="center">{{.StakeActionId}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="center">
+							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+						</td>
+						<td class="center">{{.ClaimBlockNum}}</td>
+						<td class="monospace">{{.ClaimTxHash}}</td>
+						<td>{{.ClaimDateTime}}</td>
+						<td class="right">{{printf "%.6f" .ClaimRewardAmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/[user_addr]/[deposit_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{.UserAddr}}/{{.DepositId}}</code>
+		</div>
+	</div>
 </body>
+</html>

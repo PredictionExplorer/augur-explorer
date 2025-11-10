@@ -1,78 +1,94 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Raffle NFT Winners</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Raffle NFT Winners - Round {{.RoundNum}}</title>
 </head>
 <body>
-	<h3 class="page_title">Raffle NFT Winners</h3>
-	<h3 class="page_title">Round: {{.RoundNum}}</h3>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎲 Raffle NFT Winners</h1>
+			<div class="subtitle">Round #{{.RoundNum}}</div>
+		</div>
 
-<p>
-	&nbsp;
-</p>
-<h4>Raffle NFT Winners</h4>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Winner</th>
-		<th class="market_reports">Round</th>
-		<th class="market_reports">TokenId</th>
-		<th class="market_reports">Index</th>
-		<th class="market_reports">IsStaker</th>
-		<th class="market_reports">IsRandomWalk</th>
-	</tr>
-	{{- range $i, $change := .RaffleNFTWinners}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
-			</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: right;" title="">{{ .TokenId}}</td>
-			<td style="text-align: right;" title="">{{ .WinnerIndex}}</td>
-			<td style="text-align: right;" title="">{{ .IsStaker}}</td>
-			<td style="text-align: right;" title="">{{ .IsRWalk}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<h4>Staking NFT Winners</h4>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">Winner</th>
-		<th class="market_reports">Round</th>
-		<th class="market_reports">TokenId</th>
-		<th class="market_reports">Index</th>
-		<th class="market_reports">IsStaker</th>
-		<th class="market_reports">IsRandomWalk</th>
-	</tr>
-	{{- range $i, $change := .StakingNFTWinners}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				{{.Tx.BlockNum}}
-			</td>
-			<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
-			</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: right;" title="">{{ .TokenId}}</td>
-			<td style="text-align: right;" title="">{{ .WinnerIndex}}</td>
-			<td style="text-align: right;" title="">{{ .IsStaker}}</td>
-			<td style="text-align: right;" title="">{{ .IsRWalk}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/raffle/nft/by_round/[round_num]</br>
+		<!-- Raffle NFT Winners -->
+		<div class="section-card">
+			<div class="section-header">Raffle NFT Winners</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Round</th>
+					<th class="center">Token ID</th>
+					<th class="center">Index</th>
+					<th class="center">Is Staker</th>
+					<th class="center">Is RandomWalk</th>
+				</tr>
+				{{- range $i, $change := .RaffleNFTWinners}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">
+							{{if .IsStaker}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">-</span>{{end}}
+						</td>
+						<td class="center">
+							{{if .IsRWalk}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">-</span>{{end}}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
 
-Example: /api/cosmicgame/raffle/nft/by_round/{{.RoundNum}}
-</code>
+		<!-- Staking NFT Winners -->
+		<div class="section-card">
+			<div class="section-header">Staking NFT Winners</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Round</th>
+					<th class="center">Token ID</th>
+					<th class="center">Index</th>
+				</tr>
+				{{- range $i, $change := .StakingNFTWinners}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="center">{{.WinnerIndex}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/raffle/nft/by_round/{{.RoundNum}}</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/raffle/nft/by_round/{{.RoundNum}}</code>
+		</div>
+	</div>
 </body>
+</html>

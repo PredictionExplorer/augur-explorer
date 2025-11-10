@@ -1,50 +1,65 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Round configurations</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>System Mode Changes</title>
 </head>
 <body>
-	<h3 class="page_title">Round configurations</h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
-		<th class="market_reports">Datetime</th>
-		<th class="market_reports">RoundNum</th>
-		<th class="market_reports"></th>
-		<th class="market_reports">Event Low</th>
-		<th class="market_reports">Event High</th>
-	</tr>
-	{{- range $i, $change := .SystemModeChanges}}
-		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
-			<td class="" title="{{.TimeStamp}}">
-				{{ if eq -1 .EvtLogId }}Deployment{{else}}
-				{{.DateTime}}
-				{{ end }}
-			</td>
-			<td style="text-align: center" >
-				{{.RoundNum}}
-			</td>
-			<td style="text-align: center" >
-				<a href="/black/cosmicgame/system/admin_events/{{.EvtLogId}}/{{.NextEvtLogId}}">
-					Events
-				</a>
-			</td>
-			<td style="text-align: center" >{{.EvtLogId}}</td>
-			<td style="text-align: center" >{{.NextEvtLogId}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/system/modelist/[offset]/[limit]</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⚙️ Round Configurations</h1>
+			<div class="subtitle">System mode changes and round transitions</div>
+		</div>
 
-	Example: /api/cosmicgame/system/modelist/0/10000
-</br></br>
-Note : to get events from the moment of contract deployments use -1 in offset parameter:</br>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th class="center">Events</th>
+					<th class="center">Event Low</th>
+					<th class="center">Event High</th>
+				</tr>
+				{{- range $i, $change := .SystemModeChanges}}
+					<tr>
+						<td class="center">{{.BlockNum}}</td>
+						<td>
+							{{ if eq -1 .EvtLogId }}
+								<span class="badge badge-info">Deployment</span>
+							{{else}}
+								{{.DateTime}}
+							{{ end }}
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">
+							<a href="/black/cosmicgame/system/admin_events/{{.EvtLogId}}/{{.NextEvtLogId}}">View Events</a>
+						</td>
+						<td class="center">{{.EvtLogId}}</td>
+						<td class="center">{{.NextEvtLogId}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
 
-	Example: /api/cosmicgame/system/modelist/-1/10000
-
-
-</code>
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/system/modelist/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/system/modelist/0/10000</code><br/><br/>
+			<strong>Note:</strong> To get events from contract deployment, use -1 in offset parameter:<br/>
+			<code>/api/cosmicgame/system/modelist/-1/10000</code>
+		</div>
+	</div>
 </body>
+</html>

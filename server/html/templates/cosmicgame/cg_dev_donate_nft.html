@@ -1,14 +1,28 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
 	<title>Donate NFT</title>
 </head>
 <body>
-	<h3 class="page_title">Donate NFT results<h3>
-	<div>
-		<code>
-		{{.Output}}
-		</code>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎁 Donate NFT Results</h1>
+		</div>
+
+		<div class="section-card">
+			<pre style="background: #0d0d0d; padding: 2em; border-radius: 8px; color: #4CAF50; font-family: monospace; overflow-x: auto;">{{.Output}}</pre>
+		</div>
 	</div>
-<br/><br/>
 </body>
+</html>

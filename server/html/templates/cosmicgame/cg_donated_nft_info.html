@@ -1,65 +1,86 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Donated NFT info</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Donated NFT Info</title>
 </head>
 <body>
-	<h3 class="page_title">Donted NFT Info<h3>
-<table>
-	<tr>
-		<td>Record ID</td>
-		<td>{{.NFTDonation.RecordId}}
-	</tr>
-	<tr>
-		<td>EvtLog ID</td>
-		<td>{{.NFTDonation.Tx.EvtLogId}}
-	</tr>
-	<tr>
-		<td>BlockNum</td>
-		<td>{{.NFTDonation.Tx.BlockNum}}</td>
-	</tr>
-	<tr>
-		<td>TxId</td>
-		<td>{{.NFTDonation.Tx.TxId}}</td>
-	</tr>
-	<tr>
-		<td>TxHash</td>
-		<td>{{.NFTDonation.Tx.TxHash}}</td>
-	</td>
-	<tr>
-		<td>TimeStamp</td>
-		<td>
-			{{.NFTDonation.Tx.TimeStamp}}
-		</td>
-	</tr>
-	<tr>
-		<td>DateTime</td>
-		<td>
-			{{.NFTDonation.Tx.DateTime}}
-		</td>
-	</tr>
-	<tr>
-		<td>Donor Address</td>
-		<td><a class="addr" href="/black/cosmicgame/user/info/{{.NFTDonation.DonorAddr}}">{{.NFTDonation.DonorAddr}}</a></td>
-	</tr>
-	<tr>
-		<td>Token ID</td>
-		<td>{{.NFTDonation.NFTTokenId}}</td>
-	</tr>
-	<tr>
-		<td>Token Address</td>
-		<td>{{.NFTDonation.TokenAddr}} (ETH)</td>
-	</tr>
-	<tr>
-		<td>NFTTokenURI</td>
-		<td>{{.NFTDonation.NFTTokenURI}} </td>
-	</tr>
-</table>
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/donations/nft/info/[record_id]<br/>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎁 Donated NFT Information</h1>
+			<div class="subtitle">Record ID: {{.NFTDonation.RecordId}}</div>
+		</div>
 
-	Example: /api/cosmicgame/donations/nft/info/{{.NFTDonation.RecordId}}
-</code>
+		<div class="section-card">
+			<div class="section-header">Transaction Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Record ID</div>
+					<div class="detail-value">{{.NFTDonation.RecordId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.NFTDonation.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.NFTDonation.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction ID</div>
+					<div class="detail-value">{{.NFTDonation.Tx.TxId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.NFTDonation.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.NFTDonation.Tx.DateTime}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">NFT Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Donor Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.NFTDonation.DonorAddr}}">{{.NFTDonation.DonorAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token Address</div>
+					<div class="detail-value monospace">{{.NFTDonation.TokenAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">NFT Token ID</div>
+					<div class="detail-value">{{.NFTDonation.NFTTokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">NFT Token URI</div>
+					<div class="detail-value" style="word-break: break-all;">{{.NFTDonation.NFTTokenURI}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/info/[record_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/info/{{.NFTDonation.RecordId}}</code>
+		</div>
+	</div>
 </body>
+</html>

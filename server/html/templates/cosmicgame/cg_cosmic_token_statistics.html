@@ -1,117 +1,151 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CosmicSignatureToken (CST) Statistics</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CosmicToken Statistics</title>
 </head>
 <body>
-	<h3 class="page_title">CosmicSignatureToken (CST/ERC20) Statistics</h3>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📊 CosmicToken (CST/ERC20) Statistics</h1>
+			<div class="subtitle">Complete token statistics and distribution</div>
+		</div>
 
-<h4>Token Information</h4>
-<table>
-	<tr>
-		<td>Token Name</td>
-		<td>{{ .TokenName }}</td>
-	</tr>
-	<tr>
-		<td>Token Symbol</td>
-		<td>{{ .TokenSymbol }}</td>
-	</tr>
-	<tr>
-		<td>Decimals</td>
-		<td>{{ .TokenDecimals }}</td>
-	</tr>
-	<tr>
-		<td>Token Contract Address</td>
-		<td class="addr">{{ .CosmicTokenAddr }}</td>
-	</tr>
-	<tr>
-		<td>Game Contract Address</td>
-		<td class="addr">{{ .GameContractAddr }}</td>
-	</tr>
-</table>
+		<!-- Token Information -->
+		<div class="section-card">
+			<div class="section-header">Token Information</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Token Name</div>
+					<div class="detail-value">{{.TokenName}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token Symbol</div>
+					<div class="detail-value">{{.TokenSymbol}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Decimals</div>
+					<div class="detail-value">{{.TokenDecimals}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token Contract Address</div>
+					<div class="detail-value monospace">{{.CosmicTokenAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Game Contract Address</div>
+					<div class="detail-value monospace">{{.GameContractAddr}}</div>
+				</div>
+			</div>
+		</div>
 
-<h4>Supply & Holders</h4>
-<table>
-	<tr>
-		<td>Total Supply</td>
-		<td>{{ printf "%.4f" .Stats.TotalSupplyEth }} CST</td>
-	</tr>
-	<tr>
-		<td>Total Holders</td>
-		<td>{{ .Stats.TotalHolders }}</td>
-	</tr>
-</table>
+		<!-- Supply & Holders -->
+		<div class="section-card">
+			<div class="section-header">Supply & Holders</div>
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">Total Supply</div>
+					<div class="stat-value">{{printf "%.2f" .Stats.TotalSupplyEth}}</div>
+					<div class="stat-sublabel">CST</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Total Holders</div>
+					<div class="stat-value">{{.Stats.TotalHolders}}</div>
+				</div>
+			</div>
+		</div>
 
-<h4>CST Distribution (How CST Enters the Game)</h4>
-<table>
-	<tr>
-		<td>Earned from Bidding Rewards</td>
-		<td style="text-align: right;">{{ printf "%.4f" .Stats.EarnedFromBiddingEth }} CST</td>
-	</tr>
-	<tr>
-		<td>Given as Main Prizes</td>
-		<td style="text-align: right;">{{ printf "%.4f" .Stats.GivenAsMainPrizesEth }} CST</td>
-	</tr>
-	<tr>
-		<td>Given as Raffle Prizes</td>
-		<td style="text-align: right;">{{ printf "%.4f" .Stats.GivenAsRafflePrizesEth }} CST</td>
-	</tr>
-	<tr>
-		<td>Given as Chrono Warrior Prizes</td>
-		<td style="text-align: right;">{{ printf "%.4f" .Stats.GivenAsChronoWarriorPrizesEth }} CST</td>
-	</tr>
-	<tr>
-		<td>Distributed to Marketers</td>
-		<td style="text-align: right;">{{ printf "%.4f" .Stats.DistributedToMarketersEth }} CST</td>
-	</tr>
-</table>
+		<!-- Distribution -->
+		<div class="section-card">
+			<div class="section-header">CST Distribution (How CST Enters the Game)</div>
+			<div class="info-grid">
+				<div class="info-item">
+					<div class="info-label">Earned from Bidding Rewards</div>
+					<div class="info-value">{{printf "%.2f" .Stats.EarnedFromBiddingEth}} CST</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Given as Main Prizes</div>
+					<div class="info-value">{{printf "%.2f" .Stats.GivenAsMainPrizesEth}} CST</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Given as Raffle Prizes</div>
+					<div class="info-value">{{printf "%.2f" .Stats.GivenAsRafflePrizesEth}} CST</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Given as Chrono Warrior Prizes</div>
+					<div class="info-value">{{printf "%.2f" .Stats.GivenAsChronoWarriorPrizesEth}} CST</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Distributed to Marketers</div>
+					<div class="info-value">{{printf "%.2f" .Stats.DistributedToMarketersEth}} CST</div>
+				</div>
+			</div>
+		</div>
 
-<h4>CST Usage (How CST Leaves the Game)</h4>
-<table>
-	<tr>
-		<td>Consumed in Bids (Burned)</td>
-		<td style="text-align: right;">{{ printf "%.4f" .Stats.ConsumedInBidsEth }} CST</td>
-	</tr>
-</table>
+		<!-- Usage -->
+		<div class="section-card">
+			<div class="section-header">CST Usage (How CST Leaves the Game)</div>
+			<div class="info-grid">
+				<div class="info-item">
+					<div class="info-label">Consumed in Bids (Burned)</div>
+					<div class="info-value">{{printf "%.2f" .Stats.ConsumedInBidsEth}} CST</div>
+				</div>
+			</div>
+		</div>
 
-<h4>Activity Metrics</h4>
-<table>
-	<tr>
-		<td>Total Mint Events</td>
-		<td>{{ .Stats.TotalMints }}</td>
-	</tr>
-	<tr>
-		<td>Total Burn Events</td>
-		<td>{{ .Stats.TotalBurns }}</td>
-	</tr>
-	<tr>
-		<td>Total Transfer Events</td>
-		<td>{{ .Stats.TotalTransfers }}</td>
-	</tr>
-</table>
+		<!-- Activity Metrics -->
+		<div class="section-card">
+			<div class="section-header">Activity Metrics</div>
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">Mint Events</div>
+					<div class="stat-value">{{.Stats.TotalMints}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Burn Events</div>
+					<div class="stat-value">{{.Stats.TotalBurns}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Transfer Events</div>
+					<div class="stat-value">{{.Stats.TotalTransfers}}</div>
+				</div>
+			</div>
+		</div>
 
-<h4>Top 10 CST Holders</h4>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Address</th>
-		<th class="market_reports">Balance (CST)</th>
-		<th class="market_reports">% of Supply</th>
-	</tr>
-	{{- range $i, $holder := .Stats.TopHolders}}
-		<tr class="market_reports">
-			<td class="addr">
-				<a href="/black/cosmicgame/user/info/{{$holder.OwnerAddr}}">{{$holder.OwnerAddr}}</a>
-			</td>
-			<td style="text-align: right;">{{ printf "%.4f" $holder.BalanceFloat }}</td>
-			<td style="text-align: right;">{{ printf "%.2f" $holder.PercentOfSupply }}%</td>
-		</tr>
-	{{- end}}
-</table>
+		<!-- Top Holders -->
+		<div class="section-card">
+			<div class="section-header">Top 10 CST Holders</div>
+			<table class="data-table">
+				<tr>
+					<th>Address</th>
+					<th class="right">Balance (CST)</th>
+					<th class="right">% of Supply</th>
+				</tr>
+				{{- range $i, $holder := .Stats.TopHolders}}
+					<tr>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{$holder.OwnerAddr}}">{{$holder.OwnerAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.2f" $holder.BalanceFloat}}</td>
+						<td class="right">{{printf "%.2f" $holder.PercentOfSupply}}%</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
 
-<br/><br/>
-<code>
-	API: /api/cosmicgame/ct/statistics
-</code>
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/ct/statistics</code>
+		</div>
+	</div>
 </body>
 </html>
-

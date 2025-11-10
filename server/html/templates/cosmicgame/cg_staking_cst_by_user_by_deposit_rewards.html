@@ -1,116 +1,109 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Staking Rewards By Deposit for {{.UserAddr}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CST Staking Rewards By Deposit</title>
 </head>
 <body>
-	<h3 class="page_title">Staking Rewards By Deposit for {{.UserAddr}}<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Deposit Info</th>
-		<th class="market_reports">Detailed info on rewards per token</th>
-	</tr>
-	{{- range $i, $change := .RewardsByDeposit}}
-		<tr class="market_reports">
-			<td class="" title="{{.Tx.TimeStamp}}">
-				<table class="market_reports">
-					<tr>
-						<td>Block Num</td>
-						<td>{{.Tx.BlockNum}}</th>
-					</tr>
-					<tr>
-						<td>Datetime </td>
-						<td class="" title="{{.Tx.TimeStamp}}">{{.Tx.DateTime}}</td>
-					</tr>
-					<tr>
-						<td>Deposit Id</td>
-						<td>
-							<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
-							{{.DepositId}}
-							</a>
-						</td>
-					</tr>
-					<tr>
-						<td>Round</td>
-						<td>{{.DepositRoundNum}}</td>
-					</tr>
-					<tr>
-						<td>Total tokens staked</td>
-						<td>{{.NumStakedNFTs}}</td>
-					</tr>
-					<tr>
-						<td>Reward per token</td>
-						<td>{{ printf "%.6f" .AmountPerTokenEth}}</td>
-					</tr>
-					<tr>
-						<td>Your claimable Amount(ETH)</td>
-						<td style="text-align: right;">{{ printf "%.6f" .YourClaimableAmountEth}}</td>
-					</tr>
-					<tr>
-						<td>Your tokens staked</td>
-						<td style="text-align: left;" title="">{{.YourTokensStaked}}</td>
-					</tr>
-					<tr>
-						<td>Tokens collected</td>
-						<td style="text-align: left;" title="">{{.NumTokensCollected}}</td>
-					</tr>
-					<tr>
-						<td>Accum. Amount collected (ETH)</td>
-						<td style="text-align: right;" title="">{{ printf "%.6f" .ClaimedAmountEth}}</td>
-					</tr>
-				</table>
-			</td>
-			<td>
-				<table>
-					<tr>
-						<th class="market_reports">RecordID</th>
-						<th class="market_reports">ActionID</th>
-						<th class="market_reports">TokenID</th>
-						<th class="market_reports">Stake Date</th>
-						<th class="market_reports">Reward (Wei)</th>
-						<th class="market_reports">Reward (ETH)</th>
-						<th class="market_reports">Collected ?</th>
-						<th class="market_reports">Unstake Date</th>
-						<th class="market_reports" title="Payment at unstake() tx for all the rewards this token generated (all deposits summed)">$$$ at unstake()</th>
-					</tr>
-					{{- range $j, $row := .Actions }}
-					<tr class="market_reports">
-						<td class="" style="text-align: center;">
-							{{.Stake.RecordId}}
-						</td>
-						<td class="" style="text-align: center;">
-							{{.Stake.ActionId}}
-						</td>
-						<td class="" style="text-align: center;">
-							{{.Stake.TokenId}}
-						</td>
-						<td class="">
-							{{.Stake.DateTime}}
-						</td>
-						<td>{{.Reward }}</td>
-						<td style="text-align: center;">
-							&nbsp; {{ printf "%.6f" .RewardEth}} &nbsp;
-						</td>
-						<td style="text-align: center;">
-							{{ if .Claimed }} Yes {{ else }}No {{ end}}
-						</td>
-						<td>
-							{{.Unstake.DateTime}}
-						</td>
-						<td style="text-align: right;">
-							{{ printf "%.6f" .Unstake.RewardAmountEth }}
-						</td>
-					</tr>
-					{{- end }}
-				</table>
-			</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/staking/cst/rewards/by_user/by_deposit/[user_addr]</br>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 CST Staking Rewards By Deposit</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
 
-	Example: /api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserAddr}}
-</code>
+		<div class="section-card">
+			{{- range $i, $change := .RewardsByDeposit}}
+			<div class="sub-card mb-3">
+				<div class="sub-header">Deposit #{{.DepositId}} - Round {{.DepositRoundNum}}</div>
+				
+				<div class="info-grid">
+					<div class="info-item">
+						<div class="info-label">Block Number</div>
+						<div class="info-value">{{.Tx.BlockNum}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">DateTime</div>
+						<div class="info-value">{{.Tx.DateTime}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Deposit ID</div>
+						<div class="info-value">
+							<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">{{.DepositId}}</a>
+						</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Total Tokens Staked</div>
+						<div class="info-value">{{.NumStakedNFTs}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Reward Per Token</div>
+						<div class="info-value">{{printf "%.6f" .AmountPerTokenEth}} ETH</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Your Claimable Amount</div>
+						<div class="info-value">{{printf "%.6f" .YourClaimableAmountEth}} ETH</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Your Tokens Staked</div>
+						<div class="info-value">{{.YourTokensStaked}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Tokens Collected</div>
+						<div class="info-value">{{.NumTokensCollected}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Amount Collected</div>
+						<div class="info-value">{{printf "%.6f" .ClaimedAmountEth}} ETH</div>
+					</div>
+				</div>
+
+				<div class="section-subheader">Token Details</div>
+				<table class="compact-table">
+					<tr>
+						<th>Record ID</th>
+						<th>Action ID</th>
+						<th>Token ID</th>
+						<th>Stake Date</th>
+						<th class="right">Reward (ETH)</th>
+						<th class="center">Collected</th>
+						<th>Unstake Date</th>
+						<th class="right">$$$ at unstake()</th>
+					</tr>
+					{{- range $j, $row := .Actions}}
+					<tr>
+						<td class="center">{{.Stake.RecordId}}</td>
+						<td class="center">{{.Stake.ActionId}}</td>
+						<td class="center">{{.Stake.TokenId}}</td>
+						<td>{{.Stake.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .RewardEth}}</td>
+						<td class="center">
+							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+						</td>
+						<td>{{.Unstake.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .Unstake.RewardAmountEth}}</td>
+					</tr>
+					{{- end}}
+				</table>
+			</div>
+			{{- end}}
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserAddr}}</code>
+		</div>
+	</div>
 </body>
+</html>

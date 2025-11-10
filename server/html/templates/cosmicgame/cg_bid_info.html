@@ -1,91 +1,126 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Bid record for event id={{.BidInfo.Tx.EvtLogId}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Bid Record #{{.BidInfo.Tx.EvtLogId}}</title>
 </head>
 <body>
-	<h3 class="page_title">Bid Info<h3>
-<table>
-	<tr>
-		<td>EvtLog ID</td>
-		<td>{{.BidInfo.Tx.EvtLogId}}
-	</tr>
-	<tr>
-		<td>BlockNum</td>
-		<td>{{.BidInfo.Tx.BlockNum}}</td>
-	</tr>
-	<tr>
-		<td>TxId</td>
-		<td>{{.BidInfo.Tx.TxId}}</td>
-	</tr>
-	<tr>
-		<td>TxHash</td>
-		<td>{{.BidInfo.Tx.TxHash}}</td>
-	</td>
-	<tr>
-		<td>Round Num</td>
-		<td>
-			{{.BidInfo.RoundNum}}
-		</td>
-	</tr>
-	<tr>
-		<td>TimeStamp</td>
-		<td>
-			{{.BidInfo.Tx.TimeStamp}}
-		</td>
-	</tr>
-	<tr>
-		<td>DateTime</td>
-		<td>
-			{{.BidInfo.Tx.DateTime}}
-		</td>
-	</tr>
-	<tr>
-		<td>Bidder Address</td>
-		<td><a class="addr" href="/black/cosmicgame/user/info/{{.BidInfo.BidderAddr}}">{{.BidInfo.BidderAddr}}</a></td>
-	</tr>
-	<tr>
-		<td>Bid Price</td>
-		<td>{{.BidInfo.EthPriceEth}}</td>
-	</tr>
-	<tr>
-		<td>ERC20 amount</td>
-		<td>{{.BidInfo.CSTRewardEth}} (ETH)</td>
-	</tr>
-	<tr>
-		<td>RWalk NFT Id</td>
-		<td>{{.BidInfo.RWalkNFTId}} </td>
-	</tr>
-	<tr>
-		<td>NumCSTTokens (bid price)</td>
-		<td>{{.BidInfo.CSTRewardEth}} CST</td>
-	</tr>
-	<tr>
-		<td>Donated NFT Contract Address (aka Token)</td>
-		<td>{{.BidInfo.NFTDonationTokenAddr}}</td>
-	</tr>
-	<tr>
-		<td>Donated NFT Token Id</td>
-		<td>{{.BidInfo.NFTDonationTokenId}}</td>
-	</tr>
-	<tr>
-		<td>Donated NFT Token URI</td>
-		<td>{{.BidInfo.NFTTokenURI}}</td>
-	</tr>
-	<tr>
-		<td>Message</td>
-		<td>{{.BidInfo.Message}}</td>
-	</tr>
-	<tr>
-		<td>Image</td>
-		<td><img width="300" src="{{.BidInfo.ImageURL}}"></td>
-	</tr>
-</table>
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/bid/info/[evtlog_id]<br/>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📝 Bid Information</h1>
+			<div class="subtitle">Event Log ID: {{.BidInfo.Tx.EvtLogId}}</div>
+		</div>
 
-	Example: /api/cosmicgame/bid/info/{{.BidInfo.Tx.EvtLogId}}
-</code>
+		<div class="section-card">
+			<div class="section-header">Transaction Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.BidInfo.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.BidInfo.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction ID</div>
+					<div class="detail-value">{{.BidInfo.Tx.TxId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.BidInfo.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Timestamp</div>
+					<div class="detail-value">{{.BidInfo.Tx.TimeStamp}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.BidInfo.Tx.DateTime}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Bid Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Round Number</div>
+					<div class="detail-value">{{.BidInfo.RoundNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Bidder Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.BidInfo.BidderAddr}}">{{.BidInfo.BidderAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Bid Price</div>
+					<div class="detail-value">{{printf "%.6f" .BidInfo.EthPriceEth}} ETH</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">ERC20 Amount</div>
+					<div class="detail-value">{{printf "%.6f" .BidInfo.CSTRewardEth}} ETH</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">RWalk NFT ID</div>
+					<div class="detail-value">{{.BidInfo.RWalkNFTId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">CST Tokens (Bid Price)</div>
+					<div class="detail-value">{{printf "%.4f" .BidInfo.CSTRewardEth}} CST</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Message</div>
+					<div class="detail-value">{{.BidInfo.Message}}</div>
+				</div>
+			</div>
+		</div>
+
+		{{ if .BidInfo.NFTDonationTokenAddr }}
+		<div class="section-card">
+			<div class="section-header">Donated NFT Information</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">NFT Contract Address</div>
+					<div class="detail-value monospace">{{.BidInfo.NFTDonationTokenAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">NFT Token ID</div>
+					<div class="detail-value">{{.BidInfo.NFTDonationTokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">NFT Token URI</div>
+					<div class="detail-value" style="word-break: break-all;">{{.BidInfo.NFTTokenURI}}</div>
+				</div>
+				{{ if .BidInfo.ImageURL }}
+				<div class="detail-row">
+					<div class="detail-label">NFT Image</div>
+					<div class="detail-value">
+						<img width="300" src="{{.BidInfo.ImageURL}}" style="border-radius: 8px; margin-top: 1em;">
+					</div>
+				</div>
+				{{ end }}
+			</div>
+		</div>
+		{{ end }}
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/bid/info/[evtlog_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/bid/info/{{.BidInfo.Tx.EvtLogId}}</code>
+		</div>
+	</div>
 </body>
+</html>

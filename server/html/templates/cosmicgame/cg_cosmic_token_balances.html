@@ -1,30 +1,49 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CosmicToken User Balances</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CosmicToken Balances</title>
 </head>
 <body>
-	<h3 class="page_title">Cosmic Token User Balances<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Holder</th>
-		<th class="market_reports">Balance</th>
-	</tr>
-	{{- range $i, $change := .CosmicTokenBalances}}
-		<tr class="market_reports">
-			<td class="addr" style="text-align: left;">
-				{{.OwnerAddr}}
-			</td>
-			<td style="text-align: right;" title="">
-				<a href="/black/cosmicgame/user/info/{{.OwnerAddr}}">{{ .BalanceFloat}}</a>
-			</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/ct/balances</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🪙 CosmicToken (ERC20) Balances</h1>
+			<div class="subtitle">Current balances of all CST token holders</div>
+		</div>
 
-	Example: /api/cosmicgame/ct/balances
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Holder Address</th>
+					<th class="right">Balance</th>
+				</tr>
+				{{- range $i, $change := .CosmicTokenBalances}}
+					<tr>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.OwnerAddr}}">{{.OwnerAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.2f" .BalanceFloat}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/ct/balances</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/ct/balances</code>
+		</div>
+	</div>
 </body>
+</html>

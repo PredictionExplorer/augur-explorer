@@ -1,78 +1,91 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Notification red box for {{.UserAddr}}</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Notification Red Box</title>
 </head>
 <body>
-	<h3 class="page_title">Notification red box for {{.UserAddr}}<h3>
-<table>
-	<tr class="market_reports">
-		<td class="market_reports">Unclaimed donated NFTs</td>
-		<td class="market_reports">
-			<a href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserAddr}}">
-			{{.Winnings.NumDonatedNFTToClaim}}
-			</a>
-			(
-			<a href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserAddr}}">
-			 List of unclaimed NFTs
-			</a>
-			)
-		</td>
-	</tr>
-	<tr class="market_reports">
-		<td class="market_reports">Unclaimed ETH winnings</td>
-		<td class="market_reports">
-			{{ printf "%.8f" .Winnings.ETHRaffleToClaim}}
-			{{ if lt 0.0 .Winnings.ETHRaffleToClaim }}
-			(
-			<a href="/black/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}">
-				List of unclaimed deposits
-			</a>
-			)
-			{{ end }}		
-		</td>
-	<tr class="market_reports">
-		<td class="market_reports">Unclaimed Staking Rewards</td>
-		<td class="market_reports">
-			{{ printf "%.8f" .Winnings.UnclaimedStakingReward}}
-			{{ if lt 0.0 .Winnings.UnclaimedStakingReward}}
-			(
-			<a href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserAddr}}">
-				List of unclaimed staking rewards
-			</a>
-			)
-			{{ end }}		
-		</td>
-	</tr>
-	</tr>
-	<tr class="market_reports">
-		<td class="market_reports">Donated ERC20 tokens</td>
-		<td class="market_reports">
-			<table>
-			<tr class="market_reports">
-				<th class="market_reports">Token Addr</th>
-				<th class="market_reports">Amount</th>
-			</tr>
-			{{- range $i, $change := .Winnings.DonatedERC20Tokens}}
-				<tr class="market_reports">
-					<td style="text-align: center">{{.TokenAddr}}</td>
-					<td style="text-align: center;" title="">{{ printf "%.6f" .AmountEth}}</td>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🔔 Notification Red Box</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+			<div class="subtitle" style="margin-top: 1em;">Items requiring your attention</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Unclaimed Rewards</div>
+			
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">Unclaimed Donated NFTs</div>
+					<div class="stat-value">
+						<a href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserAddr}}" style="color: inherit; text-decoration: none;">
+							{{.Winnings.NumDonatedNFTToClaim}}
+						</a>
+					</div>
+					<div class="stat-sublabel">
+						<a href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserAddr}}">View List</a>
+					</div>
+				</div>
+
+				<div class="stat-card">
+					<div class="stat-label">Unclaimed ETH Winnings</div>
+					<div class="stat-value">{{printf "%.6f" .Winnings.ETHRaffleToClaim}}</div>
+					<div class="stat-sublabel">ETH</div>
+					{{ if lt 0.0 .Winnings.ETHRaffleToClaim }}
+					<div style="margin-top: 0.5em;">
+						<a href="/black/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}">View Deposits</a>
+					</div>
+					{{ end }}
+				</div>
+
+				<div class="stat-card">
+					<div class="stat-label">Unclaimed Staking Rewards</div>
+					<div class="stat-value">{{printf "%.6f" .Winnings.UnclaimedStakingReward}}</div>
+					<div class="stat-sublabel">ETH</div>
+					{{ if lt 0.0 .Winnings.UnclaimedStakingReward}}
+					<div style="margin-top: 0.5em;">
+						<a href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserAddr}}">View Rewards</a>
+					</div>
+					{{ end }}
+				</div>
+			</div>
+		</div>
+
+		{{ if .Winnings.DonatedERC20Tokens }}
+		<div class="section-card">
+			<div class="section-header">Donated ERC20 Tokens</div>
+			<table class="data-table">
+				<tr>
+					<th>Token Address</th>
+					<th class="right">Amount</th>
 				</tr>
-		    {{- end}}
+				{{- range $i, $change := .Winnings.DonatedERC20Tokens}}
+					<tr>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+					</tr>
+				{{- end}}
 			</table>
-		</td>
-	</tr>
-</table>
+		</div>
+		{{ end }}
 
-		</td>
-	</tr>
-</table>
-
-<br/><br/>
-<code>
-	API: /api/cosmicgame/user/notif_red_box/[user_addr]</br>
-
-	Example: /api/cosmicgame/user/notif_red_box/{{.UserAddr}}
-</code>
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/user/notif_red_box/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/user/notif_red_box/{{.UserAddr}}</code>
+		</div>
+	</div>
 </body>
 </html>

@@ -1,18 +1,51 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CST Price</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Current CST Price</title>
 </head>
 <body>
-	<h3 class="page_title">CST Price<h3>
-<br/><br/>
-CSTPrice = {{.CSTPrice}}<br/>
-SecondsElapsed = {{.SecondsElapsed}}<br/>
-AuctionDuration = {{.AuctionDuration}}<br/>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/bid/cst_price<br/>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 Current CST Price</h1>
+			<div class="subtitle">Current bidding price information</div>
+		</div>
 
-	Example: /api/cosmicgame/bid/cst_price
-</code>
+		<div class="section-card">
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">CST Price</div>
+					<div class="stat-value">{{printf "%.6f" .CSTPrice}}</div>
+					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Seconds Elapsed</div>
+					<div class="stat-value">{{.SecondsElapsed}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Auction Duration</div>
+					<div class="stat-value">{{.AuctionDuration}}</div>
+					<div class="stat-sublabel">seconds</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/bid/cst_price</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/bid/cst_price</code>
+		</div>
+	</div>
 </body>
+</html>

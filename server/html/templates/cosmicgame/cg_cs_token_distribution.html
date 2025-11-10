@@ -1,30 +1,49 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>CosmicSignature token distribution</title>
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CS Token Distribution</title>
 </head>
 <body>
-	<h3 class="page_title">Cosmic Signature token distribution<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Owner</th>
-		<th class="market_reports">Amount of tokens owned</th>
-	</tr>
-	{{- range $i, $change := .CosmicSignatureTokenDistribution}}
-		<tr class="market_reports">
-			<td class="addr" style="text-align: left;">
-				{{.OwnerAddr}}
-			</td>
-			<td style="text-align: right;" title="">
-				<a href="/black/cosmicgame/user/info/{{.OwnerAddr}}">{{ .NumTokens}}</a>
-			</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/cst/distribution</br>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎨 Cosmic Signature Token Distribution</h1>
+			<div class="subtitle">Token ownership distribution across holders</div>
+		</div>
 
-	Example: /api/cosmicgame/cst/distribution
-</code>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Owner Address</th>
+					<th class="right">Tokens Owned</th>
+				</tr>
+				{{- range $i, $change := .CosmicSignatureTokenDistribution}}
+					<tr>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.OwnerAddr}}">{{.OwnerAddr}}</a>
+						</td>
+						<td class="right">{{.NumTokens}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/cst/distribution</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/cst/distribution</code>
+		</div>
+	</div>
 </body>
+</html>

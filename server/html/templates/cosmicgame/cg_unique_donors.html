@@ -1,31 +1,51 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
 	<title>Unique Donors</title>
 </head>
 <body>
-	<h3 class="page_title">Unique donros list<h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Donor Address</th>
-		<th class="market_reports">Donations made</th>
-		<th class="market_reports">Total ETH donated</th>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎁 Unique Donors</h1>
+			<div class="subtitle">All addresses that have made donations</div>
+		</div>
 
-	</tr>
-	{{- range $i, $change := .UniqueDonors}}
-		<tr class="market_reports">
-			<td class="" title="{{.DonorAid}}">
-				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
-			</td>
-			<td class="" style="text-align: center;">{{.CountDonations}}</td>
-			<td class="addr" title="{{.TotalDonated}}">{{ printf "%.6f" .TotalDonatedEth}}</td>
-		</tr>
-	{{- end}}
-</table>
-<br/><br/>
-<code>
-	API: /api/cosmicgame/statistics/unique/donors<br/>
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Donor Address</th>
+					<th class="center">Donations Made</th>
+					<th class="right">Total ETH Donated</th>
+				</tr>
+				{{- range $i, $change := .UniqueDonors}}
+					<tr>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="center">{{.CountDonations}}</td>
+						<td class="right">{{printf "%.6f" .TotalDonatedEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
 
-	Example: /api/cosmicgame/statistics/unique/donors
-</code>
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/statistics/unique/donors</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/statistics/unique/donors</code>
+		</div>
+	</div>
 </body>
+</html>

@@ -2,19 +2,38 @@
 <head>
 	<title>CosmicGame Time Until Prize</title>
 	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
 </head>
 
 <body>
-	<br/>
-	<div>
-	Time until prize : {{.TimeUntilPrize}}
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⏰ Time Until Prize</h1>
+		</div>
+
+		<div class="section-card">
+			<div class="stat-card">
+				<div class="stat-label">Time Until Prize</div>
+				<div class="stat-value" style="font-size: 1.5em;">{{.TimeUntilPrize}}</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/time/until_prize</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/time/until_prize</code>
+		</div>
 	</div>
-	<br/><br/>
-<code style="float: right">
-	API: /api/cosmicgame/time/until_prize<br/>
-
-	Example: /api/cosmicgame/time/until_prize
-</code>
-
 </body>
 </html>
