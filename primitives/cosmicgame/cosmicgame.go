@@ -403,14 +403,6 @@ type CGNumRaffleNFTWinnersBiddingChanged struct {
 	Contract                string
 	NewNumRaffleNFTWinnersBidding int64
 }
-type CGNumRaffleNFTWinnersStakingCSTChanged struct {
-	EvtId                   int64
-	BlockNum                int64
-	TxId                    int64
-	TimeStamp               int64
-	Contract                string
-	NewNumRaffleNFTWinnersStakingCST int64
-}
 type CGNumRaffleNFTWinnersStakingRWalkChanged struct {
 	EvtId                   int64
 	BlockNum                int64
@@ -556,14 +548,6 @@ type CGInitialSecondsUntilPrizeChanged struct {
 	Contract                string
 	NewInitialSecondsUntilPrize	string
 }
-type CGInitialBidAmountFractionChanged struct {
-	EvtId                   int64
-	BlockNum                int64
-	TxId                    int64
-	TimeStamp               int64
-	Contract                string
-	NewInitialBidAmountFraction	string
-}
 type CGActivationTimeChanged struct {
 	EvtId                   int64
 	BlockNum                int64
@@ -571,14 +555,6 @@ type CGActivationTimeChanged struct {
 	TimeStamp               int64
 	Contract                string
 	NewActivationTime		string
-}
-type CGETHCSTBidRatioChanged struct {
-	EvtId                   int64
-	BlockNum                int64
-	TxId                    int64
-	TimeStamp               int64
-	Contract                string
-	NewETHToCSTBidRatio		string
 }
 type CGCstDutchAuctionDurationDivisorChanged struct {
 	EvtId                   int64

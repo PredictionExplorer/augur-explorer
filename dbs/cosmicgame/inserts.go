@@ -897,29 +897,6 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_bidding_c
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_staking_cst_changed_event(evt *p.CGNumRaffleNFTWinnersStakingCSTChanged) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_adm_raf_nft_staking_cst(" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"num_winners" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewNumRaffleNFTWinnersStakingCST,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_nft_staking_cst table: %v\n",err))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(evt *p.CGNumRaffleNFTWinnersStakingRWalkChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
@@ -1393,29 +1370,6 @@ func (sw *SQLStorageWrapper) Insert_initial_seconds_until_prize_changed_event(ev
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_initial_bid_amount_fraction_changed_event(evt *p.CGInitialBidAmountFractionChanged) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_adm_bidfraction(" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_fraction" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewInitialBidAmountFraction,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_bidfraction table: %v\n",err))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Insert_activation_time_changed_event(evt *p.CGActivationTimeChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
@@ -1436,29 +1390,6 @@ func (sw *SQLStorageWrapper) Insert_activation_time_changed_event(evt *p.CGActiv
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_acttime table: %v\n",err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_ethcst_bid_ratio_changed_event(evt *p.CGETHCSTBidRatioChanged) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_adm_ethcst(" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_ratio" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewETHToCSTBidRatio,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_ethcst table: %v\n",err))
 		os.Exit(1)
 	}
 }
