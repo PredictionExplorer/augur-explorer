@@ -209,7 +209,7 @@ func (sw *SQLStorageWrapper) Delete_eth_deposit_event(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_marketing_reward_sent_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_marketing_reward_paid_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_mkt_reward WHERE evtlog_id=$1"

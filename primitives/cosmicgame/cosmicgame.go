@@ -316,7 +316,7 @@ type CGNftUnstakedCst struct {
 	RewardAmount		string
 	RewardPerToken		string
 }
-type CGMarketingRewardSent struct {
+type CGMarketingRewardPaid struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64

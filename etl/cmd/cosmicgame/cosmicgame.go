@@ -231,7 +231,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_marketing_reward_sent[:4]),
+			Signature: hex.EncodeToString(evt_marketing_reward_paid[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -1510,12 +1510,12 @@ func proc_nft_unstaked_cst_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_nft_unstaked_cst_event(evt.EvtId)
 	storagew.Insert_nft_unstaked_cst_event(&evt)
 }
-func proc_marketing_reward_sent_event(log *types.Log,elog *EthereumEventLog) {
+func proc_marketing_reward_paid_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGMarketingRewardSent
+	var evt CGMarketingRewardPaid
 	var eth_evt MarketingWalletRewardPaid
 
-	Info.Printf("Processing MarketingWallet RewardSent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing MarketingWallet RewardPaid event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),marketing_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1536,13 +1536,13 @@ func proc_marketing_reward_sent_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("Marketing RwardPaid{\n")
+	Info.Printf("Marketing RewardPaid{\n")
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tMarketer: %v\n",evt.Marketer)
 	Info.Printf("}\n")
 
-	storagew.Delete_marketing_reward_sent_event(evt.EvtId)
-	storagew.Insert_marketing_reward_sent_event(&evt)
+	storagew.Delete_marketing_reward_paid_event(evt.EvtId)
+	storagew.Insert_marketing_reward_paid_event(&evt)
 }
 func proc_cosmic_signature_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2959,8 +2959,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_eth_deposit) {
 		proc_staking_eth_deposit_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_reward_sent) {
-		proc_marketing_reward_sent_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_reward_paid) {
+		proc_marketing_reward_paid_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_percentage_changed) {
 		proc_charity_percentage_changed_event(log,evtlog)

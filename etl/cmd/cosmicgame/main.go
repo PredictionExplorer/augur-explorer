@@ -90,7 +90,7 @@ const (
 	ETH_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED= "fdf6043c89a5f304289122dcc9f8bd78bb111b5d4f409e2fc2e6c141a1110b79" // ISystemEvents.sol:EthDutchAuctionDurationDivisorChanged
 	CST_DUTCH_AUCTION_DURATION_DIVISOR_CHANGED= "c95d03f6c735a9e59c760fdb88e585aafe0a31b5c034fc7838155287ee32212f" // ISystemEvents.sol:CstDutchAuctionDurationDivisorChanged
 	ETH_DUTCH_AUCTION_ENDING_PRICE_DIVISOR_CHANGED = "b6f6af60099e44041a78b3561ed029b98bf03fdb0efbbb2eb15e1f3d7d923037" // ISystemEvents.sol:EthDutchAuctionEndingBidPriceDivisorChanged
-	MARKETING_REWARD_SENT	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486" // IMarketingWallet.sol:RewardPaid
+	MARKETING_REWARD_PAID	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486" // IMarketingWallet.sol:RewardPaid
 	MARKETING_REWARD_CHANGED = "2652e6657dd1ed89d7bdcb70f8827cc8449ac4536ebf604dbb2465cdad264020" // ISystemEvents.sol:MarketingWalletCstContributionAmountChanged
 	CST_REWARD_FOR_BIDDING_CHANGED = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0" // ISystemEvents.sol:CstRewardAmountForBiddingChanged
 	STATIC_CST_REWARD		= "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
@@ -188,7 +188,7 @@ var (
 	evt_staking_eth_deposit,_		= hex.DecodeString(STAKING_ETH_DEPOSIT_EVENT)
 
 	// MarketingWallet events
-	evt_marketing_reward_sent,_		= hex.DecodeString(MARKETING_REWARD_SENT)
+	evt_marketing_reward_paid,_		= hex.DecodeString(MARKETING_REWARD_PAID)
 	evt_treasurer_changed,_		= hex.DecodeString(TREASURER_CHANGED)
 
 	inspected_events []InspectedEvent
