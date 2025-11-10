@@ -2752,40 +2752,6 @@ func proc_fund_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_fund_transfer_failed_event(evt.EvtId)
     storagew.Insert_fund_transfer_failed_event(&evt)
 }
-/* DISCONTINUED , pending for revision that in Solidity we report a failure if ERC20 mint fails 
-func proc_erc20_transfer_failed_event(log *types.Log,elog *EthereumEventLog) {
-
-	var evt CGErc20TransferFailed
-	var eth_evt CosmicSignatureEventsERC20TransferFailed
-
-	if !bytes.Equal(log.Address.Bytes(),marketing_wallet_addr.Bytes()) {
-		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
-		return
-	}
-	Info.Printf("Processing Initialized event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ERC20TransferFailed",log.Data)
-	if err != nil {
-		Error.Printf("Event Initialized decode error: %v",err)
-		os.Exit(1)
-	}
-
-	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
-	evt.TimeStamp = elog.TimeStamp
-	evt.Destination= common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Amount= eth_evt.Amount.String()
-
-	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("FundTransferFailed {\n")
-	Info.Printf("\tDestination: %v\n",evt.Destination)
-	Info.Printf("\tAmount: %v\n",evt.Amount)
-	Info.Printf("}\n")
-
-	storagew.Delete_erc20_transfer_failed_event(evt.EvtId)
-    storagew.Insert_erc20_transfer_failed_event(&evt)
-}*/
 func proc_funds_transferred_to_charity_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGFundsToCharity
@@ -3079,10 +3045,6 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fund_transf_err) {
 		proc_fund_transfer_failed_event(log,evtlog)
 	}
-	/* DISCONTINUED
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transf_err) {
-		proc_erc20_transfer_failed_event(log,evtlog)
-	} */
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funds2charity) {
 		proc_funds_transferred_to_charity_event(log,evtlog)
 	}

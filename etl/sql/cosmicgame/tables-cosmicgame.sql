@@ -821,16 +821,6 @@ CREATE TABLE cg_adm_initialized( -- Initialized event (OpenZeppelin)
 	version			BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_state_reset ( -- IStakingWalletCosmicSignatureNft:StateReset event
-	id              BIGSERIAL PRIMARY KEY,
-	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num       BIGINT NOT NULL,
-	tx_id           BIGINT NOT NULL,
-	time_stamp      TIMESTAMPTZ NOT NULL,
-	contract_aid    BIGINT NOT NULL,
-	num_resets		BIGINT NOT NULL,
-	UNIQUE(evtlog_id)
-);
 CREATE TABLE cg_fund_transf_err ( -- ICosmicSignatureErrors.sol:FundTransferFailed
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

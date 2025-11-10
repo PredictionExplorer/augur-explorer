@@ -330,34 +330,6 @@ func (sw *SQLStorageWrapper) Get_unclaimed_donated_nft_by_user(winner_aid int64)
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_unclaimed_token_ids(winner_aid int64) []int64 {
-
-	var query string
-	query = "SELECT "+
-				"p.token_id, "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_prize w "+
-				"LEFT JOIN cg_raffle_nft_claimed c ON c.nft_winner_evtlog_id=w.evtlog_id "+
-			"WHERE w.winner_aid=$1  AND c.nft_winner_vetlog_id IS NULL "+
-			"ORDER BY w.id"
-
-	rows,err := sw.S.Db().Query(query,winner_aid)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	records := make([]int64,0, 256)
-	defer rows.Close()
-	for rows.Next() {
-		var token_id int64
-		err=rows.Scan(&token_id)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		records = append(records,token_id)
-	}
-	return records
-}
 func (sw *SQLStorageWrapper) Get_raffle_nft_winnings_by_user(winner_aid int64) []p.CGRaffleNFTWinnerRec {
 
 	var query string

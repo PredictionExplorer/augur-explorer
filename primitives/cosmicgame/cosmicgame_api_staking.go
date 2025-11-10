@@ -301,24 +301,10 @@ type CGCombinedDepositRewardRec struct {	// for showing tree-like structure of d
 	ClaimedAmountEth			float64
 	Actions						[]CGNftStakeUnstakeCombined
 }
-type CGRewardPaidRec struct {
-	RecordId					int64
-	Tx							Transaction
-	ActionId					int64
-	TokenId						int64
-	StakerAid					int64
-	StakerAddr					string
-	RewardAmount				string
-	RewardAmountEth				float64
-}
 type CGStakingCstRewardPerTokenRec struct {
 	TokenId						int64
 	RewardCollectedEth			float64
 	RewardToCollectEth			float64
 	UserAid						int64
 	UserAddr					string
-}
-type UserStakingInfo struct {
-	CSTStakingInfo				CGStakeStatsCST
-	RWalkStakingInfo			CGStakeStatsRWalk
 }

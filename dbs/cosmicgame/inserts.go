@@ -659,34 +659,6 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		os.Exit(1)
 	}
 }
-/*func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
-
-	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO cg_reward_paid(" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,reward,staker_aid,unpaid_dep_id" +
-			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
-			")"
-	_,err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.NftId,
-		evt.RewardAmount,
-		staker_aid,
-		evt.MaxUnpaidEthDepositIndex,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_reward_paid table: %v\n",err))
-		os.Exit(1)
-	}
-}*/
 func (sw *SQLStorageWrapper) Insert_marketing_reward_paid_event(evt *p.CGMarketingRewardPaid) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)

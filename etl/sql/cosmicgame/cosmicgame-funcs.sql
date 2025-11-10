@@ -988,24 +988,6 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_staker_update() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
---	IF NEW.total_tokens_staked = 0 THEN
---		IF OLD.total_tokens_staked = 1 THEN
---			UPDATE cg_stake_stats_cst SET total_num_stakers = (total_num_stakers - 1);
---		END IF;
---	ELSE
---		IF NEW.total_tokens_staked = 1 THEN
---			IF OLD.total_tokens_staked = 0 THEN
---				UPDATE cg_stake_stats_cst SET total_num_stakers = (total_num_stakers + 1);
---			END IF;
---		END IF;
---	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_eth_deposit_insert() RETURNS trigger AS  $$
 DECLARE
 	v_amount_per_token DECIMAL;
@@ -1175,7 +1157,7 @@ BEGIN
 	UPDATE cg_glob_stats 
 		SET 
 			num_direct_donations = (num_direct_donations - 1),
-			direct_donations = (direct_donations - OLD.amount);
+			irect_donations = (direct_donations - OLD.amount);
 	UPDATE cg_round_stats
 		SET
 			donations_round_total = (donations_round_total - OLD.amount),
