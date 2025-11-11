@@ -401,6 +401,10 @@ func reload_database_variables_goroutine() {
 		time.Sleep(CONTRACT_VARIABLES_REFRESH_TIME * time.Second)
 	}
 }
+func cosmic_game_api_docs(c *gin.Context) {
+	// Static API documentation page - no data needed
+	c.HTML(http.StatusOK, "cg_api_docs.html", gin.H{})
+}
 func cosmic_game_index_page(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {

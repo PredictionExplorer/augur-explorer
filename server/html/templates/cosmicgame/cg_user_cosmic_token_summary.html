@@ -77,21 +77,17 @@
 			</div>
 		</div>
 
-		<!-- Spending -->
+		<!-- Spending & Net Flow -->
 		<div class="section-card">
-			<div class="section-header">CST Spending</div>
+			<div class="section-header">CST Spending & Net Flow</div>
 			<div class="info-grid">
 				<div class="info-item">
 					<div class="info-label">Consumed in Bids (Burned)</div>
 					<div class="info-value">{{printf "%.4f" .Summary.ConsumedInBidsEth}} CST</div>
 				</div>
 				<div class="info-item">
-					<div class="info-label">Transferred Out</div>
-					<div class="info-value">{{printf "%.4f" .Summary.TransferredOutEth}} CST</div>
-				</div>
-				<div class="info-item">
-					<div class="info-label">Transferred In</div>
-					<div class="info-value">{{printf "%.4f" .Summary.TransferredInEth}} CST</div>
+					<div class="info-label">Net CST Flow</div>
+					<div class="info-value">{{printf "%.4f" .Summary.NetCSTFlowEth}} CST</div>
 				</div>
 			</div>
 		</div>
@@ -102,7 +98,15 @@
 			<div class="stats-dashboard">
 				<div class="stat-card">
 					<div class="stat-label">Total Transfers</div>
-					<div class="stat-value">{{.Summary.TotalTransfers}}</div>
+					<div class="stat-value">{{.Summary.NumTransfers}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Mints</div>
+					<div class="stat-value">{{.Summary.NumMints}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Burns</div>
+					<div class="stat-value">{{.Summary.NumBurns}}</div>
 				</div>
 				<div class="stat-card">
 					<div class="stat-label">

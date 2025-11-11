@@ -84,12 +84,12 @@
 						<td class="center">{{.Stake.RecordId}}</td>
 						<td class="center">{{.Stake.ActionId}}</td>
 						<td class="center">{{.Stake.TokenId}}</td>
-						<td>{{.Stake.DateTime}}</td>
+						<td>{{.Stake.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .RewardEth}}</td>
 						<td class="center">
 							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
 						</td>
-						<td>{{.Unstake.DateTime}}</td>
+						<td>{{.Unstake.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .Unstake.RewardAmountEth}}</td>
 					</tr>
 					{{- end}}

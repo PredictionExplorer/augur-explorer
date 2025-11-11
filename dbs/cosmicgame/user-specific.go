@@ -405,8 +405,6 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_chrono_warrior_by_user(winner_ai
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"WHERE p.winner_aid = $1 " +
 			"ORDER BY p.id DESC"
-	fmt.Printf("q = %v\n",query)
-	fmt.Printf("user_aid= %v\n",winner_aid)
 	rows,err := sw.S.Db().Query(query,winner_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1253,7 +1251,6 @@ func (sw *SQLStorageWrapper) Get_erc20_donated_prizes_erc20_by_winner(user_aid i
 				"LEFT JOIN address wa ON wa.address_id = claim.winner_aid "+
 			"WHERE p.winner_aid = $1 " +
 			"ORDER BY dt20.token_aid"
-//	fmt.Printf("q=%v\nuser_aid=%v\n",query,user_aid)
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

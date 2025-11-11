@@ -21,6 +21,11 @@
 			</div>
 			<h1>🎮 CosmicGame Dashboard</h1>
 			<div class="subtitle">Real-time blockchain gaming statistics and management</div>
+			<div style="margin-top: 1em;">
+				<a href="/black/cosmicgame/api_docs" style="display: inline-block; padding: 0.5em 1.5em; background: #1a1a1a; border: 2px solid goldenrod; border-radius: 8px; color: goldenrod; text-decoration: none; font-weight: bold; transition: all 0.3s ease;">
+					📚 API Documentation
+				</a>
+			</div>
 		</div>
 
 		<!-- Current Round Statistics -->
@@ -29,7 +34,7 @@
 			<div class="stats-dashboard">
 				<div class="stat-card">
 					<div class="stat-label">Current Bid Price</div>
-					<div class="stat-value">{{printf "%.6f" .EthPriceEth}}</div>
+					<div class="stat-value">{{printf "%.6f" .BidPriceEth}}</div>
 					<div class="stat-sublabel">ETH</div>
 				</div>
 				<div class="stat-card">

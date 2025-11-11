@@ -40,11 +40,11 @@
 				<div class="stat-sublabel">ETH</div>
 			</div>
 			
-			<div class="stat-card">
-				<div class="stat-label">Max Win</div>
-				<div class="stat-value">{{.UserInfo.MaxWinAmount}}</div>
-				<div class="stat-sublabel">Prize Winnings</div>
-			</div>
+		<div class="stat-card">
+			<div class="stat-label">Max Win</div>
+			<div class="stat-value">{{printf "%.6f" .UserInfo.MaxWinAmount}}</div>
+			<div class="stat-sublabel">Prize Winnings</div>
+		</div>
 			
 			<div class="stat-card">
 				<div class="stat-label">CS Tokens</div>

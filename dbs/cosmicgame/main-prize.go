@@ -58,7 +58,6 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			"ORDER BY p.id DESC "+
 			"OFFSET $1 LIMIT $2"
 
-			fmt.Printf("query - %v\n",query)
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

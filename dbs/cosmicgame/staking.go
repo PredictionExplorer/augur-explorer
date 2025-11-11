@@ -9,8 +9,8 @@ import (
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
 
-// buildStakeActionQuery returns unified query for stake/unstake info
-func (sw *SQLStorageWrapper) buildStakeActionQuery(stakeTable, unstakeTable string) string {
+// buildStakeActionQueryCST returns unified query for CST stake/unstake info (with reward columns)
+func (sw *SQLStorageWrapper) buildStakeActionQueryCST(stakeTable, unstakeTable string) string {
 	return "SELECT " +
 		"st.id," +
 		"st.evtlog_id," +
@@ -51,8 +51,46 @@ func (sw *SQLStorageWrapper) buildStakeActionQuery(stakeTable, unstakeTable stri
 		"WHERE st.action_id=$1"
 }
 
+// buildStakeActionQueryRWalk returns unified query for RWalk stake/unstake info (without reward columns)
+func (sw *SQLStorageWrapper) buildStakeActionQueryRWalk(stakeTable, unstakeTable string) string {
+	return "SELECT " +
+		"st.id," +
+		"st.evtlog_id," +
+		"st.block_num," +
+		"ts.id," +
+		"ts.tx_hash," +
+		"EXTRACT(EPOCH FROM st.time_stamp)::BIGINT," +
+		"st.time_stamp," +
+		"st.action_id," +
+		"st.token_id," +
+		"st.round_num," +
+		"st.num_staked_nfts," +
+		"st.staker_aid," +
+		"sa.addr," +
+		"u.id," +
+		"u.evtlog_id," +
+		"u.block_num," +
+		"tu.id," +
+		"tu.tx_hash," +
+		"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT," +
+		"u.time_stamp," +
+		"u.action_id," +
+		"u.token_id, " +
+		"u.round_num," +
+		"u.num_staked_nfts, " +
+		"u.staker_aid, " +
+		"ua.addr " +
+		"FROM " + sw.S.SchemaName() + "." + stakeTable + " st " +
+		"LEFT JOIN " + sw.S.SchemaName() + ".transaction ts ON ts.id=st.tx_id " +
+		"LEFT JOIN " + sw.S.SchemaName() + ".address sa ON st.staker_aid=sa.address_id " +
+		"LEFT JOIN " + sw.S.SchemaName() + "." + unstakeTable + " u ON st.action_id=u.action_id " +
+		"LEFT JOIN " + sw.S.SchemaName() + ".transaction tu ON tu.id=u.tx_id " +
+		"LEFT JOIN " + sw.S.SchemaName() + ".address ua ON u.staker_aid=ua.address_id " +
+		"WHERE st.action_id=$1"
+}
+
 func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.CGStakeUnstakeCombined) {
-	query := sw.buildStakeActionQuery("cg_nft_staked_cst", "cg_nft_unstaked_cst")
+	query := sw.buildStakeActionQueryCST("cg_nft_staked_cst", "cg_nft_unstaked_cst")
 	row := sw.S.Db().QueryRow(query, action_id)
 	
 	var rec p.CGStakeUnstakeCombined
@@ -101,14 +139,13 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 }
 
 func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,p.CGStakeUnstakeCombined) {
-	query := sw.buildStakeActionQuery("cg_nft_staked_rwalk", "cg_nft_unstaked_rwalk")
+	query := sw.buildStakeActionQueryRWalk("cg_nft_staked_rwalk", "cg_nft_unstaked_rwalk")
 	row := sw.S.Db().QueryRow(query, action_id)
 	
 	var rec p.CGStakeUnstakeCombined
 	var null_record_id, null_evtlog_id, null_tx_id, null_unstake_ts, null_action_id sql.NullInt64
 	var null_block_num, null_token_id, null_round_num, null_num_staked_nfts, null_staker_aid sql.NullInt64
-	var null_unstake_date, null_tx_hash, null_staker_addr, null_reward, null_reward_per_tok sql.NullString
-	var null_reward_eth, null_reward_per_tok_eth sql.NullFloat64
+	var null_unstake_date, null_tx_hash, null_staker_addr sql.NullString
 	
 	err := row.Scan(
 		&rec.Stake.RecordId, &rec.Stake.Tx.EvtLogId, &rec.Stake.Tx.BlockNum, &rec.Stake.Tx.TxId, &rec.Stake.Tx.TxHash,
@@ -116,8 +153,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 		&rec.Stake.RoundNum, &rec.Stake.NumStakedNFTs, &rec.Stake.StakerAid, &rec.Stake.StakerAddr,
 		&null_record_id, &null_evtlog_id, &null_block_num, &null_tx_id, &null_tx_hash,
 		&null_unstake_ts, &null_unstake_date, &null_action_id, &null_token_id,
-		&null_round_num, &null_num_staked_nfts, &null_reward, &null_reward_eth,
-		&null_reward_per_tok, &null_reward_per_tok_eth, &null_staker_aid, &null_staker_addr,
+		&null_round_num, &null_num_staked_nfts, &null_staker_aid, &null_staker_addr,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -137,12 +173,9 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
 	if null_round_num.Valid { rec.Unstake.RoundNum = null_round_num.Int64 }
 	if null_num_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
-	if null_reward.Valid { rec.Unstake.RewardAmount = null_reward.String }
-	if null_reward_eth.Valid { rec.Unstake.RewardAmountEth = null_reward_eth.Float64 }
-	if null_reward_per_tok.Valid { rec.Unstake.RewardPerToken = null_reward_per_tok.String }
-	if null_reward_per_tok_eth.Valid { rec.Unstake.RewardPerTokenEth = null_reward_per_tok_eth.Float64 }
 	if null_staker_aid.Valid { rec.Unstake.StakerAid = null_staker_aid.Int64 }
 	if null_staker_addr.Valid { rec.Unstake.StakerAddr = null_staker_addr.String }
+	// Note: RWalk unstake table doesn't have reward columns, so we leave them empty
 	return true, rec
 }
 func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) []p.CGRewardToClaim {
@@ -609,7 +642,6 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards() []p.CGStakingRewardGlo
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		fmt.Printf("count_not_collected=%v, count_total=%v , rec.PendingToCollectEth=%v rec.AlreadyCollectedEth = %v deposit amount=%v\n",count_not_collected,count_total,rec.PendingToCollectEth,rec.AlreadyCollectedEth,rec.TotalDepositAmountEth)
 		if count_not_collected == 0 {
 			rec.FullyClaimed = true
 		} else {
@@ -1014,8 +1046,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_by_user_by_deposit_rewards(user_aid
 			"WHERE str.staker_aid=$1 "+
 			"ORDER BY d.id ASC,sa_action_id DESC "		// Note: sort order is ASC because we are accumularting the sum in golang (between rows)
 
-	fmt.Printf("user_id = %v\n",user_aid)
-	fmt.Printf("query = %v\n",query)
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
