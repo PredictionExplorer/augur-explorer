@@ -269,6 +269,7 @@ func main() {
 	go show_disk_usage_statistics()
 	go show_application_layer_last_blocks()
 	go check_web_api()
+	go monitor_rwalk_thumb_images()
 
 //	check_randomwalk_resource_availability()
 //	check_cosmicgame_resource_availability()
