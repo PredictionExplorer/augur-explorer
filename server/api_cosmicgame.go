@@ -1240,7 +1240,8 @@ func api_cosmic_game_time_until_prize(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
-	const time_until_prize_sig string = "0x8b1329e0"
+	// Function: getDurationUntilMainPrize() - returns time until prize can be claimed
+	const time_until_prize_sig string = "0x36750d2c"
 	var raw json.RawMessage
 	args := map[string]interface{}{
 		"to": cosmic_game_addr.String(),
