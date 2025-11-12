@@ -23,19 +23,16 @@ func print_df_for_server(status *DfStatus,wg *sync.WaitGroup) {
 	if err != nil {
 		status.ErrStr = err.Error()
 		update_global_errors(status.ErrStr)
+		wg.Done()
+		return
 	}
+	termboxMutex.Lock()
+	defer termboxMutex.Unlock()
 	printAtPosition(status.X+3,status.Y,status.Title,termbox.ColorYellow,termbox.ColorDefault)
 	lines := strings.Split(string(output),"\n")
 	for i:=1; i<(len(lines)-1);i++ {
 		line:=lines[i];
-		if len(status.ErrStr) > 0 {
-			update_global_errors(status.ErrStr)
-		}
 		printAtPosition(status.X,status.Y+i,line,termbox.ColorWhite,termbox.ColorDefault)
-		if len(status.ErrStr) > 0 {
-			update_global_errors(status.ErrStr)
-			break
-		}
 	}
 	termbox.Flush()
 	wg.Done()

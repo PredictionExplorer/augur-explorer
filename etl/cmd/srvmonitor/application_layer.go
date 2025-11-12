@@ -83,6 +83,8 @@ func print_application_layer_status_line(status *AppLayerStatus) {
 	printAtPosition(status.X+45,status.Y,official_diff,termbox.ColorBlue,termbox.ColorDefault)
 }
 func print_current_application_layer_status() {
+	termboxMutex.Lock()
+	defer termboxMutex.Unlock()
 	printAtPosition(1, 24, "----------- Last Block Numbers in Postgres ----------",termbox.ColorWhite,termbox.ColorDefault)
 	print_application_layer_status_line(&cosmic_app1)
 	print_application_layer_status_line(&cosmic_app2)

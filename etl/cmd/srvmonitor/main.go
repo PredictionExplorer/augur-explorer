@@ -7,6 +7,8 @@ package main
 import (
 //	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"fmt"
 	"log"
 	"time"
@@ -97,10 +99,14 @@ var (
 
 	globErr1								string
 	globErr2								string
+	
+	termboxMutex							sync.Mutex	// Protect all termbox operations
 )
 func update_global_errors(new_error string) {
 	if len(new_error) == 0 { return }
 	Info.Printf("%v\n",new_error)
+	termboxMutex.Lock()
+	defer termboxMutex.Unlock()
 	if len(globErr1) == 0 { 
 		globErr1 = new_error
 		printAtPosition(1,35,fmt.Sprintf("%v",globErr1),termbox.ColorYellow,termbox.ColorDefault)
@@ -216,13 +222,15 @@ func show_application_layer_last_blocks() {
 	}
 }
 func main() {
-	/*
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		os.Exit(1)
-    }() */
+	// Setup panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC: %v\n", r)
+			termbox.Close()
+			os.Exit(1)
+		}
+	}()
+	
 	logfile, err := os.OpenFile("/tmp/srvmonitor.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err!=nil {
 		fmt.Printf("Error: %v\n",err)
@@ -231,13 +239,30 @@ func main() {
 	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
 	defer os.Rename("/tmp/srvmonitor.log","/tmp/srvmonitor-old.log")
 
+	// Setup signal handlers - specifically catch SIGWINCH (window resize)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGWINCH)
+	go func() {
+		for sig := range sigChan {
+			switch sig {
+			case syscall.SIGWINCH:
+				// Window resize signal - termbox will handle via EventResize
+				// Nothing to do here
+			case os.Interrupt, syscall.SIGTERM:
+				Info.Printf("Termination signal received, exiting\n")
+				termbox.Close()
+				os.Exit(0)
+			}
+		}
+	}()
+
 	err = termbox.Init()
 	if err != nil {
 		log.Fatalf("Failed to initialize termbox: %v", err)
 	}
 	defer termbox.Close()
 	
-	fmt.Printf("\n\n\n\n\n\n")
+	Info.Printf("Application started\n")
 
 	go check_rpc_services()
 	go check_layer1()
@@ -248,5 +273,36 @@ func main() {
 //	check_randomwalk_resource_availability()
 //	check_cosmicgame_resource_availability()
 //	send_alarm_slack(SEND_ALARMS_INTERVAL,"sample message from golang")	Slack alarms is a todo
-	termbox.PollEvent()
+
+	// Event loop to keep the application running
+	for {
+		ev := termbox.PollEvent()
+		switch ev.Type {
+		case termbox.EventKey:
+			// Exit on Ctrl+C or 'q' key
+			if ev.Key == termbox.KeyCtrlC || ev.Ch == 'q' {
+				Info.Printf("Exit key pressed\n")
+				return
+			}
+		case termbox.EventResize:
+			// Handle window resize by clearing and letting goroutines redraw
+			termboxMutex.Lock()
+			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+			// Show a temporary "reloading" message in the center
+			w, h := termbox.Size()
+			msg := "Refreshing display..."
+			x := (w - len(msg)) / 2
+			y := h / 2
+			if x < 0 { x = 0 }
+			if y < 0 { y = 0 }
+			printAtPosition(x, y, msg, termbox.ColorYellow, termbox.ColorDefault)
+			termbox.Flush()
+			termboxMutex.Unlock()
+		case termbox.EventError:
+			// Log error but continue
+			Info.Printf("Termbox error event: %v\n", ev.Err)
+		case termbox.EventInterrupt:
+			Info.Printf("Interrupt event received\n")
+		}
+	}
 }

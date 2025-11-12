@@ -47,6 +47,8 @@ func print_web_api_status_line(status *WebApiStatus) {
 	}
 }
 func print_current_web_api_status() {
+	termboxMutex.Lock()
+	defer termboxMutex.Unlock()
 	printAtPosition(0, 30 , "--------------------- Web API ------------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_web_api_status_line(&web1)
 	print_web_api_status_line(&web2)

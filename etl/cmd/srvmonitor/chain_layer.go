@@ -32,6 +32,8 @@ func print_layer1_status_line(status *Layer1Status) {
 	}
 }
 func print_current_layer1_status() {
+	termboxMutex.Lock()
+	defer termboxMutex.Unlock()
 	printAtPosition(0, 11, "--------------------- SQL DB --------------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_layer1_status_line(&db1)
 	print_layer1_status_line(&db2)

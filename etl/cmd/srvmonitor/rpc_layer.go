@@ -134,6 +134,8 @@ func print_rpc_status_line(status *RPCStatus) {
 	printAtPosition(status.X+80,status.Y,official_diff,termbox.ColorBlue,termbox.ColorDefault)
 }
 func print_current_rpc_status() {
+	termboxMutex.Lock()
+	defer termboxMutex.Unlock()
 	printAtPosition(0, 0, "--------------------- RPC Nodes ------------------------------",termbox.ColorWhite,termbox.ColorDefault)
 	print_rpc_status_line(&rpc0)
 	print_rpc_status_line(&rpc1)
