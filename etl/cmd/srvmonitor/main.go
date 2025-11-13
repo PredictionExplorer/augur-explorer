@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	
 	"github.com/nsf/termbox-go"
@@ -27,13 +28,20 @@ func main() {
 	}()
 	
 	// Setup logging
-	logfile, err := os.OpenFile("/tmp/srvmonitor.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	tmpDir := os.Getenv("TMPDIR")
+	if tmpDir == "" {
+		tmpDir = "/tmp"
+	}
+	logFilePath := filepath.Join(tmpDir, "srvmonitor.log")
+	oldLogFilePath := filepath.Join(tmpDir, "srvmonitor-old.log")
+	
+	logfile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Printf("Error opening log file: %v\n", err)
 		os.Exit(1)
 	}
 	logger := log.New(logfile, "INFO: ", log.Ltime|log.Lshortfile)
-	defer os.Rename("/tmp/srvmonitor.log", "/tmp/srvmonitor-old.log")
+	defer os.Rename(logFilePath, oldLogFilePath)
 	
 	logger.Printf("=== Server Monitor Starting ===")
 	
