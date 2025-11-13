@@ -1157,7 +1157,7 @@ BEGIN
 	UPDATE cg_glob_stats 
 		SET 
 			num_direct_donations = (num_direct_donations - 1),
-			irect_donations = (direct_donations - OLD.amount);
+			direct_donations = (direct_donations - OLD.amount);
 	UPDATE cg_round_stats
 		SET
 			donations_round_total = (donations_round_total - OLD.amount),
