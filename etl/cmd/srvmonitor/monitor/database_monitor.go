@@ -142,24 +142,24 @@ func (m *DatabaseMonitor) display(disp display.Display) {
 	for _, status := range m.statuses {
 		y := status.Y
 		
-		// Name
-		disp.DrawText(types.Position{X: status.X, Y: y}, status.Config.Name, types.ColorWhite, types.ColorDefault)
-		
-		// Host
-		disp.DrawText(types.Position{X: status.X + 35, Y: y}, status.Config.Host, types.ColorWhite, types.ColorDefault)
-		
-		// Status
+		// Status (first column)
 		aliveStr := "Alive"
 		color := types.ColorGreen
 		if !status.Alive {
 			aliveStr = "DOWN "
 			color = types.ColorRed
 		}
-		disp.DrawText(types.Position{X: status.X + 60, Y: y}, aliveStr, color, types.ColorDefault)
+		disp.DrawText(types.Position{X: status.X, Y: y}, aliveStr, color, types.ColorDefault)
 		
-		// Block number
-		disp.DrawText(types.Position{X: status.X + 70, Y: y}, fmt.Sprintf("%v", status.LastBlockNum),
+		// Block number (second column)
+		disp.DrawText(types.Position{X: status.X + 10, Y: y}, fmt.Sprintf("%v", status.LastBlockNum),
 			types.ColorBlue, types.ColorDefault)
+		
+		// Name (third column - shifted right)
+		disp.DrawText(types.Position{X: status.X + 20, Y: y}, status.Config.Name, types.ColorWhite, types.ColorDefault)
+		
+		// Host (fourth column - shifted right)
+		disp.DrawText(types.Position{X: status.X + 55, Y: y}, status.Config.Host, types.ColorWhite, types.ColorDefault)
 	}
 	
 	disp.Flush()

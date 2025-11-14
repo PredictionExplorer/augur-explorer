@@ -173,19 +173,19 @@ func (m *ApplicationMonitor) display(disp display.Display) {
 	for _, status := range m.apps {
 		y := status.Y
 		
-		// Title
-		disp.DrawText(types.Position{X: status.X, Y: y}, status.Config.Name, types.ColorWhite, types.ColorDefault)
-		
-		// Block number
-		disp.DrawText(types.Position{X: status.X + 35, Y: y}, fmt.Sprintf("%9d", status.LastBlockNum),
+		// Block number (first column)
+		disp.DrawText(types.Position{X: status.X, Y: y}, fmt.Sprintf("%9d", status.LastBlockNum),
 			types.ColorBlue, types.ColorDefault)
 		
-		// Official lag
+		// Official lag (second column)
 		officialDiff := "------"
 		if status.OfficialLagDiff != math.MaxInt64 {
 			officialDiff = fmt.Sprintf("%6v", status.OfficialLagDiff)
 		}
-		disp.DrawText(types.Position{X: status.X + 45, Y: y}, officialDiff, types.ColorBlue, types.ColorDefault)
+		disp.DrawText(types.Position{X: status.X + 10, Y: y}, officialDiff, types.ColorBlue, types.ColorDefault)
+		
+		// Title (third column - shifted right)
+		disp.DrawText(types.Position{X: status.X + 20, Y: y}, status.Config.Name, types.ColorWhite, types.ColorDefault)
 	}
 	
 	disp.Flush()

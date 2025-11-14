@@ -10,20 +10,28 @@ import (
 
 // Manager coordinates all monitors
 type Manager struct {
-	monitors   []Monitor
-	display    display.Display
-	errorChan  chan string
-	globalErrs [2]string
-	logger     *log.Logger
+	monitors     []Monitor
+	display      display.Display
+	errorChan    chan string
+	globalErrs   [2]string
+	logger       *log.Logger
+	alarmTracker *AlarmTracker
 }
 
 // NewManager creates a new monitor manager
-func NewManager(display display.Display, logger *log.Logger) *Manager {
+func NewManager(display display.Display, logger *log.Logger, mobileNotifEnabled bool) *Manager {
+	alarmTracker := NewAlarmTracker(mobileNotifEnabled, logger)
+	if mobileNotifEnabled {
+		alarmTracker.StartCleanupRoutine()
+		logger.Printf("Mobile notifications enabled")
+	}
+	
 	return &Manager{
-		monitors:  make([]Monitor, 0),
-		display:   display,
-		errorChan: make(chan string, 100),
-		logger:    logger,
+		monitors:     make([]Monitor, 0),
+		display:      display,
+		errorChan:    make(chan string, 100),
+		logger:       logger,
+		alarmTracker: alarmTracker,
 	}
 }
 
@@ -56,6 +64,9 @@ func (m *Manager) handleErrors(ctx context.Context) {
 			}
 			
 			m.logger.Printf("Monitor error: %v", err)
+			
+			// Record alarm for mobile notification tracking
+			m.alarmTracker.RecordAlarm(err)
 			
 			// Update global error display
 			if m.globalErrs[0] == "" {

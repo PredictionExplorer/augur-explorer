@@ -117,21 +117,21 @@ func (m *WebAPIMonitor) display(disp display.Display) {
 	for _, status := range m.statuses {
 		y := status.Y
 		
-		// Title
-		disp.DrawText(types.Position{X: status.X, Y: y}, status.Config.Title, types.ColorWhite, types.ColorDefault)
-		
-		// Host:Port
-		hostPort := status.Config.Host + ":" + status.Config.Port
-		disp.DrawText(types.Position{X: status.X + 25, Y: y}, hostPort, types.ColorWhite, types.ColorDefault)
-		
-		// Status
+		// Status (first column)
 		aliveStr := "Alive"
 		color := types.ColorGreen
 		if !status.Alive {
 			aliveStr = "DOWN "
 			color = types.ColorRed
 		}
-		disp.DrawText(types.Position{X: status.X + 60, Y: y}, aliveStr, color, types.ColorDefault)
+		disp.DrawText(types.Position{X: status.X, Y: y}, aliveStr, color, types.ColorDefault)
+		
+		// Title (second column - shifted right)
+		disp.DrawText(types.Position{X: status.X + 10, Y: y}, status.Config.Title, types.ColorWhite, types.ColorDefault)
+		
+		// Host:Port (third column - shifted right)
+		hostPort := status.Config.Host + ":" + status.Config.Port
+		disp.DrawText(types.Position{X: status.X + 35, Y: y}, hostPort, types.ColorWhite, types.ColorDefault)
 	}
 	
 	disp.Flush()

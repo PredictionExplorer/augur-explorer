@@ -59,6 +59,7 @@ func main() {
 	logger.Printf("  - %d Application databases", len(cfg.ApplicationDBs))
 	logger.Printf("  - %d Web APIs", len(cfg.WebAPIs))
 	logger.Printf("  - %d Disk monitors", len(cfg.DiskMonitors))
+	logger.Printf("  - Mobile notifications: %v", cfg.MobileNotif)
 	
 	// Initialize display
 	disp := display.NewTermboxDisplay()
@@ -75,7 +76,7 @@ func main() {
 	sharedRPCState := monitor.NewSharedRPCState()
 	
 	// Create monitor manager
-	mgr := monitor.NewManager(disp, logger)
+	mgr := monitor.NewManager(disp, logger, cfg.MobileNotif)
 	
 	// Register RPC monitor
 	officialNames := map[string]string{
@@ -111,7 +112,7 @@ func main() {
 	
 	// Register Disk monitor
 	if len(cfg.DiskMonitors) > 0 {
-		diskMon := monitor.NewDiskMonitor(cfg.DiskMonitors)
+		diskMon := monitor.NewDiskMonitor(cfg.DiskMonitors, logger)
 		mgr.Register(diskMon)
 		logger.Printf("Registered: %s", diskMon.Name())
 	}
@@ -175,6 +176,9 @@ func main() {
 				y = 0
 			}
 			disp.DrawText(types.Position{X: x, Y: y}, msg, types.ColorYellow, types.ColorDefault)
+			disp.Flush()
+			// Clear the temporary message immediately so monitors can redraw cleanly
+			disp.Clear()
 			disp.Flush()
 		case termbox.EventError:
 			logger.Printf("Termbox error event: %v", ev.Err)

@@ -215,26 +215,20 @@ func (m *RPCMonitor) display(disp display.Display) {
 	for _, status := range m.statuses {
 		y := status.Y
 		
-		// Name
-		disp.DrawText(types.Position{X: status.X, Y: y}, status.Config.Name, types.ColorWhite, types.ColorDefault)
-		
-		// URL
-		disp.DrawText(types.Position{X: status.X + 25, Y: y}, status.Config.URL, types.ColorWhite, types.ColorDefault)
-		
-		// Status
+		// Status (first column)
 		aliveStr := "Alive"
 		color := types.ColorGreen
 		if !status.Alive {
 			aliveStr = "DOWN "
 			color = types.ColorRed
 		}
-		disp.DrawText(types.Position{X: status.X + 60, Y: y}, aliveStr, color, types.ColorDefault)
+		disp.DrawText(types.Position{X: status.X, Y: y}, aliveStr, color, types.ColorDefault)
 		
-		// Block number
-		disp.DrawText(types.Position{X: status.X + 70, Y: y}, fmt.Sprintf("%v", status.LastBlockNum),
+		// Block number (second column)
+		disp.DrawText(types.Position{X: status.X + 10, Y: y}, fmt.Sprintf("%v", status.LastBlockNum),
 			types.ColorBlue, types.ColorDefault)
 		
-		// Official lag
+		// Official lag (third column)
 		officialDiff := "------"
 		if status.OfficialLagDiff != math.MaxInt64 {
 			officialDiff = fmt.Sprintf("%6v", status.OfficialLagDiff)
@@ -242,7 +236,13 @@ func (m *RPCMonitor) display(disp display.Display) {
 		if status.Config.IsOfficial {
 			officialDiff = fmt.Sprintf("%6s", "N/A")
 		}
-		disp.DrawText(types.Position{X: status.X + 80, Y: y}, officialDiff, types.ColorBlue, types.ColorDefault)
+		disp.DrawText(types.Position{X: status.X + 20, Y: y}, officialDiff, types.ColorBlue, types.ColorDefault)
+		
+		// Name (fourth column - shifted right)
+		disp.DrawText(types.Position{X: status.X + 30, Y: y}, status.Config.Name, types.ColorWhite, types.ColorDefault)
+		
+		// URL (fifth column - shifted right)
+		disp.DrawText(types.Position{X: status.X + 55, Y: y}, status.Config.URL, types.ColorWhite, types.ColorDefault)
 	}
 	
 	disp.Flush()

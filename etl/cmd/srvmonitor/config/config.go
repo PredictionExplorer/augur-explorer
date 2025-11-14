@@ -39,6 +39,9 @@ type Config struct {
 	ImageCheckInterval     int
 	RPCBlockWait           int
 	DBBlockWait            int
+	
+	// Mobile Notifications
+	MobileNotif bool
 }
 
 // LoadFromEnv loads configuration from environment variables
@@ -165,6 +168,10 @@ func LoadFromEnv() (*Config, error) {
 		ContractAddr: os.Getenv("RWALK_CONTRACT_ADDR"),
 		RPCURL:       os.Getenv("RPC1_URL"),
 	}
+	
+	// Load Mobile Notification setting
+	mobileNotif := strings.ToLower(os.Getenv("MOBILE_NOTIF"))
+	cfg.MobileNotif = (mobileNotif == "yes" || mobileNotif == "true" || mobileNotif == "1")
 	
 	// Validate critical configuration
 	if err := cfg.Validate(); err != nil {
