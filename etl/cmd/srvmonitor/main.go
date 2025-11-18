@@ -129,7 +129,7 @@ func main() {
 	defer cancel()
 	
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGWINCH)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGWINCH, syscall.SIGUSR1)
 	
 	go func() {
 		for sig := range sigChan {
@@ -137,6 +137,10 @@ func main() {
 			case syscall.SIGWINCH:
 				// Window resize - termbox will handle via EventResize
 				logger.Printf("Window resize signal received")
+			case syscall.SIGUSR1:
+				// Test notification request
+				logger.Printf("SIGUSR1 signal received, sending test notification")
+				mgr.SendTestNotification()
 			case os.Interrupt, syscall.SIGTERM:
 				logger.Printf("Termination signal received, exiting")
 				cancel()

@@ -268,15 +268,15 @@ func (m *ImageMonitor) display(disp display.Display) {
 		disp.DrawText(types.Position{X: x, Y: y + 1}, tokenStr, types.ColorWhite, types.ColorDefault)
 		x += len(tokenStr)
 		
-		// Status
-		statusStr := "Ok"
+		// Status (padded to 4 chars to fully overwrite previous text)
+		statusStr := "Ok  "
 		statusColor := types.ColorGreen
 		if !m.data.LatestTokens[i].IsPresent {
 			statusStr = "Fail"
 			statusColor = types.ColorRed
 		}
 		disp.DrawText(types.Position{X: x, Y: y + 1}, statusStr, statusColor, types.ColorDefault)
-		x += len(statusStr) + 3
+		x += 4 + 3  // Always use 4 chars for status + 3 spaces
 	}
 	
 	// Random token
@@ -285,7 +285,8 @@ func (m *ImageMonitor) display(disp display.Display) {
 		disp.DrawText(types.Position{X: x, Y: y + 1}, randomStr, types.ColorCyan, types.ColorDefault)
 		x += len(randomStr)
 		
-		statusStr := "Ok"
+		// Status (padded to 4 chars to fully overwrite previous text)
+		statusStr := "Ok  "
 		statusColor := types.ColorGreen
 		if !m.data.RandomToken.IsPresent {
 			statusStr = "Fail"
@@ -307,7 +308,8 @@ func (m *ImageMonitor) display(disp display.Display) {
 	disp.DrawText(types.Position{X: x2, Y: y + 2}, "Match: ", types.ColorWhite, types.ColorDefault)
 	x2 += 7
 	
-	matchStr := "Ok"
+	// Status (padded to 4 chars to fully overwrite previous text)
+	matchStr := "Ok  "
 	matchColor := types.ColorGreen
 	if !m.data.TokensMatch {
 		matchStr = "Fail"
@@ -317,5 +319,7 @@ func (m *ImageMonitor) display(disp display.Display) {
 	
 	disp.Flush()
 }
+
+
 
 

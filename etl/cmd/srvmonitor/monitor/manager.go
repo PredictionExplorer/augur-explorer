@@ -82,4 +82,14 @@ func (m *Manager) handleErrors(ctx context.Context) {
 	}
 }
 
+// SendTestNotification sends a test notification (for SIGUSR1 signal handler)
+func (m *Manager) SendTestNotification() {
+	m.logger.Printf("SIGUSR1 received: Sending test notification")
+	if m.alarmTracker != nil {
+		m.alarmTracker.SendTestNotification("TEST: Server Monitor notification test (triggered by SIGUSR1)")
+	} else {
+		m.logger.Printf("Cannot send test notification: alarm tracker not initialized")
+	}
+}
+
 
