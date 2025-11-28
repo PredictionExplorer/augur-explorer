@@ -3,6 +3,7 @@ package main
 import (
 	//"fmt"
 	//"errors"
+	"strings"
 	"encoding/json"
 	"context"
 	"math/big"
@@ -17,11 +18,29 @@ type rpcTransaction struct {
 	tx *types.Transaction
 	txExtraInfo
 }
-func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
-	if err := json.Unmarshal(msg, &tx.tx); err != nil {
+func (rt *rpcTransaction) UnmarshalJSON(msg []byte) error {
+	// First decode the extra info (hash, from, etc.)
+	if err := json.Unmarshal(msg, &rt.txExtraInfo); err != nil {
 		return err
 	}
-	return json.Unmarshal(msg, &tx.txExtraInfo)
+
+	// Then try to decode as a go-ethereum transaction
+	var inner types.Transaction
+	if err := json.Unmarshal(msg, &inner); err != nil {
+		// This is where type "0x6a" causes "transaction type not supported"
+		if strings.Contains(err.Error(), "transaction type not supported") {
+			// Log so it's not silent
+			Info.Printf("rpc: unsupported tx type in block tx_hash=%v: %v\n",
+				rt.Hash, err)
+
+			// Leave rt.tx == nil as a signal: "unsupported/system tx"
+			return nil
+		}
+		return err
+	}
+
+	rt.tx = &inner
+	return nil
 }
 type txExtraInfo struct {
 	BlockNumber *string         `json:"blockNumber,omitempty"`
@@ -81,6 +100,16 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 		agtx := new(AugurTx)
 		agtx.BlockNum = bnum
 		agtx.TxHash = tx.txExtraInfo.Hash.String()
+		// Unsupported/system tx: tx.tx == nil
+		if tx.tx == nil {
+			agtx.From = "0x0000000000000000000000000000000000000000"
+			agtx.To = "0x0000000000000000000000000000000000000000"
+			agtx.Value = "0"
+			agtx.Input = nil
+			agtx.GasPrice = "0"
+			txs[i] = agtx
+			continue
+		}
 		agtx.From = tx.txExtraInfo.From.String()
 		if tx.tx.To() != nil {
 			agtx.To  = tx.tx.To().String()

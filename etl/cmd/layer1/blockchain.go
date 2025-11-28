@@ -39,12 +39,24 @@ func roll_back_blocks(diverging_block *types.Header) error {
 			total_blocks := block_num - my_block_num
 			if total_blocks < 0 { total_blocks = -total_blocks }
 			if total_blocks > MAX_BLOCKS_CHAIN_SPLIT {
+				// Huge split: instead of trying to walk all the way back in one go,
+				// just trim a fixed batch of blocks from the DB tip and exit with error.
+				lastBlockNum, exists := storage.Get_last_block_num()
+				if !exists {
+					return fmt.Errorf("Chainsplit fix: can't get last block num from storage")
+				}
+				rollbackTo := lastBlockNum - BATCH_ROLLBACK_SIZE
+				if rollbackTo < 0 {
+					rollbackTo = 0
+				}
 				Info.Printf(
-					"Chainsplit fix: Chain split is longer than reasonal length, aborting. " +
-					"(starting_block_num=%v, cur_block_num=%v",
-					starting_block_num,block_num,
+					"Chainsplit fix: Chain split is longer than reasonable length, "+
+					"rolling back last %v blocks (starting_block_num=%v, cur_block_num=%v)\n",
+					lastBlockNum-rollbackTo, starting_block_num, block_num,
 				)
-				return errors.New("Chain split max size overflow")
+				storage.Chainsplit_delete_blocks(rollbackTo)
+				storage.Set_last_block_num(rollbackTo)
+				return fmt.Errorf("Chainsplit fix: batch rollback to block %v", rollbackTo)
 			}
 			Info.Printf(
 				"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
@@ -61,9 +73,11 @@ func roll_back_blocks(diverging_block *types.Header) error {
 			))
 		} else {
 			Info.Printf(
-				"Chainsplit fix: block %v doesn't fit, block_hash=%v not found in my DB. Trying more...\n",
+				"Chainsplit fix: block %v doesn't fit, block_hash=%v not found in my DB. Going to delete it...\n",
 				block_num,block_hash,
 			)
+			storage.Chainsplit_delete_blocks(block_num - 1)
+			storage.Set_last_block_num(block_num - 1)
 		}
 		total_blocks := starting_block_num - block_num
 		if total_blocks < 0 { total_blocks = -total_blocks }//just an extra safety against any bug before
