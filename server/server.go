@@ -79,6 +79,11 @@ func connect_to_main_net(srv *AugurServer) {
 			eth_user,
 			eth_passwd,
 		)
+		Info.Printf("Main net database connection initialized (ETH_USERNAME=%v, ETH_HOST=%v, ETH_DATABASE=%v)\n",
+			eth_user, eth_host_port, eth_db_name)
+	} else {
+		Info.Printf("Main net database connection NOT configured. ETH_USERNAME environment variable is not set. Main net features will be unavailable.\n")
+		fmt.Printf("INFO: Main net database connection NOT configured (ETH_USERNAME not set). Main net features will be unavailable.\n")
 	}
 }
 func connect_to_amm(srv *AugurServer) {
@@ -87,7 +92,6 @@ func connect_to_amm(srv *AugurServer) {
 	amm_db_name := os.Getenv("AMM_DATABASE")
 	amm_host_port := os.Getenv("AMM_HOST")
 	if len(amm_user) > 0 {
-		fmt.Printf("Amm=%v\n",amm_user)
 		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"amm-db.log")
 		amm_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -105,6 +109,11 @@ func connect_to_amm(srv *AugurServer) {
 			amm_user,
 			amm_passwd,
 		)
+		Info.Printf("AMM/Matic database connection initialized (AMM_USERNAME=%v, AMM_HOST=%v, AMM_DATABASE=%v)\n",
+			amm_user, amm_host_port, amm_db_name)
+	} else {
+		Info.Printf("AMM/Matic database connection NOT configured. AMM_USERNAME environment variable is not set. Polymarket and AMM features will be unavailable.\n")
+		fmt.Printf("INFO: AMM/Matic database connection NOT configured (AMM_USERNAME not set). Polymarket and AMM features will be unavailable.\n")
 	}
 }
 func connect_to_arbitrum(srv *AugurServer ) {
@@ -131,6 +140,11 @@ func connect_to_arbitrum(srv *AugurServer ) {
 			arb_user,
 			arb_passwd,
 		)
+		Info.Printf("Arbitrum database connection initialized (ARB_USERNAME=%v, ARB_HOST=%v, ARB_DATABASE=%v)\n",
+			arb_user, arb_host_port, arb_db_name)
+	} else {
+		Info.Printf("Arbitrum database connection NOT configured. ARB_USERNAME environment variable is not set. Arbitrum features will be unavailable.\n")
+		fmt.Printf("INFO: Arbitrum database connection NOT configured (ARB_USERNAME not set). Arbitrum features will be unavailable.\n")
 	}
 }
 func create_augur_server() *AugurServer {
