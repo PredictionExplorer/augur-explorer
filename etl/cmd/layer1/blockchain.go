@@ -73,11 +73,19 @@ func roll_back_blocks(diverging_block *types.Header) error {
 			))
 		} else {
 			Info.Printf(
-				"Chainsplit fix: block %v doesn't fit, block_hash=%v not found in my DB. Going to delete it...\n",
+				"Chainsplit fix: block %v doesn't fit, block_hash=%v not found in my DB. Going to delete it and 1000 blocks after it...\n",
 				block_num,block_hash,
 			)
-			storage.Chainsplit_delete_blocks(block_num - 1)
-			storage.Set_last_block_num(block_num - 1)
+			// Delete in batches of BATCH_ROLLBACK_SIZE
+			for i := int64(0); i < BATCH_ROLLBACK_SIZE; i++ {
+				current_block := block_num - 1 - i
+				if current_block < 0 {
+					break
+				}
+				storage.Chainsplit_delete_blocks(current_block)
+				storage.Set_last_block_num(current_block)
+			}
+			return fmt.Errorf("Chainsplit fix: deleted %v blocks backwards", BATCH_ROLLBACK_SIZE)
 		}
 		total_blocks := starting_block_num - block_num
 		if total_blocks < 0 { total_blocks = -total_blocks }//just an extra safety against any bug before
