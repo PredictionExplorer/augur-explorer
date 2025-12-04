@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -30,14 +32,17 @@ import (
 
 // Internal constants (not user-configurable)
 const (
-	RWALK_MINT_EVENT    = "ad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec"
-	TIME_DELAY_SEC      = 1
-	TIME_DELAY_ON_ERROR = 500 // milliseconds
-	DELAY_AFTER_TX      = 2   // seconds
-	DELAY_NO_ACTION     = 5   // seconds
-	MAX_RETRIES         = 3   // if something doesn't work for 3 times, then we abandon the task
-	BID_GAS_LIMIT       = 1000000
-	CLAIM_GAS_LIMIT     = 5000000
+	RWALK_MINT_EVENT        = "ad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec"
+	TIME_DELAY_SEC          = 1
+	TIME_DELAY_ON_ERROR     = 500 // milliseconds
+	DELAY_AFTER_TX          = 2   // seconds
+	DELAY_NO_ACTION         = 5   // seconds
+	MAX_RETRIES             = 3   // if something doesn't work for 3 times, then we abandon the task
+	BID_GAS_LIMIT           = 1000000
+	CLAIM_GAS_LIMIT         = 5000000
+	MAX_CONSECUTIVE_ERRORS  = 5   // trigger reconnect after this many consecutive errors
+	RECONNECT_DELAY_SEC     = 5   // delay before reconnection attempt
+	MAX_RECONNECT_ATTEMPTS  = 10  // max reconnection attempts before giving up
 )
 
 // Default values for user-configurable parameters
@@ -101,6 +106,20 @@ type Config struct {
 	GameContractAddr   string
 }
 
+// SessionStats tracks statistics for the current session
+type SessionStats struct {
+	StartTime        time.Time
+	StartBalance     *big.Int
+	EthBidCount      int
+	CstBidCount      int
+	RWalkBidCount    int
+	TotalEthSpent    *big.Int
+	FailedTxCount    int
+	RoundsWon        int
+	PrizesClaimed    int
+	ReconnectCount   int
+}
+
 // =============================================================================
 // BiddingBot - Main struct encapsulating all state
 // =============================================================================
@@ -151,6 +170,14 @@ type BiddingBot struct {
 	ethBalance     *big.Int
 	lastBidder     common.Address
 	rwalkMintPrice *big.Int
+
+	// Session statistics and shutdown
+	stats        SessionStats
+	shutdownChan chan os.Signal
+
+	// Connection health tracking
+	consecutiveErrors int
+	reconnectCount    int
 }
 
 // =============================================================================
@@ -165,7 +192,15 @@ func NewBiddingBot(cfg Config) (*BiddingBot, error) {
 		roundNumPlayed:   -1,
 		nextRWalkTokenID: -1,
 		prevRWalkTokenID: -1,
+		stats: SessionStats{
+			StartTime:     time.Now(),
+			TotalEthSpent: big.NewInt(0),
+		},
+		shutdownChan: make(chan os.Signal, 1),
 	}
+
+	// Setup signal handling for graceful shutdown
+	signal.Notify(bot.shutdownChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Connect to RPC
 	var err error
@@ -183,7 +218,7 @@ func NewBiddingBot(cfg Config) (*BiddingBot, error) {
 
 	// Setup private key and address
 	bot.privateKey, err = crypto.HexToECDSA(cfg.PrivateKeyHex)
-	if err != nil {
+		if err != nil {
 		return nil, fmt.Errorf("error parsing private key: %v", err)
 	}
 	publicKey := bot.privateKey.Public()
@@ -233,7 +268,90 @@ func NewBiddingBot(cfg Config) (*BiddingBot, error) {
 		return nil, fmt.Errorf("error getting suggested gas price: %v", err)
 	}
 
+	// Get initial ETH balance for stats
+	bot.stats.StartBalance, err = bot.ethClient.BalanceAt(context.Background(), bot.address, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting initial balance: %v", err)
+	}
+
 	return bot, nil
+}
+
+// reconnect attempts to re-establish the RPC connection
+func (bot *BiddingBot) reconnect() error {
+	bot.reconnectCount++
+	bot.stats.ReconnectCount++
+	log("[RECONNECT] Attempting reconnection (%d/%d)...", bot.reconnectCount, MAX_RECONNECT_ATTEMPTS)
+
+	if bot.reconnectCount > MAX_RECONNECT_ATTEMPTS {
+		return fmt.Errorf("max reconnection attempts (%d) exceeded", MAX_RECONNECT_ATTEMPTS)
+	}
+
+	// Close existing connections
+	if bot.rpcClient != nil {
+		bot.rpcClient.Close()
+	}
+
+	// Wait before reconnecting
+	time.Sleep(RECONNECT_DELAY_SEC * time.Second)
+
+	// Reconnect to RPC
+	var err error
+	bot.rpcClient, err = ethrpc.DialContext(context.Background(), bot.config.RpcURL)
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't connect to ETH RPC: %v", err)
+	}
+	bot.ethClient = ethclient.NewClient(bot.rpcClient)
+
+	// Verify connection by getting chain ID
+	chainID, err := bot.ethClient.ChainID(context.Background())
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't get chain ID: %v", err)
+	}
+
+	// Verify chain ID matches
+	if chainID.Cmp(bot.chainID) != 0 {
+		return fmt.Errorf("chain ID mismatch after reconnect: expected %v, got %v", bot.chainID, chainID)
+	}
+
+	// Re-instantiate contracts with new client
+	gameAddr := common.HexToAddress(bot.config.GameContractAddr)
+	bot.gameContract, err = NewCosmicSignatureGame(gameAddr, bot.ethClient)
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't instantiate game contract: %v", err)
+	}
+
+	rwalkAddr, err := bot.gameContract.RandomWalkNft(&bot.callOpts)
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't get RWalk address: %v", err)
+	}
+	bot.rwalkContract, err = NewRWalk(rwalkAddr, bot.ethClient)
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't instantiate RWalk contract: %v", err)
+	}
+
+	prizesAddr, err := bot.gameContract.PrizesWallet(&bot.callOpts)
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't get PrizesWallet address: %v", err)
+	}
+	bot.prizesWallet, err = NewPrizesWallet(prizesAddr, bot.ethClient)
+	if err != nil {
+		return fmt.Errorf("reconnect failed - can't instantiate PrizesWallet contract: %v", err)
+	}
+
+	// Reset error counter on successful reconnect
+	bot.consecutiveErrors = 0
+	log("[RECONNECT] Successfully reconnected to RPC")
+	return nil
+}
+
+// checkConnectionHealth checks if we need to reconnect
+func (bot *BiddingBot) checkConnectionHealth() bool {
+	if bot.consecutiveErrors >= MAX_CONSECUTIVE_ERRORS {
+		log("[WARNING] %d consecutive errors detected, connection may be unstable", bot.consecutiveErrors)
+		return false
+	}
+	return true
 }
 
 // =============================================================================
@@ -248,6 +366,23 @@ func fmtEth(wei *big.Int) string {
 	ether := new(big.Float).SetInt(wei)
 	ethValue := new(big.Float).Quo(ether, big.NewFloat(1e18))
 	return ethValue.Text('f', 18)
+}
+
+// timestamp returns current time in human readable format
+func timestamp() string {
+	return time.Now().Format("15:04:05")
+}
+
+// log prints a message with timestamp
+func log(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	fmt.Printf("[%s] %s\n", timestamp(), msg)
+}
+
+// logRaw prints without newline (for special formatting)
+func logRaw(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	fmt.Printf("[%s] %s", timestamp(), msg)
 }
 
 // isMyAddress checks if the given address matches the bot's address
@@ -374,7 +509,7 @@ func (bot *BiddingBot) checkTimeoutClaim() {
 		}
 		timeoutExpired := new(big.Int).Add(prizeTime, timeoutDuration)
 		if timeoutExpired.Cmp(blockTimestamp) < 0 {
-			fmt.Println("Winner didn't claim prize during claim window, I am going to claim it")
+			log("Winner didn't claim prize during claim window, I am going to claim it")
 			bot.flowState = FlowNeedToClaimPrize
 		}
 	}
@@ -384,38 +519,42 @@ func (bot *BiddingBot) checkTimeoutClaim() {
 func (bot *BiddingBot) checkRoundChange() bool {
 	rnum, err := bot.gameContract.RoundNum(&bot.callOpts)
 	if err != nil {
-		fmt.Printf("Error getting roundNum: %v\n", err)
+		log("Error getting roundNum: %v", err)
 		return false
 	}
 
 	if rnum.Int64() != bot.roundNumPlayed {
-		fmt.Printf("Round changed (was %v, now %v)\n", bot.roundNumPlayed, rnum)
+		log("Round changed (was %v, now %v)", bot.roundNumPlayed, rnum)
 		
 		// SAFETY: Detect blockchain reset (round went backwards)
 		if rnum.Int64() < bot.roundNumPlayed {
-			fmt.Printf("ERROR: Round number decreased (%v -> %v) - blockchain was reset!\n", 
+			log("ERROR: Round number decreased (%v -> %v) - blockchain was reset!", 
 				bot.roundNumPlayed, rnum.Int64())
-			fmt.Println("Exiting to prevent unintended spending. Restart bot manually.")
+			log("Exiting to prevent unintended spending. Restart bot manually.")
+			bot.printStats()
 			os.Exit(1)
 		}
 		
 		winner, err := bot.prizesWallet.MainPrizeBeneficiaryAddresses(&bot.callOpts, big.NewInt(bot.roundNumPlayed))
 		if err == nil {
 			if bot.isMyAddress(winner) {
-				fmt.Printf("I am the winner of round %v!\n", bot.roundNumPlayed)
+				log("I am the winner of round %v!", bot.roundNumPlayed)
+				bot.stats.RoundsWon++
 			} else {
-				fmt.Printf("I am not the winner of round %v\n", bot.roundNumPlayed)
+				log("I am not the winner of round %v", bot.roundNumPlayed)
 			}
 		}
 
 		if bot.config.InitialBidPrice != nil {
-			fmt.Printf("Playing new round with initial bids\n")
+			log("Playing new round with initial bids")
 			bot.roundNumPlayed = rnum.Int64()
 			bot.flowState = FlowInitialBidding
 			return false
 		}
-				os.Exit(0)
-			}
+		log("Round ended, exiting...")
+		bot.printStats()
+		os.Exit(0)
+	}
 	return false
 }
 
@@ -424,7 +563,7 @@ func (bot *BiddingBot) findRWalkTokenID() {
 	if bot.nextRWalkTokenID > -1 {
 		wasUsed, err := bot.gameContract.UsedRandomWalkNfts(&bot.callOpts, big.NewInt(bot.nextRWalkTokenID))
 		if err == nil && wasUsed.Cmp(big.NewInt(1)) == 0 {
-			fmt.Printf("Resetting nextRWalkTokenID (%v) - already used\n", bot.nextRWalkTokenID)
+			log("Resetting nextRWalkTokenID (%v) - already used", bot.nextRWalkTokenID)
 			bot.nextRWalkTokenID = -1
 		} else if err == nil {
 			return // Already have a valid token
@@ -434,7 +573,7 @@ func (bot *BiddingBot) findRWalkTokenID() {
 	targetID := bot.prevRWalkTokenID + 1
 	lastTokenID, err := bot.rwalkContract.NextTokenId(&bot.callOpts)
 	if err != nil {
-		fmt.Printf("Error calling NextTokenId(): %v\n", err)
+		log("Error calling NextTokenId(): %v", err)
 		return
 	}
 
@@ -450,7 +589,7 @@ func (bot *BiddingBot) findRWalkTokenID() {
 			wasUsed, err := bot.gameContract.UsedRandomWalkNfts(&bot.callOpts, big.NewInt(targetID))
 			if err == nil && wasUsed.Cmp(big.NewInt(0)) == 0 {
 				bot.nextRWalkTokenID = targetID
-				fmt.Printf("Found RWalk token %v for bidding\n", bot.nextRWalkTokenID)
+				log("Found RWalk token %v for bidding", bot.nextRWalkTokenID)
 				return
 			}
 		}
@@ -472,28 +611,28 @@ func (bot *BiddingBot) canBidWithCST() bool {
 func (bot *BiddingBot) handleUninitialized() FlowState {
 	if bot.isMyAddress(bot.lastBidder) {
 		if !bot.lastBidderNotified {
-			fmt.Println("I am last bidder")
+			log("I am last bidder")
 			bot.lastBidderNotified = true
 		}
 		return FlowIAmLastBidder
 	}
-	fmt.Printf("I am not the last bidder (time until prize = %v)\n", bot.timeUntilPrize)
+	log("I am not the last bidder (time until prize = %v)", bot.timeUntilPrize)
 	bot.lastBidderNotified = false
 	return FlowNotLastBidder
 }
 
 // handleNotLastBidder handles logic when bot is not the last bidder
 func (bot *BiddingBot) handleNotLastBidder() (FlowState, bool) {
-	// Check if we should bid with CST anyway
-	if bot.config.CstBidAnyway && bot.canBidWithCST() {
-		fmt.Printf("CST price (%v) below limit, bidding with CST\n", fmtEth(bot.cstPrice))
+	// Check if we should bid with CST anyway (but NOT if first bid of round - must be ETH)
+	if bot.config.CstBidAnyway && bot.canBidWithCST() && !isZeroAddress(bot.lastBidder) {
+		log("CST price (%v) below limit, bidding with CST", fmtEth(bot.cstPrice))
 		return FlowNeedToBidWithCST, true
 	}
 
 	// Re-verify last bidder status
 	if bot.isMyAddress(bot.lastBidder) {
 		if !bot.lastBidderNotified {
-			fmt.Println("I am last bidder")
+			log("I am last bidder")
 			bot.lastBidderNotified = true
 		}
 		return FlowIAmLastBidder, false
@@ -501,27 +640,33 @@ func (bot *BiddingBot) handleNotLastBidder() (FlowState, bool) {
 
 	// Check if it's time to bid
 	if bot.timeUntilPrize.Cmp(big.NewInt(bot.config.TimeBeforePrize)) <= 0 {
-		fmt.Printf("%v sec before prize, time to bid\n", bot.timeUntilPrize.Int64())
+		log("%v sec before prize, time to bid", bot.timeUntilPrize.Int64())
 		return bot.decideBidType()
 	}
 
-	fmt.Printf("Not my time to bid yet (timeUntilPrize = %v)\n", bot.timeUntilPrize.Int64())
+	log("Not my time to bid yet (timeUntilPrize = %v)", bot.timeUntilPrize.Int64())
 	return FlowNotLastBidder, false
 }
 
 // decideBidType decides which bidding method to use
 func (bot *BiddingBot) decideBidType() (FlowState, bool) {
+	// First bid of round must be ETH (contract requirement)
+	if isZeroAddress(bot.lastBidder) {
+		log("First bid of round - must use ETH")
+		return bot.tryPlainEthBid()
+	}
+
 	// Try CST first
 	if bot.canBidWithCST() {
-		fmt.Printf("CST price (%v) below limit, bidding with CST\n", fmtEth(bot.cstPrice))
+		log("CST price (%v) below limit, bidding with CST", fmtEth(bot.cstPrice))
 		return FlowNeedToBidWithCST, true
 	}
 
 	// Can't bid with CST, check ETH options
 	if bot.config.MaxCstBid.Cmp(bot.cstBalance) > 0 {
-		fmt.Printf("Not enough CST balance for bid\n")
-							} else { 
-		fmt.Printf("CST price above limit\n")
+		log("Not enough CST balance for bid")
+	} else { 
+		log("CST price above limit")
 	}
 
 	// Check if RWalk bidding is allowed
@@ -529,18 +674,18 @@ func (bot *BiddingBot) decideBidType() (FlowState, bool) {
 		rwalkDiscountedPrice := new(big.Int).Quo(bot.bidPrice, big.NewInt(2))
 		bidWithRwalkPrice := new(big.Int).Add(bot.rwalkMintPrice, rwalkDiscountedPrice)
 
-		fmt.Printf("RWALK+ETH costs %v, pure ETH costs %v\n", fmtEth(bidWithRwalkPrice), fmtEth(bot.bidPrice))
+		log("RWALK+ETH costs %v, pure ETH costs %v", fmtEth(bidWithRwalkPrice), fmtEth(bot.bidPrice))
 
 		if bot.bidPrice.Cmp(bidWithRwalkPrice) <= 0 {
 			// Plain ETH is cheaper
 			return bot.tryPlainEthBid()
-								} else {
+		} else {
 			// RWalk is cheaper
 			if bidWithRwalkPrice.Cmp(bot.config.MaxEthBid) < 0 {
-				fmt.Println("Bidding with RWalk (cheaper)")
+				log("Bidding with RWalk (cheaper)")
 				return FlowNeedToBidWithRWalk, true
 			}
-			fmt.Printf("Out of funds even with RWalk\n")
+			log("Out of funds even with RWalk")
 			return FlowNotLastBidder, false
 		}
 	}
@@ -552,14 +697,14 @@ func (bot *BiddingBot) decideBidType() (FlowState, bool) {
 // tryPlainEthBid attempts to bid with plain ETH
 func (bot *BiddingBot) tryPlainEthBid() (FlowState, bool) {
 	if bot.config.MaxEthBid.Cmp(bot.bidPrice) < 0 {
-		fmt.Printf("ETH bid price (%v) above limit\n", fmtEth(bot.bidPrice))
+		log("ETH bid price (%v) above limit", fmtEth(bot.bidPrice))
 		return FlowNotLastBidder, false
 	}
 	if bot.bidPrice.Cmp(bot.ethBalance) >= 0 {
-		fmt.Printf("Insufficient ETH balance\n")
+		log("Insufficient ETH balance")
 		return FlowNotLastBidder, false
 	}
-	fmt.Println("Bidding with plain ETH")
+	log("Bidding with plain ETH")
 	return FlowNeedToBidWithETH, true
 }
 
@@ -568,14 +713,14 @@ func (bot *BiddingBot) handleIAmLastBidder() (FlowState, bool) {
 	// Use cached lastBidder (already fetched in refreshMarketData)
 	// Don't make duplicate contract calls that could cause inconsistency
 	if !bot.isMyAddress(bot.lastBidder) {
-		fmt.Printf("No longer last bidder\n")
+		log("No longer last bidder")
 		bot.lastBidderNotified = false
 		return FlowNotLastBidder, false // Don't continue - need to refresh market data
 	}
 
 	// Check if we should keep bidding with CST
 	if bot.config.CstBidAnyway && bot.canBidWithCST() {
-		fmt.Printf("CST price low, bidding again\n")
+		log("CST price low, bidding again")
 		return FlowNeedToBidWithCST, true
 	}
 
@@ -590,18 +735,18 @@ func (bot *BiddingBot) handleIAmLastBidder() (FlowState, bool) {
 // handleBidWithCST handles CST bidding
 func (bot *BiddingBot) handleBidWithCST() (FlowState, bool) {
 	txopts, err := bot.createTransactOpts(nil, BID_GAS_LIMIT)
-					if err != nil {
-		fmt.Printf("Error creating tx opts: %v\n", err)
+	if err != nil {
+		log("Error creating tx opts: %v", err)
 		return FlowUninitialized, false
 	}
 
 	tx, err := bot.gameContract.BidWithCst(txopts, bot.cstPrice, "")
-					if err != nil {
-		fmt.Printf("BidWithCST error: %v\n", err)
+	if err != nil {
+		log("BidWithCST error: %v", err)
 		return FlowUninitialized, false
 	}
 
-	fmt.Printf("CST bid tx: %v\n", tx.Hash().Hex())
+	log("CST bid tx: %v", tx.Hash().Hex())
 	bot.cstBidTxHash = tx.Hash()
 	bot.retriesCounter = 0
 	return FlowWaitingForCSTBidTx, false
@@ -610,38 +755,40 @@ func (bot *BiddingBot) handleBidWithCST() (FlowState, bool) {
 // handleWaitForCSTBidTx waits for CST bid transaction receipt
 func (bot *BiddingBot) handleWaitForCSTBidTx() (FlowState, bool) {
 	receipt, err := bot.ethClient.TransactionReceipt(context.Background(), bot.cstBidTxHash)
-					if err != nil {
+	if err != nil {
 		bot.retriesCounter++
 		if bot.retriesCounter >= MAX_RETRIES {
-			fmt.Println("Max retries reached for CST bid tx")
+			log("Max retries reached for CST bid tx")
 			return FlowUninitialized, false
 		}
 		return FlowWaitingForCSTBidTx, false
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		fmt.Println("CST bid tx failed")
+		log("CST bid tx failed")
+		bot.stats.FailedTxCount++
 		return FlowUninitialized, false
 	}
 
+	bot.stats.CstBidCount++
 	return bot.checkLastBidderAfterBid("CST")
 }
 
 // handleBidWithETH handles plain ETH bidding
 func (bot *BiddingBot) handleBidWithETH() (FlowState, bool) {
 	txopts, err := bot.createTransactOpts(bot.bidPrice, BID_GAS_LIMIT)
-						if err != nil {
-		fmt.Printf("Error creating tx opts: %v\n", err)
+	if err != nil {
+		log("Error creating tx opts: %v", err)
 		return FlowUninitialized, false
 	}
 
 	tx, err := bot.gameContract.BidWithEth(txopts, big.NewInt(-1), "")
-					if err != nil {
-		fmt.Printf("BidWithEth error: %v\n", err)
+	if err != nil {
+		log("BidWithEth error: %v", err)
 		return FlowUninitialized, false
 	}
 
-	fmt.Printf("ETH bid tx (%v ETH): %v\n", fmtEth(bot.bidPrice), tx.Hash().Hex())
+	log("ETH bid tx (%v ETH): %v", fmtEth(bot.bidPrice), tx.Hash().Hex())
 	bot.ethBidTxHash = tx.Hash()
 	bot.retriesCounter = 0
 	return FlowWaitingForETHBidTx, false
@@ -650,44 +797,47 @@ func (bot *BiddingBot) handleBidWithETH() (FlowState, bool) {
 // handleWaitForETHBidTx waits for ETH bid transaction receipt
 func (bot *BiddingBot) handleWaitForETHBidTx() (FlowState, bool) {
 	receipt, err := bot.ethClient.TransactionReceipt(context.Background(), bot.ethBidTxHash)
-						if err != nil {
+	if err != nil {
 		bot.retriesCounter++
 		if bot.retriesCounter >= MAX_RETRIES {
-			fmt.Println("Max retries reached for ETH bid tx")
+			log("Max retries reached for ETH bid tx")
 			return FlowUninitialized, false
 		}
 		return FlowWaitingForETHBidTx, false
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		fmt.Println("ETH bid tx failed")
+		log("ETH bid tx failed")
+		bot.stats.FailedTxCount++
 		return FlowUninitialized, false
 	}
 
+	bot.stats.EthBidCount++
+	bot.stats.TotalEthSpent.Add(bot.stats.TotalEthSpent, bot.bidPrice)
 	return bot.checkLastBidderAfterBid("ETH")
 }
 
 // handleBidWithRWalk handles RWalk bidding flow
 func (bot *BiddingBot) handleBidWithRWalk() (FlowState, bool) {
 	if bot.nextRWalkTokenID > -1 {
-		fmt.Printf("Using pre-minted RWalk token %v\n", bot.nextRWalkTokenID)
+		log("Using pre-minted RWalk token %v", bot.nextRWalkTokenID)
 		return FlowNeedToSendRWalkBidTx, true
 	}
 
-	fmt.Println("Need to mint RWalk token first")
+	log("Need to mint RWalk token first")
 	txopts, err := bot.createTransactOpts(bot.rwalkMintPrice, BID_GAS_LIMIT)
-					if err != nil {
-		fmt.Printf("Error creating tx opts: %v\n", err)
+	if err != nil {
+		log("Error creating tx opts: %v", err)
 		return FlowUninitialized, false
 	}
 
 	tx, err := bot.rwalkContract.Mint(txopts)
-						if err != nil {
-		fmt.Printf("RWalk mint error: %v\n", err)
+	if err != nil {
+		log("RWalk mint error: %v", err)
 		return FlowUninitialized, false
 	}
 
-	fmt.Printf("RWalk mint tx: %v\n", tx.Hash().Hex())
+	log("RWalk mint tx: %v", tx.Hash().Hex())
 	bot.rwalkMintTxHash = tx.Hash()
 	bot.retriesCounter = 0
 	return FlowWaitingForRWalkMint, false
@@ -696,10 +846,10 @@ func (bot *BiddingBot) handleBidWithRWalk() (FlowState, bool) {
 // handleWaitForRWalkMint waits for RWalk mint transaction
 func (bot *BiddingBot) handleWaitForRWalkMint() (FlowState, bool) {
 	receipt, err := bot.ethClient.TransactionReceipt(context.Background(), bot.rwalkMintTxHash)
-					if err != nil {
+	if err != nil {
 		bot.retriesCounter++
 		if bot.retriesCounter >= MAX_RETRIES {
-			fmt.Println("Max retries reached for RWalk mint tx")
+			log("Max retries reached for RWalk mint tx")
 			return FlowUninitialized, false
 		}
 		return FlowWaitingForRWalkMint, false
@@ -709,30 +859,30 @@ func (bot *BiddingBot) handleWaitForRWalkMint() (FlowState, bool) {
 	for _, elog := range receipt.Logs {
 		if len(elog.Topics) > 0 && bytes.Equal(elog.Topics[0].Bytes(), evtMintEvent) {
 			bot.nextRWalkTokenID = elog.Topics[1].Big().Int64()
-			fmt.Printf("Minted RWalk token %v\n", bot.nextRWalkTokenID)
+			log("Minted RWalk token %v", bot.nextRWalkTokenID)
 			return FlowNeedToSendRWalkBidTx, true
 		}
 	}
 
-	fmt.Println("RWalk mint event not found")
+	log("RWalk mint event not found")
 	return FlowUninitialized, false
 }
 
 // handleSendRWalkBidTx sends bid with RWalk token
 func (bot *BiddingBot) handleSendRWalkBidTx() (FlowState, bool) {
 	txopts, err := bot.createTransactOpts(bot.bidPrice, BID_GAS_LIMIT)
-					if err != nil {
-		fmt.Printf("Error creating tx opts: %v\n", err)
+	if err != nil {
+		log("Error creating tx opts: %v", err)
 		return FlowUninitialized, false
 	}
 
 	tx, err := bot.gameContract.BidWithEth(txopts, big.NewInt(bot.nextRWalkTokenID), "")
-						if err != nil {
-		fmt.Printf("BidWithEth (RWalk) error: %v\n", err)
+	if err != nil {
+		log("BidWithEth (RWalk) error: %v", err)
 		return FlowUninitialized, false
 	}
 
-	fmt.Printf("RWalk bid tx: %v (token %v)\n", tx.Hash().Hex(), bot.nextRWalkTokenID)
+	log("RWalk bid tx: %v (token %v)", tx.Hash().Hex(), bot.nextRWalkTokenID)
 	bot.rwalkBidTxHash = tx.Hash()
 	bot.retriesCounter = 0
 	return FlowWaitingForRWalkBidTx, false
@@ -741,20 +891,25 @@ func (bot *BiddingBot) handleSendRWalkBidTx() (FlowState, bool) {
 // handleWaitForRWalkBidTx waits for RWalk bid transaction
 func (bot *BiddingBot) handleWaitForRWalkBidTx() (FlowState, bool) {
 	receipt, err := bot.ethClient.TransactionReceipt(context.Background(), bot.rwalkBidTxHash)
-					if err != nil {
+	if err != nil {
 		bot.retriesCounter++
 		if bot.retriesCounter >= MAX_RETRIES {
-			fmt.Println("Max retries reached for RWalk bid tx")
+			log("Max retries reached for RWalk bid tx")
 			return FlowUninitialized, false
 		}
 		return FlowWaitingForRWalkBidTx, false
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		fmt.Println("RWalk bid tx failed")
+		log("RWalk bid tx failed")
+		bot.stats.FailedTxCount++
 		return FlowUninitialized, false
 	}
 
+	bot.stats.RWalkBidCount++
+	// RWalk bids cost half the ETH price
+	halfPrice := new(big.Int).Div(bot.bidPrice, big.NewInt(2))
+	bot.stats.TotalEthSpent.Add(bot.stats.TotalEthSpent, halfPrice)
 	bot.nextRWalkTokenID = -1
 	return bot.checkLastBidderAfterBid("RWalk")
 }
@@ -762,18 +917,18 @@ func (bot *BiddingBot) handleWaitForRWalkBidTx() (FlowState, bool) {
 // handleClaimPrize handles claiming the prize
 func (bot *BiddingBot) handleClaimPrize() (FlowState, bool) {
 	txopts, err := bot.createTransactOpts(nil, CLAIM_GAS_LIMIT)
-					if err != nil {
-		fmt.Printf("Error creating tx opts: %v\n", err)
+	if err != nil {
+		log("Error creating tx opts: %v", err)
 		return FlowUninitialized, false
 	}
 
 	tx, err := bot.gameContract.ClaimMainPrize(txopts)
-						if err != nil {
-		fmt.Printf("ClaimMainPrize error: %v\n", err)
+	if err != nil {
+		log("ClaimMainPrize error: %v", err)
 		return FlowUninitialized, false
 	}
 
-	fmt.Printf("ClaimPrize tx: %v\n", tx.Hash().Hex())
+	log("ClaimPrize tx: %v", tx.Hash().Hex())
 	bot.claimPrizeTxHash = tx.Hash()
 	bot.retriesCounter = 0
 	return FlowWaitingForClaimPrizeTx, false
@@ -782,26 +937,29 @@ func (bot *BiddingBot) handleClaimPrize() (FlowState, bool) {
 // handleWaitForClaimPrizeTx waits for claim prize transaction
 func (bot *BiddingBot) handleWaitForClaimPrizeTx() (FlowState, bool) {
 	receipt, err := bot.ethClient.TransactionReceipt(context.Background(), bot.claimPrizeTxHash)
-					if err != nil {
+	if err != nil {
 		bot.retriesCounter++
 		if bot.retriesCounter >= MAX_RETRIES {
-			fmt.Println("Max retries reached for claim prize tx")
+			log("Max retries reached for claim prize tx")
 			return FlowUninitialized, false
 		}
 		return FlowWaitingForClaimPrizeTx, false
 	}
 
 	if receipt.Status == types.ReceiptStatusSuccessful {
-		fmt.Println("Prize claimed successfully!")
-					} else {
-		fmt.Println("Claim prize tx failed")
+		log("Prize claimed successfully!")
+		bot.stats.PrizesClaimed++
+		bot.stats.RoundsWon++
+	} else {
+		log("Claim prize tx failed")
+		bot.stats.FailedTxCount++
 	}
 	return FlowUninitialized, false
 }
 
 // handleInitialBidding handles the initial bidding phase
 func (bot *BiddingBot) handleInitialBidding() (FlowState, bool) {
-	fmt.Printf("Initial bidding: price=%v, limit=%v\n", fmtEth(bot.bidPrice), fmtEth(bot.config.InitialBidPrice))
+	log("Initial bidding: price=%v, limit=%v", fmtEth(bot.bidPrice), fmtEth(bot.config.InitialBidPrice))
 
 	const maxInitialBids = 20 // Safety limit to prevent runaway bidding
 	bidCount := 0
@@ -810,48 +968,48 @@ func (bot *BiddingBot) handleInitialBidding() (FlowState, bool) {
 	for failures := 0; failures <= 5; {
 		// Safety check: max bid count
 		if bidCount >= maxInitialBids {
-			fmt.Printf("SAFETY: Reached max initial bids (%d), stopping\n", maxInitialBids)
+			log("SAFETY: Reached max initial bids (%d), stopping", maxInitialBids)
 			break
 		}
 
 		bidPrice, err := bot.gameContract.GetNextEthBidPrice(&bot.callOpts)
-					if err != nil {
-			fmt.Printf("Error getting bid price: %v\n", err)
+		if err != nil {
+			log("Error getting bid price: %v", err)
 			failures++
-						time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
+			time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
 			continue
 		}
 
 		if bot.config.InitialBidPrice.Cmp(bidPrice) < 0 {
-			fmt.Println("Reached bid price limit, stopping initial bidding")
+			log("Reached bid price limit, stopping initial bidding")
 			break
 		}
 
 		// Safety check: don't exceed ETH balance
 		if bidPrice.Cmp(bot.ethBalance) >= 0 {
-			fmt.Println("Insufficient ETH balance for initial bid, stopping")
+			log("Insufficient ETH balance for initial bid, stopping")
 			break
 		}
 
 		txopts, err := bot.createTransactOpts(bidPrice, BID_GAS_LIMIT)
 		if err != nil {
 			failures++
-						time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
+			time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
 			continue
 		}
 
 		tx, err := bot.gameContract.BidWithEth(txopts, big.NewInt(-1), "")
 		if err != nil {
-			fmt.Printf("Bid error: %v\n", err)
+			log("Bid error: %v", err)
 			failures++
-						time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
+			time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
 			continue
 		}
 
 		bidCount++
 		totalSpent.Add(totalSpent, bidPrice)
-		fmt.Printf("Initial bid #%d tx (%v ETH): %v\n", bidCount, fmtEth(bidPrice), tx.Hash().Hex())
-						time.Sleep(DELAY_AFTER_TX * time.Second)
+		log("Initial bid #%d tx (%v ETH): %v", bidCount, fmtEth(bidPrice), tx.Hash().Hex())
+		time.Sleep(DELAY_AFTER_TX * time.Second)
 
 		// Wait for receipt
 		for i := 0; i < 5; i++ {
@@ -859,9 +1017,12 @@ func (bot *BiddingBot) handleInitialBidding() (FlowState, bool) {
 			receipt, err := bot.ethClient.TransactionReceipt(context.Background(), tx.Hash())
 			if err == nil {
 				if receipt.Status == types.ReceiptStatusSuccessful {
-					fmt.Println("Initial bid successful")
+					log("Initial bid successful")
+					bot.stats.EthBidCount++
+					bot.stats.TotalEthSpent.Add(bot.stats.TotalEthSpent, bidPrice)
 				} else {
-					fmt.Println("Initial bid tx failed, stopping")
+					log("Initial bid tx failed, stopping")
+					bot.stats.FailedTxCount++
 					failures = 6 // Force exit
 				}
 				break
@@ -873,25 +1034,25 @@ func (bot *BiddingBot) handleInitialBidding() (FlowState, bool) {
 		bot.ethBalance, _ = bot.ethClient.BalanceAt(context.Background(), bot.address, nil)
 	}
 
-	fmt.Printf("Initial bidding finished: %d bids, %v ETH spent\n", bidCount, fmtEth(totalSpent))
+	log("Initial bidding finished: %d bids, %v ETH spent", bidCount, fmtEth(totalSpent))
 	return FlowUninitialized, false
 }
 
 // checkLastBidderAfterBid checks if we're last bidder after a bid
 func (bot *BiddingBot) checkLastBidderAfterBid(bidType string) (FlowState, bool) {
 	lastBidder, err := bot.gameContract.LastBidderAddress(&bot.callOpts)
-					if err != nil {
-		fmt.Printf("Error checking last bidder: %v\n", err)
+	if err != nil {
+		log("Error checking last bidder: %v", err)
 		return FlowUninitialized, false
 	}
 
 	if bot.isMyAddress(lastBidder) {
-		fmt.Printf("I am last bidder after %s bid\n", bidType)
+		log("I am last bidder after %s bid", bidType)
 		bot.lastBidderNotified = true
 		return FlowIAmLastBidder, false
 	}
 
-	fmt.Printf("Not last bidder after %s bid\n", bidType)
+	log("Not last bidder after %s bid", bidType)
 	bot.lastBidderNotified = false
 	return FlowNotLastBidder, false
 }
@@ -902,11 +1063,37 @@ func (bot *BiddingBot) checkLastBidderAfterBid(bidType string) (FlowState, bool)
 
 // Run starts the main event loop
 func (bot *BiddingBot) Run() {
-	fmt.Printf("Playing round %v\n", bot.roundNumPlayed)
+	log("Playing round %v", bot.roundNumPlayed)
+	log("Press Ctrl+C to stop gracefully")
 	bot.printConfig()
 
 	for {
-		fmt.Printf("\n=== Event loop (flow=%s, rwalkNext=%v) ===\n", 
+		// Check for shutdown signal (non-blocking)
+		select {
+		case sig := <-bot.shutdownChan:
+			log("Received signal: %v", sig)
+			log("Shutting down gracefully...")
+			bot.printStats()
+			return
+		default:
+			// Continue normal operation
+		}
+
+		// Check connection health and reconnect if needed
+		if !bot.checkConnectionHealth() {
+			if err := bot.reconnect(); err != nil {
+				log("[ERROR] Reconnection failed: %v", err)
+				if bot.reconnectCount >= MAX_RECONNECT_ATTEMPTS {
+					log("[FATAL] Max reconnection attempts reached, exiting...")
+					bot.printStats()
+					return
+				}
+				time.Sleep(RECONNECT_DELAY_SEC * time.Second)
+				continue
+			}
+		}
+
+		log("=== Event loop (flow=%s, rwalkNext=%v) ===", 
 			bot.flowState, bot.nextRWalkTokenID)
 
 		// Search for RWalk tokens in background
@@ -916,18 +1103,22 @@ func (bot *BiddingBot) Run() {
 
 		// Refresh market data
 		if err := bot.refreshMarketData(); err != nil {
-			fmt.Printf("Error refreshing data: %v\n", err)
-						time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
-						continue
-					}
+			log("Error refreshing data: %v", err)
+			bot.consecutiveErrors++
+			time.Sleep(TIME_DELAY_ON_ERROR * time.Millisecond)
+			continue
+		}
+		// Reset error counter on successful refresh
+		bot.consecutiveErrors = 0
+		bot.reconnectCount = 0  // Reset reconnect count on successful operation
 
 		// Check for timeout claim opportunity
 		bot.checkTimeoutClaim()
 
 		// Check for round change
 		if bot.checkRoundChange() {
-								continue
-							}
+			continue
+		}
 
 		// Process flow states
 		bot.processFlowStates()
@@ -945,9 +1136,9 @@ func (bot *BiddingBot) Run() {
 func (bot *BiddingBot) processFlowStates() {
 	for {
 		prevState := bot.flowState
-		fmt.Printf("Processing state: %s (timeUntilPrize=%v)\n", bot.flowState, bot.timeUntilPrize.Int64())
+		log("Processing state: %s (timeUntilPrize=%v)", bot.flowState, bot.timeUntilPrize.Int64())
 
-		var continueProcessing bool
+		continueProcessing := false
 		var sleepDuration time.Duration
 
 		switch bot.flowState {
@@ -955,6 +1146,8 @@ func (bot *BiddingBot) processFlowStates() {
 			bot.flowState = bot.handleUninitialized()
 			if bot.flowState == FlowIAmLastBidder {
 				sleepDuration = DELAY_NO_ACTION * time.Second
+			} else if bot.flowState != FlowUninitialized {
+				continueProcessing = true
 			}
 
 		case FlowNotLastBidder:
@@ -972,21 +1165,21 @@ func (bot *BiddingBot) processFlowStates() {
 			}
 
 		case FlowNeedToBidWithCST:
-			bot.flowState, _ = bot.handleBidWithCST()
+			bot.flowState, continueProcessing = bot.handleBidWithCST()
 			sleepDuration = DELAY_AFTER_TX * time.Second
 
 		case FlowWaitingForCSTBidTx:
-			bot.flowState, _ = bot.handleWaitForCSTBidTx()
+			bot.flowState, continueProcessing = bot.handleWaitForCSTBidTx()
 			if bot.flowState == FlowWaitingForCSTBidTx {
 				sleepDuration = TIME_DELAY_ON_ERROR * time.Millisecond
 			}
 
 		case FlowNeedToBidWithETH:
-			bot.flowState, _ = bot.handleBidWithETH()
+			bot.flowState, continueProcessing = bot.handleBidWithETH()
 			sleepDuration = DELAY_AFTER_TX * time.Second
 
 		case FlowWaitingForETHBidTx:
-			bot.flowState, _ = bot.handleWaitForETHBidTx()
+			bot.flowState, continueProcessing = bot.handleWaitForETHBidTx()
 			if bot.flowState == FlowWaitingForETHBidTx {
 				sleepDuration = TIME_DELAY_ON_ERROR * time.Millisecond
 			}
@@ -1004,30 +1197,30 @@ func (bot *BiddingBot) processFlowStates() {
 			}
 
 		case FlowNeedToSendRWalkBidTx:
-			bot.flowState, _ = bot.handleSendRWalkBidTx()
+			bot.flowState, continueProcessing = bot.handleSendRWalkBidTx()
 			sleepDuration = DELAY_AFTER_TX * time.Second
 
 		case FlowWaitingForRWalkBidTx:
-			bot.flowState, _ = bot.handleWaitForRWalkBidTx()
+			bot.flowState, continueProcessing = bot.handleWaitForRWalkBidTx()
 			if bot.flowState == FlowWaitingForRWalkBidTx {
 				sleepDuration = TIME_DELAY_ON_ERROR * time.Millisecond
 			}
 
 		case FlowNeedToClaimPrize:
-			bot.flowState, _ = bot.handleClaimPrize()
+			bot.flowState, continueProcessing = bot.handleClaimPrize()
 			sleepDuration = DELAY_AFTER_TX * time.Second
 
 		case FlowWaitingForClaimPrizeTx:
-			bot.flowState, _ = bot.handleWaitForClaimPrizeTx()
+			bot.flowState, continueProcessing = bot.handleWaitForClaimPrizeTx()
 			if bot.flowState == FlowWaitingForClaimPrizeTx {
 				sleepDuration = TIME_DELAY_ON_ERROR * time.Millisecond
 			}
 
 		case FlowInitialBidding:
-			bot.flowState, _ = bot.handleInitialBidding()
+			bot.flowState, continueProcessing = bot.handleInitialBidding()
 
 		default:
-			fmt.Printf("Unknown flow state: %v\n", bot.flowState)
+			log("Unknown flow state: %v", bot.flowState)
 			sleepDuration = DELAY_NO_ACTION * time.Second
 		}
 
@@ -1036,10 +1229,14 @@ func (bot *BiddingBot) processFlowStates() {
 			time.Sleep(sleepDuration)
 		}
 
-		// Break if state didn't change (need to refresh data)
-		if bot.flowState == prevState && !continueProcessing {
-							break
-						}
+		// Break out of inner loop to refresh market data unless explicitly continuing
+		if !continueProcessing {
+			break
+		}
+		// Also break if state didn't change to prevent infinite loops
+		if bot.flowState == prevState {
+			break
+		}
 	}
 }
 
@@ -1054,6 +1251,43 @@ func (bot *BiddingBot) printConfig() {
 	if bot.config.InitialBidPrice != nil {
 		fmt.Printf("  INITIAL_BID_PRICE: %v ETH\n", fmtEth(bot.config.InitialBidPrice))
 	}
+}
+
+// printStats prints the session statistics summary
+func (bot *BiddingBot) printStats() {
+	duration := time.Since(bot.stats.StartTime)
+	
+	// Get current balance to calculate net change
+	currentBalance, err := bot.ethClient.BalanceAt(context.Background(), bot.address, nil)
+	if err != nil {
+		currentBalance = big.NewInt(0)
+	}
+	
+	balanceChange := new(big.Int).Sub(currentBalance, bot.stats.StartBalance)
+	
+	fmt.Println("\n" + "=" + "==========================================================")
+	fmt.Println("                    SESSION SUMMARY")
+	fmt.Println("==========================================================")
+	fmt.Printf("  Duration:          %v\n", duration.Round(time.Second))
+	fmt.Printf("  Starting Balance:  %v ETH\n", fmtEth(bot.stats.StartBalance))
+	fmt.Printf("  Current Balance:   %v ETH\n", fmtEth(currentBalance))
+	if balanceChange.Sign() >= 0 {
+		fmt.Printf("  Balance Change:    +%v ETH\n", fmtEth(balanceChange))
+	} else {
+		fmt.Printf("  Balance Change:    %v ETH\n", fmtEth(balanceChange))
+	}
+	fmt.Println("----------------------------------------------------------")
+	fmt.Printf("  ETH Bids:          %d\n", bot.stats.EthBidCount)
+	fmt.Printf("  CST Bids:          %d\n", bot.stats.CstBidCount)
+	fmt.Printf("  RWalk Bids:        %d\n", bot.stats.RWalkBidCount)
+	fmt.Printf("  Total Bids:        %d\n", bot.stats.EthBidCount+bot.stats.CstBidCount+bot.stats.RWalkBidCount)
+	fmt.Printf("  ETH Spent on Bids: %v ETH\n", fmtEth(bot.stats.TotalEthSpent))
+	fmt.Println("----------------------------------------------------------")
+	fmt.Printf("  Rounds Won:        %d\n", bot.stats.RoundsWon)
+	fmt.Printf("  Prizes Claimed:    %d\n", bot.stats.PrizesClaimed)
+	fmt.Printf("  Failed Txs:        %d\n", bot.stats.FailedTxCount)
+	fmt.Printf("  Reconnections:     %d\n", bot.stats.ReconnectCount)
+	fmt.Println("==========================================================")
 }
 
 // =============================================================================
@@ -1123,7 +1357,7 @@ func getEnvBigIntEth(key string, defaultVal float64) *big.Int {
 			result, _ := wei.Int(nil)
 			return result
 		}
-		fmt.Printf("Warning: invalid %s, using default\n", key)
+		log("Warning: invalid %s, using default", key)
 	}
 	wei := new(big.Float).Mul(big.NewFloat(defaultVal), big.NewFloat(1e18))
 	result, _ := wei.Int(nil)
@@ -1157,7 +1391,7 @@ func main() {
 
 	bot, err := NewBiddingBot(cfg)
 		if err != nil {
-		fmt.Printf("Failed to initialize bot: %v\n", err)
+		log("Failed to initialize bot: %v", err)
 		os.Exit(1)
 		}
 
