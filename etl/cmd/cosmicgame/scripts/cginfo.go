@@ -311,12 +311,12 @@ func main() {
 		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
 		os.Exit(1)
 	}
-	lblock, err := eclient.BlockByNumber(context.Background(), nil)
+	lblock, err := eclient.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		fmt.Printf("Error at BlockByNumber(latest): %v\n",err)
 		os.Exit(1)
 	}
-	block_time := int64(lblock.Time())
+	block_time := int64(lblock.Time)
 	secs_to_start := activation_time.Int64() - block_time;
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())

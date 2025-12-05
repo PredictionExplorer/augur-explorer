@@ -1249,7 +1249,7 @@ func (bot *BiddingBot) printConfig() {
 	fmt.Printf("  TIME_BEFORE_PRIZE: %v secs\n", bot.config.TimeBeforePrize)
 	fmt.Printf("  CST_BID_ANYWAY: %v\n", bot.config.CstBidAnyway)
 	if bot.config.InitialBidPrice != nil {
-		fmt.Printf("  INITIAL_BID_PRICE: %v ETH\n", fmtEth(bot.config.InitialBidPrice))
+		fmt.Printf("  AT_STARTUP_BID_UP_TO_PRICE_LEVEL: %v ETH\n", fmtEth(bot.config.InitialBidPrice))
 	}
 }
 
@@ -1306,13 +1306,7 @@ func loadConfig() Config {
 		RWalkMinPrice:    getEnvBigIntEth("RWALK_MIN_PRICE", DEFAULT_RWALK_BID_START_PRICE),
 		TimeBeforePrize:  getEnvInt64("TIME_BEFORE_PRIZE", DEFAULT_TIME_UNTIL_PRIZE_LIMIT),
 		CstBidAnyway:     getEnvBool("CST_BID_ANYWAY", DEFAULT_CST_BID_ANYWAY),
-	}
-
-	// Parse optional initial bid price
-	if level := os.Getenv("INITIAL_BID_PRICE_LEVEL"); level != "" {
-		if val, valid := new(big.Int).SetString(level, 10); valid {
-			cfg.InitialBidPrice = new(big.Int).Mul(big.NewInt(1e15), val)
-		}
+		InitialBidPrice:  getEnvBigIntEthOptional("AT_STARTUP_BID_UP_TO_PRICE_LEVEL"),
 	}
 
 	return cfg
@@ -1362,6 +1356,18 @@ func getEnvBigIntEth(key string, defaultVal float64) *big.Int {
 	wei := new(big.Float).Mul(big.NewFloat(defaultVal), big.NewFloat(1e18))
 	result, _ := wei.Int(nil)
 	return result
+}
+
+func getEnvBigIntEthOptional(key string) *big.Int {
+	if val := os.Getenv(key); val != "" {
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			wei := new(big.Float).Mul(big.NewFloat(f), big.NewFloat(1e18))
+			result, _ := wei.Int(nil)
+			return result
+		}
+		log("Warning: invalid %s, ignoring", key)
+	}
+	return nil
 }
 
 func getEnvInt64(key string, defaultVal int64) int64 {

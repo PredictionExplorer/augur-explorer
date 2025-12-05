@@ -41,10 +41,11 @@ cd ../..
 cd cmd/notibot
 go build .
 cd ../..
-echo Building 0x Mesh order listener
-cd dmesh
-go build ./
-cd ../..
+# NOTE: 0x Mesh (dmesh) is disabled - the 0x-mesh library is deprecated and has incompatible import paths
+# echo Building 0x Mesh order listener
+# cd dmesh
+# go build ./
+# cd ../..
 
 echo Building Web Server ...
 cd server

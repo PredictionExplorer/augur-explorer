@@ -105,7 +105,7 @@ func main() {
 	txopts.Value = big.NewInt(0)     // in weia
 	txopts.Value.Set(bid_price)
 	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
+	txopts.GasPrice = gasPrice.Add(gasPrice,big.NewInt(20000))	// bump a little bit to avoid error of lower gas price
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
@@ -122,10 +122,10 @@ func main() {
 	txopts.Signer = signfunc
 
 	tx,err := cosmic_game_ctrct.BidWithEth(txopts,big.NewInt(-1),"")
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
 		os.Exit(1)
 	}
+	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
 }
