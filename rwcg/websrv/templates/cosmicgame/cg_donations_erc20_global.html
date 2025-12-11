@@ -1,0 +1,59 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>ERC20 Donations Global</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💎 ERC20 Donations</h1>
+			<div class="subtitle">All ERC20 donations across all rounds</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th>Token Address</th>
+					<th class="right">Amount</th>
+					<th>Winner</th>
+				</tr>
+				{{- range $i, $change := .DonationsERC20}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/donations/erc20/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/global/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/global/{{.Offset}}/{{.Limit}}</code>
+		</div>
+	</div>
+</body>
+</html>

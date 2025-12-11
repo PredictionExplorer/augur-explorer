@@ -1,0 +1,76 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CST Staking Actions by User</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 CST Staking Actions by User</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<div class="action-grid" style="margin-bottom: 2em;">
+				<div class="action-item">
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/user/info/{{.UserAddr}}">Back to User Info</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Action Type</th>
+					<th class="center">Action ID</th>
+					<th class="center">Token ID</th>
+					<th class="center">Num NFTs</th>
+				</tr>
+				{{- range $i, $change := .UserStakingActionsCST}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">
+							{{if eq .ActionType 0}}
+								<span class="badge badge-success">Stake</span>
+							{{else}}
+								<span class="badge badge-warning">Unstake</span>
+							{{end}}
+						</td>
+						<td class="center">
+							<a href="/black/cosmicgame/staking/cst/actions/info/{{.ActionId}}">{{.ActionId}}</a>
+						</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="center">{{.NumStakedNFTs}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/actions/by_user/[user_addr]/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/actions/by_user/{{.UserAddr}}/0/100000</code>
+		</div>
+	</div>
+</body>
+</html>

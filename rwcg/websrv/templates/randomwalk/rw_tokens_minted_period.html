@@ -1,0 +1,48 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Tokens Minted from {{.InitDate}} to {{.FinDate}}</title>
+</head>
+<body>
+	<h3 class="page_title">Tokens Minted in range <h3>
+<table>
+	<tr>
+		<td><b>From</b></td><td>{{.InitDate}}</td>
+	</tr>
+	<tr>
+		<td><b>To</b></td><td>{{.FinDate}}</td>
+	</tr>
+</table>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Block</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">TokenId</th>
+		<th class="market_reports">Minter</th>
+		<th class="market_reports">Seed Hex</th>
+		<th class="market_reports">Numeric Seed</th>
+		<th class="market_reports">Price</th>
+	</tr>
+	{{- range $i, $change := .MintedTokens}}
+		<tr class="market_reports">
+			<td class="">{{.BlockNum}}</td>
+			<td class="">{{.DateTime}}</td>
+			<td class="" style="text-align:center;">{{.TokenId}}</td>
+			<td class="addr">
+				<a href="/black/rwalk/user/info/{{.MinterAid}}/{{.ContractAddr}}">{{.MinterAddr}}</a>
+			</td>
+			<td class="addr">{{.Seed}}</td>
+			<td class="addr" style="text-align: right;">{{.SeedNum}}</td>
+			<td class="market_reports_field" style="text-align: center;">
+				{{ printf "%.18f" .Price}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/rwalk/tokens/list/by_period/[nft_contract_addr]/[from_ts]/[to_ts]<br/>
+
+	Example: /api/rwalk/tokens/list/by_period/{{.RWalkAddr}}/{{.InitTs}}/{{.FinTs}}
+</code>
+</body>

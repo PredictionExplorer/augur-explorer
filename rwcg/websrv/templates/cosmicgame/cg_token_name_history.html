@@ -1,0 +1,49 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Token Name History</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📝 Token Name History</h1>
+			<div class="subtitle">Token ID: {{.TokenId}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Block</th>
+					<th>DateTime</th>
+					<th>Token Name</th>
+				</tr>
+				{{- range $i, $change := .TokenNameHistory}}
+					<tr>
+						<td class="center">{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td>{{.TokenName}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/cst/names/history/[token_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/cst/names/history/{{.TokenId}}</code>
+		</div>
+	</div>
+</body>
+</html>

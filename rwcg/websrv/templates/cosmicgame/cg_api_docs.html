@@ -1,0 +1,975 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CosmicGame API Documentation</title>
+	<style>
+		.api-table {
+			width: 100%;
+			border-collapse: separate;
+			border-spacing: 0;
+			background: #0d0d0d;
+			border-radius: 8px;
+			overflow: hidden;
+			margin-top: 1em;
+		}
+		
+		.api-table th {
+			background: #1a1a1a;
+			color: goldenrod;
+			padding: 1em;
+			text-align: left;
+			font-weight: bold;
+			border-bottom: 2px solid #333;
+			font-size: 0.95em;
+		}
+		
+		.api-table td {
+			padding: 0.8em 1em;
+			border-bottom: 1px solid #222;
+			font-size: 0.9em;
+		}
+		
+		.api-table tr:hover {
+			background: #1a1a1a;
+		}
+		
+		.api-table tr:last-child td {
+			border-bottom: none;
+		}
+		
+		.api-endpoint {
+			font-family: monospace;
+			color: #4CAF50;
+			font-size: 0.95em;
+		}
+		
+		.api-method {
+			display: inline-block;
+			padding: 0.2em 0.6em;
+			border-radius: 4px;
+			font-size: 0.75em;
+			font-weight: bold;
+			margin-right: 0.5em;
+		}
+		
+		.method-get {
+			background: #1b5e20;
+			color: #4caf50;
+		}
+		
+		.method-post {
+			background: #01579b;
+			color: #03a9f4;
+		}
+		
+		.api-description {
+			color: #ccc;
+			margin-bottom: 0.3em;
+		}
+		
+		.api-example {
+			font-family: monospace;
+			font-size: 0.85em;
+			color: #888;
+		}
+		
+		.api-example a {
+			color: #03a9f4;
+			text-decoration: none;
+		}
+		
+		.api-example a:hover {
+			color: #4CAF50;
+		}
+		
+		.category-header {
+			background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+			padding: 0.8em 1em;
+			font-weight: bold;
+			color: goldenrod;
+			font-size: 1.1em;
+			border-bottom: 2px solid goldenrod;
+		}
+		
+		.toc {
+			background: #1a1a1a;
+			border: 1px solid #333;
+			border-radius: 8px;
+			padding: 2em;
+			margin-bottom: 2em;
+		}
+		
+		.toc-title {
+			font-size: 1.3em;
+			color: goldenrod;
+			margin-bottom: 1em;
+			font-weight: bold;
+		}
+		
+		.toc-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 1em;
+		}
+		
+		.toc-item a {
+			color: #03a9f4;
+			text-decoration: none;
+			transition: color 0.3s ease;
+		}
+		
+		.toc-item a:hover {
+			color: goldenrod;
+		}
+		
+		.base-url {
+			background: #0d0d0d;
+			border-left: 3px solid goldenrod;
+			padding: 1em 1.5em;
+			border-radius: 4px;
+			margin-bottom: 2em;
+		}
+		
+		.base-url-label {
+			font-size: 0.85em;
+			color: #999;
+			margin-bottom: 0.5em;
+		}
+		
+		.base-url-value {
+			font-family: monospace;
+			color: #4CAF50;
+			font-size: 1.1em;
+		}
+	</style>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📚 CosmicGame API Documentation</h1>
+			<div class="subtitle">Complete API reference for developers</div>
+		</div>
+
+		<!-- Base URL Info -->
+		<div class="base-url">
+			<div class="base-url-label">Base URL</div>
+			<div class="base-url-value">/api/cosmicgame</div>
+		</div>
+
+		<!-- Table of Contents -->
+		<div class="toc">
+			<div class="toc-title">📑 Categories</div>
+			<div class="toc-grid">
+				<div class="toc-item">→ <a href="#system">System & Dashboard</a></div>
+				<div class="toc-item">→ <a href="#bids">Bids</a></div>
+				<div class="toc-item">→ <a href="#rounds">Rounds & Prizes</a></div>
+				<div class="toc-item">→ <a href="#tokens">Cosmic Signature Tokens (NFT)</a></div>
+				<div class="toc-item">→ <a href="#cosmictoken">CosmicToken (ERC20)</a></div>
+				<div class="toc-item">→ <a href="#staking-cst">CST Staking</a></div>
+				<div class="toc-item">→ <a href="#staking-rwalk">RWalk Staking</a></div>
+				<div class="toc-item">→ <a href="#donations">Donations (ETH/ERC20/NFT)</a></div>
+				<div class="toc-item">→ <a href="#raffles">Raffles</a></div>
+				<div class="toc-item">→ <a href="#marketing">Marketing</a></div>
+				<div class="toc-item">→ <a href="#charity">Charity</a></div>
+				<div class="toc-item">→ <a href="#users">User Information</a></div>
+				<div class="toc-item">→ <a href="#statistics">Statistics</a></div>
+			</div>
+		</div>
+
+		<!-- System & Dashboard -->
+		<div class="section-card" id="system">
+			<div class="section-header">System & Dashboard</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Dashboard & Time</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/dashboard</span></td>
+					<td class="api-description">Get main dashboard statistics</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/dashboard">/api/cosmicgame/statistics/dashboard</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/time/current</span></td>
+					<td class="api-description">Get current timestamp</td>
+					<td class="api-example"><a href="/api/cosmicgame/time/current">/api/cosmicgame/time/current</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/time/until_prize</span></td>
+					<td class="api-description">Time until next prize claim</td>
+					<td class="api-example"><a href="/api/cosmicgame/time/until_prize">/api/cosmicgame/time/until_prize</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">System Configuration</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/system/modelist/{offset}/{limit}</span></td>
+					<td class="api-description">System mode changes and configurations</td>
+					<td class="api-example"><a href="/api/cosmicgame/system/modelist/-1/10000">...modelist/-1/10000</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/system/admin_events/{start}/{end}</span></td>
+					<td class="api-description">Admin events in event log range</td>
+					<td class="api-example"><a href="/api/cosmicgame/system/admin_events/0/1000">...admin_events/0/1000</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Bids -->
+		<div class="section-card" id="bids">
+			<div class="section-header">Bids</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/list/all/{offset}/{limit}</span></td>
+					<td class="api-description">List all bids</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/list/all/0/100">.../bid/list/all/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/info/{evtlog_id}</span></td>
+					<td class="api-description">Get bid details</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/info/1000">.../bid/info/1000</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/list/by_round/{round}/{sort}/{offset}/{limit}</span></td>
+					<td class="api-description">Bids for specific round (sort: 0=asc, 1=desc)</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/list/by_round/0/1/0/100">.../by_round/0/1/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/used_rwalk_nfts</span></td>
+					<td class="api-description">RandomWalk NFTs used in bids</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/used_rwalk_nfts">.../bid/used_rwalk_nfts</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/cst_price</span></td>
+					<td class="api-description">Current CST bid price</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/cst_price">.../bid/cst_price</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/eth_price</span></td>
+					<td class="api-description">Current ETH bid price</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/eth_price">.../bid/eth_price</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/current_special_winners</span></td>
+					<td class="api-description">Current endurance champion & last CST bidder</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/current_special_winners">.../current_special_winners</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Rounds & Prizes -->
+		<div class="section-card" id="rounds">
+			<div class="section-header">Rounds & Prizes</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Rounds</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/rounds/list/{offset}/{limit}</span></td>
+					<td class="api-description">List all rounds</td>
+					<td class="api-example"><a href="/api/cosmicgame/rounds/list/0/100">.../rounds/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/rounds/info/{round_num}</span></td>
+					<td class="api-description">Detailed round information</td>
+					<td class="api-example"><a href="/api/cosmicgame/rounds/info/0">.../rounds/info/0</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Prize History</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/history/global/{offset}/{limit}</span></td>
+					<td class="api-description">Global prize distribution history</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/history/global/0/100">.../history/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/history/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">Prize history for specific user</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/history/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">ETH Prizes</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/all/global</span></td>
+					<td class="api-description">All ETH prizes (raffle + chrono warrior)</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/all/global">.../prizes/eth/all/global</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/all/global/{offset}/{limit}</span></td>
+					<td class="api-description">All ETH prizes (paginated)</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/all/global/0/100">.../eth/all/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/raffle/global</span></td>
+					<td class="api-description">Raffle ETH prizes only</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/raffle/global">.../eth/raffle/global</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/raffle/global/{offset}/{limit}</span></td>
+					<td class="api-description">Raffle ETH prizes (paginated)</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/raffle/global/0/100">.../eth/raffle/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/chronowarrior/global</span></td>
+					<td class="api-description">Chrono warrior ETH prizes only</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/chronowarrior/global">.../eth/chronowarrior/global</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/chronowarrior/global/{offset}/{limit}</span></td>
+					<td class="api-description">Chrono warrior ETH prizes (paginated)</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/chronowarrior/global/0/100">.../chronowarrior/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/all/by_user/{addr}</span></td>
+					<td class="api-description">All ETH prizes for user</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/all/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../all/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/raffle/by_user/{addr}</span></td>
+					<td class="api-description">User's raffle ETH prizes</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/raffle/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../raffle/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/chronowarrior/by_user/{addr}</span></td>
+					<td class="api-description">User's chrono warrior ETH prizes</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/chronowarrior/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../chronowarrior/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/unclaimed/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's unclaimed ETH prizes</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/unclaimed/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../unclaimed/by_user/0x90F7.../0/100</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Cosmic Signature Tokens (NFT) -->
+		<div class="section-card" id="tokens">
+			<div class="section-header">Cosmic Signature Tokens (ERC721 NFT)</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/list/all/{offset}/{limit}</span></td>
+					<td class="api-description">List all CS tokens (mints)</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/list/all/0/100">.../cst/list/all/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/list/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's CS tokens</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/list/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/info/{token_id}</span></td>
+					<td class="api-description">Detailed token information</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/info/1">.../cst/info/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/distribution</span></td>
+					<td class="api-description">Token distribution by owner</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/distribution">.../cst/distribution</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Token Names</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/names/history/{token_id}</span></td>
+					<td class="api-description">Token name change history</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/names/history/1">.../names/history/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/names/search/{name}</span></td>
+					<td class="api-description">Search tokens by name</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/names/search/cosmic">.../names/search/cosmic</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/names/named_only</span></td>
+					<td class="api-description">Only tokens with custom names</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/names/named_only">.../names/named_only</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Transfers</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/transfers/all/{token_id}/{offset}/{limit}</span></td>
+					<td class="api-description">All transfers for a token</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/transfers/all/1/0/100">.../transfers/all/1/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/transfers/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's CS token transfers (ERC721)</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/transfers/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../by_user/0x90F7.../0/100</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- CosmicToken (ERC20) -->
+		<div class="section-card" id="cosmictoken">
+			<div class="section-header">CosmicToken (ERC20)</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/balances</span></td>
+					<td class="api-description">All CosmicToken balances</td>
+					<td class="api-example"><a href="/api/cosmicgame/ct/balances">.../ct/balances</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/statistics</span></td>
+					<td class="api-description">CosmicToken statistics</td>
+					<td class="api-example"><a href="/api/cosmicgame/ct/statistics">.../ct/statistics</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/summary/by_user/{addr}</span></td>
+					<td class="api-description">User's CosmicToken summary</td>
+					<td class="api-example"><a href="/api/cosmicgame/ct/summary/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../summary/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/transfers/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's CosmicToken transfers (ERC20)</td>
+					<td class="api-example"><a href="/api/cosmicgame/ct/transfers/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../transfers/by_user/0x90F7.../0/100</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- CST Staking -->
+		<div class="section-card" id="staking-cst">
+			<div class="section-header">CST Staking</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Staking Actions</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/actions/global/{offset}/{limit}</span></td>
+					<td class="api-description">Global CST stake/unstake actions</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/actions/global/0/100">.../actions/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/actions/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's CST staking actions</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/actions/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/actions/info/{action_id}</span></td>
+					<td class="api-description">Detailed stake action info</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/actions/info/1">.../actions/info/1</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Staked Tokens</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/staked_tokens/all</span></td>
+					<td class="api-description">All currently staked CST tokens</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/staked_tokens/all">.../staked_tokens/all</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/staked_tokens/by_user/{addr}</span></td>
+					<td class="api-description">User's staked CST tokens</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/staked_tokens/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Staking Rewards</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/global</span></td>
+					<td class="api-description">Global CST staking rewards</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/global">.../rewards/global</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/to_claim/by_user/{addr}</span></td>
+					<td class="api-description">User's unclaimed staking rewards</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/to_claim/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../to_claim/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/collected/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's collected staking rewards</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/collected/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../collected/by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/by_round/{round_num}</span></td>
+					<td class="api-description">Staking rewards for specific round</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/by_round/0">.../rewards/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/action_ids_by_deposit/{addr}/{deposit_id}</span></td>
+					<td class="api-description">Action IDs for specific deposit</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/0x90F79bf6EB2c4f870365E785982E1f101E93b906/1">.../by_deposit/0x90F7.../1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/by_user/by_token/summary/{addr}</span></td>
+					<td class="api-description">User's rewards summary by token</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../by_token/summary/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/by_user/by_token/details/{addr}/{token_id}</span></td>
+					<td class="api-description">Detailed rewards for specific token</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/by_user/by_token/details/0x90F79bf6EB2c4f870365E785982E1f101E93b906/1">.../details/0x90F7.../1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/rewards/by_user/by_deposit/{addr}</span></td>
+					<td class="api-description">User's rewards by deposit</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../by_deposit/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Staking Raffle Mints</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/mints/global/{offset}/{limit}</span></td>
+					<td class="api-description">Global CST staking raffle mints</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/mints/global/0/100">.../mints/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/cst/mints/by_user/{addr}</span></td>
+					<td class="api-description">User's CST staking raffle wins</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/cst/mints/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../mints/by_user/0x90F7...</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- RWalk Staking -->
+		<div class="section-card" id="staking-rwalk">
+			<div class="section-header">RandomWalk Staking</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/actions/global/{offset}/{limit}</span></td>
+					<td class="api-description">Global RWalk stake/unstake actions</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/actions/global/0/100">.../actions/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/actions/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's RWalk staking actions</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/actions/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/actions/info/{action_id}</span></td>
+					<td class="api-description">Detailed RWalk stake action info</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/actions/info/1">.../actions/info/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/staked_tokens/all</span></td>
+					<td class="api-description">All currently staked RWalk tokens</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/staked_tokens/all">.../staked_tokens/all</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/staked_tokens/by_user/{addr}</span></td>
+					<td class="api-description">User's staked RWalk tokens</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/staked_tokens/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/mints/global/{offset}/{limit}</span></td>
+					<td class="api-description">Global RWalk staking raffle mints</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/mints/global/0/100">.../mints/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/staking/rwalk/mints/by_user/{addr}</span></td>
+					<td class="api-description">User's RWalk staking raffle wins</td>
+					<td class="api-example"><a href="/api/cosmicgame/staking/rwalk/mints/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../mints/by_user/0x90F7...</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Donations -->
+		<div class="section-card" id="donations">
+			<div class="section-header">Donations (ETH/ERC20/NFT)</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">ETH Donations</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/simple/list/{offset}/{limit}</span></td>
+					<td class="api-description">Direct ETH donations (via donate())</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/simple/list/0/100">.../simple/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/simple/by_round/{round_num}</span></td>
+					<td class="api-description">Simple ETH donations by round</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/simple/by_round/0">.../simple/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/with_info/list/{offset}/{limit}</span></td>
+					<td class="api-description">ETH donations with info (via donateWithInfo())</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/with_info/list/0/100">.../with_info/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/with_info/by_round/{round_num}</span></td>
+					<td class="api-description">ETH donations with info by round</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/with_info/by_round/0">.../with_info/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/with_info/info/{record_id}</span></td>
+					<td class="api-description">Donation with info record details</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/with_info/info/1">.../with_info/info/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/by_user/{addr}</span></td>
+					<td class="api-description">User's ETH donations (both types)</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/both/all</span></td>
+					<td class="api-description">All ETH donations (simple + with info)</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/both/all">.../eth/both/all</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/eth/both/by_round/{round_num}</span></td>
+					<td class="api-description">All ETH donations for round</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/eth/both/by_round/0">.../both/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">ERC20 Donations</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/global/{offset}/{limit}</span></td>
+					<td class="api-description">All ERC20 donations</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/global/0/100">.../erc20/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/by_round/detailed/{round_num}</span></td>
+					<td class="api-description">ERC20 donations for round (detailed)</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/by_round/detailed/0">.../erc20/by_round/detailed/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/by_round/summarized/{round_num}</span></td>
+					<td class="api-description">ERC20 donations for round (summarized)</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/by_round/summarized/0">.../summarized/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/donated/by_user/{addr}</span></td>
+					<td class="api-description">ERC20 tokens donated by user</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/donated/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../donated/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/by_user/{addr}</span></td>
+					<td class="api-description">ERC20 prizes won by user</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../erc20/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/info/{record_id}</span></td>
+					<td class="api-description">ERC20 donation details</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/info/1">.../erc20/info/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/claims/{offset}/{limit}</span></td>
+					<td class="api-description">All ERC20 claims</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/claims/0/100">.../erc20/claims/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/claims/by_user/{addr}</span></td>
+					<td class="api-description">User's ERC20 claims</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/claims/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../claims/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">NFT Donations</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/list/{offset}/{limit}</span></td>
+					<td class="api-description">All NFT donations</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/list/0/100">.../nft/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/info/{record_id}</span></td>
+					<td class="api-description">NFT donation details</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/info/1">.../nft/info/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/by_user/{addr}</span></td>
+					<td class="api-description">NFTs donated by user</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../nft/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/by_round/{round_num}</span></td>
+					<td class="api-description">NFT donations for specific round</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/by_round/0">.../nft/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/claims/{offset}/{limit}</span></td>
+					<td class="api-description">All NFT claims</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/claims/0/100">.../nft/claims/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/claims/by_user/{addr}</span></td>
+					<td class="api-description">User's NFT claims</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/claims/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../claims/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/unclaimed/by_user/{addr}</span></td>
+					<td class="api-description">User's unclaimed donated NFTs</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/unclaimed/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../unclaimed/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/statistics</span></td>
+					<td class="api-description">NFT donation statistics</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/statistics">.../nft/statistics</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Raffles -->
+		<div class="section-card" id="raffles">
+			<div class="section-header">Raffles</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Raffle NFT Winners</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/raffle/nft/all/list/{offset}/{limit}</span></td>
+					<td class="api-description">All raffle NFT winners</td>
+					<td class="api-example"><a href="/api/cosmicgame/raffle/nft/all/list/0/100">.../nft/all/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/raffle/nft/by_round/{round_num}</span></td>
+					<td class="api-description">Raffle NFT winners for round</td>
+					<td class="api-example"><a href="/api/cosmicgame/raffle/nft/by_round/0">.../nft/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/raffle/nft/by_user/{addr}</span></td>
+					<td class="api-description">User's raffle NFT wins</td>
+					<td class="api-example"><a href="/api/cosmicgame/raffle/nft/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../nft/by_user/0x90F7...</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Marketing -->
+		<div class="section-card" id="marketing">
+			<div class="section-header">Marketing</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/marketing/rewards/global/{offset}/{limit}</span></td>
+					<td class="api-description">All marketing rewards</td>
+					<td class="api-example"><a href="/api/cosmicgame/marketing/rewards/global/0/100">.../rewards/global/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/marketing/rewards/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's marketing rewards</td>
+					<td class="api-example"><a href="/api/cosmicgame/marketing/rewards/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/marketing/config/current</span></td>
+					<td class="api-description">Current marketing wallet configuration</td>
+					<td class="api-example"><a href="/api/cosmicgame/marketing/config/current">.../config/current</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Charity -->
+		<div class="section-card" id="charity">
+			<div class="section-header">Charity</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/charity/deposits</span></td>
+					<td class="api-description">All charity deposits</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/charity/deposits">.../charity/deposits</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/charity/cg_deposits</span></td>
+					<td class="api-description">Charity deposits from CosmicGame contract</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/charity/cg_deposits">.../charity/cg_deposits</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/charity/voluntary</span></td>
+					<td class="api-description">Voluntary charity deposits</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/charity/voluntary">.../charity/voluntary</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/charity/withdrawals</span></td>
+					<td class="api-description">Charity wallet withdrawals</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/charity/withdrawals">.../charity/withdrawals</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- User Information -->
+		<div class="section-card" id="users">
+			<div class="section-header">User Information</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/user/info/{addr}</span></td>
+					<td class="api-description">Complete user information & stats</td>
+					<td class="api-example"><a href="/api/cosmicgame/user/info/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../user/info/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/user/balances/{addr}</span></td>
+					<td class="api-description">User's ETH and CST balances</td>
+					<td class="api-example"><a href="/api/cosmicgame/user/balances/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../user/balances/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/user/notif_red_box/{addr}</span></td>
+					<td class="api-description">User's pending claimable items</td>
+					<td class="api-example"><a href="/api/cosmicgame/user/notif_red_box/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../notif_red_box/0x90F7...</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Statistics -->
+		<div class="section-card" id="statistics">
+			<div class="section-header">Statistics</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/bidders</span></td>
+					<td class="api-description">All unique bidders</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/bidders">.../unique/bidders</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/winners</span></td>
+					<td class="api-description">All unique winners</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/winners">.../unique/winners</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/donors</span></td>
+					<td class="api-description">All unique donors</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/donors">.../unique/donors</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/stakers/cst</span></td>
+					<td class="api-description">Unique CST stakers</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/stakers/cst">.../stakers/cst</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/stakers/rwalk</span></td>
+					<td class="api-description">Unique RWalk stakers</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/stakers/rwalk">.../stakers/rwalk</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/stakers/both</span></td>
+					<td class="api-description">Unique stakers (both CST & RWalk)</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/stakers/both">.../stakers/both</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Developer Notes -->
+		<div class="section-card">
+			<div class="section-header">📝 Developer Notes</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Response Format</div>
+					<div class="detail-value">All endpoints return JSON responses</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Authentication</div>
+					<div class="detail-value">No authentication required (read-only public API)</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Sample Address</div>
+					<div class="detail-value monospace">0x90F79bf6EB2c4f870365E785982E1f101E93b906</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Sample Round</div>
+					<div class="detail-value">0 (use round_num=0 for testing)</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Pagination</div>
+					<div class="detail-value">Most list endpoints support {offset}/{limit} parameters</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Timestamps</div>
+					<div class="detail-value">Unix timestamps and formatted datetime strings provided</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">ETH Values</div>
+					<div class="detail-value">Returned in both Wei (integer) and ETH (float) formats</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Quick Reference -->
+		<div class="section-card">
+			<div class="section-header">🚀 Quick Start Examples</div>
+			<div class="sub-grid">
+				<div class="sub-card">
+					<div class="sub-header">Get User Info</div>
+					<pre style="background: #000; padding: 1em; border-radius: 4px; overflow-x: auto; color: #4CAF50; margin: 0;">GET /api/cosmicgame/user/info/0x90F79bf6EB2c4f870365E785982E1f101E93b906</pre>
+				</div>
+				<div class="sub-card">
+					<div class="sub-header">Get Round Details</div>
+					<pre style="background: #000; padding: 1em; border-radius: 4px; overflow-x: auto; color: #4CAF50; margin: 0;">GET /api/cosmicgame/rounds/info/0</pre>
+				</div>
+				<div class="sub-card">
+					<div class="sub-header">Get Recent Bids</div>
+					<pre style="background: #000; padding: 1em; border-radius: 4px; overflow-x: auto; color: #4CAF50; margin: 0;">GET /api/cosmicgame/bid/list/all/0/50</pre>
+				</div>
+				<div class="sub-card">
+					<div class="sub-header">Get User's Unclaimed</div>
+					<pre style="background: #000; padding: 1em; border-radius: 4px; overflow-x: auto; color: #4CAF50; margin: 0;">GET /api/cosmicgame/user/notif_red_box/0x90F79bf6EB2c4f870365E785982E1f101E93b906</pre>
+				</div>
+			</div>
+		</div>
+
+		<div class="alert alert-info">
+			<strong>💡 Tip:</strong> All clickable examples in this documentation are live links. Click any example to see the actual JSON response!
+		</div>
+	</div>
+</body>
+</html>
+

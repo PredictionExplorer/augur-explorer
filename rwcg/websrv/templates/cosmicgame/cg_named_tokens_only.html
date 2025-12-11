@@ -1,0 +1,51 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Named CosmicSignature Tokens</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📝 Named CosmicSignature Tokens</h1>
+			<div class="subtitle">All tokens that have been given custom names</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>DateTime Minted</th>
+					<th class="center">Token ID</th>
+					<th>Token Name</th>
+				</tr>
+				{{- range $i, $change := .NamedTokens}}
+					<tr>
+						<td>{{.MintDateTime}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td>
+							<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.TokenName}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/cst/names/named_only</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/cst/names/named_only</code>
+		</div>
+	</div>
+</body>
+</html>

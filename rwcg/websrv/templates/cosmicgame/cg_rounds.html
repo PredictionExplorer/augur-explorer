@@ -1,0 +1,73 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Rounds</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🏆 Game Rounds</h1>
+			<div class="subtitle">Complete round history with winners and prizes</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Round #</th>
+					<th class="right">Prize Amount</th>
+					<th class="center">Bids</th>
+					<th class="right">Donated NFTs</th>
+					<th class="right">Raffle Deposits</th>
+					<th class="center">Raffle NFTs</th>
+					<th>Quick Links</th>
+				</tr>
+				{{- range $i, $change := .Rounds}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.DateTime}}</a>
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.MainPrize.WinnerAddr}}">{{.MainPrize.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="right" title="Seed: {{.MainPrize.Seed}}">{{printf "%.6f" .MainPrize.EthAmountEth}} ETH</td>
+						<td class="center">{{.RoundStats.TotalBids}}</td>
+						<td class="center">{{.RoundStats.TotalDonatedNFTs}}</td>
+						<td class="right">{{printf "%.6f" .RoundStats.TotalRaffleEthDepositsEth}} ETH</td>
+						<td class="center">{{.RoundStats.TotalRaffleNFTs}}</td>
+						<td>
+							<a href="/black/cosmicgame/bid/list/by_round/{{.RoundNum}}/0/0/100000">Bids</a> • 
+							<a href="/black/cosmicgame/donations/nft/by_round/{{.RoundNum}}">NFTs</a> • 
+							<a href="/black/cosmicgame/donations/erc20/by_round/detailed/{{.RoundNum}}">ERC20</a> • 
+							<a href="/black/cosmicgame/donations/eth/both/by_round/{{.RoundNum}}">ETH</a> • 
+							<a href="/black/cosmicgame/prizes/eth/round/{{.RoundNum}}">Prizes</a> • 
+							<a href="/black/cosmicgame/raffle/nft/by_round/{{.RoundNum}}">Raffles</a> • 
+							<a href="/black/cosmicgame/staking/cst/rewards/by_round/{{.RoundNum}}">Staking</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/rounds/list/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/rounds/list/0/1000000</code>
+		</div>
+	</div>
+</body>
+</html>

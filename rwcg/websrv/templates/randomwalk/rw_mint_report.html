@@ -1,0 +1,34 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+<body>
+<h1 class="page_title" style="width: 100%; text-align: center">Mint Report</h1>
+<table>
+	<tr>
+		<th class="market_reports">Month</th>
+		<th class="market_reports">NFTs minted</th>
+		<th class="market_reports">Mint amount(ETH)</th>
+		<th class="market_reports">Redeem amount</th>
+	</tr>
+	{{- range .Records}}
+	<tr>
+		<td class="market_reports">{{.MonthStr}}</td>
+		<td class="market_reports" style="text-align: right">{{.TotalMinted}}</td>
+		<td class="market_reports" style="text-align: right">{{ printf "%.2f" .TotalEth}}</td>
+		<td class="market_reports" style="text-align: right">{{ printf "%.2f" .RedeemAmount}}</td>
+	</tr>
+	{{- end}}
+</table>
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

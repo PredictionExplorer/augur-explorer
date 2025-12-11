@@ -1,0 +1,66 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Unclaimed Raffle ETH Deposits</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⏳ Unclaimed Raffle ETH Deposits</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Winner Index</th>
+					<th class="center">Round</th>
+					<th class="center">Prize Type</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .UnclaimedDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">
+							{{ if eq 7 .RecordType}}
+								<span class="badge badge-warning">Chrono Warrior</span>
+							{{else}}
+								<span class="badge badge-info">Raffle ETH</span>
+							{{end}}
+						</td>
+						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>Simplified API (NEW):</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/user_unclaimed/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}</code><br/><br/>
+			<small style="color: #888;">Old API (deprecated): /api/cosmicgame/prizes/deposits/unclaimed/by_user/[user_addr]/[offset]/[limit]</small>
+		</div>
+	</div>
+</body>
+</html>
