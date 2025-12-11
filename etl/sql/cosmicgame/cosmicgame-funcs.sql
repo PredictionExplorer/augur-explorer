@@ -116,12 +116,14 @@ BEGIN
 			prizes_count = (prizes_count + v_prizes_count),
 			max_win_amount	 = v_max_prize,
 			prizes_sum = v_prizes_sum,
-			unclaimed_nfts = (unclaimed_nfts + v_donated_nfts)
+			unclaimed_nfts = (unclaimed_nfts + v_donated_nfts),
+			erc20_count = (erc20_count + 1),   -- Main prize awards 1 CST prize
+			erc721_count = (erc721_count + 1)  -- Main prize awards 1 NFT
 		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid,max_win_amount,prizes_count,prizes_sum,unclaimed_nfts)
-			VALUES(NEW.winner_aid,v_max_prize,v_prizes_count,v_prizes_sum,v_donated_nfts);
+		INSERT INTO cg_winner(winner_aid,max_win_amount,prizes_count,prizes_sum,unclaimed_nfts,erc20_count,erc721_count)
+			VALUES(NEW.winner_aid,v_max_prize,v_prizes_count,v_prizes_sum,v_donated_nfts,1,1);
 	END IF;
 	UPDATE cg_glob_stats SET num_wins = (num_wins + 1);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -183,7 +185,7 @@ BEGIN
 		v_prizes_sum := 0;
 		v_prizes_count := 0;
 	END IF;
-	SELECT total_nft_donated FROM cg_round_stats WHERE round_num=NEW.round_num INTO v_donated_nfts;
+	SELECT total_nft_donated FROM cg_round_stats WHERE round_num=OLD.round_num INTO v_donated_nfts;
 	IF v_donated_nfts IS NULL THEN
 		v_donated_nfts := 0;
 	END IF;
@@ -192,7 +194,9 @@ BEGIN
 			prizes_count = v_prizes_count,
 			max_win_amount	 = v_max_prize,
 			prizes_sum = v_prizes_sum,
-			unclaimed_nfts = (unclaimed_nfts + v_donated_nfts)
+			unclaimed_nfts = GREATEST(0, unclaimed_nfts - v_donated_nfts),
+			erc20_count = GREATEST(0, erc20_count - 1),
+			erc721_count = GREATEST(0, erc721_count - 1)
 		WHERE winner_aid = OLD.winner_aid;
 
 	UPDATE cg_glob_stats SET num_wins = (num_wins - 1);
@@ -445,11 +449,16 @@ BEGIN
 		INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,12);
 	END IF;
 	
-	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
-	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	-- Update winner: prizes_count (+2), erc20_count (+1), erc721_count (+1)
+	UPDATE cg_winner 
+		SET 
+			prizes_count = (prizes_count + 2),
+			erc20_count = (erc20_count + 1),
+			erc721_count = (erc721_count + 1)
+		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+		INSERT INTO cg_winner(winner_aid, prizes_count, erc20_count, erc721_count) VALUES (NEW.winner_aid, 2, 1, 1);
 	END IF;
 
 	RETURN NEW;
@@ -469,11 +478,11 @@ BEGIN
 		WHERE round_num=OLD.round_num;
 	IF OLD.is_staker THEN
 		IF OLD.is_rwalk THEN
-			UPDATE cg_staker_rwalk SET num_tokens_minted = (num_tokens_minted + 1)
+			UPDATE cg_staker_rwalk SET num_tokens_minted = (num_tokens_minted - 1)
 				WHERE staker_aid=OLD.winner_aid;
 			UPDATE cg_stake_stats_rwalk SET total_nft_mints = (total_nft_mints - 1);
 		ELSE
-			UPDATE cg_staker_cst SET num_tokens_minted = (num_tokens_minted + 1)
+			UPDATE cg_staker_cst SET num_tokens_minted = (num_tokens_minted - 1)
 				WHERE staker_aid=OLD.winner_aid;
 			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints - 1);
 		END IF;
@@ -496,6 +505,15 @@ BEGIN
 		DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=11;
 		DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=12;
 	END IF;
+
+	-- Update winner counts
+	UPDATE cg_winner 
+		SET 
+			prizes_count = GREATEST(0, prizes_count - 2),
+			erc20_count = GREATEST(0, erc20_count - 1),
+			erc721_count = GREATEST(0, erc721_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -519,11 +537,16 @@ BEGIN
 	-- 2) ERC20 CST token prize (ptype=6)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,6);
 	
-	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
-	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	-- Update winner: prizes_count (+2), erc20_count (+1), erc721_count (+1)
+	UPDATE cg_winner 
+		SET 
+			prizes_count = (prizes_count + 2),
+			erc20_count = (erc20_count + 1),
+			erc721_count = (erc721_count + 1)
+		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+		INSERT INTO cg_winner(winner_aid, prizes_count, erc20_count, erc721_count) VALUES (NEW.winner_aid, 2, 1, 1);
 	END IF;
 
 	RETURN NEW;
@@ -550,6 +573,14 @@ BEGIN
 	-- 2) ERC20 CST token prize (ptype=6)
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=6;
 
+	-- Update winner counts
+	UPDATE cg_winner 
+		SET 
+			prizes_count = GREATEST(0, prizes_count - 2),
+			erc20_count = GREATEST(0, erc20_count - 1),
+			erc721_count = GREATEST(0, erc721_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -573,11 +604,16 @@ BEGIN
 	-- 2) ERC20 CST token prize (ptype=4)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,4);
 	
-	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
-	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	-- Update winner: prizes_count (+2), erc20_count (+1), erc721_count (+1)
+	UPDATE cg_winner 
+		SET 
+			prizes_count = (prizes_count + 2),
+			erc20_count = (erc20_count + 1),
+			erc721_count = (erc721_count + 1)
+		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+		INSERT INTO cg_winner(winner_aid, prizes_count, erc20_count, erc721_count) VALUES (NEW.winner_aid, 2, 1, 1);
 	END IF;
 
 	RETURN NEW;
@@ -603,6 +639,14 @@ BEGIN
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=3;
 	-- 2) ERC20 CST token prize (ptype=4)
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=4;
+
+	-- Update winner counts
+	UPDATE cg_winner 
+		SET 
+			prizes_count = GREATEST(0, prizes_count - 2),
+			erc20_count = GREATEST(0, erc20_count - 1),
+			erc721_count = GREATEST(0, erc721_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
 
 	RETURN OLD;
 END;
@@ -827,30 +871,32 @@ BEGIN
 	-- Get the claim timestamp
 	SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT FROM cg_donated_nft_claimed WHERE id = NEW.id INTO v_claim_ts;
 	
-	-- Only update unclaimed_nfts tracking if:
-	-- 1. Claimer IS the round winner, OR
-	-- 2. Timeout has NOT expired (within timeout period, only winner can claim)
-	IF v_round_winner_aid = NEW.winner_aid THEN
-		-- Winner is claiming their own NFTs - decrement tracking
-		UPDATE cg_winner
-			SET
-				unclaimed_nfts = (unclaimed_nfts - 1)
-			WHERE winner_aid = NEW.winner_aid
-			RETURNING unclaimed_nfts INTO new_unclaimed_value;
-		GET DIAGNOSTICS v_cnt = ROW_COUNT;
-		IF v_cnt = 0 THEN
-			RAISE EXCEPTION 'on_donated_nft_claimed_insert() winner record does not exist for winner_aid=%, round_num=%',NEW.winner_aid,NEW.round_num;
+	-- ALWAYS decrement unclaimed_nfts for the ORIGINAL ROUND WINNER, regardless of who claims
+	-- The unclaimed_nfts counter tracks how many donated NFTs the round winner has pending
+	-- When ANYONE claims (winner or non-winner after timeout), that count should decrease for the winner
+	UPDATE cg_winner
+		SET
+			unclaimed_nfts = GREATEST(0, unclaimed_nfts - 1)
+		WHERE winner_aid = v_round_winner_aid
+		RETURNING unclaimed_nfts INTO new_unclaimed_value;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		-- Winner record should exist from on_prize_claim_insert(), but handle edge case
+		RAISE NOTICE 'on_donated_nft_claimed_insert() winner record does not exist for round winner_aid=% (round_num=%), claimer=%. Creating record.',
+			v_round_winner_aid, NEW.round_num, NEW.winner_aid;
+		INSERT INTO cg_winner(winner_aid, unclaimed_nfts) VALUES(v_round_winner_aid, 0);
+	END IF;
+	
+	-- Log if this is a timeout claim by non-winner (for debugging)
+	IF v_round_winner_aid != NEW.winner_aid THEN
+		IF v_claim_ts >= v_timeout_ts THEN
+			RAISE NOTICE 'on_donated_nft_claimed_insert() timeout claim: non-winner (%) claimed NFT from round % after timeout. Original winner: %, timeout_ts: %, claim_ts: %',
+				NEW.winner_aid, NEW.round_num, v_round_winner_aid, v_timeout_ts, v_claim_ts;
+		ELSE
+			-- Non-winner claiming before timeout - this should not happen per Solidity logic
+			RAISE WARNING 'on_donated_nft_claimed_insert() UNEXPECTED: non-winner (%) claimed NFT from round % BEFORE timeout. Original winner: %, timeout_ts: %, claim_ts: %. This may indicate a bug.',
+				NEW.winner_aid, NEW.round_num, v_round_winner_aid, v_timeout_ts, v_claim_ts;
 		END IF;
-		IF new_unclaimed_value < 0 THEN
-			RAISE EXCEPTION 'unclaimed_nfts went negative (value=%) for winner_aid=% on round_num=%. This indicates donated NFTs were not properly credited during prize claim.',new_unclaimed_value,NEW.winner_aid,NEW.round_num;
-		END IF;
-	ELSIF v_claim_ts < v_timeout_ts THEN
-		-- Non-winner claiming before timeout expired - not allowed
-		RAISE EXCEPTION 'on_donated_nft_claimed_insert() non-winner (winner_aid=%) tried to claim NFT from round_num=% before timeout. Actual winner=%, timeout_ts=%, claim_ts=%',NEW.winner_aid,NEW.round_num,v_round_winner_aid,v_timeout_ts,v_claim_ts;
-	ELSE
-		-- Non-winner claiming after timeout - allowed per Solidity logic
-		-- Don't update unclaimed_nfts tracking since this is a timeout claim, not a winner claim
-		-- This is valid behavior according to PrizesWallet.sol
 	END IF;
 	
 	RETURN NEW;
@@ -858,12 +904,19 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_donated_nft_claimed_delete() RETURNS trigger AS  $$
 DECLARE
+	v_round_winner_aid			BIGINT;
 BEGIN
-
-	UPDATE cg_winner
-		SET
-			unclaimed_nfts = (unclaimed_nfts + 1)
-		WHERE winner_aid = OLD.winner_aid;
+	-- Get the original round winner
+	SELECT winner_aid FROM cg_prize_claim WHERE round_num = OLD.round_num INTO v_round_winner_aid;
+	
+	IF v_round_winner_aid IS NOT NULL THEN
+		-- Increment unclaimed_nfts for the original round winner
+		UPDATE cg_winner
+			SET
+				unclaimed_nfts = (unclaimed_nfts + 1)
+			WHERE winner_aid = v_round_winner_aid;
+	END IF;
+	
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -871,15 +924,13 @@ CREATE OR REPLACE FUNCTION on_mint_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
-
-	UPDATE cg_winner
-		SET
-			tokens_count = (tokens_count + 1)
-		WHERE winner_aid = NEW.owner_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid,tokens_count) VALUES(NEW.owner_aid,1);
-	END IF;
+	-- REMOVED: cg_winner updates (now tracked by prize-specific triggers)
+	-- Main prize NFT is tracked by on_prize_claim_insert()
+	-- Raffle NFT is tracked by on_raffle_nft_winner_insert()
+	-- Endurance NFT is tracked by on_endurance_winner_insert()
+	-- Last CST NFT is tracked by on_lastcst_winner_insert()
+	-- Chrono Warrior NFT is tracked by on_chrono_warrior_insert()
+	
 	UPDATE cg_glob_stats SET num_mints = (num_mints + 1);
 	RETURN NEW;
 END;
@@ -887,11 +938,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mint_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
-
-	UPDATE cg_winner
-		SET
-			tokens_count = (tokens_count - 1)
-		WHERE winner_aid = OLD.owner_aid;
+	-- REMOVED: cg_winner updates (now tracked by prize-specific triggers)
+	
 	UPDATE cg_glob_stats SET num_mints = (num_mints - 1);
 	RETURN OLD;
 END;
@@ -1447,11 +1495,18 @@ BEGIN
 	-- 3) Chrono Warrior CS NFT (ptype=9)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_index,9);
 	
-	-- Update winner prize count (each raffle NFT = 2 prizes: CST + NFT)
-	UPDATE cg_winner SET prizes_count = (prizes_count + 2) WHERE winner_aid = NEW.winner_aid;
+	-- Update winner: prizes_count (+3), prizes_sum (+ETH), erc20_count (+1), erc721_count (+1)
+	UPDATE cg_winner 
+		SET 
+			prizes_count = (prizes_count + 3),
+			prizes_sum = (prizes_sum + NEW.eth_amount),
+			erc20_count = (erc20_count + 1),
+			erc721_count = (erc721_count + 1)
+		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 2);
+		INSERT INTO cg_winner(winner_aid, prizes_count, prizes_sum, erc20_count, erc721_count) 
+			VALUES (NEW.winner_aid, 3, NEW.eth_amount, 1, 1);
 	END IF;
 
 	RETURN NEW;
@@ -1476,6 +1531,15 @@ BEGIN
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index AND ptype=8;
 	-- 3) Chrono Warrior CS NFT (ptype=9)
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_index AND ptype=9;
+
+	-- Update winner counts
+	UPDATE cg_winner 
+		SET 
+			prizes_count = GREATEST(0, prizes_count - 3),
+			prizes_sum = GREATEST(0, prizes_sum - OLD.eth_amount),
+			erc20_count = GREATEST(0, erc20_count - 1),
+			erc721_count = GREATEST(0, erc721_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
 
 	RETURN OLD;
 END;
@@ -1509,11 +1573,15 @@ BEGIN
 	-- Insert record in cg_prize table with ptype=10 for Raffle ETH (for bidders)
 	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,10);
 	
-	-- Update winner prize count (Raffle ETH = 1 prize)
-	UPDATE cg_winner SET prizes_count = (prizes_count + 1) WHERE winner_aid = NEW.winner_aid;
+	-- Update winner prize count and prizes_sum (Raffle ETH = 1 prize, ETH amount)
+	UPDATE cg_winner 
+		SET 
+			prizes_count = (prizes_count + 1),
+			prizes_sum = (prizes_sum + NEW.amount)
+		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_winner(winner_aid, prizes_count) VALUES (NEW.winner_aid, 1);
+		INSERT INTO cg_winner(winner_aid, prizes_count, prizes_sum) VALUES (NEW.winner_aid, 1, NEW.amount);
 	END IF;
 
 	RETURN NEW;
@@ -1538,6 +1606,13 @@ BEGIN
 
 	-- Remove corresponding record from cg_prize table
 	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=10;
+
+	-- Update winner prize count and prizes_sum
+	UPDATE cg_winner 
+		SET 
+			prizes_count = GREATEST(0, prizes_count - 1),
+			prizes_sum = GREATEST(0, prizes_sum - OLD.amount)
+		WHERE winner_aid = OLD.winner_aid;
 
 	RETURN OLD;
 END;

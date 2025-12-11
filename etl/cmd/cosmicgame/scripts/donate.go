@@ -101,7 +101,7 @@ func main() {
 	txopts.Value.Set(donation_amount)
 	txopts.GasLimit = uint64(20000000) // in units
 	fmt.Printf("tx = %v\n",txopts)
-	txopts.GasPrice = gasPrice
+	txopts.GasPrice = gasPrice.Add(gasPrice,big.NewInt(20000))	// bump a little bit to avoid error of lower gas price
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
 

@@ -898,13 +898,15 @@ CREATE TABLE cg_bidder ( -- collects statistics per bidder
 	max_bid			DECIMAL DEFAULT 0,
 	tokens_minted	DECIMAL DEFAULT 0 -- total tokens minted
 );
-CREATE TABLE cg_winner ( -- collects statistics per winer of prize
+CREATE TABLE cg_winner ( -- collects statistics per winner of any prize type
 	winner_aid				BIGINT PRIMARY KEY,
-	max_win_amount			DECIMAL DEFAULT 0,
-	prizes_count			BIGINT DEFAULT 0,
-	prizes_sum				DECIMAL DEFAULT 0,
-	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
-	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs (erc721)
+	max_win_amount			DECIMAL DEFAULT 0,	-- max ETH won in main prize
+	prizes_count			BIGINT DEFAULT 0,	-- total prize count (all types)
+	prizes_sum				DECIMAL DEFAULT 0,	-- sum of ETH won (main + raffle + chrono warrior)
+	tokens_count			BIGINT DEFAULT 0,	-- DEPRECATED: use erc721_count instead
+	erc20_count				BIGINT DEFAULT 0,	-- count of ERC20 (CST) prizes won
+	erc721_count			BIGINT DEFAULT 0,	-- count of ERC721 (NFT) prizes won
+	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs (erc721) pending claim by winner
 );
 CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This is the smallest reward unit (from which other accumulators are composed)
 	-- This table is internal, it is populated via SQL triggers
