@@ -120,3 +120,4 @@ func main_page(c *gin.Context) {
 		"title": "RandomWalk & CosmicGame",
 	})
 }
+

@@ -318,3 +318,4 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/system/modelist/:offset/:limit", cosmic_game_sysmode_changes)
 	r.GET("/black/cosmicgame/system/admin_events/:evtlog_start/:evtlog_end", cosmic_game_admin_events_in_range)
 }
+

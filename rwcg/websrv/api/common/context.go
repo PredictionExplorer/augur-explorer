@@ -94,3 +94,4 @@ func IsAddressValid(c *gin.Context, jsonOutput bool, addr string) (string, bool)
 	}
 	return formattedAddr, true
 }
+

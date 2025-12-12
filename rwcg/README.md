@@ -1,6 +1,6 @@
-# RWCG - RandomWalk & CosmicGame Web Server
+# RWCG - RandomWalk & CosmicGame Backend
 
-This is an extracted subproject containing the web server functionality for RandomWalk and CosmicGame.
+This is an extracted subproject containing the web server functionality for RandomWalk and CosmicGame (only).
 
 ## Structure
 

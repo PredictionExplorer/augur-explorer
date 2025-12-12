@@ -148,3 +148,4 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 	}
 	return formatted_addr,true
 }
+

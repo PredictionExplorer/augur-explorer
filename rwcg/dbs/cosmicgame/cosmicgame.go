@@ -75,13 +75,14 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_processing_status() p.CosmicGamePro
 
 	var output p.CosmicGameProcStatus
 	var null_id sql.NullInt64
+	var null_block sql.NullInt64
 
 	var query string
 	for {
-		query = "SELECT last_evt_id FROM "+sw.S.SchemaName()+".cg_proc_status"
+		query = "SELECT last_evt_id, last_block_num FROM "+sw.S.SchemaName()+".cg_proc_status"
 
 		res := sw.S.Db().QueryRow(query)
-		err := res.Scan(&null_id)
+		err := res.Scan(&null_id, &null_block)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
 				query = "INSERT INTO "+sw.S.SchemaName()+".cg_proc_status DEFAULT VALUES"
@@ -101,14 +102,17 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_processing_status() p.CosmicGamePro
 	if null_id.Valid {
 		output.LastEvtIdProcessed = null_id.Int64
 	}
+	if null_block.Valid {
+		output.LastBlockNum = null_block.Int64
+	}
 	return output
 }
 func (sw *SQLStorageWrapper) Update_cosmic_game_process_status(status *p.CosmicGameProcStatus) {
 
 	var query string
-	query = "UPDATE "+sw.S.SchemaName()+".cg_proc_status SET last_evt_id = $1"
+	query = "UPDATE "+sw.S.SchemaName()+".cg_proc_status SET last_evt_id = $1, last_block_num = $2"
 
-	_,err := sw.S.Db().Exec(query,status.LastEvtIdProcessed)
+	_,err := sw.S.Db().Exec(query, status.LastEvtIdProcessed, status.LastBlockNum)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)

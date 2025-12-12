@@ -1,0 +1,187 @@
+// Copied from: github.com/febriliankr/whatsapp-cloud-api
+// (had to copy because the library has a bug (issue #2 at Github) wich I fixed in my copy)
+package wanotif
+import (
+	"fmt"
+	"bytes"
+	"io"
+	"errors"
+	"net/http"
+	"encoding/json"
+)
+type Whatsapp struct {
+	Token         string
+	APIVersion    string
+	PhoneNumberID string
+	Language      TemplateLanguage
+}
+type TemplateLanguage struct {
+	Code string `json:"code,omitempty"`
+}
+
+// Components for WhatsApp template messages
+type Components struct {
+	Type       string               `json:"type,omitempty"`
+	Parameters []TemplateParameters `json:"parameters,omitempty"`
+}
+
+// TemplateParameters for WhatsApp template messages
+type TemplateParameters struct {
+	Type string `json:"type,omitempty"`
+	Text string `json:"text,omitempty"`
+}
+
+// Template for WhatsApp template messages
+type Template struct {
+	Name       string       `json:"name,omitempty"`
+	Language   TemplateLanguage `json:"language,omitempty"`
+	Components []Components `json:"components,omitempty"`
+}
+
+// SendWithTemplateRequest for WhatsApp API
+type SendWithTemplateRequest struct {
+	MessagingProduct string   `json:"messaging_product,omitempty"`
+	To               string   `json:"to,omitempty"`
+	Type             string   `json:"type,omitempty"`
+	Template         Template `json:"template,omitempty"`
+}
+var (
+	LanguageEnglish = TemplateLanguage{
+		Code: "en",
+	}
+)
+func NewWhatsapp(token string, phoneNumberID string) *Whatsapp {
+	return &Whatsapp{
+		Language:      LanguageEnglish,
+		Token:         token,
+		APIVersion:    "v14.0",
+		PhoneNumberID: phoneNumberID,
+	}
+}
+func parseHTTPError(body io.Reader) (err error) {
+	var errRes map[string]map[string]interface{}
+	err = json.NewDecoder(body).Decode(&errRes)
+	if err != nil {
+		return fmt.Errorf("unparsed error message")
+	}
+	msg := fmt.Sprintf("%s", errRes["error"]["message"])
+	return errors.New(msg)
+}
+func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}, err error) {
+
+	jsonRequest, err := json.Marshal(request)
+	if err != nil {
+		return res, err
+	}
+
+	body := bytes.NewReader(jsonRequest)
+
+	endpoint := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", wa.APIVersion, wa.PhoneNumberID)
+	req, err := http.NewRequest("POST", endpoint, body)
+	if err != nil {
+		return res, err
+	}
+	req.Header.Set("Authorization", "Bearer "+wa.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	fmt.Printf("Do(): resp=%v, err=%v\n",resp,err)
+	if err != nil {
+		return res, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		err := parseHTTPError(resp.Body)
+		return res, err
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return res, err
+	}
+	fmt.Printf("body bytes=%+v\n",string(bodyBytes))
+	resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &req)
+	if err != nil {
+		return res,err
+	}
+	var b bytes.Buffer
+	_, err = io.Copy(&b, resp.Body)
+	if err != nil {
+		return res, err
+	}
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&res)
+	if err != nil {
+		return res, err
+	}
+
+	return res, err
+}
+func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
+
+	request := wa.createSendWithTemplateRequest(toPhoneNumber, templateName, wa.Language, components)
+
+	return wa.sendMessage(request)
+}
+func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]interface{}, err error) {
+
+	request := map[string]interface{}{
+		"messaging_product": "whatsapp",
+		"to":                toPhoneNumber,
+		"type":              "text",
+		"text": map[string]string{
+			"body": string(text),
+		},
+	}
+	return wa.sendMessage(request)
+
+}
+func (wa *Whatsapp) createSendWithTemplateRequest(receiverPhoneNumber string, templateName string, language TemplateLanguage, components []Components) (res SendWithTemplateRequest) {
+	return SendWithTemplateRequest{
+		MessagingProduct: "whatsapp",
+		To:               receiverPhoneNumber,
+		Type:             "template",
+		Template: Template{
+			Name:     templateName,
+			Language: LanguageEnglish,
+			// Components can be empty if you don't want to send any parameters
+			Components: components,
+		},
+	}
+}
+func (wa *Whatsapp) GenerateTemplateParameters(parameterType string, args ...string) (res []TemplateParameters) {
+
+	if parameterType == "" {
+		parameterType = "text"
+	}
+
+	for _, arg := range args {
+		res = append(res, TemplateParameters{
+			Type: parameterType,
+			Text: arg,
+		})
+	}
+	return
+}
+/*
+	Sample use
+	note: you must initiate conversation with the sending account first, otherwise
+			the message will be classified as spam and won't be delivered, though no err is reported
+func main() {
+
+	my_phone_id := os.Getenv("WHATSAPP_PHONE_ID")
+	token := os.Getenv("WHATSAPP_TOKEN")
+	wa := NewWhatsapp(token,my_phone_id)
+	wa.APIVersion = "v15.0"
+	res, err := wa.SendText("phone_num", "your_message")
+	if err != nil {
+		fmt.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Message sent successfuly\n")
+	fmt.Printf("res = %v\n",res)
+	os.Exit(0)
+}
+*/

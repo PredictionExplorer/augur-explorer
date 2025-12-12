@@ -83,3 +83,4 @@ func dbInitialized() bool {
 func db() *rwdb.SQLStorageWrapper {
 	return &rw_storagew
 }
+

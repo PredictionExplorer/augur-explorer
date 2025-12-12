@@ -2,8 +2,49 @@
 package primitives
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 )
+
+// =====================================================================
+// Blockchain Transaction Types
+// =====================================================================
+
+// AugurTx is a wrapper for Ethereum Transaction object in our own format
+type AugurTx struct {
+	TxId              int64 // once inserted tx_id is stored here
+	BlockNum          int64
+	Gas               int64
+	GasUsed           int64
+	TimeStamp         int64
+	TxIndex           int32
+	NumLogs           int32
+	CtrctCreate       bool
+	CumulativeGasUsed uint64
+	EffectiveGasPrice *big.Int
+	BlockHash         string
+	GasPrice          string
+	TxHash            string
+	From              string
+	To                string
+	Value             string
+	Input             []byte
+}
+
+// AddrStatsLog for address statistics logging
+type AddrStatsLog struct {
+	BlockNum int64
+	TxIndex  int64
+	Aid      int64 // Address ID
+}
+
+// TxShort is a shortened transaction record
+type TxShort struct {
+	BlockNum int64
+	TxIndex  int64
+	TxFee    string
+}
 
 // =====================================================================
 // User Statistics Types
@@ -137,4 +178,112 @@ type ContractAddresses struct {
 	USDT                    common.Address
 	RelayHubV2              common.Address
 	AccountLoader           common.Address
+}
+
+// =====================================================================
+// ETL Event Types
+// =====================================================================
+
+// EthereumEventLog represents an Ethereum event log entry
+type EthereumEventLog struct {
+	EvtId           int64
+	BlockNum        int64
+	TxId            int64
+	ContractAid     int64
+	TimeStamp       int64
+	ContractAddress string
+	TxHash          string
+	Topic0_Sig      string
+	RlpLog          []byte
+}
+
+// InspectedEvent for ETL event tracking
+type InspectedEvent struct {
+	ContractAid int64
+	Signature   string
+}
+
+// ShortEvtLog is a shortened event log reference
+type ShortEvtLog struct {
+	EvtId int64
+	TxId  int64
+}
+
+// EthereumEventTopic represents an event topic
+type EthereumEventTopic struct {
+	BlockNum    int64
+	TxId        int64
+	EventLogId  int64
+	ContractAid int64
+	Pos         int
+	Value       string // Important note: this isn't 0x-prefixed
+}
+
+// =====================================================================
+// Market Types
+// =====================================================================
+
+// MarketVeryShortInfo contains minimal market information
+type MarketVeryShortInfo struct {
+	MktAddr string
+	MktDesc string
+}
+
+// =====================================================================
+// Token Types
+// =====================================================================
+
+// ERC20Info contains ERC20 token information
+type ERC20Info struct {
+	Id           int64
+	Aid          int64
+	TotalSupplyF float64
+	Decimals     int
+	TotalSupply  string
+	Address      string
+	Name         string
+	Symbol       string
+}
+
+// =====================================================================
+// DeFi Types (for TxInfo fields)
+// =====================================================================
+
+// BalancerSwap represents a Balancer swap event
+type BalancerSwap struct {
+	PoolAid    int64
+	PoolAddr   string
+	TokenIn    string
+	TokenOut   string
+	AmountIn   float64
+	AmountOut  float64
+}
+
+// UniswapSwap represents a Uniswap swap event
+type UniswapSwap struct {
+	PairAid   int64
+	PairAddr  string
+	Token0    string
+	Token1    string
+	Amount0   float64
+	Amount1   float64
+}
+
+// PoolVeryShortInfo contains minimal pool information
+type PoolVeryShortInfo struct {
+	PoolAid  int64
+	PoolAddr string
+}
+
+// PairVeryShortInfo contains minimal pair information
+type PairVeryShortInfo struct {
+	PairAid  int64
+	PairAddr string
+}
+
+// TokenVeryShortInfo contains minimal token information
+type TokenVeryShortInfo struct {
+	TokenAid  int64
+	TokenAddr string
+	Symbol    string
 }

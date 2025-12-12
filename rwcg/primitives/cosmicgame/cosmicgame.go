@@ -19,6 +19,7 @@ type CosmicGameContractAddrs struct {
 }
 type CosmicGameProcStatus struct {
 	LastEvtIdProcessed			int64
+	LastBlockNum				int64
 }
 type CGPrizeClaimEvent struct {
 	EvtId				int64
