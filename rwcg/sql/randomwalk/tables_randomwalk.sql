@@ -149,7 +149,7 @@ CREATE TABLE rw_uranks (   -- User Rankings (how this user ranks against each ot
 CREATE TABLE rw_notif_status ( -- Status of Tweeter/Discord notifications
 	last_token_id_tweeter		BIGINT DEFAULT 0,
 	last_token_id_discord		BIGINT DEFAULT 0,
-	msg_text					TEXT DEFALT 'New token '
+	msg_text					TEXT DEFAULT 'New token '
 );
 CREATE TABLE rw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0,

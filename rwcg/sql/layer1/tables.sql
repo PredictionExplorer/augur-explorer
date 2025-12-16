@@ -1,3 +1,4 @@
+
 -- Layer1 tables
 -- Blockchain tables
 CREATE TABLE block (
@@ -47,8 +48,9 @@ CREATE TABLE evt_log (
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	contract_aid		BIGINT NOT NULL, -- copied for easy data management
 	topic0_sig			CHAR(8) NOT NULL,-- 4 bytes (8 hex chars)  from Topics[0] (the event signature)
-	log_rlp				bytea NOT NULL -- RLP encoded (core/types.log:RLPEncode()) event log data
---	data				TEXT NOT NULL
+	log_index			INT NOT NULL DEFAULT 0, -- log index within the block
+	log_rlp				bytea NOT NULL, -- RLP encoded (core/types.log:RLPEncode()) event log data
+	UNIQUE(block_num, log_index) -- prevent duplicate event insertions
 );
 CREATE TABLE evt_topic (	-- stores indexed topics of Ethereum Event
 	id					BIGSERIAL PRIMARY KEY,
@@ -70,82 +72,6 @@ CREATE TABLE abi_events (-- Ethereum event signature of the contract event
 	signature			CHAR(8) UNIQUE,
 	evt_name			TEXT NOT NULL,
 	contracts			TEXT NOT NULL
-);
--- Layer2 tables
-CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
-	id						BIGSERIAL PRIMARY KEY,
-	aid						BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
--- Event fields:
-	time_stamp				TIMESTAMPTZ NOT NULL,
-	fillable_amount			DECIMAL(32,18) NOT NULL,
-	evt_code				SMALLINT NOT NULL,
--- Augur fields:
-	mktord_id				BIGINT DEFAULT NULL, -- the DELETE trigger in 'mktord' does the deletion
-	market_aid				BIGINT NOT NULL,
-	outcome_idx				SMALLINT NOT NULL,
-	otype					SMALLINT NOT NULL,-- 0: BID, 1: ASK
-	price					DECIMAL(32,18) NOT NULL,
--- Fill fields:
-	amount_fill				DECIMAL(32,18) DEFAULT 0.0,
--- `Order` struct follows:
-	order_hash				CHAR(66) NOT NULL,
-	chain_id				INT NOT NULL,
-	exchange_addr			CHAR(42) NOT NULL,
-	maker_addr				CHAR(42) NOT NULL,
-	maker_asset_data		TEXT NOT NULL,	-- hex encoded
-	maker_fee_asset_data	TEXT NOT NULL,	-- hex encoded
-	maker_asset_amount		DECIMAL(32,18) NOT NULL,
-	maker_fee				DECIMAL(32,18) NOT NULL,
-	taker_address			CHAR(42) NOT NULL,
-	taker_asset_data		TEXT NOT NULL,
-	taker_fee_asset_data	TEXT NOT NULL,
-	taker_asset_amount		DECIMAL(32,18) NOT NULL,
-	taker_fee				DECIMAL(32,18) NOT NULL,
-	sender_address			CHAR(42) NOT NULL,
-	fee_recipient_address	CHAR(42) NOT NULL,
-	expiration_time			TIMESTAMPTZ(3) NOT NULL,
-	salt					TEXT NOT NULL, -- big.Int as string
-	signature				TEXT
-);
-CREATE TABLE mesh_status (
-	last_id_processed	BIGINT DEFAULT 0
-);
-CREATE TABLE depth_state ( -- the state market depth at any given point in time, used to calculate 
-	id					BIGSERIAL PRIMARY KEY,
-	meshevt_id			BIGINT NOT NULL REFERENCES mesh_evt(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	otype				SMALLINT NOT NULL,
-	order_hash			CHAR(66),
-	price				DECIMAL(32,18) NOT NULL,
-	amount				DECIMAL(32,18) NOT NULL,
-	ini_ts				TIMESTAMPTZ NOT NULL,
-	fin_ts				TIMESTAMPTZ NOT NULL
-);
-CREATE TABLE mesh_link ( -- links two mesh events (ex. one event cancel order created in another event)
-	id					BIGSERIAL PRIMARY KEY,
-	depthst_id			BIGINT NOT NULL REFERENCES depth_state(id) ON DELETE CASCADE,
-	meshevt_id			BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ NOT NULL,
-	order_hash			CHAR(66) NOT NULL
-);
-CREATE TABLE price_estimate (
-	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL,
-	meshevt_id			BIGINT NOT NULL REFERENCES mesh_evt(id) ON DELETE CASCADE,
-	time_stamp			TIMESTAMPTZ NOT NULL,
-	bid_state_id		BIGINT, -- will be NULL if there is are no orders (fake orders used)
-	ask_state_id		BIGINT,	-- will be NULL if there is are no orders (fake orders used)
-	outcome_idx			SMALLINT NOT NULL,
-	spread				DECIMAL(32,18) NOT NULL,
-	price_est			DECIMAL(32,18) NOT NULL,
-	wprice_est			DECIMAL(32,18),-- weighted price estimate (taking volume into consideration)
-	wmax_bid			DECIMAL(32,18),
-	wmin_ask			DECIMAL(32,18),
-	max_bid				DECIMAL(32,18) NOT NULL,
-	min_ask				DECIMAL(32,18) NOT NULL,
-	wbid_size			DECIMAL(64,18),
-	wask_size			DECIMAL(64,18)
 );
 CREATE TABLE last_block (	-- the value in this table is guaranteeing integrity in the data up to last block
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
@@ -190,8 +116,4 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	usdt				TEXT DEFAULT '',-- USDT:
 	relay_hub_v2		TEXT DEFAULT '',-- RelayHubV2:
 	account_loader		TEXT DEFAULT '' -- AccountLoader
-);
-CREATE TABLE ooconfig ( -- configuration for spread calculation
-	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
-	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
 );

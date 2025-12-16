@@ -14,13 +14,9 @@ import (
 func (ss *SQLStorage) Insert_block(header *types.Header) error {
 	var query string
 	query = `INSERT INTO block (
-		block_num, block_hash, ts, parent_hash, 
-		nonce, miner, difficulty, gas_limit, gas_used,
-		tx_root, state_root, receipts_root, uncle_hash
+		block_num, block_hash, ts, parent_hash
 	) VALUES (
-		$1, $2, TO_TIMESTAMP($3), $4, 
-		$5, $6, $7, $8, $9,
-		$10, $11, $12, $13
+		$1, $2, TO_TIMESTAMP($3), $4
 	) ON CONFLICT (block_num) DO NOTHING`
 
 	_, err := ss.db.Exec(query,
@@ -28,15 +24,6 @@ func (ss *SQLStorage) Insert_block(header *types.Header) error {
 		header.Hash().Hex(),
 		header.Time,
 		header.ParentHash.Hex(),
-		fmt.Sprintf("%d", header.Nonce.Uint64()),
-		header.Coinbase.Hex(),
-		header.Difficulty.String(),
-		header.GasLimit,
-		header.GasUsed,
-		header.TxHash.Hex(),
-		header.Root.Hex(),
-		header.ReceiptHash.Hex(),
-		header.UncleHash.Hex(),
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("Insert_block failed: %v", err))
@@ -70,11 +57,9 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 	fromAid := ss.Lookup_or_create_address(from.Hex(), blockNum, 0)
 
 	// Get to address (may be nil for contract creation)
-	var toAddr string
 	var toAid int64
 	if tx.To() != nil {
-		toAddr = tx.To().Hex()
-		toAid = ss.Lookup_or_create_address(toAddr, blockNum, 0)
+		toAid = ss.Lookup_or_create_address(tx.To().Hex(), blockNum, 0)
 	}
 
 	// Calculate gas price
@@ -85,17 +70,23 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 		gasPrice = tx.GasPrice()
 	}
 
+	// Get input signature (first 4 bytes of input data)
+	var inputSig string
+	if len(tx.Data()) >= 4 {
+		inputSig = "0x" + hex.EncodeToString(tx.Data()[:4])
+	}
+
 	var query string
 	query = `INSERT INTO transaction (
 		block_num, tx_hash, tx_index, 
 		from_aid, to_aid, value, 
-		gas, gas_used, gas_price,
-		input, num_logs, ctrct_create
+		gas_used, gas_price,
+		input_sig, num_logs, ctrct_create
 	) VALUES (
 		$1, $2, $3, 
 		$4, $5, $6, 
-		$7, $8, $9,
-		$10, $11, $12
+		$7, $8,
+		$9, $10, $11
 	) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
 	RETURNING id`
 
@@ -107,10 +98,9 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 		fromAid,
 		toAid,
 		tx.Value().String(),
-		tx.Gas(),
 		receipt.GasUsed,
 		gasPrice.String(),
-		hex.EncodeToString(tx.Data()),
+		inputSig,
 		len(receipt.Logs),
 		tx.To() == nil, // contract creation if To is nil
 	).Scan(&txId)
@@ -124,16 +114,22 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 }
 
 // Insert_event_log inserts an event log into the evt_log table
+// Uses ON CONFLICT to handle duplicate inserts (idempotent for crash recovery)
 // Returns the event log ID
 func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid int64) (int64, error) {
-	// Get topic0 signature (first 4 bytes of first topic, or full topic if available)
+	// Get topic0 signature (first 4 bytes = 8 hex chars of first topic)
 	var topic0Sig string
 	if len(log.Topics) > 0 {
-		topic0Sig = log.Topics[0].Hex()[2:] // Remove 0x prefix
+		fullSig := log.Topics[0].Hex()[2:] // Remove 0x prefix
+		if len(fullSig) >= 8 {
+			topic0Sig = fullSig[:8] // First 4 bytes (8 hex chars)
+		} else {
+			topic0Sig = fullSig
+		}
 	}
 
-	// RLP encode the log
-	rlpLog, err := rlp.EncodeToBytes(log)
+	// RLP encode the log (need pointer for EncodeRLP method)
+	rlpLog, err := rlp.EncodeToBytes(&log)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("Failed to RLP encode log: %v", err))
 		return 0, err
@@ -141,10 +137,11 @@ func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid in
 
 	var query string
 	query = `INSERT INTO evt_log (
-		block_num, tx_id, contract_aid, topic0_sig, log_rlp
+		block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
 	) VALUES (
-		$1, $2, $3, $4, $5
-	) RETURNING id`
+		$1, $2, $3, $4, $5, $6
+	) ON CONFLICT (block_num, log_index) DO UPDATE SET id = evt_log.id
+	RETURNING id`
 
 	var evtId int64
 	err = ss.db.QueryRow(query,
@@ -152,6 +149,7 @@ func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid in
 		txId,
 		contractAid,
 		topic0Sig,
+		log.Index, // Log index within the block
 		rlpLog,
 	).Scan(&evtId)
 

@@ -7,6 +7,8 @@ DROP TABLE IF EXISTS
 	rw_token_name,
 	rw_mint_evt,
 	rw_transfer,
+	rw_notif_status,
+	rw_messaging_status,
 	rw_stats,
 	rw_mkt_stats,
 	rw_user_stats,

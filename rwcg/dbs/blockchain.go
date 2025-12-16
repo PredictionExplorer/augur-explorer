@@ -201,6 +201,7 @@ func (ss *SQLStorage) Get_specific_event_logs_by_tx_backwards_from_id(tx_id, con
 }
 
 // Get_last_block_timestamp returns the timestamp of the last block
+// Returns 0 if no blocks exist (graceful handling for empty/new database)
 func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 	var query string
 	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
@@ -210,13 +211,17 @@ func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 	var err error
 	err = row.Scan(&ts)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0 // No blocks yet, return 0
+		}
 		ss.Log_msg(fmt.Sprintf("Error in Get_last_block_timestamp(): %v, q=%v", err, query))
-		os.Exit(1)
+		return 0
 	}
 	return ts
 }
 
 // Get_first_block_timestamp returns the timestamp of the first block
+// Returns 0 if no blocks exist (graceful handling for empty/new database)
 func (ss *SQLStorage) Get_first_block_timestamp() int64 {
 	var query string
 	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
@@ -226,8 +231,11 @@ func (ss *SQLStorage) Get_first_block_timestamp() int64 {
 	var err error
 	err = row.Scan(&ts)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0 // No blocks yet, return 0
+		}
 		ss.Log_msg(fmt.Sprintf("Error in Get_first_block_timestamp(): %v, q=%v", err, query))
-		os.Exit(1)
+		return 0
 	}
 	return ts
 }

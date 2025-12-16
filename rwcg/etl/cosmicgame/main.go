@@ -249,7 +249,10 @@ func process_events_filterlog(exit_chan chan bool) {
 		Error:     Error,
 	}
 
-	var maxBlocksPerBatch uint64 = 1000 // Process 1000 blocks at a time
+	// Adaptive batch sizing: start large, reduce if we get events
+	var batchSize uint64 = 100000      // Start with 100k blocks
+	var minBatchSize uint64 = 1000     // Minimum when processing events
+	var maxBatchSize uint64 = 1000000  // Maximum when scanning empty ranges
 	contracts := getContractAddresses()
 
 	for {
@@ -267,7 +270,6 @@ func process_events_filterlog(exit_chan chan bool) {
 		lastProcessedBlock := status.LastBlockNum
 		if lastProcessedBlock == 0 {
 			// If no blocks processed yet, start from the block where contracts were deployed
-			// For now, use last_block table or start from 0
 			lastProcessedBlock, _ = storagew.S.Get_last_block_num()
 		}
 
@@ -281,7 +283,7 @@ func process_events_filterlog(exit_chan chan bool) {
 
 		// Calculate block range to process
 		fromBlock := uint64(lastProcessedBlock + 1)
-		toBlock := fromBlock + maxBlocksPerBatch - 1
+		toBlock := fromBlock + batchSize - 1
 		if toBlock > currentBlock {
 			toBlock = currentBlock
 		}
@@ -289,15 +291,21 @@ func process_events_filterlog(exit_chan chan bool) {
 		if fromBlock > currentBlock {
 			// Already caught up, wait for new blocks
 			time.Sleep(2 * time.Second)
+			batchSize = minBatchSize // Reset to small batch for real-time
 			continue
 		}
 
-		Info.Printf("Fetching events from block %d to %d\n", fromBlock, toBlock)
+		Info.Printf("Fetching events from block %d to %d (batch size: %d)\n", fromBlock, toBlock, batchSize)
 
 		// Fetch events using FilterLogs
 		logs, err := etlcommon.FetchEvents(eclient, fromBlock, toBlock, contracts)
 		if err != nil {
 			Error.Printf("FetchEvents failed: %v", err)
+			// Reduce batch size on error (might be too large)
+			batchSize = batchSize / 2
+			if batchSize < minBatchSize {
+				batchSize = minBatchSize
+			}
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -342,9 +350,16 @@ func process_events_filterlog(exit_chan chan bool) {
 		status.LastBlockNum = int64(toBlock)
 		storagew.Update_cosmic_game_process_status(&status)
 
+		// Adaptive batch sizing
 		if len(logs) == 0 {
-			// No events in this range, just update status
-			time.Sleep(1 * time.Second)
+			// No events - increase batch size for faster scanning
+			batchSize = batchSize * 2
+			if batchSize > maxBatchSize {
+				batchSize = maxBatchSize
+			}
+		} else {
+			// Found events - use smaller batch for granularity
+			batchSize = minBatchSize
 		}
 	}
 }
@@ -403,6 +418,22 @@ func main() {
 	erc721_abi = get_abi(ERC721ABI)
 
 	cg_contracts = storagew.Get_cosmic_game_contract_addrs()
+	
+	// Insert all contract addresses into address table (for fresh database)
+	storagew.S.Lookup_or_create_address(cg_contracts.CosmicGameAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.CosmicSignatureAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.CosmicTokenAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.CosmicDaoAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.CharityWalletAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.PrizesWalletAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.RandomWalkAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.StakingWalletCSTAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.StakingWalletRWalkAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.MarketingWalletAddr, 0, 0)
+	storagew.S.Lookup_or_create_address(cg_contracts.ImplementationAddr, 0, 0)
+	Info.Printf("All contract addresses registered in address table\n")
+	
+	// Now lookup the address IDs (they are guaranteed to exist now)
 	cosmic_sig_aid,err  = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicSignatureAddr)
 	if err != nil {
 		fmt.Printf("Lookup of CosmicSignatureAddr failed: %v",err)
@@ -423,12 +454,12 @@ func main() {
 	staking_wallet_rwalk_addr = ethcommon.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	exit_chan := make(chan bool)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		<-c
-		Info.Printf("Got SIGINT signal, will exit after processing is over." +
+		Info.Printf("Got signal, will exit after current batch is processed." +
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()

@@ -46,7 +46,7 @@ var (
 
 	storage *dbs.SQLStorage
 	storagew rwdb.SQLStorageWrapper
-	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	RPC_URL = os.Getenv("RPC_URL")
 	Error   *log.Logger
 	Info	*log.Logger
 	inspected_events []InspectedEvent
@@ -81,7 +81,10 @@ func process_events_filterlog(exit_chan chan bool) {
 		Error:     Error,
 	}
 
-	var maxBlocksPerBatch uint64 = 1000 // Process 1000 blocks at a time
+	// Adaptive batch sizing: start large, reduce if we get events
+	var batchSize uint64 = 100000      // Start with 100k blocks
+	var minBatchSize uint64 = 1000     // Minimum when processing events
+	var maxBatchSize uint64 = 1000000  // Maximum when scanning empty ranges
 	contracts := getContractAddresses()
 
 	for {
@@ -112,7 +115,7 @@ func process_events_filterlog(exit_chan chan bool) {
 
 		// Calculate block range to process
 		fromBlock := uint64(lastProcessedBlock + 1)
-		toBlock := fromBlock + maxBlocksPerBatch - 1
+		toBlock := fromBlock + batchSize - 1
 		if toBlock > currentBlock {
 			toBlock = currentBlock
 		}
@@ -120,15 +123,21 @@ func process_events_filterlog(exit_chan chan bool) {
 		if fromBlock > currentBlock {
 			// Already caught up, wait for new blocks
 			time.Sleep(2 * time.Second)
+			batchSize = minBatchSize // Reset to small batch for real-time
 			continue
 		}
 
-		Info.Printf("Fetching events from block %d to %d\n", fromBlock, toBlock)
+		Info.Printf("Fetching events from block %d to %d (batch size: %d)\n", fromBlock, toBlock, batchSize)
 
 		// Fetch events using FilterLogs
 		logs, err := etlcommon.FetchEvents(eclient, fromBlock, toBlock, contracts)
 		if err != nil {
 			Error.Printf("FetchEvents failed: %v", err)
+			// Reduce batch size on error (might be too large)
+			batchSize = batchSize / 2
+			if batchSize < minBatchSize {
+				batchSize = minBatchSize
+			}
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -173,9 +182,16 @@ func process_events_filterlog(exit_chan chan bool) {
 		status.LastBlockNum = int64(toBlock)
 		storagew.Update_randomwalk_process_status(&status)
 
+		// Adaptive batch sizing
 		if len(logs) == 0 {
-			// No events in this range, just update status
-			time.Sleep(1 * time.Second)
+			// No events - increase batch size for faster scanning
+			batchSize = batchSize * 2
+			if batchSize > maxBatchSize {
+				batchSize = maxBatchSize
+			}
+		} else {
+			// Found events - use smaller batch for granularity
+			batchSize = minBatchSize
 		}
 	}
 }
@@ -228,18 +244,33 @@ func main() {
 	}
 	randomwalk_abi = &ab2
 
+	// First, read raw contract addresses and insert into address table
+	var rawMarketplace, rawRandomwalk string
+	query := "SELECT marketplace_addr, randomwalk_addr FROM rw_contracts LIMIT 1"
+	err = storage.Db().QueryRow(query).Scan(&rawMarketplace, &rawRandomwalk)
+	if err != nil {
+		fmt.Printf("Failed to read rw_contracts: %v\n", err)
+		os.Exit(1)
+	}
+	
+	// Insert contract addresses into address table (for fresh database)
+	storage.Lookup_or_create_address(rawMarketplace, 0, 0)
+	storage.Lookup_or_create_address(rawRandomwalk, 0, 0)
+	Info.Printf("Contract addresses registered in address table\n")
+	
+	// Now we can safely call the function that joins with address table
 	rw_contracts = storagew.Get_randomwalk_contract_addresses()
 	rwalk_addr = ethcommon.HexToAddress(rw_contracts.RandomWalk)
 	market_addr = ethcommon.HexToAddress(rw_contracts.MarketPlace)
 	Info.Printf("RandomWalk contract %v\n",rwalk_addr.String())
 	Info.Printf("MarketPlace contract %v\n",market_addr.String())
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	exit_chan := make(chan bool)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		<-c
-		Info.Printf("Got SIGINT signal, will exit after processing is over." +
+		Info.Printf("Got signal, will exit after current batch is processed." +
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
