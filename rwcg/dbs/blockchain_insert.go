@@ -39,6 +39,34 @@ func (ss *SQLStorage) Insert_block(header *types.Header) error {
 	return nil
 }
 
+// Insert_minimal_transaction inserts a minimal transaction record when full tx data is unavailable
+// Used when RPC node doesn't have historical transaction data (non-archive node)
+// Returns the transaction ID
+func (ss *SQLStorage) Insert_minimal_transaction(txHash string, blockNum int64) (int64, error) {
+	var query string
+	query = `INSERT INTO transaction (
+		block_num, tx_hash, tx_index, 
+		from_aid, to_aid, value, 
+		gas_used, gas_price,
+		input_sig, num_logs, ctrct_create
+	) VALUES (
+		$1, $2, 0, 
+		0, 0, '0', 
+		0, '0',
+		'', 0, false
+	) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
+	RETURNING id`
+
+	var txId int64
+	err := ss.db.QueryRow(query, blockNum, txHash).Scan(&txId)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Insert_minimal_transaction failed: %v", err))
+		return 0, err
+	}
+
+	return txId, nil
+}
+
 // Insert_transaction inserts a transaction into the database
 // Returns the transaction ID
 func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, receipt *types.Receipt) (int64, error) {

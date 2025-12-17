@@ -313,11 +313,14 @@ func process_events_filterlog(exit_chan chan bool) {
 		Info.Printf("Received %d events\n", len(logs))
 
 		// Process each event
+		var processingFailed bool
+		var lastSuccessfulBlock uint64
 		for _, log := range logs {
 			// Ensure block exists with correct hash (chain split detection)
 			_, err := etlcommon.EnsureBlockExists(ctx, int64(log.BlockNumber), log.BlockHash.Hex())
 			if err != nil {
 				Error.Printf("EnsureBlockExists failed for block %d: %v", log.BlockNumber, err)
+				processingFailed = true
 				time.Sleep(5 * time.Second)
 				break
 			}
@@ -326,6 +329,7 @@ func process_events_filterlog(exit_chan chan bool) {
 			txId, _, err := etlcommon.EnsureTransactionExists(ctx, log.TxHash, int64(log.BlockNumber))
 			if err != nil {
 				Error.Printf("EnsureTransactionExists failed for tx %s: %v", log.TxHash.Hex(), err)
+				processingFailed = true
 				time.Sleep(5 * time.Second)
 				break
 			}
@@ -334,6 +338,7 @@ func process_events_filterlog(exit_chan chan bool) {
 			evtId, err := etlcommon.InsertEventLog(ctx, log, txId)
 			if err != nil {
 				Error.Printf("InsertEventLog failed: %v", err)
+				processingFailed = true
 				time.Sleep(5 * time.Second)
 				break
 			}
@@ -344,11 +349,21 @@ func process_events_filterlog(exit_chan chan bool) {
 				Error.Printf("process_single_event failed for evt %d: %v", evtId, err)
 				// Continue processing other events
 			}
+			
+			// Track last successfully processed block
+			lastSuccessfulBlock = log.BlockNumber
 		}
 
-		// Update processing status
-		status.LastBlockNum = int64(toBlock)
-		storagew.Update_cosmic_game_process_status(&status)
+		// Only update status if processing succeeded
+		if !processingFailed {
+			status.LastBlockNum = int64(toBlock)
+			storagew.Update_cosmic_game_process_status(&status)
+		} else if lastSuccessfulBlock > 0 {
+			// Update to last successfully processed block
+			status.LastBlockNum = int64(lastSuccessfulBlock)
+			storagew.Update_cosmic_game_process_status(&status)
+		}
+		// If processingFailed and lastSuccessfulBlock==0, don't update - will retry same batch
 
 		// Adaptive batch sizing
 		if len(logs) == 0 {

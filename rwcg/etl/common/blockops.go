@@ -77,6 +77,7 @@ func GetBlockHeader(client *ethclient.Client, blockNum int64) (*types.Header, er
 }
 
 // EnsureTransactionExists verifies transaction exists in DB, or fetches and inserts it
+// If RPC returns "not found", tries to fetch from archive tables
 // Returns: transaction ID, whether it was newly inserted, error
 func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64) (int64, bool, error) {
 	// Check if transaction exists in DB
@@ -86,9 +87,17 @@ func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64
 		return txId, false, nil
 	}
 
-	// Fetch transaction from chain
+	// Try to fetch full transaction from chain
 	tx, isPending, err := ctx.EthClient.TransactionByHash(context.Background(), txHash)
 	if err != nil {
+		// Check if it's a "not found" error - only then try archive
+		errStr := err.Error()
+		if errStr == "not found" || errStr == "transaction not found" {
+			// Transaction pruned from RPC node - try archive
+			ctx.Info.Printf("Transaction %s not in RPC, checking archive\n", txHash.Hex())
+			return fetchTransactionFromArchive(ctx, txHash.Hex(), blockNum)
+		}
+		// Other error (connection refused, etc.) - don't use archive, propagate error
 		return 0, false, fmt.Errorf("TransactionByHash failed for %s: %v", txHash.Hex(), err)
 	}
 	if isPending {
@@ -98,13 +107,48 @@ func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64
 	// Get transaction receipt for gas used info
 	receipt, err := ctx.EthClient.TransactionReceipt(context.Background(), txHash)
 	if err != nil {
+		// Check if it's a "not found" error
+		errStr := err.Error()
+		if errStr == "not found" || errStr == "transaction not found" {
+			// Receipt pruned - try archive
+			ctx.Info.Printf("Receipt %s not in RPC, checking archive\n", txHash.Hex())
+			return fetchTransactionFromArchive(ctx, txHash.Hex(), blockNum)
+		}
+		// Other error - propagate
 		return 0, false, fmt.Errorf("TransactionReceipt failed for %s: %v", txHash.Hex(), err)
 	}
 
-	// Insert transaction into DB
+	// Insert full transaction into DB
 	txId, err = ctx.Storage.Insert_transaction(tx, blockNum, receipt)
 	if err != nil {
 		return 0, false, fmt.Errorf("Insert_transaction failed for %s: %v", txHash.Hex(), err)
+	}
+
+	return txId, true, nil
+}
+
+// fetchTransactionFromArchive reads transaction from archive and inserts into main table
+func fetchTransactionFromArchive(ctx *ETLContext, txHash string, blockNum int64) (int64, bool, error) {
+	// Try to get transaction from archive
+	archTx, err := ctx.Storage.Get_archived_transaction(txHash)
+	if err != nil {
+		return 0, false, fmt.Errorf("archive lookup failed for %s: %v", txHash, err)
+	}
+	if archTx == nil {
+		// Not in archive either - create minimal record as last resort
+		ctx.Info.Printf("Transaction %s not in archive, creating minimal record\n", txHash)
+		txId, err := ctx.Storage.Insert_minimal_transaction(txHash, blockNum)
+		if err != nil {
+			return 0, false, fmt.Errorf("Insert_minimal_transaction failed for %s: %v", txHash, err)
+		}
+		return txId, true, nil
+	}
+
+	// Insert transaction from archive data
+	ctx.Info.Printf("Restoring transaction %s from archive\n", txHash)
+	txId, err := ctx.Storage.Insert_transaction_from_archive(archTx)
+	if err != nil {
+		return 0, false, fmt.Errorf("Insert_transaction_from_archive failed for %s: %v", txHash, err)
 	}
 
 	return txId, true, nil
