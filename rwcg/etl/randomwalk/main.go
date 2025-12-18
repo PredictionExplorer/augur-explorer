@@ -95,12 +95,12 @@ func process_events_filterlog(exit_chan chan bool) {
 
 	for {
 		select {
-		case exit_flag := <-exit_chan:
-			if exit_flag {
-				Info.Println("Exiting by user request.")
-				os.Exit(0)
-			}
-		default:
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
 		}
 
 		// Get last processed block from status

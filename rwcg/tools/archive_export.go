@@ -351,3 +351,4 @@ func exportBlocks(srcDB, dstDB *sql.DB, blockNums map[int64]bool) {
 
 	log.Printf("Blocks export complete. Total: %d", totalInserted)
 }
+

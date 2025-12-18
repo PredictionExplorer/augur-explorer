@@ -16,19 +16,19 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 	evtlog.EvtId = evtlog_id
 	var query string
 	query = "SELECT " +
-		"e.block_num," +
+				"e.block_num," +
 		"EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts, " +
-		"e.tx_id," +
-		"tx.tx_hash," +
-		"e.contract_aid," +
-		"ca.addr, " +
-		"e.topic0_sig," +
-		"e.log_rlp " +
-		"FROM evt_log e " +
-		"JOIN block b ON e.block_num=b.block_num " +
-		"JOIN transaction tx ON e.tx_id=tx.id " +
-		"JOIN address ca ON e.contract_aid=ca.address_id " +
-		"WHERE e.id=$1"
+				"e.tx_id," +
+				"tx.tx_hash," +
+				"e.contract_aid," +
+				"ca.addr, " +
+				"e.topic0_sig," +
+				"e.log_rlp " +
+			"FROM evt_log e " +
+				"JOIN block b ON e.block_num=b.block_num " +
+				"JOIN transaction tx ON e.tx_id=tx.id " +
+				"JOIN address ca ON e.contract_aid=ca.address_id " +
+			"WHERE e.id=$1"
 	res := ss.db.QueryRow(query, evtlog_id)
 	err := res.Scan(
 		&evtlog.BlockNum,
@@ -113,7 +113,7 @@ func (ss *SQLStorage) Get_last_evtlog_id() (int64, error) {
 	res := ss.db.QueryRow(query)
 	var null_id sql.NullInt64
 	err := res.Scan(&null_id)
-	if err != nil {
+		if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
@@ -254,9 +254,9 @@ func (ss *SQLStorage) Get_block_hash(blockNum int64) (string, error) {
 	err := row.Scan(&blockHash)
 	if err != nil {
 		return "", err
-	}
+		}
 	return blockHash, nil
-}
+	}
 
 // Get_last_block_num returns the last block number from last_block table
 func (ss *SQLStorage) Get_last_block_num() (int64, error) {
@@ -276,7 +276,7 @@ func (ss *SQLStorage) Get_last_block_num() (int64, error) {
 
 // Set_last_block_num updates the last block number in last_block table
 func (ss *SQLStorage) Set_last_block_num(blockNum int64) error {
-	var query string
+	var query string 
 	query = "UPDATE last_block SET block_num = $1"
 	_, err := ss.db.Exec(query, blockNum)
 	if err != nil {
@@ -288,7 +288,7 @@ func (ss *SQLStorage) Set_last_block_num(blockNum int64) error {
 
 // Delete_block deletes a block and all its associated data (cascades via foreign keys)
 func (ss *SQLStorage) Delete_block(blockNum int64) error {
-	var query string
+	var query string 
 	query = "DELETE FROM block WHERE block_num = $1"
 	_, err := ss.db.Exec(query, blockNum)
 	if err != nil {

@@ -168,7 +168,7 @@ func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid in
 		block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
 	) VALUES (
 		$1, $2, $3, $4, $5, $6
-	) ON CONFLICT (block_num, log_index) DO UPDATE SET id = evt_log.id
+	) ON CONFLICT (block_num, tx_id, log_index) DO UPDATE SET id = evt_log.id
 	RETURNING id`
 
 	var evtId int64

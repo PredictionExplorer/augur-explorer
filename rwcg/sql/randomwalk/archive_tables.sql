@@ -40,3 +40,4 @@ CREATE TABLE rw_arch_evtlog (
 );
 CREATE INDEX idx_rw_arch_evtlog_tx ON rw_arch_evtlog(tx_hash);
 CREATE INDEX idx_rw_arch_evtlog_block ON rw_arch_evtlog(block_num);
+

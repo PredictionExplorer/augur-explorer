@@ -142,3 +142,4 @@ func (ss *SQLStorage) Insert_transaction_from_archive(arch *ArchivedTransaction)
 
 	return txId, nil
 }
+

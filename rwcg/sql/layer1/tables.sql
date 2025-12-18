@@ -50,7 +50,7 @@ CREATE TABLE evt_log (
 	topic0_sig			CHAR(8) NOT NULL,-- 4 bytes (8 hex chars)  from Topics[0] (the event signature)
 	log_index			INT NOT NULL DEFAULT 0, -- log index within the block
 	log_rlp				bytea NOT NULL, -- RLP encoded (core/types.log:RLPEncode()) event log data
-	UNIQUE(block_num, log_index) -- prevent duplicate event insertions
+	UNIQUE(block_num,tx_id,log_index) -- prevent duplicate event insertions
 );
 CREATE TABLE evt_topic (	-- stores indexed topics of Ethereum Event
 	id					BIGSERIAL PRIMARY KEY,

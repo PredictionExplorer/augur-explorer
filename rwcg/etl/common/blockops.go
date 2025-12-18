@@ -94,7 +94,7 @@ func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64
 		errStr := err.Error()
 		if errStr == "not found" || errStr == "transaction not found" {
 			// Transaction pruned from RPC node - try archive
-			ctx.Info.Printf("Transaction %s not in RPC, checking archive\n", txHash.Hex())
+			ctx.Info.Printf("[RPC-MISS] Transaction %s not found in RPC, checking archive...\n", txHash.Hex())
 			return fetchTransactionFromArchive(ctx, txHash.Hex(), blockNum)
 		}
 		// Other error (connection refused, etc.) - don't use archive, propagate error
@@ -111,7 +111,7 @@ func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64
 		errStr := err.Error()
 		if errStr == "not found" || errStr == "transaction not found" {
 			// Receipt pruned - try archive
-			ctx.Info.Printf("Receipt %s not in RPC, checking archive\n", txHash.Hex())
+			ctx.Info.Printf("[RPC-MISS] Receipt %s not found in RPC, checking archive...\n", txHash.Hex())
 			return fetchTransactionFromArchive(ctx, txHash.Hex(), blockNum)
 		}
 		// Other error - propagate
@@ -124,6 +124,7 @@ func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64
 		return 0, false, fmt.Errorf("Insert_transaction failed for %s: %v", txHash.Hex(), err)
 	}
 
+	ctx.Info.Printf("[RPC] Transaction %s fetched from RPC node\n", txHash.Hex())
 	return txId, true, nil
 }
 
@@ -136,7 +137,7 @@ func fetchTransactionFromArchive(ctx *ETLContext, txHash string, blockNum int64)
 	}
 	if archTx == nil {
 		// Not in archive either - create minimal record as last resort
-		ctx.Info.Printf("Transaction %s not in archive, creating minimal record\n", txHash)
+		ctx.Info.Printf("[MINIMAL] Transaction %s not in RPC or archive, creating minimal record\n", txHash)
 		txId, err := ctx.Storage.Insert_minimal_transaction(txHash, blockNum)
 		if err != nil {
 			return 0, false, fmt.Errorf("Insert_minimal_transaction failed for %s: %v", txHash, err)
@@ -145,7 +146,7 @@ func fetchTransactionFromArchive(ctx *ETLContext, txHash string, blockNum int64)
 	}
 
 	// Insert transaction from archive data
-	ctx.Info.Printf("Restoring transaction %s from archive\n", txHash)
+	ctx.Info.Printf("[ARCHIVE] Transaction %s fetched from archive database\n", txHash)
 	txId, err := ctx.Storage.Insert_transaction_from_archive(archTx)
 	if err != nil {
 		return 0, false, fmt.Errorf("Insert_transaction_from_archive failed for %s: %v", txHash, err)
