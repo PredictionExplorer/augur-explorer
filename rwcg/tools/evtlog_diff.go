@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -10,24 +12,21 @@ import (
 )
 
 type EventLog struct {
-	ID          int64
 	BlockNum    int64
-	TxID        int64
-	ContractAid int64
+	TxHash      string
+	ContractAddr string
 	Topic0Sig   string
-	LogIndex    int
 	LogRlp      []byte
 }
 
 func main() {
 	primary := flag.String("primary", "", "Primary DB connection string (gold standard)")
 	secondary := flag.String("secondary", "", "Secondary DB connection string (to verify)")
-	table := flag.String("table", "evt_log", "Table to compare (default: evt_log)")
 	limit := flag.Int("limit", 0, "Limit comparison to first N records (0 = all)")
 	flag.Parse()
 
 	if *primary == "" || *secondary == "" {
-		log.Fatal("Usage: evtlog_diff -primary 'postgres://...' -secondary 'postgres://...' [-table evt_log] [-limit N]")
+		log.Fatal("Usage: evtlog_diff -primary 'postgres://...' -secondary 'postgres://...' [-limit N]")
 	}
 
 	// Connect to primary
@@ -46,231 +45,213 @@ func main() {
 	defer secondaryDB.Close()
 	log.Println("Connected to secondary database")
 
-	// Get counts
+	// Get contract address IDs from rw_contracts in primary DB
+	contractAids := getContractAddressIds(primaryDB)
+	if len(contractAids) == 0 {
+		log.Fatal("No contract addresses found in rw_contracts")
+	}
+	log.Printf("Found %d contract address IDs: %v", len(contractAids), contractAids)
+
+	// Get counts for our contracts only
 	var primaryCount, secondaryCount int64
-	primaryDB.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", *table)).Scan(&primaryCount)
-	secondaryDB.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", *table)).Scan(&secondaryCount)
-	log.Printf("Primary has %d records, Secondary has %d records", primaryCount, secondaryCount)
+	primaryDB.QueryRow("SELECT COUNT(*) FROM evt_log WHERE contract_aid = ANY($1)", pq.Array(contractAids)).Scan(&primaryCount)
+	secondaryDB.QueryRow("SELECT COUNT(*) FROM evt_log").Scan(&secondaryCount)
+	log.Printf("Primary has %d records for our contracts, Secondary has %d records total", primaryCount, secondaryCount)
 
-	// Step 1: Check for records in primary that are missing in secondary
-	log.Println("\n=== Step 1: Checking for missing records in secondary ===")
-	missingCount := checkMissingRecords(primaryDB, secondaryDB, *table, *limit)
+	// Load all events from primary (for our contracts)
+	log.Println("\n=== Loading events from primary (filtered by contract) ===")
+	primaryEvents := loadPrimaryEvents(primaryDB, contractAids, *limit)
+	log.Printf("Loaded %d events from primary", len(primaryEvents))
 
-	// Step 2: Check for records in secondary that are not in primary
-	log.Println("\n=== Step 2: Checking for extra records in secondary ===")
-	extraCount := checkExtraRecords(primaryDB, secondaryDB, *table, *limit)
+	// Load all events from secondary
+	log.Println("\n=== Loading events from secondary ===")
+	secondaryEvents := loadSecondaryEvents(secondaryDB, *limit)
+	log.Printf("Loaded %d events from secondary", len(secondaryEvents))
 
-	// Step 3: Check for field mismatches on common records
-	log.Println("\n=== Step 3: Checking for field mismatches ===")
-	mismatchCount := checkFieldMismatches(primaryDB, secondaryDB, *table, *limit)
+	// Compare: create lookup by (block_num, tx_hash, log_rlp_hash)
+	log.Println("\n=== Comparing events ===")
+
+	// Build primary index by log_rlp (the unique content)
+	primaryByRlp := make(map[string]EventLog)
+	for _, evt := range primaryEvents {
+		key := hex.EncodeToString(evt.LogRlp)
+		primaryByRlp[key] = evt
+	}
+
+	// Build secondary index by log_rlp
+	secondaryByRlp := make(map[string]EventLog)
+	for _, evt := range secondaryEvents {
+		key := hex.EncodeToString(evt.LogRlp)
+		secondaryByRlp[key] = evt
+	}
+
+	// Check for events in primary missing from secondary
+	missingCount := 0
+	for key, evt := range primaryByRlp {
+		if _, found := secondaryByRlp[key]; !found {
+			log.Printf("ERROR: Secondary missing event: block=%d tx=%s topic0=%s",
+				evt.BlockNum, evt.TxHash, evt.Topic0Sig)
+			missingCount++
+			if missingCount >= 20 {
+				log.Printf("... (showing first 20 missing)")
+				break
+			}
+		}
+	}
+
+	// Check for events in secondary not in primary
+	extraCount := 0
+	for key, evt := range secondaryByRlp {
+		if _, found := primaryByRlp[key]; !found {
+			log.Printf("ERROR: Secondary has extra event: block=%d tx=%s topic0=%s",
+				evt.BlockNum, evt.TxHash, evt.Topic0Sig)
+			extraCount++
+			if extraCount >= 20 {
+				log.Printf("... (showing first 20 extra)")
+				break
+			}
+		}
+	}
+
+	// Count actual totals
+	actualMissing := 0
+	for key := range primaryByRlp {
+		if _, found := secondaryByRlp[key]; !found {
+			actualMissing++
+		}
+	}
+	actualExtra := 0
+	for key := range secondaryByRlp {
+		if _, found := primaryByRlp[key]; !found {
+			actualExtra++
+		}
+	}
+
+	// Check for field mismatches on matching events
+	mismatchCount := 0
+	for key, pri := range primaryByRlp {
+		sec, found := secondaryByRlp[key]
+		if !found {
+			continue
+		}
+
+		mismatches := []string{}
+
+		if pri.BlockNum != sec.BlockNum {
+			mismatches = append(mismatches, fmt.Sprintf("block_num: %d vs %d", pri.BlockNum, sec.BlockNum))
+		}
+		if pri.TxHash != sec.TxHash {
+			mismatches = append(mismatches, fmt.Sprintf("tx_hash: %s vs %s", pri.TxHash, sec.TxHash))
+		}
+		if pri.Topic0Sig != sec.Topic0Sig {
+			mismatches = append(mismatches, fmt.Sprintf("topic0_sig: %s vs %s", pri.Topic0Sig, sec.Topic0Sig))
+		}
+		if !bytes.Equal(pri.LogRlp, sec.LogRlp) {
+			mismatches = append(mismatches, fmt.Sprintf("log_rlp: len %d vs %d", len(pri.LogRlp), len(sec.LogRlp)))
+		}
+
+		if len(mismatches) > 0 {
+			log.Printf("ERROR: Mismatch: block=%d tx=%s: %v", pri.BlockNum, pri.TxHash, mismatches)
+			mismatchCount++
+		}
+	}
 
 	// Summary
 	log.Println("\n=== SUMMARY ===")
-	log.Printf("Missing in secondary: %d records", missingCount)
-	log.Printf("Extra in secondary: %d records", extraCount)
+	log.Printf("Primary events (for our contracts): %d", len(primaryEvents))
+	log.Printf("Secondary events: %d", len(secondaryEvents))
+	log.Printf("Missing in secondary: %d records", actualMissing)
+	log.Printf("Extra in secondary: %d records", actualExtra)
 	log.Printf("Field mismatches: %d records", mismatchCount)
 
-	if missingCount == 0 && extraCount == 0 && mismatchCount == 0 {
+	if actualMissing == 0 && actualExtra == 0 && mismatchCount == 0 {
 		log.Println("✓ Databases match perfectly!")
 	} else {
 		log.Println("✗ Databases have differences!")
 	}
 }
 
-func checkMissingRecords(primaryDB, secondaryDB *sql.DB, table string, limit int) int {
-	// Get all IDs from primary
-	limitClause := ""
-	if limit > 0 {
-		limitClause = fmt.Sprintf(" LIMIT %d", limit)
-	}
-
-	rows, err := primaryDB.Query(fmt.Sprintf("SELECT id FROM %s ORDER BY id%s", table, limitClause))
+func getContractAddressIds(db *sql.DB) []int64 {
+	rows, err := db.Query(`
+		SELECT a.address_id 
+		FROM address a
+		JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
+	`)
 	if err != nil {
-		log.Fatalf("Failed to query primary IDs: %v", err)
+		log.Fatalf("Failed to get contract addresses: %v", err)
 	}
 	defer rows.Close()
 
-	var primaryIDs []int64
+	var aids []int64
 	for rows.Next() {
-		var id int64
-		rows.Scan(&id)
-		primaryIDs = append(primaryIDs, id)
+		var aid int64
+		if err := rows.Scan(&aid); err != nil {
+			log.Fatalf("Failed to scan address_id: %v", err)
+		}
+		aids = append(aids, aid)
 	}
-	log.Printf("Checking %d records from primary...", len(primaryIDs))
-
-	// Check which IDs exist in secondary (batch query)
-	missingCount := 0
-	batchSize := 1000
-	for i := 0; i < len(primaryIDs); i += batchSize {
-		end := i + batchSize
-		if end > len(primaryIDs) {
-			end = len(primaryIDs)
-		}
-		batch := primaryIDs[i:end]
-
-		// Query secondary for these IDs
-		secRows, err := secondaryDB.Query(
-			fmt.Sprintf("SELECT id FROM %s WHERE id = ANY($1)", table),
-			pq.Array(batch),
-		)
-		if err != nil {
-			log.Fatalf("Failed to query secondary: %v", err)
-		}
-
-		foundIDs := make(map[int64]bool)
-		for secRows.Next() {
-			var id int64
-			secRows.Scan(&id)
-			foundIDs[id] = true
-		}
-		secRows.Close()
-
-		// Report missing
-		for _, id := range batch {
-			if !foundIDs[id] {
-				log.Printf("ERROR: Secondary DB is missing record id=%d", id)
-				missingCount++
-			}
-		}
-	}
-
-	return missingCount
+	return aids
 }
 
-func checkExtraRecords(primaryDB, secondaryDB *sql.DB, table string, limit int) int {
-	// Get all IDs from secondary
+func loadPrimaryEvents(db *sql.DB, contractAids []int64, limit int) []EventLog {
 	limitClause := ""
 	if limit > 0 {
 		limitClause = fmt.Sprintf(" LIMIT %d", limit)
 	}
 
-	rows, err := secondaryDB.Query(fmt.Sprintf("SELECT id FROM %s ORDER BY id%s", table, limitClause))
+	// Primary DB uses contract_aid, join with address and transaction
+	rows, err := db.Query(fmt.Sprintf(`
+		SELECT e.block_num, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
+		FROM evt_log e
+		JOIN transaction t ON e.tx_id = t.id
+		JOIN address a ON e.contract_aid = a.address_id
+		WHERE e.contract_aid = ANY($1)
+		ORDER BY e.block_num, e.id%s
+	`, limitClause), pq.Array(contractAids))
 	if err != nil {
-		log.Fatalf("Failed to query secondary IDs: %v", err)
+		log.Fatalf("Failed to query primary events: %v", err)
 	}
 	defer rows.Close()
 
-	var secondaryIDs []int64
+	var events []EventLog
 	for rows.Next() {
-		var id int64
-		rows.Scan(&id)
-		secondaryIDs = append(secondaryIDs, id)
-	}
-	log.Printf("Checking %d records from secondary...", len(secondaryIDs))
-
-	// Check which IDs exist in primary (batch query)
-	extraCount := 0
-	batchSize := 1000
-	for i := 0; i < len(secondaryIDs); i += batchSize {
-		end := i + batchSize
-		if end > len(secondaryIDs) {
-			end = len(secondaryIDs)
-		}
-		batch := secondaryIDs[i:end]
-
-		// Query primary for these IDs
-		priRows, err := primaryDB.Query(
-			fmt.Sprintf("SELECT id FROM %s WHERE id = ANY($1)", table),
-			pq.Array(batch),
-		)
+		var evt EventLog
+		err := rows.Scan(&evt.BlockNum, &evt.TxHash, &evt.ContractAddr, &evt.Topic0Sig, &evt.LogRlp)
 		if err != nil {
-			log.Fatalf("Failed to query primary: %v", err)
+			log.Fatalf("Failed to scan primary event: %v", err)
 		}
-
-		foundIDs := make(map[int64]bool)
-		for priRows.Next() {
-			var id int64
-			priRows.Scan(&id)
-			foundIDs[id] = true
-		}
-		priRows.Close()
-
-		// Report extra
-		for _, id := range batch {
-			if !foundIDs[id] {
-				log.Printf("ERROR: Secondary DB has record not in primary id=%d", id)
-				extraCount++
-			}
-		}
+		events = append(events, evt)
 	}
-
-	return extraCount
+	return events
 }
 
-func checkFieldMismatches(primaryDB, secondaryDB *sql.DB, table string, limit int) int {
+func loadSecondaryEvents(db *sql.DB, limit int) []EventLog {
 	limitClause := ""
 	if limit > 0 {
 		limitClause = fmt.Sprintf(" LIMIT %d", limit)
 	}
 
-	// Query all records from primary
-	rows, err := primaryDB.Query(fmt.Sprintf(`
-		SELECT id, block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
-		FROM %s ORDER BY id%s
-	`, table, limitClause))
+	// Secondary DB - join with address and transaction
+	rows, err := db.Query(fmt.Sprintf(`
+		SELECT e.block_num, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
+		FROM evt_log e
+		JOIN transaction t ON e.tx_id = t.id
+		JOIN address a ON e.contract_aid = a.address_id
+		ORDER BY e.block_num, e.id%s
+	`, limitClause))
 	if err != nil {
-		log.Fatalf("Failed to query primary: %v", err)
+		log.Fatalf("Failed to query secondary events: %v", err)
 	}
 	defer rows.Close()
 
-	mismatchCount := 0
-	checkedCount := 0
-
+	var events []EventLog
 	for rows.Next() {
-		var pri EventLog
-		err := rows.Scan(&pri.ID, &pri.BlockNum, &pri.TxID, &pri.ContractAid, &pri.Topic0Sig, &pri.LogIndex, &pri.LogRlp)
+		var evt EventLog
+		err := rows.Scan(&evt.BlockNum, &evt.TxHash, &evt.ContractAddr, &evt.Topic0Sig, &evt.LogRlp)
 		if err != nil {
-			log.Fatalf("Failed to scan primary row: %v", err)
+			log.Fatalf("Failed to scan secondary event: %v", err)
 		}
-
-		// Query corresponding record from secondary
-		var sec EventLog
-		err = secondaryDB.QueryRow(fmt.Sprintf(`
-			SELECT id, block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
-			FROM %s WHERE id = $1
-		`, table), pri.ID).Scan(&sec.ID, &sec.BlockNum, &sec.TxID, &sec.ContractAid, &sec.Topic0Sig, &sec.LogIndex, &sec.LogRlp)
-
-		if err == sql.ErrNoRows {
-			// Already reported in missing check
-			continue
-		}
-		if err != nil {
-			log.Fatalf("Failed to query secondary for id=%d: %v", pri.ID, err)
-		}
-
-		// Compare fields
-		mismatches := []string{}
-
-		if pri.BlockNum != sec.BlockNum {
-			mismatches = append(mismatches, fmt.Sprintf("block_num: %d vs %d", pri.BlockNum, sec.BlockNum))
-		}
-		if pri.TxID != sec.TxID {
-			mismatches = append(mismatches, fmt.Sprintf("tx_id: %d vs %d", pri.TxID, sec.TxID))
-		}
-		if pri.ContractAid != sec.ContractAid {
-			mismatches = append(mismatches, fmt.Sprintf("contract_aid: %d vs %d", pri.ContractAid, sec.ContractAid))
-		}
-		if pri.Topic0Sig != sec.Topic0Sig {
-			mismatches = append(mismatches, fmt.Sprintf("topic0_sig: %s vs %s", pri.Topic0Sig, sec.Topic0Sig))
-		}
-		if pri.LogIndex != sec.LogIndex {
-			mismatches = append(mismatches, fmt.Sprintf("log_index: %d vs %d", pri.LogIndex, sec.LogIndex))
-		}
-		if string(pri.LogRlp) != string(sec.LogRlp) {
-			mismatches = append(mismatches, fmt.Sprintf("log_rlp: len %d vs %d", len(pri.LogRlp), len(sec.LogRlp)))
-		}
-
-		if len(mismatches) > 0 {
-			log.Printf("ERROR: Mismatch at id=%d: %v", pri.ID, mismatches)
-			mismatchCount++
-		}
-
-		checkedCount++
-		if checkedCount%10000 == 0 {
-			log.Printf("Checked %d records for field mismatches...", checkedCount)
-		}
+		events = append(events, evt)
 	}
-
-	log.Printf("Checked %d records for field mismatches", checkedCount)
-	return mismatchCount
+	return events
 }
