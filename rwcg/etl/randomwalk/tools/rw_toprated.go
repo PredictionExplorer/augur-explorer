@@ -4,18 +4,14 @@ import (
 	"os"
 	"log"
 	"sort"
-	//"fmt"
 
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	rwdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/randomwalk"
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
 )
 var (
-	storage *SQLStorage
-
-	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
-	market_order_id int64 = 0
-
-	Info    *log.Logger
+	storagew *rwdb.SQLStorageWrapper
+	Info     *log.Logger
 )
 func update_profit_ranks(records []RankStats) {
 
@@ -23,7 +19,7 @@ func update_profit_ranks(records []RankStats) {
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
-		storage.Update_randomwalk_top_profit_rank(record.Aid,rank_value,record.ProfitLoss)
+		storagew.Update_randomwalk_top_profit_rank(record.Aid,rank_value,record.ProfitLoss)
 	}
 }
 func update_trade_ranks(records []RankStats) {
@@ -32,7 +28,7 @@ func update_trade_ranks(records []RankStats) {
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
-		storage.Update_randomwalk_top_total_trades_rank(record.Aid,rank_value,record.TotalTrades)
+		storagew.Update_randomwalk_top_total_trades_rank(record.Aid,rank_value,record.TotalTrades)
 	}
 }
 func update_volume_ranks(records []RankStats) {
@@ -41,7 +37,7 @@ func update_volume_ranks(records []RankStats) {
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
-		storage.Update_randomwalk_top_volume_rank(record.Aid,rank_value,record.VolumeTraded)
+		storagew.Update_randomwalk_top_volume_rank(record.Aid,rank_value,record.VolumeTraded)
 	}
 }
 func main() {
@@ -55,8 +51,9 @@ func main() {
 	//				server overload
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storage = Connect_to_storage(&market_order_id,Info)
-	records := storage.Get_randomwalk_ranking_data_for_all_users()
+	storage := dbs.Connect_to_storage(Info)
+	storagew = &rwdb.SQLStorageWrapper{S: storage}
+	records := storagew.Get_randomwalk_ranking_data_for_all_users()
 
 	sort.SliceStable(records,func(i,j int) bool {
 		return records[j].TotalTrades < records[i].TotalTrades
