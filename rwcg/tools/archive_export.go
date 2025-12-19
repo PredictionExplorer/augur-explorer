@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 )
 
-const BATCH_SIZE = 10000
+const BATCH_SIZE = 20000
 
 func main() {
 	srcConn := flag.String("src", "", "Source DB connection string (production)")
@@ -179,9 +179,57 @@ func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64) map[int64]bool 
 	return txIds
 }
 
-func exportTransactions(srcDB, dstDB *sql.DB, txIds map[int64]bool) map[int64]bool {
+func exportTransactions(srcDB, dstDB *sql.DB, _ map[int64]bool) map[int64]bool {
 	log.Println("=== Exporting transactions ===")
-	log.Printf("Transactions to export: %d", len(txIds))
+
+	// Get ALL tx_hashes from archived events that don't have a corresponding archived tx
+	log.Println("Finding missing transactions in archive...")
+	rows, err := srcDB.Query(`
+		SELECT DISTINCT t.id
+		FROM transaction t
+		WHERE t.tx_hash IN (
+			SELECT DISTINCT e.tx_hash FROM rw_arch_evtlog e
+			LEFT JOIN rw_arch_tx tx ON e.tx_hash = tx.tx_hash
+			WHERE tx.tx_hash IS NULL
+		)
+	`)
+	// Note: This query runs on srcDB but uses destination tables via dblink or requires adjustment
+	// Actually, we need to query destination for missing tx_hashes, then lookup ids in source
+
+	// Close that query attempt - we need a different approach
+	if rows != nil {
+		rows.Close()
+	}
+
+	// Get all tx_hashes from destination that are missing in rw_arch_tx
+	log.Println("Querying destination for tx_hashes missing from rw_arch_tx...")
+	missingRows, err := dstDB.Query(`
+		SELECT DISTINCT e.tx_hash
+		FROM rw_arch_evtlog e
+		LEFT JOIN rw_arch_tx tx ON e.tx_hash = tx.tx_hash
+		WHERE tx.tx_hash IS NULL
+	`)
+	if err != nil {
+		log.Fatalf("Failed to find missing transactions: %v", err)
+	}
+
+	var missingTxHashes []string
+	for missingRows.Next() {
+		var txHash string
+		if err := missingRows.Scan(&txHash); err != nil {
+			missingRows.Close()
+			log.Fatalf("Scan failed: %v", err)
+		}
+		missingTxHashes = append(missingTxHashes, txHash)
+	}
+	missingRows.Close()
+
+	log.Printf("Transactions to export: %d", len(missingTxHashes))
+	if len(missingTxHashes) == 0 {
+		log.Println("No missing transactions to export")
+		// Still need to return block_nums from existing transactions
+		return getBlockNumsFromArchiveTx(dstDB)
+	}
 
 	// Prepare insert
 	insertStmt, err := dstDB.Prepare(`
@@ -199,27 +247,24 @@ func exportTransactions(srcDB, dstDB *sql.DB, txIds map[int64]bool) map[int64]bo
 	totalInserted := int64(0)
 	startTime := time.Now()
 
-	// Convert map to slice for batching
-	txIdSlice := make([]int64, 0, len(txIds))
-	for txId := range txIds {
-		txIdSlice = append(txIdSlice, txId)
-	}
+	// Use tx_hashes directly
+	txHashSlice := missingTxHashes
 
 	// Process in batches
-	for i := 0; i < len(txIdSlice); i += BATCH_SIZE {
+	for i := 0; i < len(txHashSlice); i += BATCH_SIZE {
 		batchStart := time.Now()
 		end := i + BATCH_SIZE
-		if end > len(txIdSlice) {
-			end = len(txIdSlice)
+		if end > len(txHashSlice) {
+			end = len(txHashSlice)
 		}
-		batch := txIdSlice[i:end]
+		batch := txHashSlice[i:end]
 
 		log.Printf("Querying %d transactions...", len(batch))
 
 		rows, err := srcDB.Query(`
 			SELECT block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig
 			FROM transaction
-			WHERE id = ANY($1)
+			WHERE tx_hash = ANY($1)
 		`, pq.Array(batch))
 		if err != nil {
 			log.Fatalf("Query failed: %v", err)
@@ -259,21 +304,74 @@ func exportTransactions(srcDB, dstDB *sql.DB, txIds map[int64]bool) map[int64]bo
 		totalInserted += int64(batchCount)
 		elapsed := time.Since(startTime).Seconds()
 		rate := float64(totalInserted) / elapsed
-		pct := float64(i+batchCount) / float64(len(txIdSlice)) * 100
+		pct := float64(i+batchCount) / float64(len(txHashSlice)) * 100
 
 		log.Printf("Transactions: %d rows (%.1f ms) | Total: %d/%d | %.1f/sec | %.1f%%",
 			batchCount,
 			time.Since(batchStart).Seconds()*1000,
-			totalInserted, len(txIdSlice), rate, pct)
+			totalInserted, len(txHashSlice), rate, pct)
 	}
 
 	log.Printf("Transactions export complete. Total: %d, Unique blocks: %d", totalInserted, len(blockNums))
+
+	// Merge with any existing block_nums from already-exported transactions
+	existingBlockNums := getBlockNumsFromArchiveTx(dstDB)
+	for bn := range existingBlockNums {
+		blockNums[bn] = true
+	}
+
 	return blockNums
 }
 
-func exportBlocks(srcDB, dstDB *sql.DB, blockNums map[int64]bool) {
+func getBlockNumsFromArchiveTx(dstDB *sql.DB) map[int64]bool {
+	blockNums := make(map[int64]bool)
+	rows, err := dstDB.Query("SELECT DISTINCT block_num FROM rw_arch_tx")
+	if err != nil {
+		log.Printf("Warning: Failed to get existing block_nums: %v", err)
+		return blockNums
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var bn int64
+		if err := rows.Scan(&bn); err == nil {
+			blockNums[bn] = true
+		}
+	}
+	return blockNums
+}
+
+func exportBlocks(srcDB, dstDB *sql.DB, _ map[int64]bool) {
 	log.Println("=== Exporting blocks ===")
-	log.Printf("Blocks to export: %d", len(blockNums))
+
+	// Get all block_nums from archived transactions that don't have a corresponding archived block
+	log.Println("Finding missing blocks in archive...")
+	missingRows, err := dstDB.Query(`
+		SELECT DISTINCT tx.block_num
+		FROM rw_arch_tx tx
+		LEFT JOIN rw_arch_block b ON tx.block_num = b.block_num
+		WHERE b.block_num IS NULL
+	`)
+	if err != nil {
+		log.Fatalf("Failed to find missing blocks: %v", err)
+	}
+
+	var missingBlockNums []int64
+	for missingRows.Next() {
+		var bn int64
+		if err := missingRows.Scan(&bn); err != nil {
+			missingRows.Close()
+			log.Fatalf("Scan failed: %v", err)
+		}
+		missingBlockNums = append(missingBlockNums, bn)
+	}
+	missingRows.Close()
+
+	log.Printf("Blocks to export: %d", len(missingBlockNums))
+	if len(missingBlockNums) == 0 {
+		log.Println("No missing blocks to export")
+		return
+	}
 
 	// Prepare insert
 	insertStmt, err := dstDB.Prepare(`
@@ -286,11 +384,8 @@ func exportBlocks(srcDB, dstDB *sql.DB, blockNums map[int64]bool) {
 	}
 	defer insertStmt.Close()
 
-	// Convert map to slice for batching
-	blockNumSlice := make([]int64, 0, len(blockNums))
-	for bn := range blockNums {
-		blockNumSlice = append(blockNumSlice, bn)
-	}
+	// Use missingBlockNums directly
+	blockNumSlice := missingBlockNums
 
 	totalInserted := int64(0)
 	startTime := time.Now()
