@@ -33,6 +33,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
 	rwdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/randomwalk"
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/tweets"
@@ -75,7 +76,7 @@ var (
 	Error					*log.Logger
 	Info					*log.Logger
 	storagew				*rwdb.SQLStorageWrapper
-	rw_contracts			RW_ContractAddresses
+	rw_contracts			rwp.ContractAddresses
 	market_addr				common.Address
 	rwalk_addr common.Address
 	rwalk_ctrct *rwcontracts.RWalk
@@ -812,4 +813,5 @@ func main() {
 	monitor_events(exit_chan,rwalk_addr)
 
 }
+
 

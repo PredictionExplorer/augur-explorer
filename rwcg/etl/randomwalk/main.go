@@ -21,6 +21,7 @@ import (
 	rwdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/randomwalk"
 	etlcommon "github.com/PredictionExplorer/augur-explorer/rwcg/etl/common"
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 const (
 	DEFAULT_DB_LOG				= "db.log"
@@ -57,7 +58,7 @@ var (
 	marketplace_abi *abi.ABI
 	randomwalk_abi *abi.ABI
 
-	rw_contracts RW_ContractAddresses
+	rw_contracts rwp.ContractAddresses
 	market_addr ethcommon.Address
 	rwalk_addr ethcommon.Address
 )

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
-	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 
 // SQLStorageWrapper wraps dbs.SQLStorage to provide RandomWalk-specific database methods
@@ -19,9 +19,9 @@ type SQLStorageWrapper struct {
 // PROCESSING STATUS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_randomwalk_processing_status() p.RandomWalkProcStatus {
+func (sw *SQLStorageWrapper) Get_randomwalk_processing_status() rwp.ProcStatus {
 
-	var output p.RandomWalkProcStatus
+	var output rwp.ProcStatus
 	var null_id,null_block sql.NullInt64
 
 	var query string
@@ -54,7 +54,7 @@ func (sw *SQLStorageWrapper) Get_randomwalk_processing_status() p.RandomWalkProc
 	}
 	return output
 }
-func (sw *SQLStorageWrapper) Update_randomwalk_process_status(status *p.RandomWalkProcStatus) {
+func (sw *SQLStorageWrapper) Update_randomwalk_process_status(status *rwp.ProcStatus) {
 
 	var query string
 	query = "UPDATE rw_proc_status SET last_evt_id = $1,last_block=$2"
@@ -70,9 +70,9 @@ func (sw *SQLStorageWrapper) Update_randomwalk_process_status(status *p.RandomWa
 // CONTRACT CONFIGURATION
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_randomwalk_contract_addresses() p.RW_ContractAddresses {
+func (sw *SQLStorageWrapper) Get_randomwalk_contract_addresses() rwp.ContractAddresses {
 
-	var output p.RW_ContractAddresses
+	var output rwp.ContractAddresses
 	var query string
 	query = "SELECT "+
 				"marketplace_addr,randomwalk_addr," +
@@ -103,7 +103,7 @@ func (sw *SQLStorageWrapper) Get_randomwalk_contract_addresses() p.RW_ContractAd
 // OFFER OPERATIONS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Insert_new_offer(evt *p.RW_NewOffer) {
+func (sw *SQLStorageWrapper) Insert_new_offer(evt *rwp.NewOffer) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	rwalk_aid:=sw.S.Lookup_or_create_address(evt.RWalkAddr,evt.BlockNum,evt.TxId)
@@ -140,7 +140,7 @@ func (sw *SQLStorageWrapper) Insert_new_offer(evt *p.RW_NewOffer) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_item_bought(evt *p.RW_ItemBought) {
+func (sw *SQLStorageWrapper) Insert_item_bought(evt *rwp.ItemBought) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	seller_aid:=sw.S.Lookup_or_create_address(evt.SellerAddr,evt.BlockNum,evt.TxId)
@@ -168,7 +168,7 @@ func (sw *SQLStorageWrapper) Insert_item_bought(evt *p.RW_ItemBought) {
 	}
 
 }
-func (sw *SQLStorageWrapper) Insert_offer_canceled(evt *p.RW_OfferCanceled) {
+func (sw *SQLStorageWrapper) Insert_offer_canceled(evt *rwp.OfferCanceled) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
@@ -197,7 +197,7 @@ func (sw *SQLStorageWrapper) Insert_offer_canceled(evt *p.RW_OfferCanceled) {
 // TOKEN OPERATIONS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Insert_withdrawal(evt *p.RW_Withdrawal) {
+func (sw *SQLStorageWrapper) Insert_withdrawal(evt *rwp.Withdrawal) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	aid:=sw.S.Lookup_or_create_address(evt.Destination,evt.BlockNum,evt.TxId)
@@ -224,7 +224,7 @@ func (sw *SQLStorageWrapper) Insert_withdrawal(evt *p.RW_Withdrawal) {
 	}
 
 }
-func (sw *SQLStorageWrapper) Insert_token_name(evt *p.RW_TokenName) {
+func (sw *SQLStorageWrapper) Insert_token_name(evt *rwp.TokenName) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
@@ -249,7 +249,7 @@ func (sw *SQLStorageWrapper) Insert_token_name(evt *p.RW_TokenName) {
 	}
 
 }
-func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.RW_MintEvent) {
+func (sw *SQLStorageWrapper) Insert_mint_event(evt *rwp.MintEvent) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	owner_aid:=sw.S.Lookup_or_create_address(evt.Owner,evt.BlockNum,evt.TxId)
@@ -277,7 +277,7 @@ func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.RW_MintEvent) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *p.RW_Transfer) {
+func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *rwp.Transfer) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	from_aid:=sw.S.Lookup_or_create_address(evt.From,evt.BlockNum,evt.TxId)
@@ -429,7 +429,7 @@ func (sw *SQLStorageWrapper) Update_randomwalk_top_volume_rank(aid int64,value f
 	}
 	return affected_rows
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_ranking_data_for_all_users() []p.RankStats {
+func (sw *SQLStorageWrapper) Get_randomwalk_ranking_data_for_all_users() []rwp.RankStats {
 
 	var query string
 	query = "SELECT "+
@@ -445,16 +445,16 @@ func (sw *SQLStorageWrapper) Get_randomwalk_ranking_data_for_all_users() []p.Ran
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.RankStats,0,8)
+	records := make([]rwp.RankStats,0,8)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RankStats
+		var rec rwp.RankStats
 		err=rows.Scan(&rec.Aid,&rec.TotalTrades,&rec.ProfitLoss,&rec.VolumeTraded)
 		records = append(records,rec)
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_top_profit_makers() []p.ProfitMaker {
+func (sw *SQLStorageWrapper) Get_randomwalk_top_profit_makers() []rwp.ProfitMaker {
 
 	var query string
 	query = "SELECT "+
@@ -470,16 +470,16 @@ func (sw *SQLStorageWrapper) Get_randomwalk_top_profit_makers() []p.ProfitMaker 
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.ProfitMaker,0,101)
+	records := make([]rwp.ProfitMaker,0,101)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.ProfitMaker
+		var rec rwp.ProfitMaker
 		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.ProfitLoss)
 		records = append(records,rec)
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_top_trade_makers() []p.TradeMaker {
+func (sw *SQLStorageWrapper) Get_randomwalk_top_trade_makers() []rwp.TradeMaker {
 
 	var query string
 	query = "SELECT " +
@@ -495,16 +495,16 @@ func (sw *SQLStorageWrapper) Get_randomwalk_top_trade_makers() []p.TradeMaker {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.TradeMaker,0,101)
+	records := make([]rwp.TradeMaker,0,101)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.TradeMaker
+		var rec rwp.TradeMaker
 		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.TotalTrades)
 		records = append(records,rec)
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_top_volume_makers() []p.VolumeMaker {
+func (sw *SQLStorageWrapper) Get_randomwalk_top_volume_makers() []rwp.VolumeMaker {
 
 	var query string
 	query = "SELECT "+
@@ -520,10 +520,10 @@ func (sw *SQLStorageWrapper) Get_randomwalk_top_volume_makers() []p.VolumeMaker 
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.VolumeMaker,0,101)
+	records := make([]rwp.VolumeMaker,0,101)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.VolumeMaker
+		var rec rwp.VolumeMaker
 		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.Volume)
 		records = append(records,rec)
 	}
@@ -534,9 +534,9 @@ func (sw *SQLStorageWrapper) Get_randomwalk_top_volume_makers() []p.VolumeMaker 
 // NOTIFICATION & MESSAGING
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_mint_events_for_notification(rwalk_aid int64,start_ts int64) []p.RW_NotificationEvent {
+func (sw *SQLStorageWrapper) Get_mint_events_for_notification(rwalk_aid int64,start_ts int64) []rwp.NotificationEvent {
 
-	records := make([]p.RW_NotificationEvent,0,101)
+	records := make([]rwp.NotificationEvent,0,101)
 	var query string
 	query = "SELECT "+
 				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
@@ -552,7 +552,7 @@ func (sw *SQLStorageWrapper) Get_mint_events_for_notification(rwalk_aid int64,st
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_NotificationEvent
+		var rec rwp.NotificationEvent
 		err=rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TokenId,
@@ -563,13 +563,13 @@ func (sw *SQLStorageWrapper) Get_mint_events_for_notification(rwalk_aid int64,st
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_messaging_status() p.RW_MsgStatus  {
+func (sw *SQLStorageWrapper) Get_messaging_status() rwp.MsgStatus  {
 
 	var query string
 	query = "SELECT last_tx_id,last_evtlog_id,last_block_num,last_timestamp "+
 				"FROM rw_messaging_status"
 	res := sw.S.Db().QueryRow(query)
-	var output p.RW_MsgStatus
+	var output rwp.MsgStatus
 	err := res.Scan(
 		&output.TxId,
 		&output.EvtLogId,
@@ -586,7 +586,7 @@ func (sw *SQLStorageWrapper) Get_messaging_status() p.RW_MsgStatus  {
 	return output
 
 }
-func (sw *SQLStorageWrapper) Update_messaging_status(status *p.RW_MsgStatus) {
+func (sw *SQLStorageWrapper) Update_messaging_status(status *rwp.MsgStatus) {
 
 	var query string
 	query = "UPDATE rw_messaging_status SET "+
@@ -601,9 +601,9 @@ func (sw *SQLStorageWrapper) Update_messaging_status(status *p.RW_MsgStatus) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Get_all_events_for_notification(rwalk_aid int64,start_ts int64) []p.RW_NotificationEvent {
+func (sw *SQLStorageWrapper) Get_all_events_for_notification(rwalk_aid int64,start_ts int64) []rwp.NotificationEvent {
 
-	records := make([]p.RW_NotificationEvent,0,101)
+	records := make([]rwp.NotificationEvent,0,101)
 	var query string
 	query = "SELECT "+
 				"ts,"+
@@ -656,7 +656,7 @@ func (sw *SQLStorageWrapper) Get_all_events_for_notification(rwalk_aid int64,sta
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_NotificationEvent
+		var rec rwp.NotificationEvent
 		err=rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TokenId,
@@ -667,9 +667,9 @@ func (sw *SQLStorageWrapper) Get_all_events_for_notification(rwalk_aid int64,sta
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_all_events_for_notification2(rwalk_aid int64,start_evtlog_id int64) []p.RW_NotificationEvent2 {
+func (sw *SQLStorageWrapper) Get_all_events_for_notification2(rwalk_aid int64,start_evtlog_id int64) []rwp.NotificationEvent2 {
 
-	records := make([]p.RW_NotificationEvent2,0,101)
+	records := make([]rwp.NotificationEvent2,0,101)
 	var query string
 	query = "SELECT "+
 				"ts,"+
@@ -731,7 +731,7 @@ func (sw *SQLStorageWrapper) Get_all_events_for_notification2(rwalk_aid int64,st
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_NotificationEvent2
+		var rec rwp.NotificationEvent2
 		err=rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TxId,
@@ -744,9 +744,9 @@ func (sw *SQLStorageWrapper) Get_all_events_for_notification2(rwalk_aid int64,st
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_all_events_for_notification_test(rwalk_aid int64,start_ts int64) []p.RW_NotificationEvent {
+func (sw *SQLStorageWrapper) Get_all_events_for_notification_test(rwalk_aid int64,start_ts int64) []rwp.NotificationEvent {
 
-	records := make([]p.RW_NotificationEvent,0,101)
+	records := make([]rwp.NotificationEvent,0,101)
 	var query string
 	query = "SELECT "+
 				"ts,"+
@@ -791,7 +791,7 @@ func (sw *SQLStorageWrapper) Get_all_events_for_notification_test(rwalk_aid int6
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_NotificationEvent
+		var rec rwp.NotificationEvent
 		err=rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TokenId,
@@ -832,7 +832,7 @@ func (sw *SQLStorageWrapper) Get_last_mint_timestamp() int64 {
 	}
 	return null_ts.Int64
 }
-func (sw *SQLStorageWrapper) Get_rw_token_transfers_by_tx_hash(tx_hash string) []p.RW_TransferEntry  {
+func (sw *SQLStorageWrapper) Get_rw_token_transfers_by_tx_hash(tx_hash string) []rwp.TransferEntry  {
 
 	var query string
 	query = "SELECT " +
@@ -848,10 +848,10 @@ func (sw *SQLStorageWrapper) Get_rw_token_transfers_by_tx_hash(tx_hash string) [
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.RW_TransferEntry,0,8)
+	records := make([]rwp.TransferEntry,0,8)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_TransferEntry
+		var rec rwp.TransferEntry
 		err=rows.Scan(&rec.From,&rec.To,&rec.TokenId)
 		if (err!=nil) {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

@@ -6,10 +6,10 @@ import (
 	"html/template"
 	"time"
 
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 
-func BuildJSRandomwalkVolumeHistory(prices *[]RW_API_RandomWalkVolumeHistory) template.JS {
+func BuildJSRandomwalkVolumeHistory(prices *[]rwp.API_VolumeHistory) template.JS {
 	var dataStr string = "["
 
 	for i := 0; i < len(*prices); i++ {
@@ -32,7 +32,7 @@ func BuildJSRandomwalkVolumeHistory(prices *[]RW_API_RandomWalkVolumeHistory) te
 	return template.JS(dataStr)
 }
 
-func BuildJSRandomwalkMintIntervals(intervals *[]RW_API_MintInterval) template.JS {
+func BuildJSRandomwalkMintIntervals(intervals *[]rwp.API_MintInterval) template.JS {
 	var dataStr string = "["
 
 	for i := 0; i < len(*intervals); i++ {
@@ -57,7 +57,7 @@ func BuildJSRandomwalkMintIntervals(intervals *[]RW_API_MintInterval) template.J
 	return template.JS(dataStr)
 }
 
-func BuildJSRandomwalkWithdrawalChart(intervals *[]RW_API_WithdrawalChartEntry) template.JS {
+func BuildJSRandomwalkWithdrawalChart(intervals *[]rwp.API_WithdrawalChartEntry) template.JS {
 	var dataStr string = "["
 
 	for i := 0; i < len(*intervals); i++ {
@@ -81,7 +81,7 @@ func BuildJSRandomwalkWithdrawalChart(intervals *[]RW_API_WithdrawalChartEntry) 
 	return template.JS(dataStr)
 }
 
-func BuildJSFloorPriceData(intervals *[]RW_API_RWalkFloorPrice) template.JS {
+func BuildJSFloorPriceData(intervals *[]rwp.API_FloorPrice) template.JS {
 	var dataStr string = "["
 
 	for i := 0; i < len(*intervals); i++ {

@@ -13,6 +13,7 @@ import (
 
 	//ethereum "github.com/ethereum/go-ethereum"
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 func build_list_of_inspected_events_layer1(rwalk_aid int64) []InspectedEvent {
 
@@ -52,8 +53,8 @@ func build_list_of_inspected_events_layer1(rwalk_aid int64) []InspectedEvent {
 }
 func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_NewOffer
-	var eth_evt ERandomWalk_NewOffer
+	var evt rwp.NewOffer
+	var eth_evt rwp.ENewOffer
 
 	/*if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
 		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
@@ -98,7 +99,7 @@ func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_item_bought(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_ItemBought
+	var evt rwp.ItemBought
 
 	/*if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
 		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
@@ -130,7 +131,7 @@ func proc_item_bought(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_offer_cancelled(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_OfferCanceled
+	var evt rwp.OfferCanceled
 
 	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to know address set (addr=%v), skipping\n",log.Address.String())
@@ -161,8 +162,8 @@ func proc_offer_cancelled(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_Withdrawal
-	var eth_evt ERandomWalk_WithdrawalEvent
+	var evt rwp.Withdrawal
+	var eth_evt rwp.EWithdrawalEvent
 
 	Info.Printf("Processing WithdrawalEvent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
@@ -195,8 +196,8 @@ func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_TokenName
-	var eth_evt ERandomWalk_TokenNameEvent
+	var evt rwp.TokenName
+	var eth_evt rwp.ETokenNameEvent
 
 	Info.Printf("Processing TokenName id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
@@ -232,8 +233,8 @@ func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_MintEvent
-	var eth_evt ERandomWalk_MintEvent
+	var evt rwp.MintEvent
+	var eth_evt rwp.EMintEvent
 
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -272,7 +273,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt RW_Transfer
+	var evt rwp.Transfer
 
 	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
 		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())

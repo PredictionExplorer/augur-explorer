@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/randomwalk"
 )
 const (
 	RWALK_MINT_EVENT		= "ad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec"

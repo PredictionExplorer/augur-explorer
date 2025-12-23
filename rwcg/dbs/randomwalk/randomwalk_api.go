@@ -7,16 +7,17 @@ import (
 	"os"
 	"time"
 
-	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 
 // =============================================================================
 // OFFER QUERIES
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_active_offers(rwalk_aid int64,market_aid int64, order_by int) []p.RW_API_Offer {
+func (sw *SQLStorageWrapper) Get_active_offers(rwalk_aid int64,market_aid int64, order_by int) []rwp.API_Offer {
 
-	records := make([]p.RW_API_Offer,0 ,16)
+	records := make([]rwp.API_Offer,0 ,16)
 
 	var order_by_mod string =" ORDER BY o.id"
 	if order_by == 1 {
@@ -63,7 +64,7 @@ func (sw *SQLStorageWrapper) Get_active_offers(rwalk_aid int64,market_aid int64,
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Offer
+		var rec rwp.API_Offer
 		err=rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
@@ -97,9 +98,9 @@ func (sw *SQLStorageWrapper) Get_active_offers(rwalk_aid int64,market_aid int64,
 // TOKEN MINT QUERIES
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts int) []p.RW_API_TokenMint {
+func (sw *SQLStorageWrapper) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts int) []rwp.API_TokenMint {
 
-	records := make([]p.RW_API_TokenMint,0,32)
+	records := make([]rwp.API_TokenMint,0,32)
 	var query string
 	query = "SELECT "+
 				"t.block_num,"+
@@ -129,7 +130,7 @@ func (sw *SQLStorageWrapper) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_TokenMint
+		var rec rwp.API_TokenMint
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -153,9 +154,9 @@ func (sw *SQLStorageWrapper) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,
 
 	return records
 }
-func (sw *SQLStorageWrapper) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limit int) []p.RW_API_TokenMint {
+func (sw *SQLStorageWrapper) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limit int) []rwp.API_TokenMint {
 
-	records := make([]p.RW_API_TokenMint,0,32)
+	records := make([]rwp.API_TokenMint,0,32)
 	var query string
 	query = "SELECT "+
 				"t.block_num,"+
@@ -186,7 +187,7 @@ func (sw *SQLStorageWrapper) Get_minted_tokens_sequentially(rwalk_aid int64,offs
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_TokenMint
+		var rec rwp.API_TokenMint
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -215,9 +216,9 @@ func (sw *SQLStorageWrapper) Get_minted_tokens_sequentially(rwalk_aid int64,offs
 // TRADING HISTORY
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit int) []p.RW_API_TradingHistoryLog {
+func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit int) []rwp.API_TradingHistoryLog {
 
-	records := make([]p.RW_API_TradingHistoryLog,0,16)
+	records := make([]rwp.API_TradingHistoryLog,0,16)
 
 	var query string
 	query = "SELECT " +
@@ -302,7 +303,7 @@ func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_TradingHistoryLog
+		var rec rwp.API_TradingHistoryLog
 		var null_profit sql.NullFloat64
 		var null_can_id sql.NullInt64
 		var null_bought_ts,null_cancel_ts sql.NullInt64
@@ -350,7 +351,7 @@ func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit
 			rec.CanceledTs = null_cancel_ts.Int64
 			time_canceled := time.Unix(int64(rec.CanceledTs),0)
 			time_offered := time.Unix(int64(rec.TimeStamp),0)
-			rec.CanceledDuration = p.DurationToString(p.TimeDifference(time_offered,time_canceled))
+			rec.CanceledDuration = primitives.DurationToString(primitives.TimeDifference(time_offered,time_canceled))
 			fmt.Printf(
 				"id=%v: offer_id=%v , canceled ts = %v , offered_Ts=%v rec.CanceledDuration=%v\n",
 				rec.Id,rec.OfferId,rec.CanceledTs,rec.TimeStamp,rec.CanceledDuration,
@@ -362,7 +363,7 @@ func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit
 			rec.ItemBoughtTs = null_bought_ts.Int64
 			time_bought := time.Unix(int64(rec.ItemBoughtTs),0)
 			time_offered := time.Unix(int64(rec.TimeStamp),0)
-			rec.BoughtDuration = p.DurationToString(p.TimeDifference(time_offered,time_bought))
+			rec.BoughtDuration = primitives.DurationToString(primitives.TimeDifference(time_offered,time_bought))
 			fmt.Printf(
 				"id=%v: offer_id=%v , bought_ts = %v , offered_Ts=%v rec.BoughtDuration=%v\n",
 				rec.Id,rec.OfferId,rec.ItemBoughtTs,rec.TimeStamp,rec.BoughtDuration,
@@ -379,9 +380,9 @@ func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit
 // STATISTICS QUERIES
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_random_walk_stats(rwalk_aid int64) p.RW_API_RWalkStats {
+func (sw *SQLStorageWrapper) Get_random_walk_stats(rwalk_aid int64) rwp.API_RWalkStats {
 
-	var output p.RW_API_RWalkStats
+	var output rwp.API_RWalkStats
 	var query string
 	query = "SELECT " +
 				"total_vol/1e+18,"+
@@ -442,9 +443,9 @@ func (sw *SQLStorageWrapper) Get_random_walk_stats(rwalk_aid int64) p.RW_API_RWa
 
 	return output
 }
-func (sw *SQLStorageWrapper) Get_market_stats(market_aid int64) p.RW_API_MarketStats {
+func (sw *SQLStorageWrapper) Get_market_stats(market_aid int64) rwp.API_MarketStats {
 
-	var output p.RW_API_MarketStats
+	var output rwp.API_MarketStats
 	var query string
 	query = "SELECT " +
 				"total_vol/1e+18,"+
@@ -468,9 +469,9 @@ func (sw *SQLStorageWrapper) Get_market_stats(market_aid int64) p.RW_API_MarketS
 	}
 	return output
 }
-func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,offset,limit int) []p.RW_API_FullHistoryEntry {
+func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,offset,limit int) []rwp.API_FullHistoryEntry {
 
-	records := make([]p.RW_API_FullHistoryEntry,0,32)
+	records := make([]rwp.API_FullHistoryEntry,0,32)
 
 	var query string
 	query = "SELECT " +
@@ -821,9 +822,9 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		var rec p.RW_API_FullHistoryEntry
+		var rec rwp.API_FullHistoryEntry
 		if seed.Valid {
-			iface := p.RW_API_HistEntry_Mint{
+			iface := rwp.API_HistEntry_Mint{
 				BlockNum:			block_num.Int64,
 				TimeStamp:			timestamp.Int64,
 				DateTime:			datetime.String,
@@ -840,7 +841,7 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 			rec.RecordType = 1
 		}
 		if otype.Valid {
-			iface := p.RW_API_HistEntry_Offer{
+			iface := rwp.API_HistEntry_Offer{
 				BlockNum:			block_num.Int64,
 				TimeStamp:			timestamp.Int64,
 				DateTime:			datetime.String,
@@ -860,7 +861,7 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 			rec.RecordType = 2
 		}
 		if offer_canceled_id.Valid {
-			iface := p.RW_API_HistEntry_OfferCanceled{
+			iface := rwp.API_HistEntry_OfferCanceled{
 				BlockNum:			block_num.Int64,
 				TimeStamp:			timestamp.Int64,
 				DateTime:			datetime.String,
@@ -887,7 +888,7 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 			rec.RecordType = 3
 		}
 		if item_bought_id.Valid {
-			iface := p.RW_API_HistEntry_ItemBought{
+			iface := rwp.API_HistEntry_ItemBought{
 				BlockNum:			block_num.Int64,
 				TimeStamp:			timestamp.Int64,
 				DateTime:			datetime.String,
@@ -914,7 +915,7 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 			rec.RecordType = 4
 		}
 		if token_name.Valid {
-			iface := p.RW_API_HistEntry_TokenName {
+			iface := rwp.API_HistEntry_TokenName {
 				BlockNum:			block_num.Int64,
 				TimeStamp:			timestamp.Int64,
 				DateTime:			datetime.String,
@@ -927,7 +928,7 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 			rec.RecordType = 5
 		}
 		if transfer_id.Valid {
-			iface := p.RW_API_HistEntry_Transfer {
+			iface := rwp.API_HistEntry_Transfer {
 				BlockNum:			block_num.Int64,
 				TimeStamp:			timestamp.Int64,
 				DateTime:			datetime.String,
@@ -948,7 +949,7 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 
 	return records
 }
-func (sw *SQLStorageWrapper) Get_market_trading_volume_by_period(contract_aid int64,init_ts int,fin_ts int,interval int) []p.RW_API_RandomWalkVolumeHistory {
+func (sw *SQLStorageWrapper) Get_market_trading_volume_by_period(contract_aid int64,init_ts int,fin_ts int,interval int) []rwp.API_VolumeHistory {
 
 	var query string
 	query = "SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b " +
@@ -999,14 +1000,14 @@ func (sw *SQLStorageWrapper) Get_market_trading_volume_by_period(contract_aid in
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.RW_API_RandomWalkVolumeHistory,0,8)
+	records := make([]rwp.API_VolumeHistory,0,8)
 	var accum_vol float64 = 0.0
 	if initial_volume.Valid {
 		accum_vol = initial_volume.Float64
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_RandomWalkVolumeHistory
+		var rec rwp.API_VolumeHistory
 		var sum_volume sql.NullFloat64
 		var num_rows int
 		err=rows.Scan(
@@ -1029,9 +1030,9 @@ func (sw *SQLStorageWrapper) Get_market_trading_volume_by_period(contract_aid in
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_name_changes_for_token(token_id int64) []p.RW_API_TokenName{
+func (sw *SQLStorageWrapper) Get_name_changes_for_token(token_id int64) []rwp.API_TokenName{
 
-	records := make([]p.RW_API_TokenName,0,32)
+	records := make([]rwp.API_TokenName,0,32)
 	var query string
 	query = "SELECT "+
 				"t.block_num,"+
@@ -1058,7 +1059,7 @@ func (sw *SQLStorageWrapper) Get_name_changes_for_token(token_id int64) []p.RW_A
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_TokenName
+		var rec rwp.API_TokenName
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -1081,9 +1082,9 @@ func (sw *SQLStorageWrapper) Get_name_changes_for_token(token_id int64) []p.RW_A
 	return records
 
 }
-func (sw *SQLStorageWrapper) Get_random_walk_tokens_by_user(user_aid int64) []p.RW_API_UserToken {
+func (sw *SQLStorageWrapper) Get_random_walk_tokens_by_user(user_aid int64) []rwp.API_UserToken {
 
-	records := make([]p.RW_API_UserToken,0,32)
+	records := make([]rwp.API_UserToken,0,32)
 	var query string
 	query = "SELECT "+
 				"t.token_id,"+
@@ -1101,7 +1102,7 @@ func (sw *SQLStorageWrapper) Get_random_walk_tokens_by_user(user_aid int64) []p.
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_UserToken
+		var rec rwp.API_UserToken
 		err=rows.Scan(
 			&rec.TokenId,
 			&rec.Seed,
@@ -1156,9 +1157,9 @@ func (sw *SQLStorageWrapper) Get_floor_price(rwalk_aid int64,market_aid int64) (
 	token_id = n_token_id.Int64
 	return
 }
-func (sw *SQLStorageWrapper) Get_trading_history_by_user(user_aid int64) []p.RW_API_Offer {
+func (sw *SQLStorageWrapper) Get_trading_history_by_user(user_aid int64) []rwp.API_Offer {
 
-	records := make([]p.RW_API_Offer,0,16)
+	records := make([]rwp.API_Offer,0,16)
 
 	var query string
 	query = "SELECT " +
@@ -1204,7 +1205,7 @@ func (sw *SQLStorageWrapper) Get_trading_history_by_user(user_aid int64) []p.RW_
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Offer
+		var rec rwp.API_Offer
 		var null_profit sql.NullFloat64
 		var null_can_id sql.NullInt64
 		err=rows.Scan(
@@ -1248,9 +1249,9 @@ func (sw *SQLStorageWrapper) Get_trading_history_by_user(user_aid int64) []p.RW_
 
 	return records
 }
-func (sw *SQLStorageWrapper) Get_rwalk_user_info(user_aid int64,rwalk_aid int64) (p.RW_API_UserInfo,error) {
+func (sw *SQLStorageWrapper) Get_rwalk_user_info(user_aid int64,rwalk_aid int64) (rwp.API_UserInfo,error) {
 
-	var output p.RW_API_UserInfo
+	var output rwp.API_UserInfo
 	var query string
 	query = "SELECT contract_aid FROM rw_new_offer WHERE contract_aid=$1 LIMIT 1"
 	var null_aid sql.NullInt64
@@ -1286,9 +1287,9 @@ func (sw *SQLStorageWrapper) Get_rwalk_user_info(user_aid int64,rwalk_aid int64)
 	}
 	return output,nil
 }
-func (sw *SQLStorageWrapper) Get_top5_traded_tokens() []p.RW_API_Top5Toks {
+func (sw *SQLStorageWrapper) Get_top5_traded_tokens() []rwp.API_Top5Toks {
 
-	records := make([]p.RW_API_Top5Toks,0,16)
+	records := make([]rwp.API_Top5Toks,0,16)
 
 	var query string
 	query = "SELECT " +
@@ -1308,7 +1309,7 @@ func (sw *SQLStorageWrapper) Get_top5_traded_tokens() []p.RW_API_Top5Toks {
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Top5Toks
+		var rec rwp.API_Top5Toks
 		err=rows.Scan(
 			&rec.TokenId,
 			&rec.TotalTrades,
@@ -1323,7 +1324,7 @@ func (sw *SQLStorageWrapper) Get_top5_traded_tokens() []p.RW_API_Top5Toks {
 
 	return records
 }
-func (sw *SQLStorageWrapper) Get_rwalk_token_info(rwalk_aid int64,token_id int64) (p.RW_API_TokenInfo,error) {
+func (sw *SQLStorageWrapper) Get_rwalk_token_info(rwalk_aid int64,token_id int64) (rwp.API_TokenInfo,error) {
 
 	var query string
 	query = "SELECT " +
@@ -1340,7 +1341,7 @@ func (sw *SQLStorageWrapper) Get_rwalk_token_info(rwalk_aid int64,token_id int64
 				"LEFT JOIN address oa ON oa.address_id=t.cur_owner_aid "+
 			"WHERE t.rwalk_aid=$1 AND token_id=$2"
 
-	var output p.RW_API_TokenInfo
+	var output rwp.API_TokenInfo
 	output.TokenId=token_id
 	res := sw.S.Db().QueryRow(query,rwalk_aid,token_id)
 	err := res.Scan(
@@ -1392,10 +1393,10 @@ func (sw *SQLStorageWrapper) Check_rwalk_token_exists(token_id int64) (bool,erro
 	}
 	return true,nil
 }
-func (sw *SQLStorageWrapper) Get_rwalk_mint_intervals(rwalk_aid int64) []p.RW_API_MintInterval {
+func (sw *SQLStorageWrapper) Get_rwalk_mint_intervals(rwalk_aid int64) []rwp.API_MintInterval {
 	// gets mint number and time elapsed between mints (for scatter plot)
 
-	records := make([]p.RW_API_MintInterval,0,256)
+	records := make([]rwp.API_MintInterval,0,256)
 
 	var query string
 	query = "SELECT "+
@@ -1413,7 +1414,7 @@ func (sw *SQLStorageWrapper) Get_rwalk_mint_intervals(rwalk_aid int64) []p.RW_AP
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_MintInterval
+		var rec rwp.API_MintInterval
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.TokenId,
@@ -1436,9 +1437,9 @@ func (sw *SQLStorageWrapper) Get_rwalk_mint_intervals(rwalk_aid int64) []p.RW_AP
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_rwalk_withdrawal_chart(rwalk_aid int64) []p.RW_API_WithdrawalChartEntry {
+func (sw *SQLStorageWrapper) Get_rwalk_withdrawal_chart(rwalk_aid int64) []rwp.API_WithdrawalChartEntry {
 
-	records := make([]p.RW_API_WithdrawalChartEntry,0,256)
+	records := make([]rwp.API_WithdrawalChartEntry,0,256)
 	var query string
 	query = "SELECT "+
 				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
@@ -1457,7 +1458,7 @@ func (sw *SQLStorageWrapper) Get_rwalk_withdrawal_chart(rwalk_aid int64) []p.RW_
 	var withdrawal_amount float64
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_WithdrawalChartEntry
+		var rec rwp.API_WithdrawalChartEntry
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
@@ -1474,9 +1475,9 @@ func (sw *SQLStorageWrapper) Get_rwalk_withdrawal_chart(rwalk_aid int64) []p.RW_
 
 	return records
 }
-func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
+func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit int) []rwp.API_Offer {
 
-	records := make([]p.RW_API_Offer,0,16)
+	records := make([]rwp.API_Offer,0,16)
 
 	var query string
 	query = "SELECT " +
@@ -1522,7 +1523,7 @@ func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit in
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Offer
+		var rec rwp.API_Offer
 		var null_profit sql.NullFloat64
 		var null_can_id sql.NullInt64
 		err=rows.Scan(
@@ -1566,7 +1567,7 @@ func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit in
 
 	return records
 }
-func (sw *SQLStorageWrapper) Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid int64,init_ts int,fin_ts int,interval int) []p.RW_API_RWalkFloorPrice {
+func (sw *SQLStorageWrapper) Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid int64,init_ts int,fin_ts int,interval int) []rwp.API_FloorPrice {
 
 	var query string
 	query = "WITH periods AS (" +
@@ -1605,10 +1606,10 @@ func (sw *SQLStorageWrapper) Get_rwalk_floor_price_for_periods(rwalk_aid,market_
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.RW_API_RWalkFloorPrice,0,8)
+	records := make([]rwp.API_FloorPrice,0,8)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_RWalkFloorPrice
+		var rec rwp.API_FloorPrice
 		var null_float sql.NullFloat64
 		err=rows.Scan(
 			&rec.TimeStamp,
@@ -1627,9 +1628,9 @@ func (sw *SQLStorageWrapper) Get_rwalk_floor_price_for_periods(rwalk_aid,market_
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_minted_tokens_for_CSV(rwalk_aid int64) []p.RW_API_TokenMint_CSV {
+func (sw *SQLStorageWrapper) Get_minted_tokens_for_CSV(rwalk_aid int64) []rwp.API_TokenMint_CSV {
 
-	records := make([]p.RW_API_TokenMint_CSV,0,32)
+	records := make([]rwp.API_TokenMint_CSV,0,32)
 	var query string
 	query = "SELECT "+
 				"t.block_num,"+
@@ -1666,7 +1667,7 @@ func (sw *SQLStorageWrapper) Get_minted_tokens_for_CSV(rwalk_aid int64) []p.RW_A
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_TokenMint_CSV
+		var rec rwp.API_TokenMint_CSV
 		var n_num_trades sql.NullInt64
 		var n_last_owner_addr,n_last_name sql.NullString
 		var n_total_vol,n_last_price sql.NullFloat64
@@ -1722,9 +1723,9 @@ func month_lookup(code int64) string {
 		}
 		return ""
 }
-func (sw *SQLStorageWrapper) Get_mint_report() []p.RW_API_MintReportRec {
+func (sw *SQLStorageWrapper) Get_mint_report() []rwp.API_MintReportRec {
 
-	records := make([]p.RW_API_MintReportRec,0 ,32)
+	records := make([]rwp.API_MintReportRec,0 ,32)
 	var query string
 	query = "WITH periods AS ("+
 				"SELECT "+
@@ -1752,7 +1753,7 @@ func (sw *SQLStorageWrapper) Get_mint_report() []p.RW_API_MintReportRec {
 	var sum_deposited float64 = 0.0
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_MintReportRec
+		var rec rwp.API_MintReportRec
 		var n_total_minted sql.NullInt64
 		var n_total_wei sql.NullString
 		var n_total_eth sql.NullFloat64
