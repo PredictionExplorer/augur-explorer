@@ -484,3 +484,4 @@ func compareBlockSets(primary, secondary map[string]BlockRecord) bool {
 	log.Printf("block: Missing=%d, Extra=%d", missing, extra)
 	return missing == 0 && extra == 0
 }
+
