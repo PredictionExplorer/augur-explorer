@@ -4,7 +4,7 @@ LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`
 while true
 do
-	nohup $WD/randomwalk >> $LOG_DIR/randomwalk_nohup.log
+	nohup $WD/rw_etl >> $LOG_DIR/randomwalk_nohup.log
 	sleep 2
 done
 

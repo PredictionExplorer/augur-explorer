@@ -7,8 +7,6 @@ CREATE INDEX tx_input_tx_idx		ON	tx_input		(tx_id);
 CREATE INDEX blk_ph_idx				ON block			(parent_hash);
 CREATE UNIQUE INDEX blk_hash_uniq	ON block			(block_hash);
 CREATE INDEX blk_ts_idx				ON block			(ts);
-CREATE UNIQUE INDEX meshevt_uniq1	ON mesh_evt			(order_hash,evt_code) WHERE mktord_id IS NULL;
-CREATE UNIQUE INDEX meshevt_uniq2	ON mesh_evt			(order_hash,evt_code,mktord_id) WHERE mktord_id IS NOT NULL;
 CREATE INDEX pest_ts_idx			ON price_estimate	(time_stamp);
 CREATE INDEX elog_ctrct_idx			ON evt_log			(contract_aid);
 CREATE INDEX elog_topic0_sig		ON evt_log			(topic0_sig);
