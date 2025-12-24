@@ -393,13 +393,13 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_distribution() []p.CGCST
 
 	var query string
 	query = "SELECT "+
-				"m.cur_owner_aid, "+
+				"o.owner_aid, "+
 				"a.addr, "+
-				"count(m.cur_owner_aid) AS counter "+
-			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
-				"LEFT JOIN address a ON m.cur_owner_aid=a.address_id "+
-			"GROUP BY m.cur_owner_aid,a.addr "+
-			"ORDER BY counter DESC "
+				"FLOOR(o.cur_balance/1e18)::BIGINT AS num_tokens "+
+			"FROM "+sw.S.SchemaName()+".cg_costok_owner o "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address a ON o.owner_aid=a.address_id "+
+			"WHERE o.cur_balance > 0 "+
+			"ORDER BY o.cur_balance DESC "
 
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {

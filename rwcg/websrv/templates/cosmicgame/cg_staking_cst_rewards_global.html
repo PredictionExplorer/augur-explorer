@@ -1,0 +1,65 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CST Staking Rewards Global</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 CST Staking Rewards (Global)</h1>
+			<div class="subtitle">All staking rewards across all rounds</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Record ID</th>
+					<th class="center">Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th class="right">Deposit Amount</th>
+					<th class="right">Collected</th>
+					<th class="right">Pending</th>
+					<th class="center">Fully Collected</th>
+				</tr>
+				{{- range $i, $change := .StakingCSTRewards}}
+					<tr>
+						<td class="center">{{.RecordId}}</td>
+						<td class="center">{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="right">{{printf "%.6f" .TotalDepositAmountEth}} ETH</td>
+						<td class="right">{{printf "%.6f" .AlreadyCollectedEth}} ETH</td>
+						<td class="right">{{printf "%.6f" .PendingToCollectEth}} ETH</td>
+						<td class="center">
+							{{if .FullyClaimed}}
+								<span class="badge badge-success">✓</span>
+							{{else}}
+								<span class="badge badge-warning">Pending</span>
+							{{end}}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/global</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/global</code>
+		</div>
+	</div>
+</body>
+</html>

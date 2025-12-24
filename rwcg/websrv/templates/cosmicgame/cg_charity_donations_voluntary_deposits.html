@@ -1,0 +1,53 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Voluntary Charity Deposits</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>❤️ Voluntary Charity Deposits</h1>
+			<div class="subtitle">Deposits made voluntarily outside of the CosmicGame system</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Donor</th>
+					<th class="right">Amount (ETH)</th>
+				</tr>
+				{{- range $i, $change := .CharityDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/charity/voluntary</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/charity/voluntary</code>
+		</div>
+	</div>
+</body>
+</html>

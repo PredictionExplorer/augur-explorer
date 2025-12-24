@@ -1,0 +1,27 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>User Tokens</title>
+</head>
+<body>
+	<h3 class="page_title">Tokens for user {{.UserAddr}}<h3>
+<div id="volume_history_graph"></div>
+<h3>Tokens for user {{.UserAddr}}</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Token ID</th>
+		<th class="market_reports">Seed</th>
+		<th class="market_reports">Seed Hex</th>
+		<th class="market_reports">Last Price</th>
+	</tr>
+	{{- range $i, $change := .UserTokens}}
+		<tr class="market_reports">
+			<td class="">{{.TokenId}}</td>
+			<td class="">{{.Seed}}</td>
+			<td class="">{{.SeedNum}}</td>
+			<td class="">{{ printf ".18f" .Price}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

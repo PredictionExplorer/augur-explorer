@@ -1,0 +1,65 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Collected CST Staking Rewards</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>✅ Collected CST Staking Rewards</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Deposit ID</th>
+					<th class="center">Total Staked</th>
+					<th class="right">Total Deposited</th>
+					<th class="right">Your Reward</th>
+					<th class="center">Your Stake</th>
+					<th class="center">Collected</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .CollectedStakingCSTRewards}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">
+							<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
+								{{.DepositId}}
+							</a>
+						</td>
+						<td class="center">{{.NumStakedNFTs}}</td>
+						<td class="right">{{printf "%.6f" .TotalDepositAmountEth}}</td>
+						<td class="right">{{printf "%.6f" .YourAmountToClaimEth}}</td>
+						<td class="center">{{.YourTokensStaked}}</td>
+						<td class="center">{{.NumTokensCollected}}</td>
+						<td class="right">{{printf "%.6f" .YourCollectedAmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/collected/by_user/[user_addr]/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/collected/by_user/{{.UserAddr}}/0/10000</code>
+		</div>
+	</div>
+</body>
+</html>

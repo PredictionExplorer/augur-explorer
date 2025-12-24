@@ -1,0 +1,427 @@
+/*body {
+	font-family:                    SANS-SERIF;
+	text-align:                     center;
+}*/
+
+body {
+	margin: 0;
+	height: 100vh;
+	/*display: flex;*/
+	color: white;
+	align-items: center;
+	justify-content: center;
+	background-color: black;
+}
+a {
+	color: white;
+	text-decoration-color: blue;
+}
+nav ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+nav ul li {
+	--c: goldenrod;
+	color: var(--c);
+	font-size: 16px;
+	border: 0.3em solid var(--c);
+	border-radius: 0.5em;
+	width: 12em;
+	height: 3em;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-family: sans-serif;
+	letter-spacing: 0.1em;
+	text-align: center;
+	line-height: 3em;
+	position: relative;
+	overflow: hidden;
+	z-index: 1;
+	transition: 0.5s;
+	margin: 1em;
+}
+
+nav ul li span {
+	position: absolute;
+	width: 25%;
+	height: 100%;
+	background-color: var(--c);
+	transform: translateY(150%);
+	border-radius: 50%;
+	left: calc((var(--n) - 1) * 25%);
+	transition: 0.5s;
+	transition-delay: calc((var(--n) - 1) * 0.1s);
+	z-index: -1;
+}
+
+nav ul li:hover {
+	color: black;
+}
+
+nav ul li:hover span {
+	transform: translateY(0) scale(2);
+}
+
+nav ul li span:nth-child(1) {
+	--n: 1;
+}
+
+nav ul li span:nth-child(2) {
+	--n: 2;
+}
+
+nav ul li span:nth-child(3) {
+	--n: 3;
+}
+
+nav ul li span:nth-child(4) {
+	--n: 4;
+}
+
+a.btn_link{
+	--c: goldenrod;
+	color: var(--c);
+	text-decoration:				none;
+}
+a.btn_link:hover {
+	color:							white;
+	text-decoration:				none;
+}
+
+a.market_record {
+	color:							white;
+	text-decoration:					none;
+}
+div.market_record {
+	display:                        block;
+	border:							solid 1px black;
+	padding-top:						1.0em;
+	font-weight:                    bold;
+	font-size:                      0.8em;
+}
+div.market_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.category_record {
+	display:                        block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	margin-left:					1.0em;
+	font-size:                      1.5em;
+}
+div.category_record_subcategory {
+	display:                        inline;
+	font-weight:                    bold;
+	font-size:                      1em;
+}
+div.category_separator {
+	display:                        inline;
+}
+div.mkt_trade {
+	display:                        inline-block;
+	border:							solid 1px blue;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+table.market_trades {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.market_trades {
+	background-color: #161616;
+}
+div.mkt_trade_hdr {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.mkt_trade_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+h3.page_title {
+	font-weight:					bold;
+	font-size:						2.0em;
+	padding:						1em;
+}
+div.statistics {
+	margin-left:					1.0em;
+}
+div.explorer {
+	margin-left:					1.0em;
+}
+div.market_info {
+	margin-left:					1.0em;
+}
+div.markets {
+	margin-left:					1.0em;
+}
+table.markets {
+	margin-left:					1.0em;
+	margin-right:					1.0em;
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.markets {
+	background-color: #161616;
+}
+div.main_info {
+	top:							-15em;
+	text-align:						right;
+	position:						relative;
+	margin-right:					1.0em;
+
+}
+table.market_detail {
+	max-width:						40em;
+	margin-left:					1.0em;
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.market_detail {
+	background-color: #161616;
+}
+div.market_outcome_vols {
+	margin-left:					1.0em;
+}
+table.market_outcome_vols {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.market_outcome_vols {
+	background-color: #161616;
+}
+div.mkt_outvol_hdr {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.mkt_outvol_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.mkt_outvol {
+	display:                        inline-block;
+	border:							solid 1px blue;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+table.market_depth_pane {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.market_depth_pane {
+	background-color: #161616;
+}
+div.mkt_depth_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+a.depth_link {
+	text-decoration:			none;
+	color:						white;
+}
+.market_depth {
+	margin-left:					1.0em;
+}
+.market_bids {
+	margin-left:					1.0em;
+}
+.market_asks {
+	margin-left:					1.0em;
+}
+td.mkt_depth_hdr {
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+	color:							yellow;
+}
+#depth_graph {
+	padding:						1em;
+	max-width:						30em;
+}
+div.user_info {
+	text-align:						center;
+	padding-left:					2em;
+}
+table.user_info {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.user_info {
+	background-color: #161616;
+}
+#open_positions_chart {
+	max-width:						40em;
+	padding-left:					2em;
+}
+#profit_loss_chart {
+	max-width:						40em;
+}
+.user_info_generic {
+	padding-left:					2em;
+}
+div.order_info {
+	text-align:						center;
+	padding-left:					2em;
+}
+#market_trades_nav {
+	height:				10em;
+}
+div.category_record_small {
+	display:                        block;
+	border:							solid 1px black;
+	font-size:                      1em;
+}
+div.category_record_subcategory_small {
+	display:                        inline;
+	font-size:                      1em;
+}
+#cash_flow_chart {
+	padding:						1em;
+	max-width:						30em;
+}
+#uniq_addr_chart {
+	padding:						1em;
+	max-width:						30em;
+}
+#gas_usage_chart {
+	padding:						1em;
+	max-width:						30em;
+}
+#tx_fees_chart {
+	padding:						1em;
+	max-width:						30em;
+}
+table.deposits_withdrawals {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+th.deposits_withdrawals {
+
+}
+tr.deposits_withdrawals_record {
+	background-color: #161616;
+}
+.addr {
+	font-family:		"monospace";
+	font-size:			0.7em;
+}
+.right {
+	text-align:						right;
+}
+.ctr {
+	text-align:						center;
+}
+table.open_pos_info {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.open_pos_info {
+	background-color: #161616;
+}
+table.profit_loss_order_detail {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.profit_loss_order_detail {
+	background-color: #161616;
+}
+table.user_reports {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.user_reports {
+	background-color: #161616;
+}
+table.volume_makers {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.volume_makers {
+	background-color: #161616;
+}
+table.profit_makers {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.profit_makers {
+	background-color: #161616;
+}
+table.trade_makers {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.trade_makers {
+	background-color: #161616;
+}
+table.statistics {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.statistics {
+	background-color: #161616;
+}
+table.index_stats {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.index_stats {
+	background-color: #161616;
+}
+table.order_info {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.order_info {
+	background-color: #161616;
+}
+table.user_open_orders {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.user_open_orders {
+	background-color: #161616;
+}
+table.market_reports {
+	color:							white;
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.market_reports {
+	color:							white;
+	background-color: #161616;
+}
+table.report_rounds {
+	border:							solid 1px white;
+	border-spacing:					1em;
+	border-collapse: separate;
+	padding:						1em;
+	font-weight:                    bold;
+}
+table.generic {
+	border-collapse:				separate;
+	border-spacing:					6px 2px;
+}
+tr.generic {
+	background-color: #161616;
+}
+td.generic {
+
+}
+th.generic {
+
+}

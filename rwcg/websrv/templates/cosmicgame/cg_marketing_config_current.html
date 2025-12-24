@@ -1,0 +1,70 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Marketing Wallet Configuration</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⚙️ Marketing Wallet Configuration</h1>
+			<div class="subtitle">Current marketing wallet settings</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Contract Addresses</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Marketing Wallet Contract</div>
+					<div class="detail-value monospace">{{.MarketingWalletAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token Contract (CST)</div>
+					<div class="detail-value monospace">{{.TokenAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label"></div>
+					<div class="detail-value"><em style="color: #888;">CosmicSignatureToken (CST) used for marketing rewards</em></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Permissions</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Treasurer Address</div>
+					<div class="detail-value monospace">{{.TreasurerAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label"></div>
+					<div class="detail-value"><em style="color: #888;">The treasurer has permission to distribute CST rewards to marketers</em></div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Contract Owner</div>
+					<div class="detail-value monospace">{{.OwnerAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label"></div>
+					<div class="detail-value"><em style="color: #888;">The owner has permission to change the treasurer address</em></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/marketing/config/current</code>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CST Staking Rewards By Deposit</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 CST Staking Rewards By Deposit</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			{{- range $i, $change := .RewardsByDeposit}}
+			<div class="sub-card mb-3">
+				<div class="sub-header">Deposit #{{.DepositId}} - Round {{.DepositRoundNum}}</div>
+				
+				<div class="info-grid">
+					<div class="info-item">
+						<div class="info-label">Block Number</div>
+						<div class="info-value">{{.Tx.BlockNum}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">DateTime</div>
+						<div class="info-value">{{.Tx.DateTime}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Deposit ID</div>
+						<div class="info-value">
+							<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">{{.DepositId}}</a>
+						</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Total Tokens Staked</div>
+						<div class="info-value">{{.NumStakedNFTs}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Reward Per Token</div>
+						<div class="info-value">{{printf "%.6f" .AmountPerTokenEth}} ETH</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Your Claimable Amount</div>
+						<div class="info-value">{{printf "%.6f" .YourClaimableAmountEth}} ETH</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Your Tokens Staked</div>
+						<div class="info-value">{{.YourTokensStaked}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Tokens Collected</div>
+						<div class="info-value">{{.NumTokensCollected}}</div>
+					</div>
+					<div class="info-item">
+						<div class="info-label">Amount Collected</div>
+						<div class="info-value">{{printf "%.6f" .ClaimedAmountEth}} ETH</div>
+					</div>
+				</div>
+
+				<div class="section-subheader">Token Details</div>
+				<table class="compact-table">
+					<tr>
+						<th>Record ID</th>
+						<th>Action ID</th>
+						<th>Token ID</th>
+						<th>Stake Date</th>
+						<th class="right">Reward (ETH)</th>
+						<th class="center">Collected</th>
+						<th>Unstake Date</th>
+						<th class="right">$$$ at unstake()</th>
+					</tr>
+					{{- range $j, $row := .Actions}}
+					<tr>
+						<td class="center">{{.Stake.RecordId}}</td>
+						<td class="center">{{.Stake.ActionId}}</td>
+						<td class="center">{{.Stake.TokenId}}</td>
+						<td>{{.Stake.Tx.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .RewardEth}}</td>
+						<td class="center">
+							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+						</td>
+						<td>{{.Unstake.Tx.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .Unstake.RewardAmountEth}}</td>
+					</tr>
+					{{- end}}
+				</table>
+			</div>
+			{{- end}}
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserAddr}}</code>
+		</div>
+	</div>
+</body>
+</html>

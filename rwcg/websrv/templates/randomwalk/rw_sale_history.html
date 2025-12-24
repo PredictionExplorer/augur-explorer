@@ -1,0 +1,52 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Finalized Token Sales</title>
+</head>
+<body>
+	<h3 class="page_title">Finalized Token Sales<h3>
+<div id="volume_history_graph"></div>
+<h3>Token sales by date</h3>
+<a href="/black/rwalk/statistics/trading_volume/1634858540/1635776941/86400">Trading Volume Chart</a>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Block</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">OfferId</th>
+		<th class="market_reports">Offer Type</th>
+		<th class="market_reports">Seller</th>
+		<th class="market_reports">TokenId</th>
+		<th class="market_reports">Price</th>
+		<th class="market_reports">Profit</th>
+	</tr>
+	{{- range $i, $change := .Trading}}
+		<tr class="market_reports">
+			<td class="">{{.BlockNum}}</td>
+			<td class="">{{.DateTime}}</td>
+			<td class="" style="text-align:center;">{{.OfferId}}</td>
+			<td class="">
+				{{ if eq .OfferType 0 }}BUY{{else}}SELL{{end}}
+			</td>
+			<td class="addr">
+				<a href="/black/rwalk/user/info/{{.SellerAid}}/{{.RWalkAddr}}">{{.SellerAddr}}</a>
+			</td>
+			<td class="" style="text-align: center;">{{.TokenId}}</td>
+			<td class="market_reports_field" style="text-align: center;">
+				{{ printf "%.18f" .Price}}
+			</td>
+			<td class="market_reports_field" style="text-align: center;">
+				{{if .WasCanceled }} CANCELED
+				{{ else }}
+					{{ printf "%.18f" .Profit}}
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/rwalk/trading/sales/[market_addr]/[offset]/[limit]</br>
+
+	Example: /api/rwalk/trading/sales/{{.MarketPlaceAddr}}/0/1000000
+</code>
+</body>

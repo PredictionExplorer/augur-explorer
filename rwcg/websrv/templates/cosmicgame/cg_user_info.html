@@ -1,0 +1,413 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>User Info for {{.UserInfo.Address}}</title>
+</head>
+<body>
+	<div class="cg-container">
+		<!-- Page Header -->
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>User Dashboard</h1>
+			<div class="address-display" title="{{.UserInfo.AddressId}}">{{.UserInfo.Address}}</div>
+		</div>
+		
+		<!-- Stats Dashboard -->
+		<div class="stats-dashboard">
+			<div class="stat-card">
+				<div class="stat-label">Total Bids</div>
+				<div class="stat-value">{{.UserInfo.NumBids}}</div>
+			</div>
+			
+			<div class="stat-card">
+				<div class="stat-label">Prizes Won</div>
+				<div class="stat-value">{{.UserInfo.NumPrizes}}</div>
+			</div>
+			
+			<div class="stat-card">
+				<div class="stat-label">Max Bid</div>
+				<div class="stat-value">{{printf "%.4f" .UserInfo.MaxBidAmount}}</div>
+				<div class="stat-sublabel">ETH</div>
+			</div>
+			
+		<div class="stat-card">
+			<div class="stat-label">Max Win</div>
+			<div class="stat-value">{{printf "%.6f" .UserInfo.MaxWinAmount}}</div>
+			<div class="stat-sublabel">Prize Winnings</div>
+		</div>
+			
+			<div class="stat-card">
+				<div class="stat-label">CS Tokens</div>
+				<div class="stat-value">{{.UserInfo.TotalCSTokensWon}}</div>
+			</div>
+			
+			<div class="stat-card">
+				<div class="stat-label">Unclaimed NFTs</div>
+				<div class="stat-value">{{.UserInfo.UnclaimedNFTs}}</div>
+			</div>
+		</div>
+		
+		<!-- Quick Actions -->
+		<div class="section-card">
+			<div class="section-header">Quick Actions</div>
+			<div class="action-grid">
+				<div class="action-item">
+					<div class="action-title">🔔 Notifications</div>
+					<nav>
+						<ul>
+							<li>
+								<a class="btn_link" href="/black/cosmicgame/user/notif_red_box/{{.UserInfo.Address}}">Notif Red Box</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="action-item">
+					<div class="action-title">🏆 Prize History</div>
+					<nav>
+						<ul>
+							<li>
+								<a class="btn_link" href="/black/cosmicgame/prizes/history/by_user/{{.UserInfo.Address}}/0/1000000">Prize History</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="action-item">
+					<div class="action-title">💰 Balances</div>
+					<nav>
+						<ul>
+							<li>
+								<a class="btn_link" href="/black/cosmicgame/user/balances/{{.UserInfo.Address}}">Balances</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="action-item">
+					<div class="action-title">🪙 CST Activity</div>
+					<nav>
+						<ul>
+							<li>
+								<a class="btn_link" href="/black/cosmicgame/ct/summary/by_user/{{.UserInfo.Address}}">CST Summary</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Staking Section -->
+		<div class="section-card">
+			<div class="section-header">Staking & Rewards</div>
+			
+			<div class="sub-grid">
+				<!-- CST Staking -->
+				<div class="sub-card">
+					<div class="sub-header">CST Staking Rewards</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/by_user/by_token/summary/{{.UserInfo.Address}}">By Token</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserInfo.Address}}">By Deposit</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<!-- RWalk Staking -->
+				<div class="sub-card">
+					<div class="sub-header">RWalk Staking</div>
+					<div class="info-grid">
+						<div class="info-item">
+							<div class="info-label">Total RWalk NFTs Staked</div>
+							<div class="info-value">
+								<a href="/black/cosmicgame/staking/rwalk/staked_tokens/by_user/{{.UserInfo.Address}}">
+									{{.UserInfo.StakingStatisticsRWalk.TotalTokensStaked}}
+								</a>
+							</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">Total Stake Actions</div>
+							<div class="info-value">
+								<a href="/black/cosmicgame/staking/rwalk/actions/by_user/{{.UserInfo.Address}}">
+									{{.UserInfo.StakingStatisticsRWalk.TotalNumStakeActions}}
+								</a>
+							</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">Total RWalk Mints in Raffles</div>
+							<div class="info-value">
+								<a href="/black/cosmicgame/staking/rwalk/mints/by_user/{{.UserInfo.Address}}">
+									{{.UserInfo.StakingStatisticsRWalk.TotalTokensMinted}}
+								</a>
+							</div>
+						</div>
+					</div>
+					<nav style="margin-top: 1em;">
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/staking/rwalk/actions/by_user/{{.UserInfo.Address}}">RWalk Actions</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<!-- Pending Rewards -->
+				<div class="sub-card">
+					<div class="sub-header">Pending & History</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">Pending CST Rewards</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/by_user/by_deposit/{{.UserInfo.Address}}">CST Reward History</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Raffles & Prizes -->
+		<div class="section-card">
+			<div class="section-header">Raffles & Prizes</div>
+			
+			<div class="info-grid">
+				<div class="info-item">
+					<div class="info-label">Total ETH Won in Raffles</div>
+					<div class="info-value">
+						<a href="/black/cosmicgame/prizes/eth/user_raffle/{{.UserInfo.Address}}">
+							{{.UserInfo.SumRaffleEthWinnings}}
+						</a>
+					</div>
+				</div>
+				
+				<div class="info-item">
+					<div class="info-label">ETH Raffles Participated</div>
+					<div class="info-value">
+						<a href="/black/cosmicgame/prizes/eth/user_raffle/{{.UserInfo.Address}}">
+							{{.UserInfo.NumRaffleEthWinnings}}
+						</a>
+					</div>
+				</div>
+				
+				<div class="info-item">
+					<div class="info-label">Amount Withdrawn from ETH Raffles</div>
+					<div class="info-value">{{.UserInfo.SumRaffleEthWithdrawal}}</div>
+				</div>
+				
+				<div class="info-item">
+					<div class="info-label">Raffle NFTs Won</div>
+					<div class="info-value">
+						<a href="/black/cosmicgame/raffle/nft/by_user/{{.UserInfo.Address}}">
+							{{.UserInfo.RaffleNFTsCount}}
+						</a>
+						(Total NFTs: {{.UserInfo.RewardNFTsCount}})
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Donations & Claims -->
+		<div class="section-card">
+			<div class="section-header">🎁 Donations Made (Donor)</div>
+			<div class="sub-grid">
+				<div class="sub-card">
+					<div class="sub-header">ETH Donations</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/donations/eth/by_user/{{.UserInfo.Address}}">ETH Donated</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="sub-card">
+					<div class="sub-header">ERC20 Donations</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/donations/erc20/donated/by_user/{{.UserInfo.Address}}">ERC20 Donated</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="sub-card">
+					<div class="sub-header">NFT Donations</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/donations/nft/by_user/{{.UserInfo.Address}}">NFT Donated</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section-card">
+			<div class="section-header">🏆 Prizes Claimed (Winner)</div>
+			<div class="sub-grid">
+				<div class="sub-card">
+					<div class="sub-header">ERC20 Prizes Won</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/donations/erc20/by_user/{{.UserInfo.Address}}">ERC20 Prizes</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="sub-card">
+					<div class="sub-header">ERC20 Claims</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/donations/erc20/claims/by_user/{{.UserInfo.Address}}">ERC20 Claims</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="sub-card">
+					<div class="sub-header">NFT Claims</div>
+					<div class="info-item" style="margin-bottom: 1em;">
+						<div class="info-label">Unclaimed (donated) NFTs</div>
+						<div class="info-value">
+							<a href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserInfo.Address}}">
+								{{.UserInfo.UnclaimedNFTs}}
+							</a>
+						</div>
+					</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/donations/nft/claims/by_user/{{.UserInfo.Address}}">NFT Claims</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Tokens & Transfers -->
+		<div class="section-card">
+			<div class="section-header">Tokens & Transfers</div>
+			<div class="action-grid">
+				<div class="action-item">
+					<div class="action-title">CS Tokens Owned</div>
+					<div class="info-value" style="margin-bottom: 1em; text-align: center;">
+						<a href="/black/cosmicgame/cst/list/by_user/{{.UserInfo.Address}}">
+							{{.UserInfo.TotalCSTokensWon}} tokens
+						</a>
+					</div>
+				</div>
+				
+				<div class="action-item">
+					<div class="action-title">🔄 Transfers</div>
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/cst/transfers/by_user/{{.UserInfo.Address}}">CS Token Transfers</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/ct/transfers/by_user/{{.UserInfo.Address}}">Cosmic Token Transfers</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Recent Bids -->
+		<div class="section-card">
+			<div class="section-header">Recent Bids</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>Date & Time</th>
+					<th class="right">Bid Amount (ETH)</th>
+					<th class="right">CST Reward</th>
+					<th class="center">RWalk NFT ID</th>
+				</tr>
+				{{- range $i, $change := .Bids}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/bid/info/{{.Tx.EvtLogId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
+						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
+						<td class="center">{{ .RWalkNFTId }}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+		
+		<!-- Prizes Won -->
+		<div class="section-card">
+			<div class="section-header">Prizes Won</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>Date & Time</th>
+					<th class="right">Win Amount (ETH)</th>
+					<th class="right">Seed</th>
+				</tr>
+				{{- range $i, $change := .Prizes}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.ClaimPrizeTx.Tx.DateTime}}</td>
+						<td class="right">{{printf "%.6f" .MainPrize.EthAmountEth}}</td>
+						<td class="right">{{.MainPrize.Seed}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+		
+		<!-- API Info -->
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/user/info/[user_address]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/user/info/{{.UserInfo.Address}}</code>
+		</div>
+	</div>
+</body>
+</html>
