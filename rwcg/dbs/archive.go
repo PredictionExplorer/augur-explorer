@@ -32,7 +32,7 @@ type ArchivedEventLog struct {
 	LogRlp       []byte
 }
 
-// Get_archived_transaction reads a transaction from rw_arch_tx table
+// Get_archived_transaction reads a transaction from arch_tx table
 // Returns nil if not found
 func (ss *SQLStorage) Get_archived_transaction(txHash string) (*ArchivedTransaction, error) {
 	var tx ArchivedTransaction
@@ -42,7 +42,7 @@ func (ss *SQLStorage) Get_archived_transaction(txHash string) (*ArchivedTransact
 		from_aid, to_aid, value,
 		gas_used, gas_price, input_sig,
 		num_logs, ctrct_create
-	FROM rw_arch_tx WHERE tx_hash = $1`
+	FROM arch_tx WHERE tx_hash = $1`
 
 	var inputSig sql.NullString
 	err := ss.db.QueryRow(query, txHash).Scan(
@@ -70,12 +70,12 @@ func (ss *SQLStorage) Get_archived_transaction(txHash string) (*ArchivedTransact
 	return &tx, nil
 }
 
-// Get_archived_event_logs reads all event logs for a transaction from rw_arch_evtlog
+// Get_archived_event_logs reads all event logs for a transaction from arch_evtlog
 func (ss *SQLStorage) Get_archived_event_logs(txHash string) ([]ArchivedEventLog, error) {
 	var query string
 	query = `SELECT 
 		block_num, evt_id, tx_hash, contract_addr, topic0_sig, log_rlp
-	FROM rw_arch_evtlog WHERE tx_hash = $1
+	FROM arch_evtlog WHERE tx_hash = $1
 	ORDER BY evt_id`
 
 	rows, err := ss.db.Query(query, txHash)

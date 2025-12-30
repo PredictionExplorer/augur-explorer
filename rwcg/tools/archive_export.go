@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -14,11 +15,19 @@ const BATCH_SIZE = 20000
 func main() {
 	srcConn := flag.String("src", "", "Source DB connection string (production)")
 	dstConn := flag.String("dst", "", "Destination DB connection string (dev)")
+	projectType := flag.String("project", "", "Project type: 'randomwalk' or 'cosmicgame'")
 	flag.Parse()
 
-	if *srcConn == "" || *dstConn == "" {
-		log.Fatal("Usage: archive_export -src 'postgres://...' -dst 'postgres://...'")
+	if *srcConn == "" || *dstConn == "" || *projectType == "" {
+		log.Fatal("Usage: archive_export -project <randomwalk|cosmicgame> -src 'postgres://...' -dst 'postgres://...'")
 	}
+
+	*projectType = strings.ToLower(*projectType)
+	if *projectType != "randomwalk" && *projectType != "cosmicgame" {
+		log.Fatalf("Invalid project type '%s'. Must be 'randomwalk' or 'cosmicgame'", *projectType)
+	}
+
+	log.Printf("Project type: %s", *projectType)
 
 	// Connect to source
 	srcDB, err := sql.Open("postgres", *srcConn)
@@ -36,10 +45,10 @@ func main() {
 	defer dstDB.Close()
 	dstDB.SetMaxOpenConns(2)
 
-	// Get contract address IDs from rw_contracts
-	contractAids := getContractAddressIds(srcDB)
+	// Get contract address IDs based on project type
+	contractAids := getContractAddressIds(srcDB, *projectType)
 	if len(contractAids) == 0 {
-		log.Fatal("No contract addresses found in rw_contracts")
+		log.Fatalf("No contract addresses found for project '%s'", *projectType)
 	}
 	log.Printf("Found %d contract address IDs: %v", len(contractAids), contractAids)
 
@@ -52,13 +61,37 @@ func main() {
 	log.Println("=== Export complete ===")
 }
 
-func getContractAddressIds(srcDB *sql.DB) []int64 {
-	// Get address IDs for contracts in rw_contracts
-	rows, err := srcDB.Query(`
-		SELECT a.address_id 
-		FROM address a
-		JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
-	`)
+func getContractAddressIds(srcDB *sql.DB, projectType string) []int64 {
+	var query string
+
+	if projectType == "randomwalk" {
+		// Get address IDs for RandomWalk contracts from rw_contracts
+		query = `
+			SELECT a.address_id 
+			FROM address a
+			JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
+		`
+	} else {
+		// Get address IDs for CosmicGame contracts from cg_contracts
+		query = `
+			SELECT a.address_id 
+			FROM address a
+			JOIN cg_contracts cc ON 
+				a.addr = cc.cosmic_game_addr OR
+				a.addr = cc.cosmic_signature_addr OR
+				a.addr = cc.cosmic_token_addr OR
+				a.addr = cc.cosmic_dao_addr OR
+				a.addr = cc.charity_wallet_addr OR
+				a.addr = cc.prizes_wallet_addr OR
+				a.addr = cc.random_walk_addr OR
+				a.addr = cc.staking_wallet_cst_addr OR
+				a.addr = cc.staking_wallet_rwalk_addr OR
+				a.addr = cc.marketing_wallet_addr OR
+				a.addr = cc.implementation_addr
+		`
+	}
+
+	rows, err := srcDB.Query(query)
 	if err != nil {
 		log.Fatalf("Failed to get contract addresses: %v", err)
 	}
@@ -90,14 +123,14 @@ func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64) map[int64]bool 
 
 	// Check resume point
 	var currentId int64
-	dstDB.QueryRow("SELECT COALESCE(MAX(evt_id), 0) FROM rw_arch_evtlog").Scan(&currentId)
+	dstDB.QueryRow("SELECT COALESCE(MAX(evt_id), 0) FROM arch_evtlog").Scan(&currentId)
 	if currentId > 0 {
 		log.Printf("Resuming from evt_id = %d", currentId)
 	}
 
 	// Prepare insert
 	insertStmt, err := dstDB.Prepare(`
-		INSERT INTO rw_arch_evtlog (block_num, evt_id, tx_hash, contract_addr, topic0_sig, log_rlp)
+		INSERT INTO arch_evtlog (block_num, evt_id, tx_hash, contract_addr, topic0_sig, log_rlp)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (evt_id) DO NOTHING
 	`)
@@ -188,8 +221,8 @@ func exportTransactions(srcDB, dstDB *sql.DB, _ map[int64]bool) map[int64]bool {
 		SELECT DISTINCT t.id
 		FROM transaction t
 		WHERE t.tx_hash IN (
-			SELECT DISTINCT e.tx_hash FROM rw_arch_evtlog e
-			LEFT JOIN rw_arch_tx tx ON e.tx_hash = tx.tx_hash
+			SELECT DISTINCT e.tx_hash FROM arch_evtlog e
+			LEFT JOIN arch_tx tx ON e.tx_hash = tx.tx_hash
 			WHERE tx.tx_hash IS NULL
 		)
 	`)
@@ -201,12 +234,12 @@ func exportTransactions(srcDB, dstDB *sql.DB, _ map[int64]bool) map[int64]bool {
 		rows.Close()
 	}
 
-	// Get all tx_hashes from destination that are missing in rw_arch_tx
-	log.Println("Querying destination for tx_hashes missing from rw_arch_tx...")
+	// Get all tx_hashes from destination that are missing in arch_tx
+	log.Println("Querying destination for tx_hashes missing from arch_tx...")
 	missingRows, err := dstDB.Query(`
 		SELECT DISTINCT e.tx_hash
-		FROM rw_arch_evtlog e
-		LEFT JOIN rw_arch_tx tx ON e.tx_hash = tx.tx_hash
+		FROM arch_evtlog e
+		LEFT JOIN arch_tx tx ON e.tx_hash = tx.tx_hash
 		WHERE tx.tx_hash IS NULL
 	`)
 	if err != nil {
@@ -233,7 +266,7 @@ func exportTransactions(srcDB, dstDB *sql.DB, _ map[int64]bool) map[int64]bool {
 
 	// Prepare insert
 	insertStmt, err := dstDB.Prepare(`
-		INSERT INTO rw_arch_tx (block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig)
+		INSERT INTO arch_tx (block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (tx_hash) DO NOTHING
 	`)
@@ -325,7 +358,7 @@ func exportTransactions(srcDB, dstDB *sql.DB, _ map[int64]bool) map[int64]bool {
 
 func getBlockNumsFromArchiveTx(dstDB *sql.DB) map[int64]bool {
 	blockNums := make(map[int64]bool)
-	rows, err := dstDB.Query("SELECT DISTINCT block_num FROM rw_arch_tx")
+	rows, err := dstDB.Query("SELECT DISTINCT block_num FROM arch_tx")
 	if err != nil {
 		log.Printf("Warning: Failed to get existing block_nums: %v", err)
 		return blockNums
@@ -348,8 +381,8 @@ func exportBlocks(srcDB, dstDB *sql.DB, _ map[int64]bool) {
 	log.Println("Finding missing blocks in archive...")
 	missingRows, err := dstDB.Query(`
 		SELECT DISTINCT tx.block_num
-		FROM rw_arch_tx tx
-		LEFT JOIN rw_arch_block b ON tx.block_num = b.block_num
+		FROM arch_tx tx
+		LEFT JOIN arch_block b ON tx.block_num = b.block_num
 		WHERE b.block_num IS NULL
 	`)
 	if err != nil {
@@ -375,7 +408,7 @@ func exportBlocks(srcDB, dstDB *sql.DB, _ map[int64]bool) {
 
 	// Prepare insert
 	insertStmt, err := dstDB.Prepare(`
-		INSERT INTO rw_arch_block (block_num, num_tx, ts, cash_flow, block_hash, parent_hash)
+		INSERT INTO arch_block (block_num, num_tx, ts, cash_flow, block_hash, parent_hash)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (block_hash) DO NOTHING
 	`)
