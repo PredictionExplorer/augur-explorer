@@ -7,7 +7,8 @@
 //	             --startBlock 0 --endBlock 1000000 \
 //	             --contracts 0x123...,0x456... \
 //	             --eventSigs 0xabc...,0xdef... \
-//	             --out events.jsonl --format jsonl
+//	             --out events.jsonl --format jsonl \
+//	             --workers 16
 //
 // Resume: If the output file exists and is not empty, the scan will
 // automatically resume from the last block found in the file.
@@ -22,14 +23,19 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/PredictionExplorer/augur-explorer/rwcg/freezer-scanner/decode"
 	freezerscanner "github.com/PredictionExplorer/augur-explorer/rwcg/freezer-scanner"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/freezer-scanner/decode"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/freezer-scanner/output"
 )
 
@@ -46,12 +52,14 @@ var (
 	errorLogPath    = flag.String("errorLog", "", "Path to error log file (errors are appended)")
 	format          = flag.String("format", "jsonl", "Output format: jsonl or csv")
 	includeData     = flag.Bool("includeData", false, "Include full hex data in output (large)")
-	progressEvery   = flag.Uint64("progressEvery", 10000, "Log progress every N blocks")
+	progressEvery   = flag.Uint64("progressEvery", 100000, "Log progress every N blocks")
 	bestEffort      = flag.Bool("bestEffort", false, "Continue on decode errors")
 	validate        = flag.Bool("validate", false, "Validate index before scanning")
 	validateOnly    = flag.Bool("validateOnly", false, "Only validate index, don't scan")
 	showInfo        = flag.Bool("info", false, "Show information about the freezer data")
 	noResume        = flag.Bool("noResume", false, "Don't resume from existing file, start fresh")
+	numWorkers      = flag.Int("workers", 0, "Number of parallel chunk workers (0 = auto, typically 16-64)")
+	chunkSize       = flag.Uint64("chunkSize", 50000, "Blocks per worker chunk")
 )
 
 func main() {
@@ -67,32 +75,42 @@ func main() {
 	// Determine ancient directory
 	dir := *ancientDir
 	if dir == "" {
-		// Derive from cidx path
 		dir = strings.TrimSuffix(*receiptsCidx, "/receipts.cidx")
 		dir = strings.TrimSuffix(dir, "/ancient/receipts.cidx")
 	}
 
-	// Open freezer reader
-	reader, err := freezerscanner.NewFreezerReader(dir)
+	// Determine number of workers (chunk workers processing in parallel)
+	// Each worker processes blocks sequentially within its chunk
+	// Parallelism comes from multiple chunks running concurrently
+	workers := *numWorkers
+	if workers <= 0 {
+		workers = runtime.NumCPU() * 2
+		if workers < 16 {
+			workers = 16
+		}
+		if workers > 64 {
+			workers = 64
+		}
+	}
+
+	log.Printf("Starting freezer-scan with %d parallel workers", workers)
+
+	// Open parallel reader (loads index into memory)
+	log.Println("Loading index into memory...")
+	loadStart := time.Now()
+	reader, err := freezerscanner.NewParallelReader(dir)
 	if err != nil {
 		log.Fatalf("Failed to open freezer: %v", err)
 	}
-	defer reader.Close()
+	
+	totalBlocks, indexSizeMB, cdatCount := reader.GetIndexStats()
+	log.Printf("Index loaded in %v: %d blocks (%.1f MB), %d cdat files",
+		time.Since(loadStart), totalBlocks, indexSizeMB, cdatCount)
 
 	// Show info if requested
 	if *showInfo {
 		printInfo(reader)
 		if !*validate && !*validateOnly {
-			return
-		}
-	}
-
-	// Validate if requested
-	if *validate || *validateOnly {
-		if err := validateIndex(reader); err != nil {
-			log.Fatalf("Validation failed: %v", err)
-		}
-		if *validateOnly {
 			return
 		}
 	}
@@ -120,7 +138,6 @@ func main() {
 			if sig == "" {
 				continue
 			}
-			// Remove 0x prefix if present
 			sig = strings.TrimPrefix(sig, "0x")
 			if len(sig) != 64 {
 				log.Fatalf("Invalid event signature (must be 32 bytes hex): %s", sig)
@@ -129,36 +146,42 @@ func main() {
 		}
 	}
 
-	// Determine start block (check for resume)
-	actualStart := *startBlock
-	appendMode := false
-	
-	if *outPath != "-" && !*noResume {
-		if resumeBlock, found := getResumeBlock(*outPath); found {
-			if resumeBlock >= actualStart {
-			actualStart = resumeBlock + 1
-			appendMode = true
-			log.Printf("Resuming from block %d (last block in file: %d)", actualStart, resumeBlock)
-			}
+	// Determine end block - limit to available data
+	end := *endBlock
+	maxAvailable := reader.MaxAvailableBlock()
+	if end == 0 || end > maxAvailable {
+		end = maxAvailable
+		log.Printf("Limiting end block to %d (max available data)", end)
+	}
+
+	// Handle output path - if it's a directory, create a filename
+	outputPath := *outPath
+	if outputPath != "-" {
+		if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
+			// It's a directory - create filename with block range
+			outputPath = filepath.Join(outputPath, fmt.Sprintf("events_%d_%d.jsonl", *startBlock, end))
+			log.Printf("Output directory detected, using: %s", outputPath)
 		}
 	}
 
-	// Determine end block
-	end := *endBlock
-	if end == 0 || end > reader.ItemCount() {
-		end = reader.ItemCount()
+	// Determine start block (check for resume)
+	actualStart := *startBlock
+	appendMode := false
+
+	if outputPath != "-" && !*noResume {
+		if resumeBlock, found := getResumeBlock(outputPath); found {
+			if resumeBlock >= actualStart {
+				actualStart = resumeBlock + 1
+				appendMode = true
+				log.Printf("Resuming from block %d (last block in file: %d)", actualStart, resumeBlock)
+			}
+		}
 	}
+	
 	if actualStart >= end {
 		log.Printf("Already complete: start block %d >= end block %d", actualStart, end)
 		return
 	}
-
-	// Create output writer (append mode if resuming)
-	writer, err := output.NewWriterWithMode(*format, *outPath, appendMode)
-	if err != nil {
-		log.Fatalf("Failed to create output writer: %v", err)
-	}
-	defer writer.Close()
 
 	// Create error logger if specified
 	var errorLogger *ErrorLogger
@@ -175,227 +198,239 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	done := make(chan struct{})
+	var interrupted atomic.Bool
 
 	go func() {
 		<-sigChan
 		log.Println("Interrupt received, shutting down gracefully...")
+		interrupted.Store(true)
 		close(done)
 	}()
 
-	// Scan blocks
-	if err := scanBlocks(reader, writer, errorLogger, actualStart, end, contractSet, eventSigSet, done); err != nil {
+	// Run parallel scan
+	if err := parallelScan(reader, actualStart, end, workers,
+		contractSet, eventSigSet, outputPath, appendMode, errorLogger, done, &interrupted); err != nil {
 		log.Fatalf("Scan failed: %v", err)
 	}
-
-	if err := writer.Flush(); err != nil {
-		log.Fatalf("Failed to flush output: %v", err)
-	}
 }
 
-// getResumeBlock reads the last line of a JSONL file to find the last block number
-func getResumeBlock(path string) (uint64, bool) {
-	file, err := os.Open(path)
+// parallelScan processes blocks in parallel using chunk workers
+// Each worker processes a chunk of blocks sequentially
+// Parallelism comes from multiple workers processing different chunks concurrently
+func parallelScan(reader *freezerscanner.ParallelReader, start, end uint64, numWorkers int,
+	contracts map[common.Address]bool, eventSigs map[common.Hash]bool,
+	outPath string, appendMode bool, errorLogger *ErrorLogger,
+	done <-chan struct{}, interrupted *atomic.Bool) error {
+
+	startTime := time.Now()
+	totalBlocks := end - start
+
+	log.Printf("Parallel scan: blocks %d to %d (%d blocks), %d workers", start, end, totalBlocks, numWorkers)
+
+	// Create temp directory for chunk output files
+	tempDir, err := os.MkdirTemp("", "freezer-scan-*")
 	if err != nil {
-		return 0, false // File doesn't exist
+		return fmt.Errorf("failed to create temp dir: %v", err)
 	}
-	defer file.Close()
+	defer os.RemoveAll(tempDir)
 
-	// Check if file is empty
-	stat, err := file.Stat()
-	if err != nil || stat.Size() == 0 {
-		return 0, false
-	}
-
-	// Read last line efficiently by seeking from end
-	var lastLine string
-	
-	// For small files, just scan all lines
-	if stat.Size() < 1024*1024 { // < 1MB
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			lastLine = scanner.Text()
+	// Create work chunks for ordered output
+	var chunks []freezerscanner.BlockRange
+	for chunkStart := start; chunkStart < end; chunkStart += *chunkSize {
+		chunkEnd := chunkStart + *chunkSize
+		if chunkEnd > end {
+			chunkEnd = end
 		}
-	} else {
-		// For large files, seek to near end and find last line
-		const tailSize = 4096
-		seekPos := stat.Size() - tailSize
-		if seekPos < 0 {
-			seekPos = 0
-		}
-		file.Seek(seekPos, io.SeekStart)
-		
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			lastLine = scanner.Text()
-		}
+		chunks = append(chunks, freezerscanner.BlockRange{Start: chunkStart, End: chunkEnd})
 	}
 
-	if lastLine == "" {
-		return 0, false
-	}
+	log.Printf("  Chunks: %d (each %d blocks)", len(chunks), *chunkSize)
 
-	// Parse the JSON to get blockNumber
-	var record struct {
-		BlockNumber uint64 `json:"blockNumber"`
-	}
-	if err := json.Unmarshal([]byte(lastLine), &record); err != nil {
-		log.Printf("Warning: could not parse last line of %s: %v", path, err)
-		return 0, false
-	}
+	// Progress tracking
+	var processedBlocks atomic.Uint64
+	var totalMatched atomic.Uint64
+	var totalLogs atomic.Uint64
+	var totalErrors atomic.Int64
 
-	return record.BlockNumber, true
-}
+	// Start progress reporter
+	progressDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				processed := processedBlocks.Load()
+				matched := totalMatched.Load()
+				logs := totalLogs.Load()
+				errors := totalErrors.Load()
+				elapsed := time.Since(startTime)
+				if elapsed.Seconds() < 1 {
+					continue
+				}
+				blocksPerSec := float64(processed) / elapsed.Seconds()
+				remaining := float64(totalBlocks-processed) / blocksPerSec
+				pct := float64(processed) * 100 / float64(totalBlocks)
 
-func printInfo(reader *freezerscanner.FreezerReader) {
-	fmt.Printf("Freezer Information:\n")
-	fmt.Printf("  Item count (blocks): %d\n", reader.ItemCount())
-	fmt.Printf("  CDAT files:\n")
-	for _, info := range reader.CdatFileInfo() {
-		fmt.Printf("    %s\n", info)
-	}
-
-	// Sample first few offsets
-	fmt.Printf("\nFirst 10 index entries:\n")
-	for i := uint64(0); i < 10 && i < reader.ItemCount(); i++ {
-		offset, err := reader.ReadOffset(i)
-		if err != nil {
-			fmt.Printf("  Block %d: error %v\n", i, err)
-		} else {
-			fmt.Printf("  Block %d: offset %d\n", i, offset)
-		}
-	}
-
-	// Sample last few offsets
-	if reader.ItemCount() > 10 {
-		fmt.Printf("\nLast 5 index entries:\n")
-		start := reader.ItemCount() - 5
-		for i := start; i < reader.ItemCount(); i++ {
-			offset, err := reader.ReadOffset(i)
-			if err != nil {
-				fmt.Printf("  Block %d: error %v\n", i, err)
-			} else {
-				fmt.Printf("  Block %d: offset %d\n", i, offset)
+				log.Printf("Progress: %d/%d blocks (%.1f%%), %.0f blocks/sec, ETA: %v, matched: %d/%d logs, errors: %d",
+					processed, totalBlocks, pct, blocksPerSec,
+					time.Duration(remaining)*time.Second, matched, logs, errors)
+			case <-progressDone:
+				return
 			}
 		}
+	}()
+
+	// Process chunks in parallel
+	chunkChan := make(chan int, len(chunks))
+	resultChan := make(chan ChunkResult, numWorkers)
+
+	// Start workers - each processes chunks sequentially
+	var wg sync.WaitGroup
+	for w := 0; w < numWorkers; w++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+
+			// Create worker-specific reader with its own file handles
+			workerReader := reader.NewWorkerReader()
+			defer workerReader.Close()
+
+			for chunkIdx := range chunkChan {
+				if interrupted.Load() {
+					return
+				}
+
+				chunk := chunks[chunkIdx]
+				tempFile := filepath.Join(tempDir, fmt.Sprintf("chunk-%08d.jsonl", chunkIdx))
+
+				err := processChunk(workerReader, chunk, tempFile,
+					contracts, eventSigs, errorLogger,
+					&processedBlocks, &totalMatched, &totalLogs, &totalErrors,
+					interrupted)
+
+				resultChan <- ChunkResult{
+					ChunkIdx: chunkIdx,
+					TempFile: tempFile,
+					Err:      err,
+				}
+			}
+		}(w)
 	}
-}
 
-func validateIndex(reader *freezerscanner.FreezerReader) error {
-	log.Printf("Validating index for %d blocks...", reader.ItemCount())
-	start := time.Now()
+	// Send chunks to workers
+	go func() {
+		for i := range chunks {
+			select {
+			case chunkChan <- i:
+			case <-done:
+				break
+			}
+		}
+		close(chunkChan)
+	}()
 
-	if err := reader.ValidateIndexRange(0, reader.ItemCount()); err != nil {
-		return err
+	// Collect results
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	results := make([]ChunkResult, 0, len(chunks))
+	for result := range resultChan {
+		results = append(results, result)
+		if result.Err != nil && !*bestEffort {
+			close(progressDone)
+			return fmt.Errorf("chunk %d failed: %v", result.ChunkIdx, result.Err)
+		}
 	}
 
-	log.Printf("Index validated successfully in %v", time.Since(start))
+	close(progressDone)
+
+	// Sort by chunk index for ordered merge
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].ChunkIdx < results[j].ChunkIdx
+	})
+
+	log.Println("Merging results...")
+	if err := mergeChunkFiles(results, outPath, appendMode); err != nil {
+		return fmt.Errorf("merge failed: %v", err)
+	}
+
+	// Final statistics
+	elapsed := time.Since(startTime)
+	processed := processedBlocks.Load()
+	matched := totalMatched.Load()
+	logs := totalLogs.Load()
+	errors := totalErrors.Load()
+
+	log.Printf("Scan complete: %d blocks in %v (%.0f blocks/sec)",
+		processed, elapsed, float64(processed)/elapsed.Seconds())
+	log.Printf("Total logs: %d, Matched: %d, Errors: %d", logs, matched, errors)
+
 	return nil
 }
 
-// ErrorLogger writes errors to a log file
-type ErrorLogger struct {
-	file *os.File
-}
+// processChunk processes a chunk sequentially (simple and memory-efficient)
+func processChunk(reader *freezerscanner.WorkerReader, chunk freezerscanner.BlockRange,
+	tempFile string,
+	contracts map[common.Address]bool, eventSigs map[common.Hash]bool,
+	errorLogger *ErrorLogger,
+	processedBlocks, totalMatched, totalLogs *atomic.Uint64, totalErrors *atomic.Int64,
+	interrupted *atomic.Bool) error {
 
-// NewErrorLogger creates a new error logger (appends to file)
-func NewErrorLogger(path string) (*ErrorLogger, error) {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	// Create output file
+	f, err := os.Create(tempFile)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("create temp file: %v", err)
 	}
-	// Write session header
-	fmt.Fprintf(f, "\n=== Scan session started at %s ===\n", time.Now().Format(time.RFC3339))
-	return &ErrorLogger{file: f}, nil
-}
+	defer f.Close()
 
-// Log writes an error entry
-func (el *ErrorLogger) Log(blockNum uint64, errType, errMsg string) {
-	if el == nil || el.file == nil {
-		return
-	}
-	fmt.Fprintf(el.file, "[%s] block=%d type=%s error=%s\n",
-		time.Now().Format("2006-01-02 15:04:05"), blockNum, errType, errMsg)
-}
+	writer := bufio.NewWriterSize(f, 256*1024) // 256KB buffer
+	defer writer.Flush()
 
-// Close closes the error log file
-func (el *ErrorLogger) Close() error {
-	if el == nil || el.file == nil {
-		return nil
-	}
-	fmt.Fprintf(el.file, "=== Scan session ended at %s ===\n", time.Now().Format(time.RFC3339))
-	return el.file.Close()
-}
-
-func scanBlocks(reader *freezerscanner.FreezerReader, writer output.Writer, errorLogger *ErrorLogger,
-	start, end uint64, contracts map[common.Address]bool, eventSigs map[common.Hash]bool,
-	done <-chan struct{}) error {
-
-	startTime := time.Now()
-	var totalLogs, matchedLogs uint64
-	var errorCount int
-	var lastBlock uint64
-
-	log.Printf("Scanning blocks %d to %d (filters: %d contracts, %d event sigs)",
-		start, end, len(contracts), len(eventSigs))
-
-	for block := start; block < end; block++ {
-		lastBlock = block
-		
-		// Check for interrupt
-		select {
-		case <-done:
-			log.Printf("Scan interrupted at block %d (progress saved)", block)
-			return nil
-		default:
+	// Process blocks sequentially within chunk - simple and memory efficient
+	// Parallelism comes from multiple chunks being processed concurrently
+	for block := chunk.Start; block < chunk.End; block++ {
+		if interrupted.Load() {
+			break
 		}
 
-		// Progress logging
-		if *progressEvery > 0 && block > start && (block-start)%*progressEvery == 0 {
-			elapsed := time.Since(startTime)
-			blocksScanned := block - start
-			blocksPerSec := float64(blocksScanned) / elapsed.Seconds()
-			remaining := float64(end-block) / blocksPerSec
-			log.Printf("Progress: block %d/%d (%.1f%%), %.1f blocks/sec, ETA: %v, matched: %d/%d logs, errors: %d",
-				block, end, float64(block-start)*100/float64(end-start),
-				blocksPerSec, time.Duration(remaining)*time.Second,
-				matchedLogs, totalLogs, errorCount)
-		}
-
-		// Read raw receipts data
 		data, err := reader.ReadItem(block)
+		processedBlocks.Add(1)
+
 		if err != nil {
-			errorCount++
+			totalErrors.Add(1)
 			if errorLogger != nil {
 				errorLogger.Log(block, "read", err.Error())
 			}
-			if *bestEffort {
-				continue
+			if !*bestEffort {
+				return fmt.Errorf("block %d read: %v", block, err)
 			}
-			return fmt.Errorf("Block %d: read error: %v", block, err)
+			continue
 		}
 
 		if len(data) == 0 {
-			continue // Empty block (no transactions)
+			continue
 		}
 
-		// Decode receipts (Arbitrum Nitro format)
+		// Decode
 		logs, err := decode.DecodeArbitrumReceipts(data)
 		if err != nil {
-			errorCount++
+			totalErrors.Add(1)
 			if errorLogger != nil {
 				errorLogger.Log(block, "decode", err.Error())
 			}
-			if *bestEffort {
-				continue
+			if !*bestEffort {
+				return fmt.Errorf("block %d decode: %v", block, err)
 			}
-			return fmt.Errorf("Block %d: decode error: %v", block, err)
+			continue
 		}
 
-		// Process logs
+		// Filter and write
 		for logIdx, logEntry := range logs {
-			totalLogs++
+			totalLogs.Add(1)
 
-			// Apply filters
 			if len(contracts) > 0 && !contracts[logEntry.Address] {
 				continue
 			}
@@ -408,26 +443,189 @@ func scanBlocks(reader *freezerscanner.FreezerReader, writer output.Writer, erro
 				}
 			}
 
-			matchedLogs++
+			totalMatched.Add(1)
 
-			// Write record
 			record := output.LogEntryToRecord(block, uint(logIdx), logEntry, *includeData)
-			if err := writer.Write(record); err != nil {
-				errorCount++
-				if errorLogger != nil {
-					errorLogger.Log(block, "write", err.Error())
-				}
-				return fmt.Errorf("Block %d: write error: %v", block, err)
-			}
+			jsonBytes, _ := json.Marshal(record)
+			writer.Write(jsonBytes)
+			writer.WriteByte('\n')
 		}
 	}
 
-	elapsed := time.Since(startTime)
-	blocksScanned := end - start
-	log.Printf("Scan complete: %d blocks in %v (%.1f blocks/sec)",
-		blocksScanned, elapsed, float64(blocksScanned)/elapsed.Seconds())
-	log.Printf("Total logs: %d, Matched: %d, Last block: %d, Errors: %d", 
-		totalLogs, matchedLogs, lastBlock, errorCount)
+	return nil
+}
+
+// ChunkResult contains the result from processing a chunk
+type ChunkResult struct {
+	ChunkIdx int
+	TempFile string
+	Err      error
+}
+
+// mergeChunkFiles merges temp files into the final output
+func mergeChunkFiles(results []ChunkResult, outPath string, appendMode bool) error {
+	if outPath == "-" {
+		for _, r := range results {
+			if r.TempFile == "" {
+				continue
+			}
+			data, err := os.ReadFile(r.TempFile)
+			if err != nil {
+				return err
+			}
+			os.Stdout.Write(data)
+		}
+		return nil
+	}
+
+	flags := os.O_CREATE | os.O_WRONLY
+	if appendMode {
+		flags |= os.O_APPEND
+	} else {
+		flags |= os.O_TRUNC
+	}
+
+	out, err := os.OpenFile(outPath, flags, 0644)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	writer := bufio.NewWriterSize(out, 1024*1024) // 1MB buffer
+	defer writer.Flush()
+
+	for _, r := range results {
+		if r.TempFile == "" {
+			continue
+		}
+
+		f, err := os.Open(r.TempFile)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err
+		}
+
+		_, err = io.Copy(writer, f)
+		f.Close()
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
+}
+
+// getResumeBlock reads the last line of a JSONL file to find the last block number
+func getResumeBlock(path string) (uint64, bool) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, false
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil || stat.Size() == 0 {
+		return 0, false
+	}
+
+	var lastLine string
+	if stat.Size() < 1024*1024 {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			lastLine = scanner.Text()
+		}
+	} else {
+		const tailSize = 4096
+		seekPos := stat.Size() - tailSize
+		if seekPos < 0 {
+			seekPos = 0
+		}
+		file.Seek(seekPos, io.SeekStart)
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			lastLine = scanner.Text()
+		}
+	}
+
+	if lastLine == "" {
+		return 0, false
+	}
+
+	var record struct {
+		BlockNumber uint64 `json:"blockNumber"`
+	}
+	if err := json.Unmarshal([]byte(lastLine), &record); err != nil {
+		log.Printf("Warning: could not parse last line of %s: %v", path, err)
+		return 0, false
+	}
+
+	return record.BlockNumber, true
+}
+
+func printInfo(reader *freezerscanner.ParallelReader) {
+	totalBlocks, indexSizeMB, cdatCount := reader.GetIndexStats()
+	fmt.Printf("Freezer Information:\n")
+	fmt.Printf("  Item count (blocks): %d\n", totalBlocks)
+	fmt.Printf("  Index size: %.1f MB (loaded in memory)\n", indexSizeMB)
+	fmt.Printf("  Max available block: %d\n", reader.MaxAvailableBlock())
+	fmt.Printf("  CDAT files: %d\n", cdatCount)
+	fmt.Printf("\n  CDAT file details:\n")
+	for _, info := range reader.CdatFileInfo() {
+		fmt.Printf("    %s\n", info)
+	}
+
+	// Sample offsets
+	fmt.Printf("\nFirst 10 index entries:\n")
+	offsets := reader.ReadOffsetBatch(0, 10)
+	for i, offset := range offsets {
+		fmt.Printf("  Block %d: offset %d\n", i, offset)
+	}
+
+	if totalBlocks > 10 {
+		fmt.Printf("\nLast 5 index entries:\n")
+		offsets = reader.ReadOffsetBatch(totalBlocks-5, 5)
+		for i, offset := range offsets {
+			fmt.Printf("  Block %d: offset %d\n", totalBlocks-5+uint64(i), offset)
+		}
+	}
+}
+
+// ErrorLogger writes errors to a log file
+type ErrorLogger struct {
+	file *os.File
+	mu   sync.Mutex
+}
+
+// NewErrorLogger creates a new error logger (appends to file)
+func NewErrorLogger(path string) (*ErrorLogger, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(f, "\n=== Scan session started at %s ===\n", time.Now().Format(time.RFC3339))
+	return &ErrorLogger{file: f}, nil
+}
+
+// Log writes an error entry (thread-safe)
+func (el *ErrorLogger) Log(blockNum uint64, errType, errMsg string) {
+	if el == nil || el.file == nil {
+		return
+	}
+	el.mu.Lock()
+	defer el.mu.Unlock()
+	fmt.Fprintf(el.file, "[%s] block=%d type=%s error=%s\n",
+		time.Now().Format("2006-01-02 15:04:05"), blockNum, errType, errMsg)
+}
+
+// Close closes the error log file
+func (el *ErrorLogger) Close() error {
+	if el == nil || el.file == nil {
+		return nil
+	}
+	el.mu.Lock()
+	defer el.mu.Unlock()
+	fmt.Fprintf(el.file, "=== Scan session ended at %s ===\n", time.Now().Format(time.RFC3339))
+	return el.file.Close()
 }
