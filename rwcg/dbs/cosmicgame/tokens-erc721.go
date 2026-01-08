@@ -299,9 +299,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id in
 				"EXTRACT(EPOCH FROM n.time_stamp)::BIGINT,"+
 				"n.time_stamp,"+
 				"n.token_id,"+
-				"n.token_name "+
+				"n.token_name,"+
+				"t.from_aid,"+
+				"a.addr "+
 			"FROM "+sw.S.SchemaName()+".cg_token_name n "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN transaction t ON t.id=n.tx_id "+
+				"LEFT JOIN address a ON a.address_id=t.from_aid "+
 			"WHERE n.token_id=$1 "+
 			"ORDER BY n.id DESC "
 	rows,err := sw.S.Db().Query(query,token_id)
@@ -322,6 +325,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id in
 			&rec.Tx.DateTime,
 			&rec.TokenId,
 			&rec.TokenName,
+			&rec.ChangedByAid,
+			&rec.ChangedBy,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

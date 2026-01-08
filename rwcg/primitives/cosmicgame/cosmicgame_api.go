@@ -204,6 +204,19 @@ type CGUniqueBidder struct {
 	MaxBidAmount				string
 	MaxBidAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 }
+type CGWinnerStats struct {
+	MaxWinAmount				string
+	MaxWinAmountEth				float64
+	PrizesCount					int64
+	PrizesSum					string
+	PrizesSumEth				float64
+	TokensCount					int64
+	ERC20Count					int64
+	ERC721Count					int64
+	UnclaimedNfts				int64
+	TotalSpent					string
+	TotalSpentEth				float64
+}
 type CGUniqueWinner struct {
 	WinnerAid					int64
 	WinnerAddr					string
@@ -211,6 +224,7 @@ type CGUniqueWinner struct {
 	MaxWinAmount				string
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
+	WinnerStats					CGWinnerStats
 }
 type CGUniqueDonor struct {
 	DonorAid					int64
@@ -392,6 +406,8 @@ type CGTokenName struct {
 	Tx							Transaction
 	TokenId						int64
 	TokenName					string
+	ChangedByAid				int64
+	ChangedBy					string
 }
 type CGTransfer struct {
 	RecordId					int64

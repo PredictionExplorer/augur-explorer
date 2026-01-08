@@ -383,17 +383,35 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 					"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index AND p.ptype IN (7,8,9)) "+
 					"LEFT JOIN "+sw.S.SchemaName()+".address wa_cw ON cw.winner_aid = wa_cw.address_id "+
 				"WHERE p.ptype != 15"+
+			"), "+
+			"bidder_spending AS ("+
+				"SELECT bidder_aid, SUM(CASE WHEN eth_price > 0 THEN eth_price ELSE 0 END) AS total_spent "+
+				"FROM "+sw.S.SchemaName()+".cg_bid "+
+				"GROUP BY bidder_aid"+
 			") "+
 			"SELECT "+
-				"winner_aid,"+
-				"winner_addr,"+
+				"pw.winner_aid,"+
+				"pw.winner_addr,"+
 				"COUNT(*) AS prizes_count,"+
 				"0 AS max_win_amount,"+
 				"0 AS max_win_eth,"+
-				"0 AS prizes_sum_eth "+
-			"FROM prize_winners "+
-			"WHERE winner_aid IS NOT NULL "+
-			"GROUP BY winner_aid, winner_addr "+
+				"0 AS prizes_sum_eth,"+
+				"COALESCE(w.max_win_amount,0),"+
+				"COALESCE(w.max_win_amount,0)/1e18,"+
+				"COALESCE(w.prizes_count,0),"+
+				"COALESCE(w.prizes_sum,0),"+
+				"COALESCE(w.prizes_sum,0)/1e18,"+
+				"COALESCE(w.tokens_count,0),"+
+				"COALESCE(w.erc20_count,0),"+
+				"COALESCE(w.erc721_count,0),"+
+				"COALESCE(w.unclaimed_nfts,0),"+
+				"COALESCE(bs.total_spent,0),"+
+				"COALESCE(bs.total_spent,0)/1e18 "+
+			"FROM prize_winners pw "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_winner w ON pw.winner_aid=w.winner_aid "+
+			"LEFT JOIN bidder_spending bs ON pw.winner_aid=bs.bidder_aid "+
+			"WHERE pw.winner_aid IS NOT NULL "+
+			"GROUP BY pw.winner_aid, pw.winner_addr, w.max_win_amount, w.prizes_count, w.prizes_sum, w.tokens_count, w.erc20_count, w.erc721_count, w.unclaimed_nfts, bs.total_spent "+
 			"ORDER BY prizes_count DESC"
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
@@ -411,6 +429,17 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 			&rec.MaxWinAmount,
 			&rec.MaxWinAmountEth,
 			&rec.PrizesSum,
+			&rec.WinnerStats.MaxWinAmount,
+			&rec.WinnerStats.MaxWinAmountEth,
+			&rec.WinnerStats.PrizesCount,
+			&rec.WinnerStats.PrizesSum,
+			&rec.WinnerStats.PrizesSumEth,
+			&rec.WinnerStats.TokensCount,
+			&rec.WinnerStats.ERC20Count,
+			&rec.WinnerStats.ERC721Count,
+			&rec.WinnerStats.UnclaimedNfts,
+			&rec.WinnerStats.TotalSpent,
+			&rec.WinnerStats.TotalSpentEth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

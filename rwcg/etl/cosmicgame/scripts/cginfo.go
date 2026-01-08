@@ -221,6 +221,14 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	duration_until_prize_raw,err := cosmic_game_ctrct.GetDurationUntilMainPrizeRaw(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetDurationUntilMainPrizeRaw(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	duration_until_anyone_can_claim := new(big.Int).Add(duration_until_prize_raw, timeout_main_prize)
+	anyone_can_claim := duration_until_anyone_can_claim.Cmp(big.NewInt(0)) <= 0
 	timeout_claim,err := prizes_wallet.TimeoutDurationToWithdrawPrizes(&copts)
 	if err != nil {
 		fmt.Printf("Error at TimeoutDurationToWithdrawPrizes(): %v\n",err)
@@ -341,6 +349,11 @@ func main() {
 	fmt.Printf("Num donated NFTs = %v\n",num_donated_nfts.String());
 	fmt.Printf("Num raffle participants = %v\n",num_raffle_participants.Int64())
 	fmt.Printf("MainPrize claim timeout = %v\n",timeout_main_prize.String())
+	if anyone_can_claim {
+		fmt.Printf("Can anyone claim? yes\n")
+	} else {
+		fmt.Printf("Can anyone claim? no\n")
+	}
 	fmt.Printf("PrizesWallet claim timeout = %v\n",timeout_claim.String())
 	fmt.Printf("Owner = %v\n",owneraddr.String())
 	fmt.Printf("Endurance champion = %v\n",current_champions.EnduranceChampionAddress.String())
