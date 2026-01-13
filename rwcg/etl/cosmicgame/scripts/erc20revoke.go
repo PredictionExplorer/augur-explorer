@@ -1,4 +1,4 @@
-// Approves ERC20 token spending (sets MAX_UINT256 allowance for test networks)
+// Revokes ERC20 token spending (sets allowance to 0)
 package main
 
 import (
@@ -35,7 +35,7 @@ func main() {
 	if len(os.Args) < 4 {
 		fmt.Printf(
 			"Usage: \n\t\t%v [private_key] [erc20_token_addr] [spender_addr]\n\t\t"+
-			"Approves MAX_UINT256 allowance for spender to spend your ERC20 tokens\n\n",os.Args[0],
+			"Revokes allowance (sets to 0) for spender to spend your ERC20 tokens\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
@@ -49,10 +49,7 @@ func main() {
 	token_addr := common.HexToAddress(os.Args[2])
 	spender_addr := common.HexToAddress(os.Args[3])
 
-	// MAX_UINT256 = 2^256 - 1
-	max_uint256 := new(big.Int)
-	max_uint256.Exp(big.NewInt(2), big.NewInt(256), nil)
-	max_uint256.Sub(max_uint256, big.NewInt(1))
+	zero := big.NewInt(0)
 
 	erc20_ctrct,err := NewERC20(token_addr,eclient)
 	if err!=nil {
@@ -87,7 +84,7 @@ func main() {
 	fmt.Printf("From address: %v\n", from_address.String())
 	fmt.Printf("Token address: %v\n", token_addr.String())
 	fmt.Printf("Spender address: %v\n", spender_addr.String())
-	fmt.Printf("Allowance amount: MAX_UINT256\n")
+	fmt.Printf("Allowance amount: 0 (revoking)\n")
 
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
@@ -107,7 +104,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := erc20_ctrct.Approve(txopts, spender_addr, max_uint256)
+	tx,err := erc20_ctrct.Approve(txopts, spender_addr, zero)
 	if err!=nil {
 		fmt.Printf("Error sending approve tx: %v\n",err)
 		os.Exit(1)
@@ -115,7 +112,6 @@ func main() {
 	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
 	fmt.Printf("Waiting for confirmation...\n")
 	time.Sleep(2 * time.Second)
-	fmt.Printf("Done. Approval should be set.\n")
+	fmt.Printf("Done. Allowance should be revoked.\n")
 }
-
 
