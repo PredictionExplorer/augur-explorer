@@ -373,4 +373,14 @@ func main() {
 	fmt.Printf("Time increment in microseconds: %v\n",time_inc_microsec)
 	fmt.Printf("Round activation time = %v\n",activation_time.String())
 	fmt.Printf("Seconds to round start= %v (%v - %v)\n",secs_to_start,block_time,activation_time.Int64())
+	if secs_to_start > 0 {
+		minutes := secs_to_start / 60
+		seconds := secs_to_start % 60
+		fmt.Printf("Round status: INACTIVE - activates in %d min %d sec\n", minutes, seconds)
+	} else {
+		elapsed := -secs_to_start
+		minutes := elapsed / 60
+		seconds := elapsed % 60
+		fmt.Printf("Round status: ACTIVE - started %d min %d sec ago\n", minutes, seconds)
+	}
 }
