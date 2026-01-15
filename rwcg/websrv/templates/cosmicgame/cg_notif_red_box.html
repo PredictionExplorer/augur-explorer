@@ -23,7 +23,56 @@
 		</div>
 
 		<div class="section-card">
-			<div class="section-header">Unclaimed Rewards</div>
+			<div class="section-header">Unclaimed ETH Rewards</div>
+			
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">Raffle ETH</div>
+					<div class="stat-value">{{printf "%.6f" .Winnings.ETHRaffleToClaim}}</div>
+					<div class="stat-sublabel">ETH</div>
+					{{ if lt 0.0 .Winnings.ETHRaffleToClaim }}
+					<div style="margin-top: 0.5em;">
+						<a href="/black/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}">View Deposits</a>
+					</div>
+					{{ end }}
+				</div>
+
+				<div class="stat-card">
+					<div class="stat-label">ChronoWarrior ETH</div>
+					<div class="stat-value">{{printf "%.6f" .Winnings.ETHChronoWarriorToClaim}}</div>
+					<div class="stat-sublabel">ETH</div>
+					{{ if lt 0.0 .Winnings.ETHChronoWarriorToClaim }}
+					<div style="margin-top: 0.5em;">
+						<a href="/black/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}">View Deposits</a>
+					</div>
+					{{ end }}
+				</div>
+
+				<div class="stat-card">
+					<div class="stat-label">Staking Rewards</div>
+					<div class="stat-value">{{printf "%.6f" .Winnings.UnclaimedStakingReward}}</div>
+					<div class="stat-sublabel">ETH</div>
+					{{ if lt 0.0 .Winnings.UnclaimedStakingReward}}
+					<div style="margin-top: 0.5em;">
+						<a href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserAddr}}">View Rewards</a>
+					</div>
+					{{ end }}
+				</div>
+			</div>
+
+			<div class="stats-dashboard" style="margin-top: 1em;">
+				<div class="stat-card" style="background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 100%); border: 2px solid #4CAF50;">
+					<div class="stat-label" style="color: #81C784;">💰 Total Unclaimed ETH</div>
+					<div class="stat-value" style="color: #4CAF50; font-size: 1.8em;">
+						{{printf "%.6f" .TotalUnclaimedETH}}
+					</div>
+					<div class="stat-sublabel" style="color: #A5D6A7;">ETH</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Unclaimed NFTs & Tokens</div>
 			
 			<div class="stats-dashboard">
 				<div class="stat-card">
@@ -36,28 +85,6 @@
 					<div class="stat-sublabel">
 						<a href="/black/cosmicgame/donations/nft/unclaimed/by_user/{{.UserAddr}}">View List</a>
 					</div>
-				</div>
-
-				<div class="stat-card">
-					<div class="stat-label">Unclaimed ETH Winnings</div>
-					<div class="stat-value">{{printf "%.6f" .Winnings.ETHRaffleToClaim}}</div>
-					<div class="stat-sublabel">ETH</div>
-					{{ if lt 0.0 .Winnings.ETHRaffleToClaim }}
-					<div style="margin-top: 0.5em;">
-						<a href="/black/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}">View Deposits</a>
-					</div>
-					{{ end }}
-				</div>
-
-				<div class="stat-card">
-					<div class="stat-label">Unclaimed Staking Rewards</div>
-					<div class="stat-value">{{printf "%.6f" .Winnings.UnclaimedStakingReward}}</div>
-					<div class="stat-sublabel">ETH</div>
-					{{ if lt 0.0 .Winnings.UnclaimedStakingReward}}
-					<div style="margin-top: 0.5em;">
-						<a href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserAddr}}">View Rewards</a>
-					</div>
-					{{ end }}
 				</div>
 			</div>
 		</div>

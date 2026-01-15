@@ -1135,36 +1135,61 @@ func (sw *SQLStorageWrapper) Get_user_notif_red_box_rewards(winner_aid int64) p.
 
 	var output p.CGClaimInfo
 	var query string
-	query = "SELECT " +
-				"s.amount_sum,"+ 
-				"s.amount_sum/1e18, " +
-				"w.unclaimed_nfts  " +
-			"FROM cg_raffle_winner_stats s " +
-				"LEFT JOIN cg_winner w ON s.winner_aid=w.winner_aid "+
-			"WHERE s.winner_aid = $1"
-
-	row := sw.S.Db().QueryRow(query,winner_aid)
 	var err error
-	var null_wei sql.NullString
-	var null_eth sql.NullFloat64
-	var null_nfts sql.NullInt64
 
-	err=row.Scan(&null_wei,&null_eth,&null_nfts);
+	// Query unclaimed Raffle ETH from cg_prize_deposit (winner_index 0-3, claimed = false)
+	var null_raffle_wei sql.NullString
+	var null_raffle_eth sql.NullFloat64
+	query = "SELECT SUM(amount), SUM(amount)/1e18 FROM cg_prize_deposit " +
+			"WHERE winner_aid = $1 AND winner_index < 4 AND claimed = false"
+	row := sw.S.Db().QueryRow(query, winner_aid)
+	err = row.Scan(&null_raffle_wei, &null_raffle_eth)
 	if err != nil {
-		if err == sql.ErrNoRows {
-		} else {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 			os.Exit(1)
 		}
 	}
-	if null_eth.Valid {
-		output.ETHRaffleToClaim = null_eth.Float64
+	if null_raffle_eth.Valid {
+		output.ETHRaffleToClaim = null_raffle_eth.Float64
 	}
-	if null_wei.Valid {
-		output.ETHRaffleToClaimWei = null_wei.String
+	if null_raffle_wei.Valid {
+		output.ETHRaffleToClaimWei = null_raffle_wei.String
+	}
+
+	// Query unclaimed donated NFTs count
+	var null_nfts sql.NullInt64
+	query = "SELECT unclaimed_nfts FROM cg_winner WHERE winner_aid = $1"
+	row = sw.S.Db().QueryRow(query, winner_aid)
+	err = row.Scan(&null_nfts)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
 	}
 	if null_nfts.Valid {
 		output.NumDonatedNFTToClaim = null_nfts.Int64
+	}
+
+	// Query unclaimed ChronoWarrior ETH from cg_prize_deposit (winner_index = 4)
+	var null_chrono_wei sql.NullString
+	var null_chrono_eth sql.NullFloat64
+	query = "SELECT SUM(amount), SUM(amount)/1e18 FROM cg_prize_deposit " +
+			"WHERE winner_aid = $1 AND winner_index = 4 AND claimed = false"
+	row = sw.S.Db().QueryRow(query, winner_aid)
+	err = row.Scan(&null_chrono_wei, &null_chrono_eth)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
+	}
+	if null_chrono_eth.Valid {
+		output.ETHChronoWarriorToClaim = null_chrono_eth.Float64
+	}
+	if null_chrono_wei.Valid {
+		output.ETHChronoWarriorToClaimWei = null_chrono_wei.String
 	}
 
 	var null_staking_rewards sql.NullFloat64

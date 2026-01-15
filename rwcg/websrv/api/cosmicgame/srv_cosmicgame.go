@@ -1705,8 +1705,10 @@ func cosmic_game_user_notif_red_box_rewards(c *gin.Context) {
 	}
 
 	claim_info := arb_storagew.Get_user_notif_red_box_rewards(user_aid)
+	total_eth := claim_info.ETHRaffleToClaim + claim_info.ETHChronoWarriorToClaim + claim_info.UnclaimedStakingReward
 	c.HTML(http.StatusOK, "cg_notif_red_box.html", gin.H{
 		"Winnings" : claim_info,
+		"TotalUnclaimedETH" : total_eth,
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 	})

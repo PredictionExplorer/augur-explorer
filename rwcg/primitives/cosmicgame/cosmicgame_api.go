@@ -383,6 +383,8 @@ type CGRoundStats struct {
 type CGClaimInfo struct {
 	ETHRaffleToClaim			float64
 	ETHRaffleToClaimWei			string
+	ETHChronoWarriorToClaim		float64
+	ETHChronoWarriorToClaimWei	string
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
 	UnclaimedStakingReward		float64
 	DonatedERC20Tokens			[]ERC20DonatedTokensInfo
