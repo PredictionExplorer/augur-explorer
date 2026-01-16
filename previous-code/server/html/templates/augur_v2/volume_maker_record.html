@@ -1,0 +1,9 @@
+{{define "volume_maker_record"}}
+<tr class="volume_makers">
+	<td>{{.Percentage}}%</td>
+	<td>
+		<a class="addr" href="search?q={{.Addr}}">{{.Addr}}</a>
+	</td>
+	<td class="right">{{ printf "%9.2f" .Volume}}</td>
+</tr>
+{{end}}

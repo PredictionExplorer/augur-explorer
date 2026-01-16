@@ -1,0 +1,26 @@
+<html>
+<head>
+	<title>Market Statistics</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<h3>Market Statistics
+<table>
+	<tr class="market_reports">
+		<td class="market_reports_field" >Total Trading Volume</td>
+		<td class="market_reports_field" >{{ printf "%0.18f" .MarketStats.TradingVol}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field" >Total Trades</td>
+		<td>{{.MarketStats.NumTrades}}</td>
+	</tr>
+</table>
+<br/></br/>
+<code>
+	API: /api/rwalk/statistics/by_market/[market_addr]</br/>
+
+	Example: /api/rwalk/statistics/by_market/{{.MarketAddr}}
+</code>
+</body>
+</html>

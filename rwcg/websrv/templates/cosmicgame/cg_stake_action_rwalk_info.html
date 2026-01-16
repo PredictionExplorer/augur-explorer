@@ -1,0 +1,114 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>RWalk Stake Action Info</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🚶 RWalk Stake Action Information</h1>
+			<div class="subtitle">Action ID: {{.CombinedRWalkStakingRecordInfo.Stake.ActionId}}</div>
+		</div>
+
+		<!-- Stake Action -->
+		<div class="section-card">
+			<div class="section-header">Stake Action Info</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Stake.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Stake.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.CombinedRWalkStakingRecordInfo.Stake.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Stake.Tx.DateTime}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Action ID</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Stake.ActionId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token ID</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Stake.TokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Num Staked NFTs</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Stake.NumStakedNFTs}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Staker Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}">{{.CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Unstake Action -->
+		<div class="section-card">
+			<div class="section-header">Unstake Action Info</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Unstake.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Unstake.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.CombinedRWalkStakingRecordInfo.Unstake.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Unstake.Tx.DateTime}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Action ID</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Unstake.ActionId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token ID</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Unstake.TokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Num Staked NFTs</div>
+					<div class="detail-value">{{.CombinedRWalkStakingRecordInfo.Unstake.NumStakedNFTs}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Staker Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}">{{.CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/rwalk/actions/info/[action_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/rwalk/actions/info/{{.CombinedRWalkStakingRecordInfo.Stake.ActionId}}</code>
+		</div>
+	</div>
+</body>
+</html>

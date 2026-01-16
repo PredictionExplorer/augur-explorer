@@ -1,0 +1,65 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>All ETH Donations to CosmicGame</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 All ETH Donations to CosmicGame</h1>
+			<div class="subtitle">Simple and with-info donations combined</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Type</th>
+					<th class="center">Round</th>
+					<th>Donor</th>
+					<th class="right">Amount (ETH)</th>
+					<th class="center">Record ID</th>
+					<th>Data JSON</th>
+				</tr>
+				{{- range $i, $change := .CosmicGameDonations}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>
+							<a href="/black/cosmicgame/donations/eth/with_info/info/{{.CGRecordId}}">{{.Tx.DateTime}}</a>
+						</td>
+						<td class="center">
+							{{ if eq 0 .RecordType}}<span class="badge badge-info">Simple</span>{{else}}<span class="badge badge-success">With Info</span>{{end}}
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="center">{{.CGRecordId}}</td>
+						<td style="font-family: monospace; font-size: 0.85em;">{{.DataJson}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/eth/both/all</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/eth/both/all</code>
+		</div>
+	</div>
+</body>
+</html>

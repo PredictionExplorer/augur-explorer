@@ -1,0 +1,46 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>List of users tha traded market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">List of Users that traded market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<h3>Trader list </h3>
+<table class="generic">
+	<tr class="generic">
+		<th class="generic">Address</th>
+		<th class="generic">Trades</th>
+		<th class="generic">Liquidity</th>
+		<th class="generic">Liquidity Volume</th>
+		<th class="generic">Trade Volume</th>
+		<th class="generic">Fees paid</th>
+		<th class="generic">Profit/loss</th>
+	</tr>
+	{{- range $i, $change := .Users}}
+		<tr class="generic">
+			<td class="generic addr">
+				<a href="/black/poly/markets/traderops/{{$.MarketId}}/{{.UserAid}}/0/1000000">
+					{{.UserAddr}}
+				</a>
+			</td>
+			<td class="generic ctr">
+				<a href="http://localhost:9094/black/poly/markets/traderops/{{$.MarketId}}/{{.UserAid}}/0/1000000">
+				{{.NumTrades}}
+				</a>
+			</td>
+			<td class="generic ctr">
+				<a href="http://localhost:9094/black/poly/markets/funderops/{{$.MarketId}}/{{.UserAid}}/0/1000000">
+					{{.NumLiquidityOps}}
+				</a>
+			</td>
+			<td class="generic right" style="text-align: right">{{printf "%.4f" .TotalTradeVolume}}</td>
+			<td class="generic right" style="text-align: right">{{printf "%.2f" .TotalLiquidityVol}}</td>
+			<td class="generic right" style="text-align: right">{{printf "%.2f" .TotalFeesPaid}}</td>
+			<td class="generic right" style="text-align: right">{{printf "%.2f" .TotalProfitLoss}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

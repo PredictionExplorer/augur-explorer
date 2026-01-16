@@ -1,0 +1,71 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Bids for Round {{.RoundNum}}</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📊 Bids for Round #{{.RoundNum}}</h1>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th>Bidder</th>
+					<th class="right">Amount (ETH)</th>
+					<th class="right">CST Reward</th>
+					<th class="center">Type</th>
+					<th class="center">RWalk</th>
+					<th class="right">CST Amount</th>
+					<th>Message</th>
+					<th>Donated ERC20</th>
+					<th class="right">Donated Amount</th>
+				</tr>
+				{{- range $i, $change := .BidsByRound}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/bid/info/{{.Tx.EvtLogId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
+						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
+						<td class="center">{{.BidType}}</td>
+						<td class="center">{{.RWalkNFTId}}</td>
+						<td class="right">{{printf "%.2f" .CstPriceEth}}</td>
+						<td>{{.Message}}</td>
+						<td class="monospace">{{.DonatedERC20TokenAddr}}</td>
+						<td class="right">{{printf "%.2f" .DonatedERC20TokenAmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/bid/list/by_round/[round_num]/[sort]/[offset]/[limit]</code><br/>
+			sort: 0 - ascending, 1 - descending<br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/bid/list/by_round/{{.RoundNum}}/1/{{.Offset}}/{{.Limit}}</code>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>User Balances</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 User Balances</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">ETH Balance</div>
+					<div class="stat-value">{{printf "%.6f" .ETH_Balance}}</div>
+					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">CosmicToken Balance</div>
+					<div class="stat-value">{{printf "%.2f" .CosmicTokenBalance}}</div>
+					<div class="stat-sublabel">CST (ERC20)</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/user/balances/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/user/balances/{{.UserAddr}}</code>
+		</div>
+	</div>
+</body>
+</html>

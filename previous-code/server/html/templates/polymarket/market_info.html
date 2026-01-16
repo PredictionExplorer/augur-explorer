@@ -1,0 +1,201 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Polymarkets Market {{.MarketInfo.MarketId}}</title>
+	<meta name="description" content="{{.MarketInfo.Description}}">
+</head>
+<body>
+<script language=javascript>
+	function show_market_description() {
+		var elt = document.getElementById('mkt_desc')
+		elt.style.display = "block"
+	}
+</script>
+<h3 class="page_title">Market Details (Basic)</h3>
+<table class="market_detail">
+<tr class="market_detail">
+	<td nowrap>Market ID:</td>
+	<td class="addr" >{{.MarketId}}</td>
+</tr>
+<tr>
+	<td></td>
+	<td>
+		<table><tr>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/buysell/{{.MarketId}}/0/10000">TRADING</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/liquidity/{{.MarketId}}/0/10000">LIQUIDITY</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/userlist/{{.MarketId}}">USER LIST</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/open_positions/{{.MarketId}}">OPEN POSITIONS</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		</tr><tr>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/redemptions/{{.MarketId}}">REDEMPTIONS</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/erc1155/{{.MarketId}}/0/100000">ERC1155</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+						<a class="btn_link" href="/black/poly/markets/open_interest_history/{{.MarketId}}/0/10000000">OI</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/statistics/{{.MarketId}}">Stats</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<tr>
+		</table>
+	</td>
+</tr>
+<tr class="market_detail">
+	<td>Question</td>
+	<td>{{.MarketInfo.Question }}</td>
+</tr>
+{{ if .MarketInfo.IsGroupMarket }}
+<tr class="market_detail">
+	<td>Is part of group?</td>
+	<td>Yes<br/>
+		Group question: {{.MarketInfo.MktGroupQuestion }}
+	</td>
+</tr>
+{{ end }}
+<tr class="market_detail">
+	<td>Description</td>
+	<td>
+			<nav>
+				<ul>
+					<li>
+						<a class="btn_link" href="javascript: show_market_description();void(0)">SHOW DESCRIPTION</a>
+						<span></span><span></span><span></span><span></span>
+					</li>
+				</ul>
+			</nav>
+		<span id="mkt_desc" style="display:none;">
+			{{.MarketInfo.Description}}
+		</span>
+	</td>
+</tr>
+<tr class="market_detail">
+	<td>Outcomes</td>
+	<td>{{.MarketInfo.Outcomes}}</td>
+</tr>
+<tr class="market_detail">
+	<td nowrap>Category</td>
+	<td>{{.MarketInfo.Category}}</td>
+</tr>
+<tr class="market_detail">
+	<td>MarketType</td>
+	<td>{{.MarketInfo.MarketType}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Slug::</td>
+	<td>{{.MarketInfo.Slug}}</td>
+</tr>
+<tr class="market_detail">
+	<td>ResolutionSource</td>
+	<td><a class="addr" href="{{.MarketInfo.ResolutionSource}}">{{.MarketInfo.ResolutionSource}}</a></td>
+</tr>
+{{ if .MarketInfo.WasResolved }}
+<tr class="market_detail">
+	<td>Resolved at </td>
+	<td>{{.MarketInfo.ResolvedDate}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Payout numerators </td>
+	<td>{{.MarketInfo.PayoutNumeratorsStr}}</td>
+</tr>
+{{ else }}
+<tr class="generic">
+	<td class="generic">Resolved?</td>
+	<td class="generic">No</td>
+</tr>
+{{ end }}
+<tr class="market_detail">
+	<td>Created</td>
+	<td>{{.MarketInfo.CreatedAtDate}}</td>
+</tr>
+<tr class="market_detail">
+	<td>End Date</td>
+	<td>{{.MarketInfo.EndDate}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Image</td>
+	<td><img src="{{.MarketInfo.Image}}">{{.MarketInfo.Image}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Icon</td>
+	<td><img src="{{.MarketInfo.Icon}}">{{.MarketInfo.Icon}}</td>
+</tr>
+</table>
+<h3 class="page_title">Market Details (Advanced)</h3>
+<table>
+<tr class="market_detail">
+	<td>ConditionId</td>
+	<td>{{.MarketInfo.ConditionId}}</td>
+</td>
+<tr class="market_detail">
+	<td>Market Maker Address</td>
+	<td>{{.MarketInfo.MarketMakerAddr}}</td>
+</td>
+<tr>
+	<td>Question ID</td>
+	<td>{{.MarketInfo.QuestionId}}</td>
+</tr>
+<tr>
+	<td>Condition Preparation transaction</td>
+	<td><a class="addr" href="https://polygonscan.com/tx/{{.MarketInfo.CondPrepTxHash}}">{{.MarketInfo.CondPrepTxHash}}</a></td>
+</td>
+<tr>
+	<td>Condition Preparation Date</td>
+	<td>{{.MarketInfo.CreatedAtDate}}</td>
+</td>
+</table>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+</div>
+
+
+
+
+
+
+<nav>
+	<ul>
+		<li>
+			<a class="btn_link" href="index.html">Back</a>
+			<span></span><span></span><span></span><span></span>
+		</li>
+	</ul>
+</nav>
+</body>
+</html>

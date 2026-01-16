@@ -1,0 +1,57 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Staked CST Tokens Global</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 Globally Staked CST Tokens</h1>
+			<div class="subtitle">All tokens currently staked in StakingWalletCST</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Block</th>
+					<th class="center">Action ID</th>
+					<th>Stake DateTime</th>
+					<th class="center">Token ID</th>
+					<th>User</th>
+				</tr>
+				{{- range $i, $change := .StakedTokensCST}}
+					<tr>
+						<td class="center">{{.StakeBlockNum}}</td>
+						<td class="center">{{.StakeActionId}}</td>
+						<td>{{.StakeDateTime}}</td>
+						<td class="center">
+							<a href="/black/cosmicgame/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.UserAddr}}">{{.UserAddr}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/staked_tokens/all</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/staked_tokens/all</code>
+		</div>
+	</div>
+</body>
+</html>

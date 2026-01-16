@@ -1,0 +1,55 @@
+<table>
+	<tr>
+		<td>
+			Listing individual contributions: <br/>
+			<table>
+				<tr>
+					<td class="mkt_trade_field">Date</td>
+					<td class="mkt_trade_field">Reporter</td>
+					<td class="mkt_trade_field">Outcome</td>
+					<td class="mkt_trade_field">Amount Staked</td>
+					<td class="mkt_trade_field">Current Stake</td>
+					<td class="mkt_trade_field">Stake Remaining</td>
+				</tr>
+				{{- range $i, $rpt := .}}
+				<tr class="market_trades">
+					<td>{{.DateTime}}</td>
+					<td>
+						<a href="/black/search?q={{.ReporterAddr}}">
+							{{.ReporterAddrSh}}
+						</a>
+					</td>
+					<td class="mkt_trade_field">{{.OutcomeStr}}</td>
+
+					<td class="mkt_trade_field" style="text-align: right">{{ printf "%.3f" .AmountStaked}}</td>
+					<td class="mkt_trade_field" style="text-align: right">{{ printf "%.3f" .CurrentStake}}</td>
+					<td class="mkt_trade_field" style="text-align: right">{{ printf "%.3f" .StakeRemaining}}</td>
+				</tr>
+				{{ if eq 2 .MktType }}
+				<tr class="market_trades">
+					<td class="mkt_trade_field">
+						Scalar Value
+					</td>
+					<td class="mkt_trade_field">
+						{{.ScalarValue }}
+					</td>
+				</tr>
+				{{ end }}
+				<tr class="market_trades">
+					<td class="mkt_trade_field" colspan=7>
+						Transaction Hash: 
+						<a href="/black/search?q={{.TxHash}}">
+							{{.TxHashSh}}
+						</a>
+						&nbsp;&nbsp;
+						(<a href="https://etherscan.io/tx/{{.TxHash}}">
+							Etherscan link
+						</a>)
+						<br/><br/></br>
+					</td>
+				</tr>
+				{{- end}}
+			</table>
+		</td>
+	</tr>
+</table>

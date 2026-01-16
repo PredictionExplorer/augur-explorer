@@ -1,0 +1,385 @@
+package main
+import (
+	"fmt"
+	"net/http"
+	"github.com/gin-gonic/gin"
+
+)
+func cosmic_game_donations_cg_simple_list(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_simple_list(0, 10000)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_simple_list.html", gin.H{
+		"CosmicGameDonations" : donations,
+	})
+}
+func cosmic_game_donations_cg_simple_by_round(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_simple_by_round(round_num)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_simple_by_round.html", gin.H{
+		"CosmicGameDonations" : donations,
+		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_cg_with_info_list(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_with_info_simple_list(0, 10000)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_with_info_list.html", gin.H{
+		"CosmicGameDonations" : donations,
+	})
+}
+func cosmic_game_donations_cg_with_info_by_round(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_with_info_by_round(round_num)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_with_info_by_round.html", gin.H{
+		"CosmicGameDonations" : donations,
+		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_cg_with_info_record_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_record_id := c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,HTTP,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'record_id' parameter is not set")
+		return
+	}
+	record_info := arb_storagew.Get_donation_with_info_record_info(record_id)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_with_info_record_info.html", gin.H{
+		"ETHDonation" : record_info,
+		"RecordId": record_id,
+	})
+}
+func cosmic_game_donations_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_by_user.html", gin.H{
+		"CombinedDonationRecords" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}
+func cosmic_game_donations_cg_both_by_round(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_both_by_round(round_num)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_both_by_round.html", gin.H{
+		"CosmicGameDonations" : donations,
+		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_cg_both_all(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_both_all()
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_both_all.html", gin.H{
+		"CosmicGameDonations" : donations,
+	})
+}
+func cosmic_game_donations_erc20_by_round_detailed(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_by_round_detailed(round_num)
+	c.HTML(http.StatusOK, "cg_donations_erc20_by_round_detailed.html", gin.H{
+		"DonationsERC20ByRoundDetailed" : donations,
+		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_erc20_by_round_summarized(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_by_round_summarized(round_num)
+	c.HTML(http.StatusOK, "cg_donations_erc20_by_round_summarized.html", gin.H{
+		"DonationsERC20ByRoundSummarized" : donations,
+		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_erc20_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	donated_prizes := arb_storagew.Get_erc20_donated_prizes_erc20_by_winner(user_aid)
+	c.HTML(http.StatusOK, "cg_donations_erc20_by_user.html", gin.H{
+		"DonatedPrizesERC20ByWinner" : donated_prizes,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}
+func cosmic_game_donations_erc20_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_global(0, 10000)
+	c.HTML(http.StatusOK, "cg_donations_erc20_global.html", gin.H{
+		"DonationsERC20" : donations,
+		"Offset": 0,
+		"Limit": 10000,
+	})
+}
+func cosmic_game_donations_erc20_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_record_id:= c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,HTTP,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'record_id' parameter is not set")
+		return
+	}
+	found,donation := arb_storagew.Get_erc20_donation_info(record_id)
+	if !found {
+		respond_error(c,"Record not found")
+	} else {
+		c.HTML(http.StatusOK, "cg_donated_erc20_info.html", gin.H{
+			"ERC20Donation" : donation,
+		})
+	}
+}
+func cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
+	// DONOR PERSPECTIVE: Shows tokens THIS USER donated
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	donations := arb_storagew.Get_erc20_donations_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_donations_erc20_donated_by_user.html", gin.H{
+		"DonationsERC20ByDonor" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}
+func cosmic_game_erc20_claims_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	var offset, limit int
+	p_offset := c.Param("offset")
+	p_limit := c.Param("limit")
+	
+	if len(p_offset) == 0 || len(p_limit) == 0 {
+		offset = 0
+		limit = 10000
+	} else {
+		var success bool
+		success, offset, limit = parse_offset_limit_params_html(c)
+		if !success {
+			return
+		}
+	}
+
+	claims := arb_storagew.Get_erc20_donated_token_claims_global(offset,limit)
+	c.HTML(http.StatusOK, "cg_erc20_claims_global.html", gin.H{
+		"ERC20Claims" : claims,
+		"Offset": offset,
+		"Limit": limit,
+	})
+}
+func cosmic_game_erc20_claims_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	claims := arb_storagew.Get_erc20_donated_token_claims_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_erc20_claims_by_user.html", gin.H{
+		"ERC20ClaimsByWinner" : claims,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}
+func cosmic_game_nft_donations_by_user(c *gin.Context) {
+	// DONOR PERSPECTIVE: Shows NFTs THIS USER donated
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	donations := arb_storagew.Get_nft_donations_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_nft_donations_by_user.html", gin.H{
+		"NFTDonationsByDonor" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}

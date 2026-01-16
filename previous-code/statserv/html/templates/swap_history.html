@@ -1,0 +1,45 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<p>
+<table>
+	<tr>
+		<td>Pool ID</td>
+		<td>{{.PoolId}}</td>
+	</tr>
+	<tr>
+		<td>Pool Address</td>
+		<td>{{.PoolAddr}} ({{.PoolAid}})</td>
+	</tr>
+</table>
+<br/>
+</p>
+<h3>History of Token Swaps</h3>
+<table>
+	<tr>
+		<th>Block</th>
+		<th>DateTime</th>
+		<th>Token In</th>
+		<th>Token Out</th>
+		<th>Amount In</th>
+		<th>Amount Out</th>
+		<th>Fee in USD</th>
+	</tr>
+	{{- range $i, $change := .Swaps}}
+	<tr>
+		<td>{{.BlockNum}}</td>
+		<td>{{.DateTime}}</td>
+		<td>{{.TokenInAddrShort}}</td>
+		<td>{{.TokenOutAddrShort}}</td>
+		<td style="text-align:right;">{{ .AmountInFmt }} {{.SymbolIn}}</td>
+		<td style="text-align:right;">{{ .AmountOutFmt }} {{.SymbolOut}}</td>
+		<td style="text-align:right;">$ {{ printf "%0.2f" .USDValue}}</td>
+	</tr>
+	{{- end}}
+</table>
+</body>
+</html>

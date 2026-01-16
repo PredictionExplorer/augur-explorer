@@ -1,0 +1,42 @@
+<html>
+<head>
+	<title>Random Walk Statistics</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<h3>Random Walk Token Statistics
+<table>
+	<tr>
+		<td>Total Trading Volume</td>
+		<td>{{ printf "%0.5f" .TokenStats.TradingVol}} ETH</td>
+	</tr>
+	<tr>
+		<td>Total Trades</td>
+		<td>{{.TokenStats.NumTrades}}</td>
+	</tr>
+	<tr>
+		<td>Tokens Minted</td>
+		<td>{{.TokenStats.TokensMinted}}</td>
+	</tr>
+	<tr>
+		<td>Unique Users</td>
+		<td>{{.TokenStats.UniqueUsers}}</td>
+	</tr>
+	<tr>
+		<td>Total Withdrawals</td>
+		<td>{{.TokenStats.NumWithdrawals}}</td>
+	</tr>
+	<tr>
+		<td>Last Minted Price</td>
+		<td>{{ printf "%.5f" .TokenStats.LastMintedPrice}} ETH</td>
+	</tr>
+</table>
+<br/><br/>
+<code>
+	API: /api/rwalk/statistics/by_token/[rwalk_addr]</br/>
+
+	Example: /api/rwalk/statistics/by_token/{{.RWalkAddr}}
+</code>
+</body>
+</html>

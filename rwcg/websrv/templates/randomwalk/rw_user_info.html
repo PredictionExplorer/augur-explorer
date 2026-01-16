@@ -1,0 +1,57 @@
+<html>
+<head>
+	<title>User Info for {{.UserAddr}}</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+
+<body>
+	<h3>User info for {{.UserAddr}}</h3>
+<table>
+	{{ if .UserInfo.IsMarketPlaceContract }}
+	<tr class="market_reports">
+		<td class="market_reports_field" ><font color=yellow>Note:</font></td>
+		<td class="market_reports_field" >This user is MarketPlace contract</td>
+	</tr>
+	{{ end }}
+	<tr class="market_reports">
+		<td class="market_reports_field" >Address</td>
+		<td class="market_reports_field" >{{.UserAddr}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field" >Address ID</td>
+		<td>{{.UserAid}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Total Volume</td>
+		<td>{{ printf "%.18f" .UserInfo.TotalVolume}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Number of trade operations</td>
+		<td>{{.UserInfo.TotalNumTrades}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Number of minted tokens</td>
+		<td>{{.UserInfo.TotalMintedToks}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Number of Withdrawals</td>
+		<td>{{.UserInfo.TotalNumWithdrawals}}</td>
+	</tr>
+</table>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/rwalk/trading/by_user/{{.UserAid}}">
+			Trade List
+		</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	</ul>
+</nav>
+<code>
+	API: /api/rwalk/user/info/[user_aid]/[rwalk_contract_addr]</br/>
+
+	Example: /api/rwalk/user/info/200057/0x332E5e3dE89cDe8131aCCdd09ecbd51Ea4B9b0E3
+</code>
+</body>
+</html>

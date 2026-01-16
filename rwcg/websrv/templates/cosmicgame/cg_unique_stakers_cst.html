@@ -1,0 +1,59 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Unique CST Stakers</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 Unique CST Token Stakers</h1>
+			<div class="subtitle">All addresses that have staked CST tokens</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Staker Address</th>
+					<th class="center">Stake Actions</th>
+					<th class="right">Total Reward (ETH)</th>
+					<th class="right">Unclaimed (ETH)</th>
+					<th class="center">Token Rewards</th>
+					<th class="center">Tokens Staked</th>
+				</tr>
+				{{- range $i, $change := .UniqueStakersCST}}
+					<tr>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
+						</td>
+						<td class="center">
+							<a href="/black/cosmicgame/staking/cst/actions/by_user/{{.StakerAddr}}">{{.NumStakeActions}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .TotalRewardEth}}</td>
+						<td class="right">{{printf "%.6f" .UnclaimedRewardEth}}</td>
+						<td class="center">{{.TotalTokensMinted}}</td>
+						<td class="center">{{.TotalTokensStaked}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/statistics/unique/stakers/cst</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/statistics/unique/stakers/cst</code>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,7 +1,0 @@
-Dump of storage for first 4 values:
-getting storage of ctrct 0xcc165aa8353BcCe882C14677aD78B20b55C0A5ED
-storage value key=0 is: 00000000000000000000001fd9274a2fe0e86f5a7b5bde57b93c8c9b62e21d01 (Wallet Registry Contract)
-storage value key=1 is: 000000000000000000000000913da4198e6be1d5f5e4a40d0667f70c0b5430eb (Owner's address)
-storage value key=2 is: dbcbbe076df86450984986b8258f77d8cf985f84ca462832fa9950a15e2478d3 (keccak of domain separator)
-storage value key=3 is: 0000000000000000000000005f3341ea5989ad3129e325027b8d908b63709a00 (Cash contract addr)
-

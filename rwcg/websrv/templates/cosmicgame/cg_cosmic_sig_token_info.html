@@ -1,0 +1,177 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Token #{{.TokenInfo.TokenId}} Info</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎨 Cosmic Signature Token Info</h1>
+			<div class="subtitle">Token ID: {{.TokenInfo.TokenId}}</div>
+		</div>
+
+		<!-- Token Information -->
+		<div class="section-card">
+			<div class="section-header">Token Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Token ID</div>
+					<div class="detail-value">{{.TokenInfo.TokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.TokenInfo.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.TokenInfo.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.TokenInfo.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.TokenInfo.Tx.DateTime}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Seed</div>
+					<div class="detail-value">{{.TokenInfo.Seed}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Ownership Information -->
+		<div class="section-card">
+			<div class="section-header">Ownership</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Original Winner</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.TokenInfo.WinnerAddr}}">{{.TokenInfo.WinnerAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Current Owner</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.TokenInfo.CurOwnerAddr}}">{{.TokenInfo.CurOwnerAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Prize Information</div>
+					<div class="detail-value">
+						{{ if eq 1 .TokenInfo.RecordType}}
+							<span class="badge badge-info">Token won in raffle</span>
+						{{else}}
+							Main prize: <a href="/black/cosmicgame/rounds/info/{{.TokenInfo.RoundNum}}">Round #{{.TokenInfo.RoundNum}}</a>
+						{{ end }}
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Ownership Transfers</div>
+					<div class="detail-value">
+						<a href="/black/cosmicgame/cst/transfers/all/{{.TokenInfo.TokenId}}">View Transfer History</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Staking Information -->
+		<div class="section-card">
+			<div class="section-header">Staking Status</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Staked</div>
+					<div class="detail-value">
+						{{if .TokenInfo.Staked}}
+							<span class="badge badge-success">✓ Currently Staked</span>
+						{{else}}
+							<span class="badge badge-default">Not Staked</span>
+						{{end}}
+					</div>
+				</div>
+				{{ if .TokenInfo.Staked }}
+				<div class="detail-row">
+					<div class="detail-label">Staked Owner</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.TokenInfo.StakedOwnerAddr}}">{{.TokenInfo.StakedOwnerAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Stake Action ID</div>
+					<div class="detail-value">{{.TokenInfo.StakeActionId}}</div>
+				</div>
+				{{ end }}
+				{{ if .TokenInfo.ActualUnstakeDateTime }}
+				<div class="detail-row">
+					<div class="detail-label">Unstake Date</div>
+					<div class="detail-value">{{.TokenInfo.ActualUnstakeDateTime}}</div>
+				</div>
+				{{ end }}
+			</div>
+		</div>
+
+		<!-- Token Name History -->
+		<div class="section-card">
+			<div class="section-header">Token Name History</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Token Name</th>
+				</tr>
+				{{- range $i, $change := .TokenNameHistory}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td>{{.TokenName}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<!-- Transfer History -->
+		<div class="section-card">
+			<div class="section-header">Transfer History</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>From</th>
+					<th>To</th>
+				</tr>
+				{{- range $i, $change := .TokenTransfers}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.FromAddr}}">{{.FromAddr}}</a>
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.ToAddr}}">{{.ToAddr}}</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/cst/info/[token_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/cst/info/{{.TokenInfo.TokenId}}</code>
+		</div>
+	</div>
+</body>
+</html>

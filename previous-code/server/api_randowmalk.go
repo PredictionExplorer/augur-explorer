@@ -1,0 +1,690 @@
+/// API v1
+package main
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"net/http"
+	"github.com/gin-gonic/gin"
+
+)
+func api_rwalk_current_offers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		rwalk_aid = 0
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		market_aid = 0
+	}
+
+	p_order_by := c.Param("order_by")
+	var order_by int64
+	if len(p_order_by) > 0 {
+		var success bool
+		order_by,success = parse_int_from_remote_or_error(c,JSON,&p_order_by)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'order_by' parameter is not set")
+		return
+	}
+
+	offers := augur_srv.db_arbitrum.Get_active_offers(rwalk_aid,market_aid,int(order_by))
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offers" : offers,
+		"RWalkAid": rwalk_aid,
+		"MarketAid": market_aid,
+	})
+}
+func api_rwalk_floor_price(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		rwalk_aid = -1
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		market_aid = -1
+	}
+
+	_,floor_price,_,_,err := augur_srv.db_arbitrum.Get_floor_price(rwalk_aid,market_aid)
+	var db_err string
+	if err != nil { db_err = err.Error() }
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"FloorPrice" : floor_price,
+		"DBError": db_err,
+		"MarketAddr":p_market_addr,
+		"RWalkAddr":p_rwalk_addr,
+		"RWalkAid": rwalk_aid,
+		"MarketAid": market_aid,
+	})
+}
+func api_rwalk_token_list_seq(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
+
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_sequentially(rwalk_aid,0,10000000000)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MintedTokens" : tokens ,
+	})
+}
+func api_rwalk_token_list_period(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
+
+	success,ini,fin := parse_timeframe_ini_fin(c,JSON)
+	if !success {
+		return
+	}
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(rwalk_aid,ini,fin)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MintedTokens" : tokens,
+		"InitTs": ini,
+		"FinTs":fin,
+		"RWalkAid":rwalk_aid,
+	})
+}
+func api_rwalk_trading_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	var market_aid int64 = 0
+	if p_market_addr != "0x0000000000000000000000000000000000000000" {
+		var err error
+		market_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+		if err != nil {
+			respond_error_json(c,"Market address doesn't exist in the database")
+			return
+		}
+	}
+
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	sales := augur_srv.db_arbitrum.Get_trading_history(market_aid,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Sales" : sales,
+		"MarketAid" : market_aid,
+		"MarketAddr" : p_market_addr,
+	})
+}
+func api_rwalk_sale_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	var market_aid int64 = 0
+	if p_market_addr != "0x0000000000000000000000000000000000000000" {
+		var err error
+		market_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+		if err != nil {
+			respond_error(c,"Market address doesn't exist in the database")
+			return
+		}
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	sales := augur_srv.db_arbitrum.Get_sale_history(market_aid,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Trading" : sales,
+		"MarketPlaceAddr": p_market_addr,
+		"MarketPlaceAid" : market_aid,
+	})
+}
+func api_rwalk_token_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,JSON,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of 'rwalk_addr' failed, address doesn't exist")
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	history := augur_srv.db_arbitrum.Get_token_full_history(rwalk_aid,token_id,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"TokenId" : token_id,
+		"TokenHistory" : history,
+		"RWalkAddr" : p_rwalk_addr,
+		"RWalkAid" : rwalk_aid,
+	})
+}
+func api_rwalk_trading_volume_by_period(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error_json(c,"Market address doesn't exist in the database")
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	vol_hist := augur_srv.db_arbitrum.Get_market_trading_volume_by_period(market_aid,init_ts,fin_ts,interval_secs)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"VolumeHistory" : vol_hist,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
+	})
+}
+func api_rwalk_token_name_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,JSON,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'token_id' parameter is not set")
+		return
+	}
+	name_changes := augur_srv.db_arbitrum.Get_name_changes_for_token(token_id)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"TokenNameChanges" : name_changes,
+	})
+}
+func api_rwalk_token_stats(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token address in the Db has failed")
+		return
+	}
+	stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"TokenStats" : stats,
+		"RWalkAid": rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func api_rwalk_market_stats(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of Market address in the DB has failed")
+		return
+	}
+	stats := augur_srv.db_arbitrum.Get_market_stats(market_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketStats" : stats,
+		"MarketAid": market_aid,
+		"MarketAddr" : p_market_addr,
+	})
+}
+func api_rwalk_tokens_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var err error
+		user_aid, err = strconv.ParseInt(p_user_aid,10,64)
+		if err != nil {
+			if (len(p_user_aid) != 40) && (len(p_user_aid)!=42) {
+				respond_error_json(c,"Can't resolve user identifier to valid address ID or address hex")
+				return
+			} else {
+				user_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_user_aid)
+				if err != nil {
+					respond_error_json(c,"Cant find provided user")
+					return
+				}
+			}
+		}
+	} else {
+		respond_error_json(c,"'user_aid' parameter is not set")
+		return
+	}
+
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error_json(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_tokens := augur_srv.db_arbitrum.Get_random_walk_tokens_by_user(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserTokens" : user_tokens,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+	})
+}
+func api_rwalk_trading_history_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,HTTP,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'user_aid' parameter is not set")
+		return
+	}
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error_json(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_trading := augur_srv.db_arbitrum.Get_trading_history_by_user(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserTrading" : user_trading,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+	})
+}
+func api_rwalk_user_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token failed")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,JSON,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'user_aid' parameter is not set")
+		return
+	}
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error_json(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_info,dberr := augur_srv.db_arbitrum.Get_rwalk_user_info(user_aid,rwalk_aid)
+
+	var dberr_str string
+	if dberr != nil {
+		dberr_str = dberr.Error()
+	}
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserInfo" : user_info,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+		"RWalkAddr" : p_rwalk_addr,
+		"RWalkAid" : rwalk_aid,
+		"DBError" : dberr_str,
+	})
+}
+func api_rwalk_top5_traded_tokens(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	top5toks := augur_srv.db_arbitrum.Get_top5_traded_tokens()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Top5TradedTokens" : top5toks,
+	})
+}
+func api_rwalk_mint_intervals(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token failed")
+		return
+	}
+	mint_intervals := augur_srv.db_arbitrum.Get_rwalk_mint_intervals(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MintIntervals" : mint_intervals,
+		"RWalkAid" : rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func api_rwalk_withdrawal_chart(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"Lookup of NFT token failed")
+		return
+	}
+	withdrawal_entries := augur_srv.db_arbitrum.Get_rwalk_withdrawal_chart(rwalk_aid)
+	withdrawal_data := build_js_randomwalk_withdrawal_chart(&withdrawal_entries)
+	rwalk_stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"WithdrawalEntries" : withdrawal_entries,
+		"WithdrawalData" : withdrawal_data,
+		"ContractStatistics": rwalk_stats,
+		"RWalkAid" : rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func api_rwalk_floor_price_over_time(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token failed")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error_json(c,"Market address doesn't exist in the database")
+		return
+	}
+	success,ini,fin,interval := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	if ini == 0 {
+		ini = 1636676049
+	}
+	if fin == 0 {
+		fin = int(time.Now().Unix()) 
+	}
+	if interval == 0 || interval == 2147483647 {
+		interval = 24*60*60
+	}
+	price_entries := augur_srv.db_arbitrum.Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid,ini,fin,interval)
+	price_data := build_js_floor_price_data(&price_entries)
+	rwalk_stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"PriceEntries" : price_entries,
+		"PriceData" : price_data,
+		"ContractStatistics": rwalk_stats,
+		"RWalkAid" : rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+		"MarketAid":market_aid,
+		"MarketAddr":p_market_addr,
+		"InitTs" : ini,
+		"FinTs": fin,
+		"Interval": interval,
+	})
+}
+func api_rwalk_token_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token address in the Db has failed")
+		return
+	}
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,HTTP,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+	token_info,err := augur_srv.db_arbitrum.Get_rwalk_token_info(rwalk_aid,token_id)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("Error during query execution: %v",err))
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"TokenInfo" : token_info,
+	})
+}
+func api_rwalk_mint_report(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	records := augur_srv.db_arbitrum.Get_mint_report()
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Records" : records,
+	})
+}

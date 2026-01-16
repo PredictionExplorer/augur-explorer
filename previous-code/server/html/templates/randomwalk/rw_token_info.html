@@ -1,0 +1,55 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Information about Token ID {{.TokenID}}</title>
+</head>
+<body>
+	<h3 class="page_title">Token Info<h3>
+<table>
+	<tr>
+		<td>Token ID</td>
+		<td>{{.TokenInfo.TokenId}}
+	</tr>
+	<tr>
+		<td>Seed Hex</td>
+		<td>{{.TokenInfo.SeedHex}}</td>
+	</tr>
+	<tr>
+		<td>Seed Numeric</td>
+		<td>{{.TokenInfo.SeedNum}}</td>
+	</tr>
+	<tr>
+		<td>Last Price</td>
+		<td>{{.TokenInfo.LastPrice}}</td>
+	</td>
+	<tr>
+		<td>Current Name</td>
+		<td>
+			{{.TokenInfo.CurName}}
+			{{ if eq .TokenInfo.CurName "" }}
+			{{ else }}
+				(updated at {{.TokenInfo.LastNameUpdateDate}})
+			{{ end }}
+		</td>
+	</tr>
+	<tr>
+		<td>Current Owner</td>
+		<td><a class="addr" href="/black/rwalk/user/info/{{.TokenInfo.CurOwnerAid}}/{{.RWalkAddr}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Num Trades</td>
+		<td>{{.TokenInfo.NumTrades}}</td>
+	</tr>
+	<tr>
+		<td>Total Volume</td>
+		<td>{{.TokenInfo.TotalVolume}} ETH</td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/rwalk/tokens/info/[rwalk_addr]/[token_id]<br/>
+
+	Example: /api/rwalk/tokens/info/{{.RWalkAddr}}/{{.TokenInfo.TokenId}}
+</code>
+</body>

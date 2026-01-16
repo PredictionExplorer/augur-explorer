@@ -1,0 +1,67 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Unclaimed CST Staking Rewards</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⏳ Unclaimed CST Staking Rewards</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Deposit ID</th>
+					<th class="center">Total Staked Tokens</th>
+					<th class="right">Total Deposited</th>
+					<th class="right">Reward/Token</th>
+					<th class="center">Your Stake</th>
+					<th class="right">Your Reward</th>
+					<th class="right">Collected</th>
+					<th class="right">Pending</th>
+				</tr>
+				{{- range $i, $change := .UnclaimedEthDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>
+							<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
+								{{.Tx.DateTime}}
+							</a>
+						</td>
+						<td class="center">{{.DepositId}}</td>
+						<td class="center">{{.NumStakedNFTs}}</td>
+						<td class="right">{{printf "%.6f" .DepositAmountEth}}</td>
+						<td class="right">{{printf "%.6f" .AmountPerTokenEth}}</td>
+						<td class="center">{{.YourTokensStaked}}</td>
+						<td class="right">{{printf "%.6f" .YourRewardAmountEth}}</td>
+						<td class="right">{{printf "%.6f" .YourCollectedAmountEth}}</td>
+						<td class="right">{{printf "%.6f" .PendingToClaimEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/to_claim/by_user/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserAddr}}</code>
+		</div>
+	</div>
+</body>
+</html>

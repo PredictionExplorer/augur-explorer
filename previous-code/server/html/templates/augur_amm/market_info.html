@@ -1,0 +1,135 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>AMM Market Info</title>
+</head>
+<body>
+<h3 class="page_title">AMM Market <h3>
+<h4 class="page_title">
+</h4>
+<br/>
+<h4>Basic Market Info</h4>
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Title</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.Title}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Description</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.Description}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Home Team</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.HomeTeam}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Away Team</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AwayTeam}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Market Rules</td>
+		<td class="mkt_trade_hdr" style="text-align: left">
+			{{- range $i, $item := .MarketInfo.MarketRules}}
+				{{.}}<br/>
+			{{- end }}
+		</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">MArket Ends</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.MarketEndDate}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Liquidity</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.Liquidity}}</td>
+	</tr>
+</table>
+<br/><br/>
+<h4>Advanced Market Info</h4>
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Market ID</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.MarketId}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Factory Address</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.FactoryAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Creation Block Number</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.BlockNum}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Creation Block Date</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.BlockDateTime}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left"></td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.HomeTeam}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Away Team</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AwayTeam}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Market Rules</td>
+		<td class="mkt_trade_hdr" style="text-align: left">
+			{{- range $i, $item := .MarketInfo.MarketRules}}
+				{{.}}<br/>
+			{{- end }}
+		</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Liquidity</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.Liquidity}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Winning token address</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.WinnerAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Creation Transaction Hash</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.TxHash}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Collateral Token Address</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.CollateralAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Protocol Fee Address</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.ProtocolAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Settlement Fee Address</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.SettlementAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">FeePot Contract Address</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.FeePotAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Settlement Fee %</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.SettlementFee}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Protocol Fee %</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.ProtocolFee}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Staker Fee %</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.StakerFee}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">ShareFactor %</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AbstractMarketInfo.ShareFactor}}</td>
+	</tr>
+</table>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

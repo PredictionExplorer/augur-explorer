@@ -1,0 +1,32 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<table>
+	<tr>
+		<td>
+			<a href="/balancerv2/top_pools/0/{{.HourlyTsIni}}/{{.HourlyTsFin}}">
+				Top pools last hour
+			</a>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<a href="/balancerv2/top_pools/1/{{.DailyTsIni}}/{{.DailyTsFin}}">
+				Top pools last day
+			</a>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<a href="/balancerv2/top_pools/2/{{.WeeklyTsIni}}/{{.WeeklyTsFin}}">
+				Top pools last 7 days
+			</a>
+		</td>
+	</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Unclaimed NFT Donations</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⏳ Unclaimed NFT Donations</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+			<div class="subtitle" style="margin-top: 1em;">NFTs available to claim</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Donor</th>
+					<th>Token Address</th>
+					<th class="center">Round</th>
+					<th class="center">NFT ID</th>
+					<th>NFT URI</th>
+				</tr>
+				{{- range $i, $change := .UnclaimedDonatedNFTs}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.NFTTokenId}}</td>
+						<td style="word-break: break-all; max-width: 300px;">{{.NFTTokenURI}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/unclaimed/by_user/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/unclaimed/by_user/{{.UserAddr}}</code>
+		</div>
+	</div>
+</body>
+</html>

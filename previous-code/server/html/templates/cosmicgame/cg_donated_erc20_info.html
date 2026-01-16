@@ -1,0 +1,78 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Donated ERC20 Info</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💎 Donated ERC20 Information</h1>
+			<div class="subtitle">Record ID: {{.ERC20Donation.RecordId}}</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Transaction Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Record ID</div>
+					<div class="detail-value">{{.ERC20Donation.RecordId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.ERC20Donation.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.ERC20Donation.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction ID</div>
+					<div class="detail-value">{{.ERC20Donation.Tx.TxId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.ERC20Donation.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.ERC20Donation.Tx.DateTime}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Donation Details</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Donor Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.ERC20Donation.DonorAddr}}">{{.ERC20Donation.DonorAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token Address</div>
+					<div class="detail-value monospace">{{.ERC20Donation.TokenAddr}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/info/[record_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/erc20/info/{{.ERC20Donation.RecordId}}</code>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Augur Market {{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+<h3 class="page_title">Market Details</h3>
+<table class="market_detail">
+<tr class="market_detail">
+	<td nowrap>Address (ID):</td>
+	<td class="addr" >{{.Market.MktAddr}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Creator:</td>
+	<td><a class="addr" href="/black/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
+</tr>
+<tr class="market_detail">
+	<td>Reporter</td>
+	<td><a class="addr" href="/black/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
+</tr>
+<tr class="market_detail">
+	<td>End Date</td>
+	<td>{{.Market.EndDate}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Description</td>
+	<td>{{.Market.Description}}</td>
+</tr>
+<tr class="market_detail">
+	<td nowrap>Long description</td>
+	<td>{{.Market.LongDesc}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Category</td>
+	<td>	{{template "category_record_small" .Market}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Market Type</td>
+	<td>{{.Market.MktTypeStr}}</td>
+</td>
+{{if ne 2 .Market.MktType }}
+<tr class="market_detail">
+	<td>Outcomes</td>
+	<td>{{.Market.Outcomes}}</td>
+</tr>
+{{end}}
+<tr class="market_detail">
+	<td>Status</td>
+	<td>{{.Market.Status}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Fee</td>
+	<td>{{.Market.Fee}}</td>
+</tr>
+<tr class="market_detail">
+	<td>OpenInterest</td>
+	<td>{{.Market.OpenInterest}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total Volume</td>
+	<td>{{.Market.CurVolume}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Money at Statke</td>
+	<td>{{.Market.MoneyAtStake}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total Trades</td>
+	<td>{{.Market.TotalTrades}}</td>
+</tr>
+<tr class="market_detail">
+	<td>TimeLeftToReport</td>
+	<td>{{.Market.DesignRepTimeLeft}}</td>
+</tr>
+</table>
+<br/><br/>
+{{$maddr := .Market.MktAddr}}
+<div class="market_outcome_vols">
+	<h3>Volume & Last Price data:</h3>
+	{{template "market_outcome_vols" .OutcomeVols}}
+</div>
+<br/><br/>
+<div class="market_info">
+	Market has {{.Market.TotalTrades}} trades in total
+	<nav id="market_trades_nav">
+		<ul>
+			<li style="">
+				<a class="btn_link" href="/black/fulltradelist/{{.Market.MktAddr}}">Trade List</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+</div>
+{{if .Market.OutsideAugurBalanceChanges }}
+<h3>This market has share-token balance changes outside Augur UI</h3>
+<div>
+	<nav id="market_reports_nav">
+		<ul>
+			<li style="float: left">
+				<a class="btn_link" href="/black/stbc/{{.Market.MktAddr}}">ShareToken balance changes</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+	<br/><br/><br/><br/>
+</div>
+{{ end }}
+{{if .BalancerPools }}
+<h3>Balancer Pools where the Outcomes of this Market can be traded</h3>
+<div id="outside_ag_bal_changes">
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Pool Address</th>
+		<th class="market_reports">Tokens in the Pool</th>
+		<td class="market_reports">Amount of Holders</h>
+		<th class="market_reports">Amount of Swaps</th>
+		<th class="market_reports">Pool Fee</th>
+		<th class="market_reports">Liquidity (USD)</th>
+	</tr>
+	{{- range $i, $change := .BalancerPools }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a class="addr" href="/black/pool_swaps/{{.PoolAddr}}">{{.PoolAddr}}</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center">{{.NumTokens}}
+			<td class="market_reports_field" style="text-align: center">{{.NumHolders}}
+			<td class="market_reports_field" style="text-align: center">{{.NumSwaps}}
+			<td class="market_reports_field" style="text-align: center">{{.SwapFee}}</td>
+			<td class="market_reports_field" style="text-align: center">{{.UsdLiquidity}}</td>
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
+{{ if ne .Market.MktStatus 0 }}
+<h3>Reports for this Market</h3>
+<div id="market_reports">
+	{{template "market_reports" .Reports}}
+	<nav id="market_reports_nav">
+		<ul>
+			<li style="float: left">
+				<a class="btn_link" href="/black/fullreports/{{.Market.MktAddr}}">All Reports</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+{{ end }}
+{{ if .UniswapPairs }}
+	<nav id="market_reports_nav">
+		<ul>
+			<li style="float: left">
+				<a class="btn_link" href="/black/mkt_uniswaps/{{.Market.MktAddr}}">Uniswap Pairs</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+{{ end }}
+<br/><br/>
+<br/><br/>
+	<nav id="market_reports_nav">
+		<ul>
+			<li style="float: left">
+				<a class="btn_link" href="/black/reports_table/{{.Market.MktAddr}}">Reports Table</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+<br/><br/>
+<br/><br/>
+</div>
+<nav>
+	<ul>
+		<li>
+			<a class="btn_link" href="index.html">Back</a>
+			<span></span><span></span><span></span><span></span>
+		</li>
+	</ul>
+</nav>
+</body>
+</html>

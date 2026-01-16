@@ -1,0 +1,58 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>User Raffle ETH Deposits</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎲 Raffle ETH Deposits</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Winner Index</th>
+					<th class="center">Round</th>
+					<th class="right">Amount</th>
+					<th class="center">Claimed</th>
+				</tr>
+				{{- range $i, $change := .RaffleDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
+						<td class="center">
+							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>Simplified API (NEW):</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/user_raffle/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/user_raffle/{{.UserAddr}}</code><br/><br/>
+			<small style="color: #888;">Old API (deprecated): /api/cosmicgame/prizes/eth/raffle/by_user/[user_addr]</small>
+		</div>
+	</div>
+</body>
+</html>

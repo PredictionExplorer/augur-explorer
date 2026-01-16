@@ -1,0 +1,55 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Statistics from {{.IniDate}} to {{.FinDate}}</title>
+</head>
+<body>
+	<h3 class="page_title">Daily blockchain statistics <h3>
+<table>
+	<tr>
+		<td><b>From</b></td><td>{{.IniDate}}</td>
+	</tr>
+	<tr>
+		<td><b>To</b></td><td>{{.FinDate}}</td>
+	</tr>
+</table>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">From Timestamp</th>
+		<th class="market_reports">To Timestamp</th>
+		<th class="market_reports">Unique Human</th>
+		<th class="market_reports">Unique Contract</th>
+		<th class="market_reports">ETH Transferred</th>
+		<th class="market_reports">Tx Fees in ETH</th>
+		<th class="market_reports">Tx Fees in USD</th>
+	</tr>
+	{{- range $i, $change := .Statistics}}
+		<tr class="market_reports">
+			<td class="">{{.DateTime}}</td>
+			<td class="">{{.TimeStamp}}</td>
+			<td class="">{{.TimeStampTo}}</td>
+			<td class="" style="text-align:center;">{{.NumUniqHumanAccts}}</td>
+			<td class="" style="text-align:center;">{{.NumUniqContractAccts}}</td>
+			<td class="addr" style="text-align: right;">{{printf "%.6f" .EthTransferred}}</td>
+			<td class="addr" style="text-align: right;">{{printf "%.6f" .TxFeesEth}}</td>
+			<td class="addr" style="text-align: right;">{{printf "%.6f" .TxFeesUsd}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API Ethereum: /api/statistics/main_net/[from_ts]/[to_ts]<br/>
+	API Arbitrum: /api/statistics/arbitrum/[from_ts]/[to_ts]<br/>
+
+	Example: /api/statistics/{{ if eq .SchemaName "st_eth" }}main_net{{ end }}{{ if eq .SchemaName "st_arb" }}arbitrum{{end}}/{{.IniTs}}/{{.FinTs}}
+</code>
+<h4>Legend</h4>
+<ul>
+	<li type=disc>Unique Human - unique active addresses (addresses that made at least 1 transaction) sent by human accounts (EOA type account) within 24 hours
+	<li type=disc>Unique Contract - unique active addresses (addresses that were involved in at least 1 transaction) that belong to a contract account (single transaction can make accesss to few of such contract accounts) within 24 hours
+	<li type=disc>Transferred - amount in ETH that was transferred in 24 hours between accounts of different types (contract or human)
+	<li type=disc>Tx Fees in ETH - the transaction fee in ETH 
+	<li type=disc>Tx Fees in US Dollars, calculated per individual transaction using price of ETH averaged within interval of 30 minutes
+</ul>
+</body>

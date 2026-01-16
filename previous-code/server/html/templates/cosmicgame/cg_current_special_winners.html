@@ -1,0 +1,76 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Current Special Winners</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🏆 Current Special Winners</h1>
+			<div class="subtitle">Endurance Champion & Last CST Bidder Info</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Last Bidder</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Last Bidder Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.LastBidderAddress}}">{{.LastBidderAddress}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Last Bid Time</div>
+					<div class="detail-value">{{.LastBidderLastBidTime}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Endurance Champion</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Champion Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.EnduranceChampionAddress}}">{{.EnduranceChampionAddress}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Duration</div>
+					<div class="detail-value">{{.EnduranceChampionDuration}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Last CST Bidder</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Bidder Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.LastCstBidderAddress}}">{{.LastCstBidderAddress}}</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/bid/current_special_winners</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/bid/current_special_winners</code>
+		</div>
+	</div>
+</body>
+</html>

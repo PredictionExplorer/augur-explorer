@@ -1,0 +1,127 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ENS Name {{.ENSInfo.FQDN}}</title>
+</head>
+<body>
+	<h3 class="page_title">ENS Name with hash {{.ENSInfo.FQDN}}</h3>
+<table class="market_detail">
+<tr>
+	<td>Name:</td>
+	<td>{{.ENSInfo.ENS_Name}}</td>
+</tr>
+<tr>
+	<td nowrap>Last Owner Address</td>
+	<td><a href="/black/user/{{.ENSInfo.LastOwnerAddr}}">{{.ENSInfo.LastOwnerAddr}}</a></td>
+</tr>
+<tr>
+	<td nowrap>First Time Registered</td>
+	<td>{{.ENSInfo.FirstRegisteredDate}}</td>
+</tr>
+<tr>
+	<td nowrap>Parent Node</td>
+	<td><a href="/black/ens_name_info/{{.ENSInfo.Node}}" class=addr>{{.ENSInfo.Node}}</a></td>
+</tr>
+<tr>
+	<td nowrap>Name Hash</td>
+	<td>{{.ENSInfo.FQDN}}</td>
+</tr>
+<tr>
+	<td nowrap>Active</td>
+	<td>
+		{{.ENSInfo.Active}}
+	</td>
+</td>
+<tr>
+	<td nowrap>Content Hash</td>
+	<td>
+		{{.ENSInfo.ContentHash}}
+	</td>
+</td>
+<tr>
+	<td>
+		Public Key parameters
+	</td>
+	<td>
+		<table class="market_detail">
+			<tr>
+				<td>X: </td>
+				<td>{{.ENSInfo.PublicKey_X}}</td>
+			</tr>
+			<tr>
+				<td>Y: </td>
+				<td>{{.ENSInfo.PublicKey_Y}}</td>
+			</tr>
+		</table>
+	</td>
+</tr>
+</table>
+{{ if .ENSInfo.NameTextMetaInfo.TextMetaInfo }}
+<h3>Key-Value Text pairs assigned to the ENS Name:</h3>
+<div class="market_info">
+<table class="market_detail">
+	{{- range $i, $swap:= .ENSInfo.NameTextMetaInfo.TextMetaInfo}}
+		<tr class="market_trades">
+			<td class="mkt_trade_field">{{.Key}}</td>
+			<td class="mkt_trade_field">{{.Value}}</td>
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
+
+<br/><br/>
+<h3>Ownership change history:</h3>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Block</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Tx Hash</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Owner</th>
+	</tr>
+		{{- range $i, $swap:= .ENSInfo.OwnershipChangeHistory}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateTime}}</td>
+				<td class="mkt_trade_field">{{.BlockNum}}</td>
+				<td class="mkt_trade_field">
+					<a class=addr href="https://etherscan.io/tx/{{.TxHash}}">{{.TxHash}}</a>
+				</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/ens_name/{{.Owner}}">{{.Owner}}</a>
+				</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+<br/><br/>
+{{ if .ENSInfo.AddressChangeHistory }}
+<div class="market_info">
+<h3>List of address change history :</h3>
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date Assigned</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Block</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Tx Hash</th>
+	</tr>
+		{{- range $i, $swap:= .ENSInfo.AddressChangeHistory}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.AddressSetDate}}</td>
+				<td class="mkt_trade_field">{{.BlockNum}}</td>
+				<td class="mkt_trade_field addr">
+				{{ if eq "0x0000000000000000000000000000000000000000" .Address }}
+					Registration of ENS name ended
+				{{ else }}
+					<a href="/black/user/{{.Address}}">{{.Address}}</a>
+				{{ end }}
+				</td>
+				<td class="mkt_trade_field">
+					<a href="https://etherscan.io/tx/{{.TxHash}}" class=addr>{{.TxHash}}</a>
+				</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+{{ end }}
+</body>

@@ -1,0 +1,94 @@
+<html>
+<head>
+	<title>Random Walk Tokens</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/rwalk/tokens/list/sequential/{{.ContractAddresses.RandomWalk}}">Token Mints</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/current_offers/{{.ContractAddresses.RandomWalk}}/{{.ContractAddresses.MarketPlace}}/0">Active Offers</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/trading/history/{{.ContractAddresses.MarketPlace}}/0/1000000">Trade History</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/statistics/by_token/{{.ContractAddresses.RandomWalk}}">Token Stats</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/statistics/by_market/{{.ContractAddresses.MarketPlace}}">Market Stats</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/floor_price/{{.ContractAddresses.RandomWalk}}/{{.ContractAddresses.MarketPlace}}">Floor Price</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/statistics/mint_intervals/{{.ContractAddresses.RandomWalk}}">Mint Intervals</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/statistics/top_users">Top Users</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li style="width: 20em;">
+		<a class="btn_link" href="/black/rwalk/statistics/withdrawal_chart/{{.ContractAddresses.RandomWalk}}">Withdrawal Chart</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li style="width: 20em;">
+		<a class="btn_link" href="/black/rwalk/trading/sales/{{.ContractAddresses.MarketPlace}}">Finalized Sales</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li style="width: 20em;">
+		<a class="btn_link" href="/black/rwalk/statistics/floor_price/{{.ContractAddresses.MarketPlace}}/{{.ContractAddresses.RandomWalk}}/0/0/0">Floor Price Chart</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li style="width: 20em;">
+		<a class="btn_link" href="/black/rwalk/download_mints/{{.ContractAddresses.RandomWalk}}">Export Mints</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<div class="main_info">
+<table style="float: right" class="index_stats">
+	<tr>
+		<td colspan=3 style="text-align:center;">
+			<h4 style="text-align:center;">Top 5 Tokens</h4>
+			<small>(Click on the link for trade history</small>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<th class="market_reports">TokenID</th>
+		<th class="market_reports">Seed</th>
+		<th class="market_reports">Total Trades</th>
+	</tr>
+	{{- range $i, $change := .Top5Tokens}}
+		<tr class="market_reports">
+			<td class="">{{.TokenId}}</td>
+			<td class="">
+				<a href="/black/rwalk/tokens/history/{{.TokenId}}/{{$.ContractAddresses.RandomWalk}}">{{.SeedHex}}</a>
+			</td>
+			<td class="" style="text-align:center;">{{.TotalTrades}}</td>
+		</tr>
+	{{- end}}
+	<tr>
+		<td colspan=3>
+			<code>
+				API: /api/rwalk/top5tokens<br/>
+
+				Example: /api/rwalk/top5tokens
+			</code>
+		</td>
+	</tr>
+</table>
+</div>
+</body>
+</html>

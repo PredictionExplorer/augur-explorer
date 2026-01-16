@@ -1,0 +1,87 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Admin Events</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>⚙️ Admin Events in Range</h1>
+			<div class="subtitle">Event Logs {{.EvtLogIdStart}} to {{.EvtLogIdEnd}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Event</th>
+					<th class="center">Block</th>
+					<th>Date</th>
+					<th>New Value</th>
+				</tr>
+				{{- range $i, $change := .AdminEvents}}
+					<tr>
+						<td>
+							{{ if eq 0 .RecordType}}Undefined{{end}}
+							{{ if eq 1 .RecordType}}CharityEthDonationAmount%Changed{{end}}
+							{{ if eq 2 .RecordType}}MainEthPrizeAmount%Changed{{end}}
+							{{ if eq 7 .RecordType}}Raffle%Changed{{end}}
+							{{ if eq 5 .RecordType}}Staking%Changed{{end}}
+							{{ if eq 6 .RecordType}}NumRaffleETHWinnersBiddingChanged{{end}}
+							{{ if eq 13 .RecordType}}NumRaffleNFTWinnersBiddingChanged{{end}}
+							{{ if eq 3 .RecordType}}DelayDurationBeforeNextRoundChanged{{end}}
+							{{ if eq 6 .RecordType}}CharityAddressChanged{{end}}
+							{{ if eq 17 .RecordType}}Upgraded{{end}}
+							{{ if eq 18 .RecordType}}TimeIncreaseChanged{{end}}
+							{{ if eq 19 .RecordType}}TimeoutClaimPrizeChanged{{end}}
+							{{ if eq 20 .RecordType}}PriceIncreaseChanged{{end}}
+							{{ if eq 21 .RecordType}}NanoSecondsExtraChanged{{end}}
+							{{ if eq 22 .RecordType}}InitialSecondsUntilPrizeChanged{{end}}
+							{{ if eq 23 .RecordType}}TreasurerAddressChanged{{end}}
+							{{ if eq 24 .RecordType}}ActivationTimeChanged{{end}}
+							{{ if eq 25 .RecordType}}RoundStartCSTAuctionLengthChanged{{end}}
+							{{ if eq 26 .RecordType}}Erc20RewardMultiplierChanged{{end}}
+							{{ if eq 27 .RecordType}}StartingBidPriceCSTMinLimitChanged{{end}}
+							{{ if eq 28 .RecordType}}MarketingRewardChanged{{end}}
+							{{ if eq 29 .RecordType}}TokenRewardChanged{{end}}
+							{{ if eq 30 .RecordType}}MaxMessageLengthChanged{{end}}
+							{{ if eq 31 .RecordType}}TokenGenerationScriptURL{{end}}
+							{{ if eq 32 .RecordType}}BaseURI{{end}}
+							{{ if eq 33 .RecordType}}Initialized{{end}}
+							{{ if eq 34 .RecordType}}OwnershipTransferred{{end}}
+							{{ if eq 35 .RecordType}}TimeoutDurationToWithdrawPrizesChanged{{end}}
+							{{ if eq 36 .RecordType}}EthDutchAuctionDurationDivisorChanged{{end}}
+							{{ if eq 37 .RecordType}}EthDutchAuctionEndingBidPriceDivisorChanged{{end}}
+							{{ if eq 38 .RecordType}}ChronoWarriorEthPrizeAmount%Changed{{end}}
+						</td>
+						<td class="center">{{.BlockNum}}</td>
+						<td>{{.DateTime}}</td>
+						<td class="monospace">
+							{{ if .IntegerValue}}{{.IntegerValue}}{{end}}
+							{{ if .AddressValue}}{{.AddressValue}}{{end}}
+							{{ if .StringValue}}{{.StringValue}}{{end}}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/system/admin_events/[evtlog_start]/[evtlog_end]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/system/admin_events/{{.EvtLogIdStart}}/{{.EvtLogIdEnd}}</code>
+		</div>
+	</div>
+</body>
+</html>

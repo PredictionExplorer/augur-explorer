@@ -1,0 +1,77 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Shares Swapped</title>
+</head>
+<body>
+	<h3 class="page_title">Shares Swaps for Market {{.MarketId}}<h3>
+<h4 class="page_title">
+</h4>
+<br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Market ID</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.MarketId}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Title</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.Title}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Description</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.Description}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Home Team</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.HomeTeam}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Away Team</td>
+		<td class="mkt_trade_hdr" style="text-align: left">{{.MarketInfo.AwayTeam}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: left">Market Rules</td>
+		<td class="mkt_trade_hdr" style="text-align: left">
+			{{- range $i, $item := .MarketInfo.MarketRules}}
+				{{.}}<br/>
+			{{- end }}
+		</td>
+	</tr>
+</table>
+<br/>
+<div id="arbitrum_augur_pools"></div>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Block</td>
+		<td class="mkt_trade_hdr" style="text-align: center">CreatedTime</td>
+		<td class="mkt_trade_hdr" style="text-align: center">User Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Outcome</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Operation Type</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Collateral</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Shares</td>
+	</tr>
+	{{- range $i, $rpt := .Swaps }}
+	<tr class="market_trades">
+		<td class="mkt_trade_field">{{.BlockNum}}</td>
+		<td class="mkt_trade_field">{{.CreatedDate}}</td>
+		<td class="mkt_trade_field">{{.UserAddr}}</td>
+		<td class="mkt_trade_field">{{.Outcome}} ({{.OutcomeStr}})</td>
+		<td class="mkt_trade_field">{{ if eq false .Buy}} BUY {{ else }} SELL {{end}}</td>
+		<td class="mkt_trade_field">{{ printf "%.2f" .Collateral}}</td>
+		<td class="mkt_trade_field">{{ printf "%.2f" .Shares}}</td>
+	</tr>
+	{{- end }}
+</table>
+<br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

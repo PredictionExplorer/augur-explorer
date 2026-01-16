@@ -1,0 +1,39 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<p>
+Pool ID: {{.PoolId}} ({{.PoolAid}})
+<br/>
+Token Id = {{.TokenAid}} , {{.TokenAddr}}
+</p>
+<h3>History of Balance change</h3>
+<table>
+	<tr>
+		<th>Block</th>
+		<th>DateTime</th>
+		<th>In Aid</th>
+		<th>Out Aid</th>
+		<th>Sign</th>
+		<th>Amount</th>
+		<th>Balance</th>
+		<th></th>
+	</tr>
+	{{- range $i, $change := .Balances}}
+	<tr>
+		<td>{{.BlockNum}}</td>
+		<td>{{.DateTime}}</td>
+		<td style="text-align:center;">{{.TokenInAid}}</td>
+		<td style="text-align:center;">{{.TokenOutAid}}</td>
+		<td style="text-align:center;">{{.OpSign}}</td>
+		<td style="text-align:right;">{{ .Amount }}</td>
+		<td style="text-align:right;">{{ .Balance }}</td>
+		<td>{{- if .IsSwap }}&nbsp;&nbsp; Swap{{end}}</td>
+	</tr>
+	{{- end}}
+</table>
+</body>
+</html>

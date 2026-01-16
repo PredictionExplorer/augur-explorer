@@ -1,0 +1,374 @@
+diff -Naur uniswap-v3-core/contracts/libraries/BitMath.sol uniswap-v3-core-mine/contracts/libraries/BitMath.sol
+--- uniswap-v3-core/contracts/libraries/BitMath.sol	2022-07-18 15:25:37.931163910 -0500
++++ uniswap-v3-core-mine/contracts/libraries/BitMath.sol	2022-07-18 15:27:15.902429763 -0500
+@@ -11,7 +11,7 @@
+     /// @param x the value for which to compute the most significant bit, must be greater than 0
+     /// @return r the index of the most significant bit
+     function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
+-        require(x > 0);
++        require(x > 0,"bitmath:mostSignificatnBit(): x>0");
+ 
+         if (x >= 0x100000000000000000000000000000000) {
+             x >>= 128;
+@@ -51,7 +51,7 @@
+     /// @param x the value for which to compute the least significant bit, must be greater than 0
+     /// @return r the index of the least significant bit
+     function leastSignificantBit(uint256 x) internal pure returns (uint8 r) {
+-        require(x > 0);
++        require(x > 0,"bitmath:leastSignificantBit(): x>0");
+ 
+         r = 255;
+         if (x & type(uint128).max > 0) {
+diff -Naur uniswap-v3-core/contracts/libraries/FullMath.sol uniswap-v3-core-mine/contracts/libraries/FullMath.sol
+--- uniswap-v3-core/contracts/libraries/FullMath.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/libraries/FullMath.sol	2022-07-18 15:29:05.030037725 -0500
+@@ -31,7 +31,7 @@
+ 
+         // Handle non-overflow cases, 256 by 256 division
+         if (prod1 == 0) {
+-            require(denominator > 0);
++            require(denominator > 0,"fullmath:mulDiv(): denominator>0");
+             assembly {
+                 result := div(prod0, denominator)
+             }
+@@ -40,7 +40,7 @@
+ 
+         // Make sure the result is less than 2**256.
+         // Also prevents denominator == 0
+-        require(denominator > prod1);
++        require(denominator > prod1,"fullmath:mulDiv(): denominator>prod1");
+ 
+         ///////////////////////////////////////////////
+         // 512 by 256 division.
+@@ -117,7 +117,7 @@
+     ) internal pure returns (uint256 result) {
+         result = mulDiv(a, b, denominator);
+         if (mulmod(a, b, denominator) > 0) {
+-            require(result < type(uint256).max);
++            require(result < type(uint256).max,"fullmath:mulDivRoundingUp(): result < max");
+             result++;
+         }
+     }
+diff -Naur uniswap-v3-core/contracts/libraries/LowGasSafeMath.sol uniswap-v3-core-mine/contracts/libraries/LowGasSafeMath.sol
+--- uniswap-v3-core/contracts/libraries/LowGasSafeMath.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/libraries/LowGasSafeMath.sol	2022-07-18 15:35:38.342862091 -0500
+@@ -9,7 +9,7 @@
+     /// @param y The addend
+     /// @return z The sum of x and y
+     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
+-        require((z = x + y) >= x);
++        require((z = x + y) >= x,"lowgassafemath:add() (z=x+y)>=x");
+     }
+ 
+     /// @notice Returns x - y, reverts if underflows
+@@ -17,7 +17,7 @@
+     /// @param y The subtrahend
+     /// @return z The difference of x and y
+     function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
+-        require((z = x - y) <= x);
++        require((z = x - y) <= x,"lowgassafemath:sub() (z=x-y)<=x");
+     }
+ 
+     /// @notice Returns x * y, reverts if overflows
+@@ -25,7 +25,7 @@
+     /// @param y The multiplier
+     /// @return z The product of x and y
+     function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+-        require(x == 0 || (z = x * y) / x == y);
++        require(x == 0 || (z = x * y) / x == y,"lowgassafemath:mul() x==0||(z=x*y)/x==y");
+     }
+ 
+     /// @notice Returns x + y, reverts if overflows or underflows
+@@ -33,7 +33,7 @@
+     /// @param y The addend
+     /// @return z The sum of x and y
+     function add(int256 x, int256 y) internal pure returns (int256 z) {
+-        require((z = x + y) >= x == (y >= 0));
++        require((z = x + y) >= x == (y >= 0),"lowgassafemath:add(): (z=x+y)>=x==(y>=0)");
+     }
+ 
+     /// @notice Returns x - y, reverts if overflows or underflows
+@@ -41,6 +41,6 @@
+     /// @param y The subtrahend
+     /// @return z The difference of x and y
+     function sub(int256 x, int256 y) internal pure returns (int256 z) {
+-        require((z = x - y) <= x == (y >= 0));
++        require((z = x - y) <= x == (y >= 0),"lowgassafemath:sub(): (z=x-y)<=x==(y>=0)");
+     }
+ }
+diff -Naur uniswap-v3-core/contracts/libraries/SafeCast.sol uniswap-v3-core-mine/contracts/libraries/SafeCast.sol
+--- uniswap-v3-core/contracts/libraries/SafeCast.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/libraries/SafeCast.sol	2022-07-18 15:34:53.685416409 -0500
+@@ -8,21 +8,21 @@
+     /// @param y The uint256 to be downcasted
+     /// @return z The downcasted integer, now type uint160
+     function toUint160(uint256 y) internal pure returns (uint160 z) {
+-        require((z = uint160(y)) == y);
++        require((z = uint160(y)) == y,"safecast:toUint160(): (z=uint160(y))=y");
+     }
+ 
+     /// @notice Cast a int256 to a int128, revert on overflow or underflow
+     /// @param y The int256 to be downcasted
+     /// @return z The downcasted integer, now type int128
+     function toInt128(int256 y) internal pure returns (int128 z) {
+-        require((z = int128(y)) == y);
++        require((z = int128(y)) == y,"safecast:toInt128(): (z=int128(y))");
+     }
+ 
+     /// @notice Cast a uint256 to a int256, revert on overflow
+     /// @param y The uint256 to be casted
+     /// @return z The casted integer, now type int256
+     function toInt256(uint256 y) internal pure returns (int256 z) {
+-        require(y < 2**255);
++        require(y < 2**255,"safecast:toInt256(): y<2*255");
+         z = int256(y);
+     }
+ }
+diff -Naur uniswap-v3-core/contracts/libraries/SqrtPriceMath.sol uniswap-v3-core-mine/contracts/libraries/SqrtPriceMath.sol
+--- uniswap-v3-core/contracts/libraries/SqrtPriceMath.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/libraries/SqrtPriceMath.sol	2022-07-18 15:41:43.242613865 -0500
+@@ -49,7 +49,7 @@
+             uint256 product;
+             // if the product overflows, we know the denominator underflows
+             // in addition, we must check that the denominator does not underflow
+-            require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product);
++            require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product,"sqrtpricemath:gethNextSqrtPriceFromAmount0RoundingUp(): (product=amount*sqrtPx96)/amount==sqrtPx96&&numerator1>product");
+             uint256 denominator = numerator1 - product;
+             return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
+         }
+@@ -90,7 +90,7 @@
+                         : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
+                 );
+ 
+-            require(sqrtPX96 > quotient);
++            require(sqrtPX96 > quotient,"sqrtpricemath:getNextSqrtPriceFromAmount1RoundingDown() sqrtPX96 > quotient");
+             // always fits 160 bits
+             return uint160(sqrtPX96 - quotient);
+         }
+@@ -109,8 +109,8 @@
+         uint256 amountIn,
+         bool zeroForOne
+     ) internal pure returns (uint160 sqrtQX96) {
+-        require(sqrtPX96 > 0);
+-        require(liquidity > 0);
++        require(sqrtPX96 > 0,"sqrtpricemath:getNextSqrtPriceFromInput(): sqrtPX96>0");
++        require(liquidity > 0,"sqrtpricemath:getNextSqrtPriceFromInput(): liquidity>0");
+ 
+         // round to make sure that we don't pass the target price
+         return
+@@ -132,8 +132,8 @@
+         uint256 amountOut,
+         bool zeroForOne
+     ) internal pure returns (uint160 sqrtQX96) {
+-        require(sqrtPX96 > 0);
+-        require(liquidity > 0);
++        require(sqrtPX96 > 0,"sqrtpricemath: getNextSqrtPriceFromOutput(): sqrtPX96>0");
++        require(liquidity > 0,"sqrtpricemath: getNextSqrtPriceFromOutput(): liquidity>0");
+ 
+         // round to make sure that we pass the target price
+         return
+@@ -161,7 +161,7 @@
+         uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
+         uint256 numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
+ 
+-        require(sqrtRatioAX96 > 0);
++        require(sqrtRatioAX96 > 0,"sqrtpricemath:getAmount0Delta(): sqrtRationAX96");
+ 
+         return
+             roundUp
+diff -Naur uniswap-v3-core/contracts/libraries/TickBitmap.sol uniswap-v3-core-mine/contracts/libraries/TickBitmap.sol
+--- uniswap-v3-core/contracts/libraries/TickBitmap.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/libraries/TickBitmap.sol	2022-07-18 15:42:29.700104245 -0500
+@@ -25,7 +25,7 @@
+         int24 tick,
+         int24 tickSpacing
+     ) internal {
+-        require(tick % tickSpacing == 0); // ensure that the tick is spaced
++        require(tick % tickSpacing == 0,"TickBitmap:flipTick(): flipTick()"); // ensure that the tick is spaced
+         (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
+         uint256 mask = 1 << bitPos;
+         self[wordPos] ^= mask;
+--- uniswap-v3-core/contracts/UniswapV3Factory.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/UniswapV3Factory.sol	2022-07-18 17:24:40.163330070 -0500
+@@ -37,12 +37,12 @@
+         address tokenB,
+         uint24 fee
+     ) external override noDelegateCall returns (address pool) {
+-        require(tokenA != tokenB);
++        require(tokenA != tokenB,"UniswapV3Factory:createPool() tokenA!=tokenB");
+         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+-        require(token0 != address(0));
++        require(token0 != address(0),"UniswapV3Factory:createPool() token0!=address(0)");
+         int24 tickSpacing = feeAmountTickSpacing[fee];
+-        require(tickSpacing != 0);
+-        require(getPool[token0][token1][fee] == address(0));
++        require(tickSpacing != 0,"UniswapV3Factory:createPool(): tickSpacing!=0");
++        require(getPool[token0][token1][fee] == address(0),"UniswapV3Factory:createPool(): require getPool[token0][token1][fee]=address(0)");
+         pool = deploy(address(this), token0, token1, fee, tickSpacing);
+         getPool[token0][token1][fee] = pool;
+         // populate mapping in the reverse direction, deliberate choice to avoid the cost of comparing addresses
+@@ -52,20 +52,20 @@
+ 
+     /// @inheritdoc IUniswapV3Factory
+     function setOwner(address _owner) external override {
+-        require(msg.sender == owner);
++        require(msg.sender == owner,"UniswapV3Factory:setOwner(): msg.sender=owner");
+         emit OwnerChanged(owner, _owner);
+         owner = _owner;
+     }
+ 
+     /// @inheritdoc IUniswapV3Factory
+     function enableFeeAmount(uint24 fee, int24 tickSpacing) public override {
+-        require(msg.sender == owner);
+-        require(fee < 1000000);
++        require(msg.sender == owner,"UniswapV3Factory:enableFeeAmount(): msg.sender==owner");
++        require(fee < 1000000,"UniswapV3Factory:enableFeeAmount(): fee<1000000");
+         // tick spacing is capped at 16384 to prevent the situation where tickSpacing is so large that
+         // TickBitmap#nextInitializedTickWithinOneWord overflows int24 container from a valid tick
+         // 16384 ticks represents a >5x price change with ticks of 1 bips
+-        require(tickSpacing > 0 && tickSpacing < 16384);
+-        require(feeAmountTickSpacing[fee] == 0);
++        require(tickSpacing > 0 && tickSpacing < 16384,"UniswapV3Factory:enableFeeAmount() tickSpacing>0 && tickSpacing<16384");
++        require(feeAmountTickSpacing[fee] == 0,"UniswapV3Factory:enableFeeAmount(): feeAmountTickSpacing[fee]==0");
+ 
+         feeAmountTickSpacing[fee] = tickSpacing;
+         emit FeeAmountEnabled(fee, tickSpacing);
+--- uniswap-v3-core/contracts/UniswapV3Pool.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/UniswapV3Pool.sol	2022-07-18 17:28:24.319497021 -0500
+@@ -110,7 +110,7 @@
+ 
+     /// @dev Prevents calling a function from anyone except the address returned by IUniswapV3Factory#owner()
+     modifier onlyFactoryOwner() {
+-        require(msg.sender == IUniswapV3Factory(factory).owner());
++        require(msg.sender == IUniswapV3Factory(factory).owner(),"UniswapV3Pool:onlyFactoryOwner(): msg.sender==IUniswapV3Factory(factory).owner()");
+         _;
+     }
+ 
+@@ -140,7 +140,7 @@
+     function balance0() private view returns (uint256) {
+         (bool success, bytes memory data) =
+             token0.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
+-        require(success && data.length >= 32);
++        require(success && data.length >= 32,"UniswapV3Pool:balance0() success&&data.length>=32");
+         return abi.decode(data, (uint256));
+     }
+ 
+@@ -150,7 +150,7 @@
+     function balance1() private view returns (uint256) {
+         (bool success, bytes memory data) =
+             token1.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
+-        require(success && data.length >= 32);
++        require(success && data.length >= 32,"UniswapV3Pool:balance1() success&&data.length>=32");
+         return abi.decode(data, (uint256));
+     }
+ 
+@@ -185,7 +185,7 @@
+                 lower.secondsOutside,
+                 lower.initialized
+             );
+-            require(initializedLower);
++            require(initializedLower,"UniswapV3Pool:snapshotCumulativeInside(): initializedLower");
+ 
+             bool initializedUpper;
+             (tickCumulativeUpper, secondsPerLiquidityOutsideUpperX128, secondsOutsideUpper, initializedUpper) = (
+@@ -194,7 +194,7 @@
+                 upper.secondsOutside,
+                 upper.initialized
+             );
+-            require(initializedUpper);
++            require(initializedUpper,"UniswapV3Pool:snapshotCumulativeInside(): initializedUpper");
+         }
+ 
+         Slot0 memory _slot0 = slot0;
+@@ -324,6 +324,7 @@
+             _slot0.tick
+         );
+ 
++        uint128 liquidityBeforeSaved;
+         if (params.liquidityDelta != 0) {
+             if (_slot0.tick < params.tickLower) {
+                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
+@@ -336,7 +337,7 @@
+             } else if (_slot0.tick < params.tickUpper) {
+                 // current tick is inside the passed range
+                 uint128 liquidityBefore = liquidity; // SLOAD for gas optimization
+-
++				liquidityBeforeSaved = liquidityBefore;
+                 // write an oracle entry
+                 (slot0.observationIndex, slot0.observationCardinality) = observations.write(
+                     _slot0.observationIndex,
+@@ -369,6 +370,7 @@
+                 );
+             }
+         }
++		emit DBG_MOD_POS(params.owner,params.tickLower,params.tickUpper,_slot0.tick,params.liquidityDelta,liquidityBeforeSaved,amount0,amount1,_slot0.sqrtPriceX96);
+     }
+ 
+     /// @dev Gets and updates a position with the given liquidity delta
+@@ -450,6 +452,7 @@
+                 ticks.clear(tickUpper);
+             }
+         }
++		emit DBG_UPD_POS(owner,tickLower,tickUpper,tick,liquidityDelta,_feeGrowthGlobal0X128,_feeGrowthGlobal1X128,feeGrowthInside0X128,feeGrowthInside1X128,flippedLower,flippedUpper);
+     }
+ 
+     /// @inheritdoc IUniswapV3PoolActions
+@@ -461,7 +464,7 @@
+         uint128 amount,
+         bytes calldata data
+     ) external override lock returns (uint256 amount0, uint256 amount1) {
+-        require(amount > 0);
++        require(amount > 0,"UniswapV3Pool:mint(): amount>0");
+         (, int256 amount0Int, int256 amount1Int) =
+             _modifyPosition(
+                 ModifyPositionParams({
+@@ -482,7 +485,6 @@
+         IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(amount0, amount1, data);
+         if (amount0 > 0) require(balance0Before.add(amount0) <= balance0(), 'M0');
+         if (amount1 > 0) require(balance1Before.add(amount1) <= balance1(), 'M1');
+-
+         emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
+     }
+ 
+@@ -636,7 +638,7 @@
+                 protocolFee: 0,
+                 liquidity: cache.liquidityStart
+             });
+-
++		emit DBG_SWAP_HEAD(address(this),zeroForOne,amountSpecified,slot0Start.sqrtPriceX96,sqrtPriceLimitX96,slot0.sqrtPriceX96,state.tick);
+         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
+         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96) {
+             StepComputations memory step;
+@@ -658,7 +660,6 @@
+ 
+             // get the price for the next tick
+             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+-
+             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
+             (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
+                 state.sqrtPriceX96,
+@@ -689,6 +690,7 @@
+             if (state.liquidity > 0)
+                 state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+ 
++			emit DBG_SWAP_LOOP(address(this),state.sqrtPriceX96,step.sqrtPriceStartX96,step.sqrtPriceNextX96,state.tick,cache.tickCumulative,step.initialized,step.amountIn,step.amountOut,state.amountCalculated,step.feeAmount,liquidity,exactInput,state.feeGrowthGlobalX128);
+             // shift tick if we reached the next price
+             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+                 // if the tick is initialized, run the tick transition
+@@ -782,7 +784,7 @@
+             IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
+             require(balance1Before.add(uint256(amount1)) <= balance1(), 'IIA');
+         }
+-
++		emit DBG_SWAP_TAIL(address(this),feeGrowthGlobal0X128,feeGrowthGlobal1X128,state.tick,slot0.sqrtPriceX96,state.liquidity,(state.liquidity-cache.liquidityStart));
+         emit Swap(msg.sender, recipient, amount0, amount1, state.sqrtPriceX96, state.liquidity, state.tick);
+         slot0.unlocked = true;
+     }
+@@ -838,6 +840,7 @@
+         require(
+             (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
+                 (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
++			,"UniswapV3Pool:setFeeProtocol: line 840"
+         );
+         uint8 feeProtocolOld = slot0.feeProtocol;
+         slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);

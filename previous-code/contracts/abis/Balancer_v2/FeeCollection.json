@@ -1,0 +1,30 @@
+[{
+	"anonymous":false,
+	"inputs": [
+		{
+			"indexed":false,
+			"internalType":"uint256",
+			"name":"collectedBase",
+			"type":"uint256"
+		},
+		{
+			"indexed":false,
+			"internalType":"uint256",
+			"name":"collectedBond",
+			"type":"uint256"
+		},
+		{
+			"indexed":false,
+			"internalType":		"uint256",
+			"name":"remainingBase",
+			"type":"uint256"
+		},
+		{
+			"indexed":false,
+			"internalType":"uint256",
+			"name":"remainingBond",
+			"type":"uint256"
+		}
+	],
+	"name":"FeeCollection","type":"event"
+}]

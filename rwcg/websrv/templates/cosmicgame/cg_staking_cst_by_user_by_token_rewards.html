@@ -1,0 +1,51 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CST Staking Rewards By Token</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 CST Staking Rewards By Token</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Token ID</th>
+					<th class="right">Reward Collected</th>
+					<th class="right">Reward To Collect</th>
+				</tr>
+				{{- range $i, $change := .RewardsByToken}}
+					<tr>
+						<td class="center">
+							<a href="/black/cosmicgame/staking/cst/rewards/by_user/by_token/details/{{$.UserAddr}}/{{.TokenId}}">{{.TokenId}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .RewardCollectedEth}} ETH</td>
+						<td class="right">{{printf "%.6f" .RewardToCollectEth}} ETH</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/{{.UserAddr}}</code>
+		</div>
+	</div>
+</body>
+</html>

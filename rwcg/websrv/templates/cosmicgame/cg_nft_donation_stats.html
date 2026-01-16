@@ -1,0 +1,47 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>NFT Donation Statistics</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📊 NFT Donation Statistics</h1>
+			<div class="subtitle">Statistics on donated NFT tokens</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Token Address</th>
+					<th class="center">Number of Donated Tokens</th>
+				</tr>
+				{{- range $i, $change := .NFTDonationStats}}
+					<tr>
+						<td class="monospace">{{.TokenAddress}}</td>
+						<td class="center">{{.NumDonations}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/statistics</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/statistics</code>
+		</div>
+	</div>
+</body>
+</html>

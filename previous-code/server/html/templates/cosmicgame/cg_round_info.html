@@ -1,0 +1,436 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Round #{{.RoundInfo.RoundNum}} Details</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🏆 Round #{{.RoundInfo.RoundNum}} Details</h1>
+			<div class="subtitle">Complete round information and statistics</div>
+		</div>
+
+		<!-- Transaction Info -->
+		<div class="section-card">
+			<div class="section-header">Transaction Information</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.RoundInfo.ClaimPrizeTx.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.RoundInfo.ClaimPrizeTx.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction ID</div>
+					<div class="detail-value">{{.RoundInfo.ClaimPrizeTx.Tx.TxId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.RoundInfo.ClaimPrizeTx.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.RoundInfo.ClaimPrizeTx.Tx.DateTime}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Main Prize Info -->
+		<div class="section-card">
+			<div class="section-header">Main Prize Information</div>
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">ETH Prize</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.MainPrize.EthAmountEth}}</div>
+					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">CST Prize</div>
+					<div class="stat-value">{{printf "%.2f" .RoundInfo.MainPrize.CstAmountEth}}</div>
+					<div class="stat-sublabel">CST</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">NFT Token ID</div>
+					<div class="stat-value">{{.RoundInfo.MainPrize.NftTokenId}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Seed</div>
+					<div class="stat-value" style="font-size: 1.2em;">{{.RoundInfo.MainPrize.Seed}}</div>
+				</div>
+			</div>
+			<div class="details-list mt-2">
+				<div class="detail-row">
+					<div class="detail-label">Winner Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.RoundInfo.MainPrize.WinnerAddr}}">{{.RoundInfo.MainPrize.WinnerAddr}}</a>
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Timeout Timestamp</div>
+					<div class="detail-value">{{.RoundInfo.MainPrize.TimeoutTs}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Special Winners -->
+		<div class="section-card">
+			<div class="section-header">Special Prize Winners</div>
+			
+			<div class="sub-grid">
+				<div class="sub-card">
+					<div class="sub-header">🏃 Endurance Champion</div>
+					<div class="details-list">
+						<div class="detail-row">
+							<div class="detail-label">Winner</div>
+							<div class="detail-value monospace">
+								<a href="/black/cosmicgame/user/info/{{.RoundInfo.EnduranceChampion.WinnerAddr}}">{{.RoundInfo.EnduranceChampion.WinnerAddr}}</a>
+							</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">NFT Token ID</div>
+							<div class="detail-value">{{.RoundInfo.EnduranceChampion.NftTokenId}}</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">CST Amount</div>
+							<div class="detail-value">{{printf "%.2f" .RoundInfo.EnduranceChampion.CstAmountEth}} CST</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="sub-card">
+					<div class="sub-header">🎯 Last CST Bidder</div>
+					<div class="details-list">
+						<div class="detail-row">
+							<div class="detail-label">Winner</div>
+							<div class="detail-value monospace">
+								<a href="/black/cosmicgame/user/info/{{.RoundInfo.LastCstBidder.WinnerAddr}}">{{.RoundInfo.LastCstBidder.WinnerAddr}}</a>
+							</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">NFT Token ID</div>
+							<div class="detail-value">{{.RoundInfo.LastCstBidder.NftTokenId}}</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">CST Amount</div>
+							<div class="detail-value">{{printf "%.2f" .RoundInfo.LastCstBidder.CstAmountEth}} CST</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="sub-card">
+					<div class="sub-header">⏱️ Chrono Warrior</div>
+					<div class="details-list">
+						<div class="detail-row">
+							<div class="detail-label">Winner</div>
+							<div class="detail-value monospace">
+								<a href="/black/cosmicgame/user/info/{{.RoundInfo.ChronoWarrior.WinnerAddr}}">{{.RoundInfo.ChronoWarrior.WinnerAddr}}</a>
+							</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">ETH Amount</div>
+							<div class="detail-value">{{printf "%.6f" .RoundInfo.ChronoWarrior.EthAmountEth}} ETH</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">CST Amount</div>
+							<div class="detail-value">{{printf "%.2f" .RoundInfo.ChronoWarrior.CstAmountEth}} CST</div>
+						</div>
+						<div class="detail-row">
+							<div class="detail-label">NFT Token ID</div>
+							<div class="detail-value">{{.RoundInfo.ChronoWarrior.NftTokenId}}</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Round Statistics -->
+		<div class="section-card">
+			<div class="section-header">Round Statistics</div>
+			<div class="stats-dashboard">
+				<div class="stat-card">
+					<div class="stat-label">Total Bids</div>
+					<div class="stat-value">{{.RoundInfo.RoundStats.TotalBids}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Donated NFTs</div>
+					<div class="stat-value">{{.RoundInfo.RoundStats.TotalDonatedNFTs}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Raffle ETH</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.RoundStats.TotalRaffleEthDepositsEth}}</div>
+					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Raffle NFTs</div>
+					<div class="stat-value">{{.RoundInfo.RoundStats.TotalRaffleNFTs}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Staking Deposit</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.StakingDeposit.StakingDepositAmountEth}}</div>
+					<div class="stat-sublabel">ETH</div>
+				</div>
+			</div>
+
+			<div class="section-subheader">Round Timing</div>
+			<div class="info-grid">
+				{{ if .RoundInfo.RoundStats.ParamWindowStartTime }}
+				<div class="info-item">
+					<div class="info-label">Parameter Window Start</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.ParamWindowStartTime}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Activation Time Set</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.ActivationTime}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Parameter Window Duration</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.ParamWindowDurationSeconds}} seconds</div>
+				</div>
+				{{ end }}
+				<div class="info-item">
+					<div class="info-label">Round Started (First Bid)</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.RoundStartTime}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Round Ended (Prize Claimed)</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.RoundEndTime}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Round Duration</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.RoundDurationSeconds}} seconds</div>
+				</div>
+			</div>
+
+			<div class="info-grid mt-2">
+				<div class="info-item">
+					<div class="info-label">Charity Address</div>
+					<div class="info-value monospace">{{.RoundInfo.CharityDeposit.CharityAddress}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Charity Deposit</div>
+					<div class="info-value">{{printf "%.6f" .RoundInfo.CharityDeposit.CharityAmountETH}} ETH</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Unclaimed Donated NFTs</div>
+					<div class="info-value">
+						<a href="/black/cosmicgame/donations/nft/unclaimed/by_round/{{.RoundInfo.RoundNum}}">View Unclaimed</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- All Prizes Table -->
+		<div class="section-card">
+			<div class="section-header">All Prizes for This Round</div>
+			<table class="data-table">
+				<tr>
+					<th>Prize Type</th>
+					<th>Winner Address</th>
+					<th class="right">ETH Amount</th>
+					<th class="right">CST Amount</th>
+					<th class="center">NFT Token ID</th>
+				</tr>
+				{{- range $i, $change := .RoundInfo.AllPrizes}}
+					<tr>
+						<td>
+							{{ if eq 0 .RecordType}}<span class="badge badge-warning">Main Prize ETH</span>{{end}}
+							{{ if eq 1 .RecordType}}<span class="badge badge-info">Main Prize CST</span>{{end}}
+							{{ if eq 2 .RecordType}}<span class="badge badge-success">Main Prize CS NFT</span>{{end}}
+							{{ if eq 3 .RecordType}}<span class="badge badge-default">Last CST Bidder NFT</span>{{end}}
+							{{ if eq 4 .RecordType}}<span class="badge badge-default">Last CST Bidder CST</span>{{end}}
+							{{ if eq 5 .RecordType}}<span class="badge badge-success">Endurance Champion NFT</span>{{end}}
+							{{ if eq 6 .RecordType}}<span class="badge badge-info">Endurance Champion CST</span>{{end}}
+							{{ if eq 7 .RecordType}}<span class="badge badge-warning">Chrono Warrior ETH</span>{{end}}
+							{{ if eq 8 .RecordType}}<span class="badge badge-info">Chrono Warrior CST</span>{{end}}
+							{{ if eq 9 .RecordType}}<span class="badge badge-success">Chrono Warrior NFT</span>{{end}}
+							{{ if eq 10 .RecordType}}<span class="badge badge-warning">Raffle ETH (Bidders)</span>{{end}}
+							{{ if eq 11 .RecordType}}<span class="badge badge-info">Raffle CST (Bidders)</span>{{end}}
+							{{ if eq 12 .RecordType}}<span class="badge badge-success">Raffle NFT (Bidders)</span>{{end}}
+							{{ if eq 13 .RecordType}}<span class="badge badge-info">Raffle CST (RWalk)</span>{{end}}
+							{{ if eq 14 .RecordType}}<span class="badge badge-success">Raffle NFT (RWalk)</span>{{end}}
+							{{ if eq 15 .RecordType}}<span class="badge badge-warning">Staking Deposit ETH</span>{{end}}
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="right">
+							{{ if or (eq 0 .RecordType) (eq 7 .RecordType) (eq 10 .RecordType) (eq 15 .RecordType) }}
+								{{printf "%.6f" .AmountEth}} ETH
+							{{ end }}
+						</td>
+						<td class="right">
+							{{ if or (eq 1 .RecordType) (eq 4 .RecordType) (eq 6 .RecordType) (eq 8 .RecordType) (eq 11 .RecordType) (eq 13 .RecordType) }}
+								{{printf "%.4f" .AmountEth}} CST
+							{{ end }}
+						</td>
+						<td class="center">
+							{{ if or (eq 2 .RecordType) (eq 3 .RecordType) (eq 5 .RecordType) (eq 9 .RecordType) (eq 12 .RecordType) (eq 14 .RecordType) }}
+								{{.TokenId}}
+							{{ end }}
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<!-- Raffle NFT Winners (Bidders) -->
+		<div class="section-card">
+			<div class="section-header">🎲 Raffle NFT Winners (Bidders)</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Winner Index</th>
+					<th class="center">Round</th>
+					<th class="center">NFT Token ID</th>
+					<th class="right">CST Amount</th>
+				</tr>
+				{{- range $i, $change := .RoundInfo.RaffleNFTWinners}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="right">{{printf "%.4f" .CstAmountEth}} CST</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<!-- Staking NFT Winners -->
+		<div class="section-card">
+			<div class="section-header">🚶 Staking NFT Winners (RandomWalk Stakers)</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Winner Index</th>
+					<th class="center">Round</th>
+					<th class="center">NFT Token ID</th>
+					<th class="right">CST Amount</th>
+				</tr>
+				{{- range $i, $change := .RoundInfo.StakingNFTWinners}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="right">{{printf "%.4f" .CstAmountEth}} CST</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<!-- Raffle ETH Deposits -->
+		<div class="section-card">
+			<div class="section-header">💰 Raffle ETH Deposits (Bidders)</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Winner</th>
+					<th class="center">Winner Index</th>
+					<th class="center">Round</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .RoundInfo.RaffleETHDeposits}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="center">{{.WinnerIndex}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<!-- Donated NFTs -->
+		<div class="section-card">
+			<div class="section-header">🎁 Donated NFTs</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Index</th>
+					<th>Donor</th>
+					<th>Token Address</th>
+					<th class="center">NFT Token ID</th>
+					<th>Token URI</th>
+				</tr>
+				{{- range $i, $change := .DonatedNFTs}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.Index}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="center">{{.NFTTokenId}}</td>
+						<td style="word-break: break-all; max-width: 300px;">{{.NFTTokenURI}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<!-- Donated ERC20 Tokens -->
+		<div class="section-card">
+			<div class="section-header">💎 Donated ERC20 Tokens</div>
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th>Donor</th>
+					<th>Token Address</th>
+					<th class="right">Amount</th>
+				</tr>
+				{{- range $i, $change := .DonatedERC20s}}
+					<tr>
+						<td>{{.Tx.BlockNum}}</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+						</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="right">{{printf "%.4f" .AmountEth}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/rounds/info/[prize_num]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/rounds/info/{{.RoundInfo.RoundNum}}</code>
+		</div>
+	</div>
+</body>
+</html>

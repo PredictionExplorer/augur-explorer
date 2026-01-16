@@ -1,0 +1,122 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>CST Stake Action Info</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>💰 CST Stake Action Information</h1>
+			<div class="subtitle">Action ID: {{.CombinedCSTStakingRecordInfo.Stake.ActionId}}</div>
+		</div>
+
+		<!-- Stake Action -->
+		<div class="section-card">
+			<div class="section-header">Stake Action Info</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Stake.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Stake.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.CombinedCSTStakingRecordInfo.Stake.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Stake.Tx.DateTime}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Action ID</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Stake.ActionId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token ID</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Stake.TokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Num Staked NFTs</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Stake.NumStakedNFTs}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Staker Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.CombinedCSTStakingRecordInfo.Stake.StakerAddr}}">{{.CombinedCSTStakingRecordInfo.Stake.StakerAddr}}</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Unstake Action -->
+		<div class="section-card">
+			<div class="section-header">Unstake Action Info</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Event Log ID</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Unstake.Tx.EvtLogId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Block Number</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Unstake.Tx.BlockNum}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Transaction Hash</div>
+					<div class="detail-value monospace">{{.CombinedCSTStakingRecordInfo.Unstake.Tx.TxHash}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">DateTime</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Unstake.Tx.DateTime}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Action ID</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Unstake.ActionId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Token ID</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Unstake.TokenId}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Num Staked NFTs</div>
+					<div class="detail-value">{{.CombinedCSTStakingRecordInfo.Unstake.NumStakedNFTs}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Staking Reward</div>
+					<div class="detail-value">{{printf "%.6f" .CombinedCSTStakingRecordInfo.Unstake.RewardAmountEth}} ETH</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Reward Per Token</div>
+					<div class="detail-value">{{printf "%.6f" .CombinedCSTStakingRecordInfo.Unstake.RewardPerTokenEth}} ETH</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Staker Address</div>
+					<div class="detail-value monospace">
+						<a href="/black/cosmicgame/user/info/{{.CombinedCSTStakingRecordInfo.Unstake.StakerAddr}}">{{.CombinedCSTStakingRecordInfo.Unstake.StakerAddr}}</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/actions/info/[action_id]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/staking/cst/actions/info/{{.CombinedCSTStakingRecordInfo.Stake.ActionId}}</code>
+		</div>
+	</div>
+</body>
+</html>

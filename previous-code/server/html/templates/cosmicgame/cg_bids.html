@@ -1,0 +1,71 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Bids</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📊 All Bids</h1>
+			<div class="subtitle">Complete bidding history</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th class="center">Bid Type</th>
+					<th>Bidder</th>
+					<th class="right">Amount (ETH)</th>
+					<th class="right">Tokens Earned</th>
+					<th class="right">CST Burned</th>
+					<th class="center">RWalk</th>
+					<th>Message</th>
+				</tr>
+				{{- range $i, $change := .Bids}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/bid/info/{{.Tx.EvtLogId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">
+							{{ if eq 0 .BidType}}<span class="badge badge-info">ETH</span>{{end}}
+							{{ if eq 1 .BidType}}<span class="badge badge-success">RandomWalk</span>{{end}}
+							{{ if eq 2 .BidType}}<span class="badge badge-warning">Cosmic Token</span>{{end}}
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+						</td>
+						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
+						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
+						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
+						<td class="center">{{ .RWalkNFTId }}</td>
+						<td>{{ .Message }}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/bid/list/all/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/bid/list/all/0/1000000</code>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<table>
+	<tr>
+		<td>Timeframe code</td>
+		<td>{{.TfCode}}</td>
+	</tr>
+	<tr>
+		<td>Start date</td>
+		<td>{{.StartDate}}</td>
+	</tr>
+	<tr>
+		<td>EndDate</td>
+		<td>{{.EndDate}}</td>
+	</tr>
+</table>
+<br/>
+<h3>Top profitable pools</h3>
+<table>
+	<tr>
+		<th>Pool</th>
+		<th>Profit</th>
+	</tr>
+	{{- range $i, $change := .Pools}}
+	<tr>
+		<td>
+			<a href="/balancerv2/poolinfo.html?pool_id={{.PoolId}}">
+				{{.PoolAddr}}
+			</a>
+		</td>
+		<td style="text-align:right;">{{ printf "%.2f" .AmountUSD }}</td>
+	</tr>
+	{{- end}}
+</table>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<p>
+Pool ID: {{.PoolInfo.PoolId}}
+</p>
+{{- if .PoolInfo.Unhandled }}
+<p>Swaps Unhandled: {{.PoolInfo.UnhandledComments}} </p>
+{{- end }}
+<p>
+<a href="/balancerv2/pool_fees_daily/{{$.PoolInfo.PoolAid}}/0/0">Fee Returns</a>
+<a href="/balancerv2/swap_history/{{$.PoolInfo.PoolAid}}/0/0">Swap History</a>
+<a href="/balancerv2/pool_fund_holders/{{$.PoolInfo.PoolAid}}">Distribution of Funds</a>
+<h3>Registered Tokens</h3>
+<table>
+	<tr>
+		<th>Id</th>
+		<th>Address</th>
+		<th>Symbol/Name</th>
+		<th>Balance in USD</th>
+		<th></th>
+	</tr>
+	{{- range $i, $change := .Tokens}}
+	<tr>
+		<td>{{.Token.TokenAid}}</td>
+		<td>{{.Token.TokenAddr}}</td>
+		<td>{{.Token.Symbol}} / {{.Token.Name}}</td>
+		<td style="text-align:right;">{{ printf "%.2f" .Token.CurBalanceUSD}}</td>
+		<td><a href="/balancerv2/tokbalhistory/{{$.PoolInfo.PoolAid}}/{{.Token.TokenAid}}">Balance History</a></td>
+	</tr>
+	{{- end}}
+</table>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Cosmic Signature Token List</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎨 Cosmic Signature Token List</h1>
+			<div class="subtitle">All minted CS NFTs</div>
+		</div>
+
+		<div class="section-card">
+			<div class="action-grid" style="margin-bottom: 2em;">
+				<div class="action-item">
+					<nav>
+						<ul>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/black/cosmicgame/cst/distribution">View Distribution</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+
+			<table class="data-table">
+				<tr>
+					<th>DateTime</th>
+					<th class="center">Token ID</th>
+					<th>Winner</th>
+					<th>Current Owner</th>
+					<th class="center">Round</th>
+					<th class="center">Prize Type</th>
+					<th class="center">Names</th>
+				</tr>
+				{{- range $i, $change := .CosmicSignatureTokenList}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.Tx.DateTime}}</a>
+						</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+						</td>
+						<td class="monospace">
+							<a href="/black/cosmicgame/user/info/{{.CurOwnerAddr}}">{{.CurOwnerAddr}}</a>
+						</td>
+						<td class="center">{{.RoundNum}}</td>
+						<td class="center">
+							{{ if eq 0 .RecordType}}<span class="badge badge-default">Unknown</span>{{end}}
+							{{ if eq 1 .RecordType}}<span class="badge badge-info">Raffle NFT</span>{{end}}
+							{{ if eq 2 .RecordType}}<span class="badge badge-success">Staking RWalk</span>{{end}}
+							{{ if eq 7 .RecordType}}<span class="badge badge-warning">Main Prize</span>{{end}}
+							{{ if eq 5 .RecordType}}<span class="badge badge-success">Endurance</span>{{end}}
+							{{ if eq 6 .RecordType}}<span class="badge badge-info">Last CST Bidder</span>{{end}}
+						</td>
+						<td class="center">
+							<a href="/black/cosmicgame/cst/names/history/{{.TokenId}}">📝 View Names</a>
+						</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/cst/list/all/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/cst/list/all/0/1000000</code>
+		</div>
+	</div>
+</body>
+</html>

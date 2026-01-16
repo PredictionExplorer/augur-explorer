@@ -1,0 +1,14 @@
+{{define "coin_type_lookup"}}
+<span>
+	{{ if eq . 60 }}Ethereum{{end}}
+	{{ if eq . 0 }}Bitcoin{{end}}
+	{{ if eq . 2 }}Litecoin{{end}}
+	{{ if eq . 3 }}Dogecoin{{end}}
+	{{ if eq . 22 }}Monacoin{{end}}
+	{{ if eq . 61 }}Ethereum Classic{{end}}
+	{{ if eq . 137}}Rootstock{{end}}
+	{{ if eq . 144}}Ripple{{end}}
+	{{ if eq . 145}}Bitcoin Cash{{end}}
+	{{ if eq . 714}}Binance{{end}}
+</span>
+{{end}}

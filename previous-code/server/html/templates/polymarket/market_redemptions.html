@@ -1,0 +1,36 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Payout redemption operations for Polymarkets Market {{.MarketId}}</title>
+</head>
+<body>
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://code.highcharts.com/modules/data.js"></script>
+	<h3 class="page_title">Payout redemption operations for market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<div id="price_history_graph"></div>
+<h3>Payout redemptions</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date </th>
+		<th class="market_reports">Block</th>
+		<th class="market_reports">Outcomes</th>
+		<th class="market_reports">Redeemer</th>
+		<th class="market_reports">Collateral (out)</th>
+	</tr>
+	{{- range $i, $change := .PayoutRedemptions }}
+		<tr class="market_reports">
+			<td class="market_reports_field" title="{{.Id}}">
+				{{.DateTime}}
+			</td>
+			<td class="market_reports_field">{{.BlockNum}}</td>
+			<td class="market_reports_field">{{.Outcomes}}</td>
+			<td class="market_reports_field">{{.RedeemerAddr}}</td>
+			<td class="market_reports_field">{{printf "%.6f" .Payout}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
+</html>

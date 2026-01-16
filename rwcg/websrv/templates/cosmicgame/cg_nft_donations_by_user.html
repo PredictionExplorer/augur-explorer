@@ -1,0 +1,65 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>NFT Donations by User</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🎁 NFTs Donated by User</h1>
+			<div class="address-display">{{.UserAddr}}</div>
+			<div class="subtitle" style="margin-top: 1em;">Donor Perspective</div>
+		</div>
+
+		<div class="alert alert-info">
+			<strong>Note:</strong> This shows NFTs YOU donated. To see NFTs you claimed as a winner, use 
+			<a href="/black/cosmicgame/donations/nft/claims/by_user/{{.UserAddr}}" style="color: #4CAF50;">NFT Claims</a>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>DateTime</th>
+					<th class="center">Round</th>
+					<th>Token Address</th>
+					<th class="center">NFT ID</th>
+					<th>NFT URI</th>
+				</tr>
+				{{- range $i, $change := .NFTDonationsByDonor}}
+					<tr>
+						<td>
+							<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+						</td>
+						<td>{{.Tx.DateTime}}</td>
+						<td class="center">
+							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.RoundNum}}</a>
+						</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="center">{{.NFTTokenId}}</td>
+						<td style="word-break: break-all; max-width: 300px;">{{.NFTTokenURI}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/by_user/[user_addr]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/donations/nft/by_user/{{.UserAddr}}</code>
+		</div>
+	</div>
+</body>
+</html>

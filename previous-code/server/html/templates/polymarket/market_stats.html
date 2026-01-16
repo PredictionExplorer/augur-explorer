@@ -1,0 +1,55 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Polymarkets Market {{.MarketInfo.MarketId}}</title>
+	<meta name="description" content="{{.MarketInfo.Description}}">
+</head>
+<body>
+<h3 class="page_title">Market Statistics </h3>
+<table class="market_detail">
+<tr class="market_detail">
+	<td nowrap>Market ID:</td>
+	<td class="addr" >{{.MarketId}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Open Interest (amount of liquidity)</td>
+	<td>{{printf "%.4f"  .MarketStats.OpenInterest}} USDC</td>
+</tr>
+<tr class="market_detail">
+	<td>Total number of liquidity operations</td>
+	<td>{{.MarketStats.NumLiquidityOps}}</td>
+</tr>
+<tr class="market_detail">
+	<td nowrap>Total number of trades</td>
+	<td>{{.MarketStats.NumTrades}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total Volume registeredf for all time</td>
+	<td>{{printf "%.4f" .MarketStats.TotalVolume}} USDC</td>
+</tr>
+<tr class="market_detail">
+	<td>Total Fees Collected</td>
+	<td>{{printf "%.4f" .MarketStats.TotalFeesCollected}} USDC</td>
+</tr>
+</table>
+<br>
+<p>
+Notes: Open Interest is the amount of liquidity deposited by funders + amount of share tokens bought by traders.
+</p>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+</div>
+
+<nav>
+	<ul>
+		<li>
+			<a class="btn_link" href="index.html">Back</a>
+			<span></span><span></span><span></span><span></span>
+		</li>
+	</ul>
+</nav>
+</body>
+</html>

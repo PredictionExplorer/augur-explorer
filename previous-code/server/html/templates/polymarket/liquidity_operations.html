@@ -1,0 +1,51 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Liquidity Addition/Removal operations for Polymarkets Market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Liquidity Addition/Removal</h3>
+<table class="market_detail">
+</table>
+<table class="generic">
+	<tr class="generic">
+		<td>Market ID</td>
+		<td>{{.MarketId}}</td>
+	</tr>
+	<tr class="generic">
+		<td>Question</td>
+		<td>{{.MarketInfo.Question}}</td>
+	</tr>
+</table>
+<h3>Operations</h3>
+<table class="generic">
+	<tr class="generic">
+		<th class="generic">Date </th>
+		<th class="generic">Block</th>
+		<th class="generic">Tx</th>
+		<th class="generic">Type</th>
+		<th class="generic">Collateral (USDC)</th>
+		<th class="generic">Funder</th>
+	</tr>
+	{{- range $i, $change := .LiquidityOperations}}
+		<tr class="generic">
+			<td class="generic">
+				{{.DateTime}}
+			</td>
+			<td class="generic">{{.BlockNum}}</td>
+			<td class="generic">{{.TxId}}</td>
+			<td class="generic ctr">
+				{{ if eq 0 .OperationType}} Addition
+				{{ else }} Removal {{end }}
+			</td>
+			<td class="generic right">{{ printf "%.4f" .CollateralAmount}}</td>
+			<td class="generic addr">
+				<a href="/black/poly/user/info/{{.FunderAddr}}">
+				{{.FunderAddr}}
+				</a>
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
