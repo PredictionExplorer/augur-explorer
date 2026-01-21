@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 	
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 // Config holds all application configuration

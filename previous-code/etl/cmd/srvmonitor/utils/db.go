@@ -7,7 +7,7 @@ import (
 	"net"
 	
 	_ "github.com/lib/pq"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 // ConnectPostgres connects to a PostgreSQL database

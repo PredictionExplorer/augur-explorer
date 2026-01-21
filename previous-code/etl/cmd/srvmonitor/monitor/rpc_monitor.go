@@ -9,8 +9,8 @@ import (
 	
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/display"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/display"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 const (

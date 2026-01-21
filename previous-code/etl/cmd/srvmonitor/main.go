@@ -11,10 +11,10 @@ import (
 	"syscall"
 	
 	"github.com/nsf/termbox-go"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/config"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/display"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/monitor"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/config"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/display"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/monitor"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 func main() {

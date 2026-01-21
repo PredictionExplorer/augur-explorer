@@ -4,7 +4,7 @@ import (
 	"sync"
 	
 	"github.com/nsf/termbox-go"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 // TermboxDisplay implements Display using termbox

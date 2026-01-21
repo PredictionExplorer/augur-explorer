@@ -3,8 +3,8 @@ package monitor
 import (
 	"context"
 	
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/display"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/display"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 // Monitor represents a monitoring component

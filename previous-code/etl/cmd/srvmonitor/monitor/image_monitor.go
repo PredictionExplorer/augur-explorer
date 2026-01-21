@@ -13,10 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/PredictionExplorer/augur-explorer/contracts"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/display"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/utils"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/display"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/utils"
 )
 
 const (
@@ -231,7 +231,7 @@ func (m *ImageMonitor) getContractTokenID() (int64, error) {
 	eclient := ethclient.NewClient(rpcClient)
 	contractAddr := common.HexToAddress(m.config.ContractAddr)
 	
-	rwalkContract, err := contracts.NewRWalk(contractAddr, eclient)
+	rwalkContract, err := randomwalk.NewRWalk(contractAddr, eclient)
 	if err != nil {
 		return -1, fmt.Errorf("Contract instantiation failed: %v", err)
 	}

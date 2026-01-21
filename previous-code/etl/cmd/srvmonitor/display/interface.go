@@ -1,7 +1,7 @@
 package display
 
 import (
-	"github.com/PredictionExplorer/augur-explorer/etl/cmd/srvmonitor/types"
+	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
 )
 
 // Display is the interface for rendering to screen
