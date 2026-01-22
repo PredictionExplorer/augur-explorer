@@ -217,7 +217,6 @@ type CGUniqueStakerCST struct {
 	TotalRewardEth				float64
 	UnclaimedReward				string
 	UnclaimedRewardEth			float64
-	TotalTokensMinted			int64
 }
 type CGUniqueStakerRWalk struct {
 	StakerAid					int64
@@ -244,7 +243,6 @@ type CGStakeStatsCST struct {
 	UnclaimedRewardEth			float64
 	NumActiveStakers			int64
 	NumDeposits					int64
-	TotalTokensMinted			int64		// if CosmicGame is configured to mint NFTs for CST stakers, this counts tokens minted
 }
 type CGStakeStatsRWalk struct {
 	TotalNumStakeActions		int64

@@ -27,7 +27,6 @@
 					<th>Staker Address</th>
 					<th class="center">CST Tokens Staked</th>
 					<th class="center">RWalk Tokens Staked</th>
-					<th class="center">CST Reward Mints</th>
 					<th class="center">RWalk Reward Mints</th>
 				</tr>
 				{{- range $i, $change := .UniqueStakersBoth}}
@@ -40,9 +39,6 @@
 						</td>
 						<td class="center">
 							<a href="/black/cosmicgame/staking/rwalk/staked_tokens/by_user/{{.StakerAddr}}">{{.RWalkStats.TotalTokensStaked}}</a>
-						</td>
-						<td class="center">
-							<a href="/black/cosmicgame/staking/cst/mints/by_user/{{.StakerAddr}}">{{.CSTStats.TotalTokensMinted}}</a>
 						</td>
 						<td class="center">
 							<a href="/black/cosmicgame/staking/rwalk/mints/by_user/{{.StakerAddr}}">{{.RWalkStats.TotalTokensMinted}}</a>

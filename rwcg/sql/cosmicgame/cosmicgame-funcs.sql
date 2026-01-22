@@ -424,7 +424,6 @@ BEGIN
 			IF v_cnt = 0 THEN
 				INSERT INTO cg_staker_cst(staker_aid,num_tokens_minted) VALUES(NEW.winner_aid,1);
 			END IF;
-			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints + 1);
 		END IF;
 	END IF;
 	
@@ -484,7 +483,6 @@ BEGIN
 		ELSE
 			UPDATE cg_staker_cst SET num_tokens_minted = (num_tokens_minted - 1)
 				WHERE staker_aid=OLD.winner_aid;
-			UPDATE cg_stake_stats_cst SET total_nft_mints = (total_nft_mints - 1);
 		END IF;
 	END IF;
 	

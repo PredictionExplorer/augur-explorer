@@ -1028,8 +1028,7 @@ CREATE TABLE cg_stake_stats_cst ( -- gloal staking statistics (StakinWalletCST)
 	num_deposits			BIGINT DEFAULT 0,
 	total_modulo			DECIMAL DEFAULT 0,
 	num_charity_deposits	BIGINT DEFAULT 0,
-	total_charity_amount	DECIMAL DEFAULT 0,
-	total_nft_mints			BIGINT DEFAULT 0
+	total_charity_amount	DECIMAL DEFAULT 0
 );
 CREATE TABLE cg_stake_stats_rwalk ( -- gloal staking statistics (StakinWalletRWalk)
 	total_tokens_staked		BIGINT DEFAULT 0,

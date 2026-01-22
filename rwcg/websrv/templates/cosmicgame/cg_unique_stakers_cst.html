@@ -28,7 +28,6 @@
 					<th class="center">Stake Actions</th>
 					<th class="right">Total Reward (ETH)</th>
 					<th class="right">Unclaimed (ETH)</th>
-					<th class="center">Token Rewards</th>
 					<th class="center">Tokens Staked</th>
 				</tr>
 				{{- range $i, $change := .UniqueStakersCST}}
@@ -41,7 +40,6 @@
 						</td>
 						<td class="right">{{printf "%.6f" .TotalRewardEth}}</td>
 						<td class="right">{{printf "%.6f" .UnclaimedRewardEth}}</td>
-						<td class="center">{{.TotalTokensMinted}}</td>
 						<td class="center">{{.TotalTokensStaked}}</td>
 					</tr>
 				{{- end}}

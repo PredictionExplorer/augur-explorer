@@ -240,8 +240,7 @@ func (sw *SQLStorageWrapper) Get_stake_statistics_cst() p.CGStakeStatsCST {
 				"total_unclaimed_reward,"+
 				"total_unclaimed_reward/1e18,"+
 				"total_num_stakers, "+
-				"num_deposits, "+
-				"total_nft_mints "+
+				"num_deposits "+
 			"FROM cg_stake_stats_cst LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
@@ -254,7 +253,6 @@ func (sw *SQLStorageWrapper) Get_stake_statistics_cst() p.CGStakeStatsCST {
 		&stats.UnclaimedRewardEth,
 		&stats.NumActiveStakers,
 		&stats.NumDeposits,
-		&stats.TotalTokensMinted,
 	)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_stake_statistics(): %v, q=%v",err,query))
@@ -461,8 +459,7 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_cst() []p.CGUniqueStakerCST {
 				"s.total_reward,"+
 				"s.total_reward/1e18, "+
 				"s.unclaimed_reward,"+
-				"s.unclaimed_reward/1e18, "+
-				"s.num_tokens_minted "+
+				"s.unclaimed_reward/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_staker_cst s "+
 				"LEFT JOIN address a ON s.staker_aid=a.address_id " +
 			"WHERE num_stake_actions> 0 "+
@@ -486,7 +483,6 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_cst() []p.CGUniqueStakerCST {
 			&rec.TotalRewardEth,
 			&rec.UnclaimedReward,
 			&rec.UnclaimedRewardEth,
-			&rec.TotalTokensMinted,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -549,7 +545,6 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
 				"COALESCE(c.total_reward/1e18,0) cst_total_reward_eth,"+
 				"COALESCE(c.unclaimed_reward,0) cst_unclaimed_reward,"+
 				"COALESCE(c.unclaimed_reward/1e18,0) cst_unclaimed_reward_eth, "+
-				"COALESCE(c.num_tokens_minted,0) cst_num_tokens_minted, "+
 
 				"COALESCE(r.total_tokens_staked,0) rw_total_tokens_staked,"+
 				"COALESCE(r.num_stake_actions,0) rw_num_stake_actions,"+
@@ -583,7 +578,6 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
 			&rec.CSTStats.TotalRewardEth,
 			&rec.CSTStats.UnclaimedReward,
 			&rec.CSTStats.UnclaimedRewardEth,
-			&rec.CSTStats.TotalTokensMinted,
 			&rec.RWalkStats.TotalTokensStaked,
 			&rec.RWalkStats.NumStakeActions,
 			&rec.RWalkStats.NumUnstakeActions,
