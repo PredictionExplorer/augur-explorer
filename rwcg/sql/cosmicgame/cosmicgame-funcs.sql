@@ -519,6 +519,8 @@ CREATE OR REPLACE FUNCTION on_endurance_winner_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
+	-- Note: The Solidity EnduranceChampionPrizePaid event does not emit a winner_index.
+	-- There is exactly one endurance champion per round, so winner_index is implicitly 0.
 
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
 	
@@ -530,10 +532,11 @@ BEGIN
 	END IF;
 
 	-- Insert TWO records in cg_prize table for Endurance Champion prizes
+	-- Winner index is always 0 (one endurance champion per round)
 	-- 1) ERC721 CS NFT prize (ptype=5)
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,5);
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,5);
 	-- 2) ERC20 CST token prize (ptype=6)
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,6);
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,6);
 	
 	-- Update winner: prizes_count (+2), erc20_count (+1), erc721_count (+1)
 	UPDATE cg_winner 
@@ -553,6 +556,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_endurance_winner_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
+	-- Note: Winner index is always 0 (one endurance champion per round)
 
 	UPDATE cg_round_stats
 		SET
@@ -567,9 +571,9 @@ BEGIN
 
 	-- Remove BOTH corresponding records from cg_prize table
 	-- 1) ERC721 CS NFT prize (ptype=5)
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=5;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=5;
 	-- 2) ERC20 CST token prize (ptype=6)
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=6;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=6;
 
 	-- Update winner counts
 	UPDATE cg_winner 
@@ -586,6 +590,8 @@ CREATE OR REPLACE FUNCTION on_lastcst_winner_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
+	-- Note: The Solidity LastCstBidderPrizePaid event does not emit a winner_index.
+	-- There is exactly one last CST bidder per round, so winner_index is implicitly 0.
 
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes + NEW.erc20_amount);
 	
@@ -597,10 +603,11 @@ BEGIN
 	END IF;
 
 	-- Insert TWO records in cg_prize table for Last CST Bidder prizes
+	-- Winner index is always 0 (one last CST bidder per round)
 	-- 1) ERC721 CS NFT prize (ptype=3)
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,3);
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,3);
 	-- 2) ERC20 CST token prize (ptype=4)
-	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,NEW.winner_idx,4);
+	INSERT INTO cg_prize(round_num,winner_index,ptype) VALUES(NEW.round_num,0,4);
 	
 	-- Update winner: prizes_count (+2), erc20_count (+1), erc721_count (+1)
 	UPDATE cg_winner 
@@ -620,6 +627,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_lastcst_winner_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
+	-- Note: Winner index is always 0 (one last CST bidder per round)
 
 	UPDATE cg_round_stats
 		SET
@@ -634,9 +642,9 @@ BEGIN
 
 	-- Remove BOTH corresponding records from cg_prize table
 	-- 1) ERC721 CS NFT prize (ptype=3)
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=3;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=3;
 	-- 2) ERC20 CST token prize (ptype=4)
-	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=OLD.winner_idx AND ptype=4;
+	DELETE FROM cg_prize WHERE round_num=OLD.round_num AND winner_index=0 AND ptype=4;
 
 	-- Update winner counts
 	UPDATE cg_winner 

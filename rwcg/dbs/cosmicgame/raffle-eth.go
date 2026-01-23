@@ -29,11 +29,11 @@ func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,o
 		"EXTRACT(EPOCH FROM rw.time_stamp)::BIGINT AS tstmp, "+
 		"rw.time_stamp, "+
 		"CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type "+
-	"FROM cg_prize_deposit rd "+
-		"LEFT JOIN cg_prize_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id "+
-		"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-		"LEFT JOIN address wa ON rd.winner_aid = wa.address_id "+
-		"LEFT JOIN cg_chrono_warrior_prize cw ON (rd.round_num = cw.round_num AND rd.winner_index = cw.winner_index) "+
+	"FROM "+sw.S.SchemaName()+".cg_prize_deposit rd "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_prize_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id "+
+		"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=rd.tx_id "+
+		"LEFT JOIN "+sw.S.SchemaName()+".address wa ON rd.winner_aid = wa.address_id "+
+		"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (rd.round_num = cw.round_num AND rd.winner_index = cw.winner_index) "+
 	"WHERE rd.winner_aid=$1 AND rd.claimed='F' " +
 			"ORDER BY rd.id DESC "+
 			"OFFSET $2 LIMIT $3"

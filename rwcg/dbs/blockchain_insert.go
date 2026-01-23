@@ -141,10 +141,24 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 	return txId, nil
 }
 
+// Delete_event_log deletes an event log by block_num and log_index
+// This ensures idempotent re-processing regardless of tx_id changes
+func (ss *SQLStorage) Delete_event_log(blockNum uint64, logIndex uint) {
+	var query string
+	query = `DELETE FROM evt_log WHERE block_num = $1 AND log_index = $2`
+	_, err := ss.db.Exec(query, blockNum, logIndex)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Delete_event_log failed: %v", err))
+	}
+}
+
 // Insert_event_log inserts an event log into the evt_log table
-// Uses ON CONFLICT to handle duplicate inserts (idempotent for crash recovery)
+// Deletes any existing event with same (block_num, log_index) first for idempotent re-processing
 // Returns the event log ID
 func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid int64) (int64, error) {
+	// Delete any existing event with same block_num and log_index (idempotent re-processing)
+	ss.Delete_event_log(log.BlockNumber, log.Index)
+
 	// Get topic0 signature (first 4 bytes = 8 hex chars of first topic)
 	var topic0Sig string
 	if len(log.Topics) > 0 {
@@ -168,14 +182,13 @@ func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid in
 		block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
 	) VALUES (
 		$1, $2, $3, $4, $5, $6
-	) ON CONFLICT (block_num, tx_id, log_index) DO UPDATE SET id = evt_log.id
-	RETURNING id`
+	) RETURNING id`
 
 	var evtId int64
 	err = ss.db.QueryRow(query,
 		log.BlockNumber,
 		txId,
-		contractAid,
+		contractAid, 
 		topic0Sig,
 		log.Index, // Log index within the block
 		rlpLog,

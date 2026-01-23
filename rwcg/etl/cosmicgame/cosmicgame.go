@@ -759,7 +759,7 @@ func proc_erc20_donated_event(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount);
-	Info.Printf("\tLinking to bid id: \n",evt.BidId)
+	Info.Printf("\tLinking to bid id: %v\n",evt.BidId)
 	Info.Printf("}\n")
 
 	storagew.Delete_erc20_donated_event(evt.EvtId)

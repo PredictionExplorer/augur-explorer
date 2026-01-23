@@ -37,7 +37,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"total_mkt_rewards,"+
 				"total_mkt_rewards/1e18,"+
 				"num_mkt_rewards "+
-			"FROM cg_glob_stats LIMIT 1"
+			"FROM "+sw.S.SchemaName()+".cg_glob_stats LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
 	var err error
@@ -76,7 +76,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	var null_bidders sql.NullInt64
 	query = "SELECT "+
 				"COUNT(*) AS total "+
-			"FROM cg_bidder " +
+			"FROM "+sw.S.SchemaName()+".cg_bidder " +
 			"WHERE num_bids > 0 "
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_bidders)
@@ -94,7 +94,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"COUNT(*) AS total,"+
 				"SUM(prizes_sum) AS sum_wei,"+
 				"SUM(prizes_sum)/1e18 AS sum_eth "+
-				"FROM cg_winner " +
+				"FROM "+sw.S.SchemaName()+".cg_winner " +
 				"WHERE prizes_count > 0"
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(
@@ -117,7 +117,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"COUNT(*) AS total,"+
 				"SUM(total_eth_donated) AS sum_wei,"+
 				"SUM(total_eth_donated)/1e18 AS sum_eth "+
-				"FROM cg_donor " +
+				"FROM "+sw.S.SchemaName()+".cg_donor " +
 				"WHERE total_eth_donated > 0"
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(
@@ -138,7 +138,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 
 	query = "SELECT "+
 				"COUNT(*) AS total "+
-				"FROM cg_staker_cst " +
+				"FROM "+sw.S.SchemaName()+".cg_staker_cst " +
 				"WHERE num_stake_actions > 0"
 	row = sw.S.Db().QueryRow(query)
 	var null_stakers sql.NullInt64
@@ -152,7 +152,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	if null_stakers.Valid { stats.NumUniqueStakersCST = uint64(null_stakers.Int64) }
 	query = "SELECT "+
 				"COUNT(*) AS total "+
-				"FROM cg_staker_rwalk " +
+				"FROM "+sw.S.SchemaName()+".cg_staker_rwalk " +
 				"WHERE num_stake_actions > 0"
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_stakers)
@@ -194,7 +194,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		}
 	}
 	stats.NumDonatedNFTs=uint64(null_donated_nfts.Int64)
-	query = "SELECT count(*) AS total FROM cg_mint_event "+
+	query = "SELECT count(*) AS total FROM "+sw.S.SchemaName()+".cg_mint_event "+
 			"WHERE LENGTH(token_name) > 0 "
 	var null_named_tokens sql.NullInt64
 	row = sw.S.Db().QueryRow(query)
@@ -209,7 +209,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	}
 	stats.TotalNamedTokens = null_named_tokens.Int64
 
-	query = "SELECT count(winner_aid) AS total FROM cg_raffle_Winner_stats "+
+	query = "SELECT count(winner_aid) AS total FROM "+sw.S.SchemaName()+".cg_raffle_winner_stats "+
 			"WHERE amount_sum > 0 "
 	var null_num_users_missing_withdrawal sql.NullInt64
 	row = sw.S.Db().QueryRow(query)
@@ -241,7 +241,7 @@ func (sw *SQLStorageWrapper) Get_stake_statistics_cst() p.CGStakeStatsCST {
 				"total_unclaimed_reward/1e18,"+
 				"total_num_stakers, "+
 				"num_deposits "+
-			"FROM cg_stake_stats_cst LIMIT 1"
+			"FROM "+sw.S.SchemaName()+".cg_stake_stats_cst LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
 	var err error
@@ -268,7 +268,7 @@ func (sw *SQLStorageWrapper) Get_stake_statistics_rwalk() p.CGStakeStatsRWalk {
 				"total_tokens_staked, "+
 				"total_num_stakers, "+
 				"total_nft_mints "+
-			"FROM cg_stake_stats_rwalk LIMIT 1"
+			"FROM "+sw.S.SchemaName()+".cg_stake_stats_rwalk LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
 	var err error
@@ -297,7 +297,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 				"donations_round_count,"+
 				"donations_round_total,"+
 				"donations_round_total/1e18 "+
-			"FROM cg_round_stats WHERE round_num=$1"
+			"FROM "+sw.S.SchemaName()+".cg_round_stats WHERE round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
 	var err error
@@ -701,7 +701,7 @@ func (sw *SQLStorageWrapper) Get_record_counters() p.CGRecordCounters {
 func (sw *SQLStorageWrapper) Get_num_prize_claims() int64 {
 
 	var query string
-	query = "SELECT num_wins FROM cg_glob_stats"
+	query = "SELECT num_wins FROM "+sw.S.SchemaName()+".cg_glob_stats"
 	row := sw.S.Db().QueryRow(query)
 	var err error
 	var null_num_claims sql.NullInt64

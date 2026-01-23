@@ -113,7 +113,7 @@ func scanBidRecord(rows *sql.Rows) (p.CGBidRec, error) {
 func (sw *SQLStorageWrapper) Get_bid_id_by_evtlog(evtlog_id int64) (int64) {
 
 	var query string
-	query = "SELECT b.id FROM cg_bid b WHERE b.evtlog_id=$1"
+	query = "SELECT b.id FROM "+sw.S.SchemaName()+".cg_bid b WHERE b.evtlog_id=$1"
 
 	row := sw.S.Db().QueryRow(query,evtlog_id)
 	var err error
@@ -195,7 +195,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 		records = append(records, rec)
 	}
 
-	query = "SELECT count(*) AS total_rows FROM cg_bid b WHERE round_num=$1"
+	query = "SELECT count(*) AS total_rows FROM "+sw.S.SchemaName()+".cg_bid b WHERE round_num=$1"
 	var null_total_rows sql.NullInt64
 	row := sw.S.Db().QueryRow(query,round_num)
 	err=row.Scan(&null_total_rows);
@@ -214,7 +214,7 @@ func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  
 	var query string
 	query = "SELECT "+
 				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT "+
-			"FROM cg_bid b "+
+			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 			"WHERE round_num=$1 "+
 			"ORDER BY b.id LIMIT 1"
 

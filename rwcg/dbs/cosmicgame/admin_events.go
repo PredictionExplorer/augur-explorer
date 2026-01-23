@@ -25,7 +25,7 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 					"s.time_stamp date_time,"+
 					"s.round_num, "+
 					"0 AS rec_type "+
-				"FROM cg_first_bid s"+
+				"FROM "+sw.S.SchemaName()+".cg_first_bid s"+
 			") UNION ALL ("+
 				"SELECT "+
 					"p.evtlog_id," +
@@ -34,7 +34,7 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 					"p.time_stamp date_time,"+
 					"-1 AS round_num,"+
 					"1 AS rec_type "+
-				"FROM cg_prize_claim p "+
+				"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 			") "+
 			"ORDER BY evtlog_id DESC " +
 			"OFFSET $1 LIMIT $2"

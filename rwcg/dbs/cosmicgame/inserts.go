@@ -437,6 +437,8 @@ func (sw *SQLStorageWrapper) Insert_raffle_eth_winner(evt *p.CGRaffleETHWinner) 
 	}
 }
 func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
+	// Note: The Solidity EnduranceChampionPrizePaid event does not emit a winner_index.
+	// There is exactly one endurance champion per round, so winner_index is implicitly 0.
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
@@ -444,8 +446,8 @@ func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_endurance_prize ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+					"winner_aid,round_num,erc721_token_id,erc20_amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -456,7 +458,6 @@ func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 		evt.Round,
 		evt.Erc721TokenId,
 		evt.Erc20Amount,
-		evt.WinnerIndex,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_prize table: %v\n",err))
@@ -464,6 +465,8 @@ func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 	}
 }
 func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWinner) {
+	// Note: The Solidity LastCstBidderPrizePaid event does not emit a winner_index.
+	// There is exactly one last CST bidder per round, so winner_index is implicitly 0.
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
@@ -471,8 +474,8 @@ func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWin
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_lastcst_prize ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+					"winner_aid,round_num,erc721_token_id,erc20_amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -483,7 +486,6 @@ func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWin
 		evt.Round,
 		evt.Erc721TokenId,
 		evt.Erc20Amount,
-		evt.WinnerIndex,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_lastcst_prize table: %v\n",err))
@@ -579,7 +581,7 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_rwalk_event(evt *p.CGNftUnstake
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_nft_unstaked_rwalk (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_nft_unstaked_rwalk (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +
@@ -606,7 +608,7 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_nft_unstaked_cst (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_nft_unstaked_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,num_staked_nfts,staker_aid,reward,reward_per_tok,action_counter" +
 			") VALUES (" +
@@ -635,7 +637,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_staking_eth_deposit(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_staking_eth_deposit(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
 			") VALUES (" +
@@ -666,7 +668,7 @@ func (sw *SQLStorageWrapper) Insert_marketing_reward_paid_event(evt *p.CGMarketi
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	marketer_aid:=sw.S.Lookup_or_create_address(evt.Marketer,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_mkt_reward(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_mkt_reward(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"amount,marketer_aid" +
 			") VALUES (" +
@@ -699,7 +701,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_signature_transfer_event(evt *p.CGERC
 		otype = 2
 	}
 	var query string
-	query = "INSERT INTO cg_erc721_transfer(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_erc721_transfer(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"token_id,from_aid,to_aid,otype" +
 			") VALUES (" +
@@ -734,7 +736,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_token_transfer_event(evt *p.CGERC20Tr
 		otype = 2
 	}
 	var query string
-	query = "INSERT INTO cg_erc20_transfer(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_erc20_transfer(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"value,from_aid,to_aid,otype" +
 			") VALUES (" +
@@ -760,7 +762,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_percentage_changed_event
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_charity_pcent (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_charity_pcent (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"percentage" +
 			") VALUES (" +
@@ -783,7 +785,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_percentage_changed_event(e
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_main_prize_pcent (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_main_prize_pcent (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"percentage" +
 			") VALUES (" +
@@ -806,7 +808,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_percentage_changed_event(
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raffle_pcent (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_raffle_pcent (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"percentage" +
 			") VALUES (" +
@@ -829,7 +831,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_eth_winners_bidding_c
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raf_eth_bidding(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_raf_eth_bidding(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"num_winners" +
 			") VALUES (" +
@@ -852,7 +854,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_bidding_c
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raf_nft_bidding(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_raf_nft_bidding(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"num_winners" +
 			") VALUES (" +
@@ -875,7 +877,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_staking_r
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raf_nft_staking_rwalk(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_raf_nft_staking_rwalk(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"num_winners" +
 			") VALUES (" +
@@ -898,7 +900,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_percentage_changed_event
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_stake_pcent (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_stake_pcent (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"percentage" +
 			") VALUES (" +
@@ -921,7 +923,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_chrono_percentage_changed_event(
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_chrono_pcent (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_chrono_pcent (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"percentage" +
 			") VALUES (" +
@@ -945,7 +947,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_address_changed_event(ev
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_charity_aid:=sw.S.Lookup_or_create_address(evt.NewCharity,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_charity_wallet(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_charity_wallet(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_charity_aid" +
 			") VALUES (" +
@@ -969,7 +971,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_random_walk_address_changed_even
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_rwalk_aid:=sw.S.Lookup_or_create_address(evt.NewRandomWalk,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_rwalk_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_rwalk_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_rwalk_aid" +
 			") VALUES (" +
@@ -993,7 +995,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_wallet_address_changed_eve
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_raffle_aid:=sw.S.Lookup_or_create_address(evt.NewPrizeWallet,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_prizes_wallet_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_prizes_wallet_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_wallet_aid" +
 			") VALUES (" +
@@ -1017,7 +1019,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_cst_address_chang
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_staking_aid:=sw.S.Lookup_or_create_address(evt.NewStakingWalletCST,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_staking_cst_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_staking_cst_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_staking_aid" +
 			") VALUES (" +
@@ -1041,7 +1043,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_rwalk_address_cha
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_staking_aid:=sw.S.Lookup_or_create_address(evt.NewStakingWalletRWalk,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_staking_rwalk_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_staking_rwalk_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_staking_aid" +
 			") VALUES (" +
@@ -1065,7 +1067,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_marketing_wallet_address_changed
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_marketing_aid:=sw.S.Lookup_or_create_address(evt.NewMarketingWallet,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_marketing_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_marketing_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_marketing_aid" +
 			") VALUES (" +
@@ -1089,7 +1091,7 @@ func (sw *SQLStorageWrapper) Insert_treasurer_address_changed_event(evt *p.CGTre
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_treasurer_aid:=sw.S.Lookup_or_create_address(evt.NewTreasurer,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_treasurer_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_treasurer_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_treasurer_aid" +
 			") VALUES (" +
@@ -1113,7 +1115,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_token_address_changed_event(evt *p.CG
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_costok_aid:=sw.S.Lookup_or_create_address(evt.NewCosmicToken,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_costok_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_costok_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_costok_aid" +
 			") VALUES (" +
@@ -1137,7 +1139,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_signature_address_changed_event(evt *
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	new_cossig_aid:=sw.S.Lookup_or_create_address(evt.NewCosmicSignature,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_cossig_addr(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_cossig_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_cossig_aid" +
 			") VALUES (" +
@@ -1161,7 +1163,7 @@ func (sw *SQLStorageWrapper) Insert_upgraded_event(evt *p.CGUpgraded) {
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	implementation_aid:=sw.S.Lookup_or_create_address(evt.Implementation,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_upgraded(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_upgraded(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"implementation_aid" +
 			") VALUES (" +
@@ -1186,7 +1188,7 @@ func (sw *SQLStorageWrapper) Insert_admin_changed_event(evt *p.CGAdminChanged) {
 	old_admin_aid:=sw.S.Lookup_or_create_address(evt.OldAdmin,evt.BlockNum,evt.TxId)
 	new_admin_aid:=sw.S.Lookup_or_create_address(evt.NewAdmin,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_admin_changed(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_admin_changed(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"old_admin_aid,new_admin_aid" +
 			") VALUES (" +
@@ -1210,7 +1212,7 @@ func (sw *SQLStorageWrapper) Insert_time_increase_changed_event(evt *p.CGTimeInc
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_time_inc(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_time_inc(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_time_inc" +
 			") VALUES (" +
@@ -1233,7 +1235,7 @@ func (sw *SQLStorageWrapper) Insert_timeout_claimprize_changed_event(evt *p.CGTi
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_timeout_claimprize(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_timeout_claimprize(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_timeout" +
 			") VALUES (" +
@@ -1256,7 +1258,7 @@ func (sw *SQLStorageWrapper) Insert_timeout_to_withdraw_prizes_changed_event(evt
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_timeout_withdraw(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_timeout_withdraw(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_timeout" +
 			") VALUES (" +
@@ -1279,7 +1281,7 @@ func (sw *SQLStorageWrapper) Insert_price_increase_changed_event(evt *p.CGPriceI
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_price_inc(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_price_inc(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_price_increase" +
 			") VALUES (" +
@@ -1302,7 +1304,7 @@ func (sw *SQLStorageWrapper) Insert_mainprize_microseconds_increase_changed_even
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_prize_microsec (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_prize_microsec (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_microseconds " +
 			") VALUES (" +
@@ -1325,7 +1327,7 @@ func (sw *SQLStorageWrapper) Insert_initial_seconds_until_prize_changed_event(ev
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_inisecprize (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_inisecprize (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_inisec" +
 			") VALUES (" +
@@ -1348,7 +1350,7 @@ func (sw *SQLStorageWrapper) Insert_activation_time_changed_event(evt *p.CGActiv
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_acttime (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_acttime (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_atime" +
 			") VALUES (" +
@@ -1371,7 +1373,7 @@ func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_cst_auclen (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_cst_auclen (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_len" +
 			") VALUES (" +
@@ -1394,7 +1396,7 @@ func (sw *SQLStorageWrapper) Insert_eth_auction_duration_divisor_changed_event(e
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_eth_auclen (" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_eth_auclen (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_len" +
 			") VALUES (" +
@@ -1417,7 +1419,7 @@ func (sw *SQLStorageWrapper) Insert_eth_dutch_auction_ending_bidprice_divisor_ch
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_eth_auc_endprice(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_eth_auc_endprice(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_len" +
 			") VALUES (" +
@@ -1440,7 +1442,7 @@ func (sw *SQLStorageWrapper) Insert_static_cst_reward_changed_event(evt *p.CGSta
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_erc_rwd_mul(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_erc_rwd_mul(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_reward" +
 			") VALUES (" +
@@ -1463,7 +1465,7 @@ func (sw *SQLStorageWrapper) Insert_marketing_reward_changed_event(evt *p.CGMark
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_mkt_reward(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_mkt_reward(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_reward" +
 			") VALUES (" +
@@ -1486,7 +1488,7 @@ func (sw *SQLStorageWrapper) Insert_erc20_token_reward_changed_event(evt *p.CGCs
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_erc20_reward(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_erc20_reward(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_reward" +
 			") VALUES (" +
@@ -1509,7 +1511,7 @@ func (sw *SQLStorageWrapper) Insert_max_message_length_changed_event(evt *p.CGMa
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_msg_len(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_msg_len(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_length" +
 			") VALUES (" +
@@ -1532,7 +1534,7 @@ func (sw *SQLStorageWrapper) Insert_token_generation_script_url_event(evt *p.CGT
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_script_url(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_script_url(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_url" +
 			") VALUES (" +
@@ -1555,7 +1557,7 @@ func (sw *SQLStorageWrapper) Insert_base_uri_event(evt *p.CGBaseURIEvent) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_base_uri_cs(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_base_uri_cs(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_uri" +
 			") VALUES (" +
@@ -1579,7 +1581,7 @@ func (sw *SQLStorageWrapper) Insert_nft_staked_cst_event(evt *p.CGNftStakedCst) 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_nft_staked_cst(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_nft_staked_cst(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,num_staked_nfts,reward_per_staker,staker_aid" +
 			") VALUES (" +
@@ -1608,7 +1610,7 @@ func (sw *SQLStorageWrapper) Insert_nft_staked_rwalk_event(evt *p.CGNftStakedRWa
 	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
 	var table = "cg_nft_staked_cst"
 	var query string
-	query = "INSERT INTO cg_nft_staked_rwalk("+
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_nft_staked_rwalk("+
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +
@@ -1636,7 +1638,7 @@ func (sw *SQLStorageWrapper) Insert_ownership_transferred_event(evt *p.CGOwnersh
 	new_owner_aid:=sw.S.Lookup_or_create_address(evt.NewOwner,evt.BlockNum,evt.TxId)
 	prev_owner_aid:=sw.S.Lookup_or_create_address(evt.PrevOwner,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_ownership(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_ownership(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"prev_owner_aid,new_owner_aid,contract_code" +
 			") VALUES (" +
@@ -1661,7 +1663,7 @@ func (sw *SQLStorageWrapper) Insert_initialized_event(evt *p.CGInitialized) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_initialized(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_initialized(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"version" +
 			") VALUES (" +
@@ -1684,7 +1686,7 @@ func (sw *SQLStorageWrapper) Insert_cst_min_limit_event(evt *p.CGCstMinLimit) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_cst_min_limit(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_cst_min_limit(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"min_limit" +
 			") VALUES (" +
@@ -1708,7 +1710,7 @@ func (sw *SQLStorageWrapper) Insert_fund_transfer_failed_event(evt *p.CGFundTran
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	destination_aid:=sw.S.Lookup_or_create_address(evt.Destination,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_fund_transf_err(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_fund_transf_err(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"destination_aid,amount" +
 			") VALUES (" +
@@ -1733,7 +1735,7 @@ func (sw *SQLStorageWrapper) Insert_erc20_transfer_failed_event(evt *p.CGErc20Tr
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	destination_aid:=sw.S.Lookup_or_create_address(evt.Destination,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_erc20_transf_err(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_erc20_transf_err(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"destination_aid,amount" +
 			") VALUES (" +
@@ -1758,7 +1760,7 @@ func (sw *SQLStorageWrapper) Insert_funds_transferred_to_charity_event(evt *p.CG
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	charity_aid:=sw.S.Lookup_or_create_address(evt.CharityAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_funds_to_charity(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_funds_to_charity(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"charity_aid,amount" +
 			") VALUES (" +
@@ -1782,7 +1784,7 @@ func (sw *SQLStorageWrapper) Insert_delay_duration_before_next_round_changed_eve
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_delay_duration(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_delay_duration(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_value" +
 			") VALUES (" +
@@ -1805,7 +1807,7 @@ func (sw *SQLStorageWrapper) Insert_round_started_event(evt *p.CGRoundStarted) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_first_bid(" +
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_first_bid(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"round_num,start_ts" +
 			") VALUES (" +

@@ -231,6 +231,8 @@ CREATE TABLE cg_raffle_eth_prize ( -- ICosmicSignatureGame.sol:RaffleWinnerBidde
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_endurance_prize ( -- ICosmicSignatureGame.sol:EnduranceChampionPrizePaid
+	-- Note: The Solidity event does not emit a winner_index field.
+	-- There is exactly one endurance champion per round, so winner_index is implicitly 0.
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -241,11 +243,12 @@ CREATE TABLE cg_endurance_prize ( -- ICosmicSignatureGame.sol:EnduranceChampionP
 	round_num		BIGINT NOT NULL,
 	erc721_token_id		BIGINT NOT NULL,
 	erc20_amount	DECIMAL NOT NULL,
-	winner_idx		BIGINT NOT NULL,
 	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_lastcst_prize ( -- ICosmicSignatureGame.sol:LastCstBidderPrizePaid
+	-- Note: The Solidity event does not emit a winner_index field.
+	-- There is exactly one last CST bidder per round, so winner_index is implicitly 0.
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -256,7 +259,6 @@ CREATE TABLE cg_lastcst_prize ( -- ICosmicSignatureGame.sol:LastCstBidderPrizePa
 	round_num		BIGINT NOT NULL,
 	erc721_token_id		BIGINT NOT NULL,
 	erc20_amount	DECIMAL NOT NULL,
-	winner_idx		BIGINT NOT NULL,
 	UNIQUE(round_num),
 	UNIQUE(evtlog_id)
 );
@@ -305,6 +307,9 @@ CREATE TABLE cg_donated_nft_claimed ( -- IPrizesWallet.sol:DonatedNftClaimed
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_nft_unstaked_rwalk ( -- IStakingWalletNftBase.sol:NftUnstaked
+	-- Note: The Solidity NftUnstaked event does not emit a round_num field.
+	-- The round_num is derived via SQL trigger from the most recent prize claim.
+	-- Default -1 indicates round has not been determined yet (will be populated by trigger).
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -319,6 +324,9 @@ CREATE TABLE cg_nft_unstaked_rwalk ( -- IStakingWalletNftBase.sol:NftUnstaked
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_nft_unstaked_cst ( -- IStakingWalletNftBase.sol:NftUnstaked
+	-- Note: The Solidity NftUnstaked event does not emit a round_num field.
+	-- The round_num is derived via SQL trigger from the most recent prize claim.
+	-- Default -1 indicates round has not been determined yet (will be populated by trigger).
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -336,6 +344,9 @@ CREATE TABLE cg_nft_unstaked_cst ( -- IStakingWalletNftBase.sol:NftUnstaked
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_nft_staked_cst ( -- IStakingWalletNftBase.sol:NftStaked
+	-- Note: The Solidity NftStaked event does not emit a round_num field.
+	-- The round_num is derived via SQL trigger from the most recent prize claim.
+	-- Default -1 indicates round has not been determined yet (will be populated by trigger).
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -352,6 +363,9 @@ CREATE TABLE cg_nft_staked_cst ( -- IStakingWalletNftBase.sol:NftStaked
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_nft_staked_rwalk ( -- IStakingWalletNftBase.sol:NftStaked
+	-- Note: The Solidity NftStaked event does not emit a round_num field.
+	-- The round_num is derived via SQL trigger from the most recent prize claim.
+	-- Default -1 indicates round has not been determined yet (will be populated by trigger).
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
