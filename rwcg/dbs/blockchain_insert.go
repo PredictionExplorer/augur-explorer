@@ -141,23 +141,10 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 	return txId, nil
 }
 
-// Delete_event_log deletes an event log by block_num and log_index
-// This ensures idempotent re-processing regardless of tx_id changes
-func (ss *SQLStorage) Delete_event_log(blockNum uint64, logIndex uint) {
-	var query string
-	query = `DELETE FROM evt_log WHERE block_num = $1 AND log_index = $2`
-	_, err := ss.db.Exec(query, blockNum, logIndex)
-	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Delete_event_log failed: %v", err))
-	}
-}
-
 // Insert_event_log inserts an event log into the evt_log table
-// Deletes any existing event with same (block_num, log_index) first for idempotent re-processing
+// Uses INSERT ... ON CONFLICT to handle idempotent re-processing
 // Returns the event log ID
 func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid int64) (int64, error) {
-	// Delete any existing event with same block_num and log_index (idempotent re-processing)
-	ss.Delete_event_log(log.BlockNumber, log.Index)
 
 	// Get topic0 signature (first 4 bytes = 8 hex chars of first topic)
 	var topic0Sig string
@@ -174,6 +161,18 @@ func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid in
 	rlpLog, err := rlp.EncodeToBytes(&log)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("Failed to RLP encode log: %v", err))
+		return 0, err
+	}
+
+	// Use ON CONFLICT to handle idempotent re-processing
+	// First try to delete any existing record with same (block_num, log_index)
+	// This handles the case where tx_id might have changed due to chain reorganization
+	var deleteQuery string
+	deleteQuery = `DELETE FROM evt_log WHERE block_num = $1 AND log_index = $2`
+	_, err = ss.db.Exec(deleteQuery, log.BlockNumber, log.Index)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Delete before insert failed for evt_log (block=%d, log_index=%d): %v", 
+			log.BlockNumber, log.Index, err))
 		return 0, err
 	}
 
