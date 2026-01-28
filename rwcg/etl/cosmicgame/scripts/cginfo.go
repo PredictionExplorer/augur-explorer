@@ -32,6 +32,24 @@ func convert_to_percentage(in *big.Int) (float64) {
 	out,_ := increase_percent.Float64()
 	return out
 }
+func fmt_duration(secs int64) string {
+	if secs < 0 {
+		return fmt.Sprintf("%d sec (negative)", secs)
+	}
+	if secs < 60 {
+		return fmt.Sprintf("%d sec", secs)
+	}
+	if secs < 3600 {
+		return fmt.Sprintf("%d min %d sec", secs/60, secs%60)
+	}
+	hours := secs / 3600
+	mins := (secs % 3600) / 60
+	sec := secs % 60
+	return fmt.Sprintf("%dh %dm %ds", hours, mins, sec)
+}
+func section(title string) {
+	fmt.Printf("\n==================== %s ====================\n", title)
+}
 func main() {
 
 	RPC_URL = os.Getenv("RPC_URL")
@@ -54,231 +72,147 @@ func main() {
 	}
 	var copts bind.CallOpts
 	cosmic_game_addr := common.HexToAddress(cg_addr)
-	fmt.Printf("Calling to contract at %v\n",cosmic_game_addr.String())
+	fmt.Printf("CosmicSignatureGame contract: %v\n",cosmic_game_addr.String())
 
 	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
 	}
-	prize_wallet_addr,err := cosmic_game_ctrct.PrizesWallet(&copts);
-	if err != nil {
-		fmt.Printf("Error at PrizesWallet()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	prizes_wallet,err := NewPrizesWallet(prize_wallet_addr,eclient);
-	if err != nil {
-		fmt.Printf("Error at instantiation of PrizesWallet()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	cst_reward,err := cosmic_game_ctrct.CstRewardAmountForBidding(&copts)
-	if err != nil {
-		fmt.Printf("Error at CstRewardAmountForBidding()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
 
-	time_until_prize,err := cosmic_game_ctrct.GetDurationUntilMainPrize(&copts)
+	// Get current block for time calculations
+	lblock, err := eclient.HeaderByNumber(context.Background(), nil)
 	if err != nil {
-		fmt.Printf("Error at TimeUntilPrize()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at BlockByNumber(latest): %v\n",err)
 		os.Exit(1)
 	}
-	next_bid_price,err := cosmic_game_ctrct.NextEthBidPrice(&copts)
-	if err != nil {
-		fmt.Printf("Error at (next) bidprice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
+	block_time := int64(lblock.Time)
 
-	bid_price_auction,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts)
-	if err != nil {
-		fmt.Printf("Error at BidPrice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	cst_price,err := cosmic_game_ctrct.GetNextCstBidPrice(&copts)
-	if err != nil {
-		fmt.Printf("Error at BidPrice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
+	// ==================== ROUND STATUS ====================
 	round_num,err := cosmic_game_ctrct.RoundNum(&copts)
 	if err != nil {
-		fmt.Printf("Error at RoundNum()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at RoundNum(): %v\n",err)
 		os.Exit(1)
 	}
-	prize_amount,err := cosmic_game_ctrct.GetMainEthPrizeAmount(&copts)
+	activation_time,err := cosmic_game_ctrct.RoundActivationTime(&copts)
 	if err != nil {
-		fmt.Printf("Error at PrizeAmount()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
 		os.Exit(1)
 	}
-	prize_percentage,err := cosmic_game_ctrct.GetMainEthPrizeAmount(&copts)
+	secs_to_start := activation_time.Int64() - block_time
+	delay_until_activation,err := cosmic_game_ctrct.DelayDurationBeforeRoundActivation(&copts)
 	if err != nil {
-		fmt.Printf("Error at PrizePercentage()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at DelayDurationBeforeRoundActivation(): %v\n",err)
 		os.Exit(1)
 	}
-	raffle_percentage,err := cosmic_game_ctrct.RaffleTotalEthPrizeAmountForBiddersPercentage(&copts)
+	total_bids,err := cosmic_game_ctrct.GetTotalNumBids(&copts, round_num)
 	if err != nil {
-		fmt.Printf("Error at RafflePercentage()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	chrono_percentage,err := cosmic_game_ctrct.ChronoWarriorEthPrizeAmountPercentage(&copts)
-	if err != nil {
-		fmt.Printf("Error at ChronoWarriorEthPrizeAmountPercentage()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	eth_bidders,err := cosmic_game_ctrct.RaffleTotalEthPrizeAmountForBiddersPercentage(&copts)
-	if err != nil {
-		fmt.Printf("Error at NumRaffleETHWinnersBidding()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	nft_bidders,err := cosmic_game_ctrct.NumRaffleCosmicSignatureNftsForBidders(&copts)
-	if err != nil {
-		fmt.Printf("Error at NumRaffleNFTWinnersBidding()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	nft_stakers,err := cosmic_game_ctrct.NumRaffleCosmicSignatureNftsForRandomWalkNftStakers(&copts)
-	if err != nil {
-		fmt.Printf("Error at NumRaffleNFTWinnersBidding()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at GetTotalNumBids(): %v\n",err)
 		os.Exit(1)
 	}
 	num_raffle_participants,err := cosmic_game_ctrct.BidderAddresses(&copts,big.NewInt(round_num.Int64()))
 	if err != nil {
-		fmt.Printf("Error at NumRaffleParticipants()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	var charity_donation_recipient string
-	charity_addr,err := cosmic_game_ctrct.CharityAddress(&copts)
-	if err != nil {
-		fmt.Printf("Error at Charity()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	} else {
-		charity_wallet_ctrct,err := NewCharityWallet(charity_addr,eclient)
-		if err!=nil {
-			fmt.Printf("Failed to instantiate CharityWallet contract: %v\n",err)
-			os.Exit(1)
-		}
-		addr,err := charity_wallet_ctrct.CharityAddress(&copts)
-		if err != nil {
-			fmt.Printf("Error calling CharityAddress() : %v\n",err)
-			os.Exit(1)
-		}
-		charity_donation_recipient= addr.String()
-	}
-	charity_amount,err := cosmic_game_ctrct.GetCharityEthDonationAmount(&copts)
-	if err != nil {
-		fmt.Printf("Error at CharityAmount()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	raffle_amount,err := cosmic_game_ctrct.GetRaffleTotalEthPrizeAmountForBidders(&copts)
-	if err != nil {
-		fmt.Printf("Error at RaffleAmount()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	last_bidder,err := cosmic_game_ctrct.LastBidderAddress(&copts)
-	if err != nil {
-		fmt.Printf("Error at LastBidder()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at BidderAddresses(): %v\n",err)
 		os.Exit(1)
 	}
 
-	prize_time,err := cosmic_game_ctrct.MainPrizeTime(&copts)
-	if err != nil {
-		fmt.Printf("Error at prizeTime()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+	section("ROUND STATUS")
+	fmt.Printf("RoundNum                       = %v\n",round_num.String())
+	fmt.Printf("Round activation time          = %v\n",activation_time.String())
+	fmt.Printf("Block time (current)           = %v\n",block_time)
+	fmt.Printf("Delay before activation        = %v\n",delay_until_activation)
+	if secs_to_start > 0 {
+		fmt.Printf("Round status                   = INACTIVE - activates in %s\n", fmt_duration(secs_to_start))
+	} else {
+		fmt.Printf("Round status                   = ACTIVE - started %s ago\n", fmt_duration(-secs_to_start))
 	}
-	balance,err := eclient.BalanceAt(context.Background(),cosmic_game_addr,nil)
+	fmt.Printf("Total bids this round          = %v\n",total_bids.String())
+	fmt.Printf("Unique bidders this round      = %v\n",num_raffle_participants.Int64())
+
+	// ==================== TIMING / COUNTDOWN ====================
+	time_until_prize,err := cosmic_game_ctrct.GetDurationUntilMainPrize(&copts)
 	if err != nil {
-		fmt.Printf("Error at balanceAt()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	num_donated_nfts,err := prizes_wallet.NextDonatedNftIndex(&copts)
-	if err != nil {
-		fmt.Printf("Error at numDonatedNFTs()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}
-	timeout_main_prize,err := cosmic_game_ctrct.TimeoutDurationToClaimMainPrize(&copts)
-	if err != nil {
-		fmt.Printf("Error at TimeoutDurationToClaimMainPrize(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at GetDurationUntilMainPrize(): %v\n",err)
 		os.Exit(1)
 	}
 	duration_until_prize_raw,err := cosmic_game_ctrct.GetDurationUntilMainPrizeRaw(&copts)
 	if err != nil {
 		fmt.Printf("Error at GetDurationUntilMainPrizeRaw(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	prize_time,err := cosmic_game_ctrct.MainPrizeTime(&copts)
+	if err != nil {
+		fmt.Printf("Error at MainPrizeTime(): %v\n",err)
+		os.Exit(1)
+	}
+	timeout_main_prize,err := cosmic_game_ctrct.TimeoutDurationToClaimMainPrize(&copts)
+	if err != nil {
+		fmt.Printf("Error at TimeoutDurationToClaimMainPrize(): %v\n",err)
 		os.Exit(1)
 	}
 	duration_until_anyone_can_claim := new(big.Int).Add(duration_until_prize_raw, timeout_main_prize)
 	anyone_can_claim := duration_until_anyone_can_claim.Cmp(big.NewInt(0)) <= 0
-	timeout_claim,err := prizes_wallet.TimeoutDurationToWithdrawPrizes(&copts)
+
+	time_inc_microsec,err := cosmic_game_ctrct.MainPrizeTimeIncrementInMicroSeconds(&copts)
 	if err != nil {
-		fmt.Printf("Error at TimeoutDurationToWithdrawPrizes(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at MainPrizeTimeIncrementInMicroSeconds(): %v\n",err)
 		os.Exit(1)
 	}
-	owneraddr,err := cosmic_game_ctrct.Owner(&copts)
+	time_increment := float64(time_inc_microsec.Int64())/float64(1000000)
+	time_inc_on_bid,err := cosmic_game_ctrct.GetMainPrizeTimeIncrement(&copts)
 	if err != nil {
-		fmt.Printf("Error at Owner(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at GetMainPrizeTimeIncrement(): %v\n",err)
 		os.Exit(1)
 	}
-	/*
-	staking_addr_cst,err := cosmic_game_ctrct.StakingWalletCosmicSignatureNft(&copts)
+	time_inc_increase_divisor,err := cosmic_game_ctrct.MainPrizeTimeIncrementIncreaseDivisor(&copts)
 	if err != nil {
-		fmt.Printf("Error at StakingWalletCST(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at MainPrizeTimeIncrementIncreaseDivisor(): %v\n",err)
 		os.Exit(1)
 	}
-	staking_addr_rwalk,err := cosmic_game_ctrct.StakingWalletRandomWalkNft(&copts)
+	initial_duration_divisor,err := cosmic_game_ctrct.InitialDurationUntilMainPrizeDivisor(&copts)
 	if err != nil {
-		fmt.Printf("Error at StakingWalletRWalk(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
-	}*/
-	randomwalk_addr,err := cosmic_game_ctrct.RandomWalkNft(&copts)
-	if err != nil {
-		fmt.Printf("Error at RandomWalk(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at InitialDurationUntilMainPrizeDivisor(): %v\n",err)
 		os.Exit(1)
 	}
-	delay_until_activation,err := cosmic_game_ctrct.DelayDurationBeforeRoundActivation(&copts)
+	initial_duration_inc := convert_to_percentage(initial_duration_divisor)
+	initial_duration_seconds,err := cosmic_game_ctrct.GetInitialDurationUntilMainPrize(&copts)
 	if err != nil {
-		fmt.Printf("Error at ActivationTime()(): %v\n",err)
-		fmt.Printf("Aborting\n")
+		fmt.Printf("Error at GetInitialDurationUntilMainPrize(): %v\n",err)
 		os.Exit(1)
 	}
-	current_champions,err := cosmic_game_ctrct.TryGetCurrentChampions(&copts)
+
+	section("TIMING / COUNTDOWN")
+	fmt.Printf("MainPrizeTime (timestamp)      = %v\n",prize_time.String())
+	fmt.Printf("Duration until prize (clamped) = %v (%s)\n",time_until_prize.Int64(), fmt_duration(time_until_prize.Int64()))
+	fmt.Printf("Duration until prize (raw)     = %v (%s)\n",duration_until_prize_raw.Int64(), fmt_duration(duration_until_prize_raw.Int64()))
+	fmt.Printf("Timeout for last bidder claim  = %v (%s)\n",timeout_main_prize.String(), fmt_duration(timeout_main_prize.Int64()))
+	fmt.Printf("Duration until anyone can claim= %v (%s)\n",duration_until_anyone_can_claim.Int64(), fmt_duration(duration_until_anyone_can_claim.Int64()))
+	if anyone_can_claim {
+		fmt.Printf("Can anyone claim now?          = YES\n")
+	} else {
+		fmt.Printf("Can anyone claim now?          = NO\n")
+	}
+	fmt.Printf("Time increment (microsec)      = %v\n",time_inc_microsec)
+	fmt.Printf("Time increment (seconds)       = %v\n",time_increment)
+	fmt.Printf("Time increment on bid (current)= %v sec\n",time_inc_on_bid.Int64())
+	fmt.Printf("Time increment increase divisor= %v\n",time_inc_increase_divisor)
+	fmt.Printf("First bid time bump            = %v%% (divisor=%v)\n",initial_duration_inc,initial_duration_divisor)
+	fmt.Printf("First bid time bump (seconds)  = %v\n",initial_duration_seconds)
+
+	// ==================== BIDDING / PRICES ====================
+	next_bid_price,err := cosmic_game_ctrct.NextEthBidPrice(&copts)
 	if err != nil {
-		fmt.Printf("Error at TryGetCurrentChampions(): %v\n",err)
+		fmt.Printf("Error at NextEthBidPrice(): %v\n",err)
 		os.Exit(1)
 	}
-	cst_auction_duration,cst_auction_elapsed,err := cosmic_game_ctrct.GetCstDutchAuctionDurations(&copts)
+	bid_price_auction,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts)
 	if err != nil {
-		fmt.Printf("Error at GetCstDutchAuctionDuration(): %v\n",err)
+		fmt.Printf("Error at GetNextEthBidPrice(): %v\n",err)
 		os.Exit(1)
 	}
-	eth_auction_duration,eth_auction_elapsed,err := cosmic_game_ctrct.GetEthDutchAuctionDurations(&copts)
+	cst_price,err := cosmic_game_ctrct.GetNextCstBidPrice(&copts)
 	if err != nil {
-		fmt.Printf("Error at GetEthDutchAuctionDuration(): %v\n",err)
+		fmt.Printf("Error at GetNextCstBidPrice(): %v\n",err)
 		os.Exit(1)
 	}
 	eth_bid_price_increase_divisor,err := cosmic_game_ctrct.EthBidPriceIncreaseDivisor(&copts)
@@ -286,101 +220,291 @@ func main() {
 		fmt.Printf("Error at EthBidPriceIncreaseDivisor(): %v\n",err)
 		os.Exit(1)
 	}
-	fmt.Printf("eth_bid_price_increase_divisor = %v\n",eth_bid_price_increase_divisor)
 	price_increase := convert_to_percentage(eth_bid_price_increase_divisor)
-
-	initial_duration_divisor,err := cosmic_game_ctrct.InitialDurationUntilMainPrizeDivisor(&copts)
+	cst_reward,err := cosmic_game_ctrct.CstRewardAmountForBidding(&copts)
 	if err != nil {
-		fmt.Printf("Error at initialDurationUntilMainPrizeDivisor(): %v\n",err)
-		os.Exit(1)
-	}
-	initial_duration_inc := convert_to_percentage(initial_duration_divisor)
-	initial_duration_seconds,err := cosmic_game_ctrct.GetInitialDurationUntilMainPrize(&copts)
-	if err != nil {
-		fmt.Printf("Error at getInitialDurationUntilMainPrize(): %v\n",err)
+		fmt.Printf("Error at CstRewardAmountForBidding(): %v\n",err)
 		os.Exit(1)
 	}
 
-	time_inc_microsec,err :=  cosmic_game_ctrct.MainPrizeTimeIncrementInMicroSeconds(&copts)
+	// Dutch auction info
+	cst_auction_duration,cst_auction_elapsed,err := cosmic_game_ctrct.GetCstDutchAuctionDurations(&copts)
 	if err != nil {
-		fmt.Printf("Error at MainPrizeTimeIncrementInMicroSeconds(): %v\n",err)
+		fmt.Printf("Error at GetCstDutchAuctionDurations(): %v\n",err)
 		os.Exit(1)
 	}
-	time_increment := float64(time_inc_microsec.Int64())/float64(1000000);
-	time_inc_on_bid,err := cosmic_game_ctrct.GetMainPrizeTimeIncrement(&copts)
+	eth_auction_duration,eth_auction_elapsed,err := cosmic_game_ctrct.GetEthDutchAuctionDurations(&copts)
 	if err != nil {
-		fmt.Printf("Error at GetMainPrizeTimeIncrement(): %v\n",err)
+		fmt.Printf("Error at GetEthDutchAuctionDurations(): %v\n",err)
+		os.Exit(1)
+	}
+	cst_dutch_begin_price,err := cosmic_game_ctrct.CstDutchAuctionBeginningBidPrice(&copts)
+	if err != nil {
+		fmt.Printf("Error at CstDutchAuctionBeginningBidPrice(): %v\n",err)
+		os.Exit(1)
+	}
+	eth_dutch_begin_price,err := cosmic_game_ctrct.EthDutchAuctionBeginningBidPrice(&copts)
+	if err != nil {
+		fmt.Printf("Error at EthDutchAuctionBeginningBidPrice(): %v\n",err)
+		os.Exit(1)
+	}
+	eth_dutch_ending_divisor,err := cosmic_game_ctrct.EthDutchAuctionEndingBidPriceDivisor(&copts)
+	if err != nil {
+		fmt.Printf("Error at EthDutchAuctionEndingBidPriceDivisor(): %v\n",err)
 		os.Exit(1)
 	}
 
+	section("BIDDING / PRICES")
+	fmt.Printf("NextEthBidPrice (stored)       = %v ETH\n",fmt_eth(next_bid_price))
+	fmt.Printf("NextEthBidPrice (auction)      = %v ETH\n",fmt_eth(bid_price_auction))
+	fmt.Printf("NextCstBidPrice                = %v CST\n",fmt_eth(cst_price))
+	fmt.Printf("ETH bid price increase divisor = %v (%.2f%%)\n",eth_bid_price_increase_divisor,price_increase)
+	fmt.Printf("CST reward per bid             = %v CST\n",fmt_eth(cst_reward))
+	fmt.Printf("ETH Dutch auction elapsed/total= %v / %v\n",eth_auction_elapsed.String(),eth_auction_duration.String())
+	fmt.Printf("ETH Dutch auction begin price  = %v ETH\n",fmt_eth(eth_dutch_begin_price))
+	fmt.Printf("ETH Dutch auction end divisor  = %v\n",eth_dutch_ending_divisor)
+	fmt.Printf("CST Dutch auction elapsed/total= %v / %v\n",cst_auction_elapsed.String(),cst_auction_duration.String())
+	fmt.Printf("CST Dutch auction begin price  = %v CST\n",fmt_eth(cst_dutch_begin_price))
 
-	activation_time,err := cosmic_game_ctrct.RoundActivationTime(&copts)
+	// ==================== CURRENT BIDDERS / CHAMPIONS ====================
+	last_bidder,err := cosmic_game_ctrct.LastBidderAddress(&copts)
 	if err != nil {
-		fmt.Printf("Error at RoundActivationTime(): %v\n",err)
+		fmt.Printf("Error at LastBidderAddress(): %v\n",err)
 		os.Exit(1)
 	}
-	lblock, err := eclient.HeaderByNumber(context.Background(), nil)
+	last_cst_bidder,err := cosmic_game_ctrct.LastCstBidderAddress(&copts)
 	if err != nil {
-		fmt.Printf("Error at BlockByNumber(latest): %v\n",err)
+		fmt.Printf("Error at LastCstBidderAddress(): %v\n",err)
 		os.Exit(1)
 	}
-	block_time := int64(lblock.Time)
-	secs_to_start := activation_time.Int64() - block_time;
+	current_champions,err := cosmic_game_ctrct.TryGetCurrentChampions(&copts)
+	if err != nil {
+		fmt.Printf("Error at TryGetCurrentChampions(): %v\n",err)
+		os.Exit(1)
+	}
+	endurance_start_ts,err := cosmic_game_ctrct.EnduranceChampionStartTimeStamp(&copts)
+	if err != nil {
+		fmt.Printf("Error at EnduranceChampionStartTimeStamp(): %v\n",err)
+		os.Exit(1)
+	}
+	prev_endurance_duration,err := cosmic_game_ctrct.PrevEnduranceChampionDuration(&copts)
+	if err != nil {
+		fmt.Printf("Error at PrevEnduranceChampionDuration(): %v\n",err)
+		os.Exit(1)
+	}
 
-	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
-	fmt.Printf("Bid Price = %v\n",fmt_eth(next_bid_price))
-	fmt.Printf("Bid Price auction %v\n",fmt_eth(bid_price_auction))
-	fmt.Printf("CST Price = %v\n",fmt_eth(cst_price))
-	fmt.Printf("RoundNum = %v\n",round_num.String())
-	fmt.Printf("PrizeAmount = %v\n",fmt_eth(prize_amount))
-	fmt.Printf("PrizePercentage = %v\n",prize_percentage.String())
-	fmt.Printf("RafflePercentage = %v\n",raffle_percentage.String())
-	fmt.Printf("ChronoPercentage = %v\n",chrono_percentage.String())
-	fmt.Printf("ETHWinnersBidding = %v\n",eth_bidders);
-	fmt.Printf("NFTWinnersBidding = %v\n",nft_bidders);
-	fmt.Printf("NFTWinnersStaking = %v\n",nft_stakers);
-	fmt.Printf("PrizeTime = %v\n",prize_time.String());
-	fmt.Printf("CharityWallet addr = %v\n",charity_addr.String());
-	fmt.Printf("Charity donation receiver = %v\n",charity_donation_recipient);
-	fmt.Printf("CharityAmount = %v\n",charity_amount.String())
-	fmt.Printf("RaffleAmount = %v\n",raffle_amount.String())
-	fmt.Printf("Last bidder = %v\n",last_bidder.String())
-	fmt.Printf("Contract balance = %v\n",balance.String())
-	fmt.Printf("Num donated NFTs = %v\n",num_donated_nfts.String());
-	fmt.Printf("Num raffle participants = %v\n",num_raffle_participants.Int64())
-	fmt.Printf("MainPrize claim timeout = %v\n",timeout_main_prize.String())
-	if anyone_can_claim {
-		fmt.Printf("Can anyone claim? yes\n")
-	} else {
-		fmt.Printf("Can anyone claim? no\n")
+	section("CURRENT BIDDERS / CHAMPIONS")
+	fmt.Printf("Last ETH bidder                = %v\n",last_bidder.String())
+	fmt.Printf("Last CST bidder                = %v\n",last_cst_bidder.String())
+	fmt.Printf("Endurance champion             = %v\n",current_champions.EnduranceChampionAddress.String())
+	fmt.Printf("Endurance champion duration    = %v (%s)\n",current_champions.EnduranceChampionDuration.Int64(), fmt_duration(current_champions.EnduranceChampionDuration.Int64()))
+	fmt.Printf("Endurance champion start ts    = %v\n",endurance_start_ts.String())
+	fmt.Printf("Prev endurance champion dur    = %v (%s)\n",prev_endurance_duration.Int64(), fmt_duration(prev_endurance_duration.Int64()))
+	fmt.Printf("Chrono Warrior                 = %v\n",current_champions.ChronoWarriorAddress.String())
+	fmt.Printf("Chrono Warrior duration        = %v (%s)\n",current_champions.ChronoWarriorDuration.Int64(), fmt_duration(current_champions.ChronoWarriorDuration.Int64()))
+
+	// ==================== PRIZE DISTRIBUTION ====================
+	balance,err := eclient.BalanceAt(context.Background(),cosmic_game_addr,nil)
+	if err != nil {
+		fmt.Printf("Error at BalanceAt(): %v\n",err)
+		os.Exit(1)
 	}
-	fmt.Printf("PrizesWallet claim timeout = %v\n",timeout_claim.String())
-	fmt.Printf("Owner = %v\n",owneraddr.String())
-	fmt.Printf("Endurance champion = %v\n",current_champions.EnduranceChampionAddress.String())
-	fmt.Printf("Endurance champion duration = %v\n",current_champions.EnduranceChampionDuration.Int64())
-	fmt.Printf("ChronoWarrior = %v\n",current_champions.ChronoWarriorAddress.String())
-	fmt.Printf("ChronoWarrior duration = %v\n",current_champions.ChronoWarriorDuration.Int64())
-	fmt.Printf("RandomWalk addr = %v\n",randomwalk_addr.String())
-	fmt.Printf("Delay until Activation = %v\n",delay_until_activation)
-	fmt.Printf("CST Auction duration %v of %v\n",cst_auction_elapsed.String(),cst_auction_duration.String())
-	fmt.Printf("ETH Auction duration %v of %v\n",eth_auction_elapsed.String(),eth_auction_duration.String())
-	fmt.Printf("Price increase (on bid) = %v%%\n",price_increase)
-	fmt.Printf("CST Reward = %v\n",fmt_eth(cst_reward))
-	fmt.Printf("First bid time bump %v%% (divisor=%v)\n",initial_duration_inc,initial_duration_divisor)
-	fmt.Printf("First bid time bump %v sseconds\n",initial_duration_seconds)
-	fmt.Printf("Time increment (on claimPrize()): %v\n",time_increment)
-	fmt.Printf("Time increment on bid: %v\n",time_inc_on_bid.Int64())
-	fmt.Printf("Time increment in microseconds: %v\n",time_inc_microsec)
-	fmt.Printf("Round activation time = %v\n",activation_time.String())
-	fmt.Printf("Seconds to round start= %v (%v - %v)\n",secs_to_start,block_time,activation_time.Int64())
-	if secs_to_start > 0 {
-		minutes := secs_to_start / 60
-		seconds := secs_to_start % 60
-		fmt.Printf("Round status: INACTIVE - activates in %d min %d sec\n", minutes, seconds)
-	} else {
-		elapsed := -secs_to_start
-		minutes := elapsed / 60
-		seconds := elapsed % 60
-		fmt.Printf("Round status: ACTIVE - started %d min %d sec ago\n", minutes, seconds)
+	prize_amount,err := cosmic_game_ctrct.GetMainEthPrizeAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetMainEthPrizeAmount(): %v\n",err)
+		os.Exit(1)
 	}
+	main_prize_percentage,err := cosmic_game_ctrct.MainEthPrizeAmountPercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at MainEthPrizeAmountPercentage(): %v\n",err)
+		os.Exit(1)
+	}
+	charity_amount,err := cosmic_game_ctrct.GetCharityEthDonationAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetCharityEthDonationAmount(): %v\n",err)
+		os.Exit(1)
+	}
+	charity_percentage,err := cosmic_game_ctrct.CharityEthDonationAmountPercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at CharityEthDonationAmountPercentage(): %v\n",err)
+		os.Exit(1)
+	}
+	raffle_amount,err := cosmic_game_ctrct.GetRaffleTotalEthPrizeAmountForBidders(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetRaffleTotalEthPrizeAmountForBidders(): %v\n",err)
+		os.Exit(1)
+	}
+	raffle_percentage,err := cosmic_game_ctrct.RaffleTotalEthPrizeAmountForBiddersPercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at RaffleTotalEthPrizeAmountForBiddersPercentage(): %v\n",err)
+		os.Exit(1)
+	}
+	chrono_amount,err := cosmic_game_ctrct.GetChronoWarriorEthPrizeAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetChronoWarriorEthPrizeAmount(): %v\n",err)
+		os.Exit(1)
+	}
+	chrono_percentage,err := cosmic_game_ctrct.ChronoWarriorEthPrizeAmountPercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at ChronoWarriorEthPrizeAmountPercentage(): %v\n",err)
+		os.Exit(1)
+	}
+	staking_amount,err := cosmic_game_ctrct.GetCosmicSignatureNftStakingTotalEthRewardAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at GetCosmicSignatureNftStakingTotalEthRewardAmount(): %v\n",err)
+		os.Exit(1)
+	}
+	staking_percentage,err := cosmic_game_ctrct.CosmicSignatureNftStakingTotalEthRewardAmountPercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at CosmicSignatureNftStakingTotalEthRewardAmountPercentage(): %v\n",err)
+		os.Exit(1)
+	}
+	cst_prize_amount,err := cosmic_game_ctrct.CstPrizeAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at CstPrizeAmount(): %v\n",err)
+		os.Exit(1)
+	}
+
+	section("PRIZE DISTRIBUTION")
+	fmt.Printf("Contract balance               = %v ETH\n",fmt_eth(balance))
+	fmt.Printf("Main prize amount              = %v ETH (%v%%)\n",fmt_eth(prize_amount),main_prize_percentage)
+	fmt.Printf("Charity amount                 = %v ETH (%v%%)\n",fmt_eth(charity_amount),charity_percentage)
+	fmt.Printf("Raffle amount (bidders)        = %v ETH (%v%%)\n",fmt_eth(raffle_amount),raffle_percentage)
+	fmt.Printf("Chrono Warrior amount          = %v ETH (%v%%)\n",fmt_eth(chrono_amount),chrono_percentage)
+	fmt.Printf("Staking reward amount          = %v ETH (%v%%)\n",fmt_eth(staking_amount),staking_percentage)
+	fmt.Printf("CST prize amount               = %v CST\n",fmt_eth(cst_prize_amount))
+
+	// ==================== RAFFLE CONFIG ====================
+	num_eth_winners,err := cosmic_game_ctrct.NumRaffleEthPrizesForBidders(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumRaffleEthPrizesForBidders(): %v\n",err)
+		os.Exit(1)
+	}
+	nft_bidders,err := cosmic_game_ctrct.NumRaffleCosmicSignatureNftsForBidders(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumRaffleCosmicSignatureNftsForBidders(): %v\n",err)
+		os.Exit(1)
+	}
+	nft_stakers,err := cosmic_game_ctrct.NumRaffleCosmicSignatureNftsForRandomWalkNftStakers(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumRaffleCosmicSignatureNftsForRandomWalkNftStakers(): %v\n",err)
+		os.Exit(1)
+	}
+
+	section("RAFFLE CONFIG")
+	fmt.Printf("Num ETH raffle winners         = %v\n",num_eth_winners)
+	fmt.Printf("Num NFT winners (bidders)      = %v\n",nft_bidders)
+	fmt.Printf("Num NFT winners (RW stakers)   = %v\n",nft_stakers)
+
+	// ==================== PRIZES WALLET ====================
+	prize_wallet_addr,err := cosmic_game_ctrct.PrizesWallet(&copts)
+	if err != nil {
+		fmt.Printf("Error at PrizesWallet(): %v\n",err)
+		os.Exit(1)
+	}
+	prizes_wallet,err := NewPrizesWallet(prize_wallet_addr,eclient)
+	if err != nil {
+		fmt.Printf("Error at instantiation of PrizesWallet: %v\n",err)
+		os.Exit(1)
+	}
+	num_donated_nfts,err := prizes_wallet.NextDonatedNftIndex(&copts)
+	if err != nil {
+		fmt.Printf("Error at NextDonatedNftIndex(): %v\n",err)
+		os.Exit(1)
+	}
+	timeout_claim,err := prizes_wallet.TimeoutDurationToWithdrawPrizes(&copts)
+	if err != nil {
+		fmt.Printf("Error at TimeoutDurationToWithdrawPrizes(): %v\n",err)
+		os.Exit(1)
+	}
+
+	section("PRIZES WALLET")
+	fmt.Printf("PrizesWallet address           = %v\n",prize_wallet_addr.String())
+	fmt.Printf("Num donated NFTs               = %v\n",num_donated_nfts.String())
+	fmt.Printf("Timeout to withdraw prizes     = %v (%s)\n",timeout_claim.String(), fmt_duration(timeout_claim.Int64()))
+
+	// ==================== CHARITY ====================
+	charity_addr,err := cosmic_game_ctrct.CharityAddress(&copts)
+	if err != nil {
+		fmt.Printf("Error at CharityAddress(): %v\n",err)
+		os.Exit(1)
+	}
+	var charity_donation_recipient string
+	charity_wallet_ctrct,err := NewCharityWallet(charity_addr,eclient)
+	if err!=nil {
+		fmt.Printf("Failed to instantiate CharityWallet contract: %v\n",err)
+		os.Exit(1)
+	}
+	charity_recv_addr,err := charity_wallet_ctrct.CharityAddress(&copts)
+	if err != nil {
+		fmt.Printf("Error calling CharityAddress(): %v\n",err)
+		os.Exit(1)
+	}
+	charity_donation_recipient = charity_recv_addr.String()
+
+	section("CHARITY")
+	fmt.Printf("CharityWallet address          = %v\n",charity_addr.String())
+	fmt.Printf("Charity donation receiver      = %v\n",charity_donation_recipient)
+
+	// ==================== CONTRACT ADDRESSES ====================
+	nft_addr,err := cosmic_game_ctrct.Nft(&copts)
+	if err != nil {
+		fmt.Printf("Error at Nft(): %v\n",err)
+		os.Exit(1)
+	}
+	token_addr,err := cosmic_game_ctrct.Token(&copts)
+	if err != nil {
+		fmt.Printf("Error at Token(): %v\n",err)
+		os.Exit(1)
+	}
+	randomwalk_addr,err := cosmic_game_ctrct.RandomWalkNft(&copts)
+	if err != nil {
+		fmt.Printf("Error at RandomWalkNft(): %v\n",err)
+		os.Exit(1)
+	}
+	staking_addr_cst,err := cosmic_game_ctrct.StakingWalletCosmicSignatureNft(&copts)
+	if err != nil {
+		fmt.Printf("Error at StakingWalletCosmicSignatureNft(): %v\n",err)
+		os.Exit(1)
+	}
+	staking_addr_rwalk,err := cosmic_game_ctrct.StakingWalletRandomWalkNft(&copts)
+	if err != nil {
+		fmt.Printf("Error at StakingWalletRandomWalkNft(): %v\n",err)
+		os.Exit(1)
+	}
+	marketing_addr,err := cosmic_game_ctrct.MarketingWallet(&copts)
+	if err != nil {
+		fmt.Printf("Error at MarketingWallet(): %v\n",err)
+		os.Exit(1)
+	}
+	marketing_cst_amount,err := cosmic_game_ctrct.MarketingWalletCstContributionAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at MarketingWalletCstContributionAmount(): %v\n",err)
+		os.Exit(1)
+	}
+	owneraddr,err := cosmic_game_ctrct.Owner(&copts)
+	if err != nil {
+		fmt.Printf("Error at Owner(): %v\n",err)
+		os.Exit(1)
+	}
+
+	section("CONTRACT ADDRESSES")
+	fmt.Printf("CosmicSignatureNft             = %v\n",nft_addr.String())
+	fmt.Printf("CosmicSignatureToken           = %v\n",token_addr.String())
+	fmt.Printf("RandomWalkNft                  = %v\n",randomwalk_addr.String())
+	fmt.Printf("StakingWallet (CST NFT)        = %v\n",staking_addr_cst.String())
+	fmt.Printf("StakingWallet (RandomWalk)     = %v\n",staking_addr_rwalk.String())
+	fmt.Printf("MarketingWallet                = %v\n",marketing_addr.String())
+	fmt.Printf("MarketingWallet CST contrib    = %v CST\n",fmt_eth(marketing_cst_amount))
+	fmt.Printf("Owner                          = %v\n",owneraddr.String())
+
+	// ==================== CONFIG PARAMETERS ====================
+	bid_msg_max_len,err := cosmic_game_ctrct.BidMessageLengthMaxLimit(&copts)
+	if err != nil {
+		fmt.Printf("Error at BidMessageLengthMaxLimit(): %v\n",err)
+		os.Exit(1)
+	}
+
+	section("CONFIG PARAMETERS")
+	fmt.Printf("Bid message max length         = %v\n",bid_msg_max_len)
 }
