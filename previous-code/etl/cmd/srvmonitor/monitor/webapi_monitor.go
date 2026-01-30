@@ -27,11 +27,11 @@ type WebAPIMonitor struct {
 }
 
 // NewWebAPIMonitor creates a new web API monitor
-func NewWebAPIMonitor(apis []types.WebAPIConfig) *WebAPIMonitor {
+func NewWebAPIMonitor(apis []types.WebAPIConfig, baseY int) *WebAPIMonitor {
 	m := &WebAPIMonitor{
 		apis:     apis,
 		statuses: make([]*WebAPIStatus, len(apis)),
-		position: types.Position{X: 0, Y: 30},
+		position: types.Position{X: 0, Y: baseY},
 	}
 	
 	// Initialize statuses
@@ -39,7 +39,7 @@ func NewWebAPIMonitor(apis []types.WebAPIConfig) *WebAPIMonitor {
 		m.statuses[i] = &WebAPIStatus{
 			Config: api,
 			X:      1,
-			Y:      31 + i,
+			Y:      baseY + 1 + i,
 		}
 	}
 	
@@ -109,7 +109,7 @@ func (m *WebAPIMonitor) checkAPI(status *WebAPIStatus, wg *sync.WaitGroup, error
 // display renders the web API status
 func (m *WebAPIMonitor) display(disp display.Display) {
 	// Header
-	disp.DrawText(types.Position{X: 0, Y: 30},
+	disp.DrawText(types.Position{X: 0, Y: m.position.Y},
 		"--------------------- Web API ------------------------------",
 		types.ColorWhite, types.ColorDefault)
 	

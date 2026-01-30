@@ -96,6 +96,17 @@ type ImageServerConfig struct {
 	RPCURL       string
 }
 
+// EventTableConfig holds event table monitoring configuration
+type EventTableConfig struct {
+	Name       string
+	Host       string
+	DBName     string
+	User       string
+	Pass       string
+	TableName  string // e.g., "cg_proc_status" or "rw_proc_status"
+	ColumnName string // e.g., "last_evt_id" or "last_block"
+}
+
 
 
 

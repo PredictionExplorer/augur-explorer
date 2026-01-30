@@ -16,6 +16,7 @@ type Config struct {
 	// Databases
 	Layer1DBs      []types.DatabaseConfig
 	ApplicationDBs []types.DatabaseConfig
+	EventTableDBs  []types.EventTableConfig
 	
 	// Image Monitoring
 	RWalkImage types.ImageServerConfig
@@ -100,6 +101,38 @@ func LoadFromEnv() (*Config, error) {
 		}
 	}
 	
+	// Load Event Table databases (DB_L1EVT1 and DB_L1EVT2)
+	for i := 1; i <= 2; i++ {
+		name := os.Getenv(fmt.Sprintf("DB_L1EVT%d_NAME", i))
+		host := os.Getenv(fmt.Sprintf("DB_L1EVT%d_HOST", i))
+		dbname := os.Getenv(fmt.Sprintf("DB_L1EVT%d_DBNAME", i))
+		user := os.Getenv(fmt.Sprintf("DB_L1EVT%d_USER", i))
+		pass := os.Getenv(fmt.Sprintf("DB_L1EVT%d_PASS", i))
+		tableName := os.Getenv(fmt.Sprintf("DB_L1EVT%d_TABLE", i))
+		columnName := os.Getenv(fmt.Sprintf("DB_L1EVT%d_COLUMN", i))
+		
+		// Default to cg_proc_status if not specified
+		if tableName == "" {
+			tableName = "cg_proc_status"
+		}
+		// Default to last_evt_id if not specified
+		if columnName == "" {
+			columnName = "last_evt_id"
+		}
+		
+		if name != "" && host != "" {
+			cfg.EventTableDBs = append(cfg.EventTableDBs, types.EventTableConfig{
+				Name:       name,
+				Host:       host,
+				DBName:     dbname,
+				User:       user,
+				Pass:       pass,
+				TableName:  tableName,
+				ColumnName: columnName,
+			})
+		}
+	}
+	
 	// Load Application Layer databases
 	for i := 1; i <= 4; i++ {
 		title := os.Getenv(fmt.Sprintf("APP_STATUS_SRV%d_TITLE", i))
@@ -120,7 +153,7 @@ func LoadFromEnv() (*Config, error) {
 	}
 	
 	// Load Web APIs
-	for i := 1; i <= 4; i++ {
+	for i := 1; i <= 6; i++ {
 		title := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_NAME", i))
 		host := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_HOST", i))
 		port := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_PORT", i))

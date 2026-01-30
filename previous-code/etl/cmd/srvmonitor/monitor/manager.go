@@ -10,16 +10,17 @@ import (
 
 // Manager coordinates all monitors
 type Manager struct {
-	monitors     []Monitor
-	display      display.Display
-	errorChan    chan string
-	globalErrs   [2]string
-	logger       *log.Logger
-	alarmTracker *AlarmTracker
+	monitors      []Monitor
+	display       display.Display
+	errorChan     chan string
+	globalErrs    [2]string
+	logger        *log.Logger
+	alarmTracker  *AlarmTracker
+	errorDisplayY int
 }
 
 // NewManager creates a new monitor manager
-func NewManager(display display.Display, logger *log.Logger, mobileNotifEnabled bool) *Manager {
+func NewManager(display display.Display, logger *log.Logger, mobileNotifEnabled bool, errorDisplayY int) *Manager {
 	alarmTracker := NewAlarmTracker(mobileNotifEnabled, logger)
 	if mobileNotifEnabled {
 		alarmTracker.StartCleanupRoutine()
@@ -27,11 +28,12 @@ func NewManager(display display.Display, logger *log.Logger, mobileNotifEnabled 
 	}
 	
 	return &Manager{
-		monitors:     make([]Monitor, 0),
-		display:      display,
-		errorChan:    make(chan string, 100),
-		logger:       logger,
-		alarmTracker: alarmTracker,
+		monitors:      make([]Monitor, 0),
+		display:       display,
+		errorChan:     make(chan string, 100),
+		logger:        logger,
+		alarmTracker:  alarmTracker,
+		errorDisplayY: errorDisplayY,
 	}
 }
 
@@ -71,11 +73,11 @@ func (m *Manager) handleErrors(ctx context.Context) {
 			// Update global error display
 			if m.globalErrs[0] == "" {
 				m.globalErrs[0] = err
-				m.display.DrawText(types.Position{X: 1, Y: 35}, err, types.ColorYellow, types.ColorDefault)
+				m.display.DrawText(types.Position{X: 1, Y: m.errorDisplayY}, err, types.ColorYellow, types.ColorDefault)
 				m.display.Flush()
 			} else if m.globalErrs[1] == "" {
 				m.globalErrs[1] = err
-				m.display.DrawText(types.Position{X: 1, Y: 36}, err, types.ColorYellow, types.ColorDefault)
+				m.display.DrawText(types.Position{X: 1, Y: m.errorDisplayY + 1}, err, types.ColorYellow, types.ColorDefault)
 				m.display.Flush()
 			}
 		}

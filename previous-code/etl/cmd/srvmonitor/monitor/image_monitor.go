@@ -49,13 +49,13 @@ type ImageMonitor struct {
 }
 
 // NewImageMonitor creates a new image monitor
-func NewImageMonitor(imgCfg types.ImageServerConfig, dbCfg types.DatabaseConfig) *ImageMonitor {
+func NewImageMonitor(imgCfg types.ImageServerConfig, dbCfg types.DatabaseConfig, baseY int) *ImageMonitor {
 	rand.Seed(time.Now().UnixNano())
 	
 	return &ImageMonitor{
 		config:   imgCfg,
 		dbConfig: dbCfg,
-		position: types.Position{X: 0, Y: 37},
+		position: types.Position{X: 0, Y: baseY},
 	}
 }
 
@@ -249,7 +249,7 @@ func (m *ImageMonitor) getContractTokenID() (int64, error) {
 
 // display renders the image monitoring status
 func (m *ImageMonitor) display(disp display.Display) {
-	y := 37
+	y := m.position.Y
 	
 	// Header
 	disp.DrawText(types.Position{X: 0, Y: y},

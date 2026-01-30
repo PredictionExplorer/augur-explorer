@@ -57,23 +57,23 @@ func New_sql_storage(info_log *log.Logger,db_log *log.Logger,host_port,db_name,u
 	return ss
 }
 func show_connect_error() {
-	fmt.Printf(`Extractor: can't connect to PostgreSQL database.
-				Check that you have set EXTRACTOR_USERNAME,EXTRACTOR_PASSWORD,EXTRACTOR_DATABASE
-				EXTRACTOR_HOST environment variables`);
+	fmt.Printf(`Websrv: can't connect to PostgreSQL database.
+				Check that you have set PGSQL_USERNAME,PGSQL_PASSWORD,PGSQL_DATABASE
+				PGSQL_HOST environment variables`);
 }
 func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	var err error
-	host,port,err:=net.SplitHostPort(os.Getenv("EXTRACTOR_HOST"))
+	host,port,err:=net.SplitHostPort(os.Getenv("PGSQL_HOST"))
 	if (err!=nil) {
-		host=os.Getenv("EXTRACTOR_HOST")
+		host=os.Getenv("PGSQL_HOST")
 		port="5432"
 	}
 	conn_str := "user='"+
-				os.Getenv("EXTRACTOR_USERNAME") +
+				os.Getenv("PGSQL_USERNAME") +
 				"' dbname='" +
-				os.Getenv("EXTRACTOR_DATABASE") +
+				os.Getenv("PGSQL_DATABASE") +
 				"' password='" +
-				os.Getenv("EXTRACTOR_PASSWORD") +
+				os.Getenv("PGSQL_PASSWORD") +
 				"' host='" +
 				host +
 				"' port='" +
@@ -97,17 +97,17 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 }
 func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQLStorage {
 	var err error
-	host,port,err:=net.SplitHostPort(os.Getenv("EXTRACTOR_HOST"))
+	host,port,err:=net.SplitHostPort(os.Getenv("PGSQL_HOST"))
 	if (err!=nil) {
-		host=os.Getenv("EXTRACTOR_HOST")
+		host=os.Getenv("PGSQL_HOST")
 		port="5432"
 	}
 	conn_str := "user='"+
-				os.Getenv("EXTRACTOR_USERNAME") +
+				os.Getenv("PGSQL_USERNAME") +
 				"' dbname='" +
-				os.Getenv("EXTRACTOR_DATABASE") +
+				os.Getenv("PGSQL_DATABASE") +
 				"' password='" +
-				os.Getenv("EXTRACTOR_PASSWORD") +
+				os.Getenv("PGSQL_PASSWORD") +
 				"' host='" +
 				host +
 				"' port='" +

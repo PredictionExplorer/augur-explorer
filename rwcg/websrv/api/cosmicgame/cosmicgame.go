@@ -25,10 +25,20 @@ var (
 	// Loggers
 	Info  *log.Logger
 	Error *log.Logger
+
+	// Enabled indicates whether the cosmicgame module is enabled
+	Enabled bool
 )
 
 // Init initializes the cosmicgame package with required dependencies
-func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger) {
+// If enabled is false, the module will be disabled and routes will not be functional
+func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) {
+	Enabled = enabled
+	if !enabled {
+		info.Printf("CosmicGame module is disabled")
+		return
+	}
+
 	EthClient = ethClient
 	rpcclient = rpcClient
 	Info = info
@@ -50,7 +60,11 @@ func dbInitialized() bool {
 }
 
 // RegisterAPIRoutes registers all CosmicGame JSON API routes
+// If the module is disabled, this function returns without registering any routes
 func RegisterAPIRoutes(r *gin.Engine) {
+	if !Enabled {
+		return
+	}
 	// Statistics
 	r.GET("/api/cosmicgame/statistics/dashboard", api_cosmic_game_dashboard)
 	r.GET("/api/cosmicgame/statistics/counters", api_cosmic_game_record_counters)
@@ -202,7 +216,11 @@ func RegisterAPIRoutes(r *gin.Engine) {
 }
 
 // RegisterHTMLRoutes registers all CosmicGame HTML page routes
+// If the module is disabled, this function returns without registering any routes
 func RegisterHTMLRoutes(r *gin.Engine) {
+	if !Enabled {
+		return
+	}
 	r.GET("/black/cosmicgame", cosmic_game_index_page)
 	r.GET("/black/cosmicgame/index.html", cosmic_game_index_page)
 	r.GET("/black/cosmicgame/api_docs", cosmic_game_api_docs)

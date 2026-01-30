@@ -27,14 +27,31 @@ var (
 
 	Error *log.Logger
 	Info  *log.Logger
+
+	// Module enable flags (default to true for backward compatibility)
+	enableCosmicGame = true
 )
+
+func init() {
+	// Check environment variable to disable cosmicgame module
+	// Set ENABLE_COSMICGAME=false to disable
+	if val := os.Getenv("ENABLE_COSMICGAME"); val == "false" || val == "0" {
+		enableCosmicGame = false
+	}
+}
 
 func initialize() {
 	// Initialize the common context
 	common.InitContext(rwcg_srv.db, rwcg_srv.db_arbitrum, eclient, Info, Error)
 
-	// Initialize CosmicGame
-	cosmicgame.Init(eclient, rpcclient, Info, Error)
+	// Initialize CosmicGame (only if enabled)
+	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCosmicGame)
+	if enableCosmicGame {
+		Info.Printf("CosmicGame module enabled")
+	} else {
+		Info.Printf("CosmicGame module disabled (set ENABLE_COSMICGAME=true to enable)")
+		fmt.Printf("INFO: CosmicGame module disabled. Set ENABLE_COSMICGAME=true to enable.\n")
+	}
 
 	// Initialize RandomWalk
 	randomwalk.Init()

@@ -54,7 +54,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 		&implementation_addr,
 	);
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_contract_addrs(): %v, q=%v",err,query))
+		err_msg := fmt.Sprintf("Error in Get_cosmic_game_contract_addrs(): %v, q=%v",err,query)
+		sw.S.Log_msg(err_msg)
+		fmt.Printf("\nFATAL: %s\n", err_msg)
+		fmt.Printf("HINT: If you don't need CosmicGame, run with ENABLE_COSMICGAME=false\n\n")
 		os.Exit(1)
 	}
 	var output p.CosmicGameContractAddrs
