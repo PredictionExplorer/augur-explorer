@@ -77,8 +77,8 @@ BEGIN
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids - 1) WHERE cur_num_bids>0;
 	UPDATE cg_round_stats SET 
 			total_bids = (total_bids - 1),
-			total_cst_in_bids = (total_cst_in_bids + NEW.cst_reward),
-			total_eth_in_Bids = (total_eth_in_bids + NEW.eth_price)
+			total_cst_in_bids = (total_cst_in_bids - OLD.cst_reward),
+			total_eth_in_bids = (total_eth_in_bids - OLD.eth_price)
 		WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
@@ -558,11 +558,6 @@ DECLARE
 BEGIN
 	-- Note: Winner index is always 0 (one endurance champion per round)
 
-	UPDATE cg_round_stats
-		SET
-			total_nfts_minted = (total_nfts_minted - 1)
-		WHERE round_num=OLD.round_num;
-	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
 	
 	-- Update round stats
@@ -629,11 +624,6 @@ DECLARE
 BEGIN
 	-- Note: Winner index is always 0 (one last CST bidder per round)
 
-	UPDATE cg_round_stats
-		SET
-			total_nfts_minted = (total_nfts_minted - 1)
-		WHERE round_num=OLD.round_num;
-	
 	UPDATE cg_glob_stats SET total_cst_given_in_prizes = (total_cst_given_in_prizes - OLD.erc20_amount);
 	
 	-- Update round stats
@@ -780,7 +770,7 @@ DECLARE
 	v_to_addr					TEXT;
 BEGIN
 
-	SELECT addr FROM address WHERE address_id=OLD.to_aid INTO v_from_addr;
+	SELECT addr FROM address WHERE address_id=OLD.from_aid INTO v_from_addr;
 	SELECT addr FROM address WHERE address_id=OLD.to_aid INTO v_to_addr;
 	--- update From balance
 	IF v_to_addr = '0x0000000000000000000000000000000000000000' THEN -- burn
@@ -1374,7 +1364,7 @@ BEGIN
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
 
-	FOR v_rec IN (SELECT action_id,deposit_id FROM cg_st_reward ORDER BY deposit_id DESC,action_id DESC)
+	FOR v_rec IN (SELECT action_id,deposit_id FROM cg_st_reward WHERE action_id=OLD.action_id ORDER BY deposit_id DESC,action_id DESC)
 		LOOP
 			UPDATE cg_st_reward
 				SET collected = 'F',
@@ -1515,6 +1505,16 @@ BEGIN
 			VALUES (NEW.winner_aid, 3, NEW.eth_amount, 1, 1);
 	END IF;
 
+	-- Credit chrono warrior ETH to raffle_winner_stats (shared pool for all withdrawable prizes)
+	UPDATE cg_raffle_winner_stats
+		SET amount_sum = (amount_sum + NEW.eth_amount)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_raffle_winner_stats(winner_aid, amount_sum, raffles_count)
+			VALUES(NEW.winner_aid, NEW.eth_amount, 0);
+	END IF;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1545,6 +1545,11 @@ BEGIN
 			prizes_sum = GREATEST(0, prizes_sum - OLD.eth_amount),
 			erc20_count = GREATEST(0, erc20_count - 1),
 			erc721_count = GREATEST(0, erc721_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
+
+	-- Debit chrono warrior ETH from raffle_winner_stats
+	UPDATE cg_raffle_winner_stats
+		SET amount_sum = (amount_sum - OLD.eth_amount)
 		WHERE winner_aid = OLD.winner_aid;
 
 	RETURN OLD;
