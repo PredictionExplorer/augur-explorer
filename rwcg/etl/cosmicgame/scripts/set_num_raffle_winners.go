@@ -1,4 +1,4 @@
-// Sets cosmicSignatureNftStakingTotalEthRewardAmountPercentage (percentage of funds for staking rewards)
+// Sets numRaffleEthPrizesForBidders (number of ETH raffle winners per round)
 package main
 
 import (
@@ -15,8 +15,8 @@ func main() {
 	// Usage check
 	if len(os.Args) < 4 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicgame_contract_addr] [percentage]",
-			"Sets cosmicSignatureNftStakingTotalEthRewardAmountPercentage (percentage of funds for staking rewards)",
+			"[private_key] [cosmicgame_contract_addr] [num_winners]",
+			"Sets numRaffleEthPrizesForBidders (number of ETH raffle winners per round)",
 			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
 		os.Exit(1)
@@ -39,10 +39,10 @@ func main() {
 	// Parse parameters
 	cosmicGameAddr := common.HexToAddress(os.Args[2])
 
-	percentageVal := big.NewInt(0)
-	_, success := percentageVal.SetString(os.Args[3], 10)
+	numVal := big.NewInt(0)
+	_, success := numVal.SetString(os.Args[3], 10)
 	if !success {
-		cutils.Fatal("Invalid percentage value provided: %s", os.Args[3])
+		cutils.Fatal("Invalid number value provided: %s", os.Args[3])
 	}
 
 	// Contract setup
@@ -56,21 +56,21 @@ func main() {
 	// Get current value
 	copts := cutils.CreateCallOpts()
 
-	currentValue, err := cosmicGame.CosmicSignatureNftStakingTotalEthRewardAmountPercentage(copts)
+	currentValue, err := cosmicGame.NumRaffleEthPrizesForBidders(copts)
 	if err != nil {
 		cutils.Fatal("Error getting current value: %v", err)
 	}
 
-	cutils.Section("STAKING REWARD PERCENTAGE CONFIG")
-	cutils.PrintKeyValue("Current Value", currentValue.String()+"%")
-	cutils.PrintKeyValue("New Value", percentageVal.String()+"%")
+	cutils.Section("RAFFLE ETH WINNERS CONFIG")
+	cutils.PrintKeyValue("Current Value", currentValue.String())
+	cutils.PrintKeyValue("New Value", numVal.String())
 
 	// Create and submit transaction
-	cutils.PrintTxSubmitting("SetCosmicSignatureNftStakingTotalEthRewardAmountPercentage", nil, cutils.GasLimitAdminCall, net.GasPrice)
+	cutils.PrintTxSubmitting("SetNumRaffleEthPrizesForBidders", nil, cutils.GasLimitAdminCall, net.GasPrice)
 
 	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitAdminCall)
 
-	tx, err := cosmicGame.SetCosmicSignatureNftStakingTotalEthRewardAmountPercentage(txopts, percentageVal)
+	tx, err := cosmicGame.SetNumRaffleEthPrizesForBidders(txopts, numVal)
 	cutils.PrintTxResult(tx, err)
 
 	if err != nil {

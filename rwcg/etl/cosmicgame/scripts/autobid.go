@@ -24,6 +24,7 @@ import (
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/contracts/randomwalk"
 )
 
 // =============================================================================
@@ -136,7 +137,7 @@ type BiddingBot struct {
 
 	// Contracts
 	gameContract   *CosmicSignatureGame
-	rwalkContract  *RWalk
+	rwalkContract  *randomwalk.RWalk
 	prizesWallet   *PrizesWallet
 
 	// Account info
@@ -240,7 +241,7 @@ func NewBiddingBot(cfg Config) (*BiddingBot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting RWalk addr: %v", err)
 	}
-	bot.rwalkContract, err = NewRWalk(rwalkAddr, bot.ethClient)
+	bot.rwalkContract, err = randomwalk.NewRWalk(rwalkAddr, bot.ethClient)
 	if err != nil {
 		return nil, fmt.Errorf("error creating RWalk instance: %v", err)
 	}
@@ -325,7 +326,7 @@ func (bot *BiddingBot) reconnect() error {
 	if err != nil {
 		return fmt.Errorf("reconnect failed - can't get RWalk address: %v", err)
 	}
-	bot.rwalkContract, err = NewRWalk(rwalkAddr, bot.ethClient)
+	bot.rwalkContract, err = randomwalk.NewRWalk(rwalkAddr, bot.ethClient)
 	if err != nil {
 		return fmt.Errorf("reconnect failed - can't instantiate RWalk contract: %v", err)
 	}

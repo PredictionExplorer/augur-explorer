@@ -147,20 +147,3 @@ The common package defines standard gas limits:
 | `GasLimitDonate` | 300,000 | Donations |
 | `GasLimitAdminCall` | 100,000 | Admin setters |
 
-## Scripts with Known Issues
-
-The following scripts have contract API incompatibilities and need updates:
-
-| Script | Issue |
-|--------|-------|
-| `autobid.go` | Uses deprecated `RWalk` contract binding |
-| `dwi-records.go` | Missing contract method |
-| `num_nft_winners.go` | Missing contract method |
-| `num_raffle_winners.go` | Missing contract method |
-| `percent_prize.go` | Missing contract method |
-| `percent_raffle.go` | Missing contract method |
-| `set_charity_percentage.go` | Missing contract method |
-| `set_staking_percentage.go` | Missing contract method |
-| `settokname.go` | Missing contract method |
-
-These scripts need to be updated to match the current contract ABI.

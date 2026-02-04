@@ -1,68 +1,76 @@
+// Dumps ETH donation with info records from CosmicGame
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
+	"os"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-)
-var (
-	RPC_URL string
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
-	var cg_addr string
+	// Usage check
+	var cgAddr string
 	if len(os.Args) < 2 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [cosmic_game_addr]\n\t\t"+
-			"Dumps donate with info records\n\n",os.Args[0],
+		cutils.PrintUsage(os.Args[0],
+			"[cosmicgame_contract_addr]",
+			"Dumps ETH donation with info records from CosmicGame",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
-		fmt.Printf("Setting default cosmic game contract address to 0x5FbDB2315678afecb367f032d93F642f64180aa3\n")
-		cg_addr = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+		cutils.Section("DEFAULT ADDRESS")
+		cgAddr = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+		cutils.PrintKeyValue("Using default", cgAddr)
 	} else {
-		cg_addr = os.Args[1]
-	}
-	var copts bind.CallOpts
-	cosmic_game_addr := common.HexToAddress(cg_addr)
-	fmt.Printf("Calling to contract at %v\n",cosmic_game_addr.String())
-
-	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
-		os.Exit(1)
+		cgAddr = os.Args[1]
 	}
 
-	num_recs,err := cosmic_game_ctrct.NumDonationInfoRecords(&copts)
+	// Connect to network
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error at DonateWithInfoNumRecords()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
-	n := num_recs.Int64()
+	cutils.PrintNetworkInfo(net)
+
+	// Contract setup
+	cosmicGameAddr := common.HexToAddress(cgAddr)
+	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
+
+	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate CosmicGame: %v", err)
+	}
+
+	// Get number of records
+	copts := cutils.CreateCallOpts()
+
+	numRecs, err := cosmicGame.NumEthDonationWithInfoRecords(copts)
+	if err != nil {
+		cutils.Fatal("Error getting NumEthDonationWithInfoRecords: %v", err)
+	}
+
+	cutils.Section("DONATION RECORDS")
+	cutils.PrintKeyValue("Total Records", numRecs.String())
+
+	n := numRecs.Int64()
 	if n == 0 {
-		fmt.Printf("No donate with info records , exiting\n")
-		os.Exit(1)
+		cutils.PrintKeyValue("Note", "No ETH donation with info records found")
+		return
 	}
-	for i:=int64(0);i<n;i++ {
-		rec,err := cosmic_game_ctrct.DonationInfoRecords(&copts,big.NewInt(i))
+
+	// Iterate through records
+	for i := int64(0); i < n; i++ {
+		rec, err := cosmicGame.EthDonationWithInfoRecords(copts, big.NewInt(i))
 		if err != nil {
-			fmt.Printf("Error calling DonationInfoRecords() :%v\n",err)
+			cutils.PrintKeyValue("Error at record "+string(rune(i)), err.Error())
 		} else {
-			fmt.Printf("Record %v\n%v\n",i,rec)
+			cutils.Section("RECORD " + big.NewInt(i).String())
+			cutils.PrintKeyValue("Round Number", rec.RoundNum.String())
+			cutils.PrintKeyValue("Donor Address", rec.DonorAddress.String())
+			cutils.PrintKeyValueEth("Amount", rec.Amount)
+			cutils.PrintKeyValue("Data", rec.Data)
 		}
 	}
 }
