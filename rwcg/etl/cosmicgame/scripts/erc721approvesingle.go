@@ -1,117 +1,93 @@
-// Makes a deposit to Wrapped ETH contract
+// Approves a specific ERC721 token for transfer by an operator
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
-	"context"
-	"crypto/ecdsa"
+	"os"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-	CHAIN_ID		int64 = 31337
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 5 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [operator] [tokenid]\n\n\t\tClaim raffle NFT\n",os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [erc721_contract_addr] [operator_addr] [token_id]",
+			"Approves a specific ERC721 token for transfer by an operator (single token approval)",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 66 characters long\n")
-		os.Exit(1)
-	}
-	erc721_contract_addr := common.HexToAddress(os.Args[2])
-	operator_addr := common.HexToAddress(os.Args[3])
-	tokenid_str := os.Args[4]
-	token_id,err := strconv.ParseInt(tokenid_str,10,64)
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("error parsing token id: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
+	cutils.PrintNetworkInfo(net)
 
-	contract,err := NewCosmicSignatureNft(erc721_contract_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Account setup failed: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
+	cutils.PrintAccountInfo(acc)
+
+	// Parse parameters
+	contractAddr := common.HexToAddress(os.Args[2])
+	operatorAddr := common.HexToAddress(os.Args[3])
+
+	tokenID, err := strconv.ParseInt(os.Args[4], 10, 64)
 	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Error parsing token_id: %v", err)
 	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
+
+	// Contract setup
+	erc721, err := NewCosmicSignatureNft(contractAddr, net.Client)
 	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
+		cutils.Fatal("Failed to instantiate ERC721 contract: %v", err)
+	}
+
+	// Get current info
+	copts := cutils.CreateCallOpts()
+
+	currentOwner, err := erc721.OwnerOf(copts, big.NewInt(tokenID))
+	if err != nil {
+		cutils.Fatal("Error getting token owner: %v", err)
+	}
+
+	currentApproved, err := erc721.GetApproved(copts, big.NewInt(tokenID))
+	if err != nil {
+		cutils.Fatal("Error getting current approval: %v", err)
+	}
+
+	cutils.Section("APPROVAL INFO")
+	cutils.PrintKeyValue("Contract Address", contractAddr.String())
+	cutils.PrintKeyValue("Token ID", tokenID)
+	cutils.PrintKeyValue("Token Owner", currentOwner.String())
+	cutils.PrintKeyValue("Current Approved", currentApproved.String())
+	cutils.PrintKeyValue("New Operator", operatorAddr.String())
+
+	// Check ownership
+	if acc.Address != currentOwner {
+		cutils.Section("WARNING")
+		cutils.PrintKeyValue("Your Address", acc.Address.String())
+		cutils.PrintKeyValue("Note", "You are NOT the token owner. Approval will fail unless you are an approved operator.")
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("Approve (single token)", nil, cutils.GasLimitERC721Approve, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitERC721Approve)
+
+	tx, err := erc721.Approve(txopts, operatorAddr, big.NewInt(tokenID))
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-	big_chain_id := big.NewInt(CHAIN_ID)
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in weia
-	txopts.Value.Set(big.NewInt(0))
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
-
-	fmt.Printf("Gas price = %v\n",gasPrice.String())
-
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
-	}
-	txopts.Signer = signfunc
-
-	tx,err := contract.Approve(txopts,operator_addr,big.NewInt(token_id))
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
-	fmt.Printf("call : Approve()\n")
-	fmt.Printf("contract address : %v\n",erc721_contract_addr.String())
-	fmt.Printf("operator address : %v\n",operator_addr.String())
-	fmt.Printf("token id: %v\n",token_id);
 }

@@ -1,118 +1,98 @@
-// Transfers token
+// Transfers CosmicSignatureNFT to another address
 package main
 
 import (
-	"os"
-	"fmt"
-	"time"
-	"strconv"
 	"math/big"
-	"context"
-	"crypto/ecdsa"
+	"os"
+	"strconv"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-	CHAIN_ID		int64 = 31337
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) < 5 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [private_key] [cosmicsig_addr] [recipient_addr] [token_id]\n\t\t"+
-			"Transfers CosmicTokens to another address\n\n",os.Args[0],
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [cosmicsig_addr] [recipient_addr] [token_id]",
+			"Transfers a CosmicSignatureNFT to another address",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 64 characters long\n")
-		os.Exit(1)
-	}
-
-	cossig_addr := common.HexToAddress(os.Args[2])
-	rcpt_addr := common.HexToAddress(os.Args[3])
-	token_id_str:= os.Args[4]
-
-	num,err := strconv.ParseInt(token_id_str,10,64)
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Invalid token_id was given on the command line: %v",token_id_str)
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
-	token_id := big.NewInt(num)
+	cutils.PrintNetworkInfo(net)
 
-	costok_ctrct,err := NewCosmicSignatureNft(cossig_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Account setup failed: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
-	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
-	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
-	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
-		os.Exit(1)
-	}
-	big_chain_id := big.NewInt(CHAIN_ID)
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in wei
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
+	cutils.PrintAccountInfo(acc)
 
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
+	// Parse parameters
+	nftAddr := common.HexToAddress(os.Args[2])
+	recipientAddr := common.HexToAddress(os.Args[3])
+
+	tokenIDNum, err := strconv.ParseInt(os.Args[4], 10, 64)
+	if err != nil {
+		cutils.Fatal("Invalid token_id: %s", os.Args[4])
 	}
-	txopts.Signer = signfunc
-	fmt.Printf("Sending token_id= %v to address = %v\n",token_id.String(),rcpt_addr.String())
-	tx,err := costok_ctrct.TransferFrom(txopts,from_address,rcpt_addr,token_id)
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
+	tokenID := big.NewInt(tokenIDNum)
+
+	// Contract setup
+	nft, err := NewCosmicSignatureNft(nftAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate CosmicSignatureNft: %v", err)
+	}
+
+	// Get token info
+	copts := cutils.CreateCallOpts()
+
+	currentOwner, err := nft.OwnerOf(copts, tokenID)
+	if err != nil {
+		cutils.Fatal("Error getting token owner (token may not exist): %v", err)
+	}
+
+	senderBalance, err := nft.BalanceOf(copts, acc.Address)
+	if err != nil {
+		senderBalance = nil
+	}
+
+	cutils.Section("NFT INFO")
+	cutils.PrintKeyValue("Contract Address", nftAddr.String())
+	cutils.PrintKeyValue("Token ID", tokenID.String())
+
+	cutils.Section("TRANSFER INFO")
+	cutils.PrintKeyValue("Current Owner", currentOwner.String())
+	cutils.PrintKeyValue("From (you)", acc.Address.String())
+	cutils.PrintKeyValue("To", recipientAddr.String())
+	if senderBalance != nil {
+		cutils.PrintKeyValue("Your NFT Balance", senderBalance.String())
+	}
+
+	// Check ownership
+	if acc.Address != currentOwner {
+		cutils.Section("WARNING")
+		cutils.PrintKeyValue("Note", "You are NOT the current owner. Transfer may fail unless you are approved.")
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("TransferFrom", nil, cutils.GasLimitContractCall, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitContractCall)
+
+	tx, err := nft.TransferFrom(txopts, acc.Address, recipientAddr, tokenID)
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
-	time.Sleep(1 * time.Second)
-
 }

@@ -1,63 +1,73 @@
-// Makes a bid
+// Gets the current CST bid price from CosmicGame
 package main
 
 import (
 	"os"
-	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-	CHAIN_ID		int64 = 31337
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 2 {
-		fmt.Printf("Usage: \n\t\t%v [contract_addr]\n\n\t\tMakes bid using CST tokens\n",os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[cosmicgame_contract_addr]",
+			"Gets the current CST bid price from CosmicGame",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	cosmic_game_addr := common.HexToAddress(os.Args[1])
-
-	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	var copts bind.CallOpts
-	cst_price,err := cosmic_game_ctrct.GetCurrentBidPriceCST(&copts)
+	// Connect to network
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error at currentCSTPrice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
+	}
+	cutils.PrintNetworkInfo(net)
+
+	// Contract setup
+	cosmicGameAddr := common.HexToAddress(os.Args[1])
+	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
+
+	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate CosmicGame: %v", err)
 	}
 
-	fmt.Printf("CSt price = %v\n",cst_price.String())
-	mult := big.NewInt(2)
-	cst_price.Mul(cst_price,mult)
-	fmt.Printf("CST bid amount: %v\n",cst_price.String())
+	// Get CST price info
+	copts := cutils.CreateCallOpts()
 
-	f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-	f_bid_price := big.NewFloat(0.0).SetInt(cst_price)
-	f_quo := big.NewFloat(0.0).Quo(f_bid_price,f_divisor)
-	bid_price_eth,_ := f_quo.Float64()
+	cstPrice, err := cosmicGame.GetNextCstBidPrice(copts)
+	if err != nil {
+		cutils.Fatal("Error getting CST bid price: %v", err)
+	}
 
-	fmt.Printf("Bid price in CST ETH = %v\n",bid_price_eth)
+	ethPrice, err := cosmicGame.GetNextEthBidPrice(copts)
+	if err != nil {
+		cutils.Fatal("Error getting ETH bid price: %v", err)
+	}
+
+	// Dutch auction info
+	cstAuctionDuration, cstAuctionElapsed, err := cosmicGame.GetCstDutchAuctionDurations(copts)
+	if err != nil {
+		cutils.Fatal("Error getting CST Dutch auction durations: %v", err)
+	}
+
+	cstDutchBeginPrice, err := cosmicGame.CstDutchAuctionBeginningBidPrice(copts)
+	if err != nil {
+		cutils.Fatal("Error getting CST Dutch auction begin price: %v", err)
+	}
+
+	cutils.Section("BID PRICES")
+	cutils.PrintKeyValue("CST Bid Price", cutils.WeiToEth(cstPrice)+" CST")
+	cutils.PrintKeyValueEth("ETH Bid Price", ethPrice)
+
+	cutils.Section("CST DUTCH AUCTION")
+	cutils.PrintKeyValue("Auction Duration", cstAuctionDuration.String()+" seconds")
+	cutils.PrintKeyValue("Auction Elapsed", cstAuctionElapsed.String()+" seconds")
+	cutils.PrintKeyValue("Begin Price", cutils.WeiToEth(cstDutchBeginPrice)+" CST")
+	cutils.PrintKeyValue("Current Price", cutils.WeiToEth(cstPrice)+" CST")
 }

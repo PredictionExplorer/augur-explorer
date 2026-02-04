@@ -1,116 +1,81 @@
-// Claims staking deposit
+// Claims staking reward by unstaking from StakingWalletCosmicSignatureNft
+// Note: In the current contract version, unstaking also claims rewards
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
-	"context"
+	"os"
 	"strconv"
-	"crypto/ecdsa"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-	CHAIN_ID		int64 = 31337
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [staking_wallet_addr] [action_id]\n\n\t\tClaims staking reward(deposit)\n",os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [staking_wallet_addr] [stake_action_id]",
+			"Claims staking reward by unstaking (Unstake) from StakingWalletCosmicSignatureNft",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 66 characters long\n")
-		os.Exit(1)
-	}
-
-	staking_wallet_addr := common.HexToAddress(os.Args[2])
-
-	action_id_str := os.Args[3]
-	action_id,err := strconv.ParseInt(action_id_str,10,64)
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("error parsing action_id parameter: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
+	cutils.PrintNetworkInfo(net)
 
-//	var copts bind.CallOpts
-	stw_contract,err := NewStakingWalletCosmicSignatureNft(staking_wallet_addr,eclient)
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
 	if err != nil {
-		fmt.Printf("Error instantiating BusinessLogic: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Account setup failed: %v", err)
 	}
+	cutils.PrintAccountInfo(acc)
 
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Parse parameters
+	stakingWalletAddr := common.HexToAddress(os.Args[2])
+
+	stakeActionID, err := strconv.ParseInt(os.Args[3], 10, 64)
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Error parsing stake_action_id: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
+
+	// Contract setup
+	cutils.PrintContractInfo("StakingWallet Address", stakingWalletAddr)
+
+	stakingWallet, err := NewStakingWalletCosmicSignatureNft(stakingWalletAddr, net.Client)
 	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Failed to instantiate StakingWalletCosmicSignatureNft: %v", err)
 	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
+
+	// Get staking wallet balance for info
+	walletBalance, err := cutils.GetBalance(net, stakingWalletAddr)
 	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
+		walletBalance = nil
+	}
+
+	cutils.Section("CLAIM INFO")
+	cutils.PrintKeyValue("Stake Action ID", stakeActionID)
+	if walletBalance != nil {
+		cutils.PrintKeyValueEth("Staking Wallet Balance", walletBalance)
+	}
+	cutils.PrintKeyValue("Note", "Unstaking also claims accumulated rewards")
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("Unstake (claim rewards)", nil, cutils.GasLimitContractCall, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitContractCall)
+
+	tx, err := stakingWallet.Unstake(txopts, big.NewInt(stakeActionID))
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-	big_chain_id := big.NewInt(CHAIN_ID)
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in weia
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
-
-	fmt.Printf("Gas price = %v\n",gasPrice.String())
-
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
-	}
-	txopts.Signer = signfunc
-
-	tx,err := stw_contract.PayReward(txopts,big.NewInt(action_id),big.NewInt(999))
-	if tx != nil {
-		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
-	}
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
 }

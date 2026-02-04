@@ -1,53 +1,72 @@
+// Gets ERC20 token total supply
 package main
 
 import (
 	"os"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-)
-var (
-	RPC_URL string
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) < 2 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [erc20_addr]\n\t\t"+
-			"Gets erc20 totalsupply value\n\n",os.Args[0],
+		cutils.PrintUsage(os.Args[0],
+			"[erc20_contract_addr]",
+			"Gets ERC20 token total supply",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
 		os.Exit(1)
 	}
 
-	var copts bind.CallOpts
-	caddr := common.HexToAddress(os.Args[1])
-	fmt.Printf("Creating contract instance for address %v\n",caddr.String())
-
-	ctrct,err := NewERC20(caddr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate ERC20 contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	totsup,err := ctrct.TotalSupply(&copts)
+	// Connect to network
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error at TotalSupply()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
+	}
+	cutils.PrintNetworkInfo(net)
+
+	// Parse address
+	contractAddr := common.HexToAddress(os.Args[1])
+
+	// Contract setup
+	erc20, err := NewERC20(contractAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate ERC20 contract: %v", err)
 	}
 
-	fmt.Printf("Total Supply: %v\n",totsup.String())
+	// Get token info
+	copts := cutils.CreateCallOpts()
+
+	name, err := erc20.Name(copts)
+	if err != nil {
+		name = "UNKNOWN"
+	}
+
+	symbol, err := erc20.Symbol(copts)
+	if err != nil {
+		symbol = "UNKNOWN"
+	}
+
+	decimals, err := erc20.Decimals(copts)
+	if err != nil {
+		decimals = 18
+	}
+
+	totalSupply, err := erc20.TotalSupply(copts)
+	if err != nil {
+		cutils.Fatal("Error getting total supply: %v", err)
+	}
+
+	cutils.Section("TOKEN INFO")
+	cutils.PrintKeyValue("Contract Address", contractAddr.String())
+	cutils.PrintKeyValue("Name", name)
+	cutils.PrintKeyValue("Symbol", symbol)
+	cutils.PrintKeyValue("Decimals", decimals)
+
+	cutils.Section("SUPPLY INFO")
+	cutils.PrintKeyValue("Total Supply (raw)", totalSupply.String())
+	cutils.PrintKeyValue("Total Supply", cutils.FormatTokenAmount(totalSupply, decimals, symbol))
 }

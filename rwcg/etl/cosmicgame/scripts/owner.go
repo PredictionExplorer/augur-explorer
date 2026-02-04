@@ -1,53 +1,59 @@
+// Gets the owner of an Ownable contract
 package main
 
 import (
 	"os"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-)
-var (
-	RPC_URL string
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) < 2 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [contract_addr] [tokenid]\n\t\t"+
-			"Gets ownership of a contract\n\n",os.Args[0],
+		cutils.PrintUsage(os.Args[0],
+			"[contract_addr]",
+			"Gets the owner of an Ownable contract",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
 		os.Exit(1)
 	}
 
-	var copts bind.CallOpts
-	ctrct_addr := common.HexToAddress(os.Args[1])
-	fmt.Printf("Calling to contract at %v\n",ctrct_addr.String())
-
-	ownable_ctrct,err := NewOwnable(ctrct_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	owner_addr,err := ownable_ctrct.Owner(&copts)
+	// Connect to network
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error at Owner()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
+	}
+	cutils.PrintNetworkInfo(net)
+
+	// Contract setup
+	contractAddr := common.HexToAddress(os.Args[1])
+	cutils.PrintContractInfo("Contract Address", contractAddr)
+
+	ownable, err := NewOwnable(contractAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate Ownable contract: %v", err)
 	}
 
-	fmt.Printf("Owner: %v\n",owner_addr.String())
+	// Get owner
+	copts := cutils.CreateCallOpts()
+
+	owner, err := ownable.Owner(copts)
+	if err != nil {
+		cutils.Fatal("Error calling Owner(): %v", err)
+	}
+
+	// Get owner's balance for additional info
+	ownerBalance, err := cutils.GetBalance(net, owner)
+	if err != nil {
+		ownerBalance = nil
+	}
+
+	cutils.Section("OWNERSHIP INFO")
+	cutils.PrintKeyValue("Owner Address", owner.String())
+	if ownerBalance != nil {
+		cutils.PrintKeyValueEth("Owner Balance", ownerBalance)
+	}
 }

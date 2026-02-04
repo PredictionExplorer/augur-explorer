@@ -1,118 +1,102 @@
-// Transfers token
+// Transfers CosmicSignatureToken (CST) to another address
 package main
 
 import (
-	"os"
-	"fmt"
-	"time"
 	"math/big"
-	"context"
-	"crypto/ecdsa"
+	"os"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-	//CHAIN_ID		int64 = 31337
-	CHAIN_ID		int64 = 421614
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) < 5 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [private_key] [cosmictoken_addr] [destinatoin] [amount]\n\t\t"+
-			"Transfers CosmicTokens to another address\n\n",os.Args[0],
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [cosmictoken_addr] [destination_addr] [amount]",
+			"Transfers CosmicSignatureToken (CST) to another address",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 64 characters long\n")
-		os.Exit(1)
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
+	if err != nil {
+		cutils.Fatal("Network connection failed: %v", err)
 	}
+	cutils.PrintNetworkInfo(net)
 
-	costok_addr := common.HexToAddress(os.Args[2])
-	dst_addr := common.HexToAddress(os.Args[3])
-	amount_str := os.Args[4]
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	if err != nil {
+		cutils.Fatal("Account setup failed: %v", err)
+	}
+	cutils.PrintAccountInfo(acc)
+
+	// Parse parameters
+	tokenAddr := common.HexToAddress(os.Args[2])
+	destAddr := common.HexToAddress(os.Args[3])
 
 	amount := big.NewInt(0)
-	_,success := amount.SetString(amount_str,10)
+	_, success := amount.SetString(os.Args[4], 10)
 	if !success {
-		fmt.Printf("Incorrect amount provided on the command line")
-		os.Exit(1)
+		cutils.Fatal("Invalid amount provided: %s", os.Args[4])
 	}
 
-	costok_ctrct,err := NewCosmicSignatureToken(costok_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicToken contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Contract setup
+	cstToken, err := NewCosmicSignatureToken(tokenAddr, net.Client)
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Failed to instantiate CosmicSignatureToken: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
-	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
-	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
-	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
-		os.Exit(1)
-	}
-	big_chain_id := big.NewInt(CHAIN_ID)
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in wei
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
 
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
+	// Get token info
+	copts := cutils.CreateCallOpts()
+
+	symbol, err := cstToken.Symbol(copts)
+	if err != nil {
+		symbol = "CST"
 	}
-	txopts.Signer = signfunc
-	fmt.Printf("Sending %v tokens to address = %v\n",amount.String(),dst_addr.String())
-	tx,err := costok_ctrct.Transfer(txopts,dst_addr,amount)
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
+
+	senderBalance, err := cstToken.BalanceOf(copts, acc.Address)
+	if err != nil {
+		cutils.Fatal("Error getting sender balance: %v", err)
+	}
+
+	destBalance, err := cstToken.BalanceOf(copts, destAddr)
+	if err != nil {
+		cutils.Fatal("Error getting destination balance: %v", err)
+	}
+
+	cutils.Section("TOKEN INFO")
+	cutils.PrintKeyValue("Token Address", tokenAddr.String())
+	cutils.PrintKeyValue("Token Symbol", symbol)
+
+	cutils.Section("TRANSFER INFO")
+	cutils.PrintKeyValue("From", acc.Address.String())
+	cutils.PrintKeyValue("To", destAddr.String())
+	cutils.PrintKeyValue("Amount (raw)", amount.String())
+	cutils.PrintKeyValue("Amount", cutils.WeiToEth(amount)+" "+symbol)
+	cutils.PrintKeyValue("Sender Balance Before", cutils.WeiToEth(senderBalance)+" "+symbol)
+	cutils.PrintKeyValue("Dest Balance Before", cutils.WeiToEth(destBalance)+" "+symbol)
+
+	// Check balance
+	if senderBalance.Cmp(amount) < 0 {
+		cutils.Fatal("Insufficient balance. Need %s %s, have %s %s",
+			cutils.WeiToEth(amount), symbol, cutils.WeiToEth(senderBalance), symbol)
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("Transfer", nil, cutils.GasLimitERC20Transfer, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitERC20Transfer)
+
+	tx, err := cstToken.Transfer(txopts, destAddr, amount)
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
-	time.Sleep(1 * time.Second)
-
 }

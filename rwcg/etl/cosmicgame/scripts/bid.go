@@ -1,131 +1,94 @@
-// Makes a bid
+// Makes a bid at CosmicGame current round
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
-	"context"
-	"crypto/ecdsa"
+	"os"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-//	CHAIN_ID		int64 = 31337
-//	CHAIN_ID		int64 = 421614
-//	CHAIN_ID		int64 = 11155111
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-	bidParamType, _	= abi.NewType("tuple","BidParams",[]abi.ArgumentMarshaling{
-		{Name: "message", Type: "string"},
-		{Name: "randomWalkNFTId", Type: "int256"},
-	})
-	params = abi.Arguments{
-		{Type: bidParamType, Name: "bp"},
-	}
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 3 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr]\n\n\t\tMakes bid at CosmicGame current round\n",os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [cosmicgame_contract_addr]",
+			"Makes a bid at CosmicGame current round",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 66 characters long\n")
-		os.Exit(1)
-	}
-
-	cosmic_game_addr := common.HexToAddress(os.Args[2])
-
-	big_chain_id, err := eclient.NetworkID(context.Background()) // Get current network ID
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error getting network ID: %v\n", err)
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
-	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
-		os.Exit(1)
-	}
+	cutils.PrintNetworkInfo(net)
 
-	var copts bind.CallOpts
-	bid_price,err := cosmic_game_ctrct.GetNextEthBidPrice(&copts)
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
 	if err != nil {
-		fmt.Printf("Error at BidPrice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		cutils.Fatal("Account setup failed: %v", err)
 	}
+	cutils.PrintAccountInfo(acc)
 
-	fmt.Printf("Bid price = %v\n",bid_price.String())
+	// Contract setup
+	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
 
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Failed to instantiate CosmicGame: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
+
+	// Get current round info
+	copts := cutils.CreateCallOpts()
+
+	roundNum, err := cosmicGame.RoundNum(copts)
 	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Error getting round number: %v", err)
 	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
+
+	bidPrice, err := cosmicGame.GetNextEthBidPrice(copts)
 	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
+		cutils.Fatal("Error getting bid price: %v", err)
+	}
+
+	lastBidder, err := cosmicGame.LastBidderAddress(copts)
+	if err != nil {
+		cutils.Fatal("Error getting last bidder: %v", err)
+	}
+
+	totalBids, err := cosmicGame.GetTotalNumBids(copts, roundNum)
+	if err != nil {
+		cutils.Fatal("Error getting total bids: %v", err)
+	}
+
+	cutils.Section("ROUND INFO")
+	cutils.PrintKeyValue("Round Number", roundNum.String())
+	cutils.PrintKeyValue("Total Bids This Round", totalBids.String())
+	cutils.PrintKeyValue("Last Bidder", lastBidder.String())
+	cutils.PrintKeyValueEth("Next Bid Price", bidPrice)
+
+	// Check if account has enough balance
+	if acc.Balance.Cmp(bidPrice) < 0 {
+		cutils.Fatal("Insufficient balance. Need %s ETH, have %s ETH",
+			cutils.WeiToEth(bidPrice), cutils.WeiToEth(acc.Balance))
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("BidWithEth", bidPrice, cutils.GasLimitBid, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, bidPrice, cutils.GasLimitBid)
+
+	tx, err := cosmicGame.BidWithEth(txopts, big.NewInt(-1), "")
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in weia
-	txopts.Value.Set(bid_price)
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice.Add(gasPrice,big.NewInt(20000))	// bump a little bit to avoid error of lower gas price
-
-	fmt.Printf("Gas price = %v\n",gasPrice.String())
-
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
-	}
-	txopts.Signer = signfunc
-
-	tx,err := cosmic_game_ctrct.BidWithEth(txopts,big.NewInt(-1),"")
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
 }

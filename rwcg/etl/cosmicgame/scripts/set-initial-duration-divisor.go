@@ -1,152 +1,99 @@
-// Sets initialDurationUntilMainPrizeDivisor so that after first bid,
-// time until main prize equals the specified duration (in seconds)
+// Sets the initial duration until main prize divisor
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
-	"context"
-	"crypto/ecdsa"
+	"os"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-var (
-	RPC_URL    string
-	chain_id   *big.Int
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-	chain_id,err = eclient.ChainID(context.Background())
-	if err != nil {
-		fmt.Printf("Error getting chain id : %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [desired_duration_seconds]\n\n"+
-			"\t\tSets initialDurationUntilMainPrizeDivisor so that after first bid,\n"+
-			"\t\tthe time until main prize equals desired_duration_seconds.\n"+
-			"\t\tExample: %v [key] [addr] 300  (for 5 minutes)\n",os.Args[0],os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [cosmicgame_contract_addr] [divisor]",
+			"Sets the initial duration until main prize divisor (e.g., 100 = 1% bump on first bid)",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 64 characters long\n")
-		os.Exit(1)
-	}
-
-	cosmic_game_addr := common.HexToAddress(os.Args[2])
-
-	desired_seconds, err := strconv.ParseInt(os.Args[3], 10, 64)
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error parsing desired_duration_seconds: %v\n", err)
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
-	if desired_seconds <= 0 {
-		fmt.Printf("desired_duration_seconds must be positive\n")
-		os.Exit(1)
-	}
+	cutils.PrintNetworkInfo(net)
 
-	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	// Read current mainPrizeTimeIncrementInMicroSeconds from contract
-	var copts bind.CallOpts
-	mainPrizeTimeIncrementInMicroSeconds, err := cosmic_game_ctrct.MainPrizeTimeIncrementInMicroSeconds(&copts)
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
 	if err != nil {
-		fmt.Printf("Error reading mainPrizeTimeIncrementInMicroSeconds: %v\n", err)
-		os.Exit(1)
+		cutils.Fatal("Account setup failed: %v", err)
 	}
-	fmt.Printf("mainPrizeTimeIncrementInMicroSeconds = %v\n", mainPrizeTimeIncrementInMicroSeconds.String())
+	cutils.PrintAccountInfo(acc)
 
-	// Calculate divisor: initialDuration = mainPrizeTimeIncrementInMicroSeconds / divisor
-	// So: divisor = mainPrizeTimeIncrementInMicroSeconds / desired_seconds
-	// With rounding: divisor = (mainPrizeTimeIncrementInMicroSeconds + desired/2) / desired
-	desired := big.NewInt(desired_seconds)
-	half_desired := new(big.Int).Div(desired, big.NewInt(2))
-	numerator := new(big.Int).Add(mainPrizeTimeIncrementInMicroSeconds, half_desired)
-	divisor := new(big.Int).Div(numerator, desired)
-	
-	fmt.Printf("\nFormula: initialDuration = mainPrizeTimeIncrementInMicroSeconds / divisor\n")
-	fmt.Printf("         %v = %v / %v\n", desired_seconds, mainPrizeTimeIncrementInMicroSeconds.String(), divisor.String())
-
-	fmt.Printf("Desired initial duration: %v seconds\n", desired_seconds)
-	fmt.Printf("Calculated divisor: %v\n", divisor.String())
-
-	// Verify: actual_duration = mainPrizeTimeIncrementInMicroSeconds / divisor
-	actual_duration := new(big.Int).Div(mainPrizeTimeIncrementInMicroSeconds, divisor)
-	fmt.Printf("Actual initial duration will be: %v seconds\n", actual_duration.String())
-
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Parse divisor parameter
+	divisor, err := strconv.ParseInt(os.Args[3], 10, 64)
 	if err != nil {
-		fmt.Printf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Error parsing divisor parameter: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender\n")
-		os.Exit(1)
+	if divisor <= 0 {
+		cutils.Fatal("Divisor must be positive")
 	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
 
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
+	// Contract setup
+	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
+
+	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
 	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Failed to instantiate CosmicGame: %v", err)
 	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
+
+	// Get current value
+	copts := cutils.CreateCallOpts()
+
+	currentDivisor, err := cosmicGame.InitialDurationUntilMainPrizeDivisor(copts)
 	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
+		cutils.Fatal("Error getting current divisor: %v", err)
+	}
+
+	owner, err := cosmicGame.Owner(copts)
+	if err != nil {
+		cutils.Fatal("Error getting contract owner: %v", err)
+	}
+
+	cutils.Section("CURRENT STATE")
+	cutils.PrintKeyValue("Contract Owner", owner.String())
+	cutils.PrintKeyValue("Current Divisor", currentDivisor.String())
+	cutils.PrintKeyValue("Current Percentage", cutils.ConvertToPercentage(currentDivisor))
+
+	cutils.Section("NEW VALUES")
+	cutils.PrintKeyValue("New Divisor", divisor)
+	cutils.PrintKeyValue("New Percentage", cutils.ConvertToPercentage(big.NewInt(divisor)))
+	cutils.PrintKeyValue("Formula", "percentage = 100 / divisor")
+
+	// Check ownership
+	if acc.Address != owner {
+		cutils.Section("WARNING")
+		cutils.PrintKeyValue("Your Address", acc.Address.String())
+		cutils.PrintKeyValue("Note", "You are NOT the contract owner. Transaction will likely fail.")
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("SetInitialDurationUntilMainPrizeDivisor", nil, cutils.GasLimitAdminCall, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitAdminCall)
+
+	tx, err := cosmicGame.SetInitialDurationUntilMainPrizeDivisor(txopts, big.NewInt(divisor))
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-
-	fmt.Printf("Using chain_id=%v\n",chain_id.String())
-	fmt.Printf("From address: %v\n", from_address.String())
-
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)
-	txopts.GasLimit = uint64(100000)
-	txopts.GasPrice = gasPrice
-
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
-	}
-	txopts.Signer = signfunc
-
-	fmt.Printf("Setting initialDurationUntilMainPrizeDivisor to %v...\n", divisor.String())
-	tx,err := cosmic_game_ctrct.SetInitialDurationUntilMainPrizeDivisor(txopts, divisor)
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
-	fmt.Printf("Done! After first bid, time until main prize will be ~%v seconds.\n", actual_duration.String())
 }
-

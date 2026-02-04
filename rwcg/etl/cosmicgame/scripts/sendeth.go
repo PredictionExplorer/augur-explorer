@@ -1,104 +1,76 @@
-// Makes a bid
+// Sends ETH to an address
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
-	"context"
-	"crypto/ecdsa"
+	"os"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/crypto"
 
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-	bidParamType, _	= abi.NewType("tuple","BidParams",[]abi.ArgumentMarshaling{
-		{Name: "message", Type: "string"},
-		{Name: "randomWalkNFTId", Type: "int256"},
-	})
-	params = abi.Arguments{
-		{Type: bidParamType, Name: "bp"},
-	}
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [to] [value]\n\n\t\tSend transaction\n",os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [to_address] [value_wei]",
+			"Sends ETH to an address",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 64 characters long\n")
-		os.Exit(1)
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
+	if err != nil {
+		cutils.Fatal("Network connection failed: %v", err)
 	}
+	cutils.PrintNetworkInfo(net)
 
-	to_addr := common.HexToAddress(os.Args[2])
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	if err != nil {
+		cutils.Fatal("Account setup failed: %v", err)
+	}
+	cutils.PrintAccountInfo(acc)
+
+	// Parse destination and value
+	toAddr := common.HexToAddress(os.Args[2])
 	value := big.NewInt(0)
-	_,success := value.SetString(os.Args[3],10)
+	_, success := value.SetString(os.Args[3], 10)
 	if !success {
-		fmt.Printf("Error setting value (%v)\n",os.Args[3])
-		os.Exit(1)
+		cutils.Fatal("Invalid value provided: %s", os.Args[3])
 	}
 
-	fmt.Printf("Sending value %v to %v\n",value.String(),to_addr.String()) 
-
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Get recipient balance
+	recipientBalance, err := cutils.GetBalance(net, toAddr)
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
-	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender\n")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
-	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
-	}
-	gas_price, err := eclient.SuggestGasPrice(context.Background())
-	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Error getting recipient balance: %v", err)
 	}
 
-	big_chain_id, err := eclient.NetworkID(context.Background()) // Get current network ID
-	if err != nil {
-		fmt.Printf("Error getting network ID: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	tx := types.NewTransaction(from_nonce, to_addr, value, 21000, gas_price, nil)
+	cutils.Section("TRANSFER INFO")
+	cutils.PrintKeyValue("To Address", toAddr.String())
+	cutils.PrintKeyValueEth("Recipient Current Balance", recipientBalance)
+	cutils.PrintKeyValueEth("Transfer Amount", value)
+	cutils.PrintKeyValueEth("Recipient Balance After", new(big.Int).Add(recipientBalance, value))
 
-	signed_tx, err := types.SignTx(tx, types.NewEIP155Signer(big_chain_id), from_PrivateKey)
-/*	signed_tx, err := types.SignTx(tx, types.LatestSignerForChainID(big_chain_id), from_PrivateKey)
+	// Check if account has enough balance
+	gasCost := new(big.Int).Mul(net.GasPrice, big.NewInt(int64(cutils.GasLimitSimpleTransfer)))
+	totalNeeded := new(big.Int).Add(value, gasCost)
+
+	if acc.Balance.Cmp(totalNeeded) < 0 {
+		cutils.Fatal("Insufficient balance. Need %s ETH (including gas), have %s ETH",
+			cutils.WeiToEth(totalNeeded), cutils.WeiToEth(acc.Balance))
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("ETH Transfer", value, cutils.GasLimitSimpleTransfer, net.GasPrice)
+
+	tx, err := cutils.SignAndSendTx(net, acc, toAddr, value, cutils.GasLimitSimpleTransfer, nil)
+	cutils.PrintTxResult(tx, err)
+
 	if err != nil {
-		fmt.Printf("Error signing transaction: %v\n", err)
-		os.Exit(1)
-	}*/
-	err = eclient.SendTransaction(context.Background(), signed_tx)
-	if err != nil {
-		fmt.Printf("Error sending transaction: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
 }

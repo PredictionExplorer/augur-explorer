@@ -1,126 +1,94 @@
-// Makes a deposit to Wrapped ETH contract
+// Claims a donated NFT from the PrizesWallet
 package main
 
 import (
-	"os"
-	"fmt"
 	"math/big"
-	"context"
+	"os"
 	"strconv"
-	"crypto/ecdsa"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-	CHAIN_ID		int64 = 31337
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) != 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [num]\n\n\t\tClaim donated NFT\n",os.Args[0])
+		cutils.PrintUsage(os.Args[0],
+			"[private_key] [cosmicgame_contract_addr] [donated_nft_index]",
+			"Claims a donated NFT from the PrizesWallet",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
-	num_str := os.Args[3]
-	num,err := strconv.ParseInt(num_str,10,64)
+
+	// Connect to network (chainID and gasPrice fetched from network)
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("error parsing num parameter: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
 	}
+	cutils.PrintNetworkInfo(net)
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 66 characters long\n")
-		os.Exit(1)
-	}
-
-	cosmic_game_addr := common.HexToAddress(os.Args[2])
-
-	cosmic_game_ctrct,err := NewCosmicSignatureGame(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
-		os.Exit(1)
-	}
-	var copts bind.CallOpts
-	prizes_wallet_addr, err := cosmic_game_ctrct.PrizesWallet(&copts)
-	if err!=nil {
-		fmt.Printf("Failed to get PrizesWallet address : %v\n",err)
-		os.Exit(1)
-	}
-	prizes_wallet,err := NewPrizesWallet(prizes_wallet_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate PrizesWallet contract: %v\n",err)
-		os.Exit(1)
-	}
-
-
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
+	// Prepare account
+	acc, err := cutils.PrepareAccount(net, os.Args[1])
 	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Account setup failed: %v", err)
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
+	cutils.PrintAccountInfo(acc)
+
+	// Parse parameters
+	cosmicGameAddr := common.HexToAddress(os.Args[2])
+
+	nftIndex, err := strconv.ParseInt(os.Args[3], 10, 64)
 	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Error parsing donated_nft_index: %v", err)
 	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
+
+	// Get PrizesWallet address from CosmicGame
+	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
 	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
+		cutils.Fatal("Failed to instantiate CosmicGame: %v", err)
+	}
+
+	copts := cutils.CreateCallOpts()
+
+	prizesWalletAddr, err := cosmicGame.PrizesWallet(copts)
+	if err != nil {
+		cutils.Fatal("Failed to get PrizesWallet address: %v", err)
+	}
+
+	prizesWallet, err := NewPrizesWallet(prizesWalletAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate PrizesWallet: %v", err)
+	}
+
+	// Get donation info
+	numDonatedNfts, err := prizesWallet.NextDonatedNftIndex(copts)
+	if err != nil {
+		cutils.Fatal("Error getting next donated NFT index: %v", err)
+	}
+
+	cutils.Section("PRIZES WALLET INFO")
+	cutils.PrintKeyValue("CosmicGame Address", cosmicGameAddr.String())
+	cutils.PrintKeyValue("PrizesWallet Address", prizesWalletAddr.String())
+	cutils.PrintKeyValue("Total Donated NFTs", numDonatedNfts.String())
+	cutils.PrintKeyValue("Claiming NFT Index", nftIndex)
+
+	// Validate index
+	if nftIndex < 0 || nftIndex >= numDonatedNfts.Int64() {
+		cutils.Fatal("Invalid NFT index %d. Valid range: 0 to %d", nftIndex, numDonatedNfts.Int64()-1)
+	}
+
+	// Create and submit transaction
+	cutils.PrintTxSubmitting("ClaimDonatedNft", nil, cutils.GasLimitContractCall, net.GasPrice)
+
+	txopts := cutils.CreateTransactOpts(net, acc, nil, cutils.GasLimitContractCall)
+
+	tx, err := prizesWallet.ClaimDonatedNft(txopts, big.NewInt(nftIndex))
+	cutils.PrintTxResult(tx, err)
+
+	if err != nil {
 		os.Exit(1)
 	}
-	big_chain_id := big.NewInt(CHAIN_ID)
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in weia
-	txopts.Value.Set(big.NewInt(0))
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
-
-	fmt.Printf("Gas price = %v\n",gasPrice.String())
-
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
-	}
-	txopts.Signer = signfunc
-
-	tx,err := prizes_wallet.ClaimDonatedNft(txopts,big.NewInt(num))
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
-	_=tx
 }

@@ -1,57 +1,72 @@
+// Gets ERC721 isApprovedForAll status (operator level approval)
 package main
 
 import (
 	"os"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-)
-var (
-	RPC_URL string
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
-	if len(os.Args) < 3 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [token_addr] [owner] [operator]\n\t\t"+
-			"Gets ERC721 approved for all status (operator level approval)\n\n",os.Args[0],
+	// Usage check
+	if len(os.Args) < 4 {
+		cutils.PrintUsage(os.Args[0],
+			"[erc721_token_addr] [owner_addr] [operator_addr]",
+			"Gets ERC721 isApprovedForAll status (operator level approval)",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
 		)
 		os.Exit(1)
 	}
 
-	var copts bind.CallOpts
-	cosmic_sig_addr := common.HexToAddress(os.Args[1])
-	fmt.Printf("Calling to contract at %v\n",cosmic_sig_addr.String())
-	owner := common.HexToAddress(os.Args[2])
-	operator := common.HexToAddress(os.Args[3])
-
-	cosmic_sig_ctrct,err := NewCosmicSignatureNft(cosmic_sig_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicSignature contract: %v\n",err)
-		os.Exit(1)
-	}
-
-	is_approved_for_all,err := cosmic_sig_ctrct.IsApprovedForAll(&copts,owner,operator)
+	// Connect to network
+	net, err := cutils.ConnectToRPC()
 	if err != nil {
-		fmt.Printf("Error at IsApprovedForAll()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		cutils.Fatal("Network connection failed: %v", err)
+	}
+	cutils.PrintNetworkInfo(net)
+
+	// Parse addresses
+	tokenAddr := common.HexToAddress(os.Args[1])
+	ownerAddr := common.HexToAddress(os.Args[2])
+	operatorAddr := common.HexToAddress(os.Args[3])
+
+	// Contract setup
+	erc721, err := NewCosmicSignatureNft(tokenAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate ERC721 contract: %v", err)
 	}
 
-	fmt.Printf("Owner: %v\n",owner.String())
-	fmt.Printf("Operator:  %v\n",operator.String())
-	fmt.Printf("Approved: %v\n",is_approved_for_all)
+	// Get approval status
+	copts := cutils.CreateCallOpts()
+
+	isApproved, err := erc721.IsApprovedForAll(copts, ownerAddr, operatorAddr)
+	if err != nil {
+		cutils.Fatal("Error calling IsApprovedForAll(): %v", err)
+	}
+
+	// Get owner's token balance for context
+	balance, err := erc721.BalanceOf(copts, ownerAddr)
+	if err != nil {
+		balance = nil
+	}
+
+	cutils.Section("TOKEN INFO")
+	cutils.PrintKeyValue("Token Contract", tokenAddr.String())
+
+	cutils.Section("APPROVAL STATUS")
+	cutils.PrintKeyValue("Owner", ownerAddr.String())
+	cutils.PrintKeyValue("Operator", operatorAddr.String())
+	if balance != nil {
+		cutils.PrintKeyValue("Owner's Token Balance", balance.String())
+	}
+	cutils.PrintKeyValue("Is Approved For All", isApproved)
+
+	if isApproved {
+		cutils.PrintKeyValue("Status", "APPROVED - Operator can transfer all owner's tokens")
+	} else {
+		cutils.PrintKeyValue("Status", "NOT APPROVED - Operator cannot transfer owner's tokens")
+	}
 }

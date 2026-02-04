@@ -1,70 +1,90 @@
-// Dumps ERC20 token info of a User address
+// Gets ERC20 token balance for a user
 package main
 
 import (
 	"os"
-	"fmt"
-	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
-
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
-const (
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
+	// Usage check
 	if len(os.Args) < 3 {
-		fmt.Printf("Usage: \n\t\t%v [contract_addr] [user_addr]\n\n\t\tShows amount of tokens for an ERC20 tokens of [user_addr] account\n\n",os.Args[0])
-		os.Exit(1)
-	}
-	contract_addr := common.HexToAddress(os.Args[1])
-	user_addr := common.HexToAddress(os.Args[2])
-	erc20_token,err := NewERC20(contract_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate ERC20 contract: %v\n",err)
+		cutils.PrintUsage(os.Args[0],
+			"[erc20_contract_addr] [user_addr]",
+			"Shows ERC20 token balance for a user address",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+		)
 		os.Exit(1)
 	}
 
-	var copts = new(bind.CallOpts)
-	balance,err:=erc20_token.BalanceOf(copts,user_addr)
-	if err!=nil {
-		fmt.Printf("Error during call: %v\n",err)
+	// Connect to network
+	net, err := cutils.ConnectToRPC()
+	if err != nil {
+		cutils.Fatal("Network connection failed: %v", err)
 	}
-	decimals,err:=erc20_token.Decimals(copts)
-	if err!=nil {
-		fmt.Printf("Error during call: %v\n",err)
+	cutils.PrintNetworkInfo(net)
+
+	// Parse addresses
+	contractAddr := common.HexToAddress(os.Args[1])
+	userAddr := common.HexToAddress(os.Args[2])
+
+	// Contract setup
+	erc20, err := NewERC20(contractAddr, net.Client)
+	if err != nil {
+		cutils.Fatal("Failed to instantiate ERC20 contract: %v", err)
 	}
-	symbol,err:=erc20_token.Symbol(copts)
-	if err!=nil {
-		fmt.Printf("Error during call: %v\n",err)
+
+	// Get token info
+	copts := cutils.CreateCallOpts()
+
+	name, err := erc20.Name(copts)
+	if err != nil {
+		name = "UNKNOWN"
 	}
-	divisor:=big.NewInt(0)
-	if decimals == 0 {
-		divisor = big.NewInt(1)	//to avoid divide by 0 error
-	} else {
-		multiplier_str := strings.Repeat("0",int(decimals))
-		multiplier_str = "1" + multiplier_str
-		divisor.SetString(multiplier_str,10)
+
+	symbol, err := erc20.Symbol(copts)
+	if err != nil {
+		symbol = "UNKNOWN"
 	}
-	fmt.Printf("Amount of %v tokens: %v\n",symbol,balance.String())
-	compact_balance := big.NewInt(0)
-	reminder := big.NewInt(0)
-	compact_balance.QuoRem(balance,divisor,reminder)
-	fmt.Printf("Amount of %v tokens: %v.%018s (with decimal point applied)\n",symbol,compact_balance.String(),reminder.String())
+
+	decimals, err := erc20.Decimals(copts)
+	if err != nil {
+		decimals = 18
+	}
+
+	totalSupply, err := erc20.TotalSupply(copts)
+	if err != nil {
+		cutils.Fatal("Error getting total supply: %v", err)
+	}
+
+	balance, err := erc20.BalanceOf(copts, userAddr)
+	if err != nil {
+		cutils.Fatal("Error getting balance: %v", err)
+	}
+
+	// Get user's ETH balance for context
+	ethBalance, err := cutils.GetBalance(net, userAddr)
+	if err != nil {
+		ethBalance = nil
+	}
+
+	cutils.Section("TOKEN INFO")
+	cutils.PrintKeyValue("Contract Address", contractAddr.String())
+	cutils.PrintKeyValue("Name", name)
+	cutils.PrintKeyValue("Symbol", symbol)
+	cutils.PrintKeyValue("Decimals", decimals)
+	cutils.PrintKeyValue("Total Supply (raw)", totalSupply.String())
+	cutils.PrintKeyValue("Total Supply", cutils.FormatTokenAmount(totalSupply, decimals, symbol))
+
+	cutils.Section("USER BALANCE")
+	cutils.PrintKeyValue("User Address", userAddr.String())
+	cutils.PrintKeyValue("Balance (raw)", balance.String())
+	cutils.PrintKeyValue("Balance", cutils.FormatTokenAmount(balance, decimals, symbol))
+	if ethBalance != nil {
+		cutils.PrintKeyValueEth("ETH Balance", ethBalance)
+	}
 }
