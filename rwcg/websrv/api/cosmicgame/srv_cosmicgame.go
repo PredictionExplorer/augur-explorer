@@ -9,8 +9,6 @@ import (
 	"math/big"
 	"net/http"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -1878,34 +1876,6 @@ func cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 		"UserAid" : user_aid,
 		"UserTokens" : user_tokens,
 	})
-}
-func cosmic_game_dev_donate_nft(c *gin.Context) {
-
-	if  !dbInitialized() {
-		common.RespondError(c,"Database link wasn't configured")
-		return
-	}
-
-	cmd_str := fmt.Sprintf("%v/%v",os.Getenv("HOME"),"mint-artblocks.sh")
-	cmd := exec.Command(cmd_str)
-	buf := new(strings.Builder)
-	err_buf:= new(strings.Builder)
-	cmd.Stdout = buf
-	cmd.Stderr = err_buf
-	err := cmd.Run()
-	output := buf.String()
-	stderr := buf.String()
-	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Error",
-			"ErrDescr": fmt.Sprintf("exec() failed: %v:\n%v\n%v",err,output,stderr),
-		})
-		return
-	}
-	c.HTML(http.StatusOK, "cg_dev_donate_nft.html", gin.H{
-		"Output" : output,
-	})
-
 }
 func cosmic_game_dev_funcs(c *gin.Context) {
 

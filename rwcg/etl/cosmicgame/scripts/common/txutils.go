@@ -75,6 +75,21 @@ func ConnectToRPC() (*NetworkInfo, error) {
 	}, nil
 }
 
+// MustGetPkeyHex returns the private key hex from PKEY_HEX environment variable.
+// It exits with an error message if unset or invalid (must be 64 hex chars, no 0x prefix).
+func MustGetPkeyHex() string {
+	s := os.Getenv("PKEY_HEX")
+	if s == "" {
+		fmt.Fprintf(os.Stderr, "ERROR: PKEY_HEX environment variable is required (64 hex characters, no 0x prefix)\n")
+		os.Exit(1)
+	}
+	if len(s) != 64 {
+		fmt.Fprintf(os.Stderr, "ERROR: PKEY_HEX must be 64 hex characters (got %d)\n", len(s))
+		os.Exit(1)
+	}
+	return s
+}
+
 // PrepareAccount parses private key and fetches account info from network.
 // The pkeyHex must be a 64-character hex string (without 0x prefix).
 func PrepareAccount(net *NetworkInfo, pkeyHex string) (*AccountInfo, error) {

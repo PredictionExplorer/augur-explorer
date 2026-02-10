@@ -13,11 +13,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) < 4 {
+	if len(os.Args) < 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicsignaturenft_contract_addr] [token_id] [name (optional)]",
+			"[cosmicsignaturenft_contract_addr] [token_id] [name (optional)]",
 			"Sets NFT name for a CosmicSignatureNft token. If name is omitted, sets to empty string.",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -30,25 +30,25 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse parameters
-	cosmicSigAddr := common.HexToAddress(os.Args[2])
+	cosmicSigAddr := common.HexToAddress(os.Args[1])
 
 	tokenId := big.NewInt(0)
-	_, success := tokenId.SetString(os.Args[3], 10)
+	_, success := tokenId.SetString(os.Args[2], 10)
 	if !success {
-		cutils.Fatal("Invalid token_id value provided: %s", os.Args[3])
+		cutils.Fatal("Invalid token_id value provided: %s", os.Args[2])
 	}
 
 	// Name is optional, defaults to empty string
 	nftName := ""
-	if len(os.Args) >= 5 {
-		nftName = os.Args[4]
+	if len(os.Args) >= 4 {
+		nftName = os.Args[3]
 	}
 
 	// Contract setup

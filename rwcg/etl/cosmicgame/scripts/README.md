@@ -4,12 +4,18 @@ Scripts for managing CosmicGame transactions and queries, primarily for developm
 
 ## Setup
 
-All scripts require the `RPC_URL` environment variable to be set:
+Transaction scripts (those that send transactions) require:
+
+- **RPC_URL** – Ethereum RPC endpoint
+- **PKEY_HEX** – Signer private key as 64 hex characters (no `0x` prefix). Never pass the private key on the command line; set it in the environment.
 
 ```bash
 export RPC_URL="http://localhost:8545"  # Local Hardhat/Anvil
 # or
 export RPC_URL="https://arb-sepolia.g.alchemy.com/v2/YOUR_KEY"  # Arbitrum Sepolia
+
+# For transaction scripts (bid, claimprize, donate, etc.):
+export PKEY_HEX="your_64_char_hex_private_key_no_0x_prefix"
 ```
 
 ## Building
@@ -76,7 +82,8 @@ common/
 ### Make a Bid
 
 ```bash
-./bid [private_key] [cosmicgame_addr]
+export PKEY_HEX="your_64_char_hex_private_key"
+./bid [cosmicgame_addr]
 
 # Example output:
 # ==================== NETWORK INFO ====================

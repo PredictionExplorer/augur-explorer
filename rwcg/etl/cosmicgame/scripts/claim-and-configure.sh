@@ -3,32 +3,38 @@
 
 set -e
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
-    echo "Usage: $0 <private_key> <contract_addr> <initial_duration_seconds> [delay_seconds] [rpc_url]"
+if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
+    echo "Usage: $0 <contract_addr> <initial_duration_seconds> [delay_seconds] [rpc_url]"
     echo ""
-    echo "  private_key            - 64 character hex private key (owner)"
     echo "  contract_addr          - CosmicSignatureGame contract address"
     echo "  initial_duration_seconds - Time until main prize after first bid (e.g., 300 for 5 min)"
     echo "  delay_seconds          - Optional: delay before round activation (default: 120)"
     echo "  rpc_url                - Optional: RPC URL (default: \$RPC_URL env var)"
     echo ""
+    echo "Environment: PKEY_HEX (64-char hex private key) and RPC_URL must be set."
+    echo ""
     echo "Example:"
-    echo "  $0 ac0974bec...f2ff80 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 300 120"
+    echo "  export PKEY_HEX=ac0974bec...f2ff80"
+    echo "  $0 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 300 120"
     exit 1
 fi
 
-PRIV_KEY="$1"
-CONTRACT_ADDR="$2"
-INITIAL_DURATION="$3"
-DELAY_SECONDS="${4:-120}"
-RPC_URL="${5:-$RPC_URL}"
+CONTRACT_ADDR="$1"
+INITIAL_DURATION="$2"
+DELAY_SECONDS="${3:-120}"
+RPC_URL="${4:-$RPC_URL}"
 
 if [ -z "$RPC_URL" ]; then
-    echo "Error: RPC_URL not set. Provide as 5th argument or set RPC_URL env var."
+    echo "Error: RPC_URL not set. Provide as 4th argument or set RPC_URL env var."
+    exit 1
+fi
+if [ -z "$PKEY_HEX" ]; then
+    echo "Error: PKEY_HEX not set (64-char hex private key)."
     exit 1
 fi
 
 export RPC_URL
+export PKEY_HEX
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -52,7 +58,7 @@ go build -o set-initial-duration-divisor set-initial-duration-divisor.go 2>/dev/
 echo ""
 echo "Step 1: Setting delay to $DELAY_SECONDS seconds and claiming prize..."
 echo "------------------------------------------------------------------------"
-./claimprize-delay60 "$PRIV_KEY" "$CONTRACT_ADDR" "$DELAY_SECONDS"
+./claimprize-delay60 "$CONTRACT_ADDR" "$DELAY_SECONDS"
 
 # Wait a bit for transaction to be mined
 echo ""
@@ -63,7 +69,7 @@ sleep 3
 echo ""
 echo "Step 2: Setting initial duration to $INITIAL_DURATION seconds..."
 echo "------------------------------------------------------------------------"
-./set-initial-duration-divisor "$PRIV_KEY" "$CONTRACT_ADDR" "$INITIAL_DURATION"
+./set-initial-duration-divisor "$CONTRACT_ADDR" "$INITIAL_DURATION"
 
 echo ""
 echo "=========================================="

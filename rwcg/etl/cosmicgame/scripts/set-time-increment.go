@@ -14,11 +14,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicgame_contract_addr] [time_increment_seconds]",
+			"[cosmicgame_contract_addr] [time_increment_seconds]",
 			"Sets mainPrizeTimeIncrementInMicroSeconds so that each bid extends the time until main prize by the specified seconds",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -31,14 +31,14 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse seconds parameter
-	desiredSeconds, err := strconv.ParseInt(os.Args[3], 10, 64)
+	desiredSeconds, err := strconv.ParseInt(os.Args[2], 10, 64)
 	if err != nil {
 		cutils.Fatal("Error parsing time_increment_seconds: %v", err)
 	}
@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// Contract setup
-	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cosmicGameAddr := common.HexToAddress(os.Args[1])
 	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
 
 	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
@@ -101,5 +101,6 @@ func main() {
 		os.Exit(1)
 	}
 }
+
 
 

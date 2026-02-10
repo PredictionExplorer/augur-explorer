@@ -3,30 +3,36 @@
 
 set -e
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
-    echo "Usage: $0 <private_key> <contract_addr> <time_increment_seconds> [rpc_url]"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+    echo "Usage: $0 <contract_addr> <time_increment_seconds> [rpc_url]"
     echo ""
-    echo "  private_key            - 64 character hex private key (owner)"
     echo "  contract_addr          - CosmicSignatureGame contract address"
     echo "  time_increment_seconds - Time added per bid (e.g., 120 for 2 min)"
     echo "  rpc_url                - Optional: RPC URL (default: \$RPC_URL env var)"
     echo ""
+    echo "Environment: PKEY_HEX (64-char hex private key) and RPC_URL must be set."
+    echo ""
     echo "Example:"
-    echo "  $0 ac0974bec...f2ff80 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 120"
+    echo "  export PKEY_HEX=ac0974bec...f2ff80"
+    echo "  $0 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 120"
     exit 1
 fi
 
-PRIV_KEY="$1"
-CONTRACT_ADDR="$2"
-TIME_INCREMENT="$3"
-RPC_URL="${4:-$RPC_URL}"
+CONTRACT_ADDR="$1"
+TIME_INCREMENT="$2"
+RPC_URL="${3:-$RPC_URL}"
 
 if [ -z "$RPC_URL" ]; then
-    echo "Error: RPC_URL not set. Provide as 4th argument or set RPC_URL env var."
+    echo "Error: RPC_URL not set. Provide as 3rd argument or set RPC_URL env var."
+    exit 1
+fi
+if [ -z "$PKEY_HEX" ]; then
+    echo "Error: PKEY_HEX not set (64-char hex private key)."
     exit 1
 fi
 
 export RPC_URL
+export PKEY_HEX
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -49,7 +55,7 @@ go build -o set-time-increment set-time-increment.go 2>/dev/null || true
 echo ""
 echo "Step 1: Claiming prize..."
 echo "------------------------------------------------------------------------"
-#./claimprize "$PRIV_KEY" "$CONTRACT_ADDR"
+#./claimprize "$CONTRACT_ADDR"
 
 # Wait a bit for transaction to be mined
 echo ""
@@ -60,7 +66,7 @@ sleep 3
 echo ""
 echo "Step 2: Setting time increment to $TIME_INCREMENT seconds per bid..."
 echo "------------------------------------------------------------------------"
-./set-time-increment "$PRIV_KEY" "$CONTRACT_ADDR" "$TIME_INCREMENT"
+./set-time-increment "$CONTRACT_ADDR" "$TIME_INCREMENT"
 
 echo ""
 echo "=========================================="

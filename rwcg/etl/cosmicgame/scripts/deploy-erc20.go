@@ -110,11 +110,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key]\n\n\t\tDeploys a sample ERC20 token (100 billion tokens with 18 decimals)\n\t\tToken Name: ERC20 Token Sample1\n\t\tToken Symbol: Sample 1\n\n\t\tEnvironment: RPC_URL must be set\n", os.Args[0])
-		os.Exit(1)
-	}
-
 	big_chain_id, err := eclient.NetworkID(context.Background())
 	if err != nil {
 		fmt.Printf("Error getting network ID: %v\n", err)
@@ -122,9 +117,13 @@ func main() {
 	}
 	fmt.Printf("Using chain_id=%v\n", big_chain_id.String())
 
-	from_pkey_str := os.Args[1]
+	from_pkey_str := os.Getenv("PKEY_HEX")
+	if from_pkey_str == "" {
+		fmt.Printf("Usage: %v\n\nDeploys a sample ERC20 token (100 billion tokens with 18 decimals).\nToken Name: ERC20 Token Sample1, Symbol: Sample 1\n\nEnvironment: RPC_URL and PKEY_HEX (64-char hex private key, no 0x prefix) must be set.\n", os.Args[0])
+		os.Exit(1)
+	}
 	if len(from_pkey_str) != 64 {
-		fmt.Printf("Private key must be 64 hex characters (without 0x prefix)\n")
+		fmt.Printf("PKEY_HEX must be 64 hex characters (without 0x prefix)\n")
 		os.Exit(1)
 	}
 

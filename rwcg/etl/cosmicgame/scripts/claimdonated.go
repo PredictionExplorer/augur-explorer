@@ -14,11 +14,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicgame_contract_addr] [donated_nft_index]",
+			"[cosmicgame_contract_addr] [donated_nft_index]",
 			"Claims a donated NFT from the PrizesWallet",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -31,16 +31,16 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse parameters
-	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cosmicGameAddr := common.HexToAddress(os.Args[1])
 
-	nftIndex, err := strconv.ParseInt(os.Args[3], 10, 64)
+	nftIndex, err := strconv.ParseInt(os.Args[2], 10, 64)
 	if err != nil {
 		cutils.Fatal("Error parsing donated_nft_index: %v", err)
 	}

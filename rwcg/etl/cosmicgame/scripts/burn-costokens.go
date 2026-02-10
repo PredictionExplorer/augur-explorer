@@ -13,11 +13,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) < 4 {
+	if len(os.Args) < 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmictoken_addr] [amount]",
+			"[cosmictoken_addr] [amount]",
 			"Burns CosmicSignatureToken (CST) from the sender's account",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -30,19 +30,19 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse parameters
-	tokenAddr := common.HexToAddress(os.Args[2])
+	tokenAddr := common.HexToAddress(os.Args[1])
 
 	amount := big.NewInt(0)
-	_, success := amount.SetString(os.Args[3], 10)
+	_, success := amount.SetString(os.Args[2], 10)
 	if !success {
-		cutils.Fatal("Invalid amount provided: %s", os.Args[3])
+		cutils.Fatal("Invalid amount provided: %s", os.Args[2])
 	}
 
 	// Contract setup

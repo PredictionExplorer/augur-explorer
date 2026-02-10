@@ -15,11 +15,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [staking_wallet_addr] [stake_action_id]",
+			"[staking_wallet_addr] [stake_action_id]",
 			"Claims staking reward by unstaking (Unstake) from StakingWalletCosmicSignatureNft",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -32,16 +32,16 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse parameters
-	stakingWalletAddr := common.HexToAddress(os.Args[2])
+	stakingWalletAddr := common.HexToAddress(os.Args[1])
 
-	stakeActionID, err := strconv.ParseInt(os.Args[3], 10, 64)
+	stakeActionID, err := strconv.ParseInt(os.Args[2], 10, 64)
 	if err != nil {
 		cutils.Fatal("Error parsing stake_action_id: %v", err)
 	}

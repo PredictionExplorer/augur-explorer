@@ -17,11 +17,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) < 3 || len(os.Args) > 4 {
+	if len(os.Args) < 2 || len(os.Args) > 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicgame_contract_addr] [delay_seconds]",
+			"[cosmicgame_contract_addr] [delay_seconds]",
 			"Sets delayDurationBeforeRoundActivation, then claims prize. delay_seconds defaults to 60 if not provided",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -34,7 +34,7 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
@@ -42,15 +42,15 @@ func main() {
 
 	// Parse delay seconds
 	delaySeconds := int64(60)
-	if len(os.Args) == 4 {
-		delaySeconds, err = strconv.ParseInt(os.Args[3], 10, 64)
+	if len(os.Args) == 3 {
+		delaySeconds, err = strconv.ParseInt(os.Args[2], 10, 64)
 		if err != nil {
 			cutils.Fatal("Error parsing delay_seconds: %v", err)
 		}
 	}
 
 	// Contract setup
-	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cosmicGameAddr := common.HexToAddress(os.Args[1])
 	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
 
 	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)
@@ -94,7 +94,7 @@ func main() {
 	time.Sleep(2 * time.Second)
 
 	// Refresh account nonce
-	acc, err = cutils.PrepareAccount(net, os.Args[1])
+	acc, err = cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account refresh failed: %v", err)
 	}

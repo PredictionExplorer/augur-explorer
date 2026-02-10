@@ -7,16 +7,26 @@ package dbs
 //		(though, some exceptions may apply)
 
 import (
+	"database/sql"
 	"fmt"
-	"net"
-	"os"
 	"log"
 	"math/big"
-	"database/sql"
-	_  "github.com/lib/pq"
+	"net"
+	"os"
+	"strings"
+
+	_ "github.com/lib/pq"
 
 	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
 )
+
+// escapeConnParam escapes a value for use inside a single-quoted libpq connection parameter.
+// Backslashes and single quotes must be escaped per PostgreSQL libpq documentation.
+func escapeConnParam(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "'", "\\'")
+	return s
+}
 var (
 	zero *big.Int = big.NewInt(0)
 	hundred *big.Int = big.NewInt(100)
@@ -38,9 +48,9 @@ func New_sql_storage(info_log *log.Logger,db_log *log.Logger,host_port,db_name,u
 		host=host_port
 		port="5432"
 	}
-	conn_str := "user='"+user+"' dbname='" + db_name + "' password='" + pass +
-				"' host='" + host + "' port='" + port +	"'";
-	db,err := sql.Open("postgres",conn_str);
+	conn_str := "user='" + escapeConnParam(user) + "' dbname='" + escapeConnParam(db_name) + "' password='" + escapeConnParam(pass) +
+		"' host='" + escapeConnParam(host) + "' port='" + escapeConnParam(port) + "'"
+	db, err := sql.Open("postgres", conn_str)
 	if (err!=nil) {
 		info_log.Printf("Error connecting: %v\n",err)
 	}
@@ -63,31 +73,25 @@ func show_connect_error() {
 }
 func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	var err error
-	host,port,err:=net.SplitHostPort(os.Getenv("PGSQL_HOST"))
-	if (err!=nil) {
-		host=os.Getenv("PGSQL_HOST")
-		port="5432"
+	host, port, err := net.SplitHostPort(os.Getenv("PGSQL_HOST"))
+	if err != nil {
+		host = os.Getenv("PGSQL_HOST")
+		port = "5432"
 	}
-	conn_str := "user='"+
-				os.Getenv("PGSQL_USERNAME") +
-				"' dbname='" +
-				os.Getenv("PGSQL_DATABASE") +
-				"' password='" +
-				os.Getenv("PGSQL_PASSWORD") +
-				"' host='" +
-				host +
-				"' port='" +
-				port +
-				"'";
-	db,err := sql.Open("postgres",conn_str);
-	if (err!=nil) {
+	conn_str := "user='" + escapeConnParam(os.Getenv("PGSQL_USERNAME")) +
+		"' dbname='" + escapeConnParam(os.Getenv("PGSQL_DATABASE")) +
+		"' password='" + escapeConnParam(os.Getenv("PGSQL_PASSWORD")) +
+		"' host='" + escapeConnParam(host) +
+		"' port='" + escapeConnParam(port) + "'"
+	db, err := sql.Open("postgres", conn_str)
+	if err != nil {
 		show_connect_error()
 	} else {
 
 	}
-	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC
-	if (err!=nil) {
-		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
+	_, err = db.Exec("SET timezone TO 0") // Setting timezone to UTC
+	if err != nil {
+		p.Fatalf(fmt.Sprintf("DB Error: %v", err))
 	}
 
 	ss := new(SQLStorage)
@@ -95,28 +99,20 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	ss.Info = info_log
 	return ss
 }
-func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQLStorage {
+func Connect_to_storage_with_schema(info_log *log.Logger, schema_name string) *SQLStorage {
 	var err error
-	host,port,err:=net.SplitHostPort(os.Getenv("PGSQL_HOST"))
-	if (err!=nil) {
-		host=os.Getenv("PGSQL_HOST")
-		port="5432"
+	host, port, err := net.SplitHostPort(os.Getenv("PGSQL_HOST"))
+	if err != nil {
+		host = os.Getenv("PGSQL_HOST")
+		port = "5432"
 	}
-	conn_str := "user='"+
-				os.Getenv("PGSQL_USERNAME") +
-				"' dbname='" +
-				os.Getenv("PGSQL_DATABASE") +
-				"' password='" +
-				os.Getenv("PGSQL_PASSWORD") +
-				"' host='" +
-				host +
-				"' port='" +
-				port +
-				"'" +
-				"search_path='"+
-				schema_name+
-				"'";
-	db,err := sql.Open("postgres",conn_str);
+	conn_str := "user='" + escapeConnParam(os.Getenv("PGSQL_USERNAME")) +
+		"' dbname='" + escapeConnParam(os.Getenv("PGSQL_DATABASE")) +
+		"' password='" + escapeConnParam(os.Getenv("PGSQL_PASSWORD")) +
+		"' host='" + escapeConnParam(host) +
+		"' port='" + escapeConnParam(port) +
+		"' search_path='" + escapeConnParam(schema_name) + "'"
+	db, err := sql.Open("postgres", conn_str)
 	if (err!=nil) {
 		show_connect_error()
 	} else {

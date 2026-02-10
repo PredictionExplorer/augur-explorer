@@ -14,11 +14,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 5 {
+	if len(os.Args) != 4 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [erc721_contract_addr] [operator_addr] [token_id]",
+			"[erc721_contract_addr] [operator_addr] [token_id]",
 			"Approves a specific ERC721 token for transfer by an operator (single token approval)",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -31,17 +31,17 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse parameters
-	contractAddr := common.HexToAddress(os.Args[2])
-	operatorAddr := common.HexToAddress(os.Args[3])
+	contractAddr := common.HexToAddress(os.Args[1])
+	operatorAddr := common.HexToAddress(os.Args[2])
 
-	tokenID, err := strconv.ParseInt(os.Args[4], 10, 64)
+	tokenID, err := strconv.ParseInt(os.Args[3], 10, 64)
 	if err != nil {
 		cutils.Fatal("Error parsing token_id: %v", err)
 	}

@@ -12,11 +12,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [erc721_contract_addr] [operator_addr]",
+			"[erc721_contract_addr] [operator_addr]",
 			"Revokes ERC721 approval for all tokens (setApprovalForAll to false)",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -29,15 +29,15 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse addresses
-	contractAddr := common.HexToAddress(os.Args[2])
-	operatorAddr := common.HexToAddress(os.Args[3])
+	contractAddr := common.HexToAddress(os.Args[1])
+	operatorAddr := common.HexToAddress(os.Args[2])
 
 	// Contract setup
 	erc721, err := NewCosmicSignatureNft(contractAddr, net.Client)

@@ -13,11 +13,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) < 4 {
+	if len(os.Args) < 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicgame_contract_addr] [percentage]",
+			"[cosmicgame_contract_addr] [percentage]",
 			"Sets cosmicSignatureNftStakingTotalEthRewardAmountPercentage (percentage of funds for staking rewards)",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -30,19 +30,19 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse parameters
-	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cosmicGameAddr := common.HexToAddress(os.Args[1])
 
 	percentageVal := big.NewInt(0)
-	_, success := percentageVal.SetString(os.Args[3], 10)
+	_, success := percentageVal.SetString(os.Args[2], 10)
 	if !success {
-		cutils.Fatal("Invalid percentage value provided: %s", os.Args[3])
+		cutils.Fatal("Invalid percentage value provided: %s", os.Args[2])
 	}
 
 	// Contract setup

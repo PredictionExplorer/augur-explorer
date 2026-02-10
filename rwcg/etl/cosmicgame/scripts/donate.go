@@ -13,11 +13,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [cosmicgame_contract_addr] [amount_wei]",
+			"[cosmicgame_contract_addr] [amount_wei]",
 			"Makes an ETH donation to CosmicGame contract",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -30,7 +30,7 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
@@ -38,13 +38,13 @@ func main() {
 
 	// Parse donation amount
 	donationAmount := big.NewInt(0)
-	_, success := donationAmount.SetString(os.Args[3], 10)
+	_, success := donationAmount.SetString(os.Args[2], 10)
 	if !success {
-		cutils.Fatal("Invalid amount provided: %s", os.Args[3])
+		cutils.Fatal("Invalid amount provided: %s", os.Args[2])
 	}
 
 	// Contract setup
-	cosmicGameAddr := common.HexToAddress(os.Args[2])
+	cosmicGameAddr := common.HexToAddress(os.Args[1])
 	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
 
 	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)

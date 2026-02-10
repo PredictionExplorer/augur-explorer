@@ -12,11 +12,11 @@ import (
 
 func main() {
 	// Usage check
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		cutils.PrintUsage(os.Args[0],
-			"[private_key] [contract_addr] [new_owner_addr]",
+			"[contract_addr] [new_owner_addr]",
 			"Changes ownership of an Ownable contract",
-			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)"},
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
@@ -29,15 +29,15 @@ func main() {
 	cutils.PrintNetworkInfo(net)
 
 	// Prepare account
-	acc, err := cutils.PrepareAccount(net, os.Args[1])
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
 	if err != nil {
 		cutils.Fatal("Account setup failed: %v", err)
 	}
 	cutils.PrintAccountInfo(acc)
 
 	// Parse addresses
-	contractAddr := common.HexToAddress(os.Args[2])
-	newOwnerAddr := common.HexToAddress(os.Args[3])
+	contractAddr := common.HexToAddress(os.Args[1])
+	newOwnerAddr := common.HexToAddress(os.Args[2])
 
 	// Contract setup
 	cutils.PrintContractInfo("Contract Address", contractAddr)

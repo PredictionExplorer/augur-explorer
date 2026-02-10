@@ -330,7 +330,6 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/marketing/config/current", cosmic_game_marketing_config_current)
 	r.GET("/black/cosmicgame/time/current", cosmic_game_time_current)
 	r.GET("/black/cosmicgame/time/until_prize", cosmic_game_time_until_prize)
-	r.GET("/black/cosmicgame/dev/donate_nft", cosmic_game_dev_donate_nft)
 	r.GET("/black/cosmicgame/dev_funcs", cosmic_game_dev_funcs)
 	r.GET("/black/cosmicgame/system/modelist", cosmic_game_sysmode_changes)
 	r.GET("/black/cosmicgame/system/modelist/:offset/:limit", cosmic_game_sysmode_changes)
