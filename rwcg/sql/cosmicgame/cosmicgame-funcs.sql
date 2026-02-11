@@ -36,7 +36,7 @@ BEGIN
 	UPDATE cg_round_stats SET 
 			total_bids = (total_bids + 1),
 			total_cst_in_bids = (total_cst_in_bids + NEW.cst_reward),
-			total_eth_in_Bids = (total_eth_in_bids + NEW.eth_price)
+			total_eth_in_bids = (total_eth_in_bids + NEW.eth_price)
 	   	WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN

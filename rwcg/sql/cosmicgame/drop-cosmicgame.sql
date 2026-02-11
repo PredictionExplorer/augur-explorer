@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS
 	cg_bid,
 	cg_eth_donated,
 	cg_eth_donated_wi,
-	cg_donation_json ,
+	cg_donation_json,
 	cg_donation_received,
 	cg_donation_sent,
 	cg_erc20_donation,
