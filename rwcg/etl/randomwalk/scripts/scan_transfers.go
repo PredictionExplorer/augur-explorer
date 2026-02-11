@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 const (
 	TRANSFER_EVT=   "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
@@ -32,7 +32,7 @@ var (
 )
 func process_log(log *types.Log) {
 
-	var evt RW_Transfer
+	var evt rwp.Transfer
 	evt.From = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.To = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.TokenId = log.Topics[3].Big().Int64()

@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // EnsureBlockExists verifies block exists in DB with correct hash, or inserts it
@@ -168,23 +167,4 @@ func InsertEventLog(ctx *ETLContext, log types.Log, txId int64) (int64, error) {
 	}
 
 	return evtId, nil
-}
-
-// GetBlockTimestamp fetches the timestamp for a block using RPC
-func GetBlockTimestamp(rpcClient *rpc.Client, blockNum int64) (int64, error) {
-	var result map[string]interface{}
-	err := rpcClient.CallContext(context.Background(), &result, "eth_getBlockByNumber",
-		fmt.Sprintf("0x%x", blockNum), false)
-	if err != nil {
-		return 0, err
-	}
-
-	timestampHex, ok := result["timestamp"].(string)
-	if !ok {
-		return 0, fmt.Errorf("timestamp not found in block %d", blockNum)
-	}
-
-	var timestamp big.Int
-	timestamp.SetString(timestampHex[2:], 16) // Remove 0x prefix
-	return timestamp.Int64(), nil
 }

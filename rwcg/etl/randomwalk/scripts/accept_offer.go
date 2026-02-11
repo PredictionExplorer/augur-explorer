@@ -112,7 +112,7 @@ func main() {
 	}
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
-	signfunc := func(signer_disabled types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
+	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
 		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
 		if err != nil {

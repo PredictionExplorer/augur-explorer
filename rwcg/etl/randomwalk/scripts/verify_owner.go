@@ -10,52 +10,52 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	rwdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/randomwalk"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 var (
-	storage *SQLStorage
-	market_order_id int64
+	storagew *rwdb.SQLStorageWrapper
 
 	Info    *log.Logger
 	RPC_URL string
-	caddrs *RW_ContractAddresses
+	caddrs  *rwp.ContractAddresses
 )
 func main() {
-
 	RPC_URL = os.Getenv("RPC_URL")
 
-	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storage = Connect_to_storage(&market_order_id,Info)
+	Info = log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	base := dbs.Connect_to_storage(Info)
+	storagew = &rwdb.SQLStorageWrapper{S: base}
 
-	caddrs_obj := storage.Get_randomwalk_contract_addresses()
+	caddrs_obj := storagew.Get_randomwalk_contract_addresses()
 	caddrs = &caddrs_obj
 
 	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
+	if err != nil {
+		fmt.Printf("Can't connect to ETH RPC: %v\n", err)
 		os.Exit(1)
 	}
 	rwalk_addr := common.HexToAddress(caddrs.RandomWalk)
-	rwalk_ctrct,err := NewRWalk(rwalk_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate RWalk contract: %v\n",err)
+	rwalk_ctrct, err := NewRWalk(rwalk_addr, eclient)
+	if err != nil {
+		fmt.Printf("Failed to instantiate RWalk contract: %v\n", err)
 		os.Exit(1)
 	}
 	var copts bind.CallOpts
-	num_toks_big,err := rwalk_ctrct.NextTokenId(&copts)
+	num_toks_big, err := rwalk_ctrct.NextTokenId(&copts)
 	if err != nil {
-		fmt.Printf("Error getting num tokens: %v\n",err)
+		fmt.Printf("Error getting num tokens: %v\n", err)
 		os.Exit(1)
 	}
 	num_toks := num_toks_big.Int64()
 
-	rwalk_aid,err := storage.Nonfatal_lookup_address_id(rwalk_addr.String())
+	rwalk_aid, err := storagew.S.Nonfatal_lookup_address_id(rwalk_addr.String())
 
 	fmt.Printf("num tokens: %v\n",num_toks)
 
-	stats := storage.Get_random_walk_stats(rwalk_aid)
+	stats := storagew.Get_random_walk_stats(rwalk_aid)
 	if stats.TokensMinted != num_toks {
 		fmt.Printf(
 			"Error: num tokens doesn't match: real num tokens = %v, db num tokens = %v\n",
@@ -72,12 +72,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		chain_owner_aid,err := storage.Nonfatal_lookup_address_id(chain_owner_addr.String())
+		chain_owner_aid, err := storagew.S.Nonfatal_lookup_address_id(chain_owner_addr.String())
 		if err != nil {
 			fmt.Printf("Error during addr lookup: %v\n",err)
 			os.Exit(1)
 		}
-		tok_info,err := storage.Get_rwalk_token_info(rwalk_aid,i)
+		tok_info, err := storagew.Get_rwalk_token_info(rwalk_aid, i)
 		if err != nil {
 			fmt.Printf("Error getting token info from db: %v",err)
 			os.Exit(1)

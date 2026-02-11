@@ -33,6 +33,29 @@ rm -f set-time-increment
 rm -f setactivation
 rm -f setroundactivation
 rm -f tokownerof
+# Binaries not in make.sh but have main():
+rm -f bidcst
+rm -f bidts
+rm -f blockts
+rm -f burn-costokens
+rm -f charitywithdraw
+rm -f chown
+rm -f claimdonated
+rm -f costoken-transfer
+rm -f csig-transfer
+rm -f cstprice
+rm -f donate-wi
+rm -f ethbal
+rm -f erc20totsup
+rm -f erc721approve
+rm -f erc721approvesingle
+rm -f erc721disapprove
+rm -f img_upload
+rm -f sendeth
+rm -f setcharity
+rm -f stakerwalk
+rm -f stclaim
+rm -f stunstake
 
 # Clean swap files
 rm -f .*.swp

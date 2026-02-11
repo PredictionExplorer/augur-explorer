@@ -14,4 +14,8 @@ if [ -x scripts/make-clean.sh ]; then
     scripts/make-clean.sh
 fi
 
+if [ -x imggen_monitor/make-clean.sh ]; then
+    imggen_monitor/make-clean.sh
+fi
+
 echo "Done cleaning etl/cosmicgame."

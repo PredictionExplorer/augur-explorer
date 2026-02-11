@@ -10,6 +10,9 @@ go build -o cg_etl .
 
 if [ $? -eq 0 ]; then
     echo "Build successful: cg_etl"
+    if [ -x imggen_monitor/make.sh ]; then
+        imggen_monitor/make.sh
+    fi
 else
     echo "Build failed!"
     exit 1

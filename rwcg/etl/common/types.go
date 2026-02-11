@@ -18,17 +18,3 @@ type ETLContext struct {
 	Info      *log.Logger
 	Error     *log.Logger
 }
-
-// ContractInfo holds contract address information
-type ContractInfo struct {
-	Address    string
-	AddressAid int64
-}
-
-// ProcessedEvent holds event processing result
-type ProcessedEvent struct {
-	BlockNum  int64
-	TxId      int64
-	EvtId     int64
-	Processed bool
-}

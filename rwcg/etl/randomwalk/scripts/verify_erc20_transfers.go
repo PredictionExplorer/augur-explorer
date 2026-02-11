@@ -14,8 +14,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	rwdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/randomwalk"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 const (
 	TRANSFER_EVT=   "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
@@ -28,20 +29,18 @@ var (
 	evt_transfer,_   = hex.DecodeString(TRANSFER_EVT)
 	rwalk_addr common.Address
 
-	storage *SQLStorage
-	market_order_id int64
-	caddrs *RW_ContractAddresses
+	storagew *rwdb.SQLStorageWrapper
+	caddrs   *rwp.ContractAddresses
 
 	rpcclient *rpc.Client
-	eclient *ethclient.Client
+	eclient   *ethclient.Client
 )
 func process_log(log *types.Log) {
-
-	var evt RW_Transfer
+	var evt rwp.TransferEntry
 	evt.From = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.To = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.TokenId = log.Topics[3].Big().Int64()
-	transfers := storage.Get_rw_token_transfers_by_tx_hash(log.TxHash.String())
+	transfers := storagew.Get_rw_token_transfers_by_tx_hash(log.TxHash.String())
 	found := false
 	for i:=0; i<len(transfers); i++ {
 		trf_item := &transfers[i]
@@ -63,9 +62,10 @@ func main() {
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
-	storage = Connect_to_storage(&market_order_id,Info)
+	base := dbs.Connect_to_storage(Info)
+	storagew = &rwdb.SQLStorageWrapper{S: base}
 
-	caddrs_obj := storage.Get_randomwalk_contract_addresses()
+	caddrs_obj := storagew.Get_randomwalk_contract_addresses()
 	caddrs = &caddrs_obj
 
 	rwalk_addr = common.HexToAddress(caddrs.RandomWalk)

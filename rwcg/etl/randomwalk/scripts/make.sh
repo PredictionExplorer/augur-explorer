@@ -19,10 +19,23 @@ build() {
     fi
 }
 
+build accept_offer
+build approve
+build cancel_offer
 build mint
+build new_offer
 build ownerof
 build price
+build scan_rwmints
+build scan_transfers
+build setname
 build status
+build statusmkt
+build tokenuri
+build transfer
+build verify_erc20_transfers
+build verify_owner
+build withdrawal
 
 if [ $FAILED -eq 0 ]; then
     echo "All randomwalk scripts built successfully!"

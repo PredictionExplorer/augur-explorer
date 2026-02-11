@@ -15,8 +15,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
+	rwdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/randomwalk"
+	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 const (
 	SCANNED_EVT=   "ad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec"
@@ -32,20 +33,15 @@ var (
 
 	rpcclient *rpc.Client
 	eclient *ethclient.Client
-	storage *SQLStorage
+	storagew *rwdb.SQLStorageWrapper
 )
 func process_log(log *types.Log) {
-	
 	//fmt.Printf("processing log %+v\n",log)
-	var evt RW_MintEvent
+	var evt rwp.MintEvent
 	evt.TokenId = log.Topics[1].Big().Int64()
 	evt.Owner = common.BytesToAddress(log.Topics[2][12:]).String()
-//	fmt.Printf(
-//		"Block %v: RWMint token id %v  tx %v\n",
-//		log.BlockNumber,evt.TokenId,log.TxHash.String(),
-//	)
   again:
-	exists,err := storage.Check_rwalk_token_exists(evt.TokenId)
+	exists, err := storagew.Check_rwalk_token_exists(evt.TokenId)
 	if err != nil {
 		fmt.Printf("Error accessing database: %v\n",err)
 		time.Sleep(1 * time.Second)
@@ -86,7 +82,8 @@ func main() {
 		fmt.Printf("Error connecting to node: %v\n",err)
 		os.Exit(1)
 	}
-	storage = Connect_to_storage(Info)
+	base := dbs.Connect_to_storage(Info)
+	storagew = &rwdb.SQLStorageWrapper{S: base}
 	ctx := context.Background()
 	latestBlock, err := eclient.HeaderByNumber(ctx, nil)
 	if err != nil {
