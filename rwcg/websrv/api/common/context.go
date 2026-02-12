@@ -16,11 +16,10 @@ import (
 
 // ServerContext holds shared dependencies for all handlers
 type ServerContext struct {
-	Db         *SQLStorage
-	DbArbitrum *SQLStorage
-	EthClient  *ethclient.Client
-	Info       *log.Logger
-	Error      *log.Logger
+	Db        *SQLStorage
+	EthClient *ethclient.Client
+	Info      *log.Logger
+	Error     *log.Logger
 }
 
 var (
@@ -29,13 +28,12 @@ var (
 )
 
 // InitContext initializes the global server context
-func InitContext(db, dbArbitrum *SQLStorage, ethClient *ethclient.Client, info, errorLog *log.Logger) {
+func InitContext(db *SQLStorage, ethClient *ethclient.Client, info, errorLog *log.Logger) {
 	Ctx = &ServerContext{
-		Db:         db,
-		DbArbitrum: dbArbitrum,
-		EthClient:  ethClient,
-		Info:       info,
-		Error:      errorLog,
+		Db:        db,
+		EthClient: ethClient,
+		Info:      info,
+		Error:     errorLog,
 	}
 }
 

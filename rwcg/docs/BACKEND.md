@@ -373,11 +373,8 @@ The web server provides a REST API for accessing data.
 ### Database Connection
 
 ```go
-// Environment variables
+// Environment variables (PGSQL_ prefix only)
 PGSQL_USERNAME, PGSQL_PASSWORD, PGSQL_DATABASE, PGSQL_HOST
-
-// Optional Arbitrum connection
-ARB_USERNAME, ARB_PASSWORD, ARB_DATABASE, ARB_HOST
 ```
 
 ### Response Format

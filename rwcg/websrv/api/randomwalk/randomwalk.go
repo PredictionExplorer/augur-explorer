@@ -8,6 +8,12 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
 
+// Response format flags for handlers
+const (
+	JSON = true
+	HTTP = false
+)
+
 // Package-level storage wrapper for randomwalk database operations
 var rw_storagew rwdb.SQLStorageWrapper
 
@@ -77,10 +83,5 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 // Helper to check if database is initialized
 func dbInitialized() bool {
 	return common.Ctx != nil && common.Ctx.Db != nil
-}
-
-// Helper to get storage wrapper
-func db() *rwdb.SQLStorageWrapper {
-	return &rw_storagew
 }
 

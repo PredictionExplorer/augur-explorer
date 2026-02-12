@@ -21,61 +21,6 @@ func RespondErrorJSON(c *gin.Context, errorText string) {
 	})
 }
 
-func JSONValidateAndLookupAddressOrAid(c *gin.Context, pAddr *string) (string, int64, bool) {
-	// Note: this function transforms address in checksumed format
-	var aid int64 = 0
-	if len(*pAddr) > 0 {
-		aid, err := strconv.ParseInt(*pAddr, 10, 64)
-		if err == nil {
-			var addr string
-			addr, err = Ctx.Db.Lookup_address(aid)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"status": 0,
-					"error":  fmt.Sprintf("Address with ID=%v not found", aid),
-				})
-				return "", aid, false
-			}
-			return addr, aid, true
-		} else {
-			aid = 0
-		}
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": 0,
-			"error":  fmt.Sprintf("Empty 'address' parameter for lookup"),
-		})
-		return "", 0, false
-	}
-	address, valid := IsAddressValid(c, true, *pAddr)
-	if !valid {
-		return "", 0, false
-	}
-	aid, err := Ctx.Db.Nonfatal_lookup_address_id(address)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": 0,
-			"error":  fmt.Sprintf("Address not found in the DB"),
-		})
-		return "", 0, false
-	}
-	return address, aid, true
-}
-
-func ShowMarketNotFoundError(c *gin.Context, jsonOutput bool, addr *string) {
-	if jsonOutput {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": 0,
-			"error":  fmt.Sprintf("Market with address %v wasn't found", *addr),
-		})
-	} else {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title":    "RWCG: Error",
-			"ErrDescr": fmt.Sprintf("Market with address %v wasn't found", *addr),
-		})
-	}
-}
-
 func ParseIntFromRemoteOrError(c *gin.Context, jsonOutput bool, asciiInt *string) (int64, bool) {
 	p, err := strconv.ParseInt(*asciiInt, 10, 64)
 	if err != nil {

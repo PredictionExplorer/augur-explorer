@@ -42,7 +42,7 @@ func init() {
 
 func initialize() {
 	// Initialize the common context
-	common.InitContext(rwcg_srv.db, rwcg_srv.db_arbitrum, eclient, Info, Error)
+	common.InitContext(rwcg_srv.db, eclient, Info, Error)
 
 	// Initialize CosmicGame (only if enabled)
 	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCosmicGame)

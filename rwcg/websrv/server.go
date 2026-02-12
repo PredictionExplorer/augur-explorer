@@ -24,47 +24,9 @@ const (
 	HTTP				bool = false
 )
 type RWCGServer struct {
-	db				*SQLStorage
-	db_arbitrum		*SQLStorage
+	db *SQLStorage
 }
-func (self *RWCGServer) arbitrum_initialized() bool {
 
-	if self.db_arbitrum == nil {
-		return false
-	}
-	return true
-}
-func connect_to_arbitrum(srv *RWCGServer) {
-
-	arb_user := os.Getenv("ARB_USERNAME")
-	arb_passwd := os.Getenv("ARB_PASSWORD")
-	arb_db_name := os.Getenv("ARB_DATABASE")
-	arb_host_port := os.Getenv("ARB_HOST")
-	if len(arb_user) > 0 {
-		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"arbitrum-db.log")
-		arbitrum_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err != nil {
-			fmt.Printf("Can't start: %v\n",err)
-			os.Exit(1)
-		}
-		arb_DB := log.New(arbitrum_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-
-		srv.db_arbitrum= New_sql_storage(
-			Info,
-			arb_DB,
-			arb_host_port,
-			arb_db_name,
-			arb_user,
-			arb_passwd,
-		)
-		Info.Printf("Arbitrum database connection initialized (ARB_USERNAME=%v, ARB_HOST=%v, ARB_DATABASE=%v)\n",
-			arb_user, arb_host_port, arb_db_name)
-	} else {
-		Info.Printf("Arbitrum database connection NOT configured. ARB_USERNAME environment variable is not set. Arbitrum features will be unavailable.\n")
-		fmt.Printf("INFO: Arbitrum database connection NOT configured (ARB_USERNAME not set). Arbitrum features will be unavailable.\n")
-	}
-}
 func create_rwcg_server() *RWCGServer {
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
@@ -89,7 +51,6 @@ func create_rwcg_server() *RWCGServer {
 	srv := new(RWCGServer)
 	srv.db = Connect_to_storage(Info)
 	srv.db.Init_log(web_db_log_file)
-	connect_to_arbitrum(srv)
 
 	return srv
 }
