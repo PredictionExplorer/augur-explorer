@@ -73,8 +73,12 @@ func main() {
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	storagew.S = Connect_to_storage(Info)
-    storagew.S.Db_set_schema_name("public");
-    storagew.S.Log_msg("Log initialized\n")
+	if storagew.S == nil {
+		fmt.Println("failed to connect to storage")
+		os.Exit(1)
+	}
+	storagew.S.Db_set_schema_name("public");
+	storagew.S.Log_msg("Log initialized\n")
 
 	if *regenerate_missing {
 		fmt.Printf("Regenerating missing images/videos\n")

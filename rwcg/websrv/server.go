@@ -50,6 +50,9 @@ func create_rwcg_server() *RWCGServer {
 	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
 	srv := new(RWCGServer)
 	srv.db = Connect_to_storage(Info)
+	if srv.db == nil {
+		os.Exit(1)
+	}
 	srv.db.Init_log(web_db_log_file)
 
 	return srv

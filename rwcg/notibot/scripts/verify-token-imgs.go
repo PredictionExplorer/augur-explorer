@@ -79,6 +79,10 @@ func main() {
 	Error = Info
 
 	storage := dbs.Connect_to_storage(Info)
+	if storage == nil {
+		fmt.Println("failed to connect to storage")
+		os.Exit(1)
+	}
 	storagew = &rwdb.SQLStorageWrapper{S: storage}
 	rwalk_aid = storagew.S.Lookup_address_id(RWALK_ADDR)
 	rw_stats := storagew.Get_random_walk_stats(rwalk_aid)

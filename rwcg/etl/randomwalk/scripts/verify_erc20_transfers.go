@@ -63,6 +63,10 @@ func main() {
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
 	base := dbs.Connect_to_storage(Info)
+	if base == nil {
+		fmt.Printf("failed to connect to storage\n")
+		os.Exit(1)
+	}
 	storagew = &rwdb.SQLStorageWrapper{S: base}
 
 	caddrs_obj := storagew.Get_randomwalk_contract_addresses()

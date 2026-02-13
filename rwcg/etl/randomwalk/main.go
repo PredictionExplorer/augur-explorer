@@ -247,6 +247,10 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 
 	storage = dbs.Connect_to_storage(Info)
+	if storage == nil {
+		Info.Printf("failed to connect to storage")
+		os.Exit(1)
+	}
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storagew.S = storage

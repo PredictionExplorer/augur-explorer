@@ -254,9 +254,9 @@ func (ss *SQLStorage) Get_block_hash(blockNum int64) (string, error) {
 	err := row.Scan(&blockHash)
 	if err != nil {
 		return "", err
-		}
-	return blockHash, nil
 	}
+	return blockHash, nil
+}
 
 // Get_last_block_num returns the last block number from last_block table
 func (ss *SQLStorage) Get_last_block_num() (int64, error) {

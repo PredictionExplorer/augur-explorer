@@ -52,6 +52,9 @@ func main() {
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	storage := dbs.Connect_to_storage(Info)
+	if storage == nil {
+		log.Fatal("failed to connect to storage")
+	}
 	storagew = &rwdb.SQLStorageWrapper{S: storage}
 	records := storagew.Get_randomwalk_ranking_data_for_all_users()
 

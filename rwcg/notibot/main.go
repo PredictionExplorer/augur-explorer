@@ -752,6 +752,9 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 
 	storage := dbs.Connect_to_storage(Info)
+	if storage == nil {
+		log.Fatal("failed to connect to storage")
+	}
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storagew = &rwdb.SQLStorageWrapper{S: storage}
