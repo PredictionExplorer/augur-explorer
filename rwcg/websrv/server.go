@@ -15,13 +15,9 @@ import (
 )
 const (
 	DEFAULT_DB_LOG_FILE_NAME = "/var/tmp/backend-db.log"
-	DEFAULT_MARKET_ROWS_LIMIT int	= 500
-	DEFAILT_MARKET_TRADES_LIMIT int = 20
-	DEFAULT_USER_REPORTS_LIMIT int = 30
-	DEFAULT_MARKET_REPORTS_LIMIT int = 40
 
-	JSON				bool = true
-	HTTP				bool = false
+	JSON  bool = true
+	HTTP  bool = false
 )
 type RWCGServer struct {
 	db *SQLStorage

@@ -137,3 +137,5 @@ rwcg/tools/archive_export
 rwcg/tools/db_verify
 rwcg/tools/evtlog_diff
 rwcg/websrv/websrv
+rwcg/etl/cosmicgame/imggen_monitor/imggen_exec
+rwcg/etl/cosmicgame/imggen_monitor/imggen_monitor

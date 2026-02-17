@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lib/pq"
 	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives"
 )
 
@@ -48,17 +49,14 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 	return evtlog
 }
 
-// Get_evtlogs_by_signature_in_range retrieves event log IDs by signature in a range
-func (ss *SQLStorage) Get_evtlogs_by_signature_in_range(sig string, contract_aids string, from_evt_id, to_evt_id int64) []int64 {
-
-	var query string
-	query = "SELECT id FROM evt_log " +
-		"WHERE topic0_sig=$1 " +
-		"AND contract_aid IN (" + contract_aids + ") " +
-		"AND id > $2 AND id <= $3 " +
+// Get_evtlogs_by_signature_in_range retrieves event log IDs by signature in a range.
+// contract_aids is a slice of address IDs; the query is parameterized to avoid SQL injection.
+func (ss *SQLStorage) Get_evtlogs_by_signature_in_range(sig string, contract_aids []int64, from_evt_id, to_evt_id int64) []int64 {
+	const query = "SELECT id FROM evt_log " +
+		"WHERE topic0_sig = $1 AND contract_aid = ANY($2) AND id > $3 AND id <= $4 " +
 		"ORDER BY id"
 
-	rows, err := ss.db.Query(query, sig, from_evt_id, to_evt_id)
+	rows, err := ss.db.Query(query, sig, pq.Array(contract_aids), from_evt_id, to_evt_id)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 		os.Exit(1)
