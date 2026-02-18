@@ -32,17 +32,29 @@ async function getCosmicSignatureGameContract(cosmicSignatureGameContractName = 
 
     return cosmicSignatureGame;
 }
-async function getERC20SampleContracts(sampContractName = "Samp") {
+async function getERC20SampleContracts(deployerSigner, sampContractName = "Samp") {
 	// gets address of dummy token contract (for donation testing)
-    const sampContract1Addr = process.env.TSAMP1;
-    const sampContract2Addr = process.env.TSAMP2;
-    if (typeof sampContract1Addr === "undefined" || sampContract1Addr.length !== 42) {
-        console.log("TSAMP1 environment variable does not contain contract address of token sample contract.");
-        process.exit(1);
-    }
-    if (typeof sampContract2Addr === "undefined" || sampContract2Addr.length !== 42) {
-        console.log("TSAMP2 environment variable does not contain contract address of token sample contract.");
-        process.exit(1);
+    let sampContract1Addr = process.env.TSAMP1;
+    let sampContract2Addr = process.env.TSAMP2;
+    const haveEnv = typeof sampContract1Addr === "string" && sampContract1Addr.length === 42 &&
+        typeof sampContract2Addr === "string" && sampContract2Addr.length === 42;
+
+    if (!haveEnv) {
+        try {
+            const signer = deployerSigner || (await hre.ethers.getSigners())[0];
+            const SampFactory = await hre.ethers.getContractFactory(sampContractName);
+            const samp1 = await SampFactory.connect(signer).deploy("ERC20 Token Sample1", "SAMP1");
+            await samp1.waitForDeployment();
+            const samp2 = await SampFactory.connect(signer).deploy("ERC20 Token Sample2", "SAMP2");
+            await samp2.waitForDeployment();
+            sampContract1Addr = await samp1.getAddress();
+            sampContract2Addr = await samp2.getAddress();
+            console.log("Deployed Samp tokens (TSAMP1/TSAMP2 unset):", sampContract1Addr, sampContract2Addr);
+        } catch (e) {
+            console.log("TSAMP1 and TSAMP2 must be set to two ERC20 contract addresses (42-char 0x...), or add a Samp contract to your project.");
+            console.error(e.message);
+            process.exit(1);
+        }
     }
 
     const sampContract1 = await hre.ethers.getContractAt(sampContractName, sampContract1Addr);
@@ -55,22 +67,42 @@ async function getRandomWalkNft(game) {
 	
 }
 async function waitUntilPrizeTimeZero(ctrct) {
-	async function sleep(ms) {
-	  return new Promise(resolve => setTimeout(resolve, ms));
+	let t = Number(await ctrct.getDurationUntilMainPrize());
+	if (t <= 0) {
+		console.log("time to claim prize = ", t, "(already claimable)");
+		return;
 	}
-	let t;
+	console.log("time to claim prize = ", t);
+	// Prefer Hardhat/Anvil time travel to avoid long real-time waits
+	try {
+		await ethers.provider.send("evm_increaseTime", [t]);
+		await ethers.provider.send("evm_mine", []);
+		console.log("evm_increaseTime(", t, ") + evm_mine() applied");
+		return;
+	} catch (e) {
+		console.log("evm_increaseTime not available, waiting in real time (poll every 5s):", e.message);
+	}
+	async function sleep(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
 	do {
-		t = await ctrct.getDurationUntilMainPrize()
-		console.log(t);
-		t = Number(t);
-		console.log("time to claim prize = ",t)
-		if (t<0) { 
-			console.log("t = "+t+", breaking")
-			break; 
-		}
+		t = Number(await ctrct.getDurationUntilMainPrize());
+		console.log("time to claim prize = ", t);
+		if (t <= 0) break;
 		await sleep(5000);
-		console.log(t);
-	} while (t>0);
+	} while (t > 0);
+}
+
+/** After a claim, the next round has delay before activation. Advance time so next bids succeed. */
+async function advanceToNextRoundActive(ctrct) {
+	try {
+		const delay = Number(await ctrct.delayDurationBeforeRoundActivation());
+		if (delay <= 0) return;
+		await ethers.provider.send("evm_increaseTime", [delay + 1]);
+		await ethers.provider.send("evm_mine", []);
+	} catch (e) {
+		// evm_increaseTime not available (live chain)
+	}
 }
 
 async function main() {
@@ -133,7 +165,7 @@ async function main() {
     const cosmicGameProxy = await getCosmicSignatureGameContract()
 	const cosmicGameAddr = await cosmicGameProxy.getAddress()
 	console.log("CosmicGame address: "+cosmicGameAddr);
-	const [ samp1,samp2 ] = await getERC20SampleContracts();
+	const [ samp1,samp2 ] = await getERC20SampleContracts(owner);
 	const cosmicSignatureNftAddr = await cosmicGameProxy.nft();
 	const cosmicSignatureNft = await ethers.getContractAt("CosmicSignatureNft",cosmicSignatureNftAddr)
 	const rwalkAddr = await cosmicGameProxy.randomWalkNft();
@@ -256,7 +288,7 @@ async function main() {
         await cosmicGameProxy.getAddress()
     );
 	console.log("Contract balance = ",contractBalance)
-    let bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    let bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	let txdata = cosmicGameProxy.interface.encodeFunctionData("bidWithEth",[-1,"bid 1"]);
 	tx = await addr1.sendTransaction({
 		to: await cosmicGameProxy.getAddress(),
@@ -268,7 +300,7 @@ async function main() {
 	await tx.wait();
 	console.log("Bid tx completed (bidPrice="+ethers.formatEther(bidPrice)+")")
     //await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 1", { value: bidPrice + 1000n }); // this works
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	console.log("Next bidPrice = "+ethers.formatEther(bidPrice))
     tx = await cosmicGameProxy.connect(addr2).bidWithEth(-1,"bid 1", { value: bidPrice });
 	console.log("second bid tx hash = "+tx.hash)
@@ -278,42 +310,42 @@ async function main() {
 //    let nanoSecondsExtra = await cosmicGameProxy.nanoSecondsExtra();
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	console.log("Next bidPrice = "+ethers.formatEther(bidPrice))
     tx = await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 2", { value: bidPrice, gasLimit: 1000000 });
 	await tx.wait()
 	console.log("Bid tx completed (bidPrice="+bidPrice+")")
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr1).bidWithEth(-1, "bid 2", { value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
     token_id = await mint_rwalk(randomWalkNFT,owner);
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(owner).bidWithEth(Number(token_id),"bidWithRWlk", {value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid 3", {
         value: bidPrice, gasLimit: 1000000 
     });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid 3", {
         value: bidPrice, gasLimit: 1000000 
     });
 	await tx.wait()
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr4).bidWithEth(-1,"", { value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr4).bidWithEth(-1,"", { value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr5).bidWithEth(-1,"", {value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr5).bidWithEth(-1,"", {value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
 
@@ -331,13 +363,14 @@ async function main() {
         gasLimit: 6000000
     });
 	await tx.wait()
+	await advanceToNextRoundActive(cosmicGameProxy);
 	console.log("Claimed prize for "+prizeAmount)
     let prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
     let expectedprizeAmount = (prizeAmount - charityAmount) / 2n;
 
 	console.log("Making another series of bids\n")
 ///	await stake_available_nfts(cosmicSignatureNft,stakingWalletCst)
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 4", {
         value: bidPrice, gasLimit: 1000000 
     });
@@ -354,13 +387,14 @@ async function main() {
         gasLimit: 3000000
     });
 	await tx.wait()
+	await advanceToNextRoundActive(cosmicGameProxy);
     prizeAmount2 = await cosmicGameProxy.getMainEthPrizeAmount();
 	//await stake_available_nfts(cosmicSignatureNft,stakingWalletCst);
     let ts = await cosmicSignatureNft.totalSupply();
     rn = await cosmicGameProxy.roundNum();
     let oldTotalSupply = ts;
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr1).bidWithEth(-1,"bid 5", { value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
@@ -369,6 +403,7 @@ async function main() {
         gasLimit: 5000000
     });
     receipt = await tx.wait();
+	await advanceToNextRoundActive(cosmicGameProxy);
     topic_sig = cosmicSignatureNft.interface.getEvent("NftMinted").topicHash;
 	let event_logs = receipt.logs.filter(log => log.topics[0] === topic_sig);
 	let mint_found = false;
@@ -411,7 +446,7 @@ async function main() {
 	await tx.wait()
 	tx = await samp2.approve(await cosmicGameProxy.getAddress(),hre.ethers.parseEther("999999999999999999999999"))
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	console.log("bid with eth and donate ERC20, tx1")
 	tx = await cosmicGameProxy.connect(owner).bidWithEthAndDonateToken(-1,"bid&donateerc20 1",await samp1.getAddress(),10000000000000000000n,{value:bidPrice, gasLimit: 1000000 });
 	await tx.wait()
@@ -419,12 +454,12 @@ async function main() {
 	await tx.wait()
 	tx = await samp2.approve(prizesWalletAddr,hre.ethers.parseEther("999999999999999999999999"));
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	console.log("bid with eth and donate ERC20, tx2")
 	tx = await cosmicGameProxy.connect(owner).bidWithEthAndDonateToken(-1,"bid&donateerc20 2",await samp2.getAddress(),10000000000000000000n,{value:bidPrice, gasLimit: 1000000 });
 	await tx.wait()
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid 6", { value: bidPrice , gasLimit: 1000000 });
 	await tx.wait()
 
@@ -441,7 +476,7 @@ async function main() {
         .setApprovalForAll(await cosmicGameProxy.getAddress(), true);
 	await tx.wait()
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     token_id = await mint_rwalk(randomWalkNFT,addr1);
 	tx = await randomWalkNFT.connect(addr1).setApprovalForAll(prizesWalletAddr, true);
 	await tx.wait()
@@ -451,7 +486,7 @@ async function main() {
             value: bidPrice, gasLimit: 1000000 
         });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     token_id = await mint_rwalk(randomWalkNFT,addr2);
 	tx = await randomWalkNFT.connect(addr2).setApprovalForAll(prizesWalletAddr, true);
 	await tx.wait()
@@ -461,7 +496,7 @@ async function main() {
             value: bidPrice, gasLimit: 1000000 
         });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     token_id = await mint_rwalk(randomWalkNFT,addr3);
 	tx = await randomWalkNFT.connect(addr3).setApprovalForAll(prizesWalletAddr, true);
 	await tx.wait()
@@ -471,7 +506,7 @@ async function main() {
             value: bidPrice, gasLimit: 1000000 
         });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     token_id = await mint_rwalk(randomWalkNFT,addr3);
 	tx = await randomWalkNFT.connect(addr3).setApprovalForAll(prizesWalletAddr, true);
 	await tx.wait()
@@ -482,21 +517,21 @@ async function main() {
         });
 	await tx.wait()
     token_id = await mint_rwalk(randomWalkNFT,addr3);
-	let cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	let cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy
         .connect(addr3)
         .bidWithCstAndDonateNft(cstPrice,"cst bid + donate1", await randomWalkNFT.getAddress(), token_id, {gasLimit: 1000000});
 	await tx.wait()
     token_id = await mint_rwalk(randomWalkNFT,addr3);
-	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy
         .connect(addr3)
         .bidWithCstAndDonateNft(cstPrice,"cst bid + donate2", await randomWalkNFT.getAddress(), token_id, {gasLimit: 1000000 });
 	await tx.wait()
-	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"bid using ERC20 token", {gasLimit: 1000000 });
 	await tx.wait()
-	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"bid using ERC20 token",{ gasLimit: 1000000 } );
 	await tx.wait()
 
@@ -507,6 +542,7 @@ async function main() {
         gasLimit: 3000000, gasLimit: 1000000 
     });
     receipt = await tx.wait();
+	await advanceToNextRoundActive(cosmicGameProxy);
 	tx = prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress());
 	await tx.wait()
 	tx = prizesWallet.connect(addr3).claimDonatedToken(rn,await samp2.getAddress());
@@ -650,10 +686,10 @@ async function main() {
         }
     }
 
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr1).bidWithEth(-1,"", { value: bidPrice , gasLimit: 1000000  });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr1).bidWithEth(-1,"", { value: bidPrice , gasLimit: 1000000  });
 	await tx.wait()
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
@@ -662,6 +698,7 @@ async function main() {
         gasLimit: 30000000, gasLimit: 1000000 
     });
 	await tx.wait()
+	await advanceToNextRoundActive(cosmicGameProxy);
 
 	//await stake_available_nfts(cosmicSignatureNft,stakingWalletCst)
 
@@ -704,7 +741,7 @@ async function main() {
 	await tx.wait()
 	tx = await samp1.approve(prizesWalletAddr,hre.ethers.parseEther("999999999999999999999999"));
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	console.log("bid with eth and donate ERC20, tx3")
 	tx = await cosmicGameProxy.connect(owner).bidWithEthAndDonateToken(-1,"bid&donateerc20 3",await samp1.getAddress(),11000000000000000000n,{value:bidPrice, gasLimit: 1000000 });
 	await tx.wait()
@@ -712,16 +749,16 @@ async function main() {
 	await tx.wait()
 	tx = await samp2.approve(prizesWalletAddr,hre.ethers.parseEther("999999999999999999999999"));
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
 	console.log("bid with eth and donate ERC20, tx4")
 	tx = await cosmicGameProxy.connect(owner).bidWithEthAndDonateToken(-1,"bid&donateerc20 4",await samp2.getAddress(),11000000000000000000n,{value:bidPrice, gasLimit: 1000000 });
 	await tx.wait()
 
     // generate one deposit to charity and not to Staking Wallet
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid 3",{value: bidPrice, gasLimit: 1000000 });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid 3", {value: bidPrice, gasLimit: 1000000  });
 	await tx.wait()
 	rn = cosmicGameProxy.roundNum();
@@ -731,6 +768,7 @@ async function main() {
         gasLimit: 5000000
     });
 	await tx.wait()
+	await advanceToNextRoundActive(cosmicGameProxy);
 
 	tx = prizesWallet.connect(addr3).claimDonatedToken(rn,await samp1.getAddress(),{gasLimit: 1000000});	// only claim one of the tokens (samp1, not samp2)
 	await tx.wait()
@@ -783,10 +821,10 @@ async function main() {
 			{gasLimit: 1000000}
         );
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid eth", {value: bidPrice, gasLimit: 1000000});
 	await tx.wait()
-	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy.connect(addr1).bidWithCst(cstPrice,"CST bid addr1",{gasLimit: 1000000});
 	await tx.wait()
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
@@ -795,15 +833,16 @@ async function main() {
         gasLimit: 3000000
     });
 	await tx.wait()
+	await advanceToNextRoundActive(cosmicGameProxy);
     donationAmount = hre.ethers.parseEther("500");
     tx = await cosmicGameProxy.connect(addr3).donateEth({
         value: donationAmount, gasLimit: 1000000
     });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid eth", {value: bidPrice, gasLimit: 1000000});
 	await tx.wait()
-	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"CST bid addr1",{ gasLimit: 1000000});
 	await tx.wait()
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
@@ -812,10 +851,11 @@ async function main() {
         gasLimit: 3000000
     });
 	await tx.wait()
-    bidPrice = await cosmicGameProxy.getNextEthBidPrice(0);
+	await advanceToNextRoundActive(cosmicGameProxy);
+    bidPrice = await cosmicGameProxy.getNextEthBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithEth(-1,"bid eth", {value: bidPrice, gasLimit: 1000000 });
 	await tx.wait()
-	cstPrice = await cosmicGameProxy.getNextCstBidPrice(0);
+	cstPrice = await cosmicGameProxy.getNextCstBidPrice();
     tx = await cosmicGameProxy.connect(addr3).bidWithCst(cstPrice,"CST bid addr1",{ gasLimit: 1000000});
 	await tx.wait()
     prizeTime = await cosmicGameProxy.getDurationUntilMainPrize();
@@ -824,6 +864,7 @@ async function main() {
         gasLimit: 3000000
     });
 	await tx.wait()
+	await advanceToNextRoundActive(cosmicGameProxy);
 
     for (let i = 1; i <= 5; i++) {
         tx = await stakingWalletRWalk.connect(addr1).unstake(i,{gasLimit:1000000});

@@ -49,6 +49,31 @@ common/
 └── output.go    # Standardized output helpers
 ```
 
+## Dev: Deploy + Populate (single bash script)
+
+For local development with fast execution (short time increments and timeouts), use:
+
+```bash
+./deploy-and-populate.sh --network localhost /path/to/Cosmic-Signature
+```
+
+This script:
+
+1. **Deploys** the full CosmicSignatureGame stack from the Cosmic-Signature repo with **dev-friendly time settings** (e.g. 1 minute claim timeout, 1 minute per bid, 1 hour withdraw timeout).
+2. **Deploys** two Samp ERC20 contracts.
+3. **Runs** `populate.js` with `CADDR`, `TSAMP1`, `TSAMP2` set so the chain is populated for testing.
+
+Requirements:
+
+- Hardhat node (or Anvil) running on `localhost:8545` (or set `NETWORK`).
+- Cosmic-Signature repo path (must contain `scripts/Deploy.js` and `contracts/tests/Samp.sol`).
+
+Node scripts involved:
+
+- **deploy-dev-and-samp.js** – Deploys via `basicDeployment`, sets short time params, deploys Samp; prints `CADDR`, `TSAMP1`, `TSAMP2`.
+- **deploy-samp.js** – Standalone deploy of two Samp contracts only (if you already have a game deployed).
+- **populate.js** – Populates the already-deployed game (requires `CADDR` and optionally `TSAMP1`/`TSAMP2`).
+
 ## Scripts Overview
 
 ### Transaction Scripts (Write Operations)
