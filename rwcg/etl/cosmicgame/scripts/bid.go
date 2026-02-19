@@ -4,6 +4,7 @@ package main
 import (
 	"math/big"
 	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -11,12 +12,45 @@ import (
 	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 )
 
+// pickContractArg returns the argument that looks like an Ethereum address (0x + 40 hex chars).
+// If one arg is given, it is returned. If two are given (e.g. tx hash + address), returns the address.
+func pickContractArg(args []string) string {
+	if len(args) == 0 {
+		return ""
+	}
+	if len(args) == 1 {
+		return args[0]
+	}
+	// Two args: pick the one that looks like an address (40 hex chars; 64 = tx hash)
+	for _, a := range args {
+		trimmed := strings.TrimPrefix(a, "0x")
+		if len(trimmed) == 40 {
+			if strings.HasPrefix(a, "0x") {
+				return a
+			}
+			return "0x" + trimmed
+		}
+	}
+	return args[1]
+}
+
 func main() {
-	// Usage check
-	if len(os.Args) != 2 {
+	cutils.ParseInfoFlag()
+	// Usage check: need at least one arg (contract address)
+	if len(os.Args) < 2 {
 		cutils.PrintUsage(os.Args[0],
-			"[cosmicgame_contract_addr]",
-			"Makes a bid at CosmicGame current round",
+			"[-i] [cosmicgame_contract_addr]",
+			"Makes a bid at CosmicGame current round. Use -i for detailed output.",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
+		)
+		os.Exit(1)
+	}
+
+	contractArg := pickContractArg(os.Args[1:])
+	if contractArg == "" || !common.IsHexAddress(contractArg) {
+		cutils.PrintUsage(os.Args[0],
+			"[-i] [cosmicgame_contract_addr]",
+			"Makes a bid at CosmicGame current round. Use -i for detailed output.",
 			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
@@ -37,7 +71,7 @@ func main() {
 	cutils.PrintAccountInfo(acc)
 
 	// Contract setup
-	cosmicGameAddr := common.HexToAddress(os.Args[1])
+	cosmicGameAddr := common.HexToAddress(contractArg)
 	cutils.PrintContractInfo("CosmicGame Address", cosmicGameAddr)
 
 	cosmicGame, err := NewCosmicSignatureGame(cosmicGameAddr, net.Client)

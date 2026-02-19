@@ -421,6 +421,11 @@ func cosmic_game_index_page(c *gin.Context) {
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);
 	record_counters := arb_storagew.Get_record_counters()
+	// Use bid count for current round from DB so "Bids This Round" matches the bid list page
+	curNumBids := int64(0)
+	if round_num >= 0 {
+		curNumBids = arb_storagew.Get_bid_count_for_round(round_num)
+	}
 	c.HTML(http.StatusOK, "cg_index.html", gin.H{
 		"CosmicGameAddr": cosmic_game_addr,
 		"CosmicGameBalanceEth": cg_balance,
@@ -432,7 +437,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"PrizeClaimDate": time.Unix(prize_claim_date,0).Format(time.RFC822),
 		"PrizeClaimTs": prize_claim_date,
 		"CurRoundNum": round_num,
-		"CurNumBids" : bw_stats.CurNumBids,
+		"CurNumBids" : curNumBids,
 		"PrizeAmount" : prize_amount,
 		"PrizeAmountEth" : prize_amount_eth,
 		"RaffleAmount" : raffle_amount,

@@ -9,13 +9,43 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// Section prints a section header for organized output
+// Verbose controls whether detailed output (network, account, sections, etc.) is printed.
+// Default is true so read-only scripts keep current behavior. Tx scripts call ParseInfoFlag()
+// at start: with -i they get Verbose=true, without -i Verbose=false (quiet: only success/error line).
+var Verbose = true
+
+// ParseInfoFlag must be called at the start of main() by scripts that send transactions.
+// It removes "-i" from os.Args if present and sets Verbose accordingly: Verbose=true if -i was
+// passed (detailed output), Verbose=false otherwise (only "Success. Tx hash = ..." or error).
+func ParseInfoFlag() {
+	var newArgs []string
+	for _, a := range os.Args {
+		if a == "-i" {
+			Verbose = true
+			continue
+		}
+		newArgs = append(newArgs, a)
+	}
+	if len(newArgs) == len(os.Args) {
+		// -i was not present; caller is a tx script so default to quiet
+		Verbose = false
+	}
+	os.Args = newArgs
+}
+
+// Section prints a section header for organized output (only when Verbose).
 func Section(title string) {
+	if !Verbose {
+		return
+	}
 	fmt.Printf("\n==================== %s ====================\n", title)
 }
 
-// PrintNetworkInfo displays verbose network information
+// PrintNetworkInfo displays verbose network information (only when Verbose).
 func PrintNetworkInfo(net *NetworkInfo) {
+	if !Verbose {
+		return
+	}
 	Section("NETWORK INFO")
 	fmt.Printf("RPC URL             = %s\n", net.RPCURL)
 	fmt.Printf("Chain ID            = %s\n", net.ChainID.String())
@@ -25,8 +55,11 @@ func PrintNetworkInfo(net *NetworkInfo) {
 	fmt.Printf("Block Timestamp     = %d\n", net.BlockTime)
 }
 
-// PrintAccountInfo displays verbose account information
+// PrintAccountInfo displays verbose account information (only when Verbose).
 func PrintAccountInfo(acc *AccountInfo) {
+	if !Verbose {
+		return
+	}
 	Section("ACCOUNT INFO")
 	fmt.Printf("Address             = %s\n", acc.Address.String())
 	fmt.Printf("Nonce               = %d\n", acc.Nonce)
@@ -34,14 +67,20 @@ func PrintAccountInfo(acc *AccountInfo) {
 	fmt.Printf("Balance (ETH)       = %s\n", WeiToEth(acc.Balance))
 }
 
-// PrintContractInfo displays contract address information
+// PrintContractInfo displays contract address information (only when Verbose).
 func PrintContractInfo(name string, addr common.Address) {
+	if !Verbose {
+		return
+	}
 	Section("CONTRACT")
 	fmt.Printf("%-20s= %s\n", name, addr.String())
 }
 
-// PrintTxSubmitting shows what transaction is about to be sent
+// PrintTxSubmitting shows what transaction is about to be sent (only when Verbose).
 func PrintTxSubmitting(action string, value *big.Int, gasLimit uint64, gasPrice *big.Int) {
+	if !Verbose {
+		return
+	}
 	Section("SUBMITTING TRANSACTION")
 	fmt.Printf("Action              = %s\n", action)
 	if value != nil && value.Cmp(big.NewInt(0)) > 0 {
@@ -53,8 +92,21 @@ func PrintTxSubmitting(action string, value *big.Int, gasLimit uint64, gasPrice 
 	fmt.Printf("Max Gas Cost (ETH)  = %s\n", WeiToEthCompact(maxCostWei))
 }
 
-// PrintTxResult displays transaction result
+// PrintTxResult displays transaction result. When Verbose is false, prints only
+// "Success. Tx hash = <hash>" or the error; when Verbose is true, prints full details.
 func PrintTxResult(tx *types.Transaction, err error) {
+	if !Verbose {
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			return
+		}
+		if tx == nil {
+			fmt.Printf("transaction is nil\n")
+			return
+		}
+		fmt.Printf("Success. Tx hash = %s\n", tx.Hash().String())
+		return
+	}
 	Section("TRANSACTION RESULT")
 	if err != nil {
 		fmt.Printf("Status              = FAILED\n")
@@ -76,23 +128,35 @@ func PrintTxResult(tx *types.Transaction, err error) {
 	fmt.Printf("\nNote: Transaction submitted. Use a block explorer to verify confirmation.\n")
 }
 
-// PrintCallResult displays a read-only call result
+// PrintCallResult displays a read-only call result (only when Verbose).
 func PrintCallResult(name string, value interface{}) {
+	if !Verbose {
+		return
+	}
 	fmt.Printf("%-28s= %v\n", name, value)
 }
 
-// PrintKeyValue prints a key-value pair with consistent formatting
+// PrintKeyValue prints a key-value pair with consistent formatting (only when Verbose).
 func PrintKeyValue(key string, value interface{}) {
+	if !Verbose {
+		return
+	}
 	fmt.Printf("%-28s= %v\n", key, value)
 }
 
-// PrintKeyValueEth prints a key-value pair formatted as ETH
+// PrintKeyValueEth prints a key-value pair formatted as ETH (only when Verbose).
 func PrintKeyValueEth(key string, wei *big.Int) {
+	if !Verbose {
+		return
+	}
 	fmt.Printf("%-28s= %s ETH\n", key, WeiToEth(wei))
 }
 
-// PrintKeyValueDuration prints a key-value pair formatted as duration
+// PrintKeyValueDuration prints a key-value pair formatted as duration (only when Verbose).
 func PrintKeyValueDuration(key string, secs int64) {
+	if !Verbose {
+		return
+	}
 	fmt.Printf("%-28s= %d (%s)\n", key, secs, FmtDuration(secs))
 }
 

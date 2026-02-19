@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	cutils.ParseInfoFlag()
 	// Usage check
 	if len(os.Args) != 2 {
 		cutils.PrintUsage(os.Args[0],

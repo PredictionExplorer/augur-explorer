@@ -37,7 +37,7 @@ All scripts use the shared `common` package which provides:
 - **Network Connection**: ChainID and gas price are always read from the network (never hardcoded)
 - **Account Management**: Private key parsing, address derivation, nonce fetching
 - **Transaction Creation**: Standardized transaction options with EIP-155 signing
-- **Verbose Output**: Consistent, sectioned output format across all scripts
+- **Output**: By default, transaction scripts print only `Success. Tx hash = <hash>` or the error. Add **-i** to the command line for full detailed output (network, account, round info, etc.).
 
 ### Common Package Structure
 

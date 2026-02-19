@@ -209,6 +209,20 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 	return records,null_total_rows.Int64
 
 }
+
+// Get_bid_count_for_round returns the number of bids in cg_bid for the given round.
+// Use this for the dashboard so the "Bids This Round" count matches the bid list for that round.
+func (sw *SQLStorageWrapper) Get_bid_count_for_round(round_num int64) int64 {
+	query := "SELECT count(*) FROM " + sw.S.SchemaName() + ".cg_bid WHERE round_num=$1"
+	var n int64
+	err := sw.S.Db().QueryRow(query, round_num).Scan(&n)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("Get_bid_count_for_round: %v", err))
+		return 0
+	}
+	return n
+}
+
 func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  {
 
 	var query string

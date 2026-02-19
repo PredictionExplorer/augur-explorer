@@ -43,12 +43,16 @@
 					<div class="stat-sublabel">ETH</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-label">Bids This Round</div>
-					<div class="stat-value">{{.CurNumBids}}</div>
+					<a href="/black/cosmicgame/bid/list/by_round/{{.CurRoundNum}}/0/0/100000" style="text-decoration: none; color: inherit;">
+						<div class="stat-label">Bids This Round</div>
+						<div class="stat-value">{{.CurNumBids}}</div>
+					</a>
 				</div>
 				<div class="stat-card">
-					<div class="stat-label">CS Tokens Minted</div>
-					<div class="stat-value">{{.MainStats.NumCSTokenMints}}</div>
+					<a href="/black/cosmicgame/cst/list/all" style="text-decoration: none; color: inherit;">
+						<div class="stat-label">CS Tokens Minted</div>
+						<div class="stat-value">{{.MainStats.NumCSTokenMints}}</div>
+					</a>
 				</div>
 			</div>
 			

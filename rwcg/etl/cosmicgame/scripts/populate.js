@@ -131,6 +131,44 @@ async function waitUntilRoundActive(ctrct) {
 	}
 }
 
+/** Dump SQL INSERT for cg_contracts table (same format as populate-old.js printContractAddresses). */
+async function printCgContractsInsert(cosmicGameProxy, cosmicSignatureNft, cosmicToken, charityWallet, prizesWallet, randomWalkNFT, stakingWalletCst, stakingWalletRWalk, marketingWallet) {
+	const EIP1967_IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+	let implementationAddr = "0x0000000000000000000000000000000000000000";
+	try {
+		const implBytes = await ethers.provider.getStorage(await cosmicGameProxy.getAddress(), EIP1967_IMPL_SLOT);
+		implementationAddr = (await ethers.AbiCoder.defaultAbiCoder().decode(["address"], implBytes))[0];
+	} catch (e) {}
+	let cosmicDaoAddr = "0x0000000000000000000000000000000000000000";
+	try {
+		cosmicDaoAddr = await cosmicGameProxy.cosmicDAO();
+	} catch (e) {
+		try {
+			cosmicDaoAddr = await cosmicGameProxy.dao();
+		} catch (e2) {}
+	}
+	const marketingAddr = marketingWallet ? await marketingWallet.getAddress() : "0x0000000000000000000000000000000000000000";
+	const cosmicGameAddr = await cosmicGameProxy.getAddress();
+	console.log("");
+	console.log("CosmicGame main contract:", cosmicGameAddr);
+	console.log("-- SQL INSERT for cg_contracts (cosmic_game_addr, cosmic_signature_addr, cosmic_token_addr, cosmic_dao_addr, charity_wallet_addr, prizes_wallet_addr, random_walk_addr, staking_wallet_cst_addr, staking_wallet_rwalk_addr, marketing_wallet_addr, implementation_addr):");
+	console.log(
+		"INSERT INTO cg_contracts VALUES(" +
+		`'${cosmicGameAddr}',` +
+		`'${await cosmicSignatureNft.getAddress()}',` +
+		`'${await cosmicToken.getAddress()}',` +
+		`'${cosmicDaoAddr}',` +
+		`'${await charityWallet.getAddress()}',` +
+		`'${await prizesWallet.getAddress()}',` +
+		`'${await randomWalkNFT.getAddress()}',` +
+		`'${await stakingWalletCst.getAddress()}',` +
+		`'${await stakingWalletRWalk.getAddress()}',` +
+		`'${marketingAddr}',` +
+		`'${implementationAddr}')`
+	);
+	console.log("");
+}
+
 /** Wait until getNextCstBidPrice() <= bidder's CST balance so a CST bid won't revert. */
 async function waitUntilCstPriceAffordable(ctrct, cosmicToken, bidderAddress) {
 	for (;;) {
@@ -893,6 +931,8 @@ async function main() {
 		//	console.log("unstake() error: ",e);
 		}
     }
+
+	await printCgContractsInsert(cosmicGameProxy, cosmicSignatureNft, cosmicToken, charityWallet, prizesWallet, randomWalkNFT, stakingWalletCst, stakingWalletRWalk, marketingWallet);
 }
 
 main()

@@ -22,18 +22,25 @@ func escapeConnParam(s string) string {
 
 // openDB opens a PostgreSQL connection using env vars (PGSQL_*).
 // If schema != "", adds search_path to the connection string.
+// If PGSQL_HOST is empty or unset, connects via Unix socket (same as psql without -h); otherwise uses TCP.
 // Caller must not use returned db if err != nil.
 func openDB(schema string) (*sql.DB, error) {
-	host, port, err := net.SplitHostPort(os.Getenv("PGSQL_HOST"))
-	if err != nil {
-		host = os.Getenv("PGSQL_HOST")
-		port = "5432"
-	}
+	hostEnv := os.Getenv("PGSQL_HOST")
+	useSocket := hostEnv == ""
 	connStr := "user='" + escapeConnParam(os.Getenv("PGSQL_USERNAME")) +
-		"' dbname='" + escapeConnParam(os.Getenv("PGSQL_DATABASE")) +
-		"' password='" + escapeConnParam(os.Getenv("PGSQL_PASSWORD")) +
-		"' host='" + escapeConnParam(host) +
-		"' port='" + escapeConnParam(port) + "'"
+		"' dbname='" + escapeConnParam(os.Getenv("PGSQL_DATABASE")) + "'"
+	if !useSocket {
+		connStr += " password='" + escapeConnParam(os.Getenv("PGSQL_PASSWORD")) + "'"
+	}
+	if hostEnv != "" {
+		host, port, err := net.SplitHostPort(hostEnv)
+		if err != nil {
+			host = hostEnv
+			port = "5432"
+		}
+		connStr += " host='" + escapeConnParam(host) + "' port='" + escapeConnParam(port) + "'"
+	}
+	// When useSocket: no host/port and no password → Unix socket + trust/peer auth (like psql -U user)
 	if schema != "" {
 		connStr += " search_path='" + escapeConnParam(schema) + "'"
 	}
@@ -49,10 +56,33 @@ func openDB(schema string) (*sql.DB, error) {
 	return db, nil
 }
 
-func show_connect_error() {
-	fmt.Printf(`Websrv: can't connect to PostgreSQL database.
-				Check that you have set PGSQL_USERNAME,PGSQL_PASSWORD,PGSQL_DATABASE
-				PGSQL_HOST environment variables`)
+func show_connect_error(err error) {
+	fmt.Println("Can't connect to PostgreSQL database.")
+	if err != nil {
+		fmt.Printf("Connection error: %v\n", err)
+		if strings.Contains(err.Error(), "password authentication failed") {
+			fmt.Println("Hint: PGSQL_PASSWORD does not match the password set in PostgreSQL for this user.")
+			fmt.Println("  Option A – Make PostgreSQL use your env password:")
+			fmt.Println("    psql -U postgres -c \"ALTER USER cosmicgame PASSWORD 'YOUR_ENV_PASSWORD';\"")
+			fmt.Println("  Option B – Discover the correct password and set it in your env:")
+			fmt.Println("    psql -h 127.0.0.1 -U cosmicgame -d cosmicgame -W   # type the working password, then set that in PGSQL_PASSWORD")
+			fmt.Println("  Option C – Use Unix socket (no password) if pg_hba allows trust/peer for local:")
+			fmt.Println("    unset PGSQL_HOST")
+		}
+	}
+	fmt.Println("Environment variable status:")
+	for _, name := range []string{"PGSQL_USERNAME", "PGSQL_PASSWORD", "PGSQL_DATABASE", "PGSQL_HOST"} {
+		v := os.Getenv(name)
+		if v == "" {
+			fmt.Printf("  %s: not set (or empty)\n", name)
+		} else {
+			if name == "PGSQL_PASSWORD" {
+				fmt.Printf("  %s: set (length %d)\n", name, len(v))
+			} else {
+				fmt.Printf("  %s: set = %q\n", name, v)
+			}
+		}
+	}
 }
 
 type SQLStorage struct {
@@ -70,7 +100,7 @@ func (ss *SQLStorage) Db() *sql.DB        { return ss.db }
 func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	db, err := openDB("")
 	if err != nil {
-		show_connect_error()
+		show_connect_error(err)
 		return nil
 	}
 	ss := new(SQLStorage)

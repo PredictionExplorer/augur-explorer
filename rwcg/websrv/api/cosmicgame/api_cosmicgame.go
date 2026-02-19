@@ -33,6 +33,10 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
 	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
 	cg_balance := get_cosmic_game_contract_balance()
+	curNumBids := int64(0)
+	if round_num >= 0 {
+		curNumBids = arb_storagew.Get_bid_count_for_round(round_num)
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -48,7 +52,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"PrizeClaimDate": time.Unix(prize_claim_date,0).Format(time.RFC822),
 		"PrizeClaimTs": prize_claim_date,
 		"CurRoundNum": round_num,
-		"CurNumBids" : bw_stats.CurNumBids,
+		"CurNumBids" : curNumBids,
 		"PrizeAmount" : prize_amount,
 		"PrizeAmountEth" : prize_amount_eth,
 		"RaffleAmount" : raffle_amount,
