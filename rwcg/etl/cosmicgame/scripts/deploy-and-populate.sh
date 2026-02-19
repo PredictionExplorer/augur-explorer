@@ -67,6 +67,8 @@ TSAMP2=$(echo "$OUTPUT" | sed -n 's/^TSAMP2=\(0x[0-9a-fA-F]\{40\}\)$/\1/p' | tai
 
 if [ -z "$CADDR" ] || [ -z "$TSAMP1" ] || [ -z "$TSAMP2" ]; then
     echo "Error: Could not parse CADDR, TSAMP1, TSAMP2 from deploy output."
+    echo "Last 30 lines of deploy output:"
+    echo "$OUTPUT" | tail -30
     exit 1
 fi
 

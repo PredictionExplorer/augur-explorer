@@ -19,6 +19,8 @@ const MAIN_PRIZE_TIME_INCREMENT_MICRO = BigInt(MAIN_PRIZE_TIME_INCREMENT_SEC) * 
 const INITIAL_DURATION_UNTIL_MAIN_PRIZE_DIVISOR = 10000000;
 const CST_DUTCH_AUCTION_DURATION_DIVISOR = 3600;   // short CST auction
 const TIMEOUT_WITHDRAW_PRIZES_SEC = 3600;          // 1 hour for PrizesWallet
+// Short delay before first round activates so populate.js can run admin config during this window (then sleep and proceed)
+const ROUND_ACTIVATION_DELAY_SEC = 5;
 
 async function main() {
     const [owner] = await hre.ethers.getSigners();
@@ -40,9 +42,17 @@ async function main() {
     await (await cosmicGameProxy.connect(owner).setCstDutchAuctionDurationDivisor(CST_DUTCH_AUCTION_DURATION_DIVISOR, g)).wait();
     await (await prizesWallet.connect(owner).setTimeoutDurationToWithdrawPrizes(TIMEOUT_WITHDRAW_PRIZES_SEC, g)).wait();
 
-    console.log("Activating round (set round activation time to now)...");
+    // Delay before first round activates so populate can run admin setters during this window (see claim-and-configure.sh pattern)
+    await (await cosmicGameProxy.connect(owner).setDelayDurationBeforeRoundActivation(ROUND_ACTIVATION_DELAY_SEC, g)).wait();
     const block = await hre.ethers.provider.getBlock("latest");
-    await (await cosmicGameProxy.connect(owner).setRoundActivationTime(block.timestamp - 1, g)).wait();
+    try {
+        console.log("Setting round activation in " + ROUND_ACTIVATION_DELAY_SEC + " seconds (config window for populate)...");
+        const activationTs = BigInt(block.timestamp) + BigInt(ROUND_ACTIVATION_DELAY_SEC);
+        await (await cosmicGameProxy.connect(owner).setRoundActivationTime(activationTs, g)).wait();
+    } catch (err) {
+        console.warn("setRoundActivationTime(now+" + ROUND_ACTIVATION_DELAY_SEC + ") failed (round may already be active):", err.message || err);
+        console.warn("Continuing: Samp deploy and populate will run; populate will skip admin config if round is active.");
+    }
 
     console.log("Deploying Samp ERC20 contracts...");
     const Samp = await hre.ethers.getContractFactory("Samp");

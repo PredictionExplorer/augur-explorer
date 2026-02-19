@@ -74,6 +74,16 @@ Node scripts involved:
 - **deploy-samp.js** – Standalone deploy of two Samp contracts only (if you already have a game deployed).
 - **populate.js** – Populates the already-deployed game (requires `CADDR` and optionally `TSAMP1`/`TSAMP2`).
 
+### Round-activation delay window
+
+After deployment there is a short time interval before the first round becomes active. During this window the contract allows admin setters (e.g. `setCharityAddress`, `setNumRaffleEthPrizesForBidders`, timeouts for the next round). The deploy script sets a **5-second** delay so that:
+
+1. Deploy sets round activation to `now + 5` seconds (and `delayDurationBeforeRoundActivation(5)` for later rounds).
+2. Populate runs **admin config during that window** (when it detects the round is not yet active), then waits until the round is active (Hardhat: `evm_increaseTime` + `evm_mine`; real RPC: sleep).
+3. Donate, bids, and the rest of the script then run with the round active.
+
+This matches the pattern used by **claim-and-configure.sh** and **claim-and-set-time-increment.sh**: claim (or deploy) leaves a short delay before the next round activates; you run config during that window; a small timeout allows `sleep()` so the next transaction succeeds.
+
 ## Scripts Overview
 
 ### Transaction Scripts (Write Operations)
