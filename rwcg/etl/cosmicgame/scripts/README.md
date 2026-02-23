@@ -112,6 +112,26 @@ This matches the pattern used by **claim-and-configure.sh** and **claim-and-set-
 | `isapproved4all.go` | Check ERC721 operator approval |
 | `tokownerof.go` | Get owner of ERC721 token |
 
+### NFT image / upload (no DB)
+
+| Script | Description |
+|--------|-------------|
+| `imgcheck_api.sh` | Fetch all CosmicSignature token seeds from the **public API**, check which PNG/MP4 artifacts are missing on a remote host (`DST_DIR`), regenerate only missing via `run.py` (or `three_body_problem` fallback), and upload them. No SQL or `img_upload` helper. |
+| `imgcheck.sh` | Legacy: same idea but uses SQL via `img_upload` (total_tokens, token_seed). Prefer `imgcheck_api.sh` when the API is available. |
+
+**imgcheck_api.sh** usage (run on the machine where `run.py` and `./pics`/`./vids` live):
+
+```bash
+./imgcheck_api.sh <ssh-host> [api_base_url]
+# Example:
+./imgcheck_api.sh my.server.com
+./imgcheck_api.sh my.server.com http://161.129.67.42:8353
+```
+
+- Requires `curl`, `jq`, and SSH key-based access to `frontend@<ssh-host>`.
+- Destination directory on the remote host: `DST_DIR="/home/frontend/nft-assets/new/cosmicsignature"`.
+- API used: `GET /api/cosmicgame/cst/list/all/0/100000` to obtain all token seeds.
+
 ## Usage Examples
 
 ### Make a Bid
