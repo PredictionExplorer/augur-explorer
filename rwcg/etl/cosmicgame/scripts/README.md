@@ -196,6 +196,45 @@ Tx Hash             = 0x...
 5. **Balance Checks**: Verify sufficient funds before submitting transactions
 6. **Ownership Warnings**: Warn when calling admin functions as non-owner
 
+## ERC721 NFTs minted per round (production contracts)
+
+Source: `production/` (Cosmic-Signature contracts). Verified against [cosmic-signature-game-prizes.md](https://github.com/PredictionExplorer/Cosmic-Signature/blob/main/docs/cosmic-signature-game-prizes.md) (Group 2 prizes, CS NFT rows). Each round mints Cosmic Signature (CS) NFTs from these prize types:
+
+| Source | NFTs per round |
+|--------|-----------------|
+| Main prize | 1 |
+| Last CST bidder | 0 or 1 (only if someone bid with CST) |
+| Endurance champion | 1 |
+| Chrono warrior | 1 |
+| Raffle (bidders) | `numRaffleCosmicSignatureNftsForBidders` (default **10**) |
+| Raffle (Random Walk stakers) | 0 or `numRaffleCosmicSignatureNftsForRandomWalkNftStakers` (default **10**) |
+
+With **default constants** (`CosmicSignatureConstants.sol`):
+
+- **Minimum**: 1 + 0 + 1 + 1 + 10 + 0 = **13** (no CST bidder, no RW staker raffle winners)
+- **Maximum**: 1 + 1 + 1 + 1 + 10 + 10 = **24** (CST bidder present, RW staker raffle full)
+
+If the owner sets both raffle NFT counts to 0 (`setNumRaffleCosmicSignatureNftsForBidders(0)` and `setNumRaffleCosmicSignatureNftsForRandomWalkNftStakers(0)` when the round is inactive), the range is **3** (no CST bidder) to **4** (with CST bidder). The ETL field `cg_round_stats.total_nfts_minted` stores the actual count per round.
+
+## SQL (no schema names)
+
+Use table names only; do not qualify with a schema (e.g. avoid `cosmicgame.cg_nft_donation`). Rely on the DB search path.
+
+Example – list all unclaimed donated ERC721s (round number, token ID, contract address):
+
+```sql
+SELECT
+  d.round_num,
+  d.token_id,
+  a.addr AS contract_address
+FROM cg_nft_donation d
+LEFT JOIN cg_donated_nft_claimed c
+  ON d.round_num = c.round_num AND d.idx = c.idx
+JOIN address a ON d.token_aid = a.address_id
+WHERE c.idx IS NULL
+ORDER BY d.round_num, d.idx;
+```
+
 ## Gas Limits
 
 The common package defines standard gas limits:

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -135,7 +136,7 @@ func CreateTransactOpts(net *NetworkInfo, acc *AccountInfo, value *big.Int, gasL
 	txopts.Nonce = big.NewInt(int64(acc.Nonce))
 	txopts.Value = value
 	txopts.GasLimit = gasLimit
-	txopts.GasPrice = net.GasPrice
+	txopts.GasPrice = AdjustGasPrice(net.GasPrice)
 
 	txopts.Signer = func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(net.ChainID)
@@ -157,7 +158,7 @@ func CreateCallOpts() *bind.CallOpts {
 // SignAndSendTx signs a raw transaction and sends it to the network.
 // Useful for simple ETH transfers.
 func SignAndSendTx(net *NetworkInfo, acc *AccountInfo, to common.Address, value *big.Int, gasLimit uint64, data []byte) (*types.Transaction, error) {
-	tx := types.NewTransaction(acc.Nonce, to, value, gasLimit, net.GasPrice, data)
+	tx := types.NewTransaction(acc.Nonce, to, value, gasLimit, AdjustGasPrice(net.GasPrice), data)
 
 	signer := types.NewEIP155Signer(net.ChainID)
 	signedTx, err := types.SignTx(tx, signer, acc.PrivateKey)
@@ -176,4 +177,17 @@ func SignAndSendTx(net *NetworkInfo, acc *AccountInfo, to common.Address, value 
 // GetBalance fetches the ETH balance of an address
 func GetBalance(net *NetworkInfo, addr common.Address) (*big.Int, error) {
 	return net.Client.BalanceAt(context.Background(), addr, nil)
+}
+
+// DefaultReceiptWaitTimeout is how long to wait for a transaction receipt before giving up.
+var DefaultReceiptWaitTimeout = 2 * time.Minute
+
+// WaitForReceipt waits for the transaction to be mined and returns its receipt.
+// It uses the context with DefaultReceiptWaitTimeout. Returns (nil, error) if the context
+// times out or the RPC fails; returns (receipt, nil) when the tx is mined (receipt.Status
+// is 0 for reverted, 1 for success).
+func WaitForReceipt(ctx context.Context, client *ethclient.Client, tx *types.Transaction) (*types.Receipt, error) {
+	ctx2, cancel := context.WithTimeout(ctx, DefaultReceiptWaitTimeout)
+	defer cancel()
+	return bind.WaitMined(ctx2, client, tx)
 }

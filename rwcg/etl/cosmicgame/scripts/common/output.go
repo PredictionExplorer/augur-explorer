@@ -1,12 +1,14 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // Verbose controls whether detailed output (network, account, sections, etc.) is printed.
@@ -94,6 +96,7 @@ func PrintTxSubmitting(action string, value *big.Int, gasLimit uint64, gasPrice 
 
 // PrintTxResult displays transaction result. When Verbose is false, prints only
 // "Success. Tx hash = <hash>" or the error; when Verbose is true, prints full details.
+// It does not wait for the transaction to be mined; use PrintTxResultAndWait to confirm on-chain success.
 func PrintTxResult(tx *types.Transaction, err error) {
 	if !Verbose {
 		if err != nil {
@@ -126,6 +129,74 @@ func PrintTxResult(tx *types.Transaction, err error) {
 		fmt.Printf("Value (ETH)         = %s\n", WeiToEth(tx.Value()))
 	}
 	fmt.Printf("\nNote: Transaction submitted. Use a block explorer to verify confirmation.\n")
+}
+
+// PrintTxResultAndWait submits the result, waits for the transaction receipt, and reports
+// success only if the tx was mined and did not revert (receipt.Status == 1).
+// If client is nil, behaves like PrintTxResult (no wait). Returns true only when the
+// transaction was mined and succeeded (receipt.Status == 1); returns false on send error,
+// nil tx, receipt wait error, or on-chain revert.
+func PrintTxResultAndWait(client *ethclient.Client, tx *types.Transaction, err error) bool {
+	if err != nil {
+		if !Verbose {
+			fmt.Printf("%v\n", err)
+		} else {
+			Section("TRANSACTION RESULT")
+			fmt.Printf("Status              = FAILED\n")
+			fmt.Printf("Error               = %v\n", err)
+		}
+		return false
+	}
+	if tx == nil {
+		if !Verbose {
+			fmt.Printf("transaction is nil\n")
+		} else {
+			Section("TRANSACTION RESULT")
+			fmt.Printf("Status              = FAILED\n")
+			fmt.Printf("Error               = transaction is nil\n")
+		}
+		return false
+	}
+	if client == nil {
+		PrintTxResult(tx, nil)
+		return true
+	}
+	receipt, waitErr := WaitForReceipt(context.Background(), client, tx)
+	if waitErr != nil {
+		if !Verbose {
+			fmt.Printf("Transaction submitted but receipt not received: %v. Tx hash = %s\n", waitErr, tx.Hash().String())
+		} else {
+			Section("TRANSACTION RESULT")
+			fmt.Printf("Status              = SUBMITTED (receipt wait failed)\n")
+			fmt.Printf("Tx Hash             = %s\n", tx.Hash().String())
+			fmt.Printf("Error               = %v\n", waitErr)
+			fmt.Printf("\nCheck block explorer to see if the transaction was mined.\n")
+		}
+		return false
+	}
+	if receipt.Status == 0 {
+		if !Verbose {
+			fmt.Printf("Transaction reverted on-chain. Tx hash = %s (check block explorer for revert reason)\n", tx.Hash().String())
+		} else {
+			Section("TRANSACTION RESULT")
+			fmt.Printf("Status              = REVERTED\n")
+			fmt.Printf("Tx Hash             = %s\n", tx.Hash().String())
+			fmt.Printf("Block               = %s\n", receipt.BlockNumber.String())
+			fmt.Printf("\nTransaction was mined but reverted. Check the block explorer for the revert reason (e.g. \"caller is not token owner\").\n")
+		}
+		return false
+	}
+	// receipt.Status == 1: success
+	if !Verbose {
+		fmt.Printf("Success. Tx hash = %s\n", tx.Hash().String())
+	} else {
+		Section("TRANSACTION RESULT")
+		fmt.Printf("Status              = SUCCESS\n")
+		fmt.Printf("Tx Hash             = %s\n", tx.Hash().String())
+		fmt.Printf("Block               = %s\n", receipt.BlockNumber.String())
+		fmt.Printf("Gas Used            = %d\n", receipt.GasUsed)
+	}
+	return true
 }
 
 // PrintCallResult displays a read-only call result (only when Verbose).

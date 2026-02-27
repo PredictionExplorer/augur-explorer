@@ -69,9 +69,7 @@ func main() {
 	cutils.PrintTxSubmitting("ETH Transfer", value, cutils.GasLimitSimpleTransfer, net.GasPrice)
 
 	tx, err := cutils.SignAndSendTx(net, acc, toAddr, value, cutils.GasLimitSimpleTransfer, nil)
-	cutils.PrintTxResult(tx, err)
-
-	if err != nil {
+	if !cutils.PrintTxResultAndWait(net.Client, tx, err) {
 		os.Exit(1)
 	}
 }

@@ -24,6 +24,22 @@ export PKEY_HEX="your_64_char_hex_private_key_no_0x_prefix"
 
 Database-backed scripts (scan_rwmints, scan_transfers, verify_owner, verify_erc20_transfers) also need PostgreSQL env vars: **PGSQL_HOST**, **PGSQL_USERNAME**, **PGSQL_PASSWORD**, **PGSQL_DATABASE**.
 
+## Architecture (transaction scripts)
+
+Transaction scripts (mint, transfer, approve, setname, new_offer, accept_offer, cancel_offer) follow the same pattern as the CosmicGame scripts:
+
+- **Chain ID** – Always fetched from the network (never hardcoded).
+- **Private key** – Read from **PKEY_HEX** only; never pass the private key on the command line.
+- **Output** – By default, transaction scripts print only `Success. Tx hash = <hash>` or the error. Use the **-i** flag for full detailed output (network info, account info, transaction details).
+
+Example:
+
+```bash
+export RPC_URL="..." PKEY_HEX="..."
+./transfer 0x... 1 0x...           # quiet: only success or error
+./transfer -i 0x... 1 0x...        # detailed output
+```
+
 ## Building
 
 From this directory:
@@ -82,14 +98,23 @@ go build -o mint mint.go
 
 ```bash
 export RPC_URL="..." PKEY_HEX="..."
-./mint
+./mint [rwalk_addr] [amount_wei]
+# With detailed output:
+./mint -i [rwalk_addr] [amount_wei]
+```
+
+### Transfer a token
+
+```bash
+./transfer [rwalk_addr] [token_id] [new_owner_addr]
 ```
 
 ### Create and accept an offer
 
 ```bash
-./new_offer    # create offer (see script for args)
-./accept_offer # accept by offer ID (see script for args)
+./new_offer [BUY|SELL] [market_addr] [nft_addr] [token_id] [price_wei]
+./accept_offer [market_addr] [offer_id]
+./cancel_offer [market_addr] [offer_id]
 ```
 
 ### Query token info

@@ -2,123 +2,65 @@
 package main
 
 import (
-	"os"
-	"fmt"
-	"time"
 	"math/big"
-	//"strconv"
-	"context"
-	"crypto/ecdsa"
+	"os"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 
+	cutils "github.com/PredictionExplorer/augur-explorer/rwcg/etl/cosmicgame/scripts/common"
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/randomwalk"
 )
-const (
-//	CHAIN_ID		int64 = 31337
-//	CHAIN_ID		int64 = 421614
-)
-var (
-	RPC_URL string
-	token_addr		common.Address
-)
+
 func main() {
-
-	RPC_URL = os.Getenv("RPC_URL")
-	eclient, err := ethclient.Dial(RPC_URL)
-	if err!=nil {
-		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
-		os.Exit(1)
-	}
-
-	if len(os.Args) < 4 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [private_key] [rwalk_addr] [amount]\n\t\t"+
-			"Sends [amount] to RandomWalk contract to mint a token\n\n",os.Args[0],
+	cutils.ParseInfoFlag()
+	cutils.GasPriceMultiplier = big.NewFloat(2.0)
+	if len(os.Args) != 3 {
+		cutils.PrintUsage(os.Args[0],
+			"[rwalk_addr] [amount_wei]",
+			"Mints a RandomWalk token by sending amount_wei to the contract.",
+			map[string]string{"RPC_URL": "Ethereum RPC endpoint (required)", "PKEY_HEX": "64-char hex private key, no 0x prefix (required)"},
 		)
 		os.Exit(1)
 	}
 
-	from_pkey_str := os.Args[1]
-	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 64 characters long\n")
-		os.Exit(1)
+	net, err := cutils.ConnectToRPC()
+	if err != nil {
+		cutils.Fatal("Network connection failed: %v", err)
 	}
+	cutils.PrintNetworkInfo(net)
 
-	rwalk_addr := common.HexToAddress(os.Args[2])
-	amount_str := os.Args[3]
+	acc, err := cutils.PrepareAccount(net, cutils.MustGetPkeyHex())
+	if err != nil {
+		cutils.Fatal("Account setup failed: %v", err)
+	}
+	cutils.PrintAccountInfo(acc)
+
+	rwalkAddr := common.HexToAddress(os.Args[1])
 	amount := big.NewInt(0)
-	_,success := amount.SetString(amount_str,10)
-	if !success {
-		fmt.Printf("Couldn't parse amount, bad integer\n")
-		os.Exit(1)
+	if _, ok := amount.SetString(os.Args[2], 10); !ok {
+		cutils.Fatal("Invalid amount: %s", os.Args[2])
 	}
 
-	big_chain_id, err := eclient.NetworkID(context.Background()) // Get current network ID
+	rwalkCtrct, err := NewRWalk(rwalkAddr, net.Client)
 	if err != nil {
-		fmt.Printf("Error getting network ID: %v\n", err)
-		os.Exit(1)
-	}
-	rwalk_ctrct,err := NewRWalk(rwalk_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate RWalk contract: %v\n",err)
-		os.Exit(1)
+		cutils.Fatal("Failed to instantiate RWalk contract: %v", err)
 	}
 
-	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
-	if err != nil {
-		fmt.Sprintf("Error making private key: %v\n",err)
-		os.Exit(1)
+	cutils.Section("MINT INFO")
+	cutils.PrintKeyValueEth("Amount (wei)", amount)
+	gasLimit := cutils.GasLimitHighComplexity
+	totalNeeded := new(big.Int).Mul(net.GasPrice, big.NewInt(int64(gasLimit)))
+	totalNeeded.Add(totalNeeded, amount)
+	if acc.Balance.Cmp(totalNeeded) < 0 {
+		cutils.Fatal("Insufficient balance. Need %s ETH (amount + gas), have %s ETH",
+			cutils.WeiToEth(totalNeeded), cutils.WeiToEth(acc.Balance))
 	}
-	from_publicKey := from_PrivateKey.Public()
-	from_publicKeyECDSA, ok := from_publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		fmt.Printf("Couldn't derive public key for Sender")
-		os.Exit(1)
-	}
-	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
-	if err != nil {
-		fmt.Printf("Error getting account's nonce: %v\n",err)
-		os.Exit(1)
-	}
-	gasPrice, err := eclient.SuggestGasPrice(context.Background())
-	if err != nil {
-		fmt.Printf("Error getting suggested gas price: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
-	txopts := bind.NewKeyedTransactor(from_PrivateKey)
-	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in wei
-	fmt.Printf("Setting msg.value to %v\n",txopts.Value.String())
-	txopts.Value.Set(amount)
-	txopts.GasLimit = uint64(10000000) // in units
-	txopts.GasPrice = gasPrice
-	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
-	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		signer := types.NewEIP155Signer(big_chain_id)
-		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
-		if err != nil {
-			fmt.Printf("Error signing: %v\n",err)
-			os.Exit(1)
-			return nil,nil
-		}
-		return tx.WithSignature(signer, signature)
-	}
-	txopts.Signer = signfunc
+	txopts := cutils.CreateTransactOpts(net, acc, amount, gasLimit)
+	cutils.PrintTxSubmitting("Mint", amount, gasLimit, cutils.AdjustGasPrice(net.GasPrice))
 
-	tx,err := rwalk_ctrct.Mint(txopts)
-	if err!=nil {
-		fmt.Printf("Error sending tx: %v\n",err)
+	tx, err := rwalkCtrct.Mint(txopts)
+	if !cutils.PrintTxResultAndWait(net.Client, tx, err) {
 		os.Exit(1)
 	}
-	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
-	time.Sleep(1 * time.Second)
-
 }

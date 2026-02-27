@@ -296,10 +296,18 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 				"total_raffle_nfts, "+
 				"donations_round_count,"+
 				"donations_round_total,"+
-				"donations_round_total/1e18 "+
+				"donations_round_total/1e18,"+
+				"param_window_start_time::text,"+
+				"activation_time::text,"+
+				"param_window_duration_seconds,"+
+				"round_start_time::text,"+
+				"round_end_time::text,"+
+				"round_duration_seconds "+
 			"FROM "+sw.S.SchemaName()+".cg_round_stats WHERE round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
+	var nullParamWindowStart, nullActivationTime, nullRoundStart, nullRoundEnd sql.NullString
+	var nullParamWindowDuration, nullRoundDuration sql.NullInt64
 	var err error
 	err=row.Scan(
 		&stats.RoundNum,
@@ -311,6 +319,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 		&stats.TotalDonatedCount,
 		&stats.TotalDonatedAmount,
 		&stats.TotalDonatedAmountEth,
+		&nullParamWindowStart,
+		&nullActivationTime,
+		&nullParamWindowDuration,
+		&nullRoundStart,
+		&nullRoundEnd,
+		&nullRoundDuration,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -319,6 +333,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_round_statistics(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
+	if nullParamWindowStart.Valid { stats.ParamWindowStartTime = nullParamWindowStart.String }
+	if nullActivationTime.Valid { stats.ActivationTime = nullActivationTime.String }
+	if nullParamWindowDuration.Valid { stats.ParamWindowDurationSeconds = nullParamWindowDuration.Int64 }
+	if nullRoundStart.Valid { stats.RoundStartTime = nullRoundStart.String }
+	if nullRoundEnd.Valid { stats.RoundEndTime = nullRoundEnd.String }
+	if nullRoundDuration.Valid { stats.RoundDurationSeconds = nullRoundDuration.Int64 }
 	return stats
 }
 func (sw *SQLStorageWrapper) Get_unique_bidders() []p.CGUniqueBidder {
