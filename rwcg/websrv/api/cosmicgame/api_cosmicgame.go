@@ -31,7 +31,16 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
-	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
+	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num)
+	// When DB has no activation time for current round, fill from chain (Unix seconds)
+	if cur_round_stats.ActivationTime == 0 && round_num >= 0 && EthClient != nil {
+		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
+			var copts bind.CallOpts
+			if actTime, err := contract.RoundActivationTime(&copts); err == nil {
+				cur_round_stats.ActivationTime = actTime.Int64()
+			}
+		}
+	}
 	cg_balance := get_cosmic_game_contract_balance()
 	curNumBids := int64(0)
 	if round_num >= 0 {
@@ -78,7 +87,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
 		"ChronoWarriorPercentage" : chrono_percentage,
-		"StakignPercentage" : staking_percentage,
+		"StakingPercentage" : staking_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,

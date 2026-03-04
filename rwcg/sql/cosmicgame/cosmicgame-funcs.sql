@@ -1715,9 +1715,8 @@ DECLARE
 	v_round_num BIGINT;
 	v_param_start TIMESTAMPTZ;
 BEGIN
-	-- Get the round number from the most recent prize claim + 1
-	-- (activation time is set for the NEXT round)
-	SELECT COALESCE(MAX(round_num), 0) + 1 INTO v_round_num
+	-- Round this activation time applies to: 0 when no prize has been claimed yet, else last claimed round + 1.
+	SELECT COALESCE(MAX(round_num), -1) + 1 INTO v_round_num
 	FROM cg_prize_claim;
 	
 	-- Get param window start time

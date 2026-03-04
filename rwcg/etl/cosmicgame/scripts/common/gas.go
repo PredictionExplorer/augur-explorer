@@ -1,6 +1,10 @@
 package common
 
-import "math/big"
+import (
+	"math/big"
+	"os"
+	"strconv"
+)
 
 // Gas limit constants by transaction type.
 // These are reasonable defaults based on typical gas usage.
@@ -36,10 +40,18 @@ const (
 	GasLimitHighComplexity = uint64(5000000)
 )
 
-// GasPriceMultiplier can be used to bump gas price for faster inclusion.
-// Set to 1.0 for no bump, 1.1 for 10% bump, etc.
-// This is useful for congested networks.
-var GasPriceMultiplier = big.NewFloat(1.0)
+// GasPriceMultiplier bumps gas price for faster inclusion and to stay above block base fee.
+// Default is 2.0 (double suggested price). Override with env GAS_PRICE_MULTIPLIER (e.g. 1.5, 2, 3).
+var GasPriceMultiplier = defaultGasPriceMultiplier()
+
+func defaultGasPriceMultiplier() *big.Float {
+	if s := os.Getenv("GAS_PRICE_MULTIPLIER"); s != "" {
+		if f, err := strconv.ParseFloat(s, 64); err == nil && f > 0 {
+			return big.NewFloat(f)
+		}
+	}
+	return big.NewFloat(2.0)
+}
 
 // AdjustGasPrice applies the GasPriceMultiplier to the base price.
 // Returns the adjusted gas price.
@@ -47,7 +59,8 @@ func AdjustGasPrice(basePrice *big.Int) *big.Int {
 	if basePrice == nil {
 		return big.NewInt(0)
 	}
-	if GasPriceMultiplier.Cmp(big.NewFloat(1.0)) == 0 {
+	one := big.NewFloat(1.0)
+	if GasPriceMultiplier.Cmp(one) == 0 {
 		return basePrice
 	}
 	adjusted := new(big.Float).SetInt(basePrice)

@@ -153,12 +153,14 @@ func main() {
 		fmt.Printf("Error getting suggested gas price: %v\n", err)
 		os.Exit(1)
 	}
+	// Double gas price for headroom above block base fee (same as common scripts)
+	gasPrice = new(big.Int).Mul(gasPrice, big.NewInt(2))
 
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)
 	txopts.GasLimit = uint64(3000000) // Enough for ERC20 deployment
-	txopts.GasPrice = gasPrice.Add(gasPrice, big.NewInt(20000))
+	txopts.GasPrice = gasPrice
 
 	fmt.Printf("Gas price: %v\n", gasPrice.String())
 

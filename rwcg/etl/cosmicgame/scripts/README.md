@@ -8,6 +8,7 @@ Transaction scripts (those that send transactions) require:
 
 - **RPC_URL** – Ethereum RPC endpoint
 - **PKEY_HEX** – Signer private key as 64 hex characters (no `0x` prefix). Never pass the private key on the command line; set it in the environment.
+- **GAS_PRICE_MULTIPLIER** – (optional) Multiplier applied to the RPC-suggested gas price. Default is `2.0` so transactions stay above block base fee. Use e.g. `1.5` or `3` to tune.
 
 ```bash
 export RPC_URL="http://localhost:8545"  # Local Hardhat/Anvil

@@ -302,7 +302,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 				"donations_round_total,"+
 				"donations_round_total/1e18,"+
 				"param_window_start_time::text,"+
-				"activation_time::text,"+
+				"EXTRACT(EPOCH FROM activation_time)::BIGINT,"+
 				"param_window_duration_seconds,"+
 				"round_start_time::text,"+
 				"round_end_time::text,"+
@@ -310,7 +310,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 			"FROM "+sw.S.SchemaName()+".cg_round_stats WHERE round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
-	var nullParamWindowStart, nullActivationTime, nullRoundStart, nullRoundEnd sql.NullString
+	var nullParamWindowStart, nullRoundStart, nullRoundEnd sql.NullString
+	var nullActivationTime sql.NullInt64
 	var nullParamWindowDuration, nullRoundDuration sql.NullInt64
 	var err error
 	err=row.Scan(
@@ -330,21 +331,42 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 		&nullRoundEnd,
 		&nullRoundDuration,
 	)
-	if (err!=nil) {
+	if err != nil {
 		if err == sql.ErrNoRows {
+			stats.RoundNum = round_num
+			stats.ActivationTime = sw.get_activation_time_from_events(round_num)
 			return stats
 		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_round_statistics(): %v, q=%v",err,query))
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_round_statistics(): %v, q=%v", err, query))
 		os.Exit(1)
 	}
 	if nullParamWindowStart.Valid { stats.ParamWindowStartTime = nullParamWindowStart.String }
-	if nullActivationTime.Valid { stats.ActivationTime = nullActivationTime.String }
+	if nullActivationTime.Valid {
+		stats.ActivationTime = nullActivationTime.Int64
+	} else {
+		stats.ActivationTime = sw.get_activation_time_from_events(round_num)
+	}
 	if nullParamWindowDuration.Valid { stats.ParamWindowDurationSeconds = nullParamWindowDuration.Int64 }
 	if nullRoundStart.Valid { stats.RoundStartTime = nullRoundStart.String }
 	if nullRoundEnd.Valid { stats.RoundEndTime = nullRoundEnd.String }
 	if nullRoundDuration.Valid { stats.RoundDurationSeconds = nullRoundDuration.Int64 }
 	return stats
 }
+
+// get_activation_time_from_events returns activation_time (Unix seconds) for the given round from cg_adm_acttime when
+// that round is the one the latest event applies to (same logic as trigger: 0 when no claims, else last_claimed+1).
+func (sw *SQLStorageWrapper) get_activation_time_from_events(round_num int64) int64 {
+	q := "SELECT r.new_atime FROM " + sw.S.SchemaName() + ".cg_adm_acttime r " +
+		"WHERE (SELECT COALESCE(MAX(p.round_num), -1) + 1 FROM " + sw.S.SchemaName() + ".cg_prize_claim p) = $1 " +
+		"ORDER BY r.id DESC LIMIT 1"
+	var t int64
+	err := sw.S.Db().QueryRow(q, round_num).Scan(&t)
+	if err != nil {
+		return 0
+	}
+	return t
+}
+
 func (sw *SQLStorageWrapper) Get_unique_bidders() []p.CGUniqueBidder {
 
 	var query string

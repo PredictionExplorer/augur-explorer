@@ -60,6 +60,7 @@ var (
 	staking_amount				string
 	staking_amount_eth			float64
 	round_num					int64
+	round_activation_time_ts		int64	// RoundActivationTime() from contract (Unix sec), for dashboard when DB has none
 	mainprize_microseconds_inc	string
 	last_bidder					ethcommon.Address
 	last_bidder_bid_time		int64

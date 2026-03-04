@@ -375,7 +375,7 @@ type CGRoundStats struct {
 	TotalDonatedAmountEth		float64
 	// Round timing fields (added 2025-11-06)
 	ParamWindowStartTime		string	// ISO 8601 format
-	ActivationTime				string	// ISO 8601 format
+	ActivationTime				int64	// Unix seconds (0 = not set); matches contract roundActivationTime()
 	ParamWindowDurationSeconds	int64
 	RoundStartTime				string	// ISO 8601 format
 	RoundEndTime				string	// ISO 8601 format

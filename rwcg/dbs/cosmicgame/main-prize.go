@@ -177,7 +177,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		"s.donations_round_total,"+
 		"s.donations_round_total/1e18, "+
 		"s.param_window_start_time,"+
-		"s.activation_time,"+
+		"EXTRACT(EPOCH FROM s.activation_time)::BIGINT,"+
 		"s.param_window_duration_seconds,"+
 		"s.round_start_time,"+
 		"s.round_end_time,"+
@@ -219,7 +219,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	var null_endurance_erc20_amount_float,null_lastcst_erc20_amount_float,null_warrior_eth_amount_float,null_warrior_cst_amount_float sql.NullFloat64
 	// Round timing fields (nullable)
 	var null_param_window_start sql.NullString
-	var null_activation_time sql.NullString
+	var null_activation_time sql.NullInt64
 	var null_param_window_duration sql.NullInt64
 	var null_round_start_time sql.NullString
 	var null_round_end_time sql.NullString
@@ -320,7 +320,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 
 	// Populate round timing fields
 	if null_param_window_start.Valid { rec.RoundStats.ParamWindowStartTime = null_param_window_start.String }
-	if null_activation_time.Valid { rec.RoundStats.ActivationTime = null_activation_time.String }
+	if null_activation_time.Valid { rec.RoundStats.ActivationTime = null_activation_time.Int64 }
 	if null_param_window_duration.Valid { rec.RoundStats.ParamWindowDurationSeconds = null_param_window_duration.Int64 }
 	if null_round_start_time.Valid { rec.RoundStats.RoundStartTime = null_round_start_time.String }
 	if null_round_end_time.Valid { rec.RoundStats.RoundEndTime = null_round_end_time.String }
