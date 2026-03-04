@@ -81,6 +81,9 @@ func main() {
 	r := gin.New()
 	r.LoadHTMLGlob("templates/*/*html")
 
+	// Don't trust all proxies (avoids GIN-debug warning; set trusted proxies explicitly if behind one)
+	r.SetTrustedProxies(nil)
+	r.Use(gin.Recovery()) // recover from panics (e.g. broken pipe when client disconnects)
 	r.Use(gin.Logger())
 
 	// Static files
@@ -105,25 +108,29 @@ func main() {
 	_ = m
 	log.Printf("Listening on port %s", port_plain)
 
-	go func() {
-		log.Printf("Listening for TLS on interface %v\n", host_secure)
-		cer, err := tls.LoadX509KeyPair(
-			os.Getenv("HOME")+"/configs/server.crt",
-			os.Getenv("HOME")+"/configs/server.key",
-		)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
-		server := http.Server{
-			Addr:      host_secure,
-			Handler:   r,
-			TLSConfig: tlsConfig,
-		}
-		err = server.ListenAndServeTLS("", "")
-		log.Printf("%v", err)
-	}()
+	// Only start TLS listener when HTTPS_HOSTNAME is set (avoids bind :443 permission denied when unset)
+	if len(host_secure) > 0 {
+		go func() {
+			log.Printf("Listening for TLS on %v", host_secure)
+			cer, err := tls.LoadX509KeyPair(
+				os.Getenv("HOME")+"/configs/server.crt",
+				os.Getenv("HOME")+"/configs/server.key",
+			)
+			if err != nil {
+				log.Println("TLS cert load failed:", err)
+				return
+			}
+			tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+			server := http.Server{
+				Addr:      host_secure,
+				Handler:   r,
+				TLSConfig: tlsConfig,
+			}
+			if err := server.ListenAndServeTLS("", ""); err != nil {
+				log.Printf("TLS listener: %v", err)
+			}
+		}()
+	}
 	if len(port_plain) > 0 {
 		go func() {
 			r.Run(":" + port_plain)

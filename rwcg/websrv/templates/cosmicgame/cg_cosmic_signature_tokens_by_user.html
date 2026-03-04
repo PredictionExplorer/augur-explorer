@@ -45,10 +45,11 @@
 						</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="center">
-							{{ if eq 0 .RecordType}}<span class="badge badge-warning">ETH Deposit</span>{{end}}
-							{{ if eq 1 .RecordType}}<span class="badge badge-success">CS NFT Token</span>{{end}}
-							{{ if eq 2 .RecordType}}<span class="badge badge-info">Donated NFT</span>{{end}}
-							{{ if eq 7 .RecordType}}<span class="badge badge-warning">Main Prize</span>{{end}}
+							{{ if eq 1 .RecordType}}<span class="badge badge-success">Raffle NFT</span>{{end}}
+							{{ if eq 2 .RecordType}}<span class="badge badge-info">RWalk Staking</span>{{end}}
+							{{ if eq 3 .RecordType}}<span class="badge badge-warning">Main Prize</span>{{end}}
+							{{ if eq 4 .RecordType}}<span class="badge badge-info">Endurance Champion</span>{{end}}
+							{{ if eq 5 .RecordType}}<span class="badge badge-info">Last CST Bidder</span>{{end}}
 						</td>
 					</tr>
 				{{- end}}

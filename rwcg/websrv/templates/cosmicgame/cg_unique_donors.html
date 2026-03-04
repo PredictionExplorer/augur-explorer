@@ -33,7 +33,7 @@
 						<td class="monospace">
 							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
 						</td>
-						<td class="center">{{.CountDonations}}</td>
+						<td class="center"><a href="/black/cosmicgame/donations/eth/by_user/{{.DonorAddr}}">{{.CountDonations}}</a></td>
 						<td class="right">{{printf "%.6f" .TotalDonatedEth}}</td>
 					</tr>
 				{{- end}}

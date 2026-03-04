@@ -60,6 +60,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"StakingAmount" : staking_amount,
 		"StakingAmountEth" : staking_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
+		"TotalPrizeAwards": bw_stats.TotalPrizeAwards,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
 		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,
 		"TotalEthDonatedAmountEth" : bw_stats.TotalEthDonatedAmountEth,
@@ -1105,6 +1106,30 @@ func api_cosmic_game_nft_donations_by_prize(c *gin.Context) {
 		"error" : err_str,
 		"NFTDonations" : nft_donations,
 		"RoundNum": prize_num,
+	})
+}
+func api_cosmic_game_nft_donations_by_token(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+	p_token_addr := c.Param("token_addr")
+	if len(p_token_addr) == 0 {
+		common.RespondErrorJSON(c, "'token_addr' parameter is not set")
+		return
+	}
+	token_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_token_addr)
+	if err != nil {
+		common.RespondErrorJSON(c, "Token address not found")
+		return
+	}
+	nft_donations := arb_storagew.Get_nft_donations_by_token_aid(token_aid)
+	c.JSON(http.StatusOK, gin.H{
+		"status": 1,
+		"error":  "",
+		"NFTDonations": nft_donations,
+		"TokenAddr":    p_token_addr,
 	})
 }
 func api_cosmic_game_cosmic_signature_token_list(c *gin.Context) {

@@ -32,9 +32,9 @@
 				{{- range $i, $change := .UniqueWinners}}
 					<tr>
 						<td class="monospace">
-							<a href="/black/cosmicgame/prizes/history/by_user/{{.WinnerAddr}}/0/10000">{{.WinnerAddr}}</a>
+							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 						</td>
-						<td class="center">{{.PrizesCount}}</td>
+						<td class="center"><a href="/black/cosmicgame/prizes/history/by_user/{{.WinnerAddr}}/0/10000">{{.PrizesCount}}</a></td>
 						<td class="right">{{printf "%.6f" .MaxWinAmountEth}}</td>
 						<td class="right">{{printf "%.6f" .PrizesSum}}</td>
 					</tr>

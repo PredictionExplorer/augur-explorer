@@ -445,6 +445,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"StakingAmount" : staking_amount,
 		"StakingAmountEth" : staking_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
+		"TotalPrizeAwards": bw_stats.TotalPrizeAwards,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
 		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,
 		"TotalEthDonatedAmountEth" : bw_stats.TotalEthDonatedAmountEth,

@@ -226,6 +226,12 @@ func main() {
 	cutils.Section("CURRENT BIDDERS / CHAMPIONS")
 	cutils.PrintKeyValue("Last ETH bidder", lastBidder.String())
 	cutils.PrintKeyValue("Last CST bidder", lastCstBidder.String())
+	var zeroAddr common.Address
+	lastCstBidderPrizeMinted := "NO"
+	if lastCstBidder != zeroAddr {
+		lastCstBidderPrizeMinted = "YES"
+	}
+	cutils.PrintKeyValue("LastCSTBidder prize (this round)", lastCstBidderPrizeMinted)
 	cutils.PrintKeyValue("Endurance champion", currentChampions.EnduranceChampionAddress.String())
 	cutils.PrintKeyValueDuration("Endurance champion duration", currentChampions.EnduranceChampionDuration.Int64())
 	cutils.PrintKeyValue("Endurance champion start ts", enduranceStartTs.String())

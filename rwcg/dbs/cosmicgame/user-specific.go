@@ -22,9 +22,9 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"rw.withdrawal_sum/1e18 withdrawal_sum, "+
 				"rw.raffles_count, "+
 				"rn.num_won raffle_nft_won, "+
-				"p.tokens_count,"+
+				"p.erc721_count,"+
 				"p.unclaimed_nfts, "+
-				"p.tokens_count, "+
+				"p.erc721_count, "+
 				"trs.erc721_num_transfers, "+
 				"d.count_donations,"+
 				"d.total_eth_donated/1e18 "+

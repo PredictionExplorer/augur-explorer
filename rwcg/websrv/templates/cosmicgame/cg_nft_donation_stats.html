@@ -30,7 +30,7 @@
 				{{- range $i, $change := .NFTDonationStats}}
 					<tr>
 						<td class="monospace">{{.TokenAddress}}</td>
-						<td class="center">{{.NumDonations}}</td>
+						<td class="center"><a href="/black/cosmicgame/donations/nft/by_token/{{.TokenAddress}}">{{.NumDonations}}</a></td>
 					</tr>
 				{{- end}}
 			</table>

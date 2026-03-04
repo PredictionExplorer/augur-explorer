@@ -385,3 +385,27 @@ func cosmic_game_nft_donations_by_user(c *gin.Context) {
 		"UserAid": user_aid,
 	})
 }
+func cosmic_game_nft_donations_by_token(c *gin.Context) {
+	if !dbInitialized() {
+		common.RespondError(c, "Database link wasn't configured")
+		return
+	}
+	p_token_addr := c.Param("token_addr")
+	if len(p_token_addr) == 0 {
+		common.RespondError(c, "'token_addr' parameter is not set")
+		return
+	}
+	token_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_token_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title":    "Error",
+			"ErrDescr": "Token address not found",
+		})
+		return
+	}
+	donations := arb_storagew.Get_nft_donations_by_token_aid(token_aid)
+	c.HTML(http.StatusOK, "cg_nft_donations_by_token.html", gin.H{
+		"NFTDonations": donations,
+		"TokenAddr":   p_token_addr,
+	})
+}

@@ -38,10 +38,10 @@
 In this directory, create file 'etl-config.env' with the following content:
 
         export RPC_URL="http://127.0.0.1:8545"
-        export EXTRACTOR_HOST="127.0.0.1:5432"
-        export EXTRACTOR_USERNAME="cosmicgame"
-        export EXTRACTOR_DATABASE="cosmicgamedb"
-        export EXTRACTOR_PASSWORD="cosmicgame_pass"
+        export PGSQL_HOST="127.0.0.1:5432"
+        export PGSQL_USERNAME="user"
+        export PGSQL_DATABASE="database"
+        export PGSQL_PASSWORD="pass"
 
 (Replace values of the variables with values of your configuration)
 

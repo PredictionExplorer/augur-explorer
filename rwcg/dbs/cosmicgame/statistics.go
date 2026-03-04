@@ -90,10 +90,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	var null_winners sql.NullInt64
 	var null_sum_wei sql.NullString
 	var null_sum_eth sql.NullFloat64
+	var null_total_prize_awards sql.NullInt64
 	query = "SELECT "+
 				"COUNT(*) AS total,"+
 				"SUM(prizes_sum) AS sum_wei,"+
-				"SUM(prizes_sum)/1e18 AS sum_eth "+
+				"SUM(prizes_sum)/1e18 AS sum_eth,"+
+				"COALESCE(SUM(prizes_count),0) AS total_prize_awards "+
 				"FROM "+sw.S.SchemaName()+".cg_winner " +
 				"WHERE prizes_count > 0"
 	row = sw.S.Db().QueryRow(query)
@@ -101,6 +103,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&null_winners,
 		&null_sum_wei,
 		&null_sum_eth,
+		&null_total_prize_awards,
 	)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
@@ -111,6 +114,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	if null_winners.Valid { stats.NumUniqueWinners = uint64(null_winners.Int64) }
 	if null_sum_wei.Valid { stats.TotalPrizesPaidAmountWei = null_sum_wei.String }
 	if null_sum_eth.Valid { stats.TotalPrizesPaidAmountEth = null_sum_eth.Float64 }
+	if null_total_prize_awards.Valid { stats.TotalPrizeAwards = uint64(null_total_prize_awards.Int64) }
 
 	var null_donors sql.NullInt64
 	query = "SELECT "+
@@ -411,9 +415,9 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 				"pw.winner_aid,"+
 				"pw.winner_addr,"+
 				"COUNT(*) AS prizes_count,"+
-				"0 AS max_win_amount,"+
-				"0 AS max_win_eth,"+
-				"0 AS prizes_sum_eth,"+
+				"COALESCE(w.max_win_amount,0) AS max_win_amount,"+
+				"COALESCE(w.max_win_amount,0)/1e18 AS max_win_eth,"+
+				"COALESCE(w.prizes_sum,0)/1e18 AS prizes_sum_eth,"+
 				"COALESCE(w.max_win_amount,0),"+
 				"COALESCE(w.max_win_amount,0)/1e18,"+
 				"COALESCE(w.prizes_count,0),"+
