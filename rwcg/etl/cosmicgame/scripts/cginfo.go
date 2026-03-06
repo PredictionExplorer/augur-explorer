@@ -190,16 +190,35 @@ func main() {
 	}
 
 	cutils.Section("BIDDING / PRICES")
-	cutils.PrintKeyValueEth("NextEthBidPrice (stored)", nextBidPrice)
+	cutils.PrintKeyValueEth("storage::nextEthBidPrice", nextBidPrice)
 	cutils.PrintKeyValueEth("NextEthBidPrice (auction)", bidPriceAuction)
+	fmt.Printf("%-28s  ^ effective price to pay (storage=0 until first bid)\n", "")
 	fmt.Printf("%-28s= %s CST\n", "NextCstBidPrice", cutils.WeiToEth(cstPrice))
 	cutils.PrintKeyValue("ETH bid price increase div", fmt.Sprintf("%v (%.2f%%)", ethBidPriceIncreaseDivisor, priceIncrease))
 	fmt.Printf("%-28s= %s CST\n", "CST reward per bid", cutils.WeiToEth(cstReward))
 	cutils.PrintKeyValue("ETH Dutch auction elapsed/total", fmt.Sprintf("%v / %v", ethAuctionElapsed.String(), ethAuctionDuration.String()))
 	cutils.PrintKeyValueEth("ETH Dutch auction begin price", ethDutchBeginPrice)
+	if ethDutchBeginPrice.Sign() == 0 {
+		fmt.Printf("%-28s  ^ when 0, contract uses a minimum floor (e.g. 0.0001 ETH); effective price = NextEthBidPrice (auction) above\n", "")
+		fmt.Printf("%-28s    (stored begin price is only set after first bid; getter returns min until then)\n", "")
+	}
 	cutils.PrintKeyValue("ETH Dutch auction end divisor", ethDutchEndingDivisor)
-	cutils.PrintKeyValue("CST Dutch auction elapsed/total", fmt.Sprintf("%v / %v", cstAuctionElapsed.String(), cstAuctionDuration.String()))
-	fmt.Printf("%-28s= %s CST\n", "CST Dutch auction begin price", cutils.WeiToEth(cstDutchBeginPrice))
+	// CST auction: contract may return (duration, startTimestamp) not (duration, secondsElapsed); startTimestamp is Unix sec.
+	cstElapsedSec := cstAuctionElapsed
+	if cstAuctionElapsed.Cmp(cstAuctionDuration) > 0 && cstAuctionElapsed.Cmp(big.NewInt(1e9)) > 0 {
+		elapsed := blockTime - cstAuctionElapsed.Int64()
+		if elapsed < 0 {
+			elapsed = 0
+		}
+		cstElapsedSec = big.NewInt(elapsed)
+		fmt.Printf("%-28s= %v / %v (elapsed from start_ts; raw 2nd value was start timestamp)\n", "CST Dutch auction elapsed/total", cstElapsedSec.String(), cstAuctionDuration.String())
+	} else {
+		cutils.PrintKeyValue("CST Dutch auction elapsed/total", fmt.Sprintf("%v / %v", cstAuctionElapsed.String(), cstAuctionDuration.String()))
+	}
+	fmt.Printf("%-28s= %s CST\n", "storage::cstDutchAuctionBeginningBidPrice", cutils.WeiToEth(cstDutchBeginPrice))
+	if cstDutchBeginPrice.Sign() == 0 {
+		fmt.Printf("%-28s  ^ when 0, effective CST price = getNextCstBidPrice() (min limit / auction)\n", "")
+	}
 
 	// ==================== CURRENT BIDDERS / CHAMPIONS ====================
 	lastBidder, err := cosmicGame.LastBidderAddress(copts)

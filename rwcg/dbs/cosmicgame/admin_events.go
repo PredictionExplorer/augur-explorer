@@ -7,51 +7,56 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int) []p.CGSystemModeRec {
+// Get_system_mode_change_event_list returns round boundaries (cg_first_bid, cg_prize_claim) so "View Events"
+// shows which admin/configuration events apply to each round. When offset=-1, a "Deployment" row is always
+// added so pre-round-0 state is visible even when there are no bids yet.
+func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset, limit int) []p.CGSystemModeRec {
 
-	if limit == 0 { limit = 1000000 }
+	if limit == 0 {
+		limit = 1000000
+	}
 	var add_deployment_events bool
 	if offset == -1 {
 		add_deployment_events = true
 		offset = 0
 	}
 	var query string
-	query = 
-			"("+
-				"SELECT "+
-					"s.evtlog_id," +
-					"s.block_num," +
-					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts,"+
-					"s.time_stamp date_time,"+
-					"s.round_num, "+
-					"0 AS rec_type "+
-				"FROM "+sw.S.SchemaName()+".cg_first_bid s"+
-			") UNION ALL ("+
-				"SELECT "+
-					"p.evtlog_id," +
-					"p.block_num,"+
-					"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT ts,"+
-					"p.time_stamp date_time,"+
-					"-1 AS round_num,"+
-					"1 AS rec_type "+
-				"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
-			") "+
+	query =
+		"(" +
+			"SELECT " +
+			"s.evtlog_id," +
+			"s.block_num," +
+			"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts," +
+			"s.time_stamp date_time," +
+			"s.round_num, " +
+			"0 AS rec_type " +
+			"FROM " + sw.S.SchemaName() + ".cg_first_bid s" +
+			") UNION ALL (" +
+			"SELECT " +
+			"p.evtlog_id," +
+			"p.block_num," +
+			"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT ts," +
+			"p.time_stamp date_time," +
+			"-1 AS round_num," +
+			"1 AS rec_type " +
+			"FROM " + sw.S.SchemaName() + ".cg_prize_claim p " +
+			") " +
 			"ORDER BY evtlog_id DESC " +
 			"OFFSET $1 LIMIT $2"
 
-	rows,err := sw.S.Db().Query(query,offset,limit)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+	rows, err := sw.S.Db().Query(query, offset, limit)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 		os.Exit(1)
 	}
-	records := make([]p.CGSystemModeRec,0, 256)
+	records := make([]p.CGSystemModeRec, 0, 256)
 	var evtlog_hi int64 = math.MaxInt64
-	var rnum int64 = 0;
+	var rnum int64 = 0
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGSystemModeRec
 		var rtype int64
-		err=rows.Scan(
+		err = rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -60,36 +65,26 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 			&rtype,
 		)
 		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 			os.Exit(1)
 		}
 		if rtype == 1 {
 			rec.NextEvtLogId = evtlog_hi
 			rec.RoundNum = rnum
-			records = append(records,rec)
-		} else { 
+			records = append(records, rec)
+		} else {
 			evtlog_hi = rec.EvtLogId
 			rnum = rec.RoundNum
 		}
 	}
-	/*
-	var next_evtlog int64 = math.MaxInt64;
-	for i:=0; i<len(records); i++ {
-		r := records[i];
-		r.NextEvtLogId = next_evtlog
-		next_evtlog = r.EvtLogId
-		records[i]=r
-	}
-	*/
 	if add_deployment_events {
-		if len(records) > 0 {
-			var rec p.CGSystemModeRec
-			rec.EvtLogId = -1
-			rec.BlockNum = -1
-			rec.RoundNum = 0
-			rec.NextEvtLogId = evtlog_hi
-			records = append(records,rec)
-		}
+		// Always add "Deployment" row when offset=-1 so pre-round-0 config is visible even with no bids.
+		var rec p.CGSystemModeRec
+		rec.EvtLogId = -1
+		rec.BlockNum = -1
+		rec.RoundNum = 0
+		rec.NextEvtLogId = evtlog_hi
+		records = append(records, rec)
 	}
 	return records
 }
@@ -226,7 +221,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.new_value AS int_value, "+
 						"0 AS float_value, "+
 						"'' AS string_value "+
-					"FROM cg_delay_duration r "+
+					"FROM "+sw.S.SchemaName()+".cg_delay_duration r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+

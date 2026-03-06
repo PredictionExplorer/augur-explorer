@@ -2405,7 +2405,17 @@ func cosmic_game_sysmode_changes(c *gin.Context) {
 		}
 	}
 
-	system_mode_changes := arb_storagew.Get_system_mode_change_event_list(offset,limit)
+	system_mode_changes := arb_storagew.Get_system_mode_change_event_list(offset, limit)
+
+	// When offset=-1 (events from deployment), ensure at least the pre-round-0 row is shown even if no bids yet.
+	if offset == -1 && len(system_mode_changes) == 0 {
+		system_mode_changes = []CGSystemModeRec{{
+			EvtLogId:     -1,
+			BlockNum:     -1,
+			RoundNum:     0,
+			NextEvtLogId: math.MaxInt64,
+		}}
+	}
 
 	c.HTML(http.StatusOK, "cg_system_mode_changes.html", gin.H{
 		"SystemModeChanges" : system_mode_changes,

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/big"
 	"net/http"
 	"os"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
 
@@ -29,6 +32,22 @@ const (
 func api_cosmic_game_dashboard(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Use live contract price when cache is empty or failed (avoids frontend showing 0 before first refresh or after RPC errors)
+	responseBidPrice, responseBidPriceEth := bid_price, bid_price_eth
+	if (responseBidPrice == "" || responseBidPrice == "error" || responseBidPriceEth == 0) && EthClient != nil {
+		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
+			var copts bind.CallOpts
+			if tmpVal, err := contract.GetNextEthBidPrice(&copts); err == nil {
+				responseBidPrice = tmpVal.String()
+				fDivisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
+				fBidPrice := big.NewFloat(0.0).SetInt(tmpVal)
+				fQuo := big.NewFloat(0.0).Quo(fBidPrice, fDivisor)
+				responseBidPriceEth, _ = fQuo.Float64()
+				bid_price, bid_price_eth = responseBidPrice, responseBidPriceEth
+			}
+		}
+	}
 
 	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
 	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num)
@@ -56,8 +75,8 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"CosmicSignatureAddr": cosmic_signature_addr,
 		"CosmicSignatureTokenAddr": cosmic_token_addr,
 		"CharityWalletAddr": charity_wallet_addr,
-		"BidPrice": bid_price,
-		"BidPriceEth": bid_price_eth,
+		"BidPrice": responseBidPrice,
+		"BidPriceEth": responseBidPriceEth,
 		"PrizeClaimDate": time.Unix(prize_claim_date,0).Format(time.RFC822),
 		"PrizeClaimTs": prize_claim_date,
 		"CurRoundNum": round_num,
@@ -2205,7 +2224,17 @@ func api_cosmic_game_sysmode_changes(c *gin.Context) {
 		}
 	}
 
-	system_mode_changes := arb_storagew.Get_system_mode_change_event_list(offset,limit)
+	system_mode_changes := arb_storagew.Get_system_mode_change_event_list(offset, limit)
+
+	// When offset=-1 (events from deployment), ensure at least the pre-round-0 row is shown even if no bids yet.
+	if offset == -1 && len(system_mode_changes) == 0 {
+		system_mode_changes = []p.CGSystemModeRec{{
+			EvtLogId:     -1,
+			BlockNum:     -1,
+			RoundNum:     0,
+			NextEvtLogId: math.MaxInt64,
+		}}
+	}
 
 	var req_status int = 1
 	var err_str string = ""
