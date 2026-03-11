@@ -174,9 +174,12 @@ func api_cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "StakedTokensRWalk": []interface{}{},
+		})
 		return
 	}
 	tokens := arb_storagew.Get_staked_tokens_rwalk_by_user(user_aid)
@@ -184,10 +187,10 @@ func api_cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
-		"error" : err_str,
-		"UserAddr" : p_user_addr,
-		"UserAid" : user_aid,
-		"StakedTokensRWalk" : tokens,
+		"error":  err_str,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+		"StakedTokensRWalk": tokens,
 	})
 }
 func api_cosmic_game_staked_tokens_rwalk_global(c *gin.Context) {

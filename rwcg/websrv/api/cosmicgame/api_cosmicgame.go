@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -24,6 +25,114 @@ const (
 	JSON = true
 	HTTP = false
 )
+
+// safeFloat64 returns 0 for NaN/±Inf so that encoding/json does not panic.
+func safeFloat64(f float64) float64 {
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return 0
+	}
+	return f
+}
+
+// sanitizeMapFloatsForJSON recurses into maps and slices and replaces any float64 NaN/±Inf with 0.
+// Used so that c.JSON never sees NaN even if a value was missed earlier.
+func sanitizeMapFloatsForJSON(m map[string]interface{}) {
+	for k, v := range m {
+		if v == nil {
+			continue
+		}
+		switch val := v.(type) {
+		case float64:
+			if math.IsNaN(val) || math.IsInf(val, 0) {
+				m[k] = 0.0
+			}
+		case map[string]interface{}:
+			sanitizeMapFloatsForJSON(val)
+		case []interface{}:
+			for i, e := range val {
+				if f, ok := e.(float64); ok && (math.IsNaN(f) || math.IsInf(f, 0)) {
+					val[i] = 0.0
+				} else if m2, ok := e.(map[string]interface{}); ok {
+					sanitizeMapFloatsForJSON(m2)
+				} else if s2, ok := e.([]interface{}); ok {
+					sanitizeSliceFloatsForJSON(s2)
+				}
+			}
+		default:
+			// Struct values (CurRoundStats, MainStats, etc.) were already sanitized before being put in the map
+			break
+		}
+	}
+}
+
+func sanitizeSliceFloatsForJSON(s []interface{}) {
+	for i, e := range s {
+		if f, ok := e.(float64); ok && (math.IsNaN(f) || math.IsInf(f, 0)) {
+			s[i] = 0.0
+		} else if m2, ok := e.(map[string]interface{}); ok {
+			sanitizeMapFloatsForJSON(m2)
+		} else if s2, ok := e.([]interface{}); ok {
+			sanitizeSliceFloatsForJSON(s2)
+		}
+	}
+}
+
+// sanitizeFloatsForJSON recursively replaces NaN and ±Inf float64 with 0 in v (in-place).
+// Pass a pointer to a struct so fields can be modified. Prevents "json: unsupported value: NaN" panic.
+func sanitizeFloatsForJSON(v interface{}) {
+	if v == nil {
+		return
+	}
+	val := reflect.ValueOf(v)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if !val.IsValid() {
+		return
+	}
+	switch val.Kind() {
+	case reflect.Float64:
+		f := val.Float()
+		if math.IsNaN(f) || math.IsInf(f, 0) {
+			// v must be a settable pointer to float64
+			if p := reflect.ValueOf(v); p.Kind() == reflect.Ptr && p.Elem().CanSet() {
+				p.Elem().SetFloat(0)
+			}
+		}
+	case reflect.Struct:
+		for i := 0; i < val.NumField(); i++ {
+			f := val.Field(i)
+			if !f.CanSet() {
+				continue
+			}
+			switch f.Kind() {
+			case reflect.Float64:
+				x := f.Float()
+				if math.IsNaN(x) || math.IsInf(x, 0) {
+					f.SetFloat(0)
+				}
+			case reflect.Struct:
+				sanitizeFloatsForJSON(f.Addr().Interface())
+			case reflect.Ptr:
+				if !f.IsNil() {
+					sanitizeFloatsForJSON(f.Interface())
+				}
+			case reflect.Slice:
+				for j := 0; j < f.Len(); j++ {
+					sanitizeFloatsForJSON(f.Index(j).Addr().Interface())
+				}
+			}
+		}
+	case reflect.Ptr:
+		if !val.IsNil() {
+			sanitizeFloatsForJSON(val.Interface())
+		}
+	case reflect.Slice:
+		for i := 0; i < val.Len(); i++ {
+			sanitizeFloatsForJSON(val.Index(i).Addr().Interface())
+		}
+	}
+}
 
 // =============================================================================
 // DASHBOARD & STATISTICS API
@@ -65,37 +174,41 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 	if round_num >= 0 {
 		curNumBids = arb_storagew.Get_bid_count_for_round(round_num)
 	}
+	// Sanitize floats so JSON encoding never sees NaN/Inf (avoids "json: unsupported value: NaN" panic)
+	sanitizeFloatsForJSON(&cur_round_stats)
+	bw_stats_copy := bw_stats
+	sanitizeFloatsForJSON(&bw_stats_copy)
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	payload := gin.H{
 		"status": req_status,
 		"error" : err_str,
 		"CosmicGameAddr": cosmic_game_addr,
-		"CosmicGameBalanceEth": cg_balance,
+		"CosmicGameBalanceEth": safeFloat64(cg_balance),
 		"CosmicSignatureAddr": cosmic_signature_addr,
 		"CosmicSignatureTokenAddr": cosmic_token_addr,
 		"CharityWalletAddr": charity_wallet_addr,
 		"BidPrice": responseBidPrice,
-		"BidPriceEth": responseBidPriceEth,
+		"BidPriceEth": safeFloat64(responseBidPriceEth),
 		"PrizeClaimDate": time.Unix(prize_claim_date,0).Format(time.RFC822),
 		"PrizeClaimTs": prize_claim_date,
 		"CurRoundNum": round_num,
 		"CurNumBids" : curNumBids,
 		"PrizeAmount" : prize_amount,
-		"PrizeAmountEth" : prize_amount_eth,
+		"PrizeAmountEth" : safeFloat64(prize_amount_eth),
 		"RaffleAmount" : raffle_amount,
-		"RaffleAmountEth" : raffle_amount_eth,
+		"RaffleAmountEth" : safeFloat64(raffle_amount_eth),
 		"StakingAmount" : staking_amount,
-		"StakingAmountEth" : staking_amount_eth,
-		"TotalPrizes": bw_stats.TotalPrizes,
-		"TotalPrizeAwards": bw_stats.TotalPrizeAwards,
-		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
-		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,
-		"TotalEthDonatedAmountEth" : bw_stats.TotalEthDonatedAmountEth,
+		"StakingAmountEth" : safeFloat64(staking_amount_eth),
+		"TotalPrizes": bw_stats_copy.TotalPrizes,
+		"TotalPrizeAwards": bw_stats_copy.TotalPrizeAwards,
+		"TotalPrizesPaidAmountEth": bw_stats_copy.TotalPrizesPaidAmountEth,
+		"TotalEthDonatedAmount" : bw_stats_copy.TotalEthDonatedAmount,
+		"TotalEthDonatedAmountEth" : bw_stats_copy.TotalEthDonatedAmountEth,
 		"LastBidderAddr":last_bidder.String(),
-		"NumVoluntaryDonations":bw_stats.NumVoluntaryDonations,
-		"SumVoluntaryDonationsEth":bw_stats.SumVoluntaryDonationsEth,
-		"NumRwalkTokensUsed":bw_stats.NumRwalkTokensUsed,
+		"NumVoluntaryDonations":bw_stats_copy.NumVoluntaryDonations,
+		"SumVoluntaryDonationsEth":bw_stats_copy.SumVoluntaryDonationsEth,
+		"NumRwalkTokensUsed":bw_stats_copy.NumRwalkTokensUsed,
 		"PriceIncrease" : price_increase,
 		"TimeIncrease" : time_increase,
 		"MainPrizeTimeIncrementInMicroSeconds" : mainprize_microseconds_inc,
@@ -110,22 +223,24 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
-		"CharityBalanceEth": charity_balance_eth,
+		"CharityBalanceEth": safeFloat64(charity_balance_eth),
 		"NumRaffleEthWinnersBidding" : raffle_eth_winners_bidding,
 		"NumRaffleNFTWinnersBidding" : raffle_nft_winners_bidding,
 		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
-		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
-		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
-		"NumUniqueDonors" : bw_stats.NumUniqueDonors,
-		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
-		"NumUniqueStakersRWalk" : bw_stats.NumUniqueStakersRWalk,
-		"NumUniqueStakersBoth" : bw_stats.NumUniqueStakersBoth,
-		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
-		"MainStats" : bw_stats,
+		"NumUniqueBidders" :  bw_stats_copy.NumUniqueBidders,
+		"NumUniqueWinners" : bw_stats_copy.NumUniqueWinners,
+		"NumUniqueDonors" : bw_stats_copy.NumUniqueDonors,
+		"NumUniqueStakersCST" : bw_stats_copy.NumUniqueStakersCST,
+		"NumUniqueStakersRWalk" : bw_stats_copy.NumUniqueStakersRWalk,
+		"NumUniqueStakersBoth" : bw_stats_copy.NumUniqueStakersBoth,
+		"NumDonatedNFTs" : bw_stats_copy.NumDonatedNFTs,
+		"MainStats" : bw_stats_copy,
 		"CurRoundStats" : cur_round_stats,
 		"TsRoundStart" : round_start_ts,
 		"ContractAddrs" : caddrs,
-	})
+	}
+	sanitizeMapFloatsForJSON(payload)
+	c.JSON(http.StatusOK, payload)
 }
 
 // =============================================================================
@@ -1368,30 +1483,44 @@ func api_cosmic_game_time_until_prize(c *gin.Context) {
 func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !dbInitialized() {
-		common.RespondErrorJSON(c,"Database link wasn't configured")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	var copts bind.CallOpts
-	bwcontract,err := NewCosmicSignatureGame(cosmic_game_addr,EthClient)
-	if err != nil {
-		common.RespondErrorJSON(c,fmt.Sprintf("Error during call: can't instantiate CG contract: %v",err))
-		return
-	}
-	prize_time,err := bwcontract.MainPrizeTime(&copts)
-	if err!=nil {
-		common.RespondErrorJSON(c,fmt.Sprintf("Error during call: %v",err))
-		return
+	// Return 200 with status/error in body when contract is unavailable, so frontend gets consistent response shape
+	var req_status int = 1
+	var err_str string
+	var prize_time *big.Int
+
+	if EthClient == nil {
+		req_status = 0
+		err_str = "Ethereum client not configured"
+		prize_time = big.NewInt(0)
 	} else {
-		var req_status int = 1
-		var err_str string = ""
-		c.JSON(http.StatusOK, gin.H{
-			"status": req_status,
-			"error" : err_str,
-			"CurRoundPrizeTime" : prize_time,
-		})
+		var copts bind.CallOpts
+		bwcontract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient)
+		if err != nil {
+			req_status = 0
+			err_str = fmt.Sprintf("Can't instantiate CG contract: %v", err)
+			prize_time = big.NewInt(0)
+		} else {
+			pt, err := bwcontract.MainPrizeTime(&copts)
+			if err != nil {
+				req_status = 0
+				err_str = fmt.Sprintf("MainPrizeTime call failed: %v", err)
+				prize_time = big.NewInt(0)
+			} else {
+				prize_time = pt
+			}
+		}
 	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":            req_status,
+		"error":             err_str,
+		"CurRoundPrizeTime": prize_time,
+	})
 } 
 func api_cosmic_game_user_global_winnings(c *gin.Context) {
 
