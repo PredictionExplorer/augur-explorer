@@ -79,6 +79,15 @@ type CGBidRec struct {
 	DonatedERC20TokenAmount		string
 	DonatedERC20TokenAmountEth	float64
 }
+
+// CGBannedBidRec is one row from cg_banned_bids (API: get_banned_bids)
+type CGBannedBidRec struct {
+	Id        int64  `json:"id"`
+	BidId     int64  `json:"bid_id"`
+	UserAddr  string `json:"user_addr"`
+	CreatedAt int64  `json:"created_at"`
+}
+
 type CGClaimPrizeTx struct {
 	Tx							Transaction
 }

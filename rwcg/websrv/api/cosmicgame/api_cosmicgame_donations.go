@@ -153,7 +153,10 @@ func api_cosmic_game_donations_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "CombinedDonationRecords": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 
@@ -289,7 +292,10 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "DonatedPrizesERC20ByWinner": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 
@@ -375,7 +381,10 @@ func api_cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "DonationsERC20ByDonor": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 
@@ -438,7 +447,10 @@ func api_cosmic_game_erc20_claims_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "ERC20ClaimsByWinner": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 

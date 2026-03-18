@@ -105,6 +105,9 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/bid/cst_price", api_cosmic_game_get_cst_price)
 	r.GET("/api/cosmicgame/bid/eth_price", api_cosmic_game_get_eth_price)
 	r.GET("/api/cosmicgame/bid/current_special_winners", api_cosmic_game_bid_special_winners)
+	r.GET("/api/cosmicgame/get_banned_bids", api_cosmic_game_get_banned_bids)
+	r.POST("/api/cosmicgame/ban_bid", api_cosmic_game_ban_bid)
+	r.POST("/api/cosmicgame/unban_bid", api_cosmic_game_unban_bid)
 
 	// CST Tokens
 	r.GET("/api/cosmicgame/cst/list/all/:offset/:limit", api_cosmic_game_cosmic_signature_token_list)

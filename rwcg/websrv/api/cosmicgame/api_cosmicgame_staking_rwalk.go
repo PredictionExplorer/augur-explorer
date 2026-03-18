@@ -73,15 +73,18 @@ func api_cosmic_game_staking_actions_rwalk_by_user(c *gin.Context) {
         return
     }
 
-    user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-    if err != nil {
-        common.RespondErrorJSON(c,"Provided address wasn't found")
-        return
-    } 
 	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
+    user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+    if err != nil {
+        c.JSON(http.StatusOK, gin.H{
+            "status": 1, "error": "", "UserAid": int64(0), "UserAddr": p_user_addr,
+            "Offset": offset, "Limit": limit, "UserStakingActionsRWalk": []interface{}{},
+        })
+        return
+    }
 	actions := arb_storagew.Get_staking_actions_rwalk_by_user(user_aid,offset,limit)
 	var req_status int = 1
 	var err_str string = ""
@@ -150,9 +153,12 @@ func api_cosmic_game_staking_rwalk_mints_by_user(c *gin.Context) {
 
     user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
     if err != nil {
-        common.RespondErrorJSON(c,"Provided address wasn't found")
+        // Address not in DB yet — return 200 with empty list so UI works
+        c.JSON(http.StatusOK, gin.H{
+            "status": 1, "error": "", "RWalkStakingRewardMints": []interface{}{},
+        })
         return
-    } 
+    }
 
 	mints := arb_storagew.Get_staking_rwalk_mints_by_user(user_aid)
 	var req_status int = 1

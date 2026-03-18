@@ -83,6 +83,20 @@ func main() {
 
 	// Don't trust all proxies (avoids GIN-debug warning; set trusted proxies explicitly if behind one)
 	r.SetTrustedProxies(nil)
+
+	// CORS: allow cross-origin requests from browsers (frontend on different origin)
+	// Handles OPTIONS preflight and adds CORS headers to all responses
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	})
+
 	r.Use(gin.Recovery()) // recover from panics (e.g. broken pipe when client disconnects)
 	r.Use(gin.Logger())
 

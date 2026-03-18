@@ -26,6 +26,31 @@ const (
 	HTTP = false
 )
 
+// respondUserAddrNotIndexedJSON returns 200 with empty user-shaped data when the wallet
+// is not in the indexer DB yet (common for new connections).
+func respondUserAddrNotIndexedUserInfoJSON(c *gin.Context, userAddr string) {
+	emptyUserInfo := gin.H{
+		"AddressId": int64(0), "Address": userAddr, "NumPrizes": int64(0), "NumBids": int64(0),
+		"MaxWinAmount": 0.0, "MaxBidAmount": 0.0, "SumRaffleEthWinnings": 0.0, "SumRaffleEthWithdrawal": 0.0,
+		"NumRaffleEthWinnings": int64(0), "RaffleNFTsCount": int64(0), "RewardNFTsCount": int64(0),
+		"UnclaimedNFTs": int64(0), "TotalCSTokensWon": int64(0), "CosmicSignatureNumTransfers": int64(0),
+		"TotalDonatedCount": int64(0), "TotalDonatedAmountEth": 0.0,
+		"StakingStatisticsRWalk": gin.H{},
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status": 1, "error": "", "UserInfo": emptyUserInfo,
+		"Bids": []interface{}{}, "MainPrizeClaims": []interface{}{}, "PrizeHistory": []interface{}{},
+		"TokenDonationsMade": gin.H{"NFTDonations": []interface{}{}, "ERC20Donations": []interface{}{}},
+		"ETHDonationsMade": []interface{}{}, "MarketingRewardsAwarded": []interface{}{},
+		"DonatedNFTsClaimed": []interface{}{}, "DonatedTokensClaimed": []interface{}{},
+		"UnclaimedAssets": gin.H{"ETHPrizes": []interface{}{}, "DonatedNFTs": []interface{}{}},
+		"CurrentlyStakedTokens": gin.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
+		"StakingActions": gin.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
+		"ERC20Transfers": []interface{}{}, "ERC721Transfers": []interface{}{},
+		"CosmicSignatureTokensOwned": []interface{}{},
+	})
+}
+
 // safeFloat64 returns 0 for NaN/±Inf so that encoding/json does not panic.
 func safeFloat64(f float64) float64 {
 	if math.IsNaN(f) || math.IsInf(f, 0) {
@@ -429,13 +454,13 @@ func api_cosmic_game_user_info(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		respondUserAddrNotIndexedUserInfoJSON(c, p_user_addr)
 		return
 	}
 
 	found, user_info := arb_storagew.Get_user_info(user_aid)
 	if !found {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		respondUserAddrNotIndexedUserInfoJSON(c, p_user_addr)
 		return
 	}
 	bids := arb_storagew.Get_bids_by_user(user_aid)
@@ -714,7 +739,10 @@ func api_cosmic_game_nft_donations_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "NFTDonationsByDonor": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 
@@ -1393,12 +1421,18 @@ func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
+			"UserInfo": p.CGUserInfo{Address: p_user_addr},
+		})
 		return
 	}
 	found, user_info := arb_storagew.Get_user_info(user_aid)
 	if !found {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
+			"UserInfo": p.CGUserInfo{Address: p_user_addr},
+		})
 		return
 	}
 	claims := arb_storagew.Get_donated_nft_claims_by_user(user_aid)
@@ -1536,7 +1570,10 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet — return 200 with empty winnings so UI works
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "Winnings": []interface{}{}, "UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 
@@ -1564,18 +1601,24 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
+	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
+	if !success {
+		return
+	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"UserPrizeHistory": []interface{}{},
+		})
 		return
 	}
 	found, _ := arb_storagew.Get_user_info(user_aid)
 	if !found {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
-		return
-	}
-	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
-	if !success {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
+			"UserPrizeHistory": []interface{}{},
+		})
 		return
 	}
 
@@ -1588,7 +1631,7 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 		"error" : err_str,
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"USerPrizeHistory" : claim_history,
+		"UserPrizeHistory" : claim_history,
 	})
 }
 func api_cosmic_game_global_claim_history_detail(c *gin.Context) {
@@ -1627,12 +1670,18 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": int64(0),
+		})
 		return
 	}
 	found, _ := arb_storagew.Get_user_info(user_aid)
 	if !found {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
+			"UserAddr": p_user_addr, "UserAid": user_aid,
+		})
 		return
 	}
 
@@ -1692,18 +1741,24 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
+	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
+	if !success {
+		return
+	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"UnclaimedDeposits": []interface{}{},
+		})
 		return
 	}
 	found, _ := arb_storagew.Get_user_info(user_aid)
 	if !found {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
-		return
-	}
-	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
-	if !success {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
+			"UnclaimedDeposits": []interface{}{},
+		})
 		return
 	}
 
@@ -1733,12 +1788,27 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet — return 200 with empty list so UI works
+		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
+		if !success {
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
+		})
 		return
 	}
 	found, _ := arb_storagew.Get_user_info(user_aid)
 	if !found {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
+		if !success {
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
+			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
+		})
 		return
 	}
 	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
@@ -1902,10 +1972,9 @@ func api_cosmic_game_user_balances(c *gin.Context) {
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
-		return
+	user_aid, addrLookupErr := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if addrLookupErr != nil {
+		user_aid = 0 // address not in DB yet; still return 200 with on-chain balances below
 	}
 
 	addr := ethcommon.HexToAddress(p_user_addr)
@@ -2180,7 +2249,15 @@ func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet — return 200 with empty list so UI works
+		success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
+		if !success {
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "Offset": offset, "Limit": limit,
+			"UserAddr": p_user_addr, "UserAid": int64(0), "UserMarketingRewards": []interface{}{},
+		})
 		return
 	}
 	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
@@ -2443,4 +2520,67 @@ func api_cosmic_game_bid_special_winners(c *gin.Context) {
 		"ChronoWarriorDuration" : chrono_warrior_duration,
 		"LastCstBidderAddress" : lastcst_bidder_addr,
 	})
+}
+
+// =============================================================================
+// BANNED BIDS API (mirrors FastAPI get_banned_bids / ban_bid / unban_bid)
+// =============================================================================
+
+func api_cosmic_game_get_banned_bids(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+	list := arb_storagew.Get_banned_bids()
+	if list == nil {
+		list = []p.CGBannedBidRec{}
+	}
+	// Return raw JSON array like FastAPI so frontend gets same shape
+	c.JSON(http.StatusOK, list)
+}
+
+type banBidPayload struct {
+	BidId    int64  `json:"bid_id" binding:"required"`
+	UserAddr string `json:"user_addr" binding:"required"`
+}
+
+func api_cosmic_game_ban_bid(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+	var payload banBidPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		common.RespondErrorJSON(c, "Invalid JSON: bid_id and user_addr required")
+		return
+	}
+	if err := arb_storagew.Insert_banned_bid(payload.BidId, payload.UserAddr); err != nil {
+		common.RespondErrorJSON(c, fmt.Sprintf("Failed to insert banned bid: %v", err))
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"result": "success"})
+}
+
+type unbanBidPayload struct {
+	BidId int64 `json:"bid_id" binding:"required"`
+}
+
+func api_cosmic_game_unban_bid(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+	var payload unbanBidPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		common.RespondErrorJSON(c, "Invalid JSON: bid_id required")
+		return
+	}
+	if err := arb_storagew.Delete_banned_bid_by_bid_id(payload.BidId); err != nil {
+		common.RespondErrorJSON(c, fmt.Sprintf("Failed to unban bid: %v", err))
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"result": "success"})
 }

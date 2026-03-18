@@ -74,6 +74,7 @@ DROP TABLE IF EXISTS
 	cg_adm_cst_min_limit,
 	cg_delay_duration,
 	cg_chrono_warrior_prize,
+	cg_banned_bids,
 	cg_transfer_stats,
 	cg_round_stats,
 	cg_bidder,

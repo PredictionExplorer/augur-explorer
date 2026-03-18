@@ -385,3 +385,12 @@ CREATE TABLE cg_adm_initialized( -- Initialized event (OpenZeppelin)
 	version			BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+
+-- Banned bids (admin/manual bans; API: get_banned_bids, ban_bid, unban_bid)
+CREATE TABLE cg_banned_bids (
+	id          BIGSERIAL PRIMARY KEY,
+	bid_id      BIGINT NOT NULL,
+	user_addr   VARCHAR(255) NOT NULL,
+	created_at  BIGINT NOT NULL
+);
+CREATE INDEX idx_cg_banned_bids_bid_id ON cg_banned_bids(bid_id);

@@ -73,13 +73,16 @@ func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
-		return
-	}
 	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "Offset": offset, "Limit": limit,
+			"UserAddr": p_user_addr, "UserAid": int64(0), "StakingCSTActions": []interface{}{},
+		})
 		return
 	}
 	actions := arb_storagew.Get_staking_actions_cst_by_user(user_aid,offset,limit)
@@ -127,7 +130,10 @@ func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI works
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "UnclaimedEthDeposits": []interface{}{},
+		})
 		return
 	}
 	deposits := arb_storagew.Get_staking_rewards_to_be_claimed(user_aid)
@@ -200,7 +206,15 @@ func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet — return 200 with empty list so UI works
+		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
+		if !success {
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "Offset": offset, "Limit": limit,
+			"UserAddr": p_user_addr, "UserAid": int64(0), "CollectedStakingCSTRewards": []interface{}{},
+		})
 		return
 	}
 	success,offset,limit := common.ParseOffsetLimitParamsJSON(c)
@@ -305,9 +319,11 @@ func api_cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
 
     user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
     if err != nil {
-        common.RespondErrorJSON(c,"Provided address wasn't found")
+        c.JSON(http.StatusOK, gin.H{
+            "status": 1, "error": "", "CSTStakingRewardMints": []interface{}{},
+        })
         return
-    } 
+    }
 
 	mints := arb_storagew.Get_staking_cst_mints_by_user(user_aid)
 	var req_status int = 1
@@ -330,11 +346,6 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
-		return
-	}
 	p_deposit_id := c.Param("deposit_id")
 	var deposit_id int64
 	if len(p_deposit_id) > 0 {
@@ -345,6 +356,14 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		}
 	} else {
 		common.RespondErrorJSON(c,"'deposit_id' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"DepositId": deposit_id, "ActionIdsWithClaimInfo": []interface{}{},
+		})
 		return
 	}
 	action_ids := arb_storagew.Get_action_ids_for_deposit_with_claim_info(deposit_id,user_aid)
@@ -373,7 +392,10 @@ func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet — return 200 with empty list so UI works
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": p_user_addr, "RewardsByDeposit": []interface{}{},
+		})
 		return
 	}
 
@@ -402,7 +424,10 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
+		// Address not in DB yet — return 200 with empty list so UI works
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "RewardsByToken": []interface{}{},
+		})
 		return
 	}
 
@@ -429,12 +454,6 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context
 		common.RespondErrorJSON(c,"'user_addr' parameter is not set")
 		return
 	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		common.RespondErrorJSON(c,"Provided address wasn't found")
-		return
-	}
-
 	p_token_id:= c.Param("token_id")
 	var token_id int64
 	if len(p_token_id) > 0 {
@@ -445,6 +464,14 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context
 		}
 	} else {
 		common.RespondErrorJSON(c,"'token_id' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"TokenId": token_id, "RewardsByTokenDetails": []interface{}{},
+		})
 		return
 	}
 
