@@ -37,7 +37,7 @@
 			<td class="market_reports_field" style="text-align: center;">
 				{{if .WasCanceled }} CANCELED
 				{{ else }}
-					{{ printf "%.18f" .Profit}}
+					{{if .Profit.Valid}}{{ printf "%.18f" .Profit.Value }}{{else}}—{{end}}
 				{{ end }}
 			</td>
 		</tr>

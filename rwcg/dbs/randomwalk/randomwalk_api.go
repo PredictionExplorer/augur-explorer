@@ -11,6 +11,17 @@ import (
 	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
 
+func profitFromNull(nf sql.NullFloat64) rwp.JSONNullFloat64 {
+	if !nf.Valid {
+		return rwp.JSONNullFloat64{}
+	}
+	p := nf.Float64
+	if math.IsNaN(p) || math.IsInf(p, 0) {
+		return rwp.JSONNullFloat64{}
+	}
+	return rwp.JSONNullFloat64{Valid: true, Value: p}
+}
+
 // =============================================================================
 // OFFER QUERIES
 // =============================================================================
@@ -121,7 +132,6 @@ func (sw *SQLStorageWrapper) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,
 				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
 			"WHERE (t.time_stamp >= TO_TIMESTAMP($1)) AND (t.time_stamp<TO_TIMESTAMP($2)) " +
 				"AND t.contract_aid=$3"
-	sw.S.Info.Printf("rwalk_aid=%v ini=%v,fin=%v, q=%v\n",rwalk_aid,ini_ts,fin_ts,query)
 	rows,err := sw.S.Db().Query(query,ini_ts,fin_ts,rwalk_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -341,21 +351,13 @@ func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		if null_profit.Valid {
-			rec.Profit = null_profit.Float64
-		} else {
-			rec.Profit = math.NaN()
-		}
+		rec.Profit = profitFromNull(null_profit)
 		if null_can_id.Valid {rec.WasCanceled = true}
 		if null_cancel_ts.Valid {
 			rec.CanceledTs = null_cancel_ts.Int64
 			time_canceled := time.Unix(int64(rec.CanceledTs),0)
 			time_offered := time.Unix(int64(rec.TimeStamp),0)
 			rec.CanceledDuration = primitives.DurationToString(primitives.TimeDifference(time_offered,time_canceled))
-			fmt.Printf(
-				"id=%v: offer_id=%v , canceled ts = %v , offered_Ts=%v rec.CanceledDuration=%v\n",
-				rec.Id,rec.OfferId,rec.CanceledTs,rec.TimeStamp,rec.CanceledDuration,
-			)
 		}
 		if null_cancel_date.Valid { rec.CanceledDate = null_cancel_date.String }
 		if null_bought_ts.Valid {
@@ -364,10 +366,6 @@ func (sw *SQLStorageWrapper) Get_trading_history(contract_aid int64,offset,limit
 			time_bought := time.Unix(int64(rec.ItemBoughtTs),0)
 			time_offered := time.Unix(int64(rec.TimeStamp),0)
 			rec.BoughtDuration = primitives.DurationToString(primitives.TimeDifference(time_offered,time_bought))
-			fmt.Printf(
-				"id=%v: offer_id=%v , bought_ts = %v , offered_Ts=%v rec.BoughtDuration=%v\n",
-				rec.Id,rec.OfferId,rec.ItemBoughtTs,rec.TimeStamp,rec.BoughtDuration,
-			)
 		}
 		if null_bought_date.Valid { rec.ItemBoughtDate = null_bought_date.String }
 		records = append(records,rec)
@@ -761,7 +759,6 @@ func (sw *SQLStorageWrapper) Get_token_full_history(rwalk_aid,token_id int64,off
 		"ORDER BY ts " +
 		"OFFSET $3 LIMIT $4"
 
-	sw.S.Info.Printf("rwalk_aid=%v token_id=%v, query = %v\n",rwalk_aid,token_id,query)
 	rows,err := sw.S.Db().Query(query,token_id,rwalk_aid,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -993,8 +990,6 @@ func (sw *SQLStorageWrapper) Get_market_trading_volume_by_period(contract_aid in
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
 
-	sw.S.Info.Printf("contract_aid=%v init_ts= %v , fin_ts= %v , interval = %v\n",contract_aid,init_ts,fin_ts,interval)
-	sw.S.Info.Printf("query = %v\n",query)
 	rows,err := sw.S.Db().Query(query,init_ts,fin_ts,interval,contract_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1196,7 +1191,6 @@ func (sw *SQLStorageWrapper) Get_trading_history_by_user(user_aid int64) []rwp.A
 			"WHERE (active = 'f') AND ((o.buyer_aid=$1) OR (o.seller_aid=$1)) " +
 			"ORDER BY o.id "
 
-	sw.S.Info.Printf("user_aid=%v q=%v\n",user_aid,query)
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1236,11 +1230,7 @@ func (sw *SQLStorageWrapper) Get_trading_history_by_user(user_aid int64) []rwp.A
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		if null_profit.Valid {
-			rec.Profit = null_profit.Float64
-		} else {
-			rec.Profit = math.NaN()
-		}
+		rec.Profit = profitFromNull(null_profit)
 		if null_can_id.Valid {
 			rec.WasCanceled = true
 		}
@@ -1554,11 +1544,7 @@ func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit in
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		if null_profit.Valid {
-			rec.Profit = null_profit.Float64
-		} else {
-			rec.Profit = 0
-		}
+		rec.Profit = profitFromNull(null_profit)
 		if null_can_id.Valid {
 			rec.WasCanceled = true
 		}
@@ -1599,8 +1585,6 @@ func (sw *SQLStorageWrapper) Get_rwalk_floor_price_for_periods(rwalk_aid,market_
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
 
-	sw.S.Info.Printf("market_aid=%v rwalk_aid=%v init_ts= %v , fin_ts= %v , interval = %v\n",market_aid,rwalk_aid,init_ts,fin_ts,interval)
-	sw.S.Info.Printf("query = %v\n",query)
 	rows,err := sw.S.Db().Query(query,init_ts,fin_ts,interval,market_aid,rwalk_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

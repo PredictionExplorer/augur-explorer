@@ -56,7 +56,7 @@
 					CANCELED
 				{{ else }}
 					{{ if .WasBought }}
-						{{ printf "%.18f" .Profit}}
+						{{if .Profit.Valid}}{{ printf "%.18f" .Profit.Value }}{{else}}—{{end}}
 					{{ end }}
 				{{ end }}
 			</td>

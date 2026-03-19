@@ -23,7 +23,7 @@ type API_Offer struct {
 	TokenId      int64
 	Active       bool
 	Price        float64
-	Profit       float64
+	Profit       JSONNullFloat64
 	RWalkAid     int64
 	RWalkAddr    string
 	WasCanceled  bool
@@ -270,7 +270,7 @@ type API_TradingHistoryLog struct {
 	TokenId          int64
 	Active           bool
 	Price            float64
-	Profit           float64
+	Profit           JSONNullFloat64
 	RWalkAid         int64
 	RWalkAddr        string
 	WasCanceled      bool
