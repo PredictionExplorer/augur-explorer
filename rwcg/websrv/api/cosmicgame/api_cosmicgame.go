@@ -1943,6 +1943,7 @@ func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
 	})
 }
 func api_cosmic_game_cs_token_distribution(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if  !dbInitialized() {
 		common.RespondErrorJSON(c,"Database link wasn't configured")

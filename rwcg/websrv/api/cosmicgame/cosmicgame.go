@@ -113,6 +113,8 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/cst/list/all/:offset/:limit", api_cosmic_game_cosmic_signature_token_list)
 	r.GET("/api/cosmicgame/cst/list/by_user/:user_addr/:offset/:limit", api_cosmic_game_cosmic_signature_token_list_by_user)
 	r.GET("/api/cosmicgame/cst/info/:token_id", api_cosmic_game_cosmic_signature_token_info)
+	r.GET("/api/cosmicgame/cst/metadata/:token_id", api_cosmic_game_cst_metadata)
+	r.GET("/cg/metadata/:token_id", api_cosmic_game_cst_metadata) // legacy Python path
 	r.GET("/api/cosmicgame/cst/names/history/:token_id", api_cosmic_game_token_name_history)
 	r.GET("/api/cosmicgame/cst/names/search/:name", api_cosmic_game_token_name_search)
 	r.GET("/api/cosmicgame/cst/names/named_only", api_cosmic_game_named_tokens_only)

@@ -1,4 +1,6 @@
 DROP TABLE IF EXISTS
+	rw_ranking_match,
+	rw_token_ranking,
 	rw_token,
 	rw_new_offer,
 	rw_item_bought,

@@ -48,6 +48,17 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/rwalk/user/info/:user_aid/:rwalk_addr", apiRwalkUserInfo)
 	r.GET("/api/rwalk/top5tokens", apiRwalkTop5TradedTokens)
 	r.GET("/api/rwalk/mint_report", apiRwalkMintReport)
+
+	// NFT metadata + explore (legacy Python backend parity)
+	r.GET("/api/randomwalk/explore/random", apiRandomwalkExploreRandom)
+	r.GET("/api/randomwalk/token-ranking/order", apiRandomwalkTokenRankingOrder)
+	r.POST("/api/randomwalk/token-ranking/match", apiRandomwalkTokenRankingMatch)
+	r.GET("/api/randomwalk/metadata/:token_id", apiRandomwalkTokenMetadata)
+
+	// Legacy paths (same responses as old FastAPI app at host root)
+	r.GET("/random", apiRandomwalkExploreRandom)
+	r.GET("/rating_order", apiRandomwalkTokenRankingOrder)
+	r.GET("/metadata/:token_id", apiRandomwalkTokenMetadata)
 }
 
 // RegisterHTMLRoutes registers all RandomWalk HTML page routes

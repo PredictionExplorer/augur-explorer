@@ -3,16 +3,20 @@ package main
 import (
 	"crypto/tls"
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/randomwalk"
@@ -28,29 +32,57 @@ var (
 	Error *log.Logger
 	Info  *log.Logger
 
-	// Module enable flags (default to true for backward compatibility)
-	enableCosmicGame = true
+	enableCosmicGame bool
 )
 
-func init() {
-	// Check environment variable to disable cosmicgame module
-	// Set ENABLE_COSMICGAME=false to disable
-	if val := os.Getenv("ENABLE_COSMICGAME"); val == "false" || val == "0" {
-		enableCosmicGame = false
+// cosmicgameSchemaPresent returns true if CosmicGame tables (cg_contracts) exist in public.
+func cosmicgameSchemaPresent(db *dbs.SQLStorage) bool {
+	if db == nil {
+		return false
 	}
+	var ok bool
+	err := db.Db().QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'cg_contracts'
+		)`).Scan(&ok)
+	if err != nil {
+		log.Printf("WARN: could not probe for public.cg_contracts: %v — CosmicGame will be disabled", err)
+		return false
+	}
+	return ok
 }
 
 func initialize() {
 	// Initialize the common context
 	common.InitContext(rwcg_srv.db, eclient, Info, Error)
 
-	// Initialize CosmicGame (only if enabled)
+	// CosmicGame: ENABLE_COSMICGAME=false|0 → off; true|1 → on (fatal if schema missing);
+	// unset → auto: on only if public.cg_contracts exists (RandomWalk-only DB starts without extra env).
+	ev := strings.TrimSpace(os.Getenv("ENABLE_COSMICGAME"))
+	switch {
+	case ev == "false" || ev == "0":
+		enableCosmicGame = false
+	case ev == "true" || ev == "1":
+		enableCosmicGame = true
+	default:
+		enableCosmicGame = cosmicgameSchemaPresent(rwcg_srv.db)
+		if !enableCosmicGame {
+			fmt.Printf("INFO: CosmicGame disabled: public.cg_contracts not found (RandomWalk-only DB). Set ENABLE_COSMICGAME=true to require CosmicGame.\n")
+			Info.Printf("CosmicGame auto-disabled: cg_contracts not in database")
+		}
+	}
+
 	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCosmicGame)
 	if enableCosmicGame {
 		Info.Printf("CosmicGame module enabled")
 	} else {
-		Info.Printf("CosmicGame module disabled (set ENABLE_COSMICGAME=true to enable)")
-		fmt.Printf("INFO: CosmicGame module disabled. Set ENABLE_COSMICGAME=true to enable.\n")
+		if ev == "false" || ev == "0" {
+			Info.Printf("CosmicGame module disabled (ENABLE_COSMICGAME=false)")
+			fmt.Printf("INFO: CosmicGame module disabled by ENABLE_COSMICGAME=false.\n")
+		} else {
+			Info.Printf("CosmicGame module disabled")
+		}
 	}
 
 	// Initialize RandomWalk
@@ -100,6 +132,9 @@ func main() {
 	r.Use(gin.Recovery()) // recover from panics (e.g. broken pipe when client disconnects)
 	r.Use(gin.Logger())
 
+	// NFT asset files (nft-assets mirror) and optional /static ABI JSON; see static_assets.go
+	registerStaticAssetRoutes(r)
+
 	// Static files
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")
@@ -125,7 +160,6 @@ func main() {
 	// Only start TLS listener when HTTPS_HOSTNAME is set (avoids bind :443 permission denied when unset)
 	if len(host_secure) > 0 {
 		go func() {
-			log.Printf("Listening for TLS on %v", host_secure)
 			cer, err := tls.LoadX509KeyPair(
 				os.Getenv("HOME")+"/configs/server.crt",
 				os.Getenv("HOME")+"/configs/server.key",
@@ -135,13 +169,18 @@ func main() {
 				return
 			}
 			tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+			ln, err := net.Listen("tcp", host_secure)
+			if err != nil {
+				log.Printf("HTTPS bind failed on %q: %v", host_secure, err)
+				return
+			}
+			log.Printf("HTTPS bound and listening on %s", ln.Addr().String())
 			server := http.Server{
-				Addr:      host_secure,
 				Handler:   r,
 				TLSConfig: tlsConfig,
 			}
-			if err := server.ListenAndServeTLS("", ""); err != nil {
-				log.Printf("TLS listener: %v", err)
+			if err := server.ServeTLS(ln, "", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("HTTPS server: %v", err)
 			}
 		}()
 	}
