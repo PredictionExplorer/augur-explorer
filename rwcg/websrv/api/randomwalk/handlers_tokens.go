@@ -20,12 +20,8 @@ func apiRwalkTokenListSeq(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "NTF address wasn't found in the 'address' table")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
 	tokens := rw_storagew.Get_minted_tokens_sequentially(rwalk_aid, 0, 10000000000)
 	c.JSON(http.StatusOK, gin.H{
 		"status":       1,
@@ -39,12 +35,9 @@ func rwalk_token_list_seq(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "NTF address wasn't found in the 'address' table")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	tokens := rw_storagew.Get_minted_tokens_sequentially(rwalk_aid, 0, 10000000000)
 	fin_ts := int(time.Now().Unix())
 	interval := int(2 * 24 * 60 * 60)
@@ -66,12 +59,8 @@ func apiRwalkTokenListPeriod(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "NTF address wasn't found in the 'address' table")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
 	success, ini, fin := common.ParseTimeframeIniFin(c, JSON)
 	if !success {
 		return
@@ -92,12 +81,9 @@ func rwalk_token_list_period(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "NTF address wasn't found in the 'address' table")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	success, ini, fin := common.ParseTimeframeIniFin(c, HTTP)
 	if !success {
 		return
@@ -121,12 +107,8 @@ func apiRwalkTokenInfo(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of NFT token address in the Db has failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
 	p_token_id := c.Param("token_id")
 	var token_id int64
 	if len(p_token_id) > 0 {
@@ -156,12 +138,9 @@ func rwalk_token_info(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of NFT token address in the Db has failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	p_token_id := c.Param("token_id")
 	var token_id int64
 	if len(p_token_id) > 0 {
@@ -205,12 +184,9 @@ func apiRwalkTokenHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "'token_id' parameter is not set")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of 'rwalk_addr' failed, address doesn't exist")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
@@ -243,14 +219,26 @@ func rwalk_token_history(c *gin.Context) {
 		common.RespondError(c, "'token_id' parameter is not set")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of 'rwalk_addr' failed, address doesn't exist")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	offset := int(0)
 	limit := int(100000)
+	if co := c.Param("offset"); co != "" {
+		if cl := c.Param("limit"); cl != "" {
+			var err error
+			offset, err = strconv.Atoi(co)
+			if err != nil {
+				common.RespondError(c, fmt.Sprintf("Bad 'offset' parameter: %v", err))
+				return
+			}
+			limit, err = strconv.Atoi(cl)
+			if err != nil {
+				common.RespondError(c, fmt.Sprintf("Bad 'limit' parameter: %v", err))
+				return
+			}
+		}
+	}
 	history := rw_storagew.Get_token_full_history(rwalk_aid, token_id, offset, limit)
 	token_info, err := rw_storagew.Get_rwalk_token_info(rwalk_aid, token_id)
 	if err != nil {
@@ -401,12 +389,8 @@ func rwalk_token_csv_export(c *gin.Context) {
 	c.Writer.Header().Set("Pragma", "must-revalidate")
 	c.Writer.Header().Set("Content-type", "application/vnd.ms-excel")
 	c.Writer.Header().Set("Content-disposition", "attachment; filename=mints.csv")
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "NTF address wasn't found in the 'address' table")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
 	data := rw_storagew.Get_minted_tokens_for_CSV(rwalk_aid)
 	header := []string{
 		"BlockNum", "TimeStamp", "DateTime", "ContractAddr", "TokenId",

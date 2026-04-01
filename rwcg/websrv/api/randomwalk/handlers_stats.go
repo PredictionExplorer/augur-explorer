@@ -30,12 +30,9 @@ func apiRwalkTokenStats(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of NFT token address in the Db has failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
 	c.JSON(http.StatusOK, gin.H{
 		"status":    1,
@@ -51,12 +48,9 @@ func rwalk_token_stats(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of NFT token address in the Db has failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
 	c.HTML(http.StatusOK, "rw_token_stats.html", gin.H{
 		"TokenStats": stats,
@@ -72,12 +66,9 @@ func apiRwalkMarketStats(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of Market address in the DB has failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	market_aid := addrs.MarketPlaceAid
+	p_market_addr := addrs.MarketPlace
 	stats := rw_storagew.Get_market_stats(market_aid)
 	c.JSON(http.StatusOK, gin.H{
 		"status":      1,
@@ -93,12 +84,9 @@ func rwalk_market_stats(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		common.RespondError(c, "Market address doesn't exist in the database")
-		return
-	}
+	addrs := rwContractAddrs()
+	market_aid := addrs.MarketPlaceAid
+	p_market_addr := addrs.MarketPlace
 	stats := rw_storagew.Get_market_stats(market_aid)
 	c.HTML(http.StatusOK, "rw_market_stats.html", gin.H{
 		"MarketStats": stats,
@@ -114,12 +102,8 @@ func apiRwalkTradingVolumeByPeriod(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Market address doesn't exist in the database")
-		return
-	}
+	addrs := rwContractAddrs()
+	market_aid := addrs.MarketPlaceAid
 	success, init_ts, fin_ts, interval_secs := common.ParseTimeframeParams(c)
 	if !success {
 		return
@@ -136,16 +120,17 @@ func apiRwalkTradingVolumeByPeriod(c *gin.Context) {
 }
 
 func rwalk_trading_volume_by_period(c *gin.Context) {
+	if !dbInitialized() {
+		common.RespondError(c, "Database link wasn't configured")
+		return
+	}
 	success, init_ts, fin_ts, interval_secs := common.ParseTimeframeParams(c)
 	if !success {
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		common.RespondError(c, "Market address doesn't exist in the database")
-		return
-	}
+	addrs := rwContractAddrs()
+	market_aid := addrs.MarketPlaceAid
+	p_market_addr := addrs.MarketPlace
 	vol_hist := rw_storagew.Get_market_trading_volume_by_period(market_aid, init_ts, fin_ts, interval_secs)
 	volume_data := common.BuildJSRandomwalkVolumeHistory(&vol_hist)
 	c.HTML(http.StatusOK, "rw_volume_history.html", gin.H{
@@ -166,12 +151,9 @@ func apiRwalkMintIntervals(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of NFT token failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	mint_intervals := rw_storagew.Get_rwalk_mint_intervals(rwalk_aid)
 	c.JSON(http.StatusOK, gin.H{
 		"status":        1,
@@ -187,12 +169,9 @@ func rwalk_mint_intervals(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of NFT token failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	mint_intervals := rw_storagew.Get_rwalk_mint_intervals(rwalk_aid)
 	mint_data := common.BuildJSRandomwalkMintIntervals(&mint_intervals)
 	c.HTML(http.StatusOK, "rw_mint_intervals.html", gin.H{
@@ -210,12 +189,9 @@ func apiRwalkWithdrawalChart(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of NFT token failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	withdrawal_entries := rw_storagew.Get_rwalk_withdrawal_chart(rwalk_aid)
 	withdrawal_data := common.BuildJSRandomwalkWithdrawalChart(&withdrawal_entries)
 	rwalk_stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
@@ -235,12 +211,9 @@ func rwalk_withdrawal_chart(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of NFT token failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	withdrawal_entries := rw_storagew.Get_rwalk_withdrawal_chart(rwalk_aid)
 	withdrawal_data := common.BuildJSRandomwalkWithdrawalChart(&withdrawal_entries)
 	rwalk_stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
@@ -260,18 +233,11 @@ func apiRwalkFloorPriceOverTime(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of NFT token failed")
-		return
-	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Market address doesn't exist in the database")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
+	market_aid := addrs.MarketPlaceAid
+	p_market_addr := addrs.MarketPlace
 	success, ini, fin, interval := common.ParseTimeframeParams(c)
 	if !success {
 		return
@@ -309,18 +275,11 @@ func rwalk_floor_price_over_time(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of NFT token failed")
-		return
-	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		common.RespondError(c, "Market address doesn't exist in the database")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
+	market_aid := addrs.MarketPlaceAid
+	p_market_addr := addrs.MarketPlace
 	success, ini, fin, interval := common.ParseTimeframeParams(c)
 	if !success {
 		return

@@ -474,13 +474,13 @@ PGSQL_USERNAME, PGSQL_PASSWORD, PGSQL_DATABASE, PGSQL_HOST
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/rwalk/tokens/list/sequential/:rwalk_addr` | Token list |
-| `GET /api/rwalk/tokens/info/:rwalk_addr/:token_id` | Token info |
-| `GET /api/rwalk/current_offers/:rwalk_addr/:market_addr/:order_by` | Current offers |
-| `GET /api/rwalk/floor_price/:rwalk_addr/:market_addr` | Floor price |
-| `GET /api/rwalk/trading/history/:market_addr/:offset/:limit` | Trading history |
-| `GET /api/rwalk/statistics/by_token/:rwalk_addr` | Token statistics |
-| `GET /api/rwalk/user/info/:user_aid/:rwalk_addr` | User information |
+| `GET /api/randomwalk/tokens/list/sequential` | Token list |
+| `GET /api/randomwalk/tokens/info/:token_id` | Token info |
+| `GET /api/randomwalk/current_offers/:order_by` | Current offers |
+| `GET /api/randomwalk/floor_price` | Floor price |
+| `GET /api/randomwalk/trading/history/:offset/:limit` | Trading history |
+| `GET /api/randomwalk/statistics/by_token` | Token statistics |
+| `GET /api/randomwalk/user/info/:user_aid` | User information |
 
 ### Running the Web Server
 

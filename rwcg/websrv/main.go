@@ -53,23 +53,54 @@ func cosmicgameSchemaPresent(db *dbs.SQLStorage) bool {
 	return ok
 }
 
+// cosmicgameContractsHasRows returns true if public.cg_contracts exists and has at least one row.
+// An empty table used to still flip auto mode "on" (table exists), then cosmic_game_init would
+// call Get_cosmic_game_contract_addrs → ErrNoRows → os.Exit(1), or periodic RPC refresh could run
+// with bogus addresses against the node shared with RandomWalk local dev.
+func cosmicgameContractsHasRows(db *dbs.SQLStorage) bool {
+	if db == nil || !cosmicgameSchemaPresent(db) {
+		return false
+	}
+	var n int64
+	err := db.Db().QueryRow(`SELECT COUNT(*) FROM public.cg_contracts`).Scan(&n)
+	if err != nil {
+		log.Printf("WARN: could not COUNT public.cg_contracts: %v — CosmicGame will be disabled", err)
+		return false
+	}
+	return n > 0
+}
+
 func initialize() {
 	// Initialize the common context
 	common.InitContext(rwcg_srv.db, eclient, Info, Error)
 
-	// CosmicGame: ENABLE_COSMICGAME=false|0 → off; true|1 → on (fatal if schema missing);
-	// unset → auto: on only if public.cg_contracts exists (RandomWalk-only DB starts without extra env).
+	// CosmicGame: ENABLE_COSMICGAME=false|0 → off; true|1 → on (fatal if no contract row);
+	// unset → auto: on only if public.cg_contracts exists **and has ≥1 row** (RandomWalk-only / empty CG).
 	ev := strings.TrimSpace(os.Getenv("ENABLE_COSMICGAME"))
 	switch {
 	case ev == "false" || ev == "0":
 		enableCosmicGame = false
 	case ev == "true" || ev == "1":
+		if !cosmicgameContractsHasRows(rwcg_srv.db) {
+			fmt.Printf("FATAL: ENABLE_COSMICGAME=true requires public.cg_contracts with at least one row.\n")
+			if !cosmicgameSchemaPresent(rwcg_srv.db) {
+				fmt.Printf("  The table is missing. Create CosmicGame schema or set ENABLE_COSMICGAME=false.\n")
+			} else {
+				fmt.Printf("  The table exists but is empty. Seed cg_contracts or set ENABLE_COSMICGAME=false.\n")
+			}
+			os.Exit(1)
+		}
 		enableCosmicGame = true
 	default:
-		enableCosmicGame = cosmicgameSchemaPresent(rwcg_srv.db)
+		enableCosmicGame = cosmicgameContractsHasRows(rwcg_srv.db)
 		if !enableCosmicGame {
-			fmt.Printf("INFO: CosmicGame disabled: public.cg_contracts not found (RandomWalk-only DB). Set ENABLE_COSMICGAME=true to require CosmicGame.\n")
-			Info.Printf("CosmicGame auto-disabled: cg_contracts not in database")
+			if !cosmicgameSchemaPresent(rwcg_srv.db) {
+				fmt.Printf("INFO: CosmicGame disabled: public.cg_contracts not found (RandomWalk-only DB). Set ENABLE_COSMICGAME=true to require CosmicGame.\n")
+				Info.Printf("CosmicGame auto-disabled: cg_contracts not in database")
+			} else {
+				fmt.Printf("INFO: CosmicGame disabled: public.cg_contracts has no rows (seed contract addresses to enable). Set ENABLE_COSMICGAME=false to silence this.\n")
+				Info.Printf("CosmicGame auto-disabled: cg_contracts table is empty")
+			}
 		}
 	}
 

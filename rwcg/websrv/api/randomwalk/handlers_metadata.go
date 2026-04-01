@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -13,16 +12,16 @@ import (
 )
 
 // GET /api/randomwalk/metadata/:token_id — ERC-721-style JSON for marketplaces (image + animation_url).
-// Requires NFT_ASSETS_PUBLIC_BASE (e.g. https://example.com/images or http://localhost:8080/images).
+// Image URLs use this API's /images/... (see NFT_ASSETS_ROOT). Optional NFT_ASSETS_PUBLIC_BASE overrides the absolute prefix.
 func apiRandomwalkTokenMetadata(c *gin.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	base := strings.TrimRight(strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")), "/")
+	base := common.NFTImagePublicBase(c)
 	if base == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "NFT_ASSETS_PUBLIC_BASE is not set (public base URL for /images, no trailing slash)",
+			"error": "cannot derive public /images base URL (set Host or NFT_ASSETS_PUBLIC_BASE)",
 		})
 		return
 	}

@@ -17,15 +17,13 @@ func apiRwalkTradingHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	var market_aid int64 = 0
-	if p_market_addr != "0x0000000000000000000000000000000000000000" {
-		var err error
-		market_aid, err = rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-		if err != nil {
-			common.RespondErrorJSON(c, "Market address doesn't exist in the database")
-			return
-		}
+	addrs := rwContractAddrs()
+	p_market_addr := addrs.MarketPlace
+	var market_aid int64
+	if p_market_addr == "0x0000000000000000000000000000000000000000" {
+		market_aid = 0
+	} else {
+		market_aid = addrs.MarketPlaceAid
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
@@ -46,15 +44,13 @@ func rwalk_trading_history(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	var market_aid int64 = 0
-	if p_market_addr != "0x0000000000000000000000000000000000000000" {
-		var err error
-		market_aid, err = rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-		if err != nil {
-			common.RespondError(c, "Market address doesn't exist in the database")
-			return
-		}
+	addrs := rwContractAddrs()
+	p_market_addr := addrs.MarketPlace
+	var market_aid int64
+	if p_market_addr == "0x0000000000000000000000000000000000000000" {
+		market_aid = 0
+	} else {
+		market_aid = addrs.MarketPlaceAid
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsHTML(c)
 	if !success {
@@ -75,15 +71,13 @@ func apiRwalkSaleHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	var market_aid int64 = 0
-	if p_market_addr != "0x0000000000000000000000000000000000000000" {
-		var err error
-		market_aid, err = rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-		if err != nil {
-			common.RespondErrorJSON(c, "Market address doesn't exist in the database")
-			return
-		}
+	addrs := rwContractAddrs()
+	p_market_addr := addrs.MarketPlace
+	var market_aid int64
+	if p_market_addr == "0x0000000000000000000000000000000000000000" {
+		market_aid = 0
+	} else {
+		market_aid = addrs.MarketPlaceAid
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
@@ -104,15 +98,13 @@ func rwalk_sale_history(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_market_addr := c.Param("market_addr")
-	var market_aid int64 = 0
-	if p_market_addr != "0x0000000000000000000000000000000000000000" {
-		var err error
-		market_aid, err = rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-		if err != nil {
-			common.RespondError(c, "Market address doesn't exist in the database")
-			return
-		}
+	addrs := rwContractAddrs()
+	p_market_addr := addrs.MarketPlace
+	var market_aid int64
+	if p_market_addr == "0x0000000000000000000000000000000000000000" {
+		market_aid = 0
+	} else {
+		market_aid = addrs.MarketPlaceAid
 	}
 	offset := int(0)
 	limit := int(100000)

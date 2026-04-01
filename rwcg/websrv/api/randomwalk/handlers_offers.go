@@ -15,16 +15,9 @@ func apiRwalkCurrentOffers(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		rwalk_aid = 0
-	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		market_aid = 0
-	}
+	addr := rwContractAddrs()
+	rwalk_aid := addr.RandomWalkAid
+	market_aid := addr.MarketPlaceAid
 	p_order_by := c.Param("order_by")
 	var order_by int64
 	if len(p_order_by) > 0 {
@@ -52,16 +45,11 @@ func rwalk_current_offers(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		rwalk_aid = -1
-	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		market_aid = -1
-	}
+	addr := rwContractAddrs()
+	rwalk_aid := addr.RandomWalkAid
+	market_aid := addr.MarketPlaceAid
+	p_rwalk_addr := addr.RandomWalk
+	p_market_addr := addr.MarketPlace
 	p_order_by := c.Param("order_by")
 	var order_by int64
 	if len(p_order_by) > 0 {
@@ -90,16 +78,11 @@ func apiRwalkFloorPrice(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		rwalk_aid = -1
-	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		market_aid = -1
-	}
+	addr := rwContractAddrs()
+	rwalk_aid := addr.RandomWalkAid
+	market_aid := addr.MarketPlaceAid
+	p_rwalk_addr := addr.RandomWalk
+	p_market_addr := addr.MarketPlace
 	_, floor_price, _, _, err := rw_storagew.Get_floor_price(rwalk_aid, market_aid)
 	var db_err string
 	if err != nil {
@@ -122,16 +105,11 @@ func rwalk_floor_price(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		rwalk_aid = -1
-	}
-	p_market_addr := c.Param("market_addr")
-	market_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		market_aid = -1
-	}
+	addr := rwContractAddrs()
+	rwalk_aid := addr.RandomWalkAid
+	market_aid := addr.MarketPlaceAid
+	p_rwalk_addr := addr.RandomWalk
+	p_market_addr := addr.MarketPlace
 	_, floor_price, _, _, err := rw_storagew.Get_floor_price(rwalk_aid, market_aid)
 	var db_err string
 	if err != nil {

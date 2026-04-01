@@ -7,7 +7,7 @@
 	<h3 class="page_title">Token Trading History at MarketPlace {{.MarketPlaceAddr}}<h3>
 <div id="volume_history_graph"></div>
 <h3>Token sales by date</h3>
-<a href="/black/rwalk/statistics/trading_volume/1634858540/1635776941/86400">Trading Volume Chart</a>
+<a href="/black/randomwalk/statistics/trading_volume/1634858540/1635776941/86400">Trading Volume Chart</a>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Block</th>
@@ -42,10 +42,10 @@
 				{{ if eq .OfferType 0 }}BUY{{else}}SELL{{end}}
 			</td>
 			<td class="addr">
-				<a href="/black/rwalk/user/info/{{.SellerAid}}/{{.RWalkAddr}}">{{.SellerAddr}}</a>
+				<a href="/black/randomwalk/user/info/{{.SellerAid}}">{{.SellerAddr}}</a>
 			</td>
 			<td class="addr">
-				<a href="/black/rwalk/user/info/{{.BuyerAid}}/{{.RWalkAddr}}">{{.BuyerAddr}}</a>
+				<a href="/black/randomwalk/user/info/{{.BuyerAid}}">{{.BuyerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
 			<td class="market_reports_field" style="text-align: center;">
@@ -67,8 +67,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/rwalk/trading/history/[market_addr]/[offset]/[limit]</br>
+	API: /api/randomwalk/trading/history/[offset]/[limit]</br>
 
-	Example: /api/rwalk/trading/history/0x52266bdbfa301803a62FCF7B3C946EF1c3f7691E/0/1000000
+	Example: /api/randomwalk/trading/history/0/1000000
 </code>
 </body>

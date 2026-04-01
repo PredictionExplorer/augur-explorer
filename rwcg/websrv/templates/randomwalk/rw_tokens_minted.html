@@ -9,7 +9,7 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/black/rwalk/tokens/list/by_period/{{.RWalkAddr}}/{{.InitTs}}/{{.FinTs}}">
+		<a class="btn_link" href="/black/randomwalk/tokens/list/by_period/{{.InitTs}}/{{.FinTs}}">
 			Last 2 Days 
 		</a>
 		<span></span><span></span><span></span><span></span>
@@ -32,7 +32,7 @@
 			<td class="">{{.DateTime}}</td>
 			<td class="" style="text-align:center;">{{.TokenId}}</td>
 			<td class="addr">
-				<a href="/black/rwalk/user/info/{{.MinterAid}}/{{.ContractAddr}}">{{.MinterAddr}}</a>
+				<a href="/black/randomwalk/user/info/{{.MinterAid}}">{{.MinterAddr}}</a>
 			</td>
 			<td class="addr">{{.Seed}}</td>
 			<td class="addr" style="text-align: right;">{{.SeedNum}}</td>
@@ -44,8 +44,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/rwalk/tokens/list/sequential/[nft_contract_addr]/[offset]/[limit]</br/>
+	API: /api/randomwalk/tokens/list/sequential</br/>
 
-	Example: /api/rwalk/tokens/list/sequential/{{.RWalkAddr}}/0/1000
+	Example: /api/randomwalk/tokens/list/sequential
 </code>
 </body>

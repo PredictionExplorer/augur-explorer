@@ -3,7 +3,6 @@ package cosmicgame
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -12,17 +11,17 @@ import (
 )
 
 // GET /api/cosmicgame/cst/metadata/:token_id — OpenSea-compatible metadata JSON (image hosted under /images/...).
-// Uses the same token row as /cst/info. Requires NFT_ASSETS_PUBLIC_BASE.
+// Uses the same token row as /cst/info. Image base defaults to this API's origin + /images; optional NFT_ASSETS_PUBLIC_BASE overrides.
 func api_cosmic_game_cst_metadata(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !Enabled || !dbInitialized() {
 		common.RespondErrorJSON(c, "CosmicGame module or database not available")
 		return
 	}
-	base := strings.TrimRight(strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")), "/")
+	base := common.NFTImagePublicBase(c)
 	if base == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "NFT_ASSETS_PUBLIC_BASE is not set (public base for /images, no trailing slash)",
+			"error": "cannot derive public /images base URL (set Host or NFT_ASSETS_PUBLIC_BASE)",
 		})
 		return
 	}

@@ -34,7 +34,7 @@
 	</tr>
 	<tr>
 		<td>Current Owner</td>
-		<td><a class="addr" href="/black/rwalk/user/info/{{.TokenInfo.CurOwnerAid}}/{{.RWalkAddr}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
+		<td><a class="addr" href="/black/randomwalk/user/info/{{.TokenInfo.CurOwnerAid}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
 	</tr>
 	<tr>
 		<td>Num Trades</td>
@@ -48,8 +48,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/rwalk/tokens/info/[rwalk_addr]/[token_id]<br/>
+	API: /api/randomwalk/tokens/info/[token_id]<br/>
 
-	Example: /api/rwalk/tokens/info/{{.RWalkAddr}}/{{.TokenInfo.TokenId}}
+	Example: /api/randomwalk/tokens/info/{{.TokenInfo.TokenId}}
 </code>
 </body>

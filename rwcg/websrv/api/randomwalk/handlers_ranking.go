@@ -13,11 +13,18 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
 
-// GET /api/randomwalk/explore/random — legacy parity with Python GET /random (up to 2 token IDs).
+// GET /api/randomwalk/explore/random — legacy parity with Python GET /random (default 2 token IDs).
+// Optional query: limit=1..100 (homepage / legacy random_token uses a higher limit).
 func apiRandomwalkExploreRandom(c *gin.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
+	}
+	limit := 2
+	if s := strings.TrimSpace(c.Query("limit")); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v > 0 && v <= 100 {
+			limit = v
+		}
 	}
 	maxID := int64(3766)
 	if s := strings.TrimSpace(os.Getenv("RANDOMWALK_EXPLORE_MAX_TOKEN_ID")); s != "" {
@@ -26,9 +33,9 @@ func apiRandomwalkExploreRandom(c *gin.Context) {
 		}
 	}
 	addrs := rw_storagew.Get_randomwalk_contract_addresses()
-	ids, err := rw_storagew.Get_explore_random_token_ids(addrs.RandomWalkAid, maxID, 2)
+	ids, err := rw_storagew.Get_explore_random_token_ids(addrs.RandomWalkAid, maxID, limit)
 	if err != nil {
-		ids, err = rw_storagew.Get_fallback_random_token_ids(addrs.RandomWalkAid, maxID, 2)
+		ids, err = rw_storagew.Get_fallback_random_token_ids(addrs.RandomWalkAid, maxID, limit)
 	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

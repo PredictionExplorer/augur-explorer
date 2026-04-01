@@ -15,12 +15,9 @@ func apiRwalkUserInfo(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondErrorJSON(c, "Lookup of NFT token failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
+	p_rwalk_addr := addrs.RandomWalk
 	p_user_aid := c.Param("user_aid")
 	var user_aid int64
 	if len(p_user_aid) > 0 {
@@ -60,12 +57,8 @@ func rwalk_user_info(c *gin.Context) {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
-	p_rwalk_addr := c.Param("rwalk_addr")
-	rwalk_aid, err := rw_storagew.S.Nonfatal_lookup_address_id(p_rwalk_addr)
-	if err != nil {
-		common.RespondError(c, "Lookup of NFT token failed")
-		return
-	}
+	addrs := rwContractAddrs()
+	rwalk_aid := addrs.RandomWalkAid
 	p_user_aid := c.Param("user_aid")
 	var user_aid int64
 	if len(p_user_aid) > 0 {

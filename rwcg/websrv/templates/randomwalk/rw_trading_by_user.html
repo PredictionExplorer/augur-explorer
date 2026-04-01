@@ -7,7 +7,7 @@
 	<h3 class="page_title">Trading History for {{.UserAddr}}<h3>
 <div id="volume_history_graph"></div>
 <h3>Token sales by date</h3>
-<a href="/black/rwalk/statistics/trading_volume/1634858540/1635776941/86400">Trading Volume Chart</a>
+<a href="/black/randomwalk/statistics/trading_volume/1634858540/1635776941/86400">Trading Volume Chart</a>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Block</th>
@@ -29,10 +29,10 @@
 				{{ if eq .OfferType 0 }}BUY{{else}}SELL{{end}}
 			</td>
 			<td class="addr">
-				<a href="/black/rwalk/user/info/{{.SellerAddr}}/{{.RWalkAddr}}">{{.BuyerAddr}}</a>
+				<a href="/black/randomwalk/user/info/{{.BuyerAid}}">{{.BuyerAddr}}</a>
 			</td>
 			<td class="addr">
-				<a href="/black/rwalk/user/info/{{.SellerAddr}}/{{.RWalkAddr}}">{{.SellerAddr}}</a>
+				<a href="/black/randomwalk/user/info/{{.SellerAid}}">{{.SellerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
 			<td class="market_reports_field" style="text-align: center;">
@@ -49,8 +49,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/rwalk/trading/by_user/[user_aid]/[offset]/[limit]<br/>
+	API: /api/randomwalk/trading/by_user/[user_aid]/[offset]/[limit]<br/>
 
-	Example: /api/rwalk/trading/by_user/{{.UserAid}}/0/1000
+	Example: /api/randomwalk/trading/by_user/{{.UserAid}}/0/1000
 </code>
 </body>

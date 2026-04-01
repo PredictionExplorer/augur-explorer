@@ -35,7 +35,7 @@
 	</tr>
 	<tr>
 		<td>Current Owner</td>
-		<td><a class="addr" href="/black/rwalk/user/info/{{.TokenInfo.CurOwnerAid}}/{{.RWalkAddr}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
+		<td><a class="addr" href="/black/randomwalk/user/info/{{.TokenInfo.CurOwnerAid}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
 	</tr>
 </table>
 <table>
@@ -92,18 +92,18 @@
 			</td>
 			<td class="">
 				{{ if eq .RecordType 1 }}
-				<a class="link" href="/black/rwalk/user/info/{{.Record.OwnerAid}}/{{$.RWalkAddr}}">
+				<a class="link" href="/black/randomwalk/user/info/{{.Record.OwnerAid}}">
 					{{.Record.OwnerAddr}}
 				</a>
 				{{ end }}
 				{{ if eq .RecordType 2 }}
 					{{ if eq .Record.OfferType 1 }}
-						<a class="link" href="/black/rwalk/user/info/{{.Record.SellerAid}}/{{$.RWalkAddr}}">
+						<a class="link" href="/black/randomwalk/user/info/{{.Record.SellerAid}}">
 						{{.Record.SellerAddr }}
 						</a>
 					{{end}}
 					{{ if eq .Record.OfferType 0 }}
-						<a class="link" href="/black/rwalk/user/info/{{.Record.BuyerAid}}/{{$.RWalkAddr}}">
+						<a class="link" href="/black/randomwalk/user/info/{{.Record.BuyerAid}}">
 						{{.Record.BuyerAddr}}
 						</a>
 					{{end}}
@@ -112,7 +112,7 @@
 					Token Owner
 				{{ end }}
 				{{ if eq .RecordType 4 }}
-					<a class="link" href="/black/rwalk/user/info/{{.Record.Aid}}/{{$.RWalkAddr}}">
+					<a class="link" href="/black/randomwalk/user/info/{{.Record.Aid}}">
 					{{.Record.Address }}
 					</a>
 				{{ end }}
@@ -120,7 +120,7 @@
 					Token Owner
 				{{ end }}
 				{{ if eq .RecordType 6 }}
-					<a class="link" href="/black/rwalk/user/info/{{.Record.FromAid}}/{{$.RWalkAddr}}">
+					<a class="link" href="/black/randomwalk/user/info/{{.Record.FromAid}}">
 					{{.Record.FromAddr}}
 					</a>
 				{{ end }}
@@ -218,8 +218,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/rwalk/tokens/history/[token_id]/[rwalk_addr]/[offset]/[limit] <br/>
+	API: /api/randomwalk/tokens/history/[token_id]/[offset]/[limit] <br/>
 
-	Example: /api/rwalk/tokens/history/{{.TokenInfo.TokenId}}/{{.RWalkAddr}}/0/1000
+	Example: /api/randomwalk/tokens/history/{{.TokenInfo.TokenId}}/0/1000
 </code>
 </body>
