@@ -52,12 +52,17 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	// NFT metadata + explore (legacy Python backend parity)
 	r.GET("/api/randomwalk/explore/random", apiRandomwalkExploreRandom)
 	r.GET("/api/randomwalk/token-ranking/order", apiRandomwalkTokenRankingOrder)
+	r.GET("/api/randomwalk/vote_count", apiRandomwalkVoteCount)
+	r.GET("/api/randomwalk/ranking/sign-challenge", apiRandomwalkRankingSignChallenge)
+	r.GET("/api/randomwalk/ranking/beauty-pair-ids", apiRandomwalkRankingBeautyPairIDs)
 	r.POST("/api/randomwalk/token-ranking/match", apiRandomwalkTokenRankingMatch)
 	r.GET("/api/randomwalk/metadata/:token_id", apiRandomwalkTokenMetadata)
 
 	// Legacy paths (same responses as old FastAPI app at host root)
 	r.GET("/random", apiRandomwalkExploreRandom)
 	r.GET("/rating_order", apiRandomwalkTokenRankingOrder)
+	r.GET("/vote_count", apiRandomwalkVoteCount)
+	r.POST("/add_game", apiRandomwalkAddGameLegacy)
 	r.GET("/metadata/:token_id", apiRandomwalkTokenMetadata)
 }
 

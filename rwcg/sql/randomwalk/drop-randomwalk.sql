@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS
+	rw_ranking_vote_nonce,
 	rw_ranking_match,
 	rw_token_ranking,
 	rw_token,

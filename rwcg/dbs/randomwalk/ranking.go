@@ -3,6 +3,7 @@ package randomwalk
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 // Get_explore_random_token_ids returns up to limit token_ids with fewest ranking matches, then lowest rating
@@ -65,6 +66,28 @@ func (sw *SQLStorageWrapper) Get_fallback_random_token_ids(rwalk_aid, max_id int
 	return out, rows.Err()
 }
 
+// Has_ranking_vote_for_voter_pair reports whether this voter_aid already has a row for the unordered pair (nft1, nft2).
+func (sw *SQLStorageWrapper) Has_ranking_vote_for_voter_pair(voterAid, nft1, nft2 int64) (bool, error) {
+	if voterAid <= 0 || nft1 < 0 || nft2 < 0 || nft1 == nft2 {
+		return false, nil
+	}
+	var one int
+	err := sw.S.Db().QueryRow(`
+SELECT 1 FROM rw_ranking_match
+WHERE voter_aid = $1
+  AND LEAST(nft1, nft2) = LEAST($2::bigint, $3::bigint)
+  AND GREATEST(nft1, nft2) = GREATEST($2::bigint, $3::bigint)
+LIMIT 1`,
+		voterAid, nft1, nft2).Scan(&one)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Count_ranking_matches returns total pairwise rows (for Elo K factor, legacy parity).
 func (sw *SQLStorageWrapper) Count_ranking_matches() (int64, error) {
 	var n sql.NullInt64
@@ -124,8 +147,14 @@ func (sw *SQLStorageWrapper) Get_rating_pair(nft1, nft2 int64) (r1, r2 float64, 
 }
 
 // Apply_ranking_match_tx inserts a match and updates ratings inside tx (call after BEGIN).
-func Apply_ranking_match_tx(tx *sql.Tx, nft1, nft2 int64, nft1Won bool, raNew, rbNew float64) error {
-	_, err := tx.Exec(`INSERT INTO rw_ranking_match (nft1, nft2, nft1_won) VALUES ($1,$2,$3)`, nft1, nft2, nft1Won)
+// voterAid nil => legacy/admin row without wallet voter (voter_aid column NULL).
+func Apply_ranking_match_tx(tx *sql.Tx, nft1, nft2 int64, nft1Won bool, raNew, rbNew float64, voterAid *int64) error {
+	var err error
+	if voterAid != nil {
+		_, err = tx.Exec(`INSERT INTO rw_ranking_match (nft1, nft2, nft1_won, voter_aid) VALUES ($1,$2,$3,$4)`, nft1, nft2, nft1Won, *voterAid)
+	} else {
+		_, err = tx.Exec(`INSERT INTO rw_ranking_match (nft1, nft2, nft1_won) VALUES ($1,$2,$3)`, nft1, nft2, nft1Won)
+	}
 	if err != nil {
 		return fmt.Errorf("insert match: %w", err)
 	}
@@ -142,4 +171,34 @@ ON CONFLICT (token_id) DO UPDATE SET rating = EXCLUDED.rating, updated_at = NOW(
 		return fmt.Errorf("upsert rating nft2: %w", err)
 	}
 	return nil
+}
+
+// Insert_ranking_vote_nonce stores a one-time nonce for wallet-signed beauty votes.
+func (sw *SQLStorageWrapper) Insert_ranking_vote_nonce(nonce string, ttl time.Duration) error {
+	if ttl <= 0 {
+		ttl = 15 * time.Minute
+	}
+	expires := time.Now().UTC().Add(ttl)
+	_, err := sw.S.Db().Exec(`DELETE FROM rw_ranking_vote_nonce WHERE expires_at < NOW()`)
+	if err != nil {
+		return err
+	}
+	_, err = sw.S.Db().Exec(`INSERT INTO rw_ranking_vote_nonce (nonce, expires_at) VALUES ($1, $2)`, nonce, expires)
+	return err
+}
+
+// Delete_ranking_vote_nonce_if_valid removes nonce if present and unexpired (single row). Returns false if missing/expired.
+func (sw *SQLStorageWrapper) Delete_ranking_vote_nonce_if_valid(tx *sql.Tx, nonce string) (bool, error) {
+	var got string
+	err := tx.QueryRow(
+		`DELETE FROM rw_ranking_vote_nonce WHERE nonce = $1 AND expires_at > NOW() RETURNING nonce`,
+		nonce,
+	).Scan(&got)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

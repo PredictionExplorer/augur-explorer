@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -140,6 +141,7 @@ func main() {
 
 	port_plain := os.Getenv("HTTP_PORT")
 	host_secure := os.Getenv("HTTPS_HOSTNAME")
+	httpsExtra := strings.TrimSpace(os.Getenv("HTTPS_EXTRA_LISTEN_ADDR"))
 
 	r := gin.New()
 	r.LoadHTMLGlob("templates/*/*html")
@@ -188,32 +190,34 @@ func main() {
 	_ = m
 	log.Printf("Listening on port %s", port_plain)
 
-	// Only start TLS listener when HTTPS_HOSTNAME is set (avoids bind :443 permission denied when unset)
+	// TLS: HTTPS_HOSTNAME is the primary bind address (e.g. :443 or 0.0.0.0:443).
+	// Optional HTTPS_EXTRA_LISTEN_ADDR starts a second TLS listener (e.g. :1443) with the same routes and certs.
 	if len(host_secure) > 0 {
-		go func() {
-			cer, err := tls.LoadX509KeyPair(
-				os.Getenv("HOME")+"/configs/server.crt",
-				os.Getenv("HOME")+"/configs/server.key",
-			)
-			if err != nil {
-				log.Println("TLS cert load failed:", err)
-				return
+		certs := loadHTTPSCertificates()
+		if len(certs) == 0 {
+			log.Println("TLS: no certificates loaded; HTTPS listeners not started")
+		} else {
+			tlsConfig := &tls.Config{Certificates: certs}
+			startTLS := func(addr string) {
+				ln, err := net.Listen("tcp", addr)
+				if err != nil {
+					log.Printf("HTTPS bind failed on %q: %v", addr, err)
+					return
+				}
+				log.Printf("HTTPS bound and listening on %s", ln.Addr().String())
+				server := http.Server{
+					Handler:   r,
+					TLSConfig: tlsConfig,
+				}
+				if err := server.ServeTLS(ln, "", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					log.Printf("HTTPS server %s: %v", addr, err)
+				}
 			}
-			tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
-			ln, err := net.Listen("tcp", host_secure)
-			if err != nil {
-				log.Printf("HTTPS bind failed on %q: %v", host_secure, err)
-				return
+			go startTLS(host_secure)
+			if httpsExtra != "" {
+				go startTLS(httpsExtra)
 			}
-			log.Printf("HTTPS bound and listening on %s", ln.Addr().String())
-			server := http.Server{
-				Handler:   r,
-				TLSConfig: tlsConfig,
-			}
-			if err := server.ServeTLS(ln, "", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				log.Printf("HTTPS server: %v", err)
-			}
-		}()
+		}
 	}
 	if len(port_plain) > 0 {
 		go func() {
@@ -227,5 +231,40 @@ func main_page(c *gin.Context) {
 	c.HTML(http.StatusOK, "rw_index.html", gin.H{
 		"title": "RandomWalk & CosmicGame",
 	})
+}
+
+// loadHTTPSCertificates returns TLS cert/key pairs for one listener. Go picks the right leaf cert per TLS SNI
+// when multiple entries are present (e.g. api1.randomwalknft.com + randomwalknft.com on :443).
+//
+// Primary pair: TLS_CERT_FILE + TLS_KEY_FILE, or $HOME/configs/server.crt + server.key.
+// Optional second pair (another domain): TLS_CERT_FILE_2 + TLS_KEY_FILE_2.
+func loadHTTPSCertificates() []tls.Certificate {
+	home := os.Getenv("HOME")
+	cert1 := strings.TrimSpace(os.Getenv("TLS_CERT_FILE"))
+	key1 := strings.TrimSpace(os.Getenv("TLS_KEY_FILE"))
+	if cert1 == "" {
+		cert1 = filepath.Join(home, "configs", "server.crt")
+	}
+	if key1 == "" {
+		key1 = filepath.Join(home, "configs", "server.key")
+	}
+	var out []tls.Certificate
+	if cer, err := tls.LoadX509KeyPair(cert1, key1); err == nil {
+		out = append(out, cer)
+		log.Printf("TLS: loaded certificate %q", cert1)
+	} else {
+		log.Printf("TLS: primary cert load failed (%q + %q): %v", cert1, key1, err)
+	}
+	cert2 := strings.TrimSpace(os.Getenv("TLS_CERT_FILE_2"))
+	key2 := strings.TrimSpace(os.Getenv("TLS_KEY_FILE_2"))
+	if cert2 != "" && key2 != "" {
+		if cer, err := tls.LoadX509KeyPair(cert2, key2); err == nil {
+			out = append(out, cer)
+			log.Printf("TLS: loaded additional certificate %q (SNI will choose between %d certs)", cert2, len(out))
+		} else {
+			log.Printf("TLS: TLS_CERT_FILE_2 load failed: %v", err)
+		}
+	}
+	return out
 }
 
