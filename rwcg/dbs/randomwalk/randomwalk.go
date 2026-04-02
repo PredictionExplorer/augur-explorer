@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
 	rwp "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/randomwalk"
 )
@@ -282,11 +283,12 @@ func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *rwp.Transfer) {
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	from_aid:=sw.S.Lookup_or_create_address(evt.From,evt.BlockNum,evt.TxId)
 	to_aid:=sw.S.Lookup_or_create_address(evt.To,evt.BlockNum,evt.TxId)
+	var zero common.Address
 	otype := int(0)
-	if evt.From == "0x0000000000000000000000000000000000000000" {
+	if common.HexToAddress(evt.From) == zero {
 		otype = 1
 	}
-	if evt.To == "0x0000000000000000000000000000000000000000" {
+	if common.HexToAddress(evt.To) == zero {
 		otype = 2
 	}
 	var query string

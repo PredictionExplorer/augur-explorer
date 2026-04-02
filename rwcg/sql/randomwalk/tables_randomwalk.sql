@@ -2,7 +2,7 @@ CREATE TABLE rw_token(
 	token_id		BIGINT NOT NULL,
 	rwalk_aid		BIGINT NOT NULL,
 	cur_owner_aid	BIGINT NOT NULL,
-	seed_hex		TEXT DEFAULT '',
+	seed_hex		TEXT DEFAULT NULL,
 	seed_num		DECIMAL DEFAULT 0,
 	last_name		TEXT DEFAULT '',
 	last_price		DECIMAL DEFAULT 0,

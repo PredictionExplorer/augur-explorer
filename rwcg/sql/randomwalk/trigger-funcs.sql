@@ -313,8 +313,10 @@ BEGIN
 		WHERE token_id=NEW.token_id AND rwalk_aid=NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO rw_token(rwalk_aid,token_id,cur_owner_aid)
-			VALUES(NEW.contract_aid,NEW.token_id,NEW.to_aid);
+		-- Use NULL, not default '' : UNIQUE(seed_hex) allows many NULLs but only one empty string,
+		-- so mint/burn placeholder rows must not all share ''.
+		INSERT INTO rw_token(rwalk_aid,token_id,cur_owner_aid,seed_hex)
+			VALUES(NEW.contract_aid,NEW.token_id,NEW.to_aid,NULL);
 	END IF;
 	RETURN NEW;
 END;

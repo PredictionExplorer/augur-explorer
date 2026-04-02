@@ -181,7 +181,7 @@ func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.TokenId = eth_evt.TokenId.Int64()
+	evt.TokenId = log.Topics[1].Big().Int64()
 	evt.Destination = eth_evt.Destination.String()
 	evt.Amount = eth_evt.Amount.String()
 
