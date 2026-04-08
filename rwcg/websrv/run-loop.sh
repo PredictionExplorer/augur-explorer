@@ -1,5 +1,5 @@
 #!/bin/bash
-. $HOME/configs/web-config.env
+. $HOME/configs/rwalk-api-config.env
 LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`
 while true

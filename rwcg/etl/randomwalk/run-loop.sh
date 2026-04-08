@@ -1,5 +1,5 @@
 #!/bin/bash
-. $HOME/configs/etl-config.env
+. $HOME/configs/rwalk-etl-config.env
 LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`
 while true

@@ -87,7 +87,7 @@ func fetchExploreRandomTokenIDs(limit int) ([]int64, error) {
 	return ids, err
 }
 
-// GET /api/randomwalk/explore/random — legacy parity with Python GET /random (default 2 token IDs).
+// GET /api/randomwalk/explore/random and GET /api/randomwalk/random — default 2 token IDs unless ?limit=.
 // Optional query: limit=1..100 (homepage / legacy random_token uses a higher limit).
 func apiRandomwalkExploreRandom(c *gin.Context) {
 	if !dbInitialized() {
@@ -171,7 +171,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 	})
 }
 
-// GET /vote_count and GET /api/randomwalk/vote_count — legacy FastAPI parity:
+// GET /api/randomwalk/vote_count — total pairwise beauty votes (rw_ranking_match count).
 // total pairwise comparisons (Python GameModel count == rows in rw_ranking_match).
 func apiRandomwalkVoteCount(c *gin.Context) {
 	if !dbInitialized() {
@@ -186,7 +186,7 @@ func apiRandomwalkVoteCount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"total_count": n})
 }
 
-// GET /api/randomwalk/token-ranking/order — legacy parity with GET /rating_order.
+// GET /api/randomwalk/token-ranking/order and GET /api/randomwalk/rating_order — token ids by Elo ascending.
 func apiRandomwalkTokenRankingOrder(c *gin.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -234,7 +234,7 @@ func apiRandomwalkTokenRankingMatch(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"nft1": body.Nft1, "nft2": body.Nft2, "rating_nft1": raNew, "rating_nft2": rbNew})
 }
 
-// addGameLegacyBody matches legacy FastAPI POST /add_game (beauty contest frontend).
+// addGameLegacyBody matches POST /api/randomwalk/add_game (beauty contest frontend).
 // Wallet path: sign_nonce + signature + chain_id (EIP-191 personal_sign over beautyVoteSignMessage).
 type addGameLegacyBody struct {
 	Nft1      int64  `json:"nft1"`
@@ -356,7 +356,7 @@ func performSignedBeautyVote(nft1, nft2 int64, nft1Won bool, chainID int64, sign
 
 var errRankingDuplicateVoterPair = errors.New("randomwalk: already voted on this pair")
 
-// GET /api/randomwalk/ranking/sign-challenge — issue one-time nonce for wallet-signed /add_game.
+// GET /api/randomwalk/ranking/sign-challenge — issue one-time nonce for wallet-signed /api/randomwalk/add_game.
 func apiRandomwalkRankingSignChallenge(c *gin.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -375,7 +375,7 @@ func apiRandomwalkRankingSignChallenge(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"nonce": nonce})
 }
 
-// POST /add_game — beauty contest with EIP-191 wallet signature; stores voter_aid and enforces one vote per pair per wallet.
+// POST /api/randomwalk/add_game — beauty contest with EIP-191 wallet signature; stores voter_aid and enforces one vote per pair per wallet.
 // Response shape matches actionResponseSchema: {"result":"success"}.
 func apiRandomwalkAddGameLegacy(c *gin.Context) {
 	if !dbInitialized() {

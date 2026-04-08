@@ -7,7 +7,7 @@ import (
 )
 
 // Get_explore_random_token_ids returns up to limit token_ids with fewest ranking matches, then lowest rating
-// (parity with legacy Python GET /random), scoped to one RandomWalk contract and token_id <= max_id.
+// (GET /api/randomwalk/random), scoped to one RandomWalk contract and token_id <= max_id.
 func (sw *SQLStorageWrapper) Get_explore_random_token_ids(rwalk_aid, max_id int64, limit int) ([]int64, error) {
 	if limit <= 0 {
 		limit = 2
@@ -101,7 +101,7 @@ func (sw *SQLStorageWrapper) Count_ranking_matches() (int64, error) {
 	return 0, nil
 }
 
-// Get_rating_order returns all token_ids ordered by rating ascending (legacy GET /rating_order).
+// Get_rating_order returns all token_ids ordered by rating ascending (GET /api/randomwalk/rating_order).
 func (sw *SQLStorageWrapper) Get_rating_order(rwalk_aid int64) ([]int64, error) {
 	q := `
 SELECT t.token_id
