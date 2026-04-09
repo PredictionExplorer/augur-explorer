@@ -133,7 +133,7 @@
 				{{- range $i, $holder := .Stats.TopHolders}}
 					<tr>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{$holder.OwnerAddr}}">{{$holder.OwnerAddr}}</a>
+							{{ethAddrLink $holder.OwnerAddr}}
 						</td>
 						<td class="right">{{printf "%.2f" $holder.BalanceFloat}}</td>
 						<td class="right">{{printf "%.2f" $holder.PercentOfSupply}}%</td>

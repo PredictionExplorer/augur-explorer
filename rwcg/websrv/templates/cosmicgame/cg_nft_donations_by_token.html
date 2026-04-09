@@ -39,10 +39,10 @@
 							<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
 						</td>
 						<td>{{.Tx.DateTime}}</td>
-						<td class="center"><a href="/black/cosmicgame/round/{{.RoundNum}}">{{.RoundNum}}</a></td>
+						<td class="center"><a href="/black/cosmicgame/round/info/{{.RoundNum}}">{{.RoundNum}}</a></td>
 						<td class="center">{{.Index}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+							{{ethAddrLink .DonorAddr}}
 						</td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="center">{{.NFTTokenId}}</td>

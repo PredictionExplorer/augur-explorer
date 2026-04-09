@@ -27,7 +27,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Last Bidder Address</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.LastBidderAddress}}">{{.LastBidderAddress}}</a>
+						{{ethAddrLink .LastBidderAddress}}
 					</div>
 				</div>
 				<div class="detail-row">
@@ -43,7 +43,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Champion Address</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.EnduranceChampionAddress}}">{{.EnduranceChampionAddress}}</a>
+						{{ethAddrLink .EnduranceChampionAddress}}
 					</div>
 				</div>
 				<div class="detail-row">
@@ -59,7 +59,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Bidder Address</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.LastCstBidderAddress}}">{{.LastCstBidderAddress}}</a>
+						{{ethAddrLink .LastCstBidderAddress}}
 					</div>
 				</div>
 			</div>

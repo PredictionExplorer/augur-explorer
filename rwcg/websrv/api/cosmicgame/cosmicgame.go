@@ -237,7 +237,8 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/statistics/unique/stakers/rwalk", cosmic_game_unique_stakers_rwalk)
 	r.GET("/black/cosmicgame/statistics/unique/stakers/both", cosmic_game_unique_stakers_both)
 	r.GET("/black/cosmicgame/rounds/list", cosmic_game_prize_claims)
-	r.GET("/black/cosmicgame/rounds/info/:prize_num", cosmic_game_round_info)
+	r.GET("/black/cosmicgame/round/info/:prize_num", cosmic_game_round_info)
+	r.GET("/black/cosmicgame/rounds/info/:prize_num", cosmic_game_round_info) // alias
 	r.GET("/black/cosmicgame/prizes/history/global", cosmic_game_global_claim_history_detail)
 	r.GET("/black/cosmicgame/prizes/history/by_user/:user_addr/:offset/:limit", cosmic_game_prize_history_detail_by_user)
 	r.GET("/black/cosmicgame/prizes/eth/all", cosmic_game_prizes_eth_all)

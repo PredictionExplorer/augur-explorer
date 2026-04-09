@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -144,6 +145,11 @@ func main() {
 	httpsExtra := strings.TrimSpace(os.Getenv("HTTPS_EXTRA_LISTEN_ADDR"))
 
 	r := gin.New()
+	r.SetFuncMap(template.FuncMap{
+		"isEthAddr":     isEthAddr,
+		"ethAddrLink":   ethAddrLink,
+		"ethAddrLinkTo": ethAddrLinkTo,
+	})
 	r.LoadHTMLGlob("templates/*/*html")
 
 	// Don't trust all proxies (avoids GIN-debug warning; set trusted proxies explicitly if behind one)

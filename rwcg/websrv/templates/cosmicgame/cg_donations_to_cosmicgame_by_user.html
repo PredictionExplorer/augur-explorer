@@ -48,7 +48,7 @@
 						</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+							{{ethAddrLink .DonorAddr}}
 						</td>
 						<td class="right">{{printf "%.6f" .AmountEth}}</td>
 						<td class="center">{{.CGRecordId}}</td>

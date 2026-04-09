@@ -62,7 +62,7 @@
 						<td class="right">{{printf "%.6f" .AmountEth}}</td>
 						<td class="center">{{.TokenId}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="center">
 							{{if .Claimed}}

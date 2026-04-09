@@ -35,10 +35,10 @@
 						<td class="center">{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.FromAddr}}">{{.FromAddr}}</a>
+							{{ethAddrLink .FromAddr}}
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.ToAddr}}">{{.ToAddr}}</a>
+							{{ethAddrLink .ToAddr}}
 						</td>
 						<td class="center">
 							<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.TokenId}}</a>

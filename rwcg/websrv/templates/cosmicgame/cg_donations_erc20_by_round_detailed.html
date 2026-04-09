@@ -40,12 +40,12 @@
 						</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+							{{ethAddrLink .DonorAddr}}
 						</td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="right">{{printf "%.6f" .AmountEth}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 					</tr>
 				{{- end}}

@@ -36,10 +36,10 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.FromAddr}}">{{.FromAddr}}</a>
+							{{ethAddrLink .FromAddr}}
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.ToAddr}}">{{.ToAddr}}</a>
+							{{ethAddrLink .ToAddr}}
 						</td>
 						<td class="right monospace">{{.Value}}</td>
 						<td class="right">{{printf "%.2f" .ValueFloat}}</td>

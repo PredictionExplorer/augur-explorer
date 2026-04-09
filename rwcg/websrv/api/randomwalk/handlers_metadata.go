@@ -13,17 +13,16 @@ import (
 
 // GET /api/randomwalk/metadata/:token_id and GET /metadata/:token_id — ERC-721 metadata JSON.
 // On-chain baseURI is often https://<api-host>/metadata/ (e.g. legacy randomwalknft-api.com or api1.randomwalknft.com).
-// Image/animation URLs use the same API host’s /images/... unless NFT_ASSETS_PUBLIC_BASE is set.
-// Image URLs use this host's /images/... (see NFT_ASSETS_ROOT). Optional NFT_ASSETS_PUBLIC_BASE overrides the absolute prefix.
+// image/animation_url use MetadataRandomWalkImagePublicBase (canonical https://randomwalknft.com/images/... unless NFT_ASSETS_PUBLIC_BASE is set).
 func apiRandomwalkTokenMetadata(c *gin.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	base := common.NFTImagePublicBase(c)
+	base := common.MetadataRandomWalkImagePublicBase()
 	if base == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "cannot derive public /images base URL (set Host or NFT_ASSETS_PUBLIC_BASE)",
+			"error": "cannot derive public /images base URL (set NFT_ASSETS_PUBLIC_BASE)",
 		})
 		return
 	}

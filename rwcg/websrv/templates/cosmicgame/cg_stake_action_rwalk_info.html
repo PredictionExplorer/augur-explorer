@@ -56,7 +56,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Staker Address</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}">{{.CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}</a>
+						{{ethAddrLink .CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}
 					</div>
 				</div>
 			</div>
@@ -97,7 +97,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Staker Address</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}">{{.CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}</a>
+						{{ethAddrLink .CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}
 					</div>
 				</div>
 			</div>

@@ -32,7 +32,7 @@
 				{{- range $i, $change := .UniqueStakersBoth}}
 					<tr>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
+							{{ethAddrLink .StakerAddr}}
 						</td>
 						<td class="center">
 							<a href="/black/cosmicgame/staking/cst/staked_tokens/by_user/{{.StakerAddr}}">{{.CSTStats.TotalTokensStaked}}</a>

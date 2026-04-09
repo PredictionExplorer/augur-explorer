@@ -30,7 +30,7 @@
 				{{- range $i, $change := .CosmicTokenBalances}}
 					<tr>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.OwnerAddr}}">{{.OwnerAddr}}</a>
+							{{ethAddrLink .OwnerAddr}}
 						</td>
 						<td class="right">{{printf "%.2f" .BalanceFloat}}</td>
 					</tr>

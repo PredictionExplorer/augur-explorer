@@ -37,10 +37,10 @@
 				{{- range $i, $change := .Rounds}}
 					<tr>
 						<td>
-							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.DateTime}}</a>
+							<a href="/black/cosmicgame/round/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.DateTime}}</a>
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.MainPrize.WinnerAddr}}">{{.MainPrize.WinnerAddr}}</a>
+							{{ethAddrLink .MainPrize.WinnerAddr}}
 						</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right" title="Seed: {{.MainPrize.Seed}}">{{printf "%.6f" .MainPrize.EthAmountEth}} ETH</td>

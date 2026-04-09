@@ -391,7 +391,7 @@
 				{{- range $i, $change := .Prizes}}
 					<tr>
 						<td>
-							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.BlockNum}}</a>
+							<a href="/black/cosmicgame/round/info/{{.RoundNum}}">{{.ClaimPrizeTx.Tx.BlockNum}}</a>
 						</td>
 						<td>{{.ClaimPrizeTx.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .MainPrize.EthAmountEth}}</td>

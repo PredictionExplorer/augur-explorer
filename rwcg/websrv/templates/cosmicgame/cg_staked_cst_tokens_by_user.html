@@ -27,7 +27,7 @@
 					<nav>
 						<ul>
 							<li style="width: 100%;">
-								<a class="btn_link" href="/black/cosmicgame/user/info/{{.UserAddr}}">Back to User Info</a>
+								{{if isEthAddr .UserAddr}}<a class="btn_link" href="/black/cosmicgame/user/info/{{.UserAddr}}">Back to User Info</a>{{else}}<span class="btn_link">Back to User Info</span>{{end}}
 								<span></span><span></span><span></span><span></span>
 							</li>
 						</ul>
@@ -50,7 +50,7 @@
 							<a href="/black/cosmicgame/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>
 						</td>
 						<td class="center">
-							<a href="/black/cosmicgame/staking/cst/actions/info/{{.StakeActionId}}">{{.StakeActionId}}</a>
+							{{if gt .StakeActionId 0}}<a href="/black/cosmicgame/staking/cst/actions/info/{{.StakeActionId}}">{{.StakeActionId}}</a>{{else}}{{.StakeActionId}}{{end}}
 						</td>
 					</tr>
 				{{- end}}

@@ -43,7 +43,7 @@
 						<td>{{.Tx.EvtLogId}}</td>
 						<td>{{.Tx.BlockNum}}</td>
 						<td>
-							<a href="/black/cosmicgame/staking/cst/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>
+							{{if gt .ActionId 0}}<a href="/black/cosmicgame/staking/cst/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>{{else}}{{.Tx.DateTime}}{{end}}
 						</td>
 						<td class="center">
 							{{if eq .ActionType 0}}
@@ -56,7 +56,7 @@
 						<td class="center">{{.RoundNum}}</td>
 						<td class="center">{{.ActionId}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.StakerAddr}}">{{.StakerAddr}}</a>
+							{{ethAddrLinkTo "/black/cosmicgame/staking/cst/rewards/collected/by_user/" .StakerAddr}}
 						</td>
 						<td class="right" {{if eq .NumStakedNFTs 0}}style="color: #ff4444;"{{end}}>
 							{{.NumStakedNFTs}}

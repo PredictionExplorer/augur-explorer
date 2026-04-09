@@ -35,7 +35,7 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">{{printf "%.6f" .Amount}} ETH</td>

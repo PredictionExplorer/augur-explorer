@@ -42,7 +42,7 @@
 					<tr>
 						<td>{{.Tx.BlockNum}}</td>
 						<td>
-							<a href="/black/cosmicgame/staking/rwalk/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>
+							{{if gt .ActionId 0}}<a href="/black/cosmicgame/staking/rwalk/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>{{else}}{{.Tx.DateTime}}{{end}}
 						</td>
 						<td class="center">
 							{{if eq .ActionType 0}}

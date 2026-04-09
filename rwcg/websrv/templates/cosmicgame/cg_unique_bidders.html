@@ -31,7 +31,7 @@
 				{{- range $i, $change := .UniqueBidders}}
 					<tr>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+							{{ethAddrLink .BidderAddr}}
 						</td>
 						<td class="center">{{.NumBids}}</td>
 						<td class="right">{{printf "%.6f" .MaxBidAmountEth}}</td>

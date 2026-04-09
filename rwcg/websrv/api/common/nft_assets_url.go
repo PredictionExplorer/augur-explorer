@@ -33,3 +33,16 @@ func NFTImagePublicBase(c *gin.Context) string {
 	}
 	return scheme + "://" + host + "/images"
 }
+
+// MetadataRandomWalkImagePublicBase is the absolute URL prefix (…/images, no trailing slash) for Random Walk
+// ERC-721 metadata JSON fields `image` and `animation_url`.
+//
+// When NFT_ASSETS_PUBLIC_BASE is set, it is used (same as NFTImagePublicBase). When unset, this returns
+// https://randomwalknft.com/images so metadata served from dev/staging/local hosts does not embed
+// localhost in URLs that wallets and marketplaces cache on-chain.
+func MetadataRandomWalkImagePublicBase() string {
+	if b := strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")); b != "" {
+		return strings.TrimRight(b, "/")
+	}
+	return "https://randomwalknft.com/images"
+}

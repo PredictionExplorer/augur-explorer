@@ -48,7 +48,7 @@
 							{{ if eq 2 .BidType}}<span class="badge badge-warning">Cosmic Token</span>{{end}}
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+							{{ethAddrLink .BidderAddr}}
 						</td>
 						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
 						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>

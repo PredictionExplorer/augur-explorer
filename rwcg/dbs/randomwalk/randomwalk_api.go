@@ -1470,14 +1470,16 @@ func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit in
 	records := make([]rwp.API_Offer,0,16)
 
 	var query string
+	// Sales are ordered by purchase time (rw_item_bought.time_stamp), not offer creation time,
+	// so "latest sale" matches the most recent on-chain buy. Tx hash is the purchase tx.
 	query = "SELECT " +
 				"o.id,"+
 				"o.evtlog_id,"+
 				"o.block_num,"+
-				"o.tx_id, "+
+				"ib.tx_id, "+
 				"tx.tx_hash,"+
-				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
-				"o.time_stamp," +
+				"EXTRACT(EPOCH FROM ib.time_stamp)::BIGINT as ts,"+
+				"ib.time_stamp," +
 				"o.offer_id,"+
 				"o.otype,"+
 				"o.seller_aid,"+
@@ -1495,14 +1497,15 @@ func (sw *SQLStorageWrapper) Get_sale_history(contract_aid int64,offset,limit in
 				"rwa.addr "+
 			"FROM "+
 				"rw_new_offer o "+
-				"JOIN transaction tx ON o.tx_id=tx.id "+
+				"JOIN rw_item_bought ib ON ib.contract_aid=o.contract_aid AND ib.offer_id=o.offer_id "+
+				"JOIN transaction tx ON ib.tx_id=tx.id "+
 				"JOIN address sa ON o.seller_aid=sa.address_id "+
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
 				"JOIN address ca ON o.contract_aid=ca.address_id "+
 				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
 				"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) "+
 			"WHERE (active = 'f') AND (o.contract_aid=$3) AND (can.id IS NULL) "+
-			"ORDER BY o.id " +
+				"ORDER BY ib.time_stamp ASC, o.id ASC " +
 			"OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit,contract_aid)

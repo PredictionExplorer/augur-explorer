@@ -75,7 +75,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Winner Address</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.RoundInfo.MainPrize.WinnerAddr}}">{{.RoundInfo.MainPrize.WinnerAddr}}</a>
+						{{ethAddrLink .RoundInfo.MainPrize.WinnerAddr}}
 					</div>
 				</div>
 				<div class="detail-row">
@@ -96,7 +96,7 @@
 						<div class="detail-row">
 							<div class="detail-label">Winner</div>
 							<div class="detail-value monospace">
-								<a href="/black/cosmicgame/user/info/{{.RoundInfo.EnduranceChampion.WinnerAddr}}">{{.RoundInfo.EnduranceChampion.WinnerAddr}}</a>
+								{{ethAddrLink .RoundInfo.EnduranceChampion.WinnerAddr}}
 							</div>
 						</div>
 						<div class="detail-row">
@@ -116,7 +116,7 @@
 						<div class="detail-row">
 							<div class="detail-label">Winner</div>
 							<div class="detail-value monospace">
-								<a href="/black/cosmicgame/user/info/{{.RoundInfo.LastCstBidder.WinnerAddr}}">{{.RoundInfo.LastCstBidder.WinnerAddr}}</a>
+								{{ethAddrLink .RoundInfo.LastCstBidder.WinnerAddr}}
 							</div>
 						</div>
 						<div class="detail-row">
@@ -136,7 +136,7 @@
 						<div class="detail-row">
 							<div class="detail-label">Winner</div>
 							<div class="detail-value monospace">
-								<a href="/black/cosmicgame/user/info/{{.RoundInfo.ChronoWarrior.WinnerAddr}}">{{.RoundInfo.ChronoWarrior.WinnerAddr}}</a>
+								{{ethAddrLink .RoundInfo.ChronoWarrior.WinnerAddr}}
 							</div>
 						</div>
 						<div class="detail-row">
@@ -264,7 +264,7 @@
 							{{ if eq 15 .RecordType}}<span class="badge badge-warning">Staking Deposit ETH</span>{{end}}
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="right">
 							{{ if or (eq 0 .RecordType) (eq 7 .RecordType) (eq 10 .RecordType) (eq 15 .RecordType) }}
@@ -304,7 +304,7 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="center">{{.WinnerIndex}}</td>
 						<td class="center">{{.RoundNum}}</td>
@@ -333,7 +333,7 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="center">{{.WinnerIndex}}</td>
 						<td class="center">{{.RoundNum}}</td>
@@ -361,7 +361,7 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="center">{{.WinnerIndex}}</td>
 						<td class="center">{{.RoundNum}}</td>
@@ -390,7 +390,7 @@
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.Index}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+							{{ethAddrLink .DonorAddr}}
 						</td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="center">{{.NFTTokenId}}</td>
@@ -416,7 +416,7 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+							{{ethAddrLink .DonorAddr}}
 						</td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="right">{{printf "%.4f" .AmountEth}}</td>
@@ -426,6 +426,8 @@
 		</div>
 
 		<div class="api-info">
+			<strong>HTML page:</strong><br/>
+			<code>/black/cosmicgame/round/info/{{.RoundInfo.RoundNum}}</code><br/><br/>
 			<strong>API Endpoint:</strong><br/>
 			<code>/api/cosmicgame/rounds/info/[prize_num]</code><br/><br/>
 			<strong>Example:</strong><br/>

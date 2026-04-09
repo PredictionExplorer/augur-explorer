@@ -385,6 +385,8 @@ type CGRoundStats struct {
 	// Round timing fields (added 2025-11-06)
 	ParamWindowStartTime		string	// ISO 8601 format
 	ActivationTime				int64	// Unix seconds (0 = not set); matches contract roundActivationTime()
+	// Seconds; contract delayDurationBeforeRoundActivation() (global config, not per-round DB column)
+	DelayDurationBeforeRoundActivation	int64
 	ParamWindowDurationSeconds	int64
 	RoundStartTime				string	// ISO 8601 format
 	RoundEndTime				string	// ISO 8601 format

@@ -59,13 +59,13 @@
 				<div class="detail-row">
 					<div class="detail-label">Original Winner</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.TokenInfo.WinnerAddr}}">{{.TokenInfo.WinnerAddr}}</a>
+						{{ethAddrLink .TokenInfo.WinnerAddr}}
 					</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Current Owner</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.TokenInfo.CurOwnerAddr}}">{{.TokenInfo.CurOwnerAddr}}</a>
+						{{ethAddrLink .TokenInfo.CurOwnerAddr}}
 					</div>
 				</div>
 				<div class="detail-row">
@@ -74,7 +74,7 @@
 						{{ if eq 1 .TokenInfo.RecordType}}
 							<span class="badge badge-info">Token won in raffle</span>
 						{{else}}
-							Main prize: <a href="/black/cosmicgame/rounds/info/{{.TokenInfo.RoundNum}}">Round #{{.TokenInfo.RoundNum}}</a>
+							Main prize: <a href="/black/cosmicgame/round/info/{{.TokenInfo.RoundNum}}">Round #{{.TokenInfo.RoundNum}}</a>
 						{{ end }}
 					</div>
 				</div>
@@ -105,7 +105,7 @@
 				<div class="detail-row">
 					<div class="detail-label">Staked Owner</div>
 					<div class="detail-value monospace">
-						<a href="/black/cosmicgame/user/info/{{.TokenInfo.StakedOwnerAddr}}">{{.TokenInfo.StakedOwnerAddr}}</a>
+						{{ethAddrLink .TokenInfo.StakedOwnerAddr}}
 					</div>
 				</div>
 				<div class="detail-row">
@@ -156,10 +156,10 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.FromAddr}}">{{.FromAddr}}</a>
+							{{ethAddrLink .FromAddr}}
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.ToAddr}}">{{.ToAddr}}</a>
+							{{ethAddrLink .ToAddr}}
 						</td>
 					</tr>
 				{{- end}}

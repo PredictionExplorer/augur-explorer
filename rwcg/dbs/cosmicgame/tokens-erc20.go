@@ -105,7 +105,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_token_statistics() p.CGCosmicTokenStats 
 	}
 	
 	// Chrono warrior prizes
-	query = "SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM "+sw.S.SchemaName()+".cg_chrono_warrior WHERE cst_amount > 0"
+	query = "SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM "+sw.S.SchemaName()+".cg_chrono_warrior_prize WHERE cst_amount > 0"
 	row = sw.S.Db().QueryRow(query)
 	err = row.Scan(&stats.GivenAsChronoWarriorPrizes, &stats.GivenAsChronoWarriorPrizesEth)
 	if err != nil {
@@ -223,7 +223,7 @@ func (sw *SQLStorageWrapper) Get_user_cosmic_token_summary(user_aid int64) p.CGU
 	}
 	
 	// Earned from chrono warrior
-	query = "SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM "+sw.S.SchemaName()+".cg_chrono_warrior WHERE winner_aid=$1 AND cst_amount > 0"
+	query = "SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM "+sw.S.SchemaName()+".cg_chrono_warrior_prize WHERE winner_aid=$1 AND cst_amount > 0"
 	row = sw.S.Db().QueryRow(query, user_aid)
 	err = row.Scan(&summary.EarnedFromChronoWarrior, &summary.EarnedFromChronoWarriorEth)
 	if err != nil {

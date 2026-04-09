@@ -417,7 +417,20 @@ func cosmic_game_index_page(c *gin.Context) {
 		common.RespondError(c,"Database link wasn't configured")
 		return
 	}
-	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
+	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num)
+	if EthClient != nil {
+		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
+			var copts bind.CallOpts
+			if d, err := contract.DelayDurationBeforeRoundActivation(&copts); err == nil {
+				cur_round_stats.DelayDurationBeforeRoundActivation = d.Int64()
+			}
+			if cur_round_stats.ActivationTime == 0 && round_num >= 0 {
+				if actTime, err := contract.RoundActivationTime(&copts); err == nil {
+					cur_round_stats.ActivationTime = actTime.Int64()
+				}
+			}
+		}
+	}
 	cg_balance := get_cosmic_game_contract_balance()
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);

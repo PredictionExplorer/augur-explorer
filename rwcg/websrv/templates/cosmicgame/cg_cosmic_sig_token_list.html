@@ -52,10 +52,10 @@
 						</td>
 						<td class="center">{{.TokenId}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+							{{ethAddrLink .WinnerAddr}}
 						</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.CurOwnerAddr}}">{{.CurOwnerAddr}}</a>
+							{{ethAddrLink .CurOwnerAddr}}
 						</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="center">

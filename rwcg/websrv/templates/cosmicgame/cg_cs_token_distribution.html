@@ -30,7 +30,7 @@
 				{{- range $i, $change := .CosmicSignatureTokenDistribution}}
 					<tr>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.OwnerAddr}}">{{.OwnerAddr}}</a>
+							{{ethAddrLink .OwnerAddr}}
 						</td>
 						<td class="right">{{.NumTokens}}</td>
 					</tr>

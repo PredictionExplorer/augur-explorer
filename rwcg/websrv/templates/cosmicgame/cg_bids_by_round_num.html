@@ -44,7 +44,7 @@
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="monospace">
-							<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+							{{ethAddrLink .BidderAddr}}
 						</td>
 						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
 						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>

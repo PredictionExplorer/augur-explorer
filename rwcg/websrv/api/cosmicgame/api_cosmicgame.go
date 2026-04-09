@@ -185,12 +185,17 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 
 	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
 	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num)
-	// When DB has no activation time for current round, fill from chain (Unix seconds)
-	if cur_round_stats.ActivationTime == 0 && round_num >= 0 && EthClient != nil {
+	// Live contract: delay before round activation (always); activation time when DB has none
+	if EthClient != nil {
 		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
 			var copts bind.CallOpts
-			if actTime, err := contract.RoundActivationTime(&copts); err == nil {
-				cur_round_stats.ActivationTime = actTime.Int64()
+			if d, err := contract.DelayDurationBeforeRoundActivation(&copts); err == nil {
+				cur_round_stats.DelayDurationBeforeRoundActivation = d.Int64()
+			}
+			if cur_round_stats.ActivationTime == 0 && round_num >= 0 {
+				if actTime, err := contract.RoundActivationTime(&copts); err == nil {
+					cur_round_stats.ActivationTime = actTime.Int64()
+				}
 			}
 		}
 	}

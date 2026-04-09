@@ -42,13 +42,13 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">
-							<a href="/black/cosmicgame/rounds/info/{{.RoundNum}}">{{.RoundNum}}</a>
+							<a href="/black/cosmicgame/round/info/{{.RoundNum}}">{{.RoundNum}}</a>
 						</td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="right">{{printf "%.6f" .AmountEth}}</td>
 						<td class="monospace">
 							{{if .DonorAddr}}
-								<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+								{{ethAddrLink .DonorAddr}}
 							{{else}}
 								<em style="color: #888;">Multiple donors</em>
 							{{end}}
