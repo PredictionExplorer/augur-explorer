@@ -232,6 +232,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"StakingAmountEth" : safeFloat64(staking_amount_eth),
 		"TotalPrizes": bw_stats_copy.TotalPrizes,
 		"TotalPrizeAwards": bw_stats_copy.TotalPrizeAwards,
+		"CgPrizeRowCount": bw_stats_copy.CgPrizeRowCount,
 		"TotalPrizesPaidAmountEth": bw_stats_copy.TotalPrizesPaidAmountEth,
 		"TotalEthDonatedAmount" : bw_stats_copy.TotalEthDonatedAmount,
 		"TotalEthDonatedAmountEth" : bw_stats_copy.TotalEthDonatedAmountEth,

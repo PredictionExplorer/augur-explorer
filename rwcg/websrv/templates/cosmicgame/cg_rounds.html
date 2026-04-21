@@ -27,7 +27,9 @@
 					<th>DateTime</th>
 					<th>Winner</th>
 					<th class="center">Round #</th>
-					<th class="right">Prize Amount</th>
+					<th class="right">Main Prize</th>
+					<th class="right">Endurance CST</th>
+					<th class="right">Chrono Warrior</th>
 					<th class="center">Bids</th>
 					<th class="right">Donated NFTs</th>
 					<th class="right">Raffle Deposits</th>
@@ -43,7 +45,22 @@
 							{{ethAddrLink .MainPrize.WinnerAddr}}
 						</td>
 						<td class="center">{{.RoundNum}}</td>
-						<td class="right" title="Seed: {{.MainPrize.Seed}}">{{printf "%.6f" .MainPrize.EthAmountEth}} ETH</td>
+						<td class="right" title="Seed: {{.MainPrize.Seed}}">
+							{{printf "%.6f" .MainPrize.EthAmountEth}} ETH
+							{{if gt .MainPrize.CstAmountEth 0.0}}<br>{{printf "%.4f" .MainPrize.CstAmountEth}} CST{{end}}
+						</td>
+						<td class="right">
+							{{if gt .EnduranceChampion.CstAmountEth 0.0}}{{printf "%.4f" .EnduranceChampion.CstAmountEth}} CST{{else}}—{{end}}
+						</td>
+						<td class="right">
+							{{if or (gt .ChronoWarrior.EthAmountEth 0.0) (gt .ChronoWarrior.CstAmountEth 0.0)}}
+								{{if gt .ChronoWarrior.EthAmountEth 0.0}}{{printf "%.6f" .ChronoWarrior.EthAmountEth}} ETH{{end}}
+								{{if and (gt .ChronoWarrior.EthAmountEth 0.0) (gt .ChronoWarrior.CstAmountEth 0.0)}}<br>{{end}}
+								{{if gt .ChronoWarrior.CstAmountEth 0.0}}{{printf "%.4f" .ChronoWarrior.CstAmountEth}} CST{{end}}
+							{{else}}
+								—
+							{{end}}
+						</td>
 						<td class="center">{{.RoundStats.TotalBids}}</td>
 						<td class="center">{{.RoundStats.TotalDonatedNFTs}}</td>
 						<td class="right">{{printf "%.6f" .RoundStats.TotalRaffleEthDepositsEth}} ETH</td>

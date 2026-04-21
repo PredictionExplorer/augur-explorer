@@ -28,7 +28,8 @@
 					<th>Block</th>
 					<th>DateTime</th>
 					<th class="center">Round</th>
-					<th class="right">Amount</th>
+					<th class="right">ETH Amount</th>
+					<th class="right">CST Amount</th>
 					<th class="center">Token ID</th>
 					<th>Winner Address</th>
 					<th class="center">Claimed</th>
@@ -59,7 +60,19 @@
 						<td>{{.Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
-						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="right">
+							{{ if or (eq 0 .RecordType) (eq 7 .RecordType) (eq 10 .RecordType) (eq 15 .RecordType) (eq 18 .RecordType) }}
+								{{printf "%.6f" .AmountEth}} ETH
+							{{ end }}
+							{{ if eq 17 .RecordType }}
+								{{printf "%.6f" .AmountEth}} <span class="badge badge-default">ERC20</span>
+							{{ end }}
+						</td>
+						<td class="right">
+							{{ if or (eq 1 .RecordType) (eq 4 .RecordType) (eq 6 .RecordType) (eq 8 .RecordType) (eq 11 .RecordType) (eq 13 .RecordType) }}
+								{{printf "%.4f" .AmountEth}} CST
+							{{ end }}
+						</td>
 						<td class="center">{{.TokenId}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}

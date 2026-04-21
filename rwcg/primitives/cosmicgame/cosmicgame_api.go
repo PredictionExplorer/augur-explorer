@@ -14,7 +14,8 @@ type CGStatistics struct {
 	TotalBids					uint64
 	CurNumBids					uint64
 	TotalPrizes					uint64   // main prize claims (one per round won)
-	TotalPrizeAwards				uint64   // total count of all prize types (main + raffle + chrono + etc.)
+	TotalPrizeAwards				uint64   // SUM(cg_winner.prizes_count); excludes cg_prize rows without winner attribution (e.g. ptype 15 staking)
+	CgPrizeRowCount				uint64   // COUNT(*) FROM cg_prize — canonical row count in unified prize table
 	NumUniqueBidders			uint64
 	NumUniqueWinners			uint64
 	NumUniqueStakersCST			uint64

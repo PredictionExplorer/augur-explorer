@@ -26,16 +26,16 @@ var (
 	Info  *log.Logger
 	Error *log.Logger
 
-	// Enabled indicates whether the cosmicgame module is enabled
+	// Enabled is set from websrv env ENABLE_ROUTES_COSMICGAME (default true). When false, API and HTML routes are not registered.
 	Enabled bool
 )
 
-// Init initializes the cosmicgame package with required dependencies
-// If enabled is false, the module will be disabled and routes will not be functional
+// Init initializes the cosmicgame package with required dependencies.
+// If enabled is false, RegisterAPIRoutes / RegisterHTMLRoutes are no-ops; Init returns without loading contract state.
 func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) {
 	Enabled = enabled
 	if !enabled {
-		info.Printf("CosmicGame module is disabled")
+		info.Printf("CosmicGame module init skipped (ENABLE_ROUTES_COSMICGAME=false)")
 		return
 	}
 
@@ -59,8 +59,8 @@ func dbInitialized() bool {
 	return common.Ctx != nil && common.Ctx.Db != nil
 }
 
-// RegisterAPIRoutes registers all CosmicGame JSON API routes
-// If the module is disabled, this function returns without registering any routes
+// RegisterAPIRoutes registers all CosmicGame JSON API routes.
+// If ENABLE_ROUTES_COSMICGAME is false, this function returns without registering any routes.
 func RegisterAPIRoutes(r *gin.Engine) {
 	if !Enabled {
 		return
@@ -72,7 +72,8 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/statistics/unique/winners", api_cosmic_game_user_unique_winners)
 	r.GET("/api/cosmicgame/statistics/unique/donors", api_cosmic_game_user_unique_donors)
 	r.GET("/api/cosmicgame/statistics/unique/stakers/cst", api_cosmic_game_user_unique_stakers_cst)
-	r.GET("/api/cosmicgame/statistics/unique/stakers/rwalk", api_cosmic_game_user_unique_stakers_rwalk)
+	r.GET("/api/cosmicgame/statistics/unique/stakers/randomwalk", api_cosmic_game_user_unique_stakers_rwalk)
+	r.GET("/api/cosmicgame/statistics/unique/stakers/rwalk", api_cosmic_game_user_unique_stakers_rwalk) // legacy alias
 	r.GET("/api/cosmicgame/statistics/unique/stakers/both", api_cosmic_game_user_unique_stakers_both)
 
 	// Rounds
@@ -101,7 +102,8 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/bid/list/all/:offset/:limit", api_cosmic_game_bid_list)
 	r.GET("/api/cosmicgame/bid/info/:evtlog_id", api_cosmic_game_bid_info)
 	r.GET("/api/cosmicgame/bid/list/by_round/:round_num/:sort/:offset/:limit", api_cosmic_game_bid_list_by_round)
-	r.GET("/api/cosmicgame/bid/used_rwalk_nfts", api_cosmic_game_used_rwalk_nfts)
+	r.GET("/api/cosmicgame/bid/used_randomwalk_nfts", api_cosmic_game_used_rwalk_nfts)
+	r.GET("/api/cosmicgame/bid/used_rwalk_nfts", api_cosmic_game_used_rwalk_nfts) // legacy path (same handler)
 	r.GET("/api/cosmicgame/bid/cst_price", api_cosmic_game_get_cst_price)
 	r.GET("/api/cosmicgame/bid/eth_price", api_cosmic_game_get_eth_price)
 	r.GET("/api/cosmicgame/bid/current_special_winners", api_cosmic_game_bid_special_winners)
@@ -197,7 +199,14 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/staking/cst/mints/global/:offset/:limit", api_cosmic_game_staking_cst_mints_global)
 	r.GET("/api/cosmicgame/staking/cst/mints/by_user/:user_addr", api_cosmic_game_staking_cst_mints_by_user)
 
-	// Staking RWalk
+	// Staking RWalk (canonical: .../randomwalk/...; legacy: .../rwalk/... — same handlers)
+	r.GET("/api/cosmicgame/staking/randomwalk/actions/info/:action_id", api_cosmic_game_staking_action_rwalk_info)
+	r.GET("/api/cosmicgame/staking/randomwalk/actions/global/:offset/:limit", api_cosmic_game_staking_actions_rwalk_global)
+	r.GET("/api/cosmicgame/staking/randomwalk/actions/by_user/:user_addr/:offset/:limit", api_cosmic_game_staking_actions_rwalk_by_user)
+	r.GET("/api/cosmicgame/staking/randomwalk/mints/global/:offset/:limit", api_cosmic_game_staking_rwalk_mints_global)
+	r.GET("/api/cosmicgame/staking/randomwalk/mints/by_user/:user_addr", api_cosmic_game_staking_rwalk_mints_by_user)
+	r.GET("/api/cosmicgame/staking/randomwalk/staked_tokens/all", api_cosmic_game_staked_tokens_rwalk_global)
+	r.GET("/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/:user_addr", api_cosmic_game_staked_tokens_rwalk_by_user)
 	r.GET("/api/cosmicgame/staking/rwalk/actions/info/:action_id", api_cosmic_game_staking_action_rwalk_info)
 	r.GET("/api/cosmicgame/staking/rwalk/actions/global/:offset/:limit", api_cosmic_game_staking_actions_rwalk_global)
 	r.GET("/api/cosmicgame/staking/rwalk/actions/by_user/:user_addr/:offset/:limit", api_cosmic_game_staking_actions_rwalk_by_user)
@@ -221,8 +230,8 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/system/admin_events/:evtlog_start/:evtlog_end", api_cosmic_game_admin_events_in_range)
 }
 
-// RegisterHTMLRoutes registers all CosmicGame HTML page routes
-// If the module is disabled, this function returns without registering any routes
+// RegisterHTMLRoutes registers all CosmicGame HTML page routes.
+// If ENABLE_ROUTES_COSMICGAME is false, this function returns without registering any routes.
 func RegisterHTMLRoutes(r *gin.Engine) {
 	if !Enabled {
 		return
@@ -234,7 +243,8 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/statistics/unique/winners", cosmic_game_unique_winners)
 	r.GET("/black/cosmicgame/statistics/unique/donors", cosmic_game_unique_donors)
 	r.GET("/black/cosmicgame/statistics/unique/stakers/cst", cosmic_game_unique_stakers_cst)
-	r.GET("/black/cosmicgame/statistics/unique/stakers/rwalk", cosmic_game_unique_stakers_rwalk)
+	r.GET("/black/cosmicgame/statistics/unique/stakers/randomwalk", cosmic_game_unique_stakers_rwalk)
+	r.GET("/black/cosmicgame/statistics/unique/stakers/rwalk", cosmic_game_unique_stakers_rwalk) // legacy alias
 	r.GET("/black/cosmicgame/statistics/unique/stakers/both", cosmic_game_unique_stakers_both)
 	r.GET("/black/cosmicgame/rounds/list", cosmic_game_prize_claims)
 	r.GET("/black/cosmicgame/round/info/:prize_num", cosmic_game_round_info)
@@ -255,7 +265,8 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/bid/list/all", cosmic_game_bids)
 	r.GET("/black/cosmicgame/bid/info/:evtlog_id", cosmic_game_bid_info)
 	r.GET("/black/cosmicgame/bid/list/by_round/:round_num/:sort/:offset/:limit", cosmic_game_bid_list_by_round)
-	r.GET("/black/cosmicgame/bid/used_rwalk_nfts", cosmic_game_used_rwalk_nfts)
+	r.GET("/black/cosmicgame/bid/used_randomwalk_nfts", cosmic_game_used_rwalk_nfts)
+	r.GET("/black/cosmicgame/bid/used_rwalk_nfts", cosmic_game_used_rwalk_nfts) // legacy path
 	r.GET("/black/cosmicgame/bid/cst_price", cosmic_game_get_cst_price)
 	r.GET("/black/cosmicgame/bid/eth_price", cosmic_game_get_eth_price)
 	r.GET("/black/cosmicgame/bid/current_special_winners", cosmic_game_bid_special_winners)
@@ -326,6 +337,13 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/staking/cst/rewards/by_round/:round_num", cosmic_game_staking_cst_rewards_by_round)
 	r.GET("/black/cosmicgame/staking/cst/mints/global", cosmic_game_staking_cst_mints_global)
 	r.GET("/black/cosmicgame/staking/cst/mints/by_user/:user_addr", cosmic_game_staking_cst_mints_by_user)
+	r.GET("/black/cosmicgame/staking/randomwalk/actions/info/:action_id", cosmic_game_staking_action_rwalk_info)
+	r.GET("/black/cosmicgame/staking/randomwalk/actions/global", cosmic_game_staking_actions_rwalk_global)
+	r.GET("/black/cosmicgame/staking/randomwalk/actions/by_user/:user_addr", cosmic_game_staking_actions_rwalk_by_user)
+	r.GET("/black/cosmicgame/staking/randomwalk/mints/global", cosmic_game_staking_rwalk_mints_global)
+	r.GET("/black/cosmicgame/staking/randomwalk/mints/by_user/:user_addr", cosmic_game_staking_rwalk_mints_by_user)
+	r.GET("/black/cosmicgame/staking/randomwalk/staked_tokens/all", cosmic_game_staked_tokens_rwalk_global)
+	r.GET("/black/cosmicgame/staking/randomwalk/staked_tokens/by_user/:user_addr", cosmic_game_staked_tokens_rwalk_by_user)
 	r.GET("/black/cosmicgame/staking/rwalk/actions/info/:action_id", cosmic_game_staking_action_rwalk_info)
 	r.GET("/black/cosmicgame/staking/rwalk/actions/global", cosmic_game_staking_actions_rwalk_global)
 	r.GET("/black/cosmicgame/staking/rwalk/actions/by_user/:user_addr", cosmic_game_staking_actions_rwalk_by_user)

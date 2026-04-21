@@ -41,12 +41,28 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"dp.amount_per_token,"+
 				"dp.amount_per_token/1e18, "+
 				"dp.deposit_id, "+
-				"dp.num_staked_nfts "+
+				"dp.num_staked_nfts, "+
+				"p.cst_amount, "+
+				"p.cst_amount/1e18, "+
+				"end_a.addr, "+
+				"endu.erc721_token_id, "+
+				"endu.erc20_amount, "+
+				"endu.erc20_amount/1e18, "+
+				"cw_a.addr, "+
+				"cw.eth_amount, "+
+				"cw.eth_amount/1e18, "+
+				"cw.cst_amount, "+
+				"cw.cst_amount/1e18, "+
+				"cw.nft_id "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_round_stats s ON p.round_num=s.round_num "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_endurance_prize endu ON endu.round_num=p.round_num "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address end_a ON endu.winner_aid=end_a.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON cw.round_num=p.round_num "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address cw_a ON cw.winner_aid=cw_a.address_id "+
 			"LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num " +
 			"LEFT JOIN ("+
 				"SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr "+
@@ -71,6 +87,16 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
 	var null_charity_amount,null_charity_addr sql.NullString
 	var null_charity_amount_eth sql.NullFloat64
+	var null_main_cst_amount sql.NullString
+	var null_main_cst_eth_float sql.NullFloat64
+	var null_endurance_addr sql.NullString
+	var null_endurance_tid sql.NullInt64
+	var null_endurance_erc20_amount sql.NullString
+	var null_endurance_cst_eth sql.NullFloat64
+	var null_chrono_addr sql.NullString
+	var null_chrono_eth_amount,null_chrono_cst_amount sql.NullString
+	var null_chrono_eth_eth,null_chrono_cst_eth sql.NullFloat64
+	var null_chrono_nft_id sql.NullInt64
 	for rows.Next() {
 		var rec p.CGRoundRec
 		err=rows.Scan(
@@ -85,6 +111,18 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&rec.MainPrize.TimeoutTs,
 			&rec.MainPrize.EthAmount,
 			&rec.MainPrize.EthAmountEth,
+			&null_main_cst_amount,
+			&null_main_cst_eth_float,
+			&null_endurance_addr,
+			&null_endurance_tid,
+			&null_endurance_erc20_amount,
+			&null_endurance_cst_eth,
+			&null_chrono_addr,
+			&null_chrono_eth_amount,
+			&null_chrono_eth_eth,
+			&null_chrono_cst_amount,
+			&null_chrono_cst_eth,
+			&null_chrono_nft_id,
 			&rec.RoundNum,
 			&rec.MainPrize.NftTokenId,
 			&null_seed,
@@ -109,6 +147,42 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			os.Exit(1)
 		}
 		if null_seed.Valid { rec.MainPrize.Seed = null_seed.String } else {rec.MainPrize.Seed = "???"}
+		if null_main_cst_amount.Valid {
+			rec.MainPrize.CstAmount = null_main_cst_amount.String
+			if null_main_cst_eth_float.Valid {
+				rec.MainPrize.CstAmountEth = null_main_cst_eth_float.Float64
+			}
+		}
+		if null_endurance_addr.Valid {
+			rec.EnduranceChampion.WinnerAddr = null_endurance_addr.String
+		}
+		if null_endurance_tid.Valid {
+			rec.EnduranceChampion.NftTokenId = null_endurance_tid.Int64
+		}
+		if null_endurance_erc20_amount.Valid {
+			rec.EnduranceChampion.CstAmount = null_endurance_erc20_amount.String
+			if null_endurance_cst_eth.Valid {
+				rec.EnduranceChampion.CstAmountEth = null_endurance_cst_eth.Float64
+			}
+		}
+		if null_chrono_addr.Valid {
+			rec.ChronoWarrior.WinnerAddr = null_chrono_addr.String
+		}
+		if null_chrono_eth_amount.Valid {
+			rec.ChronoWarrior.EthAmount = null_chrono_eth_amount.String
+			if null_chrono_eth_eth.Valid {
+				rec.ChronoWarrior.EthAmountEth = null_chrono_eth_eth.Float64
+			}
+		}
+		if null_chrono_cst_amount.Valid {
+			rec.ChronoWarrior.CstAmount = null_chrono_cst_amount.String
+			if null_chrono_cst_eth.Valid {
+				rec.ChronoWarrior.CstAmountEth = null_chrono_cst_eth.Float64
+			}
+		}
+		if null_chrono_nft_id.Valid {
+			rec.ChronoWarrior.NftTokenId = null_chrono_nft_id.Int64
+		}
 		if null_charity_amount.Valid { rec.CharityDeposit.CharityAmount = null_charity_amount.String }
 		if null_charity_amount_eth.Valid { rec.CharityDeposit.CharityAmountETH = null_charity_amount_eth.Float64 }
 		if null_charity_addr.Valid { rec.CharityDeposit.CharityAddress = null_charity_addr.String }

@@ -17,8 +17,12 @@ const (
 // Package-level storage wrapper for randomwalk database operations
 var rw_storagew rwdb.SQLStorageWrapper
 
-// Init initializes the randomwalk package with database connection
-func Init() {
+// routesEnabled mirrors websrv env ENABLE_ROUTES_RANDOMWALK (default true). When false, no RandomWalk HTTP routes are registered.
+var routesEnabled = true
+
+// Init initializes the randomwalk package. enableRoutes controls whether RegisterAPIRoutes / RegisterHTMLRoutes add handlers (from ENABLE_ROUTES_RANDOMWALK).
+func Init(enableRoutes bool) {
+	routesEnabled = enableRoutes
 	if common.Ctx != nil && common.Ctx.Db != nil {
 		rw_storagew.S = common.Ctx.Db
 		rw_storagew.S.Db_set_schema_name("public")
@@ -27,11 +31,16 @@ func Init() {
 
 // RegisterAPIRoutes registers all RandomWalk JSON API routes
 func RegisterAPIRoutes(r *gin.Engine) {
+	if !routesEnabled {
+		return
+	}
 	r.GET("/api/randomwalk/current_offers/:order_by", apiRwalkCurrentOffers)
 	r.GET("/api/randomwalk/floor_price", apiRwalkFloorPrice)
 	r.GET("/api/randomwalk/tokens/list/sequential", apiRwalkTokenListSeq)
 	r.GET("/api/randomwalk/tokens/list/by_period/:init_ts/:fin_ts", apiRwalkTokenListPeriod)
 	r.GET("/api/randomwalk/tokens/info/:token_id", apiRwalkTokenInfo)
+	// Same JSON as above; use this path when a reverse proxy only forwards /api/cosmicgame/* to the app.
+	r.GET("/api/cosmicgame/randomwalk/tokens/info/:token_id", apiRwalkTokenInfo)
 	r.GET("/api/randomwalk/tokens/name_changes/:token_id", apiRwalkTokenNameHistory)
 	r.GET("/api/randomwalk/trading/history/:offset/:limit", apiRwalkTradingHistory)
 	r.GET("/api/randomwalk/trading/by_user/:user_aid/:offset/:limit", apiRwalkTradingHistoryByUser)
@@ -67,6 +76,9 @@ func RegisterAPIRoutes(r *gin.Engine) {
 
 // RegisterHTMLRoutes registers all RandomWalk HTML page routes
 func RegisterHTMLRoutes(r *gin.Engine) {
+	if !routesEnabled {
+		return
+	}
 	r.GET("/black/randomwalk", rwalk_index_page)
 	r.GET("/black/randomwalk/", rwalk_index_page)
 	r.GET("/black/randomwalk/current_offers/:order_by", rwalk_current_offers)

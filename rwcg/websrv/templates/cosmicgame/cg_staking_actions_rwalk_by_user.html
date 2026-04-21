@@ -56,7 +56,7 @@
 							{{end}}
 						</td>
 						<td class="center">
-							{{if gt .ActionId 0}}<a href="/black/cosmicgame/staking/rwalk/actions/info/{{.ActionId}}">{{.ActionId}}</a>{{else}}{{.ActionId}}{{end}}
+							{{if gt .ActionId 0}}<a href="/black/cosmicgame/staking/randomwalk/actions/info/{{.ActionId}}">{{.ActionId}}</a>{{else}}{{.ActionId}}{{end}}
 						</td>
 						<td class="center">{{.TokenId}}</td>
 						<td class="center">{{.NumStakedNFTs}}</td>
@@ -67,9 +67,9 @@
 
 		<div class="api-info">
 			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/staking/rwalk/actions/by_user/[user_addr]/[offset]/[limit]</code><br/><br/>
+			<code>/api/cosmicgame/staking/randomwalk/actions/by_user/[user_addr]/[offset]/[limit]</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/staking/rwalk/actions/by_user/{{.UserAddr}}/0/100000</code>
+			<code>/api/cosmicgame/staking/randomwalk/actions/by_user/{{.UserAddr}}/0/100000</code>
 		</div>
 	</div>
 </body>

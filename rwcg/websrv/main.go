@@ -18,7 +18,6 @@ import (
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/crypto/acme/autocert"
 
-	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/randomwalk"
@@ -33,93 +32,43 @@ var (
 
 	Error *log.Logger
 	Info  *log.Logger
-
-	enableCosmicGame bool
 )
 
-// cosmicgameSchemaPresent returns true if CosmicGame tables (cg_contracts) exist in public.
-func cosmicgameSchemaPresent(db *dbs.SQLStorage) bool {
-	if db == nil {
+// envBoolDefaultTrue returns true if the variable is unset or empty (default on).
+// Returns false for "false", "0", "no", "off" (case-insensitive). Any other non-empty value is true.
+func envBoolDefaultTrue(key string) bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if v == "" {
+		return true
+	}
+	if v == "false" || v == "0" || v == "no" || v == "off" {
 		return false
 	}
-	var ok bool
-	err := db.Db().QueryRow(`
-		SELECT EXISTS (
-			SELECT 1 FROM information_schema.tables
-			WHERE table_schema = 'public' AND table_name = 'cg_contracts'
-		)`).Scan(&ok)
-	if err != nil {
-		log.Printf("WARN: could not probe for public.cg_contracts: %v — CosmicGame will be disabled", err)
-		return false
-	}
-	return ok
-}
-
-// cosmicgameContractsHasRows returns true if public.cg_contracts exists and has at least one row.
-// An empty table used to still flip auto mode "on" (table exists), then cosmic_game_init would
-// call Get_cosmic_game_contract_addrs → ErrNoRows → os.Exit(1), or periodic RPC refresh could run
-// with bogus addresses against the node shared with RandomWalk local dev.
-func cosmicgameContractsHasRows(db *dbs.SQLStorage) bool {
-	if db == nil || !cosmicgameSchemaPresent(db) {
-		return false
-	}
-	var n int64
-	err := db.Db().QueryRow(`SELECT COUNT(*) FROM public.cg_contracts`).Scan(&n)
-	if err != nil {
-		log.Printf("WARN: could not COUNT public.cg_contracts: %v — CosmicGame will be disabled", err)
-		return false
-	}
-	return n > 0
+	return true
 }
 
 func initialize() {
 	// Initialize the common context
 	common.InitContext(rwcg_srv.db, eclient, Info, Error)
 
-	// CosmicGame: ENABLE_COSMICGAME=false|0 → off; true|1 → on (fatal if no contract row);
-	// unset → auto: on only if public.cg_contracts exists **and has ≥1 row** (RandomWalk-only / empty CG).
-	ev := strings.TrimSpace(os.Getenv("ENABLE_COSMICGAME"))
-	switch {
-	case ev == "false" || ev == "0":
-		enableCosmicGame = false
-	case ev == "true" || ev == "1":
-		if !cosmicgameContractsHasRows(rwcg_srv.db) {
-			fmt.Printf("FATAL: ENABLE_COSMICGAME=true requires public.cg_contracts with at least one row.\n")
-			if !cosmicgameSchemaPresent(rwcg_srv.db) {
-				fmt.Printf("  The table is missing. Create CosmicGame schema or set ENABLE_COSMICGAME=false.\n")
-			} else {
-				fmt.Printf("  The table exists but is empty. Seed cg_contracts or set ENABLE_COSMICGAME=false.\n")
-			}
-			os.Exit(1)
-		}
-		enableCosmicGame = true
-	default:
-		enableCosmicGame = cosmicgameContractsHasRows(rwcg_srv.db)
-		if !enableCosmicGame {
-			if !cosmicgameSchemaPresent(rwcg_srv.db) {
-				fmt.Printf("INFO: CosmicGame disabled: public.cg_contracts not found (RandomWalk-only DB). Set ENABLE_COSMICGAME=true to require CosmicGame.\n")
-				Info.Printf("CosmicGame auto-disabled: cg_contracts not in database")
-			} else {
-				fmt.Printf("INFO: CosmicGame disabled: public.cg_contracts has no rows (seed contract addresses to enable). Set ENABLE_COSMICGAME=false to silence this.\n")
-				Info.Printf("CosmicGame auto-disabled: cg_contracts table is empty")
-			}
-		}
-	}
+	enableRWRoutes := envBoolDefaultTrue("ENABLE_ROUTES_RANDOMWALK")
+	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")
 
-	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCosmicGame)
-	if enableCosmicGame {
-		Info.Printf("CosmicGame module enabled")
+	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCGRoutes)
+	if enableCGRoutes {
+		Info.Printf("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
 	} else {
-		if ev == "false" || ev == "0" {
-			Info.Printf("CosmicGame module disabled (ENABLE_COSMICGAME=false)")
-			fmt.Printf("INFO: CosmicGame module disabled by ENABLE_COSMICGAME=false.\n")
-		} else {
-			Info.Printf("CosmicGame module disabled")
-		}
+		Info.Printf("CosmicGame HTTP routes: disabled (ENABLE_ROUTES_COSMICGAME=false)")
+		fmt.Printf("INFO: CosmicGame API/HTML routes are not registered (ENABLE_ROUTES_COSMICGAME=false).\n")
 	}
 
-	// Initialize RandomWalk
-	randomwalk.Init()
+	randomwalk.Init(enableRWRoutes)
+	if enableRWRoutes {
+		Info.Printf("RandomWalk HTTP routes: enabled (ENABLE_ROUTES_RANDOMWALK unset or true)")
+	} else {
+		Info.Printf("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
+		fmt.Printf("INFO: RandomWalk API/HTML routes are not registered (ENABLE_ROUTES_RANDOMWALK=false).\n")
+	}
 }
 
 func main() {

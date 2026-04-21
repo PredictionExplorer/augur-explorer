@@ -228,6 +228,20 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	}
 	stats.NumWinnersWithPendingRaffleWithdrawal = null_num_users_missing_withdrawal.Int64
 
+	var null_cg_prize_rows sql.NullInt64
+	query = "SELECT COUNT(*) AS total FROM " + sw.S.SchemaName() + ".cg_prize"
+	row = sw.S.Db().QueryRow(query)
+	err = row.Scan(&null_cg_prize_rows)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v", err, query))
+			os.Exit(1)
+		}
+	}
+	if null_cg_prize_rows.Valid {
+		stats.CgPrizeRowCount = uint64(null_cg_prize_rows.Int64)
+	}
+
 	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
 	stats.StakeStatisticsCST = sw.Get_stake_statistics_cst()
 	stats.StakeStatisticsRWalk = sw.Get_stake_statistics_rwalk()

@@ -42,7 +42,7 @@
 					<tr>
 						<td>{{.Tx.BlockNum}}</td>
 						<td>
-							{{if gt .ActionId 0}}<a href="/black/cosmicgame/staking/rwalk/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>{{else}}{{.Tx.DateTime}}{{end}}
+							{{if gt .ActionId 0}}<a href="/black/cosmicgame/staking/randomwalk/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>{{else}}{{.Tx.DateTime}}{{end}}
 						</td>
 						<td class="center">
 							{{if eq .ActionType 0}}
@@ -66,9 +66,9 @@
 
 		<div class="api-info">
 			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/staking/rwalk/actions/global/[offset]/[limit]</code><br/><br/>
+			<code>/api/cosmicgame/staking/randomwalk/actions/global/[offset]/[limit]</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/staking/rwalk/actions/global/0/100000</code>
+			<code>/api/cosmicgame/staking/randomwalk/actions/global/0/100000</code>
 		</div>
 	</div>
 </body>
