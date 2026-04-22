@@ -4,7 +4,7 @@ LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`
 while true
 do
-	nohup $WD/websrv >> $LOG_DIR/webserver_nohup.log 2>&1
+	nohup $WD/websrv >> $LOG_DIR/webserver_rwalk_nohup.log 2>&1
 	sleep 2
 done
 

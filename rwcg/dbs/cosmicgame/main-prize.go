@@ -99,7 +99,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 	var null_chrono_nft_id sql.NullInt64
 	for rows.Next() {
 		var rec p.CGRoundRec
-		err=rows.Scan(
+		// Scan order must match SELECT column order exactly (see query above).
+		err = rows.Scan(
 			&rec.ClaimPrizeTx.Tx.EvtLogId,
 			&rec.ClaimPrizeTx.Tx.BlockNum,
 			&rec.ClaimPrizeTx.Tx.TxId,
@@ -111,18 +112,6 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&rec.MainPrize.TimeoutTs,
 			&rec.MainPrize.EthAmount,
 			&rec.MainPrize.EthAmountEth,
-			&null_main_cst_amount,
-			&null_main_cst_eth_float,
-			&null_endurance_addr,
-			&null_endurance_tid,
-			&null_endurance_erc20_amount,
-			&null_endurance_cst_eth,
-			&null_chrono_addr,
-			&null_chrono_eth_amount,
-			&null_chrono_eth_eth,
-			&null_chrono_cst_amount,
-			&null_chrono_cst_eth,
-			&null_chrono_nft_id,
 			&rec.RoundNum,
 			&rec.MainPrize.NftTokenId,
 			&null_seed,
@@ -141,6 +130,18 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&null_dep_amount_per_token_eth,
 			&null_dep_deposit_num,
 			&null_num_staked_nfts,
+			&null_main_cst_amount,
+			&null_main_cst_eth_float,
+			&null_endurance_addr,
+			&null_endurance_tid,
+			&null_endurance_erc20_amount,
+			&null_endurance_cst_eth,
+			&null_chrono_addr,
+			&null_chrono_eth_amount,
+			&null_chrono_eth_eth,
+			&null_chrono_cst_amount,
+			&null_chrono_cst_eth,
+			&null_chrono_nft_id,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
