@@ -15,19 +15,24 @@ const BATCH_SIZE = 20000
 func main() {
 	srcConn := flag.String("src", "", "Source DB connection string (production)")
 	dstConn := flag.String("dst", "", "Destination DB connection string (dev)")
-	projectType := flag.String("project", "", "Project type: 'randomwalk' or 'cosmicgame'")
+	projectType := flag.String("project", "", "Project: randomwalk | cosmicgame | both (runs cosmicgame then randomwalk)")
 	flag.Parse()
 
 	if *srcConn == "" || *dstConn == "" || *projectType == "" {
-		log.Fatal("Usage: archive_export -project <randomwalk|cosmicgame> -src 'postgres://...' -dst 'postgres://...'")
+		log.Fatal("Usage: archive_export -project <randomwalk|cosmicgame|both> -src 'postgres://...' -dst 'postgres://...'")
 	}
 
 	*projectType = strings.ToLower(*projectType)
-	if *projectType != "randomwalk" && *projectType != "cosmicgame" {
-		log.Fatalf("Invalid project type '%s'. Must be 'randomwalk' or 'cosmicgame'", *projectType)
+	var projects []string
+	switch *projectType {
+	case "both":
+		// CosmicGame first: shared DB often has lower evt_ids for CG contracts; either order is safe with per-project resume.
+		projects = []string{"cosmicgame", "randomwalk"}
+	case "randomwalk", "cosmicgame":
+		projects = []string{*projectType}
+	default:
+		log.Fatalf("Invalid project type '%s'. Must be 'randomwalk', 'cosmicgame', or 'both'", *projectType)
 	}
-
-	log.Printf("Project type: %s", *projectType)
 
 	// Connect to source
 	srcDB, err := sql.Open("postgres", *srcConn)
@@ -45,20 +50,35 @@ func main() {
 	defer dstDB.Close()
 	dstDB.SetMaxOpenConns(2)
 
-	// Get contract address IDs based on project type
-	contractAids := getContractAddressIds(srcDB, *projectType)
+	for _, p := range projects {
+		runArchiveExport(srcDB, dstDB, p)
+	}
+
+	log.Println("=== All exports complete ===")
+}
+
+// runArchiveExport copies evt_log → arch_evtlog, then arch_tx, arch_block for one project.
+// Safe on a single DB where both cg_etl and rw_etl append to the same evt_log: resume uses
+// min(per-contract MAX(evt_id)) in arch_evtlog for this project's contracts only.
+func runArchiveExport(srcDB, dstDB *sql.DB, projectType string) {
+	log.Printf("Project type: %s", projectType)
+
+	contractAids := getContractAddressIds(srcDB, projectType)
 	if len(contractAids) == 0 {
-		log.Fatalf("No contract addresses found for project '%s'", *projectType)
+		log.Fatalf("No contract addresses found for project '%s'", projectType)
 	}
 	log.Printf("Found %d contract address IDs: %v", len(contractAids), contractAids)
 
-	// Export in order: events -> transactions -> blocks
-	// (events reference tx, tx references blocks)
-	txIds := exportEventLogs(srcDB, dstDB, contractAids)
+	contractAddrs := getContractAddrsByAids(srcDB, contractAids)
+	if len(contractAddrs) == 0 {
+		log.Fatalf("No contract addresses resolved for project '%s'", projectType)
+	}
+
+	txIds := exportEventLogs(srcDB, dstDB, contractAids, contractAddrs)
 	blockNums := exportTransactions(srcDB, dstDB, txIds)
 	exportBlocks(srcDB, dstDB, blockNums)
 
-	log.Println("=== Export complete ===")
+	log.Printf("=== Export complete (%s) ===", projectType)
 }
 
 func getContractAddressIds(srcDB *sql.DB, projectType string) []int64 {
@@ -108,7 +128,54 @@ func getContractAddressIds(srcDB *sql.DB, projectType string) []int64 {
 	return aids
 }
 
-func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64) map[int64]bool {
+// getContractAddrsByAids resolves hex addresses for evt_log / arch_evtlog.contract_addr matching.
+func getContractAddrsByAids(srcDB *sql.DB, contractAids []int64) []string {
+	rows, err := srcDB.Query(`SELECT addr FROM address WHERE address_id = ANY($1) ORDER BY address_id`, pq.Array(contractAids))
+	if err != nil {
+		log.Fatalf("Failed to resolve contract addresses: %v", err)
+	}
+	defer rows.Close()
+
+	var addrs []string
+	for rows.Next() {
+		var addr string
+		if err := rows.Scan(&addr); err != nil {
+			log.Fatalf("Failed to scan addr: %v", err)
+		}
+		addrs = append(addrs, addr)
+	}
+	return addrs
+}
+
+// eventLogResumeFloor returns min(COALESCE(MAX(evt_id),0)) over project contracts in arch_evtlog.
+// Using the global MAX(evt_id) would skip older logs for another project sharing the same archive.
+func eventLogResumeFloor(dstDB *sql.DB, contractAddrs []string) int64 {
+	if len(contractAddrs) == 0 {
+		return 0
+	}
+	log.Println("Per-contract MAX(evt_id) already in arch_evtlog (0 = no rows for that contract):")
+	var floor int64 = -1
+	for _, ca := range contractAddrs {
+		var maxForContract int64
+		err := dstDB.QueryRow(`
+			SELECT COALESCE(MAX(evt_id), 0) FROM arch_evtlog WHERE contract_addr = $1
+		`, ca).Scan(&maxForContract)
+		if err != nil {
+			log.Fatalf("Failed to read resume position for contract %s: %v", ca, err)
+		}
+		log.Printf("  %s -> %d", ca, maxForContract)
+		if floor < 0 || maxForContract < floor {
+			floor = maxForContract
+		}
+	}
+	if floor < 0 {
+		floor = 0
+	}
+	log.Printf("Resume floor evt_id (min over contracts) = %d — exporting source evt_log rows with id > %d", floor, floor)
+	return floor
+}
+
+func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64, contractAddrs []string) map[int64]bool {
 	log.Println("=== Exporting event logs for contracts ===")
 
 	// Count total events for these contracts
@@ -119,14 +186,10 @@ func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64) map[int64]bool 
 	if err != nil {
 		log.Fatalf("Failed to count events: %v", err)
 	}
-	log.Printf("Total events to export: %d (counted in %.1f ms)", totalEvents, time.Since(countStart).Seconds()*1000)
+	log.Printf("Total events on source for these contracts: %d (counted in %.1f ms)", totalEvents, time.Since(countStart).Seconds()*1000)
 
-	// Check resume point
-	var currentId int64
-	dstDB.QueryRow("SELECT COALESCE(MAX(evt_id), 0) FROM arch_evtlog").Scan(&currentId)
-	if currentId > 0 {
-		log.Printf("Resuming from evt_id = %d", currentId)
-	}
+	// Resume from min(per-contract max evt_id in arch); not global MAX(arch_evtlog) or proc_status tables.
+	currentId := eventLogResumeFloor(dstDB, contractAddrs)
 
 	// Prepare insert
 	insertStmt, err := dstDB.Prepare(`

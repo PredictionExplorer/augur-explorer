@@ -38,11 +38,12 @@ func NFTImagePublicBase(c *gin.Context) string {
 // ERC-721 metadata JSON fields `image` and `animation_url`.
 //
 // When NFT_ASSETS_PUBLIC_BASE is set, it is used (same as NFTImagePublicBase). When unset, this returns
-// https://randomwalknft.com/images so metadata served from dev/staging/local hosts does not embed
-// localhost in URLs that wallets and marketplaces cache on-chain.
+// the public API image base: RandomWalk artwork is not served from the Vercel marketing site; it is
+// served by websrv under GET /images/... (typically TLS on api.randomwalknft.com). Override with
+// NFT_ASSETS_PUBLIC_BASE for other hosts (staging, IP-only deploys, etc.).
 func MetadataRandomWalkImagePublicBase() string {
 	if b := strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")); b != "" {
 		return strings.TrimRight(b, "/")
 	}
-	return "https://randomwalknft.com/images"
+	return "https://api.randomwalknft.com:1443/images"
 }
