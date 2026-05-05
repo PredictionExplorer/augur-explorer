@@ -15,6 +15,8 @@ type CosmicGameContractAddrs struct {
 	StakingWalletCSTAddr			string
 	StakingWalletRWalkAddr			string
 	MarketingWalletAddr			string
+	// MarketplaceAddr is rw_contracts.marketplace_addr (RandomWalk NFT marketplace); included on dashboard ContractAddrs.
+	MarketplaceAddr				string
 	ImplementationAddr			string
 }
 type CosmicGameProcStatus struct {

@@ -15,18 +15,19 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 
 	var query string
 	query = "SELECT "+
-				"cosmic_game_addr,"+
-				"cosmic_signature_addr,"+
-				"cosmic_token_addr,"+
-				"cosmic_dao_addr,"+
-				"charity_wallet_addr, "+
-				"prizes_wallet_addr, "+
-				"random_walk_addr, "+
-				"staking_wallet_cst_addr, "+
-				"staking_wallet_rwalk_addr, "+
-				"marketing_wallet_addr, "+
-				"implementation_addr "+
-			"FROM "+sw.S.SchemaName()+".cg_contracts"
+				"cg.cosmic_game_addr,"+
+				"cg.cosmic_signature_addr,"+
+				"cg.cosmic_token_addr,"+
+				"cg.cosmic_dao_addr,"+
+				"cg.charity_wallet_addr, "+
+				"cg.prizes_wallet_addr, "+
+				"cg.random_walk_addr, "+
+				"cg.staking_wallet_cst_addr, "+
+				"cg.staking_wallet_rwalk_addr, "+
+				"cg.marketing_wallet_addr, "+
+				"COALESCE((SELECT marketplace_addr FROM "+sw.S.SchemaName()+".rw_contracts LIMIT 1), '') AS marketplace_addr, "+
+				"cg.implementation_addr "+
+			"FROM "+sw.S.SchemaName()+".cg_contracts cg"
 	row := sw.S.Db().QueryRow(query)
 	var cosmic_game_addr string
 	var cosmic_signature_addr string
@@ -38,6 +39,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	var staking_wallet_cst_addr string
 	var staking_wallet_rwalk_addr string
 	var marketing_wallet_addr string
+	var marketplace_addr string
 	var implementation_addr string
 	var err error
 	err=row.Scan(
@@ -51,6 +53,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 		&staking_wallet_cst_addr,
 		&staking_wallet_rwalk_addr,
 		&marketing_wallet_addr,
+		&marketplace_addr,
 		&implementation_addr,
 	);
 	if (err!=nil) {
@@ -71,6 +74,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	output.StakingWalletCSTAddr = staking_wallet_cst_addr
 	output.StakingWalletRWalkAddr = staking_wallet_rwalk_addr
 	output.MarketingWalletAddr = marketing_wallet_addr
+	output.MarketplaceAddr = marketplace_addr
 	output.ImplementationAddr = implementation_addr
 	return output
 }
