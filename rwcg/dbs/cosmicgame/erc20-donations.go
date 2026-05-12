@@ -75,6 +75,77 @@ func (sw *SQLStorageWrapper) Get_erc20_donations_by_round_detailed(round_num int
 	}
 	return records
 }
+
+// Get_erc20_donations_by_round_all returns every cg_erc20_donation row for the round, with optional
+// main-prize winner fields when cg_prize_claim exists (LEFT JOIN). Unlike
+// Get_erc20_donations_by_round_detailed, rows are included before the cycle is claimed.
+func (sw *SQLStorageWrapper) Get_erc20_donations_by_round_all(round_num int64) []p.CGERC20Donation {
+
+	var query string
+	query = "SELECT DISTINCT ON (tok.id) "+
+				"tok.id,"+
+				"tok.evtlog_id,"+
+				"tok.block_num,"+
+				"tok.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM tok.time_stamp)::BIGINT,"+
+				"tok.time_stamp,"+
+				"tok.round_num,"+
+				"tok.donor_aid,"+
+				"da.addr, "+
+				"tokaddr.address_id,"+
+				"tokaddr.addr, "+
+				"tok.amount, "+
+				"tok.amount/1e18, "+
+				"p.winner_aid,"+
+				"wa.addr "+
+			"FROM "+sw.S.SchemaName()+".cg_erc20_donation tok "+
+				"LEFT JOIN cg_prize_claim p ON p.round_num=tok.round_num "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tok.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON tok.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address tokaddr ON tok.token_aid=tokaddr.address_id "+
+				"LEFT JOIN address wa ON wa.address_id = p.winner_aid "+
+			"WHERE tok.round_num= $1 " +
+			"ORDER BY tok.id DESC, p.id DESC NULLS LAST"
+	rows,err := sw.S.Db().Query(query,round_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGERC20Donation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGERC20Donation
+		var null_winner_addr sql.NullString
+		var null_winner_aid sql.NullInt64
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
+			&rec.RoundNum,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.TokenAid,
+			&rec.TokenAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&null_winner_aid,
+			&null_winner_addr,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_winner_aid.Valid { rec.WinnerAid=null_winner_aid.Int64 }
+		if null_winner_addr.Valid { rec.WinnerAddr = null_winner_addr.String }
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_erc20_donations_by_round_summarized(round_num int64) []p.CGSummarizedERC20Donation {
 
 	var query string

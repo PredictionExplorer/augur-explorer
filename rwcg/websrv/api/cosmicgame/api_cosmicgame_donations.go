@@ -248,6 +248,36 @@ func api_cosmic_game_donations_erc20_by_round_detailed(c *gin.Context) {
 		"RoundNum": round_num,
 	})
 }
+func api_cosmic_game_donations_erc20_by_round_all(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !dbInitialized() {
+		common.RespondErrorJSON(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = common.ParseIntFromRemoteOrError(c,JSON,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		common.RespondErrorJSON(c,"'round_num' parameter is not set")
+		return
+	}
+
+	donations := arb_storagew.Get_erc20_donations_by_round_all(round_num)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"DonationsERC20ByRoundAll" : donations,
+		"RoundNum": round_num,
+	})
+}
 func api_cosmic_game_donations_erc20_by_round_summarized(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

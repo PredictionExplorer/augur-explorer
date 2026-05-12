@@ -670,8 +670,13 @@
 					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/global/0/100">.../erc20/global/0/100</a></td>
 				</tr>
 				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/by_round/all/{round_num}</span></td>
+					<td class="api-description">ERC20 donations for round (all rows; winner optional until main prize claimed)</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/by_round/all/0">.../erc20/by_round/all/0</a></td>
+				</tr>
+				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/by_round/detailed/{round_num}</span></td>
-					<td class="api-description">ERC20 donations for round (detailed)</td>
+					<td class="api-description">ERC20 donations for round (detailed, requires main-prize claim row)</td>
 					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/by_round/detailed/0">.../erc20/by_round/detailed/0</a></td>
 				</tr>
 				<tr>
