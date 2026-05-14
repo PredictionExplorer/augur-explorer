@@ -119,7 +119,7 @@ func main() {
 	msg_id2 := notify_twitter(11,"test message",image_data2,msg_id)
 	fmt.Printf("msg id2 = %v\n",msg_id2)
 	*/
-//	url := "https://randomwalknft.s3.us-east-2.amazonaws.com/003913_black_single.mp4"
+//	url := "https://api.randomwalknft.com:1443/images/randomwalk/003913_black_single.mp4"
 
 	//media_type := "image/png"
 	media_type := 	"video/mp4"

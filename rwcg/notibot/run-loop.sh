@@ -6,7 +6,7 @@ LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`
 while true
 do
-	nohup $WD/notibot --twitter --discord >> $LOG_DIR/notibot_nohup.log
+	nohup $WD/notibot --discord >> $LOG_DIR/notibot_nohup.log
 	sleep 2
 done
 

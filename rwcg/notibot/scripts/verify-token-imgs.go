@@ -14,7 +14,7 @@ import (
 const (
 	RWALK_ADDR				string = "0x895a6F444BE4ba9d124F61DF736605792B35D66b"
 	TMP_IMAGE_FILE			string = "randomwalk_tmp.png"
-	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
+	IMAGES_URL			string = "https://api.randomwalknft.com:1443/images/randomwalk"
 )
 var (
 	storagew				*rwdb.SQLStorageWrapper

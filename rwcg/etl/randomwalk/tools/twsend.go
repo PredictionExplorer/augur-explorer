@@ -58,8 +58,8 @@ func main() {
 	client.Nonce=format_nonce(session_nonce)
 
 	form := url.Values{
-		"status": {"finally works "+"https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png"},
-//		"attachment_url":{"https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png"},
+		"status": {"finally works "+"https://api.randomwalknft.com:1443/images/randomwalk/003246_black.png"},
+//		"attachment_url":{"https://api.randomwalknft.com:1443/images/randomwalk/003246_black.png"},
 	}
 	var token_credentials Credentials
 	token_credentials.Token = access_token

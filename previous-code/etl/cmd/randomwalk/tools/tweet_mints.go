@@ -31,8 +31,8 @@ const (
 var (
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
 
-	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
-	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
+	//Sample URL: https://api.randomwalknft.com:1443/images/randomwalk/004067_black.png
+	IMAGES_URL			string = "https://api.randomwalknft.com:1443/images/randomwalk"
 	TMP_IMAGE_FILE		string = "randomwalk_tmp.png"
 	DETAIL_URL			string = "https://randomwalknft.com/detail"
 	MAX_TIMEOUT_COUNTER		int = 1000

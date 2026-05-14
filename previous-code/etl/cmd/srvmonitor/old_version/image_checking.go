@@ -17,8 +17,8 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	RWALK_IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
-	RWALK_VIDEOS_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
+	RWALK_IMAGES_URL			string = "https://api.randomwalknft.com:1443/images/randomwalk"
+	RWALK_VIDEOS_URL			string = "https://api.randomwalknft.com:1443/images/randomwalk"
 	CGAME_IMAGES_URL			string = "https://cosmic-game2.s3.us-east-2.amazonaws.com"
 	CGAME_VIDEOS_URL			string = "https://cosmic-game2.s3.us-east-2.amazonaws.com"
 	RWALK_THUMBS_URL			string = "https://nfts.cosmicsignature.com/images/randomwalk"

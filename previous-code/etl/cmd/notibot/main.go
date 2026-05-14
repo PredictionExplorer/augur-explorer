@@ -60,9 +60,9 @@ var (
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
 	DISCORD_KEYS_FILE = os.Getenv("DISCORD_KEYS_FILE")
 
-	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
-	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
-	VIDEOS_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
+	//Sample URL: https://api.randomwalknft.com:1443/images/randomwalk/004067_black.png
+	IMAGES_URL			string = "https://api.randomwalknft.com:1443/images/randomwalk"
+	VIDEOS_URL			string = "https://api.randomwalknft.com:1443/images/randomwalk"
 	TMP_IMG_DATA_FILE	string = "randomwalk_img.png"	// could be an image or video
 	TMP_VIDEO_DATA_FILE	string = "randomwalk_video.mp4"
 	RESAMPLED_TMP_FILE	string = "randomwalk_resampled.mp4"	// could be an image or video
@@ -197,7 +197,7 @@ func fmt_url_addr_for_image(token_id int64) string {
 	return url
 }
 func fmt_url_addr_for_video(token_id int64) string {
-	//	https://randomwalknft.s3.us-east-2.amazonaws.com/003968_black_single.mp4
+	//	https://api.randomwalknft.com:1443/images/randomwalk/003968_black_single.mp4
 	url := fmt.Sprintf("%v/%06d_black_single.mp4",VIDEOS_URL,token_id)
 	return url
 }
