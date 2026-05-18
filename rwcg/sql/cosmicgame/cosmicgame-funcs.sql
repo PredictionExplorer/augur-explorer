@@ -29,13 +29,13 @@ BEGIN
 		IF NEW.bid_type = 2 THEN
 			UPDATE cg_glob_stats SET
 				num_bids_cst = (num_bids_cst + 1),
-				total_cst_consumed = (total_cst_consumed + NEW.cst_reward);
+				total_cst_consumed = (total_cst_consumed + NEW.cst_price);
 		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids + 1);
 	UPDATE cg_round_stats SET 
 			total_bids = (total_bids + 1),
-			total_cst_in_bids = (total_cst_in_bids + NEW.cst_reward),
+			total_cst_in_bids = (total_cst_in_bids + CASE WHEN NEW.bid_type = 2 THEN NEW.cst_price ELSE 0 END),
 			total_eth_in_bids = (total_eth_in_bids + NEW.eth_price)
 	   	WHERE round_num=NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -71,13 +71,13 @@ BEGIN
 		IF OLD.bid_type = 2 THEN
 			UPDATE cg_glob_stats SET 
 				num_bids_cst = (num_bids_cst - 1),
-				total_cst_consumed = (total_cst_consumed - OLD.cst_reward);
+				total_cst_consumed = (total_cst_consumed - OLD.cst_price);
 		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids - 1) WHERE cur_num_bids>0;
 	UPDATE cg_round_stats SET 
 			total_bids = (total_bids - 1),
-			total_cst_in_bids = (total_cst_in_bids - OLD.cst_reward),
+			total_cst_in_bids = (total_cst_in_bids - CASE WHEN OLD.bid_type = 2 THEN OLD.cst_price ELSE 0 END),
 			total_eth_in_bids = (total_eth_in_bids - OLD.eth_price)
 		WHERE round_num=OLD.round_num;
 	RETURN OLD;
