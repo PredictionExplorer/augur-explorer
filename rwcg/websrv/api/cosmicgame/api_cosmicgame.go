@@ -2134,7 +2134,20 @@ func api_cosmic_game_cosmic_token_summary_by_user(c *gin.Context) {
 		"Summary": summary,
 	})
 }
-func api_cosmic_game_cosmic_token_total_supply_history(c *gin.Context) {
+func parseCosmicTokenHistoryDateParam(c *gin.Context, paramName string) (string, bool) {
+	val := c.Param(paramName)
+	if len(val) != 8 {
+		common.RespondErrorJSON(c, fmt.Sprintf("'%s' must be YYYYMMDD (8 digits)", paramName))
+		return "", false
+	}
+	if _, err := time.Parse("20060102", val); err != nil {
+		common.RespondErrorJSON(c, fmt.Sprintf("Bad '%s' parameter: %v", paramName, err))
+		return "", false
+	}
+	return val, true
+}
+
+func api_cosmic_game_cosmic_token_total_supply_history_by_bid(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2142,10 +2155,40 @@ func api_cosmic_game_cosmic_token_total_supply_history(c *gin.Context) {
 		return
 	}
 
-	history := arb_storagew.Get_cosmic_token_total_supply_history()
+	history := arb_storagew.Get_cosmic_token_total_supply_history_by_bid()
 	c.JSON(http.StatusOK, gin.H{
 		"status":              1,
 		"error":               "",
+		"TotalSupplyHistory": history,
+	})
+}
+func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+
+	fromDate, ok := parseCosmicTokenHistoryDateParam(c, "from_date")
+	if !ok {
+		return
+	}
+	toDate, ok := parseCosmicTokenHistoryDateParam(c, "to_date")
+	if !ok {
+		return
+	}
+	if fromDate > toDate {
+		common.RespondErrorJSON(c, "'from_date' must be on or before 'to_date'")
+		return
+	}
+
+	history := arb_storagew.Get_cosmic_token_total_supply_history_by_date(fromDate, toDate)
+	c.JSON(http.StatusOK, gin.H{
+		"status":              1,
+		"error":               "",
+		"DateFrom":            fromDate,
+		"DateTo":              toDate,
 		"TotalSupplyHistory": history,
 	})
 }

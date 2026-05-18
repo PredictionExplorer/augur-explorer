@@ -279,9 +279,9 @@ func (sw *SQLStorageWrapper) Get_user_cosmic_token_summary(user_aid int64) p.CGU
 	return summary
 }
 
-// Get_cosmic_token_total_supply_history returns one row per bid with net CST supply change
+// Get_cosmic_token_total_supply_history_by_bid returns one row per bid with net CST supply change
 // (cst_reward mint minus cst_price burn on CST bids) and running totals computed in SQL.
-func (sw *SQLStorageWrapper) Get_cosmic_token_total_supply_history() []p.CGTotalSupplyHistoryRec {
+func (sw *SQLStorageWrapper) Get_cosmic_token_total_supply_history_by_bid() []p.CGTotalSupplyHistoryRec {
 
 	query := "SELECT " +
 		"b.evtlog_id, b.bid_type, COALESCE(ba.addr, ''), b.block_num, COALESCE(t.id, 0), COALESCE(t.tx_hash, ''), " +
@@ -333,6 +333,72 @@ func (sw *SQLStorageWrapper) Get_cosmic_token_total_supply_history() []p.CGTotal
 			os.Exit(1)
 		}
 		rec.Tx.EvtLogId = rec.BidInfoId
+		records = append(records, rec)
+	}
+	return records
+}
+
+// Get_cosmic_token_total_supply_history_by_date returns daily aggregates of CST supply change
+// between fromDate and toDate (inclusive), with running totals over all history up to each day.
+func (sw *SQLStorageWrapper) Get_cosmic_token_total_supply_history_by_date(fromDate, toDate string) []p.CGTotalSupplyHistoryByDateRec {
+
+	query := "WITH daily AS (" +
+		"SELECT " +
+		"DATE(b.time_stamp) AS bid_date, " +
+		"COUNT(*)::bigint AS num_bids, " +
+		"SUM(GREATEST(COALESCE(b.cst_reward, 0), 0)) AS mint_amt, " +
+		"SUM(CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END) AS burn_amt, " +
+		"SUM(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END) AS net_amt " +
+		"FROM " + sw.S.SchemaName() + ".cg_bid b " +
+		"GROUP BY DATE(b.time_stamp) " +
+		"), with_totals AS (" +
+		"SELECT " +
+		"d.bid_date, " +
+		"d.num_bids, " +
+		"d.mint_amt, d.burn_amt, d.net_amt, " +
+		"SUM(d.net_amt) OVER (ORDER BY d.bid_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total_supply " +
+		"FROM daily d " +
+		") " +
+		"SELECT " +
+		"TO_CHAR(w.bid_date, 'YYYYMMDD'), " +
+		"EXTRACT(EPOCH FROM w.bid_date)::BIGINT, " +
+		"w.bid_date::text, " +
+		"w.num_bids, " +
+		"w.mint_amt::text, w.mint_amt/1e18, " +
+		"w.burn_amt::text, w.burn_amt/1e18, " +
+		"w.net_amt::text, w.net_amt/1e18, " +
+		"w.total_supply::text, w.total_supply/1e18 " +
+		"FROM with_totals w " +
+		"WHERE w.bid_date >= TO_DATE($1, 'YYYYMMDD') AND w.bid_date <= TO_DATE($2, 'YYYYMMDD') " +
+		"ORDER BY w.bid_date"
+
+	rows, err := sw.S.Db().Query(query, fromDate, toDate)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	records := make([]p.CGTotalSupplyHistoryByDateRec, 0, 64)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGTotalSupplyHistoryByDateRec
+		err = rows.Scan(
+			&rec.Date,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.NumBids,
+			&rec.MintAmount,
+			&rec.MintAmountEth,
+			&rec.BurnAmount,
+			&rec.BurnAmountEth,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.TotalSupply,
+			&rec.TotalSupplyEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
 		records = append(records, rec)
 	}
 	return records

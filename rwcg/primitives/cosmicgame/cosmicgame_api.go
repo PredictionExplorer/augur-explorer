@@ -463,6 +463,21 @@ type CGCosmicTokenHolderRec struct {
 	BalanceFloat				float64
 	PercentOfSupply				float64
 }
+// CGTotalSupplyHistoryByDateRec is one calendar day's aggregated CST supply change from bids.
+type CGTotalSupplyHistoryByDateRec struct {
+	Date			string	// YYYYMMDD
+	TimeStamp		int64	// epoch at start of day (UTC)
+	DateTime		string
+	NumBids			int64
+	MintAmount		string
+	MintAmountEth	float64
+	BurnAmount		string
+	BurnAmountEth	float64
+	Amount			string	// net mint minus burn for the day
+	AmountEth		float64
+	TotalSupply		string
+	TotalSupplyEth	float64
+}
 // CGTotalSupplyHistoryRec is one bid's net CST supply change (mint minus burn on that bid).
 type CGTotalSupplyHistoryRec struct {
 	Tx				Transaction
