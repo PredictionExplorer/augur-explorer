@@ -463,6 +463,21 @@ type CGCosmicTokenHolderRec struct {
 	BalanceFloat				float64
 	PercentOfSupply				float64
 }
+// CGTotalSupplyHistoryRec is one bid's net CST supply change (mint minus burn on that bid).
+type CGTotalSupplyHistoryRec struct {
+	Tx				Transaction
+	BidInfoId		int64	// evtlog_id for /bid/info/:evtlog_id
+	BidType			int64	// 0 = ETH, 1 = RandomWalk, 2 = CST
+	BidderAddr		string
+	MintAmount		string	// cst_reward minted for this bid
+	MintAmountEth	float64
+	BurnAmount		string	// cst_price burned (0 for ETH / RandomWalk bids)
+	BurnAmountEth	float64
+	Amount			string	// net: MintAmount - BurnAmount (wei string)
+	AmountEth		float64
+	TotalSupply		string
+	TotalSupplyEth	float64
+}
 type CGCosmicTokenStats struct {
 	// Supply metrics
 	TotalSupply					string

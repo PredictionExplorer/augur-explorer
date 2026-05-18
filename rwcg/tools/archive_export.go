@@ -58,8 +58,8 @@ func main() {
 }
 
 // runArchiveExport copies evt_log → arch_evtlog, then arch_tx, arch_block for one project.
-// Safe on a single DB where both cg_etl and rw_etl append to the same evt_log: resume uses
-// min(per-contract MAX(evt_id)) in arch_evtlog for this project's contracts only.
+// arch_evtlog rows are keyed by (tx_hash, log_index) so archives stay valid if evt_log ids change.
+// Incremental export still scans source evt_log by id from min(per-contract MAX(evt_id)) on dst.
 func runArchiveExport(srcDB, dstDB *sql.DB, projectType string) {
 	log.Printf("Project type: %s", projectType)
 
@@ -191,11 +191,11 @@ func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64, contractAddrs [
 	// Resume from min(per-contract max evt_id in arch); not global MAX(arch_evtlog) or proc_status tables.
 	currentId := eventLogResumeFloor(dstDB, contractAddrs)
 
-	// Prepare insert
+	// Prepare insert — duplicate chain logs suppressed by (tx_hash, log_index), not evt_id.
 	insertStmt, err := dstDB.Prepare(`
-		INSERT INTO arch_evtlog (block_num, evt_id, tx_hash, contract_addr, topic0_sig, log_rlp)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (evt_id) DO NOTHING
+		INSERT INTO arch_evtlog (block_num, evt_id, log_index, tx_hash, contract_addr, topic0_sig, log_rlp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (tx_hash, log_index) DO NOTHING
 	`)
 	if err != nil {
 		log.Fatalf("Failed to prepare insert: %v", err)
@@ -215,7 +215,7 @@ func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64, contractAddrs [
 
 		// Build query with contract filter - use pq.Array for ANY clause
 		query := `
-			SELECT e.block_num, e.id, e.tx_id, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
+			SELECT e.block_num, e.id, e.tx_id, e.log_index, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
 			FROM evt_log e
 			JOIN transaction t ON e.tx_id = t.id
 			JOIN address a ON e.contract_aid = a.address_id
@@ -234,19 +234,20 @@ func exportEventLogs(srcDB, dstDB *sql.DB, contractAids []int64, contractAddrs [
 		var lastId int64
 		for rows.Next() {
 			var blockNum, evtId, txId int64
+			var logIndex int
 			var txHash, contractAddr, topic0Sig string
 			var logRlp []byte
 
-			err = rows.Scan(&blockNum, &evtId, &txId, &txHash, &contractAddr, &topic0Sig, &logRlp)
+			err = rows.Scan(&blockNum, &evtId, &txId, &logIndex, &txHash, &contractAddr, &topic0Sig, &logRlp)
 			if err != nil {
 				rows.Close()
 				log.Fatalf("Scan failed: %v", err)
 			}
 
-			_, err = insertStmt.Exec(blockNum, evtId, txHash, contractAddr, topic0Sig, logRlp)
+			_, err = insertStmt.Exec(blockNum, evtId, logIndex, txHash, contractAddr, topic0Sig, logRlp)
 			if err != nil {
 				rows.Close()
-				log.Fatalf("Insert failed for evt_id %d: %v", evtId, err)
+				log.Fatalf("Insert failed for evt_id %d tx %s log_index %d: %v", evtId, txHash, logIndex, err)
 			}
 
 			txIds[txId] = true

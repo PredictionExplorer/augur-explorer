@@ -22,8 +22,6 @@ import (
 func main() {
 	dbConn := flag.String("db", "", "PostgreSQL connection string (same DB holds live + arch_* tables)")
 	projectType := flag.String("project", "", "Project: randomwalk | cosmicgame | both (same order as archive_export: cosmicgame then randomwalk)")
-	strictOrphans := flag.Bool("strict-orphans", false,
-		"If set, fail on any arch_evtlog row whose evt_id is missing from evt_log. Default: only fail on in-range evt_ids (possible deletion); out-of-range ids are reported as legacy imports.")
 	strictBlockMeta := flag.Bool("strict-arch-block-metadata", false,
 		"If set, require arch_block num_tx, ts, cash_flow to match live block (default: only block_hash and parent_hash must match).")
 	strictTxNumLogs := flag.Bool("strict-arch-tx-num-logs", false,
@@ -54,7 +52,7 @@ func main() {
 
 	allOK := true
 	for _, p := range projects {
-		ok := verifyProject(db, p, *strictOrphans, *strictBlockMeta, *strictTxNumLogs)
+		ok := verifyProject(db, p, *strictBlockMeta, *strictTxNumLogs)
 		allOK = allOK && ok
 	}
 
@@ -68,7 +66,7 @@ func main() {
 	os.Exit(1)
 }
 
-func verifyProject(db *sql.DB, project string, strictOrphans, strictBlockMeta, strictTxNumLogs bool) bool {
+func verifyProject(db *sql.DB, project string, strictBlockMeta, strictTxNumLogs bool) bool {
 	log.Printf("")
 	log.Printf("=== Verifying project: %s ===", project)
 
@@ -82,61 +80,40 @@ func verifyProject(db *sql.DB, project string, strictOrphans, strictBlockMeta, s
 	}
 	log.Printf("Contract AIDs (%d): %v", len(aids), aids)
 
-	var loID, hiID int64
-	row := db.QueryRow(`SELECT COALESCE(MIN(id), 0), COALESCE(MAX(id), 0) FROM evt_log`)
-	if err := row.Scan(&loID, &hiID); err != nil {
-		log.Fatalf("evt_log id bounds: %v", err)
-	}
-	log.Printf("evt_log id range (global): [%d, %d]", loID, hiID)
-
 	ok := true
 
 	c := count(db, `
 		SELECT COUNT(*) FROM evt_log e
+		INNER JOIN transaction t ON e.tx_id = t.id
 		WHERE e.contract_aid = ANY($1)
-		AND NOT EXISTS (SELECT 1 FROM arch_evtlog ae WHERE ae.evt_id = e.id)
+		AND NOT EXISTS (
+			SELECT 1 FROM arch_evtlog ae
+			WHERE ae.tx_hash = t.tx_hash AND ae.log_index = e.log_index
+		)
 	`, pq.Array(aids))
-	log.Printf("evt_log rows missing from arch_evtlog: %d", c)
+	log.Printf("evt_log rows missing from arch_evtlog (by tx_hash + log_index): %d", c)
 	if c != 0 {
-		ok = false
-	}
-
-	allOrphans := count(db, `
-		SELECT COUNT(*) FROM arch_evtlog ae
-		WHERE ae.contract_addr = ANY($1)
-		AND NOT EXISTS (SELECT 1 FROM evt_log e WHERE e.id = ae.evt_id)
-	`, pq.Array(addrs))
-
-	legacyOrphans := count(db, `
-		SELECT COUNT(*) FROM arch_evtlog ae
-		WHERE ae.contract_addr = ANY($1)
-		AND NOT EXISTS (SELECT 1 FROM evt_log e WHERE e.id = ae.evt_id)
-		AND ( ae.evt_id < $2 OR ae.evt_id > $3 )
-	`, pq.Array(addrs), loID, hiID)
-
-	suspectOrphans := count(db, `
-		SELECT COUNT(*) FROM arch_evtlog ae
-		WHERE ae.contract_addr = ANY($1)
-		AND NOT EXISTS (SELECT 1 FROM evt_log e WHERE e.id = ae.evt_id)
-		AND ae.evt_id >= $2 AND ae.evt_id <= $3
-	`, pq.Array(addrs), loID, hiID)
-
-	log.Printf("arch_evtlog rows with no evt_log row (evt_id): %d total", allOrphans)
-	log.Printf("  … legacy (evt_id outside global evt_log id range [%d, %d]): %d — likely rows archived from another DB / old sequence", loID, hiID, legacyOrphans)
-	log.Printf("  … suspect (evt_id inside that range but missing): %d — possible deletions or corruption", suspectOrphans)
-
-	if strictOrphans {
-		if allOrphans != 0 {
-			ok = false
-		}
-	} else if suspectOrphans != 0 {
 		ok = false
 	}
 
 	c = count(db, `
 		SELECT COUNT(*) FROM arch_evtlog ae
-		INNER JOIN evt_log e ON e.id = ae.evt_id
-		INNER JOIN transaction t ON e.tx_id = t.id
+		WHERE ae.contract_addr = ANY($1)
+		AND NOT EXISTS (
+			SELECT 1 FROM evt_log e
+			INNER JOIN transaction t ON e.tx_id = t.id
+			WHERE t.tx_hash = ae.tx_hash AND e.log_index = ae.log_index
+		)
+	`, pq.Array(addrs))
+	log.Printf("arch_evtlog orphan rows (no matching live log for tx_hash + log_index): %d", c)
+	if c != 0 {
+		ok = false
+	}
+
+	c = count(db, `
+		SELECT COUNT(*) FROM arch_evtlog ae
+		INNER JOIN transaction t ON t.tx_hash = ae.tx_hash
+		INNER JOIN evt_log e ON e.tx_id = t.id AND e.log_index = ae.log_index
 		INNER JOIN address a ON e.contract_aid = a.address_id
 		WHERE ae.contract_addr = ANY($1)
 		AND (
@@ -145,6 +122,7 @@ func verifyProject(db *sql.DB, project string, strictOrphans, strictBlockMeta, s
 			OR ae.contract_addr IS DISTINCT FROM a.addr
 			OR ae.topic0_sig IS DISTINCT FROM e.topic0_sig
 			OR ae.log_rlp IS DISTINCT FROM e.log_rlp
+			OR (ae.evt_id IS NOT NULL AND ae.evt_id IS DISTINCT FROM e.id)
 		)
 	`, pq.Array(addrs))
 	log.Printf("arch_evtlog rows that disagree with live evt_log/tx/address: %d", c)

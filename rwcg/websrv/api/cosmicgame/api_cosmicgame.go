@@ -2134,6 +2134,21 @@ func api_cosmic_game_cosmic_token_summary_by_user(c *gin.Context) {
 		"Summary": summary,
 	})
 }
+func api_cosmic_game_cosmic_token_total_supply_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+
+	history := arb_storagew.Get_cosmic_token_total_supply_history()
+	c.JSON(http.StatusOK, gin.H{
+		"status":              1,
+		"error":               "",
+		"TotalSupplyHistory": history,
+	})
+}
 func api_cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

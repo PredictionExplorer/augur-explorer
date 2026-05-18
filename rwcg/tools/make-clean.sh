@@ -8,6 +8,7 @@ echo "Cleaning tools binaries..."
 
 rm -f archive_export
 rm -f arch_verify
+rm -f arch_node_fill
 rm -f db_verify
 rm -f evtlog_diff
 

@@ -26,6 +26,7 @@ type ArchivedTransaction struct {
 type ArchivedEventLog struct {
 	BlockNum     int64
 	EvtId        int64
+	LogIndex     int
 	TxHash       string
 	ContractAddr string
 	Topic0Sig    string
@@ -74,9 +75,9 @@ func (ss *SQLStorage) Get_archived_transaction(txHash string) (*ArchivedTransact
 func (ss *SQLStorage) Get_archived_event_logs(txHash string) ([]ArchivedEventLog, error) {
 	var query string
 	query = `SELECT 
-		block_num, evt_id, tx_hash, contract_addr, topic0_sig, log_rlp
+		block_num, COALESCE(evt_id, 0), log_index, tx_hash, contract_addr, topic0_sig, log_rlp
 	FROM arch_evtlog WHERE tx_hash = $1
-	ORDER BY evt_id`
+	ORDER BY log_index`
 
 	rows, err := ss.db.Query(query, txHash)
 	if err != nil {
@@ -90,6 +91,7 @@ func (ss *SQLStorage) Get_archived_event_logs(txHash string) ([]ArchivedEventLog
 		err := rows.Scan(
 			&log.BlockNum,
 			&log.EvtId,
+			&log.LogIndex,
 			&log.TxHash,
 			&log.ContractAddr,
 			&log.Topic0Sig,

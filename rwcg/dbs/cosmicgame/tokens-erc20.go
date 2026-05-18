@@ -278,3 +278,62 @@ func (sw *SQLStorageWrapper) Get_user_cosmic_token_summary(user_aid int64) p.CGU
 	
 	return summary
 }
+
+// Get_cosmic_token_total_supply_history returns one row per bid with net CST supply change
+// (cst_reward mint minus cst_price burn on CST bids) and running totals computed in SQL.
+func (sw *SQLStorageWrapper) Get_cosmic_token_total_supply_history() []p.CGTotalSupplyHistoryRec {
+
+	query := "SELECT " +
+		"b.evtlog_id, b.bid_type, COALESCE(ba.addr, ''), b.block_num, COALESCE(t.id, 0), COALESCE(t.tx_hash, ''), " +
+		"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT, b.time_stamp, " +
+		"GREATEST(COALESCE(b.cst_reward, 0), 0)::text, " +
+		"GREATEST(COALESCE(b.cst_reward, 0), 0)/1e18, " +
+		"(CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)::text, " +
+		"(CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)/1e18, " +
+		"(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)::text, " +
+		"(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)/1e18, " +
+		"SUM(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END) " +
+		"OVER (ORDER BY b.id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)::text, " +
+		"SUM((GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)/1e18) " +
+		"OVER (ORDER BY b.id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) " +
+		"FROM " + sw.S.SchemaName() + ".cg_bid b " +
+		"LEFT JOIN " + sw.S.SchemaName() + ".address ba ON b.bidder_aid = ba.address_id " +
+		"LEFT JOIN " + sw.S.SchemaName() + ".transaction t ON t.id = b.tx_id " +
+		"ORDER BY b.id"
+
+	rows, err := sw.S.Db().Query(query)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	records := make([]p.CGTotalSupplyHistoryRec, 0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGTotalSupplyHistoryRec
+		err = rows.Scan(
+			&rec.BidInfoId,
+			&rec.BidType,
+			&rec.BidderAddr,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			&rec.Tx.DateTime,
+			&rec.MintAmount,
+			&rec.MintAmountEth,
+			&rec.BurnAmount,
+			&rec.BurnAmountEth,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.TotalSupply,
+			&rec.TotalSupplyEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
+		rec.Tx.EvtLogId = rec.BidInfoId
+		records = append(records, rec)
+	}
+	return records
+}

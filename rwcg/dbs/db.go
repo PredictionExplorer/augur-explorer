@@ -103,6 +103,11 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 		show_connect_error(err)
 		return nil
 	}
+	return NewSQLStorageFromDB(db, info_log)
+}
+
+// NewSQLStorageFromDB wraps an existing database handle (e.g. tools using -db DSN).
+func NewSQLStorageFromDB(db *sql.DB, info_log *log.Logger) *SQLStorage {
 	ss := new(SQLStorage)
 	ss.db = db
 	ss.Info = info_log

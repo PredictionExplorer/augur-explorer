@@ -1,6 +1,8 @@
 -- Archive tables for RandomWalk AND CosmicGame
 -- These store historical data that may be pruned from RPC nodes
--- No IDs, no foreign keys - just raw data for recovery
+-- No foreign keys - just raw data for recovery
+--
+-- arch_evtlog primary key is (tx_hash, log_index): chain-native identity, stable across DB reloads.
 
 -- Archived blocks
 CREATE TABLE arch_block (
@@ -29,15 +31,16 @@ CREATE TABLE arch_tx (
 );
 CREATE INDEX idx_arch_tx_block ON arch_tx(block_num);
 
--- Archived event logs
+-- Archived event logs (identity = Ethereum log: tx_hash + log_index within block/tx)
 CREATE TABLE arch_evtlog (
     block_num     BIGINT NOT NULL,
-    evt_id        BIGINT NOT NULL PRIMARY KEY,
+    evt_id        BIGINT,
+    log_index     INT NOT NULL,
     tx_hash       CHAR(66) NOT NULL,
     contract_addr CHAR(42) NOT NULL,
     topic0_sig    CHAR(8) NOT NULL,
-    log_rlp       BYTEA NOT NULL
+    log_rlp       BYTEA NOT NULL,
+    PRIMARY KEY (tx_hash, log_index)
 );
-CREATE INDEX idx_arch_evtlog_tx ON arch_evtlog(tx_hash);
+CREATE INDEX idx_arch_evtlog_evt_id ON arch_evtlog(evt_id);
 CREATE INDEX idx_arch_evtlog_block ON arch_evtlog(block_num);
-

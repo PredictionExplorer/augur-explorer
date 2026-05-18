@@ -129,6 +129,7 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/ct/statistics", api_cosmic_game_cosmic_token_statistics)
 	r.GET("/api/cosmicgame/ct/summary/by_user/:user_addr", api_cosmic_game_cosmic_token_summary_by_user)
 	r.GET("/api/cosmicgame/ct/transfers/by_user/:user_addr/:offset/:limit", api_cosmic_game_cosmic_token_transfers_by_user)
+	r.GET("/api/cosmicgame/ct/total_supply_history", api_cosmic_game_cosmic_token_total_supply_history)
 
 	// User
 	r.GET("/api/cosmicgame/user/info/:user_addr", api_cosmic_game_user_info)
