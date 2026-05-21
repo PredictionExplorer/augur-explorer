@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cosmic Signature FAQ — Test UI</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #0f1117; color: #e8eaed; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.25rem; margin: 0 0 8px; }
+    .sub { color: #9aa0a6; font-size: 0.9rem; margin-bottom: 20px; }
+    #status { font-size: 0.85rem; margin-bottom: 16px; padding: 8px 12px; border-radius: 8px; background: #1a1d27; }
+    #status.ok { border-left: 3px solid #34a853; }
+    #status.bad { border-left: 3px solid #ea4335; }
+    textarea { width: 100%; min-height: 90px; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid #3c4043; background: #1a1d27; color: inherit; resize: vertical; }
+    button { margin-top: 10px; padding: 10px 18px; border: 0; border-radius: 8px; background: #8ab4f8; color: #0f1117; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #answer { margin-top: 20px; padding: 16px; border-radius: 8px; background: #1a1d27; white-space: pre-wrap; line-height: 1.5; min-height: 80px; }
+    #sources { margin-top: 12px; font-size: 0.85rem; color: #9aa0a6; }
+    #sources ul { margin: 6px 0 0; padding-left: 18px; }
+    .err { color: #f28b82; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Cosmic Signature FAQ — Test UI</h1>
+    <p class="sub">Minimal tester for Haystack + Codex MCP. Session persists until page reload.</p>
+    <div id="status">Checking backend…</div>
+    <label for="question">Question</label>
+    <textarea id="question" placeholder="How can I bid on the website?"></textarea>
+    <button id="ask">Ask</button>
+    <div id="answer"></div>
+    <div id="sources"></div>
+  </div>
+  <script>
+    const API = window.location.origin;
+    let sessionId = null;
+
+    async function checkHealth() {
+      const el = document.getElementById('status');
+      try {
+        const r = await fetch(API + '/health');
+        const data = await r.json();
+        if (r.ok && data.status === 'healthy') {
+          el.className = 'ok';
+          el.textContent = 'Backend healthy — Haystack + Codex MCP ready (' + data.haystack.documents + ' docs indexed)';
+        } else {
+          el.className = 'bad';
+          el.textContent = 'Backend degraded: ' + JSON.stringify(data);
+        }
+      } catch (e) {
+        el.className = 'bad';
+        el.textContent = 'Cannot reach backend at ' + API;
+      }
+    }
+
+    async function ask() {
+      const q = document.getElementById('question').value.trim();
+      const answerEl = document.getElementById('answer');
+      const sourcesEl = document.getElementById('sources');
+      const btn = document.getElementById('ask');
+      if (!q) return;
+      btn.disabled = true;
+      answerEl.textContent = 'Thinking…';
+      sourcesEl.innerHTML = '';
+      try {
+        const r = await fetch(API + '/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q, session_id: sessionId }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          const detail = data.detail || {};
+          const component = detail.component || 'unknown';
+          const msg = detail.error || JSON.stringify(data);
+          answerEl.innerHTML = '<span class="err">[' + component + '] ' + msg + '</span>';
+          return;
+        }
+        sessionId = data.session_id;
+        answerEl.textContent = data.answer || '(empty answer)';
+        if (data.sources && data.sources.length) {
+          sourcesEl.innerHTML = '<strong>Sources</strong><ul>' +
+            data.sources.map(s => '<li>' + s + '</li>').join('') + '</ul>';
+        }
+      } catch (e) {
+        answerEl.innerHTML = '<span class="err">' + e + '</span>';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('ask').addEventListener('click', ask);
+    document.getElementById('question').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask();
+    });
+    checkHealth();
+  </script>
+</body>
+</html>

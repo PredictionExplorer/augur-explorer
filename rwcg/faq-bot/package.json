@@ -1,0 +1,23 @@
+{
+  "name": "cosmic-faq-bot",
+  "version": "1.0.0",
+  "description": "AI FAQ Bot for Cosmic Signature project",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "axios": "^1.13.5",
+    "next": "^15.1.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.6",
+    "typescript": "^5.7.3"
+  }
+}
