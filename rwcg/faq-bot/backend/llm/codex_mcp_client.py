@@ -13,16 +13,31 @@ from mcp.client.stdio import stdio_client
 
 logger = logging.getLogger(__name__)
 
+
+class _SuppressCodexNotificationWarnings(logging.Filter):
+    """Codex MCP emits custom `codex/event` notifications the Python MCP SDK cannot parse."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "Failed to validate notification" not in record.getMessage()
+
+
+logging.getLogger().addFilter(_SuppressCodexNotificationWarnings())
+
 SYSTEM_INSTRUCTIONS = """You are the Cosmic Signature FAQ assistant.
 
-Answer using ONLY the provided CONTEXT (facts + retrieved documents + conversation history).
+Answer using ONLY the provided CONTEXT (facts + retrieved documents + conversation history + live on-chain state).
 If the context is insufficient, say exactly what information is missing — do not invent addresses, counts, or behavior.
 
-Audience rules:
-- For beginner questions: plain language, step-by-step, mention pages like /game/play when relevant.
-- For expert/developer questions: precise terminology, cite source paths, include counts and contract names when present in facts.
+Response length (important):
+- Default to **short answers**: 1–3 sentences with only the facts the user asked for.
+- Do **not** add UI walkthrough steps, background, or extra sections unless the user asked for them.
+- Do **not** include a "Sources" section — sources are shown separately in the UI.
+- Do **not** mention fetch timestamps or "from the live on-chain state you provided" unless the user asked about freshness.
+- Give detailed step-by-step or developer-level answers only when the user clearly wants depth (explain, how to, steps, tutorial, tell me more).
 
-Always end with a short "Sources:" list referencing paths from the context."""
+Audience:
+- Beginner how-to questions: plain language, steps only when requested.
+- Expert/developer questions: precise terms and signatures when relevant, still concise unless detail was requested."""
 
 
 class CodexMCPError(RuntimeError):

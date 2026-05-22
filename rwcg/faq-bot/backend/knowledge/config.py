@@ -28,6 +28,7 @@ FACTS_DIR = KNOWLEDGE_BASE / "facts"
 DOCS_BEGINNER_DIR = KNOWLEDGE_BASE / "docs" / "beginner"
 DOCS_EXPERT_DIR = KNOWLEDGE_BASE / "docs" / "expert"
 DOCS_SOURCES_DIR = KNOWLEDGE_BASE / "docs" / "sources"
+DEPLOYMENTS_SOURCE_DIR = DOCS_SOURCES_DIR / "deployments"
 
 CURSOR_VREF_PATH = Path(
     os.getenv("CURSOR_VREF_PATH", str(RWCG_ROOT.parent))
@@ -53,5 +54,6 @@ def ensure_output_dirs() -> None:
         DOCS_BEGINNER_DIR,
         DOCS_EXPERT_DIR,
         DOCS_SOURCES_DIR,
+        DEPLOYMENTS_SOURCE_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

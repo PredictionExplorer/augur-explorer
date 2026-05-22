@@ -15,12 +15,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from llm.codex_mcp_client import CodexMCPClient, CodexMCPError
 from orchestrator import HaystackUnavailableError, Orchestrator
 from retrieval.pipeline import KnowledgeRetriever
-from sessions.store import SessionStore
+from sessions.store import SessionExpiredError, SessionStore
 
 load_dotenv()
 
@@ -33,7 +34,7 @@ _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 retriever: Optional[KnowledgeRetriever] = None
 codex_client: Optional[CodexMCPClient] = None
 orchestrator: Optional[Orchestrator] = None
-session_store = SessionStore(ttl_seconds=int(os.getenv("SESSION_TTL_SECONDS", "86400")))
+session_store = SessionStore(ttl_seconds=int(os.getenv("SESSION_TTL_SECONDS", "3600")))
 
 
 class QueryRequest(BaseModel):
@@ -107,6 +108,9 @@ async def test_ui():
     return FileResponse(os.path.join(_STATIC_DIR, "test-ui.html"))
 
 
+app.mount("/test-ui-static", StaticFiles(directory=_STATIC_DIR), name="test-ui-static")
+
+
 @app.get("/")
 async def root():
     indexed = retriever.is_ready if retriever else False
@@ -169,6 +173,12 @@ async def query(request: QueryRequest):
     try:
         result = await orchestrator.query(request.question, request.session_id)
         return QueryResponse(**result)
+    except SessionExpiredError as exc:
+        logger.info("Session expired: %s", request.session_id)
+        raise HTTPException(
+            status_code=410,
+            detail={"error": str(exc), "component": "session"},
+        )
     except HaystackUnavailableError as exc:
         logger.error("Haystack error: %s", exc)
         raise HTTPException(

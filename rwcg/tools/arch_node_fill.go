@@ -8,7 +8,7 @@
 //
 // Example:
 //
-//	RPC_URL=https://... ./arch_node_fill -project both -db 'postgres://...' -from 0
+//	RPC_URL=https://... ./arch_node_fill -project both -db 'postgres://...' -start-block 9292392
 package main
 
 import (
@@ -51,17 +51,26 @@ func main() {
 	dbConn := flag.String("db", "", "PostgreSQL connection string")
 	projectType := flag.String("project", "", "randomwalk | cosmicgame | both")
 	fromBlock := flag.Uint64("from", 0, "Start block (0 = auto: min contract address block_num, else min evt_log block)")
+	startBlock := flag.Uint64("start-block", 0, "Start block (same as -from; overrides -from when both are set)")
 	toBlock := flag.Uint64("to", 0, "End block inclusive (0 = chain head)")
 	batchBlocks := flag.Uint64("batch", defaultBatchBlocks, "FilterLogs block range size")
 	dryRun := flag.Bool("dry-run", false, "Scan and report only; do not insert")
 	flag.Parse()
+
+	flagFrom := *fromBlock
+	if *startBlock > 0 {
+		if *fromBlock > 0 && *fromBlock != *startBlock {
+			log.Fatalf("-start-block (%d) and -from (%d) disagree; pass only one", *startBlock, *fromBlock)
+		}
+		flagFrom = *startBlock
+	}
 
 	rpcURL := os.Getenv("RPC_URL")
 	if rpcURL == "" {
 		log.Fatal("RPC_URL environment variable is required")
 	}
 	if *dbConn == "" || *projectType == "" {
-		log.Fatal("Usage: arch_node_fill -project <randomwalk|cosmicgame|both> -db 'postgres://...' [-from N] [-to N] [-batch N] [-dry-run]")
+		log.Fatal("Usage: arch_node_fill -project <randomwalk|cosmicgame|both> -db 'postgres://...' [-start-block N] [-from N] [-to N] [-batch N] [-dry-run]")
 	}
 
 	*projectType = strings.ToLower(*projectType)
@@ -108,7 +117,7 @@ func main() {
 	for _, p := range projects {
 		log.Printf("")
 		log.Printf("========== project: %s ==========", p)
-		st := runProject(db, storage, eclient, p, *fromBlock, endBlock, *batchBlocks, *dryRun)
+		st := runProject(db, storage, eclient, p, flagFrom, endBlock, *batchBlocks, *dryRun)
 		printStats(p, &st)
 		mergeStats(&total, &st)
 	}
@@ -146,6 +155,7 @@ func requireArchLogIndexPK(db *sql.DB) error {
 
 func resolveFromBlock(db *sql.DB, aids []int64, addrs []string, flagFrom uint64) (uint64, error) {
 	if flagFrom > 0 {
+		log.Printf("Start block: %d (from -start-block / -from)", flagFrom)
 		return flagFrom, nil
 	}
 	var fromAddr, fromEvt sql.NullInt64

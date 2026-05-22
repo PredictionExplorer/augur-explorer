@@ -6,96 +6,355 @@
   <title>Cosmic Signature FAQ — Test UI</title>
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; background: #0f1117; color: #e8eaed; }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 24px; }
-    h1 { font-size: 1.25rem; margin: 0 0 8px; }
-    .sub { color: #9aa0a6; font-size: 0.9rem; margin-bottom: 20px; }
-    #status { font-size: 0.85rem; margin-bottom: 16px; padding: 8px 12px; border-radius: 8px; background: #1a1d27; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0f1117; color: #e8eaed; height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 16px 20px 8px; border-bottom: 1px solid #2a2f3a; }
+    h1 { font-size: 1.15rem; margin: 0 0 4px; }
+    .sub { color: #9aa0a6; font-size: 0.85rem; margin: 0; }
+    #status { font-size: 0.8rem; margin-top: 10px; padding: 6px 10px; border-radius: 6px; background: #1a1d27; }
     #status.ok { border-left: 3px solid #34a853; }
     #status.bad { border-left: 3px solid #ea4335; }
-    textarea { width: 100%; min-height: 90px; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid #3c4043; background: #1a1d27; color: inherit; resize: vertical; }
-    button { margin-top: 10px; padding: 10px 18px; border: 0; border-radius: 8px; background: #8ab4f8; color: #0f1117; font-weight: 600; cursor: pointer; }
+    #status.expired { border-left: 3px solid #fbbc04; color: #fdd663; }
+    #chat { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; line-height: 1.5; word-break: break-word; }
+    .msg.user { align-self: flex-end; background: #394457; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+    .msg.bot { align-self: flex-start; background: #1a1d27; border: 1px solid #2a2f3a; border-bottom-left-radius: 4px; }
+    .msg.error { align-self: stretch; background: #3b1f1f; border: 1px solid #ea4335; color: #f28b82; white-space: pre-wrap; }
+    .md-root { font-size: 0.95rem; }
+    .md-root p { margin: 0.2rem 0; line-height: 1.6; }
+    .md-root .md-heading { font-weight: 700; margin-top: 0.75rem; margin-bottom: 0.1rem; }
+    .md-root .md-spacer { height: 0.4rem; }
+    .md-root ul.md-list, .md-root ol.md-list { margin: 0.2rem 0; padding-left: 1.25rem; }
+    .md-root li { margin-bottom: 0.15rem; line-height: 1.5; }
+    .md-root strong { font-weight: 700; color: #f3f4f6; }
+    .md-root em { font-style: italic; }
+    .md-root code { background: rgba(255,255,255,0.08); border-radius: 3px; padding: 1px 5px; font-family: ui-monospace, monospace; font-size: 0.88em; }
+    .md-root a { color: #8ab4f8; text-decoration: none; }
+    .md-root a:hover { text-decoration: underline; }
+    .md-root pre { background: rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 0.4rem 0; }
+    .md-root pre code { background: none; padding: 0; font-size: 0.85em; }
+    .sources { margin-top: 8px; font-size: 0.78rem; color: #9aa0a6; }
+    .sources summary { cursor: pointer; user-select: none; list-style: none; display: inline-flex; align-items: center; gap: 4px; color: #8ab4f8; }
+    .sources summary::-webkit-details-marker { display: none; }
+    .sources summary::before { content: '▸'; display: inline-block; transition: transform 0.15s ease; }
+    .sources[open] summary::before { transform: rotate(90deg); }
+    .sources ul { margin: 6px 0 0; padding-left: 16px; }
+    .thinking { color: #9aa0a6; font-style: italic; }
+    footer { padding: 12px 20px 16px; border-top: 1px solid #2a2f3a; background: #0f1117; }
+    .input-row { display: flex; gap: 10px; align-items: flex-end; }
+    textarea { flex: 1; min-height: 52px; max-height: 140px; padding: 10px 12px; border-radius: 8px; border: 1px solid #3c4043; background: #1a1d27; color: inherit; resize: vertical; font: inherit; }
+    textarea:disabled { opacity: 0.5; }
+    button { padding: 10px 18px; border: 0; border-radius: 8px; background: #8ab4f8; color: #0f1117; font-weight: 600; cursor: pointer; white-space: nowrap; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    #answer { margin-top: 20px; padding: 16px; border-radius: 8px; background: #1a1d27; white-space: pre-wrap; line-height: 1.5; min-height: 80px; }
-    #sources { margin-top: 12px; font-size: 0.85rem; color: #9aa0a6; }
-    #sources ul { margin: 6px 0 0; padding-left: 18px; }
-    .err { color: #f28b82; }
+    .header-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button.secondary { background: #394457; color: #e8eaed; }
+    button.secondary.copied { background: #34a853; color: #0f1117; }
+    .hint { font-size: 0.75rem; color: #9aa0a6; margin-top: 6px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <header>
     <h1>Cosmic Signature FAQ — Test UI</h1>
-    <p class="sub">Minimal tester for Haystack + Codex MCP. Session persists until page reload.</p>
+    <p class="sub">Chat-style tester. Context lasts 1 hour of idle time, then reload to start fresh.</p>
     <div id="status">Checking backend…</div>
-    <label for="question">Question</label>
-    <textarea id="question" placeholder="How can I bid on the website?"></textarea>
-    <button id="ask">Ask</button>
-    <div id="answer"></div>
-    <div id="sources"></div>
-  </div>
+    <div class="header-actions">
+      <button type="button" id="copy-conversation" class="secondary">Copy Conversation</button>
+    </div>
+  </header>
+
+  <div id="chat"></div>
+
+  <footer>
+    <div class="input-row">
+      <textarea id="question" placeholder="Ask a follow-up question…" rows="2"></textarea>
+      <button id="ask">Send</button>
+    </div>
+    <div class="hint">Enter to send · Shift+Enter for newline</div>
+  </footer>
+
+  <script>
+    /** Lightweight markdown → DOM (bold, italic, code, lists, links). */
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderInlineMarkdown(text) {
+      let s = escapeHtml(text);
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      return s;
+    }
+
+    function renderMarkdownTo(container, content) {
+      container.replaceChildren();
+      const root = document.createElement('div');
+      root.className = 'md-root';
+
+      const lines = content.split('\n');
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i];
+
+        if (line.trim() === '') {
+          const spacer = document.createElement('div');
+          spacer.className = 'md-spacer';
+          root.appendChild(spacer);
+          i++;
+          continue;
+        }
+
+        if (/^```/.test(line.trim())) {
+          const codeLines = [];
+          i++;
+          while (i < lines.length && !/^```/.test(lines[i].trim())) {
+            codeLines.push(lines[i]);
+            i++;
+          }
+          if (i < lines.length) i++;
+          const pre = document.createElement('pre');
+          const code = document.createElement('code');
+          code.textContent = codeLines.join('\n');
+          pre.appendChild(code);
+          root.appendChild(pre);
+          continue;
+        }
+
+        if (/^#{1,3}\s+/.test(line)) {
+          const p = document.createElement('p');
+          p.className = 'md-heading';
+          p.innerHTML = renderInlineMarkdown(line.replace(/^#{1,3}\s+/, ''));
+          root.appendChild(p);
+          i++;
+          continue;
+        }
+
+        if (/^\*\*[^*]+\*\*$/.test(line.trim())) {
+          const p = document.createElement('p');
+          p.className = 'md-heading';
+          p.innerHTML = renderInlineMarkdown(line.trim());
+          root.appendChild(p);
+          i++;
+          continue;
+        }
+
+        if (/^(\s*[-*])\s+/.test(line)) {
+          const ul = document.createElement('ul');
+          ul.className = 'md-list';
+          while (i < lines.length && /^(\s*[-*])\s+/.test(lines[i])) {
+            const li = document.createElement('li');
+            li.innerHTML = renderInlineMarkdown(lines[i].replace(/^\s*[-*]\s+/, ''));
+            ul.appendChild(li);
+            i++;
+          }
+          root.appendChild(ul);
+          continue;
+        }
+
+        if (/^\d+\.\s+/.test(line)) {
+          const ol = document.createElement('ol');
+          ol.className = 'md-list';
+          while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+            const li = document.createElement('li');
+            li.innerHTML = renderInlineMarkdown(lines[i].replace(/^\d+\.\s+/, ''));
+            ol.appendChild(li);
+            i++;
+          }
+          root.appendChild(ol);
+          continue;
+        }
+
+        const p = document.createElement('p');
+        p.className = 'md-paragraph';
+        p.innerHTML = renderInlineMarkdown(line);
+        root.appendChild(p);
+        i++;
+      }
+
+      container.appendChild(root);
+    }
+  </script>
   <script>
     const API = window.location.origin;
     let sessionId = null;
+    let contextExpired = false;
+    const conversation = [];
+
+    const chatEl = document.getElementById('chat');
+    const questionEl = document.getElementById('question');
+    const askBtn = document.getElementById('ask');
+    const copyBtn = document.getElementById('copy-conversation');
+    const statusEl = document.getElementById('status');
+
+    function scrollChat() {
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function addMessage(role, text, sources) {
+      conversation.push({ role, text, sources: sources ? sources.slice() : null });
+      renderMessage(role, text, sources);
+    }
+
+    function renderMessage(role, text, sources) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      if (role === 'bot') {
+        renderMarkdownTo(div, text);
+      } else {
+        div.textContent = text;
+      }
+      if (sources && sources.length) {
+        const src = document.createElement('details');
+        src.className = 'sources';
+        src.innerHTML =
+          '<summary>Sources (' + sources.length + ')</summary><ul>' +
+          sources.map(s => '<li>' + escapeHtml(s) + '</li>').join('') + '</ul>';
+        div.appendChild(src);
+      }
+      chatEl.appendChild(div);
+      scrollChat();
+    }
+
+    function roleLabel(role) {
+      if (role === 'user') return 'USER';
+      if (role === 'bot') return 'ASSISTANT';
+      if (role === 'error') return 'ERROR';
+      return role.toUpperCase();
+    }
+
+    function formatConversation() {
+      const lines = [
+        'Cosmic Signature FAQ — conversation export',
+        'Exported: ' + new Date().toISOString(),
+        'Session ID: ' + (sessionId || '(none)'),
+        '---',
+        '',
+      ];
+      conversation.forEach((entry, i) => {
+        lines.push('[' + (i + 1) + '] ' + roleLabel(entry.role));
+        lines.push(entry.text);
+        if (entry.sources && entry.sources.length) {
+          lines.push('Sources:');
+          entry.sources.forEach(s => lines.push('  - ' + s));
+        }
+        lines.push('');
+      });
+      return lines.join('\n').trim() + '\n';
+    }
+
+    async function copyConversation() {
+      if (!conversation.length) {
+        statusEl.className = 'bad';
+        statusEl.textContent = 'Nothing to copy yet — send a message first.';
+        return;
+      }
+      const text = formatConversation();
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.classList.add('copied');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.textContent = 'Copy Conversation';
+        }, 2000);
+      } catch (e) {
+        statusEl.className = 'bad';
+        statusEl.textContent = 'Clipboard copy failed: ' + e;
+      }
+    }
+
+    function setExpiredUI() {
+      contextExpired = true;
+      questionEl.disabled = true;
+      askBtn.disabled = true;
+      statusEl.className = 'expired';
+      statusEl.textContent = 'error: context expired, please reload window';
+    }
 
     async function checkHealth() {
-      const el = document.getElementById('status');
       try {
         const r = await fetch(API + '/health');
         const data = await r.json();
+        if (contextExpired) return;
         if (r.ok && data.status === 'healthy') {
-          el.className = 'ok';
-          el.textContent = 'Backend healthy — Haystack + Codex MCP ready (' + data.haystack.documents + ' docs indexed)';
+          statusEl.className = 'ok';
+          const ttl = data.sessions && data.sessions.ttl_seconds;
+          statusEl.textContent = 'Backend healthy (' + data.haystack.documents + ' docs). Context expires after ' +
+            (ttl ? Math.round(ttl / 60) + ' min idle' : '1 hour idle') + '.';
         } else {
-          el.className = 'bad';
-          el.textContent = 'Backend degraded: ' + JSON.stringify(data);
+          statusEl.className = 'bad';
+          statusEl.textContent = 'Backend degraded: ' + JSON.stringify(data);
         }
       } catch (e) {
-        el.className = 'bad';
-        el.textContent = 'Cannot reach backend at ' + API;
+        statusEl.className = 'bad';
+        statusEl.textContent = 'Cannot reach backend at ' + API;
       }
     }
 
     async function ask() {
-      const q = document.getElementById('question').value.trim();
-      const answerEl = document.getElementById('answer');
-      const sourcesEl = document.getElementById('sources');
-      const btn = document.getElementById('ask');
+      if (contextExpired) return;
+      const q = questionEl.value.trim();
       if (!q) return;
-      btn.disabled = true;
-      answerEl.textContent = 'Thinking…';
-      sourcesEl.innerHTML = '';
+
+      addMessage('user', q);
+      questionEl.value = '';
+      questionEl.disabled = true;
+      askBtn.disabled = true;
+
+      const thinking = document.createElement('div');
+      thinking.className = 'msg bot thinking';
+      thinking.textContent = 'Thinking…';
+      chatEl.appendChild(thinking);
+      scrollChat();
+
       try {
         const r = await fetch(API + '/api/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question: q, session_id: sessionId }),
         });
+        thinking.remove();
         const data = await r.json();
+
         if (!r.ok) {
           const detail = data.detail || {};
-          const component = detail.component || 'unknown';
           const msg = detail.error || JSON.stringify(data);
-          answerEl.innerHTML = '<span class="err">[' + component + '] ' + msg + '</span>';
+          if (r.status === 410 || detail.component === 'session') {
+            addMessage('error', msg);
+            setExpiredUI();
+            return;
+          }
+          addMessage('error', '[' + (detail.component || 'error') + '] ' + msg);
           return;
         }
+
         sessionId = data.session_id;
-        answerEl.textContent = data.answer || '(empty answer)';
-        if (data.sources && data.sources.length) {
-          sourcesEl.innerHTML = '<strong>Sources</strong><ul>' +
-            data.sources.map(s => '<li>' + s + '</li>').join('') + '</ul>';
-        }
+        addMessage('bot', data.answer || '(empty answer)', data.sources);
       } catch (e) {
-        answerEl.innerHTML = '<span class="err">' + e + '</span>';
+        thinking.remove();
+        addMessage('error', String(e));
       } finally {
-        btn.disabled = false;
+        if (!contextExpired) {
+          questionEl.disabled = false;
+          askBtn.disabled = false;
+          questionEl.focus();
+        }
       }
     }
 
-    document.getElementById('ask').addEventListener('click', ask);
-    document.getElementById('question').addEventListener('keydown', e => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask();
+    askBtn.addEventListener('click', ask);
+    copyBtn.addEventListener('click', copyConversation);
+    questionEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        ask();
+      }
     });
+
     checkHealth();
+    questionEl.focus();
   </script>
 </body>
 </html>

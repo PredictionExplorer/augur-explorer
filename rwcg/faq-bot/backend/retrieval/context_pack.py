@@ -34,7 +34,14 @@ def build_context_pack(
         budget -= len(block)
 
     if facts:
-        facts_block = "STRUCTURED FACTS\n" + _truncate(json.dumps(facts, indent=2), min(3000, budget // 3)) + "\n\n"
+        facts_payload = facts
+        priority_keys = ("deployed-addresses", "contract-abis-summary", "network-environment")
+        if any(k in facts for k in priority_keys):
+            priority = {k: facts[k] for k in priority_keys if k in facts}
+            rest = {k: v for k, v in facts.items() if k not in priority}
+            facts_payload = {**priority, **rest}
+        facts_text = json.dumps(facts_payload, indent=2)
+        facts_block = "STRUCTURED FACTS\n" + _truncate(facts_text, min(4000, budget // 2)) + "\n\n"
         parts.append(facts_block)
         budget -= len(facts_block)
 

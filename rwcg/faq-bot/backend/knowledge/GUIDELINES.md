@@ -37,6 +37,8 @@ $KNOWLEDGE_BASE/
 | `extract_contracts.py` | `facts/contracts-inventory.json`, expert contract doc | Counts, paths, roles |
 | `extract_routes.py` | `facts/frontend-routes.json`, navigation docs | Site map |
 | `extract_api.py` | `facts/api-endpoints.json`, API overview | Backend REST surface |
+| `extract_deployments.py` | `facts/deployed-addresses.json`, expert deployment doc | On-chain addresses |
+| `extract_abis.py` | `facts/contract-abis-summary.json`, `docs/sources/frontend-contracts/*.json`, expert integration doc | Contract ABIs + integration recipes |
 | `copy_source_docs.py` | `docs/sources/*`, curated beginner/expert summaries | Import upstream docs |
 | `extract_ui_pages.py` | `docs/sources/frontend-pages/*` | User-visible copy from TSX |
 
@@ -90,6 +92,7 @@ strict inputs and output paths.
 | Gap | Proposed extractor |
 |-----|-------------------|
 | Live Arbitrum addresses | Parse latest `deploy-cosmic-signature-contracts-report-*.json` if present |
+| Production frontend env (RPC/API URLs) | `knowledge/deployments/*-environment.txt` → `facts/network-environment.json` |
 | SQL/game mechanics | Summarize `cursor-vref/rwcg/sql/cosmicgame/*.sql` into expert doc |
 | Error code catalog | Extract `CosmicSignatureErrors.sol` + frontend decoder |
 | Prize math | Summarize `cosmic-signature-game-prizes.md` + `MainPrize.sol` comments |

@@ -1283,6 +1283,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_staked_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
+	v_active_stakers			INT;
 	v_round_num					INT;
 BEGIN
 
@@ -1297,6 +1298,10 @@ BEGIN
 		INSERT INTO cg_staker_rwalk(staker_aid,total_tokens_staked,num_stake_actions) VALUES(NEW.staker_aid,1,1);
 	END IF;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+	SELECT COUNT(*) FROM cg_staker_rwalk WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_rwalk SET total_num_stakers=v_active_stakers;
+	END IF;
 	SELECT round_num FROM cg_prize_claim ORDER BY round_num DESC LIMIT 1 INTO v_round_num;
 	IF v_round_num IS NOT NULL THEN
 		UPDATE cg_nft_staked_rwalk SET round_num=(v_round_num+1) WHERE id=NEW.id;
@@ -1306,6 +1311,7 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_staked_rwalk_delete() RETURNS trigger AS  $$
 DECLARE
+	v_active_stakers			INT;
 BEGIN
 
 	DELETE FROM cg_staked_token_rwalk WHERE token_id = OLD.token_id;
@@ -1314,6 +1320,10 @@ BEGIN
 			num_stake_actions = (num_stake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
+	SELECT COUNT(*) FROM cg_staker_rwalk WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_rwalk SET total_num_stakers=v_active_stakers;
+	END IF;
 
 	RETURN OLD;
 END;
@@ -1382,6 +1392,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_unstaked_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
+	v_active_stakers			INT;
 	v_round_num					INT;
 BEGIN
 
@@ -1391,6 +1402,10 @@ BEGIN
 		WHERE staker_aid=NEW.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
 	DELETE FROM cg_staked_token_rwalk WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
+	SELECT COUNT(*) FROM cg_staker_rwalk WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_rwalk SET total_num_stakers=v_active_stakers;
+	END IF;
 	SELECT round_num FROM cg_prize_claim ORDER BY round_num DESC LIMIT 1 INTO v_round_num;
 	IF v_round_num IS NOT NULL THEN
 		UPDATE cg_nft_unstaked_rwalk SET round_num=(v_round_num+1) WHERE id=NEW.id;
@@ -1400,6 +1415,7 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_nft_unstaked_rwalk_delete() RETURNS trigger AS  $$
 DECLARE
+	v_active_stakers			INT;
 BEGIN
 
 	UPDATE cg_staker_rwalk
@@ -1407,6 +1423,10 @@ BEGIN
 			num_unstake_actions = (num_unstake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+	SELECT COUNT(*) FROM cg_staker_rwalk WHERE total_tokens_staked > 0 INTO v_active_stakers;
+	IF v_active_stakers IS NOT NULL THEN
+		UPDATE cg_stake_stats_rwalk SET total_num_stakers=v_active_stakers;
+	END IF;
 	-- We aren't restoring state here (To Do)
 
 	RETURN OLD;

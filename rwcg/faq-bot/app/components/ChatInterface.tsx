@@ -135,14 +135,14 @@ export default function ChatInterface() {
                 <p>{message.text}</p>
               )}
               {message.sources && message.sources.length > 0 && (
-                <div className={styles.sources}>
-                  <strong>Sources:</strong>
+                <details className={styles.sources}>
+                  <summary>Sources ({message.sources.length})</summary>
                   <ul>
                     {message.sources.map((source, idx) => (
                       <li key={idx}>{source}</li>
                     ))}
                   </ul>
-                </div>
+                </details>
               )}
             </div>
             <span className={styles.timestamp}>

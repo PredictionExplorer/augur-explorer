@@ -13,6 +13,7 @@ if str(BACKEND_ROOT) not in sys.path:
 from knowledge.config import ensure_output_dirs, KNOWLEDGE_BASE
 from knowledge.generate import (
     copy_source_docs,
+    extract_abis,
     extract_api,
     extract_contracts,
     extract_deployments,
@@ -41,6 +42,9 @@ def main() -> int:
 
     extract_deployments.run()
     print("  ✓ deployment addresses")
+
+    extract_abis.run()
+    print("  ✓ contract ABIs")
 
     if not args.skip_source_copy:
         copy_source_docs.run()

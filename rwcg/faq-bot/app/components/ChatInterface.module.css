@@ -97,13 +97,30 @@
   font-size: 0.85rem;
 }
 
-.sources strong {
-  display: block;
-  margin-bottom: 0.5rem;
+.sources summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  color: #667eea;
+  font-weight: 600;
+}
+
+.sources summary::-webkit-details-marker {
+  display: none;
+}
+
+.sources summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.sources[open] summary::before {
+  transform: rotate(90deg);
 }
 
 .sources ul {
-  margin: 0;
+  margin: 0.5rem 0 0;
   padding-left: 1.25rem;
 }
 

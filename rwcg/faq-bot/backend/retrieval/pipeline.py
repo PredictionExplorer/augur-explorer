@@ -199,16 +199,106 @@ class KnowledgeRetriever:
         )
         return result.get("documents", [])
 
-    def retrieve(self, query: str, top_k_primary: int = 4, top_k_secondary: int = 2) -> list[Document]:
+    def _search_query(self, query: str) -> str:
+        """Use the user's actual question for BM25, not the full rewrite blob."""
+        if "Current question:" in query:
+            query = query.split("Current question:")[-1].strip()
+        return query
+
+    def _is_address_query(self, query: str) -> bool:
+        q = query.lower()
+        triggers = (
+            "address", "addresses", "0x", "mainnet", "contractaddr",
+            "deployed on", "deployment address", "give me the",
+        )
+        return any(t in q for t in triggers)
+
+    def _is_integration_query(self, query: str) -> bool:
+        q = query.lower()
+        triggers = (
+            " abi", "abi ", "golang", "go script", "typescript", "javascript",
+            "web3", "ethers", "viem", "integration", "bidwitheth", "contract call",
+            "encode", "abi.json", "make a bid with", "script in go", "script in golang",
+            "how do i call", "function signature", "getnextethbidprice",
+        )
+        return any(t in q for t in triggers)
+
+    def _is_environment_query(self, query: str) -> bool:
+        q = query.lower()
+        triggers = (
+            "next_public_", "rpc_url", "api_url", "environment variable",
+            "env var", "cosmicsignature.com", "production url", "mainnet rpc",
+        )
+        return any(t in q for t in triggers)
+
+    def _forced_documents_for_query(self, query: str) -> list[Document]:
+        """Pin high-value docs for address or integration/code questions."""
+        patterns: tuple[str, ...] = ()
+        if self._is_address_query(query):
+            patterns += (
+                "docs/expert/07-deployed-addresses",
+                "docs/sources/deployments/",
+                "facts/deployed-addresses.json",
+            )
+        if self._is_integration_query(query):
+            patterns += (
+                "docs/expert/08-contract-abis",
+                "docs/sources/frontend-contracts/CosmicGame.json",
+                "facts/contract-abis-summary.json",
+            )
+        if self._is_environment_query(query):
+            patterns += (
+                "docs/expert/09-network-environment",
+                "docs/sources/deployments/arbitrum-mainnet-environment",
+                "facts/network-environment.json",
+            )
+        if not patterns:
+            return []
+        forced: list[Document] = []
+        for doc in self.document_store.filter_documents():
+            path = doc.meta.get("file_path", "")
+            if any(p in path for p in patterns):
+                forced.append(doc)
+        if forced:
+            logger.info("Forced %d document(s) for query", len(forced))
+        return forced
+
+    def _facts_for_query(self, question: str, facts: dict[str, Any]) -> dict[str, Any]:
+        prioritized_keys: list[str] = []
+        if self._is_address_query(question):
+            prioritized_keys.extend(("deployed-addresses", "deployed-contract-roles"))
+        if self._is_integration_query(question):
+            prioritized_keys.extend(("contract-abis-summary", "deployed-addresses"))
+        if self._is_environment_query(question):
+            prioritized_keys.extend(("network-environment", "deployed-addresses"))
+        if not prioritized_keys:
+            return facts
+        prioritized: dict[str, Any] = {}
+        for key in prioritized_keys:
+            if key in facts:
+                prioritized[key] = facts[key]
+        for key, value in facts.items():
+            if key not in prioritized:
+                prioritized[key] = value
+        return prioritized
+
+    def retrieve(self, query: str, top_k_primary: int = 4, top_k_secondary: int = 3) -> list[Document]:
         if not self.is_ready:
             raise RuntimeError("Knowledge retriever is not ready")
 
-        primary = self._retrieve_tier(query, TIER_PRIMARY, top_k_primary)
-        secondary = self._retrieve_tier(query, TIER_SECONDARY, top_k_secondary)
+        search_q = self._search_query(query)
+        if self._is_address_query(search_q):
+            search_q = f"{search_q} arbitrum mainnet deployed contract addresses 0x"
+        if self._is_integration_query(search_q):
+            search_q = f"{search_q} CosmicGame ABI bidWithEth getNextEthBidPrice integration"
+
+        primary = self._retrieve_tier(search_q, TIER_PRIMARY, top_k_primary)
+        secondary = self._retrieve_tier(search_q, TIER_SECONDARY, top_k_secondary)
+        forced = self._forced_documents_for_query(search_q)
 
         seen = set()
         merged: list[Document] = []
-        for doc in primary + secondary:
+        for doc in forced + primary + secondary:
             key = (doc.meta.get("file_path"), doc.meta.get("chunk", 0))
             if key in seen:
                 continue
@@ -220,9 +310,12 @@ class KnowledgeRetriever:
         self,
         question: str,
         history: list[dict[str, str]] | None = None,
+        retrieval_query: str | None = None,
     ) -> tuple[str, list[str], list[Document]]:
-        documents = self.retrieve(question)
+        rq = retrieval_query or question
+        documents = self.retrieve(rq)
         facts = self._facts_cache or self.load_facts()
+        facts = self._facts_for_query(question, facts)
         context_text, sources = build_context_pack(
             question=question,
             documents=documents,
