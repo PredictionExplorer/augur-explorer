@@ -20,6 +20,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/randomwalk"
 )
 
@@ -53,6 +54,7 @@ func initialize() {
 
 	enableRWRoutes := envBoolDefaultTrue("ENABLE_ROUTES_RANDOMWALK")
 	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")
+	enableFAQRoutes := envBoolDefaultTrue("ENABLE_ROUTES_FAQ")
 
 	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCGRoutes)
 	if enableCGRoutes {
@@ -68,6 +70,11 @@ func initialize() {
 	} else {
 		Info.Printf("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
 		fmt.Printf("INFO: RandomWalk API/HTML routes are not registered (ENABLE_ROUTES_RANDOMWALK=false).\n")
+	}
+
+	faq.Init(Info, Error, enableFAQRoutes)
+	if !enableFAQRoutes {
+		fmt.Printf("INFO: FAQ bot proxy routes are not registered (ENABLE_ROUTES_FAQ=false).\n")
 	}
 }
 
@@ -136,6 +143,7 @@ func main() {
 	randomwalk.RegisterAPIRoutes(r)
 	cosmicgame.RegisterHTMLRoutes(r)
 	cosmicgame.RegisterAPIRoutes(r)
+	faq.RegisterAPIRoutes(r)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
