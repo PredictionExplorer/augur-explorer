@@ -75,6 +75,10 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/statistics/unique/stakers/randomwalk", api_cosmic_game_user_unique_stakers_rwalk)
 	r.GET("/api/cosmicgame/statistics/unique/stakers/rwalk", api_cosmic_game_user_unique_stakers_rwalk) // legacy alias
 	r.GET("/api/cosmicgame/statistics/unique/stakers/both", api_cosmic_game_user_unique_stakers_both)
+	r.GET("/api/cosmicgame/statistics/bidding/activity/:init_ts/:fin_ts/:interval_secs", api_cosmic_game_bidding_activity)
+	r.GET("/api/cosmicgame/statistics/bidding/frequency/:init_ts/:fin_ts/:interval_secs", api_cosmic_game_bidding_frequency)
+	r.GET("/api/cosmicgame/statistics/bidding/top_active_periods/:n/:init_ts/:fin_ts", api_cosmic_game_bidding_top_active_periods)
+	r.GET("/api/cosmicgame/statistics/bidding/time_bounds", api_cosmic_game_bidding_time_bounds)
 
 	// Rounds
 	r.GET("/api/cosmicgame/rounds/list/:offset/:limit", api_cosmic_game_prize_list)

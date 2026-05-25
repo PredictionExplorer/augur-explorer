@@ -658,3 +658,38 @@ type ERC20DonatedTokensInfo struct {
 	Amount						string
 	AmountEth					float64
 }
+
+// CGBidFrequencyBucket is bid count in a fixed time bucket.
+type CGBidFrequencyBucket struct {
+	BucketTs      int64
+	NumBids       int64
+	UniqueBidders int64
+}
+
+// CGBidSpike is a merged run of above-normal bid frequency buckets.
+type CGBidSpike struct {
+	Index       int
+	StartTs     int64
+	EndTs       int64
+	PeakTs      int64
+	PeakNumBids int64
+	TotalBids   int64
+	BucketCount int64
+}
+
+// CGTopBidderInfo ranks bidders by lifetime gesture count.
+type CGTopBidderInfo struct {
+	BidderAid  int64
+	BidderAddr string
+	NumBids    int64
+}
+
+// CGBidderActivePeriod is a contiguous burst of bids by one address (gap-separated).
+type CGBidderActivePeriod struct {
+	BidderAid    int64
+	BidderAddr   string
+	PeriodStart  int64
+	PeriodEnd    int64
+	NumBids      int64
+	DurationSecs int64
+}

@@ -118,3 +118,27 @@ func ParseOffsetLimitParamsJSON(c *gin.Context) (bool, int, int) {
 	}
 	return true, offset, limit
 }
+
+// ParseInitFinTsParams reads init_ts and fin_ts path params (no interval_secs).
+func ParseInitFinTsParams(c *gin.Context) (bool, int, int) {
+	initTs, err := strconv.Atoi(c.Param("init_ts"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": 0,
+			"error":  fmt.Sprintf("Bad 'init_ts' parameter: %v", err),
+		})
+		return false, 0, 0
+	}
+	finTs, err := strconv.Atoi(c.Param("fin_ts"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": 0,
+			"error":  fmt.Sprintf("Bad 'fin_ts' parameter: %v", err),
+		})
+		return false, 0, 0
+	}
+	if finTs == 0 {
+		finTs = 2147483647
+	}
+	return true, initTs, finTs
+}
