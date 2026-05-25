@@ -2564,27 +2564,45 @@ func api_cosmic_game_admin_events_in_range(c *gin.Context) {
 func api_cosmic_game_bid_special_winners(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !dbInitialized() {
-		common.RespondErrorJSON(c,"Database link wasn't configured")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	if  !dbInitialized() {
-		common.RespondError(c,"Database link wasn't configured")
+	if EthClient == nil {
+		common.RespondErrorJSON(c, "Ethereum client is not configured")
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
-		"status": req_status,
-		"error" : err_str,
-		"LastBidderAddress": last_bidder.String(),
-		"LastBidderLastBidTime" : last_bidder_bid_time,
-		"EnduranceChampionAddress": endurance_champ_addr,
-		"EnduranceChampionDuration": endurance_duration,
-		"ChronoWarriorAddress" : chrono_warrior_addr,
-		"ChronoWarriorDuration" : chrono_warrior_duration,
-		"LastCstBidderAddress" : lastcst_bidder_addr,
-	})
+
+	state := fetchLiveSpecialWinnersState()
+	if state.Err != nil {
+		common.RespondErrorJSON(c, state.Err.Error())
+		return
+	}
+
+	resp := gin.H{
+		"status":                          1,
+		"error":                           "",
+		"LastBidderAddress":               state.LastBidderAddress,
+		"LastBidderLastBidTime":           state.LastBidderLastBidTime,
+		"EnduranceChampionAddress":        state.EnduranceChampionAddress,
+		"EnduranceChampionDuration":       state.EnduranceChampionDuration,
+		"EnduranceChampionStartTimeStamp": state.EnduranceChampionStartTimeStamp,
+		"PrevEnduranceChampionDuration":   state.PrevEnduranceChampionDuration,
+		"ChronoWarriorAddress":            state.ChronoWarriorAddress,
+		"ChronoWarriorDuration":           state.ChronoWarriorDuration,
+		"ChronoWarriorIsLive":             state.ChronoWarriorIsLive,
+		"LastCstBidderAddress":            state.LastCstBidderAddress,
+		"RoundNum":                        state.RoundNum,
+		"SourceBlockNumber":               state.SourceBlockNumber,
+		"SourceBlockTimeStamp":            state.SourceBlockTimeStamp,
+	}
+	if state.HasLastCstBidderLastBidTime {
+		resp["LastCstBidderLastBidTime"] = state.LastCstBidderLastBidTime
+	}
+	if state.HasLastCstBidEventLogId {
+		resp["LastCstBidEventLogId"] = state.LastCstBidEventLogId
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 // =============================================================================

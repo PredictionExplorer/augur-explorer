@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -80,6 +81,221 @@ var (
 )
 type rpcBlock struct {
     Timestamp         string      `json:"timestamp"`
+}
+
+type liveSpecialWinnersState struct {
+	EnduranceChampionAddress        string
+	EnduranceChampionDuration       int64
+	EnduranceChampionStartTimeStamp int64
+	PrevEnduranceChampionDuration   int64
+	ChronoWarriorAddress            string
+	ChronoWarriorDuration           int64
+	ChronoWarriorIsLive             bool
+	LastBidderAddress               string
+	LastBidderLastBidTime           int64
+	LastCstBidderAddress            string
+	LastCstBidderLastBidTime        int64
+	LastCstBidEventLogId            int64
+	HasLastCstBidderLastBidTime     bool
+	HasLastCstBidEventLogId         bool
+	RoundNum                        int64
+	SourceBlockNumber               uint64
+	SourceBlockTimeStamp            int64
+	Err                             error
+}
+
+func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
+	var state liveSpecialWinnersState
+	state.RoundNum = round_num
+
+	if EthClient == nil {
+		state.Err = fmt.Errorf("ethereum client is not configured")
+		return state
+	}
+
+	ctx := context.Background()
+	header, err := EthClient.HeaderByNumber(ctx, nil)
+	if err != nil {
+		state.Err = fmt.Errorf("failed to fetch latest block header: %w", err)
+		return state
+	}
+	state.SourceBlockNumber = header.Number.Uint64()
+	state.SourceBlockTimeStamp = int64(header.Time)
+
+	contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient)
+	if err != nil {
+		state.Err = fmt.Errorf("failed to instantiate CosmicGame contract: %w", err)
+		return state
+	}
+
+	copts := bind.CallOpts{Context: ctx, BlockNumber: header.Number}
+
+	var (
+		champs struct {
+			EnduranceChampionAddress  ethcommon.Address
+			EnduranceChampionDuration *big.Int
+			ChronoWarriorAddress      ethcommon.Address
+			ChronoWarriorDuration     *big.Int
+		}
+		enduranceStartTs          *big.Int
+		prevEnduranceDuration     *big.Int
+		lastBidder                ethcommon.Address
+		lastCstBidder             ethcommon.Address
+		storedChronoWarriorDur    *big.Int
+		lastBidderLastBidTime     *big.Int
+		lastCstBidderLastBidTime  *big.Int
+	)
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	recordErr := func(label string, err error) {
+		if err == nil {
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if state.Err == nil {
+			state.Err = fmt.Errorf("%s: %w", label, err)
+		}
+	}
+
+	wg.Add(6)
+	go func() {
+		defer wg.Done()
+		result, err := contract.TryGetCurrentChampions(&copts)
+		if err != nil {
+			recordErr("TryGetCurrentChampions", err)
+			return
+		}
+		mu.Lock()
+		champs = result
+		mu.Unlock()
+	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.EnduranceChampionStartTimeStamp(&copts)
+		if err != nil {
+			recordErr("EnduranceChampionStartTimeStamp", err)
+			return
+		}
+		mu.Lock()
+		enduranceStartTs = val
+		mu.Unlock()
+	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.PrevEnduranceChampionDuration(&copts)
+		if err != nil {
+			recordErr("PrevEnduranceChampionDuration", err)
+			return
+		}
+		mu.Lock()
+		prevEnduranceDuration = val
+		mu.Unlock()
+	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.LastBidderAddress(&copts)
+		if err != nil {
+			recordErr("LastBidderAddress", err)
+			return
+		}
+		mu.Lock()
+		lastBidder = val
+		mu.Unlock()
+	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.LastCstBidderAddress(&copts)
+		if err != nil {
+			recordErr("LastCstBidderAddress", err)
+			return
+		}
+		mu.Lock()
+		lastCstBidder = val
+		mu.Unlock()
+	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.ChronoWarriorDuration(&copts)
+		if err != nil {
+			recordErr("ChronoWarriorDuration", err)
+			return
+		}
+		mu.Lock()
+		storedChronoWarriorDur = val
+		mu.Unlock()
+	}()
+	wg.Wait()
+
+	if state.Err != nil {
+		return state
+	}
+
+	state.EnduranceChampionAddress = champs.EnduranceChampionAddress.String()
+	state.EnduranceChampionDuration = champs.EnduranceChampionDuration.Int64()
+	state.ChronoWarriorAddress = champs.ChronoWarriorAddress.String()
+	state.ChronoWarriorDuration = champs.ChronoWarriorDuration.Int64()
+	state.EnduranceChampionStartTimeStamp = enduranceStartTs.Int64()
+	state.PrevEnduranceChampionDuration = prevEnduranceDuration.Int64()
+	state.LastBidderAddress = lastBidder.String()
+	state.LastCstBidderAddress = lastCstBidder.String()
+
+	chronoSegmentStart := state.EnduranceChampionStartTimeStamp + state.PrevEnduranceChampionDuration
+	currentChronoSegmentDuration := state.SourceBlockTimeStamp - chronoSegmentStart
+	state.ChronoWarriorIsLive = currentChronoSegmentDuration > storedChronoWarriorDur.Int64()
+
+	if state.RoundNum >= 0 {
+		roundBig := big.NewInt(state.RoundNum)
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			info, err := contract.BiddersInfo(&copts, roundBig, lastBidder)
+			if err != nil {
+				recordErr("BiddersInfo(lastBidder)", err)
+				return
+			}
+			mu.Lock()
+			lastBidderLastBidTime = info.LastBidTimeStamp
+			mu.Unlock()
+		}()
+		go func() {
+			defer wg.Done()
+			if lastCstBidder == (ethcommon.Address{}) {
+				return
+			}
+			info, err := contract.BiddersInfo(&copts, roundBig, lastCstBidder)
+			if err != nil {
+				recordErr("BiddersInfo(lastCstBidder)", err)
+				return
+			}
+			mu.Lock()
+			lastCstBidderLastBidTime = info.LastBidTimeStamp
+			mu.Unlock()
+		}()
+		wg.Wait()
+
+		if state.Err != nil {
+			return state
+		}
+
+		if lastBidderLastBidTime != nil {
+			state.LastBidderLastBidTime = lastBidderLastBidTime.Int64()
+		}
+		if lastCstBidderLastBidTime != nil {
+			state.LastCstBidderLastBidTime = lastCstBidderLastBidTime.Int64()
+			state.HasLastCstBidderLastBidTime = true
+		}
+
+		if lastCstBidder != (ethcommon.Address{}) {
+			if evtlogId, ok := arb_storagew.Get_last_cst_bid_evtlog_for_bidder(state.RoundNum, lastCstBidder.String()); ok {
+				state.LastCstBidEventLogId = evtlogId
+				state.HasLastCstBidEventLogId = true
+			}
+		}
+	}
+
+	return state
 }
 
 func cosmic_game_init() {
@@ -2478,16 +2694,39 @@ func cosmic_game_admin_events_in_range(c *gin.Context) {
 }
 func cosmic_game_bid_special_winners(c *gin.Context) {
 
-	if  !dbInitialized() {
-		common.RespondError(c,"Database link wasn't configured")
+	if !dbInitialized() {
+		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
+	if EthClient == nil {
+		common.RespondError(c, "Ethereum client is not configured")
+		return
+	}
+
+	state := fetchLiveSpecialWinnersState()
+	if state.Err != nil {
+		common.RespondError(c, state.Err.Error())
+		return
+	}
+
 	c.HTML(http.StatusOK, "cg_current_special_winners.html", gin.H{
-		"LastBidderAddress": last_bidder.String(),
-		"LastBidderLastBidTime" : last_bidder_bid_time,
-		"EnduranceChampionAddress": endurance_champ_addr,
-		"EnduranceChampionDuration": endurance_duration,
-		"LastCstBidderAddress" : lastcst_bidder_addr,
+		"LastBidderAddress":               state.LastBidderAddress,
+		"LastBidderLastBidTime":           state.LastBidderLastBidTime,
+		"EnduranceChampionAddress":        state.EnduranceChampionAddress,
+		"EnduranceChampionDuration":       state.EnduranceChampionDuration,
+		"EnduranceChampionStartTimeStamp": state.EnduranceChampionStartTimeStamp,
+		"PrevEnduranceChampionDuration":   state.PrevEnduranceChampionDuration,
+		"ChronoWarriorAddress":            state.ChronoWarriorAddress,
+		"ChronoWarriorDuration":           state.ChronoWarriorDuration,
+		"ChronoWarriorIsLive":             state.ChronoWarriorIsLive,
+		"LastCstBidderAddress":            state.LastCstBidderAddress,
+		"LastCstBidderLastBidTime":        state.LastCstBidderLastBidTime,
+		"HasLastCstBidderLastBidTime":     state.HasLastCstBidderLastBidTime,
+		"LastCstBidEventLogId":             state.LastCstBidEventLogId,
+		"HasLastCstBidEventLogId":         state.HasLastCstBidEventLogId,
+		"RoundNum":                        state.RoundNum,
+		"SourceBlockNumber":               state.SourceBlockNumber,
+		"SourceBlockTimeStamp":            state.SourceBlockTimeStamp,
 	})
 }
 

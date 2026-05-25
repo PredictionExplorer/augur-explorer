@@ -223,6 +223,20 @@ func (sw *SQLStorageWrapper) Get_bid_count_for_round(round_num int64) int64 {
 	return n
 }
 
+// Get_last_cst_bid_evtlog_for_bidder returns the evtlog_id of the latest CST bid in a round by address.
+func (sw *SQLStorageWrapper) Get_last_cst_bid_evtlog_for_bidder(round_num int64, bidder_addr string) (int64, bool) {
+	query := "SELECT b.evtlog_id FROM " + sw.S.SchemaName() + ".cg_bid b " +
+		"JOIN " + sw.S.SchemaName() + ".address ba ON b.bidder_aid=ba.address_id " +
+		"WHERE b.round_num=$1 AND lower(ba.addr)=lower($2) AND b.cst_price > 0 " +
+		"ORDER BY b.time_stamp DESC LIMIT 1"
+	var evtlogId int64
+	err := sw.S.Db().QueryRow(query, round_num, bidder_addr).Scan(&evtlogId)
+	if err != nil {
+		return 0, false
+	}
+	return evtlogId, true
+}
+
 func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  {
 
 	var query string
