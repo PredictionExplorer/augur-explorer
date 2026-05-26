@@ -1,0 +1,16 @@
+# Arbitrum One Mainnet — production frontend / integration environment
+
+Network: Arbitrum One (mainnet)
+Chain ID: 42161
+
+# Frontend (Next.js) — set at deploy time for the mainnet Cosmic Signature site
+NEXT_PUBLIC_NETWORK: mainnet
+NEXT_PUBLIC_RPC_URL: https://a1.cosmicsignature.com:38546
+NEXT_PUBLIC_API_URL: https://a1.cosmicsignature.com/api/cosmicgame/
+
+## Notes
+
+- `NEXT_PUBLIC_NETWORK=mainnet` selects Arbitrum One (chain ID 42161) in the frontend.
+- `NEXT_PUBLIC_RPC_URL` is the JSON-RPC endpoint the dApp uses for wallet reads and transactions.
+- `NEXT_PUBLIC_API_URL` is the Cosmic Game backend REST API base (dashboard, bids, rounds, etc.).
+- Contract addresses are separate — see `arbitrum-mainnet.txt` in this directory.

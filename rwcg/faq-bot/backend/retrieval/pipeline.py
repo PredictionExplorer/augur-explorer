@@ -11,6 +11,7 @@ from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 
 from knowledge.config import KNOWLEDGE_BASE, REPOS_DIR
+from live.detector import needs_backend_url_info
 from retrieval.context_pack import build_context_pack
 
 logger = logging.getLogger(__name__)
@@ -224,10 +225,13 @@ class KnowledgeRetriever:
         return any(t in q for t in triggers)
 
     def _is_environment_query(self, query: str) -> bool:
+        if needs_backend_url_info(query):
+            return True
         q = query.lower()
         triggers = (
             "next_public_", "rpc_url", "api_url", "environment variable",
             "env var", "cosmicsignature.com", "production url", "mainnet rpc",
+            "backend url", "rest api", "api endpoint", "backend endpoint",
         )
         return any(t in q for t in triggers)
 
@@ -250,6 +254,7 @@ class KnowledgeRetriever:
             patterns += (
                 "docs/expert/09-network-environment",
                 "docs/sources/deployments/arbitrum-mainnet-environment",
+                "deployments/arbitrum-mainnet-environment",
                 "facts/network-environment.json",
             )
         if not patterns:
@@ -291,6 +296,8 @@ class KnowledgeRetriever:
             search_q = f"{search_q} arbitrum mainnet deployed contract addresses 0x"
         if self._is_integration_query(search_q):
             search_q = f"{search_q} CosmicGame ABI bidWithEth getNextEthBidPrice integration"
+        if self._is_environment_query(search_q):
+            search_q = f"{search_q} NEXT_PUBLIC_API_URL network environment backend REST API cosmicsignature.com"
 
         primary = self._retrieve_tier(search_q, TIER_PRIMARY, top_k_primary)
         secondary = self._retrieve_tier(search_q, TIER_SECONDARY, top_k_secondary)

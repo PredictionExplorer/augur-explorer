@@ -8,7 +8,7 @@ from llm.codex_mcp_client import CodexMCPClient, CodexMCPError
 from live.api_client import CosmicGameApiClient
 from live.api_detector import needs_backend_api
 from live.cginfo_client import CginfoClient
-from live.detector import needs_live_state
+from live.detector import needs_live_state, needs_backend_url_info
 from response_format import strip_sources_section, wants_detail
 from retrieval.pipeline import KnowledgeRetriever
 from sessions.conversation_logger import ConversationLogger
@@ -89,6 +89,44 @@ class Orchestrator:
                 return True
         return False
 
+    def _build_runtime_config_block(self, question: str) -> tuple[str, list[str]]:
+        """Inject configured API/RPC URLs for meta questions about backend endpoints."""
+        if not needs_backend_url_info(question):
+            return "", []
+
+        api_cfg = self.api_client.config_status()
+        cg_cfg = self.cginfo.config_status()
+        lines = [
+            "BOT RUNTIME CONFIG (authoritative for backend/API URL questions)",
+            f"Cosmic Game REST API base (FAQ_BOT_API_URL): {api_cfg.get('base_url') or '(not configured)'}",
+            f"Cosmic Game API configured: {api_cfg.get('configured')}",
+        ]
+
+        facts = self.retriever._facts_cache or self.retriever.load_facts()
+        net_env = (facts.get("network-environment") or {}).get("networks") or {}
+        for network, info in sorted(net_env.items()):
+            frontend_env = info.get("frontend_env") or {}
+            api_url = frontend_env.get("NEXT_PUBLIC_API_URL")
+            rpc_url = frontend_env.get("NEXT_PUBLIC_RPC_URL")
+            if api_url:
+                label = info.get("network_label") or network
+                lines.append(f"Production frontend API URL ({label}, NEXT_PUBLIC_API_URL): {api_url}")
+            if rpc_url:
+                label = info.get("network_label") or network
+                lines.append(f"Production frontend RPC URL ({label}, NEXT_PUBLIC_RPC_URL): {rpc_url}")
+
+        if cg_cfg.get("rpc_url_set"):
+            lines.append("On-chain reads RPC (RPC_URL / FAQ_BOT_RPC_URL): configured")
+        else:
+            lines.append("On-chain reads RPC (RPC_URL / FAQ_BOT_RPC_URL): not configured")
+        if cg_cfg.get("game_address"):
+            lines.append(f"CosmicSignatureGame proxy: {cg_cfg['game_address']}")
+
+        lines.append(
+            "The REST API base path is /api/cosmicgame/ (e.g. statistics/dashboard, rounds/info, bid/list)."
+        )
+        return "\n".join(lines) + "\n\n", ["runtime:config"]
+
     async def query(self, question: str, session_id: str | None = None) -> dict[str, Any]:
         question = question.strip()
         if not question:
@@ -121,6 +159,8 @@ class Orchestrator:
         sources = list(sources)
         live_block = ""
         api_block = ""
+        config_block, config_sources = self._build_runtime_config_block(question)
+        sources.extend(config_sources)
 
         if needs_live_state(question):
             live_output, live_err = await self.cginfo.fetch_state()
@@ -141,22 +181,39 @@ class Orchestrator:
                 logger.warning("Live state requested but cginfo failed: %s", live_err)
 
         if needs_backend_api(question):
-            api_output, api_err, api_sources = await self.api_client.fetch_for_question(question)
-            sources.extend(api_sources)
-            if api_output:
-                api_block = f"{api_output}\n\n"
-                logger.info("Injected live API data (%d chars)", len(api_output))
-            elif api_err:
-                api_block = f"LIVE BACKEND API DATA UNAVAILABLE\n{api_err}\n\n"
+            api_result = await self.api_client.fetch_for_question(question)
+            sources.extend(api_result.sources)
+            if api_result.clarification_answer:
+                answer = api_result.clarification_answer
+                session.add_message("user", question)
+                session.add_message("assistant", answer)
+                self.conversation_logger.log_turn(session, question, answer)
+                return {
+                    "answer": answer,
+                    "sources": sources,
+                    "session_id": session.session_id,
+                }
+            if api_result.block:
+                api_block = f"{api_result.block}\n\n"
+                logger.info("Injected live API data (%d chars)", len(api_result.block))
+            elif api_result.error:
+                api_block = f"LIVE BACKEND API DATA UNAVAILABLE\n{api_result.error}\n\n"
                 sources.append("live:api-unavailable")
-                logger.warning("Backend API fetch failed: %s", api_err)
+                logger.warning("Backend API fetch failed: %s", api_result.error)
 
         prompt = (
             "Use the following CONTEXT to answer the user.\n\n"
+            f"{config_block}"
             f"{live_block}"
             f"{api_block}"
             f"{context_text}\n\n"
         )
+        if config_block:
+            prompt += (
+                "The BOT RUNTIME CONFIG section lists the Cosmic Game REST API base URL this bot uses. "
+                "Answer backend/API URL questions with FAQ_BOT_API_URL and/or NEXT_PUBLIC_API_URL from "
+                "that section. Do not say the URL is missing when it is present.\n\n"
+            )
         if live_block.startswith("LIVE ON-CHAIN STATE (via cginfo"):
             prompt += (
                 "The LIVE ON-CHAIN STATE section contains a fresh contract read. "
@@ -168,9 +225,41 @@ class Orchestrator:
             prompt += (
                 "The LIVE BACKEND API DATA section contains fresh indexed statistics from "
                 "the Cosmic Game backend. Use NumERC20Donations, TotalDonatedNFTs, "
-                "TotalRows, and related counts as authoritative when answering about "
-                "donations, bid totals, or round statistics. Do not say the data is "
-                "missing if those fields are present.\n\n"
+                "TotalRows, PERIOD_BID_COUNT, and CURRENT_ROUND_STATUS fields as authoritative. "
+                "PERIOD_BID_COUNT is for calendar/time-window bid questions; round TotalBids is "
+                "the entire current round — do not confuse them. "
+                "For catch-up questions, answer the time-window count first (if present), then "
+                "summarize current round status in 1–2 sentences. "
+                "Do not say data is missing if those fields are present.\n\n"
+            )
+        if "LIVE CHAMPIONS STATE" in api_block:
+            prompt += (
+                "The LIVE CHAMPIONS STATE section has the current Chrono Warrior and "
+                "Endurance Champion addresses and timestamps. Use ChronoWarriorAddress and "
+                "ChronoSegmentStart (UTC) for who/when questions. Do not say the data is missing "
+                "when those fields are present.\n\n"
+            )
+        if "LIVE STAKING STATE" in api_block:
+            prompt += (
+                "The LIVE STAKING STATE section has current and historical staker counts. "
+                "For 'how many stakers currently', use NumActiveStakersCST and "
+                "NumActiveStakersRandomWalk. Do not say staker data is missing when those "
+                "fields are present.\n\n"
+            )
+        if "LIVE ROUND END STATE" in api_block or "ROUND_END_UTC" in api_block:
+            prompt += (
+                "The LIVE ROUND END STATE section has the projected cycle end time. "
+                "Answer with ROUND_END_UTC (and TIME_UNTIL_ROUND_END if helpful). "
+                "If ROUND_STATUS is pre-activation, use ROUND_OPENS_UTC instead. "
+                "If waiting for the first gesture, say the countdown has not started yet. "
+                "Mention that new gestures extend the timer when relevant. "
+                "Do not say the end time is unknown when those fields are present.\n\n"
+            )
+        if live_block.startswith("LIVE ON-CHAIN STATE (via cginfo") and "MainPrizeTime" in live_block:
+            prompt += (
+                "For round/cycle end time, prefer MainPrizeTime (timestamp) and "
+                "'Duration until prize' from LIVE ON-CHAIN STATE when LIVE ROUND END STATE "
+                "is not present.\n\n"
             )
         if wants_detail(question):
             prompt += (

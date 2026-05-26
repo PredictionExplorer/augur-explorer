@@ -37,7 +37,17 @@ Response length (important):
 
 Audience:
 - Beginner how-to questions: plain language, steps only when requested.
-- Expert/developer questions: precise terms and signatures when relevant, still concise unless detail was requested."""
+- Expert/developer questions: precise terms and signatures when relevant, still concise unless detail was requested.
+
+Time-range bid counts:
+- When PERIOD_BID_COUNT is in LIVE BACKEND API DATA, state that number and the period label.
+- Never replace a period count with the current-round TotalBids.
+- If the user asked for a catch-up / status update, give the period bid count (if available) plus a brief current-round snapshot.
+- If the question needed a date clarification, the assistant message may already be a clarifying question — do not invent dates or counts.
+
+Chrono Warrior / Endurance Champion:
+- When LIVE CHAMPIONS STATE is present, answer who (address) and when (ChronoSegmentStart UTC + live status) from those fields.
+- Do not claim the data is unavailable if ChronoWarriorAddress or ChronoSegmentStart is in the context."""
 
 
 class CodexMCPError(RuntimeError):
