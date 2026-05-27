@@ -69,7 +69,11 @@ async def lifespan(app: FastAPI):
         raise
 
     codex_client = CodexMCPClient()
-    await codex_client.start()
+    try:
+        await codex_client.start()
+    except CodexMCPError as exc:
+        logger.error("Codex MCP startup failed (fatal): %s", exc)
+        raise
 
     orchestrator = Orchestrator(retriever, codex_client, session_store)
     health = await orchestrator.health()

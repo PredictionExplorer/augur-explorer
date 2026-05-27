@@ -12,7 +12,7 @@ import (
 // Set NFT_ASSETS_PUBLIC_BASE when the public asset URL must differ (CDN, external hostname, etc.).
 func NFTImagePublicBase(c *gin.Context) string {
 	if b := strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")); b != "" {
-		return strings.TrimRight(b, "/")
+		return NormalizeNFTAssetsPublicBase(b)
 	}
 	scheme := "http"
 	if c.Request.TLS != nil {
@@ -34,6 +34,29 @@ func NFTImagePublicBase(c *gin.Context) string {
 	return scheme + "://" + host + "/images"
 }
 
+// NormalizeNFTAssetsPublicBase ensures the public asset prefix ends with "/images" (no trailing slash).
+// Accepts either "https://host" or "https://host/images"; fixes "…/randomwalk" misconfiguration.
+func NormalizeNFTAssetsPublicBase(b string) string {
+	b = strings.TrimRight(strings.TrimSpace(b), "/")
+	if b == "" {
+		return ""
+	}
+	if strings.HasSuffix(b, "/images") {
+		return b
+	}
+	if strings.HasSuffix(b, "/randomwalk") {
+		return strings.TrimSuffix(b, "/randomwalk") + "/images"
+	}
+	return b + "/images"
+}
+
+// NFTAssetsFlatPaths reports whether RandomWalk assets use /images/<file> (flat) instead of /images/randomwalk/<file>.
+// Set NFT_ASSETS_FLAT_PATHS=1 on hosts like nfts.randomwalknft.com where files map directly under /images/.
+func NFTAssetsFlatPaths() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("NFT_ASSETS_FLAT_PATHS")))
+	return v == "1" || v == "true" || v == "yes"
+}
+
 // MetadataRandomWalkImagePublicBase is the absolute URL prefix (…/images, no trailing slash) for Random Walk
 // ERC-721 metadata JSON fields `image` and `animation_url`.
 //
@@ -43,7 +66,7 @@ func NFTImagePublicBase(c *gin.Context) string {
 // NFT_ASSETS_PUBLIC_BASE for other hosts (staging, IP-only deploys, etc.).
 func MetadataRandomWalkImagePublicBase() string {
 	if b := strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")); b != "" {
-		return strings.TrimRight(b, "/")
+		return NormalizeNFTAssetsPublicBase(b)
 	}
 	return "https://api.randomwalknft.com:1443/images"
 }

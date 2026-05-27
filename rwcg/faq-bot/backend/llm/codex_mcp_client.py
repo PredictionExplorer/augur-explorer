@@ -13,6 +13,9 @@ from mcp.client.stdio import stdio_client
 
 logger = logging.getLogger(__name__)
 
+# `codex mcp-server` must expose only these MCP tools (text synthesis via codex / codex-reply).
+EXPECTED_MCP_TOOLS = frozenset({"codex", "codex-reply"})
+
 
 class _SuppressCodexNotificationWarnings(logging.Filter):
     """Codex MCP emits custom `codex/event` notifications the Python MCP SDK cannot parse."""
@@ -23,9 +26,17 @@ class _SuppressCodexNotificationWarnings(logging.Filter):
 
 logging.getLogger().addFilter(_SuppressCodexNotificationWarnings())
 
-SYSTEM_INSTRUCTIONS = """You are the Cosmic Signature FAQ assistant.
+SYSTEM_INSTRUCTIONS = """You are the Cosmic Signature FAQ assistant — a text synthesis model only.
 
-Answer using ONLY the provided CONTEXT (facts + retrieved documents + conversation history + live on-chain state).
+The Python backend has already assembled the full CONTEXT in your prompt:
+conversation history, Haystack retrieved documents, structured facts, live API blocks,
+and on-chain cginfo blocks. Treat that prompt text as the only source of truth.
+
+You must NOT run shell commands, read or write files, search the filesystem, use git,
+curl, docker, or any other tools. Do not attempt to gather more data. Return only the
+final answer text.
+
+Answer using ONLY the provided CONTEXT.
 If the context is insufficient, say exactly what information is missing — do not invent addresses, counts, or behavior.
 
 Response length (important):
@@ -55,7 +66,7 @@ class CodexMCPError(RuntimeError):
 
 
 class CodexMCPClient:
-    """Long-lived stdio connection to `codex mcp-server`."""
+    """Long-lived stdio connection to `codex mcp-server` (synthesis only)."""
 
     def __init__(self) -> None:
         command = os.getenv("CODEX_MCP_COMMAND", "codex")
@@ -70,6 +81,30 @@ class CodexMCPClient:
         self._session: ClientSession | None = None
         self._ready = False
 
+    @staticmethod
+    def _validate_tool_surface(tool_names: set[str]) -> None:
+        if tool_names == EXPECTED_MCP_TOOLS:
+            return
+        unexpected = sorted(tool_names - EXPECTED_MCP_TOOLS)
+        missing = sorted(EXPECTED_MCP_TOOLS - tool_names)
+        raise CodexMCPError(
+            "Codex MCP tool surface is not synthesis-only. "
+            f"Expected exactly {sorted(EXPECTED_MCP_TOOLS)}; got {sorted(tool_names)}. "
+            f"Unexpected: {unexpected or 'none'}; missing: {missing or 'none'}. "
+            "Remove extra MCP servers from the Codex config and use codex-nsjail mcp-server."
+        )
+
+    def _build_server_env(self) -> dict[str, str]:
+        """Subprocess env for the jailed Codex account. Visitor text never goes here."""
+        env = os.environ.copy()
+        home = os.getenv("CODEX_MCP_HOME", "").strip()
+        codex_home = os.getenv("CODEX_MCP_CODEX_HOME", "").strip()
+        if home:
+            env["HOME"] = home
+        if codex_home:
+            env["CODEX_HOME"] = codex_home
+        return env
+
     @property
     def is_ready(self) -> bool:
         return self._ready and self._session is not None
@@ -82,12 +117,27 @@ class CodexMCPClient:
             command=self._command,
             args=self._args,
             cwd=self._cwd,
+            env=self._build_server_env(),
         )
         read, write = await self._stack.enter_async_context(stdio_client(server_params))
         self._session = await self._stack.enter_async_context(ClientSession(read, write))
         await self._session.initialize()
+        await self._assert_expected_tools()
         self._ready = True
-        logger.info("Codex MCP client connected (%s %s)", self._command, " ".join(self._args))
+        logger.info(
+            "Codex MCP synthesis server ready (%s %s, cwd=%s, tools=%s)",
+            self._command,
+            " ".join(self._args),
+            self._cwd,
+            sorted(EXPECTED_MCP_TOOLS),
+        )
+
+    async def _assert_expected_tools(self) -> None:
+        if self._session is None:
+            raise CodexMCPError("Codex MCP session not initialized")
+        tools = await self._session.list_tools()
+        names = {t.name for t in tools.tools}
+        self._validate_tool_surface(names)
 
     async def stop(self) -> None:
         if self._stack:
@@ -99,10 +149,19 @@ class CodexMCPClient:
     async def health_check(self) -> dict[str, Any]:
         if not self.is_ready:
             return {"ready": False, "error": "Codex MCP client not started"}
-        assert self._session is not None
-        tools = await self._session.list_tools()
-        names = [t.name for t in tools.tools]
-        return {"ready": True, "tools": names}
+        try:
+            await self._assert_expected_tools()
+        except CodexMCPError as exc:
+            return {"ready": False, "error": str(exc)}
+        return {
+            "ready": True,
+            "tools": sorted(EXPECTED_MCP_TOOLS),
+            "command": self._command,
+            "args": self._args,
+            "cwd": self._cwd,
+            "sandbox": self._sandbox,
+            "approval_policy": self._approval_policy,
+        }
 
     def _extract_text(self, result: Any) -> tuple[str, str | None]:
         thread_id = None
@@ -130,6 +189,7 @@ class CodexMCPClient:
         if not self.is_ready or self._session is None:
             raise CodexMCPError("Codex MCP is not connected. Ensure `codex mcp-server` can be started.")
 
+        # Visitor text is passed only via MCP tool JSON (prompt field), never argv/env/cwd.
         tool_name = "codex-reply" if thread_id else "codex"
         arguments: dict[str, Any] = {
             "prompt": prompt,

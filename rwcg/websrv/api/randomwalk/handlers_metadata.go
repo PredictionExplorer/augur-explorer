@@ -48,11 +48,19 @@ func apiRandomwalkTokenMetadata(c *gin.Context) {
 	if name == "" {
 		name = fmt.Sprintf("Random Walk #%s", pad)
 	}
+	var imageURL, animationURL string
+	if common.NFTAssetsFlatPaths() {
+		imageURL = fmt.Sprintf("%s/%s_black.png", base, pad)
+		animationURL = fmt.Sprintf("%s/%s_black_single.mp4", base, pad)
+	} else {
+		imageURL = fmt.Sprintf("%s/randomwalk/%s_black.png", base, pad)
+		animationURL = fmt.Sprintf("%s/randomwalk/%s_black_single.mp4", base, pad)
+	}
 	meta := gin.H{
 		"name":            name,
 		"description":     "Random Walk NFT",
-		"image":           fmt.Sprintf("%s/randomwalk/%s_black.png", base, pad),
-		"animation_url":   fmt.Sprintf("%s/randomwalk/%s_black_single.mp4", base, pad),
+		"image":           imageURL,
+		"animation_url":   animationURL,
 		"external_url":    fmt.Sprintf("https://randomwalknft.com/detail/%d", tokenID),
 		"attributes":      []gin.H{{"trait_type": "seed", "value": info.SeedHex}},
 		"properties":      gin.H{"seed": info.SeedHex},

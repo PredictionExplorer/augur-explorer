@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
 
 // warnNFTAssetsLayout logs when we cannot find RandomWalk thumbs in the expected places.
@@ -22,26 +23,41 @@ func warnNFTAssetsLayout(abs string, mount string) {
 	log.Printf("Current mount: %s -> filesystem root %q", mount, abs)
 }
 
-// resolveNFTStaticMount chooses how /images/randomwalk/<file> maps to disk.
-// 1) Thumbs under .../randomwalk/*.jpg  -> mount /images, root = parent (Cosmic /images/new/ still works).
-// 2) Thumbs directly in NFT_ASSETS_ROOT -> mount /images/randomwalk, root = that dir (inner randomwalk folder).
-// 3) Heuristics when no thumbs yet (empty DB / fresh checkout).
+// resolveNFTStaticMount chooses how GET /images/... maps to disk.
+// Nested (default): /images/randomwalk/<file> — Cosmic CDN and legacy URLs.
+// Flat (NFT_ASSETS_FLAT_PATHS=1): /images/<file> — nfts.randomwalknft.com layout; fs root is the randomwalk folder.
 func resolveNFTStaticMount(abs string) (mount string, fsRoot string) {
+	flat := common.NFTAssetsFlatPaths()
+
 	rwNested := filepath.Join(abs, "randomwalk")
 	thumbsNested, _ := filepath.Glob(filepath.Join(rwNested, "*_black_thumb.jpg"))
 	if len(thumbsNested) > 0 {
+		if flat {
+			log.Printf("NFT assets: found RandomWalk thumbs under %s (flat layout -> URL /images/<file>)", rwNested)
+			return "/images", rwNested
+		}
 		log.Printf("NFT assets: found RandomWalk thumbs under %s (standard layout)", rwNested)
 		return "/images", abs
 	}
 	thumbsRoot, _ := filepath.Glob(filepath.Join(abs, "*_black_thumb.jpg"))
 	if len(thumbsRoot) > 0 {
+		if flat {
+			log.Printf("NFT assets: found RandomWalk thumbs in %s (flat layout -> URL /images/<file>)", abs)
+			return "/images", abs
+		}
 		log.Printf("NFT assets: found RandomWalk thumbs in %s (compact layout -> URL /images/randomwalk/)", abs)
 		return "/images/randomwalk", abs
 	}
 	if st, err := os.Stat(rwNested); err == nil && st.IsDir() {
+		if flat {
+			return "/images", rwNested
+		}
 		return "/images", abs
 	}
 	if filepath.Base(abs) == "randomwalk" {
+		if flat {
+			return "/images", abs
+		}
 		return "/images/randomwalk", abs
 	}
 	return "/images", abs
@@ -124,6 +140,8 @@ func registerStaticAssetRoutes(r *gin.Engine) {
 		if mount == "/images/randomwalk" {
 			log.Printf("Serving RandomWalk NFT files from %q at %s/ (token assets live directly in NFT_ASSETS_ROOT)", fsRoot, mount)
 			log.Printf("Note: /images/new/... needs NFT_ASSETS_ROOT set to the parent of randomwalk/ if you use Cosmic assets too.")
+		} else if fsRoot != abs {
+			log.Printf("Serving RandomWalk NFT files from %q at %s/ (flat URL layout, files under randomwalk/)", fsRoot, mount)
 		} else {
 			log.Printf("Serving NFT assets from %q at %s/ (expect randomwalk/ and optional new/ under that root)", fsRoot, mount)
 		}
