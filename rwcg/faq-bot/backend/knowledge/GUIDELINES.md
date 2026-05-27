@@ -15,8 +15,16 @@ expand or refresh narrative docs.
 ```bash
 cd backend
 python -m knowledge.generate.run_all
-python -m retrieval.pipeline --reindex   # or automatic on app startup
+./scripts/reindex-knowledge.sh   # or: cd backend && python -m retrieval.pipeline --reindex
 ```
+
+On a **fresh git clone**, `run_all` first shallow-clones three upstream GitHub repos into
+`backend/data/repos/` (Cosmic-Signature, augur-explorer, cosmic-front-alternate). This
+cache is gitignored and not part of the faq-bot repo. Requires `git` and network access.
+Use `--skip-repo-sync` or `FAQ_BOT_SKIP_REPO_SYNC=1` only if that directory is already populated.
+
+Local monorepo docs (e.g. `rwcg/docs/BACKEND.md`) are read via `CURSOR_VREF_PATH` when set;
+contract ABIs still come from the **frontend** clone (`frontend/src/contracts/*.json`).
 
 ## Output layout
 

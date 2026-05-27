@@ -78,10 +78,24 @@ source "${FAQ_BOT_VENV}/bin/activate"
 
 cd "$(dirname "$0")/../backend"
 
-if [[ ! -f .env ]]; then
-  cp .env.example .env
-  echo "Created backend/.env from .env.example — review before production use."
+# Config comes from ~/configs/faq-bot.env (sourced above). Do not require backend/.env.
+if [[ -f .env ]]; then
+  echo "Note: backend/.env exists but faq-bot.env exports take precedence (dotenv does not override)."
 fi
+
+# Codex nsjail: Python spawns the wrapper from a cwd cgprod can enter (not /home/aijail).
+if [[ -f llm/codex_mcp_client.py ]] && ! grep -q '_spawn_cwd' llm/codex_mcp_client.py; then
+  echo "ERROR: llm/codex_mcp_client.py is outdated (missing CODEX_MCP_SPAWN_CWD support)." >&2
+  echo "Run: git pull   (in rwcg/faq-bot), then restart." >&2
+  exit 1
+fi
+CODEX_MCP_SPAWN_CWD="${CODEX_MCP_SPAWN_CWD:-$(pwd)}"
+if [[ ! -r "${CODEX_MCP_SPAWN_CWD}" || ! -x "${CODEX_MCP_SPAWN_CWD}" ]]; then
+  echo "ERROR: CODEX_MCP_SPAWN_CWD is not accessible: ${CODEX_MCP_SPAWN_CWD}" >&2
+  echo "Set in ${CONFIG}, e.g. export CODEX_MCP_SPAWN_CWD=$(pwd)" >&2
+  exit 1
+fi
+export CODEX_MCP_SPAWN_CWD
 
 display_host="${HOST}"
 if [[ "${display_host}" == "0.0.0.0" || "${display_host}" == "::" ]]; then
@@ -90,7 +104,8 @@ fi
 
 echo "Config:  ${CONFIG}"
 echo "Venv:    ${FAQ_BOT_VENV}"
-echo "KB:      ${KNOWLEDGE_BASE:-"(set in backend/.env)"}"
+echo "KB:      ${KNOWLEDGE_BASE:-"(set KNOWLEDGE_BASE in faq-bot.env)"}"
+echo "Codex:   ${CODEX_MCP_COMMAND:-codex} (spawn cwd ${CODEX_MCP_SPAWN_CWD})"
 echo "Listen:  ${HOST}:${PORT}"
 echo "API:     http://${display_host}:${PORT}"
 echo "Test UI: http://${display_host}:${PORT}/test-ui"

@@ -13,12 +13,33 @@ if [[ -z "${KNOWLEDGE_BASE:-}" ]]; then
   exit 1
 fi
 
-if [[ -n "${FAQ_BOT_VENV:-}" && -f "${FAQ_BOT_VENV}/bin/activate" ]]; then
-  # shellcheck disable=SC1091
-  source "${FAQ_BOT_VENV}/bin/activate"
+if [[ -z "${FAQ_BOT_VENV:-}" ]]; then
+  echo "ERROR: FAQ_BOT_VENV is not set. Add it to ${CONFIG} and run scripts/setup-venv.sh" >&2
+  exit 1
+fi
+
+PYTHON="${FAQ_BOT_VENV}/bin/python3"
+if [[ ! -x "${PYTHON}" ]]; then
+  echo "ERROR: venv python not found at ${PYTHON}" >&2
+  echo "Run: scripts/setup-venv.sh" >&2
+  exit 1
+fi
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "ERROR: system 'git' is not installed (needed to clone upstream repos)." >&2
+  echo "Install with: sudo apt install git" >&2
+  exit 1
+fi
+
+if ! "${PYTHON}" -c "import git" 2>/dev/null; then
+  echo "ERROR: GitPython is not installed in ${FAQ_BOT_VENV}" >&2
+  echo "Run: scripts/setup-venv.sh  (or: ${FAQ_BOT_VENV}/bin/pip install -r backend/requirements.txt)" >&2
+  exit 1
 fi
 
 cd "$(dirname "$0")/../backend"
 echo "Generating knowledge base → ${KNOWLEDGE_BASE}"
-python3 -m knowledge.generate.run_all "$@"
-echo "Re-index with: curl -X POST http://127.0.0.1:8000/api/reindex"
+echo "Python: ${PYTHON}"
+"${PYTHON}" -m knowledge.generate.run_all "$@"
+echo "Re-index with: $(dirname "$0")/reindex-knowledge.sh"
+echo "  (or restart backend / POST /api/reindex if the server is running)"

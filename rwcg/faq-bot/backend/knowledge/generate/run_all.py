@@ -19,6 +19,7 @@ from knowledge.generate import (
     extract_deployments,
     extract_routes,
     extract_ui_pages,
+    sync_repos,
 )
 from knowledge.generate.utils import write_text
 
@@ -26,9 +27,18 @@ from knowledge.generate.utils import write_text
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate FAQ knowledge base")
     parser.add_argument("--skip-source-copy", action="store_true")
+    parser.add_argument(
+        "--skip-repo-sync",
+        action="store_true",
+        help="Do not clone/update GitHub repos into backend/data/repos (offline or pre-populated cache)",
+    )
     args = parser.parse_args()
 
     ensure_output_dirs()
+    if not args.skip_repo_sync:
+        print("Syncing upstream GitHub repos → backend/data/repos/ ...")
+        sync_repos.sync_repositories()
+        print("  ✓ repository cache")
     print("Generating facts and docs...")
 
     extract_contracts.run()

@@ -6,6 +6,7 @@ import logging
 import os
 import shlex
 from contextlib import AsyncExitStack
+from pathlib import Path
 from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
@@ -73,7 +74,11 @@ class CodexMCPClient:
         args_raw = os.getenv("CODEX_MCP_ARGS", "mcp-server")
         self._command = command
         self._args = shlex.split(args_raw)
-        self._cwd = os.getenv("CODEX_MCP_CWD", os.getcwd())
+        # cwd passed to codex/codex-reply tool args (inside nsjail — usually /home/aijail)
+        self._tool_cwd = os.getenv("CODEX_MCP_CWD", "/home/aijail")
+        # cwd for spawning codex-nsjail — must be readable by the FAQ bot OS user (cgprod)
+        backend_root = Path(__file__).resolve().parents[1]
+        self._spawn_cwd = os.getenv("CODEX_MCP_SPAWN_CWD", str(backend_root))
         self._sandbox = os.getenv("CODEX_MCP_SANDBOX", "read-only")
         self._approval_policy = os.getenv("CODEX_MCP_APPROVAL_POLICY", "never")
         self._model = os.getenv("CODEX_MCP_MODEL", "")
@@ -95,15 +100,8 @@ class CodexMCPClient:
         )
 
     def _build_server_env(self) -> dict[str, str]:
-        """Subprocess env for the jailed Codex account. Visitor text never goes here."""
-        env = os.environ.copy()
-        home = os.getenv("CODEX_MCP_HOME", "").strip()
-        codex_home = os.getenv("CODEX_MCP_CODEX_HOME", "").strip()
-        if home:
-            env["HOME"] = home
-        if codex_home:
-            env["CODEX_HOME"] = codex_home
-        return env
+        """Env for spawning codex-nsjail. Jail HOME/CODEX_HOME are set inside nsjail, not here."""
+        return os.environ.copy()
 
     @property
     def is_ready(self) -> bool:
@@ -116,7 +114,7 @@ class CodexMCPClient:
         server_params = StdioServerParameters(
             command=self._command,
             args=self._args,
-            cwd=self._cwd,
+            cwd=self._spawn_cwd,
             env=self._build_server_env(),
         )
         read, write = await self._stack.enter_async_context(stdio_client(server_params))
@@ -125,10 +123,11 @@ class CodexMCPClient:
         await self._assert_expected_tools()
         self._ready = True
         logger.info(
-            "Codex MCP synthesis server ready (%s %s, cwd=%s, tools=%s)",
+            "Codex MCP synthesis server ready (%s %s, spawn_cwd=%s, tool_cwd=%s, tools=%s)",
             self._command,
             " ".join(self._args),
-            self._cwd,
+            self._spawn_cwd,
+            self._tool_cwd,
             sorted(EXPECTED_MCP_TOOLS),
         )
 
@@ -158,7 +157,8 @@ class CodexMCPClient:
             "tools": sorted(EXPECTED_MCP_TOOLS),
             "command": self._command,
             "args": self._args,
-            "cwd": self._cwd,
+            "spawn_cwd": self._spawn_cwd,
+            "tool_cwd": self._tool_cwd,
             "sandbox": self._sandbox,
             "approval_policy": self._approval_policy,
         }
@@ -196,7 +196,7 @@ class CodexMCPClient:
             "sandbox": self._sandbox,
             "approval-policy": self._approval_policy,
             "base-instructions": SYSTEM_INSTRUCTIONS,
-            "cwd": self._cwd,
+            "cwd": self._tool_cwd,
         }
         if self._model:
             arguments["model"] = self._model

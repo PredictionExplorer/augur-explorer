@@ -330,3 +330,27 @@ class KnowledgeRetriever:
             history=history,
         )
         return context_text, sources, documents
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Haystack knowledge base indexer")
+    parser.add_argument(
+        "--reindex",
+        action="store_true",
+        help="Rebuild the in-memory Haystack index from KNOWLEDGE_BASE",
+    )
+    args = parser.parse_args()
+    if not args.reindex:
+        parser.print_help()
+        return 1
+
+    retriever = KnowledgeRetriever()
+    count = retriever.index_knowledge_base(force=True)
+    print(f"Indexed {count} documents from {retriever.knowledge_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

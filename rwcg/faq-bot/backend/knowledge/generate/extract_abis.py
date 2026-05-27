@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -10,12 +11,36 @@ from knowledge.config import (
     DOCS_EXPERT_DIR,
     DOCS_SOURCES_DIR,
     FACTS_DIR,
+    GITHUB_REPOS,
+    REPOS_DIR,
     REPO_NAMES,
 )
 from knowledge.generate.utils import read_text, write_json, write_text
 
-FRONTEND_CONTRACTS_SRC = REPO_NAMES["frontend"] / "src" / "contracts"
 KB_CONTRACTS_DIR = DOCS_SOURCES_DIR / "frontend-contracts"
+
+
+def resolve_frontend_contracts_dir() -> Path:
+    """Locate frontend ABI JSONs (env override, then data/repos clone)."""
+    override = os.getenv("FAQ_BOT_FRONTEND_CONTRACTS_DIR", "").strip()
+    if override:
+        path = Path(override)
+        if path.is_dir():
+            return path
+        raise FileNotFoundError(
+            f"FAQ_BOT_FRONTEND_CONTRACTS_DIR is set but not a directory: {path}"
+        )
+
+    default = REPO_NAMES["frontend"] / "src" / "contracts"
+    if default.is_dir():
+        return default
+
+    raise FileNotFoundError(
+        f"Frontend contract ABIs not found at {default}. "
+        f"Run knowledge generation without --skip-repo-sync to clone "
+        f"{GITHUB_REPOS['frontend']} into {REPOS_DIR / 'frontend'}, "
+        "or set FAQ_BOT_FRONTEND_CONTRACTS_DIR to a directory containing *.json ABI files."
+    )
 
 # Frontend ABI filename -> deployed role / frontend env key
 CONTRACT_META: dict[str, dict[str, str]] = {
@@ -337,22 +362,18 @@ def generate_expert_integration_doc(summary: dict[str, Any]) -> str:
 
 
 def run() -> None:
-    if not FRONTEND_CONTRACTS_SRC.exists():
-        raise FileNotFoundError(
-            f"Frontend contract ABIs not found at {FRONTEND_CONTRACTS_SRC}. "
-            "Ensure backend/data/repos/frontend is populated."
-        )
+    frontend_contracts_src = resolve_frontend_contracts_dir()
 
     KB_CONTRACTS_DIR.mkdir(parents=True, exist_ok=True)
     contracts_summary: dict[str, Any] = {}
 
-    for path in sorted(FRONTEND_CONTRACTS_SRC.glob("*.json")):
+    for path in sorted(frontend_contracts_src.glob("*.json")):
         abi = _load_abi(path)
         contracts_summary[path.name] = _summarize_contract(path.name, abi)
         shutil.copy2(path, KB_CONTRACTS_DIR / path.name)
 
     summary = {
-        "source_directory": str(FRONTEND_CONTRACTS_SRC),
+        "source_directory": str(frontend_contracts_src),
         "kb_abi_directory": str(KB_CONTRACTS_DIR),
         "contract_count": len(contracts_summary),
         "contracts": contracts_summary,
