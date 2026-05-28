@@ -1,0 +1,16 @@
+# Arbitrum One Mainnet — deployed Cosmic Signature contract addresses
+# Format required by extract_deployments.py: "<Name> address: 0x..."
+# Source: Cosmic Game backend statistics/dashboard ContractAddrs (2026-05-28)
+
+CosmicSignatureGame proxy address: 0x6a714Ae7B5b6eA520F6BCA23d2E609C4Fd5863F2
+CosmicSignatureGame implementation address: 0x7739148013777c485AD9f3d971e1005Eca686661
+CosmicSignatureToken address: 0xAD91843e6A58Ba560F577E676986AFb1dba6FBA0
+CosmicSignatureNft address: 0xbb84Be3500A63581d3F2d5AC3bdF8685AAedad25
+RandomWalkNFT address: 0x895a6F444BE4ba9d124F61DF736605792B35D66b
+PrizesWallet address: 0xE1b619e9B39ea4109D2F429Ea5eAA307759b0011
+StakingWalletCosmicSignatureNft address: 0x6308A405B4FF1eA890870Efe2a6D036750B81F7C
+StakingWalletRandomWalkNft address: 0x5EB3396092841E6c5b0b51141699F6711E830529
+CharityWallet address: 0x96bB0ADB414d5350f435E52f94946B6C7A0760a9
+MarketingWallet address: 0xa3802c799f5e3D3D3562A9B513a41C6aAF92e25e
+CosmicSignatureDao address: 0xF3D52E1c681949be7E624778dB13DaD7F8c729db
+RandomWalk marketplace address: 0x47eF85Dfb775aCE0934fBa9EEd09D22e6eC0Cc08

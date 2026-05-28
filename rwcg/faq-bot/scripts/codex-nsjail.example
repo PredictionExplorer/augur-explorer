@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# /usr/local/bin/codex-nsjail on cosmic1 — invoked via passwordless sudo from FAQ bot.
+#
+# One-time setup (as root):
+#   mkdir -p /var/lib/nsjail-root /var/lib/nsjail-aijail
+#   chown root:root /var/lib/nsjail-root && chmod 700 /var/lib/nsjail-root
+#   chown aijail:aijail /var/lib/nsjail-aijail && chmod 700 /var/lib/nsjail-aijail
+#   cp scripts/codex-nsjail.example /usr/local/bin/codex-nsjail && chmod 755 /usr/local/bin/codex-nsjail
+#
+#   echo 'cgprod ALL=(root) NOPASSWD: /usr/local/bin/codex-nsjail mcp-server' >/etc/sudoers.d/faq-bot-codex
+#   chmod 440 /etc/sudoers.d/faq-bot-codex && visudo -c
+#
+# Do NOT pass --mount /dev:/dev — nsjail mounts /dev itself; an extra bind breaks the mount tree.
+# Use --disable_clone_newpid so Node/libuv can create threads inside the jail.
+# Use --disable_clone_newnet so Codex can reach OpenAI (HTTPS/WSS to chatgpt.com).
+# Bind /etc/ssl + resolv.conf — without these, Codex fails with "no native root CA certificates"
+# and "failed to lookup address information" inside the jail.
+
+set -euo pipefail
+
+AI_UID="$(id -u aijail)"
+AI_GID="$(id -g aijail)"
+NODE_DIR="/usr/local/node-v18.20.5-linux-x64"
+NSJAIL_BIN="${NSJAIL_BIN:-/usr/bin/nsjail}"
+
+if [[ "$(id -u)" -eq 0 ]]; then
+  export XDG_RUNTIME_DIR=/var/lib/nsjail-root
+else
+  export XDG_RUNTIME_DIR=/var/lib/nsjail-aijail
+fi
+mkdir -p "${XDG_RUNTIME_DIR}"
+
+exec "${NSJAIL_BIN}" \
+  --mode o \
+  --hostname codexjail \
+  --disable_clone_newuser \
+  --disable_clone_newpid \
+  --disable_clone_newnet \
+  --time_limit 0 \
+  --rlimit_as 2048 \
+  --rlimit_cpu 300 \
+  --rlimit_fsize 32 \
+  --rlimit_nofile 512 \
+  --rlimit_nproc 512 \
+  --user "${AI_UID}" \
+  --group "${AI_GID}" \
+  --cwd /home/aijail \
+  --env HOME=/home/aijail \
+  --env CODEX_HOME=/home/aijail/.codex \
+  --env "PATH=/home/aijail/.local/bin:${NODE_DIR}/bin:/usr/local/bin:/usr/bin:/bin" \
+  --tmpfsmount /tmp:size=256,mode=1777 \
+  --tmpfsmount /dev/shm:size=64,mode=1777 \
+  --bindmount_ro /usr \
+  --bindmount_ro /bin \
+  --bindmount_ro /lib \
+  --bindmount_ro /lib64 \
+  --bindmount_ro /etc/ssl \
+  --bindmount_ro /etc/resolv.conf \
+  --bindmount_ro /etc/hosts \
+  --bindmount_ro /etc/nsswitch.conf \
+  --bindmount "${NODE_DIR}" \
+  --bindmount /home/aijail \
+  -- \
+  /home/aijail/.local/bin/codex "$@"

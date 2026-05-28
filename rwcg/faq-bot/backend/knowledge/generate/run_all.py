@@ -10,7 +10,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from knowledge.config import ensure_output_dirs, KNOWLEDGE_BASE
+from knowledge.config import ensure_output_dirs, FACTS_DIR, KNOWLEDGE_BASE
 from knowledge.generate import (
     copy_source_docs,
     extract_abis,
@@ -51,7 +51,17 @@ def main() -> int:
     print("  ✓ backend API")
 
     extract_deployments.run()
-    print("  ✓ deployment addresses")
+    print("  ✓ deployment addresses (repo seeds)")
+
+    deployed = FACTS_DIR / "deployed-addresses.json"
+    if deployed.is_file():
+        import json
+
+        data = json.loads(deployed.read_text(encoding="utf-8"))
+        mainnet = (data.get("networks") or {}).get("arbitrum_one_mainnet") or {}
+        proxy = (mainnet.get("addresses") or {}).get("CosmicSignatureGame proxy")
+        if proxy:
+            print(f"  ✓ mainnet CosmicSignatureGame proxy: {proxy}")
 
     extract_abis.run()
     print("  ✓ contract ABIs")
