@@ -28,6 +28,7 @@ _STATE_WORDS = (
     "cost to bid",
     "main prize",
     "contract balance",
+    "balance",
     "gas price",
     "chrono warrior",
     "endurance champion",
@@ -60,6 +61,12 @@ _PHRASES = (
     "last eth bidder",
     "last cst bidder",
     "price to bid",
+    "what is the balance",
+    "what's the balance",
+    "balance of the",
+    "balance of cosmic",
+    "contract balance",
+    "game contract balance",
     "who is the chrono",
     "who is chrono",
     "who is the endurance",
@@ -186,6 +193,8 @@ def needs_live_state(question: str) -> bool:
     if needs_champions_state(question):
         return True
     if any(p in q for p in _PHRASES):
+        return True
+    if "balance" in q and "contract" in q:
         return True
     has_live = any(w in q for w in _LIVE_WORDS)
     has_state = any(w in q for w in _STATE_WORDS)

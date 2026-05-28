@@ -89,6 +89,12 @@ def test_normalize_chronowarrior_compound():
     assert "chrono warrior" in q
 
 
+def test_contract_balance_question_triggers_live_state():
+    q = "what is the balance of cosmic signature game contract right now?"
+    assert needs_live_state(q)
+    assert needs_live_state("what is the balance of the cosmic game contract?")
+
+
 def test_iso_date_range_resolves():
     result = parse_time_range(
         "how many bids between 2026-05-24 and 2026-05-25?",
