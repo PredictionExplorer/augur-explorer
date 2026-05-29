@@ -60,6 +60,7 @@ func main() {
 	logger.Printf("  - %d Application databases", len(cfg.ApplicationDBs))
 	logger.Printf("  - %d Web APIs", len(cfg.WebAPIs))
 	logger.Printf("  - %d Disk monitors", len(cfg.DiskMonitors))
+	logger.Printf("  - %d SSL certificates", len(cfg.SSLCerts))
 	logger.Printf("  - Mobile notifications: %v", cfg.MobileNotif)
 	
 	// Initialize display
@@ -95,12 +96,18 @@ func main() {
 	
 	// Image starts after Web API header + entries + 1 line gap
 	imageBaseY := webAPIBaseY + 1 + len(cfg.WebAPIs) + 1
-	
-	// Error display starts after Image section (header + 2 content lines + 1 gap)
+
+	// SSL starts after Image section (header + 2 content lines)
+	sslBaseY := imageBaseY + 3
+
+	// Error display starts after Image, optionally SSL section, plus 1 line gap
 	errorDisplayY := imageBaseY + 3 + 1
-	
-	logger.Printf("Layout positions: EventTable=%d, WebAPI=%d, Image=%d, Errors=%d",
-		eventTableBaseY, webAPIBaseY, imageBaseY, errorDisplayY)
+	if len(cfg.SSLCerts) > 0 {
+		errorDisplayY = sslBaseY + 1 + len(cfg.SSLCerts) + 1
+	}
+
+	logger.Printf("Layout positions: EventTable=%d, WebAPI=%d, Image=%d, SSL=%d, Errors=%d",
+		eventTableBaseY, webAPIBaseY, imageBaseY, sslBaseY, errorDisplayY)
 	
 	// Create monitor manager
 	mgr := monitor.NewManager(disp, logger, cfg.MobileNotif, errorDisplayY)
@@ -156,6 +163,13 @@ func main() {
 		imgMon := monitor.NewImageMonitor(cfg.RWalkImage, cfg.RWalkDB, imageBaseY)
 		mgr.Register(imgMon)
 		logger.Printf("Registered: %s", imgMon.Name())
+	}
+
+	// Register SSL certificate monitor
+	if len(cfg.SSLCerts) > 0 {
+		sslMon := monitor.NewSSLMonitor(cfg.SSLCerts, sslBaseY)
+		mgr.Register(sslMon)
+		logger.Printf("Registered: %s", sslMon.Name())
 	}
 	
 	// Setup signal handling

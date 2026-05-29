@@ -96,6 +96,14 @@ type ImageServerConfig struct {
 	RPCURL       string
 }
 
+// SSLCertConfig holds SSL certificate monitoring configuration
+type SSLCertConfig struct {
+	Name       string // optional display label; defaults to Host or Host:Port
+	Host       string // address to connect to (hostname or IP)
+	Port       string // optional; defaults to 443
+	ServerName string // optional TLS SNI; defaults to Host (set when Host is an IP)
+}
+
 // EventTableConfig holds event table monitoring configuration
 type EventTableConfig struct {
 	Name       string

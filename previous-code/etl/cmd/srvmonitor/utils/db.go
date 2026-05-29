@@ -72,4 +72,8 @@ func ConnectPostgresEventTable(cfg types.EventTableConfig) (*sql.DB, error) {
 	return dbobj, nil
 }
 
+// IsNoRows reports whether err is an empty query result.
+func IsNoRows(err error) bool {
+	return errors.Is(err, sql.ErrNoRows)
+}
 

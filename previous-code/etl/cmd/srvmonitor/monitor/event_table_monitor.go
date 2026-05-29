@@ -110,6 +110,9 @@ func (m *EventTableMonitor) checkDatabase(status *EventTableStatus, wg *sync.Wai
 	var val1 int64
 	err = dbobj.QueryRow(query).Scan(&val1)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return
@@ -120,6 +123,9 @@ func (m *EventTableMonitor) checkDatabase(status *EventTableStatus, wg *sync.Wai
 	var val2 int64
 	err = dbobj.QueryRow(query).Scan(&val2)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return

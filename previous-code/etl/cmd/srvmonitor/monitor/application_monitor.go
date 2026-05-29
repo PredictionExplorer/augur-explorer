@@ -111,6 +111,10 @@ func (m *ApplicationMonitor) checkApp(status *ApplicationStatus, wg *sync.WaitGr
 	var chainIDStr string
 	err = dbobj.QueryRow("SELECT chain_id FROM contract_addresses").Scan(&chainIDStr)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			status.LastBlockNum = 0
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return
@@ -120,6 +124,10 @@ func (m *ApplicationMonitor) checkApp(status *ApplicationStatus, wg *sync.WaitGr
 	var lastEvtID int64
 	err = dbobj.QueryRow("SELECT last_evt_id FROM " + status.TableName).Scan(&lastEvtID)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			status.LastBlockNum = 0
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return
@@ -128,6 +136,10 @@ func (m *ApplicationMonitor) checkApp(status *ApplicationStatus, wg *sync.WaitGr
 	var bnum int64
 	err = dbobj.QueryRow("SELECT block_num FROM evt_log WHERE id=$1", lastEvtID).Scan(&bnum)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			status.LastBlockNum = 0
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return

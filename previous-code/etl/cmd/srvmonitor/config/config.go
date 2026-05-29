@@ -27,6 +27,9 @@ type Config struct {
 	
 	// Disk Monitoring
 	DiskMonitors []types.DiskConfig
+
+	// SSL Certificates
+	SSLCerts []types.SSLCertConfig
 	
 	// Official RPC identifiers
 	OfficialRPCMainnet    string
@@ -186,6 +189,20 @@ func LoadFromEnv() (*Config, error) {
 		}
 	}
 	
+	// Load SSL certificate monitors (SSL_CERT1_HOST, SSL_CERT1_PORT, ...)
+	for i := 1; i <= 6; i++ {
+		host := os.Getenv(fmt.Sprintf("SSL_CERT%d_HOST", i))
+		if host == "" {
+			continue
+		}
+		cfg.SSLCerts = append(cfg.SSLCerts, types.SSLCertConfig{
+			Name:       os.Getenv(fmt.Sprintf("SSL_CERT%d_NAME", i)),
+			Host:       host,
+			Port:       os.Getenv(fmt.Sprintf("SSL_CERT%d_PORT", i)),
+			ServerName: os.Getenv(fmt.Sprintf("SSL_CERT%d_SERVERNAME", i)),
+		})
+	}
+
 	// Load RWalk Image Monitoring
 	cfg.RWalkDB = types.DatabaseConfig{
 		Name:   os.Getenv("DB_RWLK_NAME_SRV"),

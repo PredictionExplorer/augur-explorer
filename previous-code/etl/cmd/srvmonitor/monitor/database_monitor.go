@@ -106,6 +106,9 @@ func (m *DatabaseMonitor) checkDatabase(status *DatabaseStatus, wg *sync.WaitGro
 	var bnum1 int64
 	err = dbobj.QueryRow("SELECT block_num FROM block ORDER BY block_num DESC LIMIT 1").Scan(&bnum1)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return
@@ -116,6 +119,9 @@ func (m *DatabaseMonitor) checkDatabase(status *DatabaseStatus, wg *sync.WaitGro
 	var bnum2 int64
 	err = dbobj.QueryRow("SELECT block_num FROM block ORDER BY block_num DESC LIMIT 1").Scan(&bnum2)
 	if err != nil {
+		if utils.IsNoRows(err) {
+			return
+		}
 		status.ErrStr = fmt.Sprintf("Error %v", err)
 		errorChan <- status.ErrStr
 		return
