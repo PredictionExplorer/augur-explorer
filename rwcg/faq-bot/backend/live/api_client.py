@@ -15,9 +15,15 @@ from live.api_detector import (
     bidding_frequency_path,
     donation_fetch_paths,
     extract_round_num,
+    needs_activation_window_config,
     needs_backend_api,
     needs_status_recap,
     needs_time_range_bids,
+)
+from live.admin_events import (
+    filter_events_to_activation_window,
+    parse_iso_timestamp,
+    summarize_admin_event,
 )
 from live.api_fetch_result import ApiFetchResult
 from live.detector import needs_champions_state, needs_round_end_time, needs_staking_stats
@@ -429,6 +435,132 @@ class CosmicGameApiClient:
         lines.append(compact)
         return lines
 
+    @staticmethod
+    def _pick_modelist_row(rows: list[dict[str, Any]], round_num: int) -> dict[str, Any] | None:
+        matches = [row for row in rows if row.get("RoundNum") == round_num]
+        if round_num == 0:
+            deployment = [row for row in matches if row.get("EvtLogId") == -1]
+            if deployment:
+                return deployment[0]
+        if matches:
+            return max(matches, key=lambda row: int(row.get("EvtLogId") or 0))
+        return None
+
+    async def fetch_activation_window_config(
+        self,
+        question: str,
+        round_num: int | None = None,
+    ) -> ApiFetchResult:
+        if not self.is_configured:
+            return ApiFetchResult(error="FAQ_BOT_API_URL is not set and no KB API default found")
+
+        sources: list[str] = []
+        errors: list[str] = []
+
+        dashboard_path = "statistics/dashboard"
+        sources.append(f"live:api:{dashboard_path}")
+        dashboard, dash_err = await self._get_json(dashboard_path)
+        if dash_err:
+            errors.append(f"{dashboard_path}: {dash_err}")
+
+        if round_num is None:
+            round_num = extract_round_num(question)
+        if round_num is None and dashboard:
+            cur = dashboard.get("CurRoundNum")
+            if isinstance(cur, int):
+                round_num = cur
+            elif isinstance(cur, str) and cur.isdigit():
+                round_num = int(cur)
+
+        if round_num is None:
+            return ApiFetchResult(
+                error="Could not determine round number for activation-window config history",
+                sources=sources,
+            )
+
+        modelist_path = "system/modelist/-1/10000"
+        sources.append(f"live:api:{modelist_path}")
+        modelist, modelist_err = await self._get_json(modelist_path)
+        if modelist_err or not modelist:
+            return ApiFetchResult(
+                error=modelist_err or "empty modelist response",
+                sources=sources,
+            )
+
+        rows = modelist.get("SystemModeChanges") or []
+        row = self._pick_modelist_row(rows, round_num)
+        if row is None:
+            return ApiFetchResult(
+                error=f"No system/modelist row found for round {round_num}",
+                sources=sources,
+            )
+
+        evt_start = int(row.get("EvtLogId", 0))
+        evt_end = int(row.get("NextEvtLogId", 0))
+        admin_path = f"system/admin_events/{evt_start}/{evt_end}"
+        sources.append(f"live:api:{admin_path}")
+        admin_data, admin_err = await self._get_json(admin_path)
+        if admin_err or not admin_data:
+            return ApiFetchResult(
+                error=admin_err or "empty admin_events response",
+                sources=sources,
+            )
+
+        events = admin_data.get("AdminEvents") or []
+        stats = (dashboard or {}).get("CurRoundStats") or {}
+        if stats.get("RoundNum") != round_num:
+            info_path = f"rounds/info/{round_num}"
+            sources.append(f"live:api:{info_path}")
+            info_data, info_err = await self._get_json(info_path)
+            if info_data and info_data.get("RoundInfo"):
+                stats = (info_data["RoundInfo"].get("RoundStats") or info_data["RoundInfo"]) or stats
+            elif info_err:
+                errors.append(f"{info_path}: {info_err}")
+
+        param_start_ts = parse_iso_timestamp(stats.get("ParamWindowStartTime"))
+        activation_ts = self._parse_unix_timestamp(stats.get("ActivationTime"))
+        filtered = filter_events_to_activation_window(
+            events,
+            param_window_start_ts=param_start_ts,
+            activation_ts=activation_ts,
+        )
+
+        lines = [
+            f"Fetched at (UTC): {datetime.now(timezone.utc).isoformat()}",
+            f"API base: {self.base_url}",
+            f"Round: {round_num}",
+            f"Modelist evtlog range: {evt_start} .. {evt_end}",
+        ]
+        if stats.get("ParamWindowStartTime"):
+            lines.append(f"ParamWindowStartTime: {stats.get('ParamWindowStartTime')}")
+        if activation_ts:
+            lines.append(f"ActivationTime (UTC): {self._format_utc_timestamp(activation_ts)}")
+        if stats.get("ParamWindowDurationSeconds"):
+            lines.append(f"ParamWindowDurationSeconds: {stats.get('ParamWindowDurationSeconds')}")
+        if stats.get("DelayDurationBeforeRoundActivation"):
+            lines.append(
+                f"DelayDurationBeforeRoundActivation: {stats.get('DelayDurationBeforeRoundActivation')}"
+            )
+        lines.append(
+            f"Admin config events in activation window: {len(filtered)} "
+            f"(of {len(events)} in modelist evtlog range)"
+        )
+        if filtered:
+            lines.append("Changes (indexed admin events — authoritative for activation-window config):")
+            for event in filtered:
+                lines.append(summarize_admin_event(event))
+        else:
+            lines.append("No admin config events matched the activation window filter for this round.")
+
+        if errors:
+            lines.append("Partial fetch errors: " + "; ".join(errors))
+
+        block = (
+            "LIVE ACTIVATION WINDOW CONFIG (indexed admin events during round param/activation window)\n"
+            + "\n".join(lines)
+        )
+        return ApiFetchResult(block=block, sources=sources)
+
     async def fetch_for_question(self, question: str) -> ApiFetchResult:
         if not needs_backend_api(question):
             return ApiFetchResult()
@@ -442,6 +574,7 @@ class CosmicGameApiClient:
         wants_champions = needs_champions_state(question)
         wants_time_bids = needs_time_range_bids(question)
         wants_recap = needs_status_recap(question)
+        wants_activation_config = needs_activation_window_config(question)
         wants_bids = any(
             p in q_lower for p in ("how many bid", "number of bid", "total bid", "count bid", "num bid")
         ) or wants_time_bids
@@ -471,6 +604,18 @@ class CosmicGameApiClient:
                 parts.append(f"[{label}] ERROR: {err}")
                 return None
             return data
+
+        round_num = extract_round_num(question)
+
+        if wants_activation_config:
+            activation = await self.fetch_activation_window_config(question, round_num=round_num)
+            sources.extend(activation.sources)
+            if activation.block:
+                return ApiFetchResult(block=activation.block, sources=sources)
+            return ApiFetchResult(
+                error=activation.error or "activation window config fetch failed",
+                sources=sources,
+            )
 
         if wants_staking:
             staking = await self.fetch_staking_stats()

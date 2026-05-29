@@ -109,4 +109,4 @@ echo "Codex:   ${CODEX_MCP_COMMAND:-codex} (spawn cwd ${CODEX_MCP_SPAWN_CWD})"
 echo "Listen:  ${HOST}:${PORT}"
 echo "API:     http://${display_host}:${PORT}"
 echo "Test UI: http://${display_host}:${PORT}/test-ui"
-exec python app.py
+exec python aifaq-bot.py

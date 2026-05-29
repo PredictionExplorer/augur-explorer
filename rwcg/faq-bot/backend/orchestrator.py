@@ -9,7 +9,11 @@ from typing import Any
 from knowledge.config import KNOWLEDGE_BASE
 from llm.codex_mcp_client import CodexMCPClient, CodexMCPError
 from live.api_client import CosmicGameApiClient
-from live.api_detector import needs_backend_api, needs_time_range_bids
+from live.api_detector import (
+    needs_activation_window_config,
+    needs_backend_api,
+    needs_time_range_bids,
+)
 from live.cginfo_client import CginfoClient
 from live.detector import (
     needs_backend_url_info,
@@ -150,6 +154,7 @@ class Orchestrator:
             "needs_champions_state": needs_champions_state(question),
             "needs_staking_stats": needs_staking_stats(question),
             "needs_time_range_bids": needs_time_range_bids(question),
+            "needs_activation_window_config": needs_activation_window_config(question),
             "wants_detail": wants_detail(question),
             "normalized_question": normalize_question(question),
         }
@@ -387,6 +392,15 @@ class Orchestrator:
             )
         elif api_block.startswith("LIVE BACKEND API DATA UNAVAILABLE"):
             prompt_hints.append("live_api_unavailable")
+        if api_block.startswith("LIVE ACTIVATION WINDOW CONFIG"):
+            prompt_hints.append("live_activation_window_config")
+            prompt += (
+                "The LIVE ACTIVATION WINDOW CONFIG section lists indexed admin configuration "
+                "changes during the round's param/activation window (between prize claim / "
+                "param window start and round activation). Summarize what changed using those "
+                "event names and values. Do not say config history is missing when that list "
+                "is present.\n\n"
+            )
         if "LIVE CHAMPIONS STATE" in api_block:
             prompt_hints.append("live_champions")
             prompt += (

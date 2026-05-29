@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from live.api_detector import needs_backend_api, needs_time_range_bids
+from live.api_detector import (
+    needs_activation_window_config,
+    needs_backend_api,
+    needs_time_range_bids,
+)
 from live.detector import needs_champions_state, needs_live_state, needs_round_end_time, needs_staking_stats, needs_backend_url_info, normalize_question
 from live.time_range import parse_time_range
 
@@ -93,6 +97,12 @@ def test_contract_balance_question_triggers_live_state():
     q = "what is the balance of cosmic signature game contract right now?"
     assert needs_live_state(q)
     assert needs_live_state("what is the balance of the cosmic game contract?")
+
+
+def test_activation_window_config_question_triggers_backend_api():
+    q = "give me how the configuration of the round changed during activation window of the round"
+    assert needs_activation_window_config(q)
+    assert needs_backend_api(q)
 
 
 def test_iso_date_range_resolves():

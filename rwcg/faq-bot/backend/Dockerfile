@@ -30,4 +30,4 @@ ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
 
 # Run the application
-CMD ["python", "app.py"]
+CMD ["python", "aifaq-bot.py"]

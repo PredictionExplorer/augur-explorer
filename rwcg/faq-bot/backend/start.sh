@@ -20,4 +20,4 @@ echo
 # Run the FastAPI server
 echo "Starting FastAPI server on http://localhost:8000"
 echo
-python app.py
+python aifaq-bot.py

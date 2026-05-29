@@ -53,6 +53,50 @@ _STATUS_RECAP_WORDS = (
     "missed",
 )
 
+_ACTIVATION_WINDOW_PHRASES = (
+    "activation window",
+    "param window",
+    "parameter window",
+    "before activation",
+    "before the round activated",
+    "before the round opens",
+    "during activation",
+    "config changed during",
+    "configuration changed during",
+    "configuration of the round",
+    "config of the round",
+    "admin events",
+    "admin config",
+    "round configuration",
+    "round config",
+    "delay before round activation",
+    "delaydurationbeforeroundactivation",
+)
+
+_CONFIG_CHANGE_WORDS = (
+    "config",
+    "configuration",
+    "configured",
+    "admin",
+    "parameter",
+    "param ",
+    "setter",
+    "changed during",
+    "changes during",
+)
+
+
+def needs_activation_window_config(question: str) -> bool:
+    """True when the user asks about admin config changes during a round activation window."""
+    q = question.lower().strip()
+    if any(p in q for p in _ACTIVATION_WINDOW_PHRASES):
+        return True
+    if "activation" in q and any(w in q for w in _CONFIG_CHANGE_WORDS):
+        return True
+    if "round" in q and "changed" in q and any(w in q for w in ("config", "configuration", "admin", "parameter")):
+        return True
+    return False
+
 
 def extract_round_num(question: str) -> int | None:
     for pattern in (_ROUND_NUM, _PRIZE_NUM):
@@ -126,6 +170,8 @@ def needs_status_recap(question: str) -> bool:
 def needs_backend_api(question: str) -> bool:
     """True when indexed backend REST data is needed (donations, bid counts, round stats)."""
     q = question.lower().strip()
+    if needs_activation_window_config(question):
+        return True
     if needs_round_end_time(question):
         return True
     if needs_staking_stats(question):
