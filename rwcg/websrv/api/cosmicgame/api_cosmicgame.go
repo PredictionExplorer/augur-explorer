@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -17,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	cgdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/cosmicgame"
 	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
@@ -379,11 +381,64 @@ func api_cosmic_game_bid_list_by_round(c *gin.Context) {
 		"TotalRows" : total_rows,
 	})
 }
+type bidMessageTxJSON struct {
+	EvtLogId  int64  `json:"evtLogId"`
+	BlockNum  int64  `json:"blockNum"`
+	TxId      int64  `json:"txId"`
+	TxHash    string `json:"txHash"`
+	TimeStamp int64  `json:"timeStamp"`
+	DateTime  string `json:"dateTime"`
+}
+
+type bidWithMessageJSON struct {
+	EvtLogId        int64            `json:"evtLogId"`
+	GesturePosition int64            `json:"gesturePosition"`
+	RoundNum        int64            `json:"roundNum"`
+	ParticipantAddr string           `json:"participantAddr"`
+	TimeStamp       int64            `json:"timeStamp"`
+	DateTime        string           `json:"dateTime"`
+	Message         string           `json:"message"`
+	Tx              bidMessageTxJSON `json:"tx"`
+}
+
+func bidRecToWithMessageJSON(rec p.CGBidRec) bidWithMessageJSON {
+	return bidWithMessageJSON{
+		EvtLogId:        rec.Tx.EvtLogId,
+		GesturePosition: rec.BidPosition,
+		RoundNum:        rec.RoundNum,
+		ParticipantAddr: rec.BidderAddr,
+		TimeStamp:       rec.Tx.TimeStamp,
+		DateTime:        rec.Tx.DateTime,
+		Message:         rec.Message,
+		Tx: bidMessageTxJSON{
+			EvtLogId:  rec.Tx.EvtLogId,
+			BlockNum:  rec.Tx.BlockNum,
+			TxId:      rec.Tx.TxId,
+			TxHash:    rec.Tx.TxHash,
+			TimeStamp: rec.Tx.TimeStamp,
+			DateTime:  rec.Tx.DateTime,
+		},
+	}
+}
+
+func respondBidInfoJSON(c *gin.Context, evtlog_id int64) {
+	record_found, bid_info := arb_storagew.Get_bid_info(evtlog_id)
+	if !record_found {
+		common.RespondErrorJSON(c, "record not found")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  1,
+		"error":   "",
+		"BidInfo": bid_info,
+	})
+}
+
 func api_cosmic_game_bid_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !dbInitialized() {
-		common.RespondErrorJSON(c,"Database link wasn't configured")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
@@ -391,27 +446,101 @@ func api_cosmic_game_bid_info(c *gin.Context) {
 	var evtlog_id int64
 	if len(p_evtlog_id) > 0 {
 		var success bool
-		evtlog_id,success = common.ParseIntFromRemoteOrError(c,JSON,&p_evtlog_id)
+		evtlog_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_evtlog_id)
 		if !success {
 			return
 		}
 	} else {
-		common.RespondErrorJSON(c,"'evtlog_id' parameter is not set")
+		common.RespondErrorJSON(c, "'evtlog_id' parameter is not set")
 		return
 	}
-	record_found,bid_info := arb_storagew.Get_bid_info(evtlog_id)
-	if !record_found {
-		common.RespondErrorJSON(c,"record not found")
-	} else {
-		var req_status int = 1
-		var err_str string = ""
-		c.JSON(http.StatusOK, gin.H{
-			"status": req_status,
-			"error" : err_str,
-			"BidInfo" : bid_info,
-		})
+	respondBidInfoJSON(c, evtlog_id)
+}
+
+func api_cosmic_game_bid_info_by_pos(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
 	}
-} 
+
+	p_round_num := c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		common.RespondErrorJSON(c, "'round_num' parameter is not set")
+		return
+	}
+
+	p_bid_position := c.Param("bid_position")
+	var bid_position int64
+	if len(p_bid_position) > 0 {
+		var success bool
+		bid_position, success = common.ParseIntFromRemoteOrError(c, JSON, &p_bid_position)
+		if !success {
+			return
+		}
+	} else {
+		common.RespondErrorJSON(c, "'bid_position' parameter is not set")
+		return
+	}
+
+	evtlog_id, found := arb_storagew.Get_evtlog_id_by_round_and_bid_position(round_num, bid_position)
+	if !found {
+		common.RespondErrorJSON(c, "record not found")
+		return
+	}
+	respondBidInfoJSON(c, evtlog_id)
+}
+
+func api_cosmic_game_bid_with_message_by_round(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if !dbInitialized() {
+		common.RespondErrorJSON(c, "Database link wasn't configured")
+		return
+	}
+
+	p_round := c.Param("round")
+	var round_num int64
+	if len(p_round) > 0 {
+		var success bool
+		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round)
+		if !success {
+			return
+		}
+	} else {
+		common.RespondErrorJSON(c, "'round' parameter is not set")
+		return
+	}
+
+	sortDesc := strings.EqualFold(c.Query("sort"), "desc")
+	offset := cgdb.ParseOptionalIntQuery(c.Query("offset"), 0)
+	limit := cgdb.ParseOptionalIntQuery(c.Query("limit"), 1000)
+	if limit <= 0 {
+		limit = 1000
+	}
+
+	bids := arb_storagew.Get_bids_with_message_by_round(round_num, sortDesc, offset, limit)
+	messages := make([]bidWithMessageJSON, 0, len(bids))
+	for _, bid := range bids {
+		messages = append(messages, bidRecToWithMessageJSON(bid))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":   1,
+		"error":    "",
+		"messages": messages,
+		"offset":   offset,
+		"limit":    limit,
+	})
+}
 func api_cosmic_game_round_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

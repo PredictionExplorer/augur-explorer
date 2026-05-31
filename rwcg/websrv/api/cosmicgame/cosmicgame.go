@@ -105,6 +105,8 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	// Bids
 	r.GET("/api/cosmicgame/bid/list/all/:offset/:limit", api_cosmic_game_bid_list)
 	r.GET("/api/cosmicgame/bid/info/:evtlog_id", api_cosmic_game_bid_info)
+	r.GET("/api/cosmicgame/bid/info_by_pos/:round_num/:bid_position", api_cosmic_game_bid_info_by_pos)
+	r.GET("/api/cosmicgame/bid/with_message/by_round/:round", api_cosmic_game_bid_with_message_by_round)
 	r.GET("/api/cosmicgame/bid/list/by_round/:round_num/:sort/:offset/:limit", api_cosmic_game_bid_list_by_round)
 	r.GET("/api/cosmicgame/bid/used_randomwalk_nfts", api_cosmic_game_used_rwalk_nfts)
 	r.GET("/api/cosmicgame/bid/used_rwalk_nfts", api_cosmic_game_used_rwalk_nfts) // legacy path (same handler)

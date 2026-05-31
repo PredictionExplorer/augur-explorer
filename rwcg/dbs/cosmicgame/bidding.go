@@ -172,6 +172,52 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool, p.CGBidRec) {
 	return true, rec
 }
 
+// Get_evtlog_id_by_round_and_bid_position returns the evtlog_id for a bid identified by round and position.
+func (sw *SQLStorageWrapper) Get_evtlog_id_by_round_and_bid_position(round_num, bid_position int64) (int64, bool) {
+	query := "SELECT b.evtlog_id FROM " + sw.S.SchemaName() + ".cg_bid b " +
+		"WHERE b.round_num=$1 AND b.bid_position=$2"
+	var evtlogId int64
+	err := sw.S.Db().QueryRow(query, round_num, bid_position).Scan(&evtlogId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, false
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	return evtlogId, true
+}
+
+// Get_bids_with_message_by_round returns bids in a round that have a non-empty message.
+// sortDesc=true orders by bid_position DESC; false orders ASC.
+func (sw *SQLStorageWrapper) Get_bids_with_message_by_round(round_num int64, sortDesc bool, offset, limit int) []p.CGBidRec {
+	if limit == 0 {
+		limit = 1000
+	}
+	orderBy := "b.bid_position ASC"
+	if sortDesc {
+		orderBy = "b.bid_position DESC"
+	}
+	whereClause := "b.round_num=$1 AND b.msg IS NOT NULL AND TRIM(b.msg) <> ''"
+	query := sw.buildBidSelectQuery(whereClause, orderBy, "OFFSET $2 LIMIT $3")
+	rows, err := sw.S.Db().Query(query, round_num, offset, limit)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	records := make([]p.CGBidRec, 0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		rec, err := scanBidRecord(rows)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
+		records = append(records, rec)
+	}
+	return records
+}
+
 func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,limit int) ([]p.CGBidRec,int64) {
 
 	var order_by string = "ASC"
