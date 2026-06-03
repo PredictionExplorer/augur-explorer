@@ -28,7 +28,8 @@ const (
 	IMGGEN_PATH				= "v2/etl/cmd/cosmicgame/imggen_monitor/imggen_exec" // relative to $HOME
 
 	PRIZE_CLAIM_EVENT		= "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591" // ICosmicSignatureGame.sol:MainPrizeClaimed
-	BID_EVENT				= "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549" // ICosmicSignatureGame.sol:BidPlaced
+	BID_EVENT				= "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549" // IBidding.sol:BidPlaced (legacy)
+	BID_EVENT_V2			= "1d1f406c89e99504a7222aaba50bf96b9f91f522ebc6ea825255145919e102ec" // IBiddingV2.sol:BidPlaced; both topics handled in parallel
 	ETH_DONATED_EVENT		= "e32cacf203d00685e2b4d8b0a90e7cd8f3f8a208fdf116f4bb36abe08b7d548e" // IEthDonations.sol:EthDonated
 	ETH_DONATED_WI_EVENT	= "a08049565b10d44a06dca9bf05685b39bc370352043c5a003e8d35d45ebdc53f" // IEthDonations.sol:EthDonatedWithInfo
 	DONATION_RECEIVED_EVENT	= "264f630d9efa0d07053a31163641d9fcc0adafc9d9e76f1c37c2ce3a558d2c52" // ICharityWallet.sol:DonationReceived
@@ -94,6 +95,10 @@ const (
 	MARKETING_REWARD_PAID	= "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486" // IMarketingWallet.sol:RewardPaid
 	MARKETING_REWARD_CHANGED = "2652e6657dd1ed89d7bdcb70f8827cc8449ac4536ebf604dbb2465cdad264020" // ISystemEvents.sol:MarketingWalletCstContributionAmountChanged
 	CST_REWARD_FOR_BIDDING_CHANGED = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0" // ISystemEvents.sol:CstRewardAmountForBiddingChanged
+	BID_CST_REWARD_AMOUNT_CHANGED = "96978b83addd498dff54ab50bf4ed5b62e543d07c7935099eafe180248efe4b4" // ISystemEvents.sol:BidCstRewardAmountChanged
+	BID_CST_REWARD_AMOUNT_MULTIPLIER_CHANGED = "40b9c59af8c486ccf8c7cc73df5a51e7cc29747ea7d39f99632ecaf9caa2ed1f" // ISystemEventsV2.sol:BidCstRewardAmountMultiplierChanged
+	CST_DUTCH_AUCTION_DURATION_CHANGED = "4abea08c196329c357e3175d011af39a8625be99ef0ba5a0f3547a95534fedb7" // ISystemEventsV2.sol:CstDutchAuctionDurationChanged
+	CST_DUTCH_AUCTION_DURATION_CHANGE_DIVISOR_CHANGED = "acbc6b6929088e4b2d043625fa7248e00fb6658a425eb9d9dc8c37b18c7f3e6f" // ISystemEventsV2.sol:CstDutchAuctionDurationChangeDivisorChanged
 	STATIC_CST_REWARD		= "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
 	MAX_MESSAGE_LENGTH		= "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged
 	TOKEN_SCRIPT_URL		= "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c" // ICosmicSignatureNft.sol:NftGenerationScriptUrlChanged
@@ -111,6 +116,7 @@ var (
 	// CosmicGame events:
 	evt_prize_claim_event,_ = hex.DecodeString(PRIZE_CLAIM_EVENT)
 	evt_bid_event,_			= hex.DecodeString(BID_EVENT)
+	evt_bid_event_v2,_		= hex.DecodeString(BID_EVENT_V2)
 	evt_eth_donated_event,_	= hex.DecodeString(ETH_DONATED_EVENT)
 	evt_eth_donated_wi_event,_= hex.DecodeString(ETH_DONATED_WI_EVENT)
 	evt_nft_donation_event,_= hex.DecodeString(NFT_ETH_DONATED_EVENT)
@@ -151,6 +157,10 @@ var (
 	evt_proxy_upgraded,_	= hex.DecodeString(PROXY_UPGRADED)
 	evt_admin_changed,_		= hex.DecodeString(ADMIN_CHANGED)
 	evt_cst_reward_for_bidding_changed,_	= hex.DecodeString(CST_REWARD_FOR_BIDDING_CHANGED)
+	evt_bid_cst_reward_amount_changed,_	= hex.DecodeString(BID_CST_REWARD_AMOUNT_CHANGED)
+	evt_bid_cst_reward_amount_multiplier_changed,_ = hex.DecodeString(BID_CST_REWARD_AMOUNT_MULTIPLIER_CHANGED)
+	evt_cst_dutch_auction_duration_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_CHANGED)
+	evt_cst_dutch_auction_duration_change_divisor_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_CHANGE_DIVISOR_CHANGED)
 	evt_max_msg_length_changed,_	= hex.DecodeString(MAX_MESSAGE_LENGTH)
 	evt_token_script_url,_			= hex.DecodeString(TOKEN_SCRIPT_URL)
 	evt_base_uri,_					= hex.DecodeString(BASE_URI)
@@ -195,6 +205,7 @@ var (
 	inspected_events []InspectedEvent
 
 	cosmic_game_abi			*abi.ABI
+	cosmic_game_v2_abi		*abi.ABI
 	cosmic_signature_abi	*abi.ABI
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI
@@ -426,6 +437,7 @@ func main() {
 	storagew.S.Log_msg("Log initialized\n")
 
 	cosmic_game_abi = get_abi(CosmicSignatureGameABI)
+	cosmic_game_v2_abi = get_abi(CosmicSignatureGameV2ABI)
 	cosmic_signature_abi = get_abi(CosmicSignatureNftABI)
 	cosmic_token_abi = get_abi(CosmicSignatureTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);

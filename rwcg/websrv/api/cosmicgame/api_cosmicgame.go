@@ -248,6 +248,8 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"InitialSecondsUntilPrize" : initial_seconds,
 		"TimeoutClaimPrize" : timeout_claim,
 		"RoundStartCSTAuctionLength" : roundstart_auclen,
+		"CstDutchAuctionDurationChangeDivisor" : cst_dutch_auction_duration_change_divisor,
+		"ContractMechanicsVersion" : getContractMechanicsVersion(),
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,

@@ -46,6 +46,7 @@ var (
 	initial_seconds				int64
 	timeout_claim				int64
 	roundstart_auclen			int64
+	cst_dutch_auction_duration_change_divisor int64
 	raffle_eth_winners_bidding	int64		// numRaffleETHWinnersBidding
 	raffle_nft_winners_bidding	int64		// numRaffleNFTWinnersBidding
 	raffle_nft_winners_staking_rwalk	int64	// numRaffleNFTWinnersStakingRWalk
@@ -349,12 +350,13 @@ func do_reload_contract_constants() {
 		Info.Printf(err_str)
 		fmt.Printf(err_str)
 	}
-	bwcontract,err := NewCosmicSignatureGame(cosmic_game_addr,EthClient)
-	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
+	v1contract, v2contract := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
+	if v1contract == nil {
+		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract at %v . Contract constants won't be fetched\n", cosmic_game_addr)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
+		bwcontract := v1contract
 		var err error
 		var tmp_val *big.Int
 		tmp_val,err = bwcontract.EthBidPriceIncreaseDivisor(&copts)
@@ -377,14 +379,15 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			charity_percentage = 0
 		} else { charity_percentage = tmp_val.Int64() }
-		tmp_val = big.NewInt(0);
-		tmp_val.SetString("100000000000000000000",10)
+		rewardStr, err := readTokenReward(bwcontract, v2contract, &copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at TokenReward() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at TokenReward() call: %v\n", err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 			token_reward = "error"
-		} else { token_reward = tmp_val.String() }
+		} else {
+			token_reward = rewardStr
+		}
 		tmp_val,err = bwcontract.MainEthPrizeAmountPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizePercentage() call: %v\n",err)
@@ -441,16 +444,19 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			raffle_nft_winners_staking_rwalk = -1
 		} else { raffle_nft_winners_staking_rwalk = tmp_val.Int64() }
+		cst_dutch_auction_duration_change_divisor = readCSTAuctionDurationChangeDivisor(bwcontract, v2contract, &copts)
 	}
 }
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
-	bwcontract,err := NewCosmicSignatureGame(cosmic_game_addr,EthClient)
-	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
+	v1contract, v2contract := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
+	if v1contract == nil {
+		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract at %v . Contract constants won't be fetched\n", cosmic_game_addr)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
+		bwcontract := v1contract
+		var err error
 		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
 		tmp_val,err = bwcontract.GetNextEthBidPrice(&copts)
@@ -551,13 +557,12 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			timeout_claim = -1
 		} else { timeout_claim = tmp_val.Int64() }
-		tmp_val,err = bwcontract.CstDutchAuctionDurationDivisor(&copts)
-		if err != nil {
-			err_str := fmt.Sprintf("Error at CstDutchAuctionDurationDivisor() call: %v\n",err)
+		roundstart_auclen = readRoundStartCSTAuctionSetting(bwcontract, v2contract, &copts)
+		if roundstart_auclen == -1 {
+			err_str := "Error reading CST round-start auction setting (V1 divisor / V2 duration)\n"
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-			roundstart_auclen = -1
-		} else { roundstart_auclen = tmp_val.Int64() }
+		}
 		tmp_val,err = EthClient.BalanceAt(context.Background(),charity_addr,nil)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at BalanceAt() call for charity addr: %v\n",err)
@@ -690,6 +695,8 @@ func cosmic_game_index_page(c *gin.Context) {
 		"InitialSecondsUntilPrize" : initial_seconds,
 		"TimeoutClaimPrize" : timeout_claim,
 		"RoundStartCSTAuctionLength" : roundstart_auclen,
+		"CstDutchAuctionDurationChangeDivisor" : cst_dutch_auction_duration_change_divisor,
+		"ContractMechanicsVersion" : getContractMechanicsVersion(),
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,

@@ -57,11 +57,11 @@
 							{{ if eq 22 .RecordType}}InitialSecondsUntilPrizeChanged{{end}}
 							{{ if eq 23 .RecordType}}TreasurerAddressChanged{{end}}
 							{{ if eq 24 .RecordType}}ActivationTimeChanged{{end}}
-							{{ if eq 25 .RecordType}}CstDutchAuctionDurationDivisorChanged{{end}}
+							{{ if eq 25 .RecordType}}CstDutchAuctionDurationDivisorChanged / CstDutchAuctionDurationChanged{{end}}
 							{{ if eq 26 .RecordType}}CstPrizeAmountChanged{{end}}
 							{{ if eq 27 .RecordType}}StartingBidPriceCstMinLimitChanged{{end}}
 							{{ if eq 28 .RecordType}}MarketingWalletCstContributionChanged{{end}}
-							{{ if eq 29 .RecordType}}CstRewardAmountForBiddingChanged{{end}}
+							{{ if eq 29 .RecordType}}CstRewardAmountForBiddingChanged / BidCstRewardAmountChanged / BidCstRewardAmountMultiplierChanged{{end}}
 							{{ if eq 30 .RecordType}}MaxMessageLengthChanged{{end}}
 							{{ if eq 31 .RecordType}}TokenGenerationScriptURL{{end}}
 							{{ if eq 32 .RecordType}}BaseURI{{end}}
@@ -71,11 +71,13 @@
 							{{ if eq 36 .RecordType}}EthDutchAuctionDurationDivisorChanged{{end}}
 							{{ if eq 37 .RecordType}}EthDutchAuctionEndingBidPriceDivisorChanged{{end}}
 							{{ if eq 38 .RecordType}}ChronoWarriorEthPrizeAmount%Changed{{end}}
+							{{ if eq 39 .RecordType}}CstDutchAuctionDurationChangeDivisorChanged{{end}}
 						</td>
 						<td class="center">{{.BlockNum}}</td>
 						<td>{{.DateTime}}</td>
 						<td class="monospace">
 							{{ if .IntegerValue}}{{.IntegerValue}}{{end}}
+							{{ if .FloatValue}}{{.FloatValue}}{{end}}
 							{{ if .AddressValue}}{{.AddressValue}}{{end}}
 							{{ if .StringValue}}{{.StringValue}}{{end}}
 						</td>

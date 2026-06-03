@@ -71,6 +71,10 @@ type CGBidRec struct {
 	TimeUntilPrize				int64	// Seconds until prize (0 if already ended)
 	CSTReward				string
 	CSTRewardEth				float64
+	BidCstRewardAmount			string	// IBiddingV2 BidPlaced wei; "-1" = legacy bid v1
+	BidCstRewardAmountEth		float64	// /1e18 when BidCstRewardAmount >= 0; else -1
+	CstDutchAuctionDuration		string	// per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
+	CstDutchAuctionDurationInt	int64	// numeric duration when >= 0; else -1
 	NFTDonationTokenId			int64
 	NFTDonationTokenAddr		string
 	NFTTokenURI					string
@@ -625,11 +629,11 @@ type CGAdminEvent struct {
 										//			22		InitialSecondsUntilPrizeChanged
 										//			23		TreasurerAddressChanged
 										//			24		ActivationTimeChanged
-										//			25		RoundStartCSTAuctionLengthChanged
+										//			25		CstDutchAuctionDurationDivisorChanged / CstDutchAuctionDurationChanged (V2)
 										//			26		Erc20RewardMultiplierChanged
 										//			27		StartingBidPriceCSTMinLimitChanged
 										//			28		MarketingRewardChanged
-										//			29		TokenRewardChanged
+										//			29		CstRewardAmountForBiddingChanged / BidCstRewardAmountChanged / BidCstRewardAmountMultiplierChanged (V2)
 										//			30		MaxMessageLengthChanged
 										//			31		TokenGenerationScriptURLEvent
 										//			32		BaseURI (CosmicSignature)
@@ -639,6 +643,7 @@ type CGAdminEvent struct {
 										//			36		EthDutchAuctionDurationDivisorChanged
 										//			37		EthDutchAuctionEndingBidPriceDivisorChanged
 										//			38		ChronoWarriorEthPrizeAmountPercentageChanged
+										//			39		CstDutchAuctionDurationChangeDivisorChanged (V2)
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64

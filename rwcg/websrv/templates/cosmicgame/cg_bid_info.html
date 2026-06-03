@@ -78,8 +78,18 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">CST Tokens (Bid Price)</div>
-					<div class="detail-value">{{printf "%.4f" .BidInfo.CSTRewardEth}} CST</div>
+					<div class="detail-value">{{printf "%.4f" .BidInfo.CstPriceEth}} CST</div>
 				</div>
+				{{ if ge .BidInfo.BidCstRewardAmountEth 0.0 }}
+				<div class="detail-row">
+					<div class="detail-label">Bid CST Reward (bid v2)</div>
+					<div class="detail-value">{{printf "%.4f" .BidInfo.BidCstRewardAmountEth}} CST</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">CST Dutch Auction Duration (bid v2)</div>
+					<div class="detail-value">{{.BidInfo.CstDutchAuctionDurationInt}}</div>
+				</div>
+				{{ end }}
 				<div class="detail-row">
 					<div class="detail-label">Message</div>
 					<div class="detail-value">{{.BidInfo.Message}}</div>

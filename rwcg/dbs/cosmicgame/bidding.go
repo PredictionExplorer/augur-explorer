@@ -16,7 +16,10 @@ func (sw *SQLStorageWrapper) buildBidSelectQuery(whereClause, orderBy, limitOffs
 		"b.bidder_aid,ba.addr,b.eth_price,b.eth_price/1e18 AS eth_price_eth, " +
 		"b.cst_price, b.cst_price/1e18 AS cst_price_eth, b.rwalk_nft_id," +
 		"d.token_id,d.tok_addr, d.token_uri, b.msg, b.round_num, " +
-		"b.cst_reward, b.cst_reward/1e18, b.bid_type, " +
+		"b.cst_reward, b.cst_reward/1e18, " +
+		"b.bid_cst_reward_amount, (CASE WHEN b.bid_cst_reward_amount >= 0 THEN b.bid_cst_reward_amount/1e18 ELSE -1 END), " +
+		"b.cst_dutch_auction_duration, (CASE WHEN b.cst_dutch_auction_duration >= 0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END), " +
+		"b.bid_type, " +
 		"EXTRACT(EPOCH FROM b.prize_time)::BIGINT AS prize_time_ts, b.prize_time, " +
 		"GREATEST(0, EXTRACT(EPOCH FROM b.prize_time)::BIGINT - EXTRACT(EPOCH FROM NOW())::BIGINT) AS time_until_prize, " +
 		"b.bid_position, d2.tok_addr, d2.amount, d2.amount/1e18 " +
@@ -72,6 +75,10 @@ func scanBidRecord(rows *sql.Rows) (p.CGBidRec, error) {
 		&rec.RoundNum,
 		&rec.CSTReward,
 		&rec.CSTRewardEth,
+		&rec.BidCstRewardAmount,
+		&rec.BidCstRewardAmountEth,
+		&rec.CstDutchAuctionDuration,
+		&rec.CstDutchAuctionDurationInt,
 		&rec.BidType,
 		&rec.PrizeTime,
 		&rec.PrizeTimeDate,

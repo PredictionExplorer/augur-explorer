@@ -31,11 +31,11 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     22: "InitialSecondsUntilPrizeChanged",
     23: "TreasurerAddressChanged",
     24: "ActivationTimeChanged",
-    25: "CstDutchAuctionDurationDivisorChanged",
+    25: "CstDutchAuctionDurationDivisorChanged / CstDutchAuctionDurationChanged",
     26: "CstPrizeAmountChanged",
     27: "StartingBidPriceCstMinLimitChanged",
     28: "MarketingWalletCstContributionChanged",
-    29: "CstRewardAmountForBiddingChanged",
+    29: "CstRewardAmountForBiddingChanged / BidCstRewardAmountChanged / BidCstRewardAmountMultiplierChanged",
     30: "MaxMessageLengthChanged",
     31: "TokenGenerationScriptURL",
     32: "BaseURI",
@@ -45,6 +45,7 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     36: "EthDutchAuctionDurationDivisorChanged",
     37: "EthDutchAuctionEndingBidPriceDivisorChanged",
     38: "ChronoWarriorEthPrizeAmountPercentChanged",
+    39: "CstDutchAuctionDurationChangeDivisorChanged",
 }
 
 

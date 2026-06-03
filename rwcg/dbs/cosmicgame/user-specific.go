@@ -217,52 +217,11 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 	records := make([]p.CGBidRec,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGBidRec
-		var null_token_id sql.NullInt64
-		var null_tok_addr,null_token_uri sql.NullString
-		var null_donated_erc20_addr,null_donated_erc20_amount sql.NullString
-		var null_donated_erc20_amount_eth sql.NullFloat64
-		err=rows.Scan(
-			&rec.Tx.EvtLogId,
-			&rec.Tx.BlockNum,
-			&rec.Tx.TxId,
-			&rec.Tx.TxHash,
-			&rec.Tx.TimeStamp,
-			&rec.Tx.DateTime,
-			&rec.BidderAid,
-		&rec.BidderAddr,
-		&rec.EthPrice,
-		&rec.EthPriceEth,
-		&rec.CstPrice,
-		&rec.CstPriceEth,
-		&rec.RWalkNFTId,
-		&null_token_id,
-		&null_tok_addr,
-		&null_token_uri,
-		&rec.Message,
-		&rec.RoundNum,
-		&rec.CSTReward,
-		&rec.CSTRewardEth,
-		&rec.BidType,
-		&rec.PrizeTime,
-		&rec.PrizeTimeDate,
-		&rec.TimeUntilPrize,
-		&rec.BidPosition,
-		&null_donated_erc20_addr,
-		&null_donated_erc20_amount,
-		&null_donated_erc20_amount_eth,
-	)
+		rec, err := scanBidRecord(rows)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		rec.NFTDonationTokenId = -1
-		if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
-		if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
-		if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
-		if null_donated_erc20_addr.Valid { rec.DonatedERC20TokenAddr = null_donated_erc20_addr.String }
-		if null_donated_erc20_amount.Valid { rec.DonatedERC20TokenAmount = null_donated_erc20_amount.String }
-		if null_donated_erc20_amount_eth.Valid { rec.DonatedERC20TokenAmountEth = null_donated_erc20_amount_eth.Float64 }
 		records = append(records,rec)
 	}
 	return records

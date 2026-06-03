@@ -57,6 +57,7 @@ DROP TABLE IF EXISTS
 	cg_adm_inisecprize,
 	cg_adm_acttime,
 	cg_adm_cst_auclen,
+	cg_adm_cst_auclen_chg_div,
 	cg_adm_eth_auclen,
 	cg_adm_eth_auc_endprice,
 	cg_adm_erc_rwd_mul,

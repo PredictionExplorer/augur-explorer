@@ -51,6 +51,8 @@ type CGBidEvent struct {
 	CstPrice			string	// PaidCstPrice (or -1 for ETH bids)
 	ERC20_Value			string	// reward of CST tokens earned for bidding
 	Message				string
+	BidCstRewardAmount		string	// IBiddingV2 BidPlaced; "-1" if V1 event
+	CstDutchAuctionDuration	string	// IBiddingV2 BidPlaced; "-1" if V1 event
 }
 type CGDonationEvent struct {
 	EvtId				int64
@@ -560,6 +562,14 @@ type CGActivationTimeChanged struct {
 	NewActivationTime		string
 }
 type CGCstDutchAuctionDurationDivisorChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
+type CGCstDutchAuctionDurationChangeDivisorChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64

@@ -51,6 +51,8 @@ CREATE TABLE cg_bid ( -- ICosmicSignatureGame.sol:BidPlaced
 	eth_price		DECIMAL NOT NULL,	-- PaidEthPrice (or -1 if CST bid)
 	cst_price		DECIMAL NOT NULL,	-- PaidCstPrice (or -1 if ETH bid)
 	cst_reward		DECIMAL DEFAULT 0,	-- CST reward amount for this bid (from cstRewardAmountForBidding at time of bid)
+	bid_cst_reward_amount	DECIMAL DEFAULT -1,	-- IBiddingV2 BidPlaced (topic 0x1d1f406c…); -1 = legacy BidPlaced
+	cst_dutch_auction_duration DECIMAL DEFAULT -1,	-- per-bid auction duration from IBiddingV2 BidPlaced; -1 = legacy
 	msg				TEXT,
 	UNIQUE(evtlog_id)
 );

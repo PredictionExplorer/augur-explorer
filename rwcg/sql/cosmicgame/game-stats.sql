@@ -79,7 +79,7 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
 	total_chrono_warrior_eth_deposits DECIMAL DEFAULT 0,
 	total_cst_given_in_prizes DECIMAL DEFAULT 0,
-	cst_reward_for_bidding DECIMAL DEFAULT 0,
+	cst_reward_for_bidding DECIMAL DEFAULT 0, -- V1: fixed CST reward wei; post-V2 upgrade stores bidCstRewardAmountMultiplier
 	total_nft_donated		BIGINT DEFAULT 0,
 	total_erc20_donations	BIGINT DEFAULT 0,		-- the number of donations, not the number of tokens
 	total_cst_consumed		DECIMAL DEFAULT 0,		-- or burned, sum of the tokens that was burned as bid price

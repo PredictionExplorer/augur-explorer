@@ -55,6 +55,9 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 	if err != nil || cst_reward == "0" {
 		cst_reward = DEFAULT_CST_REWARD_FOR_BIDDING // Use contract default if not set or zero
 	}
+	if evt.BidCstRewardAmount != "-1" {
+		cst_reward = evt.BidCstRewardAmount
+	}
 	
 	// Determine eth_price and cst_price based on bid type
 	eth_price := evt.EthPrice
@@ -69,8 +72,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 	
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_bid("+
 			"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-			"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,prize_time,msg,round_num,bid_type,bid_position"+
-			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,TO_TIMESTAMP($11),$12,$13,$14,$15)"
+			"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,bid_cst_reward_amount,cst_dutch_auction_duration,prize_time,msg,round_num,bid_type,bid_position"+
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17)"
 	_,err = sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -82,6 +85,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		eth_price,
 		cst_price,
 		cst_reward,
+		evt.BidCstRewardAmount,
+		evt.CstDutchAuctionDuration,
 		evt.PrizeTime,
 		evt.Message,
 		evt.RoundNum,
@@ -1389,6 +1394,29 @@ func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_auclen table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cst_dutch_auction_duration_change_divisor_changed_event(evt *p.CGCstDutchAuctionDurationChangeDivisorChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_adm_cst_auclen_chg_div (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_len" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewValue,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_auclen_chg_div table: %v\n",err))
 		os.Exit(1)
 	}
 }
