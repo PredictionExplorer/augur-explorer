@@ -246,8 +246,18 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/info/{evtlog_id}</span></td>
-					<td class="api-description">Get bid details</td>
+					<td class="api-description">Get bid details. V2 bids include <code>BidCstRewardAmount</code>, <code>BidCstRewardAmountEth</code>, <code>CstDutchAuctionDuration</code>, <code>CstDutchAuctionDurationInt</code> (-1 for legacy V1).</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/info/1000">.../bid/info/1000</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/info_by_pos/{round}/{position}</span></td>
+					<td class="api-description">Get bid details by round and position (same fields as /bid/info)</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/info_by_pos/0/1">.../bid/info_by_pos/0/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/with_message/by_round/{round}</span></td>
+					<td class="api-description">Bids with non-empty messages; returns full <code>Bids</code> array plus legacy <code>messages</code></td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/with_message/by_round/0">.../bid/with_message/by_round/0</a></td>
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/list/by_round/{round}/{sort}/{offset}/{limit}</span></td>

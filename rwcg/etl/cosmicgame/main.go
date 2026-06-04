@@ -485,6 +485,11 @@ func main() {
 	staking_wallet_rwalk_addr = ethcommon.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
 
+	if err := syncContractParamsFromChain(&storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
+		Error.Printf("Contract param chain sync failed: %v", err)
+		os.Exit(1)
+	}
+
 	c := make(chan os.Signal, 1)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)

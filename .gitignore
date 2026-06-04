@@ -131,11 +131,15 @@ rwcg/etl/randomwalk/scripts/transfer
 rwcg/etl/randomwalk/scripts/verify_erc20_transfers
 rwcg/etl/randomwalk/scripts/verify_owner
 rwcg/etl/randomwalk/scripts/withdrawal
+rwcg/etl/cosmicgame/scripts/bidcst
+rwcg/etl/cosmicgame/scripts/sendeth
 rwcg/etl/randomwalk/tools/rw_toprated
 rwcg/freezer-scanner/freezer-scan/freezer-scan
 rwcg/tools/archive_export
 rwcg/tools/db_verify
 rwcg/tools/evtlog_diff
+rwcg/tools/arch_node_fill
+rwcg/tools/arch_verify
 rwcg/websrv/websrv
 rwcg/etl/cosmicgame/imggen_monitor/imggen_exec
 rwcg/etl/cosmicgame/imggen_monitor/imggen_monitor

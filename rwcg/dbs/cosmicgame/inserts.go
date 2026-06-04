@@ -46,17 +46,15 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		bid_position = 1 // First bid in round
 	}
 	
-	// Get current cst_reward_for_bidding from settings
-	// Default is 100 CST (100 * 10^18 wei) from CosmicSignatureConstants.sol:DEFAULT_CST_REWARD_AMOUNT_FOR_BIDDING
-	const DEFAULT_CST_REWARD_FOR_BIDDING = "100000000000000000000"
+	// Get current cst_reward_for_bidding from settings (populated by admin events or ETL chain sync at startup).
 	var cst_reward string
 	row = sw.S.Db().QueryRow("SELECT cst_reward_for_bidding FROM "+sw.S.SchemaName()+".cg_glob_stats LIMIT 1")
 	err = row.Scan(&cst_reward)
-	if err != nil || cst_reward == "0" {
-		cst_reward = DEFAULT_CST_REWARD_FOR_BIDDING // Use contract default if not set or zero
-	}
 	if evt.BidCstRewardAmount != "-1" {
 		cst_reward = evt.BidCstRewardAmount
+	} else if err != nil || cst_reward == "" || cst_reward == "0" {
+		sw.S.Log_msg(fmt.Sprintf("DB error: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): %v, value=%q\n", err, cst_reward))
+		os.Exit(1)
 	}
 	
 	// Determine eth_price and cst_price based on bid type

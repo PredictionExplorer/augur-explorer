@@ -393,25 +393,33 @@ type bidMessageTxJSON struct {
 }
 
 type bidWithMessageJSON struct {
-	EvtLogId        int64            `json:"evtLogId"`
-	GesturePosition int64            `json:"gesturePosition"`
-	RoundNum        int64            `json:"roundNum"`
-	ParticipantAddr string           `json:"participantAddr"`
-	TimeStamp       int64            `json:"timeStamp"`
-	DateTime        string           `json:"dateTime"`
-	Message         string           `json:"message"`
-	Tx              bidMessageTxJSON `json:"tx"`
+	EvtLogId                   int64            `json:"evtLogId"`
+	GesturePosition            int64            `json:"gesturePosition"`
+	RoundNum                   int64            `json:"roundNum"`
+	ParticipantAddr            string           `json:"participantAddr"`
+	TimeStamp                  int64            `json:"timeStamp"`
+	DateTime                   string           `json:"dateTime"`
+	Message                    string           `json:"message"`
+	BidCstRewardAmount         string           `json:"BidCstRewardAmount"`
+	BidCstRewardAmountEth      float64          `json:"BidCstRewardAmountEth"`
+	CstDutchAuctionDuration    string           `json:"CstDutchAuctionDuration"`
+	CstDutchAuctionDurationInt int64            `json:"CstDutchAuctionDurationInt"`
+	Tx                         bidMessageTxJSON `json:"tx"`
 }
 
 func bidRecToWithMessageJSON(rec p.CGBidRec) bidWithMessageJSON {
 	return bidWithMessageJSON{
-		EvtLogId:        rec.Tx.EvtLogId,
-		GesturePosition: rec.BidPosition,
-		RoundNum:        rec.RoundNum,
-		ParticipantAddr: rec.BidderAddr,
-		TimeStamp:       rec.Tx.TimeStamp,
-		DateTime:        rec.Tx.DateTime,
-		Message:         rec.Message,
+		EvtLogId:                   rec.Tx.EvtLogId,
+		GesturePosition:            rec.BidPosition,
+		RoundNum:                   rec.RoundNum,
+		ParticipantAddr:            rec.BidderAddr,
+		TimeStamp:                  rec.Tx.TimeStamp,
+		DateTime:                   rec.Tx.DateTime,
+		Message:                    rec.Message,
+		BidCstRewardAmount:         rec.BidCstRewardAmount,
+		BidCstRewardAmountEth:      rec.BidCstRewardAmountEth,
+		CstDutchAuctionDuration:    rec.CstDutchAuctionDuration,
+		CstDutchAuctionDurationInt: rec.CstDutchAuctionDurationInt,
 		Tx: bidMessageTxJSON{
 			EvtLogId:  rec.Tx.EvtLogId,
 			BlockNum:  rec.Tx.BlockNum,
@@ -538,6 +546,7 @@ func api_cosmic_game_bid_with_message_by_round(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":   1,
 		"error":    "",
+		"Bids":     bids,
 		"messages": messages,
 		"offset":   offset,
 		"limit":    limit,
