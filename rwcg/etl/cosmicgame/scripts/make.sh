@@ -19,6 +19,7 @@ build() {
     fi
 }
 
+build backfill_dao_evtlog
 build approved
 build autobid
 build bid

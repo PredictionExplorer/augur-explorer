@@ -300,6 +300,35 @@ func (ss *SQLStorage) Delete_block(blockNum int64) error {
 // TRANSACTION OPERATIONS
 // =============================================================================
 
+// Evt_log_exists reports whether evt_log already has (block_num, tx_id, log_index).
+func (ss *SQLStorage) Evt_log_exists(blockNum, txId int64, logIndex int) (bool, error) {
+	var query string
+	query = "SELECT id FROM evt_log WHERE block_num=$1 AND tx_id=$2 AND log_index=$3 LIMIT 1"
+	var evtId int64
+	err := ss.db.QueryRow(query, blockNum, txId, logIndex).Scan(&evtId)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// Count_evt_log_for_contract returns evt_log rows emitted by contract address.
+func (ss *SQLStorage) Count_evt_log_for_contract(contractAddr string) (int64, error) {
+	var query string
+	query = "SELECT COUNT(*) FROM evt_log e " +
+		"JOIN address a ON e.contract_aid=a.address_id " +
+		"WHERE lower(a.addr)=lower($1)"
+	var count int64
+	err := ss.db.QueryRow(query, contractAddr).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // Get_transaction_id_by_hash returns the transaction ID for a given tx hash
 func (ss *SQLStorage) Get_transaction_id_by_hash(txHash string) (int64, error) {
 	var query string

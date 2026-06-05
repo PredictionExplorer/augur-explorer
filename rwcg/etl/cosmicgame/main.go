@@ -225,6 +225,7 @@ var (
 	staking_wallet_cst_addr		ethcommon.Address
 	staking_wallet_rwalk_addr		ethcommon.Address
 	marketing_wallet_addr	ethcommon.Address
+	implementation_addr		ethcommon.Address
 	cosmic_sig_aid			int64
 	cosmic_tok_aid			int64
 
@@ -241,11 +242,13 @@ func getContractAddresses() []ethcommon.Address {
 		cosmic_game_addr,
 		cosmic_signature_addr,
 		cosmic_token_addr,
+		cosmic_dao_addr,
 		charity_wallet_addr,
 		prizes_wallet_addr,
 		staking_wallet_cst_addr,
 		staking_wallet_rwalk_addr,
 		marketing_wallet_addr,
+		implementation_addr,
 	}
 }
 
@@ -484,6 +487,7 @@ func main() {
 	staking_wallet_cst_addr = ethcommon.HexToAddress(cg_contracts.StakingWalletCSTAddr)
 	staking_wallet_rwalk_addr = ethcommon.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
+	implementation_addr = ethcommon.HexToAddress(cg_contracts.ImplementationAddr)
 
 	if err := syncContractParamsFromChain(&storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
 		Error.Printf("Contract param chain sync failed: %v", err)
@@ -501,6 +505,7 @@ func main() {
 	}()
 
 
-	// Use new FilterLogs-based event processing
+	// cosmic_dao_addr is in getContractAddresses(); DAO Governor events are stored in
+	// evt_log only (no cg_dao_* layer-2 tables). process_single_event ignores unknown topics.
 	process_events_filterlog(exit_chan)
 }

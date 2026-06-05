@@ -113,6 +113,7 @@ rwcg/etl/cosmicgame/scripts/set_token_name
 rwcg/etl/cosmicgame/scripts/setactivation
 rwcg/etl/cosmicgame/scripts/setroundactivation
 rwcg/etl/cosmicgame/scripts/tokownerof
+rwcg/etl/cosmicgame/scripts/backfill_dao_evtlog
 rwcg/etl/randomwalk/rw_etl
 rwcg/etl/randomwalk/scripts/accept_offer
 rwcg/etl/randomwalk/scripts/approve

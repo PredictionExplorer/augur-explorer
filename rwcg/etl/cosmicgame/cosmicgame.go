@@ -2827,12 +2827,25 @@ func proc_ownership_transferred_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_ownership_transferred_event(evt.EvtId)
     storagew.Insert_ownership_transferred_event(&evt)
 }
+// isCgInitializedContract reports whether log.Address is a CosmicGame platform
+// contract that may emit OpenZeppelin Initializable:Initialized.
+func isCgInitializedContract(addr common.Address) bool {
+	switch addr {
+	case cosmic_game_addr, cosmic_signature_addr, cosmic_token_addr, cosmic_dao_addr,
+		charity_wallet_addr, prizes_wallet_addr, staking_wallet_cst_addr,
+		staking_wallet_rwalk_addr, marketing_wallet_addr, implementation_addr:
+		return true
+	default:
+		return false
+	}
+}
+
 func proc_initialized_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGInitialized
 	var eth_evt CosmicSignatureGameInitialized 
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+	if !isCgInitializedContract(log.Address) {
 		return
 	}
 	Info.Printf("Processing Initialized event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)

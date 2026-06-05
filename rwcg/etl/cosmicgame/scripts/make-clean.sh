@@ -6,6 +6,7 @@ cd "$SCRIPT_DIR"
 
 echo "Cleaning cosmicgame scripts binaries..."
 
+rm -f backfill_dao_evtlog
 rm -f approved
 rm -f autobid
 rm -f bid
