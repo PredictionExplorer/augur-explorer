@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/PredictionExplorer/augur-explorer/rwcg/tools/toolutil"
 	"github.com/lib/pq"
 )
 
@@ -46,7 +47,10 @@ func main() {
 	log.Println("Connected to secondary database")
 
 	// Get contract address IDs from rw_contracts in primary DB
-	contractAids := getContractAddressIds(primaryDB)
+	contractAids, err := toolutil.GetContractAddressIds(primaryDB, toolutil.ProjectRandomWalk)
+	if err != nil {
+		log.Fatalf("contract aids: %v", err)
+	}
 	if len(contractAids) == 0 {
 		log.Fatal("No contract addresses found in rw_contracts")
 	}
@@ -169,28 +173,6 @@ func main() {
 	} else {
 		log.Println("✗ Databases have differences!")
 	}
-}
-
-func getContractAddressIds(db *sql.DB) []int64 {
-	rows, err := db.Query(`
-		SELECT a.address_id 
-		FROM address a
-		JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
-	`)
-	if err != nil {
-		log.Fatalf("Failed to get contract addresses: %v", err)
-	}
-	defer rows.Close()
-
-	var aids []int64
-	for rows.Next() {
-		var aid int64
-		if err := rows.Scan(&aid); err != nil {
-			log.Fatalf("Failed to scan address_id: %v", err)
-		}
-		aids = append(aids, aid)
-	}
-	return aids
 }
 
 func loadPrimaryEvents(db *sql.DB, contractAids []int64, limit int) []EventLog {

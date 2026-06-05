@@ -140,6 +140,8 @@ rwcg/tools/db_verify
 rwcg/tools/evtlog_diff
 rwcg/tools/arch_node_fill
 rwcg/tools/arch_verify
+rwcg/tools/transaction-collector
+rwcg/tools/transaction-collector-verify
 rwcg/websrv/websrv
 rwcg/etl/cosmicgame/imggen_monitor/imggen_exec
 rwcg/etl/cosmicgame/imggen_monitor/imggen_monitor

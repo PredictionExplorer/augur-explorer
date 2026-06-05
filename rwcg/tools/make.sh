@@ -27,5 +27,7 @@ build arch_verify.go arch_verify
 build arch_node_fill.go arch_node_fill
 build db_verify.go db_verify
 build evtlog_diff.go evtlog_diff
+build transaction_collector.go transaction-collector
+build transaction_collector_verify.go transaction-collector-verify
 
 echo "done — binaries in $SCRIPT_DIR"

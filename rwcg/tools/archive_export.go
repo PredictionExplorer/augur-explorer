@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PredictionExplorer/augur-explorer/rwcg/tools/toolutil"
 	"github.com/lib/pq"
 )
 
@@ -63,13 +64,19 @@ func main() {
 func runArchiveExport(srcDB, dstDB *sql.DB, projectType string) {
 	log.Printf("Project type: %s", projectType)
 
-	contractAids := getContractAddressIds(srcDB, projectType)
+	contractAids, err := toolutil.GetContractAddressIds(srcDB, projectType)
+	if err != nil {
+		log.Fatalf("contract aids: %v", err)
+	}
 	if len(contractAids) == 0 {
 		log.Fatalf("No contract addresses found for project '%s'", projectType)
 	}
 	log.Printf("Found %d contract address IDs: %v", len(contractAids), contractAids)
 
-	contractAddrs := getContractAddrsByAids(srcDB, contractAids)
+	contractAddrs, err := toolutil.GetContractAddrsByAids(srcDB, contractAids)
+	if err != nil {
+		log.Fatalf("resolve addrs: %v", err)
+	}
 	if len(contractAddrs) == 0 {
 		log.Fatalf("No contract addresses resolved for project '%s'", projectType)
 	}
@@ -79,72 +86,6 @@ func runArchiveExport(srcDB, dstDB *sql.DB, projectType string) {
 	exportBlocks(srcDB, dstDB, blockNums)
 
 	log.Printf("=== Export complete (%s) ===", projectType)
-}
-
-func getContractAddressIds(srcDB *sql.DB, projectType string) []int64 {
-	var query string
-
-	if projectType == "randomwalk" {
-		// Get address IDs for RandomWalk contracts from rw_contracts
-		query = `
-			SELECT a.address_id 
-			FROM address a
-			JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
-		`
-	} else {
-		// Get address IDs for CosmicGame contracts from cg_contracts
-		query = `
-			SELECT a.address_id 
-			FROM address a
-			JOIN cg_contracts cc ON 
-				a.addr = cc.cosmic_game_addr OR
-				a.addr = cc.cosmic_signature_addr OR
-				a.addr = cc.cosmic_token_addr OR
-				a.addr = cc.cosmic_dao_addr OR
-				a.addr = cc.charity_wallet_addr OR
-				a.addr = cc.prizes_wallet_addr OR
-				a.addr = cc.random_walk_addr OR
-				a.addr = cc.staking_wallet_cst_addr OR
-				a.addr = cc.staking_wallet_rwalk_addr OR
-				a.addr = cc.marketing_wallet_addr OR
-				a.addr = cc.implementation_addr
-		`
-	}
-
-	rows, err := srcDB.Query(query)
-	if err != nil {
-		log.Fatalf("Failed to get contract addresses: %v", err)
-	}
-	defer rows.Close()
-
-	var aids []int64
-	for rows.Next() {
-		var aid int64
-		if err := rows.Scan(&aid); err != nil {
-			log.Fatalf("Failed to scan address_id: %v", err)
-		}
-		aids = append(aids, aid)
-	}
-	return aids
-}
-
-// getContractAddrsByAids resolves hex addresses for evt_log / arch_evtlog.contract_addr matching.
-func getContractAddrsByAids(srcDB *sql.DB, contractAids []int64) []string {
-	rows, err := srcDB.Query(`SELECT addr FROM address WHERE address_id = ANY($1) ORDER BY address_id`, pq.Array(contractAids))
-	if err != nil {
-		log.Fatalf("Failed to resolve contract addresses: %v", err)
-	}
-	defer rows.Close()
-
-	var addrs []string
-	for rows.Next() {
-		var addr string
-		if err := rows.Scan(&addr); err != nil {
-			log.Fatalf("Failed to scan addr: %v", err)
-		}
-		addrs = append(addrs, addr)
-	}
-	return addrs
 }
 
 // eventLogResumeFloor returns min(COALESCE(MAX(evt_id),0)) over project contracts in arch_evtlog.

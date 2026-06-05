@@ -25,10 +25,10 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/rwcg/dbs"
 	etlcommon "github.com/PredictionExplorer/augur-explorer/rwcg/etl/common"
+	"github.com/PredictionExplorer/augur-explorer/rwcg/tools/toolutil"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/lib/pq"
 )
 
@@ -189,11 +189,17 @@ func resolveFromBlock(db *sql.DB, aids []int64, addrs []string, flagFrom uint64)
 func runProject(db *sql.DB, storage *dbs.SQLStorage, client *ethclient.Client, project string, flagFrom, endBlock, batchSize uint64, dryRun bool) fillStats {
 	var st fillStats
 
-	aids := getContractAddressIds(db, project)
+	aids, err := toolutil.GetContractAddressIds(db, project)
+	if err != nil {
+		log.Fatalf("contract aids: %v", err)
+	}
 	if len(aids) == 0 {
 		log.Fatalf("no contracts for project %q", project)
 	}
-	addrs := getContractAddrsByAids(db, aids)
+	addrs, err := toolutil.GetContractAddrsByAids(db, aids)
+	if err != nil {
+		log.Fatalf("resolve addrs: %v", err)
+	}
 	contracts := make([]ethcommon.Address, 0, len(addrs))
 	for _, a := range addrs {
 		contracts = append(contracts, ethcommon.HexToAddress(a))
@@ -349,15 +355,8 @@ func runProject(db *sql.DB, storage *dbs.SQLStorage, client *ethclient.Client, p
 }
 
 func encodeLog(lg *types.Log) (topic0 string, rlpBytes []byte, err error) {
-	if len(lg.Topics) > 0 {
-		full := lg.Topics[0].Hex()[2:]
-		if len(full) >= 8 {
-			topic0 = full[:8]
-		} else {
-			topic0 = full
-		}
-	}
-	rlpBytes, err = rlp.EncodeToBytes(lg)
+	topic0 = toolutil.Topic0Sig(lg)
+	rlpBytes, err = toolutil.EncodeLogRLP(lg)
 	return topic0, rlpBytes, err
 }
 
@@ -483,56 +482,4 @@ func printStats(label string, st *fillStats) {
 	if st.RPCErrors > 0 || st.DBErrors > 0 {
 		log.Printf("[%s] errors — rpc: %d, db: %d", label, st.RPCErrors, st.DBErrors)
 	}
-}
-
-func getContractAddressIds(db *sql.DB, projectType string) []int64 {
-	var query string
-	if projectType == "randomwalk" {
-		query = `
-			SELECT a.address_id FROM address a
-			JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
-		`
-	} else {
-		query = `
-			SELECT a.address_id FROM address a
-			JOIN cg_contracts cc ON
-				a.addr = cc.cosmic_game_addr OR a.addr = cc.cosmic_signature_addr OR
-				a.addr = cc.cosmic_token_addr OR a.addr = cc.cosmic_dao_addr OR
-				a.addr = cc.charity_wallet_addr OR a.addr = cc.prizes_wallet_addr OR
-				a.addr = cc.random_walk_addr OR a.addr = cc.staking_wallet_cst_addr OR
-				a.addr = cc.staking_wallet_rwalk_addr OR a.addr = cc.marketing_wallet_addr OR
-				a.addr = cc.implementation_addr
-		`
-	}
-	rows, err := db.Query(query)
-	if err != nil {
-		log.Fatalf("contract aids: %v", err)
-	}
-	defer rows.Close()
-	var aids []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			log.Fatalf("scan: %v", err)
-		}
-		aids = append(aids, id)
-	}
-	return aids
-}
-
-func getContractAddrsByAids(db *sql.DB, contractAids []int64) []string {
-	rows, err := db.Query(`SELECT addr FROM address WHERE address_id = ANY($1) ORDER BY address_id`, pq.Array(contractAids))
-	if err != nil {
-		log.Fatalf("resolve addrs: %v", err)
-	}
-	defer rows.Close()
-	var addrs []string
-	for rows.Next() {
-		var addr string
-		if err := rows.Scan(&addr); err != nil {
-			log.Fatalf("scan addr: %v", err)
-		}
-		addrs = append(addrs, addr)
-	}
-	return addrs
 }

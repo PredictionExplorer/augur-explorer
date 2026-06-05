@@ -11,5 +11,7 @@ rm -f arch_verify
 rm -f arch_node_fill
 rm -f db_verify
 rm -f evtlog_diff
+rm -f transaction-collector
+rm -f transaction-collector-verify
 
 echo "Done cleaning tools."
