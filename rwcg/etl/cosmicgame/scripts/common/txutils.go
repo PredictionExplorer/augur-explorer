@@ -179,6 +179,30 @@ func GetBalance(net *NetworkInfo, addr common.Address) (*big.Int, error) {
 	return net.Client.BalanceAt(context.Background(), addr, nil)
 }
 
+// AdvanceHardhatTime advances block time on Hardhat/Ganache (evm_increaseTime + evm_mine).
+// Returns an updated NetworkInfo block timestamp on success.
+func AdvanceHardhatTime(net *NetworkInfo, seconds int64) error {
+	if seconds <= 0 {
+		return nil
+	}
+	ctx := context.Background()
+	rpc := net.Client.Client()
+	var result interface{}
+	if err := rpc.CallContext(ctx, &result, "evm_increaseTime", seconds); err != nil {
+		return fmt.Errorf("evm_increaseTime(%d): %w", seconds, err)
+	}
+	if err := rpc.CallContext(ctx, &result, "evm_mine"); err != nil {
+		return fmt.Errorf("evm_mine: %w", err)
+	}
+	header, err := net.Client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("refresh block header: %w", err)
+	}
+	net.BlockNum = header.Number
+	net.BlockTime = header.Time
+	return nil
+}
+
 // DefaultReceiptWaitTimeout is how long to wait for a transaction receipt before giving up.
 var DefaultReceiptWaitTimeout = 2 * time.Minute
 

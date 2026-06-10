@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"sync"
 )
 
 var (
-	amap map[string]int64 = make(map[string]int64)
+	amapMu sync.RWMutex
+	amap   map[string]int64 = make(map[string]int64)
 )
 
 func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64, error) {
+	amapMu.RLock()
 	aid, exists := amap[addr]
+	amapMu.RUnlock()
 	if exists {
 		return aid, nil
 	}
@@ -26,7 +30,13 @@ func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64, error) {
 		}
 		return 0, err
 	}
+	amapMu.Lock()
+	if cached, ok := amap[addr]; ok {
+		amapMu.Unlock()
+		return cached, nil
+	}
 	amap[addr] = aid
+	amapMu.Unlock()
 	return aid, nil
 }
 
@@ -56,7 +66,9 @@ func (ss *SQLStorage) Lookup_address_id(addr string) int64 {
 }
 
 func (ss *SQLStorage) Lookup_or_create_address(addr string, block_num int64, tx_id int64) int64 {
+	amapMu.RLock()
 	aid, exists := amap[addr]
+	amapMu.RUnlock()
 	if exists {
 		return aid
 	}
@@ -65,13 +77,25 @@ func (ss *SQLStorage) Lookup_or_create_address(addr string, block_num int64, tx_
 	if err != nil {
 		if err == sql.ErrNoRows {
 			aid = ss.create_address(addr, block_num, tx_id)
+			amapMu.Lock()
+			if cached, ok := amap[addr]; ok {
+				amapMu.Unlock()
+				return cached
+			}
 			amap[addr] = aid
+			amapMu.Unlock()
 			return aid
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error in getting address id : %v", err))
 		}
 	}
+	amapMu.Lock()
+	if cached, ok := amap[addr]; ok {
+		amapMu.Unlock()
+		return cached
+	}
 	amap[addr] = aid
+	amapMu.Unlock()
 	return aid
 }
 

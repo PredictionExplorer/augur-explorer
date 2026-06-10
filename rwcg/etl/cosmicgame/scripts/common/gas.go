@@ -24,8 +24,8 @@ const (
 	// GasLimitBid is for CosmicGame bidding operations
 	GasLimitBid = uint64(500000)
 
-	// GasLimitClaimPrize is for CosmicGame prize claiming (complex operation)
-	GasLimitClaimPrize = uint64(2000000)
+	// GasLimitClaimPrize is for CosmicGame prize claiming (complex operation; V2 needs ~3M)
+	GasLimitClaimPrize = uint64(3500000)
 
 	// GasLimitDonate is for CosmicGame donation operations
 	GasLimitDonate = uint64(300000)

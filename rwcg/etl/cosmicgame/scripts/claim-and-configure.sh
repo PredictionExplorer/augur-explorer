@@ -1,21 +1,26 @@
 #!/bin/bash
-# Claims prize with delay, then configures initial duration divisor during the delay window
+# Claims prize with a round-activation delay, then sets initialDurationUntilMainPrizeDivisor.
+# Works on the CosmicSignatureGame proxy after V1 or V2 upgrade.
+#
+# IMPORTANT: the second argument to set-initial-duration-divisor is a DIVISOR, not seconds.
+# Initial timer after first bid (microseconds) = mainPrizeTimeIncrementInMicroSeconds / divisor.
+# Example: increment 240s (240000000 µs) and divisor 1000000 → ~240s initial duration.
 
 set -e
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
     echo "Usage: $0 <contract_addr> <initial_duration_seconds> [delay_seconds] [rpc_url]"
     echo ""
-    echo "  contract_addr          - CosmicSignatureGame contract address"
-    echo "  initial_duration_seconds - Time until main prize after first bid (e.g., 300 for 5 min)"
-    echo "  delay_seconds          - Optional: delay before round activation (default: 120)"
+    echo "  contract_addr            - CosmicSignatureGame proxy address"
+    echo "  initial_duration_divisor - initialDurationUntilMainPrizeDivisor (e.g. 1000000)"
+    echo "  delay_seconds            - Optional: delay before round activation (default: 120)"
     echo "  rpc_url                - Optional: RPC URL (default: \$RPC_URL env var)"
     echo ""
     echo "Environment: PKEY_HEX (64-char hex private key) and RPC_URL must be set."
     echo ""
     echo "Example:"
     echo "  export PKEY_HEX=ac0974bec...f2ff80"
-    echo "  $0 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 300 120"
+    echo "  $0 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 1000000 120"
     exit 1
 fi
 
