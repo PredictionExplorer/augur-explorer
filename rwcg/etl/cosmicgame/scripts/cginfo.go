@@ -43,6 +43,7 @@ func main() {
 	if err != nil {
 		cutils.Fatal("Failed to instantiate CosmicGame contract: %v", err)
 	}
+	cosmicGameV2, _ := NewCosmicSignatureGameV2(cosmicGameAddr, net.Client)
 
 	// Get current block for time calculations
 	blockTime := int64(net.BlockTime)
@@ -162,9 +163,23 @@ func main() {
 		cutils.Fatal("Error at EthBidPriceIncreaseDivisor(): %v", err)
 	}
 	priceIncrease := cutils.ConvertToPercentage(ethBidPriceIncreaseDivisor)
-	cstReward, err := cosmicGame.CstRewardAmountForBidding(copts)
-	if err != nil {
-		cutils.Fatal("Error at CstRewardAmountForBidding(): %v", err)
+
+	var cstRewardFixed *big.Int
+	var bidCstRewardAmount *big.Int
+	var bidCstRewardMultiplier *big.Int
+	isV2Reward := false
+	if cosmicGameV2 != nil {
+		if v, err := cosmicGameV2.GetBidCstRewardAmount(copts); err == nil {
+			bidCstRewardAmount = v
+			isV2Reward = true
+			bidCstRewardMultiplier, _ = cosmicGameV2.BidCstRewardAmountMultiplier(copts)
+		}
+	}
+	if !isV2Reward {
+		cstRewardFixed, err = cosmicGame.CstRewardAmountForBidding(copts)
+		if err != nil {
+			cutils.Fatal("Error at CstRewardAmountForBidding(): %v", err)
+		}
 	}
 
 	// Dutch auction info
@@ -195,7 +210,15 @@ func main() {
 	fmt.Printf("%-28s  ^ effective price to pay (storage=0 until first bid)\n", "")
 	fmt.Printf("%-28s= %s CST\n", "NextCstBidPrice", cutils.WeiToEth(cstPrice))
 	cutils.PrintKeyValue("ETH bid price increase div", fmt.Sprintf("%v (%.2f%%)", ethBidPriceIncreaseDivisor, priceIncrease))
-	fmt.Printf("%-28s= %s CST\n", "CST reward per bid", cutils.WeiToEth(cstReward))
+	if isV2Reward {
+		fmt.Printf("%-28s= %s CST\n", "getBidCstRewardAmount (next bid)", cutils.WeiToEth(bidCstRewardAmount))
+		fmt.Printf("%-28s  ^ V2 dynamic CST reward (dashboard TokenReward); 0 right after a bid\n", "")
+		if bidCstRewardMultiplier != nil {
+			cutils.PrintKeyValue("bidCstRewardAmountMultiplier", bidCstRewardMultiplier)
+		}
+	} else {
+		fmt.Printf("%-28s= %s CST\n", "CST reward per bid (fixed)", cutils.WeiToEth(cstRewardFixed))
+	}
 	cutils.PrintKeyValue("ETH Dutch auction elapsed/total", fmt.Sprintf("%v / %v", ethAuctionElapsed.String(), ethAuctionDuration.String()))
 	cutils.PrintKeyValueEth("ETH Dutch auction begin price", ethDutchBeginPrice)
 	if ethDutchBeginPrice.Sign() == 0 {
