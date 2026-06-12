@@ -28,6 +28,7 @@
 					<th class="center">Block</th>
 					<th>Date</th>
 					<th>New Value</th>
+					<th>Resolved Value</th>
 				</tr>
 				{{- range $i, $change := .AdminEvents}}
 					<tr>
@@ -80,6 +81,9 @@
 							{{ if .FloatValue}}{{.FloatValue}}{{end}}
 							{{ if .AddressValue}}{{.AddressValue}}{{end}}
 							{{ if .StringValue}}{{.StringValue}}{{end}}
+						</td>
+						<td class="monospace">
+							{{ if .ResolvedValue}}{{.ResolvedValue}}{{else}}—{{end}}
 						</td>
 					</tr>
 				{{- end}}

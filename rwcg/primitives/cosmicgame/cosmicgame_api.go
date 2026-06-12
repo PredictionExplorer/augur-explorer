@@ -655,6 +655,7 @@ type CGAdminEvent struct {
 	IntegerValue				int64
 	FloatValue					float64
 	StringValue					string
+	ResolvedValue				string	// Human-readable value when IntegerValue is a divisor (or direct unit conversion)
 }
 type ERC20DonatedTokensInfo struct {
 	RoundNum					int64

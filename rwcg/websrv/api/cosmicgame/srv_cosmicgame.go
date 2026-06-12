@@ -2692,6 +2692,8 @@ func cosmic_game_admin_events_in_range(c *gin.Context) {
 		return
 	}
 	event_list := arb_storagew.Get_admin_events_in_range(evtlog_start,evtlog_end)
+	arb_storagew.Resolve_admin_event_values(event_list)
+	enrichAdminEventsResolvedValues(event_list)
 
 	c.HTML(http.StatusOK, "cg_system_admin_events_in_range.html", gin.H{
 		"AdminEvents" : event_list,

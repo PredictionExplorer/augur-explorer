@@ -2,7 +2,7 @@
 
 async function main() {
 
-//  await ethers.provider.send("evm_increaseTime", [600]);
+//  await ethers.provider.send("evm_increaseTime", [6000]);
   await ethers.provider.send("evm_mine");
 }
 

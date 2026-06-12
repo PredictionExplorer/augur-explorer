@@ -11,6 +11,11 @@
  *   setCstDutchAuctionDurationChangeDivisor
  *   bidWithEth/Cst(..., bidCstRewardAmountMinLimit_) — pass 0n to accept default reward
  *
+ * Mechanics admin verification (ETL / cg_adm_* tables):
+ *   Round 0 — initial setupGameConfiguration() on V1 impl
+ *   Round 2 pre-upgrade — emitMechanicsAdminEventsPreUpgrade() (V1-only setters)
+ *   Round 2 post-upgrade — emitMechanicsAdminEventsPostUpgrade() (V2-only setters)
+ *
  * Sample ERC20: uses Samp if present, else FuzzTestMockErc20 (v2 branch tests/).
  */
 const hre = require("hardhat");
@@ -435,7 +440,11 @@ async function setupGameConfiguration() {
     await cosmicGameProxy.connect(owner).setBidMessageLengthMaxLimit(gameSettings.maxMessageLength, g);
     await cosmicGameProxy.connect(owner).setCstDutchAuctionDurationDivisor(gameSettings.cstDutchAuctionDurationDivisor, g);
 
-    console.log("Game configuration complete (V1-era setters on proxy)");
+    const roundNum = await cosmicGameProxy.roundNum();
+    console.log(`Game configuration complete (V1-era setters on proxy, roundNum=${roundNum})`);
+    console.log(
+        `  Round ${roundNum} mechanics setup: CstDutchAuctionDurationDivisorChanged=${gameSettings.cstDutchAuctionDurationDivisor}, BidCstRewardAmountChanged=${gameSettings.bidCstRewardAmount}`,
+    );
 }
 
 async function upgradeGameProxyToV2() {
@@ -474,6 +483,82 @@ function bumpSmallPercent(value) {
     return value >= 99n ? value : value + 1n;
 }
 
+/** Log on-chain round for mechanics verification checkpoints. */
+async function logMechanicsCheckpoint(label) {
+    const roundNum = await cosmicGameProxy.roundNum();
+    console.log(`\n=== Mechanics checkpoint: ${label} (roundNum=${roundNum}, isGameV2=${isGameV2}) ===`);
+    return roundNum;
+}
+
+/**
+ * V1-only mechanics admin events (pre-upgrade verification).
+ * Emits:
+ *   setCstDutchAuctionDurationDivisor → CstDutchAuctionDurationDivisorChanged
+ *   setBidCstRewardAmount            → BidCstRewardAmountChanged
+ *
+ * V2-only setters are unavailable on the V1 implementation and are emitted post-upgrade.
+ */
+async function emitMechanicsAdminEventsPreUpgrade() {
+    const g = { gasLimit: 1000000 };
+    const game = cosmicGameProxy.connect(owner);
+    const roundNum = await logMechanicsCheckpoint('PRE-upgrade V1 mechanics');
+
+    const newDivisor = bumpOnePercent(await cosmicGameProxy.cstDutchAuctionDurationDivisor());
+    await game.setCstDutchAuctionDurationDivisor(newDivisor, g);
+    console.log(
+        `  setCstDutchAuctionDurationDivisor → CstDutchAuctionDurationDivisorChanged: ${newDivisor}`,
+    );
+
+    const newReward = bumpOnePercent(await cosmicGameProxy.bidCstRewardAmount());
+    await game.setBidCstRewardAmount(newReward, g);
+    console.log(`  setBidCstRewardAmount → BidCstRewardAmountChanged: ${newReward}`);
+
+    console.log(
+        `  ETL verify round ${roundNum}: cg_adm_roundstart_cst_auclen (divisor), cg_adm_erc20_reward (BidCstRewardAmountChanged)`,
+    );
+}
+
+/**
+ * V2-only mechanics admin events (post-upgrade verification).
+ * Emits:
+ *   setCstDutchAuctionDuration              → CstDutchAuctionDurationChanged
+ *   setCstDutchAuctionDurationChangeDivisor → CstDutchAuctionDurationChangeDivisorChanged
+ *   setBidCstRewardAmountMultiplier         → BidCstRewardAmountMultiplierChanged
+ *
+ * V1-only setters are removed on V2 and must not be called after upgrade.
+ */
+async function emitMechanicsAdminEventsPostUpgrade() {
+    if (!isGameV2) {
+        throw new Error('emitMechanicsAdminEventsPostUpgrade requires V2 implementation');
+    }
+
+    const g = { gasLimit: 1000000 };
+    const game = cosmicGameProxy.connect(owner);
+    const roundNum = await logMechanicsCheckpoint('POST-upgrade V2 mechanics');
+
+    const newDuration = bumpOnePercent(await cosmicGameProxy.cstDutchAuctionDuration());
+    await game.setCstDutchAuctionDuration(newDuration, g);
+    console.log(`  setCstDutchAuctionDuration → CstDutchAuctionDurationChanged: ${newDuration}`);
+
+    const newChangeDivisor = bumpOnePercent(
+        await cosmicGameProxy.cstDutchAuctionDurationChangeDivisor(),
+    );
+    await game.setCstDutchAuctionDurationChangeDivisor(newChangeDivisor, g);
+    console.log(
+        `  setCstDutchAuctionDurationChangeDivisor → CstDutchAuctionDurationChangeDivisorChanged: ${newChangeDivisor}`,
+    );
+
+    const newMultiplier = bumpOnePercent(await cosmicGameProxy.bidCstRewardAmountMultiplier());
+    await game.setBidCstRewardAmountMultiplier(newMultiplier, g);
+    console.log(
+        `  setBidCstRewardAmountMultiplier → BidCstRewardAmountMultiplierChanged: ${newMultiplier}`,
+    );
+
+    console.log(
+        `  ETL verify round ${roundNum}: cg_adm_roundstart_cst_auclen (duration), cg_adm_cst_auclen_chg_div, cg_adm_erc20_reward (BidCstRewardAmountMultiplierChanged)`,
+    );
+}
+
 async function emitAllV1AdminEvents() {
     const g = { gasLimit: 1000000 };
     const game = cosmicGameProxy.connect(owner);
@@ -492,14 +577,10 @@ async function emitAllV1AdminEvents() {
         bumpOnePercent(await cosmicGameProxy.ethBidPriceIncreaseDivisor()), g);
     await game.setEthBidRefundAmountInGasToSwallowMaxLimit(
         bumpOnePercent(await cosmicGameProxy.ethBidRefundAmountInGasToSwallowMaxLimit()), g);
-    await game.setCstDutchAuctionDurationDivisor(
-        bumpOnePercent(await cosmicGameProxy.cstDutchAuctionDurationDivisor()), g);
     await game.setCstDutchAuctionBeginningBidPriceMinLimit(
         bumpOnePercent(await cosmicGameProxy.cstDutchAuctionBeginningBidPriceMinLimit()), g);
     await game.setBidMessageLengthMaxLimit(
         bumpOnePercent(await cosmicGameProxy.bidMessageLengthMaxLimit()), g);
-    await game.setBidCstRewardAmount(
-        bumpOnePercent(await cosmicGameProxy.bidCstRewardAmount()), g);
     await game.setCstPrizeAmount(
         bumpOnePercent(await cosmicGameProxy.cstPrizeAmount()), g);
     await game.setChronoWarriorEthPrizeAmountPercentage(
@@ -561,16 +642,10 @@ async function emitAllV2AdminEvents() {
         bumpOnePercent(await cosmicGameProxy.ethBidPriceIncreaseDivisor()), g);
     await game.setEthBidRefundAmountInGasToSwallowMaxLimit(
         bumpOnePercent(await cosmicGameProxy.ethBidRefundAmountInGasToSwallowMaxLimit()), g);
-    await game.setCstDutchAuctionDuration(
-        bumpOnePercent(await cosmicGameProxy.cstDutchAuctionDuration()), g);
-    await game.setCstDutchAuctionDurationChangeDivisor(
-        bumpOnePercent(await cosmicGameProxy.cstDutchAuctionDurationChangeDivisor()), g);
     await game.setCstDutchAuctionBeginningBidPriceMinLimit(
         bumpOnePercent(await cosmicGameProxy.cstDutchAuctionBeginningBidPriceMinLimit()), g);
     await game.setBidMessageLengthMaxLimit(
         bumpOnePercent(await cosmicGameProxy.bidMessageLengthMaxLimit()), g);
-    await game.setBidCstRewardAmountMultiplier(
-        bumpOnePercent(await cosmicGameProxy.bidCstRewardAmountMultiplier()), g);
     await game.setCstPrizeAmount(
         bumpOnePercent(await cosmicGameProxy.cstPrizeAmount()), g);
     await game.setChronoWarriorEthPrizeAmountPercentage(
@@ -800,8 +875,10 @@ async function main() {
 
     // Upgrade between rounds (_authorizeUpgrade requires inactive round; roundNum >= 1 for initializeV2)
     await deferRoundActivationForUpgrade();
+    await emitMechanicsAdminEventsPreUpgrade();
     await emitAllV1AdminEvents();
     await upgradeGameProxyToV2();
+    await emitMechanicsAdminEventsPostUpgrade();
 
     console.log("=== ROUND 2 ===");
     
