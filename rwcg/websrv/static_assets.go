@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
+	"github.com/gin-gonic/gin"
 )
 
 // warnNFTAssetsLayout logs when we cannot find RandomWalk thumbs in the expected places.
@@ -85,6 +85,53 @@ func safeFileUnderRoot(rootAbs, urlRel string) (full string, ok bool) {
 	return fileClean, true
 }
 
+// cosmicAssetPrefix scopes the per-seed package fallback to Cosmic Signature
+// assets. webserv serves both RandomWalk and Cosmic Signature files from the
+// same /images mount, and only Cosmic Signature uses the package layout, so the
+// fallback must never apply to RandomWalk (or any other) paths.
+const cosmicAssetPrefix = "new/cosmicsignature/"
+
+// resolveAssetFile maps a request to a file on disk, falling back to the
+// per-seed package layout when a flat Cosmic Signature asset file is absent.
+//
+// Cosmic Signature assets are published either as flat files:
+//
+//	new/cosmicsignature/0x<seed>.png
+//	new/cosmicsignature/0x<seed>.mp4
+//
+// or as a per-seed package directory (current generator output):
+//
+//	new/cosmicsignature/0x<seed>/image.png
+//	new/cosmicsignature/0x<seed>/video.mp4
+//
+// The frontend and metadata only ever request the flat URLs, so when the flat
+// file does not exist we transparently serve the matching file from inside the
+// package directory ( .png -> image.png, .mp4 -> video.mp4 ). RandomWalk and
+// every other subtree are unaffected: a missing flat file 404s as before.
+func resolveAssetFile(rootAbs, urlRel string) (full string, ok bool) {
+	if full, ok = safeFileUnderRoot(rootAbs, urlRel); ok {
+		return full, true
+	}
+
+	if !strings.HasPrefix(urlRel, cosmicAssetPrefix) {
+		return "", false
+	}
+
+	ext := filepath.Ext(urlRel)
+	var inner string
+	switch strings.ToLower(ext) {
+	case ".png":
+		inner = "image.png"
+	case ".mp4":
+		inner = "video.mp4"
+	default:
+		return "", false
+	}
+
+	pkgRel := strings.TrimSuffix(urlRel, ext) + "/" + inner
+	return safeFileUnderRoot(rootAbs, pkgRel)
+}
+
 // registerStaticAssetRoutes serves nft-assets mirror at GET /images/*.
 // NFT_ASSETS_ROOT: parent dir containing randomwalk/, or the randomwalk dir itself (see resolveNFTStaticMount).
 //
@@ -127,7 +174,7 @@ func registerStaticAssetRoutes(r *gin.Engine) {
 				c.Status(http.StatusNotFound)
 				return
 			}
-			full, ok := safeFileUnderRoot(fsRoot, rel)
+			full, ok := resolveAssetFile(fsRoot, rel)
 			if !ok {
 				c.Status(http.StatusNotFound)
 				return
