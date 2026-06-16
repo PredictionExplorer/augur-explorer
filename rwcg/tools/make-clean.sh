@@ -13,5 +13,6 @@ rm -f db_verify
 rm -f evtlog_diff
 rm -f transaction-collector
 rm -f transaction-collector-verify
+rm -f asset_inventory
 
 echo "Done cleaning tools."

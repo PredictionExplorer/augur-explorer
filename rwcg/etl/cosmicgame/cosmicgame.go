@@ -1042,7 +1042,9 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenId = log.Topics[3].Big().Int64()
 	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.OwnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
-	evt.Seed = hex.EncodeToString(eth_evt.NftSeed.Bytes())
+	// NftSeed is uint256; big.Int.Bytes() drops leading zero bytes, so format
+	// with a fixed 64-hex-char width (32 bytes) to preserve leading zeros.
+	evt.Seed = fmt.Sprintf("%064x", eth_evt.NftSeed)
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MintEvent{\n")
