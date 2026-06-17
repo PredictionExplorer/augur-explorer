@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/tls"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"html/template"
@@ -13,9 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
@@ -145,6 +145,26 @@ func main() {
 	cosmicgame.RegisterAPIRoutes(r)
 	faq.RegisterAPIRoutes(r)
 
+	// Bare ERC-721 tokenURI route. Both projects' on-chain baseURI is
+	// https://<host>/metadata/, and this single webserv serves both the
+	// RandomWalk and Cosmic Signature hosts, so dispatch by request Host:
+	// a Cosmic Signature host serves Cosmic Signature metadata, anything else
+	// (RandomWalk hosts) serves RandomWalk metadata.
+	r.GET("/metadata/:token_id", func(c *gin.Context) {
+		host := strings.ToLower(c.Request.Host)
+		if xfh := c.Request.Header.Get("X-Forwarded-Host"); xfh != "" {
+			if i := strings.IndexByte(xfh, ','); i >= 0 {
+				xfh = xfh[:i]
+			}
+			host = strings.ToLower(strings.TrimSpace(xfh))
+		}
+		if strings.Contains(host, "cosmicsignature") {
+			cosmicgame.TokenMetadataHandler(c)
+			return
+		}
+		randomwalk.TokenMetadataHandler(c)
+	})
+
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(host_secure),
@@ -230,4 +250,3 @@ func loadHTTPSCertificates() []tls.Certificate {
 	}
 	return out
 }
-

@@ -10,6 +10,13 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
 
+// TokenMetadataHandler is the exported entry point for the bare ERC-721
+// tokenURI route (GET /metadata/:token_id), dispatched by host in the main
+// router. On the Cosmic Signature host it serves Cosmic Signature metadata.
+func TokenMetadataHandler(c *gin.Context) {
+	api_cosmic_game_cst_metadata(c)
+}
+
 // GET /api/cosmicgame/cst/metadata/:token_id — OpenSea-compatible metadata JSON (image hosted under /images/...).
 // Uses the same token row as /cst/info. Image base defaults to this API's origin + /images; optional NFT_ASSETS_PUBLIC_BASE overrides.
 func api_cosmic_game_cst_metadata(c *gin.Context) {

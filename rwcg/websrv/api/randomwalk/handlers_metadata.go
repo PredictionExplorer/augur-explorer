@@ -11,6 +11,13 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/rwcg/websrv/api/common"
 )
 
+// TokenMetadataHandler is the exported entry point for the bare ERC-721
+// tokenURI route (GET /metadata/:token_id), dispatched by host in the main
+// router. On RandomWalk hosts it serves RandomWalk metadata.
+func TokenMetadataHandler(c *gin.Context) {
+	apiRandomwalkTokenMetadata(c)
+}
+
 // GET /api/randomwalk/metadata/:token_id and GET /metadata/:token_id — ERC-721 metadata JSON.
 // On-chain baseURI is often https://<api-host>/metadata/ (e.g. legacy randomwalknft-api.com or api1.randomwalknft.com).
 // image/animation_url use MetadataRandomWalkImagePublicBase (default API /images/...; override with NFT_ASSETS_PUBLIC_BASE).
@@ -57,13 +64,13 @@ func apiRandomwalkTokenMetadata(c *gin.Context) {
 		animationURL = fmt.Sprintf("%s/randomwalk/%s_black_single.mp4", base, pad)
 	}
 	meta := gin.H{
-		"name":            name,
-		"description":     "Random Walk NFT",
-		"image":           imageURL,
-		"animation_url":   animationURL,
-		"external_url":    fmt.Sprintf("https://randomwalknft.com/detail/%d", tokenID),
-		"attributes":      []gin.H{{"trait_type": "seed", "value": info.SeedHex}},
-		"properties":      gin.H{"seed": info.SeedHex},
+		"name":          name,
+		"description":   "Random Walk NFT",
+		"image":         imageURL,
+		"animation_url": animationURL,
+		"external_url":  fmt.Sprintf("https://randomwalknft.com/detail/%d", tokenID),
+		"attributes":    []gin.H{{"trait_type": "seed", "value": info.SeedHex}},
+		"properties":    gin.H{"seed": info.SeedHex},
 	}
 	c.JSON(http.StatusOK, meta)
 }

@@ -14,5 +14,6 @@ rm -f evtlog_diff
 rm -f transaction-collector
 rm -f transaction-collector-verify
 rm -f asset_inventory
+rm -f gen_thumbnails
 
 echo "Done cleaning tools."

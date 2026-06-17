@@ -70,8 +70,10 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.POST("/api/randomwalk/add_game", apiRandomwalkAddGameLegacy)
 	r.GET("/api/randomwalk/metadata/:token_id", apiRandomwalkTokenMetadata)
 
-	// ERC-721 tokenURI (on-chain baseURI often https://<host>/metadata/)
-	r.GET("/metadata/:token_id", apiRandomwalkTokenMetadata)
+	// NOTE: the bare ERC-721 tokenURI route GET /metadata/:token_id is registered
+	// centrally in main.go with host-aware dispatch, because the same webserv
+	// serves both RandomWalk and Cosmic Signature hosts (and the Cosmic Signature
+	// contract's tokenURI base is https://nfts.cosmicsignature.com/metadata/).
 }
 
 // RegisterHTMLRoutes registers all RandomWalk HTML page routes
@@ -110,4 +112,3 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 func dbInitialized() bool {
 	return common.Ctx != nil && common.Ctx.Db != nil
 }
-
