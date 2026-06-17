@@ -59,15 +59,30 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 	if name == "" {
 		name = fmt.Sprintf("Cosmic Signature #%d", tokenID)
 	}
+
+	// Immutable, marketplace-filterable traits. "Imprinted" uses the mint
+	// timestamp (unix seconds) and is omitted when unavailable.
+	attributes := []gin.H{
+		{"trait_type": "Round", "display_type": "number", "value": tokenInfo.RoundNum},
+	}
+	if tokenInfo.Tx.TimeStamp > 0 {
+		attributes = append(attributes, gin.H{
+			"trait_type":   "Imprinted",
+			"display_type": "date",
+			"value":        tokenInfo.Tx.TimeStamp,
+		})
+	}
+	attributes = append(attributes, gin.H{"trait_type": "seed", "value": tokenInfo.Seed})
+
 	meta := gin.H{
 		"name":          name,
 		"description":   desc,
 		"image":         image,
 		"animation_url": animationURL,
-		"external_url":  fmt.Sprintf("https://www.cosmicsignature.com/detail/%d", tokenID),
-		"attributes": []gin.H{
-			{"trait_type": "seed", "value": tokenInfo.Seed},
-		},
+		// Art is rendered on pure black; matches the marketplace frame.
+		"background_color": "000000",
+		"external_url":     fmt.Sprintf("https://www.cosmicsignature.com/detail/%d", tokenID),
+		"attributes":       attributes,
 		"properties": gin.H{
 			"seed":      tokenInfo.Seed,
 			"token_id":  tokenID,
