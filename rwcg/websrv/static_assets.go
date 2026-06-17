@@ -91,23 +91,28 @@ func safeFileUnderRoot(rootAbs, urlRel string) (full string, ok bool) {
 // fallback must never apply to RandomWalk (or any other) paths.
 const cosmicAssetPrefix = "new/cosmicsignature/"
 
-// resolveAssetFile maps a request to a file on disk, falling back to the
-// per-seed package layout when a flat Cosmic Signature asset file is absent.
+// resolveAssetFile maps a request to a file on disk, translating the legacy /
+// flat Cosmic Signature URLs onto whatever on-disk layout is present.
 //
-// Cosmic Signature assets are published either as flat files:
+// The frontend and metadata only ever request these flat URLs:
 //
-//	new/cosmicsignature/0x<seed>.png
-//	new/cosmicsignature/0x<seed>.mp4
+//	new/cosmicsignature/0x<seed>.png              (full image)
+//	new/cosmicsignature/0x<seed>.mp4              (video)
+//	new/cosmicsignature/0x<seed>/thumb_card.webp  (thumbnail; also thumb_micro)
 //
-// or as a per-seed package directory (current generator output):
+// Cosmic Signature assets have shipped in three layouts over time. We try the
+// real requested path first (so anything addressing a nested file directly
+// still works), then the candidates below in priority order:
 //
-//	new/cosmicsignature/0x<seed>/image.png
-//	new/cosmicsignature/0x<seed>/video.mp4
+//	flat files:        new/cosmicsignature/0x<seed>.png   / .mp4
+//	current packages:  new/cosmicsignature/0x<seed>/images/web/full.webp,
+//	                   .../images/web/preview.webp, .../images/source/master.png,
+//	                   .../videos/web/main.mp4, .../videos/hq/main.mp4
+//	legacy packages:   new/cosmicsignature/0x<seed>/image.png / video.mp4
 //
-// The frontend and metadata only ever request the flat URLs, so when the flat
-// file does not exist we transparently serve the matching file from inside the
-// package directory ( .png -> image.png, .mp4 -> video.mp4 ). RandomWalk and
-// every other subtree are unaffected: a missing flat file 404s as before.
+// Some frontend callers omit the 0x prefix (e.g. the home banner), so the seed
+// segment is normalized to 0x<seed> when it looks like bare hex. RandomWalk and
+// every other subtree are unaffected: a missing file 404s as before.
 func resolveAssetFile(rootAbs, urlRel string) (full string, ok bool) {
 	if full, ok = safeFileUnderRoot(rootAbs, urlRel); ok {
 		return full, true
@@ -117,19 +122,62 @@ func resolveAssetFile(rootAbs, urlRel string) (full string, ok bool) {
 		return "", false
 	}
 
-	ext := filepath.Ext(urlRel)
-	var inner string
-	switch strings.ToLower(ext) {
-	case ".png":
-		inner = "image.png"
-	case ".mp4":
-		inner = "video.mp4"
+	rest := strings.TrimPrefix(urlRel, cosmicAssetPrefix) // "0x<seed>.png" or "0x<seed>/thumb_card.webp"
+	ext := strings.ToLower(filepath.Ext(rest))
+
+	var candidates []string
+	switch {
+	case ext == ".png" && !strings.Contains(rest, "/"):
+		seed := normalizeSeedSegment(strings.TrimSuffix(rest, filepath.Ext(rest)))
+		candidates = []string{
+			seed + "/images/web/full.webp",
+			seed + "/images/source/master.png",
+			seed + "/image.png", // legacy package layout
+		}
+	case ext == ".mp4" && !strings.Contains(rest, "/"):
+		seed := normalizeSeedSegment(strings.TrimSuffix(rest, filepath.Ext(rest)))
+		candidates = []string{
+			seed + "/videos/web/main.mp4",
+			seed + "/videos/hq/main.mp4",
+			seed + "/video.mp4", // legacy package layout
+		}
+	case ext == ".webp" && strings.Contains(rest, "/thumb_"):
+		seed := normalizeSeedSegment(rest[:strings.IndexByte(rest, '/')])
+		candidates = []string{
+			seed + "/images/web/preview.webp",
+			seed + "/images/web/full.webp",
+		}
 	default:
 		return "", false
 	}
 
-	pkgRel := strings.TrimSuffix(urlRel, ext) + "/" + inner
-	return safeFileUnderRoot(rootAbs, pkgRel)
+	for _, c := range candidates {
+		if full, ok = safeFileUnderRoot(rootAbs, cosmicAssetPrefix+c); ok {
+			return full, true
+		}
+	}
+	return "", false
+}
+
+// normalizeSeedSegment prepends "0x" when seg looks like a bare hex seed, so
+// callers that omit the prefix still match the on-disk 0x<seed> directory.
+func normalizeSeedSegment(seg string) string {
+	if strings.HasPrefix(seg, "0x") || strings.HasPrefix(seg, "0X") {
+		return seg
+	}
+	if seg != "" && isHex(seg) {
+		return "0x" + seg
+	}
+	return seg
+}
+
+func isHex(s string) bool {
+	for _, r := range s {
+		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+			return false
+		}
+	}
+	return true
 }
 
 // registerStaticAssetRoutes serves nft-assets mirror at GET /images/*.

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -28,12 +29,36 @@ func TestResolveAssetFile(t *testing.T) {
 	writeFile(t, flatPNG)
 	writeFile(t, flatMP4)
 
-	// Package layout for another seed.
+	// Legacy package layout for another seed (image.png / video.mp4).
 	pkgSeed := "0x95c22c676296e4cca545427249c75a2cc99e4e3a43abd24869c9a09ca5960f8a"
 	pkgPNG := filepath.Join(csDir, pkgSeed, "image.png")
 	pkgMP4 := filepath.Join(csDir, pkgSeed, "video.mp4")
 	writeFile(t, pkgPNG)
 	writeFile(t, pkgMP4)
+
+	// Current package layout (nested images/ + videos/ subdirectories).
+	newSeed := "0xe29887e5f8aea85d6b775ab8dc95df16a5a0ad2979ace2b539058a0040aca67d"
+	newFull := filepath.Join(csDir, newSeed, "images", "web", "full.webp")
+	newPreview := filepath.Join(csDir, newSeed, "images", "web", "preview.webp")
+	newMaster := filepath.Join(csDir, newSeed, "images", "source", "master.png")
+	newVideoWeb := filepath.Join(csDir, newSeed, "videos", "web", "main.mp4")
+	newVideoHQ := filepath.Join(csDir, newSeed, "videos", "hq", "main.mp4")
+	writeFile(t, newFull)
+	writeFile(t, newPreview)
+	writeFile(t, newMaster)
+	writeFile(t, newVideoWeb)
+	writeFile(t, newVideoHQ)
+
+	// Current layout for a seed that only has a master.png (no web/full.webp),
+	// to exercise the source/master.png fallback.
+	masterOnlySeed := "0x7f12ef4506339e9ccc3c665a5ae8c1878fcf241b7dcbdc4209a95a164622e204"
+	masterOnly := filepath.Join(csDir, masterOnlySeed, "images", "source", "master.png")
+	writeFile(t, masterOnly)
+
+	// Current layout for a seed that only has the hq video (no web/main.mp4).
+	hqOnlySeed := "0xae7e4b937e44eddb5693b29148b6bd03f65417f7a363b60829a562ca2370ec0d"
+	hqOnly := filepath.Join(csDir, hqOnlySeed, "videos", "hq", "main.mp4")
+	writeFile(t, hqOnly)
 
 	// A RandomWalk-style package dir must NOT be served via the fallback:
 	// the package fallback is scoped to new/cosmicsignature/ only.
@@ -68,6 +93,48 @@ func TestResolveAssetFile(t *testing.T) {
 			name:   "package mp4 fallback",
 			urlRel: "new/cosmicsignature/" + pkgSeed + ".mp4",
 			want:   pkgMP4,
+			wantOK: true,
+		},
+		{
+			name:   "new layout png -> images/web/full.webp",
+			urlRel: "new/cosmicsignature/" + newSeed + ".png",
+			want:   newFull,
+			wantOK: true,
+		},
+		{
+			name:   "new layout mp4 -> videos/web/main.mp4",
+			urlRel: "new/cosmicsignature/" + newSeed + ".mp4",
+			want:   newVideoWeb,
+			wantOK: true,
+		},
+		{
+			name:   "new layout thumb_card -> images/web/preview.webp",
+			urlRel: "new/cosmicsignature/" + newSeed + "/thumb_card.webp",
+			want:   newPreview,
+			wantOK: true,
+		},
+		{
+			name:   "new layout thumb_micro -> images/web/preview.webp",
+			urlRel: "new/cosmicsignature/" + newSeed + "/thumb_micro.webp",
+			want:   newPreview,
+			wantOK: true,
+		},
+		{
+			name:   "png falls back to source/master.png when no web image",
+			urlRel: "new/cosmicsignature/" + masterOnlySeed + ".png",
+			want:   masterOnly,
+			wantOK: true,
+		},
+		{
+			name:   "mp4 falls back to videos/hq/main.mp4 when no web video",
+			urlRel: "new/cosmicsignature/" + hqOnlySeed + ".mp4",
+			want:   hqOnly,
+			wantOK: true,
+		},
+		{
+			name:   "bare-hex seed (no 0x) normalizes to 0x<seed> dir",
+			urlRel: "new/cosmicsignature/" + strings.TrimPrefix(newSeed, "0x") + ".png",
+			want:   newFull,
 			wantOK: true,
 		},
 		{
