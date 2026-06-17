@@ -48,6 +48,9 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 		seedHex = "0x" + seedHex
 	}
 	image := fmt.Sprintf("%s/new/cosmicsignature/%s.png", base, seedHex)
+	// animation_url is the marketplace-standard field (OpenSea et al.) for the
+	// animated/video representation; built like image but pointing to the .mp4.
+	animationURL := fmt.Sprintf("%s/new/cosmicsignature/%s.mp4", base, seedHex)
 	desc := fmt.Sprintf(
 		"Discover the unique attributes and ownership history of Cosmic Signature Token #%d, an exclusive digital collectible from the Cosmic Signature game.",
 		tokenID,
@@ -57,10 +60,11 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 		name = fmt.Sprintf("Cosmic Signature #%d", tokenID)
 	}
 	meta := gin.H{
-		"name":         name,
-		"description":  desc,
-		"image":        image,
-		"external_url": fmt.Sprintf("https://www.cosmicsignature.com/detail/%d", tokenID),
+		"name":          name,
+		"description":   desc,
+		"image":         image,
+		"animation_url": animationURL,
+		"external_url":  fmt.Sprintf("https://www.cosmicsignature.com/detail/%d", tokenID),
 		"attributes": []gin.H{
 			{"trait_type": "seed", "value": tokenInfo.Seed},
 		},
