@@ -2,17 +2,28 @@
 //
 // Connects to the SQL database, fetches every minted Cosmic Signature token
 // seed, then checks the local filesystem (current directory as base by default)
-// for the presence of each token's image and video. The "new" per-seed package
-// layout is the standard:
+// for the presence of each token's image, preview (thumbnail) and video.
 //
-//	0x<seed>/image.png
-//	0x<seed>/video.mp4
+// The current per-seed package layout (uploaded by the generator) is:
 //
-// The legacy flat layout is also accepted as "present" (the web server serves
-// either), so the missing counts reflect assets that are genuinely not on disk:
+//	0x<seed>/images/web/full.webp        (full image)
+//	0x<seed>/images/web/preview.webp     (small preview / thumbnail source)
+//	0x<seed>/images/source/master.png    (full-res master)
+//	0x<seed>/videos/web/main.mp4         (web video)
+//	0x<seed>/videos/hq/main.mp4          (high-quality video)
 //
-//	0x<seed>.png
-//	0x<seed>.mp4
+// Earlier layouts are still accepted as "present" because the web server serves
+// any of them (see resolveAssetFile in websrv), so the missing counts reflect
+// assets that are genuinely not on disk:
+//
+//	0x<seed>/image.png  0x<seed>/video.mp4        (legacy package)
+//	0x<seed>/thumb_card.webp  thumb_micro.webp    (legacy generated thumbs)
+//	0x<seed>.png        0x<seed>.mp4              (flat)
+//
+// Detection order per asset mirrors the web server's fallback priority, and the
+// matched layout is reported so you can see which tokens still rely on an old
+// layout. A missing preview is non-fatal (the server falls back to the full
+// image), so previews are reported separately from the image/video pivot.
 //
 // Because some DB seeds drop leading hex zeros while the generator names its
 // package directory with a full 64-hex-char seed, the tool also looks up a
@@ -49,9 +60,64 @@ const seedHexLen = 64 // 32-byte seed as lowercase hex (no 0x prefix)
 type assetLoc struct {
 	found  bool
 	path   string
-	layout string // "package" | "flat"
+	layout string // e.g. "web" | "source" | "hq" | "legacy" | "flat" | "thumb"
 	padded bool   // matched only via the zero-padded 64-char seed name
 }
+
+// candTmpl is one place an asset may live. When inner != "" the path is
+// 0x<seed>/<inner>; otherwise it is the flat file 0x<seed><flatExt>.
+type candTmpl struct {
+	inner   string // slash-separated path under the per-seed dir
+	flatExt string // extension for the flat sibling file (used when inner == "")
+	layout  string
+}
+
+// imageCandidates / previewCandidates / videoCandidates list the on-disk
+// locations for each asset kind, ordered to match the web server's resolution
+// priority (current layout first, then legacy, then flat).
+func imageCandidates() []candTmpl {
+	return []candTmpl{
+		{inner: "images/web/full.webp", layout: "web"},
+		{inner: "images/source/master.png", layout: "source"},
+		{inner: "image.png", layout: "legacy"},
+		{flatExt: ".png", layout: "flat"},
+	}
+}
+
+func previewCandidates() []candTmpl {
+	return []candTmpl{
+		{inner: "images/web/preview.webp", layout: "web"},
+		{inner: "thumb_card.webp", layout: "thumb"},
+		{inner: "thumb_micro.webp", layout: "thumb"},
+	}
+}
+
+func videoCandidates() []candTmpl {
+	return []candTmpl{
+		{inner: "videos/web/main.mp4", layout: "web"},
+		{inner: "videos/hq/main.mp4", layout: "hq"},
+		{inner: "video.mp4", layout: "legacy"},
+		{flatExt: ".mp4", layout: "flat"},
+	}
+}
+
+func candidatesFor(kind string) []candTmpl {
+	switch kind {
+	case "video":
+		return videoCandidates()
+	case "preview":
+		return previewCandidates()
+	default:
+		return imageCandidates()
+	}
+}
+
+// imageLayoutOrder / videoLayoutOrder give a stable display order for totals.
+var (
+	imageLayoutOrder   = []string{"web", "source", "legacy", "flat"}
+	previewLayoutOrder = []string{"web", "thumb"}
+	videoLayoutOrder   = []string{"web", "hq", "legacy", "flat"}
+)
 
 type tokenRow struct {
 	tokenID int64
@@ -103,46 +169,49 @@ func main() {
 	fmt.Printf("  base dir : %s\n", absBase)
 	fmt.Printf("  database : %s\n", redactConn(conn))
 	fmt.Printf("  schema   : %s\n", *schema)
-	fmt.Printf("  layout   : package 0x<seed>/{image.png,video.mp4}; flat fallback 0x<seed>.{png,mp4}\n")
+	fmt.Printf("  layout   : 0x<seed>/{images/web/full.webp,images/web/preview.webp,videos/web/main.mp4} (+legacy/flat fallbacks)\n")
 	fmt.Printf("  DB seeds : %d\n\n", len(tokens))
 
 	var (
 		imgPresent, imgMissing   int
+		prevPresent, prevMissing int
 		vidPresent, vidMissing   int
-		imgPkg, imgFlat          int
-		vidPkg, vidFlat          int
 		bothPresent, bothMissing int
 		partial                  int
 		missingLines             []string
 		paddedLines              []string
 		allLines                 []string
 	)
+	imgLayouts := map[string]int{}
+	prevLayouts := map[string]int{}
+	vidLayouts := map[string]int{}
 
 	for _, tk := range tokens {
 		img := locateAsset(absBase, tk.seed, "image")
+		prev := locateAsset(absBase, tk.seed, "preview")
 		vid := locateAsset(absBase, tk.seed, "video")
 
 		if img.found {
 			imgPresent++
-			if img.layout == "package" {
-				imgPkg++
-			} else {
-				imgFlat++
-			}
+			imgLayouts[img.layout]++
 		} else {
 			imgMissing++
 		}
+		if prev.found {
+			prevPresent++
+			prevLayouts[prev.layout]++
+		} else {
+			prevMissing++
+		}
 		if vid.found {
 			vidPresent++
-			if vid.layout == "package" {
-				vidPkg++
-			} else {
-				vidFlat++
-			}
+			vidLayouts[vid.layout]++
 		} else {
 			vidMissing++
 		}
 
+		// "both" pivots on the renderable image+video pair; a missing preview is
+		// non-fatal (server falls back to the full image) and reported on its own.
 		switch {
 		case img.found && vid.found:
 			bothPresent++
@@ -152,10 +221,13 @@ func main() {
 			partial++
 		}
 
-		if !img.found || !vid.found {
+		if !img.found || !vid.found || !prev.found {
 			var miss []string
 			if !img.found {
 				miss = append(miss, "image")
+			}
+			if !prev.found {
+				miss = append(miss, "preview")
 			}
 			if !vid.found {
 				miss = append(miss, "video")
@@ -164,15 +236,15 @@ func main() {
 				fmt.Sprintf("  #%-5d 0x%s  missing: %s", tk.tokenID, tk.seed, strings.Join(miss, ",")))
 		}
 
-		if (img.found && img.padded) || (vid.found && vid.padded) {
+		if (img.found && img.padded) || (prev.found && prev.padded) || (vid.found && vid.padded) {
 			paddedLines = append(paddedLines,
 				fmt.Sprintf("  #%-5d db=0x%s  file=0x%s", tk.tokenID, tk.seed, leftPad(tk.seed)))
 		}
 
 		if *showAll {
 			allLines = append(allLines,
-				fmt.Sprintf("  #%-5d 0x%s  image=%s  video=%s", tk.tokenID, tk.seed,
-					status(img), status(vid)))
+				fmt.Sprintf("  #%-5d 0x%s  image=%s  preview=%s  video=%s", tk.tokenID, tk.seed,
+					status(img), status(prev), status(vid)))
 		}
 	}
 
@@ -192,7 +264,7 @@ func main() {
 		}
 		fmt.Println()
 	} else if !*missingOnly {
-		fmt.Println("No missing assets. Every DB seed has an image and a video on disk.")
+		fmt.Println("No missing assets. Every DB seed has an image, preview and video on disk.")
 		fmt.Println()
 	}
 
@@ -210,16 +282,44 @@ func main() {
 
 	fmt.Println("==== Totals ====")
 	fmt.Printf("DB seeds          : %d\n", len(tokens))
-	fmt.Printf("Images present    : %-5d (package %d, flat %d)\n", imgPresent, imgPkg, imgFlat)
+	fmt.Printf("Images present    : %-5d%s\n", imgPresent, layoutBreakdown(imgLayouts, imageLayoutOrder))
 	fmt.Printf("Images missing    : %d\n", imgMissing)
-	fmt.Printf("Videos present    : %-5d (package %d, flat %d)\n", vidPresent, vidPkg, vidFlat)
+	fmt.Printf("Previews present  : %-5d%s\n", prevPresent, layoutBreakdown(prevLayouts, previewLayoutOrder))
+	fmt.Printf("Previews missing  : %d\n", prevMissing)
+	fmt.Printf("Videos present    : %-5d%s\n", vidPresent, layoutBreakdown(vidLayouts, videoLayoutOrder))
 	fmt.Printf("Videos missing    : %d\n", vidMissing)
-	fmt.Printf("Both present      : %d\n", bothPresent)
-	fmt.Printf("Both missing      : %d\n", bothMissing)
-	fmt.Printf("Partial (one only): %d\n", partial)
+	fmt.Printf("Both (img+vid)    : present %d, missing %d, partial %d\n", bothPresent, bothMissing, partial)
 	if len(paddedLines) > 0 {
 		fmt.Printf("Padded-name only  : %d\n", len(paddedLines))
 	}
+}
+
+// layoutBreakdown formats per-layout counts in a stable order, e.g.
+// " (web 20, source 3, flat 1)". Returns "" when there is nothing to show.
+func layoutBreakdown(counts map[string]int, order []string) string {
+	var parts []string
+	for _, k := range order {
+		if counts[k] > 0 {
+			parts = append(parts, fmt.Sprintf("%s %d", k, counts[k]))
+		}
+	}
+	// Include any layout not in the known order (defensive).
+	for k, v := range counts {
+		known := false
+		for _, o := range order {
+			if o == k {
+				known = true
+				break
+			}
+		}
+		if !known && v > 0 {
+			parts = append(parts, fmt.Sprintf("%s %d", k, v))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(parts, ", ") + ")"
 }
 
 var keywordPasswordRe = regexp.MustCompile(`password\s*=\s*('[^']*'|"[^"]*"|\S+)`)
@@ -302,22 +402,22 @@ func seedNames(seed string) []struct {
 	return out
 }
 
-// locateAsset checks the package layout first, then the flat fallback, for each
-// candidate seed name. kind is "image" or "video".
+// locateAsset returns the first on-disk match across all candidate layouts,
+// trying the exact seed name before the zero-padded variant. kind is "image",
+// "preview" or "video".
 func locateAsset(base, seed, kind string) assetLoc {
-	var pkgInner, flatExt string
-	if kind == "video" {
-		pkgInner, flatExt = "video.mp4", ".mp4"
-	} else {
-		pkgInner, flatExt = "image.png", ".png"
-	}
-
+	cands := candidatesFor(kind)
 	for _, c := range seedNames(seed) {
-		if p := filepath.Join(base, c.name, pkgInner); isFile(p) {
-			return assetLoc{found: true, path: p, layout: "package", padded: c.padded}
-		}
-		if f := filepath.Join(base, c.name+flatExt); isFile(f) {
-			return assetLoc{found: true, path: f, layout: "flat", padded: c.padded}
+		for _, t := range cands {
+			var p string
+			if t.inner != "" {
+				p = filepath.Join(base, c.name, filepath.FromSlash(t.inner))
+			} else {
+				p = filepath.Join(base, c.name+t.flatExt)
+			}
+			if isFile(p) {
+				return assetLoc{found: true, path: p, layout: t.layout, padded: c.padded}
+			}
 		}
 	}
 	return assetLoc{found: false}
