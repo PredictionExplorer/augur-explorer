@@ -243,6 +243,22 @@ func main() {
 		fmt.Printf("%-28s  ^ when 0, effective CST price = getNextCstBidPrice() (min limit / auction)\n", "")
 	}
 
+	// ==================== V2 INITIALIZED PARAMETERS (initializeV2) ====================
+	// The four values set by CosmicSignatureGameV2.initializeV2(). Only printed when
+	// the proxy is on V2 (the V2-only getters succeed); on a V1 contract they revert.
+	if cosmicGameV2 != nil {
+		if cstAucChgDiv, errV2 := cosmicGameV2.CstDutchAuctionDurationChangeDivisor(copts); errV2 == nil {
+			cstAucDurationV2, _ := cosmicGameV2.CstDutchAuctionDuration(copts)
+			bidCstRewardMultiplierV2, _ := cosmicGameV2.BidCstRewardAmountMultiplier(copts)
+
+			cutils.Section("V2 INITIALIZED PARAMETERS (initializeV2)")
+			cutils.PrintKeyValueDuration("cstDutchAuctionDuration", cstAucDurationV2.Int64())
+			cutils.PrintKeyValue("cstDutchAuctionDurationChangeDivisor", cstAucChgDiv)
+			cutils.PrintKeyValue("bidCstRewardAmountMultiplier", bidCstRewardMultiplierV2)
+			cutils.PrintKeyValueDuration("timeoutDurationToClaimMainPrize", timeoutMainPrize.Int64())
+		}
+	}
+
 	// ==================== CURRENT BIDDERS / CHAMPIONS ====================
 	lastBidder, err := cosmicGame.LastBidderAddress(copts)
 	if err != nil {

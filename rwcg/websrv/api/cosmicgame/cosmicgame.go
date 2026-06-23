@@ -98,7 +98,7 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/prizes/eth/raffle/by_user/:user_addr", api_cosmic_game_unified_eth_raffle_by_user)
 	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/by_user/:user_addr", api_cosmic_game_unified_eth_chronowarrior_by_user)
 	r.GET("/api/cosmicgame/prizes/eth/unclaimed/by_user/:user_addr/:offset/:limit", api_cosmic_game_unclaimed_prize_deposits_by_user)
-	r.GET("/api/cosmicgame/prizes/deposits/raffle/by_user/:use_addr", api_cosmic_game_prize_deposits_raffle_eth_by_user)
+	r.GET("/api/cosmicgame/prizes/deposits/raffle/by_user/:user_addr", api_cosmic_game_prize_deposits_raffle_eth_by_user)
 	r.GET("/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/:user_addr", api_cosmic_game_prize_deposits_chrono_warrior_by_user)
 	r.GET("/api/cosmicgame/prizes/deposits/unclaimed/by_user/:user_addr/:offset/:limit", api_cosmic_game_unclaimed_prize_deposits_by_user)
 
