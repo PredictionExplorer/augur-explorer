@@ -138,13 +138,15 @@ func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
 			ChronoWarriorAddress      ethcommon.Address
 			ChronoWarriorDuration     *big.Int
 		}
-		enduranceStartTs          *big.Int
-		prevEnduranceDuration     *big.Int
-		lastBidder                ethcommon.Address
-		lastCstBidder             ethcommon.Address
-		storedChronoWarriorDur    *big.Int
-		lastBidderLastBidTime     *big.Int
-		lastCstBidderLastBidTime  *big.Int
+		enduranceStartTs            *big.Int
+		prevEnduranceDuration       *big.Int
+		storedEnduranceChampionAddr ethcommon.Address
+		storedEnduranceChampionDur  *big.Int
+		lastBidder                  ethcommon.Address
+		lastCstBidder               ethcommon.Address
+		storedChronoWarriorDur      *big.Int
+		lastBidderLastBidTime       *big.Int
+		lastCstBidderLastBidTime    *big.Int
 	)
 
 	var wg sync.WaitGroup
@@ -160,7 +162,7 @@ func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
 		}
 	}
 
-	wg.Add(6)
+	wg.Add(8)
 	go func() {
 		defer wg.Done()
 		result, err := contract.TryGetCurrentChampions(&copts)
@@ -227,6 +229,28 @@ func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
 		storedChronoWarriorDur = val
 		mu.Unlock()
 	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.EnduranceChampionAddress(&copts)
+		if err != nil {
+			recordErr("EnduranceChampionAddress", err)
+			return
+		}
+		mu.Lock()
+		storedEnduranceChampionAddr = val
+		mu.Unlock()
+	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.EnduranceChampionDuration(&copts)
+		if err != nil {
+			recordErr("EnduranceChampionDuration", err)
+			return
+		}
+		mu.Lock()
+		storedEnduranceChampionDur = val
+		mu.Unlock()
+	}()
 	wg.Wait()
 
 	if state.Err != nil {
@@ -237,14 +261,11 @@ func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
 	state.EnduranceChampionDuration = champs.EnduranceChampionDuration.Int64()
 	state.ChronoWarriorAddress = champs.ChronoWarriorAddress.String()
 	state.ChronoWarriorDuration = champs.ChronoWarriorDuration.Int64()
-	state.EnduranceChampionStartTimeStamp = enduranceStartTs.Int64()
-	state.PrevEnduranceChampionDuration = prevEnduranceDuration.Int64()
 	state.LastBidderAddress = lastBidder.String()
 	state.LastCstBidderAddress = lastCstBidder.String()
-
-	chronoSegmentStart := state.EnduranceChampionStartTimeStamp + state.PrevEnduranceChampionDuration
-	currentChronoSegmentDuration := state.SourceBlockTimeStamp - chronoSegmentStart
-	state.ChronoWarriorIsLive = currentChronoSegmentDuration > storedChronoWarriorDur.Int64()
+	// The chrono-segment anchor (EnduranceChampionStartTimeStamp / PrevEnduranceChampionDuration)
+	// and ChronoWarriorIsLive are computed below, after we have the last bidder's lastBidTimeStamp,
+	// so the anchor stays consistent with the LIVE champion returned by tryGetCurrentChampions().
 
 	if state.RoundNum >= 0 {
 		roundBig := big.NewInt(state.RoundNum)
@@ -287,6 +308,32 @@ func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
 			state.LastCstBidderLastBidTime = lastCstBidderLastBidTime.Int64()
 			state.HasLastCstBidderLastBidTime = true
 		}
+
+		// Derive the LIVE endurance-champion anchor consistently with tryGetCurrentChampions().
+		// When the current last bidder has overtaken the stored endurance record, the contract
+		// recomputes the champion in-memory, but the enduranceChampionStartTimeStamp() and
+		// prevEnduranceChampionDuration() storage getters still return the OLD (stale) anchor.
+		// Mixing the live champion (from tryGetCurrentChampions) with that stale anchor produced
+		// a wrong Chrono-Warrior "record-growing segment" and "is live" status.
+		liveEnduranceStart := enduranceStartTs.Int64()
+		livePrevDuration := prevEnduranceDuration.Int64()
+		if lastBidder != (ethcommon.Address{}) && lastBidderLastBidTime != nil {
+			lastBidDuration := state.SourceBlockTimeStamp - lastBidderLastBidTime.Int64()
+			if storedEnduranceChampionAddr == (ethcommon.Address{}) {
+				// No champion recorded yet: the last bidder is the (live) endurance champion.
+				liveEnduranceStart = lastBidderLastBidTime.Int64()
+			} else if storedEnduranceChampionDur != nil && lastBidDuration > storedEnduranceChampionDur.Int64() {
+				// Last bidder overtook the stored record: champion start/prev are recomputed live.
+				livePrevDuration = storedEnduranceChampionDur.Int64()
+				liveEnduranceStart = lastBidderLastBidTime.Int64()
+			}
+		}
+		state.EnduranceChampionStartTimeStamp = liveEnduranceStart
+		state.PrevEnduranceChampionDuration = livePrevDuration
+
+		chronoSegmentStart := liveEnduranceStart + livePrevDuration
+		currentChronoSegmentDuration := state.SourceBlockTimeStamp - chronoSegmentStart
+		state.ChronoWarriorIsLive = currentChronoSegmentDuration > storedChronoWarriorDur.Int64()
 
 		if lastCstBidder != (ethcommon.Address{}) {
 			if evtlogId, ok := arb_storagew.Get_last_cst_bid_evtlog_for_bidder(state.RoundNum, lastCstBidder.String()); ok {
