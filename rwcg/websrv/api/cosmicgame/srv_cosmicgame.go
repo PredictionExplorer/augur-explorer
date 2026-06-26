@@ -2273,6 +2273,29 @@ func cosmic_game_cs_token_distribution(c *gin.Context) {
 		"CosmicSignatureTokenDistribution" : distribution,
 	})
 }
+func cosmic_game_bid_type_ratio(c *gin.Context) {
+
+	if  !dbInitialized() {
+		common.RespondError(c,"Database link wasn't configured")
+		return
+	}
+
+	from_ts := ParseOptionalIntQuery(c.Query("from_ts"), 0)
+	to_ts := ParseOptionalIntQuery(c.Query("to_ts"), 2147483647)
+	interval_secs := ParseOptionalIntQuery(c.Query("interval_secs"), 86400)
+	if interval_secs <= 0 {
+		interval_secs = 86400
+	}
+
+	buckets := arb_storagew.Get_bid_type_ratio_by_period(from_ts, to_ts, interval_secs)
+
+	c.HTML(http.StatusOK, "cg_bid_type_ratio.html", gin.H{
+		"FromTs" : from_ts,
+		"ToTs" : to_ts,
+		"IntervalSecs" : interval_secs,
+		"RatioHistory" : buckets,
+	})
+}
 func cosmic_game_user_balances(c *gin.Context) {
 
 	if  !dbInitialized() {

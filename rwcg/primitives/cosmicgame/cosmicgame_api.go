@@ -672,6 +672,23 @@ type CGBidFrequencyBucket struct {
 	UniqueBidders int64
 }
 
+// CGBidTypeRatioBucket holds the bid-type composition of a single sampling
+// window. Counts are the raw number of bids of each type that fell within the
+// window [BucketTs, BucketTs+interval); the *Pct fields are those counts
+// normalized to 100% of TotalBids (windowed, not cumulative). When a window has
+// no bids, TotalBids is 0 and all *Pct fields are 0.
+// bid_type mapping: 0=ETH, 1=RandomWalk (ETH-paid), 2=CST.
+type CGBidTypeRatioBucket struct {
+	BucketTs   int64
+	EthBids    int64
+	RwalkBids  int64
+	CstBids    int64
+	TotalBids  int64
+	EthPct     float64
+	RwalkPct   float64
+	CstPct     float64
+}
+
 // CGBidSpike is a merged run of above-normal bid frequency buckets.
 type CGBidSpike struct {
 	Index       int

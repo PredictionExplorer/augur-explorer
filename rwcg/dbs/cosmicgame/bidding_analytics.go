@@ -110,6 +110,68 @@ func (sw *SQLStorageWrapper) Get_bid_frequency_by_period(initTs, finTs, interval
 	return records
 }
 
+// Get_bid_type_ratio_by_period returns the bid-type composition per sampling
+// window over [initTs, finTs). Each window reports raw counts per bid_type plus
+// those counts normalized to a windowed 100% (per-interval mix, not cumulative).
+// Windows with no bids report 0 counts and 0% for every type, so the caller can
+// render a continuous, gap-free series. bid_type: 0=ETH, 1=RandomWalk, 2=CST.
+func (sw *SQLStorageWrapper) Get_bid_type_ratio_by_period(initTs, finTs, intervalSecs int) []p.CGBidTypeRatioBucket {
+	if intervalSecs <= 0 {
+		intervalSecs = finTs - initTs
+		if intervalSecs <= 0 {
+			intervalSecs = 86400
+		}
+	}
+
+	intervalStr := strconv.Itoa(intervalSecs)
+	schema := sw.S.SchemaName()
+
+	query := "WITH periods AS (" +
+		"SELECT generate_series AS start_ts, " +
+		"generate_series + ('" + intervalStr + " seconds')::interval AS end_ts " +
+		"FROM generate_series(" +
+		"TO_TIMESTAMP($1), " +
+		"TO_TIMESTAMP($2), " +
+		"('" + intervalStr + " seconds')::interval" +
+		") AS generate_series" +
+		") " +
+		"SELECT " +
+		"FLOOR(EXTRACT(EPOCH FROM p.start_ts))::BIGINT AS bucket_ts, " +
+		"COALESCE(COUNT(b.id) FILTER (WHERE b.bid_type = 0), 0)::BIGINT AS eth_bids, " +
+		"COALESCE(COUNT(b.id) FILTER (WHERE b.bid_type = 1), 0)::BIGINT AS rwalk_bids, " +
+		"COALESCE(COUNT(b.id) FILTER (WHERE b.bid_type = 2), 0)::BIGINT AS cst_bids, " +
+		"COALESCE(COUNT(b.id), 0)::BIGINT AS total_bids " +
+		"FROM periods p " +
+		"LEFT JOIN " + schema + ".cg_bid b ON " +
+		"b.time_stamp >= p.start_ts AND b.time_stamp < p.end_ts " +
+		"GROUP BY p.start_ts " +
+		"ORDER BY p.start_ts"
+
+	rows, err := sw.S.Db().Query(query, initTs, finTs)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+
+	records := make([]p.CGBidTypeRatioBucket, 0, 256)
+	for rows.Next() {
+		var rec p.CGBidTypeRatioBucket
+		if err := rows.Scan(&rec.BucketTs, &rec.EthBids, &rec.RwalkBids, &rec.CstBids, &rec.TotalBids); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
+		if rec.TotalBids > 0 {
+			total := float64(rec.TotalBids)
+			rec.EthPct = math.Round(float64(rec.EthBids)/total*10000) / 100
+			rec.RwalkPct = math.Round(float64(rec.RwalkBids)/total*10000) / 100
+			rec.CstPct = math.Round(float64(rec.CstBids)/total*10000) / 100
+		}
+		records = append(records, rec)
+	}
+	return records
+}
+
 func (sw *SQLStorageWrapper) Get_top_bidders(limit int) []p.CGTopBidderInfo {
 	if limit <= 0 {
 		limit = 20

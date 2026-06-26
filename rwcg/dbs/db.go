@@ -3,15 +3,101 @@
 package dbs
 
 import (
+	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"strings"
+	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
+
+// Connection resilience tuning. These mirror libpq's connect_timeout +
+// keepalives_idle / keepalives_interval / keepalives_count / tcp_user_timeout,
+// which the pure-Go lib/pq driver does NOT accept as connection-string keys, so
+// we apply them ourselves via a custom dialer (see keepaliveDialer below).
+const (
+	dbConnectTimeout    = 10 * time.Second
+	dbKeepaliveIdle     = 30 * time.Second
+	dbKeepaliveInterval = 10 * time.Second
+	dbKeepaliveCount    = 5
+	dbTCPUserTimeout    = 15 * time.Second
+
+	// Connect retry: a transient link failure (e.g. "no route to host" on a
+	// flaky Wi-Fi link) should not propagate an error to callers that react by
+	// calling os.Exit. We retry the dial several times with capped backoff so a
+	// short blip is absorbed before the error can reach those call sites.
+	dbConnectMaxAttempts = 10
+	dbConnectRetryDelay  = 1 * time.Second
+	dbConnectRetryMaxWait = 5 * time.Second
+)
+
+// keepaliveDialer dials with a bounded connect timeout and TCP keepalive probing
+// (plus TCP_USER_TIMEOUT on Linux) so a dead or flaky link is detected in
+// seconds instead of the kernel default of minutes/hours.
+type keepaliveDialer struct{ d net.Dialer }
+
+func newKeepaliveDialer() keepaliveDialer {
+	return keepaliveDialer{d: net.Dialer{
+		Timeout:   dbConnectTimeout,
+		KeepAlive: dialerKeepAlive,    // platform-specific (see db_keepalive_*.go)
+		Control:   tcpKeepaliveControl, // platform-specific socket-option tuning
+	}}
+}
+
+func (k keepaliveDialer) Dial(network, address string) (net.Conn, error) {
+	return k.d.Dial(network, address)
+}
+
+func (k keepaliveDialer) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return k.d.DialContext(ctx, network, address)
+}
+
+func (k keepaliveDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return k.d.DialContext(ctx, network, address)
+}
+
+// keepaliveConnector is a database/sql driver.Connector that opens lib/pq
+// connections through keepaliveDialer. lib/pq v1.10.4's Connector keeps its
+// dialer unexported with no setter, so we wrap pq.DialOpen directly.
+type keepaliveConnector struct{ dsn string }
+
+func (c keepaliveConnector) Connect(ctx context.Context) (driver.Conn, error) {
+	delay := dbConnectRetryDelay
+	var lastErr error
+	for attempt := 1; attempt <= dbConnectMaxAttempts; attempt++ {
+		conn, err := pq.DialOpen(newKeepaliveDialer(), c.dsn)
+		if err == nil {
+			if attempt > 1 {
+				log.Printf("DB: reconnected on attempt %d/%d", attempt, dbConnectMaxAttempts)
+			}
+			return conn, nil
+		}
+		lastErr = err
+		log.Printf("DB: connect attempt %d/%d failed: %v", attempt, dbConnectMaxAttempts, err)
+		if attempt == dbConnectMaxAttempts {
+			break
+		}
+		// Back off, but bail out early if the caller's context is cancelled.
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(delay):
+		}
+		if delay *= 2; delay > dbConnectRetryMaxWait {
+			delay = dbConnectRetryMaxWait
+		}
+	}
+	return nil, fmt.Errorf("db connect failed after %d attempts: %w", dbConnectMaxAttempts, lastErr)
+}
+
+func (c keepaliveConnector) Driver() driver.Driver { return pq.Driver{} }
 
 // escapeConnParam escapes a value for use inside a single-quoted libpq connection parameter.
 func escapeConnParam(s string) string {
@@ -44,12 +130,15 @@ func openDB(schema string) (*sql.DB, error) {
 	if schema != "" {
 		connStr += " search_path='" + escapeConnParam(schema) + "'"
 	}
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-	_, err = db.Exec("SET timezone TO 0")
-	if err != nil {
+	// connect_timeout makes lib/pq call our dialer's DialTimeout, so a routing
+	// blip fails fast instead of hanging. Keepalive + TCP_USER_TIMEOUT are applied
+	// at the socket level by keepaliveDialer (lib/pq ignores those DSN keys).
+	connStr += fmt.Sprintf(" connect_timeout=%d", int(dbConnectTimeout.Seconds()))
+
+	db := sql.OpenDB(keepaliveConnector{dsn: connStr})
+	// First statement forces a real connection, surfacing connect errors here
+	// (same early-failure behavior as the previous sql.Open + Exec).
+	if _, err := db.Exec("SET timezone TO 0"); err != nil {
 		db.Close()
 		return nil, err
 	}

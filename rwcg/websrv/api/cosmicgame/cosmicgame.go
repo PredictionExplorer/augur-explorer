@@ -108,6 +108,7 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/bid/info_by_pos/:round_num/:bid_position", api_cosmic_game_bid_info_by_pos)
 	r.GET("/api/cosmicgame/bid/with_message/by_round/:round", api_cosmic_game_bid_with_message_by_round)
 	r.GET("/api/cosmicgame/bid/list/by_round/:round_num/:sort/:offset/:limit", api_cosmic_game_bid_list_by_round)
+	r.GET("/api/cosmicgame/bid/bid_type_ratio", api_cosmic_game_bid_type_ratio)
 	r.GET("/api/cosmicgame/bid/used_randomwalk_nfts", api_cosmic_game_used_rwalk_nfts)
 	r.GET("/api/cosmicgame/bid/used_rwalk_nfts", api_cosmic_game_used_rwalk_nfts) // legacy path (same handler)
 	r.GET("/api/cosmicgame/bid/cst_price", api_cosmic_game_get_cst_price)
@@ -274,6 +275,7 @@ func RegisterHTMLRoutes(r *gin.Engine) {
 	r.GET("/black/cosmicgame/bid/list/all", cosmic_game_bids)
 	r.GET("/black/cosmicgame/bid/info/:evtlog_id", cosmic_game_bid_info)
 	r.GET("/black/cosmicgame/bid/list/by_round/:round_num/:sort/:offset/:limit", cosmic_game_bid_list_by_round)
+	r.GET("/black/cosmicgame/bid/bid_type_ratio", cosmic_game_bid_type_ratio)
 	r.GET("/black/cosmicgame/bid/used_randomwalk_nfts", cosmic_game_used_rwalk_nfts)
 	r.GET("/black/cosmicgame/bid/used_rwalk_nfts", cosmic_game_used_rwalk_nfts) // legacy path
 	r.GET("/black/cosmicgame/bid/cst_price", cosmic_game_get_cst_price)
