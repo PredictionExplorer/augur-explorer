@@ -33,7 +33,9 @@ CREATE TABLE cg_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,
 	num_bids		BIGINT DEFAULT 0,
 	max_bid			DECIMAL DEFAULT 0,
-	tokens_minted	DECIMAL DEFAULT 0 -- total tokens minted
+	tokens_minted	DECIMAL DEFAULT 0, -- total tokens minted
+	total_eth_spent	DECIMAL DEFAULT 0, -- sum of eth_price across this bidder's ETH/RandomWalk bids (wei)
+	total_cst_spent	DECIMAL DEFAULT 0  -- sum of cst_price across this bidder's CST bids (wei)
 );
 CREATE TABLE cg_winner ( -- collects statistics per winner of any prize type
 	winner_aid				BIGINT PRIMARY KEY,

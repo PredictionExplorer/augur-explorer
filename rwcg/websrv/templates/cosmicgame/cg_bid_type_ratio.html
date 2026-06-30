@@ -1,0 +1,68 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<link href="/black/res/cosmicgame.css" rel="stylesheet">
+	<title>Bid Type Ratio</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/black/cosmicgame">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📊 Bid Type Ratio</h1>
+			<div class="subtitle">Per-interval bid-type composition (windowed %, 0=ETH, 1=RandomWalk, 2=CST)</div>
+		</div>
+
+		<div class="section-card">
+			<p>
+				FromTs: <code>{{.FromTs}}</code> &nbsp;
+				ToTs: <code>{{.ToTs}}</code> &nbsp;
+				IntervalSecs: <code>{{.IntervalSecs}}</code>
+			</p>
+			<table class="data-table">
+				<tr>
+					<th>Bucket (unix)</th>
+					<th class="right">ETH</th>
+					<th class="right">RandomWalk</th>
+					<th class="right">CST</th>
+					<th class="right">Total</th>
+					<th class="right">ETH %</th>
+					<th class="right">RandomWalk %</th>
+					<th class="right">CST %</th>
+				</tr>
+				{{- range $i, $b := .RatioHistory}}
+					<tr>
+						<td class="monospace">{{$b.BucketTs}}</td>
+						<td class="right">{{$b.EthBids}}</td>
+						<td class="right">{{$b.RwalkBids}}</td>
+						<td class="right">{{$b.CstBids}}</td>
+						<td class="right">{{$b.TotalBids}}</td>
+						<td class="right">{{$b.EthPct}}</td>
+						<td class="right">{{$b.RwalkPct}}</td>
+						<td class="right">{{$b.CstPct}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/bid/bid_type_ratio</code><br/><br/>
+			<strong>Query parameters:</strong><br/>
+			<code>from_ts</code> (unix seconds, default 0),
+			<code>to_ts</code> (unix seconds, default now),
+			<code>interval_secs</code> (sampling window, default 86400)<br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/bid/bid_type_ratio?from_ts=0&to_ts=2147483647&interval_secs=86400</code>
+		</div>
+	</div>
+</body>
+</html>

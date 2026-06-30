@@ -70,6 +70,7 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.GET("/api/cosmicgame/statistics/counters", api_cosmic_game_record_counters)
 	r.GET("/api/cosmicgame/statistics/unique/bidders", api_cosmic_game_user_unique_bidders)
 	r.GET("/api/cosmicgame/statistics/unique/winners", api_cosmic_game_user_unique_winners)
+	r.GET("/api/cosmicgame/statistics/leaderboard/roi", api_cosmic_game_roi_leaderboard)
 	r.GET("/api/cosmicgame/statistics/unique/donors", api_cosmic_game_user_unique_donors)
 	r.GET("/api/cosmicgame/statistics/unique/stakers/cst", api_cosmic_game_user_unique_stakers_cst)
 	r.GET("/api/cosmicgame/statistics/unique/stakers/randomwalk", api_cosmic_game_user_unique_stakers_rwalk)

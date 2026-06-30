@@ -507,6 +507,105 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 	}
 	return records
 }
+// Get_roi_leaderboard returns per-player bidding profitability (ETH-only ROI, Tier 1),
+// joining maintained spend (cg_bidder) with winnings (cg_winner) plus on-demand
+// rounds-participated / rounds-won (for win rate). sort_by is whitelisted; min_bids
+// filters out one-lucky-bid noise; offset/limit paginate.
+func (sw *SQLStorageWrapper) Get_roi_leaderboard(min_bids int, sort_by string, offset int, limit int) []p.CGRoiLeaderboardEntry {
+
+	var order string
+	switch sort_by {
+	case "roi":
+		order = "roi DESC"
+	case "winrate":
+		order = "win_rate DESC, rounds_participated DESC"
+	case "spent":
+		order = "b.total_eth_spent DESC"
+	case "nfts":
+		order = "nft_prizes_count DESC"
+	case "bids":
+		order = "b.num_bids DESC"
+	default:
+		order = "net_pl_eth DESC"
+	}
+	schema := sw.S.SchemaName()
+	query := "WITH rounds_part AS ("+
+				"SELECT bidder_aid, COUNT(DISTINCT round_num) AS rounds_participated "+
+				"FROM "+schema+".cg_bid GROUP BY bidder_aid"+
+			"), rounds_won AS ("+
+				"SELECT aid, COUNT(DISTINCT round_num) AS rounds_won FROM ("+
+					"SELECT winner_aid AS aid, round_num FROM "+schema+".cg_prize_claim "+
+					"UNION SELECT winner_aid, round_num FROM "+schema+".cg_raffle_eth_prize "+
+					"UNION SELECT winner_aid, round_num FROM "+schema+".cg_raffle_nft_prize "+
+					"UNION SELECT winner_aid, round_num FROM "+schema+".cg_endurance_prize "+
+					"UNION SELECT winner_aid, round_num FROM "+schema+".cg_lastcst_prize "+
+					"UNION SELECT winner_aid, round_num FROM "+schema+".cg_chrono_warrior_prize"+
+				") u GROUP BY aid"+
+			") "+
+			"SELECT "+
+				"b.bidder_aid,"+
+				"a.addr,"+
+				"b.num_bids,"+
+				"COALESCE(rp.rounds_participated,0) AS rounds_participated,"+
+				"COALESCE(rw.rounds_won,0) AS rounds_won,"+
+				"CASE WHEN COALESCE(rp.rounds_participated,0) > 0 "+
+					"THEN COALESCE(rw.rounds_won,0)::numeric / rp.rounds_participated ELSE 0 END AS win_rate,"+
+				"b.total_eth_spent,"+
+				"b.total_eth_spent/1e18,"+
+				"b.total_cst_spent,"+
+				"b.total_cst_spent/1e18,"+
+				"COALESCE(w.prizes_sum,0),"+
+				"COALESCE(w.prizes_sum,0)/1e18,"+
+				"COALESCE(w.prizes_count,0),"+
+				"COALESCE(w.erc20_count,0),"+
+				"COALESCE(w.erc721_count,0) AS nft_prizes_count,"+
+				"(COALESCE(w.prizes_sum,0) - b.total_eth_spent)/1e18 AS net_pl_eth,"+
+				"CASE WHEN b.total_eth_spent > 0 "+
+					"THEN (COALESCE(w.prizes_sum,0) - b.total_eth_spent)/b.total_eth_spent ELSE 0 END AS roi "+
+			"FROM "+schema+".cg_bidder b "+
+				"LEFT JOIN address a ON b.bidder_aid=a.address_id "+
+				"LEFT JOIN "+schema+".cg_winner w ON b.bidder_aid=w.winner_aid "+
+				"LEFT JOIN rounds_part rp ON b.bidder_aid=rp.bidder_aid "+
+				"LEFT JOIN rounds_won rw ON b.bidder_aid=rw.aid "+
+			"WHERE b.num_bids >= $1 "+
+			"ORDER BY "+order+" "+
+			"OFFSET $2 LIMIT $3"
+	rows,err := sw.S.Db().Query(query,min_bids,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGRoiLeaderboardEntry,0, 64)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGRoiLeaderboardEntry
+		err=rows.Scan(
+			&rec.BidderAid,
+			&rec.BidderAddr,
+			&rec.NumBids,
+			&rec.RoundsParticipated,
+			&rec.RoundsWon,
+			&rec.WinRate,
+			&rec.TotalEthSpent,
+			&rec.TotalEthSpentEth,
+			&rec.TotalCstSpent,
+			&rec.TotalCstSpentEth,
+			&rec.EthWon,
+			&rec.EthWonEth,
+			&rec.PrizesCount,
+			&rec.CstPrizesCount,
+			&rec.NftPrizesCount,
+			&rec.NetPlEth,
+			&rec.Roi,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_unique_stakers_cst() []p.CGUniqueStakerCST {
 
 	var query string

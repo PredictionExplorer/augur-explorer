@@ -11,12 +11,20 @@ BEGIN
 	UPDATE cg_bidder
 		SET
 			num_bids = (num_bids + 1),
-			max_bid	 = v_max_bid
+			max_bid	 = v_max_bid,
+			total_eth_spent = total_eth_spent + (CASE WHEN NEW.eth_price > 0 THEN NEW.eth_price ELSE 0 END),
+			total_cst_spent = total_cst_spent + (CASE WHEN NEW.cst_price > 0 THEN NEW.cst_price ELSE 0 END)
 		WHERE bidder_aid = NEW.bidder_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_bidder(bidder_aid,num_bids,max_bid)
-			VALUES(NEW.bidder_aid,1,v_max_bid);
+		INSERT INTO cg_bidder(bidder_aid,num_bids,max_bid,total_eth_spent,total_cst_spent)
+			VALUES(
+				NEW.bidder_aid,
+				1,
+				v_max_bid,
+				(CASE WHEN NEW.eth_price > 0 THEN NEW.eth_price ELSE 0 END),
+				(CASE WHEN NEW.cst_price > 0 THEN NEW.cst_price ELSE 0 END)
+			);
 	END IF;
 	UPDATE cg_glob_stats SET num_bids = (num_bids + 1);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -58,7 +66,9 @@ BEGIN
 	UPDATE cg_bidder
 		SET
 			num_bids = (num_bids - 1),
-			max_bid	 = v_max_bid
+			max_bid	 = v_max_bid,
+			total_eth_spent = total_eth_spent - (CASE WHEN OLD.eth_price > 0 THEN OLD.eth_price ELSE 0 END),
+			total_cst_spent = total_cst_spent - (CASE WHEN OLD.cst_price > 0 THEN OLD.cst_price ELSE 0 END)
 		WHERE bidder_aid = OLD.bidder_aid;
 	UPDATE cg_glob_stats SET num_bids = (num_bids - 1);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;

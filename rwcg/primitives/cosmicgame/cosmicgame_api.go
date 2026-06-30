@@ -248,6 +248,25 @@ type CGUniqueDonor struct {
 	TotalDonated				string
 	TotalDonatedEth				float64
 }
+type CGRoiLeaderboardEntry struct {
+	BidderAid					int64
+	BidderAddr					string
+	NumBids						int64
+	RoundsParticipated			int64	// distinct rounds the player bid in
+	RoundsWon					int64	// distinct rounds the player won any prize
+	WinRate						float64	// RoundsWon / RoundsParticipated (0..1)
+	TotalEthSpent				string	// wei
+	TotalEthSpentEth			float64
+	TotalCstSpent				string	// wei
+	TotalCstSpentEth			float64
+	EthWon						string	// cg_winner.prizes_sum (main+raffle+chrono ETH), wei
+	EthWonEth					float64
+	PrizesCount					int64	// all prize types
+	CstPrizesCount				int64	// count of CST (ERC20) prizes
+	NftPrizesCount				int64	// count of CS NFT (ERC721) prizes
+	NetPlEth					float64	// (EthWon - TotalEthSpent) in ETH
+	Roi							float64	// fraction; multiply by 100 for percent. 0 when no ETH spent
+}
 type CGERC20Donation struct {
 	RecordId					int64
 	Tx							Transaction

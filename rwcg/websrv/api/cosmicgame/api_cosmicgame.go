@@ -805,6 +805,34 @@ func api_cosmic_game_user_unique_winners(c *gin.Context) {
 		"UniqueWinners" : unique_winners,
 	})
 }
+func api_cosmic_game_roi_leaderboard(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !dbInitialized() {
+		common.RespondErrorJSON(c,"Database link wasn't configured")
+		return
+	}
+
+	min_bids := cgdb.ParseOptionalIntQuery(c.Query("min_bids"), 5)
+	if min_bids < 0 { min_bids = 0 }
+	sort_by := c.Query("sort") // one of: net_pl(default), roi, winrate, spent, nfts, bids
+	offset := cgdb.ParseOptionalIntQuery(c.Query("offset"), 0)
+	if offset < 0 { offset = 0 }
+	limit := cgdb.ParseOptionalIntQuery(c.Query("limit"), 100)
+	if limit <= 0 || limit > 1000 { limit = 100 }
+
+	leaderboard := arb_storagew.Get_roi_leaderboard(min_bids, sort_by, offset, limit)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": 1,
+		"error" : "",
+		"MinBids": min_bids,
+		"Sort": sort_by,
+		"Offset": offset,
+		"Limit": limit,
+		"RoiLeaderboard": leaderboard,
+	})
+}
 func api_cosmic_game_user_unique_donors(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
