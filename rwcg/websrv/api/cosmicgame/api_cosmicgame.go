@@ -833,6 +833,46 @@ func api_cosmic_game_roi_leaderboard(c *gin.Context) {
 		"RoiLeaderboard": leaderboard,
 	})
 }
+func api_cosmic_game_claims_by_round(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !dbInitialized() {
+		common.RespondErrorJSON(c,"Database link wasn't configured")
+		return
+	}
+
+	claims := arb_storagew.Get_claims_by_round()
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": 1,
+		"error" : "",
+		"ClaimsByRound": claims,
+	})
+}
+func api_cosmic_game_claim_detail_by_round(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !dbInitialized() {
+		common.RespondErrorJSON(c,"Database link wasn't configured")
+		return
+	}
+
+	round := cgdb.ParseOptionalIntQuery(c.Param("round_num"), -1)
+	if round < 0 {
+		common.RespondErrorJSON(c,"Invalid round_num")
+		return
+	}
+
+	detail := arb_storagew.Get_claim_detail_by_round(int64(round))
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": 1,
+		"error" : "",
+		"RoundNum": detail.RoundNum,
+		"ClaimTransactions": detail.ClaimTransactions,
+		"AttachedTokens": detail.AttachedTokens,
+	})
+}
 func api_cosmic_game_user_unique_donors(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

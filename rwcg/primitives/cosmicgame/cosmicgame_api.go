@@ -267,6 +267,60 @@ type CGRoiLeaderboardEntry struct {
 	NetPlEth					float64	// (EthWon - TotalEthSpent) in ETH
 	Roi							float64	// fraction; multiply by 100 for percent. 0 when no ETH spent
 }
+// A single not-yet-claimed claimable asset held in PrizesWallet (for the per-cycle dialog).
+type CGClaimUnclaimedItem struct {
+	AssetType					string	// "ETH" | "ERC721" | "ERC20"
+	RecipientAddr				string	// who is entitled to claim it
+	AmountEth					float64	// ETH prize, or ERC20 token amount /1e18; 0 for ERC721
+	TokenAddr					string	// contract address for ERC721 / ERC20; "" for ETH
+	TokenId						int64	// token id for ERC721; -1 otherwise
+}
+// Per-cycle summary of claimable assets awarded via PrizesWallet and their claim status.
+type CGRoundClaimSummary struct {
+	RoundNum					int64
+	ClaimWindowTimeout			int64	// unix ts after which unclaimed assets can be swept by anyone
+	AwardedTs					int64	// unix ts when the cycle finalized (assets became claimable)
+	Expired						bool	// now >= ClaimWindowTimeout
+	EthAwarded					int64
+	EthUnclaimed				int64
+	EthUnclaimedEth				float64
+	NftAwarded					int64
+	NftUnclaimed				int64
+	Erc20Awarded				int64
+	Erc20Unclaimed				int64
+	TotalAwarded				int64
+	TotalUnclaimed				int64
+	AvgClaimPeriodSecs			int64	// avg seconds from cycle finalize to claim (over claimed assets)
+	UnclaimedItems				[]CGClaimUnclaimedItem
+}
+// A single claim transaction (a recipient withdrawing a claimable asset from PrizesWallet).
+type CGClaimTxn struct {
+	AssetType					string	// "ETH" | "ERC721" | "ERC20"
+	RecipientAddr				string	// entitled recipient
+	BeneficiaryAddr				string	// who actually claimed (ETH: can differ from recipient after expiry)
+	AmountEth					float64	// ETH, or ERC20 amount /1e18; 0 for ERC721
+	TokenAddr					string
+	TokenId						int64	// ERC721 token id; -1 otherwise
+	ClaimedAfterSecs			int64	// seconds from cycle finalize to this claim
+	ClaimTs						int64	// unix ts of the claim
+	TxHash						string
+}
+// A token attached (donated) during a cycle, held in PrizesWallet for the recipient to claim.
+type CGAttachedToken struct {
+	AssetType					string	// "ERC721" | "ERC20"
+	ContributorAddr				string	// who attached it
+	TokenAddr					string
+	TokenId						int64	// ERC721 token id; -1 otherwise
+	AmountEth					float64	// ERC20 amount /1e18; 0 for ERC721
+	Ts							int64	// unix ts when attached
+	TxHash						string
+}
+// Per-cycle claim drill-down: the claim transactions (with latency) and the tokens attached that cycle.
+type CGRoundClaimDetail struct {
+	RoundNum					int64
+	ClaimTransactions			[]CGClaimTxn
+	AttachedTokens				[]CGAttachedToken
+}
 type CGERC20Donation struct {
 	RecordId					int64
 	Tx							Transaction
@@ -406,6 +460,8 @@ type CGRoundStats struct {
 	TotalDonatedCount			int64
 	TotalDonatedAmount			string
 	TotalDonatedAmountEth		float64
+	TotalCstInBidsEth			float64	// CST consumed in gestures during this cycle (cg_round_stats.total_cst_in_bids /1e18)
+	TotalEthInBidsEth			float64	// ETH wagered in gestures during this cycle (cg_round_stats.total_eth_in_bids /1e18)
 	// Round timing fields (added 2025-11-06)
 	ParamWindowStartTime		string	// ISO 8601 format
 	ActivationTime				int64	// Unix seconds (0 = not set); matches contract roundActivationTime()

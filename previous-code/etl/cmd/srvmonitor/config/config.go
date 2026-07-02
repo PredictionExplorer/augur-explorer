@@ -190,7 +190,7 @@ func LoadFromEnv() (*Config, error) {
 	}
 	
 	// Load SSL certificate monitors (SSL_CERT1_HOST, SSL_CERT1_PORT, ...)
-	for i := 1; i <= 6; i++ {
+	for i := 1; i <= 12; i++ {
 		host := os.Getenv(fmt.Sprintf("SSL_CERT%d_HOST", i))
 		if host == "" {
 			continue

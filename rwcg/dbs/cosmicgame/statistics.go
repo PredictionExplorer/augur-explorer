@@ -3,6 +3,7 @@ package cosmicgame
 import (
 	"os"
 	"fmt"
+	"time"
 	"database/sql"
 
 
@@ -320,7 +321,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 				"param_window_duration_seconds,"+
 				"round_start_time::text,"+
 				"round_end_time::text,"+
-				"round_duration_seconds "+
+				"round_duration_seconds, "+
+				"total_cst_in_bids/1e18, "+
+				"total_eth_in_bids/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_round_stats WHERE round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
@@ -344,6 +347,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 		&nullRoundStart,
 		&nullRoundEnd,
 		&nullRoundDuration,
+		&stats.TotalCstInBidsEth,
+		&stats.TotalEthInBidsEth,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -605,6 +610,304 @@ func (sw *SQLStorageWrapper) Get_roi_leaderboard(min_bids int, sort_by string, o
 		records = append(records,rec)
 	}
 	return records
+}
+// Get_claims_by_round returns, per finalized cycle that awarded claimable assets
+// (secondary ETH prizes, donated NFTs, donated ERC-20s held in PrizesWallet), how
+// many were awarded vs still unclaimed, the claim-window expiry, the average time
+// recipients took to claim, and the list of still-unclaimed items for a drill-down.
+// Directly-paid assets (main-prize ETH, minted CST/NFT) are not claimable and are
+// intentionally excluded.
+func (sw *SQLStorageWrapper) Get_claims_by_round() []p.CGRoundClaimSummary {
+
+	schema := sw.S.SchemaName()
+	summaryQ := "SELECT "+
+			"pc.round_num,"+
+			"pc.timeout,"+
+			"EXTRACT(EPOCH FROM pc.time_stamp)::bigint,"+
+			"COALESCE(eth.awarded,0), COALESCE(eth.unclaimed,0), COALESCE(eth.unclaimed_amt,0)/1e18,"+
+			"COALESCE(nft.awarded,0), COALESCE(nft.unclaimed,0),"+
+			"COALESCE(erc.awarded,0), COALESCE(erc.unclaimed,0),"+
+			"COALESCE(cp.avg_secs,0)::bigint "+
+		"FROM "+schema+".cg_prize_claim pc "+
+		"LEFT JOIN (SELECT round_num, COUNT(*) awarded, COUNT(*) FILTER (WHERE NOT claimed) unclaimed, "+
+			"SUM(amount) FILTER (WHERE NOT claimed) unclaimed_amt FROM "+schema+".cg_prize_deposit GROUP BY round_num) eth "+
+			"ON eth.round_num=pc.round_num "+
+		"LEFT JOIN (SELECT d.round_num, COUNT(*) awarded, COUNT(*) FILTER (WHERE c.round_num IS NULL) unclaimed "+
+			"FROM "+schema+".cg_nft_donation d "+
+			"LEFT JOIN "+schema+".cg_donated_nft_claimed c ON c.round_num=d.round_num AND c.idx=d.idx "+
+			"GROUP BY d.round_num) nft ON nft.round_num=pc.round_num "+
+		"LEFT JOIN (SELECT round_num, COUNT(*) awarded, COUNT(*) FILTER (WHERE NOT claimed) unclaimed "+
+			"FROM "+schema+".cg_erc20_donation_stats GROUP BY round_num) erc ON erc.round_num=pc.round_num "+
+		"LEFT JOIN (SELECT rn round_num, AVG(secs) avg_secs FROM ("+
+				"SELECT w.round_num rn, EXTRACT(EPOCH FROM (w.time_stamp - pcw.time_stamp)) secs "+
+					"FROM "+schema+".cg_prize_withdrawal w JOIN "+schema+".cg_prize_claim pcw ON pcw.round_num=w.round_num "+
+				"UNION ALL SELECT c.round_num, EXTRACT(EPOCH FROM (c.time_stamp - pcn.time_stamp)) "+
+					"FROM "+schema+".cg_donated_nft_claimed c JOIN "+schema+".cg_prize_claim pcn ON pcn.round_num=c.round_num "+
+				"UNION ALL SELECT t.round_num, EXTRACT(EPOCH FROM (t.time_stamp - pct.time_stamp)) "+
+					"FROM "+schema+".cg_donated_tok_claimed t JOIN "+schema+".cg_prize_claim pct ON pct.round_num=t.round_num "+
+			") x GROUP BY rn) cp ON cp.round_num=pc.round_num "+
+		"WHERE (COALESCE(eth.awarded,0)+COALESCE(nft.awarded,0)+COALESCE(erc.awarded,0)) > 0 "+
+		"ORDER BY pc.round_num DESC"
+
+	rows,err := sw.S.Db().Query(summaryQ)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,summaryQ))
+		os.Exit(1)
+	}
+	now := time.Now().Unix()
+	records := make([]p.CGRoundClaimSummary,0, 32)
+	byRound := make(map[int64]*p.CGRoundClaimSummary)
+	for rows.Next() {
+		var r p.CGRoundClaimSummary
+		err=rows.Scan(
+			&r.RoundNum,
+			&r.ClaimWindowTimeout,
+			&r.AwardedTs,
+			&r.EthAwarded, &r.EthUnclaimed, &r.EthUnclaimedEth,
+			&r.NftAwarded, &r.NftUnclaimed,
+			&r.Erc20Awarded, &r.Erc20Unclaimed,
+			&r.AvgClaimPeriodSecs,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,summaryQ))
+			os.Exit(1)
+		}
+		r.TotalAwarded = r.EthAwarded + r.NftAwarded + r.Erc20Awarded
+		r.TotalUnclaimed = r.EthUnclaimed + r.NftUnclaimed + r.Erc20Unclaimed
+		r.Expired = now >= r.ClaimWindowTimeout
+		r.UnclaimedItems = make([]p.CGClaimUnclaimedItem,0)
+		records = append(records,r)
+	}
+	rows.Close()
+	for i := range records {
+		byRound[records[i].RoundNum] = &records[i]
+	}
+
+	appendItem := func(round int64, item p.CGClaimUnclaimedItem) {
+		if s, ok := byRound[round]; ok {
+			s.UnclaimedItems = append(s.UnclaimedItems, item)
+		}
+	}
+
+	// Unclaimed secondary ETH prizes.
+	ethQ := "SELECT d.round_num, a.addr, d.amount/1e18 "+
+		"FROM "+schema+".cg_prize_deposit d JOIN address a ON a.address_id=d.winner_aid "+
+		"WHERE NOT d.claimed"
+	sw.scan_unclaimed_items(ethQ, "ETH", appendItem)
+
+	// Unclaimed donated NFTs (claimable by the cycle's main-prize recipient).
+	nftQ := "SELECT d.round_num, w.addr, ta.addr, d.token_id "+
+		"FROM "+schema+".cg_nft_donation d "+
+		"LEFT JOIN "+schema+".cg_donated_nft_claimed c ON c.round_num=d.round_num AND c.idx=d.idx "+
+		"JOIN address ta ON ta.address_id=d.token_aid "+
+		"LEFT JOIN "+schema+".cg_prize_claim pc ON pc.round_num=d.round_num "+
+		"LEFT JOIN address w ON w.address_id=pc.winner_aid "+
+		"WHERE c.round_num IS NULL"
+	sw.scan_unclaimed_nft_items(nftQ, appendItem)
+
+	// Unclaimed donated ERC-20 tokens (per cycle + token).
+	ercQ := "SELECT s.round_num, w.addr, ta.addr, s.total_amount/1e18 "+
+		"FROM "+schema+".cg_erc20_donation_stats s "+
+		"JOIN address ta ON ta.address_id=s.token_aid "+
+		"LEFT JOIN "+schema+".cg_prize_claim pc ON pc.round_num=s.round_num "+
+		"LEFT JOIN address w ON w.address_id=pc.winner_aid "+
+		"WHERE NOT s.claimed"
+	sw.scan_unclaimed_erc20_items(ercQ, appendItem)
+
+	return records
+}
+func (sw *SQLStorageWrapper) scan_unclaimed_items(query string, assetType string, appendItem func(int64, p.CGClaimUnclaimedItem)) {
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var round int64
+		var addr string
+		var amount float64
+		if err=rows.Scan(&round,&addr,&amount); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		appendItem(round, p.CGClaimUnclaimedItem{AssetType: assetType, RecipientAddr: addr, AmountEth: amount, TokenId: -1})
+	}
+}
+func (sw *SQLStorageWrapper) scan_unclaimed_nft_items(query string, appendItem func(int64, p.CGClaimUnclaimedItem)) {
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var round int64
+		var recipient, tokenAddr sql.NullString
+		var tokenId int64
+		if err=rows.Scan(&round,&recipient,&tokenAddr,&tokenId); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		appendItem(round, p.CGClaimUnclaimedItem{AssetType: "ERC721", RecipientAddr: recipient.String, TokenAddr: tokenAddr.String, TokenId: tokenId})
+	}
+}
+func (sw *SQLStorageWrapper) scan_unclaimed_erc20_items(query string, appendItem func(int64, p.CGClaimUnclaimedItem)) {
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var round int64
+		var recipient, tokenAddr sql.NullString
+		var amount float64
+		if err=rows.Scan(&round,&recipient,&tokenAddr,&amount); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		appendItem(round, p.CGClaimUnclaimedItem{AssetType: "ERC20", RecipientAddr: recipient.String, TokenAddr: tokenAddr.String, AmountEth: amount, TokenId: -1})
+	}
+}
+// Get_claim_detail_by_round returns, for a single cycle, the claim transactions
+// (each recipient's withdrawal of a claimable asset, with the time it took after the
+// cycle finalized and the tx hash) and the tokens attached during that cycle.
+func (sw *SQLStorageWrapper) Get_claim_detail_by_round(round int64) p.CGRoundClaimDetail {
+
+	schema := sw.S.SchemaName()
+	detail := p.CGRoundClaimDetail{
+		RoundNum:          round,
+		ClaimTransactions: make([]p.CGClaimTxn, 0),
+		AttachedTokens:    make([]p.CGAttachedToken, 0),
+	}
+
+	// ---- Claim transactions: secondary ETH allocations ----
+	ethQ := "SELECT ben.addr, win.addr, w.amount/1e18, "+
+			"EXTRACT(EPOCH FROM (w.time_stamp - pc.time_stamp))::bigint, "+
+			"EXTRACT(EPOCH FROM w.time_stamp)::bigint, t.tx_hash "+
+		"FROM "+schema+".cg_prize_withdrawal w "+
+		"JOIN "+schema+".cg_prize_claim pc ON pc.round_num=w.round_num "+
+		"JOIN address ben ON ben.address_id=w.beneficiary_aid "+
+		"JOIN address win ON win.address_id=w.winner_aid "+
+		"LEFT JOIN "+schema+".transaction t ON t.id=w.tx_id "+
+		"WHERE w.round_num=$1"
+	ethRows,err := sw.S.Db().Query(ethQ, round)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,ethQ))
+		os.Exit(1)
+	}
+	for ethRows.Next() {
+		var c p.CGClaimTxn
+		var txh sql.NullString
+		c.AssetType = "ETH"; c.TokenId = -1
+		if err=ethRows.Scan(&c.BeneficiaryAddr,&c.RecipientAddr,&c.AmountEth,&c.ClaimedAfterSecs,&c.ClaimTs,&txh); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,ethQ)); os.Exit(1)
+		}
+		c.TxHash = txh.String
+		detail.ClaimTransactions = append(detail.ClaimTransactions, c)
+	}
+	ethRows.Close()
+
+	// ---- Claim transactions: attached NFTs ----
+	nftQ := "SELECT w.addr, ta.addr, dc.token_id, "+
+			"EXTRACT(EPOCH FROM (dc.time_stamp - pc.time_stamp))::bigint, "+
+			"EXTRACT(EPOCH FROM dc.time_stamp)::bigint, t.tx_hash "+
+		"FROM "+schema+".cg_donated_nft_claimed dc "+
+		"JOIN "+schema+".cg_prize_claim pc ON pc.round_num=dc.round_num "+
+		"JOIN address w ON w.address_id=dc.winner_aid "+
+		"JOIN address ta ON ta.address_id=dc.token_aid "+
+		"LEFT JOIN "+schema+".transaction t ON t.id=dc.tx_id "+
+		"WHERE dc.round_num=$1"
+	nftRows,err := sw.S.Db().Query(nftQ, round)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,nftQ)); os.Exit(1)
+	}
+	for nftRows.Next() {
+		var c p.CGClaimTxn
+		var txh sql.NullString
+		c.AssetType = "ERC721"
+		if err=nftRows.Scan(&c.RecipientAddr,&c.TokenAddr,&c.TokenId,&c.ClaimedAfterSecs,&c.ClaimTs,&txh); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,nftQ)); os.Exit(1)
+		}
+		c.BeneficiaryAddr = c.RecipientAddr; c.TxHash = txh.String
+		detail.ClaimTransactions = append(detail.ClaimTransactions, c)
+	}
+	nftRows.Close()
+
+	// ---- Claim transactions: attached ERC-20s ----
+	ercQ := "SELECT w.addr, ta.addr, dc.amount/1e18, "+
+			"EXTRACT(EPOCH FROM (dc.time_stamp - pc.time_stamp))::bigint, "+
+			"EXTRACT(EPOCH FROM dc.time_stamp)::bigint, t.tx_hash "+
+		"FROM "+schema+".cg_donated_tok_claimed dc "+
+		"JOIN "+schema+".cg_prize_claim pc ON pc.round_num=dc.round_num "+
+		"JOIN address w ON w.address_id=dc.winner_aid "+
+		"JOIN address ta ON ta.address_id=dc.token_aid "+
+		"LEFT JOIN "+schema+".transaction t ON t.id=dc.tx_id "+
+		"WHERE dc.round_num=$1"
+	ercRows,err := sw.S.Db().Query(ercQ, round)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,ercQ)); os.Exit(1)
+	}
+	for ercRows.Next() {
+		var c p.CGClaimTxn
+		var txh sql.NullString
+		c.AssetType = "ERC20"; c.TokenId = -1
+		if err=ercRows.Scan(&c.RecipientAddr,&c.TokenAddr,&c.AmountEth,&c.ClaimedAfterSecs,&c.ClaimTs,&txh); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,ercQ)); os.Exit(1)
+		}
+		c.BeneficiaryAddr = c.RecipientAddr; c.TxHash = txh.String
+		detail.ClaimTransactions = append(detail.ClaimTransactions, c)
+	}
+	ercRows.Close()
+
+	// ---- Attached NFTs this cycle ----
+	anQ := "SELECT d.addr, ta.addr, dn.token_id, EXTRACT(EPOCH FROM dn.time_stamp)::bigint, t.tx_hash "+
+		"FROM "+schema+".cg_nft_donation dn "+
+		"JOIN address d ON d.address_id=dn.donor_aid "+
+		"JOIN address ta ON ta.address_id=dn.token_aid "+
+		"LEFT JOIN "+schema+".transaction t ON t.id=dn.tx_id "+
+		"WHERE dn.round_num=$1 ORDER BY dn.idx"
+	anRows,err := sw.S.Db().Query(anQ, round)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,anQ)); os.Exit(1)
+	}
+	for anRows.Next() {
+		var a p.CGAttachedToken
+		var txh sql.NullString
+		a.AssetType = "ERC721"
+		if err=anRows.Scan(&a.ContributorAddr,&a.TokenAddr,&a.TokenId,&a.Ts,&txh); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,anQ)); os.Exit(1)
+		}
+		a.TxHash = txh.String
+		detail.AttachedTokens = append(detail.AttachedTokens, a)
+	}
+	anRows.Close()
+
+	// ---- Attached ERC-20s this cycle ----
+	aeQ := "SELECT d.addr, ta.addr, e.amount/1e18, EXTRACT(EPOCH FROM e.time_stamp)::bigint, t.tx_hash "+
+		"FROM "+schema+".cg_erc20_donation e "+
+		"JOIN address d ON d.address_id=e.donor_aid "+
+		"JOIN address ta ON ta.address_id=e.token_aid "+
+		"LEFT JOIN "+schema+".transaction t ON t.id=e.tx_id "+
+		"WHERE e.round_num=$1"
+	aeRows,err := sw.S.Db().Query(aeQ, round)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,aeQ)); os.Exit(1)
+	}
+	for aeRows.Next() {
+		var a p.CGAttachedToken
+		var txh sql.NullString
+		a.AssetType = "ERC20"; a.TokenId = -1
+		if err=aeRows.Scan(&a.ContributorAddr,&a.TokenAddr,&a.AmountEth,&a.Ts,&txh); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,aeQ)); os.Exit(1)
+		}
+		a.TxHash = txh.String
+		detail.AttachedTokens = append(detail.AttachedTokens, a)
+	}
+	aeRows.Close()
+
+	return detail
 }
 func (sw *SQLStorageWrapper) Get_unique_stakers_cst() []p.CGUniqueStakerCST {
 
