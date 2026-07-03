@@ -32,12 +32,13 @@ type SSLMonitor struct {
 	position types.Position
 }
 
-// NewSSLMonitor creates a new SSL certificate monitor
-func NewSSLMonitor(certs []types.SSLCertConfig, baseY int) *SSLMonitor {
+// NewSSLMonitor creates a new SSL certificate monitor. baseX/baseY position
+// the top-left of the section, allowing it to be placed in a right-hand column.
+func NewSSLMonitor(certs []types.SSLCertConfig, baseX, baseY int) *SSLMonitor {
 	return &SSLMonitor{
 		certs:    certs,
 		statuses: make([]SSLCertStatus, len(certs)),
-		position: types.Position{X: 0, Y: baseY},
+		position: types.Position{X: baseX, Y: baseY},
 	}
 }
 
@@ -144,17 +145,18 @@ func daysUntilCertExpiry(cfg types.SSLCertConfig) (int, error) {
 }
 
 func (m *SSLMonitor) display(disp display.Display) {
+	x := m.position.X
 	y := m.position.Y
 
-	disp.DrawText(types.Position{X: 0, Y: y},
-		"--------------------- SSL Certificates ---------------------",
+	disp.DrawText(types.Position{X: x, Y: y},
+		"--- SSL Certificates ---",
 		types.ColorWhite, types.ColorDefault)
 
 	for i, status := range m.statuses {
 		lineY := y + 1 + i
 		label := fmt.Sprintf(" %s: ", sslCertLabel(status.Config))
 
-		disp.DrawText(types.Position{X: 1, Y: lineY}, label, types.ColorWhite, types.ColorDefault)
+		disp.DrawText(types.Position{X: x, Y: lineY}, label, types.ColorWhite, types.ColorDefault)
 
 		var valueStr string
 		var valueColor types.Color
@@ -175,7 +177,7 @@ func (m *SSLMonitor) display(disp display.Display) {
 			valueColor = colorForDaysLeft(status.Days)
 		}
 
-		disp.DrawText(types.Position{X: 1 + len(label), Y: lineY}, valueStr, valueColor, types.ColorDefault)
+		disp.DrawText(types.Position{X: x + len(label), Y: lineY}, valueStr, valueColor, types.ColorDefault)
 	}
 
 	disp.Flush()

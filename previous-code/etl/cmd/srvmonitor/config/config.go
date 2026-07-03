@@ -30,6 +30,9 @@ type Config struct {
 
 	// SSL Certificates
 	SSLCerts []types.SSLCertConfig
+
+	// WebSrv anomaly monitoring (error-log anomalies fetched via scp)
+	Anomaly types.AnomalyConfig
 	
 	// Official RPC identifiers
 	OfficialRPCMainnet    string
@@ -203,6 +206,14 @@ func LoadFromEnv() (*Config, error) {
 			Port:       os.Getenv(fmt.Sprintf("SSL_CERT%d_PORT", i)),
 			ServerName: os.Getenv(fmt.Sprintf("SSL_CERT%d_SERVERNAME", i)),
 		})
+	}
+
+	// Load WebSrv anomaly monitoring (optional; enabled when user/host/file set)
+	cfg.Anomaly = types.AnomalyConfig{
+		Title:      os.Getenv("ANOMALY_TITLE"),
+		User:       os.Getenv("ANOMALY_SSH_USER"),
+		Host:       os.Getenv("ANOMALY_SSH_HOST"),
+		RemoteFile: os.Getenv("ANOMALY_REMOTE_FILE"),
 	}
 
 	// Load RWalk Image Monitoring

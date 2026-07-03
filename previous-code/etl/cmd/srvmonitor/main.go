@@ -61,6 +61,11 @@ func main() {
 	logger.Printf("  - %d Web APIs", len(cfg.WebAPIs))
 	logger.Printf("  - %d Disk monitors", len(cfg.DiskMonitors))
 	logger.Printf("  - %d SSL certificates", len(cfg.SSLCerts))
+	if cfg.Anomaly.User != "" && cfg.Anomaly.Host != "" && cfg.Anomaly.RemoteFile != "" {
+		logger.Printf("  - Anomaly monitor: %s@%s:%s", cfg.Anomaly.User, cfg.Anomaly.Host, cfg.Anomaly.RemoteFile)
+	} else {
+		logger.Printf("  - Anomaly monitor: DISABLED (set ANOMALY_SSH_USER, ANOMALY_SSH_HOST, ANOMALY_REMOTE_FILE)")
+	}
 	logger.Printf("  - Mobile notifications: %v", cfg.MobileNotif)
 	
 	// Initialize display
@@ -97,20 +102,46 @@ func main() {
 	// Image starts after Web API header + entries + 1 line gap
 	imageBaseY := webAPIBaseY + 1 + len(cfg.WebAPIs) + 1
 
-	// SSL starts after Image section (header + 2 content lines)
-	sslBaseY := imageBaseY + 3
+	// WebSrv Anomalies section sits directly below the Image section
+	// (Image occupies its header + 2 content lines).
+	anomalyBaseY := imageBaseY + 3
+	anomalyEnabled := cfg.Anomaly.User != "" && cfg.Anomaly.Host != "" && cfg.Anomaly.RemoteFile != ""
 
-	// Error display starts after Image, optionally SSL section, plus 1 line gap
-	errorDisplayY := imageBaseY + 3 + 1
-	if len(cfg.SSLCerts) > 0 {
-		errorDisplayY = sslBaseY + 1 + len(cfg.SSLCerts) + 1
+	// Bottom of the left-hand column (Postgres / Web API / Image [/ Anomaly] stack).
+	leftColumnBottomY := imageBaseY + 3
+	if anomalyEnabled {
+		// Anomaly header at anomalyBaseY, then AnomalyDisplayCount content lines.
+		leftColumnBottomY = anomalyBaseY + monitor.AnomalyDisplayCount
 	}
 
-	logger.Printf("Layout positions: EventTable=%d, WebAPI=%d, Image=%d, SSL=%d, Errors=%d",
-		eventTableBaseY, webAPIBaseY, imageBaseY, sslBaseY, errorDisplayY)
+	// SSL Certificates are placed in a right-hand column, aligned with the top
+	// of the "Last Block Numbers in Postgres" section (Y=24). This runs the SSL
+	// list alongside the Postgres/WebAPI stack instead of stacking it below the
+	// Image section, reclaiming that vertical space. The X offset clears the
+	// widest left-column content (Web API host:port ends near column 60).
+	sslBaseX := 62
+	sslBaseY := 24
+	sslColumnBottomY := sslBaseY
+	if len(cfg.SSLCerts) > 0 {
+		sslColumnBottomY = sslBaseY + 1 + len(cfg.SSLCerts)
+	}
+
+	// Error area: by default at the bottom of the left column. When SSL certs
+	// are shown, place it in the right column directly beneath the SSL list, so
+	// the (mostly cert-related) warnings sit next to the certificate list and
+	// the bottom-left space stays free.
+	errorDisplayX := 1
+	errorDisplayY := leftColumnBottomY + 1
+	if len(cfg.SSLCerts) > 0 {
+		errorDisplayX = sslBaseX
+		errorDisplayY = sslColumnBottomY + 1
+	}
+
+	logger.Printf("Layout positions: EventTable=%d, WebAPI=%d, Image=%d, Anomaly=%d, SSL=(%d,%d), Errors=(%d,%d)",
+		eventTableBaseY, webAPIBaseY, imageBaseY, anomalyBaseY, sslBaseX, sslBaseY, errorDisplayX, errorDisplayY)
 	
 	// Create monitor manager
-	mgr := monitor.NewManager(disp, logger, cfg.MobileNotif, errorDisplayY)
+	mgr := monitor.NewManager(disp, logger, cfg.MobileNotif, errorDisplayX, errorDisplayY)
 	
 	// Register RPC monitor
 	officialNames := map[string]string{
@@ -165,9 +196,16 @@ func main() {
 		logger.Printf("Registered: %s", imgMon.Name())
 	}
 
+	// Register WebSrv anomaly monitor (fetches error-log anomalies via scp)
+	if anomalyEnabled {
+		anomMon := monitor.NewAnomalyMonitor(cfg.Anomaly, anomalyBaseY, logger)
+		mgr.Register(anomMon)
+		logger.Printf("Registered: %s", anomMon.Name())
+	}
+
 	// Register SSL certificate monitor
 	if len(cfg.SSLCerts) > 0 {
-		sslMon := monitor.NewSSLMonitor(cfg.SSLCerts, sslBaseY)
+		sslMon := monitor.NewSSLMonitor(cfg.SSLCerts, sslBaseX, sslBaseY)
 		mgr.Register(sslMon)
 		logger.Printf("Registered: %s", sslMon.Name())
 	}

@@ -108,6 +108,15 @@ type SSLCertConfig struct {
 	ServerName string // optional TLS SNI; defaults to Host (set when Host is an IP)
 }
 
+// AnomalyConfig holds configuration for fetching the websrv anomalies file
+// (produced by the loganomaly tool on the production host) via scp.
+type AnomalyConfig struct {
+	Title      string // optional display label
+	User       string // ssh user, e.g. "cgprod"
+	Host       string // ssh host/alias, e.g. "cosmic1"
+	RemoteFile string // path to the anomalies file on the remote host
+}
+
 // EventTableConfig holds event table monitoring configuration
 type EventTableConfig struct {
 	Name       string
