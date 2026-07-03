@@ -161,13 +161,15 @@ func LoadFromEnv() (*Config, error) {
 		host := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_HOST", i))
 		port := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_PORT", i))
 		uri := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_URI", i))
+		publicURL := os.Getenv(fmt.Sprintf("SRV%d_WEB_API_PUBLIC_URL", i))
 		
 		if title != "" && host != "" {
 			cfg.WebAPIs = append(cfg.WebAPIs, types.WebAPIConfig{
-				Title: title,
-				Host:  host,
-				Port:  port,
-				URI:   uri,
+				Title:     title,
+				Host:      host,
+				Port:      port,
+				URI:       uri,
+				PublicURL: publicURL,
 			})
 		}
 	}

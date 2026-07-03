@@ -78,6 +78,10 @@ type WebAPIConfig struct {
 	Host  string
 	Port  string
 	URI   string
+	// PublicURL is an optional full URL (e.g. https://a1.cosmicsignature.com/api/...)
+	// for the same service, reached through the public path (TLS/stunnel/nginx).
+	// When set, the monitor probes it in addition to the internal Host:Port check.
+	PublicURL string
 }
 
 // DiskConfig holds disk monitoring configuration
