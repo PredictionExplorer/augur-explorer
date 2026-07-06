@@ -83,6 +83,9 @@ flowchart LR
 
 ## Key design decisions
 
+The ongoing modernization roadmap (test-first rewrite to idiomatic Go, API v2)
+is tracked in [MODERNIZATION.md](MODERNIZATION.md).
+
 Recorded as ADRs in [docs/adr/](adr/):
 
 - **ADR-0001** — single Go module, `cmd/` + `internal/` layout.

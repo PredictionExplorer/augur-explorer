@@ -1,5 +1,10 @@
 # Contributing
 
+Before picking up work, check [docs/MODERNIZATION.md](docs/MODERNIZATION.md) —
+the tracked roadmap for the ongoing Go-native rewrite. It defines the current
+phase, the per-file checklists, and the golden rule that every rewrite must
+keep the characterization test suite green.
+
 ## Development workflow
 
 ```bash
