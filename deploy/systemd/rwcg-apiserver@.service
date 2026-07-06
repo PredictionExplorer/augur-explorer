@@ -1,0 +1,28 @@
+# API server unit template. The instance name selects the config file:
+#   systemctl enable rwcg-apiserver@cosmic   -> /etc/rwcg/apiserver-cosmic.env
+#   systemctl enable rwcg-apiserver@rwalk    -> /etc/rwcg/apiserver-rwalk.env
+#
+# This replaces the legacy nohup run-loop-cosmic.sh / run-loop-rwalk.sh scripts.
+
+[Unit]
+Description=RWCG API server (%i)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rwcg
+EnvironmentFile=/etc/rwcg/apiserver-%i.env
+WorkingDirectory=/opt/rwcg
+ExecStart=/opt/rwcg/bin/apiserver
+Restart=always
+RestartSec=2
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/rwcg /var/lib/rwcg
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

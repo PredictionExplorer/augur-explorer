@@ -1,0 +1,49 @@
+# Contributing
+
+## Development workflow
+
+```bash
+make build   # compile all binaries into ./bin
+make test    # unit tests (race detector, shuffled)
+make lint    # golangci-lint (config in .golangci.yml)
+make fmt     # gofmt the tree
+```
+
+CI runs build, tidy-check, unit + integration tests, lint, and govulncheck on
+every PR — all must pass.
+
+## Code standards
+
+- **Formatting:** gofmt, enforced by CI. No exceptions.
+- **Naming:** idiomatic Go — `CamelCase` exported, `camelCase` unexported.
+  Legacy `snake_case` identifiers are being renamed as files are touched;
+  never introduce new ones.
+- **Imports:** no dot-imports. Alias imports when the package name differs
+  from the directory or collides (`cgstore`, `rwcontracts`, ...).
+- **Errors:** return them. `os.Exit`/`panic` are allowed only in `main`
+  startup paths. Wrap with `fmt.Errorf("context: %w", err)`.
+- **SQL:** schema changes are goose migrations in `db/migrations`; new
+  queries go in `internal/store/queries/*.sql` and are generated with
+  `make generate` (sqlc). Always parameterized — never concatenate values.
+- **HTTP handlers:** validate inputs at the boundary, keep handlers thin,
+  reuse `internal/api/common` helpers. Mutating routes must be authenticated
+  and rate limited (see ADR-0004).
+- **Comments:** every exported symbol has a doc comment; comments explain
+  *why*, not *what*.
+- **Generated code** (`contracts/`, `internal/store/sqlcgen/`) is never
+  edited by hand; regenerate instead.
+
+## Tests
+
+- Unit tests live next to the code; use table-driven style and `t.Parallel()`
+  where the code allows it.
+- Integration tests that need PostgreSQL use `internal/testdb` and the
+  `integration` build tag: `make test-integration`.
+- Bug fixes come with a regression test.
+
+## Commits and PRs
+
+- Small, focused PRs with a clear "why" in the description.
+- Update documentation (`docs/`, READMEs, `.env.example`) in the same PR as
+  the behavior change.
+- Architectural decisions get an ADR in `docs/adr/`.

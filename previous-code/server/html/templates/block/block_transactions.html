@@ -1,7 +1,0 @@
-{{define "block_transactions"}}
-<table class="block_transactions">
-		{{- range $i, $tx := .}}
-			{{template "block_tx_row" $tx}}
-		{{- end}}
-</table>
-{{end}}

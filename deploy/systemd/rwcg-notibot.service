@@ -1,0 +1,24 @@
+# Discord/Twitter notification bot.
+# Replaces the legacy nohup notibot run-loop.sh script.
+
+[Unit]
+Description=RWCG notification bot
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rwcg
+EnvironmentFile=/etc/rwcg/notibot.env
+WorkingDirectory=/opt/rwcg
+ExecStart=/opt/rwcg/bin/notibot --discord
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/rwcg /var/lib/rwcg /tmp
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

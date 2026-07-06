@@ -1,0 +1,16 @@
+# One-shot artifact regeneration pass, scheduled by rwcg-imggen-monitor.timer.
+
+[Unit]
+Description=RWCG NFT artifact monitor
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=rwcg
+EnvironmentFile=/etc/rwcg/imggen-monitor.env
+WorkingDirectory=/opt/rwcg
+ExecStart=/opt/rwcg/bin/imggen-monitor -regenerate
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
