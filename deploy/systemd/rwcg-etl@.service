@@ -1,0 +1,27 @@
+# ETL indexer unit template. The instance name selects binary and config:
+#   systemctl enable rwcg-etl@cg   -> /opt/rwcg/bin/cg-etl, /etc/rwcg/etl-cg.env
+#   systemctl enable rwcg-etl@rw   -> /opt/rwcg/bin/rw-etl, /etc/rwcg/etl-rw.env
+#
+# This replaces the legacy nohup run-loop.sh scripts.
+
+[Unit]
+Description=RWCG chain indexer (%i)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rwcg
+EnvironmentFile=/etc/rwcg/etl-%i.env
+WorkingDirectory=/opt/rwcg
+ExecStart=/opt/rwcg/bin/%i-etl
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/rwcg /var/lib/rwcg
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,3 +1,0 @@
-## Running Geth for testing
-
-

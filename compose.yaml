@@ -1,0 +1,90 @@
+# Local development environment: PostgreSQL + the RWCG services.
+#
+#   docker compose up db            # database only (most common for development)
+#   docker compose up apiserver     # database + API server
+#   docker compose --profile etl up # everything including the chain indexers
+#
+# The ETL services need RPC_URL pointing at an Arbitrum node; set it in .env.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: rwcg
+      POSTGRES_PASSWORD: rwcg
+      POSTGRES_DB: rwcg
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rwcg"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  migrate:
+    image: ghcr.io/pressly/goose:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/migrations:/migrations
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://rwcg:rwcg@db:5432/rwcg?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+    command: up
+
+  apiserver:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args: { CMD: apiserver }
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGSQL_USERNAME: rwcg
+      PGSQL_PASSWORD: rwcg
+      PGSQL_DATABASE: rwcg
+      PGSQL_HOST: db:5432
+      RPC_URL: ${RPC_URL:-https://arb1.arbitrum.io/rpc}
+      HTTP_PORT: "8080"
+    ports:
+      - "8080:8080"
+
+  cg-etl:
+    profiles: [etl]
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args: { CMD: cg-etl }
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGSQL_USERNAME: rwcg
+      PGSQL_PASSWORD: rwcg
+      PGSQL_DATABASE: rwcg
+      PGSQL_HOST: db:5432
+      RPC_URL: ${RPC_URL:?set RPC_URL in .env for the indexers}
+
+  rw-etl:
+    profiles: [etl]
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args: { CMD: rw-etl }
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGSQL_USERNAME: rwcg
+      PGSQL_PASSWORD: rwcg
+      PGSQL_DATABASE: rwcg
+      PGSQL_HOST: db:5432
+      RPC_URL: ${RPC_URL:?set RPC_URL in .env for the indexers}
+
+volumes:
+  pgdata:

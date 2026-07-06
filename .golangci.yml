@@ -1,0 +1,56 @@
+version: "2"
+
+run:
+  timeout: 10m
+  build-tags:
+    - integration
+
+linters:
+  # Standard set: errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    - bodyclose      # HTTP response bodies must be closed
+    - copyloopvar    # detects pre-Go1.22 loop-var copies that are now redundant
+    - errname        # error vars named errFoo, types named FooError
+    - errorlint      # errors compared/wrapped with errors.Is/As/%w
+    - gosec          # security checks (SQL building, file perms, crypto)
+    - misspell       # commonly misspelled English words
+    - nolintlint     # nolint directives must be specific and justified
+    - rowserrcheck   # sql.Rows.Err must be checked
+    - sqlclosecheck  # sql.Rows/Stmt must be closed
+    - unconvert      # redundant type conversions
+    - unparam        # unused function parameters
+    - usestdlibvars  # http.StatusOK instead of 200, etc.
+    - wastedassign   # assignments never read
+  settings:
+    errcheck:
+      exclude-functions:
+        # Best-effort writes to HTTP clients / loggers.
+        - (*net/http.Response.Body).Close
+    gosec:
+      excludes:
+        - G115 # integer overflow conversions — pervasive in chain math; revisit per-case
+    staticcheck:
+      checks:
+        - all
+        - "-ST1003" # legacy snake_case identifiers are being renamed incrementally
+  exclusions:
+    generated: lax
+    warn-unused: false
+    rules:
+      # Generated contract bindings are vendored as-is.
+      - path: ^contracts/
+        linters:
+          - errcheck
+          - gosec
+          - staticcheck
+          - unused
+          - unconvert
+          - unparam
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    paths:
+      - ^contracts/
