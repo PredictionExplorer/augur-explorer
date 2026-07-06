@@ -69,6 +69,10 @@ make help              # all targets
 See [CONTRIBUTING.md](CONTRIBUTING.md) for code standards and
 [docs/operations.md](docs/operations.md) for deployment and maintenance.
 
+The codebase is undergoing a tracked, test-first modernization to fully
+idiomatic Go with a redesigned v2 API — the roadmap, checklists, and current
+status live in [docs/MODERNIZATION.md](docs/MODERNIZATION.md).
+
 ## License
 
 Proprietary.
