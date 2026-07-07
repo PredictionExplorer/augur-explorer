@@ -2,24 +2,48 @@
 
 package cosmicgame
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
-func TestGetMarketingRewardHistoryGlobal(t *testing.T) {
-	sw := store(t)
+func TestMarketingRewardHistoryGlobal(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "marketing_reward_history_global", func() any {
-		return sw.Get_marketing_reward_history_global(0, 100)
+		recs, err := r.MarketingRewardHistoryGlobal(ctx, 0, 100)
+		if err != nil {
+			t.Fatalf("MarketingRewardHistoryGlobal: %v", err)
+		}
+		return recs
 	})
 	golden(t, "marketing_reward_history_global_paged", func() any {
-		return sw.Get_marketing_reward_history_global(1, 1)
+		recs, err := r.MarketingRewardHistoryGlobal(ctx, 1, 1)
+		if err != nil {
+			t.Fatalf("MarketingRewardHistoryGlobal paged: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetMarketingRewardsByUser(t *testing.T) {
-	sw := store(t)
+func TestMarketingRewardsByUser(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "marketing_rewards_by_user", func() any {
-		return sw.Get_marketing_rewards_by_user(aidBob)
+		recs, err := r.MarketingRewardsByUser(ctx, aidBob)
+		if err != nil {
+			t.Fatalf("MarketingRewardsByUser: %v", err)
+		}
+		return recs
 	})
-	if got := sw.Get_marketing_rewards_by_user(aidZero); len(got) != 0 {
+	got, err := r.MarketingRewardsByUser(ctx, aidZero)
+	if err != nil {
+		t.Fatalf("MarketingRewardsByUser(zero addr): %v", err)
+	}
+	if len(got) != 0 {
 		t.Errorf("expected no marketing rewards for the zero address, got %d", len(got))
+	}
+	if got == nil {
+		t.Error("empty result must be a non-nil slice (JSON [] parity)")
 	}
 }

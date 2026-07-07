@@ -1,6 +1,7 @@
-// Package dbs - Archive table operations for reading historical data
-// when RPC nodes have pruned transaction indices
-package dbs
+// Archive table operations for reading historical data when RPC nodes have
+// pruned transaction indices.
+
+package store
 
 import (
 	"database/sql"

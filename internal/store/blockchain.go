@@ -1,5 +1,6 @@
-// Package dbs - Blockchain event log utilities for ETL
-package dbs
+// Blockchain event log utilities for ETL.
+
+package store
 
 import (
 	"database/sql"

@@ -760,10 +760,11 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage := dbs.Connect_to_storage(Info)
-	if storage == nil {
-		log.Fatal("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		log.Fatalf("failed to connect to storage: %v\n%s", err, store.ConnectHint(err))
 	}
+	storage := store.NewSQLStorageFromDB(st.DB(), Info)
 	if err := storage.Init_log(db_log_file); err != nil {
 		log.Fatalf("can't initialize DB log: %v", err)
 	}

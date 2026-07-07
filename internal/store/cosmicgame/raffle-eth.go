@@ -1,12 +1,15 @@
 package cosmicgame
 
 import (
-	"os"
-	"fmt"
+	"context"
 	"database/sql"
+	"fmt"
+	"os"
 
+	"github.com/jackc/pgx/v5"
 
 	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 func (sw *SQLStorageWrapper) Get_unclaimed_prize_eth_deposits(winner_aid int64,offset,limit int) []p.CGPrizeDepositRec {
 
@@ -135,49 +138,42 @@ func (sw *SQLStorageWrapper) Get_prize_eth_deposits_list(offset,limit int) []p.C
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CGPrizeDepositRec {
-
-	var query string
-	query =  "SELECT " +
-			"p.id,"+
-			"p.evtlog_id,"+
-			"p.block_num,"+
-			"t.id,"+
-			"t.tx_hash,"+
-			"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
-			"p.time_stamp,"+
-		"p.winner_aid,"+
-		"wa.addr,"+
-		"p.winner_index,"+
-		"p.round_num,"+
-		"p.amount/1e18 amount_eth, "+
-		"p.claimed, "+
-		"CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type "+
-	"FROM "+sw.S.SchemaName()+".cg_prize_deposit p "+
-		"INNER JOIN "+sw.S.SchemaName()+".cg_prize pr ON (pr.round_num = p.round_num AND pr.winner_index = p.winner_index AND pr.ptype = 10) "+
-		"LEFT JOIN transaction t ON t.id=p.tx_id "+
-		"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-		"LEFT JOIN "+sw.S.SchemaName()+".cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index) "+
-	"WHERE p.round_num = $1 " +
-	"ORDER BY p.winner_index "
-
-	rows,err := sw.S.Db().Query(query,round_num)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	records := make([]p.CGPrizeDepositRec,0, 32)
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.CGPrizeDepositRec
-		err=rows.Scan(
-		&rec.RecordId,
-		&rec.Tx.EvtLogId,
-		&rec.Tx.BlockNum,
-		&rec.Tx.TxId,
-		&rec.Tx.TxHash,
-		&rec.Tx.TimeStamp,
-		&rec.Tx.DateTime,
+// PrizeDepositsByRound returns the raffle ETH deposits of one round (with
+// the chrono warrior deposit tagged record_type 7, plain raffle 10), ordered
+// by winner index. Converted ahead of the rest of this file because
+// Repo.PrizeInfo composes it.
+func (r *Repo) PrizeDepositsByRound(ctx context.Context, roundNum int64) ([]p.CGPrizeDepositRec, error) {
+	query := `SELECT
+			p.id,
+			p.evtlog_id,
+			p.block_num,
+			t.id,
+			t.tx_hash,
+			EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,
+			p.time_stamp,
+			p.winner_aid,
+			wa.addr,
+			p.winner_index,
+			p.round_num,
+			p.amount/1e18 amount_eth,
+			p.claimed,
+			CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type
+		FROM cg_prize_deposit p
+			INNER JOIN cg_prize pr ON (pr.round_num = p.round_num AND pr.winner_index = p.winner_index AND pr.ptype = 10)
+			LEFT JOIN transaction t ON t.id=p.tx_id
+			LEFT JOIN address wa ON p.winner_aid=wa.address_id
+			LEFT JOIN cg_chrono_warrior_prize cw ON (p.round_num = cw.round_num AND p.winner_index = cw.winner_index)
+		WHERE p.round_num = $1
+		ORDER BY p.winner_index`
+	scan := func(rows pgx.Rows, rec *p.CGPrizeDepositRec) error {
+		return rows.Scan(
+			&rec.RecordId,
+			&rec.Tx.EvtLogId,
+			&rec.Tx.BlockNum,
+			&rec.Tx.TxId,
+			&rec.Tx.TxHash,
+			&rec.Tx.TimeStamp,
+			store.TimeText(&rec.Tx.DateTime),
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.WinnerIndex,
@@ -186,14 +182,8 @@ func (sw *SQLStorageWrapper) Get_prize_deposits_by_round(round_num int64) []p.CG
 			&rec.Claimed,
 			&rec.RecordType,
 		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		records = append(records,rec)
 	}
-	return records
-
+	return queryList(ctx, r, "prize deposits by round", 32, query, scan, roundNum)
 }
 func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_list(offset,limit int) []p.CGPrizeDepositRec {
 

@@ -17,7 +17,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // registerAllRoutes mirrors the route surface of cmd/apiserver/main.go: the
@@ -27,7 +27,7 @@ import (
 //
 // Keep in sync with cmd/apiserver/main.go until Phase 2 extracts a shared
 // router constructor.
-func registerAllRoutes(r *gin.Engine, storage *dbs.SQLStorage) {
+func registerAllRoutes(r *gin.Engine, storage *store.SQLStorage) {
 	common.RegisterHealthRoutes(r, storage)
 
 	randomwalk.RegisterAPIRoutes(r)

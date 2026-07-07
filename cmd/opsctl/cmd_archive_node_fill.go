@@ -12,7 +12,7 @@ import (
 	"time"
 
 	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -98,7 +98,7 @@ db/layer1/archive_tables.sql.`,
 			}
 
 			info := log.New(os.Stdout, "", log.LstdFlags)
-			storage := dbs.NewSQLStorageFromDB(db, info)
+			storage := store.NewSQLStorageFromDB(db, info)
 
 			head, err := etlcommon.GetCurrentBlockNumber(eclient)
 			if err != nil {
@@ -202,7 +202,7 @@ func resolveNodeFillFromBlock(db *sql.DB, aids []int64, addrs []string, flagFrom
 // runNodeFillProject scans the chain for one project and inserts the missing
 // archive rows. Per-log RPC/DB problems are counted in the stats; only setup
 // failures abort the run.
-func runNodeFillProject(db *sql.DB, storage *dbs.SQLStorage, client *ethclient.Client, project string, flagFrom, endBlock, batchSize uint64, dryRun bool) (fillStats, error) {
+func runNodeFillProject(db *sql.DB, storage *store.SQLStorage, client *ethclient.Client, project string, flagFrom, endBlock, batchSize uint64, dryRun bool) (fillStats, error) {
 	var st fillStats
 
 	aids, addrs, err := projectContracts(db, project)
@@ -366,7 +366,7 @@ func runNodeFillProject(db *sql.DB, storage *dbs.SQLStorage, client *ethclient.C
 
 // ensureArchTx inserts the transaction into arch_tx when missing, fetching it
 // (and its receipt) from the node.
-func ensureArchTx(ctx context.Context, client *ethclient.Client, storage *dbs.SQLStorage, ins *sql.Stmt, exists *sql.Stmt, txHash string, blockNum int64) (inserted, skipped int64, err error) {
+func ensureArchTx(ctx context.Context, client *ethclient.Client, storage *store.SQLStorage, ins *sql.Stmt, exists *sql.Stmt, txHash string, blockNum int64) (inserted, skipped int64, err error) {
 	var one int
 	if err := exists.QueryRow(txHash).Scan(&one); err == nil {
 		return 0, 1, nil

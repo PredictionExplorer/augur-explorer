@@ -1,6 +1,6 @@
 //go:build !linux
 
-package dbs
+package store
 
 import "syscall"
 

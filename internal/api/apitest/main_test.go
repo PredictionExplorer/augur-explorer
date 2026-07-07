@@ -52,7 +52,7 @@ func runMain(m *testing.M) int {
 		return 1
 	}
 
-	h, err := newHarness(ctx, db.SQL)
+	h, err := newHarness(ctx, db)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "apitest: building harness: %v\n", err)
 		return 1

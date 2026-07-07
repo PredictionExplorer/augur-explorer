@@ -12,7 +12,7 @@ import (
 // (which lazily inserts the default row) and the update path, restoring the
 // original watermark afterwards.
 func TestProcessingStatusRoundTrip(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 
 	initial := sw.Get_randomwalk_processing_status()
 	t.Cleanup(func() { sw.Update_randomwalk_process_status(&initial) })
@@ -26,35 +26,35 @@ func TestProcessingStatusRoundTrip(t *testing.T) {
 }
 
 func TestGetRandomwalkContractAddresses(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "randomwalk_contract_addresses", func() any {
 		return sw.Get_randomwalk_contract_addresses()
 	})
 }
 
 func TestGetRandomwalkRankingDataForAllUsers(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "randomwalk_ranking_data_for_all_users", func() any {
 		return sw.Get_randomwalk_ranking_data_for_all_users()
 	})
 }
 
 func TestGetRandomwalkTopProfitMakers(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "randomwalk_top_profit_makers", func() any {
 		return sw.Get_randomwalk_top_profit_makers()
 	})
 }
 
 func TestGetRandomwalkTopTradeMakers(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "randomwalk_top_trade_makers", func() any {
 		return sw.Get_randomwalk_top_trade_makers()
 	})
 }
 
 func TestGetRandomwalkTopVolumeMakers(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "randomwalk_top_volume_makers", func() any {
 		return sw.Get_randomwalk_top_volume_makers()
 	})
@@ -64,7 +64,7 @@ func TestGetRandomwalkTopVolumeMakers(t *testing.T) {
 // writers: the update path against carol's extension-seed row, and the
 // insert path for alice (no rw_uranks row), restoring both afterwards.
 func TestUpdateRankRoundTrip(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	db := sw.S.Db()
 
 	t.Cleanup(func() {
@@ -105,7 +105,7 @@ func TestUpdateRankRoundTrip(t *testing.T) {
 }
 
 func TestGetMintEventsForNotification(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "mint_events_for_notification", func() any {
 		return sw.Get_mint_events_for_notification(aidRandomWalk, 1767228600)
 	})
@@ -119,7 +119,7 @@ func TestGetMintEventsForNotification(t *testing.T) {
 // the plain-UPDATE writer never persisted anything, and every notibot
 // restart re-notified the full history).
 func TestMessagingStatusRoundTrip(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 
 	initial := sw.Get_messaging_status()
 	t.Cleanup(func() { sw.Update_messaging_status(&initial) })
@@ -134,14 +134,14 @@ func TestMessagingStatusRoundTrip(t *testing.T) {
 }
 
 func TestGetAllEventsForNotification(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "all_events_for_notification", func() any {
 		return sw.Get_all_events_for_notification(aidRandomWalk, 1767228000)
 	})
 }
 
 func TestGetAllEventsForNotification2(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "all_events_for_notification2", func() any {
 		return sw.Get_all_events_for_notification2(aidRandomWalk, 5080)
 	})
@@ -151,14 +151,14 @@ func TestGetAllEventsForNotification2(t *testing.T) {
 }
 
 func TestGetAllEventsForNotificationTest(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "all_events_for_notification_test", func() any {
 		return sw.Get_all_events_for_notification_test(aidRandomWalk, 1767228000)
 	})
 }
 
 func TestGetServerTimestamp(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	// now()-backed: assert sanity, not a golden.
 	if got := sw.Get_server_timestamp(); got <= 1767225600 {
 		t.Errorf("server timestamp %d is before the fixture epoch", got)
@@ -166,14 +166,14 @@ func TestGetServerTimestamp(t *testing.T) {
 }
 
 func TestGetLastMintTimestamp(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	if got := sw.Get_last_mint_timestamp(); got != 1767228900 {
 		t.Errorf("last mint timestamp: got %d, want 1767228900", got)
 	}
 }
 
 func TestGetRwTokenTransfersByTxHash(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "rw_token_transfers_by_tx_hash", func() any {
 		return sw.Get_rw_token_transfers_by_tx_hash("0xf000000000000000000000000000000000000000000000000000000000001036")
 	})
@@ -183,7 +183,7 @@ func TestGetRwTokenTransfersByTxHash(t *testing.T) {
 }
 
 func TestOfferExists(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	if !sw.Offer_exists(addrMarketplace, 1) {
 		t.Error("expected offer 1 to exist")
 	}
@@ -196,7 +196,7 @@ func TestOfferExists(t *testing.T) {
 }
 
 func TestRWalkTokenExists(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	if !sw.RWalk_token_exists(addrRandomWalk, 10) {
 		t.Error("expected token 10 to exist")
 	}

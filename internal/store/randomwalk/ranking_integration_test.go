@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetExploreRandomTokenIds(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	// All four tokens have one match each, so rating ascending decides:
 	// 11 (1189.5), 12 (1195), 13 (1205), 10 (1210.5).
 	ids, err := sw.Get_explore_random_token_ids(aidRandomWalk, 1_000_000, 2)
@@ -37,7 +37,7 @@ func TestGetExploreRandomTokenIds(t *testing.T) {
 }
 
 func TestGetFallbackRandomTokenIds(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	// ORDER BY RANDOM(): assert shape, not order.
 	ids, err := sw.Get_fallback_random_token_ids(aidRandomWalk, 1_000_000, 3)
 	if err != nil {
@@ -59,7 +59,7 @@ func TestGetFallbackRandomTokenIds(t *testing.T) {
 }
 
 func TestHasRankingVoteForVoterPair(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	// alice voted on (10, 11); the pair is unordered.
 	for _, pair := range [][2]int64{{10, 11}, {11, 10}} {
 		has, err := sw.Has_ranking_vote_for_voter_pair(aidAlice, pair[0], pair[1])
@@ -89,7 +89,7 @@ func TestHasRankingVoteForVoterPair(t *testing.T) {
 }
 
 func TestCountRankingMatches(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	n, err := sw.Count_ranking_matches()
 	if err != nil {
 		t.Fatalf("Count_ranking_matches: %v", err)
@@ -100,7 +100,7 @@ func TestCountRankingMatches(t *testing.T) {
 }
 
 func TestGetRatingOrder(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	ids, err := sw.Get_rating_order(aidRandomWalk)
 	if err != nil {
 		t.Fatalf("Get_rating_order: %v", err)
@@ -117,7 +117,7 @@ func TestGetRatingOrder(t *testing.T) {
 }
 
 func TestGetRatingPair(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	r1, r2, err := sw.Get_rating_pair(10, 11)
 	if err != nil {
 		t.Fatalf("Get_rating_pair: %v", err)
@@ -139,7 +139,7 @@ func TestGetRatingPair(t *testing.T) {
 // a rolled-back match leaves the match count, the ratings and the vote
 // lookup exactly as they were.
 func TestApplyRankingMatchTxRollback(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	db := sw.S.Db()
 
 	countBefore, err := sw.Count_ranking_matches()
@@ -179,7 +179,7 @@ func TestApplyRankingMatchTxRollback(t *testing.T) {
 // TestApplyRankingMatchTxCommit covers the commit path (match insert + both
 // rating upserts) and restores the fixture state afterwards.
 func TestApplyRankingMatchTxCommit(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	db := sw.S.Db()
 
 	t.Cleanup(func() {
@@ -221,7 +221,7 @@ func TestApplyRankingMatchTxCommit(t *testing.T) {
 }
 
 func TestRankingVoteNonceLifecycle(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	db := sw.S.Db()
 
 	const nonce = "store-suite-nonce-1"

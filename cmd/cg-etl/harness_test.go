@@ -29,7 +29,8 @@ import (
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
@@ -124,8 +125,12 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	}
 	eclient = ethclient.NewClient(rpcclient)
 
-	// Store errors precede os.Exit(1) in the legacy layer; keep them visible.
-	storagew.S = dbs.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
+	// One Store over the container's pool backs both the converted Repo
+	// queries and the legacy wrapper, exactly like main(). Store errors of
+	// unconverted methods precede os.Exit(1); keep them visible.
+	st := store.NewFromPool(db.Pool)
+	cgRepo = cgstore.NewRepo(st)
+	storagew.S = store.NewSQLStorageFromDB(st.DB(), log.New(os.Stderr, "store: ", 0))
 	storagew.S.Db_set_schema_name("public")
 
 	cosmic_game_abi = get_abi(cgc.CosmicSignatureGameABI)
@@ -236,7 +241,7 @@ func resetDB(t *testing.T) {
 	if _, err := testDB.SQL.ExecContext(ctx, "TRUNCATE "+tables+" RESTART IDENTITY CASCADE"); err != nil {
 		t.Fatalf("truncating tables: %v", err)
 	}
-	dbs.ResetAddressCacheForTests()
+	store.ResetAddressCacheForTests()
 
 	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
 		t.Fatalf("re-seeding database: %v", err)
@@ -244,7 +249,10 @@ func resetDB(t *testing.T) {
 
 	// Same bootstrap as main(): register all contract addresses, then resolve
 	// the two address ids the decode helpers need.
-	cg_contracts = storagew.Get_cosmic_game_contract_addrs()
+	cg_contracts, err = cgRepo.ContractAddrs(ctx)
+	if err != nil {
+		t.Fatalf("reading contract addresses: %v", err)
+	}
 	for _, contractAddr := range []string{
 		cg_contracts.CosmicGameAddr,
 		cg_contracts.CosmicSignatureAddr,

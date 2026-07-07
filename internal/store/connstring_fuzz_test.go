@@ -1,7 +1,7 @@
 // Fuzz target for escapeConnParam (MODERNIZATION.md §4.4): a value embedded in
 // a single-quoted libpq connection-string parameter must never be able to
 // break out of the quotes, and must round-trip through pgx's DSN parser.
-package dbs
+package store
 
 import (
 	"strings"

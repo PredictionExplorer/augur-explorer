@@ -46,3 +46,11 @@ History:
   numbers include the format-detection fix from the same sprint (snappy blobs
   whose length-uvarint starts with an RLP-like byte were previously
   undecodable; see `rlpListCoversExactly`).
+- **2026-07-07 (store groundwork sprint)** — statistics queries re-measured
+  after the connection layer moved to a shared `pgxpool` (the queries
+  themselves are still legacy `database/sql` code running through the pool's
+  `Store.DB()` view): `cosmic_game_statistics` 2,390,000 ns/op / 40,830 B/op /
+  512 allocs, `claims_by_round` 845,000 / 19,728 / 186, `roi_leaderboard`
+  267,000 / 20,282 / 161. Latency improved across the board; B/op roughly
+  doubled through the stdlib-over-pool bridge — acceptable while
+  transitional, re-measure when `statistics.go` converts to pgx-native.

@@ -27,7 +27,7 @@ import (
 
 	rwc "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
@@ -104,7 +104,7 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	}
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage = dbs.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
+	storage = store.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
 	storage.Db_set_schema_name("public")
 	storagew.S = storage
 
@@ -159,7 +159,7 @@ func resetDB(t *testing.T) {
 	if _, err := testDB.SQL.ExecContext(ctx, "TRUNCATE "+tables+" RESTART IDENTITY CASCADE"); err != nil {
 		t.Fatalf("truncating tables: %v", err)
 	}
-	dbs.ResetAddressCacheForTests()
+	store.ResetAddressCacheForTests()
 
 	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
 		t.Fatalf("re-seeding database: %v", err)

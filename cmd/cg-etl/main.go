@@ -17,7 +17,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
-	. "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	. "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -58,9 +58,12 @@ var (
 
 	cg_contracts CosmicGameContractAddrs
 	storagew     SQLStorageWrapper
-	RPC_URL      = os.Getenv("RPC_URL")
-	Error        *log.Logger
-	Info         *log.Logger
+	// cgRepo carries the store queries already converted to the context-first
+	// Repo; storagew keeps the rest until Phase 1 completes.
+	cgRepo  *Repo
+	RPC_URL = os.Getenv("RPC_URL")
+	Error   *log.Logger
+	Info    *log.Logger
 )
 
 func get_abi(abi_str string) *abi.ABI {
@@ -101,11 +104,14 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	storagew.S = Connect_to_storage(Info)
-	if storagew.S == nil {
-		Info.Printf("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		Info.Printf("failed to connect to storage: %v", err)
+		fmt.Fprintf(os.Stderr, "Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
 		os.Exit(1)
 	}
+	cgRepo = NewRepo(st)
+	storagew.S = store.NewSQLStorageFromDB(st.DB(), Info)
 	storagew.S.Db_set_schema_name("public")
 	if err := storagew.S.Init_log(db_log_file); err != nil {
 		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
@@ -126,7 +132,11 @@ func main() {
 	erc721_abi = get_abi(ERC721ABI)
 	erc1967_abi = get_abi(IERC1967ABI)
 
-	cg_contracts = storagew.Get_cosmic_game_contract_addrs()
+	cg_contracts, err = cgRepo.ContractAddrs(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read contract addresses: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Insert all contract addresses into address table (for fresh database)
 	for _, contract_addr := range []string{

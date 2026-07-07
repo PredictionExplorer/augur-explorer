@@ -55,8 +55,14 @@ func process_events_filterlog(ctx context.Context) error {
 		default:
 		}
 
-		// Get last processed block from status
-		status := storagew.Get_cosmic_game_processing_status()
+		// Get last processed block from status. A failure here is a DB
+		// failure (the legacy method terminated the process from inside the
+		// store); crash from main with the batch left unacknowledged, so it
+		// re-processes on restart.
+		status, err := cgRepo.ProcessingStatus(ctx)
+		if err != nil {
+			return fmt.Errorf("reading processing status: %w", err)
+		}
 		lastProcessedBlock := status.LastBlockNum
 		if lastProcessedBlock == 0 {
 			// If no blocks processed yet, start from the block where contracts were deployed
@@ -151,11 +157,15 @@ func process_events_filterlog(ctx context.Context) error {
 		// Only update status if processing succeeded
 		if !processingFailed {
 			status.LastBlockNum = int64(toBlock)
-			storagew.Update_cosmic_game_process_status(&status)
+			if err := cgRepo.UpdateProcessingStatus(ctx, &status); err != nil {
+				return fmt.Errorf("updating processing status: %w", err)
+			}
 		} else if lastSuccessfulBlock > 0 {
 			// Update to last successfully processed block
 			status.LastBlockNum = int64(lastSuccessfulBlock)
-			storagew.Update_cosmic_game_process_status(&status)
+			if err := cgRepo.UpdateProcessingStatus(ctx, &status); err != nil {
+				return fmt.Errorf("updating processing status: %w", err)
+			}
 		}
 		// If processingFailed and lastSuccessfulBlock==0, don't update - will retry same batch
 

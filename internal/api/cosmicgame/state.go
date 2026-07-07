@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"os"
 	"sync"
 	"time"
 
@@ -77,6 +78,11 @@ var (
 	bw_stats					CGStatistics
 
 	arb_storagew				SQLStorageWrapper
+
+	// arbRepo carries the queries already converted to the context-first,
+	// error-returning Repo (Phase 1); arb_storagew keeps the rest until the
+	// conversion completes.
+	arbRepo						*Repo
 )
 
 // backgroundRefreshDisabled suppresses the reload_* refresh goroutines while
@@ -368,7 +374,18 @@ func cosmic_game_init() {
 	}
 	arb_storagew.S=common.Ctx.Db
 	arb_storagew.S.Db_set_schema_name("public")
-	bw_caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
+	arbRepo = NewRepo(common.Ctx.Store)
+	bw_caddrs, err := arbRepo.ContractAddrs(context.Background())
+	if err != nil {
+		// Startup cannot proceed without the contract registry; this keeps
+		// the legacy fatal behavior (the exit used to live inside the store).
+		err_str := fmt.Sprintf("cosmic_game_init(): reading contract addresses: %v", err)
+		Error.Print(err_str)
+		Info.Print(err_str)
+		fmt.Printf("\nFATAL: %s\n", err_str)
+		fmt.Printf("HINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env\n\n")
+		os.Exit(1)
+	}
 	cosmic_game_addr = ethcommon.HexToAddress(bw_caddrs.CosmicGameAddr)
 	cosmic_signature_addr = ethcommon.HexToAddress(bw_caddrs.CosmicSignatureAddr)
 	cosmic_token_addr = ethcommon.HexToAddress(bw_caddrs.CosmicTokenAddr)

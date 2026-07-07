@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -62,13 +63,15 @@ Environment:
 }
 
 // connectTokenStorage connects to PostgreSQL (PGSQL_* env vars) and wraps the
-// connection in the cosmicgame storage helper.
+// connection in the cosmicgame storage helper. The pool lives for the
+// remainder of the process (cgctl runs one command and exits).
 func connectTokenStorage() (*cgstore.SQLStorageWrapper, error) {
 	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	storage := dbs.Connect_to_storage(logger)
-	if storage == nil {
-		return nil, fmt.Errorf("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to storage: %w", err)
 	}
+	storage := store.NewSQLStorageFromDB(st.DB(), logger)
 	storage.Db_set_schema_name("public")
 	return &cgstore.SQLStorageWrapper{S: storage}, nil
 }
