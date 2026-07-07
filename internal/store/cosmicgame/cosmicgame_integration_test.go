@@ -3,6 +3,7 @@
 package cosmicgame
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
@@ -12,26 +13,43 @@ import (
 // itoa keeps golden names short in table-driven cases.
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
-func TestGetCosmicGameContractAddrs(t *testing.T) {
-	sw := store(t)
+func TestContractAddrs(t *testing.T) {
+	r := repo(t)
 	golden(t, "cosmic_game_contract_addrs", func() any {
-		return sw.Get_cosmic_game_contract_addrs()
+		addrs, err := r.ContractAddrs(context.Background())
+		if err != nil {
+			t.Fatalf("ContractAddrs: %v", err)
+		}
+		return addrs
 	})
 }
 
-// TestProcessingStatusRoundTrip covers Get_cosmic_game_processing_status
-// (which lazily inserts the default row) and the update path, restoring the
-// original watermark afterwards.
+// TestProcessingStatusRoundTrip covers ProcessingStatus (which lazily inserts
+// the default row) and the update path, restoring the original watermark
+// afterwards.
 func TestProcessingStatusRoundTrip(t *testing.T) {
-	sw := store(t)
+	r := repo(t)
+	ctx := context.Background()
 
-	initial := sw.Get_cosmic_game_processing_status()
-	t.Cleanup(func() { sw.Update_cosmic_game_process_status(&initial) })
+	initial, err := r.ProcessingStatus(ctx)
+	if err != nil {
+		t.Fatalf("ProcessingStatus: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := r.UpdateProcessingStatus(ctx, &initial); err != nil {
+			t.Errorf("restoring processing status: %v", err)
+		}
+	})
 
 	want := p.CosmicGameProcStatus{LastEvtIdProcessed: 5098, LastBlockNum: 142}
-	sw.Update_cosmic_game_process_status(&want)
+	if err := r.UpdateProcessingStatus(ctx, &want); err != nil {
+		t.Fatalf("UpdateProcessingStatus: %v", err)
+	}
 
-	got := sw.Get_cosmic_game_processing_status()
+	got, err := r.ProcessingStatus(ctx)
+	if err != nil {
+		t.Fatalf("ProcessingStatus after update: %v", err)
+	}
 	if got != want {
 		t.Fatalf("processing status round trip: got %+v, want %+v", got, want)
 	}

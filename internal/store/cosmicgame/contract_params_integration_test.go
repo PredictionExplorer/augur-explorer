@@ -5,7 +5,7 @@ package cosmicgame
 import "testing"
 
 func TestGetGlobStatsCstRewardForBidding(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	reward, err := sw.Get_glob_stats_cst_reward_for_bidding()
 	if err != nil {
 		t.Fatalf("Get_glob_stats_cst_reward_for_bidding: %v", err)
@@ -23,7 +23,7 @@ func TestGetGlobStatsCstRewardForBidding(t *testing.T) {
 }
 
 func TestGetLatestDecimalParam(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 
 	val, hasRow, err := sw.Get_latest_decimal_param("cg_adm_charity_pcent", "percentage")
 	if err != nil {

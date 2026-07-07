@@ -5,11 +5,12 @@ package cosmicgame
 // Store read suite (§4.2 of docs/MODERNIZATION.md): every public query
 // function is called against the shared fixture dataset at least once and
 // its result pinned as a golden file. This is the safety net that lets the
-// Phase 1 store rewrite proceed file-by-file.
+// Phase 1 store rewrite proceed file-by-file: converted methods live on Repo
+// (context-first, error-returning), the rest on the legacy wrapper.
 //
-// Error paths are not exercised: the legacy methods call os.Exit(1) on DB
-// errors, which would kill the test binary. Phase 1 replaces those with
-// returned errors; the golden set stays put while it does.
+// Error paths exist only for converted methods (see TestErrorPaths): the
+// remaining legacy methods call os.Exit(1) on DB errors, which would kill
+// the test binary. The golden set stays put as each file converts.
 
 import (
 	"context"
@@ -22,7 +23,9 @@ import (
 	"testing"
 	"time"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
@@ -52,8 +55,10 @@ const (
 )
 
 var (
-	sharedWrapper *SQLStorageWrapper
-	errSetupSkip  error // non-nil: integration environment unavailable, skip
+	sharedWrapper    *SQLStorageWrapper
+	sharedRepo       *Repo
+	sharedConnString string
+	errSetupSkip     error // non-nil: integration environment unavailable, skip
 )
 
 // TestMain owns one database container seeded with the shared fixture set;
@@ -88,18 +93,33 @@ func runMain(m *testing.M) int {
 		return 1
 	}
 
-	// Store-layer errors precede an os.Exit(1) in the legacy query methods;
-	// keep them on stderr so a fixture/query problem is diagnosable.
-	storage := dbs.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
+	// One Store over the container's pool serves both access paths: the Repo
+	// (converted, context-first queries) and the legacy wrapper. Store-layer
+	// errors of unconverted methods precede an os.Exit(1); keep them on
+	// stderr so a fixture/query problem is diagnosable.
+	st := store.NewFromPool(db.Pool)
+	sharedRepo = NewRepo(st)
+	sharedConnString = db.ConnString
+	storage := store.NewSQLStorageFromDB(st.DB(), log.New(os.Stderr, "store: ", 0))
 	storage.Db_set_schema_name("public")
 	sharedWrapper = &SQLStorageWrapper{S: storage}
 
 	return m.Run()
 }
 
-// store returns the shared wrapper, skipping the test when the integration
-// environment (Docker) is unavailable.
-func store(t *testing.T) *SQLStorageWrapper {
+// spareStore opens a second, independent Store on the test database for
+// cases that need to close or break a pool without affecting the shared one.
+func spareStore(ctx context.Context) (*store.Store, error) {
+	pool, err := pgxpool.New(ctx, sharedConnString)
+	if err != nil {
+		return nil, err
+	}
+	return store.NewFromPool(pool), nil
+}
+
+// wrapper returns the shared legacy wrapper (unconverted query methods),
+// skipping the test when the integration environment (Docker) is unavailable.
+func wrapper(t *testing.T) *SQLStorageWrapper {
 	t.Helper()
 	if errSetupSkip != nil {
 		t.Skipf("skipping: %v", errSetupSkip)
@@ -108,6 +128,19 @@ func store(t *testing.T) *SQLStorageWrapper {
 		t.Fatal("store harness not initialized (TestMain did not run?)")
 	}
 	return sharedWrapper
+}
+
+// repo returns the shared Repo (converted query methods), skipping the test
+// when the integration environment (Docker) is unavailable.
+func repo(t *testing.T) *Repo {
+	t.Helper()
+	if errSetupSkip != nil {
+		t.Skipf("skipping: %v", errSetupSkip)
+	}
+	if sharedRepo == nil {
+		t.Fatal("store harness not initialized (TestMain did not run?)")
+	}
+	return sharedRepo
 }
 
 // golden pins fetch() as testdata/golden/<name>.json, fetching twice to

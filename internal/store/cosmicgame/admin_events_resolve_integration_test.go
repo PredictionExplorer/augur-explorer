@@ -3,6 +3,7 @@
 package cosmicgame
 
 import (
+	"context"
 	"math"
 	"testing"
 
@@ -12,9 +13,13 @@ import (
 // TestResolveAdminEventValuesFixture resolves the admin events actually
 // present in the fixture set (charity percentage, activation time) end to end.
 func TestResolveAdminEventValuesFixture(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
+	r := repo(t)
 	golden(t, "resolved_admin_events_fixture", func() any {
-		events := sw.Get_admin_events_in_range(0, math.MaxInt64)
+		events, err := r.AdminEventsInRange(context.Background(), 0, math.MaxInt64)
+		if err != nil {
+			t.Fatalf("AdminEventsInRange: %v", err)
+		}
 		sw.Resolve_admin_event_values(events)
 		return events
 	})
@@ -26,7 +31,7 @@ func TestResolveAdminEventValuesFixture(t *testing.T) {
 // the cg_adm_prize_microsec / cg_adm_cst_auclen lookups exercise the
 // documented fallback shapes (those tables are empty in the fixture set).
 func TestResolveAdminEventValuesSQLPaths(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 
 	mk := func(recordType, intValue int64) p.CGAdminEvent {
 		return p.CGAdminEvent{RecordType: recordType, EvtLogId: 6000, IntegerValue: intValue}

@@ -11,7 +11,7 @@ const (
 )
 
 func TestGetBidFrequencyByPeriod(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bid_frequency_by_period", func() any {
 		return sw.Get_bid_frequency_by_period(fixtureStartTs, fixtureEndTs, 900)
 	})
@@ -25,14 +25,14 @@ func TestGetBidFrequencyByPeriod(t *testing.T) {
 }
 
 func TestGetBidTypeRatioByPeriod(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bid_type_ratio_by_period", func() any {
 		return sw.Get_bid_type_ratio_by_period(fixtureStartTs, fixtureEndTs, 900)
 	})
 }
 
 func TestGetTopBidders(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "top_bidders", func() any {
 		return sw.Get_top_bidders(10)
 	})
@@ -42,7 +42,7 @@ func TestGetTopBidders(t *testing.T) {
 }
 
 func TestGetTopBidderActivePeriods(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "top_bidder_active_periods", func() any {
 		bidders, periods := sw.Get_top_bidder_active_periods(3, fixtureStartTs, fixtureEndTs, 1, 1)
 		return map[string]any{"topBidders": bidders, "activePeriods": periods}
@@ -50,7 +50,7 @@ func TestGetTopBidderActivePeriods(t *testing.T) {
 }
 
 func TestGetBidTimeBounds(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bid_time_bounds", func() any {
 		minTs, maxTs := sw.Get_bid_time_bounds()
 		return map[string]int64{"minTs": minTs, "maxTs": maxTs}

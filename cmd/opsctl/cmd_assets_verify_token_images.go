@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -8,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/spf13/cobra"
 )
@@ -47,11 +48,12 @@ func init() { assetsCmd.AddCommand(newAssetsVerifyTokenImagesCmd()) }
 func runVerifyTokenImages() error {
 	info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	storage := dbs.Connect_to_storage(info)
-	if storage == nil {
-		return errors.New("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		return fmt.Errorf("failed to connect to storage: %w", err)
 	}
-	storagew := &rwstore.SQLStorageWrapper{S: storage}
+	defer st.Close()
+	storagew := &rwstore.SQLStorageWrapper{S: store.NewSQLStorageFromDB(st.DB(), info)}
 	rwalkAid, err := storagew.S.Lookup_address_id(rwalkNFTAddr)
 	if err != nil {
 		return fmt.Errorf("can't resolve RandomWalk contract address id: %w", err)

@@ -24,6 +24,16 @@ func RespondErrorJSON(c *gin.Context, errorText string) {
 	})
 }
 
+// RespondInternalErrorJSON reports a server-side failure (typically a
+// database error) in the legacy error envelope without leaking internal
+// details to the client. Handlers log the underlying error before calling it.
+func RespondInternalErrorJSON(c *gin.Context) {
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"status": 0,
+		"error":  "Internal server error",
+	})
+}
+
 // ParseIntFromRemoteOrError parses an integer request parameter. The
 // jsonOutput flag used to select between JSON and HTML error rendering;
 // HTML pages are gone, so both branches now emit the same JSON error.

@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	storage  *dbs.SQLStorage
+	storage  *store.SQLStorage
 	storagew rwdb.SQLStorageWrapper
 	RPC_URL  = os.Getenv("RPC_URL")
 	Error    *log.Logger
@@ -72,11 +72,13 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage = dbs.Connect_to_storage(Info)
-	if storage == nil {
-		Info.Printf("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		Info.Printf("failed to connect to storage: %v", err)
+		fmt.Fprintf(os.Stderr, "Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
 		os.Exit(1)
 	}
+	storage = store.NewSQLStorageFromDB(st.DB(), Info)
 	if err := storage.Init_log(db_log_file); err != nil {
 		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
 		os.Exit(1)

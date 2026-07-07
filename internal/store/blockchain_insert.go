@@ -1,5 +1,6 @@
-// Package dbs - Block and transaction insertion methods
-package dbs
+// Block and transaction insertion methods.
+
+package store
 
 import (
 	"encoding/hex"

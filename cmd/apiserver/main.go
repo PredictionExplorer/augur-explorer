@@ -49,7 +49,7 @@ func envBoolDefaultTrue(key string) bool {
 
 func initialize() {
 	// Initialize the common context
-	common.InitContext(rwcg_srv.db, eclient, Info, Error)
+	common.InitContext(rwcg_srv.store, rwcg_srv.db, eclient, Info, Error)
 
 	enableRWRoutes := envBoolDefaultTrue("ENABLE_ROUTES_RANDOMWALK")
 	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")

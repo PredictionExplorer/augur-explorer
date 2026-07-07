@@ -23,7 +23,8 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 )
 
@@ -33,7 +34,7 @@ import (
 type harness struct {
 	router  *gin.Engine
 	db      *sql.DB
-	storage *dbs.SQLStorage
+	storage *store.SQLStorage
 
 	ipCounter atomic.Uint64
 }
@@ -48,7 +49,7 @@ func seedDatabase(ctx context.Context, db *sql.DB) error {
 // eth stub, then assembles the production middleware chain and route table.
 // It must be called exactly once per process: the API packages hold their
 // dependencies in package-level state until Phase 2 makes them injectable.
-func newHarness(ctx context.Context, db *sql.DB) (*harness, error) {
+func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	gin.SetMode(gin.TestMode)
 	discard := log.New(io.Discard, "", 0)
 
@@ -64,13 +65,15 @@ func newHarness(ctx context.Context, db *sql.DB) (*harness, error) {
 	}
 	ethClient := ethclient.NewClient(rpcClient)
 
-	// Store-layer errors precede an os.Exit(1) in the legacy query methods
-	// (Phase 1 removes those); keep them visible so a fixture/query problem
-	// that kills the test binary is diagnosable from the output.
+	// One Store over the container's pool backs both the converted Repo
+	// queries and the legacy wrapper, exactly like cmd/apiserver. Store-layer
+	// errors of unconverted methods precede an os.Exit(1); keep them visible
+	// so a fixture/query problem that kills the test binary is diagnosable.
+	st := store.NewFromPool(db.Pool)
 	storeLog := log.New(os.Stderr, "store: ", 0)
-	storage := dbs.NewSQLStorageFromDB(db, storeLog)
+	storage := store.NewSQLStorageFromDB(st.DB(), storeLog)
 
-	common.InitContext(storage, ethClient, discard, discard)
+	common.InitContext(st, storage, ethClient, discard, discard)
 
 	// The reload_* refresh goroutines mutate package state on a timer, which
 	// would race with request handling and make snapshots drift; the initial
@@ -102,7 +105,7 @@ func newHarness(ctx context.Context, db *sql.DB) (*harness, error) {
 
 	registerAllRoutes(r, storage)
 
-	return &harness{router: r, db: db, storage: storage}, nil
+	return &harness{router: r, db: db.SQL, storage: storage}, nil
 }
 
 // request performs one HTTP exchange through the real router. Every call uses

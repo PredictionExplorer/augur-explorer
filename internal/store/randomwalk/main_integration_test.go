@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
@@ -82,16 +82,16 @@ func runMain(m *testing.M) int {
 		return 1
 	}
 
-	storage := dbs.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
+	storage := store.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
 	storage.Db_set_schema_name("public")
 	sharedWrapper = &SQLStorageWrapper{S: storage}
 
 	return m.Run()
 }
 
-// store returns the shared wrapper, skipping the test when the integration
-// environment (Docker) is unavailable.
-func store(t *testing.T) *SQLStorageWrapper {
+// wrapper returns the shared legacy wrapper, skipping the test when the
+// integration environment (Docker) is unavailable.
+func wrapper(t *testing.T) *SQLStorageWrapper {
 	t.Helper()
 	if errSetupSkip != nil {
 		t.Skipf("skipping: %v", errSetupSkip)

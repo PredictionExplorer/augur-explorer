@@ -1,137 +1,73 @@
 package cosmicgame
 
 import (
-	"os"
-	"fmt"
+	"context"
 
+	"github.com/jackc/pgx/v5"
 
 	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
-func query_nft_winners(is_staker bool) string {
 
-	var query string
-	var staking_condition ="'F'"
-	if is_staker {
-		staking_condition = "'T'"
-	}
-	query = "SELECT "+
-				"p.evtlog_id,"+
-				"p.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
-				"p.time_stamp,"+
-				"p.winner_aid,"+
-				"wa.addr,"+
-				"p.round_num, "+
-				"p.token_id, "+
-				"p.cst_amount, "+
-				"p.cst_amount/1e18 cst_amount_eth, "+
-				"p.winner_idx, "+
-				"p.is_rwalk,"+
-				"p.is_staker "+
-			"FROM cg_raffle_nft_prize p "+
-				"LEFT JOIN transaction t ON t.id=p.tx_id "+
-				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"WHERE p.round_num=$1 AND p.is_staker= " + staking_condition +
-			"ORDER BY p.id DESC"
-	return query
-}
-func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64,is_staker bool) []p.CGRaffleNFTWinnerRec {
+const raffleNFTWinnerColumns = `
+	p.evtlog_id,
+	p.block_num,
+	t.id,
+	t.tx_hash,
+	EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,
+	p.time_stamp,
+	p.winner_aid,
+	wa.addr,
+	p.round_num,
+	p.token_id,
+	p.cst_amount,
+	p.cst_amount/1e18 cst_amount_eth,
+	p.winner_idx,
+	p.is_rwalk,
+	p.is_staker
+FROM cg_raffle_nft_prize p
+	LEFT JOIN transaction t ON t.id=p.tx_id
+	LEFT JOIN address wa ON p.winner_aid=wa.address_id`
 
-	var query string
-	query = query_nft_winners(is_staker)
-	rows,err := sw.S.Db().Query(query,round_num)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	records := make([]p.CGRaffleNFTWinnerRec,0, 256)
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.CGRaffleNFTWinnerRec
-		err=rows.Scan(
+func scanRaffleNFTWinner(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+	return rows.Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
 		&rec.Tx.TxId,
 		&rec.Tx.TxHash,
 		&rec.Tx.TimeStamp,
-		&rec.Tx.DateTime,
+		store.TimeText(&rec.Tx.DateTime),
 		&rec.WinnerAid,
-			&rec.WinnerAddr,
-			&rec.RoundNum,
-			&rec.TokenId,
-			&rec.CstAmount,
-			&rec.CstAmountEth,
-			&rec.WinnerIndex,
-			&rec.IsRWalk,
-			&rec.IsStaker,
-		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		records = append(records,rec)
-	}
-	return records
+		&rec.WinnerAddr,
+		&rec.RoundNum,
+		&rec.TokenId,
+		&rec.CstAmount,
+		&rec.CstAmountEth,
+		&rec.WinnerIndex,
+		&rec.IsRWalk,
+		&rec.IsStaker,
+	)
 }
-func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaffleNFTWinnerRec {
 
-	if limit == 0 { limit = 1000000 }
-	var query string
-	query = "SELECT "+
-				"p.evtlog_id,"+
-				"p.block_num,"+
-				"t.id,"+
-				"t.tx_hash,"+
-				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
-				"p.time_stamp,"+
-				"p.winner_aid,"+
-				"wa.addr,"+
-				"p.round_num, "+
-				"p.token_id, "+
-				"p.cst_amount, "+
-				"p.cst_amount/1e18 cst_amount_eth, "+
-				"p.winner_idx, "+
-				"p.is_rwalk,"+
-				"p.is_staker "+
-			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_prize p "+
-				"LEFT JOIN transaction t ON t.id=p.tx_id "+
-				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"ORDER BY p.id DESC "+
-			"OFFSET $1 LIMIT $2"
+// RaffleNFTWinnersByRound returns the raffle NFT winners of one round.
+// isStaker selects the staker raffle (true) or the bidder raffle (false);
+// the legacy version baked the flag into the SQL text, it is a bound
+// parameter now.
+func (r *Repo) RaffleNFTWinnersByRound(ctx context.Context, roundNum int64, isStaker bool) ([]p.CGRaffleNFTWinnerRec, error) {
+	query := "SELECT " + raffleNFTWinnerColumns + `
+		WHERE p.round_num=$1 AND p.is_staker=$2
+		ORDER BY p.id DESC`
+	return queryList(ctx, r, "raffle nft winners by round", 256, query, scanRaffleNFTWinner, roundNum, isStaker)
+}
 
-	rows,err := sw.S.Db().Query(query,offset,limit)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
+// RaffleNFTWinners returns raffle NFT winners across all rounds, newest
+// first, offset/limit paginated (limit 0 means unbounded).
+func (r *Repo) RaffleNFTWinners(ctx context.Context, offset, limit int) ([]p.CGRaffleNFTWinnerRec, error) {
+	if limit == 0 {
+		limit = 1000000
 	}
-	records := make([]p.CGRaffleNFTWinnerRec,0, 256)
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.CGRaffleNFTWinnerRec
-		err=rows.Scan(
-		&rec.Tx.EvtLogId,
-		&rec.Tx.BlockNum,
-		&rec.Tx.TxId,
-		&rec.Tx.TxHash,
-		&rec.Tx.TimeStamp,
-		&rec.Tx.DateTime,
-		&rec.WinnerAid,
-			&rec.WinnerAddr,
-			&rec.RoundNum,
-			&rec.TokenId,
-			&rec.CstAmount,
-			&rec.CstAmountEth,
-			&rec.WinnerIndex,
-			&rec.IsRWalk,
-			&rec.IsStaker,
-		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		records = append(records,rec)
-	}
-	return records
+	query := "SELECT " + raffleNFTWinnerColumns + `
+		ORDER BY p.id DESC
+		OFFSET $1 LIMIT $2`
+	return queryList(ctx, r, "raffle nft winners", 256, query, scanRaffleNFTWinner, offset, limit)
 }

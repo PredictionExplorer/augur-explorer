@@ -10,9 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// SQLStorageWrapper wraps dbs.SQLStorage to provide RandomWalk-specific database methods
+// SQLStorageWrapper wraps store.SQLStorage to provide RandomWalk-specific database methods
 type SQLStorageWrapper struct {
-	S *dbs.SQLStorage
+	S *store.SQLStorage
 }
 
 // must_lookup_or_create_address wraps the base store's error-returning

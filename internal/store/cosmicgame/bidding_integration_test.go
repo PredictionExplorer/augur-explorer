@@ -5,7 +5,7 @@ package cosmicgame
 import "testing"
 
 func TestGetBidIdByEvtlog(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	if got := sw.Get_bid_id_by_evtlog(5004); got != 2001 {
 		t.Errorf("bid id for evtlog 5004: got %d, want 2001", got)
 	}
@@ -15,7 +15,7 @@ func TestGetBidIdByEvtlog(t *testing.T) {
 }
 
 func TestGetBids(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bids", func() any {
 		return sw.Get_bids(0, 100)
 	})
@@ -29,7 +29,7 @@ func TestGetBids(t *testing.T) {
 }
 
 func TestGetBidInfo(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bid_info_5004", func() any {
 		found, rec := sw.Get_bid_info(5004)
 		if !found {
@@ -51,7 +51,7 @@ func TestGetBidInfo(t *testing.T) {
 }
 
 func TestGetEvtlogIdByRoundAndBidPosition(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	evtlogID, found := sw.Get_evtlog_id_by_round_and_bid_position(0, 1)
 	if !found || evtlogID != 5004 {
 		t.Errorf("round 0 position 1: got (%d,%v), want (5004,true)", evtlogID, found)
@@ -62,7 +62,7 @@ func TestGetEvtlogIdByRoundAndBidPosition(t *testing.T) {
 }
 
 func TestGetBidsWithMessageByRound(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bids_with_message_by_round_0_asc", func() any {
 		return sw.Get_bids_with_message_by_round(0, false, 0, 100)
 	})
@@ -72,7 +72,7 @@ func TestGetBidsWithMessageByRound(t *testing.T) {
 }
 
 func TestGetBidsByRoundNum(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "bids_by_round_num_0_asc", func() any {
 		recs, total := sw.Get_bids_by_round_num(0, 0, 0, 100)
 		return map[string]any{"records": recs, "total": total}
@@ -84,7 +84,7 @@ func TestGetBidsByRoundNum(t *testing.T) {
 }
 
 func TestGetBidCountForRound(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	if got := sw.Get_bid_count_for_round(0); got != 4 {
 		t.Errorf("bid count round 0: got %d, want 4", got)
 	}
@@ -94,7 +94,7 @@ func TestGetBidCountForRound(t *testing.T) {
 }
 
 func TestGetLastCstBidEvtlogForBidder(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	const carol = "0x2300000000000000000000000000000000000023"
 	evtlogID, found := sw.Get_last_cst_bid_evtlog_for_bidder(0, carol)
 	if !found || evtlogID != 5008 {
@@ -111,7 +111,7 @@ func TestGetLastCstBidEvtlogForBidder(t *testing.T) {
 }
 
 func TestGetRoundStartTimestamp(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	if got := sw.Get_round_start_timestamp(0); got != 1767225700 {
 		t.Errorf("round 0 start: got %d, want 1767225700", got)
 	}
@@ -121,14 +121,14 @@ func TestGetRoundStartTimestamp(t *testing.T) {
 }
 
 func TestGetRandomWalkTokensInBids(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "random_walk_tokens_in_bids", func() any {
 		return sw.Get_random_walk_tokens_in_bids()
 	})
 }
 
 func TestGetCosmicGameBidByEvtlogId(t *testing.T) {
-	sw := store(t)
+	sw := wrapper(t)
 	golden(t, "cosmic_game_bid_by_evtlog_id_5004", func() any {
 		return sw.Get_cosmic_game_bid_by_evtlog_id(5004)
 	})

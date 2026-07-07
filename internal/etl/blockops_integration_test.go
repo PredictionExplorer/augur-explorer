@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 )
@@ -29,7 +29,7 @@ type env struct {
 	ctx     *ETLContext
 	db      *testdb.DB
 	chain   *testchain.Chain
-	storage *dbs.SQLStorage
+	storage *store.SQLStorage
 }
 
 func newEnv(t *testing.T) *env {
@@ -46,9 +46,9 @@ func newEnv(t *testing.T) *env {
 
 	// The address-id cache is package state in internal/store; every fresh
 	// database must start with a fresh cache.
-	dbs.ResetAddressCacheForTests()
+	store.ResetAddressCacheForTests()
 
-	storage := dbs.NewSQLStorageFromDB(db.SQL, log.New(io.Discard, "", 0))
+	storage := store.NewSQLStorageFromDB(db.SQL, log.New(io.Discard, "", 0))
 	storage.Db_set_schema_name("public")
 
 	return &env{

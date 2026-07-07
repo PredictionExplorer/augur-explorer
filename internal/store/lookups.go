@@ -1,5 +1,6 @@
-// Package dbs - address lookups and cache used by rwcg ETL and APIs
-package dbs
+// Address lookups and the process-wide address-id cache used by ETL and APIs.
+
+package store
 
 import (
 	"database/sql"

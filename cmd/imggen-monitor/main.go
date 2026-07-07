@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -26,7 +27,7 @@ import (
 	"os"
 	"time"
 
-	store "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -100,11 +101,13 @@ func (c *artifactClient) waitUntilPresent(tokenID int64) error {
 
 func scanAll(client *artifactClient, regenerate bool) error {
 	info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	var storagew cgstore.SQLStorageWrapper
-	storagew.S = store.Connect_to_storage(info)
-	if storagew.S == nil {
-		return fmt.Errorf("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		return fmt.Errorf("failed to connect to storage: %w", err)
 	}
+	defer st.Close()
+	var storagew cgstore.SQLStorageWrapper
+	storagew.S = store.NewSQLStorageFromDB(st.DB(), info)
 	storagew.S.Db_set_schema_name("public")
 
 	if regenerate {

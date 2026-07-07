@@ -1,44 +1,35 @@
 package cosmicgame
 
 import (
-	"fmt"
+	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// Get_banned_bids returns all rows from cg_banned_bids ordered by id (same as FastAPI).
-func (sw *SQLStorageWrapper) Get_banned_bids() []p.CGBannedBidRec {
-	query := "SELECT id, bid_id, user_addr, created_at FROM " + sw.S.SchemaName() + ".cg_banned_bids ORDER BY id"
-	rows, err := sw.S.Db().Query(query)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		return nil
+// BannedBids returns all rows from cg_banned_bids ordered by id.
+func (r *Repo) BannedBids(ctx context.Context) ([]p.CGBannedBidRec, error) {
+	query := "SELECT id, bid_id, user_addr, created_at FROM cg_banned_bids ORDER BY id"
+	scan := func(rows pgx.Rows, rec *p.CGBannedBidRec) error {
+		return rows.Scan(&rec.Id, &rec.BidId, &rec.UserAddr, &rec.CreatedAt)
 	}
-	defer rows.Close()
-	var list []p.CGBannedBidRec
-	for rows.Next() {
-		var rec p.CGBannedBidRec
-		if err := rows.Scan(&rec.Id, &rec.BidId, &rec.UserAddr, &rec.CreatedAt); err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error scanning cg_banned_bids: %v", err))
-			return list
-		}
-		list = append(list, rec)
-	}
-	return list
+	return queryList(ctx, r, "banned bids", 8, query, scan)
 }
 
-// Insert_banned_bid adds a row to cg_banned_bids. created_at is set to Unix timestamp.
-func (sw *SQLStorageWrapper) Insert_banned_bid(bid_id int64, user_addr string) error {
-	created_at := time.Now().Unix()
-	query := "INSERT INTO " + sw.S.SchemaName() + ".cg_banned_bids (bid_id, user_addr, created_at) VALUES ($1, $2, $3)"
-	_, err := sw.S.Db().Exec(query, bid_id, user_addr, created_at)
-	return err
+// InsertBannedBid adds a row to cg_banned_bids with created_at set to the
+// current Unix timestamp. Banning the same bid twice yields store.ErrConflict.
+func (r *Repo) InsertBannedBid(ctx context.Context, bidID int64, userAddr string) error {
+	query := "INSERT INTO cg_banned_bids (bid_id, user_addr, created_at) VALUES ($1, $2, $3)"
+	_, err := r.pool().Exec(ctx, query, bidID, userAddr, time.Now().Unix())
+	return store.WrapError("insert banned bid", err)
 }
 
-// Delete_banned_bid_by_bid_id removes all rows with the given bid_id (FastAPI unban_bid deletes by bid_id).
-func (sw *SQLStorageWrapper) Delete_banned_bid_by_bid_id(bid_id int64) error {
-	query := "DELETE FROM " + sw.S.SchemaName() + ".cg_banned_bids WHERE bid_id = $1"
-	_, err := sw.S.Db().Exec(query, bid_id)
-	return err
+// DeleteBannedBid removes all bans of the given bid id (unban).
+func (r *Repo) DeleteBannedBid(ctx context.Context, bidID int64) error {
+	query := "DELETE FROM cg_banned_bids WHERE bid_id = $1"
+	_, err := r.pool().Exec(ctx, query, bidID)
+	return store.WrapError("delete banned bid", err)
 }

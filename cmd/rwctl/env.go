@@ -5,6 +5,7 @@ package main
 // well-known contract addresses, event topics, and argument parsing.
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -15,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
@@ -67,12 +68,14 @@ func newInfoLogger() *log.Logger {
 
 // connectRWStorage connects to PostgreSQL using the PGSQL_* environment
 // variables and wraps the connection with the RandomWalk-specific queries.
+// The pool lives for the remainder of the process (rwctl runs one command
+// and exits).
 func connectRWStorage(info *log.Logger) (*rwstore.SQLStorageWrapper, error) {
-	base := dbs.Connect_to_storage(info)
-	if base == nil {
-		return nil, errors.New("failed to connect to storage")
+	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to storage: %w", err)
 	}
-	return &rwstore.SQLStorageWrapper{S: base}, nil
+	return &rwstore.SQLStorageWrapper{S: store.NewSQLStorageFromDB(st.DB(), info)}, nil
 }
 
 // parseInt64 parses a base-10 int64 command argument, reporting the argument

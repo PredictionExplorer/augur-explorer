@@ -5,12 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // RegisterHealthRoutes adds liveness and readiness probes to the public router.
 // db may be nil, in which case /readyz always reports unready.
-func RegisterHealthRoutes(r *gin.Engine, db *dbs.SQLStorage) {
+func RegisterHealthRoutes(r *gin.Engine, db *store.SQLStorage) {
 	// Liveness: the process is up and serving.
 	r.GET("/healthz", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
