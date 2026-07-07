@@ -1,0 +1,93 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "FromTs": 1767225600,
+    "Interval": 600,
+    "RatioHistory": [
+      {
+        "BucketTs": 1767225600,
+        "CstBids": 1,
+        "CstPct": 25,
+        "EthBids": 2,
+        "EthPct": 50,
+        "RwalkBids": 1,
+        "RwalkPct": 25,
+        "TotalBids": 4
+      },
+      {
+        "BucketTs": 1767226200,
+        "CstBids": 0,
+        "CstPct": 0,
+        "EthBids": 0,
+        "EthPct": 0,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 0
+      },
+      {
+        "BucketTs": 1767226800,
+        "CstBids": 0,
+        "CstPct": 0,
+        "EthBids": 0,
+        "EthPct": 0,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 0
+      },
+      {
+        "BucketTs": 1767227400,
+        "CstBids": 1,
+        "CstPct": 25,
+        "EthBids": 3,
+        "EthPct": 75,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 4
+      },
+      {
+        "BucketTs": 1767228000,
+        "CstBids": 0,
+        "CstPct": 0,
+        "EthBids": 4,
+        "EthPct": 100,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 4
+      },
+      {
+        "BucketTs": 1767228600,
+        "CstBids": 0,
+        "CstPct": 0,
+        "EthBids": 0,
+        "EthPct": 0,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 0
+      },
+      {
+        "BucketTs": 1767229200,
+        "CstBids": 0,
+        "CstPct": 0,
+        "EthBids": 0,
+        "EthPct": 0,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 0
+      },
+      {
+        "BucketTs": 1767229800,
+        "CstBids": 0,
+        "CstPct": 0,
+        "EthBids": 0,
+        "EthPct": 0,
+        "RwalkBids": 0,
+        "RwalkPct": 0,
+        "TotalBids": 0
+      }
+    ],
+    "ToTs": 1767230000,
+    "error": "",
+    "status": 1
+  }
+}
