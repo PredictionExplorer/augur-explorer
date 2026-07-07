@@ -1,0 +1,80 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "RewardsByDeposit": [
+      {
+        "Actions": [
+          {
+            "Claimed": false,
+            "DepositDateTime": "",
+            "DepositId": 0,
+            "DepositTimeStamp": 0,
+            "Reward": "1000000000000000000",
+            "RewardEth": 1,
+            "RoundNum": 0,
+            "Stake": {
+              "ActionId": 2,
+              "NumStakedNFTs": 2,
+              "RecordId": 2,
+              "StakerAid": 0,
+              "TokenId": 5,
+              "Tx": {
+                "BlockNum": 114,
+                "DateTime": "2026-01-01T00:23:20Z",
+                "EvtLogId": 5052,
+                "TimeStamp": 1767227000,
+                "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001015",
+                "TxId": 1015
+              }
+            },
+            "Unstake": {
+              "ActionId": 0,
+              "NumStakedNFTs": 0,
+              "RecordId": 0,
+              "RewardAmount": "",
+              "RewardAmountEth": 0,
+              "StakerAid": 0,
+              "TokenId": 0,
+              "Tx": {
+                "BlockNum": 0,
+                "DateTime": "",
+                "EvtLogId": 0,
+                "TimeStamp": 0,
+                "TxHash": "",
+                "TxId": 0
+              }
+            }
+          }
+        ],
+        "AmountPerToken": "",
+        "AmountPerTokenEth": 1,
+        "ClaimedAmountEth": 0,
+        "DepositAmount": "2000000000000000000",
+        "DepositAmountEth": 2,
+        "DepositId": 501,
+        "DepositRoundNum": 0,
+        "FullyClaimed": false,
+        "Modulo": "",
+        "ModuloF64": 0,
+        "NumStakedNFTs": 2,
+        "NumTokensCollected": 0,
+        "RecordId": 1,
+        "Tx": {
+          "BlockNum": 115,
+          "DateTime": "2026-01-01T00:25:00Z",
+          "EvtLogId": 5055,
+          "TimeStamp": 1767227100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+          "TxId": 1016
+        },
+        "YourClaimableAmountEth": 1,
+        "YourTokensStaked": 1
+      }
+    ],
+    "UserAddr": "0x2200000000000000000000000000000000000022",
+    "UserAid": 22,
+    "error": "",
+    "status": 1
+  }
+}

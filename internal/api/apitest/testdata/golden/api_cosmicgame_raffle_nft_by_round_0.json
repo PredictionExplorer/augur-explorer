@@ -1,0 +1,53 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "RaffleNFTWinners": [
+      {
+        "CstAmount": "30000000000000000000",
+        "CstAmountEth": 30,
+        "IsRWalk": false,
+        "IsStaker": false,
+        "RecordId": 0,
+        "RoundNum": 0,
+        "TokenId": 2,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5025,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2400000000000000000000000000000000000024",
+        "WinnerAid": 24,
+        "WinnerIndex": 0
+      }
+    ],
+    "RoundNum": 0,
+    "StakingNFTWinners": [
+      {
+        "CstAmount": "30000000000000000000",
+        "CstAmountEth": 30,
+        "IsRWalk": true,
+        "IsStaker": true,
+        "RecordId": 0,
+        "RoundNum": 0,
+        "TokenId": 3,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5028,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2300000000000000000000000000000000000023",
+        "WinnerAid": 23,
+        "WinnerIndex": 0
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

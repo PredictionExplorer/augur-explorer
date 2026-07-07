@@ -1,0 +1,262 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "TotalSupplyHistory": [
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5004,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "100000000000000000000",
+        "TotalSupplyEth": 100,
+        "Tx": {
+          "BlockNum": 101,
+          "DateTime": "2026-01-01T00:01:40Z",
+          "EvtLogId": 5004,
+          "TimeStamp": 1767225700,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001002",
+          "TxId": 1002
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5006,
+        "BidType": 1,
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "200000000000000000000",
+        "TotalSupplyEth": 200,
+        "Tx": {
+          "BlockNum": 102,
+          "DateTime": "2026-01-01T00:03:20Z",
+          "EvtLogId": 5006,
+          "TimeStamp": 1767225800,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001003",
+          "TxId": 1003
+        }
+      },
+      {
+        "Amount": "-100000000000000000000",
+        "AmountEth": -100,
+        "BidInfoId": 5008,
+        "BidType": 2,
+        "BidderAddr": "0x2300000000000000000000000000000000000023",
+        "BurnAmount": "200000000000000000000",
+        "BurnAmountEth": 200,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "100000000000000000000",
+        "TotalSupplyEth": 100,
+        "Tx": {
+          "BlockNum": 103,
+          "DateTime": "2026-01-01T00:05:00Z",
+          "EvtLogId": 5008,
+          "TimeStamp": 1767225900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001004",
+          "TxId": 1004
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5010,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "200000000000000000000",
+        "TotalSupplyEth": 200,
+        "Tx": {
+          "BlockNum": 104,
+          "DateTime": "2026-01-01T00:06:40Z",
+          "EvtLogId": 5010,
+          "TimeStamp": 1767226000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001005",
+          "TxId": 1005
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5060,
+        "BidType": 0,
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "300000000000000000000",
+        "TotalSupplyEth": 300,
+        "Tx": {
+          "BlockNum": 118,
+          "DateTime": "2026-01-01T00:30:00Z",
+          "EvtLogId": 5060,
+          "TimeStamp": 1767227400,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001019",
+          "TxId": 1019
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5061,
+        "BidType": 0,
+        "BidderAddr": "0x2400000000000000000000000000000000000024",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "400000000000000000000",
+        "TotalSupplyEth": 400,
+        "Tx": {
+          "BlockNum": 119,
+          "DateTime": "2026-01-01T00:31:40Z",
+          "EvtLogId": 5061,
+          "TimeStamp": 1767227500,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001020",
+          "TxId": 1020
+        }
+      },
+      {
+        "Amount": "-110000000000000000000",
+        "AmountEth": -110,
+        "BidInfoId": 5069,
+        "BidType": 2,
+        "BidderAddr": "0x2300000000000000000000000000000000000023",
+        "BurnAmount": "210000000000000000000",
+        "BurnAmountEth": 210,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "290000000000000000000",
+        "TotalSupplyEth": 290,
+        "Tx": {
+          "BlockNum": 122,
+          "DateTime": "2026-01-01T00:36:40Z",
+          "EvtLogId": 5069,
+          "TimeStamp": 1767227800,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001023",
+          "TxId": 1023
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5070,
+        "BidType": 0,
+        "BidderAddr": "0x2500000000000000000000000000000000000025",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "390000000000000000000",
+        "TotalSupplyEth": 390,
+        "Tx": {
+          "BlockNum": 123,
+          "DateTime": "2026-01-01T00:38:20Z",
+          "EvtLogId": 5070,
+          "TimeStamp": 1767227900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001024",
+          "TxId": 1024
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5071,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "490000000000000000000",
+        "TotalSupplyEth": 490,
+        "Tx": {
+          "BlockNum": 124,
+          "DateTime": "2026-01-01T00:40:00Z",
+          "EvtLogId": 5071,
+          "TimeStamp": 1767228000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001025",
+          "TxId": 1025
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5077,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "590000000000000000000",
+        "TotalSupplyEth": 590,
+        "Tx": {
+          "BlockNum": 127,
+          "DateTime": "2026-01-01T00:45:00Z",
+          "EvtLogId": 5077,
+          "TimeStamp": 1767228300,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001028",
+          "TxId": 1028
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5078,
+        "BidType": 0,
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "690000000000000000000",
+        "TotalSupplyEth": 690,
+        "Tx": {
+          "BlockNum": 128,
+          "DateTime": "2026-01-01T00:46:40Z",
+          "EvtLogId": 5078,
+          "TimeStamp": 1767228400,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001029",
+          "TxId": 1029
+        }
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "BidInfoId": 5097,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BurnAmount": "0",
+        "BurnAmountEth": 0,
+        "MintAmount": "100000000000000000000",
+        "MintAmountEth": 100,
+        "TotalSupply": "790000000000000000000",
+        "TotalSupplyEth": 790,
+        "Tx": {
+          "BlockNum": 129,
+          "DateTime": "2026-01-01T00:48:20Z",
+          "EvtLogId": 5097,
+          "TimeStamp": 1767228500,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001043",
+          "TxId": 1043
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

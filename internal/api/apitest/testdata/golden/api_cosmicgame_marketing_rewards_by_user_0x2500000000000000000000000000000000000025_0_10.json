@@ -1,0 +1,29 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "UserAddr": "0x2500000000000000000000000000000000000025",
+    "UserAid": 25,
+    "UserMarketingRewards": [
+      {
+        "Amount": "50000000000000000000",
+        "AmountEth": 50,
+        "MarketerAddr": "0x2500000000000000000000000000000000000025",
+        "MarketerAid": 25,
+        "RecordId": 1,
+        "Tx": {
+          "BlockNum": 109,
+          "DateTime": "2026-01-01T00:15:00Z",
+          "EvtLogId": 5017,
+          "TimeStamp": 1767226500,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001010",
+          "TxId": 1010
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

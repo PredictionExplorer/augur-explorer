@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "DirectCGDonations": [
+      {
+        "Amount": "200000000000000000",
+        "AmountEth": 0.2,
+        "DonorAddr": "0x2400000000000000000000000000000000000024",
+        "DonorAid": 24,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 105,
+          "DateTime": "2026-01-01T00:08:20Z",
+          "EvtLogId": 5012,
+          "TimeStamp": 1767226100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001006",
+          "TxId": 1006
+        }
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UserAddr": "0x2400000000000000000000000000000000000024",
+    "UserAid": 24,
+    "UserTokens": [
+      {
+        "ContractAddr": "",
+        "ContractAid": 0,
+        "Price": 1,
+        "Seed": "aa00000000000000000000000000000000000000000000000000000000000010",
+        "SeedNum": "16",
+        "TokenId": 10
+      },
+      {
+        "ContractAddr": "",
+        "ContractAid": 0,
+        "Price": 0.055,
+        "Seed": "aa00000000000000000000000000000000000000000000000000000000000011",
+        "SeedNum": "17",
+        "TokenId": 11
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

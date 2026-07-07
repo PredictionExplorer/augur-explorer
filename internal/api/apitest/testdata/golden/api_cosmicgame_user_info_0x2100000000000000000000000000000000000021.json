@@ -1,0 +1,802 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Bids": [
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "BidPosition": 3,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "CstPrice": "-1",
+        "CstPriceEth": -1e-18,
+        "DonatedERC20TokenAddr": "",
+        "DonatedERC20TokenAmount": "",
+        "DonatedERC20TokenAmountEth": 0,
+        "EthPrice": "60000000000000000",
+        "EthPriceEth": 0.06,
+        "ImageURL": "",
+        "Message": "alice fifth bid",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767232100,
+        "PrizeTimeDate": "2026-01-01T01:48:20Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 3,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 129,
+          "DateTime": "2026-01-01T00:48:20Z",
+          "EvtLogId": 5097,
+          "TimeStamp": 1767228500,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001043",
+          "TxId": 1043
+        }
+      },
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "BidPosition": 1,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "CstPrice": "-1",
+        "CstPriceEth": -1e-18,
+        "DonatedERC20TokenAddr": "",
+        "DonatedERC20TokenAmount": "",
+        "DonatedERC20TokenAmountEth": 0,
+        "EthPrice": "50000000000000000",
+        "EthPriceEth": 0.05,
+        "ImageURL": "",
+        "Message": "round three begins",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767231900,
+        "PrizeTimeDate": "2026-01-01T01:45:00Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 3,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 127,
+          "DateTime": "2026-01-01T00:45:00Z",
+          "EvtLogId": 5077,
+          "TimeStamp": 1767228300,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001028",
+          "TxId": 1028
+        }
+      },
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "BidPosition": 3,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "CstPrice": "-1",
+        "CstPriceEth": -1e-18,
+        "DonatedERC20TokenAddr": "",
+        "DonatedERC20TokenAmount": "",
+        "DonatedERC20TokenAmountEth": 0,
+        "EthPrice": "100000000000000000",
+        "EthPriceEth": 0.1,
+        "ImageURL": "",
+        "Message": "",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767231600,
+        "PrizeTimeDate": "2026-01-01T01:40:00Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 2,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 124,
+          "DateTime": "2026-01-01T00:40:00Z",
+          "EvtLogId": 5071,
+          "TimeStamp": 1767228000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001025",
+          "TxId": 1025
+        }
+      },
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "BidPosition": 4,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "CstPrice": "-1",
+        "CstPriceEth": -1e-18,
+        "DonatedERC20TokenAddr": "",
+        "DonatedERC20TokenAmount": "",
+        "DonatedERC20TokenAmountEth": 0,
+        "EthPrice": "120000000000000000",
+        "EthPriceEth": 0.12,
+        "ImageURL": "",
+        "Message": "",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767229600,
+        "PrizeTimeDate": "2026-01-01T01:06:40Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 0,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 104,
+          "DateTime": "2026-01-01T00:06:40Z",
+          "EvtLogId": 5010,
+          "TimeStamp": 1767226000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001005",
+          "TxId": 1005
+        }
+      },
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "BidPosition": 1,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "CstPrice": "-1",
+        "CstPriceEth": -1e-18,
+        "DonatedERC20TokenAddr": "0x2600000000000000000000000000000000000026",
+        "DonatedERC20TokenAmount": "500000000000000000000",
+        "DonatedERC20TokenAmountEth": 500,
+        "EthPrice": "100000000000000000",
+        "EthPriceEth": 0.1,
+        "ImageURL": "",
+        "Message": "hello world",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767229300,
+        "PrizeTimeDate": "2026-01-01T01:01:40Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 0,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 101,
+          "DateTime": "2026-01-01T00:01:40Z",
+          "EvtLogId": 5004,
+          "TimeStamp": 1767225700,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001002",
+          "TxId": 1002
+        }
+      }
+    ],
+    "CosmicSignatureTokensOwned": [
+      {
+        "ActualUnstakeDateTime": "",
+        "ActualUnstakeTimeStamp": 0,
+        "ContractAddr": "",
+        "CurOwnerAddr": "0x2100000000000000000000000000000000000021",
+        "CurOwnerAid": 21,
+        "RecordId": 0,
+        "RecordType": 3,
+        "RoundNum": 0,
+        "Seed": "seed0000000000000000000000000000000000000000000000000000000006",
+        "StakeActionId": 0,
+        "StakeDateTime": "",
+        "StakeTimeStamp": 0,
+        "Staked": false,
+        "StakedOwnerAddr": "",
+        "StakedOwnerAid": 0,
+        "TokenId": 6,
+        "TokenName": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5038,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "UnstakeActionId": 0,
+        "WasUnstaked": false,
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21
+      },
+      {
+        "ActualUnstakeDateTime": "2026-01-01T00:26:40Z",
+        "ActualUnstakeTimeStamp": 1767227200,
+        "ContractAddr": "",
+        "CurOwnerAddr": "0x2100000000000000000000000000000000000021",
+        "CurOwnerAid": 21,
+        "RecordId": 0,
+        "RecordType": 3,
+        "RoundNum": 0,
+        "Seed": "seed0000000000000000000000000000000000000000000000000000000001",
+        "StakeActionId": 1,
+        "StakeDateTime": "2026-01-01T00:23:20Z",
+        "StakeTimeStamp": 1767227000,
+        "Staked": false,
+        "StakedOwnerAddr": "",
+        "StakedOwnerAid": 0,
+        "TokenId": 1,
+        "TokenName": "Genesis",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5019,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "UnstakeActionId": 1,
+        "WasUnstaked": true,
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21
+      }
+    ],
+    "CurrentlyStakedTokens": {
+      "CST": [],
+      "RWalk": []
+    },
+    "DonatedNFTsClaimed": [
+      {
+        "DonorAddr": "0x2200000000000000000000000000000000000022",
+        "Index": 0,
+        "NFTTokenId": 777,
+        "NFTTokenURI": "https://nft.example/777",
+        "RecordId": 1,
+        "RoundNum": 0,
+        "TokenAddr": "0x2700000000000000000000000000000000000027",
+        "Tx": {
+          "BlockNum": 112,
+          "DateTime": "2026-01-01T00:20:00Z",
+          "EvtLogId": 0,
+          "TimeStamp": 1767226800,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001013",
+          "TxId": 1013
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21,
+        "WinnerIndex": 0
+      }
+    ],
+    "DonatedTokensClaimed": [
+      {
+        "AmountClaimed": "500000000000000000000",
+        "AmountClaimedEth": 500,
+        "AmountDonated": "0",
+        "AmountDonatedEth": 0,
+        "Claimed": true,
+        "DonateClaimDiff": "-500000000000000000000",
+        "DonateClaimDiffEth": -500,
+        "RecordId": 1,
+        "RoundNum": 0,
+        "TokenAddr": "0x2600000000000000000000000000000000000026",
+        "TokenAid": 26,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5018,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21
+      }
+    ],
+    "ERC20Transfers": [
+      {
+        "FromAddr": "0x2100000000000000000000000000000000000021",
+        "FromAid": 21,
+        "RecordId": 6,
+        "ToAddr": "0x2200000000000000000000000000000000000022",
+        "ToAid": 22,
+        "TransferType": 0,
+        "Tx": {
+          "BlockNum": 113,
+          "DateTime": "2026-01-01T00:21:40Z",
+          "EvtLogId": 5049,
+          "TimeStamp": 1767226900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001014",
+          "TxId": 1014
+        },
+        "Value": "10000000000000000000",
+        "ValueFloat": 10
+      },
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 5,
+        "ToAddr": "0x2100000000000000000000000000000000000021",
+        "ToAid": 21,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5043,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "Value": "100000000000000000000",
+        "ValueFloat": 100
+      },
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 4,
+        "ToAddr": "0x2100000000000000000000000000000000000021",
+        "ToAid": 21,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 104,
+          "DateTime": "2026-01-01T00:06:40Z",
+          "EvtLogId": 5011,
+          "TimeStamp": 1767226000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001005",
+          "TxId": 1005
+        },
+        "Value": "100000000000000000000",
+        "ValueFloat": 100
+      },
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 1,
+        "ToAddr": "0x2100000000000000000000000000000000000021",
+        "ToAid": 21,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 101,
+          "DateTime": "2026-01-01T00:01:40Z",
+          "EvtLogId": 5005,
+          "TimeStamp": 1767225700,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001002",
+          "TxId": 1002
+        },
+        "Value": "100000000000000000000",
+        "ValueFloat": 100
+      }
+    ],
+    "ERC721Transfers": [
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 6,
+        "ToAddr": "0x2100000000000000000000000000000000000021",
+        "ToAid": 21,
+        "TokenId": 6,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5039,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        }
+      },
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 1,
+        "ToAddr": "0x2100000000000000000000000000000000000021",
+        "ToAid": 21,
+        "TokenId": 1,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5020,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        }
+      }
+    ],
+    "ETHDonationsMade": [],
+    "MainPrizeClaims": [
+      {
+        "AllPrizes": null,
+        "CharityDeposit": {
+          "CharityAddress": "0x6000000000000000000000000000000000000006",
+          "CharityAmount": "90000000000000000",
+          "CharityAmountETH": 0.09
+        },
+        "ChronoWarrior": {
+          "CstAmount": "",
+          "CstAmountEth": 0,
+          "EthAmount": "",
+          "EthAmountEth": 0,
+          "NftTokenId": 0,
+          "WinnerAddr": ""
+        },
+        "ClaimPrizeTx": {
+          "Tx": {
+            "BlockNum": 110,
+            "DateTime": "2026-01-01T00:16:40Z",
+            "EvtLogId": 5018,
+            "TimeStamp": 1767226600,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+            "TxId": 1011
+          }
+        },
+        "EnduranceChampion": {
+          "CstAmount": "",
+          "CstAmountEth": 0,
+          "NftTokenId": 0,
+          "WinnerAddr": ""
+        },
+        "LastCstBidder": {
+          "CstAmount": "",
+          "CstAmountEth": 0,
+          "NftTokenId": 0,
+          "WinnerAddr": ""
+        },
+        "MainPrize": {
+          "CstAmount": "",
+          "CstAmountEth": 0,
+          "EthAmount": "500000000000000000",
+          "EthAmountEth": 0.5,
+          "NftTokenId": 1,
+          "Seed": "seed0000000000000000000000000000000000000000000000000000000001",
+          "TimeoutTs": 0,
+          "WinnerAddr": "0x2100000000000000000000000000000000000021",
+          "WinnerAid": 21
+        },
+        "RaffleETHDeposits": null,
+        "RaffleNFTWinners": null,
+        "RoundNum": 0,
+        "RoundStats": {
+          "ActivationTime": 0,
+          "DelayDurationBeforeRoundActivation": 0,
+          "NumERC20Donations": 0,
+          "ParamWindowDurationSeconds": 0,
+          "ParamWindowStartTime": "",
+          "RoundDurationSeconds": 0,
+          "RoundEndTime": "",
+          "RoundNum": 0,
+          "RoundStartTime": "",
+          "TotalBids": 4,
+          "TotalCstInBidsEth": 0,
+          "TotalDonatedAmount": "",
+          "TotalDonatedAmountEth": 0,
+          "TotalDonatedCount": 0,
+          "TotalDonatedNFTs": 1,
+          "TotalEthInBidsEth": 0,
+          "TotalRaffleEthDeposits": "100000000000000000",
+          "TotalRaffleEthDepositsEth": 0.1,
+          "TotalRaffleNFTs": 2
+        },
+        "StakingDeposit": {
+          "StakingDepositAmount": "",
+          "StakingDepositAmountEth": 0,
+          "StakingDepositId": 0,
+          "StakingNumStakedTokens": 0,
+          "StakingPerToken": "",
+          "StakingPerTokenEth": 0
+        },
+        "StakingNFTWinners": null
+      }
+    ],
+    "MarketingRewardsAwarded": [],
+    "PrizeHistory": [
+      {
+        "Amount": "60000000000000000",
+        "AmountEth": 0.06,
+        "Claimed": false,
+        "IsTimeoutClaim": false,
+        "RecordType": 10,
+        "RoundNum": 1,
+        "TokenAddress": "",
+        "TokenId": -1,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 120,
+          "DateTime": "2026-01-01T00:33:20Z",
+          "EvtLogId": 5065,
+          "TimeStamp": 1767227600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+          "TxId": 1021
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 0
+      },
+      {
+        "Amount": "500000000000000000",
+        "AmountEth": 0.5,
+        "Claimed": true,
+        "IsTimeoutClaim": false,
+        "RecordType": 0,
+        "RoundNum": 0,
+        "TokenAddress": "",
+        "TokenId": -1,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5018,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 0
+      },
+      {
+        "Amount": "100000000000000000000",
+        "AmountEth": 100,
+        "Claimed": true,
+        "IsTimeoutClaim": false,
+        "RecordType": 1,
+        "RoundNum": 0,
+        "TokenAddress": "",
+        "TokenId": -1,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5018,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 0
+      },
+      {
+        "Amount": "0",
+        "AmountEth": 0,
+        "Claimed": true,
+        "IsTimeoutClaim": false,
+        "RecordType": 2,
+        "RoundNum": 0,
+        "TokenAddress": "",
+        "TokenId": 1,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5018,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 0
+      },
+      {
+        "Amount": "80000000000000000",
+        "AmountEth": 0.08,
+        "Claimed": true,
+        "IsTimeoutClaim": false,
+        "RecordType": 7,
+        "RoundNum": 0,
+        "TokenAddress": "",
+        "TokenId": -1,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5037,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 2
+      },
+      {
+        "Amount": "35000000000000000000",
+        "AmountEth": 35,
+        "Claimed": true,
+        "IsTimeoutClaim": false,
+        "RecordType": 8,
+        "RoundNum": 0,
+        "TokenAddress": "",
+        "TokenId": -1,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5037,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 2
+      },
+      {
+        "Amount": "0",
+        "AmountEth": 0,
+        "Claimed": true,
+        "IsTimeoutClaim": false,
+        "RecordType": 9,
+        "RoundNum": 0,
+        "TokenAddress": "",
+        "TokenId": 6,
+        "TokenURI": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5037,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "",
+        "WinnerAid": 0,
+        "WinnerIndex": 2
+      }
+    ],
+    "StakingActions": {
+      "CST": [
+        {
+          "ActionId": 1,
+          "ActionType": 1,
+          "Claimed": false,
+          "Modulo": "",
+          "ModuloF64": 0,
+          "NumStakedNFTs": 0,
+          "RecordId": 1,
+          "TokenId": 1,
+          "Tx": {
+            "BlockNum": 116,
+            "DateTime": "2026-01-01T00:26:40Z",
+            "EvtLogId": 5056,
+            "TimeStamp": 1767227200,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001017",
+            "TxId": 1017
+          },
+          "UnstakeDate": "1970-01-01T00:00:00Z",
+          "UnstakeTimeStamp": 0
+        },
+        {
+          "ActionId": 1,
+          "ActionType": 0,
+          "Claimed": false,
+          "Modulo": "",
+          "ModuloF64": 0,
+          "NumStakedNFTs": 1,
+          "RecordId": 1,
+          "TokenId": 1,
+          "Tx": {
+            "BlockNum": 114,
+            "DateTime": "2026-01-01T00:23:20Z",
+            "EvtLogId": 5051,
+            "TimeStamp": 1767227000,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001015",
+            "TxId": 1015
+          },
+          "UnstakeDate": "1970-01-01T00:00:00Z",
+          "UnstakeTimeStamp": -1
+        }
+      ],
+      "RWalk": []
+    },
+    "TokenDonationsMade": {
+      "ERC20Donations": [
+        {
+          "Amount": "500000000000000000000",
+          "AmountEth": 500,
+          "DonorAddr": "0x2100000000000000000000000000000000000021",
+          "DonorAid": 21,
+          "RecordId": 1,
+          "RoundNum": 0,
+          "TokenAddr": "0x2600000000000000000000000000000000000026",
+          "TokenAid": 26,
+          "Tx": {
+            "BlockNum": 107,
+            "DateTime": "2026-01-01T00:11:40Z",
+            "EvtLogId": 5015,
+            "TimeStamp": 1767226300,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001008",
+            "TxId": 1
+          },
+          "WinnerAddr": "",
+          "WinnerAid": 0
+        }
+      ],
+      "NFTDonations": []
+    },
+    "UnclaimedAssets": {
+      "DonatedNFTs": [],
+      "ETHPrizes": [
+        {
+          "Amount": 0.06,
+          "ClaimDateTime": "",
+          "ClaimTimeStamp": 0,
+          "Claimed": false,
+          "RecordId": 4,
+          "RecordType": 10,
+          "RoundNum": 1,
+          "Tx": {
+            "BlockNum": 120,
+            "DateTime": "2026-01-01T00:33:20Z",
+            "EvtLogId": 5066,
+            "TimeStamp": 1767227600,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+            "TxId": 1021
+          },
+          "WinnerAddr": "0x2100000000000000000000000000000000000021",
+          "WinnerAid": 21,
+          "WinnerIndex": 0
+        },
+        {
+          "Amount": 0.08,
+          "ClaimDateTime": "",
+          "ClaimTimeStamp": 0,
+          "Claimed": false,
+          "RecordId": 3,
+          "RecordType": 7,
+          "RoundNum": 0,
+          "Tx": {
+            "BlockNum": 110,
+            "DateTime": "2026-01-01T00:16:40Z",
+            "EvtLogId": 5040,
+            "TimeStamp": 1767226600,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+            "TxId": 1011
+          },
+          "WinnerAddr": "0x2100000000000000000000000000000000000021",
+          "WinnerAid": 21,
+          "WinnerIndex": 2
+        }
+      ]
+    },
+    "UserInfo": {
+      "Address": "0x2100000000000000000000000000000000000021",
+      "AddressId": 21,
+      "CosmicSignatureNumTransfers": 2,
+      "MaxBidAmount": 0.12,
+      "MaxWinAmount": 0.5,
+      "NumBids": 5,
+      "NumPrizes": 7,
+      "NumRaffleEthWinnings": 1,
+      "RaffleNFTsCount": 0,
+      "RewardNFTsCount": 2,
+      "StakingStatisticsRWalk": {
+        "NumActiveStakers": 0,
+        "TotalNumStakeActions": 0,
+        "TotalNumUnstakeActions": 0,
+        "TotalTokensMinted": 0,
+        "TotalTokensStaked": 0
+      },
+      "SumRaffleEthWinnings": 0.14,
+      "SumRaffleEthWithdrawal": 0,
+      "TotalCSTokensWon": 2,
+      "TotalDonatedAmountEth": 0,
+      "TotalDonatedCount": 0,
+      "UnclaimedNFTs": 0
+    },
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UnclaimedEthDeposits": [
+      {
+        "AmountPerToken": "1000000000000000000",
+        "AmountPerTokenEth": 1,
+        "DepositAmount": "2000000000000000000",
+        "DepositAmountEth": 2,
+        "DepositDate": "2026-01-01T00:25:00Z",
+        "DepositId": 501,
+        "DepositTimeStamp": 1767227100,
+        "Modulo": "",
+        "ModuloF64": 0,
+        "NumStakedNFTs": 2,
+        "NumUnclaimedTokens": 1,
+        "PendingToClaim": "1000000000000000000",
+        "PendingToClaimEth": 1,
+        "RecordId": 1,
+        "Tx": {
+          "BlockNum": 115,
+          "DateTime": "2026-01-01T00:25:00Z",
+          "EvtLogId": 5055,
+          "TimeStamp": 1767227100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+          "TxId": 1016
+        },
+        "YourCollectedAmount": "0",
+        "YourCollectedAmountEth": 0,
+        "YourRewardAmount": "1000000000000000000",
+        "YourRewardAmountEth": 1,
+        "YourTokensStaked": 1
+      }
+    ],
+    "UserAddr": "0x2200000000000000000000000000000000000022",
+    "UserAid": 22,
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10000,
+    "Offset": 0,
+    "SystemModeChanges": [
+      {
+        "BlockNum": 125,
+        "DateTime": "2026-01-01T00:41:40Z",
+        "EvtLogId": 5072,
+        "NextEvtLogId": 5076,
+        "RoundNum": 3,
+        "TimeStamp": 1767228100,
+        "TxHash": "",
+        "TxId": 0
+      },
+      {
+        "BlockNum": 120,
+        "DateTime": "2026-01-01T00:33:20Z",
+        "EvtLogId": 5062,
+        "NextEvtLogId": 5068,
+        "RoundNum": 2,
+        "TimeStamp": 1767227600,
+        "TxHash": "",
+        "TxId": 0
+      },
+      {
+        "BlockNum": 110,
+        "DateTime": "2026-01-01T00:16:40Z",
+        "EvtLogId": 5018,
+        "NextEvtLogId": 5059,
+        "RoundNum": 1,
+        "TimeStamp": 1767226600,
+        "TxHash": "",
+        "TxId": 0
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "StakedTokensRWalk": [
+      {
+        "StakeActionId": 102,
+        "StakeBlockNum": 114,
+        "StakeDateTime": "2026-01-01T00:23:20Z",
+        "StakeEvtLogId": 5054,
+        "StakeTimeStamp": 1767227000,
+        "StakedTokenId": 11,
+        "UserAddr": "0x2400000000000000000000000000000000000024",
+        "UserAid": 24
+      },
+      {
+        "StakeActionId": 103,
+        "StakeBlockNum": 114,
+        "StakeDateTime": "2026-01-01T00:23:20Z",
+        "StakeEvtLogId": 5098,
+        "StakeTimeStamp": 1767227000,
+        "StakedTokenId": 13,
+        "UserAddr": "0x2200000000000000000000000000000000000022",
+        "UserAid": 22
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "Error at BalanceOf() call: apitest eth stub: method eth_call not supported\n",
+    "status": 0
+  }
+}

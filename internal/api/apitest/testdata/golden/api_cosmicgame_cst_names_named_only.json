@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "NamedTokens": [
+      {
+        "MintDateTime": "2026-01-01T00:16:40Z",
+        "MintTimeStamp": 1767226600,
+        "TokenId": 1,
+        "TokenName": "Genesis"
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

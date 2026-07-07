@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UniqueStakersBoth": [
+      {
+        "CSTStats": {
+          "NumStakeActions": 1,
+          "NumUnstakeActions": 0,
+          "StakerAddr": "",
+          "StakerAid": 0,
+          "TotalReward": "1000000000000000000",
+          "TotalRewardEth": 1,
+          "TotalTokensStaked": 1,
+          "UnclaimedReward": "1000000000000000000",
+          "UnclaimedRewardEth": 1
+        },
+        "RWalkStats": {
+          "NumStakeActions": 1,
+          "NumUnstakeActions": 0,
+          "StakerAddr": "",
+          "StakerAid": 0,
+          "TotalTokensMinted": 0,
+          "TotalTokensStaked": 1
+        },
+        "StakerAddr": "0x2200000000000000000000000000000000000022",
+        "StakerAid": 22,
+        "TotalStakedTokensBoth": 2
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UniqueStakersCST": [
+      {
+        "NumStakeActions": 1,
+        "NumUnstakeActions": 1,
+        "StakerAddr": "0x2100000000000000000000000000000000000021",
+        "StakerAid": 21,
+        "TotalReward": "1000000000000000000",
+        "TotalRewardEth": 1,
+        "TotalTokensStaked": 0,
+        "UnclaimedReward": "0",
+        "UnclaimedRewardEth": 0
+      },
+      {
+        "NumStakeActions": 1,
+        "NumUnstakeActions": 0,
+        "StakerAddr": "0x2200000000000000000000000000000000000022",
+        "StakerAid": 22,
+        "TotalReward": "1000000000000000000",
+        "TotalRewardEth": 1,
+        "TotalTokensStaked": 1,
+        "UnclaimedReward": "1000000000000000000",
+        "UnclaimedRewardEth": 1
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

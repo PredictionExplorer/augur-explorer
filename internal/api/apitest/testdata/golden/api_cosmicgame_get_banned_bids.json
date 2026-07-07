@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": [
+    {
+      "bid_id": 2002,
+      "created_at": 1767230000,
+      "id": 1,
+      "user_addr": "0x2200000000000000000000000000000000000022"
+    }
+  ]
+}

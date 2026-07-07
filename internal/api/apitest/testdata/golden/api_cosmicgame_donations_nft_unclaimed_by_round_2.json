@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "NFTDonations": [
+      {
+        "DonorAddr": "0x2500000000000000000000000000000000000025",
+        "DonorAid": 25,
+        "Index": 1,
+        "NFTTokenId": 888,
+        "NFTTokenURI": "https://nft.example/888",
+        "RecordId": 2,
+        "RoundNum": 2,
+        "TokenAddr": "0x2700000000000000000000000000000000000027",
+        "TokenAddressId": 27,
+        "Tx": {
+          "BlockNum": 123,
+          "DateTime": "2026-01-01T00:38:20Z",
+          "EvtLogId": 5102,
+          "TimeStamp": 1767227900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001024",
+          "TxId": 1024
+        }
+      }
+    ],
+    "RoundNum": 2,
+    "error": "",
+    "status": 1
+  }
+}

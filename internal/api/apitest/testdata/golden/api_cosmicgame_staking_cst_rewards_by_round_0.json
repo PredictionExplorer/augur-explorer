@@ -1,0 +1,65 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Rewards": [
+      {
+        "Amount": "2000000000000000000",
+        "AmountCollected": "0",
+        "AmountCollectedEth": 0,
+        "AmountEth": 2,
+        "AmountPendingToClaim": "1000000000000000000",
+        "AmountPendingToClaimEth": 1,
+        "AmountPerToken": "1000000000000000000",
+        "AmountPerTokenEth": 1,
+        "DepositDate": "2026-01-01T00:25:00Z",
+        "DepositTimeStamp": 1767227100,
+        "NumStakedNFTsTotal": 2,
+        "RecordId": 1,
+        "StakerAddr": "0x2200000000000000000000000000000000000022",
+        "StakerAid": 22,
+        "StakerAmount": "1000000000000000000",
+        "StakerAmountEth": 1,
+        "StakerNumStakedNFTs": 1,
+        "Tx": {
+          "BlockNum": 115,
+          "DateTime": "2026-01-01T00:25:00Z",
+          "EvtLogId": 5055,
+          "TimeStamp": 1767227100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+          "TxId": 1016
+        }
+      },
+      {
+        "Amount": "2000000000000000000",
+        "AmountCollected": "1000000000000000000",
+        "AmountCollectedEth": 1,
+        "AmountEth": 2,
+        "AmountPendingToClaim": "0",
+        "AmountPendingToClaimEth": 0,
+        "AmountPerToken": "1000000000000000000",
+        "AmountPerTokenEth": 1,
+        "DepositDate": "2026-01-01T00:25:00Z",
+        "DepositTimeStamp": 1767227100,
+        "NumStakedNFTsTotal": 2,
+        "RecordId": 1,
+        "StakerAddr": "0x2100000000000000000000000000000000000021",
+        "StakerAid": 21,
+        "StakerAmount": "1000000000000000000",
+        "StakerAmountEth": 1,
+        "StakerNumStakedNFTs": 1,
+        "Tx": {
+          "BlockNum": 115,
+          "DateTime": "2026-01-01T00:25:00Z",
+          "EvtLogId": 5055,
+          "TimeStamp": 1767227100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+          "TxId": 1016
+        }
+      }
+    ],
+    "RoundNum": 0,
+    "error": "",
+    "status": 1
+  }
+}

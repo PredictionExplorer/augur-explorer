@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CurRoundPrizeTime": 0,
+    "error": "MainPrizeTime call failed: apitest eth stub: method eth_call not supported",
+    "status": 0
+  }
+}

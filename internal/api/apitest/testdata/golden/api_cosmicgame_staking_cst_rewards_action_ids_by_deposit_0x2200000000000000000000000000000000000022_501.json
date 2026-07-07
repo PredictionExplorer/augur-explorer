@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ActionIdsWithClaimInfo": [
+      {
+        "ClaimBlockNum": 115,
+        "ClaimDateTime": "2026-01-01T00:25:00Z",
+        "ClaimRewardAmount": "1000000000000000000",
+        "ClaimRewardAmountEth": 1,
+        "ClaimTimeStamp": 1767227100,
+        "ClaimTxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+        "ClaimTxId": 1016,
+        "Claimed": false,
+        "DepositId": 501,
+        "RecordId": 1,
+        "StakeActionId": 2,
+        "TokenId": 5,
+        "UserAid": 22
+      }
+    ],
+    "DepositId": 501,
+    "UserAddr": "0x2200000000000000000000000000000000000022",
+    "UserAid": 22,
+    "error": "",
+    "status": 1
+  }
+}

@@ -129,7 +129,7 @@ func main() {
 	r.Use(metricsMiddleware())
 
 	// Liveness/readiness probes and the internal metrics/pprof listener.
-	registerHealthRoutes(r)
+	common.RegisterHealthRoutes(r, rwcg_srv.db)
 	startInternalServer()
 
 	// NFT asset files (nft-assets mirror) and optional /static ABI JSON; see static_assets.go
@@ -146,7 +146,7 @@ func main() {
 	// a Cosmic Signature host serves Cosmic Signature metadata, anything else
 	// (RandomWalk hosts) serves RandomWalk metadata.
 	r.GET("/metadata/:token_id", func(c *gin.Context) {
-		if metadataHostServesCosmicSignature(c.Request.Host, c.Request.Header.Get("X-Forwarded-Host")) {
+		if common.MetadataHostServesCosmicSignature(c.Request.Host, c.Request.Header.Get("X-Forwarded-Host")) {
 			cosmicgame.TokenMetadataHandler(c)
 			return
 		}

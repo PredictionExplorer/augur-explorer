@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CurrentTimeStamp": 1767225600,
+    "error": "",
+    "status": 1
+  }
+}

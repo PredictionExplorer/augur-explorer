@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "FinTs": 1767229800,
+    "InitTs": 1767228500,
+    "Interval": 600,
+    "VolumeHistory": [
+      {
+        "NumOperations": 0,
+        "StartTs": 1767228500,
+        "Volume": 0,
+        "VolumeAccum": 0
+      },
+      {
+        "NumOperations": 1,
+        "StartTs": 1767229100,
+        "Volume": 1,
+        "VolumeAccum": 1
+      },
+      {
+        "NumOperations": 0,
+        "StartTs": 1767229700,
+        "Volume": 0,
+        "VolumeAccum": 1
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

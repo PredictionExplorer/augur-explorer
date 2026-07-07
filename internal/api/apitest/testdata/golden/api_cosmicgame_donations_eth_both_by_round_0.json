@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CosmicGameDonations": [
+      {
+        "Amount": "300000000000000000",
+        "AmountEth": 0.3,
+        "CGRecordId": 0,
+        "DataJson": "{\"title\":\"apitest donation\",\"url\":\"https://example.org/apitest\"}",
+        "DonorAddr": "0x2500000000000000000000000000000000000025",
+        "DonorAid": 25,
+        "RecordType": 1,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 106,
+          "DateTime": "2026-01-01T00:10:00Z",
+          "EvtLogId": 5014,
+          "TimeStamp": 1767226200,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001007",
+          "TxId": 1007
+        }
+      },
+      {
+        "Amount": "200000000000000000",
+        "AmountEth": 0.2,
+        "CGRecordId": -1,
+        "DataJson": "",
+        "DonorAddr": "0x2400000000000000000000000000000000000024",
+        "DonorAid": 24,
+        "RecordType": 0,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 105,
+          "DateTime": "2026-01-01T00:08:20Z",
+          "EvtLogId": 5012,
+          "TimeStamp": 1767226100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001006",
+          "TxId": 1006
+        }
+      }
+    ],
+    "RoundNum": 0,
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "Provided address wasn't found",
+    "status": 0
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CharityDonations": [
+      {
+        "Amount": "90000000000000000",
+        "AmountEth": 0.09,
+        "DonorAddr": "0x2000000000000000000000000000000000000002",
+        "DonorAid": 2,
+        "IsVoluntary": false,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5041,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        }
+      },
+      {
+        "Amount": "10000000000000000",
+        "AmountEth": 0.01,
+        "DonorAddr": "0x2400000000000000000000000000000000000024",
+        "DonorAid": 24,
+        "IsVoluntary": true,
+        "RoundNum": -1,
+        "Tx": {
+          "BlockNum": 105,
+          "DateTime": "2026-01-01T00:08:20Z",
+          "EvtLogId": 5013,
+          "TimeStamp": 1767226100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001006",
+          "TxId": 1006
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

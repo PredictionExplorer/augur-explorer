@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UniqueDonors": [
+      {
+        "CountDonations": 1,
+        "DonorAddr": "0x2500000000000000000000000000000000000025",
+        "DonorAid": 25,
+        "TotalDonated": "300000000000000000",
+        "TotalDonatedEth": 0.3
+      },
+      {
+        "CountDonations": 1,
+        "DonorAddr": "0x2400000000000000000000000000000000000024",
+        "DonorAid": 24,
+        "TotalDonated": "200000000000000000",
+        "TotalDonatedEth": 0.2
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

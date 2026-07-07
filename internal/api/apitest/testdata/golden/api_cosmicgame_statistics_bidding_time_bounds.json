@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MaxTs": 1767228500,
+    "MinTs": 1767225700,
+    "error": "",
+    "status": 1
+  }
+}

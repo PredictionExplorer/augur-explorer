@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 100,
+    "MinBids": 5,
+    "Offset": 0,
+    "RoiLeaderboard": [
+      {
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CstPrizesCount": 2,
+        "EthWon": "640000000000000000",
+        "EthWonEth": 0.64,
+        "NetPlEth": 0.21,
+        "NftPrizesCount": 2,
+        "NumBids": 5,
+        "PrizesCount": 7,
+        "Roi": 0.4883720930232558,
+        "RoundsParticipated": 3,
+        "RoundsWon": 2,
+        "TotalCstSpent": "0",
+        "TotalCstSpentEth": 0,
+        "TotalEthSpent": "430000000000000000",
+        "TotalEthSpentEth": 0.43,
+        "WinRate": 0.6666666666666666
+      }
+    ],
+    "Sort": "",
+    "error": "",
+    "status": 1
+  }
+}

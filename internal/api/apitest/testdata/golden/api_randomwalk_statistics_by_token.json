@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "RWalkAddr": "0x8000000000000000000000000000000000000008",
+    "RWalkAid": 8,
+    "TokenStats": {
+      "CurOwnerAddr": "",
+      "CurOwnerAid": 0,
+      "LastMintedPrice": 0.065,
+      "MaximumTradedPrice": 0,
+      "NumTrades": 1,
+      "NumWithdrawals": 0,
+      "TokensMinted": 4,
+      "TradingVol": 1,
+      "UniqueUsers": 0,
+      "WithdrawalAmount": 0.115
+    },
+    "error": "",
+    "status": 1
+  }
+}

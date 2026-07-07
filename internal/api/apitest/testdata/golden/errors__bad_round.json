@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "Invalid round_num",
+    "status": 0
+  }
+}

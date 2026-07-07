@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Summary": {
+      "ConsumedInBids": "0",
+      "ConsumedInBidsEth": 0,
+      "CurrentBalance": "290000000000000000000",
+      "CurrentBalanceEth": 290,
+      "EarnedFromBidding": "500000000000000000000",
+      "EarnedFromBiddingEth": 500,
+      "EarnedFromChronoWarrior": "35000000000000000000",
+      "EarnedFromChronoWarriorEth": 35,
+      "EarnedFromMainPrizes": "100000000000000000000",
+      "EarnedFromMainPrizesEth": 100,
+      "EarnedFromMarketing": "0",
+      "EarnedFromMarketingEth": 0,
+      "EarnedFromRafflePrizes": "0",
+      "EarnedFromRafflePrizesEth": 0,
+      "NetCSTFlow": "",
+      "NetCSTFlowEth": 635,
+      "NumBurns": 0,
+      "NumMints": 3,
+      "NumTransfers": 4,
+      "TotalEarned": "",
+      "TotalEarnedEth": 635,
+      "UserAddr": "0x2100000000000000000000000000000000000021",
+      "UserAid": 21
+    },
+    "error": "",
+    "status": 1
+  }
+}

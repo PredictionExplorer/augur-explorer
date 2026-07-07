@@ -1,0 +1,37 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "StakingCSTRewards": [
+      {
+        "AlreadyCollected": "1000000000000000000",
+        "AlreadyCollectedEth": 1,
+        "DepositAmountPerToken": "",
+        "DepositAmountPerTokenEth": 0,
+        "DepositDate": "2026-01-01T00:25:00Z",
+        "DepositId": 0,
+        "DepositTimeStamp": 1767227100,
+        "FullyClaimed": false,
+        "Modulo": "",
+        "ModuloF64": 0,
+        "NumStakedNFTs": 2,
+        "PendingToCollect": "1000000000000000000",
+        "PendingToCollectEth": 1,
+        "RecordId": 1,
+        "RoundNum": 0,
+        "TotalDepositAmount": "2000000000000000000",
+        "TotalDepositAmountEth": 2,
+        "Tx": {
+          "BlockNum": 115,
+          "DateTime": "2026-01-01T00:25:00Z",
+          "EvtLogId": 5055,
+          "TimeStamp": 1767227100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+          "TxId": 1016
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

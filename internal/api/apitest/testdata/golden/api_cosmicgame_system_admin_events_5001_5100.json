@@ -1,0 +1,72 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "AdminEvents": [
+      {
+        "AddressValue": "",
+        "BlockNum": 100,
+        "DateTime": "2026-01-01T00:00:00Z",
+        "EvtLogId": 5002,
+        "FloatValue": 0,
+        "IntegerValue": 10,
+        "RecordId": 1,
+        "RecordType": 1,
+        "ResolvedValue": "",
+        "StringValue": "",
+        "TimeStamp": 1767225600,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001001",
+        "TxId": 1001
+      },
+      {
+        "AddressValue": "",
+        "BlockNum": 117,
+        "DateTime": "2026-01-01T00:28:20Z",
+        "EvtLogId": 5058,
+        "FloatValue": 0,
+        "IntegerValue": 1767227400,
+        "RecordId": 2,
+        "RecordType": 24,
+        "ResolvedValue": "",
+        "StringValue": "",
+        "TimeStamp": 1767227300,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001018",
+        "TxId": 1018
+      },
+      {
+        "AddressValue": "",
+        "BlockNum": 121,
+        "DateTime": "2026-01-01T00:35:00Z",
+        "EvtLogId": 5067,
+        "FloatValue": 0,
+        "IntegerValue": 1767227800,
+        "RecordId": 3,
+        "RecordType": 24,
+        "ResolvedValue": "",
+        "StringValue": "",
+        "TimeStamp": 1767227700,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001022",
+        "TxId": 1022
+      },
+      {
+        "AddressValue": "",
+        "BlockNum": 126,
+        "DateTime": "2026-01-01T00:43:20Z",
+        "EvtLogId": 5075,
+        "FloatValue": 0,
+        "IntegerValue": 1767228300,
+        "RecordId": 4,
+        "RecordType": 24,
+        "ResolvedValue": "",
+        "StringValue": "",
+        "TimeStamp": 1767228200,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001027",
+        "TxId": 1027
+      }
+    ],
+    "EvtLogIdEnd": 5100,
+    "EvtLogIdStart": 5001,
+    "error": "",
+    "status": 1
+  }
+}

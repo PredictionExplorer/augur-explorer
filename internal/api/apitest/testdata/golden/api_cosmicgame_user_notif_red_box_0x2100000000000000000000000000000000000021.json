@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UserAddr": "0x2100000000000000000000000000000000000021",
+    "UserAid": 21,
+    "Winnings": {
+      "DonatedERC20Tokens": [],
+      "ETHChronoWarriorToClaim": 0,
+      "ETHChronoWarriorToClaimWei": "",
+      "ETHRaffleToClaim": 0.14,
+      "ETHRaffleToClaimWei": "140000000000000000",
+      "NumDonatedNFTToClaim": 0,
+      "UnclaimedStakingReward": 0
+    },
+    "error": "",
+    "status": 1
+  }
+}
