@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// Fixture handles referenced by the parity cases (see testdata/seed/*.sql).
+// Fixture handles referenced by the parity cases (see internal/testfixtures/seed/*.sql).
 const (
 	addrAlice = "0x2100000000000000000000000000000000000021" // round-0 main + chrono winner, CST staker
 	addrBob   = "0x2200000000000000000000000000000000000022" // rwalk bidder, endurance winner, banned bid

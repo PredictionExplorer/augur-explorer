@@ -1,0 +1,16 @@
+[
+  {
+    "DonorAid": 25,
+    "DonorAddr": "0x2500000000000000000000000000000000000025",
+    "CountDonations": 1,
+    "TotalDonated": "300000000000000000",
+    "TotalDonatedEth": 0.3
+  },
+  {
+    "DonorAid": 24,
+    "DonorAddr": "0x2400000000000000000000000000000000000024",
+    "CountDonations": 1,
+    "TotalDonated": "200000000000000000",
+    "TotalDonatedEth": 0.2
+  }
+]

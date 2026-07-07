@@ -1,0 +1,102 @@
+[
+  {
+    "BucketTs": 1767225600,
+    "EthBids": 2,
+    "RwalkBids": 1,
+    "CstBids": 1,
+    "TotalBids": 4,
+    "EthPct": 50,
+    "RwalkPct": 25,
+    "CstPct": 25
+  },
+  {
+    "BucketTs": 1767226500,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767227400,
+    "EthBids": 4,
+    "RwalkBids": 0,
+    "CstBids": 1,
+    "TotalBids": 5,
+    "EthPct": 80,
+    "RwalkPct": 0,
+    "CstPct": 20
+  },
+  {
+    "BucketTs": 1767228300,
+    "EthBids": 3,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 3,
+    "EthPct": 100,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767229200,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767230100,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767231000,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767231900,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767232800,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  },
+  {
+    "BucketTs": 1767233700,
+    "EthBids": 0,
+    "RwalkBids": 0,
+    "CstBids": 0,
+    "TotalBids": 0,
+    "EthPct": 0,
+    "RwalkPct": 0,
+    "CstPct": 0
+  }
+]

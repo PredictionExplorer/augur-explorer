@@ -1,0 +1,84 @@
+[
+  {
+    "RoundNum": 2,
+    "ClaimWindowTimeout": 1768091100,
+    "AwardedTs": 1767228100,
+    "Expired": true,
+    "EthAwarded": 0,
+    "EthUnclaimed": 0,
+    "EthUnclaimedEth": 0,
+    "NftAwarded": 1,
+    "NftUnclaimed": 1,
+    "Erc20Awarded": 0,
+    "Erc20Unclaimed": 0,
+    "TotalAwarded": 1,
+    "TotalUnclaimed": 1,
+    "AvgClaimPeriodSecs": 0,
+    "UnclaimedItems": [
+      {
+        "AssetType": "ERC721",
+        "RecipientAddr": "0x2500000000000000000000000000000000000025",
+        "AmountEth": 0,
+        "TokenAddr": "0x2700000000000000000000000000000000000027",
+        "TokenId": 888
+      }
+    ]
+  },
+  {
+    "RoundNum": 1,
+    "ClaimWindowTimeout": 1768090600,
+    "AwardedTs": 1767227600,
+    "Expired": true,
+    "EthAwarded": 1,
+    "EthUnclaimed": 1,
+    "EthUnclaimedEth": 0.06,
+    "NftAwarded": 0,
+    "NftUnclaimed": 0,
+    "Erc20Awarded": 0,
+    "Erc20Unclaimed": 0,
+    "TotalAwarded": 1,
+    "TotalUnclaimed": 1,
+    "AvgClaimPeriodSecs": 0,
+    "UnclaimedItems": [
+      {
+        "AssetType": "ETH",
+        "RecipientAddr": "0x2100000000000000000000000000000000000021",
+        "AmountEth": 0.06,
+        "TokenAddr": "",
+        "TokenId": -1
+      }
+    ]
+  },
+  {
+    "RoundNum": 0,
+    "ClaimWindowTimeout": 1768089600,
+    "AwardedTs": 1767226600,
+    "Expired": true,
+    "EthAwarded": 3,
+    "EthUnclaimed": 2,
+    "EthUnclaimedEth": 0.13,
+    "NftAwarded": 1,
+    "NftUnclaimed": 0,
+    "Erc20Awarded": 1,
+    "Erc20Unclaimed": 0,
+    "TotalAwarded": 5,
+    "TotalUnclaimed": 2,
+    "AvgClaimPeriodSecs": 167,
+    "UnclaimedItems": [
+      {
+        "AssetType": "ETH",
+        "RecipientAddr": "0x2300000000000000000000000000000000000023",
+        "AmountEth": 0.05,
+        "TokenAddr": "",
+        "TokenId": -1
+      },
+      {
+        "AssetType": "ETH",
+        "RecipientAddr": "0x2100000000000000000000000000000000000021",
+        "AmountEth": 0.08,
+        "TokenAddr": "",
+        "TokenId": -1
+      }
+    ]
+  }
+]

@@ -171,6 +171,77 @@ func TestComputeLogIdentityHash(t *testing.T) {
 	}
 }
 
+// TestSnappyBlobWithRLPLikeFirstByte pins the format-detection fix: snappy's
+// decompressed-length uvarint starts with a byte >= 0xc0 for half of all
+// payload lengths > 127 (low 7 bits >= 0x40), so a first-byte check alone
+// misclassified valid compressed blobs as raw RLP and failed to decode them.
+func TestSnappyBlobWithRLPLikeFirstByte(t *testing.T) {
+	log := &types.Log{
+		Address: common.HexToAddress("0x2000000000000000000000000000000000000002"),
+		Topics:  []common.Hash{common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")},
+		Data:    make([]byte, 32),
+	}
+	receipt := ReceiptForStorage{
+		PostStateOrStatus: []byte{1},
+		CumulativeGasUsed: 21000,
+		Logs:              []*types.Log{log},
+	}
+
+	// Grow the payload until the snappy uvarint's first byte lands in the
+	// RLP-list range (decompressed length with low 7 bits >= 0x40).
+	receipts := []ReceiptForStorage{receipt}
+	var compressed []byte
+	for i := 0; i < 64; i++ {
+		encoded, err := rlp.EncodeToBytes(receipts)
+		if err != nil {
+			t.Fatalf("encoding receipts: %v", err)
+		}
+		if c := snappy.Encode(nil, encoded); len(encoded) > 127 && c[0] >= 0xc0 {
+			compressed = c
+			break
+		}
+		receipts = append(receipts, receipt)
+	}
+	if compressed == nil {
+		t.Fatal("could not construct a snappy blob with an RLP-like first byte")
+	}
+
+	result, err := DecodeReceipts(compressed)
+	if err != nil {
+		t.Fatalf("DecodeReceipts misdetected snappy as raw RLP: %v", err)
+	}
+	if len(result.Receipts) != len(receipts) {
+		t.Fatalf("got %d receipts, want %d", len(result.Receipts), len(receipts))
+	}
+}
+
+func TestRLPListCoversExactly(t *testing.T) {
+	valid, err := rlp.EncodeToBytes([]ReceiptForStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !rlpListCoversExactly(valid) {
+		t.Error("empty receipts list should be detected as raw RLP")
+	}
+	long := make([]byte, 300)
+	long[0] = 0xf9 // long list, 2 length bytes
+	long[1] = 0x01
+	long[2] = 0x29 // 297 = len(long) - 3
+	if !rlpListCoversExactly(long) {
+		t.Error("exact-cover long list should be detected as raw RLP")
+	}
+	long[2] = 0x28 // declared length one short
+	if rlpListCoversExactly(long) {
+		t.Error("non-covering list header should not be detected as raw RLP")
+	}
+	if rlpListCoversExactly([]byte{0x80}) {
+		t.Error("string prefix is not a receipts list")
+	}
+	if rlpListCoversExactly(nil) {
+		t.Error("empty input is not a receipts list")
+	}
+}
+
 func TestIsValidRLPPrefix(t *testing.T) {
 	tests := []struct {
 		b        byte

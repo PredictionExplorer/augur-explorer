@@ -1,0 +1,33 @@
+[
+  {
+    "RecordId": 1,
+    "Tx": {
+      "EvtLogId": 5055,
+      "BlockNum": 115,
+      "TxId": 1016,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+      "TimeStamp": 1767227100,
+      "DateTime": "2026-01-01T00:25:00Z"
+    },
+    "DepositDate": "2026-01-01T00:25:00Z",
+    "DepositTimeStamp": 1767227100,
+    "DepositId": 501,
+    "NumStakedNFTs": 2,
+    "TotalDepositAmount": "2000000000000000000",
+    "TotalDepositAmountEth": 2,
+    "YourTokensStaked": 1,
+    "YourAmountToClaim": "0",
+    "YourAmountToClaimEth": 0,
+    "DepositAmountPerToken": "1000000000000000000",
+    "DepositAmountPerTokenEth": 1,
+    "NumTokensCollected": 1,
+    "YourCollectedAmount": "1000000000000000000",
+    "YourCollectedAmountEth": 1,
+    "Modulo": "0",
+    "ModuloF64": 0,
+    "RoundNum": 0,
+    "StakerAid": 0,
+    "StakerAddr": "",
+    "FullyClaimed": false
+  }
+]

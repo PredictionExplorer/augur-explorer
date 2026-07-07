@@ -1,0 +1,26 @@
+[
+  {
+    "MintNumber": 10,
+    "TimeStamp": 1767228600,
+    "Interval": 0,
+    "TokenId": 10
+  },
+  {
+    "MintNumber": 11,
+    "TimeStamp": 1767228700,
+    "Interval": 100,
+    "TokenId": 11
+  },
+  {
+    "MintNumber": 12,
+    "TimeStamp": 1767228800,
+    "Interval": 100,
+    "TokenId": 12
+  },
+  {
+    "MintNumber": 13,
+    "TimeStamp": 1767228900,
+    "Interval": 100,
+    "TokenId": 13
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "RecordId": 1,
+    "Tx": {
+      "EvtLogId": 5022,
+      "BlockNum": 110,
+      "TxId": 1011,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+      "TimeStamp": 1767226600,
+      "DateTime": "2026-01-01T00:16:40Z"
+    },
+    "RecordType": 10,
+    "WinnerAddr": "0x2200000000000000000000000000000000000022",
+    "WinnerAid": 22,
+    "WinnerIndex": 0,
+    "RoundNum": 0,
+    "Amount": 0.05,
+    "Claimed": true,
+    "ClaimTimeStamp": 0,
+    "ClaimDateTime": ""
+  }
+]

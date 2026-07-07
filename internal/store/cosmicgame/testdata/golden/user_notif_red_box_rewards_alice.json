@@ -1,0 +1,9 @@
+{
+  "ETHRaffleToClaim": 0.14,
+  "ETHRaffleToClaimWei": "140000000000000000",
+  "ETHChronoWarriorToClaim": 0,
+  "ETHChronoWarriorToClaimWei": "",
+  "NumDonatedNFTToClaim": 0,
+  "UnclaimedStakingReward": 0,
+  "DonatedERC20Tokens": []
+}

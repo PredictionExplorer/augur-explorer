@@ -1,0 +1,112 @@
+[
+  {
+    "Tx": {
+      "EvtLogId": 5072,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "RecordType": 0,
+    "RoundNum": 2,
+    "Amount": "700000000000000000",
+    "AmountEth": 0.7,
+    "WinnerIndex": 0,
+    "TokenAddress": "",
+    "TokenId": -1,
+    "TokenURI": "",
+    "Claimed": true,
+    "IsTimeoutClaim": false,
+    "WinnerAddr": "0x2500000000000000000000000000000000000025",
+    "WinnerAid": 25
+  },
+  {
+    "Tx": {
+      "EvtLogId": 5072,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "RecordType": 1,
+    "RoundNum": 2,
+    "Amount": "120000000000000000000",
+    "AmountEth": 120,
+    "WinnerIndex": 0,
+    "TokenAddress": "",
+    "TokenId": -1,
+    "TokenURI": "",
+    "Claimed": true,
+    "IsTimeoutClaim": false,
+    "WinnerAddr": "0x2500000000000000000000000000000000000025",
+    "WinnerAid": 25
+  },
+  {
+    "Tx": {
+      "EvtLogId": 5072,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "RecordType": 2,
+    "RoundNum": 2,
+    "Amount": "0",
+    "AmountEth": 0,
+    "WinnerIndex": 0,
+    "TokenAddress": "",
+    "TokenId": 8,
+    "TokenURI": "",
+    "Claimed": true,
+    "IsTimeoutClaim": false,
+    "WinnerAddr": "0x2500000000000000000000000000000000000025",
+    "WinnerAid": 25
+  },
+  {
+    "Tx": {
+      "EvtLogId": 5099,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "RecordType": 11,
+    "RoundNum": 2,
+    "Amount": "32000000000000000000",
+    "AmountEth": 32,
+    "WinnerIndex": 0,
+    "TokenAddress": "",
+    "TokenId": -1,
+    "TokenURI": "",
+    "Claimed": true,
+    "IsTimeoutClaim": false,
+    "WinnerAddr": "0x2200000000000000000000000000000000000022",
+    "WinnerAid": 22
+  },
+  {
+    "Tx": {
+      "EvtLogId": 5099,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "RecordType": 12,
+    "RoundNum": 2,
+    "Amount": "0",
+    "AmountEth": 0,
+    "WinnerIndex": 0,
+    "TokenAddress": "",
+    "TokenId": 9,
+    "TokenURI": "",
+    "Claimed": true,
+    "IsTimeoutClaim": false,
+    "WinnerAddr": "0x2200000000000000000000000000000000000022",
+    "WinnerAid": 22
+  }
+]

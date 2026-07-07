@@ -1,0 +1,14 @@
+[
+  {
+    "Aid": 24,
+    "TotalTrades": 1,
+    "ProfitLoss": 0,
+    "VolumeTraded": 1000000000000000000
+  },
+  {
+    "Aid": 23,
+    "TotalTrades": 1,
+    "ProfitLoss": 950000000000000000,
+    "VolumeTraded": 1000000000000000000
+  }
+]

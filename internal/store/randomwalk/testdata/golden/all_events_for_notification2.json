@@ -1,0 +1,74 @@
+[
+  {
+    "TokenId": 11,
+    "TxId": 1031,
+    "EvtLogId": 5082,
+    "TimeStampMinted": 1767228700,
+    "Price": 0.055,
+    "SeedHex": "",
+    "EvtType": 1
+  },
+  {
+    "TokenId": 12,
+    "TxId": 1032,
+    "EvtLogId": 5084,
+    "TimeStampMinted": 1767228800,
+    "Price": 0.06,
+    "SeedHex": "",
+    "EvtType": 1
+  },
+  {
+    "TokenId": 13,
+    "TxId": 1033,
+    "EvtLogId": 5086,
+    "TimeStampMinted": 1767228900,
+    "Price": 0.065,
+    "SeedHex": "",
+    "EvtType": 1
+  },
+  {
+    "TokenId": 10,
+    "TxId": 1035,
+    "EvtLogId": 5088,
+    "TimeStampMinted": 1767229100,
+    "Price": 1,
+    "SeedHex": "",
+    "EvtType": 2
+  },
+  {
+    "TokenId": 10,
+    "TxId": 1036,
+    "EvtLogId": 5089,
+    "TimeStampMinted": 1767229200,
+    "Price": 1,
+    "SeedHex": "",
+    "EvtType": 3
+  },
+  {
+    "TokenId": 11,
+    "TxId": 1037,
+    "EvtLogId": 5091,
+    "TimeStampMinted": 1767229300,
+    "Price": 2,
+    "SeedHex": "",
+    "EvtType": 2
+  },
+  {
+    "TokenId": 13,
+    "TxId": 1038,
+    "EvtLogId": 5092,
+    "TimeStampMinted": 1767229400,
+    "Price": 2.5,
+    "SeedHex": "",
+    "EvtType": 2
+  },
+  {
+    "TokenId": 10,
+    "TxId": 1039,
+    "EvtLogId": 5093,
+    "TimeStampMinted": 1767229500,
+    "Price": 3,
+    "SeedHex": "",
+    "EvtType": 2
+  }
+]

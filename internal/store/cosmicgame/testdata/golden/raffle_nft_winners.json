@@ -1,0 +1,62 @@
+[
+  {
+    "RecordId": 0,
+    "Tx": {
+      "EvtLogId": 5099,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "WinnerAddr": "0x2200000000000000000000000000000000000022",
+    "WinnerAid": 22,
+    "RoundNum": 2,
+    "TokenId": 9,
+    "CstAmount": "32000000000000000000",
+    "CstAmountEth": 32,
+    "WinnerIndex": 0,
+    "IsRWalk": false,
+    "IsStaker": true
+  },
+  {
+    "RecordId": 0,
+    "Tx": {
+      "EvtLogId": 5028,
+      "BlockNum": 110,
+      "TxId": 1011,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+      "TimeStamp": 1767226600,
+      "DateTime": "2026-01-01T00:16:40Z"
+    },
+    "WinnerAddr": "0x2300000000000000000000000000000000000023",
+    "WinnerAid": 23,
+    "RoundNum": 0,
+    "TokenId": 3,
+    "CstAmount": "30000000000000000000",
+    "CstAmountEth": 30,
+    "WinnerIndex": 0,
+    "IsRWalk": true,
+    "IsStaker": true
+  },
+  {
+    "RecordId": 0,
+    "Tx": {
+      "EvtLogId": 5025,
+      "BlockNum": 110,
+      "TxId": 1011,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+      "TimeStamp": 1767226600,
+      "DateTime": "2026-01-01T00:16:40Z"
+    },
+    "WinnerAddr": "0x2400000000000000000000000000000000000024",
+    "WinnerAid": 24,
+    "RoundNum": 0,
+    "TokenId": 2,
+    "CstAmount": "30000000000000000000",
+    "CstAmountEth": 30,
+    "WinnerIndex": 0,
+    "IsRWalk": false,
+    "IsStaker": false
+  }
+]

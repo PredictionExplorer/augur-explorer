@@ -1,0 +1,248 @@
+[
+  {
+    "RoundNum": 2,
+    "ClaimPrizeTx": {
+      "Tx": {
+        "EvtLogId": 5072,
+        "BlockNum": 125,
+        "TxId": 1026,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+        "TimeStamp": 1767228100,
+        "DateTime": "2026-01-01T00:41:40Z"
+      }
+    },
+    "MainPrize": {
+      "WinnerAid": 25,
+      "WinnerAddr": "0x2500000000000000000000000000000000000025",
+      "TimeoutTs": 1768091100,
+      "EthAmount": "700000000000000000",
+      "EthAmountEth": 0.7,
+      "CstAmount": "120000000000000000000",
+      "CstAmountEth": 120,
+      "NftTokenId": 8,
+      "Seed": "seed0000000000000000000000000000000000000000000000000000000008"
+    },
+    "CharityDeposit": {
+      "CharityAddress": "",
+      "CharityAmount": "",
+      "CharityAmountETH": 0
+    },
+    "StakingDeposit": {
+      "StakingDepositId": -1,
+      "StakingDepositAmount": "",
+      "StakingDepositAmountEth": 0,
+      "StakingPerToken": "",
+      "StakingPerTokenEth": 0,
+      "StakingNumStakedTokens": 0
+    },
+    "EnduranceChampion": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "LastCstBidder": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "ChronoWarrior": {
+      "WinnerAddr": "",
+      "EthAmount": "",
+      "EthAmountEth": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0,
+      "NftTokenId": 0
+    },
+    "RoundStats": {
+      "RoundNum": 0,
+      "TotalBids": 3,
+      "TotalDonatedNFTs": 1,
+      "NumERC20Donations": 0,
+      "TotalRaffleEthDeposits": "0",
+      "TotalRaffleEthDepositsEth": 0,
+      "TotalRaffleNFTs": 1,
+      "TotalDonatedCount": 0,
+      "TotalDonatedAmount": "",
+      "TotalDonatedAmountEth": 0,
+      "TotalCstInBidsEth": 0,
+      "TotalEthInBidsEth": 0,
+      "ParamWindowStartTime": "",
+      "ActivationTime": 0,
+      "DelayDurationBeforeRoundActivation": 0,
+      "ParamWindowDurationSeconds": 0,
+      "RoundStartTime": "",
+      "RoundEndTime": "",
+      "RoundDurationSeconds": 0
+    },
+    "RaffleNFTWinners": null,
+    "StakingNFTWinners": null,
+    "RaffleETHDeposits": null,
+    "AllPrizes": null
+  },
+  {
+    "RoundNum": 1,
+    "ClaimPrizeTx": {
+      "Tx": {
+        "EvtLogId": 5062,
+        "BlockNum": 120,
+        "TxId": 1021,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+        "TimeStamp": 1767227600,
+        "DateTime": "2026-01-01T00:33:20Z"
+      }
+    },
+    "MainPrize": {
+      "WinnerAid": 24,
+      "WinnerAddr": "0x2400000000000000000000000000000000000024",
+      "TimeoutTs": 1768090600,
+      "EthAmount": "600000000000000000",
+      "EthAmountEth": 0.6,
+      "CstAmount": "110000000000000000000",
+      "CstAmountEth": 110,
+      "NftTokenId": 7,
+      "Seed": "seed0000000000000000000000000000000000000000000000000000000007"
+    },
+    "CharityDeposit": {
+      "CharityAddress": "",
+      "CharityAmount": "",
+      "CharityAmountETH": 0
+    },
+    "StakingDeposit": {
+      "StakingDepositId": -1,
+      "StakingDepositAmount": "",
+      "StakingDepositAmountEth": 0,
+      "StakingPerToken": "",
+      "StakingPerTokenEth": 0,
+      "StakingNumStakedTokens": 0
+    },
+    "EnduranceChampion": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "LastCstBidder": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "ChronoWarrior": {
+      "WinnerAddr": "",
+      "EthAmount": "",
+      "EthAmountEth": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0,
+      "NftTokenId": 0
+    },
+    "RoundStats": {
+      "RoundNum": 0,
+      "TotalBids": 2,
+      "TotalDonatedNFTs": 0,
+      "NumERC20Donations": 0,
+      "TotalRaffleEthDeposits": "60000000000000000",
+      "TotalRaffleEthDepositsEth": 0.06,
+      "TotalRaffleNFTs": 0,
+      "TotalDonatedCount": 0,
+      "TotalDonatedAmount": "",
+      "TotalDonatedAmountEth": 0,
+      "TotalCstInBidsEth": 0,
+      "TotalEthInBidsEth": 0,
+      "ParamWindowStartTime": "",
+      "ActivationTime": 0,
+      "DelayDurationBeforeRoundActivation": 0,
+      "ParamWindowDurationSeconds": 0,
+      "RoundStartTime": "",
+      "RoundEndTime": "",
+      "RoundDurationSeconds": 0
+    },
+    "RaffleNFTWinners": null,
+    "StakingNFTWinners": null,
+    "RaffleETHDeposits": null,
+    "AllPrizes": null
+  },
+  {
+    "RoundNum": 0,
+    "ClaimPrizeTx": {
+      "Tx": {
+        "EvtLogId": 5018,
+        "BlockNum": 110,
+        "TxId": 1011,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "TimeStamp": 1767226600,
+        "DateTime": "2026-01-01T00:16:40Z"
+      }
+    },
+    "MainPrize": {
+      "WinnerAid": 21,
+      "WinnerAddr": "0x2100000000000000000000000000000000000021",
+      "TimeoutTs": 1768089600,
+      "EthAmount": "500000000000000000",
+      "EthAmountEth": 0.5,
+      "CstAmount": "100000000000000000000",
+      "CstAmountEth": 100,
+      "NftTokenId": 1,
+      "Seed": "seed0000000000000000000000000000000000000000000000000000000001"
+    },
+    "CharityDeposit": {
+      "CharityAddress": "0x6000000000000000000000000000000000000006",
+      "CharityAmount": "90000000000000000",
+      "CharityAmountETH": 0.09
+    },
+    "StakingDeposit": {
+      "StakingDepositId": 501,
+      "StakingDepositAmount": "2000000000000000000",
+      "StakingDepositAmountEth": 2,
+      "StakingPerToken": "1000000000000000000",
+      "StakingPerTokenEth": 1,
+      "StakingNumStakedTokens": 2
+    },
+    "EnduranceChampion": {
+      "WinnerAddr": "0x2200000000000000000000000000000000000022",
+      "NftTokenId": 5,
+      "CstAmount": "45000000000000000000",
+      "CstAmountEth": 45
+    },
+    "LastCstBidder": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "ChronoWarrior": {
+      "WinnerAddr": "0x2100000000000000000000000000000000000021",
+      "EthAmount": "80000000000000000",
+      "EthAmountEth": 0.08,
+      "CstAmount": "35000000000000000000",
+      "CstAmountEth": 35,
+      "NftTokenId": 6
+    },
+    "RoundStats": {
+      "RoundNum": 0,
+      "TotalBids": 4,
+      "TotalDonatedNFTs": 1,
+      "NumERC20Donations": 1,
+      "TotalRaffleEthDeposits": "100000000000000000",
+      "TotalRaffleEthDepositsEth": 0.1,
+      "TotalRaffleNFTs": 2,
+      "TotalDonatedCount": 0,
+      "TotalDonatedAmount": "",
+      "TotalDonatedAmountEth": 0,
+      "TotalCstInBidsEth": 0,
+      "TotalEthInBidsEth": 0,
+      "ParamWindowStartTime": "",
+      "ActivationTime": 0,
+      "DelayDurationBeforeRoundActivation": 0,
+      "ParamWindowDurationSeconds": 0,
+      "RoundStartTime": "",
+      "RoundEndTime": "",
+      "RoundDurationSeconds": 0
+    },
+    "RaffleNFTWinners": null,
+    "StakingNFTWinners": null,
+    "RaffleETHDeposits": null,
+    "AllPrizes": null
+  }
+]

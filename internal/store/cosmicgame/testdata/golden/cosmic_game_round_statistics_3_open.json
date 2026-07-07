@@ -1,0 +1,21 @@
+{
+  "RoundNum": 3,
+  "TotalBids": 3,
+  "TotalDonatedNFTs": 0,
+  "NumERC20Donations": 0,
+  "TotalRaffleEthDeposits": "0",
+  "TotalRaffleEthDepositsEth": 0,
+  "TotalRaffleNFTs": 0,
+  "TotalDonatedCount": 0,
+  "TotalDonatedAmount": "0",
+  "TotalDonatedAmountEth": 0,
+  "TotalCstInBidsEth": 0,
+  "TotalEthInBidsEth": 0.165,
+  "ParamWindowStartTime": "2026-01-01 00:41:40+00",
+  "ActivationTime": 1767228300,
+  "DelayDurationBeforeRoundActivation": 0,
+  "ParamWindowDurationSeconds": 200,
+  "RoundStartTime": "2026-01-01 00:45:00+00",
+  "RoundEndTime": "",
+  "RoundDurationSeconds": 0
+}

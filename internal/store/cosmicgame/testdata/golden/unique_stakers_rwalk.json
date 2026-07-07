@@ -1,0 +1,26 @@
+[
+  {
+    "StakerAid": 22,
+    "StakerAddr": "0x2200000000000000000000000000000000000022",
+    "TotalTokensStaked": 1,
+    "NumStakeActions": 1,
+    "NumUnstakeActions": 0,
+    "TotalTokensMinted": 0
+  },
+  {
+    "StakerAid": 24,
+    "StakerAddr": "0x2400000000000000000000000000000000000024",
+    "TotalTokensStaked": 1,
+    "NumStakeActions": 1,
+    "NumUnstakeActions": 0,
+    "TotalTokensMinted": 0
+  },
+  {
+    "StakerAid": 23,
+    "StakerAddr": "0x2300000000000000000000000000000000000023",
+    "TotalTokensStaked": 0,
+    "NumStakeActions": 1,
+    "NumUnstakeActions": 1,
+    "TotalTokensMinted": 1
+  }
+]

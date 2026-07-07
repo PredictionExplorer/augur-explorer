@@ -1,0 +1,17 @@
+[
+  {
+    "RecordId": 1,
+    "DepositId": 501,
+    "UserAid": 22,
+    "StakeActionId": 2,
+    "TokenId": 5,
+    "Claimed": false,
+    "ClaimBlockNum": 115,
+    "ClaimTimeStamp": 1767227100,
+    "ClaimDateTime": "2026-01-01T00:25:00Z",
+    "ClaimTxId": 1016,
+    "ClaimTxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+    "ClaimRewardAmount": "1000000000000000000",
+    "ClaimRewardAmountEth": 1
+  }
+]

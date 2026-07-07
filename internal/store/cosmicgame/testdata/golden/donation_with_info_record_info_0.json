@@ -1,0 +1,17 @@
+{
+  "Tx": {
+    "EvtLogId": 5014,
+    "BlockNum": 106,
+    "TxId": 1007,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001007",
+    "TimeStamp": 1767226200,
+    "DateTime": "2026-01-01T00:10:00Z"
+  },
+  "DonorAid": 25,
+  "DonorAddr": "0x2500000000000000000000000000000000000025",
+  "Amount": "300000000000000000",
+  "AmountEth": 0.3,
+  "RoundNum": 0,
+  "CGRecordId": 0,
+  "DataJson": "{\"title\":\"apitest donation\",\"url\":\"https://example.org/apitest\"}"
+}
