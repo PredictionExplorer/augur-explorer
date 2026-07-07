@@ -148,7 +148,11 @@ var parityCases = map[string][]parityCase{
 		{path: "/api/cosmicgame/bid/list/by_round/0/0/0/10"},
 		{path: "/api/cosmicgame/bid/list/by_round/0/1/0/10"},
 	},
-	"/api/cosmicgame/bid/bid_type_ratio":       {{path: "/api/cosmicgame/bid/bid_type_ratio"}},
+	// Explicit range: the parameterless default spans epoch 0..2^31-1 at daily
+	// buckets — a deterministic but ~250k-line response not worth a golden.
+	"/api/cosmicgame/bid/bid_type_ratio": {
+		{path: "/api/cosmicgame/bid/bid_type_ratio?from_ts=" + cgFrom + "&to_ts=" + cgTo + "&interval_secs=" + cgStep},
+	},
 	"/api/cosmicgame/bid/used_randomwalk_nfts": {{path: "/api/cosmicgame/bid/used_randomwalk_nfts"}},
 	"/api/cosmicgame/bid/used_rwalk_nfts":      {{path: "/api/cosmicgame/bid/used_rwalk_nfts"}},
 	"/api/cosmicgame/bid/cst_price":            {{path: "/api/cosmicgame/bid/cst_price"}},
