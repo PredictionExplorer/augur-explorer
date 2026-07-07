@@ -1,0 +1,26 @@
+[
+  {
+    "StakerAid": 22,
+    "StakerAddr": "0x2200000000000000000000000000000000000022",
+    "TotalStakedTokensBoth": 2,
+    "CSTStats": {
+      "StakerAid": 0,
+      "StakerAddr": "",
+      "TotalTokensStaked": 1,
+      "NumStakeActions": 1,
+      "NumUnstakeActions": 0,
+      "TotalReward": "1000000000000000000",
+      "TotalRewardEth": 1,
+      "UnclaimedReward": "1000000000000000000",
+      "UnclaimedRewardEth": 1
+    },
+    "RWalkStats": {
+      "StakerAid": 0,
+      "StakerAddr": "",
+      "TotalTokensStaked": 1,
+      "NumStakeActions": 1,
+      "NumUnstakeActions": 0,
+      "TotalTokensMinted": 0
+    }
+  }
+]

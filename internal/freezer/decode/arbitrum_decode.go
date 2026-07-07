@@ -48,8 +48,10 @@ func smartDecompress(data []byte) ([]byte, error) {
 		return data, nil
 	}
 
-	// If data already starts with valid RLP list prefix, return as-is
-	if data[0] >= 0xc0 {
+	// Treat as raw RLP only when the list header covers the payload exactly;
+	// snappy's leading length-uvarint collides with the 0xc0+ range for half
+	// of all decompressed lengths > 127 (see rlpListCoversExactly).
+	if rlpListCoversExactly(data) {
 		return data, nil
 	}
 

@@ -1,0 +1,70 @@
+[
+  {
+    "RecordId": 1,
+    "Tx": {
+      "EvtLogId": 5055,
+      "BlockNum": 115,
+      "TxId": 1016,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+      "TimeStamp": 1767227100,
+      "DateTime": "2026-01-01T00:25:00Z"
+    },
+    "DepositId": 501,
+    "DepositRoundNum": 0,
+    "NumStakedNFTs": 2,
+    "DepositAmount": "2000000000000000000",
+    "DepositAmountEth": 2,
+    "YourTokensStaked": 1,
+    "YourClaimableAmountEth": 0,
+    "NumTokensCollected": 1,
+    "AmountPerToken": "",
+    "AmountPerTokenEth": 1,
+    "Modulo": "",
+    "ModuloF64": 0,
+    "FullyClaimed": true,
+    "ClaimedAmountEth": 1,
+    "Actions": [
+      {
+        "Stake": {
+          "RecordId": 1,
+          "Tx": {
+            "EvtLogId": 5051,
+            "BlockNum": 114,
+            "TxId": 1015,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001015",
+            "TimeStamp": 1767227000,
+            "DateTime": "2026-01-01T00:23:20Z"
+          },
+          "ActionId": 1,
+          "TokenId": 1,
+          "NumStakedNFTs": 1,
+          "StakerAid": 0
+        },
+        "Unstake": {
+          "RecordId": 1,
+          "Tx": {
+            "EvtLogId": 5056,
+            "BlockNum": 116,
+            "TxId": 1017,
+            "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001017",
+            "TimeStamp": 1767227200,
+            "DateTime": "2026-01-01T00:26:40Z"
+          },
+          "ActionId": 1,
+          "TokenId": 1,
+          "NumStakedNFTs": 1,
+          "RewardAmount": "1000000000000000000",
+          "RewardAmountEth": 1,
+          "StakerAid": 21
+        },
+        "DepositId": 0,
+        "DepositTimeStamp": 0,
+        "DepositDateTime": "",
+        "RoundNum": 0,
+        "Reward": "1000000000000000000",
+        "RewardEth": 1,
+        "Claimed": true
+      }
+    ]
+  }
+]

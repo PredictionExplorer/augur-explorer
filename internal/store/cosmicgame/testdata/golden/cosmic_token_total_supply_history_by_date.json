@@ -1,0 +1,16 @@
+[
+  {
+    "Date": "20260101",
+    "TimeStamp": 1767225600,
+    "DateTime": "2026-01-01",
+    "NumBids": 12,
+    "MintAmount": "1200000000000000000000",
+    "MintAmountEth": 1200,
+    "BurnAmount": "410000000000000000000",
+    "BurnAmountEth": 410,
+    "Amount": "790000000000000000000",
+    "AmountEth": 790,
+    "TotalSupply": "790000000000000000000",
+    "TotalSupplyEth": 790
+  }
+]

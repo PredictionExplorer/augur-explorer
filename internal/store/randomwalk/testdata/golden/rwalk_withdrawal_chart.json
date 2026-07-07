@@ -1,0 +1,22 @@
+[
+  {
+    "TimeStamp": 1767228600,
+    "DateTime": "2026-01-01T00:50:00Z",
+    "WithdrawalAmount": 0.025
+  },
+  {
+    "TimeStamp": 1767228700,
+    "DateTime": "2026-01-01T00:51:40Z",
+    "WithdrawalAmount": 0.052500000000000005
+  },
+  {
+    "TimeStamp": 1767228800,
+    "DateTime": "2026-01-01T00:53:20Z",
+    "WithdrawalAmount": 0.0825
+  },
+  {
+    "TimeStamp": 1767228900,
+    "DateTime": "2026-01-01T00:55:00Z",
+    "WithdrawalAmount": 0.115
+  }
+]

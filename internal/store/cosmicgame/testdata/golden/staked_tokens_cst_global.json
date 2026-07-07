@@ -1,0 +1,42 @@
+[
+  {
+    "TokenInfo": {
+      "RecordId": 5,
+      "Tx": {
+        "EvtLogId": 5035,
+        "BlockNum": 110,
+        "TxId": 1011,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "TimeStamp": 1767226600,
+        "DateTime": "2026-01-01T00:16:40Z"
+      },
+      "ContractAddr": "",
+      "TokenId": 5,
+      "WinnerAid": 22,
+      "WinnerAddr": "0x2200000000000000000000000000000000000022",
+      "CurOwnerAid": 22,
+      "CurOwnerAddr": "0x2200000000000000000000000000000000000022",
+      "Seed": "seed0000000000000000000000000000000000000000000000000000000005",
+      "RoundNum": 0,
+      "RecordType": 1,
+      "TokenName": "",
+      "Staked": false,
+      "StakedOwnerAid": 0,
+      "StakedOwnerAddr": "",
+      "StakeActionId": 0,
+      "StakeTimeStamp": 0,
+      "StakeDateTime": "",
+      "UnstakeActionId": 0,
+      "WasUnstaked": false,
+      "ActualUnstakeTimeStamp": 0,
+      "ActualUnstakeDateTime": ""
+    },
+    "StakeEvtLogId": 5052,
+    "StakeBlockNum": 114,
+    "StakeActionId": 2,
+    "StakeTimeStamp": 1767227000,
+    "StakeDateTime": "2026-01-01T00:23:20Z",
+    "UserAddr": "0x2200000000000000000000000000000000000022",
+    "UserAid": 22
+  }
+]

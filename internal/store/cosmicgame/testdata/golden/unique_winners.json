@@ -1,0 +1,107 @@
+[
+  {
+    "WinnerAid": 21,
+    "WinnerAddr": "0x2100000000000000000000000000000000000021",
+    "PrizesCount": 7,
+    "MaxWinAmount": "500000000000000000",
+    "MaxWinAmountEth": 0.5,
+    "PrizesSum": 0.64,
+    "WinnerStats": {
+      "MaxWinAmount": "500000000000000000",
+      "MaxWinAmountEth": 0.5,
+      "PrizesCount": 7,
+      "PrizesSum": "640000000000000000",
+      "PrizesSumEth": 0.64,
+      "TokensCount": 0,
+      "ERC20Count": 2,
+      "ERC721Count": 2,
+      "UnclaimedNfts": 0,
+      "TotalSpent": "430000000000000000",
+      "TotalSpentEth": 0.43
+    }
+  },
+  {
+    "WinnerAid": 24,
+    "WinnerAddr": "0x2400000000000000000000000000000000000024",
+    "PrizesCount": 5,
+    "MaxWinAmount": "600000000000000000",
+    "MaxWinAmountEth": 0.6,
+    "PrizesSum": 0.6,
+    "WinnerStats": {
+      "MaxWinAmount": "600000000000000000",
+      "MaxWinAmountEth": 0.6,
+      "PrizesCount": 5,
+      "PrizesSum": "600000000000000000",
+      "PrizesSumEth": 0.6,
+      "TokensCount": 0,
+      "ERC20Count": 2,
+      "ERC721Count": 2,
+      "UnclaimedNfts": 0,
+      "TotalSpent": "110000000000000000",
+      "TotalSpentEth": 0.11
+    }
+  },
+  {
+    "WinnerAid": 23,
+    "WinnerAddr": "0x2300000000000000000000000000000000000023",
+    "PrizesCount": 5,
+    "MaxWinAmount": "0",
+    "MaxWinAmountEth": 0,
+    "PrizesSum": 0.05,
+    "WinnerStats": {
+      "MaxWinAmount": "0",
+      "MaxWinAmountEth": 0,
+      "PrizesCount": 5,
+      "PrizesSum": "50000000000000000",
+      "PrizesSumEth": 0.05,
+      "TokensCount": 0,
+      "ERC20Count": 2,
+      "ERC721Count": 2,
+      "UnclaimedNfts": 0,
+      "TotalSpent": "0",
+      "TotalSpentEth": 0
+    }
+  },
+  {
+    "WinnerAid": 22,
+    "WinnerAddr": "0x2200000000000000000000000000000000000022",
+    "PrizesCount": 5,
+    "MaxWinAmount": "0",
+    "MaxWinAmountEth": 0,
+    "PrizesSum": 0.05,
+    "WinnerStats": {
+      "MaxWinAmount": "0",
+      "MaxWinAmountEth": 0,
+      "PrizesCount": 5,
+      "PrizesSum": "50000000000000000",
+      "PrizesSumEth": 0.05,
+      "TokensCount": 0,
+      "ERC20Count": 2,
+      "ERC721Count": 2,
+      "UnclaimedNfts": 0,
+      "TotalSpent": "205000000000000000",
+      "TotalSpentEth": 0.205
+    }
+  },
+  {
+    "WinnerAid": 25,
+    "WinnerAddr": "0x2500000000000000000000000000000000000025",
+    "PrizesCount": 3,
+    "MaxWinAmount": "700000000000000000",
+    "MaxWinAmountEth": 0.7,
+    "PrizesSum": 0.7,
+    "WinnerStats": {
+      "MaxWinAmount": "700000000000000000",
+      "MaxWinAmountEth": 0.7,
+      "PrizesCount": 3,
+      "PrizesSum": "700000000000000000",
+      "PrizesSumEth": 0.7,
+      "TokensCount": 0,
+      "ERC20Count": 1,
+      "ERC721Count": 1,
+      "UnclaimedNfts": 1,
+      "TotalSpent": "90000000000000000",
+      "TotalSpentEth": 0.09
+    }
+  }
+]

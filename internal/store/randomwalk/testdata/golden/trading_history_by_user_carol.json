@@ -1,0 +1,26 @@
+[
+  {
+    "Id": 1,
+    "EvtLogId": 5088,
+    "BlockNum": 135,
+    "TxId": 1035,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001035",
+    "TimeStamp": 1767229100,
+    "DateTime": "2026-01-01T00:58:20Z",
+    "ContractAid": 12,
+    "ContractAddr": "0x1200000000000000000000000000000000000012",
+    "OfferId": 1,
+    "OfferType": 1,
+    "SellerAid": 23,
+    "SellerAddr": "0x2300000000000000000000000000000000000023",
+    "BuyerAid": 24,
+    "BuyerAddr": "0x2400000000000000000000000000000000000024",
+    "TokenId": 10,
+    "Active": false,
+    "Price": 1,
+    "Profit": 0.95,
+    "RWalkAid": 8,
+    "RWalkAddr": "0x8000000000000000000000000000000000000008",
+    "WasCanceled": false
+  }
+]

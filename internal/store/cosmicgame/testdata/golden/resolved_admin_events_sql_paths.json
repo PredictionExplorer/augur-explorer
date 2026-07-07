@@ -1,0 +1,80 @@
+[
+  {
+    "evtlogId": 6000,
+    "integerValue": 90,
+    "recordType": 7,
+    "resolvedValue": "90 sec"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 10100,
+    "recordType": 18,
+    "resolvedValue": "×101.00 per bid"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 3600,
+    "recordType": 19,
+    "resolvedValue": "1h"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 4,
+    "recordType": 20,
+    "resolvedValue": "25.0000%"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 1500000,
+    "recordType": 21,
+    "resolvedValue": "1.500000 sec"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 101,
+    "recordType": 22,
+    "resolvedValue": "0.9901%"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 45,
+    "recordType": 25,
+    "resolvedValue": "45 sec"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 7200,
+    "recordType": 35,
+    "resolvedValue": "2h"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 11614,
+    "recordType": 36,
+    "resolvedValue": "8m 20s"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 10,
+    "recordType": 37,
+    "resolvedValue": "0.00600000 ETH"
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 11,
+    "recordType": 39,
+    "resolvedValue": ""
+  },
+  {
+    "evtlogId": 6000,
+    "integerValue": 0,
+    "recordType": 37,
+    "resolvedValue": ""
+  },
+  {
+    "evtlogId": 1,
+    "integerValue": 10100,
+    "recordType": 18,
+    "resolvedValue": "×101.00 per bid"
+  }
+]

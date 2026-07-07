@@ -1,0 +1,22 @@
+[
+  {
+    "RecordId": 3,
+    "Tx": {
+      "EvtLogId": 5099,
+      "BlockNum": 125,
+      "TxId": 1026,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+      "TimeStamp": 1767228100,
+      "DateTime": "2026-01-01T00:41:40Z"
+    },
+    "WinnerAddr": "0x2200000000000000000000000000000000000022",
+    "WinnerAid": 22,
+    "RoundNum": 2,
+    "TokenId": 9,
+    "CstAmount": "32000000000000000000",
+    "CstAmountEth": 32,
+    "WinnerIndex": 0,
+    "IsRWalk": true,
+    "IsStaker": true
+  }
+]

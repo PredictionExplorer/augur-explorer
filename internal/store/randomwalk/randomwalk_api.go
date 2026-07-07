@@ -1378,16 +1378,25 @@ func (sw *SQLStorageWrapper) Get_rwalk_token_info(rwalk_aid int64,token_id int64
 	}
 	return output,nil
 }
+// Check_rwalk_token_exists reports whether a mint event exists for token_id.
+// A missing token is not an error; the error return is reserved for real
+// database failures.
+//
+// The previous implementation referenced placeholder $2 while binding a
+// single argument, so PostgreSQL rejected every call; the error fell through
+// to `return true, nil` ("token exists"), and a genuinely missing token
+// returned ErrNoRows, which rwctl scan-mints treated as a transient DB error
+// and retried forever. Found by the store read suite.
 func (sw *SQLStorageWrapper) Check_rwalk_token_exists(token_id int64) (bool,error) {
 
-	var query string
-	query = "SELECT token_id FROM rw_mint_evt m WHERE token_id=$2"
+	query := "SELECT token_id FROM rw_mint_evt m WHERE token_id=$1"
 	res := sw.S.Db().QueryRow(query,token_id)
 	err := res.Scan(&token_id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false,err
+			return false,nil
 		}
+		return false,err
 	}
 	return true,nil
 }

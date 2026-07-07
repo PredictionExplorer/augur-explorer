@@ -1,0 +1,56 @@
+[
+  {
+    "RecordId": 1,
+    "Tx": {
+      "EvtLogId": 5055,
+      "BlockNum": 115,
+      "TxId": 1016,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+      "TimeStamp": 1767227100,
+      "DateTime": "2026-01-01T00:25:00Z"
+    },
+    "DepositDate": "2026-01-01T00:25:00Z",
+    "DepositTimeStamp": 1767227100,
+    "NumStakedNFTsTotal": 2,
+    "Amount": "2000000000000000000",
+    "AmountEth": 2,
+    "AmountPerToken": "1000000000000000000",
+    "AmountPerTokenEth": 1,
+    "StakerAid": 22,
+    "StakerAddr": "0x2200000000000000000000000000000000000022",
+    "StakerNumStakedNFTs": 1,
+    "StakerAmount": "1000000000000000000",
+    "StakerAmountEth": 1,
+    "AmountCollected": "0",
+    "AmountCollectedEth": 0,
+    "AmountPendingToClaim": "1000000000000000000",
+    "AmountPendingToClaimEth": 1
+  },
+  {
+    "RecordId": 1,
+    "Tx": {
+      "EvtLogId": 5055,
+      "BlockNum": 115,
+      "TxId": 1016,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+      "TimeStamp": 1767227100,
+      "DateTime": "2026-01-01T00:25:00Z"
+    },
+    "DepositDate": "2026-01-01T00:25:00Z",
+    "DepositTimeStamp": 1767227100,
+    "NumStakedNFTsTotal": 2,
+    "Amount": "2000000000000000000",
+    "AmountEth": 2,
+    "AmountPerToken": "1000000000000000000",
+    "AmountPerTokenEth": 1,
+    "StakerAid": 21,
+    "StakerAddr": "0x2100000000000000000000000000000000000021",
+    "StakerNumStakedNFTs": 1,
+    "StakerAmount": "1000000000000000000",
+    "StakerAmountEth": 1,
+    "AmountCollected": "1000000000000000000",
+    "AmountCollectedEth": 1,
+    "AmountPendingToClaim": "0",
+    "AmountPendingToClaimEth": 0
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "OwnerAid": 21,
+    "OwnerAddr": "0x2100000000000000000000000000000000000021",
+    "Balance": "290000000000000000000",
+    "BalanceFloat": 290,
+    "PercentOfSupply": 0
+  },
+  {
+    "OwnerAid": 22,
+    "OwnerAddr": "0x2200000000000000000000000000000000000022",
+    "Balance": "110000000000000000000",
+    "BalanceFloat": 110,
+    "PercentOfSupply": 0
+  },
+  {
+    "OwnerAid": 23,
+    "OwnerAddr": "0x2300000000000000000000000000000000000023",
+    "Balance": "95000000000000000000",
+    "BalanceFloat": 95,
+    "PercentOfSupply": 0
+  }
+]

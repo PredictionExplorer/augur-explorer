@@ -1,0 +1,84 @@
+[
+  {
+    "RoundNum": 1,
+    "ClaimPrizeTx": {
+      "Tx": {
+        "EvtLogId": 5062,
+        "BlockNum": 120,
+        "TxId": 1021,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+        "TimeStamp": 1767227600,
+        "DateTime": "2026-01-01T00:33:20Z"
+      }
+    },
+    "MainPrize": {
+      "WinnerAid": 24,
+      "WinnerAddr": "0x2400000000000000000000000000000000000024",
+      "TimeoutTs": 1768090600,
+      "EthAmount": "600000000000000000",
+      "EthAmountEth": 0.6,
+      "CstAmount": "110000000000000000000",
+      "CstAmountEth": 110,
+      "NftTokenId": 7,
+      "Seed": "seed0000000000000000000000000000000000000000000000000000000007"
+    },
+    "CharityDeposit": {
+      "CharityAddress": "",
+      "CharityAmount": "",
+      "CharityAmountETH": 0
+    },
+    "StakingDeposit": {
+      "StakingDepositId": -1,
+      "StakingDepositAmount": "",
+      "StakingDepositAmountEth": 0,
+      "StakingPerToken": "",
+      "StakingPerTokenEth": 0,
+      "StakingNumStakedTokens": 0
+    },
+    "EnduranceChampion": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "LastCstBidder": {
+      "WinnerAddr": "",
+      "NftTokenId": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0
+    },
+    "ChronoWarrior": {
+      "WinnerAddr": "",
+      "EthAmount": "",
+      "EthAmountEth": 0,
+      "CstAmount": "",
+      "CstAmountEth": 0,
+      "NftTokenId": 0
+    },
+    "RoundStats": {
+      "RoundNum": 0,
+      "TotalBids": 2,
+      "TotalDonatedNFTs": 0,
+      "NumERC20Donations": 0,
+      "TotalRaffleEthDeposits": "60000000000000000",
+      "TotalRaffleEthDepositsEth": 0.06,
+      "TotalRaffleNFTs": 0,
+      "TotalDonatedCount": 0,
+      "TotalDonatedAmount": "",
+      "TotalDonatedAmountEth": 0,
+      "TotalCstInBidsEth": 0,
+      "TotalEthInBidsEth": 0,
+      "ParamWindowStartTime": "",
+      "ActivationTime": 0,
+      "DelayDurationBeforeRoundActivation": 0,
+      "ParamWindowDurationSeconds": 0,
+      "RoundStartTime": "",
+      "RoundEndTime": "",
+      "RoundDurationSeconds": 0
+    },
+    "RaffleNFTWinners": null,
+    "StakingNFTWinners": null,
+    "RaffleETHDeposits": null,
+    "AllPrizes": null
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "AddressId": 22,
+  "Address": "0x2200000000000000000000000000000000000022",
+  "NumPrizes": 5,
+  "NumBids": 3,
+  "MaxWinAmount": 0,
+  "MaxBidAmount": 0.1,
+  "SumRaffleEthWinnings": 0,
+  "SumRaffleEthWithdrawal": 0.05,
+  "NumRaffleEthWinnings": 1,
+  "RaffleNFTsCount": 1,
+  "RewardNFTsCount": 2,
+  "UnclaimedNFTs": 0,
+  "TotalCSTokensWon": 2,
+  "CosmicSignatureNumTransfers": 3,
+  "TotalDonatedCount": 0,
+  "TotalDonatedAmountEth": 0,
+  "StakingStatisticsRWalk": {
+    "TotalNumStakeActions": 1,
+    "TotalNumUnstakeActions": 0,
+    "TotalTokensStaked": 1,
+    "TotalTokensMinted": 0,
+    "NumActiveStakers": 0
+  }
+}

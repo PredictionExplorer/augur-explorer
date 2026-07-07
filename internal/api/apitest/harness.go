@@ -11,8 +11,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -26,6 +24,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	dbs "github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 )
 
 // harness is the fully wired API server under test: the real gin router with
@@ -39,26 +38,9 @@ type harness struct {
 	ipCounter atomic.Uint64
 }
 
-// seedDatabase applies every testdata/seed/*.sql file in lexical order.
+// seedDatabase applies the shared fixture dataset (internal/testfixtures).
 func seedDatabase(ctx context.Context, db *sql.DB) error {
-	entries, err := filepath.Glob(filepath.Join("testdata", "seed", "*.sql"))
-	if err != nil {
-		return fmt.Errorf("globbing seed files: %w", err)
-	}
-	if len(entries) == 0 {
-		return fmt.Errorf("no seed files found under testdata/seed")
-	}
-	sort.Strings(entries)
-	for _, path := range entries {
-		contents, err := os.ReadFile(path) //nolint:gosec // enumerated from the testdata/seed glob above
-		if err != nil {
-			return fmt.Errorf("reading %s: %w", path, err)
-		}
-		if _, err := db.ExecContext(ctx, string(contents)); err != nil {
-			return fmt.Errorf("applying %s: %w", path, err)
-		}
-	}
-	return nil
+	return testfixtures.Apply(ctx, db)
 }
 
 // newHarness initializes the API modules exactly like cmd/apiserver/main.go

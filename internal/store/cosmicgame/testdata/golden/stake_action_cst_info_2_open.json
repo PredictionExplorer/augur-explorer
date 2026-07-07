@@ -1,0 +1,42 @@
+{
+  "Stake": {
+    "ActionType": 0,
+    "RecordId": 2,
+    "Tx": {
+      "EvtLogId": 5052,
+      "BlockNum": 114,
+      "TxId": 1015,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001015",
+      "TimeStamp": 1767227000,
+      "DateTime": "2026-01-01T00:23:20Z"
+    },
+    "ActionId": 2,
+    "TokenId": 5,
+    "RoundNum": 1,
+    "NumStakedNFTs": 2,
+    "StakerAid": 22,
+    "StakerAddr": "0x2200000000000000000000000000000000000022"
+  },
+  "Unstake": {
+    "ActionType": 0,
+    "RecordId": 0,
+    "Tx": {
+      "EvtLogId": 0,
+      "BlockNum": 0,
+      "TxId": 0,
+      "TxHash": "",
+      "TimeStamp": 0,
+      "DateTime": ""
+    },
+    "ActionId": 0,
+    "TokenId": 0,
+    "RoundNum": 0,
+    "NumStakedNFTs": 0,
+    "RewardAmount": "",
+    "RewardAmountEth": 0,
+    "RewardPerToken": "",
+    "RewardPerTokenEth": 0,
+    "StakerAid": 0,
+    "StakerAddr": ""
+  }
+}

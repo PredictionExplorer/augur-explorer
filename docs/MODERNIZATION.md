@@ -33,7 +33,7 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-07 (ETL fixture sprint). Update after each phase.
+Measured 2026-07-07 (store read suite sprint). Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
@@ -43,10 +43,11 @@ Measured 2026-07-07 (ETL fixture sprint). Update after each phase.
 | Dot-import files | ~70 | **21** | **0** | `rg -l '^\s*\. "github' --type go` |
 | Package-level mutable globals (api + etl) | ~120 | ~80 (state.go ~50, cg-etl ~25, rw-etl ~8) | ~0 (DI everywhere) | manual review per package |
 | golangci-lint issues | 433 (first run) | **179** | **0** | `golangci-lint run` |
-| Test files | 17 | **53** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
+| Test files | 17 | **83** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
 | Fuzz targets | 0 | **28** | **25+** (see §4.4) — met; grows with Phase 3 | `rg "func Fuzz" internal cmd contracts -c` |
-| Coverage on `internal/` (unit) | 2.4% | **5.9%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Coverage on `internal/` (integration, enforced) | n/a | **62.7%** (ratchet floor 60% in CI) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
+| Benchmarks | 0 | **4** (8 sub-benchmarks; baselines in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
+| Coverage on `internal/` (unit) | 2.4% | **8.2%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
+| Coverage on `internal/` (integration, enforced) | n/a | **66.7%** (ratchet floor 64% in CI) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
 | Queries on sqlc | 0 | 8 (layer1 pattern) | all static queries | count in `internal/store/queries/*.sql` |
 | Routes on stdlib router | 0 | 0 (gin) | all (v1 compat + v2) | n/a |
 | `context.Context` on store methods | 0% | ~5% (base pkg only) | 100% | manual |
@@ -83,6 +84,10 @@ Purpose: pin current behavior so the rewrite can be verified mechanically.
 These tests must pass against the code as it is today, then keep passing
 (or be deliberately updated) as each piece is rewritten.
 
+**Status: complete as of 2026-07-07** — every section landed; the only open
+item is the production-RLP replay in §4.3, which needs prod access and does
+not gate Phase 1. The store rewrite (§5) is unblocked.
+
 ### 4.1 API parity suite (characterization tests)
 
 Golden-file HTTP tests: seed a testcontainers database with a fixed fixture
@@ -104,7 +109,9 @@ paths become testable in Phase 2 when contract state is injectable
       case fetched twice to prove determinism). One container + one process
       -wide harness via `TestMain` (package Init can only run once until
       Phase 2 removes the package-level state).
-- [x] Fixture dataset: SQL seed files under `internal/api/apitest/testdata/seed/`
+- [x] Fixture dataset: SQL seed files under `internal/testfixtures/seed/`
+      (embedded, shared with the §4.2 store suites via `testfixtures.Apply`;
+      originally authored under `internal/api/apitest/testdata/seed/`)
       covering 3 complete rounds + 1 open round, 5 bidders, every prize type
       (main, raffle ETH/NFT incl. staker raffles, endurance, chrono warrior,
       lastcst), donations (ETH simple/with-info JSON, ERC20 + claim, NFT +
@@ -143,6 +150,15 @@ One test file per store file; every public query function called against the
 seeded database at least once, asserting golden rows. This is what lets the
 sqlc/pgx rewrite (§5) proceed file-by-file with confidence.
 
+**Sprint 2026-07-07: read suite landed in full (196 goldens, 3 production
+bugs found — see progress log).** Harnesses: `main_integration_test.go` in
+each store package boots `testdb.Start` + the shared embedded seed dataset
+(`internal/testfixtures`, extracted from apitest so both suites pin the same
+data); every golden is fetched twice to prove determinism
+(`testutil.GoldenJSON`). Error paths of the legacy `os.Exit` methods stay
+untestable by design until Phase 1 converts them to returned errors — the
+goldens are the safety net for exactly that conversion.
+
 CosmicGame (`internal/store/cosmicgame/`):
 
 - [x] `inserts.go` (73 funcs — covered via §4.3 ETL fixture replay: every
@@ -152,30 +168,45 @@ CosmicGame (`internal/store/cosmicgame/`):
       fixture re-processes, exercising Delete_* then Insert_* per event type;
       trigger delete paths additionally covered by the reorg rollback golden
       *(2026-07-07; also fixed two wrong table names in deletes.go)*)
-- [ ] `statistics.go` (20 funcs)
-- [ ] `user-specific.go` (20 funcs)
-- [ ] `staking.go` (18 funcs)
-- [ ] `admin_events_resolve.go` (14 — extend existing test)
-- [ ] `eth-donations.go` (13)
-- [ ] `bidding.go` (13 — extend existing `bidding_v2_test.go`)
-- [ ] `contract_params.go` (12 — extend existing test)
-- [ ] `tokens-erc721.go` (11)
-- [ ] `erc20-donations.go` (9)
-- [ ] `bidding_analytics.go` (8)
-- [ ] `raffle-eth.go` (8)
-- [ ] `nft-donations.go` (8)
-- [ ] `tokens-erc20.go` (5)
-- [ ] `cosmicgame.go` (4)
-- [ ] `raffle-nft.go` (3), `main-prize.go` (3), `banned_bids.go` (3)
-- [ ] `prize-history.go` (2), `marketing.go` (2), `admin_events.go` (2)
+- [x] `statistics.go` (20 funcs — all 6 ROI-leaderboard sort branches pinned)
+- [x] `user-specific.go` (20 funcs)
+- [x] `staking.go` (18 funcs — open + closed stake actions, per-deposit and
+      per-token reward views)
+- [x] `admin_events_resolve.go` (14 — fixture events resolved end-to-end plus
+      synthetic events driving every SQL-backed resolver branch: real
+      activation-span/ETH-price hits and the documented fallbacks)
+- [x] `eth-donations.go` (13)
+- [x] `bidding.go` (13 — v1/v2 bid shapes, pagination, sort directions,
+      not-found soft paths)
+- [x] `contract_params.go` (12 — reads incl. the error path on a bad table;
+      the ETL-facing Sync* write surface is exercised by `contract_sync.go`
+      startup sync and moves with Phase 3)
+- [x] `tokens-erc721.go` (11)
+- [x] `erc20-donations.go` (9)
+- [x] `bidding_analytics.go` (8 — incl. zero-filled bucket semantics)
+- [x] `raffle-eth.go` (8)
+- [x] `nft-donations.go` (8 — claimed and unclaimed donation states)
+- [x] `tokens-erc20.go` (5)
+- [x] `cosmicgame.go` (4 — incl. processing-status lazy-insert round trip)
+- [x] `raffle-nft.go` (3), `main-prize.go` (3), `banned_bids.go` (3 —
+      insert/delete round trip restores fixture state)
+- [x] `prize-history.go` (2), `marketing.go` (2), `admin_events.go` (2)
 
 RandomWalk (`internal/store/randomwalk/`):
 
-- [~] `randomwalk.go` (29 funcs — every ETL-facing insert plus the
-      `Offer_exists`/`RWalk_token_exists` guards are covered by the §4.3
-      rw-etl fixtures; the notification/top-stats query surface remains)
-- [ ] `randomwalk_api.go` (24 funcs)
-- [ ] `ranking.go` (9 funcs — include Elo transaction semantics)
+- [x] `randomwalk.go` (29 funcs — ETL-facing inserts covered by the §4.3
+      rw-etl fixtures; the notification/top-stats read surface (notibot's
+      `Get_all_events_for_notification*`, `Get_messaging_status` watermark
+      round trip, `Get_last_mint_timestamp`, rw_uranks top-makers with a
+      suite-local extension seed) pinned by the store suite *(2026-07-07;
+      found the unseeded rw_messaging_status watermark bug — migration
+      `00008`)*)
+- [x] `randomwalk_api.go` (24 funcs — all `Get_active_offers` order branches,
+      floor price, full token history; *fixed `Check_rwalk_token_exists`,
+      which was broken on every call*)
+- [x] `ranking.go` (9 funcs — Elo transaction semantics: rollback leaves
+      count/ratings/votes untouched, commit applies match + both rating
+      upserts; nonce lifecycle incl. replay rejection and expiry purge)
 
 Base (`internal/store/`):
 
@@ -319,11 +350,18 @@ Parsers and builders:
 
 ### 4.5 Benchmarks (guard the hot paths)
 
-- [ ] `BenchmarkEventDecode` (cg-etl, most common event: BidPlaced)
-- [ ] `BenchmarkReceiptsDecode` (freezer)
-- [ ] `BenchmarkRateLimiter` (middleware, parallel)
-- [ ] `BenchmarkStatisticsQueries` (top-3 heaviest read queries vs testdb)
-- [ ] Record baselines in `docs/benchmarks.md`; re-run after each rewrite phase
+**Sprint 2026-07-07: landed in full; baselines recorded.**
+
+- [x] `BenchmarkEventDecode` (cg-etl, most common event: BidPlaced — ABI
+      unpack + topic extraction, persistence excluded)
+- [x] `BenchmarkReceiptsDecode` (freezer; raw-RLP and snappy sub-benchmarks —
+      writing it found the snappy misdetection bug, see progress log)
+- [x] `BenchmarkRateLimiter` (middleware, parallel; distinct-IP map path and
+      shared-IP bucket contention)
+- [x] `BenchmarkStatisticsQueries` (top-3 heaviest read queries vs the seeded
+      testdb: dashboard aggregate, claims-by-round CTE, ROI leaderboard;
+      integration tag)
+- [x] Record baselines in `docs/benchmarks.md`; re-run after each rewrite phase
       (`go test -bench=. -benchmem -count=6 | benchstat`)
 
 ### 4.6 CI additions for the safety net
@@ -337,7 +375,8 @@ Parsers and builders:
       (start at current %, raise the floor after each phase — ratchet, never
       lower). *(2026-07-07: integration job computes `-coverpkg=./internal/...`
       coverage and fails below 50%; measured 53.0%. ETL fixture sprint raised
-      the floor to 60%; measured 62.7%.)*
+      the floor to 60%; measured 62.7%. Store read suite raised the floor to
+      64%; measured 66.7%.)*
 - [x] Parity suite runs in the integration job (already tagged `integration`)
       *(2026-07-07)*
 
@@ -604,5 +643,6 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | 2026-07-06 | `85941dba` | Foundation: layout, Go 1.26, CI, hardening, docs (see §3) |
 | 2026-07-06 | `a7971755` | **Fuzz fleet sprint (§4.4 + §4.6 nightly CI):** 28 fuzz targets + ~20 accompanying unit/property test funcs across 15 packages; `scripts/fuzz-all.sh`, `make fuzz-smoke`, nightly `.github/workflows/fuzz.yml`. Testability extractions (behavior-preserving, pinned by unit tests): metadata host dispatch → `metadataHostServesCosmicSignature` (`cmd/apiserver`), ORDER BY whitelists → `roiLeaderboardOrderClause` / `activeOffersOrderClause`. **Bug found & fixed:** corrupt freezer index entry could OOM-kill the process via an up-to-2^48-byte allocation in `FreezerReader.readBytes` / `WorkerReader.readBytes`; both now bounds-check against the data end (`TestReadItemCorruptIndexHugeOffset`). Test files 19 → 39. |
 | 2026-07-07 | `aa9c686e` | **ETL fixture sprint (§4.3 complete + §4.2 write-path/trigger/base items):** `internal/testchain` (deterministic fake Ethereum node: real header hashes, signed txs so sender recovery works, receipts, `eth_getLogs`, registrable `eth_call` handlers, `Reorg()`) and `internal/testutil` (golden compare; canonical DB snapshot/diff with surrogate keys dropped and FKs resolved to natural identifiers). `cmd/cg-etl`: 74 per-event fixtures through the real pipeline with full trigger side effects pinned (84 goldens incl. scripted-round story + reorg rollback), every fixture re-processed to prove the delete-then-insert recovery path is state-neutral, plus a no-Docker unit test pinning all registry topic constants against ABI event IDs. `cmd/rw-etl`: all 7 event types, marketplace story, reorg test (13 goldens). `internal/etl`: blockops/chainsplit/tx-fallback/evt-log-dedup integration tests. **Seven production bugs found & fixed:** (1) `proc_admin_changed_event` unpacked ERC-1967 `AdminChanged` with the game ABI — the event is not in that ABI, so every occurrence killed the ETL (new `erc1967_abi`); (2) `proc_time_increase_changed_event` unpacked `TimeIncreaseChanged` by name from an ABI that doesn't define it — same crash mode (now decodes the raw uint256; `TestLegacyConstantsHaveNoABIEvent` guards the inverse direction); (3) `proc_token_generation_script_url_event` deleted from the *message-length* table before inserting, so re-processing a script-URL event aborted on the unique constraint; (4) `Delete_fund_transfer_failed_event`/`Delete_erc20_transfer_failed_event` referenced non-existent table names (`cg_fund_transfer_err`/`cg_erc20_transfer_err`) — any re-process/reorg of those events killed the ETL; (5) `last_block` was created rowless and every writer uses plain UPDATE, so on a fresh migrated DB the watermark never advanced and `HandleChainSplit` had nothing to roll back (migration `00005` seeds the row); (6) `on_nft_unstaked_{cst,rwalk}_delete()` never restored the staked-token row ("To Do" comment), so reorg rollback couldn't reverse reward deposits and replay double-counted `cg_staker_cst.total_reward` (migration `00006`); (7) `on_item_bought_delete()` referenced `NEW.*` in a DELETE trigger (always null → market volume/trade reversal silently skipped), restored the seller's `price_bought` to the sale price instead of the purchase price (profit became 0 on replay) and never reversed profit bookkeeping (migration `00007`). CI coverage ratchet floor raised 50% → 60% (measured 62.7%, up from 53.0%). Test files 44 → 53; golden files 183 → 280. |
+| 2026-07-07 | *(this commit)* | **Store read suite + benchmarks sprint (§4.2 and §4.5 complete — Phase 0 done except prod-RLP replay):** shared seed dataset extracted to `internal/testfixtures` (embedded via `go:embed`, `Apply`/`ApplyFS`; apitest refactored onto it with parity goldens byte-identical, removing the CWD-relative glob). Store harnesses in `internal/store/{cosmicgame,randomwalk}` (TestMain + container + seed + wrapper); `testutil.CompareGoldenJSON`/`GoldenJSON` helpers (every golden fetched twice to prove determinism). 20 CosmicGame + 3 RandomWalk test files cover every public read function (~200 funcs, 196 goldens) incl. the notibot-only notification surface (rw_uranks extension seed), Elo transaction semantics (rollback/commit), nonce replay/expiry, processing-status and rank-writer round trips that restore fixture state. Benchmarks (§4.5): `BenchmarkEventDecode`, `BenchmarkReceiptsDecode`, `BenchmarkRateLimiter`, `BenchmarkStatisticsQueries`; baselines in `docs/benchmarks.md`. **Three production bugs found & fixed:** (1) `rw_messaging_status` was created rowless and `Update_messaging_status` uses a plain UPDATE, so on a freshly migrated DB the notibot watermark never persisted and every restart re-notified the entire event history to Twitter/Discord (migration `00008` seeds the row — same defect family as `last_block`/`00005`); (2) `Check_rwalk_token_exists` referenced placeholder `$2` while binding one argument, so PostgreSQL rejected every call — the error fell through to `return true, nil` ("token exists") and genuinely missing tokens returned `ErrNoRows`, which `rwctl scan-mints` treated as a transient DB error and retried forever; (3) the freezer receipts decoders detected "raw RLP" by first byte ≥ 0xc0, but snappy's decompressed-length uvarint starts with such a byte for half of all payload lengths > 127, making valid compressed blobs undecodable (`rlpListCoversExactly` now requires the list header to span the payload; applied to both `DecodeReceipts` and `DecodeArbitrumReceipts`, regression test added). CI coverage ratchet floor raised 60% → 64% (measured 66.7%, up from 62.7%). Test files 53 → 83; golden files 280 → 476. |
 | 2026-07-07 | `ca87801a` | **API parity suite sprint (§4.1 complete + §4.6 coverage ratchet):** `internal/api/apitest` boots the real gin router (production middleware chain, real Init sequence) against a seeded testcontainers Postgres and a deterministic Ethereum JSON-RPC stub; 183 golden files pin every registered GET route (each fetched twice to prove determinism), plus mutation-route tests (admin auth matrices, ban/unban round-trip, Elo match, EIP-191 signed `add_game` incl. replay/duplicate/chain rejections) and error-envelope goldens. Route-drift unit test proves `docs/openapi.yaml` ⇄ router equality (187/187 operations, both directions). Fixture dataset exercises the migration plpgsql triggers end-to-end. Supporting changes: `testdb.Start` for TestMain lifetimes, `DisableBackgroundRefresh` test hook in `state.go` (removed in Phase 2), metadata-host dispatch + health routes moved to `internal/api/common` for reuse. CI integration job now enforces the `internal/` coverage ratchet (floor 50%; measured 53.0%, up from 5.8%). **Three production bugs found & fixed:** (1) migrations 00002/00003 both defined `on_token_name_insert()`/`_delete()`, so the RandomWalk body silently overwrote the CosmicGame one and every `cg_token_name` insert failed — CS-NFT naming was broken and the ETL would crash on `NftNameChanged`; fixed by migration `00004` with per-project function names. (2) `Get_bid_frequency_by_period` / `Get_top_bidder_active_periods` passed Go ints into pgx text-concatenation placeholders (`$3 \|\| ' seconds'`), so `statistics/bidding/frequency` and `top_active_periods` failed on every call — and their `os.Exit(1)` error paths killed the whole API server when hit. (3) `Get_market_trading_volume_by_period` had a SQL typo (`TO_TIMESTAMP($1)i`), making `statistics/trading_volume` another process-killing route. Test files 39 → 44. |
 | | | |

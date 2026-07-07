@@ -1,0 +1,40 @@
+[
+  {
+    "BidderAid": 21,
+    "BidderAddr": "0x2100000000000000000000000000000000000021",
+    "NumBids": 5,
+    "RoundsParticipated": 3,
+    "RoundsWon": 2,
+    "WinRate": 0.6666666666666666,
+    "TotalEthSpent": "430000000000000000",
+    "TotalEthSpentEth": 0.43,
+    "TotalCstSpent": "0",
+    "TotalCstSpentEth": 0,
+    "EthWon": "640000000000000000",
+    "EthWonEth": 0.64,
+    "PrizesCount": 7,
+    "CstPrizesCount": 2,
+    "NftPrizesCount": 2,
+    "NetPlEth": 0.21,
+    "Roi": 0.4883720930232558
+  },
+  {
+    "BidderAid": 22,
+    "BidderAddr": "0x2200000000000000000000000000000000000022",
+    "NumBids": 3,
+    "RoundsParticipated": 3,
+    "RoundsWon": 2,
+    "WinRate": 0.6666666666666666,
+    "TotalEthSpent": "205000000000000000",
+    "TotalEthSpentEth": 0.205,
+    "TotalCstSpent": "0",
+    "TotalCstSpentEth": 0,
+    "EthWon": "50000000000000000",
+    "EthWonEth": 0.05,
+    "PrizesCount": 5,
+    "CstPrizesCount": 2,
+    "NftPrizesCount": 2,
+    "NetPlEth": -0.155,
+    "Roi": -0.7560975609756098
+  }
+]

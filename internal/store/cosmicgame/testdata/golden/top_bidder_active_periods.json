@@ -1,0 +1,45 @@
+{
+  "activePeriods": [
+    {
+      "BidderAid": 21,
+      "BidderAddr": "0x2100000000000000000000000000000000000021",
+      "PeriodStart": 1767225700,
+      "PeriodEnd": 1767228500,
+      "NumBids": 5,
+      "DurationSecs": 2800
+    },
+    {
+      "BidderAid": 22,
+      "BidderAddr": "0x2200000000000000000000000000000000000022",
+      "PeriodStart": 1767225800,
+      "PeriodEnd": 1767228400,
+      "NumBids": 3,
+      "DurationSecs": 2600
+    },
+    {
+      "BidderAid": 23,
+      "BidderAddr": "0x2300000000000000000000000000000000000023",
+      "PeriodStart": 1767225900,
+      "PeriodEnd": 1767227800,
+      "NumBids": 2,
+      "DurationSecs": 1900
+    }
+  ],
+  "topBidders": [
+    {
+      "BidderAid": 21,
+      "BidderAddr": "0x2100000000000000000000000000000000000021",
+      "NumBids": 5
+    },
+    {
+      "BidderAid": 22,
+      "BidderAddr": "0x2200000000000000000000000000000000000022",
+      "NumBids": 3
+    },
+    {
+      "BidderAid": 23,
+      "BidderAddr": "0x2300000000000000000000000000000000000023",
+      "NumBids": 2
+    }
+  ]
+}

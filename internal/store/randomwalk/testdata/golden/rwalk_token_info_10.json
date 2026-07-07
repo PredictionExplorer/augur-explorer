@@ -1,0 +1,13 @@
+{
+  "TokenId": 10,
+  "CurOwnerAid": 24,
+  "CurOwnerAddr": "0x2400000000000000000000000000000000000024",
+  "SeedHex": "aa00000000000000000000000000000000000000000000000000000000000010",
+  "SeedNum": "16",
+  "LastPrice": 1,
+  "TotalVolume": 1,
+  "NumTrades": 1,
+  "CurName": "Wanderer",
+  "LastNameUpdateTs": 1767229000,
+  "LastNameUpdateDate": "2026-01-01T00:56:40Z"
+}

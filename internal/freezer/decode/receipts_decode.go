@@ -65,8 +65,11 @@ func trySnappyDecompress(data []byte) []byte {
 		return data
 	}
 
-	// If data already starts with valid RLP, return as-is
-	if isValidRLPPrefix(data[0]) {
+	// Treat as raw RLP only when the list header covers the payload exactly.
+	// A first-byte check alone misfires: snappy's decompressed-length uvarint
+	// starts with a byte >= 0xc0 for half of all lengths > 127 (whenever the
+	// low 7 bits are >= 0x40), which made valid compressed blobs undecodable.
+	if isValidRLPPrefix(data[0]) && rlpListCoversExactly(data) {
 		return data
 	}
 
@@ -132,6 +135,31 @@ func isValidRLPPrefix(b byte) bool {
 	// - 0xf8-0xff: long list
 	// For receipts, we expect a list, so 0xc0 and above
 	return b >= 0xc0
+}
+
+// rlpListCoversExactly reports whether data begins with an RLP list header
+// whose declared length spans the whole payload — the shape of a raw
+// receipts blob. Snappy output can share the first byte with an RLP list,
+// but its uvarint header essentially never declares the exact payload size.
+func rlpListCoversExactly(data []byte) bool {
+	if len(data) == 0 || data[0] < 0xc0 {
+		return false
+	}
+	if data[0] <= 0xf7 { // short list: payload length in the tag byte
+		return int(data[0]-0xc0)+1 == len(data)
+	}
+	lenLen := int(data[0] - 0xf7) // long list: big-endian length follows
+	if len(data) < 1+lenLen {
+		return false
+	}
+	var declared uint64
+	for _, b := range data[1 : 1+lenLen] {
+		if declared > (1<<56)-1 { // would overflow beyond any real blob
+			return false
+		}
+		declared = declared<<8 | uint64(b)
+	}
+	return declared == uint64(len(data)-1-lenLen)
 }
 
 // ReceiptForStorage is a minimal struct for RLP decoding storage receipts

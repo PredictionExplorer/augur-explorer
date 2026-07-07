@@ -1,0 +1,24 @@
+[
+  {
+    "StakerAid": 21,
+    "StakerAddr": "0x2100000000000000000000000000000000000021",
+    "TotalTokensStaked": 0,
+    "NumStakeActions": 1,
+    "NumUnstakeActions": 1,
+    "TotalReward": "1000000000000000000",
+    "TotalRewardEth": 1,
+    "UnclaimedReward": "0",
+    "UnclaimedRewardEth": 0
+  },
+  {
+    "StakerAid": 22,
+    "StakerAddr": "0x2200000000000000000000000000000000000022",
+    "TotalTokensStaked": 1,
+    "NumStakeActions": 1,
+    "NumUnstakeActions": 0,
+    "TotalReward": "1000000000000000000",
+    "TotalRewardEth": 1,
+    "UnclaimedReward": "1000000000000000000",
+    "UnclaimedRewardEth": 1
+  }
+]

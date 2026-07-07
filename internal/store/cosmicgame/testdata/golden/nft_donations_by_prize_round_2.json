@@ -1,0 +1,21 @@
+[
+  {
+    "RecordId": 2,
+    "Tx": {
+      "EvtLogId": 5102,
+      "BlockNum": 123,
+      "TxId": 1024,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001024",
+      "TimeStamp": 1767227900,
+      "DateTime": "2026-01-01T00:38:20Z"
+    },
+    "RoundNum": 2,
+    "DonorAid": 25,
+    "DonorAddr": "0x2500000000000000000000000000000000000025",
+    "TokenAddressId": 27,
+    "TokenAddr": "0x2700000000000000000000000000000000000027",
+    "NFTTokenId": 888,
+    "NFTTokenURI": "https://nft.example/888",
+    "Index": 1
+  }
+]
