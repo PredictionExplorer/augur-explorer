@@ -1,0 +1,178 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 0
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1710
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1710,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T23:30:00+00:00"
+      },
+      {
+        "block_num": 1711,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T23:31:40+00:00"
+      }
+    ]
+  },
+  "cg_glob_stats": {
+    "added": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 1,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ],
+    "removed": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ]
+  },
+  "cg_mint_event": {
+    "added": [
+      {
+        "block_num": 1710,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "cur_owner_aid": "0x2100000000000000000000000000000000000021",
+        "evtlog_id": "evt:1710/0",
+        "owner_aid": "0x2100000000000000000000000000000000000021",
+        "round_num": 0,
+        "seed": "000000000000000000000000000000000000000000000000000000000000beef",
+        "time_stamp": "2026-01-02T23:30:00+00:00",
+        "token_id": 1,
+        "token_name": "Genesis Fixture",
+        "tx_id": "0x943d5abbbcc3350e44f57f1aa7254c9b21d325d299a4ed0d5abc76a692aa4dd4"
+      }
+    ]
+  },
+  "cg_token_name": {
+    "added": [
+      {
+        "block_num": 1711,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "evtlog_id": "evt:1711/0",
+        "time_stamp": "2026-01-02T23:31:40+00:00",
+        "token_id": 1,
+        "token_name": "Genesis Fixture",
+        "tx_id": "0x48be4188b0df8beb8eb70487c4d60e6e285672f80d88988e0bdc6a7d492febfb"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1710,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 0,
+        "topic0_sig": "c2115f21",
+        "tx_id": "0x943d5abbbcc3350e44f57f1aa7254c9b21d325d299a4ed0d5abc76a692aa4dd4"
+      },
+      {
+        "block_num": 1711,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 0,
+        "topic0_sig": "a14cfb0f",
+        "tx_id": "0x48be4188b0df8beb8eb70487c4d60e6e285672f80d88988e0bdc6a7d492febfb"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1711
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1710,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3000000000000000000000000000000000000003",
+        "tx_hash": "0x943d5abbbcc3350e44f57f1aa7254c9b21d325d299a4ed0d5abc76a692aa4dd4",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1711,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3000000000000000000000000000000000000003",
+        "tx_hash": "0x48be4188b0df8beb8eb70487c4d60e6e285672f80d88988e0bdc6a7d492febfb",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2800000000000000000000000000000000000028",
+        "block_num": 0
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1540
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1540,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T18:46:40+00:00"
+      }
+    ]
+  },
+  "cg_donation_sent": {
+    "added": [
+      {
+        "amount": 4000000000000000000,
+        "block_num": 1540,
+        "charity_aid": "0x2800000000000000000000000000000000000028",
+        "contract_aid": "0x6000000000000000000000000000000000000006",
+        "evtlog_id": "evt:1540/0",
+        "time_stamp": "2026-01-02T18:46:40+00:00",
+        "tx_id": "0x056a8503ad29300aa8d3fa72587cdc2a824dc815dcfe4e2c848a1ba70f9d2498"
+      }
+    ]
+  },
+  "cg_glob_stats": {
+    "added": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 1,
+        "sum_withdrawals": 4000000000000000000,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ],
+    "removed": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1540,
+        "contract_aid": "0x6000000000000000000000000000000000000006",
+        "log_index": 0,
+        "topic0_sig": "1222634b",
+        "tx_id": "0x056a8503ad29300aa8d3fa72587cdc2a824dc815dcfe4e2c848a1ba70f9d2498"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1540
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1540,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x6000000000000000000000000000000000000006",
+        "tx_hash": "0x056a8503ad29300aa8d3fa72587cdc2a824dc815dcfe4e2c848a1ba70f9d2498",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

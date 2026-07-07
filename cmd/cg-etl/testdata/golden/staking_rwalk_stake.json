@@ -1,0 +1,116 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2300000000000000000000000000000000000023",
+        "block_num": 1770
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1770
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1770,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T01:10:00+00:00"
+      }
+    ]
+  },
+  "cg_nft_staked_rwalk": {
+    "added": [
+      {
+        "action_id": 5,
+        "block_num": 1770,
+        "contract_aid": "0x1000000000000000000000000000000000000010",
+        "evtlog_id": "evt:1770/0",
+        "num_staked_nfts": 1,
+        "round_num": -1,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "time_stamp": "2026-01-03T01:10:00+00:00",
+        "token_id": 10,
+        "tx_id": "0xd0df4aa7b1818a0e4410a23f41c8a471d0b51d13d56f5605284f3e8a1f785caa"
+      }
+    ]
+  },
+  "cg_stake_stats_rwalk": {
+    "added": [
+      {
+        "total_nft_mints": 0,
+        "total_num_stakers": 1,
+        "total_tokens_staked": 1
+      }
+    ],
+    "removed": [
+      {
+        "total_nft_mints": 0,
+        "total_num_stakers": 0,
+        "total_tokens_staked": 0
+      }
+    ]
+  },
+  "cg_staked_token_rwalk": {
+    "added": [
+      {
+        "stake_action_id": 5,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "token_id": 10
+      }
+    ]
+  },
+  "cg_staker_rwalk": {
+    "added": [
+      {
+        "num_stake_actions": 1,
+        "num_tokens_minted": 0,
+        "num_unstake_actions": 0,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "total_tokens_staked": 1
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1770,
+        "contract_aid": "0x1000000000000000000000000000000000000010",
+        "log_index": 0,
+        "topic0_sig": "62773741",
+        "tx_id": "0xd0df4aa7b1818a0e4410a23f41c8a471d0b51d13d56f5605284f3e8a1f785caa"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1770
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1770,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x1000000000000000000000000000000000000010",
+        "tx_hash": "0xd0df4aa7b1818a0e4410a23f41c8a471d0b51d13d56f5605284f3e8a1f785caa",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

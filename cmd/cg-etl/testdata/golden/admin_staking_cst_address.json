@@ -1,0 +1,72 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1340
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1340,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T13:13:20+00:00"
+      }
+    ]
+  },
+  "cg_adm_staking_cst_addr": {
+    "added": [
+      {
+        "block_num": 1340,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "evtlog_id": "evt:1340/0",
+        "new_staking_aid": "0x9000000000000000000000000000000000000009",
+        "time_stamp": "2026-01-02T13:13:20+00:00",
+        "tx_id": "0x7f69400b7bfc480b4903f81627526d5c0b26571799d3978bca19ce011a70ad65"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1340,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 0,
+        "topic0_sig": "4da1815c",
+        "tx_id": "0x7f69400b7bfc480b4903f81627526d5c0b26571799d3978bca19ce011a70ad65"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1340
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1340,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x2000000000000000000000000000000000000002",
+        "tx_hash": "0x7f69400b7bfc480b4903f81627526d5c0b26571799d3978bca19ce011a70ad65",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

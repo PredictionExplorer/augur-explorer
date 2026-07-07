@@ -1,0 +1,1159 @@
+{
+  "block": {
+    "added": [
+      {
+        "block_num": 3010,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:36:40+00:00"
+      },
+      {
+        "block_num": 3011,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:38:20+00:00"
+      },
+      {
+        "block_num": 3012,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:40:00+00:00"
+      },
+      {
+        "block_num": 3013,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:41:40+00:00"
+      },
+      {
+        "block_num": 3014,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:43:20+00:00"
+      },
+      {
+        "block_num": 3015,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:45:00+00:00"
+      }
+    ]
+  },
+  "cg_chrono_warrior_prize": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "cst_amount": 8000000000000000000,
+        "eth_amount": 2000000000000000000,
+        "evtlog_id": "evt:3009/9",
+        "nft_id": 4,
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2300000000000000000000000000000000000023",
+        "winner_index": 0
+      }
+    ]
+  },
+  "cg_donated_nft_claimed": {
+    "added": [
+      {
+        "block_num": 3011,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "evtlog_id": "evt:3011/0",
+        "idx": 0,
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:38:20+00:00",
+        "token_aid": "0x2700000000000000000000000000000000000027",
+        "token_id": 5,
+        "tx_id": "0x6718d6356fe3b5e474ef395852b3b60be68dfaff76d0731a1a901ec2b2560b60",
+        "winner_aid": "0x2100000000000000000000000000000000000021"
+      }
+    ]
+  },
+  "cg_donated_tok_claimed": {
+    "added": [
+      {
+        "amount": 50000000000000000000,
+        "block_num": 3011,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "evtlog_id": "evt:3011/1",
+        "idx": 0,
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:38:20+00:00",
+        "token_aid": "0x2600000000000000000000000000000000000026",
+        "tx_id": "0x6718d6356fe3b5e474ef395852b3b60be68dfaff76d0731a1a901ec2b2560b60",
+        "winner_aid": "0x2100000000000000000000000000000000000021"
+      }
+    ]
+  },
+  "cg_donation_received": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "block_num": 3009,
+        "contract_aid": "0x6000000000000000000000000000000000000006",
+        "donor_aid": "0x2000000000000000000000000000000000000002",
+        "evtlog_id": "evt:3009/11",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      }
+    ]
+  },
+  "cg_endurance_prize": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "erc20_amount": 7000000000000000000,
+        "erc721_token_id": 3,
+        "evtlog_id": "evt:3009/8",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2200000000000000000000000000000000000022"
+      }
+    ]
+  },
+  "cg_erc20_donation_stats": {
+    "added": [
+      {
+        "claimed": true,
+        "round_num": 0,
+        "token_aid": "0x2600000000000000000000000000000000000026",
+        "total_amount": 0,
+        "winner_aid": "0x2100000000000000000000000000000000000021"
+      }
+    ],
+    "removed": [
+      {
+        "claimed": false,
+        "round_num": 0,
+        "token_aid": "0x2600000000000000000000000000000000000026",
+        "total_amount": 50000000000000000000,
+        "winner_aid": 0
+      }
+    ]
+  },
+  "cg_erc721_transfer": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "evtlog_id": "evt:3009/2",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "otype": 1,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "to_aid": "0x2100000000000000000000000000000000000021",
+        "token_id": 1,
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "evtlog_id": "evt:3009/7",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "otype": 1,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "to_aid": "0x2400000000000000000000000000000000000024",
+        "token_id": 2,
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3012,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "evtlog_id": "evt:3012/1",
+        "from_aid": "0x2100000000000000000000000000000000000021",
+        "otype": 0,
+        "time_stamp": "2026-01-04T11:40:00+00:00",
+        "to_aid": "0x2200000000000000000000000000000000000022",
+        "token_id": 1,
+        "tx_id": "0xb4904242ec7f8039742470577310c236b4e65cbc9ee1deec11d78985681f067f"
+      }
+    ]
+  },
+  "cg_funds_to_charity": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "block_num": 3009,
+        "charity_aid": "0x2800000000000000000000000000000000000028",
+        "contract_aid": "0x1100000000000000000000000000000000000011",
+        "evtlog_id": "evt:3009/12",
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      }
+    ]
+  },
+  "cg_glob_stats": {
+    "added": [
+      {
+        "cg_donations_total": 1000000000000000000,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 5000000000000000000,
+        "num_bids": 4,
+        "num_bids_cst": 1,
+        "num_cg_donations": 1,
+        "num_direct_donations": 2,
+        "num_mints": 2,
+        "num_mkt_rewards": 1,
+        "num_rwalk_used": 1,
+        "num_vol_donations": 0,
+        "num_wins": 1,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 2000000000000000000,
+        "total_cst_consumed": 5000000000000000000,
+        "total_cst_given_in_prizes": 36000000000000000000,
+        "total_erc20_donations": 1,
+        "total_mkt_rewards": 12000000000000000000,
+        "total_nft_donated": 1,
+        "total_raffle_eth_deposits": 1000000000000000000,
+        "total_raffle_eth_withdrawn": 1000000000000000000,
+        "vol_donations_total": 0
+      }
+    ],
+    "removed": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 5000000000000000000,
+        "num_bids": 4,
+        "num_bids_cst": 1,
+        "num_cg_donations": 0,
+        "num_direct_donations": 2,
+        "num_mints": 0,
+        "num_mkt_rewards": 1,
+        "num_rwalk_used": 1,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 5000000000000000000,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 1,
+        "total_mkt_rewards": 12000000000000000000,
+        "total_nft_donated": 1,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ]
+  },
+  "cg_lastcst_prize": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "erc20_amount": 6000000000000000000,
+        "erc721_token_id": 5,
+        "evtlog_id": "evt:3009/10",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2300000000000000000000000000000000000023"
+      }
+    ]
+  },
+  "cg_mint_event": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "cur_owner_aid": "0x2200000000000000000000000000000000000022",
+        "evtlog_id": "evt:3009/1",
+        "owner_aid": "0x2100000000000000000000000000000000000021",
+        "round_num": 0,
+        "seed": "00000000000000000000000000000000000000000000000000000000000a11ce",
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "token_id": 1,
+        "token_name": "Round Zero Genesis",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "cur_owner_aid": "0x2400000000000000000000000000000000000024",
+        "evtlog_id": "evt:3009/6",
+        "owner_aid": "0x2400000000000000000000000000000000000024",
+        "round_num": 0,
+        "seed": "000000000000000000000000000000000000000000000000000000000000da7e",
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "token_id": 2,
+        "token_name": "",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      }
+    ]
+  },
+  "cg_nft_staked_cst": {
+    "added": [
+      {
+        "action_id": 1,
+        "block_num": 3013,
+        "claimed": false,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "evtlog_id": "evt:3013/0",
+        "num_staked_nfts": 1,
+        "reward_per_staker": 0,
+        "round_num": 1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "time_stamp": "2026-01-04T11:41:40+00:00",
+        "token_id": 1,
+        "tx_id": "0x73833c36a1fdfcd2f9ba533d90043101c408b8639bceaab9a0b6c74ef5c834bb"
+      }
+    ]
+  },
+  "cg_nft_staked_rwalk": {
+    "added": [
+      {
+        "action_id": 2,
+        "block_num": 3013,
+        "contract_aid": "0x1000000000000000000000000000000000000010",
+        "evtlog_id": "evt:3013/1",
+        "num_staked_nfts": 1,
+        "round_num": 1,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "time_stamp": "2026-01-04T11:41:40+00:00",
+        "token_id": 10,
+        "tx_id": "0x73833c36a1fdfcd2f9ba533d90043101c408b8639bceaab9a0b6c74ef5c834bb"
+      }
+    ]
+  },
+  "cg_nft_unstaked_cst": {
+    "added": [
+      {
+        "action_counter": 4,
+        "action_id": 1,
+        "block_num": 3015,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "evtlog_id": "evt:3015/0",
+        "num_staked_nfts": 0,
+        "reward": 2000000000000000000,
+        "reward_per_tok": 2000000000000000000,
+        "round_num": 1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "time_stamp": "2026-01-04T11:45:00+00:00",
+        "token_id": 1,
+        "tx_id": "0x9b33f2a36e8d6d826beb6cb7a3913b50b40fd1f92441eb2b724dd5ae2cd414fb"
+      }
+    ]
+  },
+  "cg_prize": {
+    "added": [
+      {
+        "ptype": 0,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 1,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 10,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 11,
+        "round_num": 0,
+        "winner_index": 1
+      },
+      {
+        "ptype": 12,
+        "round_num": 0,
+        "winner_index": 1
+      },
+      {
+        "ptype": 15,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 2,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 3,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 4,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 5,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 6,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 7,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 8,
+        "round_num": 0,
+        "winner_index": 0
+      },
+      {
+        "ptype": 9,
+        "round_num": 0,
+        "winner_index": 0
+      }
+    ]
+  },
+  "cg_prize_claim": {
+    "added": [
+      {
+        "amount": 3000000000000000000,
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "cst_amount": 10000000000000000000,
+        "evtlog_id": "evt:3009/0",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "timeout": 600,
+        "token_id": 1,
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2100000000000000000000000000000000000021"
+      }
+    ]
+  },
+  "cg_prize_deposit": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "block_num": 3009,
+        "claimed": true,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "evtlog_id": "evt:3009/4",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2200000000000000000000000000000000000022",
+        "winner_index": 0,
+        "withdrawal_id": "evt:3010/0"
+      }
+    ]
+  },
+  "cg_prize_withdrawal": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "beneficiary_aid": "0x2200000000000000000000000000000000000022",
+        "block_num": 3010,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "evtlog_id": "evt:3010/0",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:36:40+00:00",
+        "tx_id": "0xdf230e8efc12c4110a9bfffb7a1bc4863401285d5b4807d6395aa4885bc190dd",
+        "winner_aid": "0x2200000000000000000000000000000000000022"
+      }
+    ]
+  },
+  "cg_raffle_eth_prize": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "evtlog_id": "evt:3009/3",
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2200000000000000000000000000000000000022",
+        "winner_idx": 0
+      }
+    ]
+  },
+  "cg_raffle_nft_prize": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "cst_amount": 5000000000000000000,
+        "evtlog_id": "evt:3009/5",
+        "is_rwalk": false,
+        "is_staker": false,
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "token_id": 2,
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "winner_aid": "0x2400000000000000000000000000000000000024",
+        "winner_idx": 1
+      }
+    ]
+  },
+  "cg_raffle_nft_winner_stats": {
+    "added": [
+      {
+        "num_won": 1,
+        "winner_aid": "0x2400000000000000000000000000000000000024"
+      }
+    ],
+    "removed": [
+      {
+        "num_won": 0,
+        "winner_aid": "0x2400000000000000000000000000000000000024"
+      }
+    ]
+  },
+  "cg_raffle_winner_stats": {
+    "added": [
+      {
+        "amount_sum": 0,
+        "raffles_count": 1,
+        "winner_aid": "0x2200000000000000000000000000000000000022",
+        "withdrawal_sum": 1000000000000000000
+      },
+      {
+        "amount_sum": 2000000000000000000,
+        "raffles_count": 0,
+        "winner_aid": "0x2300000000000000000000000000000000000023",
+        "withdrawal_sum": 0
+      }
+    ],
+    "removed": [
+      {
+        "amount_sum": 0,
+        "raffles_count": 0,
+        "winner_aid": "0x2200000000000000000000000000000000000022",
+        "withdrawal_sum": 0
+      },
+      {
+        "amount_sum": 0,
+        "raffles_count": 0,
+        "winner_aid": "0x2300000000000000000000000000000000000023",
+        "withdrawal_sum": 0
+      }
+    ]
+  },
+  "cg_round_stats": {
+    "added": [
+      {
+        "activation_time": "2026-01-01T00:00:00+00:00",
+        "chrono_warrior_prize_eth": 2000000000000000000,
+        "donations_round_count": 2,
+        "donations_round_total": 5000000000000000000,
+        "num_contracts_donated_erc20": 1,
+        "num_erc20_donations": 1,
+        "param_window_duration_seconds": null,
+        "param_window_start_time": null,
+        "round_duration_seconds": 300800,
+        "round_end_time": "2026-01-04T11:35:00+00:00",
+        "round_num": 0,
+        "round_start_time": "2026-01-01T00:01:40+00:00",
+        "total_bids": 4,
+        "total_cst_in_bids": 5000000000000000000,
+        "total_cst_paid_in_prizes": 36000000000000000000,
+        "total_eth_in_bids": 259999999999999999,
+        "total_nft_donated": 1,
+        "total_nfts_minted": 5,
+        "total_raffle_eth_deposits": 1000000000000000000,
+        "total_raffle_nfts": 1
+      }
+    ],
+    "removed": [
+      {
+        "activation_time": "2026-01-01T00:00:00+00:00",
+        "chrono_warrior_prize_eth": 0,
+        "donations_round_count": 2,
+        "donations_round_total": 5000000000000000000,
+        "num_contracts_donated_erc20": 1,
+        "num_erc20_donations": 1,
+        "param_window_duration_seconds": null,
+        "param_window_start_time": null,
+        "round_duration_seconds": 300800,
+        "round_end_time": "2026-01-04T11:35:00+00:00",
+        "round_num": 0,
+        "round_start_time": "2026-01-01T00:01:40+00:00",
+        "total_bids": 4,
+        "total_cst_in_bids": 5000000000000000000,
+        "total_cst_paid_in_prizes": 0,
+        "total_eth_in_bids": 259999999999999999,
+        "total_nft_donated": 1,
+        "total_nfts_minted": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_nfts": 0
+      }
+    ]
+  },
+  "cg_st_reward": {
+    "added": [
+      {
+        "action_id": 1,
+        "collected": true,
+        "deposit_id": 3,
+        "is_unstake": true,
+        "reward": 2000000000000000000,
+        "round_num": 0,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "token_id": 1
+      }
+    ]
+  },
+  "cg_stake_stats_cst": {
+    "added": [
+      {
+        "num_charity_deposits": 0,
+        "num_deposits": 1,
+        "total_charity_amount": 0,
+        "total_modulo": 0,
+        "total_num_stakers": 0,
+        "total_reward_amount": 2000000000000000000,
+        "total_tokens_staked": 0,
+        "total_unclaimed_reward": 0
+      }
+    ],
+    "removed": [
+      {
+        "num_charity_deposits": 0,
+        "num_deposits": 0,
+        "total_charity_amount": 0,
+        "total_modulo": 0,
+        "total_num_stakers": 0,
+        "total_reward_amount": 0,
+        "total_tokens_staked": 0,
+        "total_unclaimed_reward": 0
+      }
+    ]
+  },
+  "cg_stake_stats_rwalk": {
+    "added": [
+      {
+        "total_nft_mints": 0,
+        "total_num_stakers": 1,
+        "total_tokens_staked": 1
+      }
+    ],
+    "removed": [
+      {
+        "total_nft_mints": 0,
+        "total_num_stakers": 0,
+        "total_tokens_staked": 0
+      }
+    ]
+  },
+  "cg_staked_token_cst_rewards": {
+    "added": [
+      {
+        "accumulated_reward": 2000000000000000000,
+        "claimed_reward": 0,
+        "stake_action_id": 1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "token_id": 1
+      }
+    ]
+  },
+  "cg_staked_token_rwalk": {
+    "added": [
+      {
+        "stake_action_id": 2,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "token_id": 10
+      }
+    ]
+  },
+  "cg_staker_cst": {
+    "added": [
+      {
+        "num_stake_actions": 1,
+        "num_tokens_minted": 0,
+        "num_unstake_actions": 1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "total_reward": 2000000000000000000,
+        "total_tokens_staked": 0,
+        "unclaimed_reward": 0
+      }
+    ],
+    "removed": [
+      {
+        "num_stake_actions": 0,
+        "num_tokens_minted": 0,
+        "num_unstake_actions": 0,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "total_reward": 0,
+        "total_tokens_staked": 0,
+        "unclaimed_reward": 0
+      }
+    ]
+  },
+  "cg_staker_deposit": {
+    "added": [
+      {
+        "amount_deposited": 2000000000000000000,
+        "amount_to_claim": 0,
+        "deposit_id": 3,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "tokens_staked": 1
+      }
+    ]
+  },
+  "cg_staker_rwalk": {
+    "added": [
+      {
+        "num_stake_actions": 1,
+        "num_tokens_minted": 0,
+        "num_unstake_actions": 0,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "total_tokens_staked": 1
+      }
+    ],
+    "removed": [
+      {
+        "num_stake_actions": 0,
+        "num_tokens_minted": 0,
+        "num_unstake_actions": 0,
+        "staker_aid": "0x2300000000000000000000000000000000000023",
+        "total_tokens_staked": 0
+      }
+    ]
+  },
+  "cg_staking_eth_deposit": {
+    "added": [
+      {
+        "accum_modulo": 0,
+        "accumulated_amount": 2000000000000000000,
+        "accumulated_nfts": 1,
+        "accumulated_per_token": null,
+        "amount_per_token": 2000000000000000000,
+        "block_num": 3014,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "deposit_amount": 2000000000000000000,
+        "deposit_id": 3,
+        "deposit_time": "2026-01-04T11:43:20+00:00",
+        "evtlog_id": "evt:3014/0",
+        "modulo": 0,
+        "num_staked_nfts": 1,
+        "round_num": 0,
+        "time_stamp": "2026-01-04T11:43:20+00:00",
+        "tx_id": "0x6b7686c36393d0c686dc80f8d2b70a35b4d40c1ca2b545273532dacd7b163bcc"
+      }
+    ]
+  },
+  "cg_token_name": {
+    "added": [
+      {
+        "block_num": 3012,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "evtlog_id": "evt:3012/0",
+        "time_stamp": "2026-01-04T11:40:00+00:00",
+        "token_id": 1,
+        "token_name": "Round Zero Genesis",
+        "tx_id": "0xb4904242ec7f8039742470577310c236b4e65cbc9ee1deec11d78985681f067f"
+      }
+    ]
+  },
+  "cg_transfer_stats": {
+    "added": [
+      {
+        "erc20_num_transfers": 0,
+        "erc721_num_transfers": 1,
+        "user_aid": "0x2400000000000000000000000000000000000024"
+      },
+      {
+        "erc20_num_transfers": 1,
+        "erc721_num_transfers": 1,
+        "user_aid": "0x2200000000000000000000000000000000000022"
+      },
+      {
+        "erc20_num_transfers": 1,
+        "erc721_num_transfers": 2,
+        "user_aid": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "erc20_num_transfers": 4,
+        "erc721_num_transfers": 2,
+        "user_aid": "0x0000000000000000000000000000000000000000"
+      }
+    ],
+    "removed": [
+      {
+        "erc20_num_transfers": 0,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x2400000000000000000000000000000000000024"
+      },
+      {
+        "erc20_num_transfers": 1,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "erc20_num_transfers": 1,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x2200000000000000000000000000000000000022"
+      },
+      {
+        "erc20_num_transfers": 4,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x0000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "cg_winner": {
+    "added": [
+      {
+        "erc20_count": 1,
+        "erc721_count": 1,
+        "max_win_amount": 0,
+        "prizes_count": 2,
+        "prizes_sum": 0,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2400000000000000000000000000000000000024"
+      },
+      {
+        "erc20_count": 1,
+        "erc721_count": 1,
+        "max_win_amount": 0,
+        "prizes_count": 3,
+        "prizes_sum": 1000000000000000000,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2200000000000000000000000000000000000022"
+      },
+      {
+        "erc20_count": 1,
+        "erc721_count": 1,
+        "max_win_amount": 3000000000000000000,
+        "prizes_count": 3,
+        "prizes_sum": 3000000000000000000,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "erc20_count": 2,
+        "erc721_count": 2,
+        "max_win_amount": 0,
+        "prizes_count": 5,
+        "prizes_sum": 2000000000000000000,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2300000000000000000000000000000000000023"
+      }
+    ],
+    "removed": [
+      {
+        "erc20_count": 0,
+        "erc721_count": 0,
+        "max_win_amount": 0,
+        "prizes_count": 0,
+        "prizes_sum": 0,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "erc20_count": 0,
+        "erc721_count": 0,
+        "max_win_amount": 0,
+        "prizes_count": 0,
+        "prizes_sum": 0,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2200000000000000000000000000000000000022"
+      },
+      {
+        "erc20_count": 0,
+        "erc721_count": 0,
+        "max_win_amount": 0,
+        "prizes_count": 0,
+        "prizes_sum": 0,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2300000000000000000000000000000000000023"
+      },
+      {
+        "erc20_count": 0,
+        "erc721_count": 0,
+        "max_win_amount": 0,
+        "prizes_count": 0,
+        "prizes_sum": 0,
+        "tokens_count": 0,
+        "unclaimed_nfts": 0,
+        "winner_aid": "0x2400000000000000000000000000000000000024"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 3009,
+        "contract_aid": "0x1100000000000000000000000000000000000011",
+        "log_index": 12,
+        "topic0_sig": "1222634b",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 0,
+        "topic0_sig": "8c551ec2",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 10,
+        "topic0_sig": "3901b643",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 3,
+        "topic0_sig": "9c62e2cb",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 5,
+        "topic0_sig": "27c21fe4",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 8,
+        "topic0_sig": "838ec9dd",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 9,
+        "topic0_sig": "aa858ae2",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 1,
+        "topic0_sig": "c2115f21",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 2,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 6,
+        "topic0_sig": "c2115f21",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 7,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x6000000000000000000000000000000000000006",
+        "log_index": 11,
+        "topic0_sig": "264f630d",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "log_index": 4,
+        "topic0_sig": "8e369548",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3010,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "log_index": 0,
+        "topic0_sig": "172b54ba",
+        "tx_id": "0xdf230e8efc12c4110a9bfffb7a1bc4863401285d5b4807d6395aa4885bc190dd"
+      },
+      {
+        "block_num": 3011,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "log_index": 0,
+        "topic0_sig": "03c2b6e0",
+        "tx_id": "0x6718d6356fe3b5e474ef395852b3b60be68dfaff76d0731a1a901ec2b2560b60"
+      },
+      {
+        "block_num": 3011,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "log_index": 1,
+        "topic0_sig": "af1adae2",
+        "tx_id": "0x6718d6356fe3b5e474ef395852b3b60be68dfaff76d0731a1a901ec2b2560b60"
+      },
+      {
+        "block_num": 3012,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 0,
+        "topic0_sig": "a14cfb0f",
+        "tx_id": "0xb4904242ec7f8039742470577310c236b4e65cbc9ee1deec11d78985681f067f"
+      },
+      {
+        "block_num": 3012,
+        "contract_aid": "0x3000000000000000000000000000000000000003",
+        "log_index": 1,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0xb4904242ec7f8039742470577310c236b4e65cbc9ee1deec11d78985681f067f"
+      },
+      {
+        "block_num": 3013,
+        "contract_aid": "0x1000000000000000000000000000000000000010",
+        "log_index": 1,
+        "topic0_sig": "62773741",
+        "tx_id": "0x73833c36a1fdfcd2f9ba533d90043101c408b8639bceaab9a0b6c74ef5c834bb"
+      },
+      {
+        "block_num": 3013,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "log_index": 0,
+        "topic0_sig": "e09cd972",
+        "tx_id": "0x73833c36a1fdfcd2f9ba533d90043101c408b8639bceaab9a0b6c74ef5c834bb"
+      },
+      {
+        "block_num": 3014,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "log_index": 0,
+        "topic0_sig": "26726e1a",
+        "tx_id": "0x6b7686c36393d0c686dc80f8d2b70a35b4d40c1ca2b545273532dacd7b163bcc"
+      },
+      {
+        "block_num": 3015,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "log_index": 0,
+        "topic0_sig": "ec478a78",
+        "tx_id": "0x9b33f2a36e8d6d826beb6cb7a3913b50b40fd1f92441eb2b724dd5ae2cd414fb"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 3015
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 3009
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 3009,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 13,
+        "to_aid": "0x2000000000000000000000000000000000000002",
+        "tx_hash": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3010,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x7000000000000000000000000000000000000007",
+        "tx_hash": "0xdf230e8efc12c4110a9bfffb7a1bc4863401285d5b4807d6395aa4885bc190dd",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3011,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x7000000000000000000000000000000000000007",
+        "tx_hash": "0x6718d6356fe3b5e474ef395852b3b60be68dfaff76d0731a1a901ec2b2560b60",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3012,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x3000000000000000000000000000000000000003",
+        "tx_hash": "0xb4904242ec7f8039742470577310c236b4e65cbc9ee1deec11d78985681f067f",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3013,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x9000000000000000000000000000000000000009",
+        "tx_hash": "0x73833c36a1fdfcd2f9ba533d90043101c408b8639bceaab9a0b6c74ef5c834bb",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3014,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x9000000000000000000000000000000000000009",
+        "tx_hash": "0x6b7686c36393d0c686dc80f8d2b70a35b4d40c1ca2b545273532dacd7b163bcc",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3015,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x9000000000000000000000000000000000000009",
+        "tx_hash": "0x9b33f2a36e8d6d826beb6cb7a3913b50b40fd1f92441eb2b724dd5ae2cd414fb",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}
