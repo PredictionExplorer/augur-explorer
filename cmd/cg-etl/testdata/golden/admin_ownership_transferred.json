@@ -1,0 +1,82 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1420
+      },
+      {
+        "addr": "0x2200000000000000000000000000000000000022",
+        "block_num": 1420
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1420
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1420,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T15:26:40+00:00"
+      }
+    ]
+  },
+  "cg_adm_ownership": {
+    "added": [
+      {
+        "block_num": 1420,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "contract_code": 1,
+        "evtlog_id": "evt:1420/0",
+        "new_owner_aid": "0x2200000000000000000000000000000000000022",
+        "prev_owner_aid": "0x2100000000000000000000000000000000000021",
+        "time_stamp": "2026-01-02T15:26:40+00:00",
+        "tx_id": "0xb1cecee4c13b74c763fc9eacc580852c5d1d63d1e7d49522b18005103d0578f6"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1420,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 0,
+        "topic0_sig": "8be0079c",
+        "tx_id": "0xb1cecee4c13b74c763fc9eacc580852c5d1d63d1e7d49522b18005103d0578f6"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1420
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1420,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x2000000000000000000000000000000000000002",
+        "tx_hash": "0xb1cecee4c13b74c763fc9eacc580852c5d1d63d1e7d49522b18005103d0578f6",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

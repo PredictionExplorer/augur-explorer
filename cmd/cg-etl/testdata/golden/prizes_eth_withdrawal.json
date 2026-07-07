@@ -1,0 +1,190 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2200000000000000000000000000000000000022",
+        "block_num": 0
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1630
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1630,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T21:16:40+00:00"
+      },
+      {
+        "block_num": 1631,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T21:18:20+00:00"
+      }
+    ]
+  },
+  "cg_glob_stats": {
+    "added": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 1000000000000000000,
+        "vol_donations_total": 0
+      }
+    ],
+    "removed": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ]
+  },
+  "cg_prize_deposit": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "block_num": 1630,
+        "claimed": true,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "evtlog_id": "evt:1630/0",
+        "round_num": 0,
+        "time_stamp": "2026-01-02T21:16:40+00:00",
+        "tx_id": "0x550321e0a02bafefe459d22b73519f3dc5f8a09d1eabb7209fd817d7cf51d841",
+        "winner_aid": "0x2200000000000000000000000000000000000022",
+        "winner_index": 2,
+        "withdrawal_id": "evt:1631/0"
+      }
+    ]
+  },
+  "cg_prize_withdrawal": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "beneficiary_aid": "0x2200000000000000000000000000000000000022",
+        "block_num": 1631,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "evtlog_id": "evt:1631/0",
+        "round_num": 0,
+        "time_stamp": "2026-01-02T21:18:20+00:00",
+        "tx_id": "0x207f8a206cc39edad026306cb76c8b228aa5334d6a098b9dfb4b176da9f8d658",
+        "winner_aid": "0x2200000000000000000000000000000000000022"
+      }
+    ]
+  },
+  "cg_raffle_winner_stats": {
+    "added": [
+      {
+        "amount_sum": 0,
+        "raffles_count": 0,
+        "winner_aid": "0x2200000000000000000000000000000000000022",
+        "withdrawal_sum": 1000000000000000000
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1630,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "log_index": 0,
+        "topic0_sig": "8e369548",
+        "tx_id": "0x550321e0a02bafefe459d22b73519f3dc5f8a09d1eabb7209fd817d7cf51d841"
+      },
+      {
+        "block_num": 1631,
+        "contract_aid": "0x7000000000000000000000000000000000000007",
+        "log_index": 0,
+        "topic0_sig": "172b54ba",
+        "tx_id": "0x207f8a206cc39edad026306cb76c8b228aa5334d6a098b9dfb4b176da9f8d658"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1631
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1630,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x7000000000000000000000000000000000000007",
+        "tx_hash": "0x550321e0a02bafefe459d22b73519f3dc5f8a09d1eabb7209fd817d7cf51d841",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1631,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x7000000000000000000000000000000000000007",
+        "tx_hash": "0x207f8a206cc39edad026306cb76c8b228aa5334d6a098b9dfb4b176da9f8d658",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

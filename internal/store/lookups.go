@@ -12,6 +12,16 @@ var (
 	amap   map[string]int64 = make(map[string]int64)
 )
 
+// ResetAddressCacheForTests clears the process-wide address-id cache. Test
+// harnesses that truncate and re-seed the address table between cases must
+// call it, otherwise cached ids from a previous seeding would leak into the
+// next one. (Phase 1 replaces this package state with a per-Store cache.)
+func ResetAddressCacheForTests() {
+	amapMu.Lock()
+	amap = make(map[string]int64)
+	amapMu.Unlock()
+}
+
 // Nonfatal_lookup_address_id returns the address_id for addr.
 // A missing address yields sql.ErrNoRows; any other failure is returned as a
 // wrapped DB error.

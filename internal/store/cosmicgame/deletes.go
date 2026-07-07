@@ -682,20 +682,20 @@ func (sw *SQLStorageWrapper) Delete_cst_min_limit_event(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_fund_transfer_failed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_fund_transfer_err WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+	query = "DELETE FROM " + sw.S.SchemaName() + ".cg_fund_transf_err WHERE evtlog_id=$1"
+	_, err := sw.S.Db().Exec(query, evtlog_id)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
 		os.Exit(1)
 	}
 }
 func (sw *SQLStorageWrapper) Delete_erc20_transfer_failed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_erc20_transfer_err WHERE evtlog_id=$1"
-	_,err := sw.S.Db().Exec(query,evtlog_id)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+	query = "DELETE FROM " + sw.S.SchemaName() + ".cg_erc20_transf_err WHERE evtlog_id=$1"
+	_, err := sw.S.Db().Exec(query, evtlog_id)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
 		os.Exit(1)
 	}
 }

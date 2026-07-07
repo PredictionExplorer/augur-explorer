@@ -41,6 +41,7 @@ var (
 	marketing_wallet_abi     *abi.ABI
 	erc20_abi                *abi.ABI
 	erc721_abi               *abi.ABI
+	erc1967_abi              *abi.ABI
 
 	cosmic_game_addr          ethcommon.Address
 	cosmic_signature_addr     ethcommon.Address
@@ -123,6 +124,7 @@ func main() {
 	marketing_wallet_abi = get_abi(MarketingWalletABI)
 	erc20_abi = get_abi(ERC20ABI)
 	erc721_abi = get_abi(ERC721ABI)
+	erc1967_abi = get_abi(IERC1967ABI)
 
 	cg_contracts = storagew.Get_cosmic_game_contract_addrs()
 

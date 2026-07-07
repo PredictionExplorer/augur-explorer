@@ -1,0 +1,223 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1790
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1790
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1790,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T01:43:20+00:00"
+      },
+      {
+        "block_num": 1791,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T01:45:00+00:00"
+      }
+    ]
+  },
+  "cg_nft_staked_cst": {
+    "added": [
+      {
+        "action_id": 1,
+        "block_num": 1790,
+        "claimed": false,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "evtlog_id": "evt:1790/0",
+        "num_staked_nfts": 1,
+        "reward_per_staker": 0,
+        "round_num": -1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "time_stamp": "2026-01-03T01:43:20+00:00",
+        "token_id": 1,
+        "tx_id": "0xafc1a021382cc90511a07de240c80297bd756bb19f22c2178299f6c3850a9fbf"
+      }
+    ]
+  },
+  "cg_prize": {
+    "added": [
+      {
+        "ptype": 15,
+        "round_num": 0,
+        "winner_index": 0
+      }
+    ]
+  },
+  "cg_st_reward": {
+    "added": [
+      {
+        "action_id": 1,
+        "collected": false,
+        "deposit_id": 3,
+        "is_unstake": false,
+        "reward": 2000000000000000000,
+        "round_num": 0,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "token_id": 1
+      }
+    ]
+  },
+  "cg_stake_stats_cst": {
+    "added": [
+      {
+        "num_charity_deposits": 0,
+        "num_deposits": 1,
+        "total_charity_amount": 0,
+        "total_modulo": 0,
+        "total_num_stakers": 1,
+        "total_reward_amount": 2000000000000000000,
+        "total_tokens_staked": 1,
+        "total_unclaimed_reward": 2000000000000000000
+      }
+    ],
+    "removed": [
+      {
+        "num_charity_deposits": 0,
+        "num_deposits": 0,
+        "total_charity_amount": 0,
+        "total_modulo": 0,
+        "total_num_stakers": 0,
+        "total_reward_amount": 0,
+        "total_tokens_staked": 0,
+        "total_unclaimed_reward": 0
+      }
+    ]
+  },
+  "cg_staked_token_cst": {
+    "added": [
+      {
+        "stake_action_id": 1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "token_id": 1
+      }
+    ]
+  },
+  "cg_staked_token_cst_rewards": {
+    "added": [
+      {
+        "accumulated_reward": 2000000000000000000,
+        "claimed_reward": 0,
+        "stake_action_id": 1,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "token_id": 1
+      }
+    ]
+  },
+  "cg_staker_cst": {
+    "added": [
+      {
+        "num_stake_actions": 1,
+        "num_tokens_minted": 0,
+        "num_unstake_actions": 0,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "total_reward": 2000000000000000000,
+        "total_tokens_staked": 1,
+        "unclaimed_reward": 2000000000000000000
+      }
+    ]
+  },
+  "cg_staker_deposit": {
+    "added": [
+      {
+        "amount_deposited": 2000000000000000000,
+        "amount_to_claim": 2000000000000000000,
+        "deposit_id": 3,
+        "staker_aid": "0x2100000000000000000000000000000000000021",
+        "tokens_staked": 1
+      }
+    ]
+  },
+  "cg_staking_eth_deposit": {
+    "added": [
+      {
+        "accum_modulo": 0,
+        "accumulated_amount": 2000000000000000000,
+        "accumulated_nfts": 1,
+        "accumulated_per_token": null,
+        "amount_per_token": 2000000000000000000,
+        "block_num": 1791,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "deposit_amount": 2000000000000000000,
+        "deposit_id": 3,
+        "deposit_time": "2026-01-03T01:45:00+00:00",
+        "evtlog_id": "evt:1791/0",
+        "modulo": 0,
+        "num_staked_nfts": 1,
+        "round_num": 0,
+        "time_stamp": "2026-01-03T01:45:00+00:00",
+        "tx_id": "0x6f76cc7d98b6a5cadb7feebb7d425a1859142037acd91542aba015c896124c89"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1790,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "log_index": 0,
+        "topic0_sig": "e09cd972",
+        "tx_id": "0xafc1a021382cc90511a07de240c80297bd756bb19f22c2178299f6c3850a9fbf"
+      },
+      {
+        "block_num": 1791,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "log_index": 0,
+        "topic0_sig": "26726e1a",
+        "tx_id": "0x6f76cc7d98b6a5cadb7feebb7d425a1859142037acd91542aba015c896124c89"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1791
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1790,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x9000000000000000000000000000000000000009",
+        "tx_hash": "0xafc1a021382cc90511a07de240c80297bd756bb19f22c2178299f6c3850a9fbf",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1791,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x9000000000000000000000000000000000000009",
+        "tx_hash": "0x6f76cc7d98b6a5cadb7feebb7d425a1859142037acd91542aba015c896124c89",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

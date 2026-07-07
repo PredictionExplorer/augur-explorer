@@ -1,0 +1,81 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1410
+      },
+      {
+        "addr": "0x2200000000000000000000000000000000000022",
+        "block_num": 1410
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1410
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1410,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T15:10:00+00:00"
+      }
+    ]
+  },
+  "cg_adm_admin_changed": {
+    "added": [
+      {
+        "block_num": 1410,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "evtlog_id": "evt:1410/0",
+        "new_admin_aid": "0x2200000000000000000000000000000000000022",
+        "old_admin_aid": "0x2100000000000000000000000000000000000021",
+        "time_stamp": "2026-01-02T15:10:00+00:00",
+        "tx_id": "0xea136edc378a8d2a7301c4bd6b8356453d4446f8da90b30cf34c9c2952de5baf"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1410,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 0,
+        "topic0_sig": "7e644d79",
+        "tx_id": "0xea136edc378a8d2a7301c4bd6b8356453d4446f8da90b30cf34c9c2952de5baf"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1410
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1410,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x2000000000000000000000000000000000000002",
+        "tx_hash": "0xea136edc378a8d2a7301c4bd6b8356453d4446f8da90b30cf34c9c2952de5baf",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

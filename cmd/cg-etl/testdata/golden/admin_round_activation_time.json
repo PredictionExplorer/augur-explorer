@@ -1,0 +1,98 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1130
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1130,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T07:23:20+00:00"
+      }
+    ]
+  },
+  "cg_adm_acttime": {
+    "added": [
+      {
+        "block_num": 1130,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "evtlog_id": "evt:1130/0",
+        "new_atime": 1767225600,
+        "time_stamp": "2026-01-02T07:23:20+00:00",
+        "tx_id": "0xcfd5e08c79e8d7b9e9d48e8a60e7fee2bdb51b820a28075227f794c216352df5"
+      }
+    ]
+  },
+  "cg_round_stats": {
+    "added": [
+      {
+        "activation_time": "2026-01-01T00:00:00+00:00",
+        "chrono_warrior_prize_eth": 0,
+        "donations_round_count": 0,
+        "donations_round_total": 0,
+        "num_contracts_donated_erc20": 0,
+        "num_erc20_donations": 0,
+        "param_window_duration_seconds": null,
+        "param_window_start_time": null,
+        "round_duration_seconds": null,
+        "round_end_time": null,
+        "round_num": 0,
+        "round_start_time": null,
+        "total_bids": 0,
+        "total_cst_in_bids": 0,
+        "total_cst_paid_in_prizes": 0,
+        "total_eth_in_bids": 0,
+        "total_nft_donated": 0,
+        "total_nfts_minted": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_nfts": 0
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1130,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 0,
+        "topic0_sig": "9a2159c1",
+        "tx_id": "0xcfd5e08c79e8d7b9e9d48e8a60e7fee2bdb51b820a28075227f794c216352df5"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1130
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1130,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x2000000000000000000000000000000000000002",
+        "tx_hash": "0xcfd5e08c79e8d7b9e9d48e8a60e7fee2bdb51b820a28075227f794c216352df5",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

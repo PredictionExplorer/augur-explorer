@@ -1,0 +1,189 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x0000000000000000000000000000000000000000",
+        "block_num": 1050
+      },
+      {
+        "addr": "0x2300000000000000000000000000000000000023",
+        "block_num": 1050
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1050
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1050,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T05:10:00+00:00"
+      },
+      {
+        "block_num": 1051,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T05:11:40+00:00"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1050,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "log_index": 0,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0xa68fae5cb219a7c90dfdd4872c6c881969f15414beac313a139a8eec1cfd892a"
+      },
+      {
+        "block_num": 1050,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "log_index": 1,
+        "topic0_sig": "ad2bc79f",
+        "tx_id": "0xa68fae5cb219a7c90dfdd4872c6c881969f15414beac313a139a8eec1cfd892a"
+      },
+      {
+        "block_num": 1051,
+        "contract_aid": "0x1200000000000000000000000000000000000012",
+        "log_index": 0,
+        "topic0_sig": "55076e90",
+        "tx_id": "0x9a72c6c50cdc5cb2b0bc35d34d127ab1ba993e9afffee7e7abe5c33aa3dad661"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1051
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "rw_mint_evt": {
+    "added": [
+      {
+        "block_num": 1050,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "evtlog_id": "evt:1050/1",
+        "owner_aid": "0x2300000000000000000000000000000000000023",
+        "price": 1000000000000000000,
+        "seed": "5e0000000000000000000000000000000000000000000000000000000000000a",
+        "seed_num": 42517407766827040507092471057877591164872572494414894608238331627905602289674,
+        "time_stamp": "2026-01-02T05:10:00+00:00",
+        "token_id": 10,
+        "tx_id": "0xa68fae5cb219a7c90dfdd4872c6c881969f15414beac313a139a8eec1cfd892a"
+      }
+    ]
+  },
+  "rw_new_offer": {
+    "added": [
+      {
+        "active": true,
+        "block_num": 1051,
+        "buyer_aid": "0x0000000000000000000000000000000000000000",
+        "contract_aid": "0x1200000000000000000000000000000000000012",
+        "evtlog_id": "evt:1051/0",
+        "offer_id": 1,
+        "otype": 1,
+        "price": 3000000000000000000,
+        "profit": null,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "seller_aid": "0x2300000000000000000000000000000000000023",
+        "time_stamp": "2026-01-02T05:11:40+00:00",
+        "token_id": 10,
+        "tx_id": "0x9a72c6c50cdc5cb2b0bc35d34d127ab1ba993e9afffee7e7abe5c33aa3dad661"
+      }
+    ]
+  },
+  "rw_stats": {
+    "added": [
+      {
+        "money_accumulated": 0,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "total_num_toks": 1,
+        "total_num_trades": 0,
+        "total_vol": 0,
+        "total_withdrawals": 0
+      }
+    ]
+  },
+  "rw_token": {
+    "added": [
+      {
+        "cur_owner_aid": "0x2300000000000000000000000000000000000023",
+        "last_name": "",
+        "last_price": 1000000000000000000,
+        "num_trades": 0,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "seed_hex": "5e0000000000000000000000000000000000000000000000000000000000000a",
+        "seed_num": 42517407766827040507092471057877591164872572494414894608238331627905602289674,
+        "token_id": 10,
+        "total_vol": 0
+      }
+    ]
+  },
+  "rw_transfer": {
+    "added": [
+      {
+        "block_num": 1050,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "evtlog_id": "evt:1050/0",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "otype": 1,
+        "time_stamp": "2026-01-02T05:10:00+00:00",
+        "to_aid": "0x2300000000000000000000000000000000000023",
+        "token_id": 10,
+        "tx_id": "0xa68fae5cb219a7c90dfdd4872c6c881969f15414beac313a139a8eec1cfd892a"
+      }
+    ]
+  },
+  "rw_user_rwtok": {
+    "added": [
+      {
+        "price_bought": 1000000000000000000,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "token_id": 10,
+        "user_aid": "0x2300000000000000000000000000000000000023"
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1050,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x8000000000000000000000000000000000000008",
+        "tx_hash": "0xa68fae5cb219a7c90dfdd4872c6c881969f15414beac313a139a8eec1cfd892a",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1051,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x1200000000000000000000000000000000000012",
+        "tx_hash": "0x9a72c6c50cdc5cb2b0bc35d34d127ab1ba993e9afffee7e7abe5c33aa3dad661",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

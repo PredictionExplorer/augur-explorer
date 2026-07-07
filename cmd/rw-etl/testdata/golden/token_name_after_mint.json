@@ -1,0 +1,182 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x0000000000000000000000000000000000000000",
+        "block_num": 1010
+      },
+      {
+        "addr": "0x2300000000000000000000000000000000000023",
+        "block_num": 1010
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1010
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1010,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T04:03:20+00:00"
+      },
+      {
+        "block_num": 1011,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T04:05:00+00:00"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1010,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "log_index": 0,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0x99d426a251f509c319262ce3aadc8c7263d29e6d33122a746a6cdd2a7d9ae69c"
+      },
+      {
+        "block_num": 1010,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "log_index": 1,
+        "topic0_sig": "ad2bc79f",
+        "tx_id": "0x99d426a251f509c319262ce3aadc8c7263d29e6d33122a746a6cdd2a7d9ae69c"
+      },
+      {
+        "block_num": 1011,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "log_index": 0,
+        "topic0_sig": "8ad5e159",
+        "tx_id": "0xbaa9ae02e88ead9a7442589a81428e2d43efa97d1eb07a56bd0fe3bb10f7c03b"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1011
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "rw_mint_evt": {
+    "added": [
+      {
+        "block_num": 1010,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "evtlog_id": "evt:1010/1",
+        "owner_aid": "0x2300000000000000000000000000000000000023",
+        "price": 1000000000000000000,
+        "seed": "5e0000000000000000000000000000000000000000000000000000000000000a",
+        "seed_num": 42517407766827040507092471057877591164872572494414894608238331627905602289674,
+        "time_stamp": "2026-01-02T04:03:20+00:00",
+        "token_id": 10,
+        "tx_id": "0x99d426a251f509c319262ce3aadc8c7263d29e6d33122a746a6cdd2a7d9ae69c"
+      }
+    ]
+  },
+  "rw_stats": {
+    "added": [
+      {
+        "money_accumulated": 0,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "total_num_toks": 1,
+        "total_num_trades": 0,
+        "total_vol": 0,
+        "total_withdrawals": 0
+      }
+    ]
+  },
+  "rw_token": {
+    "added": [
+      {
+        "cur_owner_aid": "0x2300000000000000000000000000000000000023",
+        "last_name": "Fixture Walker",
+        "last_price": 1000000000000000000,
+        "num_trades": 0,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "seed_hex": "5e0000000000000000000000000000000000000000000000000000000000000a",
+        "seed_num": 42517407766827040507092471057877591164872572494414894608238331627905602289674,
+        "token_id": 10,
+        "total_vol": 0
+      }
+    ]
+  },
+  "rw_token_name": {
+    "added": [
+      {
+        "block_num": 1011,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "evtlog_id": "evt:1011/0",
+        "new_name": "Fixture Walker",
+        "time_stamp": "2026-01-02T04:05:00+00:00",
+        "token_id": 10,
+        "tx_id": "0xbaa9ae02e88ead9a7442589a81428e2d43efa97d1eb07a56bd0fe3bb10f7c03b"
+      }
+    ]
+  },
+  "rw_transfer": {
+    "added": [
+      {
+        "block_num": 1010,
+        "contract_aid": "0x8000000000000000000000000000000000000008",
+        "evtlog_id": "evt:1010/0",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "otype": 1,
+        "time_stamp": "2026-01-02T04:03:20+00:00",
+        "to_aid": "0x2300000000000000000000000000000000000023",
+        "token_id": 10,
+        "tx_id": "0x99d426a251f509c319262ce3aadc8c7263d29e6d33122a746a6cdd2a7d9ae69c"
+      }
+    ]
+  },
+  "rw_user_rwtok": {
+    "added": [
+      {
+        "price_bought": 1000000000000000000,
+        "rwalk_aid": "0x8000000000000000000000000000000000000008",
+        "token_id": 10,
+        "user_aid": "0x2300000000000000000000000000000000000023"
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1010,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x8000000000000000000000000000000000000008",
+        "tx_hash": "0x99d426a251f509c319262ce3aadc8c7263d29e6d33122a746a6cdd2a7d9ae69c",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1011,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x8000000000000000000000000000000000000008",
+        "tx_hash": "0xbaa9ae02e88ead9a7442589a81428e2d43efa97d1eb07a56bd0fe3bb10f7c03b",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}
