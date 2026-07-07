@@ -121,6 +121,12 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	r.POST("/api/cosmicgame/ban_bid", api_cosmic_game_ban_bid)
 	r.POST("/api/cosmicgame/unban_bid", api_cosmic_game_unban_bid)
 
+	// Marketplace (Cosmic Signature NFTs traded on the shared RandomWalk marketplace contract).
+	// Offer/sale rows come from rw_new_offer / rw_item_bought, filtered to the Cosmic Signature NFT.
+	r.GET("/api/cosmicgame/marketplace/current_offers/:order_by", api_cosmic_game_marketplace_current_offers)
+	r.GET("/api/cosmicgame/marketplace/floor_price", api_cosmic_game_marketplace_floor_price)
+	r.GET("/api/cosmicgame/marketplace/trading/sales/:offset/:limit", api_cosmic_game_marketplace_sales)
+
 	// CST Tokens
 	r.GET("/api/cosmicgame/cst/list/all/:offset/:limit", api_cosmic_game_cosmic_signature_token_list)
 	r.GET("/api/cosmicgame/cst/list/by_user/:user_addr/:offset/:limit", api_cosmic_game_cosmic_signature_token_list_by_user)

@@ -81,7 +81,7 @@ previous-code/etl/tools/check_owner
 previous-code/etl/tools/check_wallet
 previous-code/server/cosmicgame-server
 previous-code/server/server
-
+previous-code/etl/cmd/loganomaly/loganomaly
 # rwcg binaries
 rwcg/cosmicgame
 rwcg/etl/cosmicgame/cg_etl
@@ -114,6 +114,8 @@ rwcg/etl/cosmicgame/scripts/setactivation
 rwcg/etl/cosmicgame/scripts/setroundactivation
 rwcg/etl/cosmicgame/scripts/tokownerof
 rwcg/etl/cosmicgame/scripts/backfill_dao_evtlog
+rwcg/etl/cosmicgame/scripts/claim-and-set-time-increment
+rwcg/etl/cosmicgame/scripts/set-delay-before-activation
 rwcg/etl/randomwalk/rw_etl
 rwcg/etl/randomwalk/scripts/accept_offer
 rwcg/etl/randomwalk/scripts/approve
@@ -143,6 +145,7 @@ rwcg/tools/arch_node_fill
 rwcg/tools/arch_verify
 rwcg/tools/transaction-collector
 rwcg/tools/transaction-collector-verify
+rwcg/tools/scan_cst_auclen_chg_div
 rwcg/websrv/websrv
 rwcg/etl/cosmicgame/imggen_monitor/imggen_exec
 rwcg/etl/cosmicgame/imggen_monitor/imggen_monitor
