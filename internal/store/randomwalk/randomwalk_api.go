@@ -26,17 +26,25 @@ func profitFromNull(nf sql.NullFloat64) rwp.JSONNullFloat64 {
 // OFFER QUERIES
 // =============================================================================
 
+// activeOffersOrderClause maps the numeric order_by API parameter onto a
+// whitelisted ORDER BY clause (1: price high→low; 2: price low→high;
+// anything else: insertion order). Request input never reaches the SQL text.
+func activeOffersOrderClause(orderBy int) string {
+	switch orderBy {
+	case 1:
+		return " ORDER BY o.price DESC"
+	case 2:
+		return " ORDER BY o.price ASC"
+	default:
+		return " ORDER BY o.id"
+	}
+}
+
 func (sw *SQLStorageWrapper) Get_active_offers(rwalk_aid int64,market_aid int64, order_by int) []rwp.API_Offer {
 
 	records := make([]rwp.API_Offer,0 ,16)
 
-	var order_by_mod string =" ORDER BY o.id"
-	if order_by == 1 {
-		order_by_mod = " ORDER BY o.price DESC"
-	}
-	if order_by == 2 {
-		order_by_mod = " ORDER BY o.price ASC"
-	}
+	order_by_mod := activeOffersOrderClause(order_by)
 	var where_cond string =""
 	where_cond = fmt.Sprintf(" AND (o.rwalk_aid=%v) ",rwalk_aid)
 	where_cond += fmt.Sprintf(" AND (o.contract_aid=%v) ",market_aid)

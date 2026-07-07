@@ -10,7 +10,7 @@ COMMANDS := apiserver cg-etl rw-etl notibot freezer-scan freezer-verify \
             srvmonitor loganomaly imggen-monitor rwalk-alarm \
             cgctl rwctl opsctl
 
-.PHONY: all build $(COMMANDS) test test-integration lint generate migrate-up fmt vet vuln clean help
+.PHONY: all build $(COMMANDS) test test-integration fuzz-smoke lint generate migrate-up fmt vet vuln clean help
 
 all: build
 
@@ -31,6 +31,10 @@ test:
 ## test-integration: run tests that need Docker (testcontainers)
 test-integration:
 	go test -race -tags=integration -timeout 20m ./...
+
+## fuzz-smoke: run every fuzz target briefly (10s each; FUZZTIME=30s to change)
+fuzz-smoke:
+	./scripts/fuzz-all.sh $${FUZZTIME:-10s}
 
 ## lint: run golangci-lint (install: brew install golangci-lint)
 lint:

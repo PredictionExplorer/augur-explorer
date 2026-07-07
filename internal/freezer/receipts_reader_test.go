@@ -198,6 +198,47 @@ func TestReadItem(t *testing.T) {
 	}
 }
 
+// TestReadItemCorruptIndexHugeOffset pins the fix for a crash found by
+// FuzzFreezerIndexRead: an index entry pointing far beyond the data files made
+// ReadItem allocate up to 2^48 bytes (length = nextOffset - offset) and abort
+// the whole process with OOM. Corrupt indexes must yield an error instead.
+func TestReadItemCorruptIndexHugeOffset(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Block 0 spans [0, 2^48-1) according to the corrupt index.
+	var cidxData []byte
+	for _, offset := range []uint64{0, 0xFFFFFFFFFFFF} {
+		cidxData = append(cidxData, Uint48ToBytes(offset)...)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "receipts.cidx"), cidxData, 0600); err != nil {
+		t.Fatalf("Failed to create cidx file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "receipts.0000.cdat"), make([]byte, 10), 0600); err != nil {
+		t.Fatalf("Failed to create cdat file: %v", err)
+	}
+
+	reader, err := NewFreezerReader(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to create reader: %v", err)
+	}
+	defer func() { _ = reader.Close() }()
+
+	if _, err := reader.ReadItem(0); err == nil {
+		t.Fatal("ReadItem(0) must fail when the index points beyond the data end")
+	}
+
+	// Same guard for the parallel/worker reader path.
+	pr, err := NewParallelReader(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to create parallel reader: %v", err)
+	}
+	wr := pr.NewWorkerReader()
+	defer func() { _ = wr.Close() }()
+	if _, err := wr.ReadItem(0); err == nil {
+		t.Fatal("WorkerReader.ReadItem(0) must fail when the index points beyond the data end")
+	}
+}
+
 func TestEmptyBlock(t *testing.T) {
 	tmpDir := t.TempDir()
 	cidxPath := filepath.Join(tmpDir, "receipts.cidx")

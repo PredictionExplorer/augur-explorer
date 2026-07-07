@@ -146,14 +146,7 @@ func main() {
 	// a Cosmic Signature host serves Cosmic Signature metadata, anything else
 	// (RandomWalk hosts) serves RandomWalk metadata.
 	r.GET("/metadata/:token_id", func(c *gin.Context) {
-		host := strings.ToLower(c.Request.Host)
-		if xfh := c.Request.Header.Get("X-Forwarded-Host"); xfh != "" {
-			if i := strings.IndexByte(xfh, ','); i >= 0 {
-				xfh = xfh[:i]
-			}
-			host = strings.ToLower(strings.TrimSpace(xfh))
-		}
-		if strings.Contains(host, "cosmicsignature") {
+		if metadataHostServesCosmicSignature(c.Request.Host, c.Request.Header.Get("X-Forwarded-Host")) {
 			cosmicgame.TokenMetadataHandler(c)
 			return
 		}
