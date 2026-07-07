@@ -43,9 +43,9 @@ Measured 2026-07-06 (commit `85941dba`). Update after each phase.
 | Dot-import files | ~70 | **21** | **0** | `rg -l '^\s*\. "github' --type go` |
 | Package-level mutable globals (api + etl) | ~120 | ~80 (state.go ~50, cg-etl ~25, rw-etl ~8) | ~0 (DI everywhere) | manual review per package |
 | golangci-lint issues | 433 (first run) | **180** | **0** | `golangci-lint run` |
-| Test files | 17 | **19** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
-| Fuzz targets | 0 | **0** | **25+** (see §4.4) | `rg -l "func Fuzz" --type go` |
-| Coverage on `internal/` | <5% | ~8% | **≥70%** enforced in CI | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
+| Test files | 17 | **39** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
+| Fuzz targets | 0 | **28** | **25+** (see §4.4) — met; grows with Phase 3 | `rg -c "func Fuzz" --type go` |
+| Coverage on `internal/` | 2.4% (re-measured 2026-07-06 with the stated command) | **5.8%** | **≥70%** enforced in CI | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
 | Queries on sqlc | 0 | 8 (layer1 pattern) | all static queries | count in `internal/store/queries/*.sql` |
 | Routes on stdlib router | 0 | 0 (gin) | all (v1 compat + v2) | n/a |
 | `context.Context` on store methods | 0% | ~5% (base pkg only) | 100% | manual |
@@ -164,54 +164,84 @@ Base (`internal/store/`):
 
 ### 4.4 Fuzz test inventory (the panic-hunting fleet)
 
-Native Go fuzzing (`go test -fuzz`). Every target gets a seed corpus in
-`testdata/fuzz/` (committed) and runs in the nightly CI fuzz job (§4.6).
+Native Go fuzzing (`go test -fuzz`). Every target carries its seed corpus
+inline via `f.Add(...)` (reviewed in source; crashers found later get
+committed under `testdata/fuzz/` as regression inputs) and runs in the
+nightly CI fuzz job (§4.6). Run locally: `make fuzz-smoke` (10s/target) or
+`scripts/fuzz-all.sh 5m`.
 Invariant unless stated otherwise: *never panics, never hangs*.
+
+**Sprint 2026-07-06:** 28 fuzz targets landed (all checked items below).
+One real bug found and fixed: a corrupt freezer index could make
+`ReadItem` allocate up to 2^48 bytes and OOM-kill the process
+(`internal/freezer`, both reader paths; regression test
+`TestReadItemCorruptIndexHugeOffset`).
 
 Decoders (highest value — they consume chain data):
 
-- [ ] `FuzzReceiptsDecode` — `internal/freezer/decode`: arbitrary bytes → RLP receipt decode
-- [ ] `FuzzArbitrumLegacyDecode` — `internal/freezer/decode`: the Arbitrum-specific format
-- [ ] `FuzzFreezerIndexRead` — `internal/freezer`: corrupt index/data-file bytes
-- [ ] `FuzzEventDecodeCG` — `cmd/cg-etl`: fuzz `types.Log{Topics,Data}` through
-      every registered decode branch (drive via the signature registry)
-- [ ] `FuzzEventDecodeRW` — `cmd/rw-etl`: same for RandomWalk events
-- [ ] `FuzzEvtlogRLP` — `internal/etl`: arbitrary bytes as stored `log_rlp`
+- [x] `FuzzReceiptsDecode` — `internal/freezer/decode`: arbitrary bytes → RLP receipt decode
+- [x] `FuzzArbitrumLegacyDecode` — `internal/freezer/decode`: the Arbitrum-specific format
+      (+ `FuzzArbitrumLogDecode` for the single-log decoder)
+- [x] `FuzzFreezerIndexRead` — `internal/freezer`: corrupt index/data-file bytes
+      (+ `FuzzUint48RoundTrip`; found the OOM bug above)
+- [~] `FuzzEventDecodeCG` — decode-only half landed as `FuzzABIEventUnpack` in
+      `contracts/cosmicgame` (fuzzes every event decoder in all 10 CosmicGame
+      ABIs). The full registry-driven fuzz over the `cmd/cg-etl` `proc_*`
+      handlers is blocked until Phase 3 separates decode from persistence.
+- [~] `FuzzEventDecodeRW` — same split: `FuzzABIEventUnpack` in
+      `contracts/randomwalk` landed; handler-level fuzz waits for Phase 3
+- [x] `FuzzEvtlogRLP` — lives in `cmd/cg-etl` (the real decode site of stored
+      `log_rlp`, not `internal/etl` which only fetches); includes
+      decode→encode→decode round-trip property
 
 HTTP/API input handling (security-relevant):
 
-- [ ] `FuzzResolveAssetFile` — `cmd/apiserver`: invariant: resolved path is
-      always under the asset root (path traversal cannot escape)
-- [ ] `FuzzSafeFileUnderRoot` — same invariant, lower-level helper
-- [ ] `FuzzNormalizeSeedSegment` + `FuzzIsHex` — `cmd/apiserver`
-- [ ] `FuzzMetadataHostDispatch` — host/X-Forwarded-Host strings never panic,
-      always route to exactly one handler
-- [ ] `FuzzParseOptionalIntQuery` — `internal/store` (or its new home)
-- [ ] `FuzzIsAddressValid` — `internal/api/common`
-- [ ] `FuzzNFTAssetsPublicBase` — `internal/api/common`: normalization is
+- [x] `FuzzResolveAssetFile` — `cmd/apiserver`: invariant: resolved path is
+      always under the asset root (path traversal cannot escape); also pins
+      that the package-layout fallback stays scoped to `new/cosmicsignature/`
+- [x] `FuzzSafeFileUnderRoot` — same invariant, lower-level helper
+- [x] `FuzzNormalizeSeedSegment` + `FuzzIsHex` — `cmd/apiserver`
+- [x] `FuzzMetadataHostDispatch` — host/X-Forwarded-Host strings never panic,
+      always route to exactly one handler (logic extracted from the `main()`
+      closure into `metadataHostServesCosmicSignature` + unit tests)
+- [x] `FuzzParseOptionalIntQuery` — `internal/store/cosmicgame`
+- [x] `FuzzIsAddressValid` — `internal/api/common` (accepted ⇒ EIP-55
+      checksummed; rejected ⇒ JSON error envelope written)
+- [x] `FuzzNFTAssetsPublicBase` — `internal/api/common`: normalization is
       idempotent and always yields `/images`-suffixed or empty result
-- [ ] `FuzzRecoverPersonalSignSigner` — `internal/api/randomwalk`: arbitrary
+- [x] `FuzzRecoverPersonalSignSigner` — `internal/api/randomwalk`: arbitrary
       signature bytes/messages never panic; only 65-byte sigs can succeed
+      (+ sign→recover round-trip unit test with a generated key)
 
 Domain logic (property-based invariants):
 
-- [ ] `FuzzEloUpdate` — `internal/api/randomwalk`: ratings stay finite;
-      winner's rating never decreases; loser's never increases
-- [ ] `FuzzOrderByWhitelists` — every dynamic ORDER BY builder in
-      `internal/store` returns a string from its whitelist for ANY input
-- [ ] `FuzzShortAddress` / `FuzzShortHash` / `FuzzThousandsFormat` —
-      `internal/primitives`: no panics, output shape invariants
-- [ ] `FuzzDateUtils` — `internal/primitives`: round-trip/bounds invariants
+- [x] `FuzzEloUpdate` — `internal/api/randomwalk`: no NaN; winner's rating
+      never decreases; loser's never increases; pair total conserved
+- [x] `FuzzOrderByWhitelists` — landed as `FuzzRoiLeaderboardOrderClause`
+      (`internal/store/cosmicgame`) and `FuzzActiveOffersOrderClause`
+      (`internal/store/randomwalk`) after extracting the sort switches into
+      pure whitelist functions; these are the only two sites where request
+      input selects an ORDER BY (the bid/NFT query builders take literals)
+- [x] `FuzzShortAddress` / `FuzzShortHash` / `FuzzThousandsFormat` —
+      `internal/primitives`: no panics, output shape invariants,
+      strip-commas-and-parse round trip
+- [x] `FuzzDateUtils` — `internal/primitives`: component bounds, symmetry,
+      zero-diff identity
 
 Parsers and builders:
 
-- [ ] `FuzzLogAnomalyScan` — `cmd/loganomaly`: arbitrary log lines
-- [ ] `FuzzTwitterRequestBuild` — `internal/notify/tweets`: URL/params encoding
-- [ ] `FuzzWhatsappPayload` — `internal/notify/wanotif`: JSON payload builder
-- [ ] `FuzzTxCollectorConfig` — `cmd/opsctl`: arbitrary JSON config bytes
-- [ ] `FuzzSrvmonitorConfig` — `cmd/srvmonitor`: config parser
-- [ ] `FuzzConnStringEscape` — `internal/store`: `escapeConnParam` round-trip
-      safety (quotes/backslashes cannot break out)
+- [x] `FuzzLogAnomalyScan` — `cmd/loganomaly`: arbitrary log lines
+- [x] `FuzzTwitterRequestBuild` — `internal/notify/tweets`: percent-encoding
+      round-trips; OAuth base string keeps exactly 2 top-level `&` separators
+- [x] `FuzzWhatsappPayload` — `internal/notify/wanotif`: error-body parser
+      total; template payload marshals to valid round-tripping JSON
+- [x] ~~`FuzzTxCollectorConfig`~~ — dropped: `opsctl txcollector` is
+      flag-driven; no JSON config parser exists to fuzz
+- [x] ~~`FuzzSrvmonitorConfig`~~ — deferred to §8.3: config is `LoadFromEnv`
+      (env-var driven); fuzz the typed config loader once it exists
+- [x] `FuzzConnStringEscape` — `internal/store`: `escapeConnParam` cannot
+      break out of quotes (scanner proof) and round-trips through
+      `pgx.ParseConfig` without parameter injection
 
 ### 4.5 Benchmarks (guard the hot paths)
 
@@ -224,8 +254,11 @@ Parsers and builders:
 
 ### 4.6 CI additions for the safety net
 
-- [ ] Nightly fuzz workflow (`.github/workflows/fuzz.yml`, cron): run every
-      `Fuzz*` target 5–10 min each; upload crashers as artifacts; open issue on failure
+- [x] Nightly fuzz workflow (`.github/workflows/fuzz.yml`, cron 03:17 UTC +
+      `workflow_dispatch`): runs every `Fuzz*` target 5 min each via
+      `scripts/fuzz-all.sh`; uploads crashers as artifacts; opens/updates a
+      `fuzz-failure` issue on failure. Local equivalent: `make fuzz-smoke`.
+      *(2026-07-06)*
 - [ ] Coverage job: fail if `internal/` coverage drops below the ratchet value
       (start at current %, raise the floor after each phase — ratchet, never lower)
 - [ ] Parity suite runs in the integration job (already tagged `integration`)
@@ -481,7 +514,7 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | D2 | v2 pagination | offset+limit / opaque cursor | open |
 | D3 | Store shape | one `Store` with domain methods / per-domain repo structs | open |
 | D4 | `internal/primitives` future | rename to `internal/model` / dissolve into owners | open |
-| D5 | Property-testing lib | stdlib fuzz only / add `pgregory.net/rapid` | open |
+| D5 | Property-testing lib | stdlib fuzz only / add `pgregory.net/rapid` | **decided 2026-07-06: stdlib-only** — the §4.4 fleet needed no extra dependency; revisit only if a future property needs structured generators |
 | D6 | v1 sunset criteria | zero traffic for 30d / hard date | open |
 
 ---
@@ -491,4 +524,5 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | Date | Commit | What landed |
 |---|---|---|
 | 2026-07-06 | `85941dba` | Foundation: layout, Go 1.26, CI, hardening, docs (see §3) |
+| 2026-07-06 | — | **Fuzz fleet sprint (§4.4 + §4.6 nightly CI):** 28 fuzz targets + ~20 accompanying unit/property test funcs across 15 packages; `scripts/fuzz-all.sh`, `make fuzz-smoke`, nightly `.github/workflows/fuzz.yml`. Testability extractions (behavior-preserving, pinned by unit tests): metadata host dispatch → `metadataHostServesCosmicSignature` (`cmd/apiserver`), ORDER BY whitelists → `roiLeaderboardOrderClause` / `activeOffersOrderClause`. **Bug found & fixed:** corrupt freezer index entry could OOM-kill the process via an up-to-2^48-byte allocation in `FreezerReader.readBytes` / `WorkerReader.readBytes`; both now bounds-check against the data end (`TestReadItemCorruptIndexHugeOffset`). Test files 19 → 39. |
 | | | |

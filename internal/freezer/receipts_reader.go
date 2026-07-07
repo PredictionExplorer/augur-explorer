@@ -222,8 +222,23 @@ func (fr *FreezerReader) ReadItem(blockNum uint64) ([]byte, error) {
 	return fr.readBytes(offset, length, blockNum)
 }
 
+// dataEndOffset returns the global offset one past the last byte of data.
+func (fr *FreezerReader) dataEndOffset() uint64 {
+	if len(fr.cdatFiles) == 0 {
+		return 0
+	}
+	last := fr.cdatFiles[len(fr.cdatFiles)-1]
+	return last.startOffset + uint64(last.size)
+}
+
 // readBytes reads a range of bytes from the cdat files, handling boundary spanning
 func (fr *FreezerReader) readBytes(offset, length uint64, blockNum uint64) ([]byte, error) {
+	// Bound the allocation by the data that actually exists: a corrupt index
+	// must fail with an error, not make(2^48 bytes) and OOM the process.
+	if end := fr.dataEndOffset(); offset+length > end || offset+length < offset {
+		return nil, fmt.Errorf("%w: block %d wants bytes [%d, %d) but data ends at %d",
+			ErrReadBeyondBounds, blockNum, offset, offset+length, end)
+	}
 	result := make([]byte, length)
 	remaining := length
 	resultPos := uint64(0)

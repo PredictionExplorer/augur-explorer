@@ -8,10 +8,11 @@ keep the characterization test suite green.
 ## Development workflow
 
 ```bash
-make build   # compile all binaries into ./bin
-make test    # unit tests (race detector, shuffled)
-make lint    # golangci-lint (config in .golangci.yml)
-make fmt     # gofmt the tree
+make build       # compile all binaries into ./bin
+make test        # unit tests (race detector, shuffled)
+make fuzz-smoke  # every fuzz target briefly (FUZZTIME=30s to change)
+make lint        # golangci-lint (config in .golangci.yml)
+make fmt         # gofmt the tree
 ```
 
 CI runs build, tidy-check, unit + integration tests, lint, and govulncheck on
@@ -44,6 +45,12 @@ every PR — all must pass.
   where the code allows it.
 - Integration tests that need PostgreSQL use `internal/testdb` and the
   `integration` build tag: `make test-integration`.
+- Fuzz targets (`func Fuzz*`) guard everything that parses untrusted bytes
+  (chain data, HTTP input, signatures) — see the inventory in
+  [docs/MODERNIZATION.md §4.4](docs/MODERNIZATION.md). Seeds are committed
+  inline via `f.Add`; a nightly CI job fuzzes every target and files an issue
+  on failure. When a fuzz run finds a crasher, commit the minimized input
+  under `testdata/fuzz/` with the fix.
 - Bug fixes come with a regression test.
 
 ## Commits and PRs

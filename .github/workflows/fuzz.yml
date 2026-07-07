@@ -1,0 +1,85 @@
+name: Nightly fuzz
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # nightly at 03:17 UTC
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        description: "Per-target fuzzing duration (Go duration, e.g. 5m)"
+        required: false
+        default: "5m"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: Fuzz all targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Run every fuzz target
+        run: ./scripts/fuzz-all.sh "${{ github.event.inputs.fuzztime || '5m' }}"
+      - name: Collect crashers
+        if: failure()
+        run: |
+          mkdir -p /tmp/crashers
+          find . -path '*/testdata/fuzz/*' -type f -newer go.mod -print -exec cp --parents {} /tmp/crashers/ \; || true
+          # The fuzz cache can also hold the failing input.
+          CACHE=$(go env GOCACHE)/fuzz
+          if [ -d "$CACHE" ]; then cp -r "$CACHE" /tmp/crashers/gocache-fuzz || true; fi
+      - name: Upload crashers
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashers-${{ github.run_id }}
+          path: /tmp/crashers
+          if-no-files-found: ignore
+      - name: Open issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Nightly fuzz failure (${new Date().toISOString().slice(0, 10)})`;
+            const body = [
+              "The nightly fuzz workflow found at least one failing input.",
+              "",
+              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              "",
+              "Crashing inputs (if captured) are attached to the run as the `fuzz-crashers` artifact.",
+              "Reproduce locally with `go test -run=Fuzz<Name>/<input-id> <package>` after copying the",
+              "input into the package's `testdata/fuzz/<FuzzName>/` directory, then fix and commit the",
+              "input as a permanent regression seed.",
+            ].join("\n");
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "fuzz-failure",
+            });
+            if (existing.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["fuzz-failure"],
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body,
+              });
+            }

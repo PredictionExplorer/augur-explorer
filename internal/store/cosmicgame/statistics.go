@@ -512,27 +512,33 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 	}
 	return records
 }
+// roiLeaderboardOrderClause maps a caller-supplied sort key onto one of the
+// whitelisted ORDER BY clauses for Get_roi_leaderboard. Every unrecognized key
+// falls back to net profit, so request input can never reach the SQL text.
+func roiLeaderboardOrderClause(sortBy string) string {
+	switch sortBy {
+	case "roi":
+		return "roi DESC"
+	case "winrate":
+		return "win_rate DESC, rounds_participated DESC"
+	case "spent":
+		return "b.total_eth_spent DESC"
+	case "nfts":
+		return "nft_prizes_count DESC"
+	case "bids":
+		return "b.num_bids DESC"
+	default:
+		return "net_pl_eth DESC"
+	}
+}
+
 // Get_roi_leaderboard returns per-player bidding profitability (ETH-only ROI, Tier 1),
 // joining maintained spend (cg_bidder) with winnings (cg_winner) plus on-demand
 // rounds-participated / rounds-won (for win rate). sort_by is whitelisted; min_bids
 // filters out one-lucky-bid noise; offset/limit paginate.
 func (sw *SQLStorageWrapper) Get_roi_leaderboard(min_bids int, sort_by string, offset int, limit int) []p.CGRoiLeaderboardEntry {
 
-	var order string
-	switch sort_by {
-	case "roi":
-		order = "roi DESC"
-	case "winrate":
-		order = "win_rate DESC, rounds_participated DESC"
-	case "spent":
-		order = "b.total_eth_spent DESC"
-	case "nfts":
-		order = "nft_prizes_count DESC"
-	case "bids":
-		order = "b.num_bids DESC"
-	default:
-		order = "net_pl_eth DESC"
-	}
+	order := roiLeaderboardOrderClause(sort_by)
 	schema := sw.S.SchemaName()
 	query := "WITH rounds_part AS ("+
 				"SELECT bidder_aid, COUNT(DISTINCT round_num) AS rounds_participated "+
