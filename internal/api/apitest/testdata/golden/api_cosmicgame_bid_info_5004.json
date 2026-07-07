@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "BidInfo": {
+      "BidCstRewardAmount": "-1",
+      "BidCstRewardAmountEth": -1,
+      "BidPosition": 1,
+      "BidType": 0,
+      "BidderAddr": "0x2100000000000000000000000000000000000021",
+      "BidderAid": 21,
+      "CSTReward": "100000000000000000000",
+      "CSTRewardEth": 100,
+      "CstDutchAuctionDuration": "-1",
+      "CstDutchAuctionDurationInt": -1,
+      "CstPrice": "-1",
+      "CstPriceEth": -1e-18,
+      "DonatedERC20TokenAddr": "0x2600000000000000000000000000000000000026",
+      "DonatedERC20TokenAmount": "500000000000000000000",
+      "DonatedERC20TokenAmountEth": 500,
+      "EthPrice": "100000000000000000",
+      "EthPriceEth": 0.1,
+      "ImageURL": "",
+      "Message": "hello world",
+      "NFTDonationTokenAddr": "",
+      "NFTDonationTokenId": -1,
+      "NFTTokenURI": "",
+      "PrizeTime": 1767229300,
+      "PrizeTimeDate": "2026-01-01T01:01:40Z",
+      "RWalkNFTId": -1,
+      "RoundNum": 0,
+      "TimeUntilPrize": 0,
+      "Tx": {
+        "BlockNum": 101,
+        "DateTime": "2026-01-01T00:01:40Z",
+        "EvtLogId": 5004,
+        "TimeStamp": 1767225700,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001002",
+        "TxId": 1002
+      }
+    },
+    "error": "",
+    "status": 1
+  }
+}

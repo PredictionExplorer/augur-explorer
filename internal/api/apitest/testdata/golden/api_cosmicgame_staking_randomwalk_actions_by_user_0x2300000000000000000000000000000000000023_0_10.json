@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "UserAddr": "0x2300000000000000000000000000000000000023",
+    "UserAid": 23,
+    "UserStakingActionsRWalk": [
+      {
+        "ActionId": 101,
+        "ActionType": 1,
+        "NumStakedNFTs": 0,
+        "RecordId": 1,
+        "TokenId": 10,
+        "Tx": {
+          "BlockNum": 116,
+          "DateTime": "2026-01-01T00:26:40Z",
+          "EvtLogId": 5057,
+          "TimeStamp": 1767227200,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001017",
+          "TxId": 1017
+        },
+        "UnstakeDate": "1970-01-01T00:00:00Z",
+        "UnstakeTimeStamp": 0
+      },
+      {
+        "ActionId": 101,
+        "ActionType": 0,
+        "NumStakedNFTs": 1,
+        "RecordId": 1,
+        "TokenId": 10,
+        "Tx": {
+          "BlockNum": 114,
+          "DateTime": "2026-01-01T00:23:20Z",
+          "EvtLogId": 5053,
+          "TimeStamp": 1767227000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001015",
+          "TxId": 1015
+        },
+        "UnstakeDate": "1970-01-01T00:00:00Z",
+        "UnstakeTimeStamp": -1
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "animation_url": "https://api.randomwalknft.com:1443/images/randomwalk/000010_black_single.mp4",
+    "attributes": [
+      {
+        "trait_type": "seed",
+        "value": "aa00000000000000000000000000000000000000000000000000000000000010"
+      }
+    ],
+    "description": "Random Walk NFT",
+    "external_url": "https://randomwalknft.com/detail/10",
+    "image": "https://api.randomwalknft.com:1443/images/randomwalk/000010_black.png",
+    "name": "Wanderer",
+    "properties": {
+      "seed": "aa00000000000000000000000000000000000000000000000000000000000010"
+    }
+  }
+}

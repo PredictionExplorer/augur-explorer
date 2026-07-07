@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "DonatedNFTClaims": [
+      {
+        "DonorAddr": "0x2200000000000000000000000000000000000022",
+        "Index": 0,
+        "NFTTokenId": 777,
+        "NFTTokenURI": "https://nft.example/777",
+        "RecordId": 1,
+        "RoundNum": 0,
+        "TokenAddr": "0x2700000000000000000000000000000000000027",
+        "Tx": {
+          "BlockNum": 112,
+          "DateTime": "2026-01-01T00:20:00Z",
+          "EvtLogId": 0,
+          "TimeStamp": 1767226800,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001013",
+          "TxId": 1013
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21,
+        "WinnerIndex": 0
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}

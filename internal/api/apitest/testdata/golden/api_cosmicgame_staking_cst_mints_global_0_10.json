@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "StakingCSTRewardsMints": [
+      {
+        "CstAmount": "32000000000000000000",
+        "CstAmountEth": 32,
+        "IsRWalk": true,
+        "IsStaker": true,
+        "RecordId": 3,
+        "RoundNum": 2,
+        "TokenId": 9,
+        "Tx": {
+          "BlockNum": 125,
+          "DateTime": "2026-01-01T00:41:40Z",
+          "EvtLogId": 5099,
+          "TimeStamp": 1767228100,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+          "TxId": 1026
+        },
+        "WinnerAddr": "0x2200000000000000000000000000000000000022",
+        "WinnerAid": 22,
+        "WinnerIndex": 0
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

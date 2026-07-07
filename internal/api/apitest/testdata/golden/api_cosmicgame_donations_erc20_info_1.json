@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ERC20Donation": {
+      "Amount": "",
+      "AmountEth": 0,
+      "DonorAddr": "0x2100000000000000000000000000000000000021",
+      "DonorAid": 21,
+      "RecordId": 1,
+      "RoundNum": 0,
+      "TokenAddr": "0x2600000000000000000000000000000000000026",
+      "TokenAid": 26,
+      "Tx": {
+        "BlockNum": 107,
+        "DateTime": "2026-01-01T00:11:40Z",
+        "EvtLogId": 5015,
+        "TimeStamp": 1767226300,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001008",
+        "TxId": 1008
+      },
+      "WinnerAddr": "",
+      "WinnerAid": 0
+    },
+    "error": "",
+    "status": 1
+  }
+}

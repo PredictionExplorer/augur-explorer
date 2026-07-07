@@ -1,0 +1,53 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Bids": [],
+    "CosmicSignatureTokensOwned": [],
+    "CurrentlyStakedTokens": {
+      "CST": [],
+      "RWalk": []
+    },
+    "DonatedNFTsClaimed": [],
+    "DonatedTokensClaimed": [],
+    "ERC20Transfers": [],
+    "ERC721Transfers": [],
+    "ETHDonationsMade": [],
+    "MainPrizeClaims": [],
+    "MarketingRewardsAwarded": [],
+    "PrizeHistory": [],
+    "StakingActions": {
+      "CST": [],
+      "RWalk": []
+    },
+    "TokenDonationsMade": {
+      "ERC20Donations": [],
+      "NFTDonations": []
+    },
+    "UnclaimedAssets": {
+      "DonatedNFTs": [],
+      "ETHPrizes": []
+    },
+    "UserInfo": {
+      "Address": "0xzz00000000000000000000000000000000000021",
+      "AddressId": 0,
+      "CosmicSignatureNumTransfers": 0,
+      "MaxBidAmount": 0,
+      "MaxWinAmount": 0,
+      "NumBids": 0,
+      "NumPrizes": 0,
+      "NumRaffleEthWinnings": 0,
+      "RaffleNFTsCount": 0,
+      "RewardNFTsCount": 0,
+      "StakingStatisticsRWalk": {},
+      "SumRaffleEthWinnings": 0,
+      "SumRaffleEthWithdrawal": 0,
+      "TotalCSTokensWon": 0,
+      "TotalDonatedAmountEth": 0,
+      "TotalDonatedCount": 0,
+      "UnclaimedNFTs": 0
+    },
+    "error": "",
+    "status": 1
+  }
+}

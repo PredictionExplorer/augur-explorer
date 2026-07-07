@@ -88,7 +88,10 @@ func (sw *SQLStorageWrapper) Get_bid_frequency_by_period(initTs, finTs, interval
 	if intervalSecs == 3600 || intervalSecs == 86400 {
 		rows, err = sw.S.Db().Query(query, initTs, finTs)
 	} else {
-		rows, err = sw.S.Db().Query(query, initTs, finTs, intervalSecs)
+		// $3 feeds a text concatenation ("$3 || ' seconds'"), so it must be
+		// passed as a string: pgx infers the placeholder as text and cannot
+		// encode a Go int into it (the request would fail on every call).
+		rows, err = sw.S.Db().Query(query, initTs, finTs, intervalStr)
 	}
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
@@ -104,6 +107,10 @@ func (sw *SQLStorageWrapper) Get_bid_frequency_by_period(initTs, finTs, interval
 			os.Exit(1)
 		}
 		records = append(records, rec)
+	}
+	if err := rows.Err(); err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
 	}
 	return records
 }
@@ -246,8 +253,10 @@ func (sw *SQLStorageWrapper) Get_top_bidder_active_periods(topN, initTs, finTs, 
 		"HAVING COUNT(*) >= $5 " +
 		"ORDER BY MIN(time_stamp)"
 
-	// bidderAids is passed as a native []int64; the pgx driver encodes it as bigint[].
-	rows, err := sw.S.Db().Query(query, bidderAids, initTs, finTs, gapHours, minBids)
+	// bidderAids is passed as a native []int64; the pgx driver encodes it as
+	// bigint[]. gapHours feeds a text concatenation ("$4 || ' hours'") and
+	// must be a string for the same reason as in Get_bid_frequency_by_period.
+	rows, err := sw.S.Db().Query(query, bidderAids, initTs, finTs, strconv.Itoa(gapHours), minBids)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
 		os.Exit(1)
@@ -274,6 +283,10 @@ func (sw *SQLStorageWrapper) Get_top_bidder_active_periods(topN, initTs, finTs, 
 			rec.DurationSecs = 0
 		}
 		periods = append(periods, rec)
+	}
+	if err := rows.Err(); err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
 	}
 	return topBidders, periods
 }

@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "Can't parse integer parameter: strconv.ParseInt: parsing \"notanumber\": invalid syntax",
+    "status": 0
+  }
+}

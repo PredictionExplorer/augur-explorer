@@ -56,26 +56,6 @@ func statusClass(code int) string {
 	}
 }
 
-// registerHealthRoutes adds liveness and readiness probes to the public router.
-func registerHealthRoutes(r *gin.Engine) {
-	// Liveness: the process is up and serving.
-	r.GET("/healthz", func(c *gin.Context) {
-		c.String(http.StatusOK, "ok")
-	})
-	// Readiness: dependencies are reachable (database ping).
-	r.GET("/readyz", func(c *gin.Context) {
-		if rwcg_srv == nil || rwcg_srv.db == nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unready", "reason": "database not configured"})
-			return
-		}
-		if err := rwcg_srv.db.Db().PingContext(c.Request.Context()); err != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unready", "reason": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "ready"})
-	})
-}
-
 // startInternalServer serves /metrics and /debug/pprof on a private listener.
 // These must never be exposed publicly, so they live on their own port,
 // controlled by METRICS_ADDR (e.g. "127.0.0.1:9090"). Unset means disabled.

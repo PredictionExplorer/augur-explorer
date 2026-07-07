@@ -1,0 +1,36 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MarketPlaceAddr": "0x1200000000000000000000000000000000000012",
+    "MarketPlaceAid": 12,
+    "Trading": [
+      {
+        "Active": false,
+        "BlockNum": 135,
+        "BuyerAddr": "0x2400000000000000000000000000000000000024",
+        "BuyerAid": 24,
+        "ContractAddr": "0x1200000000000000000000000000000000000012",
+        "ContractAid": 12,
+        "DateTime": "2026-01-01T01:00:00Z",
+        "EvtLogId": 5088,
+        "Id": 1,
+        "OfferId": 1,
+        "OfferType": 1,
+        "Price": 1,
+        "Profit": 0.95,
+        "RWalkAddr": "0x8000000000000000000000000000000000000008",
+        "RWalkAid": 8,
+        "SellerAddr": "0x2300000000000000000000000000000000000023",
+        "SellerAid": 23,
+        "TimeStamp": 1767229200,
+        "TokenId": 10,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001036",
+        "TxId": 1036,
+        "WasCanceled": false
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

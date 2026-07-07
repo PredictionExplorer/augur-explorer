@@ -1,0 +1,36 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MintIntervals": [
+      {
+        "Interval": 0,
+        "MintNumber": 10,
+        "TimeStamp": 1767228600,
+        "TokenId": 10
+      },
+      {
+        "Interval": 100,
+        "MintNumber": 11,
+        "TimeStamp": 1767228700,
+        "TokenId": 11
+      },
+      {
+        "Interval": 100,
+        "MintNumber": 12,
+        "TimeStamp": 1767228800,
+        "TokenId": 12
+      },
+      {
+        "Interval": 100,
+        "MintNumber": 13,
+        "TimeStamp": 1767228900,
+        "TokenId": 13
+      }
+    ],
+    "RWalkAddr": "0x8000000000000000000000000000000000000008",
+    "RWalkAid": 8,
+    "error": "",
+    "status": 1
+  }
+}

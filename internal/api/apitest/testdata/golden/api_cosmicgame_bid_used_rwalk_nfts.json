@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UsedRwalkNFTs": [
+      {
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BidderAid": 22,
+        "BlockNum": 102,
+        "DateTime": "2026-01-01T00:03:20Z",
+        "EvtLogId": 5006,
+        "RWalkTokenId": 13,
+        "RecordId": 2002,
+        "RoundNum": 0,
+        "TimeStamp": 1767225800,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001003",
+        "TxId": 1003
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

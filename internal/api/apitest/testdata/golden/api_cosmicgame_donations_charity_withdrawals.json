@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CharityWithdrawals": [
+      {
+        "Amount": "50000000000000000",
+        "AmountEth": 0.05,
+        "DestinationAddr": "0x2800000000000000000000000000000000000028",
+        "RecordId": 1,
+        "Tx": {
+          "BlockNum": 142,
+          "DateTime": "2026-01-01T01:10:00Z",
+          "EvtLogId": 5096,
+          "TimeStamp": 1767229800,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001042",
+          "TxId": 1042
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "Error during query execution: sql: no rows in result set",
+    "status": 0
+  }
+}

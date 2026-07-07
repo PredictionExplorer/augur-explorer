@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CharityDonations": [
+      {
+        "Amount": "90000000000000000",
+        "AmountEth": 0.09,
+        "DonorAddr": "0x2000000000000000000000000000000000000002",
+        "DonorAid": 2,
+        "IsVoluntary": false,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5041,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

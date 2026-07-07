@@ -15,6 +15,7 @@ package testdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -47,6 +48,27 @@ func New(t *testing.T) *DB {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
+	db, stop, err := Start(ctx)
+	if err != nil {
+		if errors.Is(err, ErrContainerUnavailable) {
+			t.Skipf("skipping: cannot start postgres container (is Docker running?): %v", err)
+		}
+		t.Fatalf("starting test database: %v", err)
+	}
+	t.Cleanup(stop)
+	return db
+}
+
+// ErrContainerUnavailable wraps container startup failures (typically: Docker
+// is not running). Callers that manage the database from TestMain can detect
+// it to skip integration tests instead of failing them.
+var ErrContainerUnavailable = errors.New("test database container unavailable")
+
+// Start boots a PostgreSQL container and applies all goose migrations.
+// It is intended for TestMain-style callers that need the database to outlive
+// a single test; the returned stop function terminates the container and
+// closes the pool. Prefer New in ordinary tests.
+func Start(ctx context.Context) (*DB, func(), error) {
 	container, err := postgres.Run(ctx, containerImage,
 		postgres.WithDatabase("rwcg_test"),
 		postgres.WithUsername("rwcg"),
@@ -54,30 +76,36 @@ func New(t *testing.T) *DB {
 		postgres.BasicWaitStrategies(),
 	)
 	if err != nil {
-		t.Skipf("skipping: cannot start postgres container (is Docker running?): %v", err)
+		return nil, nil, fmt.Errorf("%w: %w", ErrContainerUnavailable, err)
 	}
-	t.Cleanup(func() {
+	terminate := func() {
 		if err := testcontainers.TerminateContainer(container); err != nil {
-			t.Logf("terminating postgres container: %v", err)
+			fmt.Fprintf(os.Stderr, "terminating postgres container: %v\n", err)
 		}
-	})
+	}
 
 	connString, err := container.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
-		t.Fatalf("postgres connection string: %v", err)
+		terminate()
+		return nil, nil, fmt.Errorf("postgres connection string: %w", err)
 	}
 
 	db, err := sql.Open("pgx", connString)
 	if err != nil {
-		t.Fatalf("open postgres: %v", err)
+		terminate()
+		return nil, nil, fmt.Errorf("open postgres: %w", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	stop := func() {
+		_ = db.Close()
+		terminate()
+	}
 
 	if err := Migrate(ctx, db); err != nil {
-		t.Fatalf("applying migrations: %v", err)
+		stop()
+		return nil, nil, fmt.Errorf("applying migrations: %w", err)
 	}
 
-	return &DB{SQL: db, ConnString: connString}
+	return &DB{SQL: db, ConnString: connString}, stop, nil
 }
 
 // Migrate applies all goose migrations from db/migrations to the given database.

@@ -1,0 +1,50 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CombinedStakingRecordInfo": {
+      "Stake": {
+        "ActionId": 1,
+        "ActionType": 0,
+        "NumStakedNFTs": 1,
+        "RecordId": 1,
+        "RoundNum": 1,
+        "StakerAddr": "0x2100000000000000000000000000000000000021",
+        "StakerAid": 21,
+        "TokenId": 1,
+        "Tx": {
+          "BlockNum": 114,
+          "DateTime": "2026-01-01T00:23:20Z",
+          "EvtLogId": 5051,
+          "TimeStamp": 1767227000,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001015",
+          "TxId": 1015
+        }
+      },
+      "Unstake": {
+        "ActionId": 1,
+        "ActionType": 0,
+        "NumStakedNFTs": 1,
+        "RecordId": 1,
+        "RewardAmount": "1000000000000000000",
+        "RewardAmountEth": 1,
+        "RewardPerToken": "1000000000000000000",
+        "RewardPerTokenEth": 1,
+        "RoundNum": 1,
+        "StakerAddr": "0x2100000000000000000000000000000000000021",
+        "StakerAid": 21,
+        "TokenId": 1,
+        "Tx": {
+          "BlockNum": 116,
+          "DateTime": "2026-01-01T00:26:40Z",
+          "EvtLogId": 5056,
+          "TimeStamp": 1767227200,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001017",
+          "TxId": 1017
+        }
+      }
+    },
+    "error": "",
+    "status": 1
+  }
+}

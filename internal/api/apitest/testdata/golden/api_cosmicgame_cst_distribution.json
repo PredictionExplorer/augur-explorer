@@ -1,0 +1,35 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CosmicSignatureTokenDistribution": [
+      {
+        "NumTokens": 3,
+        "OwnerAddr": "0x2200000000000000000000000000000000000022",
+        "OwnerAid": 22
+      },
+      {
+        "NumTokens": 2,
+        "OwnerAddr": "0x2100000000000000000000000000000000000021",
+        "OwnerAid": 21
+      },
+      {
+        "NumTokens": 2,
+        "OwnerAddr": "0x2300000000000000000000000000000000000023",
+        "OwnerAid": 23
+      },
+      {
+        "NumTokens": 1,
+        "OwnerAddr": "0x2400000000000000000000000000000000000024",
+        "OwnerAid": 24
+      },
+      {
+        "NumTokens": 1,
+        "OwnerAddr": "0x2500000000000000000000000000000000000025",
+        "OwnerAid": 25
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

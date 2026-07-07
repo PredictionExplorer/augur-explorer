@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MarketAddr": "0x1200000000000000000000000000000000000012",
+    "MarketAid": 12,
+    "MarketStats": {
+      "NumTrades": 1,
+      "TradingVol": 1
+    },
+    "error": "",
+    "status": 1
+  }
+}

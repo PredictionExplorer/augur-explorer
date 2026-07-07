@@ -1,0 +1,74 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UserAddr": "0x2300000000000000000000000000000000000023",
+    "UserAid": 23,
+    "UserTokens": [
+      {
+        "ActualUnstakeDateTime": "",
+        "ActualUnstakeTimeStamp": 0,
+        "ContractAddr": "",
+        "CurOwnerAddr": "0x2300000000000000000000000000000000000023",
+        "CurOwnerAid": 23,
+        "RecordId": 0,
+        "RecordType": 5,
+        "RoundNum": 0,
+        "Seed": "seed0000000000000000000000000000000000000000000000000000000004",
+        "StakeActionId": 0,
+        "StakeDateTime": "",
+        "StakeTimeStamp": 0,
+        "Staked": false,
+        "StakedOwnerAddr": "",
+        "StakedOwnerAid": 0,
+        "TokenId": 4,
+        "TokenName": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5032,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "UnstakeActionId": 0,
+        "WasUnstaked": false,
+        "WinnerAddr": "0x2300000000000000000000000000000000000023",
+        "WinnerAid": 23
+      },
+      {
+        "ActualUnstakeDateTime": "",
+        "ActualUnstakeTimeStamp": 0,
+        "ContractAddr": "",
+        "CurOwnerAddr": "0x2300000000000000000000000000000000000023",
+        "CurOwnerAid": 23,
+        "RecordId": 0,
+        "RecordType": 2,
+        "RoundNum": 0,
+        "Seed": "seed0000000000000000000000000000000000000000000000000000000003",
+        "StakeActionId": 0,
+        "StakeDateTime": "",
+        "StakeTimeStamp": 0,
+        "Staked": false,
+        "StakedOwnerAddr": "",
+        "StakedOwnerAid": 0,
+        "TokenId": 3,
+        "TokenName": "",
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5029,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "UnstakeActionId": 0,
+        "WasUnstaked": false,
+        "WinnerAddr": "0x2300000000000000000000000000000000000023",
+        "WinnerAid": 23
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

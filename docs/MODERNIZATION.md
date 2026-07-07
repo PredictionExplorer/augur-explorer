@@ -33,19 +33,20 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-06 (commit `85941dba`). Update after each phase.
+Measured 2026-07-07 (parity-suite sprint). Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 57,660 | n/a (informational) | `rg --files internal cmd -g '*.go' -0 \| xargs -0 wc -l \| tail -1` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 60,965 (growth = test code) | n/a (informational) | `rg --files internal cmd -g '*.go' -0 \| xargs -0 wc -l \| tail -1` |
 | snake_case functions | ~700 | **656** (store 387, api 135, cg-etl 89, notibot 24, rw-etl 11) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
-| `os.Exit` in library code (`internal/`) | ~560 | **~485** (store/cosmicgame ~410, store/randomwalk 75, api 3) | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
+| `os.Exit` in library code (`internal/`) | ~560 | **~490** (store/cosmicgame ~410, store/randomwalk 75, api 3) | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **21** | **0** | `rg -l '^\s*\. "github' --type go` |
 | Package-level mutable globals (api + etl) | ~120 | ~80 (state.go ~50, cg-etl ~25, rw-etl ~8) | ~0 (DI everywhere) | manual review per package |
 | golangci-lint issues | 433 (first run) | **180** | **0** | `golangci-lint run` |
-| Test files | 17 | **39** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
+| Test files | 17 | **44** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
 | Fuzz targets | 0 | **28** | **25+** (see §4.4) — met; grows with Phase 3 | `rg -c "func Fuzz" --type go` |
-| Coverage on `internal/` | 2.4% (re-measured 2026-07-06 with the stated command) | **5.8%** | **≥70%** enforced in CI | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
+| Coverage on `internal/` (unit) | 2.4% | **5.9%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
+| Coverage on `internal/` (integration, enforced) | n/a | **53.0%** (ratchet floor 50% in CI) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
 | Queries on sqlc | 0 | 8 (layer1 pattern) | all static queries | count in `internal/store/queries/*.sql` |
 | Routes on stdlib router | 0 | 0 (gin) | all (v1 compat + v2) | n/a |
 | `context.Context` on store methods | 0% | ~5% (base pkg only) | 100% | manual |
@@ -88,24 +89,53 @@ Golden-file HTTP tests: seed a testcontainers database with a fixed fixture
 set, start the real router via `httptest`, hit every route, snapshot the
 JSON to `testdata/golden/`. The suite is the contract for the v1 API freeze.
 
-- [ ] `internal/api/apitest/` package: fixture loader + golden-file helpers
-      (`-update` flag to regenerate; byte-stable via canonical JSON marshal)
-- [ ] Fixture dataset: SQL seed files under `internal/api/apitest/testdata/seed/`
-      covering ≥3 rounds, ≥5 bidders, every prize type (main, raffle ETH/NFT,
-      endurance, chrono warrior, lastcst), donations (ETH/ERC20/NFT + claims),
-      staking (CST + RWalk, stake/unstake/rewards), banned bids, RandomWalk
-      mints/offers/sales/withdrawals/name-changes, ranking votes with Elo state
-- [ ] Route enumeration test: parse `docs/openapi.yaml` and assert every
-      documented path is registered (and vice versa) — spec can never drift
-- [ ] Golden tests for all CosmicGame GET routes (~120 paths)
-- [ ] Golden tests for all RandomWalk GET routes (~45 paths)
-- [ ] Golden tests for `/metadata/:token_id` host dispatch (both hosts) and
-      `/cg/metadata/:token_id`
-- [ ] Mutation-route tests: `ban_bid`/`unban_bid`/`token-ranking/match`
+**Sprint 2026-07-07: landed in full (183 goldens, 3 real bugs found — see
+progress log).** Scoping decision: routes whose happy path needs live contract
+reads (`bid/cst_price`, `bid/eth_price`, `bid/current_special_winners`,
+`ct/statistics`, `marketing/config/current`, `time/*`, parts of
+`user/balances` and the dashboard) are pinned in their deterministic
+"RPC unavailable" shape against a stub Ethereum JSON-RPC server; their happy
+paths become testable in Phase 2 when contract state is injectable
+(`ContractState` + mocked eth client) and the goldens get regenerated then.
+
+- [x] `internal/api/apitest/` package: fixture loader + golden-file helpers
+      (`-update` flag to regenerate; byte-stable via canonical JSON with
+      `json.Number`; per-case redaction for genuinely random fields; every
+      case fetched twice to prove determinism). One container + one process
+      -wide harness via `TestMain` (package Init can only run once until
+      Phase 2 removes the package-level state).
+- [x] Fixture dataset: SQL seed files under `internal/api/apitest/testdata/seed/`
+      covering 3 complete rounds + 1 open round, 5 bidders, every prize type
+      (main, raffle ETH/NFT incl. staker raffles, endurance, chrono warrior,
+      lastcst), donations (ETH simple/with-info JSON, ERC20 + claim, NFT +
+      claimed & unclaimed), staking (CST + RWalk stake/unstake, reward
+      deposit with per-token accounting), banned bids, marketing rewards,
+      admin events, charity flows, and RandomWalk mints/offers/sale/
+      cancellation/withdrawals/name-changes/ranking votes with Elo state.
+      Direct inserts fire the migration-00002/00003 triggers, so every
+      aggregate (`cg_bidder`, `cg_winner`, `cg_glob_stats`, `cg_round_stats`,
+      staking accumulators, `rw_stats`, ...) is computed by the real plpgsql
+      — first real coverage of the trigger layer.
+- [x] Route enumeration test: parse `docs/openapi.yaml` and assert every
+      documented path is registered (and vice versa) — spec can never drift.
+      Runs as a unit test (no Docker); found zero drift: all 187 operations
+      match.
+- [x] Golden tests for all CosmicGame GET routes (100 registered paths incl.
+      legacy aliases)
+- [x] Golden tests for all RandomWalk GET routes (30 registered paths)
+- [x] Golden tests for `/metadata/:token_id` host dispatch (both hosts) and
+      `/cg/metadata/:token_id`; `/healthz`, `/readyz`, FAQ proxy against a
+      stub upstream
+- [x] Mutation-route tests: `ban_bid`/`unban_bid`/`token-ranking/match`
       (auth 503/401/success matrix), `add_game` signature verification paths
-- [ ] Error-shape tests: invalid params on representative routes pin the
-      `{"status":0,"error":...}` envelope
-- [ ] Wire into `make test-integration` and CI
+      (challenge nonce, EIP-191 recovery, duplicate-pair 409, nonce replay,
+      chain-id rejection); all mutations restore fixture state so test order
+      and `-shuffle` cannot affect goldens
+- [x] Error-shape tests: invalid params on representative routes pin the
+      `{"status":0,"error":...}` envelope (including the HTTP-200-on-invalid
+      -address legacy quirk)
+- [x] Wire into `make test-integration` and CI (integration build tag; suite
+      auto-skips when Docker is unavailable)
 
 ### 4.2 Store integration suite
 
@@ -144,9 +174,12 @@ Base (`internal/store/`):
 
 - [ ] `lookups.go`, `blockchain.go`, `blockchain_insert.go`, `archive.go`
       (round-trip block/tx/evt_log insertion incl. reorg path)
-- [ ] Trigger behavior tests: `cg_bidder`/`cg_glob_stats`/`cg_winner`
+- [~] Trigger behavior tests: `cg_bidder`/`cg_glob_stats`/`cg_winner`
       aggregates update correctly on insert/delete (the plpgsql functions in
-      migration 00002 are load-bearing and currently untested)
+      migration 00002 are load-bearing). *Insert paths are now exercised and
+      pinned end-to-end by the §4.1 fixtures (every aggregate in the goldens
+      is trigger-computed); found+fixed the token-name trigger collision
+      (migration 00004). Delete/reorg paths remain for this item.*
 
 ### 4.3 ETL decode fixtures (golden events)
 
@@ -203,7 +236,9 @@ HTTP/API input handling (security-relevant):
 - [x] `FuzzNormalizeSeedSegment` + `FuzzIsHex` — `cmd/apiserver`
 - [x] `FuzzMetadataHostDispatch` — host/X-Forwarded-Host strings never panic,
       always route to exactly one handler (logic extracted from the `main()`
-      closure into `metadataHostServesCosmicSignature` + unit tests)
+      closure; now `common.MetadataHostServesCosmicSignature` in
+      `internal/api/common` since the parity harness registers the same
+      dispatch, fuzz + unit tests moved along)
 - [x] `FuzzParseOptionalIntQuery` — `internal/store/cosmicgame`
 - [x] `FuzzIsAddressValid` — `internal/api/common` (accepted ⇒ EIP-55
       checksummed; rejected ⇒ JSON error envelope written)
@@ -259,9 +294,12 @@ Parsers and builders:
       `scripts/fuzz-all.sh`; uploads crashers as artifacts; opens/updates a
       `fuzz-failure` issue on failure. Local equivalent: `make fuzz-smoke`.
       *(2026-07-06)*
-- [ ] Coverage job: fail if `internal/` coverage drops below the ratchet value
-      (start at current %, raise the floor after each phase — ratchet, never lower)
-- [ ] Parity suite runs in the integration job (already tagged `integration`)
+- [x] Coverage job: fail if `internal/` coverage drops below the ratchet value
+      (start at current %, raise the floor after each phase — ratchet, never
+      lower). *(2026-07-07: integration job computes `-coverpkg=./internal/...`
+      coverage and fails below 50%; measured 53.0%.)*
+- [x] Parity suite runs in the integration job (already tagged `integration`)
+      *(2026-07-07)*
 
 ---
 
@@ -525,4 +563,5 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 |---|---|---|
 | 2026-07-06 | `85941dba` | Foundation: layout, Go 1.26, CI, hardening, docs (see §3) |
 | 2026-07-06 | `a7971755` | **Fuzz fleet sprint (§4.4 + §4.6 nightly CI):** 28 fuzz targets + ~20 accompanying unit/property test funcs across 15 packages; `scripts/fuzz-all.sh`, `make fuzz-smoke`, nightly `.github/workflows/fuzz.yml`. Testability extractions (behavior-preserving, pinned by unit tests): metadata host dispatch → `metadataHostServesCosmicSignature` (`cmd/apiserver`), ORDER BY whitelists → `roiLeaderboardOrderClause` / `activeOffersOrderClause`. **Bug found & fixed:** corrupt freezer index entry could OOM-kill the process via an up-to-2^48-byte allocation in `FreezerReader.readBytes` / `WorkerReader.readBytes`; both now bounds-check against the data end (`TestReadItemCorruptIndexHugeOffset`). Test files 19 → 39. |
+| 2026-07-07 | | **API parity suite sprint (§4.1 complete + §4.6 coverage ratchet):** `internal/api/apitest` boots the real gin router (production middleware chain, real Init sequence) against a seeded testcontainers Postgres and a deterministic Ethereum JSON-RPC stub; 183 golden files pin every registered GET route (each fetched twice to prove determinism), plus mutation-route tests (admin auth matrices, ban/unban round-trip, Elo match, EIP-191 signed `add_game` incl. replay/duplicate/chain rejections) and error-envelope goldens. Route-drift unit test proves `docs/openapi.yaml` ⇄ router equality (187/187 operations, both directions). Fixture dataset exercises the migration plpgsql triggers end-to-end. Supporting changes: `testdb.Start` for TestMain lifetimes, `DisableBackgroundRefresh` test hook in `state.go` (removed in Phase 2), metadata-host dispatch + health routes moved to `internal/api/common` for reuse. CI integration job now enforces the `internal/` coverage ratchet (floor 50%; measured 53.0%, up from 5.8%). **Three production bugs found & fixed:** (1) migrations 00002/00003 both defined `on_token_name_insert()`/`_delete()`, so the RandomWalk body silently overwrote the CosmicGame one and every `cg_token_name` insert failed — CS-NFT naming was broken and the ETL would crash on `NftNameChanged`; fixed by migration `00004` with per-project function names. (2) `Get_bid_frequency_by_period` / `Get_top_bidder_active_periods` passed Go ints into pgx text-concatenation placeholders (`$3 \|\| ' seconds'`), so `statistics/bidding/frequency` and `top_active_periods` failed on every call — and their `os.Exit(1)` error paths killed the whole API server when hit. (3) `Get_market_trading_volume_by_period` had a SQL typo (`TO_TIMESTAMP($1)i`), making `statistics/trading_volume` another process-killing route. Test files 39 → 44. |
 | | | |

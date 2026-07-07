@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "apitest eth stub: method eth_call not supported",
+    "status": 0
+  }
+}

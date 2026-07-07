@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CosmicTokenBalances": [
+      {
+        "Balance": "290000000000000000000",
+        "BalanceFloat": 290,
+        "OwnerAddr": "0x2100000000000000000000000000000000000021",
+        "OwnerAid": 21,
+        "PercentOfSupply": 0
+      },
+      {
+        "Balance": "110000000000000000000",
+        "BalanceFloat": 110,
+        "OwnerAddr": "0x2200000000000000000000000000000000000022",
+        "OwnerAid": 22,
+        "PercentOfSupply": 0
+      },
+      {
+        "Balance": "95000000000000000000",
+        "BalanceFloat": 95,
+        "OwnerAddr": "0x2300000000000000000000000000000000000023",
+        "OwnerAid": 23,
+        "PercentOfSupply": 0
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

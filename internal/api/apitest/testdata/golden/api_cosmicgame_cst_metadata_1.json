@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "animation_url": "http://example.com/images/new/cosmicsignature/0xseed0000000000000000000000000000000000000000000000000000000001.mp4",
+    "attributes": [
+      {
+        "display_type": "number",
+        "trait_type": "Round",
+        "value": 0
+      },
+      {
+        "display_type": "date",
+        "trait_type": "Imprinted",
+        "value": 1767226600
+      },
+      {
+        "trait_type": "seed",
+        "value": "seed0000000000000000000000000000000000000000000000000000000001"
+      }
+    ],
+    "background_color": "000000",
+    "description": "Discover the unique attributes and ownership history of Cosmic Signature Token #1, an exclusive digital collectible from the Cosmic Signature game.",
+    "external_url": "https://www.cosmicsignature.com/detail/1",
+    "image": "http://example.com/images/new/cosmicsignature/0xseed0000000000000000000000000000000000000000000000000000000001.png",
+    "name": "Genesis",
+    "properties": {
+      "owner": "0x2100000000000000000000000000000000000021",
+      "round_num": 0,
+      "seed": "seed0000000000000000000000000000000000000000000000000000000001",
+      "token_id": 1
+    }
+  }
+}

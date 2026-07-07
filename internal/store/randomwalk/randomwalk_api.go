@@ -959,7 +959,7 @@ func (sw *SQLStorageWrapper) Get_market_trading_volume_by_period(contract_aid in
 	var query string
 	query = "SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b " +
 				"JOIN rw_new_offer o ON o.offer_id=b.offer_id " +
-				"WHERE (b.time_stamp < TO_TIMESTAMP($1)i) AND (o.contract_aid=$2)"
+				"WHERE (b.time_stamp < TO_TIMESTAMP($1)) AND (o.contract_aid=$2)"
 	var initial_volume sql.NullFloat64
 	err := sw.S.Db().QueryRow(query,init_ts,contract_aid).Scan(&initial_volume)
 	if (err!=nil) {

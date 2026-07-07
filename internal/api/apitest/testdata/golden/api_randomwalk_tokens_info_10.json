@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "TokenInfo": {
+      "CurName": "Wanderer",
+      "CurOwnerAddr": "0x2400000000000000000000000000000000000024",
+      "CurOwnerAid": 24,
+      "LastNameUpdateDate": "2026-01-01T00:56:40Z",
+      "LastNameUpdateTs": 1767229000,
+      "LastPrice": 1,
+      "NumTrades": 1,
+      "SeedHex": "aa00000000000000000000000000000000000000000000000000000000000010",
+      "SeedNum": "16",
+      "TokenId": 10,
+      "TotalVolume": 1
+    },
+    "error": "",
+    "status": 1
+  }
+}

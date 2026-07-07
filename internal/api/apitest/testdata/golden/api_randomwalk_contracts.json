@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "error": "",
+    "marketplace_addr": "0x1200000000000000000000000000000000000012",
+    "marketplace_aid": 12,
+    "randomwalk_addr": "0x8000000000000000000000000000000000000008",
+    "randomwalk_aid": 8,
+    "status": 1
+  }
+}

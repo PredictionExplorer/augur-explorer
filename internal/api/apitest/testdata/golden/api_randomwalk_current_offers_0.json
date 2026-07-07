@@ -1,0 +1,60 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MarketAid": 12,
+    "Offers": [
+      {
+        "Active": true,
+        "BlockNum": 137,
+        "BuyerAddr": "0x0000000000000000000000000000000000000000",
+        "BuyerAid": 1,
+        "ContractAddr": "",
+        "ContractAid": 0,
+        "DateTime": "2026-01-01T01:01:40Z",
+        "EvtLogId": 5091,
+        "Id": 2,
+        "OfferId": 2,
+        "OfferType": 1,
+        "Price": 2,
+        "Profit": null,
+        "RWalkAddr": "",
+        "RWalkAid": 8,
+        "SellerAddr": "0x2400000000000000000000000000000000000024",
+        "SellerAid": 24,
+        "TimeStamp": 1767229300,
+        "TokenId": 11,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001037",
+        "TxId": 1037,
+        "WasCanceled": false
+      },
+      {
+        "Active": true,
+        "BlockNum": 138,
+        "BuyerAddr": "0x0000000000000000000000000000000000000000",
+        "BuyerAid": 1,
+        "ContractAddr": "",
+        "ContractAid": 0,
+        "DateTime": "2026-01-01T01:03:20Z",
+        "EvtLogId": 5092,
+        "Id": 3,
+        "OfferId": 3,
+        "OfferType": 1,
+        "Price": 2.5,
+        "Profit": null,
+        "RWalkAddr": "",
+        "RWalkAid": 8,
+        "SellerAddr": "0x2200000000000000000000000000000000000022",
+        "SellerAid": 22,
+        "TimeStamp": 1767229400,
+        "TokenId": 13,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001038",
+        "TxId": 1038,
+        "WasCanceled": false
+      }
+    ],
+    "RWalkAid": 8,
+    "error": "",
+    "status": 1
+  }
+}

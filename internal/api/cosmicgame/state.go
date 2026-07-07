@@ -78,6 +78,21 @@ var (
 
 	arb_storagew				SQLStorageWrapper
 )
+
+// backgroundRefreshDisabled suppresses the reload_* refresh goroutines while
+// keeping the synchronous initial loads in cosmic_game_init(). Only the API
+// parity test harness sets it (via DisableBackgroundRefresh) so snapshots
+// stay deterministic; production always runs the refresh loops. The whole
+// mechanism goes away in Phase 2 when this package state becomes an
+// injected ContractState component with a Run(ctx) lifecycle.
+var backgroundRefreshDisabled bool
+
+// DisableBackgroundRefresh prevents cosmic_game_init from starting the
+// periodic contract/database refresh goroutines. Test-only; call before Init.
+func DisableBackgroundRefresh() {
+	backgroundRefreshDisabled = true
+}
+
 type rpcBlock struct {
     Timestamp         string      `json:"timestamp"`
 }
@@ -361,6 +376,12 @@ func cosmic_game_init() {
 	marketing_wallet_addr = ethcommon.HexToAddress(bw_caddrs.MarketingWalletAddr)
 	do_reload_contract_variables()
 	do_reload_database_variables()
+	if backgroundRefreshDisabled {
+		// Run the constants load that reload_constants_goroutine would have
+		// performed immediately, then stop: no periodic refresh in tests.
+		do_reload_contract_constants()
+		return
+	}
 	go reload_database_variables_goroutine()
 	go reload_constants_goroutine()
 	go reload_variables_goroutine()

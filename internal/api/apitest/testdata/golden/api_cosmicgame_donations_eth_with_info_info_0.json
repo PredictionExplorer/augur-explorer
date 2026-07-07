@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ETHDonation": {
+      "Amount": "300000000000000000",
+      "AmountEth": 0.3,
+      "CGRecordId": 0,
+      "DataJson": "{\"title\":\"apitest donation\",\"url\":\"https://example.org/apitest\"}",
+      "DonorAddr": "0x2500000000000000000000000000000000000025",
+      "DonorAid": 25,
+      "RoundNum": 0,
+      "Tx": {
+        "BlockNum": 106,
+        "DateTime": "2026-01-01T00:10:00Z",
+        "EvtLogId": 5014,
+        "TimeStamp": 1767226200,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001007",
+        "TxId": 1007
+      }
+    },
+    "RecordId": 0,
+    "error": "",
+    "status": 1
+  }
+}

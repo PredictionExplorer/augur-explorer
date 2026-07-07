@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "TokenId": 1,
+    "TokenNameHistory": [
+      {
+        "ChangedBy": "0x2100000000000000000000000000000000000021",
+        "ChangedByAid": 21,
+        "TokenId": 1,
+        "TokenName": "Genesis",
+        "Tx": {
+          "BlockNum": 113,
+          "DateTime": "2026-01-01T00:21:40Z",
+          "EvtLogId": 5047,
+          "TimeStamp": 1767226900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001014",
+          "TxId": 1014
+        }
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

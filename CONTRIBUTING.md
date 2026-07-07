@@ -45,6 +45,21 @@ every PR — all must pass.
   where the code allows it.
 - Integration tests that need PostgreSQL use `internal/testdb` and the
   `integration` build tag: `make test-integration`.
+- **API parity suite** (`internal/api/apitest`): boots the real router against
+  a seeded testcontainers database and pins every v1 GET route as a golden
+  file under `testdata/golden/`. It is the contract for the v1 freeze — any
+  rewrite must keep it green. If a response change is *intentional*,
+  regenerate the goldens in the same PR and call it out in the description:
+
+  ```bash
+  go test -tags=integration ./internal/api/apitest/ -run TestAPIParity -update
+  ```
+
+  A route-drift test also asserts `docs/openapi.yaml` and the registered
+  routes match exactly, in both directions; new routes must be added to the
+  spec and given a parity case in the same PR.
+- CI enforces a coverage ratchet on `internal/` (integration profile); the
+  floor only ever moves up.
 - Fuzz targets (`func Fuzz*`) guard everything that parses untrusted bytes
   (chain data, HTTP input, signatures) — see the inventory in
   [docs/MODERNIZATION.md §4.4](docs/MODERNIZATION.md). Seeds are committed

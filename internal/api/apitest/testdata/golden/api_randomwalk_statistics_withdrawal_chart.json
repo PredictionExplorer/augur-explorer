@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ContractStatistics": {
+      "CurOwnerAddr": "",
+      "CurOwnerAid": 0,
+      "LastMintedPrice": 0.065,
+      "MaximumTradedPrice": 0,
+      "NumTrades": 1,
+      "NumWithdrawals": 0,
+      "TokensMinted": 4,
+      "TradingVol": 1,
+      "UniqueUsers": 0,
+      "WithdrawalAmount": 0.115
+    },
+    "RWalkAddr": "0x8000000000000000000000000000000000000008",
+    "RWalkAid": 8,
+    "WithdrawalData": "[{x:new Date(1767228600 * 1000),y:0.025000000000000001,amount: 0.025,date_str: \"2026-01-01 00:50:00 +0000 UTC\",timestamp:1767228600},{x:new Date(1767228700 * 1000),y:0.052500000000000005,amount: 0.052500000000000005,date_str: \"2026-01-01 00:51:40 +0000 UTC\",timestamp:1767228700},{x:new Date(1767228800 * 1000),y:0.082500000000000004,amount: 0.0825,date_str: \"2026-01-01 00:53:20 +0000 UTC\",timestamp:1767228800},{x:new Date(1767228900 * 1000),y:0.115000000000000005,amount: 0.115,date_str: \"2026-01-01 00:55:00 +0000 UTC\",timestamp:1767228900}]",
+    "WithdrawalEntries": [
+      {
+        "DateTime": "2026-01-01T00:50:00Z",
+        "TimeStamp": 1767228600,
+        "WithdrawalAmount": 0.025
+      },
+      {
+        "DateTime": "2026-01-01T00:51:40Z",
+        "TimeStamp": 1767228700,
+        "WithdrawalAmount": 0.052500000000000005
+      },
+      {
+        "DateTime": "2026-01-01T00:53:20Z",
+        "TimeStamp": 1767228800,
+        "WithdrawalAmount": 0.0825
+      },
+      {
+        "DateTime": "2026-01-01T00:55:00Z",
+        "TimeStamp": 1767228900,
+        "WithdrawalAmount": 0.115
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

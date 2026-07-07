@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "RecordCounters": {
+      "TotalBids": 12,
+      "TotalDonatedNFTs": 2,
+      "TotalPrizes": 3
+    },
+    "error": "",
+    "status": 1
+  }
+}

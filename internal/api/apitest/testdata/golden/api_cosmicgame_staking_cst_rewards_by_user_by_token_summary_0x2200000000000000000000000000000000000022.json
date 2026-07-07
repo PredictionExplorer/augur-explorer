@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "RewardsByToken": [
+      {
+        "RewardCollectedEth": 0,
+        "RewardToCollectEth": 1,
+        "TokenId": 5,
+        "UserAddr": "",
+        "UserAid": 22
+      }
+    ],
+    "UserAddr": "0x2200000000000000000000000000000000000022",
+    "UserAid": 22,
+    "error": "",
+    "status": 1
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "CosmicSignatureTransfers": [
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 8,
+        "ToAddr": "0x2400000000000000000000000000000000000024",
+        "ToAid": 24,
+        "TokenId": 7,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 120,
+          "DateTime": "2026-01-01T00:33:20Z",
+          "EvtLogId": 5064,
+          "TimeStamp": 1767227600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+          "TxId": 1021
+        }
+      },
+      {
+        "FromAddr": "0x2400000000000000000000000000000000000024",
+        "FromAid": 24,
+        "RecordId": 7,
+        "ToAddr": "0x2200000000000000000000000000000000000022",
+        "ToAid": 22,
+        "TokenId": 2,
+        "TransferType": 0,
+        "Tx": {
+          "BlockNum": 113,
+          "DateTime": "2026-01-01T00:21:40Z",
+          "EvtLogId": 5048,
+          "TimeStamp": 1767226900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001014",
+          "TxId": 1014
+        }
+      },
+      {
+        "FromAddr": "0x0000000000000000000000000000000000000000",
+        "FromAid": 1,
+        "RecordId": 2,
+        "ToAddr": "0x2400000000000000000000000000000000000024",
+        "ToAid": 24,
+        "TokenId": 2,
+        "TransferType": 1,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5027,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        }
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "UserAddr": "0x2400000000000000000000000000000000000024",
+    "UserAid": 24,
+    "error": "",
+    "status": 1
+  }
+}

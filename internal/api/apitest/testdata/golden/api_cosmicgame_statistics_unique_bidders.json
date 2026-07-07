@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UniqueBidders": [
+      {
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "MaxBidAmount": "120000000000000000",
+        "MaxBidAmountEth": 0.12,
+        "NumBids": 5
+      },
+      {
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BidderAid": 22,
+        "MaxBidAmount": "100000000000000000",
+        "MaxBidAmountEth": 0.1,
+        "NumBids": 3
+      },
+      {
+        "BidderAddr": "0x2300000000000000000000000000000000000023",
+        "BidderAid": 23,
+        "MaxBidAmount": "-1",
+        "MaxBidAmountEth": -1e-18,
+        "NumBids": 2
+      },
+      {
+        "BidderAddr": "0x2400000000000000000000000000000000000024",
+        "BidderAid": 24,
+        "MaxBidAmount": "110000000000000000",
+        "MaxBidAmountEth": 0.11,
+        "NumBids": 1
+      },
+      {
+        "BidderAddr": "0x2500000000000000000000000000000000000025",
+        "BidderAid": 25,
+        "MaxBidAmount": "90000000000000000",
+        "MaxBidAmountEth": 0.09,
+        "NumBids": 1
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

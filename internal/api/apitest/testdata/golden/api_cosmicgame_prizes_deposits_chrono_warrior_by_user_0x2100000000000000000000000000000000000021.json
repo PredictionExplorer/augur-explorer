@@ -1,0 +1,55 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UserChronoWarriorDeposits": [
+      {
+        "Amount": 0.08,
+        "ClaimDateTime": "",
+        "ClaimTimeStamp": 0,
+        "Claimed": false,
+        "RecordId": 1,
+        "RecordType": 2,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5037,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21,
+        "WinnerIndex": 0
+      }
+    ],
+    "UserInfo": {
+      "Address": "0x2100000000000000000000000000000000000021",
+      "AddressId": 21,
+      "CosmicSignatureNumTransfers": 2,
+      "MaxBidAmount": 0.12,
+      "MaxWinAmount": 0.5,
+      "NumBids": 5,
+      "NumPrizes": 7,
+      "NumRaffleEthWinnings": 1,
+      "RaffleNFTsCount": 0,
+      "RewardNFTsCount": 2,
+      "StakingStatisticsRWalk": {
+        "NumActiveStakers": 0,
+        "TotalNumStakeActions": 0,
+        "TotalNumUnstakeActions": 0,
+        "TotalTokensMinted": 0,
+        "TotalTokensStaked": 0
+      },
+      "SumRaffleEthWinnings": 0.14,
+      "SumRaffleEthWithdrawal": 0,
+      "TotalCSTokensWon": 2,
+      "TotalDonatedAmountEth": 0,
+      "TotalDonatedCount": 0,
+      "UnclaimedNFTs": 0
+    },
+    "error": "",
+    "status": 1
+  }
+}

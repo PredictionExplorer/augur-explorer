@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "DBError": "",
+    "RWalkAddr": "0x8000000000000000000000000000000000000008",
+    "RWalkAid": 8,
+    "UserAddr": "0x2300000000000000000000000000000000000023",
+    "UserAid": 23,
+    "UserInfo": {
+      "IsMarketPlaceContract": false,
+      "TotalMintedToks": 0,
+      "TotalNumTrades": 1,
+      "TotalNumWithdrawals": 0,
+      "TotalVolume": 1,
+      "UserAddr": "",
+      "UserAid": 23
+    },
+    "error": "",
+    "status": 1
+  }
+}

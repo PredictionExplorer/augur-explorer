@@ -1,0 +1,130 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Bids": [
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "BidPosition": 1,
+        "BidType": 0,
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "CstPrice": "-1",
+        "CstPriceEth": -1e-18,
+        "DonatedERC20TokenAddr": "0x2600000000000000000000000000000000000026",
+        "DonatedERC20TokenAmount": "500000000000000000000",
+        "DonatedERC20TokenAmountEth": 500,
+        "EthPrice": "100000000000000000",
+        "EthPriceEth": 0.1,
+        "ImageURL": "",
+        "Message": "hello world",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767229300,
+        "PrizeTimeDate": "2026-01-01T01:01:40Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 0,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 101,
+          "DateTime": "2026-01-01T00:01:40Z",
+          "EvtLogId": 5004,
+          "TimeStamp": 1767225700,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001002",
+          "TxId": 1002
+        }
+      },
+      {
+        "BidCstRewardAmount": "98000000000000000000",
+        "BidCstRewardAmountEth": 98,
+        "BidPosition": 3,
+        "BidType": 2,
+        "BidderAddr": "0x2300000000000000000000000000000000000023",
+        "BidderAid": 23,
+        "CSTReward": "100000000000000000000",
+        "CSTRewardEth": 100,
+        "CstDutchAuctionDuration": "1800",
+        "CstDutchAuctionDurationInt": 1800,
+        "CstPrice": "200000000000000000000",
+        "CstPriceEth": 200,
+        "DonatedERC20TokenAddr": "",
+        "DonatedERC20TokenAmount": "",
+        "DonatedERC20TokenAmountEth": 0,
+        "EthPrice": "-1",
+        "EthPriceEth": -1e-18,
+        "ImageURL": "",
+        "Message": "cst bid",
+        "NFTDonationTokenAddr": "",
+        "NFTDonationTokenId": -1,
+        "NFTTokenURI": "",
+        "PrizeTime": 1767229500,
+        "PrizeTimeDate": "2026-01-01T01:05:00Z",
+        "RWalkNFTId": -1,
+        "RoundNum": 0,
+        "TimeUntilPrize": 0,
+        "Tx": {
+          "BlockNum": 103,
+          "DateTime": "2026-01-01T00:05:00Z",
+          "EvtLogId": 5008,
+          "TimeStamp": 1767225900,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001004",
+          "TxId": 1004
+        }
+      }
+    ],
+    "error": "",
+    "limit": 1000,
+    "messages": [
+      {
+        "BidCstRewardAmount": "-1",
+        "BidCstRewardAmountEth": -1,
+        "CstDutchAuctionDuration": "-1",
+        "CstDutchAuctionDurationInt": -1,
+        "dateTime": "2026-01-01T00:01:40Z",
+        "evtLogId": 5004,
+        "gesturePosition": 1,
+        "message": "hello world",
+        "participantAddr": "0x2100000000000000000000000000000000000021",
+        "roundNum": 0,
+        "timeStamp": 1767225700,
+        "tx": {
+          "blockNum": 101,
+          "dateTime": "2026-01-01T00:01:40Z",
+          "evtLogId": 5004,
+          "timeStamp": 1767225700,
+          "txHash": "0xf000000000000000000000000000000000000000000000000000000000001002",
+          "txId": 1002
+        }
+      },
+      {
+        "BidCstRewardAmount": "98000000000000000000",
+        "BidCstRewardAmountEth": 98,
+        "CstDutchAuctionDuration": "1800",
+        "CstDutchAuctionDurationInt": 1800,
+        "dateTime": "2026-01-01T00:05:00Z",
+        "evtLogId": 5008,
+        "gesturePosition": 3,
+        "message": "cst bid",
+        "participantAddr": "0x2300000000000000000000000000000000000023",
+        "roundNum": 0,
+        "timeStamp": 1767225900,
+        "tx": {
+          "blockNum": 103,
+          "dateTime": "2026-01-01T00:05:00Z",
+          "evtLogId": 5008,
+          "timeStamp": 1767225900,
+          "txHash": "0xf000000000000000000000000000000000000000000000000000000000001004",
+          "txId": 1004
+        }
+      }
+    ],
+    "offset": 0,
+    "status": 1
+  }
+}

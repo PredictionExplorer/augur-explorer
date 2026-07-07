@@ -1,0 +1,56 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ActivePeriods": [
+      {
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "DurationSecs": 2800,
+        "NumBids": 5,
+        "PeriodEnd": 1767228500,
+        "PeriodStart": 1767225700
+      },
+      {
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BidderAid": 22,
+        "DurationSecs": 2600,
+        "NumBids": 3,
+        "PeriodEnd": 1767228400,
+        "PeriodStart": 1767225800
+      },
+      {
+        "BidderAddr": "0x2300000000000000000000000000000000000023",
+        "BidderAid": 23,
+        "DurationSecs": 1900,
+        "NumBids": 2,
+        "PeriodEnd": 1767227800,
+        "PeriodStart": 1767225900
+      }
+    ],
+    "FinTs": 1767230000,
+    "GapHours": 6,
+    "InitTs": 1767225600,
+    "MinBids": 2,
+    "TopBidders": [
+      {
+        "BidderAddr": "0x2100000000000000000000000000000000000021",
+        "BidderAid": 21,
+        "NumBids": 5
+      },
+      {
+        "BidderAddr": "0x2200000000000000000000000000000000000022",
+        "BidderAid": 22,
+        "NumBids": 3
+      },
+      {
+        "BidderAddr": "0x2300000000000000000000000000000000000023",
+        "BidderAid": 23,
+        "NumBids": 2
+      }
+    ],
+    "TopN": 3,
+    "error": "",
+    "status": 1
+  }
+}

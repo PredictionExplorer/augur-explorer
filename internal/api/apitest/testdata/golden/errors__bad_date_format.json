@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "'from_date' must be YYYYMMDD (8 digits)",
+    "status": 0
+  }
+}

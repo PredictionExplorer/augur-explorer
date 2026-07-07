@@ -1,0 +1,92 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "AllDeposits": [
+      {
+        "Amount": 0.06,
+        "ClaimDateTime": "",
+        "ClaimTimeStamp": 0,
+        "Claimed": false,
+        "RecordId": 4,
+        "RecordType": 10,
+        "RoundNum": 1,
+        "Tx": {
+          "BlockNum": 120,
+          "DateTime": "2026-01-01T00:33:20Z",
+          "EvtLogId": 5066,
+          "TimeStamp": 1767227600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+          "TxId": 1021
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21,
+        "WinnerIndex": 0
+      },
+      {
+        "Amount": 0.08,
+        "ClaimDateTime": "",
+        "ClaimTimeStamp": 0,
+        "Claimed": false,
+        "RecordId": 3,
+        "RecordType": 7,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5040,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21,
+        "WinnerIndex": 2
+      },
+      {
+        "Amount": 0.05,
+        "ClaimDateTime": "",
+        "ClaimTimeStamp": 0,
+        "Claimed": false,
+        "RecordId": 2,
+        "RecordType": 10,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5024,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2300000000000000000000000000000000000023",
+        "WinnerAid": 23,
+        "WinnerIndex": 1
+      },
+      {
+        "Amount": 0.05,
+        "ClaimDateTime": "",
+        "ClaimTimeStamp": 0,
+        "Claimed": true,
+        "RecordId": 1,
+        "RecordType": 10,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5022,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2200000000000000000000000000000000000022",
+        "WinnerAid": 22,
+        "WinnerIndex": 0
+      }
+    ],
+    "Limit": 10000,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}

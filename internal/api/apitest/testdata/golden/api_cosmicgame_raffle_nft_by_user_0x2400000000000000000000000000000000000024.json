@@ -1,0 +1,55 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "UserInfo": {
+      "Address": "0x2400000000000000000000000000000000000024",
+      "AddressId": 24,
+      "CosmicSignatureNumTransfers": 3,
+      "MaxBidAmount": 0.11,
+      "MaxWinAmount": 0.6,
+      "NumBids": 1,
+      "NumPrizes": 5,
+      "NumRaffleEthWinnings": 0,
+      "RaffleNFTsCount": 1,
+      "RewardNFTsCount": 2,
+      "StakingStatisticsRWalk": {
+        "NumActiveStakers": 0,
+        "TotalNumStakeActions": 1,
+        "TotalNumUnstakeActions": 0,
+        "TotalTokensMinted": 0,
+        "TotalTokensStaked": 1
+      },
+      "SumRaffleEthWinnings": 0,
+      "SumRaffleEthWithdrawal": 0,
+      "TotalCSTokensWon": 2,
+      "TotalDonatedAmountEth": 0.2,
+      "TotalDonatedCount": 1,
+      "UnclaimedNFTs": 0
+    },
+    "UserRaffleNFTWinnings": [
+      {
+        "CstAmount": "",
+        "CstAmountEth": 0,
+        "IsRWalk": false,
+        "IsStaker": false,
+        "RecordId": 0,
+        "RoundNum": 0,
+        "TokenId": 2,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5025,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2400000000000000000000000000000000000024",
+        "WinnerAid": 24,
+        "WinnerIndex": 0
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

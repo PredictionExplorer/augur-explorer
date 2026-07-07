@@ -1,0 +1,56 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "FinTs": 1767230000,
+    "FrequencyHistory": [
+      {
+        "BucketTs": 1767225600,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767226200,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767226800,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767227400,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767228000,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767228600,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767229200,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      },
+      {
+        "BucketTs": 1767229800,
+        "NumBids": 0,
+        "UniqueBidders": 0
+      }
+    ],
+    "InitTs": 1767225600,
+    "Interval": 600,
+    "RecentSpikeIndex": -1,
+    "RecentWindowSecs": 2592000,
+    "Spikes": [],
+    "error": "",
+    "status": 1
+  }
+}

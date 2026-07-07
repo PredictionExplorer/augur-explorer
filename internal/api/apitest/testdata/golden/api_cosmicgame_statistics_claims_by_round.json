@@ -1,0 +1,92 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ClaimsByRound": [
+      {
+        "AvgClaimPeriodSecs": 0,
+        "AwardedTs": 1767228100,
+        "ClaimWindowTimeout": 1768091100,
+        "Erc20Awarded": 0,
+        "Erc20Unclaimed": 0,
+        "EthAwarded": 0,
+        "EthUnclaimed": 0,
+        "EthUnclaimedEth": 0,
+        "Expired": true,
+        "NftAwarded": 1,
+        "NftUnclaimed": 1,
+        "RoundNum": 2,
+        "TotalAwarded": 1,
+        "TotalUnclaimed": 1,
+        "UnclaimedItems": [
+          {
+            "AmountEth": 0,
+            "AssetType": "ERC721",
+            "RecipientAddr": "0x2500000000000000000000000000000000000025",
+            "TokenAddr": "0x2700000000000000000000000000000000000027",
+            "TokenId": 888
+          }
+        ]
+      },
+      {
+        "AvgClaimPeriodSecs": 0,
+        "AwardedTs": 1767227600,
+        "ClaimWindowTimeout": 1768090600,
+        "Erc20Awarded": 0,
+        "Erc20Unclaimed": 0,
+        "EthAwarded": 1,
+        "EthUnclaimed": 1,
+        "EthUnclaimedEth": 0.06,
+        "Expired": true,
+        "NftAwarded": 0,
+        "NftUnclaimed": 0,
+        "RoundNum": 1,
+        "TotalAwarded": 1,
+        "TotalUnclaimed": 1,
+        "UnclaimedItems": [
+          {
+            "AmountEth": 0.06,
+            "AssetType": "ETH",
+            "RecipientAddr": "0x2100000000000000000000000000000000000021",
+            "TokenAddr": "",
+            "TokenId": -1
+          }
+        ]
+      },
+      {
+        "AvgClaimPeriodSecs": 167,
+        "AwardedTs": 1767226600,
+        "ClaimWindowTimeout": 1768089600,
+        "Erc20Awarded": 1,
+        "Erc20Unclaimed": 0,
+        "EthAwarded": 3,
+        "EthUnclaimed": 2,
+        "EthUnclaimedEth": 0.13,
+        "Expired": true,
+        "NftAwarded": 1,
+        "NftUnclaimed": 0,
+        "RoundNum": 0,
+        "TotalAwarded": 5,
+        "TotalUnclaimed": 2,
+        "UnclaimedItems": [
+          {
+            "AmountEth": 0.05,
+            "AssetType": "ETH",
+            "RecipientAddr": "0x2300000000000000000000000000000000000023",
+            "TokenAddr": "",
+            "TokenId": -1
+          },
+          {
+            "AmountEth": 0.08,
+            "AssetType": "ETH",
+            "RecipientAddr": "0x2100000000000000000000000000000000000021",
+            "TokenAddr": "",
+            "TokenId": -1
+          }
+        ]
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

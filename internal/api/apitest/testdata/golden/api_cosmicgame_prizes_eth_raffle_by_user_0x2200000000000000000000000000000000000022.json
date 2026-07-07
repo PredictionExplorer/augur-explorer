@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "RaffleDeposits": [
+      {
+        "Amount": 0.05,
+        "ClaimDateTime": "",
+        "ClaimTimeStamp": 0,
+        "Claimed": true,
+        "RecordId": 1,
+        "RecordType": 10,
+        "RoundNum": 0,
+        "Tx": {
+          "BlockNum": 110,
+          "DateTime": "2026-01-01T00:16:40Z",
+          "EvtLogId": 5022,
+          "TimeStamp": 1767226600,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+          "TxId": 1011
+        },
+        "WinnerAddr": "0x2200000000000000000000000000000000000022",
+        "WinnerAid": 22,
+        "WinnerIndex": 0
+      }
+    ],
+    "UserAddr": "0x2200000000000000000000000000000000000022",
+    "UserAid": 22,
+    "error": "",
+    "status": 1
+  }
+}

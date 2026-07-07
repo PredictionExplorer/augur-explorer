@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "ERC20ClaimsByWinner": [
+      {
+        "Amount": "500000000000000000000",
+        "AmountEth": 500,
+        "DonorAddr": "0x2100000000000000000000000000000000000021",
+        "Index": 0,
+        "RecordId": 1,
+        "RoundNum": 0,
+        "TokenAddr": "0x2600000000000000000000000000000000000026",
+        "TokenAid": 26,
+        "Tx": {
+          "BlockNum": 112,
+          "DateTime": "2026-01-01T00:20:00Z",
+          "EvtLogId": 5046,
+          "TimeStamp": 1767226800,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001013",
+          "TxId": 1013
+        },
+        "WinnerAddr": "0x2100000000000000000000000000000000000021",
+        "WinnerAid": 21
+      }
+    ],
+    "UserAddr": "0x2100000000000000000000000000000000000021",
+    "UserAid": 21,
+    "error": "",
+    "status": 1
+  }
+}

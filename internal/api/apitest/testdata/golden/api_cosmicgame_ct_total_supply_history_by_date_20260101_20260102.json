@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "DateFrom": "20260101",
+    "DateTo": "20260102",
+    "TotalSupplyHistory": [
+      {
+        "Amount": "790000000000000000000",
+        "AmountEth": 790,
+        "BurnAmount": "410000000000000000000",
+        "BurnAmountEth": 410,
+        "Date": "20260101",
+        "DateTime": "2026-01-01",
+        "MintAmount": "1200000000000000000000",
+        "MintAmountEth": 1200,
+        "NumBids": 12,
+        "TimeStamp": 1767225600,
+        "TotalSupply": "790000000000000000000",
+        "TotalSupplyEth": 790
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}
