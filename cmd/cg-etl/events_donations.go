@@ -3,6 +3,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"os"
 	"fmt"
 	"math/big"
@@ -15,7 +17,35 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
+
+// bidIDByEvtlogOrExit adapts Repo.BidIDByEvtlog to the legacy handler
+// contract: -1 when the event has no bid, crash on real DB errors (event
+// handlers become error-returning in Phase 3; until then a DB failure here
+// aborts the batch exactly like the old os.Exit layer did).
+func bidIDByEvtlogOrExit(evtlogID int64) int64 {
+	id, err := cgRepo.BidIDByEvtlog(context.Background(), evtlogID)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return -1
+		}
+		Error.Printf("BidIDByEvtlog(%v): %v", evtlogID, err)
+		os.Exit(1)
+	}
+	return id
+}
+
+// bidRowIDByEvtlogOrExit is the same adapter for Repo.BidRowIDByEvtlogID
+// (0 = event carries no bid, e.g. a pure Donate() call).
+func bidRowIDByEvtlogOrExit(evtlogID int64) int64 {
+	id, err := cgRepo.BidRowIDByEvtlogID(context.Background(), evtlogID)
+	if err != nil {
+		Error.Printf("BidRowIDByEvtlogID(%v): %v", evtlogID, err)
+		os.Exit(1)
+	}
+	return id
+}
 func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGDonationEvent
@@ -225,9 +255,9 @@ func proc_erc20_donated_event(log *types.Log,elog *EthereumEventLog) {
 	evt.DonorAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
-	evt.BidId = storagew.Get_bid_id_by_evtlog(evt.EvtId-1)
-	if evt.BidId == -1 {	// if BidId = -1 , it could be that EvtId - 1 falls on Approval event, so Bid event will be EvtId - 2
-		evt.BidId = storagew.Get_bid_id_by_evtlog(evt.EvtId-2)
+	evt.BidId = bidIDByEvtlogOrExit(evt.EvtId - 1)
+	if evt.BidId == -1 { // if BidId = -1 , it could be that EvtId - 1 falls on Approval event, so Bid event will be EvtId - 2
+		evt.BidId = bidIDByEvtlogOrExit(evt.EvtId - 2)
 	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -269,7 +299,7 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenAddr = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.TokenId = eth_evt.NftId.Int64()
-	evt.BidId = storagew.Get_cosmic_game_bid_by_evtlog_id(evt.EvtId-1)
+	evt.BidId = bidRowIDByEvtlogOrExit(evt.EvtId - 1)
 	evt.NFTTokenURI = get_token_uri(evt.TokenId,common.HexToAddress(evt.TokenAddr))
 	evt.Index = eth_evt.Index.Int64()
 

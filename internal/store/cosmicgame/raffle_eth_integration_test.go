@@ -7,25 +7,43 @@ import (
 	"testing"
 )
 
-func TestGetUnclaimedPrizeEthDeposits(t *testing.T) {
-	sw := wrapper(t)
+func TestUnclaimedPrizeEthDeposits(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	// carol never withdrew her round-0 raffle deposit.
 	golden(t, "unclaimed_prize_eth_deposits_carol", func() any {
-		return sw.Get_unclaimed_prize_eth_deposits(aidCarol, 0, 100)
+		recs, err := r.UnclaimedPrizeEthDeposits(ctx, aidCarol, 0, 100)
+		if err != nil {
+			t.Fatalf("UnclaimedPrizeEthDeposits(carol): %v", err)
+		}
+		return recs
 	})
 	// bob withdrew his round-0 deposit; anything left is pinned as-is.
 	golden(t, "unclaimed_prize_eth_deposits_bob", func() any {
-		return sw.Get_unclaimed_prize_eth_deposits(aidBob, 0, 100)
+		recs, err := r.UnclaimedPrizeEthDeposits(ctx, aidBob, 0, 100)
+		if err != nil {
+			t.Fatalf("UnclaimedPrizeEthDeposits(bob): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetPrizeEthDepositsList(t *testing.T) {
-	sw := wrapper(t)
+func TestPrizeEthDeposits(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "prize_eth_deposits_list", func() any {
-		return sw.Get_prize_eth_deposits_list(0, 100)
+		recs, err := r.PrizeEthDeposits(ctx, 0, 100)
+		if err != nil {
+			t.Fatalf("PrizeEthDeposits: %v", err)
+		}
+		return recs
 	})
 	golden(t, "prize_eth_deposits_list_paged", func() any {
-		return sw.Get_prize_eth_deposits_list(2, 2)
+		recs, err := r.PrizeEthDeposits(ctx, 2, 2)
+		if err != nil {
+			t.Fatalf("PrizeEthDeposits(paged): %v", err)
+		}
+		return recs
 	})
 }
 
@@ -48,40 +66,65 @@ func TestPrizeDepositsByRound(t *testing.T) {
 	}
 }
 
-func TestGetRaffleEthDepositsList(t *testing.T) {
-	sw := wrapper(t)
+func TestRaffleEthDeposits(t *testing.T) {
+	r := repo(t)
 	golden(t, "raffle_eth_deposits_list", func() any {
-		return sw.Get_raffle_eth_deposits_list(0, 100)
+		recs, err := r.RaffleEthDeposits(context.Background(), 0, 100)
+		if err != nil {
+			t.Fatalf("RaffleEthDeposits: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetChronowarriorEthDepositsList(t *testing.T) {
-	sw := wrapper(t)
+func TestChronoWarriorEthDeposits(t *testing.T) {
+	r := repo(t)
 	golden(t, "chronowarrior_eth_deposits_list", func() any {
-		return sw.Get_chronowarrior_eth_deposits_list(0, 100)
+		recs, err := r.ChronoWarriorEthDeposits(context.Background(), 0, 100)
+		if err != nil {
+			t.Fatalf("ChronoWarriorEthDeposits: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetAllEthDepositsByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestEthDepositsByUser(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "all_eth_deposits_by_user_alice", func() any {
-		return sw.Get_all_eth_deposits_by_user(aidAlice)
+		recs, err := r.EthDepositsByUser(ctx, aidAlice)
+		if err != nil {
+			t.Fatalf("EthDepositsByUser(alice): %v", err)
+		}
+		return recs
 	})
 	golden(t, "all_eth_deposits_by_user_bob", func() any {
-		return sw.Get_all_eth_deposits_by_user(aidBob)
+		recs, err := r.EthDepositsByUser(ctx, aidBob)
+		if err != nil {
+			t.Fatalf("EthDepositsByUser(bob): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetRaffleEthDepositsByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestRaffleEthDepositsByUser(t *testing.T) {
+	r := repo(t)
 	golden(t, "raffle_eth_deposits_by_user_carol", func() any {
-		return sw.Get_raffle_eth_deposits_by_user(aidCarol)
+		recs, err := r.RaffleEthDepositsByUser(context.Background(), aidCarol)
+		if err != nil {
+			t.Fatalf("RaffleEthDepositsByUser(carol): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetChronowarriorEthDepositsByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestChronoWarriorEthDepositsByUser(t *testing.T) {
+	r := repo(t)
 	golden(t, "chronowarrior_eth_deposits_by_user_alice", func() any {
-		return sw.Get_chronowarrior_eth_deposits_by_user(aidAlice)
+		recs, err := r.ChronoWarriorEthDepositsByUser(context.Background(), aidAlice)
+		if err != nil {
+			t.Fatalf("ChronoWarriorEthDepositsByUser(alice): %v", err)
+		}
+		return recs
 	})
 }

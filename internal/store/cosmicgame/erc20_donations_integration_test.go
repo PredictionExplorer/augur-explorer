@@ -2,77 +2,121 @@
 
 package cosmicgame
 
-import "testing"
+import (
+	"context"
+	"errors"
+	"testing"
 
-func TestGetERC20DonationsByRoundDetailed(t *testing.T) {
-	sw := wrapper(t)
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+)
+
+func TestERC20DonationsByRoundDetailed(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donations_by_round_detailed_0", func() any {
-		return sw.Get_erc20_donations_by_round_detailed(0)
+		recs, err := r.ERC20DonationsByRoundDetailed(context.Background(), 0)
+		if err != nil {
+			t.Fatalf("ERC20DonationsByRoundDetailed(0): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetERC20DonationsByRoundAll(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationsByRoundAll(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donations_by_round_all_0", func() any {
-		return sw.Get_erc20_donations_by_round_all(0)
+		recs, err := r.ERC20DonationsByRoundAll(context.Background(), 0)
+		if err != nil {
+			t.Fatalf("ERC20DonationsByRoundAll(0): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetERC20DonationsByRoundSummarized(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationsByRoundSummarized(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donations_by_round_summarized_0", func() any {
-		return sw.Get_erc20_donations_by_round_summarized(0)
+		recs, err := r.ERC20DonationsByRoundSummarized(context.Background(), 0)
+		if err != nil {
+			t.Fatalf("ERC20DonationsByRoundSummarized(0): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetERC20DonationsGlobal(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20Donations(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donations_global", func() any {
-		return sw.Get_erc20_donations_global(0, 100)
+		recs, err := r.ERC20Donations(context.Background(), 0, 100)
+		if err != nil {
+			t.Fatalf("ERC20Donations: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetERC20DonationInfo(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationInfo(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "erc20_donation_info_1", func() any {
-		found, rec := sw.Get_erc20_donation_info(1)
-		if !found {
-			t.Fatal("expected ERC20 donation record 1 to exist")
+		rec, err := r.ERC20DonationInfo(ctx, 1)
+		if err != nil {
+			t.Fatalf("ERC20DonationInfo(1): %v", err)
 		}
 		return rec
 	})
-	if found, _ := sw.Get_erc20_donation_info(999_999); found {
-		t.Error("expected ERC20 donation record 999999 to be missing")
+	if _, err := r.ERC20DonationInfo(ctx, 999_999); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("ERC20DonationInfo(999999) = %v, want ErrNotFound", err)
 	}
 }
 
-func TestGetERC20DonationsByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationsByUser(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "erc20_donations_by_user_alice", func() any {
-		return sw.Get_erc20_donations_by_user(aidAlice)
+		recs, err := r.ERC20DonationsByUser(ctx, aidAlice)
+		if err != nil {
+			t.Fatalf("ERC20DonationsByUser(alice): %v", err)
+		}
+		return recs
 	})
-	if got := sw.Get_erc20_donations_by_user(aidZero); len(got) != 0 {
+	got, err := r.ERC20DonationsByUser(ctx, aidZero)
+	if err != nil {
+		t.Fatalf("ERC20DonationsByUser(zero): %v", err)
+	}
+	if len(got) != 0 {
 		t.Errorf("expected no ERC20 donations from the zero address, got %d", len(got))
 	}
 }
 
-func TestGetERC20DonatedTokenClaimsGlobal(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationClaims(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donated_token_claims_global", func() any {
-		return sw.Get_erc20_donated_token_claims_global(0, 100)
+		recs, err := r.ERC20DonationClaims(context.Background(), 0, 100)
+		if err != nil {
+			t.Fatalf("ERC20DonationClaims: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetERC20DonatedTokenClaimsByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationClaimsByUser(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donated_token_claims_by_user_alice", func() any {
-		return sw.Get_erc20_donated_token_claims_by_user(aidAlice)
+		recs, err := r.ERC20DonationClaimsByUser(context.Background(), aidAlice)
+		if err != nil {
+			t.Fatalf("ERC20DonationClaimsByUser(alice): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetERC20DonatedTokenClaimsByRound(t *testing.T) {
-	sw := wrapper(t)
+func TestERC20DonationClaimsByRound(t *testing.T) {
+	r := repo(t)
 	golden(t, "erc20_donated_token_claims_by_round_0", func() any {
-		return sw.Get_erc20_donated_token_claims_by_round(0)
+		recs, err := r.ERC20DonationClaimsByRound(context.Background(), 0)
+		if err != nil {
+			t.Fatalf("ERC20DonationClaimsByRound(0): %v", err)
+		}
+		return recs
 	})
 }

@@ -1,6 +1,7 @@
 package cosmicgame
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // TokenMetadataHandler is the exported entry point for the bare ERC-721
@@ -38,9 +40,13 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 		common.RespondErrorJSON(c, "invalid token_id")
 		return
 	}
-	ok, tokenInfo := arb_storagew.Get_cosmic_signature_token_info(tokenID)
-	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "record not found"})
+	tokenInfo, err := arbRepo.CosmicSignatureTokenInfo(c.Request.Context(), tokenID)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "record not found"})
+			return
+		}
+		respondStoreError(c, err)
 		return
 	}
 	seedHex := strings.TrimSpace(tokenInfo.Seed)

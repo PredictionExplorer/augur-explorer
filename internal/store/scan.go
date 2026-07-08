@@ -27,3 +27,19 @@ func (s timeTextScanner) Scan(src any) error {
 	*s.dst = t.Format(time.RFC3339Nano)
 	return nil
 }
+
+// NullTimeText is TimeText for nullable timestamp columns: SQL NULL leaves
+// dst unchanged (matching the legacy pattern of scanning into an
+// sql.NullString and assigning only when Valid).
+func NullTimeText(dst *string) sql.Scanner {
+	return nullTimeTextScanner{dst: dst}
+}
+
+type nullTimeTextScanner struct{ dst *string }
+
+func (s nullTimeTextScanner) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+	return timeTextScanner(s).Scan(src)
+}

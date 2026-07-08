@@ -76,9 +76,94 @@ func allocChainSyncEvtlog(sw *cgdb.SQLStorageWrapper, contractAddr string, clien
 	}, nil
 }
 
+// paramSyncer applies check-then-correct sync policy on top of the Repo
+// primitives: it compares the latest stored admin value with the chain value
+// and inserts a correction row only on mismatch. The contract-address
+// resolution stays lazy (only on an actual insert) so a clean sync run
+// leaves the address table untouched, exactly like the legacy layer.
+type paramSyncer struct {
+	ctx  context.Context
+	repo *cgdb.Repo
+	sw   *cgdb.SQLStorageWrapper
+	meta *cgdb.AdminCorrectionMeta
+}
+
+func (s *paramSyncer) contractAid(contractAddr string) (int64, error) {
+	if contractAddr == "" {
+		return 0, nil // Repo substitutes meta.ContractAid
+	}
+	aid, err := s.sw.S.Lookup_or_create_address(contractAddr, s.meta.BlockNum, s.meta.TxId)
+	if err != nil {
+		return 0, fmt.Errorf("correction contract address %v: %w", contractAddr, err)
+	}
+	return aid, nil
+}
+
+// syncDecimal aligns one admin/history column with wantValue, attributing
+// the correction row to contractAddr when non-empty.
+func (s *paramSyncer) syncDecimal(name, table, column, wantValue, contractAddr string) (bool, error) {
+	dbValue, hasRow, err := s.repo.LatestDecimalParam(s.ctx, table, column)
+	if err != nil {
+		return false, err
+	}
+	if hasRow && cgdb.DecimalStringsEqual(dbValue, wantValue) {
+		return false, nil
+	}
+	aid, err := s.contractAid(contractAddr)
+	if err != nil {
+		return false, err
+	}
+	if err := s.repo.InsertAdminCorrectionDecimal(s.ctx, table, column, wantValue, s.meta, aid); err != nil {
+		return false, fmt.Errorf("%s: %w", name, err)
+	}
+	return true, nil
+}
+
+// syncInt64 is syncDecimal for integer admin params stored as DECIMAL/BIGINT columns.
+func (s *paramSyncer) syncInt64(name, table, column string, wantValue int64, contractAddr string) (bool, error) {
+	dbStr, hasRow, err := s.repo.LatestDecimalParam(s.ctx, table, column)
+	if err != nil {
+		return false, err
+	}
+	if hasRow {
+		dbInt, ok := new(big.Int).SetString(dbStr, 10)
+		if ok && dbInt.Int64() == wantValue {
+			return false, nil
+		}
+	}
+	aid, err := s.contractAid(contractAddr)
+	if err != nil {
+		return false, err
+	}
+	valStr := fmt.Sprintf("%d", wantValue)
+	if err := s.repo.InsertAdminCorrectionDecimal(s.ctx, table, column, valStr, s.meta, aid); err != nil {
+		return false, fmt.Errorf("%s: %w", name, err)
+	}
+	return true, nil
+}
+
+// syncCstReward aligns cg_adm_erc20_reward and cg_glob_stats with wantValue.
+func (s *paramSyncer) syncCstReward(wantValue string) (bool, error) {
+	globReward, err := s.repo.GlobStatsCstRewardForBidding(s.ctx)
+	if err != nil {
+		return false, err
+	}
+	dbLatest, hasRow, err := s.repo.LatestDecimalParam(s.ctx, "cg_adm_erc20_reward", "new_reward")
+	if err != nil {
+		return false, err
+	}
+	if hasRow && cgdb.DecimalStringsEqual(dbLatest, wantValue) && cgdb.DecimalStringsEqual(globReward, wantValue) {
+		return false, nil
+	}
+	if err := s.repo.InsertAdminCorrectionERC20Reward(s.ctx, wantValue, s.meta); err != nil {
+		return false, fmt.Errorf("cst_reward_for_bidding: %w", err)
+	}
+	return true, nil
+}
+
 // syncContractParamsFromChain reads live monetary/timed settings from RPC and inserts SQL
 // correction rows when the latest admin/history value differs from chain.
-func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
+func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, sw *cgdb.SQLStorageWrapper, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
 	if client == nil {
 		return fmt.Errorf("eth client is nil")
 	}
@@ -96,6 +181,7 @@ func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.C
 	if err != nil {
 		return fmt.Errorf("alloc chain sync evtlog: %w", err)
 	}
+	syncer := &paramSyncer{ctx: ctx, repo: repo, sw: sw, meta: meta}
 
 	var updated int
 	for _, p := range buildContractParamSyncList(mechanics) {
@@ -106,11 +192,9 @@ func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.C
 		}
 		var changed bool
 		if p.name == "cst_reward_for_bidding" {
-			changed, err = sw.SyncCstRewardIfMismatch(chainValue, meta)
-		} else if p.contractAddr != "" {
-			changed, err = sw.SyncAdminDecimalParamIfMismatchForContract(p.name, p.table, p.column, chainValue, p.contractAddr, meta)
+			changed, err = syncer.syncCstReward(chainValue)
 		} else {
-			changed, err = sw.SyncAdminDecimalParamIfMismatch(p.name, p.table, p.column, chainValue, meta)
+			changed, err = syncer.syncDecimal(p.name, p.table, p.column, chainValue, p.contractAddr)
 		}
 		if err != nil {
 			return err
@@ -122,7 +206,7 @@ func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.C
 	}
 
 	if delay, err := readDelayDuration(v1, v2, &copts); err == nil {
-		changed, err := sw.SyncAdminInt64ParamIfMismatch("delay_before_round_activation", "cg_delay_duration", "new_value", delay, meta)
+		changed, err := syncer.syncInt64("delay_before_round_activation", "cg_delay_duration", "new_value", delay, "")
 		if err != nil {
 			return err
 		}
@@ -141,9 +225,9 @@ func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.C
 		} else if val, err := pw.TimeoutDurationToWithdrawPrizes(&copts); err != nil {
 			errLog.Printf("chain sync: skip timeout_withdraw_prizes: %v", err)
 		} else {
-			changed, err := sw.SyncAdminInt64ParamIfMismatchForContract(
+			changed, err := syncer.syncInt64(
 				"timeout_withdraw_prizes", "cg_adm_timeout_withdraw", "new_timeout",
-				val.Int64(), meta, prizesWalletAddr,
+				val.Int64(), prizesWalletAddr,
 			)
 			if err != nil {
 				return err
@@ -157,7 +241,7 @@ func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.C
 
 	if cstAucChangeDiv := readCSTAuctionDurationChangeDivisor(v2, &copts, mechanics); cstAucChangeDiv >= 0 {
 		valStr := fmt.Sprintf("%d", cstAucChangeDiv)
-		changed, err := sw.SyncAdminDecimalParamIfMismatch("cst_dutch_auction_duration_change_divisor", "cg_adm_cst_auclen_chg_div", "new_len", valStr, meta)
+		changed, err := syncer.syncDecimal("cst_dutch_auction_duration_change_divisor", "cg_adm_cst_auclen_chg_div", "new_len", valStr, "")
 		if err != nil {
 			return err
 		}
