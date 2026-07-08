@@ -107,8 +107,8 @@ func LoadFromEnv() (*Config, error) {
 		}
 	}
 	
-	// Load Event Table databases (DB_L1EVT1 and DB_L1EVT2)
-	for i := 1; i <= 2; i++ {
+	// Load Event Table databases (DB_L1EVT1 .. DB_L1EVT6)
+	for i := 1; i <= 6; i++ {
 		name := os.Getenv(fmt.Sprintf("DB_L1EVT%d_NAME", i))
 		host := os.Getenv(fmt.Sprintf("DB_L1EVT%d_HOST", i))
 		dbname := os.Getenv(fmt.Sprintf("DB_L1EVT%d_DBNAME", i))
