@@ -691,9 +691,14 @@ func do_reload_contract_variables() {
 	}
 }
 func do_reload_database_variables() {
-	bw_stats = arb_storagew.Get_cosmic_game_statistics()
 	// Background refresh (no request context): a failed read keeps the
 	// previous value instead of tearing anything down.
+	stats, err := arbRepo.CosmicGameStatistics(context.Background())
+	if err != nil {
+		Error.Printf("state refresh: cosmic game statistics: %v", err)
+		return
+	}
+	bw_stats = stats
 	ts, err := arbRepo.RoundStartTimestamp(context.Background(), bw_stats.TotalPrizes)
 	if err != nil {
 		Error.Printf("state refresh: round start timestamp: %v", err)

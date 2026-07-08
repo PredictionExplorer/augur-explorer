@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 )
 
 // TestErrorPathsConvertedFiles extends TestErrorPaths to the files converted
@@ -60,6 +62,34 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			_, err := r.EthDonations(cancelled)
 			return err
 		},
+		"ResolveAdminEventValues (admin_events_resolve.go)": func() error {
+			events := []p.CGAdminEvent{{RecordType: 18, EvtLogId: 6000, IntegerValue: 10100}}
+			return r.ResolveAdminEventValues(cancelled, events)
+		},
+		"StakeActionCstInfo (staking.go)": func() error {
+			_, err := r.StakeActionCstInfo(cancelled, 1)
+			return err
+		},
+		"GlobalStakingRwalkHistory (staking.go)": func() error {
+			_, err := r.GlobalStakingRwalkHistory(cancelled, 0, 10)
+			return err
+		},
+		"UserInfo (user-specific.go)": func() error {
+			_, err := r.UserInfo(cancelled, aidAlice)
+			return err
+		},
+		"UserNotifRedBoxRewards (user-specific.go)": func() error {
+			_, err := r.UserNotifRedBoxRewards(cancelled, aidAlice)
+			return err
+		},
+		"CosmicGameStatistics (statistics.go)": func() error {
+			_, err := r.CosmicGameStatistics(cancelled)
+			return err
+		},
+		"ClaimsByRound (statistics.go)": func() error {
+			_, err := r.ClaimsByRound(cancelled)
+			return err
+		},
 	}
 	for name, call := range cancelledCalls {
 		if err := call(); !errors.Is(err, context.Canceled) {
@@ -78,6 +108,22 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 	closedPoolCalls := map[string]func() error{
 		"Bids": func() error {
 			_, err := spareRepo.Bids(ctx, 0, 1)
+			return err
+		},
+		"CosmicGameRoundStatistics": func() error {
+			_, err := spareRepo.CosmicGameRoundStatistics(ctx, 0)
+			return err
+		},
+		"StakingCstUserDepositRewards": func() error {
+			_, err := spareRepo.StakingCstUserDepositRewards(ctx, aidAlice)
+			return err
+		},
+		"PrizeClaimsByUser": func() error {
+			_, err := spareRepo.PrizeClaimsByUser(ctx, aidAlice)
+			return err
+		},
+		"ClaimDetailByRound": func() error {
+			_, err := spareRepo.ClaimDetailByRound(ctx, 0)
 			return err
 		},
 		"CharityDonations": func() error {

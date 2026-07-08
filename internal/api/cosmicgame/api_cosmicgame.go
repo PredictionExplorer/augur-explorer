@@ -206,7 +206,11 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num)
+	cur_round_stats, err := arbRepo.CosmicGameRoundStatistics(c.Request.Context(), round_num)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	// Live contract: delay before round activation (always); activation time when DB has none
 	if EthClient != nil {
 		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
@@ -656,13 +660,25 @@ func api_cosmic_game_user_info(c *gin.Context) {
 		return
 	}
 
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		respondUserAddrNotIndexedUserInfoJSON(c, p_user_addr)
 		return
 	}
-	bids := arb_storagew.Get_bids_by_user(user_aid)
-	main_prize_claims := arb_storagew.Get_prize_claims_by_user(user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	bids, err := arbRepo.BidsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	main_prize_claims, err := arbRepo.PrizeClaimsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	prize_history, err := arbRepo.PrizeHistoryByUser(c.Request.Context(), user_aid, 0, 1000)
 	if err != nil {
 		respondStoreError(c, err)
@@ -699,24 +715,64 @@ func api_cosmic_game_user_info(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	unclaimed_nfts := arb_storagew.Get_unclaimed_donated_nft_by_user(user_aid)
+	unclaimed_nfts, err := arbRepo.UnclaimedDonatedNFTsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	// Get claimed donated assets
-	claimed_nfts := arb_storagew.Get_donated_nft_claims_by_user(user_aid)
-	claimed_tokens := arb_storagew.Get_erc20_donated_prizes_erc20_by_winner(user_aid)
+	claimed_nfts, err := arbRepo.DonatedNFTClaimsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	claimed_tokens, err := arbRepo.ERC20DonatedPrizesByWinner(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	// Get staking data
-	staked_cst := arb_storagew.Get_staked_tokens_cst_by_user(user_aid)
-	staked_rwalk := arb_storagew.Get_staked_tokens_rwalk_by_user(user_aid)
-	stake_actions_cst := arb_storagew.Get_staking_actions_cst_by_user(user_aid, 0, 1000)
-	stake_actions_rwalk := arb_storagew.Get_staking_actions_rwalk_by_user(user_aid, 0, 1000)
+	staked_cst, err := arbRepo.StakedTokensCstByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	staked_rwalk, err := arbRepo.StakedTokensRwalkByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	stake_actions_cst, err := arbRepo.StakingActionsCstByUser(c.Request.Context(), user_aid, 0, 1000)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	stake_actions_rwalk, err := arbRepo.StakingActionsRwalkByUser(c.Request.Context(), user_aid, 0, 1000)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	// Get token transfer history
-	erc20_transfers := arb_storagew.Get_cosmic_token_transfers_by_user(user_aid, 0, 1000)
-	erc721_transfers := arb_storagew.Get_cosmic_signature_transfers_by_user(user_aid, 0, 1000)
+	erc20_transfers, err := arbRepo.CosmicTokenTransfersByUser(c.Request.Context(), user_aid, 0, 1000)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	erc721_transfers, err := arbRepo.CosmicSignatureTransfersByUser(c.Request.Context(), user_aid, 0, 1000)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	// Get owned Cosmic Signature NFTs (where user is current owner)
-	owned_cst_nfts := arb_storagew.Get_cosmic_signature_nft_list_by_user(user_aid, 0, 1000)
+	owned_cst_nfts, err := arbRepo.CosmicSignatureTokensByUser(c.Request.Context(), user_aid, 0, 1000)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -869,7 +925,11 @@ func api_cosmic_game_user_unique_bidders(c *gin.Context) {
 		return
 	}
 
-	unique_bidders := arb_storagew.Get_unique_bidders()
+	unique_bidders, err := arbRepo.UniqueBidders(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -887,7 +947,11 @@ func api_cosmic_game_user_unique_winners(c *gin.Context) {
 		return
 	}
 
-	unique_winners := arb_storagew.Get_unique_winners()
+	unique_winners, err := arbRepo.UniqueWinners(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -919,7 +983,11 @@ func api_cosmic_game_roi_leaderboard(c *gin.Context) {
 		limit = 100
 	}
 
-	leaderboard := arb_storagew.Get_roi_leaderboard(min_bids, sort_by, offset, limit)
+	leaderboard, err := arbRepo.RoiLeaderboard(c.Request.Context(), min_bids, sort_by, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":         1,
@@ -939,7 +1007,11 @@ func api_cosmic_game_claims_by_round(c *gin.Context) {
 		return
 	}
 
-	claims := arb_storagew.Get_claims_by_round()
+	claims, err := arbRepo.ClaimsByRound(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":        1,
@@ -961,7 +1033,11 @@ func api_cosmic_game_claim_detail_by_round(c *gin.Context) {
 		return
 	}
 
-	detail := arb_storagew.Get_claim_detail_by_round(int64(round))
+	detail, err := arbRepo.ClaimDetailByRound(c.Request.Context(), int64(round))
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":            1,
@@ -979,7 +1055,11 @@ func api_cosmic_game_user_unique_donors(c *gin.Context) {
 		return
 	}
 
-	unique_donors := arb_storagew.Get_unique_donors()
+	unique_donors, err := arbRepo.UniqueDonors(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -1030,7 +1110,11 @@ func api_cosmic_game_nft_donation_stats(c *gin.Context) {
 		return
 	}
 
-	nft_donation_stats := arb_storagew.Get_NFT_donation_stats()
+	nft_donation_stats, err := arbRepo.NFTDonationStats(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -1085,7 +1169,11 @@ func api_cosmic_game_record_counters(c *gin.Context) {
 		return
 	}
 
-	record_counters := arb_storagew.Get_record_counters()
+	record_counters, err := arbRepo.RecordCounters(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -1531,13 +1619,21 @@ func api_cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
 		return
 	}
 
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
-	winnings := arb_storagew.Get_raffle_nft_winnings_by_user(user_aid)
+	winnings, err := arbRepo.RaffleNFTWinningsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -1566,13 +1662,21 @@ func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
-	deposits := arb_storagew.Get_prize_deposits_raffle_eth_by_user(user_aid)
+	deposits, err := arbRepo.PrizeDepositsRaffleEthByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -1600,13 +1704,21 @@ func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
-	deposits := arb_storagew.Get_prize_deposits_chrono_warrior_by_user(user_aid)
+	deposits, err := arbRepo.PrizeDepositsChronoWarriorByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -1821,15 +1933,23 @@ func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 		})
 		return
 	}
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
 			"UserInfo": p.CGUserInfo{Address: p_user_addr},
 		})
 		return
 	}
-	claims := arb_storagew.Get_donated_nft_claims_by_user(user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
+	claims, err := arbRepo.DonatedNFTClaimsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -1971,7 +2091,11 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 		return
 	}
 
-	claim_info := arb_storagew.Get_user_notif_red_box_rewards(user_aid)
+	claim_info, err := arbRepo.UserNotifRedBoxRewards(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -2007,12 +2131,16 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 		})
 		return
 	}
-	found, _ := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
 			"UserPrizeHistory": []interface{}{},
 		})
+		return
+	}
+	if err != nil {
+		respondStoreError(c, err)
 		return
 	}
 
@@ -2078,16 +2206,24 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 		})
 		return
 	}
-	found, _ := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": user_aid,
 		})
 		return
 	}
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
-	nfts := arb_storagew.Get_unclaimed_donated_nft_by_user(user_aid)
+	nfts, err := arbRepo.UnclaimedDonatedNFTsByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -2158,12 +2294,16 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 		})
 		return
 	}
-	found, _ := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
 			"UnclaimedDeposits": []interface{}{},
 		})
+		return
+	}
+	if err != nil {
+		respondStoreError(c, err)
 		return
 	}
 
@@ -2208,8 +2348,8 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 		})
 		return
 	}
-	found, _ := arb_storagew.Get_user_info(user_aid)
-	if !found {
+	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	if errors.Is(err, store.ErrNotFound) {
 		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 		if !success {
 			return
@@ -2220,12 +2360,20 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 		})
 		return
 	}
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
 
-	user_tokens := arb_storagew.Get_cosmic_signature_nft_list_by_user(user_aid, offset, limit)
+	user_tokens, err := arbRepo.CosmicSignatureTokensByUser(c.Request.Context(), user_aid, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 
 	var req_status int = 1
 	var err_str string = ""
@@ -2656,7 +2804,11 @@ func api_cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
 	if !success {
 		return
 	}
-	transfers := arb_storagew.Get_cosmic_token_transfers_by_user(user_aid, offset, limit)
+	transfers, err := arbRepo.CosmicTokenTransfersByUser(c.Request.Context(), user_aid, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 
@@ -2691,7 +2843,11 @@ func api_cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
 	if !success {
 		return
 	}
-	transfers := arb_storagew.Get_cosmic_signature_transfers_by_user(user_aid, offset, limit)
+	transfers, err := arbRepo.CosmicSignatureTransfersByUser(c.Request.Context(), user_aid, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 
@@ -2780,7 +2936,11 @@ func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 	if !success {
 		return
 	}
-	rewards := arb_storagew.Get_marketing_reward_history_by_user(user_aid, offset, limit)
+	rewards, err := arbRepo.MarketingRewardHistoryByUser(c.Request.Context(), user_aid, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -3009,7 +3169,10 @@ func api_cosmic_game_admin_events_in_range(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	arb_storagew.Resolve_admin_event_values(event_list)
+	if err := arbRepo.ResolveAdminEventValues(c.Request.Context(), event_list); err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	enrichAdminEventsResolvedValues(event_list)
 
 	var req_status int = 1

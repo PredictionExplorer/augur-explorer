@@ -378,7 +378,11 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 		return
 	}
 
-	donated_prizes := arb_storagew.Get_erc20_donated_prizes_erc20_by_winner(user_aid)
+	donated_prizes, err := arbRepo.ERC20DonatedPrizesByWinner(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{

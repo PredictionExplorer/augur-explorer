@@ -13,14 +13,15 @@ import (
 // TestResolveAdminEventValuesFixture resolves the admin events actually
 // present in the fixture set (charity percentage, activation time) end to end.
 func TestResolveAdminEventValuesFixture(t *testing.T) {
-	sw := wrapper(t)
 	r := repo(t)
 	golden(t, "resolved_admin_events_fixture", func() any {
 		events, err := r.AdminEventsInRange(context.Background(), 0, math.MaxInt64)
 		if err != nil {
 			t.Fatalf("AdminEventsInRange: %v", err)
 		}
-		sw.Resolve_admin_event_values(events)
+		if err := r.ResolveAdminEventValues(context.Background(), events); err != nil {
+			t.Fatalf("ResolveAdminEventValues: %v", err)
+		}
 		return events
 	})
 }
@@ -31,7 +32,7 @@ func TestResolveAdminEventValuesFixture(t *testing.T) {
 // the cg_adm_prize_microsec / cg_adm_cst_auclen lookups exercise the
 // documented fallback shapes (those tables are empty in the fixture set).
 func TestResolveAdminEventValuesSQLPaths(t *testing.T) {
-	sw := wrapper(t)
+	r := repo(t)
 
 	mk := func(recordType, intValue int64) p.CGAdminEvent {
 		return p.CGAdminEvent{RecordType: recordType, EvtLogId: 6000, IntegerValue: intValue}
@@ -51,7 +52,9 @@ func TestResolveAdminEventValuesSQLPaths(t *testing.T) {
 		mk(37, 0),                                // guard: non-positive divisor
 		{RecordType: 18, EvtLogId: 1, IntegerValue: 10100}, // before any bids/params
 	}
-	sw.Resolve_admin_event_values(events)
+	if err := r.ResolveAdminEventValues(context.Background(), events); err != nil {
+		t.Fatalf("ResolveAdminEventValues: %v", err)
+	}
 
 	resolved := make([]string, len(events))
 	for i := range events {
@@ -63,7 +66,9 @@ func TestResolveAdminEventValuesSQLPaths(t *testing.T) {
 		for i := range again {
 			again[i].ResolvedValue = ""
 		}
-		sw.Resolve_admin_event_values(again)
+		if err := r.ResolveAdminEventValues(context.Background(), again); err != nil {
+			t.Fatalf("ResolveAdminEventValues (again): %v", err)
+		}
 		out := make([]map[string]any, len(again))
 		for i, ev := range again {
 			out[i] = map[string]any{
