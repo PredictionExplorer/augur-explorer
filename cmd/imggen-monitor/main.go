@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -100,15 +99,13 @@ func (c *artifactClient) waitUntilPresent(tokenID int64) error {
 }
 
 func scanAll(client *artifactClient, regenerate bool) error {
-	info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	ctx := context.Background()
+	st, err := store.New(ctx, store.ConfigFromEnv())
 	if err != nil {
 		return fmt.Errorf("failed to connect to storage: %w", err)
 	}
 	defer st.Close()
-	var storagew cgstore.SQLStorageWrapper
-	storagew.S = store.NewSQLStorageFromDB(st.DB(), info)
-	storagew.S.Db_set_schema_name("public")
+	repo := cgstore.NewRepo(st)
 
 	if regenerate {
 		fmt.Println("Regenerating missing images/videos")
@@ -116,7 +113,10 @@ func scanAll(client *artifactClient, regenerate bool) error {
 		fmt.Println("Checking image/video presence")
 	}
 
-	tokens := storagew.Get_cosmic_signature_nft_list(0, 100000)
+	tokens, err := repo.CosmicSignatureTokens(ctx, 0, 100000)
+	if err != nil {
+		return fmt.Errorf("failed to list tokens: %w", err)
+	}
 	for _, tok := range tokens {
 		fmt.Printf("token id = %v    ", tok.TokenId)
 		exists, err := client.exists(tok.TokenId)

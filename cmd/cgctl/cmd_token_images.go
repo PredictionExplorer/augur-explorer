@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -28,11 +27,15 @@ Environment:
   PGSQL_*  PostgreSQL connection (PGSQL_HOST, PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sw, err := connectTokenStorage()
+			repo, err := connectTokenRepo(cmd.Context())
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%v", sw.Get_erc721_token_total())
+			total, err := repo.CosmicSignatureTokenCount(cmd.Context())
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%v", total)
 			return nil
 		},
 	})
@@ -52,26 +55,33 @@ Environment:
 			if err != nil {
 				return err
 			}
-			sw, err := connectTokenStorage()
+			repo, err := connectTokenRepo(cmd.Context())
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%v", sw.Get_erc721_token_seed(tokenID))
+			seed, err := repo.CosmicSignatureTokenSeed(cmd.Context(), tokenID)
+			if err != nil {
+				// The legacy helper printed an empty string for unknown
+				// token ids; imgcheck.sh relies on that contract.
+				if errors.Is(err, store.ErrNotFound) {
+					fmt.Printf("%v", "")
+					return nil
+				}
+				return err
+			}
+			fmt.Printf("%v", seed)
 			return nil
 		},
 	})
 }
 
-// connectTokenStorage connects to PostgreSQL (PGSQL_* env vars) and wraps the
-// connection in the cosmicgame storage helper. The pool lives for the
-// remainder of the process (cgctl runs one command and exits).
-func connectTokenStorage() (*cgstore.SQLStorageWrapper, error) {
-	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+// connectTokenRepo connects to PostgreSQL (PGSQL_* env vars) and returns the
+// CosmicGame query repo. The pool lives for the remainder of the process
+// (cgctl runs one command and exits).
+func connectTokenRepo(ctx context.Context) (*cgstore.Repo, error) {
+	st, err := store.New(ctx, store.ConfigFromEnv())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to storage: %w", err)
 	}
-	storage := store.NewSQLStorageFromDB(st.DB(), logger)
-	storage.Db_set_schema_name("public")
-	return &cgstore.SQLStorageWrapper{S: storage}, nil
+	return cgstore.NewRepo(st), nil
 }

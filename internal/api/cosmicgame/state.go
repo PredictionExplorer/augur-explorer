@@ -6,6 +6,7 @@ package cosmicgame
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -20,6 +21,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 const (
 	CONTRACT_CONSTANTS_REFRESH_TIME		= 5*60	// seconds
@@ -355,9 +357,17 @@ func fetchLiveSpecialWinnersState() liveSpecialWinnersState {
 		state.ChronoWarriorIsLive = currentChronoSegmentDuration > storedChronoWarriorDur.Int64()
 
 		if lastCstBidder != (ethcommon.Address{}) {
-			if evtlogId, ok := arb_storagew.Get_last_cst_bid_evtlog_for_bidder(state.RoundNum, lastCstBidder.String()); ok {
+			// Runs inside the background state refresh (no request context).
+			// Any error — including ErrNotFound — leaves the field unset,
+			// matching the legacy (id, ok) behavior; real DB failures are
+			// logged so they are not silently absorbed.
+			evtlogId, err := arbRepo.LastCstBidEvtlogForBidder(context.Background(), state.RoundNum, lastCstBidder.String())
+			switch {
+			case err == nil:
 				state.LastCstBidEventLogId = evtlogId
 				state.HasLastCstBidEventLogId = true
+			case !errors.Is(err, store.ErrNotFound):
+				Error.Printf("state refresh: last CST bid lookup: %v", err)
 			}
 		}
 	}
@@ -682,7 +692,14 @@ func do_reload_contract_variables() {
 }
 func do_reload_database_variables() {
 	bw_stats = arb_storagew.Get_cosmic_game_statistics()
-	round_start_ts = arb_storagew.Get_round_start_timestamp(bw_stats.TotalPrizes)
+	// Background refresh (no request context): a failed read keeps the
+	// previous value instead of tearing anything down.
+	ts, err := arbRepo.RoundStartTimestamp(context.Background(), bw_stats.TotalPrizes)
+	if err != nil {
+		Error.Printf("state refresh: round start timestamp: %v", err)
+		return
+	}
+	round_start_ts = ts
 }
 func reload_constants_goroutine() {
 	// we will load contract constants up web requests but to avoid having to restart

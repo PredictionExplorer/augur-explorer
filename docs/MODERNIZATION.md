@@ -33,25 +33,25 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-07 (store groundwork sprint). Update after each phase.
+Measured 2026-07-07 (read-layer conversion sprint 2). Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 68,093 (growth = test code) | n/a (informational) | `rg --files internal cmd -g '*.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
-| snake_case functions | ~700 | **630** (store 361, api 135, cg-etl 89, notibot 24, rw-etl 11) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
-| `os.Exit` in library code (`internal/`) | ~560 | **469** (store/cosmicgame ~390, store/randomwalk 75, api 4) | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 68,199 (growth = test code) | n/a (informational) | `rg --files internal cmd -g '*.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| snake_case functions | ~700 | **563** (store 294, api 135, cg-etl 89, notibot 24, rw-etl 11) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
+| `os.Exit` in library code (`internal/`) | ~560 | **362** (store/cosmicgame ~283, store/randomwalk 75, api 4) | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **19** | **0** | `rg -l '^\s*\. "github' --type go` |
 | Package-level mutable globals (api + etl) | ~120 | ~80 (state.go ~50, cg-etl ~25, rw-etl ~8) | ~0 (DI everywhere) | manual review per package |
-| golangci-lint issues | 433 (first run) | **178** | **0** | `golangci-lint run` |
-| Test files | 17 | **87** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
+| golangci-lint issues | 433 (first run) | **179** capped output (uncapped 1057, down from 1210 — default caps shuffle which issues surface) | **0** | `golangci-lint run` |
+| Test files | 17 | **89** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
 | Fuzz targets | 0 | **28** | **25+** (see §4.4) — met; grows with Phase 3 | `rg "func Fuzz" internal cmd contracts -c` |
 | Benchmarks | 0 | **4** (8 sub-benchmarks; baselines in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
 | Coverage on `internal/` (unit) | 2.4% | **8.2%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Coverage on `internal/` (integration, enforced) | n/a | **66.8%** (ratchet floor 64% in CI) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
+| Coverage on `internal/` (integration, enforced) | n/a | **66.6%** (ratchet floor 64% in CI) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
 | Queries on sqlc | 0 | 8 (layer1 pattern; scope narrowed by D7) | simple static lookups (D7) | count in `internal/store/queries/*.sql` |
 | Routes on stdlib router | 0 | 0 (gin) | all (v1 compat + v2) | n/a |
-| `context.Context` on store methods | 0% | **23 Repo methods** (CosmicGame warm-up files + PrizeDepositsByRound) | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame` |
-| Store queries on pgx-native pool | 0 | 23 (same Repo methods; every binary already runs one shared `pgxpool`) | all | manual |
+| `context.Context` on store methods | 0% | **90 Repo methods** (all CosmicGame read files except resolve/staking/user-specific/statistics) | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame` |
+| Store queries on pgx-native pool | 0 | 90 (same Repo methods; every binary already runs one shared `pgxpool`) | all | manual |
 
 ---
 
@@ -423,6 +423,8 @@ lands only with its §4.2 tests green.
       production (`store.NewFromPool` → Repo + legacy view)
 - [x] `store.TimeText` scan adapter: timestamptz → RFC3339Nano string,
       byte-identical to the `database/sql` conversion the goldens pin
+      (+ `store.NullTimeText` for nullable timestamp columns: NULL leaves
+      the destination unchanged, matching the legacy NullString pattern)
 
 ### 5.2 Per-file conversion checklist
 
@@ -454,14 +456,53 @@ they need the §4.3 ETL fixtures in place):
 - [x] `tokens-erc20.go` *(2026-07-07 — `CosmicTokenHolders`,
       `CosmicTokenStatistics`, `UserCosmicTokenSummary`,
       `CosmicTokenSupplyHistoryByBid`, `CosmicTokenSupplyHistoryByDate`)*
-- [ ] `bidding_analytics.go`
-- [~] `raffle-eth.go` (`PrizeDepositsByRound` converted early —
-      `Repo.PrizeInfo` composes it; rest of the file pending), `nft-donations.go`
-- [ ] `erc20-donations.go`
-- [ ] `tokens-erc721.go`
-- [ ] `contract_params.go`
-- [ ] `bidding.go` (dynamic query builder → safe pgx builder w/ whitelist test)
-- [ ] `eth-donations.go`
+- [x] `bidding_analytics.go` *(2026-07-07 — `BidFrequencyByPeriod`,
+      `BidTypeRatioByPeriod`, `TopBidders`, `TopBidderActivePeriods`,
+      `BidTimeBounds`; the epoch-aligned vs anchored bucket SQL extracted to
+      `bidFrequencySQL` with unit tests pinning branch selection and that
+      only the integer interval is ever interpolated)*
+- [x] `raffle-eth.go` *(2026-07-07 — `UnclaimedPrizeEthDeposits`,
+      `PrizeEthDeposits`, `RaffleEthDeposits`, `ChronoWarriorEthDeposits`,
+      `EthDepositsByUser`, `RaffleEthDepositsByUser`,
+      `ChronoWarriorEthDepositsByUser` + the earlier `PrizeDepositsByRound`;
+      nullable claim timestamp/date via `store.NullTimeText`)*
+- [x] `nft-donations.go` *(2026-07-07 — `NFTDonations`, `NFTDonationInfo`
+      (`(bool, rec)` → `(rec, error)`), `DonatedNFTClaims`,
+      `NFTDonationsByRound`, `NFTDonationsByToken`,
+      `UnclaimedDonatedNFTsByRound`, `DonatedTokenDistribution`,
+      `NFTDonationsByUser`)*
+- [x] `erc20-donations.go` *(2026-07-07 — `ERC20DonationsByRoundDetailed`/
+      `All`/`Summarized`, `ERC20Donations`, `ERC20DonationInfo`,
+      `ERC20DonationsByUser`, `ERC20DonationClaims`/`ByUser`/`ByRound`)*
+- [x] `tokens-erc721.go` *(2026-07-07 — `CosmicSignatureTokens`,
+      `CosmicSignatureTokenInfo`, `TokenNameHistory`,
+      `TokenOwnershipTransfers`, `CosmicSignatureTokenDistribution`,
+      `SearchTokensByName` (first store-suite coverage + golden),
+      `NamedTokens`, `CosmicSignatureTokenCount`, `CosmicSignatureTokenSeed`;
+      legacy `buildNFTSelectQuery`/`scanNFTRecord` twins stay for
+      `user-specific.go` and die with its conversion)*
+- [x] `contract_params.go` *(2026-07-07 — `GlobStatsCstRewardForBidding`,
+      `LatestDecimalParam`, `InsertAdminCorrectionDecimal`,
+      `InsertAdminCorrectionERC20Reward`, all with a lowercase-identifier
+      guard on the interpolated table/column names; the check-then-correct
+      sync policy (`SyncAdmin*IfMismatch`, `SyncCstRewardIfMismatch`) moved
+      to `cmd/cg-etl/contract_sync.go` as `paramSyncer` — storage keeps the
+      primitives, the ETL owns the policy, and address resolution stays lazy
+      so a clean sync run leaves the address table untouched)*
+- [x] `bidding.go` *(2026-07-07 — `Bids`, `BidInfo`, `BidsByRound`,
+      `BidsWithMessageByRound`, `BidIDByEvtlog`, `BidRowIDByEvtlogID`,
+      `EvtlogIDByRoundAndBidPosition`, `BidCountForRound`,
+      `LastCstBidEvtlogForBidder`, `RoundStartTimestamp`,
+      `RandomWalkTokensUsedInBids`; the §5.2 builder item landed as
+      `bidSelectQuery` over WHERE/ORDER BY/paging whitelists —
+      `TestBidSelectQueryWhitelists` exercises every combination and the
+      rejection path, so request input can never reach ORDER BY)*
+- [x] `eth-donations.go` *(2026-07-07 — `CharityDonations`(+`FromCosmicGame`,
+      `Voluntary`), `CharityWalletWithdrawals`, `SimpleEthDonations`(+`ByRound`),
+      `EthDonationsWithInfo`(+`ByRound`), `EthDonationWithInfoRecord`
+      (zero-record-on-miss → `ErrNotFound`; handler keeps the legacy
+      zero-record response), `EthDonationsByUser`/`ByRound`/`EthDonations`
+      (the UNION builder shared), `DonationReceivedEvtIDByTx`)*
 - [ ] `admin_events_resolve.go`
 - [ ] `staking.go`
 - [ ] `user-specific.go`
@@ -484,13 +525,15 @@ Base:
 
 ### 5.3 Callers updated as each file lands
 
-- [~] `internal/api/*` handlers propagate store errors — the ~20 handlers of
+- [~] `internal/api/*` handlers propagate store errors — the ~80 handlers of
       converted methods pass `c.Request.Context()` and answer failures with
       `respondStoreError` (logs + HTTP 500 in the legacy `{"status":0,...}`
       envelope via `common.RespondInternalErrorJSON`; these paths previously
       killed the process, so no parity golden constrains them; `ErrNotFound`
-      keeps the exact legacy not-found responses). Remaining handlers follow
-      their files.
+      keeps the exact legacy not-found responses). The `state.go` background
+      refreshers call converted methods with `context.Background()` and keep
+      the previous value on failure (ContractState extraction is Phase 2).
+      Remaining handlers follow their files.
 - [~] `cmd/cg-etl` loop reads/writes the watermark through the Repo and
       returns errors to `main` (crash only from `main`, batch left
       unacknowledged for re-processing — same recovery semantics as before);
@@ -697,4 +740,5 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | 2026-07-07 | `dd475c55` | **Store read suite + benchmarks sprint (§4.2 and §4.5 complete — Phase 0 done except prod-RLP replay):** shared seed dataset extracted to `internal/testfixtures` (embedded via `go:embed`, `Apply`/`ApplyFS`; apitest refactored onto it with parity goldens byte-identical, removing the CWD-relative glob). Store harnesses in `internal/store/{cosmicgame,randomwalk}` (TestMain + container + seed + wrapper); `testutil.CompareGoldenJSON`/`GoldenJSON` helpers (every golden fetched twice to prove determinism). 20 CosmicGame + 3 RandomWalk test files cover every public read function (~200 funcs, 196 goldens) incl. the notibot-only notification surface (rw_uranks extension seed), Elo transaction semantics (rollback/commit), nonce replay/expiry, processing-status and rank-writer round trips that restore fixture state. Benchmarks (§4.5): `BenchmarkEventDecode`, `BenchmarkReceiptsDecode`, `BenchmarkRateLimiter`, `BenchmarkStatisticsQueries`; baselines in `docs/benchmarks.md`. **Three production bugs found & fixed:** (1) `rw_messaging_status` was created rowless and `Update_messaging_status` uses a plain UPDATE, so on a freshly migrated DB the notibot watermark never persisted and every restart re-notified the entire event history to Twitter/Discord (migration `00008` seeds the row — same defect family as `last_block`/`00005`); (2) `Check_rwalk_token_exists` referenced placeholder `$2` while binding one argument, so PostgreSQL rejected every call — the error fell through to `return true, nil` ("token exists") and genuinely missing tokens returned `ErrNoRows`, which `rwctl scan-mints` treated as a transient DB error and retried forever; (3) the freezer receipts decoders detected "raw RLP" by first byte ≥ 0xc0, but snappy's decompressed-length uvarint starts with such a byte for half of all payload lengths > 127, making valid compressed blobs undecodable (`rlpListCoversExactly` now requires the list header to span the payload; applied to both `DecodeReceipts` and `DecodeArbitrumReceipts`, regression test added). CI coverage ratchet floor raised 60% → 64% (measured 66.7%, up from 62.7%). Test files 53 → 83; golden files 280 → 476. |
 | 2026-07-07 | `dbf19cf1` | **Store groundwork + first conversion batch (Phase 1 kickoff: §5.1 complete, first three §5.2 rows, D3 + D7 decided):** base package renamed `dbs` → `store`; new `Store` on `*pgxpool.Pool` (`store.go`: `New`/`NewFromPool`/`Close`, keepalive dialer port, bounded startup ping-retry replacing `retryConnector`, pool-wide `timezone=UTC` + `search_path=public` runtime params, `DefaultMaxConns=16` — the legacy `*sql.DB` was unbounded), transitional `Store.DB()` `database/sql` view so every binary shares one pool, `ConnectHint` operator diagnostics; `errors.go` (`ErrNotFound`/`ErrConflict`/`WrapError`, multi-`%w` chains), `tracer.go` (slog `QueryTracer`: failed + slow queries, cancellations skipped), `scan.go` (`TimeText`: timestamptz → RFC3339Nano strings byte-identical to `database/sql`'s convertAssign, unit-tested against both formats). `Connect_to_storage`/`openDB` deleted; all 9 binaries converted (apiserver, cg-etl, rw-etl, notibot, imggen-monitor, cgctl ×2, rwctl, opsctl). `cosmicgame.Repo` (D3) + generic `queryList` helper preserving empty-slice JSON semantics; **24 functions across 8 files converted to context-first, error-returning, pgx-native methods** (`marketing.go`, `admin_events.go` — 39-branch UNION now registry-generated with completeness + valid-SQL tests —, `prize-history.go`, `main-prize.go`, `raffle-nft.go` — staker flag now a bound parameter —, `banned_bids.go`, `cosmicgame.go`, `tokens-erc20.go`, plus `PrizeDepositsByRound` from `raffle-eth.go` early because `PrizeInfo` composes it). ~20 API handlers pass `c.Request.Context()` and answer store failures with the new `respondStoreError` → `common.RespondInternalErrorJSON` (HTTP 500, legacy envelope, no internal detail; these paths previously killed the process). cg-etl loop reads/writes its watermark through the Repo and crashes only from `main`. `common.InitContext` carries the `*store.Store`; `testdb` exposes the container `pgxpool.Pool`; store-suite/apitest/cg-etl harnesses run the production one-pool wiring (`store(t)` helper renamed `wrapper(t)`, new `repo(t)`). **All 476 goldens byte-identical** (store suite, parity suite, ETL fixtures — pins the numeric→string, timestamp and bool scan semantics across the driver swap); new error-path tests land the first coverage the legacy `os.Exit` layer could never have: cancelled context, closed pool, `ErrNotFound` on missing round/status rows. Unit tests for Config/conn-string/ConnectHint (secret never echoed), error mapping, tracer output, TimeText. Metrics: snake_case 656 → 630, `os.Exit` in `internal/` ~490 → 469, dot-import files 21 → 19, lint 179 → 178, test files 83 → 87, integration coverage 66.8% (floor stays 64%). Statistics benchmarks re-run vs `docs/benchmarks.md` baselines: all three faster (2.66→2.39ms, 955→845µs, 313→267µs); B/op higher through the pool-backed `sql.DB` view (those queries are still on the legacy path — re-measure when `statistics.go` converts). |
 | 2026-07-07 | `ca87801a` | **API parity suite sprint (§4.1 complete + §4.6 coverage ratchet):** `internal/api/apitest` boots the real gin router (production middleware chain, real Init sequence) against a seeded testcontainers Postgres and a deterministic Ethereum JSON-RPC stub; 183 golden files pin every registered GET route (each fetched twice to prove determinism), plus mutation-route tests (admin auth matrices, ban/unban round-trip, Elo match, EIP-191 signed `add_game` incl. replay/duplicate/chain rejections) and error-envelope goldens. Route-drift unit test proves `docs/openapi.yaml` ⇄ router equality (187/187 operations, both directions). Fixture dataset exercises the migration plpgsql triggers end-to-end. Supporting changes: `testdb.Start` for TestMain lifetimes, `DisableBackgroundRefresh` test hook in `state.go` (removed in Phase 2), metadata-host dispatch + health routes moved to `internal/api/common` for reuse. CI integration job now enforces the `internal/` coverage ratchet (floor 50%; measured 53.0%, up from 5.8%). **Three production bugs found & fixed:** (1) migrations 00002/00003 both defined `on_token_name_insert()`/`_delete()`, so the RandomWalk body silently overwrote the CosmicGame one and every `cg_token_name` insert failed — CS-NFT naming was broken and the ETL would crash on `NftNameChanged`; fixed by migration `00004` with per-project function names. (2) `Get_bid_frequency_by_period` / `Get_top_bidder_active_periods` passed Go ints into pgx text-concatenation placeholders (`$3 \|\| ' seconds'`), so `statistics/bidding/frequency` and `top_active_periods` failed on every call — and their `os.Exit(1)` error paths killed the whole API server when hit. (3) `Get_market_trading_volume_by_period` had a SQL typo (`TO_TIMESTAMP($1)i`), making `statistics/trading_volume` another process-killing route. Test files 39 → 44. |
+| 2026-07-07 | | **Read-layer conversion sprint 2 (§5.2: eight more files, 66 functions — the CosmicGame read layer is converted except the four heavyweights):** `bidding_analytics.go`, `raffle-eth.go`, `nft-donations.go`, `erc20-donations.go`, `tokens-erc721.go`, `contract_params.go`, `bidding.go`, `eth-donations.go` converted to context-first, error-returning, pgx-native `Repo` methods with idiomatic names; **all goldens byte-identical** (2 new store goldens: the epoch-aligned hourly bucket branch and first `SearchTokensByName` coverage). Safety/testability: `bidding.go`'s string-passthrough query builder replaced by `bidSelectQuery` over WHERE/ORDER BY/paging whitelists (`TestBidSelectQueryWhitelists` walks every combination and the rejection paths — request input can never reach ORDER BY); `bidding_analytics.go`'s bucket SQL extracted to `bidFrequencySQL` (unit tests pin epoch-aligned vs anchored branch selection and that only the integer interval is interpolated); `contract_params.go` admin table/column names pass a lowercase-identifier guard, and the `SyncAdmin*` check-then-correct policy moved out of storage into `cmd/cg-etl` (`paramSyncer`) with lazy address resolution preserved (a clean sync run leaves the address table untouched); `store.NullTimeText` added for nullable timestamps. Callers: ~60 more API handlers on `c.Request.Context()` + `respondStoreError`; `state.go` background refreshers keep the previous value on failure and log real errors; cg-etl donation handlers use adapters preserving the -1/0 sentinels (crash only on real DB errors until Phase 3); `cgctl total-tokens`/`token-seed` and `imggen-monitor` build the `Repo` directly. New tests: `TestErrorPathsConvertedFiles` (cancelled context + closed pool per file), malformed-identifier rejections, admin-correction insert round trip restoring fixture state. `Get_donated_token_distribution` stays as a private legacy copy inside unconverted `statistics.go` (dies with that file's conversion). Metrics: snake_case 630 → 563, `os.Exit` in `internal/` 469 → 362, Repo methods 24 → 90, lint uncapped 1210 → 1057 (capped display 179), test files 87 → 89, golden files 489 → 491, integration coverage 66.6% (floor stays 64%). |
 | | | |

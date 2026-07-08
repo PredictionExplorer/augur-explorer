@@ -32,3 +32,25 @@ func TestTimeText(t *testing.T) {
 		t.Error("Scan(string) succeeded, want error")
 	}
 }
+
+func TestNullTimeText(t *testing.T) {
+	got := "untouched"
+	if err := NullTimeText(&got).Scan(nil); err != nil {
+		t.Fatalf("Scan(nil): %v", err)
+	}
+	if got != "untouched" {
+		t.Errorf("Scan(nil) modified dst to %q, want it left unchanged", got)
+	}
+
+	ts := time.Date(2026, 7, 7, 12, 30, 45, 0, time.UTC)
+	if err := NullTimeText(&got).Scan(ts); err != nil {
+		t.Fatalf("Scan(time.Time): %v", err)
+	}
+	if want := "2026-07-07T12:30:45Z"; got != want {
+		t.Errorf("NullTimeText = %q, want %q", got, want)
+	}
+
+	if err := NullTimeText(&got).Scan(42); err == nil {
+		t.Error("Scan(int) succeeded, want error")
+	}
+}

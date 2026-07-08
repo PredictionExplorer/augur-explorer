@@ -2,134 +2,212 @@
 
 package cosmicgame
 
-import "testing"
+import (
+	"context"
+	"errors"
+	"testing"
 
-func TestGetBidIdByEvtlog(t *testing.T) {
-	sw := wrapper(t)
-	if got := sw.Get_bid_id_by_evtlog(5004); got != 2001 {
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+)
+
+func TestBidIDByEvtlog(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	got, err := r.BidIDByEvtlog(ctx, 5004)
+	if err != nil {
+		t.Fatalf("BidIDByEvtlog(5004): %v", err)
+	}
+	if got != 2001 {
 		t.Errorf("bid id for evtlog 5004: got %d, want 2001", got)
 	}
-	if got := sw.Get_bid_id_by_evtlog(999_999); got != -1 {
-		t.Errorf("bid id for missing evtlog: got %d, want -1", got)
+	if _, err := r.BidIDByEvtlog(ctx, 999_999); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("BidIDByEvtlog(999999) = %v, want ErrNotFound", err)
 	}
 }
 
-func TestGetBids(t *testing.T) {
-	sw := wrapper(t)
+func TestBids(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "bids", func() any {
-		return sw.Get_bids(0, 100)
+		recs, err := r.Bids(ctx, 0, 100)
+		if err != nil {
+			t.Fatalf("Bids: %v", err)
+		}
+		return recs
 	})
 	golden(t, "bids_paged", func() any {
-		return sw.Get_bids(5, 3)
+		recs, err := r.Bids(ctx, 5, 3)
+		if err != nil {
+			t.Fatalf("Bids(paged): %v", err)
+		}
+		return recs
 	})
 	// limit=0 means "no limit".
-	if all := sw.Get_bids(0, 0); len(all) != 12 {
+	all, err := r.Bids(ctx, 0, 0)
+	if err != nil {
+		t.Fatalf("Bids(no limit): %v", err)
+	}
+	if len(all) != 12 {
 		t.Errorf("expected 12 bids with limit=0, got %d", len(all))
 	}
 }
 
-func TestGetBidInfo(t *testing.T) {
-	sw := wrapper(t)
+func TestBidInfo(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "bid_info_5004", func() any {
-		found, rec := sw.Get_bid_info(5004)
-		if !found {
-			t.Fatal("expected bid at evtlog 5004")
+		rec, err := r.BidInfo(ctx, 5004)
+		if err != nil {
+			t.Fatalf("BidInfo(5004): %v", err)
 		}
 		return rec
 	})
 	// carol's CST bid carries the v2 reward/duration columns.
 	golden(t, "bid_info_5008_cst", func() any {
-		found, rec := sw.Get_bid_info(5008)
-		if !found {
-			t.Fatal("expected bid at evtlog 5008")
+		rec, err := r.BidInfo(ctx, 5008)
+		if err != nil {
+			t.Fatalf("BidInfo(5008): %v", err)
 		}
 		return rec
 	})
-	if found, _ := sw.Get_bid_info(999_999); found {
-		t.Error("expected no bid at evtlog 999999")
+	if _, err := r.BidInfo(ctx, 999_999); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("BidInfo(999999) = %v, want ErrNotFound", err)
 	}
 }
 
-func TestGetEvtlogIdByRoundAndBidPosition(t *testing.T) {
-	sw := wrapper(t)
-	evtlogID, found := sw.Get_evtlog_id_by_round_and_bid_position(0, 1)
-	if !found || evtlogID != 5004 {
-		t.Errorf("round 0 position 1: got (%d,%v), want (5004,true)", evtlogID, found)
+func TestEvtlogIDByRoundAndBidPosition(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	evtlogID, err := r.EvtlogIDByRoundAndBidPosition(ctx, 0, 1)
+	if err != nil || evtlogID != 5004 {
+		t.Errorf("round 0 position 1: got (%d,%v), want (5004,nil)", evtlogID, err)
 	}
-	if _, found := sw.Get_evtlog_id_by_round_and_bid_position(0, 99); found {
-		t.Error("expected no bid at round 0 position 99")
+	if _, err := r.EvtlogIDByRoundAndBidPosition(ctx, 0, 99); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("EvtlogIDByRoundAndBidPosition(0,99) = %v, want ErrNotFound", err)
 	}
 }
 
-func TestGetBidsWithMessageByRound(t *testing.T) {
-	sw := wrapper(t)
+func TestBidsWithMessageByRound(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "bids_with_message_by_round_0_asc", func() any {
-		return sw.Get_bids_with_message_by_round(0, false, 0, 100)
+		recs, err := r.BidsWithMessageByRound(ctx, 0, false, 0, 100)
+		if err != nil {
+			t.Fatalf("BidsWithMessageByRound(asc): %v", err)
+		}
+		return recs
 	})
 	golden(t, "bids_with_message_by_round_0_desc", func() any {
-		return sw.Get_bids_with_message_by_round(0, true, 0, 100)
+		recs, err := r.BidsWithMessageByRound(ctx, 0, true, 0, 100)
+		if err != nil {
+			t.Fatalf("BidsWithMessageByRound(desc): %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetBidsByRoundNum(t *testing.T) {
-	sw := wrapper(t)
+func TestBidsByRound(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "bids_by_round_num_0_asc", func() any {
-		recs, total := sw.Get_bids_by_round_num(0, 0, 0, 100)
+		recs, total, err := r.BidsByRound(ctx, 0, 0, 0, 100)
+		if err != nil {
+			t.Fatalf("BidsByRound(asc): %v", err)
+		}
 		return map[string]any{"records": recs, "total": total}
 	})
 	golden(t, "bids_by_round_num_0_desc_paged", func() any {
-		recs, total := sw.Get_bids_by_round_num(0, 1, 1, 2)
+		recs, total, err := r.BidsByRound(ctx, 0, 1, 1, 2)
+		if err != nil {
+			t.Fatalf("BidsByRound(desc paged): %v", err)
+		}
 		return map[string]any{"records": recs, "total": total}
 	})
 }
 
-func TestGetBidCountForRound(t *testing.T) {
-	sw := wrapper(t)
-	if got := sw.Get_bid_count_for_round(0); got != 4 {
+func TestBidCountForRound(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	got, err := r.BidCountForRound(ctx, 0)
+	if err != nil {
+		t.Fatalf("BidCountForRound(0): %v", err)
+	}
+	if got != 4 {
 		t.Errorf("bid count round 0: got %d, want 4", got)
 	}
-	if got := sw.Get_bid_count_for_round(999); got != 0 {
+	got, err = r.BidCountForRound(ctx, 999)
+	if err != nil {
+		t.Fatalf("BidCountForRound(999): %v", err)
+	}
+	if got != 0 {
 		t.Errorf("bid count round 999: got %d, want 0", got)
 	}
 }
 
-func TestGetLastCstBidEvtlogForBidder(t *testing.T) {
-	sw := wrapper(t)
+func TestLastCstBidEvtlogForBidder(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	const carol = "0x2300000000000000000000000000000000000023"
-	evtlogID, found := sw.Get_last_cst_bid_evtlog_for_bidder(0, carol)
-	if !found || evtlogID != 5008 {
-		t.Errorf("carol's last CST bid in round 0: got (%d,%v), want (5008,true)", evtlogID, found)
+	evtlogID, err := r.LastCstBidEvtlogForBidder(ctx, 0, carol)
+	if err != nil || evtlogID != 5008 {
+		t.Errorf("carol's last CST bid in round 0: got (%d,%v), want (5008,nil)", evtlogID, err)
 	}
 	// Case-insensitive address matching.
-	if _, found := sw.Get_last_cst_bid_evtlog_for_bidder(0, "0X2300000000000000000000000000000000000023"); !found {
-		t.Error("expected case-insensitive address match")
+	if _, err := r.LastCstBidEvtlogForBidder(ctx, 0, "0X2300000000000000000000000000000000000023"); err != nil {
+		t.Errorf("expected case-insensitive address match, got %v", err)
 	}
 	// alice never CST-bid in round 0.
-	if _, found := sw.Get_last_cst_bid_evtlog_for_bidder(0, "0x2100000000000000000000000000000000000021"); found {
-		t.Error("expected no CST bid for alice in round 0")
+	if _, err := r.LastCstBidEvtlogForBidder(ctx, 0, "0x2100000000000000000000000000000000000021"); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("LastCstBidEvtlogForBidder(alice) = %v, want ErrNotFound", err)
 	}
 }
 
-func TestGetRoundStartTimestamp(t *testing.T) {
-	sw := wrapper(t)
-	if got := sw.Get_round_start_timestamp(0); got != 1767225700 {
+func TestRoundStartTimestamp(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	got, err := r.RoundStartTimestamp(ctx, 0)
+	if err != nil {
+		t.Fatalf("RoundStartTimestamp(0): %v", err)
+	}
+	if got != 1767225700 {
 		t.Errorf("round 0 start: got %d, want 1767225700", got)
 	}
-	if got := sw.Get_round_start_timestamp(999); got != 0 {
+	got, err = r.RoundStartTimestamp(ctx, 999)
+	if err != nil {
+		t.Fatalf("RoundStartTimestamp(999): %v", err)
+	}
+	if got != 0 {
 		t.Errorf("round 999 start: got %d, want 0", got)
 	}
 }
 
-func TestGetRandomWalkTokensInBids(t *testing.T) {
-	sw := wrapper(t)
+func TestRandomWalkTokensUsedInBids(t *testing.T) {
+	r := repo(t)
 	golden(t, "random_walk_tokens_in_bids", func() any {
-		return sw.Get_random_walk_tokens_in_bids()
+		recs, err := r.RandomWalkTokensUsedInBids(context.Background())
+		if err != nil {
+			t.Fatalf("RandomWalkTokensUsedInBids: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetCosmicGameBidByEvtlogId(t *testing.T) {
-	sw := wrapper(t)
+func TestBidRowIDByEvtlogID(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "cosmic_game_bid_by_evtlog_id_5004", func() any {
-		return sw.Get_cosmic_game_bid_by_evtlog_id(5004)
+		id, err := r.BidRowIDByEvtlogID(ctx, 5004)
+		if err != nil {
+			t.Fatalf("BidRowIDByEvtlogID(5004): %v", err)
+		}
+		return id
 	})
+	// A missing bid means "pure Donate() transaction": 0, no error.
+	id, err := r.BidRowIDByEvtlogID(ctx, 999_999)
+	if err != nil {
+		t.Fatalf("BidRowIDByEvtlogID(999999): %v", err)
+	}
+	if id != 0 {
+		t.Errorf("bid row id for missing evtlog: got %d, want 0", id)
+	}
 }

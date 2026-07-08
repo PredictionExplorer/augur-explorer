@@ -181,7 +181,7 @@ func main() {
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
 	implementation_addr = ethcommon.HexToAddress(cg_contracts.ImplementationAddr)
 
-	if err := syncContractParamsFromChain(&storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
+	if err := syncContractParamsFromChain(context.Background(), cgRepo, &storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
 		Error.Printf("Contract param chain sync failed: %v", err)
 		os.Exit(1)
 	}

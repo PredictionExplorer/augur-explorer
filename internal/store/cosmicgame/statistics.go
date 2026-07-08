@@ -243,10 +243,47 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		stats.CgPrizeRowCount = uint64(null_cg_prize_rows.Int64)
 	}
 
-	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
+	stats.DonatedTokenDistribution = sw.donatedTokenDistributionLegacy()
 	stats.StakeStatisticsCST = sw.Get_stake_statistics_cst()
 	stats.StakeStatisticsRWalk = sw.Get_stake_statistics_rwalk()
 	return stats
+}
+
+// donatedTokenDistributionLegacy is the pre-conversion body of what is now
+// Repo.DonatedTokenDistribution, kept private for Get_cosmic_game_statistics
+// until this file converts to the Repo in its own right.
+func (sw *SQLStorageWrapper) donatedTokenDistributionLegacy() []p.CGDonatedTokenDistrRec {
+	query := "SELECT " +
+		"ca.addr," +
+		"ns.num_donated " +
+		"FROM " + sw.S.SchemaName() + ".cg_nft_stats ns " +
+		"LEFT JOIN address ca ON ns.contract_aid=ca.address_id " +
+		"ORDER BY ns.num_donated DESC "
+
+	rows, err := sw.S.Db().Query(query)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	records := make([]p.CGDonatedTokenDistrRec, 0, 16)
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var rec p.CGDonatedTokenDistrRec
+		err = rows.Scan(
+			&rec.ContractAddr,
+			&rec.NumDonatedTokens,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+			os.Exit(1)
+		}
+		records = append(records, rec)
+	}
+	if err := rows.Err(); err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
+		os.Exit(1)
+	}
+	return records
 }
 func (sw *SQLStorageWrapper) Get_stake_statistics_cst() p.CGStakeStatsCST {
 
