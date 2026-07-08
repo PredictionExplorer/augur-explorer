@@ -1,12 +1,17 @@
 package cosmicgame
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 
+	"github.com/jackc/pgx/v5"
+
 	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // ethDutchAuctionDurationNumerator matches the on-chain ETH Dutch auction duration formula:
@@ -17,140 +22,185 @@ const ethDutchAuctionDurationNumerator int64 = 11614
 // bumpSeconds = mainPrizeTimeIncrementMicroSeconds * numerator / 1000 / initialDurationUntilMainPrizeDivisor.
 const initialDurationRawNumerator int64 = 1071
 
-func (sw *SQLStorageWrapper) Resolve_admin_event_values(events []p.CGAdminEvent) {
+// ResolveAdminEventValues fills the ResolvedValue of each admin event with a
+// human-readable rendering of its parameter change (durations, percentages,
+// derived auction values). Events whose type has no resolver, or whose
+// context rows are missing, keep an empty ResolvedValue — only real database
+// failures return an error.
+func (r *Repo) ResolveAdminEventValues(ctx context.Context, events []p.CGAdminEvent) error {
 	for i := range events {
-		events[i].ResolvedValue = sw.resolveAdminEventValueSQL(&events[i])
+		value, err := r.resolveAdminEventValue(ctx, &events[i])
+		if err != nil {
+			return err
+		}
+		events[i].ResolvedValue = value
 	}
+	return nil
 }
 
-func (sw *SQLStorageWrapper) resolveAdminEventValueSQL(rec *p.CGAdminEvent) string {
+func (r *Repo) resolveAdminEventValue(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
 	if rec == nil || rec.IntegerValue == 0 && rec.FloatValue == 0 && rec.StringValue == "" {
-		return ""
+		return "", nil
 	}
 	switch rec.RecordType {
 	case 7, 19, 35:
-		return formatDurationSeconds(rec.IntegerValue)
+		return formatDurationSeconds(rec.IntegerValue), nil
 	case 18:
-		return sw.resolveTimeIncreaseChanged(rec)
+		return r.resolveTimeIncreaseChanged(ctx, rec)
 	case 20:
-		return formatPercentFromDivisor(rec.IntegerValue)
+		return formatPercentFromDivisor(rec.IntegerValue), nil
 	case 21:
-		return formatMicrosecondsAsSeconds(rec.IntegerValue)
+		return formatMicrosecondsAsSeconds(rec.IntegerValue), nil
 	case 22:
-		return sw.resolveInitialSecondsUntilPrizeChanged(rec)
+		return r.resolveInitialSecondsUntilPrizeChanged(ctx, rec)
 	case 25:
-		return formatDurationSeconds(rec.IntegerValue)
+		return formatDurationSeconds(rec.IntegerValue), nil
 	case 36:
-		return sw.resolveEthDutchAuctionDurationDivisor(rec)
+		return r.resolveEthDutchAuctionDurationDivisor(ctx, rec)
 	case 37:
-		return sw.resolveEthDutchAuctionEndingBidPriceDivisor(rec)
+		return r.resolveEthDutchAuctionEndingBidPriceDivisor(ctx, rec)
 	case 39:
-		return sw.resolveCstDutchAuctionDurationChangeDivisor(rec)
+		return r.resolveCstDutchAuctionDurationChangeDivisor(ctx, rec)
 	default:
-		return ""
+		return "", nil
 	}
 }
 
-func (sw *SQLStorageWrapper) resolveTimeIncreaseChanged(rec *p.CGAdminEvent) string {
+func (r *Repo) resolveTimeIncreaseChanged(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
-		return ""
+		return "", nil
 	}
-	baseMicros, ok := sw.getLatestInt64ParamAtEvtlog("cg_adm_prize_microsec", "new_microseconds", rec.EvtLogId, true)
+	baseMicros, ok, err := r.latestInt64ParamAtEvtlog(ctx, "cg_adm_prize_microsec", "new_microseconds", rec.EvtLogId, true)
+	if err != nil {
+		return "", err
+	}
 	if !ok || baseMicros <= 0 {
-		return fmt.Sprintf("×%.2f per bid", float64(rec.IntegerValue)/100.0)
+		return fmt.Sprintf("×%.2f per bid", float64(rec.IntegerValue)/100.0), nil
 	}
 	afterMicros := baseMicros * rec.IntegerValue / 100
-	return fmt.Sprintf("%s after next bid (×%.2f)", formatMicrosecondsAsSeconds(afterMicros), float64(rec.IntegerValue)/100.0)
+	return fmt.Sprintf("%s after next bid (×%.2f)", formatMicrosecondsAsSeconds(afterMicros), float64(rec.IntegerValue)/100.0), nil
 }
 
-func (sw *SQLStorageWrapper) resolveInitialSecondsUntilPrizeChanged(rec *p.CGAdminEvent) string {
+func (r *Repo) resolveInitialSecondsUntilPrizeChanged(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
-		return ""
+		return "", nil
 	}
 	pct := formatPercentFromDivisor(rec.IntegerValue)
-	baseMicros, ok := sw.getLatestInt64ParamAtEvtlog("cg_adm_prize_microsec", "new_microseconds", rec.EvtLogId, true)
+	baseMicros, ok, err := r.latestInt64ParamAtEvtlog(ctx, "cg_adm_prize_microsec", "new_microseconds", rec.EvtLogId, true)
+	if err != nil {
+		return "", err
+	}
 	if !ok || baseMicros <= 0 {
-		return pct
+		return pct, nil
 	}
 	raw := baseMicros * initialDurationRawNumerator / 1000
 	secs := raw / rec.IntegerValue
-	return fmt.Sprintf("%s (%s)", formatDurationSeconds(secs), pct)
+	return fmt.Sprintf("%s (%s)", formatDurationSeconds(secs), pct), nil
 }
 
-func (sw *SQLStorageWrapper) resolveEthDutchAuctionDurationDivisor(rec *p.CGAdminEvent) string {
+func (r *Repo) resolveEthDutchAuctionDurationDivisor(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
-		return ""
+		return "", nil
 	}
-	span, ok := sw.getLatestActivationSpanSeconds(rec.EvtLogId)
+	span, ok, err := r.latestActivationSpanSeconds(ctx, rec.EvtLogId)
+	if err != nil {
+		return "", err
+	}
 	if !ok || span <= 0 {
-		return ""
+		return "", nil
 	}
 	secs := span * ethDutchAuctionDurationNumerator / rec.IntegerValue
-	return formatDurationSeconds(secs)
+	return formatDurationSeconds(secs), nil
 }
 
-func (sw *SQLStorageWrapper) resolveEthDutchAuctionEndingBidPriceDivisor(rec *p.CGAdminEvent) string {
+func (r *Repo) resolveEthDutchAuctionEndingBidPriceDivisor(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
-		return ""
+		return "", nil
 	}
-	beginWei, ok := sw.getLatestEthBidPriceWeiBeforeEvtlog(rec.EvtLogId)
+	beginWei, ok, err := r.latestEthBidPriceWeiBeforeEvtlog(ctx, rec.EvtLogId)
+	if err != nil {
+		return "", err
+	}
 	if !ok || beginWei <= 0 {
-		return ""
+		return "", nil
 	}
 	endWei := beginWei / rec.IntegerValue
-	return formatEthFromWei(endWei)
+	return formatEthFromWei(endWei), nil
 }
 
-func (sw *SQLStorageWrapper) resolveCstDutchAuctionDurationChangeDivisor(rec *p.CGAdminEvent) string {
+func (r *Repo) resolveCstDutchAuctionDurationChangeDivisor(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
-		return ""
+		return "", nil
 	}
-	duration, ok := sw.getLatestInt64ParamAtEvtlog("cg_adm_cst_auclen", "new_len", rec.EvtLogId, true)
+	duration, ok, err := r.latestInt64ParamAtEvtlog(ctx, "cg_adm_cst_auclen", "new_len", rec.EvtLogId, true)
+	if err != nil {
+		return "", err
+	}
 	if !ok || duration <= 0 {
-		return ""
+		return "", nil
 	}
 	delta := duration / rec.IntegerValue
 	if delta <= 0 {
-		return ""
+		return "", nil
 	}
-	return fmt.Sprintf("%s change per bid", formatDurationSeconds(delta))
+	return fmt.Sprintf("%s change per bid", formatDurationSeconds(delta)), nil
 }
 
-func (sw *SQLStorageWrapper) getLatestInt64ParamAtEvtlog(table, column string, evtlogID int64, inclusive bool) (int64, bool) {
-	op := "<"
+// latestInt64ParamAtEvtlog returns the most recent value of an admin
+// parameter column at (or, when inclusive, up to and including) evtlogID.
+// ok is false when no usable row exists. The identifiers pass the same guard
+// as the contract-params queries; call sites use compile-time literals.
+func (r *Repo) latestInt64ParamAtEvtlog(ctx context.Context, table, column string, evtlogID int64, inclusive bool) (int64, bool, error) {
+	if err := checkAdminIdent("table", table); err != nil {
+		return 0, false, err
+	}
+	if err := checkAdminIdent("column", column); err != nil {
+		return 0, false, err
+	}
+	cmp := "<"
 	if inclusive {
-		op = "<="
+		cmp = "<="
 	}
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s.%s WHERE evtlog_id %s $1 ORDER BY evtlog_id DESC, id DESC LIMIT 1",
-		column, sw.S.SchemaName(), table, op,
+		"SELECT %s FROM %s WHERE evtlog_id %s $1 ORDER BY evtlog_id DESC, id DESC LIMIT 1",
+		column, table, cmp,
 	)
 	var val sql.NullString
-	err := sw.S.Db().QueryRow(query, evtlogID).Scan(&val)
-	if err == sql.ErrNoRows || err != nil || !val.Valid || val.String == "" {
-		return 0, false
+	err := r.pool().QueryRow(ctx, query, evtlogID).Scan(&val)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, store.WrapError("latest param "+table+"."+column, err)
+	}
+	if !val.Valid || val.String == "" {
+		return 0, false, nil
 	}
 	bi, ok := new(big.Int).SetString(val.String, 10)
 	if !ok {
-		return 0, false
+		return 0, false, nil
 	}
-	return bi.Int64(), true
+	return bi.Int64(), true, nil
 }
 
-func (sw *SQLStorageWrapper) getLatestActivationSpanSeconds(evtlogID int64) (int64, bool) {
-	query := fmt.Sprintf(
-		"SELECT new_atime FROM %s.cg_adm_acttime WHERE evtlog_id <= $1 ORDER BY evtlog_id DESC, id DESC LIMIT 2",
-		sw.S.SchemaName(),
-	)
-	rows, err := sw.S.Db().Query(query, evtlogID)
+// latestActivationSpanSeconds derives the span between the two most recent
+// activation-time settings at evtlogID (the round length used by the ETH
+// Dutch auction resolvers). ok is false with fewer than two usable rows.
+func (r *Repo) latestActivationSpanSeconds(ctx context.Context, evtlogID int64) (int64, bool, error) {
+	const op = "latest activation span seconds"
+	query := "SELECT new_atime FROM cg_adm_acttime WHERE evtlog_id <= $1 ORDER BY evtlog_id DESC, id DESC LIMIT 2"
+	rows, err := r.pool().Query(ctx, query, evtlogID)
 	if err != nil {
-		return 0, false
+		return 0, false, store.WrapError(op, err)
 	}
 	defer rows.Close()
 	var times []int64
 	for rows.Next() {
 		var raw sql.NullString
-		if err := rows.Scan(&raw); err != nil || !raw.Valid {
+		if err := rows.Scan(&raw); err != nil {
+			return 0, false, store.WrapError(op, err)
+		}
+		if !raw.Valid {
 			continue
 		}
 		bi, ok := new(big.Int).SetString(raw.String, 10)
@@ -159,31 +209,39 @@ func (sw *SQLStorageWrapper) getLatestActivationSpanSeconds(evtlogID int64) (int
 		}
 		times = append(times, bi.Int64())
 	}
+	if err := rows.Err(); err != nil {
+		return 0, false, store.WrapError(op, err)
+	}
 	if len(times) < 2 {
-		return 0, false
+		return 0, false, nil
 	}
 	span := times[0] - times[1]
 	if span <= 0 {
-		return 0, false
+		return 0, false, nil
 	}
-	return span, true
+	return span, true, nil
 }
 
-func (sw *SQLStorageWrapper) getLatestEthBidPriceWeiBeforeEvtlog(evtlogID int64) (int64, bool) {
-	query := fmt.Sprintf(
-		"SELECT eth_price FROM %s.cg_bid WHERE evtlog_id < $1 AND eth_price > 0 ORDER BY evtlog_id DESC LIMIT 1",
-		sw.S.SchemaName(),
-	)
+// latestEthBidPriceWeiBeforeEvtlog returns the last positive ETH bid price
+// preceding evtlogID; ok is false when no such bid exists.
+func (r *Repo) latestEthBidPriceWeiBeforeEvtlog(ctx context.Context, evtlogID int64) (int64, bool, error) {
+	query := "SELECT eth_price FROM cg_bid WHERE evtlog_id < $1 AND eth_price > 0 ORDER BY evtlog_id DESC LIMIT 1"
 	var val sql.NullString
-	err := sw.S.Db().QueryRow(query, evtlogID).Scan(&val)
-	if err == sql.ErrNoRows || err != nil || !val.Valid || val.String == "" {
-		return 0, false
+	err := r.pool().QueryRow(ctx, query, evtlogID).Scan(&val)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, store.WrapError("latest eth bid price before evtlog", err)
+	}
+	if !val.Valid || val.String == "" {
+		return 0, false, nil
 	}
 	bi, ok := new(big.Int).SetString(val.String, 10)
 	if !ok {
-		return 0, false
+		return 0, false, nil
 	}
-	return bi.Int64(), true
+	return bi.Int64(), true, nil
 }
 
 func formatPercentFromDivisor(divisor int64) string {

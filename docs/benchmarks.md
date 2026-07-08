@@ -36,9 +36,9 @@ against runs captured the same way.
 | `BenchmarkReceiptsDecode/snappy` (freezer) | 26,800 | 39,822 | 288 | same payload, snappy-compressed |
 | `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,510 | 5,357 | 15 | parallel, per-IP limiter map path |
 | `BenchmarkRateLimiter/shared_ip` (api/common) | 1,600 | 5,356 | 15 | parallel, single-bucket contention |
-| `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,660,000 | 18,064 | 344 | multi-query dashboard aggregate |
-| `BenchmarkStatisticsQueries/claims_by_round` | 955,000 | 13,224 | 138 | per-round claim summary CTE |
-| `BenchmarkStatisticsQueries/roi_leaderboard` | 313,000 | 18,656 | 149 | ROI leaderboard join, sort=roi |
+| `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,530,000 | 14,390 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/claims_by_round` | 936,000 | 9,625 | 82 | per-round claim summary CTE (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/roi_leaderboard` | 315,000 | 23,870 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
 
 History:
 
@@ -54,3 +54,15 @@ History:
   267,000 / 20,282 / 161. Latency improved across the board; B/op roughly
   doubled through the stdlib-over-pool bridge — acceptable while
   transitional, re-measure when `statistics.go` converts to pgx-native.
+- **2026-07-07 (read-layer conversion sprint 3)** — `statistics.go` converted
+  to pgx-native Repo methods; the benchmark now runs `CosmicGameStatistics`,
+  `ClaimsByRound` and `RoiLeaderboard` (table above updated). The
+  stdlib-over-pool B/op inflation flagged in the previous entry is gone:
+  `cosmic_game_statistics` 40,830 → 14,390 B/op (298 allocs, down from 512)
+  and `claims_by_round` 19,728 → 9,625 B/op (82 allocs, down from 186).
+  `roi_leaderboard` allocates more (20,282 → 23,870 B/op, 161 → 323 allocs)
+  because pgx's binary protocol decodes its four NUMERIC columns through
+  big-number types before formatting the strings the record shape pins —
+  latency is unchanged inside the container noise band (ns/op medians moved
+  −4%/+11%/+18% vs the bridge run and −5%/−2%/+1% vs the original
+  database/sql baselines).

@@ -4,20 +4,17 @@ package cosmicgame
 
 // Store read suite (§4.2 of docs/MODERNIZATION.md): every public query
 // function is called against the shared fixture dataset at least once and
-// its result pinned as a golden file. This is the safety net that lets the
-// Phase 1 store rewrite proceed file-by-file: converted methods live on Repo
-// (context-first, error-returning), the rest on the legacy wrapper.
-//
-// Error paths exist only for converted methods (see TestErrorPaths): the
-// remaining legacy methods call os.Exit(1) on DB errors, which would kill
-// the test binary. The golden set stays put as each file converts.
+// its result pinned as a golden file. This is the safety net that let the
+// Phase 1 store rewrite proceed file-by-file; the whole CosmicGame read
+// layer now runs on the Repo (context-first, error-returning), so the suite
+// no longer carries a legacy-wrapper handle. The remaining legacy files
+// (inserts.go / deletes.go) are exercised by the cmd/cg-etl fixture replay.
 
 import (
 	"context"
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -55,7 +52,6 @@ const (
 )
 
 var (
-	sharedWrapper    *SQLStorageWrapper
 	sharedRepo       *Repo
 	sharedConnString string
 	errSetupSkip     error // non-nil: integration environment unavailable, skip
@@ -93,16 +89,11 @@ func runMain(m *testing.M) int {
 		return 1
 	}
 
-	// One Store over the container's pool serves both access paths: the Repo
-	// (converted, context-first queries) and the legacy wrapper. Store-layer
-	// errors of unconverted methods precede an os.Exit(1); keep them on
-	// stderr so a fixture/query problem is diagnosable.
+	// One Store over the container's pool, mirroring the production wiring:
+	// every query in this package runs on the Repo.
 	st := store.NewFromPool(db.Pool)
 	sharedRepo = NewRepo(st)
 	sharedConnString = db.ConnString
-	storage := store.NewSQLStorageFromDB(st.DB(), log.New(os.Stderr, "store: ", 0))
-	storage.Db_set_schema_name("public")
-	sharedWrapper = &SQLStorageWrapper{S: storage}
 
 	return m.Run()
 }
@@ -115,19 +106,6 @@ func spareStore(ctx context.Context) (*store.Store, error) {
 		return nil, err
 	}
 	return store.NewFromPool(pool), nil
-}
-
-// wrapper returns the shared legacy wrapper (unconverted query methods),
-// skipping the test when the integration environment (Docker) is unavailable.
-func wrapper(t *testing.T) *SQLStorageWrapper {
-	t.Helper()
-	if errSetupSkip != nil {
-		t.Skipf("skipping: %v", errSetupSkip)
-	}
-	if sharedWrapper == nil {
-		t.Fatal("store harness not initialized (TestMain did not run?)")
-	}
-	return sharedWrapper
 }
 
 // repo returns the shared Repo (converted query methods), skipping the test

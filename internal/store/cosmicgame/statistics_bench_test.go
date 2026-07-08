@@ -12,28 +12,35 @@ package cosmicgame
 // captured the same way. The §4.2 goldens keep results correct; these keep
 // them fast.
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
-func benchStore(b *testing.B) *SQLStorageWrapper {
+func benchRepo(b *testing.B) *Repo {
 	b.Helper()
 	if errSetupSkip != nil {
 		b.Skipf("skipping: %v", errSetupSkip)
 	}
-	if sharedWrapper == nil {
+	if sharedRepo == nil {
 		b.Fatal("store harness not initialized (TestMain did not run?)")
 	}
-	return sharedWrapper
+	return sharedRepo
 }
 
 func BenchmarkStatisticsQueries(b *testing.B) {
-	sw := benchStore(b)
+	r := benchRepo(b)
+	ctx := context.Background()
 
 	// The three heaviest read paths: the multi-query dashboard aggregate,
 	// the per-round claim summary CTE, and the ROI leaderboard join.
 	b.Run("cosmic_game_statistics", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			stats := sw.Get_cosmic_game_statistics()
+			stats, err := r.CosmicGameStatistics(ctx)
+			if err != nil {
+				b.Fatalf("statistics query: %v", err)
+			}
 			if stats.TotalBids == 0 {
 				b.Fatal("statistics query returned no bids")
 			}
@@ -43,7 +50,11 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 	b.Run("claims_by_round", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			if rows := sw.Get_claims_by_round(); len(rows) == 0 {
+			rows, err := r.ClaimsByRound(ctx)
+			if err != nil {
+				b.Fatalf("claims_by_round: %v", err)
+			}
+			if len(rows) == 0 {
 				b.Fatal("claims_by_round returned no rows")
 			}
 		}
@@ -52,7 +63,11 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 	b.Run("roi_leaderboard", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			if rows := sw.Get_roi_leaderboard(0, "roi", 0, 100); len(rows) == 0 {
+			rows, err := r.RoiLeaderboard(ctx, 0, "roi", 0, 100)
+			if err != nil {
+				b.Fatalf("roi_leaderboard: %v", err)
+			}
+			if len(rows) == 0 {
 				b.Fatal("roi_leaderboard returned no rows")
 			}
 		}

@@ -16,7 +16,7 @@
     "CstAmount": "32000000000000000000",
     "CstAmountEth": 32,
     "WinnerIndex": 0,
-    "IsRWalk": true,
+    "IsRWalk": false,
     "IsStaker": true
   }
 ]

@@ -8,7 +8,7 @@
       {
         "CstAmount": "32000000000000000000",
         "CstAmountEth": 32,
-        "IsRWalk": true,
+        "IsRWalk": false,
         "IsStaker": true,
         "RecordId": 3,
         "RoundNum": 2,
