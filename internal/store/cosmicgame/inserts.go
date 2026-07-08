@@ -1,407 +1,675 @@
+// Event-row inserts for the CosmicGame ETL, one method per event type.
+// Every method resolves its address foreign keys through the Store's
+// lookup-or-create cache, runs a single INSERT (the plpgsql triggers of
+// migrations 00002/00003 maintain the aggregates) and returns errors instead
+// of terminating the process — the polling loop leaves the batch
+// unacknowledged so it re-processes after restart.
+
 package cosmicgame
 
 import (
+	"context"
 	"fmt"
-	"os"
 
 	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) {
+// insertAdminValue inserts the five columns every admin/parameter event
+// shares plus the one event-specific value column. table and column are
+// compile-time literals supplied by the callers below.
+func (r *Repo) insertAdminValue(ctx context.Context, table, column string, evtID, blockNum, txID, timeStamp, contractAid int64, value any) error {
+	query := "INSERT INTO " + table +
+		"(evtlog_id,block_num,tx_id,time_stamp,contract_aid," + column +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
+	_, err := r.pool().Exec(ctx, query, evtID, blockNum, txID, timeStamp, contractAid, value)
+	return store.WrapError("insert into "+table, err)
+}
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_prize_claim(" +
+// Game events.
+
+// InsertPrizeClaim records a MainPrizeClaimed event.
+func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *p.CGPrizeClaimEvent) error {
+	const op = "insert into cg_prize_claim"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_prize_claim(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"round_num,token_id,winner_aid,timeout,amount,cst_amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
+		contractAid,
 		evt.RoundNum,
 		evt.TokenId,
-		winner_aid,
+		winnerAid,
 		evt.Timeout,
 		evt.Amount,
 		evt.CstAmount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_prize_claim table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	bidder_aid := sw.must_lookup_or_create_address(evt.LastBidderAddr, 0, 0)
-	var query string
-	// Calculate bid position for this round
-	var bid_position int64 = 1
-	row := sw.S.Db().QueryRow("SELECT COALESCE(MAX(bid_position), 0) + 1 FROM "+sw.S.SchemaName()+".cg_bid WHERE round_num = $1", evt.RoundNum)
-	err := row.Scan(&bid_position)
-	if err != nil || bid_position == 0 {
-		bid_position = 1 // First bid in round
+// InsertBid records a BidPlaced event (V1 and V2 share the shape; V2 carries
+// real BidCstRewardAmount/CstDutchAuctionDuration values, V1 passes "-1").
+// The bid position is derived from the bids already stored for the round;
+// the CST bidding reward falls back to cg_glob_stats.cst_reward_for_bidding
+// (populated by admin events or the ETL startup chain sync) for V1 events.
+func (r *Repo) InsertBid(ctx context.Context, evt *p.CGBidEvent) error {
+	const op = "insert into cg_bid"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	bidderAid, err := r.addrID(ctx, evt.LastBidderAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
 	}
 
-	// Get current cst_reward_for_bidding from settings (populated by admin events or ETL chain sync at startup).
-	var cst_reward string
-	row = sw.S.Db().QueryRow("SELECT cst_reward_for_bidding FROM " + sw.S.SchemaName() + ".cg_glob_stats LIMIT 1")
-	err = row.Scan(&cst_reward)
+	var bidPosition int64
+	err = r.pool().QueryRow(ctx,
+		"SELECT COALESCE(MAX(bid_position), 0) + 1 FROM cg_bid WHERE round_num = $1",
+		evt.RoundNum).Scan(&bidPosition)
+	if err != nil {
+		// The legacy layer silently defaulted to position 1 here, mislabeling
+		// every later bid of the round on a DB failure; real errors propagate now.
+		return store.WrapError(op+": bid position", err)
+	}
+
+	cstReward, rewardErr := r.GlobStatsCstRewardForBidding(ctx)
 	if evt.BidCstRewardAmount != "-1" {
-		cst_reward = evt.BidCstRewardAmount
-	} else if err != nil || cst_reward == "" || cst_reward == "0" {
-		sw.S.Log_msg(fmt.Sprintf("DB error: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): %v, value=%q\n", err, cst_reward))
-		os.Exit(1)
+		cstReward = evt.BidCstRewardAmount
+	} else if rewardErr != nil {
+		return fmt.Errorf("%s: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): %w",
+			op, rewardErr)
+	} else if cstReward == "" || cstReward == "0" {
+		return fmt.Errorf("%s: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): value=%q",
+			op, cstReward)
 	}
 
-	// Determine eth_price and cst_price based on bid type
-	eth_price := evt.EthPrice
-	cst_price := evt.CstPrice
-	if evt.BidType == 2 { // CST bid
-		eth_price = "-1"
-		// cst_price already set
-	} else { // ETH or RandomWalk bid
-		// eth_price already set
-		cst_price = "-1"
+	// ETH and RandomWalk bids carry no CST price; CST bids no ETH price.
+	ethPrice := evt.EthPrice
+	cstPrice := evt.CstPrice
+	if evt.BidType == 2 {
+		ethPrice = "-1"
+	} else {
+		cstPrice = "-1"
 	}
 
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_bid(" +
+	query := "INSERT INTO cg_bid(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,bid_cst_reward_amount,cst_dutch_auction_duration,prize_time,msg,round_num,bid_type,bid_position" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17)"
-	_, err = sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		bidder_aid,
+		contractAid,
+		bidderAid,
 		evt.RandomWalkTokenId,
-		eth_price,
-		cst_price,
-		cst_reward,
+		ethPrice,
+		cstPrice,
+		cstReward,
 		evt.BidCstRewardAmount,
 		evt.CstDutchAuctionDuration,
 		evt.PrizeTime,
 		evt.Message,
 		evt.RoundNum,
 		evt.BidType,
-		bid_position,
+		bidPosition,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_bid table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_donation_event(evt *p.CGDonationEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	donor_aid := sw.must_lookup_or_create_address(evt.DonorAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_eth_donated(" +
+// InsertRoundStarted records a FirstBidPlacedInRound event.
+func (r *Repo) InsertRoundStarted(ctx context.Context, evt *p.CGRoundStarted) error {
+	const op = "insert into cg_first_bid"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_first_bid(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"round_num,start_ts" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		evt.RoundNum,
+		evt.StartTimestamp,
+	)
+	return store.WrapError(op, err)
+}
+
+// Donations.
+
+// InsertEthDonation records an EthDonated event.
+func (r *Repo) InsertEthDonation(ctx context.Context, evt *p.CGDonationEvent) error {
+	const op = "insert into cg_eth_donated"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	donorAid, err := r.addrID(ctx, evt.DonorAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_eth_donated(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,round_num,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		donor_aid,
+		contractAid,
+		donorAid,
 		evt.RoundNum,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_donated table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_donation_with_info_event(evt *p.CGDonationWithInfoEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	donor_aid := sw.must_lookup_or_create_address(evt.DonorAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_eth_donated_wi(" +
+// InsertEthDonationWithInfo records an EthDonatedWithInfo event; the JSON
+// payload read from the contract follows via InsertDonationJSON.
+func (r *Repo) InsertEthDonationWithInfo(ctx context.Context, evt *p.CGDonationWithInfoEvent) error {
+	const op = "insert into cg_eth_donated_wi"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	donorAid, err := r.addrID(ctx, evt.DonorAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_eth_donated_wi(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,round_num,record_id,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		donor_aid,
+		contractAid,
+		donorAid,
 		evt.RoundNum,
 		evt.RecordId,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_donated_wi table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_donation_wi_data_json(recordId int64, data string) {
 
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_donation_json(" +
-		"record_id,data" +
-		") VALUES($1,$2)"
-	_, err := sw.S.Db().Exec(query, recordId, data)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation_json : %v\n", err))
-		os.Exit(1)
-	}
+// InsertDonationJSON records the JSON payload of an EthDonatedWithInfo
+// donation, keyed by the contract-side record id (FK to cg_eth_donated_wi
+// with ON DELETE CASCADE, so re-processing the parent event replaces it).
+func (r *Repo) InsertDonationJSON(ctx context.Context, recordID int64, data string) error {
+	query := "INSERT INTO cg_donation_json(record_id,data) VALUES($1,$2)"
+	_, err := r.pool().Exec(ctx, query, recordID, data)
+	return store.WrapError("insert into cg_donation_json", err)
 }
-func (sw *SQLStorageWrapper) Insert_donation_received(evt *p.CGDonationReceivedEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	donor_aid := sw.must_lookup_or_create_address(evt.DonorAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_donation_received(" +
+// InsertDonationReceived records a CharityWallet DonationReceived event.
+func (r *Repo) InsertDonationReceived(ctx context.Context, evt *p.CGDonationReceivedEvent) error {
+	const op = "insert into cg_donation_received"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	donorAid, err := r.addrID(ctx, evt.DonorAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_donation_received(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,amount,round_num" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		donor_aid,
+		contractAid,
+		donorAid,
 		evt.Amount,
 		evt.RoundNum,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation_received table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_donation_sent(evt *p.CGDonationSentEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	charity_aid := sw.must_lookup_or_create_address(evt.CharityAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_donation_sent(" +
+// InsertDonationSent records a CharityWallet FundsTransferredToCharity event.
+func (r *Repo) InsertDonationSent(ctx context.Context, evt *p.CGDonationSentEvent) error {
+	const op = "insert into cg_donation_sent"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	charityAid, err := r.addrID(ctx, evt.CharityAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_donation_sent(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"charity_aid,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		charity_aid,
+		contractAid,
+		charityAid,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation_sent table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_erc20_donated_event(evt *p.CGERC20DonationEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	donor_aid := sw.must_lookup_or_create_address(evt.DonorAddr, 0, 0)
-	token_aid := sw.must_lookup_or_create_address(evt.TokenAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_erc20_donation(" +
+// InsertERC20Donation records a PrizesWallet TokenDonated event.
+func (r *Repo) InsertERC20Donation(ctx context.Context, evt *p.CGERC20DonationEvent) error {
+	const op = "insert into cg_erc20_donation"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	donorAid, err := r.addrID(ctx, evt.DonorAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	tokenAid, err := r.addrID(ctx, evt.TokenAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_erc20_donation(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,token_aid,round_num,bid_id,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		donor_aid,
-		token_aid,
+		contractAid,
+		donorAid,
+		tokenAid,
 		evt.RoundNum,
 		evt.BidId,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc20_donation table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.CGNFTDonationEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	donor_aid := sw.must_lookup_or_create_address(evt.DonorAddr, 0, 0)
-	token_aid := sw.must_lookup_or_create_address(evt.TokenAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_nft_donation(" +
+// InsertNFTDonation records a PrizesWallet NftDonated event.
+func (r *Repo) InsertNFTDonation(ctx context.Context, evt *p.CGNFTDonationEvent) error {
+	const op = "insert into cg_nft_donation"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	donorAid, err := r.addrID(ctx, evt.DonorAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	tokenAid, err := r.addrID(ctx, evt.TokenAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_nft_donation(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,token_aid,token_id,round_num,idx,bid_id,token_uri" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		donor_aid,
-		token_aid,
+		contractAid,
+		donorAid,
+		tokenAid,
 		evt.TokenId,
 		evt.RoundNum,
 		evt.Index,
 		evt.BidId,
 		evt.NFTTokenURI,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_donation table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_charity_updated_event(evt *p.CGCharityUpdatedEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	new_charity_aid := sw.must_lookup_or_create_address(evt.NewCharityAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_charity_receiver_changed(" +
+// InsertDonatedTokenClaim records a PrizesWallet DonatedTokenClaimed event.
+func (r *Repo) InsertDonatedTokenClaim(ctx context.Context, evt *p.CGDonatedTokenClaimed) error {
+	const op = "insert into cg_donated_tok_claimed"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	tokenAid, err := r.addrID(ctx, evt.TokenAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.BeneficiaryAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_donated_tok_claimed(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
-		"charity_aid" +
-		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6)"
-	_, err := sw.S.Db().Exec(query,
+		"round_num,idx,token_aid,winner_aid,amount" +
+		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		new_charity_aid,
+		contractAid,
+		evt.RoundNum,
+		evt.Index,
+		tokenAid,
+		winnerAid,
+		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_charity_receiver_changed table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_token_name_event(evt *p.CGTokenNameEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_token_name(" +
+// InsertDonatedNFTClaim records a PrizesWallet DonatedNftClaimed event.
+func (r *Repo) InsertDonatedNFTClaim(ctx context.Context, evt *p.CGDonatedNFTClaimed) error {
+	const op = "insert into cg_donated_nft_claimed"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	tokenAid, err := r.addrID(ctx, evt.TokenAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.BeneficiaryAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_donated_nft_claimed(" +
+		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
+		"round_num,idx,token_aid,winner_aid,token_id" +
+		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contractAid,
+		evt.RoundNum,
+		evt.Index,
+		tokenAid,
+		winnerAid,
+		evt.TokenId,
+	)
+	return store.WrapError(op, err)
+}
+
+// InsertFundsToCharity records a game FundsTransferredToCharity event.
+func (r *Repo) InsertFundsToCharity(ctx context.Context, evt *p.CGFundsToCharity) error {
+	const op = "insert into cg_funds_to_charity"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	charityAid, err := r.addrID(ctx, evt.CharityAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_funds_to_charity(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"charity_aid,amount" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		charityAid,
+		evt.Amount,
+	)
+	return store.WrapError(op, err)
+}
+
+// Tokens.
+
+// InsertTokenName records an NftNameChanged event.
+func (r *Repo) InsertTokenName(ctx context.Context, evt *p.CGTokenNameEvent) error {
+	const op = "insert into cg_token_name"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_token_name(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"token_id,token_name" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
+		contractAid,
 		evt.TokenId,
 		evt.TokenName,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_token_name table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.CGMintEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	owner_aid := sw.must_lookup_or_create_address(evt.OwnerAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_mint_event(" +
+// InsertMint records an NftMinted event; the owner starts as the current
+// owner (cur_owner_aid tracks later transfers).
+func (r *Repo) InsertMint(ctx context.Context, evt *p.CGMintEvent) error {
+	const op = "insert into cg_mint_event"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	ownerAid, err := r.addrID(ctx, evt.OwnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_mint_event(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"owner_aid,cur_owner_aid,token_id,round_num,seed" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		owner_aid,
-		owner_aid,
+		contractAid,
+		ownerAid,
+		ownerAid,
 		evt.TokenId,
 		evt.RoundNum,
 		evt.Seed,
 	)
+	return store.WrapError(op, err)
+}
+
+// InsertCosmicSignatureTransfer records an ERC721 Transfer of a
+// CosmicSignature NFT (otype: 1 = mint, 2 = burn, 0 = regular transfer).
+func (r *Repo) InsertCosmicSignatureTransfer(ctx context.Context, evt *p.CGERC721Transfer) error {
+	const op = "insert into cg_erc721_transfer"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_mint_event table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
+	}
+	fromAid, err := r.addrID(ctx, evt.From, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	toAid, err := r.addrID(ctx, evt.To, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	otype := transferOType(evt.From, evt.To)
+	query := "INSERT INTO cg_erc721_transfer(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"token_id,from_aid,to_aid,otype" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		evt.TokenId,
+		fromAid,
+		toAid,
+		otype,
+	)
+	return store.WrapError(op, err)
+}
+
+// InsertCosmicTokenTransfer records an ERC20 Transfer of CosmicToken
+// (otype: 1 = mint, 2 = burn, 0 = regular transfer).
+func (r *Repo) InsertCosmicTokenTransfer(ctx context.Context, evt *p.CGERC20Transfer) error {
+	const op = "insert into cg_erc20_transfer"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	fromAid, err := r.addrID(ctx, evt.From, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	toAid, err := r.addrID(ctx, evt.To, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	otype := transferOType(evt.From, evt.To)
+	query := "INSERT INTO cg_erc20_transfer(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"value,from_aid,to_aid,otype" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		evt.Value,
+		fromAid,
+		toAid,
+		otype,
+	)
+	return store.WrapError(op, err)
+}
+
+const zeroAddress = "0x0000000000000000000000000000000000000000"
+
+// transferOType classifies a token transfer: 1 = mint (from zero address),
+// 2 = burn (to zero address), 0 = regular transfer.
+func transferOType(from, to string) int {
+	switch {
+	case from == zeroAddress:
+		return 1
+	case to == zeroAddress:
+		return 2
+	default:
+		return 0
 	}
 }
-func (sw *SQLStorageWrapper) Insert_prize_deposit(evt *p.CGPrizesEthDeposit) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
+// Prizes.
 
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_prize_deposit (" +
+// InsertPrizeDeposit records a PrizesWallet EthReceived event.
+func (r *Repo) InsertPrizeDeposit(ctx context.Context, evt *p.CGPrizesEthDeposit) error {
+	const op = "insert into cg_prize_deposit"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_prize_deposit(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,winner_index,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		winner_aid,
+		contractAid,
+		winnerAid,
 		evt.Round,
 		evt.WinnerIndex,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_prize_deposit table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_prize_withdrawal(evt *p.CGPrizesEthWithdrawal) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-	beneficiary_aid := sw.must_lookup_or_create_address(evt.BeneficiaryAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_prize_withdrawal(" +
+// InsertPrizeWithdrawal records a PrizesWallet EthWithdrawn event.
+func (r *Repo) InsertPrizeWithdrawal(ctx context.Context, evt *p.CGPrizesEthWithdrawal) error {
+	const op = "insert into cg_prize_withdrawal"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	beneficiaryAid, err := r.addrID(ctx, evt.BeneficiaryAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_prize_withdrawal(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"round_num,winner_aid,beneficiary_aid,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
+		contractAid,
 		evt.Round,
-		winner_aid,
-		beneficiary_aid,
+		winnerAid,
+		beneficiaryAid,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_prize_withdrawal table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_raffle_nft_prize (" +
+// InsertRaffleNFTWinner records a RaffleWinnerPrizePaid event.
+func (r *Repo) InsertRaffleNFTWinner(ctx context.Context, evt *p.CGRaffleNFTWinner) error {
+	const op = "insert into cg_raffle_nft_prize"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_raffle_nft_prize(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,token_id,winner_idx,cst_amount,is_rwalk,is_staker" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		winner_aid,
+		contractAid,
+		winnerAid,
 		evt.Round,
 		evt.TokenId,
 		evt.WinnerIndex,
@@ -409,250 +677,324 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 		evt.IsRandomWalk,
 		evt.IsStaker,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_nft_prize table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_raffle_eth_winner(evt *p.CGRaffleETHWinner) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_raffle_eth_prize (" +
+// InsertRaffleETHWinner records a RaffleWinnerBidderEthPrizeAllocated event.
+func (r *Repo) InsertRaffleETHWinner(ctx context.Context, evt *p.CGRaffleETHWinner) error {
+	const op = "insert into cg_raffle_eth_prize"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_raffle_eth_prize(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,winner_idx,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		winner_aid,
+		contractAid,
+		winnerAid,
 		evt.Round,
 		evt.WinnerIndex,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_eth_prize table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
-	// Note: The Solidity EnduranceChampionPrizePaid event does not emit a winner_index.
-	// There is exactly one endurance champion per round, so winner_index is implicitly 0.
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_endurance_prize (" +
+// InsertEnduranceWinner records an EnduranceChampionPrizePaid event. The
+// Solidity event emits no winner index — there is exactly one endurance
+// champion per round.
+func (r *Repo) InsertEnduranceWinner(ctx context.Context, evt *p.CGEnduranceWinner) error {
+	const op = "insert into cg_endurance_prize"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_endurance_prize(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,erc721_token_id,erc20_amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		winner_aid,
+		contractAid,
+		winnerAid,
 		evt.Round,
 		evt.Erc721TokenId,
 		evt.Erc20Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_prize table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_lastcst_bidder_winner(evt *p.CGLastBidderWinner) {
-	// Note: The Solidity LastCstBidderPrizePaid event does not emit a winner_index.
-	// There is exactly one last CST bidder per round, so winner_index is implicitly 0.
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_lastcst_prize (" +
+// InsertLastCstBidderWinner records a LastCstBidderPrizePaid event (one per
+// round, no winner index in the Solidity event).
+func (r *Repo) InsertLastCstBidderWinner(ctx context.Context, evt *p.CGLastBidderWinner) error {
+	const op = "insert into cg_lastcst_prize"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_lastcst_prize(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,erc721_token_id,erc20_amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		winner_aid,
+		contractAid,
+		winnerAid,
 		evt.Round,
 		evt.Erc721TokenId,
 		evt.Erc20Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_lastcst_prize table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_chrono_warrior_event(evt *p.CGChronoWarrior) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.WinnerAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_chrono_warrior_prize(" +
+// InsertChronoWarrior records a ChronoWarriorPrizePaid event.
+func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *p.CGChronoWarrior) error {
+	const op = "insert into cg_chrono_warrior_prize"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	winnerAid, err := r.addrID(ctx, evt.WinnerAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_chrono_warrior_prize(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,winner_index,eth_amount,cst_amount,nft_id" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
-	_, err := sw.S.Db().Exec(query,
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		winner_aid,
+		contractAid,
+		winnerAid,
 		evt.Round,
 		evt.WinnerIndex,
 		evt.EthAmount,
 		evt.CstAmount,
 		evt.NftId,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_chrono_warrior_prize table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_donated_token_claimed(evt *p.CGDonatedTokenClaimed) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	token_aid := sw.must_lookup_or_create_address(evt.TokenAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.BeneficiaryAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_donated_tok_claimed (" +
-		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
-		"round_num,idx,token_aid,winner_aid,amount" +
-		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err := sw.S.Db().Exec(query,
+// InsertFundTransferFailed records a FundTransferFailed event.
+func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *p.CGFundTransferFailed) error {
+	const op = "insert into cg_fund_transf_err"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	destinationAid, err := r.addrID(ctx, evt.Destination, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_fund_transf_err(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"destination_aid,amount" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
-		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		evt.RoundNum,
-		evt.Index,
-		token_aid,
-		winner_aid,
+		evt.TimeStamp,
+		contractAid,
+		destinationAid,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donated_tok_claimed table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaimed) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, 0, 0)
-	token_aid := sw.must_lookup_or_create_address(evt.TokenAddr, 0, 0)
-	winner_aid := sw.must_lookup_or_create_address(evt.BeneficiaryAddr, 0, 0)
-
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_donated_nft_claimed (" +
-		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
-		"round_num,idx,token_aid,winner_aid,token_id" +
-		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err := sw.S.Db().Exec(query,
+// InsertERC20TransferFailed records an ERC20TransferFailed event.
+func (r *Repo) InsertERC20TransferFailed(ctx context.Context, evt *p.CGErc20TransferFailed) error {
+	const op = "insert into cg_erc20_transf_err"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	destinationAid, err := r.addrID(ctx, evt.Destination, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_erc20_transf_err(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"destination_aid,amount" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
-		evt.TimeStamp,
 		evt.TxId,
-		contract_aid,
-		evt.RoundNum,
-		evt.Index,
-		token_aid,
-		winner_aid,
-		evt.TokenId,
+		evt.TimeStamp,
+		contractAid,
+		destinationAid,
+		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donated_nft_claimed table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_nft_unstaked_rwalk_event(evt *p.CGNftUnstakedRWalk) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, evt.BlockNum, evt.TxId)
-	staker_aid := sw.must_lookup_or_create_address(evt.StakerAddress, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_nft_unstaked_rwalk (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
+// Staking.
+
+// InsertNftStakedCST records a CST-wallet NftStaked event.
+func (r *Repo) InsertNftStakedCST(ctx context.Context, evt *p.CGNftStakedCst) error {
+	const op = "insert into cg_nft_staked_cst"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	stakerAid, err := r.addrID(ctx, evt.StakerAddress, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_nft_staked_cst(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"action_id,token_id,num_staked_nfts,reward_per_staker,staker_aid" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		evt.ActionId,
+		evt.NftId,
+		evt.NumStakedNfts,
+		evt.RewardPerStaker,
+		stakerAid,
+	)
+	return store.WrapError(op, err)
+}
+
+// InsertNftStakedRWalk records a RandomWalk-wallet NftStaked event.
+func (r *Repo) InsertNftStakedRWalk(ctx context.Context, evt *p.CGNftStakedRWalk) error {
+	const op = "insert into cg_nft_staked_rwalk"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	stakerAid, err := r.addrID(ctx, evt.StakerAddress, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_nft_staked_rwalk(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"action_id,token_id,num_staked_nfts,staker_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.ActionId,
 		evt.NftId,
 		evt.NumStakedNfts,
-		staker_aid,
+		stakerAid,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_unstaked_rwalk table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedCst) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, evt.BlockNum, evt.TxId)
-	staker_aid := sw.must_lookup_or_create_address(evt.StakerAddress, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_nft_unstaked_cst (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
+// InsertNftUnstakedCST records a CST-wallet NftUnstaked event (carries the
+// staker's reward accounting).
+func (r *Repo) InsertNftUnstakedCST(ctx context.Context, evt *p.CGNftUnstakedCst) error {
+	const op = "insert into cg_nft_unstaked_cst"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	stakerAid, err := r.addrID(ctx, evt.StakerAddress, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_nft_unstaked_cst(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"action_id,token_id,num_staked_nfts,staker_aid,reward,reward_per_tok,action_counter" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.ActionId,
 		evt.NftId,
 		evt.NumStakedNfts,
-		staker_aid,
+		stakerAid,
 		evt.RewardAmount,
 		evt.RewardPerToken,
 		evt.ActionCounter,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_unstaked_cst  table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_staking_eth_deposit(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+// InsertNftUnstakedRWalk records a RandomWalk-wallet NftUnstaked event.
+func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *p.CGNftUnstakedRWalk) error {
+	const op = "insert into cg_nft_unstaked_rwalk"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	stakerAid, err := r.addrID(ctx, evt.StakerAddress, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_nft_unstaked_rwalk(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"action_id,token_id,num_staked_nfts,staker_aid" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
+		evt.ActionId,
+		evt.NftId,
+		evt.NumStakedNfts,
+		stakerAid,
+	)
+	return store.WrapError(op, err)
+}
+
+// InsertStakingEthDeposit records a staking-wallet EthDepositReceived event.
+func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *p.CGEthDeposit) error {
+	const op = "insert into cg_staking_eth_deposit"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_staking_eth_deposit(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13)"
+	_, err = r.pool().Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
 		evt.DepositTime,
 		evt.RoundNum,
 		evt.DepositId,
@@ -662,1195 +1004,573 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		evt.Modulo,
 		evt.AccumModulo,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_staking_eth_deposit table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_marketing_reward_paid_event(evt *p.CGMarketingRewardPaid) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, evt.BlockNum, evt.TxId)
-	marketer_aid := sw.must_lookup_or_create_address(evt.Marketer, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_mkt_reward(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
+// Marketing.
+
+// InsertMarketingRewardPaid records a MarketingWallet RewardPaid event.
+func (r *Repo) InsertMarketingRewardPaid(ctx context.Context, evt *p.CGMarketingRewardPaid) error {
+	const op = "insert into cg_mkt_reward"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	marketerAid, err := r.addrID(ctx, evt.Marketer, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_mkt_reward(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"amount,marketer_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.Amount,
-		marketer_aid,
+		marketerAid,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_mkt_reward table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_signature_transfer_event(evt *p.CGERC721Transfer) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	from_aid := sw.must_lookup_or_create_address(evt.From, evt.BlockNum, evt.TxId)
-	to_aid := sw.must_lookup_or_create_address(evt.To, evt.BlockNum, evt.TxId)
-	otype := int(0)
-	if evt.From == "0x0000000000000000000000000000000000000000" {
-		otype = 1
+// Admin: percentages and counts.
+
+// InsertCharityPercentageChange records a CharityEthDonationAmountPercentageChanged event.
+func (r *Repo) InsertCharityPercentageChange(ctx context.Context, evt *p.CGCharityPercentageChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_charity_pcent", err)
 	}
-	if evt.To == "0x0000000000000000000000000000000000000000" {
-		otype = 2
+	return r.insertAdminValue(ctx, "cg_adm_charity_pcent", "percentage",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewCharityPercentage)
+}
+
+// InsertPrizePercentageChange records a MainEthPrizeAmountPercentageChanged event.
+func (r *Repo) InsertPrizePercentageChange(ctx context.Context, evt *p.CGPrizePercentageChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_main_prize_pcent", err)
 	}
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_erc721_transfer(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"token_id,from_aid,to_aid,otype" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+	return r.insertAdminValue(ctx, "cg_adm_main_prize_pcent", "percentage",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewPrizePercentage)
+}
+
+// InsertRafflePercentageChange records a RaffleTotalEthPrizeAmountForBiddersPercentageChanged event.
+func (r *Repo) InsertRafflePercentageChange(ctx context.Context, evt *p.CGRafflePercentageChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_raffle_pcent", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_raffle_pcent", "percentage",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewRafflePercentage)
+}
+
+// InsertStakingPercentageChange records a CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged event.
+func (r *Repo) InsertStakingPercentageChange(ctx context.Context, evt *p.CGStakingPercentageChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_stake_pcent", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_stake_pcent", "percentage",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewStakingPercentage)
+}
+
+// InsertChronoPercentageChange records a ChronoWarriorEthPrizeAmountPercentageChanged event.
+func (r *Repo) InsertChronoPercentageChange(ctx context.Context, evt *p.CGChronoPercentageChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_chrono_pcent", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_chrono_pcent", "percentage",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewChronoPercentage)
+}
+
+// InsertNumRaffleETHWinnersBiddingChange records a NumRaffleEthPrizesForBiddersChanged event.
+func (r *Repo) InsertNumRaffleETHWinnersBiddingChange(ctx context.Context, evt *p.CGNumRaffleETHWinnersBiddingChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_raf_eth_bidding", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_raf_eth_bidding", "num_winners",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewNumRaffleETHWinnersBidding)
+}
+
+// InsertNumRaffleNFTWinnersBiddingChange records a NumRaffleCosmicSignatureNftsForBiddersChanged event.
+func (r *Repo) InsertNumRaffleNFTWinnersBiddingChange(ctx context.Context, evt *p.CGNumRaffleNFTWinnersBiddingChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_raf_nft_bidding", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_raf_nft_bidding", "num_winners",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewNumRaffleNFTWinnersBidding)
+}
+
+// InsertNumRaffleNFTWinnersStakingRWalkChange records a
+// NumRaffleCosmicSignatureNftsForRandomWalkNftStakersChanged event.
+func (r *Repo) InsertNumRaffleNFTWinnersStakingRWalkChange(ctx context.Context, evt *p.CGNumRaffleNFTWinnersStakingRWalkChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_raf_nft_staking_rwalk", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_raf_nft_staking_rwalk", "num_winners",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewNumRaffleNFTWinnersStakingRWalk)
+}
+
+// Admin: address changes.
+
+// InsertCharityReceiverChange records a CharityWallet CharityAddressChanged
+// event (who receives the charity funds).
+func (r *Repo) InsertCharityReceiverChange(ctx context.Context, evt *p.CGCharityUpdatedEvent) error {
+	const op = "insert into cg_charity_receiver_changed"
+	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	newCharityAid, err := r.addrID(ctx, evt.NewCharityAddr, 0, 0)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_charity_receiver_changed(" +
+		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
+		"charity_aid" +
+		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
-		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
-		evt.TokenId,
-		from_aid,
-		to_aid,
-		otype,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc721_transfer table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_token_transfer_event(evt *p.CGERC20Transfer) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	from_aid := sw.must_lookup_or_create_address(evt.From, evt.BlockNum, evt.TxId)
-	to_aid := sw.must_lookup_or_create_address(evt.To, evt.BlockNum, evt.TxId)
-	otype := int(0)
-	if evt.From == "0x0000000000000000000000000000000000000000" {
-		otype = 1
-	}
-	if evt.To == "0x0000000000000000000000000000000000000000" {
-		otype = 2
-	}
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_erc20_transfer(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"value,from_aid,to_aid,otype" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
 		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.Value,
-		from_aid,
-		to_aid,
-		otype,
+		contractAid,
+		newCharityAid,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc20_transfer table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_percentage_changed_event(evt *p.CGCharityPercentageChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_charity_pcent (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"percentage" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewCharityPercentage,
-	)
+// InsertCharityWalletAddressChange records a game CharityAddressChanged
+// event (which CharityWallet contract the game uses).
+func (r *Repo) InsertCharityWalletAddressChange(ctx context.Context, evt *p.CGCharityAddressChanged) error {
+	const op = "insert into cg_adm_charity_wallet"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_charity_pcent table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_percentage_changed_event(evt *p.CGPrizePercentageChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_main_prize_pcent (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"percentage" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewPrizePercentage,
-	)
+	newCharityAid, err := r.addrID(ctx, evt.NewCharity, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_main_prize_pcent table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_charity_wallet", "new_charity_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newCharityAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_percentage_changed_event(evt *p.CGRafflePercentageChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_raffle_pcent (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"percentage" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewRafflePercentage,
-	)
+// InsertRandomWalkAddressChange records a RandomWalkNftAddressChanged event.
+func (r *Repo) InsertRandomWalkAddressChange(ctx context.Context, evt *p.CGRandomWalkAddressChanged) error {
+	const op = "insert into cg_adm_rwalk_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raffle_pcent table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_eth_winners_bidding_changed_event(evt *p.CGNumRaffleETHWinnersBiddingChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_raf_eth_bidding(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"num_winners" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewNumRaffleETHWinnersBidding,
-	)
+	newRWalkAid, err := r.addrID(ctx, evt.NewRandomWalk, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_bidding table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_rwalk_addr", "new_rwalk_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newRWalkAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_bidding_changed_event(evt *p.CGNumRaffleNFTWinnersBiddingChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_raf_nft_bidding(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"num_winners" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewNumRaffleNFTWinnersBidding,
-	)
+// InsertPrizesWalletAddressChange records a PrizesWalletAddressChanged event.
+func (r *Repo) InsertPrizesWalletAddressChange(ctx context.Context, evt *p.CGPrizeWalletAddressChanged) error {
+	const op = "insert into cg_adm_prizes_wallet_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_nft_winners_bidding table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(evt *p.CGNumRaffleNFTWinnersStakingRWalkChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_raf_nft_staking_rwalk(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"num_winners" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewNumRaffleNFTWinnersStakingRWalk,
-	)
+	newWalletAid, err := r.addrID(ctx, evt.NewPrizeWallet, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_nft_staking_rwalk table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_prizes_wallet_addr", "new_wallet_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newWalletAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_percentage_changed_event(evt *p.CGStakingPercentageChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_stake_pcent (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"percentage" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewStakingPercentage,
-	)
+// InsertStakingWalletCSTAddressChange records a StakingWalletCosmicSignatureNftAddressChanged event.
+func (r *Repo) InsertStakingWalletCSTAddressChange(ctx context.Context, evt *p.CGStakingWalletCSTAddressChanged) error {
+	const op = "insert into cg_adm_staking_cst_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_stake_pcent table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_chrono_percentage_changed_event(evt *p.CGChronoPercentageChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_chrono_pcent (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"percentage" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewChronoPercentage,
-	)
+	newStakingAid, err := r.addrID(ctx, evt.NewStakingWalletCST, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_chrono_pcent table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_staking_cst_addr", "new_staking_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newStakingAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_address_changed_event(evt *p.CGCharityAddressChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_charity_aid := sw.must_lookup_or_create_address(evt.NewCharity, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_charity_wallet(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_charity_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_charity_aid,
-	)
+// InsertStakingWalletRWalkAddressChange records a StakingWalletRandomWalkNftAddressChanged event.
+func (r *Repo) InsertStakingWalletRWalkAddressChange(ctx context.Context, evt *p.CGStakingWalletRWalkAddressChanged) error {
+	const op = "insert into cg_adm_staking_rwalk_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_charity_wallet table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_random_walk_address_changed_event(evt *p.CGRandomWalkAddressChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_rwalk_aid := sw.must_lookup_or_create_address(evt.NewRandomWalk, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_rwalk_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_rwalk_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_rwalk_aid,
-	)
+	newStakingAid, err := r.addrID(ctx, evt.NewStakingWalletRWalk, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_rwalk_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_staking_rwalk_addr", "new_staking_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newStakingAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_prize_wallet_address_changed_event(evt *p.CGPrizeWalletAddressChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_raffle_aid := sw.must_lookup_or_create_address(evt.NewPrizeWallet, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_prizes_wallet_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_wallet_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_raffle_aid,
-	)
+// InsertMarketingWalletAddressChange records a MarketingWalletAddressChanged event.
+func (r *Repo) InsertMarketingWalletAddressChange(ctx context.Context, evt *p.CGMarketingWalletAddressChanged) error {
+	const op = "insert into cg_adm_marketing_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_prizes_wallet table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_cst_address_changed_event(evt *p.CGStakingWalletCSTAddressChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_staking_aid := sw.must_lookup_or_create_address(evt.NewStakingWalletCST, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_staking_cst_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_staking_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_staking_aid,
-	)
+	newMarketingAid, err := r.addrID(ctx, evt.NewMarketingWallet, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_staking_cst_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_marketing_addr", "new_marketing_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newMarketingAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_rwalk_address_changed_event(evt *p.CGStakingWalletRWalkAddressChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_staking_aid := sw.must_lookup_or_create_address(evt.NewStakingWalletRWalk, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_staking_rwalk_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_staking_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_staking_aid,
-	)
+// InsertTreasurerAddressChange records a TreasurerAddressChanged event.
+func (r *Repo) InsertTreasurerAddressChange(ctx context.Context, evt *p.CGTreasurerAddressChanged) error {
+	const op = "insert into cg_adm_treasurer_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_staking_rwalk_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_game_marketing_wallet_address_changed_event(evt *p.CGMarketingWalletAddressChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_marketing_aid := sw.must_lookup_or_create_address(evt.NewMarketingWallet, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_marketing_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_marketing_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_marketing_aid,
-	)
+	newTreasurerAid, err := r.addrID(ctx, evt.NewTreasurer, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_marketing_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_treasurer_addr", "new_treasurer_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newTreasurerAid)
 }
-func (sw *SQLStorageWrapper) Insert_treasurer_address_changed_event(evt *p.CGTreasurerAddressChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_treasurer_aid := sw.must_lookup_or_create_address(evt.NewTreasurer, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_treasurer_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_treasurer_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_treasurer_aid,
-	)
+// InsertCosmicTokenAddressChange records a CosmicSignatureTokenAddressChanged event.
+func (r *Repo) InsertCosmicTokenAddressChange(ctx context.Context, evt *p.CGCosmicTokenAddressChanged) error {
+	const op = "insert into cg_adm_costok_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_treasurer_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_cosmic_token_address_changed_event(evt *p.CGCosmicTokenAddressChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_costok_aid := sw.must_lookup_or_create_address(evt.NewCosmicToken, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_costok_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_costok_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_costok_aid,
-	)
+	newCosTokAid, err := r.addrID(ctx, evt.NewCosmicToken, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_costok_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_costok_addr", "new_costok_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newCosTokAid)
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_signature_address_changed_event(evt *p.CGCosmicSignatureAddressChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_cossig_aid := sw.must_lookup_or_create_address(evt.NewCosmicSignature, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_cossig_addr(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_cossig_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		new_cossig_aid,
-	)
+// InsertCosmicSignatureAddressChange records a CosmicSignatureNftAddressChanged event.
+func (r *Repo) InsertCosmicSignatureAddressChange(ctx context.Context, evt *p.CGCosmicSignatureAddressChanged) error {
+	const op = "insert into cg_adm_cossig_addr"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cossig_addr table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_upgraded_event(evt *p.CGUpgraded) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	implementation_aid := sw.must_lookup_or_create_address(evt.Implementation, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_upgraded(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"implementation_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		implementation_aid,
-	)
+	newCosSigAid, err := r.addrID(ctx, evt.NewCosmicSignature, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_upgraded table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_cossig_addr", "new_cossig_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, newCosSigAid)
 }
-func (sw *SQLStorageWrapper) Insert_admin_changed_event(evt *p.CGAdminChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	old_admin_aid := sw.must_lookup_or_create_address(evt.OldAdmin, evt.BlockNum, evt.TxId)
-	new_admin_aid := sw.must_lookup_or_create_address(evt.NewAdmin, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_admin_changed(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
+// Admin: proxy and lifecycle.
+
+// InsertUpgraded records an ERC-1967 Upgraded event.
+func (r *Repo) InsertUpgraded(ctx context.Context, evt *p.CGUpgraded) error {
+	const op = "insert into cg_adm_upgraded"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	implementationAid, err := r.addrID(ctx, evt.Implementation, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_upgraded", "implementation_aid",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, implementationAid)
+}
+
+// InsertAdminChanged records an ERC-1967 AdminChanged event.
+func (r *Repo) InsertAdminChanged(ctx context.Context, evt *p.CGAdminChanged) error {
+	const op = "insert into cg_adm_admin_changed"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	oldAdminAid, err := r.addrID(ctx, evt.OldAdmin, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	newAdminAid, err := r.addrID(ctx, evt.NewAdmin, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_adm_admin_changed(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"old_admin_aid,new_admin_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
-		old_admin_aid,
-		new_admin_aid,
+		contractAid,
+		oldAdminAid,
+		newAdminAid,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_admin_changed table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_time_increase_changed_event(evt *p.CGTimeIncreaseChanged) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_time_inc(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_time_inc" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewTimeIncrease,
-	)
+// InsertOwnershipTransfer records an OwnershipTransferred event
+// (contract_code identifies which platform contract changed owner).
+func (r *Repo) InsertOwnershipTransfer(ctx context.Context, evt *p.CGOwnershipTransferred) error {
+	const op = "insert into cg_adm_ownership"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_time_inc table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_timeout_claimprize_changed_event(evt *p.CGTimeoutClaimPrizeChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_timeout_claimprize(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_timeout" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewTimeout,
-	)
+	newOwnerAid, err := r.addrID(ctx, evt.NewOwner, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_timeout_claimprize table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_timeout_to_withdraw_prizes_changed_event(evt *p.CGTimeoutToWithdrawPrizeChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_timeout_withdraw(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_timeout" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewTimeout,
-	)
+	prevOwnerAid, err := r.addrID(ctx, evt.PrevOwner, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_timeout_withdraw table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-}
-func (sw *SQLStorageWrapper) Insert_price_increase_changed_event(evt *p.CGPriceIncreaseChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_price_inc(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_price_increase" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewPriceIncrease,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_price_increase table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_mainprize_microseconds_increase_changed_event(evt *p.CGMainPrizeMicroSecondsIncreaseChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_prize_microsec (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_microseconds " +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewMicroseconds,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_prize_microsec table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_initial_seconds_until_prize_changed_event(evt *p.CGInitialSecondsUntilPrizeChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_inisecprize (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_inisec" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewInitialSecondsUntilPrize,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_inisecprize table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_activation_time_changed_event(evt *p.CGActivationTimeChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_acttime (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_atime" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewActivationTime,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_acttime table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event(evt *p.CGCstDutchAuctionDurationDivisorChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_cst_auclen (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_len" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewValue,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_auclen table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_cst_dutch_auction_duration_change_divisor_changed_event(evt *p.CGCstDutchAuctionDurationChangeDivisorChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_cst_auclen_chg_div (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_len" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewValue,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_auclen_chg_div table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_eth_auction_duration_divisor_changed_event(evt *p.CGEthDutchAuctionDurationDivisorChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_eth_auclen (" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_len" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewValue,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_eth_auclen table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_eth_dutch_auction_ending_bidprice_divisor_changed_event(evt *p.CGEthDutchAuctionEndingBidPriceDivisorChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_eth_auc_endprice(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_len" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewValue,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_eth_auc_endprice table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_static_cst_reward_changed_event(evt *p.CGStaticCstReward) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_erc_rwd_mul(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_reward" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewReward,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_erc_rwd_mul table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_marketing_reward_changed_event(evt *p.CGMarketingRewardChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_mkt_reward(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_reward" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewReward,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_mkt_reward table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_erc20_token_reward_changed_event(evt *p.CGCstRewardForBiddingChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_erc20_reward(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_reward" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewReward,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_erc20_reward table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_max_message_length_changed_event(evt *p.CGMaxMessageLengthChanged) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_msg_len(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_length" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewMessageLength,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_msg_len table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_token_generation_script_url_event(evt *p.CGTokenGenerationScriptURL) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_script_url(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_url" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewURL,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_script_url table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_base_uri_event(evt *p.CGBaseURIEvent) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_base_uri_cs(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_uri" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewURI,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_base_uri table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_nft_staked_cst_event(evt *p.CGNftStakedCst) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, evt.BlockNum, evt.TxId)
-	staker_aid := sw.must_lookup_or_create_address(evt.StakerAddress, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_nft_staked_cst(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"action_id,token_id,num_staked_nfts,reward_per_staker,staker_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.NftId,
-		evt.NumStakedNfts,
-		evt.RewardPerStaker,
-		staker_aid,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_staked_cst table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_nft_staked_rwalk_event(evt *p.CGNftStakedRWalk) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.ContractAddr, evt.BlockNum, evt.TxId)
-	staker_aid := sw.must_lookup_or_create_address(evt.StakerAddress, evt.BlockNum, evt.TxId)
-	var table = "cg_nft_staked_cst"
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_nft_staked_rwalk(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"action_id,token_id,num_staked_nfts,staker_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.ActionId,
-		evt.NftId,
-		evt.NumStakedNfts,
-		staker_aid,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into "+table+" table: %v\n", err))
-		os.Exit(1)
-	}
-}
-func (sw *SQLStorageWrapper) Insert_ownership_transferred_event(evt *p.CGOwnershipTransferred) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	new_owner_aid := sw.must_lookup_or_create_address(evt.NewOwner, evt.BlockNum, evt.TxId)
-	prev_owner_aid := sw.must_lookup_or_create_address(evt.PrevOwner, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_ownership(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
+	query := "INSERT INTO cg_adm_ownership(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"prev_owner_aid,new_owner_aid,contract_code" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8)"
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
-		prev_owner_aid,
-		new_owner_aid,
+		contractAid,
+		prevOwnerAid,
+		newOwnerAid,
 		evt.ContractCode,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_ownership table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_initialized_event(evt *p.CGInitialized) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_initialized(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"version" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.Version,
-	)
+// InsertInitialized records an Initializable Initialized event.
+func (r *Repo) InsertInitialized(ctx context.Context, evt *p.CGInitialized) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_initialized table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_initialized", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_initialized", "version",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.Version)
 }
-func (sw *SQLStorageWrapper) Insert_cst_min_limit_event(evt *p.CGCstMinLimit) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_adm_cst_min_limit(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"min_limit" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.CstMinLimit,
-	)
+// Admin: timing and pricing parameters.
+
+// InsertTimeIncreaseChange records a legacy TimeIncreaseChanged event.
+func (r *Repo) InsertTimeIncreaseChange(ctx context.Context, evt *p.CGTimeIncreaseChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_min_limit table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_time_inc", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_time_inc", "new_time_inc",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewTimeIncrease)
 }
-func (sw *SQLStorageWrapper) Insert_fund_transfer_failed_event(evt *p.CGFundTransferFailed) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	destination_aid := sw.must_lookup_or_create_address(evt.Destination, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_fund_transf_err(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"destination_aid,amount" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		destination_aid,
-		evt.Amount,
-	)
+// InsertTimeoutClaimPrizeChange records a TimeoutDurationToClaimMainPrizeChanged event.
+func (r *Repo) InsertTimeoutClaimPrizeChange(ctx context.Context, evt *p.CGTimeoutClaimPrizeChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_fund_transf_err table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_timeout_claimprize", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_timeout_claimprize", "new_timeout",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewTimeout)
 }
-func (sw *SQLStorageWrapper) Insert_erc20_transfer_failed_event(evt *p.CGErc20TransferFailed) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	destination_aid := sw.must_lookup_or_create_address(evt.Destination, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_erc20_transf_err(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"destination_aid,amount" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		destination_aid,
-		evt.Amount,
-	)
+// InsertTimeoutToWithdrawPrizesChange records a TimeoutDurationToWithdrawPrizesChanged event.
+func (r *Repo) InsertTimeoutToWithdrawPrizesChange(ctx context.Context, evt *p.CGTimeoutToWithdrawPrizeChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc20_transf_err table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_timeout_withdraw", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_timeout_withdraw", "new_timeout",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewTimeout)
 }
-func (sw *SQLStorageWrapper) Insert_funds_transferred_to_charity_event(evt *p.CGFundsToCharity) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	charity_aid := sw.must_lookup_or_create_address(evt.CharityAddr, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_funds_to_charity(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"charity_aid,amount" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		charity_aid,
-		evt.Amount,
-	)
+// InsertPriceIncreaseChange records an EthBidPriceIncreaseDivisorChanged event.
+func (r *Repo) InsertPriceIncreaseChange(ctx context.Context, evt *p.CGPriceIncreaseChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_funds_to_charity table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_price_inc", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_price_inc", "new_price_increase",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewPriceIncrease)
 }
-func (sw *SQLStorageWrapper) Insert_delay_duration_before_next_round_changed_event(evt *p.CGNextRoundDelayDuration) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_delay_duration(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"new_value" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.NewValue,
-	)
+// InsertMainPrizeMicrosecondsChange records a MainPrizeTimeIncrementInMicroSecondsChanged event.
+func (r *Repo) InsertMainPrizeMicrosecondsChange(ctx context.Context, evt *p.CGMainPrizeMicroSecondsIncreaseChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_delay_duration table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_prize_microsec", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_prize_microsec", "new_microseconds",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewMicroseconds)
 }
-func (sw *SQLStorageWrapper) Insert_round_started_event(evt *p.CGRoundStarted) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO " + sw.S.SchemaName() + ".cg_first_bid(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"round_num,start_ts" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
-		evt.EvtId,
-		evt.BlockNum,
-		evt.TxId,
-		evt.TimeStamp,
-		contract_aid,
-		evt.RoundNum,
-		evt.StartTimestamp,
-	)
+// InsertInitialSecondsUntilPrizeChange records an InitialDurationUntilMainPrizeDivisorChanged event.
+func (r *Repo) InsertInitialSecondsUntilPrizeChange(ctx context.Context, evt *p.CGInitialSecondsUntilPrizeChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_first_bid table: %v\n", err))
-		os.Exit(1)
+		return store.WrapError("insert into cg_adm_inisecprize", err)
 	}
+	return r.insertAdminValue(ctx, "cg_adm_inisecprize", "new_inisec",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewInitialSecondsUntilPrize)
+}
+
+// InsertActivationTimeChange records a RoundActivationTimeChanged event.
+func (r *Repo) InsertActivationTimeChange(ctx context.Context, evt *p.CGActivationTimeChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_acttime", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_acttime", "new_atime",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewActivationTime)
+}
+
+// InsertCstAuctionLengthChange records a CST dutch-auction duration change
+// (CstDutchAuctionDurationDivisorChanged and the V2 duration event share the
+// table).
+func (r *Repo) InsertCstAuctionLengthChange(ctx context.Context, evt *p.CGCstDutchAuctionDurationDivisorChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_cst_auclen", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_cst_auclen", "new_len",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertCstAuctionDurationChangeDivisorChange records a CstDutchAuctionDurationChangeDivisorChanged event.
+func (r *Repo) InsertCstAuctionDurationChangeDivisorChange(ctx context.Context, evt *p.CGCstDutchAuctionDurationChangeDivisorChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_cst_auclen_chg_div", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_cst_auclen_chg_div", "new_len",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertEthAuctionDurationDivisorChange records an EthDutchAuctionDurationDivisorChanged event.
+func (r *Repo) InsertEthAuctionDurationDivisorChange(ctx context.Context, evt *p.CGEthDutchAuctionDurationDivisorChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_eth_auclen", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_eth_auclen", "new_len",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertEthAuctionEndingBidPriceDivisorChange records an EthDutchAuctionEndingBidPriceDivisorChanged event.
+func (r *Repo) InsertEthAuctionEndingBidPriceDivisorChange(ctx context.Context, evt *p.CGEthDutchAuctionEndingBidPriceDivisorChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_eth_auc_endprice", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_eth_auc_endprice", "new_len",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// Admin: rewards and limits.
+
+// InsertStaticCstRewardChange records a CstPrizeAmountChanged event.
+func (r *Repo) InsertStaticCstRewardChange(ctx context.Context, evt *p.CGStaticCstReward) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_erc_rwd_mul", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_erc_rwd_mul", "new_reward",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewReward)
+}
+
+// InsertMarketingRewardChange records a MarketingWalletCstContributionAmountChanged event.
+func (r *Repo) InsertMarketingRewardChange(ctx context.Context, evt *p.CGMarketingRewardChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_mkt_reward", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_mkt_reward", "new_reward",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewReward)
+}
+
+// InsertCstRewardForBiddingChange records a CST-bid-reward change
+// (CstRewardAmountForBiddingChanged and its V2 variants share the table; the
+// insert trigger updates cg_glob_stats.cst_reward_for_bidding).
+func (r *Repo) InsertCstRewardForBiddingChange(ctx context.Context, evt *p.CGCstRewardForBiddingChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_erc20_reward", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_erc20_reward", "new_reward",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewReward)
+}
+
+// InsertMaxMessageLengthChange records a BidMessageLengthMaxLimitChanged event.
+func (r *Repo) InsertMaxMessageLengthChange(ctx context.Context, evt *p.CGMaxMessageLengthChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_msg_len", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_msg_len", "new_length",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewMessageLength)
+}
+
+// InsertCstMinLimit records a CstDutchAuctionBeginningBidPriceMinLimitChanged event.
+func (r *Repo) InsertCstMinLimit(ctx context.Context, evt *p.CGCstMinLimit) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_cst_min_limit", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_cst_min_limit", "min_limit",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.CstMinLimit)
+}
+
+// InsertNextRoundDelayDurationChange records a DelayDurationBeforeRoundActivationChanged event.
+func (r *Repo) InsertNextRoundDelayDurationChange(ctx context.Context, evt *p.CGNextRoundDelayDuration) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_delay_duration", err)
+	}
+	return r.insertAdminValue(ctx, "cg_delay_duration", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// Admin: NFT metadata.
+
+// InsertTokenGenerationScriptURL records an NftGenerationScriptUriChanged event.
+func (r *Repo) InsertTokenGenerationScriptURL(ctx context.Context, evt *p.CGTokenGenerationScriptURL) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_script_url", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_script_url", "new_url",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewURL)
+}
+
+// InsertBaseURI records an NftBaseUriChanged event.
+func (r *Repo) InsertBaseURI(ctx context.Context, evt *p.CGBaseURIEvent) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_base_uri_cs", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_base_uri_cs", "new_uri",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewURI)
 }

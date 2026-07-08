@@ -4,8 +4,8 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,7 +15,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 )
 
-func proc_bid_event_v1(log *types.Log, elog *EthereumEventLog) error {
+func proc_bid_event_v1(ctx context.Context, log *types.Log, elog *EthereumEventLog) error {
 
 	var evt CGBidEvent
 	var eth_evt CosmicSignatureGameBidPlaced
@@ -28,8 +28,7 @@ func proc_bid_event_v1(log *types.Log, elog *EthereumEventLog) error {
 	}
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt, "BidPlaced", log.Data)
 	if err != nil {
-		Error.Printf("bid v1 decode error: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("bid v1 (evt id %v): decode: %w", elog.EvtId, err)
 	}
 
 	evt.EvtId = elog.EvtId
@@ -70,11 +69,12 @@ func proc_bid_event_v1(log *types.Log, elog *EthereumEventLog) error {
 	Info.Printf("\tMessage: %v\n", evt.Message)
 	Info.Printf("}\n")
 
-	storagew.Delete_bid(evt.EvtId)
-	storagew.Insert_bid_event(&evt)
-	return nil
+	if err := cgRepo.DeleteBid(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return cgRepo.InsertBid(ctx, &evt)
 }
-func proc_bid_event_v2(log *types.Log, elog *EthereumEventLog) error {
+func proc_bid_event_v2(ctx context.Context, log *types.Log, elog *EthereumEventLog) error {
 
 	var evt CGBidEvent
 	var eth_evt CosmicSignatureGameV2BidPlaced
@@ -87,8 +87,7 @@ func proc_bid_event_v2(log *types.Log, elog *EthereumEventLog) error {
 	}
 	err := cosmic_game_v2_abi.UnpackIntoInterface(&eth_evt, "BidPlaced", log.Data)
 	if err != nil {
-		Error.Printf("bid v2 decode error: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("bid v2 (evt id %v): decode: %w", elog.EvtId, err)
 	}
 
 	evt.EvtId = elog.EvtId
@@ -131,23 +130,23 @@ func proc_bid_event_v2(log *types.Log, elog *EthereumEventLog) error {
 	Info.Printf("\tMessage: %v\n", evt.Message)
 	Info.Printf("}\n")
 
-	storagew.Delete_bid(evt.EvtId)
-	storagew.Insert_bid_event(&evt)
-	return nil
+	if err := cgRepo.DeleteBid(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return cgRepo.InsertBid(ctx, &evt)
 }
-func proc_round_started_event(log *types.Log, elog *EthereumEventLog) {
+func proc_round_started_event(ctx context.Context, log *types.Log, elog *EthereumEventLog) error {
 
 	var evt CGRoundStarted
 	var eth_evt CosmicSignatureGameFirstBidPlacedInRound
 
 	if !bytes.Equal(log.Address.Bytes(), cosmic_game_addr.Bytes()) {
-		return
+		return nil
 	}
 	Info.Printf("Processing FirstBidPlacedInRound  event id=%v, txhash %v\n", elog.EvtId, elog.TxHash)
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt, "FirstBidPlacedInRound", log.Data)
 	if err != nil {
-		Error.Printf("Event FirstBidPlacedInRound decode error: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("FirstBidPlacedInRound (evt id %v): decode: %w", elog.EvtId, err)
 	}
 
 	evt.EvtId = elog.EvtId
@@ -163,6 +162,8 @@ func proc_round_started_event(log *types.Log, elog *EthereumEventLog) {
 	Info.Printf("\tStart TS: %v\n", evt.StartTimestamp)
 	Info.Printf("}\n")
 
-	storagew.Delete_round_started_event(evt.EvtId)
-	storagew.Insert_round_started_event(&evt)
+	if err := cgRepo.DeleteRoundStarted(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return cgRepo.InsertRoundStarted(ctx, &evt)
 }

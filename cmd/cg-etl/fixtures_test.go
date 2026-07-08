@@ -13,9 +13,12 @@
 package main
 
 import (
+	"context"
+	"math/big"
 	"path/filepath"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -87,7 +90,7 @@ func TestEventFixtures(t *testing.T) {
 			// Replay: the CG handlers delete-then-insert by evtlog id, so
 			// re-processing (the reorg/recovery path) must be state-neutral.
 			for _, id := range evtIDs {
-				if err := process_single_event(id); err != nil {
+				if err := process_single_event(context.Background(), id); err != nil {
 					t.Fatalf("replaying event %d: %v", id, err)
 				}
 			}
@@ -494,5 +497,39 @@ func eventFixtures() []fixture {
 		{name: "no_topics_noop", block: 1810, txs: []fixtureTx{{to: game, logs: []fixtureLog{{"", func(t *testing.T) *types.Log {
 			return &types.Log{Address: addr(game), Topics: nil, Data: []byte{0x02}}
 		}}}}}},
+
+		// ERC20TransferFailed lives in ICosmicSignatureErrors.sol and is
+		// absent from every generated ABI, so the log is hand-packed
+		// (string errStr + uint256 amount tail, destination indexed).
+		{name: "admin_erc20_transfer_failed", block: 1820, txs: []fixtureTx{{to: game, logs: []fixtureLog{{ERC20_TRANSFER_ERR, func(t *testing.T) *types.Log {
+			return buildERC20TransferFailedLog(t, addr(game), addr(fxCarol), "fixture erc20 transfer failure", eth(2))
+		}}}}}},
+	}
+}
+
+// buildERC20TransferFailedLog packs an ERC20TransferFailed(string,address
+// indexed,uint256) log without an ABI: the data body carries the canonical
+// encoding of (errStr, amount), the destination rides in topic 1.
+func buildERC20TransferFailedLog(t *testing.T, contract, destination ethcommon.Address, errStr string, amount *big.Int) *types.Log {
+	t.Helper()
+	stringT, err := abi.NewType("string", "", nil)
+	if err != nil {
+		t.Fatalf("string abi type: %v", err)
+	}
+	uint256T, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		t.Fatalf("uint256 abi type: %v", err)
+	}
+	data, err := abi.Arguments{{Type: stringT}, {Type: uint256T}}.Pack(errStr, amount)
+	if err != nil {
+		t.Fatalf("packing ERC20TransferFailed data: %v", err)
+	}
+	return &types.Log{
+		Address: contract,
+		Topics: []ethcommon.Hash{
+			ethcommon.HexToHash("0x" + ERC20_TRANSFER_ERR),
+			ethcommon.BytesToHash(destination.Bytes()),
+		},
+		Data: data,
 	}
 }

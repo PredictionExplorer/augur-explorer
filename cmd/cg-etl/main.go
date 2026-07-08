@@ -57,10 +57,13 @@ var (
 	cosmic_tok_aid            int64
 
 	cg_contracts CosmicGameContractAddrs
-	storagew     SQLStorageWrapper
-	// cgRepo carries the store queries already converted to the context-first
-	// Repo; storagew keeps the rest until Phase 1 completes.
+	// dbStore owns the process-wide connection pool; cgRepo runs every
+	// CosmicGame query on it. storage is the same pool's database/sql view
+	// for the base-store methods that have not been converted yet
+	// (evt_log/block reads — they move with the Phase 1 base-file batch).
+	dbStore *store.Store
 	cgRepo  *Repo
+	storage *store.SQLStorage
 	RPC_URL = os.Getenv("RPC_URL")
 	Error   *log.Logger
 	Info    *log.Logger
@@ -104,20 +107,20 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	dbStore, err = store.New(context.Background(), store.ConfigFromEnv())
 	if err != nil {
 		Info.Printf("failed to connect to storage: %v", err)
 		fmt.Fprintf(os.Stderr, "Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
 		os.Exit(1)
 	}
-	cgRepo = NewRepo(st)
-	storagew.S = store.NewSQLStorageFromDB(st.DB(), Info)
-	storagew.S.Db_set_schema_name("public")
-	if err := storagew.S.Init_log(db_log_file); err != nil {
+	cgRepo = NewRepo(dbStore)
+	storage = store.NewSQLStorageFromDB(dbStore.DB(), Info)
+	storage.Db_set_schema_name("public")
+	if err := storage.Init_log(db_log_file); err != nil {
 		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
 		os.Exit(1)
 	}
-	storagew.S.Log_msg("Log initialized\n")
+	storage.Log_msg("Log initialized\n")
 
 	cosmic_game_abi = get_abi(CosmicSignatureGameABI)
 	cosmic_game_v2_abi = get_abi(CosmicSignatureGameV2ABI)
@@ -152,7 +155,7 @@ func main() {
 		cg_contracts.MarketingWalletAddr,
 		cg_contracts.ImplementationAddr,
 	} {
-		if _, err := storagew.S.Lookup_or_create_address(contract_addr, 0, 0); err != nil {
+		if _, err := dbStore.LookupOrCreateAddress(context.Background(), contract_addr, 0, 0); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to register contract address %v: %v\n", contract_addr, err)
 			os.Exit(1)
 		}
@@ -160,12 +163,12 @@ func main() {
 	Info.Printf("All contract addresses registered in address table\n")
 
 	// Now lookup the address IDs (they are guaranteed to exist now)
-	cosmic_sig_aid, err = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicSignatureAddr)
+	cosmic_sig_aid, err = dbStore.LookupAddressID(context.Background(), cg_contracts.CosmicSignatureAddr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Lookup of CosmicSignatureAddr failed: %v", err)
 		os.Exit(1)
 	}
-	cosmic_tok_aid, err = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicTokenAddr)
+	cosmic_tok_aid, err = dbStore.LookupAddressID(context.Background(), cg_contracts.CosmicTokenAddr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Lookup of CosmicTokenAddr failed: %v", err)
 		os.Exit(1)
@@ -181,7 +184,7 @@ func main() {
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
 	implementation_addr = ethcommon.HexToAddress(cg_contracts.ImplementationAddr)
 
-	if err := syncContractParamsFromChain(context.Background(), cgRepo, &storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
+	if err := syncContractParamsFromChain(context.Background(), cgRepo, dbStore, storage, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
 		Error.Printf("Contract param chain sync failed: %v", err)
 		os.Exit(1)
 	}

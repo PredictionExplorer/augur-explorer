@@ -26,6 +26,13 @@ func NewRepo(st *store.Store) *Repo {
 // pool is a shorthand used by the query methods.
 func (r *Repo) pool() *pgxpool.Pool { return r.store.Pool() }
 
+// addrID resolves addr to its address_id through the shared Store's
+// lookup-or-create cache; the insert methods use it for every foreign-key
+// address column.
+func (r *Repo) addrID(ctx context.Context, addr string, blockNum, txID int64) (int64, error) {
+	return r.store.LookupOrCreateAddress(ctx, addr, blockNum, txID)
+}
+
 // queryList runs a SELECT and scans every row with scanRow, wrapping any
 // failure with op context. The result is always a non-nil slice (capacity
 // capHint) so an empty result marshals as [] — the shape every legacy caller

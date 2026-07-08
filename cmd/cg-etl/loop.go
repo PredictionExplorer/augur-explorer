@@ -34,12 +34,19 @@ func getContractAddresses() []ethcommon.Address {
 func process_events_filterlog(ctx context.Context) error {
 	// Create ETL context for common operations
 	etl_ctx := &etlcommon.ETLContext{
-		Storage:   storagew.S,
+		Storage:   storage,
 		EthClient: eclient,
 		RpcClient: rpcclient,
 		Info:      Info,
 		Error:     Error,
 	}
+
+	// ctx signals shutdown between batches only: in-flight DB work of the
+	// current batch (event processing, watermark writes) must complete even
+	// when a signal has already arrived, so it runs on a context that
+	// inherits values but not cancellation. Cancellable per-batch contexts
+	// with retry/backoff are Phase 3.
+	dbCtx := context.WithoutCancel(ctx)
 
 	// Adaptive batch sizing: start large, reduce if we get events
 	var batchSize uint64 = 100000     // Start with 100k blocks
@@ -59,14 +66,14 @@ func process_events_filterlog(ctx context.Context) error {
 		// failure (the legacy method terminated the process from inside the
 		// store); crash from main with the batch left unacknowledged, so it
 		// re-processes on restart.
-		status, err := cgRepo.ProcessingStatus(ctx)
+		status, err := cgRepo.ProcessingStatus(dbCtx)
 		if err != nil {
 			return fmt.Errorf("reading processing status: %w", err)
 		}
 		lastProcessedBlock := status.LastBlockNum
 		if lastProcessedBlock == 0 {
 			// If no blocks processed yet, start from the block where contracts were deployed
-			lastProcessedBlock, _ = storagew.S.Get_last_block_num()
+			lastProcessedBlock, _ = storage.Get_last_block_num()
 		}
 
 		// Get current block from chain
@@ -139,12 +146,12 @@ func process_events_filterlog(ctx context.Context) error {
 				break
 			}
 
-			// Process the event using existing logic. Errors here are DB
-			// failures propagated from the store layer (which previously
+			// Process the event using existing logic. Errors here are decode
+			// or DB failures propagated from the handlers (which previously
 			// terminated the process from inside the store); terminate the
 			// loop without updating the processing status so the batch is
 			// re-processed on restart, exactly as before.
-			err = process_single_event(evtId)
+			err = process_single_event(dbCtx, evtId)
 			if err != nil {
 				Error.Printf("process_single_event failed for evt %d: %v", evtId, err)
 				return fmt.Errorf("processing event %d: %w", evtId, err)
@@ -154,16 +161,18 @@ func process_events_filterlog(ctx context.Context) error {
 			lastSuccessfulBlock = log.BlockNumber
 		}
 
-		// Only update status if processing succeeded
+		// Only update status if processing succeeded. The watermark write
+		// runs on dbCtx so a SIGTERM arriving mid-batch still gets the
+		// "finish batch, write status, exit 0" shutdown the loop promises.
 		if !processingFailed {
 			status.LastBlockNum = int64(toBlock)
-			if err := cgRepo.UpdateProcessingStatus(ctx, &status); err != nil {
+			if err := cgRepo.UpdateProcessingStatus(dbCtx, &status); err != nil {
 				return fmt.Errorf("updating processing status: %w", err)
 			}
 		} else if lastSuccessfulBlock > 0 {
 			// Update to last successfully processed block
 			status.LastBlockNum = int64(lastSuccessfulBlock)
-			if err := cgRepo.UpdateProcessingStatus(ctx, &status); err != nil {
+			if err := cgRepo.UpdateProcessingStatus(dbCtx, &status); err != nil {
 				return fmt.Errorf("updating processing status: %w", err)
 			}
 		}
