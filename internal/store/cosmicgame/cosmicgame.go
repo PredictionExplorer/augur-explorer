@@ -3,31 +3,10 @@ package cosmicgame
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 
 	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
-
-// SQLStorageWrapper carries the CosmicGame query methods that have not been
-// converted to Repo yet (see repo.go). It shrinks file-by-file during the
-// Phase 1 store rewrite and is deleted when the conversion completes.
-type SQLStorageWrapper struct {
-	S *store.SQLStorage
-}
-
-// must_lookup_or_create_address wraps the base store's error-returning
-// Lookup_or_create_address with this subpackage's fatal-on-DB-error behavior
-// (log and exit), matching how all other methods here handle DB errors.
-func (sw *SQLStorageWrapper) must_lookup_or_create_address(addr string, block_num int64, tx_id int64) int64 {
-	aid, err := sw.S.Lookup_or_create_address(addr, block_num, tx_id)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error in lookup/create of address %v: %v", addr, err))
-		os.Exit(1)
-	}
-	return aid
-}
 
 // ContractAddrs returns the CosmicGame contract address registry
 // (cg_contracts, one row) plus the RandomWalk marketplace address.

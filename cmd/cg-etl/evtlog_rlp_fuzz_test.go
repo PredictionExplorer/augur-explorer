@@ -1,8 +1,8 @@
 // Fuzz target for the stored evt_log RLP decode path (MODERNIZATION.md §4.4).
 // process_single_event feeds evt_log.log_rlp bytes into rlp.DecodeBytes; the
 // bytes come from the database, so a corrupt row must never be able to panic
-// the decoder itself (process_single_event's deliberate panic on decode error
-// is a separate, intentional integrity check).
+// the decoder itself (process_single_event reports a decode failure as a
+// returned error, which aborts the batch).
 package main
 
 import (

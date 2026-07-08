@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -36,24 +37,24 @@ func chainSyncLogIndex() uint {
 	return 990000 + uint(time.Now().UnixNano()%10000)
 }
 
-func allocChainSyncEvtlog(sw *cgdb.SQLStorageWrapper, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
-	header, err := client.HeaderByNumber(context.Background(), nil)
+func allocChainSyncEvtlog(ctx context.Context, st *store.Store, baseStorage *store.SQLStorage, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
+	header, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("HeaderByNumber: %w", err)
 	}
-	if err := sw.S.Insert_block(header); err != nil {
+	if err := baseStorage.Insert_block(header); err != nil {
 		return nil, fmt.Errorf("Insert_block: %w", err)
 	}
 
 	blockNum := header.Number.Int64()
-	txId, err := sw.S.Insert_minimal_transaction(chainSyncTxHash, blockNum)
+	txId, err := baseStorage.Insert_minimal_transaction(chainSyncTxHash, blockNum)
 	if err != nil {
 		return nil, fmt.Errorf("Insert_minimal_transaction: %w", err)
 	}
 
-	contractAid, err := sw.S.Lookup_or_create_address(contractAddr, blockNum, txId)
+	contractAid, err := st.LookupOrCreateAddress(ctx, contractAddr, blockNum, txId)
 	if err != nil {
-		return nil, fmt.Errorf("Lookup_or_create_address: %w", err)
+		return nil, fmt.Errorf("LookupOrCreateAddress: %w", err)
 	}
 	syncLog := types.Log{
 		Address:     ethcommon.HexToAddress(contractAddr),
@@ -62,7 +63,7 @@ func allocChainSyncEvtlog(sw *cgdb.SQLStorageWrapper, contractAddr string, clien
 		Index:       chainSyncLogIndex(),
 	}
 
-	evtId, err := sw.S.Insert_event_log(syncLog, txId, contractAid)
+	evtId, err := baseStorage.Insert_event_log(syncLog, txId, contractAid)
 	if err != nil {
 		return nil, fmt.Errorf("Insert_event_log: %w", err)
 	}
@@ -82,17 +83,17 @@ func allocChainSyncEvtlog(sw *cgdb.SQLStorageWrapper, contractAddr string, clien
 // resolution stays lazy (only on an actual insert) so a clean sync run
 // leaves the address table untouched, exactly like the legacy layer.
 type paramSyncer struct {
-	ctx  context.Context
-	repo *cgdb.Repo
-	sw   *cgdb.SQLStorageWrapper
-	meta *cgdb.AdminCorrectionMeta
+	ctx   context.Context
+	repo  *cgdb.Repo
+	store *store.Store
+	meta  *cgdb.AdminCorrectionMeta
 }
 
 func (s *paramSyncer) contractAid(contractAddr string) (int64, error) {
 	if contractAddr == "" {
 		return 0, nil // Repo substitutes meta.ContractAid
 	}
-	aid, err := s.sw.S.Lookup_or_create_address(contractAddr, s.meta.BlockNum, s.meta.TxId)
+	aid, err := s.store.LookupOrCreateAddress(s.ctx, contractAddr, s.meta.BlockNum, s.meta.TxId)
 	if err != nil {
 		return 0, fmt.Errorf("correction contract address %v: %w", contractAddr, err)
 	}
@@ -163,7 +164,7 @@ func (s *paramSyncer) syncCstReward(wantValue string) (bool, error) {
 
 // syncContractParamsFromChain reads live monetary/timed settings from RPC and inserts SQL
 // correction rows when the latest admin/history value differs from chain.
-func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, sw *cgdb.SQLStorageWrapper, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
+func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store.Store, baseStorage *store.SQLStorage, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
 	if client == nil {
 		return fmt.Errorf("eth client is nil")
 	}
@@ -177,11 +178,11 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, sw *cgdb.
 	var copts bind.CallOpts
 	mechanics := probeContractMechanics(v1, v2, &copts)
 
-	meta, err := allocChainSyncEvtlog(sw, gameAddr, client)
+	meta, err := allocChainSyncEvtlog(ctx, st, baseStorage, gameAddr, client)
 	if err != nil {
 		return fmt.Errorf("alloc chain sync evtlog: %w", err)
 	}
-	syncer := &paramSyncer{ctx: ctx, repo: repo, sw: sw, meta: meta}
+	syncer := &paramSyncer{ctx: ctx, repo: repo, store: st, meta: meta}
 
 	var updated int
 	for _, p := range buildContractParamSyncList(mechanics) {

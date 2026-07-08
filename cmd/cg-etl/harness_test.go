@@ -125,13 +125,12 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	}
 	eclient = ethclient.NewClient(rpcclient)
 
-	// One Store over the container's pool backs both the converted Repo
-	// queries and the legacy wrapper, exactly like main(). Store errors of
-	// unconverted methods precede os.Exit(1); keep them visible.
-	st := store.NewFromPool(db.Pool)
-	cgRepo = cgstore.NewRepo(st)
-	storagew.S = store.NewSQLStorageFromDB(st.DB(), log.New(os.Stderr, "store: ", 0))
-	storagew.S.Db_set_schema_name("public")
+	// One Store over the container's pool backs both the Repo and the
+	// legacy database/sql view, exactly like main().
+	dbStore = store.NewFromPool(db.Pool)
+	cgRepo = cgstore.NewRepo(dbStore)
+	storage = store.NewSQLStorageFromDB(dbStore.DB(), log.New(os.Stderr, "store: ", 0))
+	storage.Db_set_schema_name("public")
 
 	cosmic_game_abi = get_abi(cgc.CosmicSignatureGameABI)
 	cosmic_game_v2_abi = get_abi(cgc.CosmicSignatureGameV2ABI)
@@ -242,6 +241,7 @@ func resetDB(t *testing.T) {
 		t.Fatalf("truncating tables: %v", err)
 	}
 	store.ResetAddressCacheForTests()
+	dbStore.ResetAddressCache()
 
 	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
 		t.Fatalf("re-seeding database: %v", err)
@@ -266,15 +266,15 @@ func resetDB(t *testing.T) {
 		cg_contracts.MarketingWalletAddr,
 		cg_contracts.ImplementationAddr,
 	} {
-		if _, err := storagew.S.Lookup_or_create_address(contractAddr, 0, 0); err != nil {
+		if _, err := dbStore.LookupOrCreateAddress(ctx, contractAddr, 0, 0); err != nil {
 			t.Fatalf("registering contract address %v: %v", contractAddr, err)
 		}
 	}
-	cosmic_sig_aid, err = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicSignatureAddr)
+	cosmic_sig_aid, err = dbStore.LookupAddressID(ctx, cg_contracts.CosmicSignatureAddr)
 	if err != nil {
 		t.Fatalf("looking up CosmicSignature aid: %v", err)
 	}
-	cosmic_tok_aid, err = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicTokenAddr)
+	cosmic_tok_aid, err = dbStore.LookupAddressID(ctx, cg_contracts.CosmicTokenAddr)
 	if err != nil {
 		t.Fatalf("looking up CosmicToken aid: %v", err)
 	}
@@ -315,7 +315,7 @@ func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string
 // etlContext builds the shared-pipeline context exactly as the polling loop does.
 func etlContext() *etlcommon.ETLContext {
 	return &etlcommon.ETLContext{
-		Storage:   storagew.S,
+		Storage:   storage,
 		EthClient: eclient,
 		RpcClient: rpcclient,
 		Info:      Info,
@@ -353,7 +353,7 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}
-		if err := process_single_event(evtID); err != nil {
+		if err := process_single_event(context.Background(), evtID); err != nil {
 			t.Fatalf("process_single_event(%d): %v", evtID, err)
 		}
 		evtIDs = append(evtIDs, evtID)

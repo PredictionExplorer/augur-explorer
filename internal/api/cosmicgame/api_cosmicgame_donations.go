@@ -176,7 +176,7 @@ func api_cosmic_game_donations_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "CombinedDonationRecords": []interface{}{},
@@ -369,7 +369,7 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "DonatedPrizesERC20ByWinner": []interface{}{},
@@ -468,7 +468,7 @@ func api_cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "DonationsERC20ByDonor": []interface{}{},
@@ -542,7 +542,7 @@ func api_cosmic_game_erc20_claims_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "ERC20ClaimsByWinner": []interface{}{},

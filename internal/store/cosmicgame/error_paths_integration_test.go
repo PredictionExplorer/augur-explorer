@@ -90,6 +90,25 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			_, err := r.ClaimsByRound(cancelled)
 			return err
 		},
+		"DeleteBid (deletes.go)": func() error {
+			return r.DeleteBid(cancelled, -1)
+		},
+		"DeletePrizeClaim (deletes.go)": func() error {
+			return r.DeletePrizeClaim(cancelled, -1)
+		},
+		"InsertEthDonation (inserts.go)": func() error {
+			return r.InsertEthDonation(cancelled, &p.CGDonationEvent{
+				EvtId: -1, ContractAddr: "0xEeee00000000000000000000000000000000Eeee",
+				DonorAddr: "0xEeee00000000000000000000000000000000Ffff",
+			})
+		},
+		"InsertBid (inserts.go)": func() error {
+			return r.InsertBid(cancelled, &p.CGBidEvent{
+				EvtId: -1, ContractAddr: "0xEeee00000000000000000000000000000000Eeee",
+				LastBidderAddr:     "0xEeee00000000000000000000000000000000Ffff",
+				BidCstRewardAmount: "-1", CstDutchAuctionDuration: "-1",
+			})
+		},
 	}
 	for name, call := range cancelledCalls {
 		if err := call(); !errors.Is(err, context.Canceled) {
@@ -137,6 +156,14 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 		"InsertAdminCorrectionDecimal": func() error {
 			meta := &AdminCorrectionMeta{EvtId: 5001, BlockNum: 1, TxId: 1001, TimeStamp: 1, ContractAid: aidCosmicGame}
 			return spareRepo.InsertAdminCorrectionDecimal(ctx, "cg_adm_charity_pcent", "percentage", "1", meta, 0)
+		},
+		"DeleteMint": func() error {
+			return spareRepo.DeleteMint(ctx, -1)
+		},
+		"InsertTokenName": func() error {
+			return spareRepo.InsertTokenName(ctx, &p.CGTokenNameEvent{
+				EvtId: -1, ContractAddr: "0xEeee00000000000000000000000000000000Eeee",
+			})
 		},
 	}
 	for name, call := range closedPoolCalls {

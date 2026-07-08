@@ -8,7 +8,6 @@ import (
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/gin-gonic/gin"
 
-	. "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 )
 
@@ -18,9 +17,6 @@ var (
 
 	// RpcClient for direct RPC calls
 	rpcclient *ethrpc.Client
-
-	// ArbStoragew is the CosmicGame database wrapper
-	ArbStoragew SQLStorageWrapper
 
 	// Loggers
 	Info  *log.Logger
@@ -43,12 +39,6 @@ func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog 
 	rpcclient = rpcClient
 	Info = info
 	Error = errorLog
-
-	// Initialize the storage wrapper
-	if common.Ctx != nil && common.Ctx.Db != nil {
-		ArbStoragew.S = common.Ctx.Db
-		ArbStoragew.S.Db_set_schema_name("public")
-	}
 
 	// Call the cosmic game initialization
 	cosmic_game_init()

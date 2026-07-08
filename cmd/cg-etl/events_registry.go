@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 
@@ -501,256 +502,136 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 	return inspected_events
 }
 
-// select_event_and_process dispatches the log to every matching event handler.
-// Handlers that touch the base store propagate DB errors, which stop the
-// dispatch and are returned to the polling loop.
-func select_event_and_process(log *types.Log, evtlog *EthereumEventLog) error {
+// eventDispatchEntry pairs a decoded topic-0 signature with its handler.
+// select_event_and_process walks the table; the two duplicate-topic events
+// (CharityAddressChanged from two contracts, Transfer from two token
+// contracts) are disambiguated inside their handlers by contract address.
+type eventDispatchEntry struct {
+	topic0  []byte
+	handler func(context.Context, *types.Log, *EthereumEventLog) error
+}
 
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_prize_claim_event) {
-		proc_prize_claim_event(log, evtlog)
+// eventDispatchTable returns the topic → handler registry. Built per call
+// because the evt_* topic variables and the handlers' address guards are
+// package globals initialized by main()/the test harness.
+func eventDispatchTable() []eventDispatchEntry {
+	return []eventDispatchEntry{
+		{evt_prize_claim_event, proc_prize_claim_event},
+		{evt_bid_event, proc_bid_event_v1},
+		{evt_bid_event_v2, proc_bid_event_v2},
+		{evt_eth_donated_event, proc_donation_event},
+		{evt_eth_donated_wi_event, proc_donation_with_info_event},
+		{evt_donation_received_event, proc_donation_received_event},
+		{evt_donation_sent_event, proc_donation_sent_event},
+		{evt_nft_donation_event, proc_nft_donation_event},
+		{evt_erc20_donated, proc_erc20_donated_event},
+		{evt_charity_receiver_changed, proc_charity_address_changed_unified},
+		{evt_token_name_event, proc_token_name_event},
+		{evt_mint_event, proc_mint_event},
+		{evt_eth_prize_deposit, proc_prizes_eth_deposit_event},
+		{evt_eth_prize_withdrawal, proc_eth_prize_withdrawal_event},
+		{evt_raffle_eth_prize_event, proc_raffle_eth_winner_event},
+		{evt_raffle_nft_prize_event, proc_raffle_nft_winner_event},
+		{evt_endurance_prize_event, proc_endurance_winner_event},
+		{evt_lastcst_bidder_prize_event, proc_lastcst_bidder_winner_event},
+		{evt_chrono_warrior_prize_event, proc_chrono_warrior_event},
+		{evt_donated_token_claimed, proc_donated_token_claimed_event},
+		{evt_donated_nft_claimed, proc_donated_nft_claimed_event},
+		{evt_transfer, proc_transfer_event_common},
+		{evt_cst_nft_staked, proc_cst_nft_staked_event},
+		{evt_rwalk_nft_staked, proc_rwalk_nft_staked_event},
+		{evt_nft_unstaked_rwalk, proc_nft_unstaked_rwalk_event},
+		{evt_nft_unstaked_cst, proc_nft_unstaked_cst_event},
+		{evt_staking_eth_deposit, proc_staking_eth_deposit_event},
+		{evt_marketing_reward_paid, proc_marketing_reward_paid_event},
+		{evt_charity_percentage_changed, proc_charity_percentage_changed_event},
+		{evt_prize_percentage_changed, proc_prize_percentage_changed_event},
+		{evt_raffle_percentage_changed, proc_raffle_percentage_changed_event},
+		{evt_staking_percentage_changed, proc_staking_percentage_changed_event},
+		{evt_chrono_percentage_changed, proc_chrono_percentage_changed_event},
+		{evt_num_raffle_eth_winners_bidding_changed, proc_num_raffle_eth_winners_bidding_changed_event},
+		{evt_num_raffle_nft_winners_bidding_changed, proc_num_raffle_nft_winners_bidding_changed_event},
+		{evt_num_raffle_nft_winners_staking_rwalk_changed, proc_num_raffle_nft_winners_staking_rwalk_changed_event},
+		{evt_charity_wallet_changed, proc_charity_address_changed_unified},
+		{evt_rwalk_address_changed, proc_random_walk_address_changed_event},
+		{evt_prizes_wallet_address_changed, proc_raffle_address_changed_event},
+		{evt_staking_wallet_cst_address_changed, proc_staking_wallet_cst_address_changed_event},
+		{evt_staking_wallet_rwalk_address_changed, proc_staking_wallet_rwalk_address_changed_event},
+		{evt_marketing_address_changed, proc_marketing_wallet_address_changed_event},
+		{evt_treasurer_changed, proc_treasurer_changed_event},
+		{evt_costok_address_changed, proc_cosmic_token_address_changed_event},
+		{evt_cossig_address_changed, proc_cosmic_signature_address_changed_event},
+		{evt_proxy_upgraded, proc_proxy_upgraded_event},
+		{evt_admin_changed, proc_admin_changed_event},
+		{evt_time_increase_changed, proc_time_increase_changed_event},
+		{evt_timeout_claimprize_changed, proc_timeout_claimprize_changed_event},
+		{evt_timeout_to_withdraw_prize, proc_timeout_duration_to_withdraw_prize_event},
+		{evt_price_increase_changed, proc_price_increase_changed_event},
+		{evt_prize_microsecond_increase_changed, proc_mainprize_microsecond_increase_changed},
+		{evt_initial_seconds_until_prize_changed, proc_initial_seconds_until_prize_changed_event},
+		{evt_activation_time_changed, proc_activation_time_changed_event},
+		{evt_cst_dutch_auction_duration_divisor_changed, proc_cst_dutch_auction_duration_divisor_changed_event},
+		{evt_cst_dutch_auction_duration_changed, proc_cst_dutch_auction_duration_changed_event},
+		{evt_cst_dutch_auction_duration_change_divisor_changed, proc_cst_dutch_auction_duration_change_divisor_changed_event},
+		{evt_eth_dutch_auction_duration_divisor_changed, proc_eth_dutch_auction_duration_divisor_changed_event},
+		{evt_eth_dutch_auction_ending_bidprice_divisor, proc_eth_dutch_auction_ending_bid_price_divisor_changed__event},
+		{evt_cst_reward_for_bidding_changed, proc_erc20_token_reward_changed_event},
+		{evt_bid_cst_reward_amount_changed, proc_bid_cst_reward_amount_changed_event},
+		{evt_bid_cst_reward_amount_multiplier_changed, proc_bid_cst_reward_amount_multiplier_changed_event},
+		{evt_static_cst_reward, proc_static_cst_reward_changed_event},
+		{evt_max_msg_length_changed, proc_max_msg_length_changed_event},
+		{evt_token_script_url, proc_token_generation_script_url_event},
+		{evt_base_uri, proc_base_uri_event},
+		{evt_marketing_reward_changed, proc_marketing_reward_changed},
+		{evt_ownership_transferred, proc_ownership_transferred_event},
+		{evt_initialized, proc_initialized_event},
+		{evt_cst_min_limit, proc_starting_bid_price_cst_min_limit_event},
+		{evt_fund_transf_err, proc_fund_transfer_failed_event},
+		{evt_erc20_transf_err, proc_erc20_transfer_failed_event},
+		{evt_funds2charity, proc_funds_transferred_to_charity_event},
+		{evt_delay_duration_round, proc_delay_duration_before_next_round_changed_event},
+		{evt_first_bid_event, proc_round_started_event},
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_bid_event) {
-		if err := proc_bid_event_v1(log, evtlog); err != nil {
+}
+
+// select_event_and_process dispatches the log to every matching event
+// handler. Any handler error (decode failure or DB write failure) stops the
+// dispatch and is returned to the polling loop, which leaves the batch
+// unacknowledged for re-processing.
+func select_event_and_process(ctx context.Context, log *types.Log, evtlog *EthereumEventLog) error {
+	topic0 := log.Topics[0].Bytes()
+	for _, entry := range eventDispatchTable() {
+		if !bytes.Equal(topic0, entry.topic0) {
+			continue
+		}
+		if err := entry.handler(ctx, log, evtlog); err != nil {
 			return err
 		}
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_bid_event_v2) {
-		if err := proc_bid_event_v2(log, evtlog); err != nil {
-			return err
-		}
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_eth_donated_event) {
-		proc_donation_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_eth_donated_wi_event) {
-		proc_donation_with_info_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_donation_received_event) {
-		proc_donation_received_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_donation_sent_event) {
-		proc_donation_sent_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_nft_donation_event) {
-		proc_nft_donation_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_erc20_donated) {
-		proc_erc20_donated_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_charity_receiver_changed) {
-		proc_charity_address_changed_unified(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_token_name_event) {
-		proc_token_name_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_mint_event) {
-		proc_mint_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_eth_prize_deposit) {
-		proc_prizes_eth_deposit_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_eth_prize_withdrawal) {
-		proc_eth_prize_withdrawal_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_raffle_eth_prize_event) {
-		proc_raffle_eth_winner_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_raffle_nft_prize_event) {
-		proc_raffle_nft_winner_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_endurance_prize_event) {
-		proc_endurance_winner_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_lastcst_bidder_prize_event) {
-		proc_lastcst_bidder_winner_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_chrono_warrior_prize_event) {
-		proc_chrono_warrior_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_donated_token_claimed) {
-		proc_donated_token_claimed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_donated_nft_claimed) {
-		proc_donated_nft_claimed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_transfer) {
-		proc_transfer_event_common(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cst_nft_staked) {
-		proc_cst_nft_staked_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_rwalk_nft_staked) {
-		proc_rwalk_nft_staked_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_nft_unstaked_rwalk) {
-		proc_nft_unstaked_rwalk_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_nft_unstaked_cst) {
-		proc_nft_unstaked_cst_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_staking_eth_deposit) {
-		proc_staking_eth_deposit_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_marketing_reward_paid) {
-		proc_marketing_reward_paid_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_charity_percentage_changed) {
-		proc_charity_percentage_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_prize_percentage_changed) {
-		proc_prize_percentage_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_raffle_percentage_changed) {
-		proc_raffle_percentage_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_staking_percentage_changed) {
-		proc_staking_percentage_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_chrono_percentage_changed) {
-		proc_chrono_percentage_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_num_raffle_eth_winners_bidding_changed) {
-		proc_num_raffle_eth_winners_bidding_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_num_raffle_nft_winners_bidding_changed) {
-		proc_num_raffle_nft_winners_bidding_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_num_raffle_nft_winners_staking_rwalk_changed) {
-		proc_num_raffle_nft_winners_staking_rwalk_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_charity_wallet_changed) {
-		proc_charity_address_changed_unified(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_rwalk_address_changed) {
-		proc_random_walk_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_prizes_wallet_address_changed) {
-		proc_raffle_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_staking_wallet_cst_address_changed) {
-		proc_staking_wallet_cst_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_staking_wallet_rwalk_address_changed) {
-		proc_staking_wallet_rwalk_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_marketing_address_changed) {
-		proc_marketing_wallet_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_treasurer_changed) {
-		proc_treasurer_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_costok_address_changed) {
-		proc_cosmic_token_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cossig_address_changed) {
-		proc_cosmic_signature_address_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_proxy_upgraded) {
-		proc_proxy_upgraded_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_admin_changed) {
-		proc_admin_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_time_increase_changed) {
-		proc_time_increase_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_timeout_claimprize_changed) {
-		proc_timeout_claimprize_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_timeout_to_withdraw_prize) {
-		proc_timeout_duration_to_withdraw_prize_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_price_increase_changed) {
-		proc_price_increase_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_prize_microsecond_increase_changed) {
-		proc_mainprize_microsecond_increase_changed(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_initial_seconds_until_prize_changed) {
-		proc_initial_seconds_until_prize_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_activation_time_changed) {
-		proc_activation_time_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cst_dutch_auction_duration_divisor_changed) {
-		proc_cst_dutch_auction_duration_divisor_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cst_dutch_auction_duration_changed) {
-		proc_cst_dutch_auction_duration_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cst_dutch_auction_duration_change_divisor_changed) {
-		proc_cst_dutch_auction_duration_change_divisor_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_eth_dutch_auction_duration_divisor_changed) {
-		proc_eth_dutch_auction_duration_divisor_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_eth_dutch_auction_ending_bidprice_divisor) {
-		proc_eth_dutch_auction_ending_bid_price_divisor_changed__event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cst_reward_for_bidding_changed) {
-		proc_erc20_token_reward_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_bid_cst_reward_amount_changed) {
-		proc_bid_cst_reward_amount_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_bid_cst_reward_amount_multiplier_changed) {
-		proc_bid_cst_reward_amount_multiplier_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_static_cst_reward) {
-		proc_static_cst_reward_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_max_msg_length_changed) {
-		proc_max_msg_length_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_token_script_url) {
-		proc_token_generation_script_url_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_base_uri) {
-		proc_base_uri_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_marketing_reward_changed) {
-		proc_marketing_reward_changed(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_ownership_transferred) {
-		proc_ownership_transferred_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_initialized) {
-		proc_initialized_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_cst_min_limit) {
-		proc_starting_bid_price_cst_min_limit_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_fund_transf_err) {
-		proc_fund_transfer_failed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_funds2charity) {
-		proc_funds_transferred_to_charity_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_delay_duration_round) {
-		proc_delay_duration_before_next_round_changed_event(log, evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(), evt_first_bid_event) {
-		proc_round_started_event(log, evtlog)
 	}
 	return nil
 }
-func process_single_event(evt_id int64) error {
 
-	evtlog, err := storagew.S.Get_event_log(evt_id)
+// process_single_event loads the stored evt_log row, reconstructs the
+// Ethereum log from its RLP and dispatches it. All failures — a missing row,
+// a corrupt RLP payload (previously a panic) or a handler error — are
+// returned to the caller.
+func process_single_event(ctx context.Context, evt_id int64) error {
+
+	evtlog, err := storage.Get_event_log(evt_id)
 	if err != nil {
 		return fmt.Errorf("process_single_event(%v): %w", evt_id, err)
 	}
 	var log types.Log
 	err = rlp.DecodeBytes(evtlog.RlpLog, &log)
 	if err != nil {
-		panic(fmt.Sprintf("RLP Decode error: %v", err))
+		return fmt.Errorf("process_single_event(%v): RLP decode: %w", evt_id, err)
 	}
 	log.BlockNumber = uint64(evtlog.BlockNum)
 	log.TxHash.SetBytes(common.HexToHash(evtlog.TxHash).Bytes())
 	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
-		return select_event_and_process(&log, &evtlog)
+		return select_event_and_process(ctx, &log, &evtlog)
 	}
 	return nil
 }

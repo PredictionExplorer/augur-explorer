@@ -305,7 +305,7 @@ func TestReorgRollbackAndReplay(t *testing.T) {
 	// story) — the claim, withdrawals, staking and their trigger effects.
 	testutil.CompareGolden(t, filepath.Join("testdata", "golden", "story_reorg_rollback.json"), diff)
 
-	lastBlock, err := storagew.S.Get_last_block_num()
+	lastBlock, err := storage.Get_last_block_num()
 	if err != nil {
 		t.Fatalf("Get_last_block_num: %v", err)
 	}

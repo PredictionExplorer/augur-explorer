@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 )
@@ -136,6 +137,7 @@ func TestLegacyConstantsHaveNoABIEvent(t *testing.T) {
 	for name, constant := range map[string]string{
 		"TIME_INCREASE_CHANGED":         TIME_INCREASE_CHANGED,
 		"BID_CST_REWARD_AMOUNT_CHANGED": BID_CST_REWARD_AMOUNT_CHANGED,
+		"ERC20_TRANSFER_ERR":            ERC20_TRANSFER_ERR,
 	} {
 		for _, a := range []*abi.ABI{game, gameV2} {
 			for _, ev := range a.Events {
@@ -145,5 +147,19 @@ func TestLegacyConstantsHaveNoABIEvent(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// TestERC20TransferFailedConstantMatchesSignature pins the ERC20_TRANSFER_ERR
+// registry constant to the ICosmicSignatureErrors.sol event signature it is
+// derived from. No generated ABI carries the event, so — unlike the entries
+// covered by TestRegistryConstantsMatchABIEventIDs — the Solidity signature
+// itself is the only cross-check, and it also documents the raw data layout
+// proc_erc20_transfer_failed_event decodes (string errStr, address indexed
+// destination, uint256 amount).
+func TestERC20TransferFailedConstantMatchesSignature(t *testing.T) {
+	got := crypto.Keccak256Hash([]byte("ERC20TransferFailed(string,address,uint256)")).Hex()[2:]
+	if got != ERC20_TRANSFER_ERR {
+		t.Fatalf("keccak256 of the event signature = %s, registry constant is %s", got, ERC20_TRANSFER_ERR)
 	}
 }

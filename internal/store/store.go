@@ -101,8 +101,9 @@ func (cfg Config) connString() string {
 // and a database/sql view over the same pool (DB, for legacy methods that
 // have not been converted yet). Create one per process with New and share it.
 type Store struct {
-	pool  *pgxpool.Pool
-	sqlDB *sql.DB
+	pool      *pgxpool.Pool
+	sqlDB     *sql.DB
+	addrCache *addressCache
 }
 
 // New connects to PostgreSQL and returns a ready Store. The initial
@@ -144,7 +145,11 @@ func New(ctx context.Context, cfg Config) (*Store, error) {
 // NewFromPool wraps an existing pool (test harnesses, callers that build
 // their own pool config). The Store takes ownership: Close closes the pool.
 func NewFromPool(pool *pgxpool.Pool) *Store {
-	return &Store{pool: pool, sqlDB: stdlib.OpenDBFromPool(pool)}
+	return &Store{
+		pool:      pool,
+		sqlDB:     stdlib.OpenDBFromPool(pool),
+		addrCache: newAddressCache(DefaultAddressCacheSize),
+	}
 }
 
 // Pool exposes the native pgx pool; converted query code runs on it.
