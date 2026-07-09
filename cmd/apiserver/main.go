@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -18,12 +19,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
-	"github.com/gin-gonic/gin"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 )
 
 // shutdownTimeout bounds how long in-flight requests may take to finish once
@@ -120,59 +122,21 @@ func main() {
 	host_secure := os.Getenv("HTTPS_HOSTNAME")
 	httpsExtra := strings.TrimSpace(os.Getenv("HTTPS_EXTRA_LISTEN_ADDR"))
 
-	r := gin.New()
-
-	// Don't trust all proxies (avoids GIN-debug warning; set trusted proxies explicitly if behind one)
-	r.SetTrustedProxies(nil)
-
-	// CORS: allow cross-origin requests from browsers (frontend on different origin)
-	// Handles OPTIONS preflight and adds CORS headers to all responses
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With")
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
-		c.Next()
+	// The shared constructor (internal/api/routes) builds the middleware
+	// chain — CORS, panic recovery, access log, per-IP rate limiting,
+	// Prometheus metrics — and registers the full v1 route table: health
+	// probes, static assets (env-gated, see static_assets.go), the three
+	// API modules and the host-dispatched bare /metadata route. The parity
+	// suite builds its router through the same constructor.
+	r := routes.New(rwcg_srv.store, routes.Options{
+		AccessLog:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		PanicLog:      slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		Extra:         []httpx.Middleware{metricsMiddleware()},
+		RegisterExtra: registerStaticAssetRoutes,
 	})
 
-	r.Use(gin.Recovery()) // recover from panics (e.g. broken pipe when client disconnects)
-	r.Use(gin.Logger())
-
-	// Baseline abuse protection: per-IP token bucket across the whole API.
-	// Generous enough for legitimate frontends; mutating endpoints add their
-	// own stricter limits at registration.
-	r.Use(common.RateLimit(50, 100))
-
-	// Prometheus request metrics; /metrics itself is served on METRICS_ADDR.
-	r.Use(metricsMiddleware())
-
-	// Liveness/readiness probes and the internal metrics/pprof listener.
-	common.RegisterHealthRoutes(r, rwcg_srv.store)
+	// Internal metrics/pprof listener (METRICS_ADDR).
 	internalSrv := startInternalServer()
-
-	// NFT asset files (nft-assets mirror) and optional /static ABI JSON; see static_assets.go
-	registerStaticAssetRoutes(r)
-
-	// Set up all routes
-	randomwalk.RegisterAPIRoutes(r)
-	cosmicgame.RegisterAPIRoutes(r)
-	faq.RegisterAPIRoutes(r)
-
-	// Bare ERC-721 tokenURI route. Both projects' on-chain baseURI is
-	// https://<host>/metadata/, and this single webserv serves both the
-	// RandomWalk and Cosmic Signature hosts, so dispatch by request Host:
-	// a Cosmic Signature host serves Cosmic Signature metadata, anything else
-	// (RandomWalk hosts) serves RandomWalk metadata.
-	r.GET("/metadata/:token_id", func(c *gin.Context) {
-		if common.MetadataHostServesCosmicSignature(c.Request.Host, c.Request.Header.Get("X-Forwarded-Host")) {
-			cosmicgame.TokenMetadataHandler(c)
-			return
-		}
-		randomwalk.TokenMetadataHandler(c)
-	})
 
 	// Public listeners. Each runs in its own goroutine and is tracked for
 	// the coordinated Shutdown below.

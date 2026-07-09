@@ -4,14 +4,14 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // User info (API)
-func apiRwalkUserInfo(c *gin.Context) {
+func apiRwalkUserInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -51,7 +51,7 @@ func apiRwalkUserInfo(c *gin.Context) {
 		}
 		dberr_str = legacyNoRowsText
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":    1,
 		"error":     "",
 		"UserInfo":  user_info,

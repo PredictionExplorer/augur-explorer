@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 // warnNFTAssetsLayout logs when we cannot find RandomWalk thumbs in the expected places.
@@ -180,43 +180,52 @@ func isHex(s string) bool {
 	return true
 }
 
+// imageCacheAndLogMiddleware sets Cache-Control on /images/ responses and
+// logs failed (or, when enabled, all) image requests. It self-filters on the
+// path prefix, so it is registered globally like the legacy version was.
+func imageCacheAndLogMiddleware() httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+			isImg := strings.HasPrefix(path, "/images/")
+			if isImg {
+				// Browsers cache aggressively on max-age; reload often skips the network → no line in websrv.
+				// Set WEBSRV_IMAGE_NO_CACHE=1 in dev to force revalidation / no-store so each reload hits the API.
+				if strings.TrimSpace(os.Getenv("WEBSRV_IMAGE_NO_CACHE")) == "1" {
+					w.Header().Set("Cache-Control", "no-store")
+				} else {
+					w.Header().Set("Cache-Control", "public, max-age=3600, must-revalidate")
+				}
+			}
+			rw := httpx.WrapResponseWriter(w)
+			next.ServeHTTP(rw, r)
+			if !isImg || r.Method != http.MethodGet && r.Method != http.MethodHead {
+				return
+			}
+			if st := rw.Status(); strings.TrimSpace(os.Getenv("WEBSRV_LOG_IMAGE_REQUESTS")) == "1" || st >= 400 {
+				log.Printf("[images] %d %s", st, path)
+			}
+		})
+	}
+}
+
 // registerStaticAssetRoutes serves nft-assets mirror at GET /images/*.
 // NFT_ASSETS_ROOT: parent dir containing randomwalk/, or the randomwalk dir itself (see resolveNFTStaticMount).
 //
 // STATIC_ABI_DIR: if set, directory whose files are served from /static/ (place abi/RandomWalkNFT.json etc. here).
-func registerStaticAssetRoutes(r *gin.Engine) {
+func registerStaticAssetRoutes(r *httpx.Router) {
 	if root := strings.TrimSpace(os.Getenv("NFT_ASSETS_ROOT")); root != "" {
 		abs, err := filepath.Abs(root)
 		if err != nil {
 			log.Printf("NFT_ASSETS_ROOT invalid: %v", err)
 			return
 		}
-		r.Use(func(c *gin.Context) {
-			path := c.Request.URL.Path
-			isImg := strings.HasPrefix(path, "/images/")
-			if isImg {
-				// Browsers cache aggressively on max-age; reload often skips the network → no line in websrv.
-				// Set WEBSRV_IMAGE_NO_CACHE=1 in dev to force revalidation / no-store so each reload hits the API.
-				if strings.TrimSpace(os.Getenv("WEBSRV_IMAGE_NO_CACHE")) == "1" {
-					c.Header("Cache-Control", "no-store")
-				} else {
-					c.Header("Cache-Control", "public, max-age=3600, must-revalidate")
-				}
-			}
-			c.Next()
-			if !isImg || c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
-				return
-			}
-			st := c.Writer.Status()
-			if strings.TrimSpace(os.Getenv("WEBSRV_LOG_IMAGE_REQUESTS")) == "1" || st >= 400 {
-				log.Printf("[images] %d %s", st, path)
-			}
-		})
+		r.Use(imageCacheAndLogMiddleware())
 
 		mount, fsRoot := resolveNFTStaticMount(abs)
 		warnNFTAssetsLayout(abs, mount)
 
-		handler := func(c *gin.Context) {
+		handler := func(c *httpx.Context) {
 			rel := strings.TrimPrefix(c.Param("filepath"), "/")
 			if rel == "" {
 				c.Status(http.StatusNotFound)
@@ -229,8 +238,8 @@ func registerStaticAssetRoutes(r *gin.Engine) {
 			}
 			c.File(full)
 		}
-		r.GET(mount+"/*filepath", handler)
-		r.HEAD(mount+"/*filepath", handler)
+		r.GET(mount+"/{filepath...}", handler)
+		r.HEAD(mount+"/{filepath...}", handler)
 
 		if mount == "/images/randomwalk" {
 			log.Printf("Serving RandomWalk NFT files from %q at %s/ (token assets live directly in NFT_ASSETS_ROOT)", fsRoot, mount)
@@ -253,7 +262,17 @@ func registerStaticAssetRoutes(r *gin.Engine) {
 			log.Printf("STATIC_ABI_DIR invalid: %v", err)
 			return
 		}
-		r.Static("/static", abs)
+		// Files only: directory requests 404 (no listings on a public API).
+		staticHandler := func(c *httpx.Context) {
+			full, ok := safeFileUnderRoot(abs, c.Param("filepath"))
+			if !ok {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			c.File(full)
+		}
+		r.GET("/static/{filepath...}", staticHandler)
+		r.HEAD("/static/{filepath...}", staticHandler)
 		log.Printf("Serving /static from %s", abs)
 	}
 }

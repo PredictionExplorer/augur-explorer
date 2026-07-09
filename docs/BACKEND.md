@@ -25,7 +25,7 @@ The backend consists of three main components:
                                                          ▼
                                                 ┌─────────────────┐
                                                 │   Web Server    │
-                                                │   (Gin API)     │
+                                                │  (net/http API) │
                                                 └─────────────────┘
 ```
 
@@ -365,8 +365,8 @@ The web server provides a REST API for accessing data.
 
 **Location**: `cmd/apiserver/` (handlers in `internal/api/`)
 
-- Framework: Gin
-- Database: PostgreSQL via `dbs.SQLStorage`
+- Framework: stdlib net/http (Go 1.22+ ServeMux) via the thin `internal/api/httpx` toolkit; route table assembled in `internal/api/routes`
+- Database: PostgreSQL via the pgx-native `internal/store` layer
 - Response format: JSON
 
 ### Database Connection

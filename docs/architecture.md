@@ -60,7 +60,7 @@ flowchart LR
 
 | Path | Contents |
 |------|----------|
-| `cmd/apiserver` | JSON API server (gin): routing, TLS, static assets, health, metrics |
+| `cmd/apiserver` | JSON API server (net/http ServeMux via `internal/api/httpx`): routing, TLS, static assets, health, metrics |
 | `cmd/cg-etl`, `cmd/rw-etl` | Chain indexers, one per contract family |
 | `cmd/notibot` | Discord/Twitter mint & trade notifications |
 | `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill |

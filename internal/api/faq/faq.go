@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 var (
@@ -42,28 +42,27 @@ func Init(info, errorLog *log.Logger, enabled bool) {
 }
 
 // RegisterAPIRoutes registers /api/cosmicgame/faq/* proxy routes.
-func RegisterAPIRoutes(r *gin.Engine) {
+func RegisterAPIRoutes(r *httpx.Router) {
 	if !Enabled {
 		return
 	}
-	g := r.Group("/api/cosmicgame/faq")
-	g.GET("/health", proxyFAQ)
-	g.POST("/query", proxyFAQ)
-	g.POST("/reindex", proxyFAQ)
+	r.GET("/api/cosmicgame/faq/health", proxyFAQ)
+	r.POST("/api/cosmicgame/faq/query", proxyFAQ)
+	r.POST("/api/cosmicgame/faq/reindex", proxyFAQ)
 }
 
-func proxyFAQ(c *gin.Context) {
+func proxyFAQ(c *httpx.Context) {
 	target := upstreamURL + mapFAQPath(c.Request.URL.Path)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		Error.Printf("faq proxy read body: %v", err)
-		c.JSON(http.StatusBadGateway, gin.H{"status": 0, "error": "faq proxy read failed"})
+		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq proxy read failed"})
 		return
 	}
 
 	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, target, bytes.NewReader(body))
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"status": 0, "error": err.Error()})
+		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": err.Error()})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -74,7 +73,7 @@ func proxyFAQ(c *gin.Context) {
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		Error.Printf("faq proxy upstream %s: %v", target, err)
-		c.JSON(http.StatusBadGateway, gin.H{
+		c.JSON(http.StatusBadGateway, httpx.H{
 			"status":    0,
 			"error":     "FAQ service unavailable. Is the Python faq-bot backend running?",
 			"component": "faq_bot",
@@ -86,7 +85,7 @@ func proxyFAQ(c *gin.Context) {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"status": 0, "error": "faq proxy response read failed"})
+		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq proxy response read failed"})
 		return
 	}
 

@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func api_cosmic_game_staking_action_cst_info(c *gin.Context) {
+func api_cosmic_game_staking_action_cst_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -41,13 +41,13 @@ func api_cosmic_game_staking_action_cst_info(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                    req_status,
 		"error":                     err_str,
 		"CombinedStakingRecordInfo": action_info,
 	})
 }
-func api_cosmic_game_staking_actions_cst_global(c *gin.Context) {
+func api_cosmic_game_staking_actions_cst_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -65,7 +65,7 @@ func api_cosmic_game_staking_actions_cst_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"Offset":            offset,
@@ -73,7 +73,7 @@ func api_cosmic_game_staking_actions_cst_global(c *gin.Context) {
 		"StakingCSTActions": actions,
 	})
 }
-func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_actions_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -91,7 +91,7 @@ func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
 			"UserAddr": p_user_addr, "UserAid": int64(0), "StakingCSTActions": []interface{}{},
 		})
@@ -104,7 +104,7 @@ func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"Offset":            offset,
@@ -114,7 +114,7 @@ func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 		"StakingCSTActions": actions,
 	})
 }
-func api_cosmic_game_user_unique_stakers_cst(c *gin.Context) {
+func api_cosmic_game_user_unique_stakers_cst(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -130,13 +130,13 @@ func api_cosmic_game_user_unique_stakers_cst(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"UniqueStakersCST": unique_stakers,
 	})
 }
-func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -151,7 +151,7 @@ func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI works
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "UnclaimedEthDeposits": []interface{}{},
 		})
 		return
@@ -163,7 +163,7 @@ func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":               req_status,
 		"error":                err_str,
 		"UserAddr":             p_user_addr,
@@ -171,7 +171,7 @@ func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 		"UnclaimedEthDeposits": deposits,
 	})
 }
-func api_cosmic_game_staked_tokens_cst_by_user(c *gin.Context) {
+func api_cosmic_game_staked_tokens_cst_by_user(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -185,7 +185,7 @@ func api_cosmic_game_staked_tokens_cst_by_user(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "StakedTokensCST": []interface{}{},
 		})
 		return
@@ -197,7 +197,7 @@ func api_cosmic_game_staked_tokens_cst_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":          req_status,
 		"error":           err_str,
 		"UserAddr":        p_user_addr,
@@ -205,7 +205,7 @@ func api_cosmic_game_staked_tokens_cst_by_user(c *gin.Context) {
 		"StakedTokensCST": tokens,
 	})
 }
-func api_cosmic_game_staked_tokens_cst_global(c *gin.Context) {
+func api_cosmic_game_staked_tokens_cst_global(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -218,13 +218,13 @@ func api_cosmic_game_staked_tokens_cst_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":          req_status,
 		"error":           err_str,
 		"StakedTokensCST": tokens,
 	})
 }
-func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_collected_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -243,7 +243,7 @@ func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 		if !success {
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
 			"UserAddr": p_user_addr, "UserAid": int64(0), "CollectedStakingCSTRewards": []interface{}{},
 		})
@@ -260,7 +260,7 @@ func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                     req_status,
 		"error":                      err_str,
 		"Offset":                     offset,
@@ -270,7 +270,7 @@ func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 		"CollectedStakingCSTRewards": actions,
 	})
 }
-func api_cosmic_game_staking_cst_rewards_by_round(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -298,14 +298,14 @@ func api_cosmic_game_staking_cst_rewards_by_round(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":   req_status,
 		"error":    err_str,
 		"RoundNum": round_num,
 		"Rewards":  rewards,
 	})
 }
-func api_cosmic_game_staking_cst_rewards_global(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -319,13 +319,13 @@ func api_cosmic_game_staking_cst_rewards_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"StakingCSTRewards": rewards,
 	})
 }
-func api_cosmic_game_staking_cst_mints_global(c *gin.Context) {
+func api_cosmic_game_staking_cst_mints_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -343,7 +343,7 @@ func api_cosmic_game_staking_cst_mints_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                 req_status,
 		"error":                  err_str,
 		"Offset":                 offset,
@@ -351,7 +351,7 @@ func api_cosmic_game_staking_cst_mints_global(c *gin.Context) {
 		"StakingCSTRewardsMints": mints,
 	})
 }
-func api_cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_mints_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -367,7 +367,7 @@ func api_cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
 
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "CSTStakingRewardMints": []interface{}{},
 		})
 		return
@@ -380,13 +380,13 @@ func api_cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                req_status,
 		"error":                 err_str,
 		"CSTStakingRewardMints": mints,
 	})
 }
-func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -412,7 +412,7 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
 			"DepositId": deposit_id, "ActionIdsWithClaimInfo": []interface{}{},
 		})
@@ -425,7 +425,7 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                 req_status,
 		"error":                  err_str,
 		"UserAddr":               p_user_addr,
@@ -434,7 +434,7 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		"ActionIdsWithClaimInfo": action_ids,
 	})
 }
-func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
+func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -449,7 +449,7 @@ func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": p_user_addr, "RewardsByDeposit": []interface{}{},
 		})
 		return
@@ -462,7 +462,7 @@ func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"UserAid":          user_aid,
@@ -470,7 +470,7 @@ func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 		"RewardsByDeposit": history,
 	})
 }
-func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
+func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -485,7 +485,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "RewardsByToken": []interface{}{},
 		})
 		return
@@ -498,7 +498,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"UserAddr":       p_user_addr,
@@ -506,7 +506,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 		"RewardsByToken": rewards,
 	})
 }
-func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context) {
+func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -532,7 +532,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
 			"TokenId": token_id, "RewardsByTokenDetails": []interface{}{},
 		})
@@ -547,7 +547,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                req_status,
 		"error":                 err_str,
 		"UserAddr":              p_user_addr,

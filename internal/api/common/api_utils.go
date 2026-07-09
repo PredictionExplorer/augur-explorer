@@ -2,26 +2,27 @@ package common
 
 import (
 	"fmt"
-	"strconv"
 	"net/http"
-	"github.com/gin-gonic/gin"
+	"strconv"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-func ParseTimeframeParams(c *gin.Context) (bool, int, int, int) {
+func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 	var err error
 	pInitTs := c.Param("init_ts")
 	var initTs int = 0
 	if len(pInitTs) > 0 {
 		initTs, err = strconv.Atoi(pInitTs)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusBadRequest, httpx.H{
 				"status": 0,
 				"error":  fmt.Sprintf("Bad 'init_ts' parameter: %v", err),
 			})
 			return false, 0, 0, 0
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("'init_ts' parameter wasn't provided: %v", err),
 		})
@@ -33,14 +34,14 @@ func ParseTimeframeParams(c *gin.Context) (bool, int, int, int) {
 	if len(pFinTs) > 0 {
 		finTs, err = strconv.Atoi(pFinTs)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusBadRequest, httpx.H{
 				"status": 0,
 				"error":  fmt.Sprintf("'fin_ts' parameter: %v", err),
 			})
 			return false, 0, 0, 0
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("'fin_ts' parameter wasn't provided: %v", err),
 		})
@@ -55,14 +56,14 @@ func ParseTimeframeParams(c *gin.Context) (bool, int, int, int) {
 	if len(pIntervalSecs) > 0 {
 		intervalSecs, err = strconv.Atoi(pIntervalSecs)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusBadRequest, httpx.H{
 				"status": 0,
 				"error":  fmt.Sprintf("Bad 'interval_secs' parameter: %v", err),
 			})
 			return false, 0, 0, 0
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("'interval_secs' parameter wasn't provided: %v", err),
 		})
@@ -74,21 +75,21 @@ func ParseTimeframeParams(c *gin.Context) (bool, int, int, int) {
 	return true, initTs, finTs, intervalSecs
 }
 
-func ParseOffsetLimitParamsJSON(c *gin.Context) (bool, int, int) {
+func ParseOffsetLimitParamsJSON(c *httpx.Context) (bool, int, int) {
 	var err error
 	pOffset := c.Param("offset")
 	var offset int = 0
 	if len(pOffset) > 0 {
 		offset, err = strconv.Atoi(pOffset)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusBadRequest, httpx.H{
 				"status": 0,
 				"error":  fmt.Sprintf("Bad 'offset' parameter: %v", err),
 			})
 			return false, 0, 0
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("'offset' parameter wasn't provided: %v", err),
 		})
@@ -100,14 +101,14 @@ func ParseOffsetLimitParamsJSON(c *gin.Context) (bool, int, int) {
 	if len(pLimit) > 0 {
 		limit, err = strconv.Atoi(pLimit)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusBadRequest, httpx.H{
 				"status": 0,
 				"error":  fmt.Sprintf("'limit' parameter: %v", err),
 			})
 			return false, 0, 0
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("'limit' parameter wasn't provided: %v", err),
 		})
@@ -120,10 +121,10 @@ func ParseOffsetLimitParamsJSON(c *gin.Context) (bool, int, int) {
 }
 
 // ParseInitFinTsParams reads init_ts and fin_ts path params (no interval_secs).
-func ParseInitFinTsParams(c *gin.Context) (bool, int, int) {
+func ParseInitFinTsParams(c *httpx.Context) (bool, int, int) {
 	initTs, err := strconv.Atoi(c.Param("init_ts"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("Bad 'init_ts' parameter: %v", err),
 		})
@@ -131,7 +132,7 @@ func ParseInitFinTsParams(c *gin.Context) (bool, int, int) {
 	}
 	finTs, err := strconv.Atoi(c.Param("fin_ts"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("Bad 'fin_ts' parameter: %v", err),
 		})

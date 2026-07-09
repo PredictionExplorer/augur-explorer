@@ -3,13 +3,13 @@ package randomwalk
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 )
 
 // Trading history (API)
-func apiRwalkTradingHistory(c *gin.Context) {
+func apiRwalkTradingHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -35,7 +35,7 @@ func apiRwalkTradingHistory(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":     1,
 		"error":      "",
 		"Sales":      sales,
@@ -45,7 +45,7 @@ func apiRwalkTradingHistory(c *gin.Context) {
 }
 
 // Sale history (API)
-func apiRwalkSaleHistory(c *gin.Context) {
+func apiRwalkSaleHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -71,7 +71,7 @@ func apiRwalkSaleHistory(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":          1,
 		"error":           "",
 		"Trading":         sales,
@@ -81,7 +81,7 @@ func apiRwalkSaleHistory(c *gin.Context) {
 }
 
 // Trading history by user (API)
-func apiRwalkTradingHistoryByUser(c *gin.Context) {
+func apiRwalkTradingHistoryByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -109,7 +109,7 @@ func apiRwalkTradingHistoryByUser(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      1,
 		"error":       "",
 		"UserTrading": user_trading,

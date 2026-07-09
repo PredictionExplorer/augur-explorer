@@ -51,6 +51,39 @@ func TestParseAnomaly(t *testing.T) {
 		{name: "gin line too few fields", line: "[GIN] x | 500", minStatus: 500, wantOK: false},
 		{name: "gin line bad status", line: "[GIN] ts | NaN | 1ms | ip | GET \"/\"", minStatus: 500, wantOK: false},
 		{name: "empty", line: "", minStatus: 500, wantOK: false},
+		{
+			name:      "slog 500",
+			line:      `time=2026-07-09T02:42:09.121-05:00 level=INFO msg=request method=GET path="/api/foo?limit=2" route=/api/foo status=500 bytes=11 duration_ms=1.25 ip=10.0.0.1`,
+			minStatus: 500,
+			want:      "2026-07-09T02:42:09.121-05:00 | 500 | GET /api/foo?limit=2 | 1.25ms",
+			wantOK:    true,
+		},
+		{
+			name:      "slog 200 below threshold",
+			line:      `time=2026-07-09T02:42:09.121-05:00 level=INFO msg=request method=GET path=/ok status=200 duration_ms=0.5 ip=10.0.0.1`,
+			minStatus: 500,
+			wantOK:    false,
+		},
+		{
+			name:      "slog 404 with lowered threshold",
+			line:      `time=2026-07-09T02:42:09.121-05:00 level=INFO msg=request method=GET path=/wp-admin route="" status=404 duration_ms=0.1 ip=10.0.0.1`,
+			minStatus: 400,
+			want:      "2026-07-09T02:42:09.121-05:00 | 404 | GET /wp-admin | 0.1ms",
+			wantOK:    true,
+		},
+		{
+			name:      "slog recovered panic",
+			line:      `time=2026-07-09T02:42:09.121-05:00 level=ERROR msg="panic recovered" method=GET path=/boom panic=kaboom`,
+			minStatus: 500,
+			want:      `PANIC | time=2026-07-09T02:42:09.121-05:00 level=ERROR msg="panic recovered" method=GET path=/boom panic=kaboom`,
+			wantOK:    true,
+		},
+		{
+			name:      "slog non-request message ignored",
+			line:      `time=2026-07-09T02:42:09.121-05:00 level=INFO msg=startup listeners=2`,
+			minStatus: 500,
+			wantOK:    false,
+		},
 	}
 	for _, tc := range cases {
 		got, ok := parseAnomaly(tc.line, tc.minStatus)
@@ -87,6 +120,10 @@ func FuzzLogAnomalyScan(f *testing.F) {
 	f.Add("[GIN] |||||", 500)
 	f.Add("", 0)
 	f.Add("[GIN] a | 99999999999999999999 | b | c | d", 500)
+	f.Add(`time=x level=INFO msg=request method=GET path="/a b" status=502 duration_ms=9 ip=1.2.3.4`, 500)
+	f.Add(`time=x msg="panic recovered" path="unterminated`, 500)
+	f.Add(`time=x msg=request status=`, 500)
+	f.Add("time== = =\"", 500)
 	f.Fuzz(func(t *testing.T, line string, minStatus int) {
 		rec, ok := parseAnomaly(line, minStatus)
 		if !ok {
@@ -98,14 +135,14 @@ func FuzzLogAnomalyScan(f *testing.F) {
 		if rec == "" {
 			t.Fatalf("parseAnomaly(%q) accepted but returned empty record", line)
 		}
-		// A panic line is always reported as such; anything else must have
-		// come from a [GIN] access line.
+		// A fatal panic line is always reported as such; anything else must
+		// come from a legacy [GIN] access line or a slog line.
 		if strings.Contains(line, "panic:") {
 			if !strings.HasPrefix(rec, "PANIC | ") {
 				t.Fatalf("panic line %q produced non-PANIC record %q", line, rec)
 			}
-		} else if !strings.HasPrefix(line, "[GIN]") {
-			t.Fatalf("non-GIN line %q was accepted: %q", line, rec)
+		} else if !strings.HasPrefix(line, "[GIN]") && !strings.HasPrefix(line, "time=") {
+			t.Fatalf("unrecognized line %q was accepted: %q", line, rec)
 		}
 	})
 }

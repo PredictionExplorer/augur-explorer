@@ -53,7 +53,7 @@ jobs:
         run: go test -race -tags=integration -timeout 20m -coverprofile=coverage-integration.out -coverpkg=./internal/... ./...
       - name: Enforce internal/ coverage ratchet
         # Ratchet, never lower: raise the floor after each phase lands
-        # (docs/MODERNIZATION.md §4.6). Current measured coverage: 69.1%.
+        # (docs/MODERNIZATION.md §4.6). Current measured coverage: 69.5%.
         run: |
           total=$(go tool cover -func=coverage-integration.out | tail -1 | awk '{print $3}' | tr -d '%')
           floor=68.0

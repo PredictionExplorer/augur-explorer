@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
@@ -49,7 +49,7 @@ func Init(enableRoutes bool) {
 // request) and answers with HTTP 500 in the legacy {"status":0,...} envelope
 // without leaking internal detail. These paths previously terminated the
 // whole process from inside the store layer, so no golden constrains them.
-func respondStoreError(c *gin.Context, err error) {
+func respondStoreError(c *httpx.Context, err error) {
 	if !errors.Is(err, context.Canceled) && common.Ctx != nil {
 		errStr := fmt.Sprintf("%s: %v", c.FullPath(), err)
 		common.Ctx.Error.Print(errStr)
@@ -61,7 +61,7 @@ func respondStoreError(c *gin.Context, err error) {
 // rwContractAddrs resolves marketplace + RandomWalk addresses and AIDs from
 // rw_contracts (same source as the ETL), answering the request with an
 // internal error when the registry is unreadable.
-func rwContractAddrs(c *gin.Context) (rwp.ContractAddresses, bool) {
+func rwContractAddrs(c *httpx.Context) (rwp.ContractAddresses, bool) {
 	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
 	if err != nil {
 		respondStoreError(c, err)
@@ -71,30 +71,30 @@ func rwContractAddrs(c *gin.Context) (rwp.ContractAddresses, bool) {
 }
 
 // RegisterAPIRoutes registers all RandomWalk JSON API routes
-func RegisterAPIRoutes(r *gin.Engine) {
+func RegisterAPIRoutes(r *httpx.Router) {
 	if !routesEnabled {
 		return
 	}
-	r.GET("/api/randomwalk/current_offers/:order_by", apiRwalkCurrentOffers)
+	r.GET("/api/randomwalk/current_offers/{order_by}", apiRwalkCurrentOffers)
 	r.GET("/api/randomwalk/floor_price", apiRwalkFloorPrice)
 	r.GET("/api/randomwalk/tokens/list/sequential", apiRwalkTokenListSeq)
-	r.GET("/api/randomwalk/tokens/list/by_period/:init_ts/:fin_ts", apiRwalkTokenListPeriod)
-	r.GET("/api/randomwalk/tokens/info/:token_id", apiRwalkTokenInfo)
+	r.GET("/api/randomwalk/tokens/list/by_period/{init_ts}/{fin_ts}", apiRwalkTokenListPeriod)
+	r.GET("/api/randomwalk/tokens/info/{token_id}", apiRwalkTokenInfo)
 	// Same JSON as above; use this path when a reverse proxy only forwards /api/cosmicgame/* to the app.
-	r.GET("/api/cosmicgame/randomwalk/tokens/info/:token_id", apiRwalkTokenInfo)
-	r.GET("/api/randomwalk/tokens/name_changes/:token_id", apiRwalkTokenNameHistory)
-	r.GET("/api/randomwalk/trading/history/:offset/:limit", apiRwalkTradingHistory)
-	r.GET("/api/randomwalk/trading/by_user/:user_aid/:offset/:limit", apiRwalkTradingHistoryByUser)
-	r.GET("/api/randomwalk/trading/sales/:offset/:limit", apiRwalkSaleHistory)
-	r.GET("/api/randomwalk/tokens/history/:token_id/:offset/:limit", apiRwalkTokenHistory)
-	r.GET("/api/randomwalk/tokens/by_user/:user_aid", apiRwalkTokensByUser)
+	r.GET("/api/cosmicgame/randomwalk/tokens/info/{token_id}", apiRwalkTokenInfo)
+	r.GET("/api/randomwalk/tokens/name_changes/{token_id}", apiRwalkTokenNameHistory)
+	r.GET("/api/randomwalk/trading/history/{offset}/{limit}", apiRwalkTradingHistory)
+	r.GET("/api/randomwalk/trading/by_user/{user_aid}/{offset}/{limit}", apiRwalkTradingHistoryByUser)
+	r.GET("/api/randomwalk/trading/sales/{offset}/{limit}", apiRwalkSaleHistory)
+	r.GET("/api/randomwalk/tokens/history/{token_id}/{offset}/{limit}", apiRwalkTokenHistory)
+	r.GET("/api/randomwalk/tokens/by_user/{user_aid}", apiRwalkTokensByUser)
 	r.GET("/api/randomwalk/statistics/by_token", apiRwalkTokenStats)
 	r.GET("/api/randomwalk/statistics/by_market", apiRwalkMarketStats)
-	r.GET("/api/randomwalk/statistics/trading_volume/:init_ts/:fin_ts/:interval_secs", apiRwalkTradingVolumeByPeriod)
+	r.GET("/api/randomwalk/statistics/trading_volume/{init_ts}/{fin_ts}/{interval_secs}", apiRwalkTradingVolumeByPeriod)
 	r.GET("/api/randomwalk/statistics/mint_intervals", apiRwalkMintIntervals)
-	r.GET("/api/randomwalk/statistics/floor_price/:init_ts/:fin_ts/:interval_secs", apiRwalkFloorPriceOverTime)
+	r.GET("/api/randomwalk/statistics/floor_price/{init_ts}/{fin_ts}/{interval_secs}", apiRwalkFloorPriceOverTime)
 	r.GET("/api/randomwalk/statistics/withdrawal_chart", apiRwalkWithdrawalChart)
-	r.GET("/api/randomwalk/user/info/:user_aid", apiRwalkUserInfo)
+	r.GET("/api/randomwalk/user/info/{user_aid}", apiRwalkUserInfo)
 	r.GET("/api/randomwalk/top5tokens", apiRwalkTop5TradedTokens)
 	r.GET("/api/randomwalk/mint_report", apiRwalkMintReport)
 	r.GET("/api/randomwalk/contracts", apiRwalkContracts)
@@ -110,14 +110,13 @@ func RegisterAPIRoutes(r *gin.Engine) {
 	// Direct match recording is admin-only (fails closed when no key is set).
 	// Public voting goes through /add_game, which is wallet-signature-verified
 	// and rate limited instead.
-	r.POST("/api/randomwalk/token-ranking/match",
+	r.POST("/api/randomwalk/token-ranking/match", apiRandomwalkTokenRankingMatch,
 		common.RateLimit(2, 5),
-		common.RequireAdminKey("X-Ranking-Admin-Key", "RANKING_ADMIN_KEY", "ADMIN_API_KEY"),
-		apiRandomwalkTokenRankingMatch)
-	r.POST("/api/randomwalk/add_game", common.RateLimit(1, 10), apiRandomwalkAddGameLegacy)
-	r.GET("/api/randomwalk/metadata/:token_id", apiRandomwalkTokenMetadata)
+		common.RequireAdminKey("X-Ranking-Admin-Key", "RANKING_ADMIN_KEY", "ADMIN_API_KEY"))
+	r.POST("/api/randomwalk/add_game", apiRandomwalkAddGameLegacy, common.RateLimit(1, 10))
+	r.GET("/api/randomwalk/metadata/{token_id}", apiRandomwalkTokenMetadata)
 
-	// NOTE: the bare ERC-721 tokenURI route GET /metadata/:token_id is registered
+	// NOTE: the bare ERC-721 tokenURI route GET /metadata/{token_id} is registered
 	// centrally in main.go with host-aware dispatch, because the same webserv
 	// serves both RandomWalk and Cosmic Signature hosts (and the Cosmic Signature
 	// contract's tokenURI base is https://nfts.cosmicsignature.com/metadata/).

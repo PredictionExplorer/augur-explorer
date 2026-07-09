@@ -106,8 +106,13 @@ each command for the transition; delete them once systemd is live).
 - `srvmonitor` — terminal dashboard checking RPC nodes, DB, web APIs, disk,
   image server; optional WhatsApp/Android alerts (see `cmd/srvmonitor/README.md`).
 - `loganomaly` — scans the API access log for 5xx/panics, feeding srvmonitor.
+  It understands both the current slog text format (`msg=request ... status=`)
+  and the legacy `[GIN]` lines still present in older log files.
 - Prometheus can scrape `METRICS_ADDR/metrics`; alert on
   `rwcg_http_requests_total{status="5xx"}` and request-duration percentiles.
+  Since the stdlib-router migration the `route` label uses ServeMux syntax
+  (`/api/.../{param}` instead of `/api/.../:param`) — update dashboards that
+  filter on route values.
 - `GET /readyz` returns 503 whenever the database is unreachable — wire it
   into your load balancer health checks.
 

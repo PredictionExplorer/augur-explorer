@@ -1,20 +1,21 @@
 package common
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-// validateAddr runs IsAddressValid against a throwaway gin context and also
-// returns the response body written on rejection.
+// validateAddr runs IsAddressValid against a throwaway request context and
+// also returns the response body written on rejection.
 func validateAddr(addr string) (result string, ok bool, body string) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
+	c := httpx.NewContext(w, httptest.NewRequest(http.MethodGet, "/", nil))
 	result, ok = IsAddressValid(c, true, addr)
 	return result, ok, w.Body.String()
 }

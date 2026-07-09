@@ -12,16 +12,15 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-func rateLimitedRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
+func rateLimitedRouter() *httpx.Router {
+	r := httpx.NewRouter()
 	// Effectively unlimited so the benchmark measures limiter bookkeeping,
 	// not 429 short-circuits.
 	r.Use(RateLimit(1e9, 1<<30))
-	r.GET("/ping", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	r.GET("/ping", func(c *httpx.Context) { c.Status(http.StatusNoContent) })
 	return r
 }
 

@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 var (
@@ -27,19 +28,23 @@ var (
 )
 
 // metricsMiddleware records Prometheus counters/latency for every request.
-// The route label uses the gin route template (not the raw URL) to keep
+// The route label uses the matched route pattern (not the raw URL) to keep
 // metric cardinality bounded.
-func metricsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		route := c.FullPath()
-		if route == "" {
-			route = "unmatched" // 404s and unrouted paths share one label
-		}
-		status := statusClass(c.Writer.Status())
-		httpRequestsTotal.WithLabelValues(c.Request.Method, route, status).Inc()
-		httpRequestDuration.WithLabelValues(c.Request.Method, route).Observe(time.Since(start).Seconds())
+func metricsMiddleware() httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rw := httpx.WrapResponseWriter(w)
+			next.ServeHTTP(rw, r)
+
+			route := httpx.PatternPath(r)
+			if route == "" {
+				route = "unmatched" // 404s and unrouted paths share one label
+			}
+			status := statusClass(rw.Status())
+			httpRequestsTotal.WithLabelValues(r.Method, route, status).Inc()
+			httpRequestDuration.WithLabelValues(r.Method, route).Observe(time.Since(start).Seconds())
+		})
 	}
 }
 

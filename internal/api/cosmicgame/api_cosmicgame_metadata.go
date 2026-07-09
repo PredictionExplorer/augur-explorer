@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -15,13 +15,13 @@ import (
 // TokenMetadataHandler is the exported entry point for the bare ERC-721
 // tokenURI route (GET /metadata/:token_id), dispatched by host in the main
 // router. On the Cosmic Signature host it serves Cosmic Signature metadata.
-func TokenMetadataHandler(c *gin.Context) {
+func TokenMetadataHandler(c *httpx.Context) {
 	api_cosmic_game_cst_metadata(c)
 }
 
 // GET /api/cosmicgame/cst/metadata/:token_id — OpenSea-compatible metadata JSON (image hosted under /images/...).
 // Uses the same token row as /cst/info. Image base defaults to this API's origin + /images; optional NFT_ASSETS_PUBLIC_BASE overrides.
-func api_cosmic_game_cst_metadata(c *gin.Context) {
+func api_cosmic_game_cst_metadata(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !Enabled || !dbInitialized() {
 		common.RespondErrorJSON(c, "CosmicGame module or database not available")
@@ -29,7 +29,7 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 	}
 	base := common.NFTImagePublicBase(c)
 	if base == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusInternalServerError, httpx.H{
 			"error": "cannot derive public /images base URL (set Host or NFT_ASSETS_PUBLIC_BASE)",
 		})
 		return
@@ -43,7 +43,7 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 	tokenInfo, err := arbRepo.CosmicSignatureTokenInfo(c.Request.Context(), tokenID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "record not found"})
+			c.JSON(http.StatusNotFound, httpx.H{"error": "record not found"})
 			return
 		}
 		respondStoreError(c, err)
@@ -68,19 +68,19 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 
 	// Immutable, marketplace-filterable traits. "Imprinted" uses the mint
 	// timestamp (unix seconds) and is omitted when unavailable.
-	attributes := []gin.H{
+	attributes := []httpx.H{
 		{"trait_type": "Round", "display_type": "number", "value": tokenInfo.RoundNum},
 	}
 	if tokenInfo.Tx.TimeStamp > 0 {
-		attributes = append(attributes, gin.H{
+		attributes = append(attributes, httpx.H{
 			"trait_type":   "Imprinted",
 			"display_type": "date",
 			"value":        tokenInfo.Tx.TimeStamp,
 		})
 	}
-	attributes = append(attributes, gin.H{"trait_type": "seed", "value": tokenInfo.Seed})
+	attributes = append(attributes, httpx.H{"trait_type": "seed", "value": tokenInfo.Seed})
 
-	meta := gin.H{
+	meta := httpx.H{
 		"name":          name,
 		"description":   desc,
 		"image":         image,
@@ -89,7 +89,7 @@ func api_cosmic_game_cst_metadata(c *gin.Context) {
 		"background_color": "000000",
 		"external_url":     fmt.Sprintf("https://www.cosmicsignature.com/detail/%d", tokenID),
 		"attributes":       attributes,
-		"properties": gin.H{
+		"properties": httpx.H{
 			"seed":      tokenInfo.Seed,
 			"token_id":  tokenID,
 			"owner":     tokenInfo.CurOwnerAddr,
