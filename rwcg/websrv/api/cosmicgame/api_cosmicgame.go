@@ -402,9 +402,12 @@ type bidWithMessageJSON struct {
 	DateTime                   string           `json:"dateTime"`
 	Message                    string           `json:"message"`
 	PreviousBidderCstRewardAmount string        `json:"PreviousBidderCstRewardAmount"`
-	PreviousCstRewardAmountEth float64          `json:"PreviousCstRewardAmountEth"`
+	PreviousBidderCstRewardAmountEth float64    `json:"PreviousBidderCstRewardAmountEth"`
 	ThisBidderCstRewardAmount  string           `json:"ThisBidderCstRewardAmount"`
-	ThisCstRewardAmountEth     float64          `json:"ThisCstRewardAmountEth"`
+	ThisBidderCstRewardAmountEth float64        `json:"ThisBidderCstRewardAmountEth"`
+	// DEPRECATED back-compat (remove after V3 upgrade): total reward.
+	BidCstRewardAmount         string           `json:"BidCstRewardAmount"`
+	BidCstRewardAmountEth      float64          `json:"BidCstRewardAmountEth"`
 	CstDutchAuctionDuration    string           `json:"CstDutchAuctionDuration"`
 	CstDutchAuctionDurationInt int64            `json:"CstDutchAuctionDurationInt"`
 	Tx                         bidMessageTxJSON `json:"tx"`
@@ -420,9 +423,11 @@ func bidRecToWithMessageJSON(rec p.CGBidRec) bidWithMessageJSON {
 		DateTime:                   rec.Tx.DateTime,
 		Message:                    rec.Message,
 		PreviousBidderCstRewardAmount: rec.PreviousBidderCstRewardAmount,
-		PreviousCstRewardAmountEth: rec.PreviousCstRewardAmountEth,
+		PreviousBidderCstRewardAmountEth: rec.PreviousBidderCstRewardAmountEth,
 		ThisBidderCstRewardAmount:  rec.ThisBidderCstRewardAmount,
-		ThisCstRewardAmountEth:     rec.ThisCstRewardAmountEth,
+		ThisBidderCstRewardAmountEth: rec.ThisBidderCstRewardAmountEth,
+		BidCstRewardAmount:         rec.BidCstRewardAmount,
+		BidCstRewardAmountEth:      rec.BidCstRewardAmountEth,
 		CstDutchAuctionDuration:    rec.CstDutchAuctionDuration,
 		CstDutchAuctionDurationInt: rec.CstDutchAuctionDurationInt,
 		Tx: bidMessageTxJSON{

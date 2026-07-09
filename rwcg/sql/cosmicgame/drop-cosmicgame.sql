@@ -71,7 +71,7 @@ DROP TABLE IF EXISTS
 	cg_adm_late_bid_dur_divisor,
 	cg_adm_late_bid_premium_base_mul,
 	cg_adm_late_bid_premium_exponent,
-	cg_adm_bid_cst_reward_per_min,
+	cg_adm_last_bidder_reward_pct,
 	cg_adm_main_prize_num_nfts,
 	cg_bid_reward,
 	cg_fund_transf_err,

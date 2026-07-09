@@ -2,7 +2,6 @@ package cosmicgame
 
 import (
 	"errors"
-	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -137,13 +136,13 @@ func readTokenReward(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2, v3 *Cos
 // plus the derived late-bid window duration. IsV3 is false when the contract is still V1/V2, in which
 // case the other fields are unset and the dashboard hides the V3 section.
 type V3LiveConfig struct {
-	IsV3                              bool
-	RoundLateBidDurationDivisor       string // roundLateBidDurationDivisor
-	RoundLateBidDurationSeconds       int64  // getRoundLateBidDuration() — derived late-bid window, in seconds
-	RoundLateBidPremiumBaseMultiplier string // roundLateBidPricePremiumAmountBaseMultiplier
-	RoundLateBidPremiumExponent       int64  // roundLateBidPricePremiumAmountExponent
-	BidCstRewardAmountPerMinute       string // bidCstRewardAmountPerMinute (CST wei per minute)
-	MainPrizeNumCosmicSignatureNfts   int64  // mainPrizeNumCosmicSignatureNfts
+	IsV3                                bool
+	RoundLateBidDurationDivisor         string // roundLateBidDurationDivisor
+	RoundLateBidDurationSeconds         int64  // getRoundLateBidDuration() — derived late-bid window, in seconds
+	RoundLateBidPremiumBaseMultiplier   string // roundLateBidPricePremiumAmountBaseMultiplier
+	RoundLateBidPremiumExponent         int64  // roundLateBidPricePremiumAmountExponent
+	LastBidderBidCstRewardAmountPercentage int64 // lastBidderBidCstRewardAmountPercentage (0..100; share minted to the outbid bidder)
+	MainPrizeNumCosmicSignatureNfts     int64  // mainPrizeNumCosmicSignatureNfts
 }
 
 // readV3Config reads the 5 new V3 configuration getters (and the derived late-bid window). Returns
@@ -166,25 +165,11 @@ func readV3Config(v3 *CosmicSignatureGameV3, opts *bind.CallOpts) V3LiveConfig {
 	if val, err := v3.RoundLateBidPricePremiumAmountExponent(opts); err == nil {
 		cfg.RoundLateBidPremiumExponent = val.Int64()
 	}
-	if val, err := v3.BidCstRewardAmountPerMinute(opts); err == nil {
-		cfg.BidCstRewardAmountPerMinute = val.String()
+	if val, err := v3.LastBidderBidCstRewardAmountPercentage(opts); err == nil {
+		cfg.LastBidderBidCstRewardAmountPercentage = val.Int64()
 	}
 	if val, err := v3.MainPrizeNumCosmicSignatureNfts(opts); err == nil {
 		cfg.MainPrizeNumCosmicSignatureNfts = val.Int64()
 	}
 	return cfg
-}
-
-// bidCstRewardAmountPerMinuteEth converts the wei-per-minute reward to a float (CST per minute).
-func (c V3LiveConfig) BidCstRewardAmountPerMinuteEth() float64 {
-	if c.BidCstRewardAmountPerMinute == "" {
-		return 0
-	}
-	v, ok := new(big.Int).SetString(c.BidCstRewardAmountPerMinute, 10)
-	if !ok {
-		return 0
-	}
-	f := new(big.Float).Quo(new(big.Float).SetInt(v), big.NewFloat(1e18))
-	out, _ := f.Float64()
-	return out
 }

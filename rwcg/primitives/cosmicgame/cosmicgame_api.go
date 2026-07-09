@@ -75,9 +75,13 @@ type CGBidRec struct {
 	// outbid (previous last) bidder; ThisBidder* is the ~10% share minted to the bidder placing this bid.
 	// For V2/V1 bids the whole reward is the ThisBidder share and PreviousBidder* is 0.
 	PreviousBidderCstRewardAmount	string
-	PreviousCstRewardAmountEth		float64
+	PreviousBidderCstRewardAmountEth	float64
 	ThisBidderCstRewardAmount		string
-	ThisCstRewardAmountEth			float64
+	ThisBidderCstRewardAmountEth	float64
+	// DEPRECATED (kept for frontend back-compat until the V3 upgrade; remove afterwards). The TOTAL bid CST
+	// reward from IBiddingV2 BidPlaced ("-1" = legacy V1). Same value as CSTReward; equals PreviousBidder + ThisBidder.
+	BidCstRewardAmount			string
+	BidCstRewardAmountEth		float64
 	CstDutchAuctionDuration		string	// per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
 	CstDutchAuctionDurationInt	int64	// numeric duration when >= 0; else -1
 	NFTDonationTokenId			int64
@@ -729,7 +733,7 @@ type CGAdminEvent struct {
 										//			40		RoundLateBidDurationDivisorChanged (V3)
 										//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
 										//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
-										//			43		BidCstRewardAmountPerMinuteChanged (V3)
+										//			43		LastBidderBidCstRewardAmountPercentageChanged (V3)
 										//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
 	RecordId					int64
 	EvtLogId					int64

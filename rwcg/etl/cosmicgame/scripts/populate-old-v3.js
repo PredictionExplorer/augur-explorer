@@ -19,7 +19,7 @@
  * V3 config admin events (ISystemEventsV3 → cg_adm_* tables, record types 40–44), emitted post-upgrade
  * while the round is inactive (setters are onlyOwner + _onlyRoundIsInactive):
  *   setRoundLateBidDurationDivisor, setRoundLateBidPricePremiumAmountBaseMultiplier,
- *   setRoundLateBidPricePremiumAmountExponent, setBidCstRewardAmountPerMinute,
+ *   setRoundLateBidPricePremiumAmountExponent, setLastBidderBidCstRewardAmountPercentage,
  *   setMainPrizeNumCosmicSignatureNfts
  *
  * V3 keeps the V2 bid method signatures (bidWithEth/Cst(..., bidCstRewardAmountMinLimit_)), so the
@@ -166,7 +166,7 @@ const CONFIG = {
         roundLateBidDurationDivisor: 3000000,
         roundLateBidPricePremiumAmountBaseMultiplier: 29228998656n, // 3567993 << 13
         roundLateBidPricePremiumAmountExponent: 8,
-        bidCstRewardAmountPerMinute: hre.ethers.parseEther("1"), // 1 CST per minute
+        lastBidderBidCstRewardAmountPercentage: 90, // % of the bid CST reward minted to the outbid bidder
         mainPrizeNumCosmicSignatureNfts: 3,
     },
     // Short skips between CST bids (works with patched short time constants)
@@ -531,7 +531,7 @@ async function upgradeGameProxyToV3() {
  *   setRoundLateBidDurationDivisor                    → RoundLateBidDurationDivisorChanged
  *   setRoundLateBidPricePremiumAmountBaseMultiplier   → RoundLateBidPricePremiumAmountBaseMultiplierChanged
  *   setRoundLateBidPricePremiumAmountExponent         → RoundLateBidPricePremiumAmountExponentChanged
- *   setBidCstRewardAmountPerMinute                    → BidCstRewardAmountPerMinuteChanged
+ *   setLastBidderBidCstRewardAmountPercentage         → LastBidderBidCstRewardAmountPercentageChanged
  *   setMainPrizeNumCosmicSignatureNfts                → MainPrizeNumCosmicSignatureNftsChanged
  *
  * All 5 setters are onlyOwner + _onlyRoundIsInactive, so this must run while the round is inactive
@@ -556,13 +556,13 @@ async function emitV3ConfigAdminEvents() {
     await game.setRoundLateBidPricePremiumAmountExponent(gameSettings.roundLateBidPricePremiumAmountExponent, g);
     console.log(`  setRoundLateBidPricePremiumAmountExponent → RoundLateBidPricePremiumAmountExponentChanged: ${gameSettings.roundLateBidPricePremiumAmountExponent}`);
 
-    await game.setBidCstRewardAmountPerMinute(gameSettings.bidCstRewardAmountPerMinute, g);
-    console.log(`  setBidCstRewardAmountPerMinute → BidCstRewardAmountPerMinuteChanged: ${gameSettings.bidCstRewardAmountPerMinute}`);
+    await game.setLastBidderBidCstRewardAmountPercentage(gameSettings.lastBidderBidCstRewardAmountPercentage, g);
+    console.log(`  setLastBidderBidCstRewardAmountPercentage → LastBidderBidCstRewardAmountPercentageChanged: ${gameSettings.lastBidderBidCstRewardAmountPercentage}`);
 
     await game.setMainPrizeNumCosmicSignatureNfts(gameSettings.mainPrizeNumCosmicSignatureNfts, g);
     console.log(`  setMainPrizeNumCosmicSignatureNfts → MainPrizeNumCosmicSignatureNftsChanged: ${gameSettings.mainPrizeNumCosmicSignatureNfts}`);
 
-    console.log(`  ETL verify: cg_adm_late_bid_dur_divisor, cg_adm_late_bid_premium_base_mul, cg_adm_late_bid_premium_exponent, cg_adm_bid_cst_reward_per_min, cg_adm_main_prize_num_nfts`);
+    console.log(`  ETL verify: cg_adm_late_bid_dur_divisor, cg_adm_late_bid_premium_base_mul, cg_adm_late_bid_premium_exponent, cg_adm_last_bidder_reward_pct, cg_adm_main_prize_num_nfts`);
 }
 
 /**

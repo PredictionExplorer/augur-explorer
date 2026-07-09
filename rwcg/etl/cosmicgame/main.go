@@ -103,7 +103,7 @@ const (
 	ROUND_LATE_BID_DURATION_DIVISOR_CHANGED = "7acba37d1b2d934e554139ff1d470d2cce50a7b6e56870577249b87564a95a69" // ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
 	ROUND_LATE_BID_PREMIUM_BASE_MULTIPLIER_CHANGED = "169f25ec19cc5b518dc57adf05bb2d85155b1d6c60767e9f0e3ced18eac0ab77" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
 	ROUND_LATE_BID_PREMIUM_EXPONENT_CHANGED = "cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
-	BID_CST_REWARD_AMOUNT_PER_MINUTE_CHANGED = "961b02838cd95976d0cac2e65ed131f45e19a84369d91d59d613dec94a0638c6" // ISystemEventsV3.sol:BidCstRewardAmountPerMinuteChanged
+	LAST_BIDDER_BID_CST_REWARD_AMOUNT_PERCENTAGE_CHANGED = "c63013cf34a6f7b20983b293d1787e833f8de2db868e904525fc2910df652a97" // ISystemEventsV3.sol:LastBidderBidCstRewardAmountPercentageChanged
 	MAIN_PRIZE_NUM_CS_NFTS_CHANGED = "616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564" // ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
 	STATIC_CST_REWARD		= "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
 	MAX_MESSAGE_LENGTH		= "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged
@@ -171,7 +171,7 @@ var (
 	evt_round_late_bid_duration_divisor_changed,_ = hex.DecodeString(ROUND_LATE_BID_DURATION_DIVISOR_CHANGED)
 	evt_round_late_bid_premium_base_multiplier_changed,_ = hex.DecodeString(ROUND_LATE_BID_PREMIUM_BASE_MULTIPLIER_CHANGED)
 	evt_round_late_bid_premium_exponent_changed,_ = hex.DecodeString(ROUND_LATE_BID_PREMIUM_EXPONENT_CHANGED)
-	evt_bid_cst_reward_amount_per_minute_changed,_ = hex.DecodeString(BID_CST_REWARD_AMOUNT_PER_MINUTE_CHANGED)
+	evt_last_bidder_bid_cst_reward_amount_percentage_changed,_ = hex.DecodeString(LAST_BIDDER_BID_CST_REWARD_AMOUNT_PERCENTAGE_CHANGED)
 	evt_main_prize_num_cs_nfts_changed,_ = hex.DecodeString(MAIN_PRIZE_NUM_CS_NFTS_CHANGED)
 	evt_max_msg_length_changed,_	= hex.DecodeString(MAX_MESSAGE_LENGTH)
 	evt_token_script_url,_			= hex.DecodeString(TOKEN_SCRIPT_URL)

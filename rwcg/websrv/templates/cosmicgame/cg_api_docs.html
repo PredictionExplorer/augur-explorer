@@ -246,7 +246,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/info/{evtlog_id}</span></td>
-					<td class="api-description">Get bid details. The bid CST reward is reported split per its recipients: <code>PreviousBidderCstRewardAmount</code>/<code>PreviousCstRewardAmountEth</code> (90% to the outbid bidder in V3) and <code>ThisBidderCstRewardAmount</code>/<code>ThisCstRewardAmountEth</code> (~10% to the bidder placing the bid in V3; the whole reward for V2/V1 bids). Also includes <code>CstDutchAuctionDuration</code>, <code>CstDutchAuctionDurationInt</code> (-1 for legacy V1).</td>
+					<td class="api-description">Get bid details. The bid CST reward is reported split per its recipients: <code>PreviousBidderCstRewardAmount</code>/<code>PreviousBidderCstRewardAmountEth</code> (90% to the outbid bidder in V3) and <code>ThisBidderCstRewardAmount</code>/<code>ThisBidderCstRewardAmountEth</code> (~10% to the bidder placing the bid in V3; the whole reward for V2/V1 bids). <code>BidCstRewardAmount</code>/<code>BidCstRewardAmountEth</code> (the total; = Previous + This) are retained for back-compat and will be removed after the V3 upgrade. Also includes <code>CstDutchAuctionDuration</code>, <code>CstDutchAuctionDurationInt</code> (-1 for legacy V1).</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/info/1000">.../bid/info/1000</a></td>
 				</tr>
 				<tr>

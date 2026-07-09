@@ -20,6 +20,8 @@ func (sw *SQLStorageWrapper) buildBidSelectQuery(whereClause, orderBy, limitOffs
 		// V3 bid CST reward 90/10 split (Comment-202607161): previous (outbid) bidder share then this bidder share.
 		"COALESCE(br.prev_reward,0)::text, COALESCE(br.prev_reward,0)/1e18, " +
 		"COALESCE(br.this_reward,0)::text, COALESCE(br.this_reward,0)/1e18, " +
+		// DEPRECATED back-compat: total reward (kept until V3 upgrade).
+		"b.bid_cst_reward_amount, (CASE WHEN b.bid_cst_reward_amount >= 0 THEN b.bid_cst_reward_amount/1e18 ELSE -1 END), " +
 		"b.cst_dutch_auction_duration, (CASE WHEN b.cst_dutch_auction_duration >= 0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END), " +
 		"b.bid_type, " +
 		"EXTRACT(EPOCH FROM b.prize_time)::BIGINT AS prize_time_ts, b.prize_time, " +
@@ -82,9 +84,11 @@ func scanBidRecord(rows *sql.Rows) (p.CGBidRec, error) {
 		&rec.CSTReward,
 		&rec.CSTRewardEth,
 		&rec.PreviousBidderCstRewardAmount,
-		&rec.PreviousCstRewardAmountEth,
+		&rec.PreviousBidderCstRewardAmountEth,
 		&rec.ThisBidderCstRewardAmount,
-		&rec.ThisCstRewardAmountEth,
+		&rec.ThisBidderCstRewardAmountEth,
+		&rec.BidCstRewardAmount,
+		&rec.BidCstRewardAmountEth,
 		&rec.CstDutchAuctionDuration,
 		&rec.CstDutchAuctionDurationInt,
 		&rec.BidType,

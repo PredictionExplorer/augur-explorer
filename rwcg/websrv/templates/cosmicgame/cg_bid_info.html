@@ -82,11 +82,11 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Bid CST Reward — Previous Bidder (90%)</div>
-					<div class="detail-value">{{ if gt .BidInfo.PreviousCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.PreviousCstRewardAmountEth}} CST{{else}}—{{end}}</div>
+					<div class="detail-value">{{ if gt .BidInfo.PreviousBidderCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.PreviousBidderCstRewardAmountEth}} CST{{else}}—{{end}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Bid CST Reward — This Bidder (10%)</div>
-					<div class="detail-value">{{ if gt .BidInfo.ThisCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.ThisCstRewardAmountEth}} CST{{else}}—{{end}}</div>
+					<div class="detail-value">{{ if gt .BidInfo.ThisBidderCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.ThisBidderCstRewardAmountEth}} CST{{else}}—{{end}}</div>
 				</div>
 				{{ if ge .BidInfo.CstDutchAuctionDurationInt 0 }}
 				<div class="detail-row">

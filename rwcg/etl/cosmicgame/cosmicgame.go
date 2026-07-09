@@ -3215,18 +3215,18 @@ func proc_round_late_bid_premium_exponent_changed_event(log *types.Log,elog *Eth
 	storagew.Delete_round_late_bid_premium_exponent_changed_event(evt.EvtId)
 	storagew.Insert_round_late_bid_premium_exponent_changed_event(&evt)
 }
-func proc_bid_cst_reward_amount_per_minute_changed_event(log *types.Log,elog *EthereumEventLog) {
+func proc_last_bidder_bid_cst_reward_amount_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGBidCstRewardAmountPerMinuteChanged
-	var eth_evt CosmicSignatureGameV3BidCstRewardAmountPerMinuteChanged
+	var evt CGLastBidderBidCstRewardAmountPercentageChanged
+	var eth_evt CosmicSignatureGameV3LastBidderBidCstRewardAmountPercentageChanged
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		return
 	}
-	Info.Printf("Processing BidCstRewardAmountPerMinuteChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"BidCstRewardAmountPerMinuteChanged",log.Data)
+	Info.Printf("Processing LastBidderBidCstRewardAmountPercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"LastBidderBidCstRewardAmountPercentageChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event BidCstRewardAmountPerMinuteChanged decode error: %v",err)
+		Error.Printf("Event LastBidderBidCstRewardAmountPercentageChanged decode error: %v",err)
 		os.Exit(1)
 	}
 	evt.EvtId=elog.EvtId
@@ -3235,10 +3235,10 @@ func proc_bid_cst_reward_amount_per_minute_changed_event(log *types.Log,elog *Et
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.NewValue = eth_evt.NewValue.String()
-	Info.Printf("BidCstRewardAmountPerMinuteChanged{ NewValue: %v }\n",evt.NewValue)
+	Info.Printf("LastBidderBidCstRewardAmountPercentageChanged{ NewValue: %v }\n",evt.NewValue)
 
-	storagew.Delete_bid_cst_reward_amount_per_minute_changed_event(evt.EvtId)
-	storagew.Insert_bid_cst_reward_amount_per_minute_changed_event(&evt)
+	storagew.Delete_last_bidder_bid_cst_reward_amount_percentage_changed_event(evt.EvtId)
+	storagew.Insert_last_bidder_bid_cst_reward_amount_percentage_changed_event(&evt)
 }
 func proc_main_prize_num_cs_nfts_changed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -3501,8 +3501,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_late_bid_premium_exponent_changed) {
 		proc_round_late_bid_premium_exponent_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_bid_cst_reward_amount_per_minute_changed) {
-		proc_bid_cst_reward_amount_per_minute_changed_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_last_bidder_bid_cst_reward_amount_percentage_changed) {
+		proc_last_bidder_bid_cst_reward_amount_percentage_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_main_prize_num_cs_nfts_changed) {
 		proc_main_prize_num_cs_nfts_changed_event(log,evtlog)

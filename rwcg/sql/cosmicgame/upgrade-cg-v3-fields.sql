@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS cg_adm_late_bid_premium_exponent(
 	id BIGSERIAL PRIMARY KEY, evtlog_id BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num BIGINT NOT NULL, tx_id BIGINT NOT NULL, time_stamp TIMESTAMPTZ NOT NULL,
 	contract_aid BIGINT NOT NULL, new_value DECIMAL NOT NULL, UNIQUE(evtlog_id));
-CREATE TABLE IF NOT EXISTS cg_adm_bid_cst_reward_per_min(
+CREATE TABLE IF NOT EXISTS cg_adm_last_bidder_reward_pct( -- new_value is a percentage 0..100
 	id BIGSERIAL PRIMARY KEY, evtlog_id BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num BIGINT NOT NULL, tx_id BIGINT NOT NULL, time_stamp TIMESTAMPTZ NOT NULL,
 	contract_aid BIGINT NOT NULL, new_value DECIMAL NOT NULL, UNIQUE(evtlog_id));

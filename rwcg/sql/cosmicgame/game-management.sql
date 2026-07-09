@@ -426,7 +426,8 @@ CREATE TABLE cg_adm_late_bid_premium_exponent( -- ISystemEventsV3.sol:RoundLateB
 	new_value		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_bid_cst_reward_per_min( -- ISystemEventsV3.sol:BidCstRewardAmountPerMinuteChanged
+CREATE TABLE cg_adm_last_bidder_reward_pct( -- ISystemEventsV3.sol:LastBidderBidCstRewardAmountPercentageChanged
+	-- new_value is a percentage (0..100): the share of the bid CST reward minted to the outbid (previous last) bidder.
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,

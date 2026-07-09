@@ -752,8 +752,8 @@ func (sw *SQLStorageWrapper) Delete_round_late_bid_premium_base_multiplier_chang
 func (sw *SQLStorageWrapper) Delete_round_late_bid_premium_exponent_changed_event(evtlog_id int64) {
 	sw.delete_v3_config_changed("cg_adm_late_bid_premium_exponent",evtlog_id)
 }
-func (sw *SQLStorageWrapper) Delete_bid_cst_reward_amount_per_minute_changed_event(evtlog_id int64) {
-	sw.delete_v3_config_changed("cg_adm_bid_cst_reward_per_min",evtlog_id)
+func (sw *SQLStorageWrapper) Delete_last_bidder_bid_cst_reward_amount_percentage_changed_event(evtlog_id int64) {
+	sw.delete_v3_config_changed("cg_adm_last_bidder_reward_pct",evtlog_id)
 }
 func (sw *SQLStorageWrapper) Delete_main_prize_num_cs_nfts_changed_event(evtlog_id int64) {
 	sw.delete_v3_config_changed("cg_adm_main_prize_num_nfts",evtlog_id)

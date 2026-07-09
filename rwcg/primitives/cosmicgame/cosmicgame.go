@@ -576,7 +576,7 @@ type CGRoundLateBidPricePremiumAmountExponentChanged struct {
 	Contract                string
 	NewValue				string
 }
-type CGBidCstRewardAmountPerMinuteChanged struct {
+type CGLastBidderBidCstRewardAmountPercentageChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64

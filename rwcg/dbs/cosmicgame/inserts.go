@@ -1905,8 +1905,8 @@ func (sw *SQLStorageWrapper) Insert_round_late_bid_premium_base_multiplier_chang
 func (sw *SQLStorageWrapper) Insert_round_late_bid_premium_exponent_changed_event(evt *p.CGRoundLateBidPricePremiumAmountExponentChanged) {
 	sw.insert_v3_config_changed("cg_adm_late_bid_premium_exponent",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
 }
-func (sw *SQLStorageWrapper) Insert_bid_cst_reward_amount_per_minute_changed_event(evt *p.CGBidCstRewardAmountPerMinuteChanged) {
-	sw.insert_v3_config_changed("cg_adm_bid_cst_reward_per_min",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
+func (sw *SQLStorageWrapper) Insert_last_bidder_bid_cst_reward_amount_percentage_changed_event(evt *p.CGLastBidderBidCstRewardAmountPercentageChanged) {
+	sw.insert_v3_config_changed("cg_adm_last_bidder_reward_pct",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
 }
 func (sw *SQLStorageWrapper) Insert_main_prize_num_cs_nfts_changed_event(evt *p.CGMainPrizeNumCosmicSignatureNftsChanged) {
 	sw.insert_v3_config_changed("cg_adm_main_prize_num_nfts",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)

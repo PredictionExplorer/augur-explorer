@@ -375,8 +375,8 @@
 						<td>{{.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
 						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
-						<td class="right">{{ if gt .PreviousCstRewardAmountEth 0.0 }}{{printf "%.4f" .PreviousCstRewardAmountEth}}{{else}}—{{end}}</td>
-						<td class="right">{{ if gt .ThisCstRewardAmountEth 0.0 }}{{printf "%.4f" .ThisCstRewardAmountEth}}{{else}}—{{end}}</td>
+						<td class="right">{{ if gt .PreviousBidderCstRewardAmountEth 0.0 }}{{printf "%.4f" .PreviousBidderCstRewardAmountEth}}{{else}}—{{end}}</td>
+						<td class="right">{{ if gt .ThisBidderCstRewardAmountEth 0.0 }}{{printf "%.4f" .ThisBidderCstRewardAmountEth}}{{else}}—{{end}}</td>
 						<td class="right">{{ if ge .CstDutchAuctionDurationInt 0 }}{{.CstDutchAuctionDurationInt}}{{else}}—{{end}}</td>
 						<td class="center">{{ .RWalkNFTId }}</td>
 					</tr>
