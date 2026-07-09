@@ -2,6 +2,7 @@
 package cosmicgame
 
 import (
+	"context"
 	"log"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -26,13 +27,18 @@ var (
 	Enabled bool
 )
 
-// Init initializes the cosmicgame package with required dependencies.
-// If enabled is false, RegisterAPIRoutes is a no-op; Init returns without loading contract state.
-func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) {
+// Init initializes the cosmicgame package with required dependencies and
+// performs the synchronous contract-state loads. If enabled is false,
+// RegisterAPIRoutes is a no-op and Init returns without loading contract
+// state. A non-nil error means the module cannot serve (missing database
+// link or unreadable contract registry); the caller decides whether that is
+// fatal. Init does not start the periodic refresh loops — call
+// StartBackgroundRefresh for that.
+func Init(ctx context.Context, ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) error {
 	Enabled = enabled
 	if !enabled {
 		info.Printf("CosmicGame module init skipped (ENABLE_ROUTES_COSMICGAME=false)")
-		return
+		return nil
 	}
 
 	EthClient = ethClient
@@ -40,8 +46,7 @@ func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog 
 	Info = info
 	Error = errorLog
 
-	// Call the cosmic game initialization
-	cosmic_game_init()
+	return initContractState(ctx)
 }
 
 // Helper to check if database is initialized

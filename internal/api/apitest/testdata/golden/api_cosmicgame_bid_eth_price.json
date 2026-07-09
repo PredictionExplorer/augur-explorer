@@ -1,8 +1,11 @@
 {
-  "status": 400,
+  "status": 200,
   "contentType": "application/json",
   "body": {
-    "error": "apitest eth stub: method eth_call not supported",
-    "status": 0
+    "AuctionDuration": "86400",
+    "ETHPrice": "1010000000000000",
+    "SecondsElapsed": "7200",
+    "error": "",
+    "status": 1
   }
 }

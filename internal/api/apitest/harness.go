@@ -24,13 +24,15 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 )
 
 // harness is the fully wired API server under test: the real gin router with
 // the real middleware stack, backed by the seeded test database and the
-// deterministic Ethereum stub.
+// deterministic in-memory Ethereum node (internal/testchain) serving
+// fixture-coherent contract state.
 type harness struct {
 	router *gin.Engine
 	db     *sql.DB
@@ -46,22 +48,23 @@ func seedDatabase(ctx context.Context, db *sql.DB) error {
 
 // newHarness initializes the API modules exactly like cmd/apiserver/main.go
 // (common context, cosmicgame, randomwalk, faq) against the test database and
-// eth stub, then assembles the production middleware chain and route table.
+// fake chain, then assembles the production middleware chain and route table.
 // It must be called exactly once per process: the API packages hold their
 // dependencies in package-level state until Phase 2 makes them injectable.
 func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	gin.SetMode(gin.TestMode)
 	discard := log.New(io.Discard, "", 0)
 
-	ethSrv := newEthStub() // lives for the whole test process
+	chain, _ := testchain.Start() // lives for the whole test process
+	registerChainState(chain)
 	faqSrv := newFAQStub()
 	if err := os.Setenv("AI_BOT_BACKEND_URL", faqSrv.URL); err != nil {
 		return nil, err
 	}
 
-	rpcClient, err := ethrpc.DialContext(ctx, ethSrv.URL)
+	rpcClient, err := ethrpc.DialContext(ctx, chain.URL())
 	if err != nil {
-		return nil, fmt.Errorf("dialing eth stub: %w", err)
+		return nil, fmt.Errorf("dialing test chain: %w", err)
 	}
 	ethClient := ethclient.NewClient(rpcClient)
 
@@ -71,11 +74,12 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 
 	common.InitContext(st, ethClient, discard, discard)
 
-	// The reload_* refresh goroutines mutate package state on a timer, which
-	// would race with request handling and make snapshots drift; the initial
-	// synchronous loads still run inside Init.
-	cosmicgame.DisableBackgroundRefresh()
-	cosmicgame.Init(ethClient, rpcClient, discard, discard, true)
+	// StartBackgroundRefresh is deliberately not called: the refresh loops
+	// would mutate the contract-state snapshot on a timer and make golden
+	// snapshots drift. Init's synchronous loads pin the state once.
+	if err := cosmicgame.Init(ctx, ethClient, rpcClient, discard, discard, true); err != nil {
+		return nil, fmt.Errorf("initializing cosmicgame module: %w", err)
+	}
 	randomwalk.Init(true)
 	faq.Init(discard, discard, true)
 

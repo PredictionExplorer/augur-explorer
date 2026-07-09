@@ -10,14 +10,10 @@ import (
 	"testing"
 )
 
-// Fixture handles referenced by the parity cases (see internal/testfixtures/seed/*.sql).
+// Fixture handles referenced by the parity cases (see
+// internal/testfixtures/seed/*.sql); the participant addresses live in
+// ethchain.go, shared with the chain stubs.
 const (
-	addrAlice = "0x2100000000000000000000000000000000000021" // round-0 main + chrono winner, CST staker
-	addrBob   = "0x2200000000000000000000000000000000000022" // rwalk bidder, endurance winner, banned bid
-	addrCarol = "0x2300000000000000000000000000000000000023" // CST bidder, lastcst + raffle winner, rwalk staker
-	addrDave  = "0x2400000000000000000000000000000000000024" // eth donor, raffle NFT winner, round-1 winner
-	addrEmma  = "0x2500000000000000000000000000000000000025" // donor with info, marketer, round-2 winner
-
 	aidCarol = "23"
 	aidDave  = "24"
 
@@ -158,10 +154,7 @@ var parityCases = map[string][]parityCase{
 	"/api/cosmicgame/bid/cst_price":            {{path: "/api/cosmicgame/bid/cst_price"}},
 	"/api/cosmicgame/bid/eth_price":            {{path: "/api/cosmicgame/bid/eth_price"}},
 	"/api/cosmicgame/bid/current_special_winners": {
-		// The handler fans out eight parallel contract reads and reports the
-		// first failure; with the eth stub all fail, and which label wins the
-		// race is scheduling-dependent, so the error text is redacted.
-		{path: "/api/cosmicgame/bid/current_special_winners", redact: redactStringFields("error")},
+		{path: "/api/cosmicgame/bid/current_special_winners"},
 	},
 	"/api/cosmicgame/get_banned_bids": {{path: "/api/cosmicgame/get_banned_bids"}},
 

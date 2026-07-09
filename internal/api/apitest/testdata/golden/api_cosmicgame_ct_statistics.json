@@ -1,8 +1,56 @@
 {
-  "status": 400,
+  "status": 200,
   "contentType": "application/json",
   "body": {
-    "error": "Error reading token name: apitest eth stub: method eth_call not supported",
-    "status": 0
+    "CosmicTokenAddr": "0x4000000000000000000000000000000000000004",
+    "GameContractAddr": "0x2000000000000000000000000000000000000002",
+    "Statistics": {
+      "ConsumedInBids": "410000000000000000000",
+      "ConsumedInBidsEth": 410,
+      "DistributedToMarketers": "50000000000000000000",
+      "DistributedToMarketersEth": 50,
+      "EarnedFromBidding": "1200000000000000000000",
+      "EarnedFromBiddingEth": 1200,
+      "GivenAsChronoWarriorPrizes": "35000000000000000000",
+      "GivenAsChronoWarriorPrizesEth": 35,
+      "GivenAsMainPrizes": "330000000000000000000",
+      "GivenAsMainPrizesEth": 330,
+      "GivenAsRafflePrizes": "92000000000000000000",
+      "GivenAsRafflePrizesEth": 92,
+      "TopHolders": [
+        {
+          "Balance": "290000000000000000000",
+          "BalanceFloat": 290,
+          "OwnerAddr": "0x2100000000000000000000000000000000000021",
+          "OwnerAid": 21,
+          "PercentOfSupply": 58.58585858585859
+        },
+        {
+          "Balance": "110000000000000000000",
+          "BalanceFloat": 110,
+          "OwnerAddr": "0x2200000000000000000000000000000000000022",
+          "OwnerAid": 22,
+          "PercentOfSupply": 22.22222222222222
+        },
+        {
+          "Balance": "95000000000000000000",
+          "BalanceFloat": 95,
+          "OwnerAddr": "0x2300000000000000000000000000000000000023",
+          "OwnerAid": 23,
+          "PercentOfSupply": 19.19191919191919
+        }
+      ],
+      "TotalBurns": 1,
+      "TotalHolders": 3,
+      "TotalMints": 5,
+      "TotalSupply": "495000000000000000000",
+      "TotalSupplyEth": 495,
+      "TotalTransfers": 1
+    },
+    "TokenDecimals": 18,
+    "TokenName": "CosmicToken",
+    "TokenSymbol": "CST",
+    "error": "",
+    "status": 1
   }
 }

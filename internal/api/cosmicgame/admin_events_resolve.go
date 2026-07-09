@@ -14,16 +14,14 @@ func enrichAdminEventsResolvedValues(events []p.CGAdminEvent) {
 	if EthClient == nil || len(events) == 0 {
 		return
 	}
-	v1, v2 := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
-	if v1 == nil && v2 == nil {
-		return
-	}
-	contract := v1
-	if contract == nil {
+	gameAddr := contractState.Snapshot().Addrs.CosmicGame
+	v1, _ := NewCosmicSignatureGame(gameAddr, EthClient)
+	v2, _ := NewCosmicSignatureGameV2(gameAddr, EthClient)
+	if v1 == nil {
 		return
 	}
 	for i := range events {
-		resolved := resolveAdminEventFromContract(contract, v2, &events[i])
+		resolved := resolveAdminEventFromContract(v1, v2, &events[i])
 		if resolved != "" {
 			events[i].ResolvedValue = resolved
 		}

@@ -1,8 +1,22 @@
 {
-  "status": 400,
+  "status": 200,
   "contentType": "application/json",
   "body": {
-    "error": "\u003credacted\u003e",
-    "status": 0
+    "ChronoWarriorAddress": "0x2300000000000000000000000000000000000023",
+    "ChronoWarriorDuration": 800,
+    "ChronoWarriorIsLive": true,
+    "EnduranceChampionAddress": "0x2200000000000000000000000000000000000022",
+    "EnduranceChampionDuration": 600,
+    "EnduranceChampionStartTimeStamp": 1767228500,
+    "LastBidderAddress": "0x2100000000000000000000000000000000000021",
+    "LastBidderLastBidTime": 1767228500,
+    "LastCstBidderAddress": "0x2300000000000000000000000000000000000023",
+    "LastCstBidderLastBidTime": 0,
+    "PrevEnduranceChampionDuration": 600,
+    "RoundNum": 3,
+    "SourceBlockNumber": 142,
+    "SourceBlockTimeStamp": 1767239800,
+    "error": "",
+    "status": 1
   }
 }
