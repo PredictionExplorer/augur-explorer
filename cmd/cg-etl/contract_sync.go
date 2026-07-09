@@ -37,19 +37,19 @@ func chainSyncLogIndex() uint {
 	return 990000 + uint(time.Now().UnixNano()%10000)
 }
 
-func allocChainSyncEvtlog(ctx context.Context, st *store.Store, baseStorage *store.SQLStorage, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
+func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
 	header, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("HeaderByNumber: %w", err)
 	}
-	if err := baseStorage.Insert_block(header); err != nil {
-		return nil, fmt.Errorf("Insert_block: %w", err)
+	if err := st.InsertBlock(ctx, header); err != nil {
+		return nil, fmt.Errorf("InsertBlock: %w", err)
 	}
 
 	blockNum := header.Number.Int64()
-	txId, err := baseStorage.Insert_minimal_transaction(chainSyncTxHash, blockNum)
+	txId, err := st.InsertMinimalTransaction(ctx, chainSyncTxHash, blockNum)
 	if err != nil {
-		return nil, fmt.Errorf("Insert_minimal_transaction: %w", err)
+		return nil, fmt.Errorf("InsertMinimalTransaction: %w", err)
 	}
 
 	contractAid, err := st.LookupOrCreateAddress(ctx, contractAddr, blockNum, txId)
@@ -63,9 +63,9 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, baseStorage *sto
 		Index:       chainSyncLogIndex(),
 	}
 
-	evtId, err := baseStorage.Insert_event_log(syncLog, txId, contractAid)
+	evtId, err := st.InsertEventLog(ctx, syncLog, txId, contractAid)
 	if err != nil {
-		return nil, fmt.Errorf("Insert_event_log: %w", err)
+		return nil, fmt.Errorf("InsertEventLog: %w", err)
 	}
 
 	return &cgdb.AdminCorrectionMeta{
@@ -164,7 +164,7 @@ func (s *paramSyncer) syncCstReward(wantValue string) (bool, error) {
 
 // syncContractParamsFromChain reads live monetary/timed settings from RPC and inserts SQL
 // correction rows when the latest admin/history value differs from chain.
-func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store.Store, baseStorage *store.SQLStorage, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
+func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store.Store, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
 	if client == nil {
 		return fmt.Errorf("eth client is nil")
 	}
@@ -178,7 +178,7 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 	var copts bind.CallOpts
 	mechanics := probeContractMechanics(v1, v2, &copts)
 
-	meta, err := allocChainSyncEvtlog(ctx, st, baseStorage, gameAddr, client)
+	meta, err := allocChainSyncEvtlog(ctx, st, gameAddr, client)
 	if err != nil {
 		return fmt.Errorf("alloc chain sync evtlog: %w", err)
 	}

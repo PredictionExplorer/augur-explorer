@@ -16,13 +16,20 @@ func apiRwalkTokenStats(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_rwalk_addr := addrs.RandomWalk
-	stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
+	stats, err := rwRepo.RandomWalkStats(c.Request.Context(), rwalk_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":    1,
-		"error":     "",
+		"status":     1,
+		"error":      "",
 		"TokenStats": stats,
 		"RWalkAid":   rwalk_aid,
 		"RWalkAddr":  p_rwalk_addr,
@@ -36,10 +43,17 @@ func apiRwalkMarketStats(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	market_aid := addrs.MarketPlaceAid
 	p_market_addr := addrs.MarketPlace
-	stats := rw_storagew.Get_market_stats(market_aid)
+	stats, err := rwRepo.MarketStats(c.Request.Context(), market_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":      1,
 		"error":       "",
@@ -56,16 +70,23 @@ func apiRwalkTradingVolumeByPeriod(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	market_aid := addrs.MarketPlaceAid
 	success, init_ts, fin_ts, interval_secs := common.ParseTimeframeParams(c)
 	if !success {
 		return
 	}
-	vol_hist := rw_storagew.Get_market_trading_volume_by_period(market_aid, init_ts, fin_ts, interval_secs)
+	vol_hist, err := rwRepo.MarketTradingVolumeByPeriod(c.Request.Context(), market_aid, init_ts, fin_ts, interval_secs)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":       1,
-		"error":        "",
+		"status":        1,
+		"error":         "",
 		"VolumeHistory": vol_hist,
 		"InitTs":        init_ts,
 		"FinTs":         fin_ts,
@@ -80,10 +101,17 @@ func apiRwalkMintIntervals(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_rwalk_addr := addrs.RandomWalk
-	mint_intervals := rw_storagew.Get_rwalk_mint_intervals(rwalk_aid)
+	mint_intervals, err := rwRepo.MintIntervals(c.Request.Context(), rwalk_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":        1,
 		"error":         "",
@@ -100,14 +128,25 @@ func apiRwalkWithdrawalChart(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_rwalk_addr := addrs.RandomWalk
-	withdrawal_entries := rw_storagew.Get_rwalk_withdrawal_chart(rwalk_aid)
+	withdrawal_entries, err := rwRepo.WithdrawalChart(c.Request.Context(), rwalk_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	withdrawal_data := common.BuildJSRandomwalkWithdrawalChart(&withdrawal_entries)
-	rwalk_stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
+	rwalk_stats, err := rwRepo.RandomWalkStats(c.Request.Context(), rwalk_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":            1,
+		"status":             1,
 		"error":              "",
 		"WithdrawalEntries":  withdrawal_entries,
 		"WithdrawalData":     withdrawal_data,
@@ -124,7 +163,10 @@ func apiRwalkFloorPriceOverTime(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_rwalk_addr := addrs.RandomWalk
 	market_aid := addrs.MarketPlaceAid
@@ -142,11 +184,19 @@ func apiRwalkFloorPriceOverTime(c *gin.Context) {
 	if interval == 0 || interval == 2147483647 {
 		interval = 24 * 60 * 60
 	}
-	price_entries := rw_storagew.Get_rwalk_floor_price_for_periods(rwalk_aid, market_aid, ini, fin, interval)
+	price_entries, err := rwRepo.FloorPriceByPeriod(c.Request.Context(), rwalk_aid, market_aid, ini, fin, interval)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	price_data := common.BuildJSFloorPriceData(&price_entries)
-	rwalk_stats := rw_storagew.Get_random_walk_stats(rwalk_aid)
+	rwalk_stats, err := rwRepo.RandomWalkStats(c.Request.Context(), rwalk_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":            1,
+		"status":             1,
 		"error":              "",
 		"PriceEntries":       price_entries,
 		"PriceData":          price_data,
@@ -168,11 +218,15 @@ func apiRwalkTop5TradedTokens(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	top5toks := rw_storagew.Get_top5_traded_tokens()
+	top5toks, err := rwRepo.Top5TradedTokens(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":            1,
-		"error":             "",
-		"Top5TradedTokens":  top5toks,
+		"status":           1,
+		"error":            "",
+		"Top5TradedTokens": top5toks,
 	})
 }
 
@@ -183,7 +237,11 @@ func apiRwalkMintReport(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	records := rw_storagew.Get_mint_report()
+	records, err := rwRepo.MintReport(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":  1,
 		"error":   "",

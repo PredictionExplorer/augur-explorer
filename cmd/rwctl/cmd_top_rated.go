@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"sort"
 
 	"github.com/spf13/cobra"
@@ -16,27 +18,36 @@ func rankValue(position, total int) float64 {
 }
 
 // updateProfitRanks writes the profit leaderboard ranks for all users.
-func updateProfitRanks(storagew *rwstore.SQLStorageWrapper, records []rwprim.RankStats) {
+func updateProfitRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.RankStats) error {
 	for i := range records {
 		record := &records[i]
-		storagew.Update_randomwalk_top_profit_rank(record.Aid, rankValue(i, len(records)), record.ProfitLoss)
+		if err := repo.UpdateTopProfitRank(ctx, record.Aid, rankValue(i, len(records)), record.ProfitLoss); err != nil {
+			return fmt.Errorf("profit rank for aid %d: %w", record.Aid, err)
+		}
 	}
+	return nil
 }
 
 // updateTradeRanks writes the total-trades leaderboard ranks for all users.
-func updateTradeRanks(storagew *rwstore.SQLStorageWrapper, records []rwprim.RankStats) {
+func updateTradeRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.RankStats) error {
 	for i := range records {
 		record := &records[i]
-		storagew.Update_randomwalk_top_total_trades_rank(record.Aid, rankValue(i, len(records)), record.TotalTrades)
+		if err := repo.UpdateTopTotalTradesRank(ctx, record.Aid, rankValue(i, len(records)), record.TotalTrades); err != nil {
+			return fmt.Errorf("trade rank for aid %d: %w", record.Aid, err)
+		}
 	}
+	return nil
 }
 
 // updateVolumeRanks writes the traded-volume leaderboard ranks for all users.
-func updateVolumeRanks(storagew *rwstore.SQLStorageWrapper, records []rwprim.RankStats) {
+func updateVolumeRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.RankStats) error {
 	for i := range records {
 		record := &records[i]
-		storagew.Update_randomwalk_top_volume_rank(record.Aid, rankValue(i, len(records)), record.VolumeTraded)
+		if err := repo.UpdateTopVolumeRank(ctx, record.Aid, rankValue(i, len(records)), record.VolumeTraded); err != nil {
+			return fmt.Errorf("volume rank for aid %d: %w", record.Aid, err)
+		}
 	}
+	return nil
 }
 
 // newTopRatedCmd builds the top-rated subcommand (legacy rw_toprated tool).
@@ -54,27 +65,34 @@ func newTopRatedCmd() *cobra.Command {
 			"Environment variables:\n  PGSQL_*  PostgreSQL connection (required)",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			storagew, err := connectRWStorage(newInfoLogger())
+			ctx := cmd.Context()
+			repo, _, err := connectRWStorage(newInfoLogger())
 			if err != nil {
 				return err
 			}
-			records := storagew.Get_randomwalk_ranking_data_for_all_users()
+			records, err := repo.RankingDataForAllUsers(ctx)
+			if err != nil {
+				return err
+			}
 
 			sort.SliceStable(records, func(i, j int) bool {
 				return records[j].TotalTrades < records[i].TotalTrades
 			})
-			updateTradeRanks(storagew, records)
+			if err := updateTradeRanks(ctx, repo, records); err != nil {
+				return err
+			}
 
 			sort.SliceStable(records, func(i, j int) bool {
 				return records[j].ProfitLoss < records[i].ProfitLoss
 			})
-			updateProfitRanks(storagew, records)
+			if err := updateProfitRanks(ctx, repo, records); err != nil {
+				return err
+			}
 
 			sort.SliceStable(records, func(i, j int) bool {
 				return records[j].VolumeTraded < records[i].VolumeTraded
 			})
-			updateVolumeRanks(storagew, records)
-			return nil
+			return updateVolumeRanks(ctx, repo, records)
 		},
 	}
 }

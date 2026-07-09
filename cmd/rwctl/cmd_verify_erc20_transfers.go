@@ -19,11 +19,14 @@ const verifyTransfersMaxBlocks = int64(1024)
 
 // checkTransferLog verifies that a chain Transfer log has a matching record
 // in the rw_transfer table and prints a message when it is missing.
-func checkTransferLog(storagew *rwstore.SQLStorageWrapper, lg *types.Log) {
+func checkTransferLog(ctx context.Context, repo *rwstore.Repo, lg *types.Log) error {
 	from := common.BytesToAddress(lg.Topics[1][12:]).String()
 	to := common.BytesToAddress(lg.Topics[2][12:]).String()
 	tokenID := lg.Topics[3].Big().Int64()
-	transfers := storagew.Get_rw_token_transfers_by_tx_hash(lg.TxHash.String())
+	transfers, err := repo.TokenTransfersByTxHash(ctx, lg.TxHash.String())
+	if err != nil {
+		return fmt.Errorf("transfers for tx %v: %w", lg.TxHash.String(), err)
+	}
 	found := false
 	for i := 0; i < len(transfers); i++ {
 		item := &transfers[i]
@@ -37,6 +40,7 @@ func checkTransferLog(storagew *rwstore.SQLStorageWrapper, lg *types.Log) {
 			lg.BlockNumber, from, to, tokenID, lg.TxHash.String(),
 		)
 	}
+	return nil
 }
 
 // newVerifyTransfersCmd builds the verify-erc20-transfers subcommand (legacy
@@ -50,18 +54,21 @@ func newVerifyTransfersCmd() *cobra.Command {
 			"Environment variables:\n  RPC_URL  Ethereum RPC endpoint (required)\n  PGSQL_*  PostgreSQL connection (required)",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			storagew, err := connectRWStorage(newInfoLogger())
+			ctx := context.Background()
+			repo, _, err := connectRWStorage(newInfoLogger())
 			if err != nil {
 				return err
 			}
-			caddrs := storagew.Get_randomwalk_contract_addresses()
+			caddrs, err := repo.ContractAddrs(ctx)
+			if err != nil {
+				return fmt.Errorf("resolving contract addresses: %w", err)
+			}
 			rwalkAddr := common.HexToAddress(caddrs.RandomWalk)
 
 			eclient, err := dialEthClient()
 			if err != nil {
 				return err
 			}
-			ctx := context.Background()
 			latestBlock, err := eclient.HeaderByNumber(ctx, nil)
 			if err != nil {
 				return fmt.Errorf("error getting latest block: %w", err)
@@ -83,7 +90,9 @@ func newVerifyTransfersCmd() *cobra.Command {
 					if logs[i].Removed {
 						continue
 					}
-					checkTransferLog(storagew, &logs[i])
+					if err := checkTransferLog(ctx, repo, &logs[i]); err != nil {
+						return err
+					}
 				}
 			}
 			return nil

@@ -23,10 +23,10 @@ const (
 
 // checkMintLog verifies that the minted token from a MintEvent log exists in
 // the database, retrying on transient database errors.
-func checkMintLog(storagew *rwstore.SQLStorageWrapper, lg *types.Log) {
+func checkMintLog(ctx context.Context, repo *rwstore.Repo, lg *types.Log) {
 	tokenID := lg.Topics[1].Big().Int64()
 	for {
-		exists, err := storagew.Check_rwalk_token_exists(tokenID)
+		exists, err := repo.TokenMinted(ctx, tokenID)
 		if err != nil {
 			fmt.Printf("Error accessing database: %v\n", err)
 			time.Sleep(1 * time.Second)
@@ -53,7 +53,7 @@ func newScanMintsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			storagew, err := connectRWStorage(newInfoLogger())
+			repo, _, err := connectRWStorage(newInfoLogger())
 			if err != nil {
 				return err
 			}
@@ -81,7 +81,7 @@ func newScanMintsCmd() *cobra.Command {
 					if logs[i].Removed {
 						continue
 					}
-					checkMintLog(storagew, &logs[i])
+					checkMintLog(ctx, repo, &logs[i])
 				}
 			}
 			return nil

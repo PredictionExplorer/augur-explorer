@@ -6,6 +6,7 @@ package main
 // price changes on Twitter.
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,6 +28,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/tweets"
 	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	rwprim "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
@@ -61,7 +63,8 @@ func readTwitterKeys() (tweets.TwitterKeys, error) {
 type mintNotifier struct {
 	info          *log.Logger
 	errlog        *log.Logger
-	storagew      *rwstore.SQLStorageWrapper
+	repo          *rwstore.Repo
+	baseStore     *store.Store
 	rwalkCtrct    *rwcontracts.RWalk
 	keys          tweets.TwitterKeys
 	nonce         uint64
@@ -178,13 +181,13 @@ func (n *mintNotifier) sendTweetWithImage(msg string, imageData []byte) {
 }
 
 // checkFloorPriceChangeAndEmit tweets when the marketplace floor price moved.
-func (n *mintNotifier) checkFloorPriceChangeAndEmit() {
-	noOffers, dbFloorPrice, _, tokenID, err := n.storagew.Get_floor_price(n.rwalkAid, n.marketAid)
-	if noOffers {
-		return
-	}
+func (n *mintNotifier) checkFloorPriceChangeAndEmit(ctx context.Context) {
+	noOffers, dbFloorPrice, _, tokenID, err := n.repo.FloorPrice(ctx, n.rwalkAid, n.marketAid)
 	if err != nil {
 		n.errlog.Printf("Can't get floor price: %v\n", err)
+		return
+	}
+	if noOffers {
 		return
 	}
 	if dbFloorPrice == n.curFloorPrice {
@@ -228,12 +231,15 @@ func tweetMessageForEvent(rec *rwprim.NotificationEvent, withdrawalAmount float6
 
 // monitorEvents polls the database for new notification events and tweets
 // them until an exit is requested.
-func (n *mintNotifier) monitorEvents(exitChan chan bool, addr common.Address) error {
-	rwalkAid, err := n.storagew.S.Lookup_address_id(addr.String())
+func (n *mintNotifier) monitorEvents(ctx context.Context, exitChan chan bool, addr common.Address) error {
+	rwalkAid, err := n.baseStore.LookupAddressID(ctx, addr.String())
 	if err != nil {
 		return fmt.Errorf("can't resolve RandomWalk contract address id: %w", err)
 	}
-	ts := n.storagew.Get_server_timestamp()
+	ts, err := n.repo.ServerTimestamp(ctx)
+	if err != nil {
+		return fmt.Errorf("can't read server timestamp: %w", err)
+	}
 	for {
 		select {
 		case exitFlag := <-exitChan:
@@ -243,8 +249,11 @@ func (n *mintNotifier) monitorEvents(exitChan chan bool, addr common.Address) er
 			}
 		default:
 		}
-		n.checkFloorPriceChangeAndEmit()
-		records := n.storagew.Get_all_events_for_notification(rwalkAid, ts)
+		n.checkFloorPriceChangeAndEmit(ctx)
+		records, err := n.repo.AllEventsForNotification(ctx, rwalkAid, ts)
+		if err != nil {
+			return fmt.Errorf("can't fetch notification events: %w", err)
+		}
 		for i := 0; i < len(records); i++ {
 			select {
 			case exitFlag := <-exitChan:
@@ -289,7 +298,6 @@ func (n *mintNotifier) monitorEvents(exitChan chan bool, addr common.Address) er
 func runNotifyBot(cmd *cobra.Command, args []string) error {
 	logDir := fmt.Sprintf("%v/%v", os.Getenv("HOME"), primitives.DEFAULT_LOG_DIR)
 	os.MkdirAll(logDir, os.ModePerm)
-	dbLogFile := fmt.Sprintf("%v/tweet_notifs_db.log", logDir)
 
 	fname := fmt.Sprintf("%v/tweet_notifs_info.log", logDir)
 	infoFile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -312,16 +320,16 @@ func runNotifyBot(cmd *cobra.Command, args []string) error {
 	}
 	info.Printf("Connected to ETH node: %v\n", rpcURL)
 
-	storagew, err := connectRWStorage(info)
+	ctx := context.Background()
+	repo, baseStore, err := connectRWStorage(info)
 	if err != nil {
 		return err
 	}
-	if err := storagew.S.Init_log(dbLogFile); err != nil {
-		return fmt.Errorf("can't initialize DB log: %w", err)
-	}
-	storagew.S.Log_msg("Log initialized\n")
 
-	rwContracts := storagew.Get_randomwalk_contract_addresses()
+	rwContracts, err := repo.ContractAddrs(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving contract addresses: %w", err)
+	}
 	rwalkAddr := common.HexToAddress(rwContracts.RandomWalk)
 	marketAddr := common.HexToAddress(rwContracts.MarketPlace)
 	info.Printf("RandomWalk contract %v\n", rwalkAddr.String())
@@ -349,11 +357,11 @@ func runNotifyBot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("can't instantiate RandomWalk contract %v: %w", rwalkAddr.String(), err)
 	}
 
-	rwalkAid, err := storagew.S.Lookup_address_id(rwalkAddr.String())
+	rwalkAid, err := baseStore.LookupAddressID(ctx, rwalkAddr.String())
 	if err != nil {
 		return fmt.Errorf("can't resolve RandomWalk contract address id: %w", err)
 	}
-	marketAid, err := storagew.S.Lookup_address_id(marketAddr.String())
+	marketAid, err := baseStore.LookupAddressID(ctx, marketAddr.String())
 	if err != nil {
 		return fmt.Errorf("can't resolve MarketPlace contract address id: %w", err)
 	}
@@ -361,7 +369,8 @@ func runNotifyBot(cmd *cobra.Command, args []string) error {
 	n := &mintNotifier{
 		info:          info,
 		errlog:        errlog,
-		storagew:      storagew,
+		repo:          repo,
+		baseStore:     baseStore,
 		rwalkCtrct:    rwalkCtrct,
 		keys:          keys,
 		nonce:         uint64(time.Now().UnixNano()),
@@ -369,7 +378,7 @@ func runNotifyBot(cmd *cobra.Command, args []string) error {
 		rwalkAid:      rwalkAid,
 		marketAid:     marketAid,
 	}
-	return n.monitorEvents(exitChan, rwalkAddr)
+	return n.monitorEvents(ctx, exitChan, rwalkAddr)
 }
 
 // notifyBotEnvHelp documents the environment variables of the notification bot.

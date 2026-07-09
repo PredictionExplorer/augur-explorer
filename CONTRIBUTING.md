@@ -28,16 +28,16 @@ every PR — all must pass.
   from the directory or collides (`cgstore`, `rwcontracts`, ...).
 - **Errors:** return them. `os.Exit`/`panic` are allowed only in `main`
   startup paths. Wrap with `fmt.Errorf("context: %w", err)`.
-- **SQL:** schema changes are goose migrations in `db/migrations`; new
-  queries go in `internal/store/queries/*.sql` and are generated with
-  `make generate` (sqlc). Always parameterized — never concatenate values.
+- **SQL:** schema changes are goose migrations in `db/migrations`; queries
+  are hand-written pgx methods on the `Store`/repos in `internal/store`.
+  Always parameterized — never concatenate values.
 - **HTTP handlers:** validate inputs at the boundary, keep handlers thin,
   reuse `internal/api/common` helpers. Mutating routes must be authenticated
   and rate limited (see ADR-0004).
 - **Comments:** every exported symbol has a doc comment; comments explain
   *why*, not *what*.
-- **Generated code** (`contracts/`, `internal/store/sqlcgen/`) is never
-  edited by hand; regenerate instead.
+- **Generated code** (`contracts/`) is never edited by hand; regenerate
+  instead.
 
 ## Tests
 

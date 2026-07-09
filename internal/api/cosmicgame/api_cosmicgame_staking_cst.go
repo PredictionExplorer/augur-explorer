@@ -89,7 +89,7 @@ func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 	if !success {
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
@@ -148,7 +148,7 @@ func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, gin.H{
@@ -182,7 +182,7 @@ func api_cosmic_game_staked_tokens_cst_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
 		c.JSON(http.StatusOK, gin.H{
@@ -236,7 +236,7 @@ func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
@@ -365,7 +365,7 @@ func api_cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
 		return
 	}
 
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "CSTStakingRewardMints": []interface{}{},
@@ -410,7 +410,7 @@ func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		common.RespondErrorJSON(c, "'deposit_id' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
@@ -446,7 +446,7 @@ func api_cosmic_game_staking_cst_by_user_by_deposit_rewards(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, gin.H{
@@ -482,7 +482,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, gin.H{
@@ -530,7 +530,7 @@ func api_cosmic_game_staking_cst_by_user_by_token_rewards_details(c *gin.Context
 		common.RespondErrorJSON(c, "'token_id' parameter is not set")
 		return
 	}
-	user_aid, err := arb_storage.Nonfatal_lookup_address_id(p_user_addr)
+	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),

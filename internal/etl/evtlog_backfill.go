@@ -2,10 +2,14 @@
 package common
 
 import (
+	"context"
+	"errors"
 	"fmt"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // EvtLogBackfillStats summarizes a contract evt_log backfill run.
@@ -19,7 +23,8 @@ type EvtLogBackfillStats struct {
 // [fromBlock, toBlock]. Layer-2 handlers are not invoked; callers use this for
 // contracts whose events are stored in evt_log only.
 func BackfillContractEvtLogs(
-	ctx *ETLContext,
+	ctx context.Context,
+	etl *ETLContext,
 	client *ethclient.Client,
 	contracts []ethcommon.Address,
 	fromBlock, toBlock, batchSize uint64,
@@ -41,7 +46,7 @@ func BackfillContractEvtLogs(
 			to = toBlock
 		}
 
-		logs, err := FetchEvents(client, from, to, contracts)
+		logs, err := FetchEvents(ctx, client, from, to, contracts)
 		if err != nil {
 			return st, fmt.Errorf("FilterLogs [%d..%d]: %w", from, to, err)
 		}
@@ -53,11 +58,14 @@ func BackfillContractEvtLogs(
 			}
 			st.LogsSeen++
 
-			txId, err := ctx.Storage.Get_transaction_id_by_hash(log.TxHash.Hex())
+			txId, err := etl.Store.TransactionIDByHash(ctx, log.TxHash.Hex())
+			if err != nil && !errors.Is(err, store.ErrNotFound) {
+				return st, fmt.Errorf("transaction id lookup tx=%s: %w", log.TxHash.Hex(), err)
+			}
 			if err == nil && txId > 0 {
-				exists, err := ctx.Storage.Evt_log_exists(int64(log.BlockNumber), txId, int(log.Index))
+				exists, err := etl.Store.EvtLogExists(ctx, int64(log.BlockNumber), txId, int(log.Index))
 				if err != nil {
-					return st, fmt.Errorf("Evt_log_exists block=%d tx=%d log_index=%d: %w",
+					return st, fmt.Errorf("evt_log existence check block=%d tx=%d log_index=%d: %w",
 						log.BlockNumber, txId, log.Index, err)
 				}
 				if exists {
@@ -66,19 +74,19 @@ func BackfillContractEvtLogs(
 				}
 			}
 
-			_, err = EnsureBlockExists(ctx, int64(log.BlockNumber), log.BlockHash.Hex())
+			_, err = EnsureBlockExists(ctx, etl, int64(log.BlockNumber), log.BlockHash.Hex())
 			if err != nil {
 				return st, fmt.Errorf("EnsureBlockExists block=%d: %w", log.BlockNumber, err)
 			}
 
-			txId, _, err = EnsureTransactionExists(ctx, log.TxHash, int64(log.BlockNumber))
+			txId, _, err = EnsureTransactionExists(ctx, etl, log.TxHash, int64(log.BlockNumber))
 			if err != nil {
 				return st, fmt.Errorf("EnsureTransactionExists tx=%s: %w", log.TxHash.Hex(), err)
 			}
 
-			exists, err := ctx.Storage.Evt_log_exists(int64(log.BlockNumber), txId, int(log.Index))
+			exists, err := etl.Store.EvtLogExists(ctx, int64(log.BlockNumber), txId, int(log.Index))
 			if err != nil {
-				return st, fmt.Errorf("Evt_log_exists block=%d tx=%d log_index=%d: %w",
+				return st, fmt.Errorf("evt_log existence check block=%d tx=%d log_index=%d: %w",
 					log.BlockNumber, txId, log.Index, err)
 			}
 			if exists {
@@ -86,7 +94,7 @@ func BackfillContractEvtLogs(
 				continue
 			}
 
-			_, err = InsertEventLog(ctx, *log, txId)
+			_, err = InsertEventLog(ctx, etl, *log, txId)
 			if err != nil {
 				return st, fmt.Errorf("InsertEventLog block=%d tx=%s log_index=%d: %w",
 					log.BlockNumber, log.TxHash.Hex(), log.Index, err)

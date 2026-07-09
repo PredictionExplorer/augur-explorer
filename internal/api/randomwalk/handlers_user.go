@@ -1,11 +1,13 @@
 package randomwalk
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // User info (API)
@@ -15,7 +17,10 @@ func apiRwalkUserInfo(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_rwalk_addr := addrs.RandomWalk
 	p_user_aid := c.Param("user_aid")
@@ -30,15 +35,21 @@ func apiRwalkUserInfo(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_aid' parameter is not set")
 		return
 	}
-	user_addr, err := rw_storagew.S.Lookup_address(user_aid)
+	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
 	if err != nil {
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}
-	user_info, dberr := rw_storagew.Get_rwalk_user_info(user_aid, rwalk_aid)
+	user_info, dberr := rwRepo.UserInfo(c.Request.Context(), user_aid, rwalk_aid)
 	var dberr_str string
 	if dberr != nil {
-		dberr_str = dberr.Error()
+		// A user without stats rows keeps the HTTP 200 + DBError wire shape
+		// (byte-identical legacy text); real failures answer 500.
+		if !errors.Is(dberr, store.ErrNotFound) {
+			respondStoreError(c, dberr)
+			return
+		}
+		dberr_str = legacyNoRowsText
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":    1,

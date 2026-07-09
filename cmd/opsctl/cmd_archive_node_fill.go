@@ -17,6 +17,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lib/pq"
 	"github.com/spf13/cobra"
 )
@@ -59,8 +60,8 @@ missing from arch_evtlog (keyed by tx_hash + log_index), fetching the matching
 transactions and blocks from the node as needed.
 
 Requires the RPC_URL environment variable (Ethereum/Arbitrum JSON-RPC
-endpoint) and arch_evtlog with PRIMARY KEY (tx_hash, log_index) — see
-db/layer1/archive_tables.sql.`,
+endpoint) and arch_evtlog with PRIMARY KEY (tx_hash, log_index) — created by
+the goose migrations under db/migrations.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flagFrom := fromBlock
@@ -81,12 +82,23 @@ db/layer1/archive_tables.sql.`,
 				return err
 			}
 
+			ctx := cmd.Context()
+
 			db, err := sql.Open("postgres", dbConn)
 			if err != nil {
 				return fmt.Errorf("db connect: %w", err)
 			}
 			defer db.Close()
 			db.SetMaxOpenConns(4)
+
+			// The address lookup/create cache runs on the pgx-native Store
+			// (same DSN); the tool-local archive statements stay on db.
+			pool, err := pgxpool.New(ctx, dbConn)
+			if err != nil {
+				return fmt.Errorf("db pool connect: %w", err)
+			}
+			st := store.NewFromPool(pool)
+			defer st.Close()
 
 			if err := requireArchLogIndexPK(db); err != nil {
 				return fmt.Errorf("schema check: %w", err)
@@ -97,10 +109,7 @@ db/layer1/archive_tables.sql.`,
 				return fmt.Errorf("rpc connect: %w", err)
 			}
 
-			info := log.New(os.Stdout, "", log.LstdFlags)
-			storage := store.NewSQLStorageFromDB(db, info)
-
-			head, err := etlcommon.GetCurrentBlockNumber(eclient)
+			head, err := etlcommon.GetCurrentBlockNumber(ctx, eclient)
 			if err != nil {
 				return fmt.Errorf("chain head: %w", err)
 			}
@@ -119,12 +128,12 @@ db/layer1/archive_tables.sql.`,
 			for _, p := range projects {
 				log.Printf("")
 				log.Printf("========== project: %s ==========", p)
-				st, err := runNodeFillProject(db, storage, eclient, p, flagFrom, endBlock, batchBlocks, dryRun)
+				stats, err := runNodeFillProject(ctx, db, st, eclient, p, flagFrom, endBlock, batchBlocks, dryRun)
 				if err != nil {
 					return err
 				}
-				printFillStats(p, &st)
-				mergeFillStats(&total, &st)
+				printFillStats(p, &stats)
+				mergeFillStats(&total, &stats)
 			}
 
 			log.Printf("")
@@ -202,7 +211,7 @@ func resolveNodeFillFromBlock(db *sql.DB, aids []int64, addrs []string, flagFrom
 // runNodeFillProject scans the chain for one project and inserts the missing
 // archive rows. Per-log RPC/DB problems are counted in the stats; only setup
 // failures abort the run.
-func runNodeFillProject(db *sql.DB, storage *store.SQLStorage, client *ethclient.Client, project string, flagFrom, endBlock, batchSize uint64, dryRun bool) (fillStats, error) {
+func runNodeFillProject(ctx context.Context, db *sql.DB, addrStore *store.Store, client *ethclient.Client, project string, flagFrom, endBlock, batchSize uint64, dryRun bool) (fillStats, error) {
 	var st fillStats
 
 	aids, addrs, err := projectContracts(db, project)
@@ -272,7 +281,6 @@ func runNodeFillProject(db *sql.DB, storage *store.SQLStorage, client *ethclient
 	}
 	defer blockExistsStmt.Close()
 
-	ctx := context.Background()
 	for from := start; from <= endBlock; {
 		to := from + batchSize - 1
 		if to > endBlock {
@@ -281,7 +289,7 @@ func runNodeFillProject(db *sql.DB, storage *store.SQLStorage, client *ethclient
 		st.BlocksScanned += to - from + 1
 		log.Printf("FilterLogs blocks %d .. %d", from, to)
 
-		logs, err := etlcommon.FetchEvents(client, from, to, contracts)
+		logs, err := etlcommon.FetchEvents(ctx, client, from, to, contracts)
 		if err != nil {
 			log.Printf("FilterLogs error [%d..%d]: %v", from, to, err)
 			st.RPCErrors++
@@ -341,7 +349,7 @@ func runNodeFillProject(db *sql.DB, storage *store.SQLStorage, client *ethclient
 			}
 			st.LogsInserted++
 
-			if inserted, skipped, err := ensureArchTx(ctx, client, storage, archTxStmt, txExistsStmt, txHash, int64(lg.BlockNumber)); err != nil {
+			if inserted, skipped, err := ensureArchTx(ctx, client, addrStore, archTxStmt, txExistsStmt, txHash, int64(lg.BlockNumber)); err != nil {
 				st.RPCErrors++
 				log.Printf("arch_tx %s: %v", txHash, err)
 			} else {
@@ -366,7 +374,7 @@ func runNodeFillProject(db *sql.DB, storage *store.SQLStorage, client *ethclient
 
 // ensureArchTx inserts the transaction into arch_tx when missing, fetching it
 // (and its receipt) from the node.
-func ensureArchTx(ctx context.Context, client *ethclient.Client, storage *store.SQLStorage, ins *sql.Stmt, exists *sql.Stmt, txHash string, blockNum int64) (inserted, skipped int64, err error) {
+func ensureArchTx(ctx context.Context, client *ethclient.Client, addrStore *store.Store, ins *sql.Stmt, exists *sql.Stmt, txHash string, blockNum int64) (inserted, skipped int64, err error) {
 	var one int
 	if err := exists.QueryRow(txHash).Scan(&one); err == nil {
 		return 0, 1, nil
@@ -394,13 +402,13 @@ func ensureArchTx(ctx context.Context, client *ethclient.Client, storage *store.
 			return 0, 0, err
 		}
 	}
-	fromAid, err := storage.Lookup_or_create_address(from.Hex(), blockNum, 0)
+	fromAid, err := addrStore.LookupOrCreateAddress(ctx, from.Hex(), blockNum, 0)
 	if err != nil {
 		return 0, 0, fmt.Errorf("from address %s: %w", from.Hex(), err)
 	}
 	var toAid int64
 	if tx.To() != nil {
-		toAid, err = storage.Lookup_or_create_address(tx.To().Hex(), blockNum, 0)
+		toAid, err = addrStore.LookupOrCreateAddress(ctx, tx.To().Hex(), blockNum, 0)
 		if err != nil {
 			return 0, 0, fmt.Errorf("to address %s: %w", tx.To().Hex(), err)
 		}

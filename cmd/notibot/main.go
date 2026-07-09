@@ -18,6 +18,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"log/slog"
 	"math/big"
 	"net/http"
 	"os"
@@ -77,7 +78,8 @@ var (
 
 	Error            *log.Logger
 	Info             *log.Logger
-	storagew         *rwdb.SQLStorageWrapper
+	dbStore          *store.Store
+	rwRepo           *rwdb.Repo
 	rw_contracts     rwp.ContractAddresses
 	market_addr      common.Address
 	rwalk_addr       common.Address
@@ -509,13 +511,13 @@ func notify_discord(token_id int64, msg string, image_data []byte, image_url str
 }
 func check_floor_price_change_and_emit() {
 
-	no_offers, db_floor_price, _, token_id, err := storagew.Get_floor_price(rwalk_ctrct_aid, market_ctrct_aid)
-	if no_offers {
-		return
-	}
+	no_offers, db_floor_price, _, token_id, err := rwRepo.FloorPrice(context.Background(), rwalk_ctrct_aid, market_ctrct_aid)
 	if err != nil {
 		Error.Printf("Can't get floor price: %v\n", err)
 		Info.Printf("Can't get floor price: %v\n", err)
+		return
+	}
+	if no_offers {
 		return
 	}
 	if db_floor_price == cur_floor_price {
@@ -596,13 +598,18 @@ func monitor_events(exit_chan chan bool, addr common.Address) {
 	//		3		Item Bought
 	//		4		Flour Price Changed
 	//		5		New Offer Buy			(otype=0)
-	rwalk_aid, err := storagew.S.Lookup_address_id(addr.String())
+	rwalk_aid, err := dbStore.LookupAddressID(context.Background(), addr.String())
 	if err != nil {
 		Info.Printf("Can't resolve RandomWalk contract address id: %v\n", err)
 		Error.Printf("Can't resolve RandomWalk contract address id: %v\n", err)
 		os.Exit(1)
 	}
-	msg_status := storagew.Get_messaging_status()
+	msg_status, err := rwRepo.MessagingStatus(context.Background())
+	if err != nil {
+		Info.Printf("Can't read messaging status: %v\n", err)
+		Error.Printf("Can't read messaging status: %v\n", err)
+		os.Exit(1)
+	}
 	cur_evtlog_id := msg_status.EvtLogId
 	cur_ts := msg_status.TimeStamp
 	Info.Printf(
@@ -625,7 +632,15 @@ func monitor_events(exit_chan chan bool, addr common.Address) {
 		default:
 		}
 		check_floor_price_change_and_emit()
-		records := storagew.Get_all_events_for_notification2(rwalk_aid, cur_evtlog_id)
+		records, err := rwRepo.AllEventsForNotificationSinceEvtlog(context.Background(), rwalk_aid, cur_evtlog_id)
+		if err != nil {
+			// The legacy store terminated the process on any DB failure
+			// here; keep the crash-and-restart semantics (systemd restarts
+			// the bot and it resumes from the persisted watermark).
+			Info.Printf("Can't fetch notification events: %v\n", err)
+			Error.Printf("Can't fetch notification events: %v\n", err)
+			os.Exit(1)
+		}
 		if len(records) > 0 {
 			Info.Printf(
 				"Got %v records for timestamp %v (%v) (evtlog_id=%v)\n",
@@ -714,7 +729,11 @@ func monitor_events(exit_chan chan bool, addr common.Address) {
 			}
 			msg_status.EvtLogId = cur_evtlog_id
 			msg_status.TimeStamp = cur_ts
-			storagew.Update_messaging_status(&msg_status)
+			if err := rwRepo.UpdateMessagingStatus(context.Background(), &msg_status); err != nil {
+				Info.Printf("Can't persist messaging status: %v\n", err)
+				Error.Printf("Can't persist messaging status: %v\n", err)
+				os.Exit(1)
+			}
 		}
 		if DEV_MODE {
 			Info.Printf("cur ts=%v(%v), records=%v\n", cur_ts, time.Unix(cur_ts, 0).Format("2006-01-02T15:04:05"), len(records))
@@ -760,18 +779,24 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	// Database log output (failed and slow queries) goes through the pgx
+	// slog tracer into the file the legacy Init_log wrote to.
+	dbLogHandle, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("can't initialize DB log: %v", err)
+	}
+	cfg := store.ConfigFromEnv()
+	cfg.Logger = slog.New(slog.NewTextHandler(dbLogHandle, nil))
+	dbStore, err = store.New(context.Background(), cfg)
 	if err != nil {
 		log.Fatalf("failed to connect to storage: %v\n%s", err, store.ConnectHint(err))
 	}
-	storage := store.NewSQLStorageFromDB(st.DB(), Info)
-	if err := storage.Init_log(db_log_file); err != nil {
-		log.Fatalf("can't initialize DB log: %v", err)
-	}
-	storage.Log_msg("Log initialized\n")
-	storagew = &rwdb.SQLStorageWrapper{S: storage}
+	rwRepo = rwdb.NewRepo(dbStore)
 
-	rw_contracts = storagew.Get_randomwalk_contract_addresses()
+	rw_contracts, err = rwRepo.ContractAddrs(context.Background())
+	if err != nil {
+		log.Fatalf("failed to resolve RandomWalk contract addresses: %v", err)
+	}
 	rwalk_addr = common.HexToAddress(rw_contracts.RandomWalk)
 	market_addr = common.HexToAddress(rw_contracts.MarketPlace)
 	Info.Printf("RandomWalk contract %v\n", rwalk_addr.String())
@@ -814,21 +839,30 @@ func main() {
 		Error.Printf("Can't instantiate RandomWalk contract %v : %v\n", rwalk_addr.String(), err)
 		os.Exit(1)
 	}
-	rwalk_ctrct_aid, err = storagew.S.Lookup_address_id(rwalk_addr.String())
+	rwalk_ctrct_aid, err = dbStore.LookupAddressID(context.Background(), rwalk_addr.String())
 	if err != nil {
 		Info.Printf("Can't resolve RandomWalk contract address id: %v\n", err)
 		Error.Printf("Can't resolve RandomWalk contract address id: %v\n", err)
 		os.Exit(1)
 	}
-	market_ctrct_aid, err = storagew.S.Lookup_address_id(market_addr.String())
+	market_ctrct_aid, err = dbStore.LookupAddressID(context.Background(), market_addr.String())
 	if err != nil {
 		Info.Printf("Can't resolve MarketPlace contract address id: %v\n", err)
 		Error.Printf("Can't resolve MarketPlace contract address id: %v\n", err)
 		os.Exit(1)
 	}
-	_, cur_floor_price, _, _, err = storagew.Get_floor_price(rwalk_ctrct_aid, market_ctrct_aid)
-	//cur_floor_price = 0.0;
-	last_mint_ts = storagew.Get_last_mint_timestamp()
+	_, cur_floor_price, _, _, err = rwRepo.FloorPrice(context.Background(), rwalk_ctrct_aid, market_ctrct_aid)
+	if err != nil {
+		Info.Printf("Can't read initial floor price: %v\n", err)
+		Error.Printf("Can't read initial floor price: %v\n", err)
+		os.Exit(1)
+	}
+	last_mint_ts, err = rwRepo.LastMintTimestamp(context.Background())
+	if err != nil {
+		Info.Printf("Can't read last mint timestamp: %v\n", err)
+		Error.Printf("Can't read last mint timestamp: %v\n", err)
+		os.Exit(1)
+	}
 	go update_last_minted_time()
 
 	wamount, success := get_withdrawal_amount()

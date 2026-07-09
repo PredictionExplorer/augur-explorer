@@ -131,6 +131,17 @@ func (s *Store) LookupAddressID(ctx context.Context, addr string) (int64, error)
 	return aid, nil
 }
 
+// AddressByID returns the address string for an address_id; a missing id
+// yields a wrapped ErrNotFound.
+func (s *Store) AddressByID(ctx context.Context, aid int64) (string, error) {
+	var addr string
+	err := s.pool.QueryRow(ctx, "SELECT addr FROM address WHERE address_id=$1", aid).Scan(&addr)
+	if err != nil {
+		return "", WrapError(fmt.Sprintf("address lookup for id %d", aid), err)
+	}
+	return addr, nil
+}
+
 // ResetAddressCache clears the address-id cache. Test harnesses that
 // truncate and re-seed the address table between cases must call it,
 // otherwise ids cached from a previous seeding would leak into the next one.

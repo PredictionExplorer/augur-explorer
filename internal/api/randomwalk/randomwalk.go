@@ -2,10 +2,16 @@
 package randomwalk
 
 import (
+	"context"
+	"errors"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
-	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
 // Response format flags for handlers
@@ -14,8 +20,18 @@ const (
 	HTTP = false
 )
 
-// Package-level storage wrapper for randomwalk database operations
-var rw_storagew rwdb.SQLStorageWrapper
+// legacyNoRowsText is what database/sql produced for a missing row; the
+// pre-rewrite handlers surfaced it verbatim in DBError/error fields, so the
+// converted not-found paths render the same string to keep the wire format
+// byte-identical.
+const legacyNoRowsText = "sql: no rows in result set"
+
+// rwRepo executes RandomWalk queries on the shared store pool; rwStore is
+// the same pool for base-store lookups (address resolution, transactions).
+var (
+	rwRepo  *rwdb.Repo
+	rwStore *store.Store
+)
 
 // routesEnabled mirrors websrv env ENABLE_ROUTES_RANDOMWALK (default true). When false, no RandomWalk HTTP routes are registered.
 var routesEnabled = true
@@ -23,10 +39,35 @@ var routesEnabled = true
 // Init initializes the randomwalk package. enableRoutes controls whether RegisterAPIRoutes adds handlers (from ENABLE_ROUTES_RANDOMWALK).
 func Init(enableRoutes bool) {
 	routesEnabled = enableRoutes
-	if common.Ctx != nil && common.Ctx.Db != nil {
-		rw_storagew.S = common.Ctx.Db
-		rw_storagew.S.Db_set_schema_name("public")
+	if common.Ctx != nil && common.Ctx.Store != nil {
+		rwStore = common.Ctx.Store
+		rwRepo = rwdb.NewRepo(rwStore)
 	}
+}
+
+// respondStoreError logs a database failure (unless the client canceled the
+// request) and answers with HTTP 500 in the legacy {"status":0,...} envelope
+// without leaking internal detail. These paths previously terminated the
+// whole process from inside the store layer, so no golden constrains them.
+func respondStoreError(c *gin.Context, err error) {
+	if !errors.Is(err, context.Canceled) && common.Ctx != nil {
+		errStr := fmt.Sprintf("%s: %v", c.FullPath(), err)
+		common.Ctx.Error.Print(errStr)
+		common.Ctx.Info.Print(errStr)
+	}
+	common.RespondInternalErrorJSON(c)
+}
+
+// rwContractAddrs resolves marketplace + RandomWalk addresses and AIDs from
+// rw_contracts (same source as the ETL), answering the request with an
+// internal error when the registry is unreadable.
+func rwContractAddrs(c *gin.Context) (rwp.ContractAddresses, bool) {
+	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
+	if err != nil {
+		respondStoreError(c, err)
+		return rwp.ContractAddresses{}, false
+	}
+	return addrs, true
 }
 
 // RegisterAPIRoutes registers all RandomWalk JSON API routes
@@ -84,5 +125,5 @@ func RegisterAPIRoutes(r *gin.Engine) {
 
 // Helper to check if database is initialized
 func dbInitialized() bool {
-	return common.Ctx != nil && common.Ctx.Db != nil
+	return rwRepo != nil && rwStore != nil
 }

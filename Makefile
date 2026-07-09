@@ -10,7 +10,7 @@ COMMANDS := apiserver cg-etl rw-etl notibot freezer-scan freezer-verify \
             srvmonitor loganomaly imggen-monitor rwalk-alarm \
             cgctl rwctl opsctl
 
-.PHONY: all build $(COMMANDS) test test-integration fuzz-smoke lint generate migrate-up fmt vet vuln clean help
+.PHONY: all build $(COMMANDS) test test-integration fuzz-smoke lint migrate-up fmt vet vuln clean help
 
 all: build
 
@@ -39,10 +39,6 @@ fuzz-smoke:
 ## lint: run golangci-lint (install: brew install golangci-lint)
 lint:
 	golangci-lint run
-
-## generate: regenerate sqlc query code (install: brew install sqlc)
-generate:
-	sqlc generate
 
 ## migrate-up: apply database migrations (uses PGSQL_* env or GOOSE_DBSTRING)
 migrate-up:

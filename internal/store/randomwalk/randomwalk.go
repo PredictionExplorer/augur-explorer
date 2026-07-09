@@ -1,749 +1,666 @@
+// ETL-facing writes (offers, buys, mints, transfers, withdrawals, token
+// names), the processing-status watermark, ranking accumulators and the
+// notification read surface of the RandomWalk domain.
+
 package randomwalk
 
 import (
+	"context"
 	"database/sql"
-	"fmt"
-	"os"
+	"errors"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
 
 	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
-	"github.com/ethereum/go-ethereum/common"
 )
-
-// SQLStorageWrapper wraps store.SQLStorage to provide RandomWalk-specific database methods
-type SQLStorageWrapper struct {
-	S *store.SQLStorage
-}
-
-// must_lookup_or_create_address wraps the base store's error-returning
-// Lookup_or_create_address with this subpackage's fatal-on-DB-error behavior
-// (log and exit), matching how all other methods here handle DB errors.
-func (sw *SQLStorageWrapper) must_lookup_or_create_address(addr string, block_num int64, tx_id int64) int64 {
-	aid, err := sw.S.Lookup_or_create_address(addr, block_num, tx_id)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error in lookup/create of address %v: %v", addr, err))
-		os.Exit(1)
-	}
-	return aid
-}
 
 // =============================================================================
 // PROCESSING STATUS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_randomwalk_processing_status() rwp.ProcStatus {
-
+// ProcessingStatus returns the ETL watermark (last processed event id and
+// block number), lazily creating the singleton rw_proc_status row on a fresh
+// database.
+func (r *Repo) ProcessingStatus(ctx context.Context) (rwp.ProcStatus, error) {
+	const op = "randomwalk processing status"
 	var output rwp.ProcStatus
-	var null_id, null_block sql.NullInt64
-
-	var query string
-	for {
-		query = "SELECT last_evt_id,last_block FROM rw_proc_status"
-
-		res := sw.S.Db().QueryRow(query)
-		err := res.Scan(&null_id, &null_block)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				query = "INSERT INTO rw_proc_status DEFAULT VALUES"
-				_, err := sw.S.Db().Exec(query)
-				if err != nil {
-					sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-					os.Exit(1)
-				}
-			} else {
-				sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-				os.Exit(1)
-			}
-		} else {
-			break
+	var lastID, lastBlock *int64
+	err := r.pool().QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock)
+	if err != nil {
+		wrapped := store.WrapError(op, err)
+		if !errors.Is(wrapped, store.ErrNotFound) {
+			return output, wrapped
+		}
+		// Fresh database: create the singleton row and report the zero
+		// watermark it holds.
+		if _, err := r.pool().Exec(ctx, "INSERT INTO rw_proc_status DEFAULT VALUES"); err != nil {
+			return output, store.WrapError(op+": insert default row", err)
+		}
+		if err := r.pool().QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock); err != nil {
+			return output, store.WrapError(op, err)
 		}
 	}
-	if null_id.Valid {
-		output.LastIdProcessed = null_id.Int64
+	if lastID != nil {
+		output.LastIdProcessed = *lastID
 	}
-	if null_block.Valid {
-		output.LastBlockNum = null_block.Int64
+	if lastBlock != nil {
+		output.LastBlockNum = *lastBlock
 	}
-	return output
+	return output, nil
 }
-func (sw *SQLStorageWrapper) Update_randomwalk_process_status(status *rwp.ProcStatus) {
 
-	var query string
-	query = "UPDATE rw_proc_status SET last_evt_id = $1,last_block=$2"
-
-	_, err := sw.S.Db().Exec(query, status.LastIdProcessed, status.LastBlockNum)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-		os.Exit(1)
-	}
+// UpdateProcessingStatus persists the ETL watermark.
+func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *rwp.ProcStatus) error {
+	_, err := r.pool().Exec(ctx, "UPDATE rw_proc_status SET last_evt_id = $1,last_block=$2",
+		status.LastIdProcessed, status.LastBlockNum)
+	return store.WrapError("update randomwalk processing status", err)
 }
 
 // =============================================================================
 // CONTRACT CONFIGURATION
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_randomwalk_contract_addresses() rwp.ContractAddresses {
-
+// ContractAddrs returns the marketplace and RandomWalk contract addresses
+// with their address ids from the rw_contracts registry (one row). A
+// database without the registry row (or with unregistered addresses) yields
+// store.ErrNotFound.
+func (r *Repo) ContractAddrs(ctx context.Context) (rwp.ContractAddresses, error) {
 	var output rwp.ContractAddresses
-	var query string
-	query = "SELECT " +
-		"marketplace_addr,randomwalk_addr," +
-		"mp_a.address_id,rw_a.address_id " +
-		"FROM rw_contracts rw " +
-		"JOIN address mp_a ON rw.marketplace_addr=mp_a.addr " +
-		"JOIN address rw_a ON rw.randomwalk_addr=rw_a.addr "
-
-	res := sw.S.Db().QueryRow(query)
-	err := res.Scan(
+	query := `SELECT
+			marketplace_addr,randomwalk_addr,
+			mp_a.address_id,rw_a.address_id
+		FROM rw_contracts rw
+			JOIN address mp_a ON rw.marketplace_addr=mp_a.addr
+			JOIN address rw_a ON rw.randomwalk_addr=rw_a.addr`
+	err := r.pool().QueryRow(ctx, query).Scan(
 		&output.MarketPlace,
 		&output.RandomWalk,
 		&output.MarketPlaceAid,
 		&output.RandomWalkAid,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			sw.S.Log_msg("Can't find record in rw_contracts table for contract addresses")
-			os.Exit(1)
-		}
-		sw.S.Log_msg(fmt.Sprintf("Get_randomwalk_contract_addresses() failed: %v, q=%v", err, query))
-		os.Exit(1)
+		return output, store.WrapError("randomwalk contract addrs", err)
 	}
-	return output
+	return output, nil
+}
+
+// RawContractAddrs returns the marketplace and RandomWalk addresses straight
+// from rw_contracts without joining the address table — the ETL uses it at
+// startup to register both addresses before ContractAddrs can resolve them.
+func (r *Repo) RawContractAddrs(ctx context.Context) (marketplace, randomwalk string, err error) {
+	err = r.pool().QueryRow(ctx,
+		"SELECT marketplace_addr, randomwalk_addr FROM rw_contracts LIMIT 1").Scan(&marketplace, &randomwalk)
+	if err != nil {
+		return "", "", store.WrapError("raw randomwalk contract addrs", err)
+	}
+	return marketplace, randomwalk, nil
 }
 
 // =============================================================================
 // OFFER OPERATIONS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Insert_new_offer(evt *rwp.NewOffer) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	rwalk_aid := sw.must_lookup_or_create_address(evt.RWalkAddr, evt.BlockNum, evt.TxId)
-	buyer_aid := sw.must_lookup_or_create_address(evt.Buyer, evt.BlockNum, evt.TxId)
-	seller_aid := sw.must_lookup_or_create_address(evt.Seller, evt.BlockNum, evt.TxId)
-	otype := int(1)
+// InsertNewOffer records a NewOffer marketplace event. Offers whose seller
+// is the zero address are BUY offers (otype 0), everything else SELL
+// (otype 1).
+func (r *Repo) InsertNewOffer(ctx context.Context, evt *rwp.NewOffer) error {
+	const op = "insert into rw_new_offer"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	rwalkAid, err := r.addrID(ctx, evt.RWalkAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	buyerAid, err := r.addrID(ctx, evt.Buyer, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	sellerAid, err := r.addrID(ctx, evt.Seller, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	otype := 1
 	if evt.Seller == "0x0000000000000000000000000000000000000000" {
 		otype = 0
 	}
-	var query string
-	query = "INSERT INTO rw_new_offer(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"rwalk_aid,offer_id,otype,token_id,buyer_aid,seller_aid,active,price" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12,$13" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+	query := `INSERT INTO rw_new_offer(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			rwalk_aid,offer_id,otype,token_id,buyer_aid,seller_aid,active,price
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12,$13
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
-		rwalk_aid,
+		contractAid,
+		rwalkAid,
 		evt.OfferId,
 		otype,
 		evt.TokenId,
-		buyer_aid,
-		seller_aid,
+		buyerAid,
+		sellerAid,
 		true,
 		evt.Price,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into new_offer table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_item_bought(evt *rwp.ItemBought) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	seller_aid := sw.must_lookup_or_create_address(evt.SellerAddr, evt.BlockNum, evt.TxId)
-	buyer_aid := sw.must_lookup_or_create_address(evt.BuyerAddr, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO rw_item_bought(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"offer_id,seller_aid,buyer_aid" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+// InsertItemBought records an ItemBought marketplace event.
+func (r *Repo) InsertItemBought(ctx context.Context, evt *rwp.ItemBought) error {
+	const op = "insert into rw_item_bought"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	sellerAid, err := r.addrID(ctx, evt.SellerAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	buyerAid, err := r.addrID(ctx, evt.BuyerAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_item_bought(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			offer_id,seller_aid,buyer_aid
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.OfferId,
-		seller_aid,
-		buyer_aid,
+		sellerAid,
+		buyerAid,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into item_bought table: %v\n", err))
-		os.Exit(1)
-	}
-
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_offer_canceled(evt *rwp.OfferCanceled) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO rw_offer_canceled(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"offer_id" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+// InsertOfferCanceled records an OfferCanceled marketplace event.
+func (r *Repo) InsertOfferCanceled(ctx context.Context, evt *rwp.OfferCanceled) error {
+	const op = "insert into rw_offer_canceled"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_offer_canceled(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			offer_id
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.OfferId,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into offer_canceled table: %v\n", err))
-		os.Exit(1)
-	}
-
+	return store.WrapError(op, err)
 }
 
 // =============================================================================
 // TOKEN OPERATIONS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Insert_withdrawal(evt *rwp.Withdrawal) {
-
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	aid := sw.must_lookup_or_create_address(evt.Destination, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO rw_withdrawal(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"aid,token_id,amount" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+// InsertWithdrawal records a WithdrawalEvent of the RandomWalk contract.
+func (r *Repo) InsertWithdrawal(ctx context.Context, evt *rwp.Withdrawal) error {
+	const op = "insert into rw_withdrawal"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	aid, err := r.addrID(ctx, evt.Destination, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_withdrawal(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			aid,token_id,amount
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		aid,
 		evt.TokenId,
 		evt.Amount,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into rw_withdrawal table: %v\n", err))
-		os.Exit(1)
-	}
-
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_token_name(evt *rwp.TokenName) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO rw_token_name(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"token_id,new_name" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+// InsertTokenName records a TokenNameEvent (token renamed).
+func (r *Repo) InsertTokenName(ctx context.Context, evt *rwp.TokenName) error {
+	const op = "insert into rw_token_name"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_token_name(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			token_id,new_name
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.TokenId,
 		evt.NewName,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into rw_token_name table: %v\n", err))
-		os.Exit(1)
-	}
-
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_mint_event(evt *rwp.MintEvent) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	owner_aid := sw.must_lookup_or_create_address(evt.Owner, evt.BlockNum, evt.TxId)
-	var query string
-	query = "INSERT INTO rw_mint_evt(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"token_id,owner_aid,seed,seed_num,price" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+// InsertMint records a MintEvent of the RandomWalk contract.
+func (r *Repo) InsertMint(ctx context.Context, evt *rwp.MintEvent) error {
+	const op = "insert into rw_mint_evt"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	ownerAid, err := r.addrID(ctx, evt.Owner, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_mint_evt(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			token_id,owner_aid,seed,seed_num,price
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.TokenId,
-		owner_aid,
+		ownerAid,
 		evt.Seed,
 		evt.SeedNum,
 		evt.Price,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into rw_mint_evt table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *rwp.Transfer) {
 
-	contract_aid := sw.must_lookup_or_create_address(evt.Contract, evt.BlockNum, evt.TxId)
-	from_aid := sw.must_lookup_or_create_address(evt.From, evt.BlockNum, evt.TxId)
-	to_aid := sw.must_lookup_or_create_address(evt.To, evt.BlockNum, evt.TxId)
+// InsertTransfer records an ERC-721 Transfer of a RandomWalk token. Mints
+// (from the zero address) are otype 1, burns (to the zero address) otype 2,
+// wallet-to-wallet transfers otype 0.
+func (r *Repo) InsertTransfer(ctx context.Context, evt *rwp.Transfer) error {
+	const op = "insert into rw_transfer"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	fromAid, err := r.addrID(ctx, evt.From, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	toAid, err := r.addrID(ctx, evt.To, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
 	var zero common.Address
-	otype := int(0)
+	otype := 0
 	if common.HexToAddress(evt.From) == zero {
 		otype = 1
 	}
 	if common.HexToAddress(evt.To) == zero {
 		otype = 2
 	}
-	var query string
-	query = "INSERT INTO rw_transfer(" +
-		"evtlog_id,block_num,tx_id,time_stamp,contract_aid, " +
-		"token_id,from_aid,to_aid,otype" +
-		") VALUES (" +
-		"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9" +
-		")"
-	_, err := sw.S.Db().Exec(query,
+	query := `INSERT INTO rw_transfer(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			token_id,from_aid,to_aid,otype
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9
+		)`
+	_, err = r.pool().Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
-		contract_aid,
+		contractAid,
 		evt.TokenId,
-		from_aid,
-		to_aid,
+		fromAid,
+		toAid,
 		otype,
 	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into rw_transfer table: %v\n", err))
-		os.Exit(1)
-	}
+	return store.WrapError(op, err)
 }
-func (sw *SQLStorageWrapper) Offer_exists(contract_addr string, offer_id int64) bool {
 
-	contract_aid, err := sw.S.Nonfatal_lookup_address_id(contract_addr)
+// OfferExists reports whether an offer with offerID exists for the contract.
+// An unknown contract address yields false. (The legacy layer also returned
+// false when the address lookup hit a real DB failure, silently skipping the
+// event; such errors propagate now.)
+func (r *Repo) OfferExists(ctx context.Context, contractAddr string, offerID int64) (bool, error) {
+	contractAid, err := r.store.LookupAddressID(ctx, contractAddr)
 	if err != nil {
-		return false
-	}
-	var query string
-	query = "SELECT id FROM rw_new_offer WHERE contract_aid=$1 AND offer_id=$2"
-	var null_offer_id sql.NullInt64
-	res := sw.S.Db().QueryRow(query, contract_aid, offer_id)
-	err = res.Scan(&null_offer_id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false
-		} else {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-			os.Exit(1)
+		if errors.Is(err, store.ErrNotFound) {
+			return false, nil
 		}
+		return false, err
 	}
-	return true
+	var id int64
+	err = r.pool().QueryRow(ctx,
+		"SELECT id FROM rw_new_offer WHERE contract_aid=$1 AND offer_id=$2",
+		contractAid, offerID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, store.WrapError("offer exists check", err)
+	}
+	return true, nil
 }
-func (sw *SQLStorageWrapper) RWalk_token_exists(contract_addr string, token_id int64) bool {
 
-	contract_aid, err := sw.S.Nonfatal_lookup_address_id(contract_addr)
+// TokenExists reports whether a mint event exists for tokenID on the given
+// contract. An unknown contract address yields false.
+func (r *Repo) TokenExists(ctx context.Context, contractAddr string, tokenID int64) (bool, error) {
+	contractAid, err := r.store.LookupAddressID(ctx, contractAddr)
 	if err != nil {
-		return false
-	}
-	var query string
-	query = "SELECT id FROM rw_mint_evt WHERE contract_aid=$1 AND token_id=$2"
-	var null_token_id sql.NullInt64
-	res := sw.S.Db().QueryRow(query, contract_aid, token_id)
-	err = res.Scan(&null_token_id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false
-		} else {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-			os.Exit(1)
+		if errors.Is(err, store.ErrNotFound) {
+			return false, nil
 		}
+		return false, err
 	}
-	return true
+	var id int64
+	err = r.pool().QueryRow(ctx,
+		"SELECT id FROM rw_mint_evt WHERE contract_aid=$1 AND token_id=$2",
+		contractAid, tokenID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, store.WrapError("token exists check", err)
+	}
+	return true, nil
 }
 
 // =============================================================================
 // RANKING OPERATIONS
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Update_randomwalk_top_profit_rank(aid int64, value float64, profit float64) int64 {
-
-	var query string
-	query = "UPDATE rw_uranks SET top_profit = $2,profit=$3 WHERE aid = $1"
-	res, err := sw.S.Db().Exec(query, aid, value, profit)
+// updateRank UPDATEs one rw_uranks rank/value column pair, inserting the row
+// when the user has no rank entry yet (the rwctl top-rated cron owns this
+// table; there is no trigger maintaining it).
+func (r *Repo) updateRank(ctx context.Context, op, rankColumn, valueColumn string, aid int64, rank float64, value any) error {
+	res, err := r.pool().Exec(ctx,
+		"UPDATE rw_uranks SET "+rankColumn+" = $2,"+valueColumn+"=$3 WHERE aid = $1",
+		aid, rank, value)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("Update_randomwalk_top_profit_rank() failed: %v, q=%v", err, query))
-		os.Exit(1)
+		return store.WrapError(op, err)
 	}
-	affected_rows, err := res.RowsAffected()
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit_rank(): %v", err))
-	}
-	if affected_rows == 0 {
-		query = "INSERT INTO rw_uranks(aid,top_profit,profit) VALUES($1,$2,$3)"
-		_, err := sw.S.Db().Exec(query, aid, value, profit)
+	if res.RowsAffected() == 0 {
+		_, err := r.pool().Exec(ctx,
+			"INSERT INTO rw_uranks(aid,"+rankColumn+","+valueColumn+") VALUES($1,$2,$3)",
+			aid, rank, value)
 		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("Update_randomwalk_top_profit_rank() failed: %v, q=%v", err, query))
+			return store.WrapError(op+": insert", err)
 		}
 	}
-	return affected_rows
+	return nil
 }
-func (sw *SQLStorageWrapper) Update_randomwalk_top_total_trades_rank(aid int64, value float64, total_trades int64) int64 {
 
-	var query string
-	query = "UPDATE rw_uranks SET top_trades = $2,total_trades=$3 WHERE aid = $1"
-	res, err := sw.S.Db().Exec(query, aid, value, total_trades)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("Uppdate_randomwalk_top_total_trades_rank() failed: %v, q=%v", err, query))
-		os.Exit(1)
-	}
-	affected_rows, err := res.RowsAffected()
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_total_trades_rank(): %v", err))
-	}
-	if affected_rows == 0 {
-		query = "INSERT INTO rw_uranks(aid,top_trades,total_trades) VALUES($1,$2,$3)"
-		_, err := sw.S.Db().Exec(query, aid, value, total_trades)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("Update_randomwalk_top_total_trades_rank() failed: value=%v, err: %v, q=%v", value, err, query))
-			os.Exit(1)
-		}
-
-	}
-	return affected_rows
+// UpdateTopProfitRank upserts a user's profit-leaderboard percentile and
+// profit value.
+func (r *Repo) UpdateTopProfitRank(ctx context.Context, aid int64, rank, profit float64) error {
+	return r.updateRank(ctx, "update top profit rank", "top_profit", "profit", aid, rank, profit)
 }
-func (sw *SQLStorageWrapper) Update_randomwalk_top_volume_rank(aid int64, value float64, volume float64) int64 {
 
-	var query string
-	query = "UPDATE rw_uranks SET top_volume = $2,volume=$3 WHERE aid = $1"
-	res, err := sw.S.Db().Exec(query, aid, value, volume)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("Update_randomwalk_top_volume_rank() failed: %v, q=%v", err, query))
-		os.Exit(1)
-	}
-	affected_rows, err := res.RowsAffected()
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("Error getting RowsAffected in Update_randomwalk_top_volume_rank(): %v", err))
-	}
-	if affected_rows == 0 {
-		query = "INSERT INTO rw_uranks(aid,top_volume,volume) VALUES($1,$2,$3)"
-		_, err := sw.S.Db().Exec(query, aid, value, volume)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("Update_randomwalk_top_volume_rank() failed: value=%v, err: %v, q=%v", value, err, query))
-			os.Exit(1)
-		}
-
-	}
-	return affected_rows
+// UpdateTopTotalTradesRank upserts a user's trades-leaderboard percentile
+// and trade count.
+func (r *Repo) UpdateTopTotalTradesRank(ctx context.Context, aid int64, rank float64, totalTrades int64) error {
+	return r.updateRank(ctx, "update top total trades rank", "top_trades", "total_trades", aid, rank, totalTrades)
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_ranking_data_for_all_users() []rwp.RankStats {
 
-	var query string
-	query = "SELECT " +
-		"user_aid," +
-		"SUM(total_num_trades) AS tot_trades," +
-		"SUM(total_profit) AS profit," +
-		"SUM(total_vol) AS tot_volume " +
-		"FROM rw_user_stats " +
-		"GROUP BY user_aid"
-
-	rows, err := sw.S.Db().Query(query)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	records := make([]rwp.RankStats, 0, 8)
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.RankStats
-		err = rows.Scan(&rec.Aid, &rec.TotalTrades, &rec.ProfitLoss, &rec.VolumeTraded)
-		records = append(records, rec)
-	}
-	return records
+// UpdateTopVolumeRank upserts a user's volume-leaderboard percentile and
+// traded volume.
+func (r *Repo) UpdateTopVolumeRank(ctx context.Context, aid int64, rank, volume float64) error {
+	return r.updateRank(ctx, "update top volume rank", "top_volume", "volume", aid, rank, volume)
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_top_profit_makers() []rwp.ProfitMaker {
 
-	var query string
-	query = "SELECT " +
-		"a.addr," +
-		"r.top_profit," +
-		"r.profit/1e+18 " +
-		"FROM rw_uranks AS r " +
-		"LEFT JOIN address AS a ON r.aid = a.address_id " +
-		"ORDER BY r.top_profit ASC,r.profit DESC LIMIT 100"
-
-	rows, err := sw.S.Db().Query(query)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	records := make([]rwp.ProfitMaker, 0, 101)
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.ProfitMaker
-		err = rows.Scan(&rec.Addr, &rec.Percentage, &rec.ProfitLoss)
-		records = append(records, rec)
-	}
-	return records
+// RankingDataForAllUsers aggregates per-user trade count, profit and volume
+// across contracts (input of the rwctl top-rated rank computation).
+func (r *Repo) RankingDataForAllUsers(ctx context.Context) ([]rwp.RankStats, error) {
+	query := `SELECT
+			user_aid,
+			SUM(total_num_trades) AS tot_trades,
+			SUM(total_profit) AS profit,
+			SUM(total_vol) AS tot_volume
+		FROM rw_user_stats
+		GROUP BY user_aid`
+	return queryList(ctx, r, "ranking data for all users", 8, query, func(rows pgx.Rows, rec *rwp.RankStats) error {
+		return rows.Scan(&rec.Aid, &rec.TotalTrades, &rec.ProfitLoss, &rec.VolumeTraded)
+	})
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_top_trade_makers() []rwp.TradeMaker {
 
-	var query string
-	query = "SELECT " +
-		"a.addr," +
-		"r.top_trades," +
-		"r.total_trades " +
-		"FROM rw_uranks AS r " +
-		"LEFT JOIN address AS a ON r.aid = a.address_id " +
-		"ORDER BY r.top_trades ASC,r.total_trades DESC LIMIT 100"
-
-	rows, err := sw.S.Db().Query(query)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	records := make([]rwp.TradeMaker, 0, 101)
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.TradeMaker
-		err = rows.Scan(&rec.Addr, &rec.Percentage, &rec.TotalTrades)
-		records = append(records, rec)
-	}
-	return records
+// TopProfitMakers returns the profit leaderboard (best percentile first,
+// top 100).
+func (r *Repo) TopProfitMakers(ctx context.Context) ([]rwp.ProfitMaker, error) {
+	query := `SELECT
+			a.addr,
+			r.top_profit,
+			r.profit/1e+18
+		FROM rw_uranks AS r
+		LEFT JOIN address AS a ON r.aid = a.address_id
+		ORDER BY r.top_profit ASC,r.profit DESC LIMIT 100`
+	return queryList(ctx, r, "top profit makers", 101, query, func(rows pgx.Rows, rec *rwp.ProfitMaker) error {
+		return rows.Scan(&rec.Addr, &rec.Percentage, &rec.ProfitLoss)
+	})
 }
-func (sw *SQLStorageWrapper) Get_randomwalk_top_volume_makers() []rwp.VolumeMaker {
 
-	var query string
-	query = "SELECT " +
-		"a.addr," +
-		"r.top_volume," +
-		"r.volume/1e+18 " +
-		"FROM rw_uranks AS r " +
-		"LEFT JOIN address AS a ON r.aid = a.address_id " +
-		"ORDER BY r.top_volume ASC,r.volume DESC LIMIT 100"
+// TopTradeMakers returns the trade-count leaderboard (top 100).
+func (r *Repo) TopTradeMakers(ctx context.Context) ([]rwp.TradeMaker, error) {
+	query := `SELECT
+			a.addr,
+			r.top_trades,
+			r.total_trades
+		FROM rw_uranks AS r
+		LEFT JOIN address AS a ON r.aid = a.address_id
+		ORDER BY r.top_trades ASC,r.total_trades DESC LIMIT 100`
+	return queryList(ctx, r, "top trade makers", 101, query, func(rows pgx.Rows, rec *rwp.TradeMaker) error {
+		return rows.Scan(&rec.Addr, &rec.Percentage, &rec.TotalTrades)
+	})
+}
 
-	rows, err := sw.S.Db().Query(query)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	records := make([]rwp.VolumeMaker, 0, 101)
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.VolumeMaker
-		err = rows.Scan(&rec.Addr, &rec.Percentage, &rec.Volume)
-		records = append(records, rec)
-	}
-	return records
+// TopVolumeMakers returns the traded-volume leaderboard (top 100).
+func (r *Repo) TopVolumeMakers(ctx context.Context) ([]rwp.VolumeMaker, error) {
+	query := `SELECT
+			a.addr,
+			r.top_volume,
+			r.volume/1e+18
+		FROM rw_uranks AS r
+		LEFT JOIN address AS a ON r.aid = a.address_id
+		ORDER BY r.top_volume ASC,r.volume DESC LIMIT 100`
+	return queryList(ctx, r, "top volume makers", 101, query, func(rows pgx.Rows, rec *rwp.VolumeMaker) error {
+		return rows.Scan(&rec.Addr, &rec.Percentage, &rec.Volume)
+	})
 }
 
 // =============================================================================
 // NOTIFICATION & MESSAGING
 // =============================================================================
 
-func (sw *SQLStorageWrapper) Get_mint_events_for_notification(rwalk_aid int64, start_ts int64) []rwp.NotificationEvent {
-
-	records := make([]rwp.NotificationEvent, 0, 101)
-	var query string
-	query = "SELECT " +
-		"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"seed " +
-		"FROM rw_mint_evt m " +
-		"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  "
-	rows, err := sw.S.Db().Query(query, rwalk_aid, start_ts)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.NotificationEvent
-		err = rows.Scan(
+// MintEventsForNotification returns mints after startTs (timestamp, token,
+// price, seed) for notification bots.
+func (r *Repo) MintEventsForNotification(ctx context.Context, rwalkAid, startTs int64) ([]rwp.NotificationEvent, error) {
+	query := `SELECT
+			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
+			token_id,
+			price/1e+18 AS price,
+			seed
+		FROM rw_mint_evt m
+		WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))`
+	return queryList(ctx, r, "mint events for notification", 101, query, func(rows pgx.Rows, rec *rwp.NotificationEvent) error {
+		return rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TokenId,
 			&rec.Price,
 			&rec.SeedHex,
 		)
-		records = append(records, rec)
-	}
-	return records
+	}, rwalkAid, startTs)
 }
-func (sw *SQLStorageWrapper) Get_messaging_status() rwp.MsgStatus {
 
-	var query string
-	query = "SELECT last_tx_id,last_evtlog_id,last_block_num,last_timestamp " +
-		"FROM rw_messaging_status"
-	res := sw.S.Db().QueryRow(query)
+// MessagingStatus returns the notification watermark; a rowless table (not
+// seeded yet) yields the zero status.
+func (r *Repo) MessagingStatus(ctx context.Context) (rwp.MsgStatus, error) {
 	var output rwp.MsgStatus
-	err := res.Scan(
+	err := r.pool().QueryRow(ctx,
+		"SELECT last_tx_id,last_evtlog_id,last_block_num,last_timestamp FROM rw_messaging_status").Scan(
 		&output.TxId,
 		&output.EvtLogId,
 		&output.BlockNum,
 		&output.TimeStamp,
 	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return output
-		}
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-		os.Exit(1)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return output, store.WrapError("messaging status", err)
 	}
-	return output
-
+	return output, nil
 }
-func (sw *SQLStorageWrapper) Update_messaging_status(status *rwp.MsgStatus) {
 
-	var query string
-	query = "UPDATE rw_messaging_status SET " +
-		"last_tx_id = $1, " +
-		"last_evtlog_id = $2," +
-		"last_block_num = $3, " +
-		"last_timestamp = $4 "
-
-	_, err := sw.S.Db().Exec(query, status.TxId, status.EvtLogId, status.BlockNum, status.TimeStamp)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-		os.Exit(1)
-	}
+// UpdateMessagingStatus persists the notification watermark.
+func (r *Repo) UpdateMessagingStatus(ctx context.Context, status *rwp.MsgStatus) error {
+	query := `UPDATE rw_messaging_status SET
+			last_tx_id = $1,
+			last_evtlog_id = $2,
+			last_block_num = $3,
+			last_timestamp = $4`
+	_, err := r.pool().Exec(ctx, query, status.TxId, status.EvtLogId, status.BlockNum, status.TimeStamp)
+	return store.WrapError("update messaging status", err)
 }
-func (sw *SQLStorageWrapper) Get_all_events_for_notification(rwalk_aid int64, start_ts int64) []rwp.NotificationEvent {
 
-	records := make([]rwp.NotificationEvent, 0, 101)
-	var query string
-	query = "SELECT " +
-		"ts," +
-		"token_id," +
-		"price, " +
-		"evt_type " +
-		"FROM (" +
-		"(" +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"1 AS evt_type " +
-		"FROM rw_mint_evt m " +
-		"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  " +
-		") UNION ALL( " +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"2 AS evt_type " +
-		"FROM rw_new_offer o " +
-		"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=1) " +
-		") UNION ALL( " +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"5 AS evt_type " +
-		"FROM rw_new_offer o " +
-		"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=0) " +
-		") UNION ALL ( " +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts," +
-		"o.token_id," +
-		"o.price/1e+18 AS price, " +
-		"3 AS evt_type " +
-		"FROM rw_item_bought b " +
-		"JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id) " +
-		"WHERE (o.rwalk_aid=$1) AND (b.time_stamp > TO_TIMESTAMP($2))  " +
-		") " +
-		") data " +
-		"ORDER BY ts"
-
-	rows, err := sw.S.Db().Query(query, rwalk_aid, start_ts)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.NotificationEvent
-		err = rows.Scan(
-			&rec.TimeStampMinted,
-			&rec.TokenId,
-			&rec.Price,
-			&rec.EvtType,
+// AllEventsForNotification returns mints, offers and buys after startTs in
+// timestamp order (evt_type 1 mint, 2 sell offer, 5 buy offer, 3 bought).
+func (r *Repo) AllEventsForNotification(ctx context.Context, rwalkAid, startTs int64) ([]rwp.NotificationEvent, error) {
+	query := `SELECT
+			ts,
+			token_id,
+			price,
+			evt_type
+		FROM (
+		(
+		SELECT
+			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
+			token_id,
+			price/1e+18 AS price,
+			1 AS evt_type
+		FROM rw_mint_evt m
+		WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))
+		) UNION ALL(
+		SELECT
+			EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,
+			token_id,
+			price/1e+18 AS price,
+			2 AS evt_type
+		FROM rw_new_offer o
+		WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=1)
+		) UNION ALL(
+		SELECT
+			EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,
+			token_id,
+			price/1e+18 AS price,
+			5 AS evt_type
+		FROM rw_new_offer o
+		WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=0)
+		) UNION ALL (
+		SELECT
+			EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,
+			o.token_id,
+			o.price/1e+18 AS price,
+			3 AS evt_type
+		FROM rw_item_bought b
+		JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id)
+		WHERE (o.rwalk_aid=$1) AND (b.time_stamp > TO_TIMESTAMP($2))
 		)
-		records = append(records, rec)
-	}
-	return records
+		) data
+		ORDER BY ts`
+	return queryList(ctx, r, "all events for notification", 101, query, scanNotificationEvent, rwalkAid, startTs)
 }
-func (sw *SQLStorageWrapper) Get_all_events_for_notification2(rwalk_aid int64, start_evtlog_id int64) []rwp.NotificationEvent2 {
 
-	records := make([]rwp.NotificationEvent2, 0, 101)
-	var query string
-	query = "SELECT " +
-		"ts," +
-		"tx_id," +
-		"evtlog_id," +
-		"token_id," +
-		"price, " +
-		"evt_type " +
-		"FROM (" +
-		"(" +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts," +
-		"m.tx_id," +
-		"m.evtlog_id," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"1 AS evt_type " +
-		"FROM rw_mint_evt m " +
-		"WHERE (contract_aid=$1) AND (m.evtlog_id>$2)  " +
-		") UNION ALL( " +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts," +
-		"o.tx_id," +
-		"o.evtlog_id," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"2 AS evt_type " +
-		"FROM rw_new_offer o " +
-		"WHERE (rwalk_aid=$1) AND (o.evtlog_id>$2) AND (otype=1) " +
-		") UNION ALL( " +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts," +
-		"o.tx_id," +
-		"o.evtlog_id," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"5 AS evt_type " +
-		"FROM rw_new_offer o " +
-		"WHERE (rwalk_aid=$1) AND (o.evtlog_id>$2) AND (otype=0) " +
-		") UNION ALL ( " +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts," +
-		"b.tx_id," +
-		"b.evtlog_id," +
-		"o.token_id," +
-		"o.price/1e+18 AS price, " +
-		"3 AS evt_type " +
-		"FROM rw_item_bought b " +
-		"JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id) " +
-		"WHERE (o.rwalk_aid=$1) AND (b.evtlog_id>$2)  " +
-		") " +
-		") data " +
-		"ORDER BY evtlog_id"
-	rows, err := sw.S.Db().Query(query, rwalk_aid, start_evtlog_id)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.NotificationEvent2
-		err = rows.Scan(
+func scanNotificationEvent(rows pgx.Rows, rec *rwp.NotificationEvent) error {
+	return rows.Scan(
+		&rec.TimeStampMinted,
+		&rec.TokenId,
+		&rec.Price,
+		&rec.EvtType,
+	)
+}
+
+// AllEventsForNotificationSinceEvtlog is AllEventsForNotification keyed on
+// the evt_log id watermark instead of a timestamp (notibot's cursor), with
+// tx and evtlog ids included in the result.
+func (r *Repo) AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid, startEvtlogID int64) ([]rwp.NotificationEvent2, error) {
+	query := `SELECT
+			ts,
+			tx_id,
+			evtlog_id,
+			token_id,
+			price,
+			evt_type
+		FROM (
+		(
+		SELECT
+			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
+			m.tx_id,
+			m.evtlog_id,
+			token_id,
+			price/1e+18 AS price,
+			1 AS evt_type
+		FROM rw_mint_evt m
+		WHERE (contract_aid=$1) AND (m.evtlog_id>$2)
+		) UNION ALL(
+		SELECT
+			EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,
+			o.tx_id,
+			o.evtlog_id,
+			token_id,
+			price/1e+18 AS price,
+			2 AS evt_type
+		FROM rw_new_offer o
+		WHERE (rwalk_aid=$1) AND (o.evtlog_id>$2) AND (otype=1)
+		) UNION ALL(
+		SELECT
+			EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,
+			o.tx_id,
+			o.evtlog_id,
+			token_id,
+			price/1e+18 AS price,
+			5 AS evt_type
+		FROM rw_new_offer o
+		WHERE (rwalk_aid=$1) AND (o.evtlog_id>$2) AND (otype=0)
+		) UNION ALL (
+		SELECT
+			EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,
+			b.tx_id,
+			b.evtlog_id,
+			o.token_id,
+			o.price/1e+18 AS price,
+			3 AS evt_type
+		FROM rw_item_bought b
+		JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id)
+		WHERE (o.rwalk_aid=$1) AND (b.evtlog_id>$2)
+		)
+		) data
+		ORDER BY evtlog_id`
+	return queryList(ctx, r, "all events for notification since evtlog", 101, query, func(rows pgx.Rows, rec *rwp.NotificationEvent2) error {
+		return rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TxId,
 			&rec.EvtLogId,
@@ -751,124 +668,70 @@ func (sw *SQLStorageWrapper) Get_all_events_for_notification2(rwalk_aid int64, s
 			&rec.Price,
 			&rec.EvtType,
 		)
-		records = append(records, rec)
-	}
-	return records
+	}, rwalkAid, startEvtlogID)
 }
-func (sw *SQLStorageWrapper) Get_all_events_for_notification_test(rwalk_aid int64, start_ts int64) []rwp.NotificationEvent {
 
-	records := make([]rwp.NotificationEvent, 0, 101)
-	var query string
-	query = "SELECT " +
-		"ts," +
-		"token_id," +
-		"price, " +
-		"evt_type " +
-		"FROM (" +
-		"(" +
-		"SELECT " +
-		"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts," +
-		"token_id," +
-		"price/1e+18 AS price, " +
-		"1 AS evt_type " +
-		"FROM rw_mint_evt m " +
-		"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  " +
-		") " +
-		/*UNION ALL( "+
-			"SELECT "+
-				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
-				"token_id,"+
-				"price/1e+18 AS price, "+
-				"2 AS evt_type "+
-			"FROM rw_new_offer o " +
-				"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  " +
-		") UNION ALL ( "+
-			"SELECT "+
-				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,"+
-				"o.token_id,"+
-				"o.price/1e+18 AS price, "+
-				"3 AS evt_type " +
-			"FROM rw_item_bought b " +
-				"JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id) " +
-			"WHERE (o.rwalk_aid=$1) AND (b.time_stamp > TO_TIMESTAMP($2))  " +
-		") " +
-		*/
-		") data " +
-		"ORDER BY ts"
-	rows, err := sw.S.Db().Query(query, rwalk_aid, start_ts)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.NotificationEvent
-		err = rows.Scan(
-			&rec.TimeStampMinted,
-			&rec.TokenId,
-			&rec.Price,
-			&rec.EvtType,
+// AllEventsForNotificationMintsOnly is the mint-only variant of
+// AllEventsForNotification (the offer/buy branches are intentionally
+// disabled; kept for notification dry runs).
+func (r *Repo) AllEventsForNotificationMintsOnly(ctx context.Context, rwalkAid, startTs int64) ([]rwp.NotificationEvent, error) {
+	query := `SELECT
+			ts,
+			token_id,
+			price,
+			evt_type
+		FROM (
+		(
+		SELECT
+			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
+			token_id,
+			price/1e+18 AS price,
+			1 AS evt_type
+		FROM rw_mint_evt m
+		WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))
 		)
-		records = append(records, rec)
-	}
-	return records
+		) data
+		ORDER BY ts`
+	return queryList(ctx, r, "all events for notification (mints only)", 101, query, scanNotificationEvent, rwalkAid, startTs)
 }
-func (sw *SQLStorageWrapper) Get_server_timestamp() int64 {
 
-	var query string
-	query = "SELECT EXTRACT(EPOCH FROM now())::BIGINT AS ts"
-	res := sw.S.Db().QueryRow(query)
-	var null_ts sql.NullInt64
-	err := res.Scan(&null_ts)
+// ServerTimestamp returns the database server's current Unix timestamp.
+func (r *Repo) ServerTimestamp(ctx context.Context) (int64, error) {
+	var ts sql.NullInt64
+	err := r.pool().QueryRow(ctx, "SELECT EXTRACT(EPOCH FROM now())::BIGINT AS ts").Scan(&ts)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-		os.Exit(1)
+		return 0, store.WrapError("server timestamp", err)
 	}
-	return null_ts.Int64
+	return ts.Int64, nil
 }
-func (sw *SQLStorageWrapper) Get_last_mint_timestamp() int64 {
 
-	var query string
-	query = "SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts FROM rw_mint_evt " +
-		"ORDER BY id DESC LIMIT 1"
-	res := sw.S.Db().QueryRow(query)
-	var null_ts sql.NullInt64
-	err := res.Scan(&null_ts)
+// LastMintTimestamp returns the timestamp of the most recent mint, or 0 when
+// no mints exist.
+func (r *Repo) LastMintTimestamp(ctx context.Context) (int64, error) {
+	var ts sql.NullInt64
+	err := r.pool().QueryRow(ctx,
+		"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts FROM rw_mint_evt ORDER BY id DESC LIMIT 1").Scan(&ts)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, nil
 		}
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-		os.Exit(1)
+		return 0, store.WrapError("last mint timestamp", err)
 	}
-	return null_ts.Int64
+	return ts.Int64, nil
 }
-func (sw *SQLStorageWrapper) Get_rw_token_transfers_by_tx_hash(tx_hash string) []rwp.TransferEntry {
 
-	var query string
-	query = "SELECT " +
-		"fa.addr,ta.addr,token_id " +
-		"FROM rw_transfer tr " +
-		"JOIN address fa ON tr.from_aid=fa.address_id " +
-		"JOIN address ta ON tr.to_aid=ta.address_id " +
-		"JOIN transaction tx ON tx.id=tr.tx_id " +
-		"WHERE tx.tx_hash=$1"
-
-	rows, err := sw.S.Db().Query(query, tx_hash)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)", err, query))
-		os.Exit(1)
-	}
-	records := make([]rwp.TransferEntry, 0, 8)
-	defer rows.Close()
-	for rows.Next() {
-		var rec rwp.TransferEntry
-		err = rows.Scan(&rec.From, &rec.To, &rec.TokenId)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v", err, query))
-			os.Exit(1)
-		}
-		records = append(records, rec)
-	}
-	return records
+// TokenTransfersByTxHash returns the RandomWalk token transfers contained in
+// one transaction (rwctl verify-erc20-transfers uses it to cross-check
+// chain data).
+func (r *Repo) TokenTransfersByTxHash(ctx context.Context, txHash string) ([]rwp.TransferEntry, error) {
+	query := `SELECT
+			fa.addr,ta.addr,token_id
+		FROM rw_transfer tr
+			JOIN address fa ON tr.from_aid=fa.address_id
+			JOIN address ta ON tr.to_aid=ta.address_id
+			JOIN transaction tx ON tx.id=tr.tx_id
+		WHERE tx.tx_hash=$1`
+	return queryList(ctx, r, "token transfers by tx hash", 8, query, func(rows pgx.Rows, rec *rwp.TransferEntry) error {
+		return rows.Scan(&rec.From, &rec.To, &rec.TokenId)
+	}, txHash)
 }

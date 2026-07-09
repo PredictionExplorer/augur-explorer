@@ -13,6 +13,7 @@
 package main
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
@@ -329,7 +330,7 @@ func TestReorgRollbackAndReplay(t *testing.T) {
 	testChain.Reorg(divergentBlock)
 	newHash := testChain.BlockHash(divergentBlock)
 
-	inserted, err := etlcommon.EnsureBlockExists(etlContext(), divergentBlock, newHash.Hex())
+	inserted, err := etlcommon.EnsureBlockExists(context.Background(), etlContext(), divergentBlock, newHash.Hex())
 	if err != nil {
 		t.Fatalf("EnsureBlockExists after reorg: %v", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -26,11 +27,13 @@ const (
 )
 
 var (
-	storage  *store.SQLStorage
-	storagew rwdb.SQLStorageWrapper
-	RPC_URL  = os.Getenv("RPC_URL")
-	Error    *log.Logger
-	Info     *log.Logger
+	// dbStore owns the process-wide connection pool; rwRepo runs every
+	// RandomWalk query on it.
+	dbStore *store.Store
+	rwRepo  *rwdb.Repo
+	RPC_URL = os.Getenv("RPC_URL")
+	Error   *log.Logger
+	Info    *log.Logger
 
 	eclient   *ethclient.Client
 	rpcclient *rpc.Client
@@ -72,19 +75,22 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	// Database log output (failed and slow queries) goes through the pgx
+	// slog tracer into the file the legacy Init_log wrote to.
+	dbLogHandle, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
+		os.Exit(1)
+	}
+	cfg := store.ConfigFromEnv()
+	cfg.Logger = slog.New(slog.NewTextHandler(dbLogHandle, nil))
+	dbStore, err = store.New(context.Background(), cfg)
 	if err != nil {
 		Info.Printf("failed to connect to storage: %v", err)
 		fmt.Fprintf(os.Stderr, "Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
 		os.Exit(1)
 	}
-	storage = store.NewSQLStorageFromDB(st.DB(), Info)
-	if err := storage.Init_log(db_log_file); err != nil {
-		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
-		os.Exit(1)
-	}
-	storage.Log_msg("Log initialized\n")
-	storagew.S = storage
+	rwRepo = rwdb.NewRepo(dbStore)
 
 	abi_parsed1 := strings.NewReader(RWMarketABI)
 	ab1, err := abi.JSON(abi_parsed1)
@@ -102,9 +108,7 @@ func main() {
 	randomwalk_abi = &ab2
 
 	// First, read raw contract addresses and insert into address table
-	var rawMarketplace, rawRandomwalk string
-	query := "SELECT marketplace_addr, randomwalk_addr FROM rw_contracts LIMIT 1"
-	err = storage.Db().QueryRow(query).Scan(&rawMarketplace, &rawRandomwalk)
+	rawMarketplace, rawRandomwalk, err := rwRepo.RawContractAddrs(context.Background())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read rw_contracts: %v\n", err)
 		os.Exit(1)
@@ -112,7 +116,7 @@ func main() {
 
 	// Insert contract addresses into address table (for fresh database)
 	for _, contract_addr := range []string{rawMarketplace, rawRandomwalk} {
-		if _, err := storage.Lookup_or_create_address(contract_addr, 0, 0); err != nil {
+		if _, err := dbStore.LookupOrCreateAddress(context.Background(), contract_addr, 0, 0); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to register contract address %v: %v\n", contract_addr, err)
 			os.Exit(1)
 		}
@@ -120,7 +124,11 @@ func main() {
 	Info.Printf("Contract addresses registered in address table\n")
 
 	// Now we can safely call the function that joins with address table
-	rw_contracts = storagew.Get_randomwalk_contract_addresses()
+	rw_contracts, err = rwRepo.ContractAddrs(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to resolve contract addresses: %v\n", err)
+		os.Exit(1)
+	}
 	rwalk_addr = ethcommon.HexToAddress(rw_contracts.RandomWalk)
 	market_addr = ethcommon.HexToAddress(rw_contracts.MarketPlace)
 	Info.Printf("RandomWalk contract %v\n", rwalk_addr.String())

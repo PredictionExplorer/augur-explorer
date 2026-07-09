@@ -151,7 +151,7 @@ func proc_donation_received_event(ctx context.Context, log *types.Log, elog *Eth
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
-	evt.RoundNum, err = find_prize_num(evt.TxId)
+	evt.RoundNum, err = find_prize_num(ctx, evt.TxId)
 	if err != nil {
 		return fmt.Errorf("DonationReceived (evt id %v): %w", elog.EvtId, err)
 	}

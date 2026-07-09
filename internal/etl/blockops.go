@@ -3,7 +3,6 @@ package common
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"math/big"
@@ -11,20 +10,22 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // EnsureBlockExists verifies block exists in DB with correct hash, or inserts it
 // If hash mismatch (chain split), it handles the reorg
 // Returns: block was newly inserted (true) or already existed (false), error
-func EnsureBlockExists(ctx *ETLContext, blockNum int64, expectedHash string) (bool, error) {
+func EnsureBlockExists(ctx context.Context, etl *ETLContext, blockNum int64, expectedHash string) (bool, error) {
 	// Check if block exists in DB
-	existingHash, err := ctx.Storage.Get_block_hash(blockNum)
-	if errors.Is(err, sql.ErrNoRows) {
+	existingHash, err := etl.Store.BlockHash(ctx, blockNum)
+	if errors.Is(err, store.ErrNotFound) {
 		// Block doesn't exist, fetch and insert it
-		return insertBlockFromChain(ctx, blockNum, expectedHash)
+		return insertBlockFromChain(ctx, etl, blockNum, expectedHash)
 	}
 	if err != nil {
-		return false, fmt.Errorf("Get_block_hash failed for block %d: %w", blockNum, err)
+		return false, fmt.Errorf("block hash check failed for block %d: %w", blockNum, err)
 	}
 
 	// Block exists, verify hash matches
@@ -34,25 +35,25 @@ func EnsureBlockExists(ctx *ETLContext, blockNum int64, expectedHash string) (bo
 	}
 
 	// Hash mismatch - chain split detected!
-	ctx.Info.Printf("Chain split detected at block %d: DB hash %s != event hash %s\n",
+	etl.Info.Printf("Chain split detected at block %d: DB hash %s != event hash %s\n",
 		blockNum, existingHash, expectedHash)
 
 	// Handle chain split: delete from this block onwards (from end first)
-	err = HandleChainSplit(ctx, blockNum)
+	err = HandleChainSplit(ctx, etl, blockNum)
 	if err != nil {
-		return false, fmt.Errorf("HandleChainSplit failed: %v", err)
+		return false, fmt.Errorf("HandleChainSplit failed: %w", err)
 	}
 
 	// Now insert the correct block
-	return insertBlockFromChain(ctx, blockNum, expectedHash)
+	return insertBlockFromChain(ctx, etl, blockNum, expectedHash)
 }
 
 // insertBlockFromChain fetches block header from chain and inserts into DB
-func insertBlockFromChain(ctx *ETLContext, blockNum int64, expectedHash string) (bool, error) {
+func insertBlockFromChain(ctx context.Context, etl *ETLContext, blockNum int64, expectedHash string) (bool, error) {
 	// Fetch block header from chain
-	header, err := GetBlockHeader(ctx.EthClient, blockNum)
+	header, err := GetBlockHeader(ctx, etl.EthClient, blockNum)
 	if err != nil {
-		return false, fmt.Errorf("GetBlockHeader failed for block %d: %v", blockNum, err)
+		return false, fmt.Errorf("GetBlockHeader failed for block %d: %w", blockNum, err)
 	}
 
 	// Verify the hash matches what we expect from the event
@@ -63,17 +64,17 @@ func insertBlockFromChain(ctx *ETLContext, blockNum int64, expectedHash string) 
 	}
 
 	// Insert block into DB
-	err = ctx.Storage.Insert_block(header)
+	err = etl.Store.InsertBlock(ctx, header)
 	if err != nil {
-		return false, fmt.Errorf("Insert_block failed for block %d: %v", blockNum, err)
+		return false, fmt.Errorf("block insert failed for block %d: %w", blockNum, err)
 	}
 
 	return true, nil
 }
 
 // GetBlockHeader fetches a block header from the chain by number
-func GetBlockHeader(client *ethclient.Client, blockNum int64) (*types.Header, error) {
-	header, err := client.HeaderByNumber(context.Background(), big.NewInt(blockNum))
+func GetBlockHeader(ctx context.Context, client *ethclient.Client, blockNum int64) (*types.Header, error) {
+	header, err := client.HeaderByNumber(ctx, big.NewInt(blockNum))
 	if err != nil {
 		return nil, err
 	}
@@ -83,77 +84,80 @@ func GetBlockHeader(client *ethclient.Client, blockNum int64) (*types.Header, er
 // EnsureTransactionExists verifies transaction exists in DB, or fetches and inserts it
 // If RPC returns "not found", tries to fetch from archive tables
 // Returns: transaction ID, whether it was newly inserted, error
-func EnsureTransactionExists(ctx *ETLContext, txHash common.Hash, blockNum int64) (int64, bool, error) {
+func EnsureTransactionExists(ctx context.Context, etl *ETLContext, txHash common.Hash, blockNum int64) (int64, bool, error) {
 	// Check if transaction exists in DB
-	txId, err := ctx.Storage.Get_transaction_id_by_hash(txHash.Hex())
+	txId, err := etl.Store.TransactionIDByHash(ctx, txHash.Hex())
 	if err == nil && txId > 0 {
 		// Transaction exists
 		return txId, false, nil
 	}
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		return 0, false, fmt.Errorf("transaction id check failed for %s: %w", txHash.Hex(), err)
+	}
 
 	// Try to fetch full transaction from chain
-	tx, isPending, err := ctx.EthClient.TransactionByHash(context.Background(), txHash)
+	tx, isPending, err := etl.EthClient.TransactionByHash(ctx, txHash)
 	if err != nil {
 		// Check if it's a "not found" error - only then try archive
 		errStr := err.Error()
 		if errStr == "not found" || errStr == "transaction not found" {
 			// Transaction pruned from RPC node - try archive
-			ctx.Info.Printf("[RPC-MISS] Transaction %s not found in RPC, checking archive...\n", txHash.Hex())
-			return fetchTransactionFromArchive(ctx, txHash.Hex(), blockNum)
+			etl.Info.Printf("[RPC-MISS] Transaction %s not found in RPC, checking archive...\n", txHash.Hex())
+			return fetchTransactionFromArchive(ctx, etl, txHash.Hex(), blockNum)
 		}
 		// Other error (connection refused, etc.) - don't use archive, propagate error
-		return 0, false, fmt.Errorf("TransactionByHash failed for %s: %v", txHash.Hex(), err)
+		return 0, false, fmt.Errorf("TransactionByHash failed for %s: %w", txHash.Hex(), err)
 	}
 	if isPending {
 		return 0, false, fmt.Errorf("transaction %s is still pending", txHash.Hex())
 	}
 
 	// Get transaction receipt for gas used info
-	receipt, err := ctx.EthClient.TransactionReceipt(context.Background(), txHash)
+	receipt, err := etl.EthClient.TransactionReceipt(ctx, txHash)
 	if err != nil {
 		// Check if it's a "not found" error
 		errStr := err.Error()
 		if errStr == "not found" || errStr == "transaction not found" {
 			// Receipt pruned - try archive
-			ctx.Info.Printf("[RPC-MISS] Receipt %s not found in RPC, checking archive...\n", txHash.Hex())
-			return fetchTransactionFromArchive(ctx, txHash.Hex(), blockNum)
+			etl.Info.Printf("[RPC-MISS] Receipt %s not found in RPC, checking archive...\n", txHash.Hex())
+			return fetchTransactionFromArchive(ctx, etl, txHash.Hex(), blockNum)
 		}
 		// Other error - propagate
-		return 0, false, fmt.Errorf("TransactionReceipt failed for %s: %v", txHash.Hex(), err)
+		return 0, false, fmt.Errorf("TransactionReceipt failed for %s: %w", txHash.Hex(), err)
 	}
 
 	// Insert full transaction into DB
-	txId, err = ctx.Storage.Insert_transaction(tx, blockNum, receipt)
+	txId, err = etl.Store.InsertTransaction(ctx, tx, blockNum, receipt)
 	if err != nil {
-		return 0, false, fmt.Errorf("Insert_transaction failed for %s: %v", txHash.Hex(), err)
+		return 0, false, fmt.Errorf("transaction insert failed for %s: %w", txHash.Hex(), err)
 	}
 
-	ctx.Info.Printf("[RPC] Transaction %s fetched from RPC node\n", txHash.Hex())
+	etl.Info.Printf("[RPC] Transaction %s fetched from RPC node\n", txHash.Hex())
 	return txId, true, nil
 }
 
 // fetchTransactionFromArchive reads transaction from archive and inserts into main table
-func fetchTransactionFromArchive(ctx *ETLContext, txHash string, blockNum int64) (int64, bool, error) {
+func fetchTransactionFromArchive(ctx context.Context, etl *ETLContext, txHash string, blockNum int64) (int64, bool, error) {
 	// Try to get transaction from archive
-	archTx, err := ctx.Storage.Get_archived_transaction(txHash)
+	archTx, err := etl.Store.ArchivedTransactionByHash(ctx, txHash)
 	if err != nil {
-		return 0, false, fmt.Errorf("archive lookup failed for %s: %v", txHash, err)
+		return 0, false, fmt.Errorf("archive lookup failed for %s: %w", txHash, err)
 	}
 	if archTx == nil {
 		// Not in archive either - create minimal record as last resort
-		ctx.Info.Printf("[MINIMAL] Transaction %s not in RPC or archive, creating minimal record\n", txHash)
-		txId, err := ctx.Storage.Insert_minimal_transaction(txHash, blockNum)
+		etl.Info.Printf("[MINIMAL] Transaction %s not in RPC or archive, creating minimal record\n", txHash)
+		txId, err := etl.Store.InsertMinimalTransaction(ctx, txHash, blockNum)
 		if err != nil {
-			return 0, false, fmt.Errorf("Insert_minimal_transaction failed for %s: %v", txHash, err)
+			return 0, false, fmt.Errorf("minimal transaction insert failed for %s: %w", txHash, err)
 		}
 		return txId, true, nil
 	}
 
 	// Insert transaction from archive data
-	ctx.Info.Printf("[ARCHIVE] Transaction %s fetched from archive database\n", txHash)
-	txId, err := ctx.Storage.Insert_transaction_from_archive(archTx)
+	etl.Info.Printf("[ARCHIVE] Transaction %s fetched from archive database\n", txHash)
+	txId, err := etl.Store.InsertTransactionFromArchive(ctx, archTx)
 	if err != nil {
-		return 0, false, fmt.Errorf("Insert_transaction_from_archive failed for %s: %v", txHash, err)
+		return 0, false, fmt.Errorf("archive transaction insert failed for %s: %w", txHash, err)
 	}
 
 	return txId, true, nil
@@ -161,17 +165,17 @@ func fetchTransactionFromArchive(ctx *ETLContext, txHash string, blockNum int64)
 
 // InsertEventLog inserts an event log into the evt_log table
 // Returns: event log ID, error
-func InsertEventLog(ctx *ETLContext, log types.Log, txId int64) (int64, error) {
+func InsertEventLog(ctx context.Context, etl *ETLContext, log types.Log, txId int64) (int64, error) {
 	// Look up or create contract address
-	contractAid, err := ctx.Storage.Lookup_or_create_address(log.Address.Hex(), int64(log.BlockNumber), txId)
+	contractAid, err := etl.Store.LookupOrCreateAddress(ctx, log.Address.Hex(), int64(log.BlockNumber), txId)
 	if err != nil {
-		return 0, fmt.Errorf("Lookup_or_create_address failed for %s: %w", log.Address.Hex(), err)
+		return 0, fmt.Errorf("contract address lookup failed for %s: %w", log.Address.Hex(), err)
 	}
 
 	// Insert the event log
-	evtId, err := ctx.Storage.Insert_event_log(log, txId, contractAid)
+	evtId, err := etl.Store.InsertEventLog(ctx, log, txId, contractAid)
 	if err != nil {
-		return 0, fmt.Errorf("Insert_event_log failed: %w", err)
+		return 0, fmt.Errorf("event log insert failed: %w", err)
 	}
 
 	return evtId, nil

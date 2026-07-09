@@ -1,14 +1,23 @@
+// Beauty-contest ranking storage: Elo ratings, pairwise match rows and the
+// one-time nonces protecting wallet-signed votes.
+
 package randomwalk
 
 import (
-	"database/sql"
+	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// Get_explore_random_token_ids returns up to limit token_ids with fewest ranking matches, then lowest rating
-// (GET /api/randomwalk/random), scoped to one RandomWalk contract and token_id <= max_id.
-func (sw *SQLStorageWrapper) Get_explore_random_token_ids(rwalk_aid, max_id int64, limit int) ([]int64, error) {
+// ExploreRandomTokenIDs returns up to limit token_ids with fewest ranking
+// matches, then lowest rating (GET /api/randomwalk/random), scoped to one
+// RandomWalk contract and token_id <= maxID.
+func (r *Repo) ExploreRandomTokenIDs(ctx context.Context, rwalkAid, maxID int64, limit int) ([]int64, error) {
 	if limit <= 0 {
 		limit = 2
 	}
@@ -28,143 +37,125 @@ LEFT JOIN rw_token_ranking r ON r.token_id = t.token_id
 WHERE t.rwalk_aid = $1 AND t.token_id <= $2
 ORDER BY COALESCE(c.cnt, 0) ASC, COALESCE(r.rating, 1200) ASC, t.token_id ASC
 LIMIT $3`
-	rows, err := sw.S.Db().Query(q, rwalk_aid, max_id, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
+	return r.scanTokenIDs(ctx, "explore random token ids", q, rwalkAid, maxID, limit)
 }
 
-// Get_fallback_random_token_ids picks random minted tokens (used when ranking tables are missing or query fails).
-func (sw *SQLStorageWrapper) Get_fallback_random_token_ids(rwalk_aid, max_id int64, limit int) ([]int64, error) {
+// FallbackRandomTokenIDs picks random minted tokens (used when ranking
+// tables are missing or the ranked query fails).
+func (r *Repo) FallbackRandomTokenIDs(ctx context.Context, rwalkAid, maxID int64, limit int) ([]int64, error) {
 	if limit <= 0 {
 		limit = 2
 	}
 	q := `SELECT token_id FROM rw_token WHERE rwalk_aid = $1 AND token_id <= $2 ORDER BY RANDOM() LIMIT $3`
-	rows, err := sw.S.Db().Query(q, rwalk_aid, max_id, limit)
+	return r.scanTokenIDs(ctx, "fallback random token ids", q, rwalkAid, maxID, limit)
+}
+
+// scanTokenIDs collects a single-column token_id result. The nil zero slice
+// is deliberate: these feed handlers that marshal the value directly, and
+// the legacy layer returned nil for an empty result.
+func (r *Repo) scanTokenIDs(ctx context.Context, op, query string, args ...any) ([]int64, error) {
+	rows, err := r.pool().Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, store.WrapError(op, err)
 	}
 	defer rows.Close()
 	var out []int64
 	for rows.Next() {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
-			return nil, err
+			return nil, store.WrapError(op, err)
 		}
 		out = append(out, id)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, store.WrapError(op, err)
+	}
+	return out, nil
 }
 
-// Has_ranking_vote_for_voter_pair reports whether this voter_aid already has a row for the unordered pair (nft1, nft2).
-func (sw *SQLStorageWrapper) Has_ranking_vote_for_voter_pair(voterAid, nft1, nft2 int64) (bool, error) {
+// HasRankingVoteForVoterPair reports whether this voter already has a row
+// for the unordered pair (nft1, nft2).
+func (r *Repo) HasRankingVoteForVoterPair(ctx context.Context, voterAid, nft1, nft2 int64) (bool, error) {
 	if voterAid <= 0 || nft1 < 0 || nft2 < 0 || nft1 == nft2 {
 		return false, nil
 	}
 	var one int
-	err := sw.S.Db().QueryRow(`
+	err := r.pool().QueryRow(ctx, `
 SELECT 1 FROM rw_ranking_match
 WHERE voter_aid = $1
   AND LEAST(nft1, nft2) = LEAST($2::bigint, $3::bigint)
   AND GREATEST(nft1, nft2) = GREATEST($2::bigint, $3::bigint)
 LIMIT 1`,
 		voterAid, nft1, nft2).Scan(&one)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, store.WrapError("ranking vote lookup for voter pair", err)
 	}
 	return true, nil
 }
 
-// Count_ranking_matches returns total pairwise rows (for Elo K factor, legacy parity).
-func (sw *SQLStorageWrapper) Count_ranking_matches() (int64, error) {
-	var n sql.NullInt64
-	err := sw.S.Db().QueryRow(`SELECT COUNT(*) FROM rw_ranking_match`).Scan(&n)
+// CountRankingMatches returns total pairwise rows (for the Elo K factor).
+func (r *Repo) CountRankingMatches(ctx context.Context) (int64, error) {
+	var n int64
+	err := r.pool().QueryRow(ctx, `SELECT COUNT(*) FROM rw_ranking_match`).Scan(&n)
 	if err != nil {
-		return 0, err
+		return 0, store.WrapError("count ranking matches", err)
 	}
-	if n.Valid {
-		return n.Int64, nil
-	}
-	return 0, nil
+	return n, nil
 }
 
-// Get_rating_order returns all token_ids ordered by rating ascending (GET /api/randomwalk/rating_order).
-func (sw *SQLStorageWrapper) Get_rating_order(rwalk_aid int64) ([]int64, error) {
+// RatingOrder returns all token_ids ordered by rating ascending
+// (GET /api/randomwalk/rating_order).
+func (r *Repo) RatingOrder(ctx context.Context, rwalkAid int64) ([]int64, error) {
 	q := `
 SELECT t.token_id
 FROM rw_token t
 LEFT JOIN rw_token_ranking r ON r.token_id = t.token_id
 WHERE t.rwalk_aid = $1
 ORDER BY COALESCE(r.rating, 1200) ASC, t.token_id ASC`
-	rows, err := sw.S.Db().Query(q, rwalk_aid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
+	return r.scanTokenIDs(ctx, "rating order", q, rwalkAid)
 }
 
-// Get_rating_pair loads current ratings for two tokens (defaults 1200 if missing).
-func (sw *SQLStorageWrapper) Get_rating_pair(nft1, nft2 int64) (r1, r2 float64, err error) {
+// RatingPair loads current ratings for two tokens (defaults 1200 if missing).
+func (r *Repo) RatingPair(ctx context.Context, nft1, nft2 int64) (r1, r2 float64, err error) {
 	r1, r2 = 1200, 1200
-	var a, b sql.NullFloat64
-	err = sw.S.Db().QueryRow(`SELECT rating FROM rw_token_ranking WHERE token_id = $1`, nft1).Scan(&a)
-	if err != nil && err != sql.ErrNoRows {
-		return 0, 0, err
-	}
-	if err == nil && a.Valid {
-		r1 = a.Float64
-	}
-	err = sw.S.Db().QueryRow(`SELECT rating FROM rw_token_ranking WHERE token_id = $1`, nft2).Scan(&b)
-	if err != nil && err != sql.ErrNoRows {
-		return 0, 0, err
-	}
-	if err == nil && b.Valid {
-		r2 = b.Float64
+	for _, pair := range []struct {
+		id  int64
+		dst *float64
+	}{{nft1, &r1}, {nft2, &r2}} {
+		var rating *float64
+		err := r.pool().QueryRow(ctx, `SELECT rating FROM rw_token_ranking WHERE token_id = $1`, pair.id).Scan(&rating)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, store.WrapError("rating pair lookup", err)
+		}
+		if err == nil && rating != nil {
+			*pair.dst = *rating
+		}
 	}
 	return r1, r2, nil
 }
 
-// Apply_ranking_match_tx inserts a match and updates ratings inside tx (call after BEGIN).
-// voterAid nil => legacy/admin row without wallet voter (voter_aid column NULL).
-func Apply_ranking_match_tx(tx *sql.Tx, nft1, nft2 int64, nft1Won bool, raNew, rbNew float64, voterAid *int64) error {
+// ApplyRankingMatch inserts a match and updates both ratings inside tx.
+// voterAid nil => legacy/admin row without wallet voter (voter_aid NULL).
+func ApplyRankingMatch(ctx context.Context, tx pgx.Tx, nft1, nft2 int64, nft1Won bool, raNew, rbNew float64, voterAid *int64) error {
 	var err error
 	if voterAid != nil {
-		_, err = tx.Exec(`INSERT INTO rw_ranking_match (nft1, nft2, nft1_won, voter_aid) VALUES ($1,$2,$3,$4)`, nft1, nft2, nft1Won, *voterAid)
+		_, err = tx.Exec(ctx, `INSERT INTO rw_ranking_match (nft1, nft2, nft1_won, voter_aid) VALUES ($1,$2,$3,$4)`, nft1, nft2, nft1Won, *voterAid)
 	} else {
-		_, err = tx.Exec(`INSERT INTO rw_ranking_match (nft1, nft2, nft1_won) VALUES ($1,$2,$3)`, nft1, nft2, nft1Won)
+		_, err = tx.Exec(ctx, `INSERT INTO rw_ranking_match (nft1, nft2, nft1_won) VALUES ($1,$2,$3)`, nft1, nft2, nft1Won)
 	}
 	if err != nil {
 		return fmt.Errorf("insert match: %w", err)
 	}
-	_, err = tx.Exec(`
+	_, err = tx.Exec(ctx, `
 INSERT INTO rw_token_ranking (token_id, rating, updated_at) VALUES ($1, $2, NOW())
 ON CONFLICT (token_id) DO UPDATE SET rating = EXCLUDED.rating, updated_at = NOW()`, nft1, raNew)
 	if err != nil {
 		return fmt.Errorf("upsert rating nft1: %w", err)
 	}
-	_, err = tx.Exec(`
+	_, err = tx.Exec(ctx, `
 INSERT INTO rw_token_ranking (token_id, rating, updated_at) VALUES ($1, $2, NOW())
 ON CONFLICT (token_id) DO UPDATE SET rating = EXCLUDED.rating, updated_at = NOW()`, nft2, rbNew)
 	if err != nil {
@@ -173,32 +164,33 @@ ON CONFLICT (token_id) DO UPDATE SET rating = EXCLUDED.rating, updated_at = NOW(
 	return nil
 }
 
-// Insert_ranking_vote_nonce stores a one-time nonce for wallet-signed beauty votes.
-func (sw *SQLStorageWrapper) Insert_ranking_vote_nonce(nonce string, ttl time.Duration) error {
+// InsertRankingVoteNonce stores a one-time nonce for wallet-signed beauty
+// votes, purging expired nonces on the way.
+func (r *Repo) InsertRankingVoteNonce(ctx context.Context, nonce string, ttl time.Duration) error {
 	if ttl <= 0 {
 		ttl = 15 * time.Minute
 	}
 	expires := time.Now().UTC().Add(ttl)
-	_, err := sw.S.Db().Exec(`DELETE FROM rw_ranking_vote_nonce WHERE expires_at < NOW()`)
-	if err != nil {
-		return err
+	if _, err := r.pool().Exec(ctx, `DELETE FROM rw_ranking_vote_nonce WHERE expires_at < NOW()`); err != nil {
+		return store.WrapError("purge expired ranking vote nonces", err)
 	}
-	_, err = sw.S.Db().Exec(`INSERT INTO rw_ranking_vote_nonce (nonce, expires_at) VALUES ($1, $2)`, nonce, expires)
-	return err
+	_, err := r.pool().Exec(ctx, `INSERT INTO rw_ranking_vote_nonce (nonce, expires_at) VALUES ($1, $2)`, nonce, expires)
+	return store.WrapError("insert ranking vote nonce", err)
 }
 
-// Delete_ranking_vote_nonce_if_valid removes nonce if present and unexpired (single row). Returns false if missing/expired.
-func (sw *SQLStorageWrapper) Delete_ranking_vote_nonce_if_valid(tx *sql.Tx, nonce string) (bool, error) {
+// ConsumeRankingVoteNonce removes nonce inside tx if present and unexpired
+// (single row). Returns false if missing or expired.
+func ConsumeRankingVoteNonce(ctx context.Context, tx pgx.Tx, nonce string) (bool, error) {
 	var got string
-	err := tx.QueryRow(
+	err := tx.QueryRow(ctx,
 		`DELETE FROM rw_ranking_vote_nonce WHERE nonce = $1 AND expires_at > NOW() RETURNING nonce`,
 		nonce,
 	).Scan(&got)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, store.WrapError("consume ranking vote nonce", err)
 	}
 	return true, nil
 }

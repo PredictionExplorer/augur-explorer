@@ -49,7 +49,7 @@ func envBoolDefaultTrue(key string) bool {
 
 func initialize() {
 	// Initialize the common context
-	common.InitContext(rwcg_srv.store, rwcg_srv.db, eclient, Info, Error)
+	common.InitContext(rwcg_srv.store, eclient, Info, Error)
 
 	enableRWRoutes := envBoolDefaultTrue("ENABLE_ROUTES_RANDOMWALK")
 	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")
@@ -129,7 +129,7 @@ func main() {
 	r.Use(metricsMiddleware())
 
 	// Liveness/readiness probes and the internal metrics/pprof listener.
-	common.RegisterHealthRoutes(r, rwcg_srv.db)
+	common.RegisterHealthRoutes(r, rwcg_srv.store)
 	startInternalServer()
 
 	// NFT asset files (nft-assets mirror) and optional /static ABI JSON; see static_assets.go

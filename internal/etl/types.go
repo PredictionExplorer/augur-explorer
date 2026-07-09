@@ -12,7 +12,7 @@ import (
 
 // ETLContext holds shared context for ETL operations
 type ETLContext struct {
-	Storage   *store.SQLStorage
+	Store     *store.Store
 	EthClient *ethclient.Client
 	RpcClient *rpc.Client
 	Info      *log.Logger

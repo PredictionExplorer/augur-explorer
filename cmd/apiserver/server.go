@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	. "github.com/PredictionExplorer/augur-explorer/internal/primitives"
@@ -16,7 +17,6 @@ const (
 
 type RWCGServer struct {
 	store *store.Store
-	db    *store.SQLStorage
 }
 
 func create_rwcg_server() *RWCGServer {
@@ -41,18 +41,22 @@ func create_rwcg_server() *RWCGServer {
 	}
 	Error = log.New(logfile, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	// Database log output (failed and slow queries) goes through the pgx
+	// slog tracer into the file the legacy Init_log wrote to.
+	dbLogHandle, err := os.OpenFile(web_db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666) // #nosec G302 -- operational log, world-readable by design
+	if err != nil {
+		fmt.Printf("Can't start: %v\n", err)
+		os.Exit(1)
+	}
+	cfg := store.ConfigFromEnv()
+	cfg.Logger = slog.New(slog.NewTextHandler(dbLogHandle, nil))
+	st, err := store.New(context.Background(), cfg)
 	if err != nil {
 		fmt.Printf("Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
 		os.Exit(1)
 	}
 	srv := new(RWCGServer)
 	srv.store = st
-	srv.db = store.NewSQLStorageFromDB(st.DB(), Info)
-	if err := srv.db.Init_log(web_db_log_file); err != nil {
-		fmt.Printf("Can't start: %v\n", err)
-		os.Exit(1)
-	}
 
 	return srv
 }

@@ -48,17 +48,21 @@ func init() { assetsCmd.AddCommand(newAssetsVerifyTokenImagesCmd()) }
 func runVerifyTokenImages() error {
 	info := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+	ctx := context.Background()
+	st, err := store.New(ctx, store.ConfigFromEnv())
 	if err != nil {
 		return fmt.Errorf("failed to connect to storage: %w", err)
 	}
 	defer st.Close()
-	storagew := &rwstore.SQLStorageWrapper{S: store.NewSQLStorageFromDB(st.DB(), info)}
-	rwalkAid, err := storagew.S.Lookup_address_id(rwalkNFTAddr)
+	repo := rwstore.NewRepo(st)
+	rwalkAid, err := st.LookupAddressID(ctx, rwalkNFTAddr)
 	if err != nil {
 		return fmt.Errorf("can't resolve RandomWalk contract address id: %w", err)
 	}
-	rwStats := storagew.Get_random_walk_stats(rwalkAid)
+	rwStats, err := repo.RandomWalkStats(ctx, rwalkAid)
+	if err != nil {
+		return fmt.Errorf("can't read RandomWalk stats: %w", err)
+	}
 	numTokens := rwStats.TokensMinted
 	info.Printf("num_tokens = %v\n", numTokens)
 
