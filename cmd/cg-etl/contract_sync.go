@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/big"
 	"time"
 
@@ -164,7 +164,7 @@ func (s *paramSyncer) syncCstReward(wantValue string) (bool, error) {
 
 // syncContractParamsFromChain reads live monetary/timed settings from RPC and inserts SQL
 // correction rows when the latest admin/history value differs from chain.
-func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store.Store, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
+func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store.Store, client *ethclient.Client, gameAddr, prizesWalletAddr string, logger *slog.Logger) error {
 	if client == nil {
 		return fmt.Errorf("eth client is nil")
 	}
@@ -188,7 +188,7 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 	for _, p := range buildContractParamSyncList(mechanics) {
 		chainValue, err := p.read(v1, v2, &copts)
 		if err != nil {
-			errLog.Printf("chain sync: skip %s: %v", p.name, err)
+			logger.Warn("chain sync: parameter skipped", "param", p.name, "err", err)
 			continue
 		}
 		var changed bool
@@ -202,7 +202,7 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 		}
 		if changed {
 			updated++
-			info.Printf("chain sync: updated %s => %s", p.name, chainValue)
+			logger.Info("chain sync: parameter corrected", "param", p.name, "value", chainValue)
 		}
 	}
 
@@ -213,18 +213,18 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 		}
 		if changed {
 			updated++
-			info.Printf("chain sync: updated delay_before_round_activation => %d", delay)
+			logger.Info("chain sync: parameter corrected", "param", "delay_before_round_activation", "value", delay)
 		}
 	} else {
-		errLog.Printf("chain sync: skip delay_before_round_activation: %v", err)
+		logger.Warn("chain sync: parameter skipped", "param", "delay_before_round_activation", "err", err)
 	}
 
 	if prizesWalletAddr != "" {
 		pw, err := cosmicgame.NewPrizesWallet(ethcommon.HexToAddress(prizesWalletAddr), client)
 		if err != nil {
-			errLog.Printf("chain sync: skip timeout_withdraw_prizes: bind PrizesWallet: %v", err)
+			logger.Warn("chain sync: parameter skipped", "param", "timeout_withdraw_prizes", "err", fmt.Errorf("bind PrizesWallet: %w", err))
 		} else if val, err := pw.TimeoutDurationToWithdrawPrizes(&copts); err != nil {
-			errLog.Printf("chain sync: skip timeout_withdraw_prizes: %v", err)
+			logger.Warn("chain sync: parameter skipped", "param", "timeout_withdraw_prizes", "err", err)
 		} else {
 			changed, err := syncer.syncInt64(
 				"timeout_withdraw_prizes", "cg_adm_timeout_withdraw", "new_timeout",
@@ -235,7 +235,7 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 			}
 			if changed {
 				updated++
-				info.Printf("chain sync: updated timeout_withdraw_prizes => %s", val.String())
+				logger.Info("chain sync: parameter corrected", "param", "timeout_withdraw_prizes", "value", val.String())
 			}
 		}
 	}
@@ -248,11 +248,11 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 		}
 		if changed {
 			updated++
-			info.Printf("chain sync: updated cst_dutch_auction_duration_change_divisor => %s", valStr)
+			logger.Info("chain sync: parameter corrected", "param", "cst_dutch_auction_duration_change_divisor", "value", valStr)
 		}
 	}
 
-	info.Printf("chain sync complete: %d parameter(s) corrected from live RPC (mechanics v%d)", updated, mechanics)
+	logger.Info("chain sync complete", "corrected", updated, "mechanics", mechanics)
 	return nil
 }
 
