@@ -250,6 +250,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"RoundStartCSTAuctionLength" : roundstart_auclen,
 		"CstDutchAuctionDurationChangeDivisor" : cst_dutch_auction_duration_change_divisor,
 		"ContractMechanicsVersion" : getContractMechanicsVersion(),
+		"V3Config" : v3_config,
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
@@ -400,8 +401,10 @@ type bidWithMessageJSON struct {
 	TimeStamp                  int64            `json:"timeStamp"`
 	DateTime                   string           `json:"dateTime"`
 	Message                    string           `json:"message"`
-	BidCstRewardAmount         string           `json:"BidCstRewardAmount"`
-	BidCstRewardAmountEth      float64          `json:"BidCstRewardAmountEth"`
+	PreviousBidderCstRewardAmount string        `json:"PreviousBidderCstRewardAmount"`
+	PreviousCstRewardAmountEth float64          `json:"PreviousCstRewardAmountEth"`
+	ThisBidderCstRewardAmount  string           `json:"ThisBidderCstRewardAmount"`
+	ThisCstRewardAmountEth     float64          `json:"ThisCstRewardAmountEth"`
 	CstDutchAuctionDuration    string           `json:"CstDutchAuctionDuration"`
 	CstDutchAuctionDurationInt int64            `json:"CstDutchAuctionDurationInt"`
 	Tx                         bidMessageTxJSON `json:"tx"`
@@ -416,8 +419,10 @@ func bidRecToWithMessageJSON(rec p.CGBidRec) bidWithMessageJSON {
 		TimeStamp:                  rec.Tx.TimeStamp,
 		DateTime:                   rec.Tx.DateTime,
 		Message:                    rec.Message,
-		BidCstRewardAmount:         rec.BidCstRewardAmount,
-		BidCstRewardAmountEth:      rec.BidCstRewardAmountEth,
+		PreviousBidderCstRewardAmount: rec.PreviousBidderCstRewardAmount,
+		PreviousCstRewardAmountEth: rec.PreviousCstRewardAmountEth,
+		ThisBidderCstRewardAmount:  rec.ThisBidderCstRewardAmount,
+		ThisCstRewardAmountEth:     rec.ThisCstRewardAmountEth,
 		CstDutchAuctionDuration:    rec.CstDutchAuctionDuration,
 		CstDutchAuctionDurationInt: rec.CstDutchAuctionDurationInt,
 		Tx: bidMessageTxJSON{

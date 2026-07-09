@@ -780,6 +780,91 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"FROM "+sw.S.SchemaName()+".cg_adm_cst_auclen_chg_div r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"40 AS record_type,"+			// RoundLateBidDurationDivisorChanged (V3)
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_value AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_late_bid_dur_divisor r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"41 AS record_type,"+			// RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_value AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_late_bid_premium_base_mul r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"42 AS record_type,"+			// RoundLateBidPricePremiumAmountExponentChanged (V3)
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_value AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_late_bid_premium_exponent r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"43 AS record_type,"+			// BidCstRewardAmountPerMinuteChanged (V3)
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"0 AS int_value, "+
+						"r.new_value/1e18 AS float_value, "+
+						"r.new_value::TEXT AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_bid_cst_reward_per_min r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"44 AS record_type,"+			// MainPrizeNumCosmicSignatureNftsChanged (V3)
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_value AS int_value, "+
+						"0 AS float_value, "+
+						"'' AS string_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_main_prize_num_nfts r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				")" +
 			") everything "+
 			"ORDER BY evtlog_id "

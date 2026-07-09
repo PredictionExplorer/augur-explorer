@@ -8,8 +8,10 @@ import (
 
 func TestCGBidRecJSONIncludesV2BidPlacedFields(t *testing.T) {
 	rec := CGBidRec{
-		BidCstRewardAmount:         "18757985052718138840",
-		BidCstRewardAmountEth:      18.757985052718137,
+		PreviousBidderCstRewardAmount: "16882186547446325056",
+		PreviousCstRewardAmountEth:    16.882186547446324,
+		ThisBidderCstRewardAmount:     "1875798505271813784",
+		ThisCstRewardAmountEth:        1.8757985052718137,
 		CstDutchAuctionDuration:      "1750",
 		CstDutchAuctionDurationInt: 1750,
 	}
@@ -19,8 +21,10 @@ func TestCGBidRecJSONIncludesV2BidPlacedFields(t *testing.T) {
 	}
 	body := string(raw)
 	for _, key := range []string{
-		"BidCstRewardAmount",
-		"BidCstRewardAmountEth",
+		"PreviousBidderCstRewardAmount",
+		"PreviousCstRewardAmountEth",
+		"ThisBidderCstRewardAmount",
+		"ThisCstRewardAmountEth",
 		"CstDutchAuctionDuration",
 		"CstDutchAuctionDurationInt",
 	} {

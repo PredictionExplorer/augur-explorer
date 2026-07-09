@@ -11,10 +11,12 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 	var query string
+	num_cs_nfts := evt.NumCSNfts
+	if num_cs_nfts <= 0 { num_cs_nfts = 1 } // defensive: V2 events (and any unset) award exactly one NFT
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_prize_claim("+
 				"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-				"round_num,token_id,winner_aid,timeout,amount,cst_amount"+
-				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
+				"round_num,token_id,num_cs_nfts,winner_aid,timeout,amount,cst_amount"+
+				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -23,6 +25,7 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.CGPrizeClaimEvent) 
 		contract_aid,
 		evt.RoundNum,
 		evt.TokenId,
+		num_cs_nfts,
 		winner_aid,
 		evt.Timeout,
 		evt.Amount,
@@ -71,8 +74,9 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_bid("+
 			"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 			"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,bid_cst_reward_amount,cst_dutch_auction_duration,prize_time,msg,round_num,bid_type,bid_position"+
-			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17)"
-	_,err = sw.S.Db().Exec(query,
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17) RETURNING id"
+	var bid_id int64
+	err = sw.S.Db().QueryRow(query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -90,10 +94,37 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		evt.RoundNum,
 		evt.BidType,
 		bid_position,
-	)
+	).Scan(&bid_id)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_bid table: %v\n",err))
 		os.Exit(1)
+	}
+	sw.insert_bid_reward_rows(evt, bid_id, bidder_aid)
+}
+// insert_bid_reward_rows records the V3 bid CST reward 90/10 split (Comment-202607161) as two rows in
+// cg_bid_reward: reward_type 0 for the bidder placing the bid (~10% in V3, the whole reward in V2/V1) and
+// reward_type 1 for the outbid (previous last) bidder (90% in V3, absent otherwise). The split is derived
+// by the ETL from the CST mint Transfer events, so it is correct for both eras without an upgrade-block flag.
+func (sw *SQLStorageWrapper) insert_bid_reward_rows(evt *p.CGBidEvent, bid_id, bidder_aid int64) {
+	this_reward := evt.ThisBidderReward
+	if this_reward == "" || this_reward == "-1" {
+		// Legacy v1 bids do not carry a split; fall back to the whole cst_reward as the bidder's share.
+		this_reward = "0"
+	}
+	query := "INSERT INTO "+sw.S.SchemaName()+".cg_bid_reward(evtlog_id,bid_id,round_num,recipient_aid,reward_type,amount) "+
+		"VALUES($1,$2,$3,$4,0,$5)"
+	if _,err := sw.S.Db().Exec(query,evt.EvtId,bid_id,evt.RoundNum,bidder_aid,this_reward); err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert this-bidder row into cg_bid_reward: %v\n",err))
+		os.Exit(1)
+	}
+	if evt.PrevBidderAddr != "" && evt.PrevBidderReward != "" && evt.PrevBidderReward != "0" {
+		prev_aid := sw.S.Lookup_or_create_address(evt.PrevBidderAddr,0,0)
+		query = "INSERT INTO "+sw.S.SchemaName()+".cg_bid_reward(evtlog_id,bid_id,round_num,recipient_aid,reward_type,amount) "+
+			"VALUES($1,$2,$3,$4,1,$5)"
+		if _,err := sw.S.Db().Exec(query,evt.EvtId,bid_id,evt.RoundNum,prev_aid,evt.PrevBidderReward); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: can't insert prev-bidder row into cg_bid_reward: %v\n",err))
+			os.Exit(1)
+		}
 	}
 }
 func (sw *SQLStorageWrapper) Insert_donation_event(evt *p.CGDonationEvent ) {
@@ -1852,4 +1883,31 @@ func (sw *SQLStorageWrapper) Insert_round_started_event(evt *p.CGRoundStarted) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_first_bid table: %v\n",err))
 		os.Exit(1)
 	}
+}
+// insert_v3_config_changed inserts a single-uint256 V3 ISystemEventsV3 config-changed event into `table`.
+func (sw *SQLStorageWrapper) insert_v3_config_changed(table string, evtId, blockNum, txId, timeStamp int64, contract, newValue string) {
+	contract_aid := sw.S.Lookup_or_create_address(contract, blockNum, txId)
+	query := "INSERT INTO "+sw.S.SchemaName()+"."+table+"("+
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid,new_value"+
+			") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
+	_,err := sw.S.Db().Exec(query, evtId, blockNum, txId, timeStamp, contract_aid, newValue)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into %v table: %v\n",table,err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_round_late_bid_duration_divisor_changed_event(evt *p.CGRoundLateBidDurationDivisorChanged) {
+	sw.insert_v3_config_changed("cg_adm_late_bid_dur_divisor",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
+}
+func (sw *SQLStorageWrapper) Insert_round_late_bid_premium_base_multiplier_changed_event(evt *p.CGRoundLateBidPricePremiumAmountBaseMultiplierChanged) {
+	sw.insert_v3_config_changed("cg_adm_late_bid_premium_base_mul",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
+}
+func (sw *SQLStorageWrapper) Insert_round_late_bid_premium_exponent_changed_event(evt *p.CGRoundLateBidPricePremiumAmountExponentChanged) {
+	sw.insert_v3_config_changed("cg_adm_late_bid_premium_exponent",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
+}
+func (sw *SQLStorageWrapper) Insert_bid_cst_reward_amount_per_minute_changed_event(evt *p.CGBidCstRewardAmountPerMinuteChanged) {
+	sw.insert_v3_config_changed("cg_adm_bid_cst_reward_per_min",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
+}
+func (sw *SQLStorageWrapper) Insert_main_prize_num_cs_nfts_changed_event(evt *p.CGMainPrizeNumCosmicSignatureNftsChanged) {
+	sw.insert_v3_config_changed("cg_adm_main_prize_num_nfts",evt.EvtId,evt.BlockNum,evt.TxId,evt.TimeStamp,evt.Contract,evt.NewValue)
 }

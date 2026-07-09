@@ -63,11 +63,14 @@
 					<div class="stat-sublabel">CST</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-label">NFT Token ID</div>
-					<div class="stat-value">{{.RoundInfo.MainPrize.NftTokenId}}</div>
+					<div class="stat-label">CS NFTs Awarded</div>
+					<div class="stat-value">{{.RoundInfo.MainPrize.NumCSNfts}}</div>
+					<div class="stat-sublabel">Token IDs:
+						{{- range $i, $tid := .RoundInfo.MainPrize.NftTokenIds}}{{if $i}}, {{end}}{{$tid}}{{end}}
+					</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-label">Seed</div>
+					<div class="stat-label">Seed (first NFT)</div>
 					<div class="stat-value" style="font-size: 1.2em;">{{.RoundInfo.MainPrize.Seed}}</div>
 				</div>
 			</div>

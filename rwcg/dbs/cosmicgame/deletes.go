@@ -22,6 +22,12 @@ func (sw *SQLStorageWrapper) Delete_prize_claim_event(evtlog_id int64) {
 func (sw *SQLStorageWrapper) Delete_bid(evtlog_id int64) {
 
 	var query string
+	// Remove the split bid CST reward rows first (keyed by the bid's evtlog_id).
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_bid_reward WHERE evtlog_id=$1"
+	if _,err := sw.S.Db().Exec(query,evtlog_id); err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_bid WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
@@ -728,4 +734,27 @@ func (sw *SQLStorageWrapper) Delete_round_started_event(evtlog_id int64) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
+}
+// delete_v3_config_changed removes a V3 config-changed event row from `table` by evtlog_id.
+func (sw *SQLStorageWrapper) delete_v3_config_changed(table string, evtlog_id int64) {
+	query := "DELETE FROM "+sw.S.SchemaName()+"."+table+" WHERE evtlog_id=$1"
+	if _,err := sw.S.Db().Exec(query,evtlog_id); err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_round_late_bid_duration_divisor_changed_event(evtlog_id int64) {
+	sw.delete_v3_config_changed("cg_adm_late_bid_dur_divisor",evtlog_id)
+}
+func (sw *SQLStorageWrapper) Delete_round_late_bid_premium_base_multiplier_changed_event(evtlog_id int64) {
+	sw.delete_v3_config_changed("cg_adm_late_bid_premium_base_mul",evtlog_id)
+}
+func (sw *SQLStorageWrapper) Delete_round_late_bid_premium_exponent_changed_event(evtlog_id int64) {
+	sw.delete_v3_config_changed("cg_adm_late_bid_premium_exponent",evtlog_id)
+}
+func (sw *SQLStorageWrapper) Delete_bid_cst_reward_amount_per_minute_changed_event(evtlog_id int64) {
+	sw.delete_v3_config_changed("cg_adm_bid_cst_reward_per_min",evtlog_id)
+}
+func (sw *SQLStorageWrapper) Delete_main_prize_num_cs_nfts_changed_event(evtlog_id int64) {
+	sw.delete_v3_config_changed("cg_adm_main_prize_num_nfts",evtlog_id)
 }

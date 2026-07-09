@@ -238,8 +238,47 @@
 					<div class="info-label">Charity Address</div>
 					<div class="info-value monospace">{{.CharityAddr}}</div>
 				</div>
+				<div class="info-item">
+					<div class="info-label">Contract Mechanics Version</div>
+					<div class="info-value">
+						{{if eq .ContractMechanicsVersion 3}}V3{{else if eq .ContractMechanicsVersion 2}}V2{{else if eq .ContractMechanicsVersion 1}}V1{{else}}unknown{{end}}
+					</div>
+				</div>
 			</div>
 		</div>
+
+		{{if .V3Config.IsV3}}
+		<!-- V3 Configuration (ISystemEventsV3 params, read live from the contract) -->
+		<div class="section-card">
+			<div class="section-header">V3 Configuration</div>
+			<div class="info-grid">
+				<div class="info-item">
+					<div class="info-label">Main Prize CS NFTs</div>
+					<div class="info-value">{{.V3Config.MainPrizeNumCosmicSignatureNfts}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Bid CST Reward / Minute</div>
+					<div class="info-value" title="{{.V3Config.BidCstRewardAmountPerMinute}} wei">{{printf "%.4f" .V3Config.BidCstRewardAmountPerMinuteEth}} CST</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Late-Bid Window</div>
+					<div class="info-value">{{.V3Config.RoundLateBidDurationSeconds}} s</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Late-Bid Duration Divisor</div>
+					<div class="info-value">{{.V3Config.RoundLateBidDurationDivisor}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Late-Bid Premium Base Multiplier</div>
+					<div class="info-value">{{.V3Config.RoundLateBidPremiumBaseMultiplier}}</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Late-Bid Premium Exponent</div>
+					<div class="info-value">{{.V3Config.RoundLateBidPremiumExponent}}</div>
+				</div>
+			</div>
+		</div>
+		{{end}}
 
 		<!-- Navigation Links -->
 		<div class="section-card">

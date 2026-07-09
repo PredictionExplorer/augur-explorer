@@ -14,7 +14,7 @@ func enrichAdminEventsResolvedValues(events []p.CGAdminEvent) {
 	if EthClient == nil || len(events) == 0 {
 		return
 	}
-	v1, v2 := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
+	v1, v2, _ := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
 	if v1 == nil && v2 == nil {
 		return
 	}

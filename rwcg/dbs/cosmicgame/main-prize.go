@@ -26,6 +26,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 				"p.amount/1e18 amount_eth, " +
 				"p.round_num,"+
 				"p.token_id,"+
+				"p.num_cs_nfts,"+
 				"m.seed,"+
 				"s.total_bids, "+
 				"s.total_nft_donated, "+
@@ -114,6 +115,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 			&rec.MainPrize.EthAmountEth,
 			&rec.RoundNum,
 			&rec.MainPrize.NftTokenId,
+			&rec.MainPrize.NumCSNfts,
 			&null_seed,
 			&rec.RoundStats.TotalBids,
 			&rec.RoundStats.TotalDonatedNFTs,
@@ -194,9 +196,22 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGRoundRec {
 		if null_dep_deposit_num.Valid { rec.StakingDeposit.StakingDepositId = null_dep_deposit_num.Int64} else {rec.StakingDeposit.StakingDepositId = -1}
 		if null_num_staked_nfts.Valid { rec.StakingDeposit.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 
+		fillMainPrizeNftIds(&rec.MainPrize)
 		records = append(records,rec)
 	}
 	return records
+}
+// fillMainPrizeNftIds expands the main prize NFT award into the full list of sequential token IDs.
+// In V3 the winner receives NumCSNfts (default 3) NFTs starting at NftTokenId; in V1/V2 it is a single NFT.
+func fillMainPrizeNftIds(mp *p.CGMainPrizeInfo) {
+	n := mp.NumCSNfts
+	if n <= 0 {
+		n = 1
+	}
+	mp.NftTokenIds = make([]int64, 0, n)
+	for i := int64(0); i < n; i++ {
+		mp.NftTokenIds = append(mp.NftTokenIds, int64(mp.NftTokenId)+i)
+	}
 }
 func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec) {
 
@@ -218,6 +233,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 			"p.cst_amount/1e18 cst_amount_eth, " +
 			"p.round_num,"+
 			"p.token_id,"+
+			"p.num_cs_nfts,"+
 			"m.seed, "+
 			"s.total_bids,"+
 			"s.total_nft_donated, "+
@@ -315,6 +331,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 		&null_main_cst_amount_eth,
 		&rec.RoundNum,
 		&rec.MainPrize.NftTokenId,
+		&rec.MainPrize.NumCSNfts,
 		&null_seed,
 		&rec.RoundStats.TotalBids,
 		&rec.RoundStats.TotalDonatedNFTs,
@@ -400,6 +417,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(round_num int64) (bool,p.CGRoundRec)
 	if null_round_start_time.Valid { rec.RoundStats.RoundStartTime = null_round_start_time.String }
 	if null_round_end_time.Valid { rec.RoundStats.RoundEndTime = null_round_end_time.String }
 	if null_round_duration.Valid { rec.RoundStats.RoundDurationSeconds = null_round_duration.Int64 }
+
+	fillMainPrizeNftIds(&rec.MainPrize)
 
 	return true,rec
 }

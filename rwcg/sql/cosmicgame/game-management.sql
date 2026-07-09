@@ -395,6 +395,57 @@ CREATE TABLE cg_adm_initialized( -- Initialized event (OpenZeppelin)
 	version			BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+-- V3 configuration-changed events (ISystemEventsV3). Each carries a single uint256 newValue.
+CREATE TABLE cg_adm_late_bid_dur_divisor( -- ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_value		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_late_bid_premium_base_mul( -- ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_value		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_late_bid_premium_exponent( -- ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_value		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_bid_cst_reward_per_min( -- ISystemEventsV3.sol:BidCstRewardAmountPerMinuteChanged
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_value		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_main_prize_num_nfts( -- ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_value		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 
 -- Banned bids (admin/manual bans; API: get_banned_bids, ban_bid, unban_bid)
 CREATE TABLE cg_banned_bids (

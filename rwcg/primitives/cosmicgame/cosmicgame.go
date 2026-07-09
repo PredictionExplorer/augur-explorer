@@ -30,7 +30,8 @@ type CGPrizeClaimEvent struct {
 	TxId				int64
 	ContractAddr		string
 	RoundNum			int64
-	TokenId				int64
+	TokenId				int64	// V2: prizeCosmicSignatureNftId; V3: prizeFirstCosmicSignatureNftId (first of NumCSNfts sequential IDs)
+	NumCSNfts			int64	// number of Cosmic Signature NFTs awarded to the main prize winner (V2 always 1, V3 default 3)
 	WinnerAddr			string
 	Timeout				int64
 	Amount				string
@@ -53,6 +54,11 @@ type CGBidEvent struct {
 	Message				string
 	BidCstRewardAmount		string	// IBiddingV2 BidPlaced; "-1" if V1 event
 	CstDutchAuctionDuration	string	// IBiddingV2 BidPlaced; "-1" if V1 event
+	// V3 bid CST reward 90/10 split (Comment-202607161). For V2/V1 bids the whole reward goes to
+	// the bidder placing the bid (ThisBidderReward = full, PrevBidderReward = "0", PrevBidderAddr = "").
+	ThisBidderReward		string	// CST minted to the bidder placing the bid (~10% in V3, full amount in V2)
+	PrevBidderReward		string	// CST minted to the outbid (previous last) bidder (90% in V3, "0" otherwise)
+	PrevBidderAddr			string	// address of the outbid bidder that received PrevBidderReward ("" if none)
 }
 type CGDonationEvent struct {
 	EvtId				int64
@@ -544,6 +550,47 @@ type CGMainPrizeMicroSecondsIncreaseChanged struct {
 	TimeStamp               int64
 	Contract                string
 	NewMicroseconds			string
+}
+// V3 configuration-changed events (ISystemEventsV3). Each carries a single uint256 newValue.
+type CGRoundLateBidDurationDivisorChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
+type CGRoundLateBidPricePremiumAmountBaseMultiplierChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
+type CGRoundLateBidPricePremiumAmountExponentChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
+type CGBidCstRewardAmountPerMinuteChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
+}
+type CGMainPrizeNumCosmicSignatureNftsChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewValue				string
 }
 type CGInitialSecondsUntilPrizeChanged struct {
 	EvtId                   int64

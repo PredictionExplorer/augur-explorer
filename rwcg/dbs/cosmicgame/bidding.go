@@ -17,7 +17,9 @@ func (sw *SQLStorageWrapper) buildBidSelectQuery(whereClause, orderBy, limitOffs
 		"b.cst_price, b.cst_price/1e18 AS cst_price_eth, b.rwalk_nft_id," +
 		"d.token_id,d.tok_addr, d.token_uri, b.msg, b.round_num, " +
 		"b.cst_reward, b.cst_reward/1e18, " +
-		"b.bid_cst_reward_amount, (CASE WHEN b.bid_cst_reward_amount >= 0 THEN b.bid_cst_reward_amount/1e18 ELSE -1 END), " +
+		// V3 bid CST reward 90/10 split (Comment-202607161): previous (outbid) bidder share then this bidder share.
+		"COALESCE(br.prev_reward,0)::text, COALESCE(br.prev_reward,0)/1e18, " +
+		"COALESCE(br.this_reward,0)::text, COALESCE(br.this_reward,0)/1e18, " +
 		"b.cst_dutch_auction_duration, (CASE WHEN b.cst_dutch_auction_duration >= 0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END), " +
 		"b.bid_type, " +
 		"EXTRACT(EPOCH FROM b.prize_time)::BIGINT AS prize_time_ts, b.prize_time, " +
@@ -26,6 +28,10 @@ func (sw *SQLStorageWrapper) buildBidSelectQuery(whereClause, orderBy, limitOffs
 		"FROM " + sw.S.SchemaName() + ".cg_bid b " +
 		"LEFT JOIN " + sw.S.SchemaName() + ".transaction t ON t.id=tx_id " +
 		"LEFT JOIN " + sw.S.SchemaName() + ".address ba ON b.bidder_aid=ba.address_id " +
+		"LEFT JOIN LATERAL (SELECT " +
+			"COALESCE(MAX(CASE WHEN reward_type=1 THEN amount END),0) AS prev_reward, " +
+			"COALESCE(MAX(CASE WHEN reward_type=0 THEN amount END),0) AS this_reward " +
+			"FROM " + sw.S.SchemaName() + ".cg_bid_reward WHERE bid_id=b.id) br ON true " +
 		"LEFT JOIN LATERAL (SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.token_uri " +
 		"FROM " + sw.S.SchemaName() + ".cg_nft_donation d " +
 		"JOIN " + sw.S.SchemaName() + ".address ta ON d.token_aid=ta.address_id) d ON b.id=d.bid_id " +
@@ -75,8 +81,10 @@ func scanBidRecord(rows *sql.Rows) (p.CGBidRec, error) {
 		&rec.RoundNum,
 		&rec.CSTReward,
 		&rec.CSTRewardEth,
-		&rec.BidCstRewardAmount,
-		&rec.BidCstRewardAmountEth,
+		&rec.PreviousBidderCstRewardAmount,
+		&rec.PreviousCstRewardAmountEth,
+		&rec.ThisBidderCstRewardAmount,
+		&rec.ThisCstRewardAmountEth,
 		&rec.CstDutchAuctionDuration,
 		&rec.CstDutchAuctionDurationInt,
 		&rec.BidType,

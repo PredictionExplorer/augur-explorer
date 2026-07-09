@@ -27,7 +27,8 @@ const (
 	DEFAULT_DB_LOG			= "db.log"
 	IMGGEN_PATH				= "v2/etl/cmd/cosmicgame/imggen_monitor/imggen_exec" // relative to $HOME
 
-	PRIZE_CLAIM_EVENT		= "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591" // ICosmicSignatureGame.sol:MainPrizeClaimed
+	PRIZE_CLAIM_EVENT		= "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591" // ICosmicSignatureGame.sol:MainPrizeClaimed (V1/V2)
+	PRIZE_CLAIM_EVENT_V3	= "9314e78538382a9fc6cd54cee107c8a7721d172c43b2e48c2e7a51f200fc3788" // IMainPrize2V3.sol:MainPrizeClaimed (adds prizeNumCosmicSignatureNfts); both topics handled in parallel
 	BID_EVENT				= "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549" // IBidding.sol:BidPlaced (legacy)
 	BID_EVENT_V2			= "1d1f406c89e99504a7222aaba50bf96b9f91f522ebc6ea825255145919e102ec" // IBiddingV2.sol:BidPlaced; both topics handled in parallel
 	ETH_DONATED_EVENT		= "e32cacf203d00685e2b4d8b0a90e7cd8f3f8a208fdf116f4bb36abe08b7d548e" // IEthDonations.sol:EthDonated
@@ -99,6 +100,11 @@ const (
 	BID_CST_REWARD_AMOUNT_MULTIPLIER_CHANGED = "40b9c59af8c486ccf8c7cc73df5a51e7cc29747ea7d39f99632ecaf9caa2ed1f" // ISystemEventsV2.sol:BidCstRewardAmountMultiplierChanged
 	CST_DUTCH_AUCTION_DURATION_CHANGED = "4abea08c196329c357e3175d011af39a8625be99ef0ba5a0f3547a95534fedb7" // ISystemEventsV2.sol:CstDutchAuctionDurationChanged
 	CST_DUTCH_AUCTION_DURATION_CHANGE_DIVISOR_CHANGED = "acbc6b6929088e4b2d043625fa7248e00fb6658a425eb9d9dc8c37b18c7f3e6f" // ISystemEventsV2.sol:CstDutchAuctionDurationChangeDivisorChanged
+	ROUND_LATE_BID_DURATION_DIVISOR_CHANGED = "7acba37d1b2d934e554139ff1d470d2cce50a7b6e56870577249b87564a95a69" // ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
+	ROUND_LATE_BID_PREMIUM_BASE_MULTIPLIER_CHANGED = "169f25ec19cc5b518dc57adf05bb2d85155b1d6c60767e9f0e3ced18eac0ab77" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
+	ROUND_LATE_BID_PREMIUM_EXPONENT_CHANGED = "cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
+	BID_CST_REWARD_AMOUNT_PER_MINUTE_CHANGED = "961b02838cd95976d0cac2e65ed131f45e19a84369d91d59d613dec94a0638c6" // ISystemEventsV3.sol:BidCstRewardAmountPerMinuteChanged
+	MAIN_PRIZE_NUM_CS_NFTS_CHANGED = "616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564" // ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
 	STATIC_CST_REWARD		= "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
 	MAX_MESSAGE_LENGTH		= "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged
 	TOKEN_SCRIPT_URL		= "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c" // ICosmicSignatureNft.sol:NftGenerationScriptUrlChanged
@@ -115,6 +121,7 @@ var (
 
 	// CosmicGame events:
 	evt_prize_claim_event,_ = hex.DecodeString(PRIZE_CLAIM_EVENT)
+	evt_prize_claim_event_v3,_ = hex.DecodeString(PRIZE_CLAIM_EVENT_V3)
 	evt_bid_event,_			= hex.DecodeString(BID_EVENT)
 	evt_bid_event_v2,_		= hex.DecodeString(BID_EVENT_V2)
 	evt_eth_donated_event,_	= hex.DecodeString(ETH_DONATED_EVENT)
@@ -161,6 +168,11 @@ var (
 	evt_bid_cst_reward_amount_multiplier_changed,_ = hex.DecodeString(BID_CST_REWARD_AMOUNT_MULTIPLIER_CHANGED)
 	evt_cst_dutch_auction_duration_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_CHANGED)
 	evt_cst_dutch_auction_duration_change_divisor_changed,_ = hex.DecodeString(CST_DUTCH_AUCTION_DURATION_CHANGE_DIVISOR_CHANGED)
+	evt_round_late_bid_duration_divisor_changed,_ = hex.DecodeString(ROUND_LATE_BID_DURATION_DIVISOR_CHANGED)
+	evt_round_late_bid_premium_base_multiplier_changed,_ = hex.DecodeString(ROUND_LATE_BID_PREMIUM_BASE_MULTIPLIER_CHANGED)
+	evt_round_late_bid_premium_exponent_changed,_ = hex.DecodeString(ROUND_LATE_BID_PREMIUM_EXPONENT_CHANGED)
+	evt_bid_cst_reward_amount_per_minute_changed,_ = hex.DecodeString(BID_CST_REWARD_AMOUNT_PER_MINUTE_CHANGED)
+	evt_main_prize_num_cs_nfts_changed,_ = hex.DecodeString(MAIN_PRIZE_NUM_CS_NFTS_CHANGED)
 	evt_max_msg_length_changed,_	= hex.DecodeString(MAX_MESSAGE_LENGTH)
 	evt_token_script_url,_			= hex.DecodeString(TOKEN_SCRIPT_URL)
 	evt_base_uri,_					= hex.DecodeString(BASE_URI)
@@ -206,6 +218,7 @@ var (
 
 	cosmic_game_abi			*abi.ABI
 	cosmic_game_v2_abi		*abi.ABI
+	cosmic_game_v3_abi		*abi.ABI
 	cosmic_signature_abi	*abi.ABI
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI
@@ -441,6 +454,7 @@ func main() {
 
 	cosmic_game_abi = get_abi(CosmicSignatureGameABI)
 	cosmic_game_v2_abi = get_abi(CosmicSignatureGameV2ABI)
+	cosmic_game_v3_abi = get_abi(CosmicSignatureGameV3ABI)
 	cosmic_signature_abi = get_abi(CosmicSignatureNftABI)
 	cosmic_token_abi = get_abi(CosmicSignatureTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);

@@ -362,7 +362,8 @@
 					<th>Date & Time</th>
 					<th class="right">Bid Amount (ETH)</th>
 					<th class="right">CST Reward</th>
-					<th class="right">Bid CST Reward (v2)</th>
+					<th class="right">CST Reward: Prev Bidder (90%)</th>
+					<th class="right">CST Reward: This Bidder (10%)</th>
 					<th class="right">CST Auction Duration (v2)</th>
 					<th class="center">RWalk NFT ID</th>
 				</tr>
@@ -374,7 +375,8 @@
 						<td>{{.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
 						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
-						<td class="right">{{ if ge .BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidCstRewardAmountEth}}{{else}}—{{end}}</td>
+						<td class="right">{{ if gt .PreviousCstRewardAmountEth 0.0 }}{{printf "%.4f" .PreviousCstRewardAmountEth}}{{else}}—{{end}}</td>
+						<td class="right">{{ if gt .ThisCstRewardAmountEth 0.0 }}{{printf "%.4f" .ThisCstRewardAmountEth}}{{else}}—{{end}}</td>
 						<td class="right">{{ if ge .CstDutchAuctionDurationInt 0 }}{{.CstDutchAuctionDurationInt}}{{else}}—{{end}}</td>
 						<td class="center">{{ .RWalkNFTId }}</td>
 					</tr>

@@ -11,9 +11,11 @@ func TestBuildBidSelectQueryIncludesV2Columns(t *testing.T) {
 	sw := &SQLStorageWrapper{S: &SQLStorage{}}
 	query := sw.buildBidSelectQuery("", "b.id DESC", "LIMIT 1")
 	for _, col := range []string{
-		"bid_cst_reward_amount",
+		// V3 bid CST reward 90/10 split (sourced from cg_bid_reward via a LATERAL join).
+		"cg_bid_reward",
+		"prev_reward",
+		"this_reward",
 		"cst_dutch_auction_duration",
-		"bid_cst_reward_amount >= 0",
 		"cst_dutch_auction_duration >= 0",
 	} {
 		if !strings.Contains(query, col) {

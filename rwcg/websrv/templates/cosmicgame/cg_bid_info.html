@@ -80,11 +80,15 @@
 					<div class="detail-label">CST Tokens (Bid Price)</div>
 					<div class="detail-value">{{printf "%.4f" .BidInfo.CstPriceEth}} CST</div>
 				</div>
-				{{ if ge .BidInfo.BidCstRewardAmountEth 0.0 }}
 				<div class="detail-row">
-					<div class="detail-label">Bid CST Reward (bid v2)</div>
-					<div class="detail-value">{{printf "%.4f" .BidInfo.BidCstRewardAmountEth}} CST</div>
+					<div class="detail-label">Bid CST Reward — Previous Bidder (90%)</div>
+					<div class="detail-value">{{ if gt .BidInfo.PreviousCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.PreviousCstRewardAmountEth}} CST{{else}}—{{end}}</div>
 				</div>
+				<div class="detail-row">
+					<div class="detail-label">Bid CST Reward — This Bidder (10%)</div>
+					<div class="detail-value">{{ if gt .BidInfo.ThisCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.ThisCstRewardAmountEth}} CST{{else}}—{{end}}</div>
+				</div>
+				{{ if ge .BidInfo.CstDutchAuctionDurationInt 0 }}
 				<div class="detail-row">
 					<div class="detail-label">CST Dutch Auction Duration (bid v2)</div>
 					<div class="detail-value">{{.BidInfo.CstDutchAuctionDurationInt}}</div>

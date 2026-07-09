@@ -156,10 +156,11 @@ BEGIN
 	END IF;
 	
 	-- Update round stats (create round record if it doesn't exist)
-	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount), total_nfts_minted = (total_nfts_minted + 1) WHERE round_num = NEW.round_num;
+	-- In V3 the main prize winner receives NEW.num_cs_nfts Cosmic Signature NFTs (default 3), not 1.
+	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes + NEW.cst_amount), total_nfts_minted = (total_nfts_minted + NEW.num_cs_nfts) WHERE round_num = NEW.round_num;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO cg_round_stats(round_num, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.cst_amount, 1);
+		INSERT INTO cg_round_stats(round_num, total_cst_paid_in_prizes, total_nfts_minted) VALUES (NEW.round_num, NEW.cst_amount, NEW.num_cs_nfts);
 		RAISE NOTICE 'on_prize_claim_insert() created new round_stats record for round_num=%', NEW.round_num;
 	END IF;
 	
@@ -219,7 +220,7 @@ BEGIN
 	
 	-- Update round stats
 	UPDATE cg_round_stats SET total_cst_paid_in_prizes = (total_cst_paid_in_prizes - OLD.cst_amount) WHERE round_num = OLD.round_num;
-	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - 1) WHERE round_num = OLD.round_num;
+	UPDATE cg_round_stats SET total_nfts_minted = (total_nfts_minted - OLD.num_cs_nfts) WHERE round_num = OLD.round_num;
 	
 	-- Remove THREE corresponding records from cg_prize table
 	-- 1) Main Prize ETH (ptype=0)

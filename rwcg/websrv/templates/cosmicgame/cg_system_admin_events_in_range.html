@@ -73,6 +73,11 @@
 							{{ if eq 37 .RecordType}}EthDutchAuctionEndingBidPriceDivisorChanged{{end}}
 							{{ if eq 38 .RecordType}}ChronoWarriorEthPrizeAmount%Changed{{end}}
 							{{ if eq 39 .RecordType}}CstDutchAuctionDurationChangeDivisorChanged{{end}}
+						{{ if eq 40 .RecordType}}RoundLateBidDurationDivisorChanged{{end}}
+						{{ if eq 41 .RecordType}}RoundLateBidPricePremiumAmountBaseMultiplierChanged{{end}}
+						{{ if eq 42 .RecordType}}RoundLateBidPricePremiumAmountExponentChanged{{end}}
+						{{ if eq 43 .RecordType}}BidCstRewardAmountPerMinuteChanged{{end}}
+						{{ if eq 44 .RecordType}}MainPrizeNumCosmicSignatureNftsChanged{{end}}
 						</td>
 						<td class="center">{{.BlockNum}}</td>
 						<td>{{.DateTime}}</td>

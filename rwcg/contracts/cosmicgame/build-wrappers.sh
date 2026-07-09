@@ -23,6 +23,7 @@ readonly PRODUCTION_SYMLINK="${BASE_PATH}/production"
 readonly CONTRACTS=(
 	CosmicSignatureGame
 	CosmicSignatureGameV2
+	CosmicSignatureGameV3
 	CosmicSignatureNft
 	CosmicSignatureToken
 	CharityWallet
@@ -62,6 +63,13 @@ for contract in "${CONTRACTS[@]}"; do
 			entry="$v2_src"
 		fi
 	fi
+	if [[ ! -f "$entry" ]] && [[ "$contract" == "CosmicSignatureGameV3" ]]; then
+		# V3 sources live in the cg-v3 branch checkout; keep V1/V2 wrappers untouched (V2 sigs preserved).
+		v3_src="/home/niko/eth/dev/b/cg-v3/Cosmic-Signature/contracts/production/${entry}"
+		if [[ -f "$v3_src" ]]; then
+			entry="$v3_src"
+		fi
+	fi
 	if [[ ! -f "$entry" ]]; then
 		echo "  Warning: skip $contract ($entry not found)" >&2
 		continue
@@ -69,7 +77,7 @@ for contract in "${CONTRACTS[@]}"; do
 	comb_dir="$OUT_DIR/${contract}-combined"
 	mkdir -p "$comb_dir"
 
-	if [[ "$contract" == "CosmicSignatureGame" ]] || [[ "$contract" == "CosmicSignatureGameV2" ]]; then
+	if [[ "$contract" == "CosmicSignatureGame" ]] || [[ "$contract" == "CosmicSignatureGameV2" ]] || [[ "$contract" == "CosmicSignatureGameV3" ]]; then
 		remaps=(":@openzeppelin=$OPENZEPPELIN_5_1")
 	elif [[ "$contract" == "PrizesWallet" ]]; then
 		remaps=(":@openzeppelin=$OPENZEPPELIN_5_02")
@@ -82,6 +90,7 @@ for contract in "${CONTRACTS[@]}"; do
 	echo "  $contract"
 	solc_bin="$SOLC"
 	[[ "$contract" == "CosmicSignatureGameV2" ]] && solc_bin="$SOLC_V2"
+	[[ "$contract" == "CosmicSignatureGameV3" ]] && solc_bin="$SOLC_V2"
 	if ! "$solc_bin" --overwrite --via-ir --combined-json bin,abi,userdoc,devdoc,metadata "${remaps[@]}" "$entry" -o "$comb_dir" 2>"$OUT_DIR/solc-errors-$contract.txt"; then
 		echo "    Error: solc failed, see $OUT_DIR/solc-errors-$contract.txt" >&2
 		continue
@@ -114,6 +123,17 @@ print(",".join(f"*:{n}" for n in names if n != "CosmicSignatureGameV2"))
 PY
 )
 		abigen_args+=(--exc="$v2_exc")
+	fi
+	# V3 shares many mixin types already generated in CosmicSignatureGame.go / V2; keep only the main contract.
+	if [[ "$contract" == "CosmicSignatureGameV3" ]]; then
+		v3_exc=$(python3 - "$combined" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    names = sorted(set(k.split(":")[1] for k in json.load(f)["contracts"]))
+print(",".join(f"*:{n}" for n in names if n != "CosmicSignatureGameV3"))
+PY
+)
+		abigen_args+=(--exc="$v3_exc")
 	fi
 	if "$ABIGEN" "${abigen_args[@]}" 2>/dev/null; then
 		echo "  $contract -> $outfile"

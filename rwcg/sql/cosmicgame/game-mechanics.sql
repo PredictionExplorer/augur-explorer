@@ -7,7 +7,8 @@ CREATE TABLE cg_prize_claim ( -- ICosmicSignatureGame.sol:MainPrizeClaimed
 	contract_aid			BIGINT NOT NULL,
 	round_num				BIGINT NOT NULL,
 	winner_aid				BIGINT NOT NULL,
-	token_id				BIGINT NOT NULL,
+	token_id				BIGINT NOT NULL,	-- V2: prizeCosmicSignatureNftId; V3: prizeFirstCosmicSignatureNftId (first of num_cs_nfts sequential IDs)
+	num_cs_nfts				BIGINT NOT NULL DEFAULT 1,	-- number of Cosmic Signature NFTs awarded to the main winner (V2=1, V3 default 3)
 	timeout					BIGINT NOT NULL,	-- timeoutTimeToWithdrawSecondaryPrizes
 	amount					DECIMAL DEFAULT 0,	-- ethPrizeAmount
 	cst_amount				DECIMAL DEFAULT 0,	-- cstPrizeAmount
@@ -55,6 +56,16 @@ CREATE TABLE cg_bid ( -- ICosmicSignatureGame.sol:BidPlaced
 	cst_dutch_auction_duration DECIMAL DEFAULT -1,	-- per-bid auction duration from IBiddingV2 BidPlaced; -1 = legacy
 	msg				TEXT,
 	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_bid_reward ( -- V3 bid CST reward 90/10 split (Comment-202607161); two rows per bid
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,	-- the bid's BidPlaced event
+	bid_id			BIGINT NOT NULL,	-- cg_bid.id
+	round_num		BIGINT NOT NULL,
+	recipient_aid	BIGINT NOT NULL,	-- address that received the minted CST reward
+	reward_type		SMALLINT NOT NULL,	-- 0 = new (this) bidder (~10% in V3, full in V2); 1 = outbid (previous) bidder (90% in V3)
+	amount			DECIMAL NOT NULL DEFAULT 0,	-- CST wei minted to recipient
+	UNIQUE(bid_id,reward_type)
 );
 CREATE TABLE cg_eth_donated ( -- IEthDonations.sol:EthDonated
 	id				BIGSERIAL PRIMARY KEY,

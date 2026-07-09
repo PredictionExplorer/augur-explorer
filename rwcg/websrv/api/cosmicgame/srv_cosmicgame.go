@@ -47,6 +47,7 @@ var (
 	timeout_claim				int64
 	roundstart_auclen			int64
 	cst_dutch_auction_duration_change_divisor int64
+	v3_config					V3LiveConfig	// live V3-only config params (empty/IsV3=false until the contract is V3)
 	raffle_eth_winners_bidding	int64		// numRaffleETHWinnersBidding
 	raffle_nft_winners_bidding	int64		// numRaffleNFTWinnersBidding
 	raffle_nft_winners_staking_rwalk	int64	// numRaffleNFTWinnersStakingRWalk
@@ -397,13 +398,15 @@ func do_reload_contract_constants() {
 		Info.Printf(err_str)
 		fmt.Printf(err_str)
 	}
-	v1contract, v2contract := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
+	v1contract, v2contract, v3contract := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
 	if v1contract == nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract at %v . Contract constants won't be fetched\n", cosmic_game_addr)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
 		bwcontract := v1contract
+		// Detect V1/V2/V3 up front (re-probed each refresh so a live upgrade is detected without restart).
+		resolveMechanicsVersion(v1contract, v2contract, v3contract, &copts)
 		var err error
 		var tmp_val *big.Int
 		tmp_val,err = bwcontract.EthBidPriceIncreaseDivisor(&copts)
@@ -426,7 +429,7 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			charity_percentage = 0
 		} else { charity_percentage = tmp_val.Int64() }
-		rewardStr, err := readTokenReward(bwcontract, v2contract, &copts)
+		rewardStr, err := readTokenReward(bwcontract, v2contract, v3contract, &copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at TokenReward() call: %v\n", err)
 			Error.Printf(err_str)
@@ -491,18 +494,21 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			raffle_nft_winners_staking_rwalk = -1
 		} else { raffle_nft_winners_staking_rwalk = tmp_val.Int64() }
-		cst_dutch_auction_duration_change_divisor = readCSTAuctionDurationChangeDivisor(bwcontract, v2contract, &copts)
+		cst_dutch_auction_duration_change_divisor = readCSTAuctionDurationChangeDivisor(bwcontract, v2contract, v3contract, &copts)
+		v3_config = readV3Config(v3contract, &copts)
 	}
 }
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
-	v1contract, v2contract := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
+	v1contract, v2contract, v3contract := bindCosmicGameLiveReaders(cosmic_game_addr, EthClient)
 	if v1contract == nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract at %v . Contract constants won't be fetched\n", cosmic_game_addr)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
 		bwcontract := v1contract
+		// Detect V1/V2/V3 up front (re-probed each refresh so a live upgrade is detected without restart).
+		resolveMechanicsVersion(v1contract, v2contract, v3contract, &copts)
 		var err error
 		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
@@ -604,7 +610,7 @@ func do_reload_contract_variables() {
 			Info.Printf(err_str)
 			timeout_claim = -1
 		} else { timeout_claim = tmp_val.Int64() }
-		roundstart_auclen = readRoundStartCSTAuctionSetting(bwcontract, v2contract, &copts)
+		roundstart_auclen = readRoundStartCSTAuctionSetting(bwcontract, v2contract, v3contract, &copts)
 		if roundstart_auclen == -1 {
 			err_str := "Error reading CST round-start auction setting (V1 divisor / V2 duration)\n"
 			Error.Printf(err_str)
@@ -744,6 +750,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"RoundStartCSTAuctionLength" : roundstart_auclen,
 		"CstDutchAuctionDurationChangeDivisor" : cst_dutch_auction_duration_change_divisor,
 		"ContractMechanicsVersion" : getContractMechanicsVersion(),
+		"V3Config" : v3_config,
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,

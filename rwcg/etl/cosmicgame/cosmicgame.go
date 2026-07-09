@@ -351,6 +351,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.EthPrizeAmount.String()
 	evt.CstAmount = eth_evt.CstPrizeAmount.String()
 	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.NumCSNfts = 1 // V1/V2 awarded exactly one Cosmic Signature NFT to the main prize winner
 	evt.Timeout = eth_evt.TimeoutTimeToWithdrawSecondaryPrizes.Int64()
 //	find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
 //	evt.DonationEvtId = storagew.Get_donation_received_evt_id_by_tx_id(evt.TxId,hex.EncodeToString(evt_donation_received_event[:4]))
@@ -367,6 +368,53 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tCstAmount: %v\n",evt.CstAmount)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tTimeout to withdraw: %v\n",evt.Timeout)
+	Info.Printf("}\n")
+
+	storagew.Delete_prize_claim_event(evt.EvtId)
+	storagew.Insert_prize_claim_event(&evt)
+}
+func proc_prize_claim_event_v3(log *types.Log,elog *EthereumEventLog) {
+	// V3 MainPrizeClaimed (IMainPrize2V3, topic 0x9314e785…). The signature gained the non-indexed
+	// `prizeNumCosmicSignatureNfts` field (inserted before `timeoutTimeToWithdrawSecondaryPrizes`) and
+	// renamed the indexed `prizeCosmicSignatureNftId` to `prizeFirstCosmicSignatureNftId`. The winner now
+	// receives `prizeNumCosmicSignatureNfts` (default 3) sequentially-numbered NFTs starting at that first ID.
+
+	var evt CGPrizeClaimEvent
+	var eth_evt CosmicSignatureGameV3MainPrizeClaimed
+
+	Info.Printf("Processing PrizeClaim (V3) event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"MainPrizeClaimed",log.Data)
+	if err != nil {
+		Error.Printf("Event MainPrizeClaimed (V3) decode error: %v",err)
+		os.Exit(1)
+	}
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.RoundNum= log.Topics[1].Big().Int64()
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Amount = eth_evt.EthPrizeAmount.String()
+	evt.CstAmount = eth_evt.CstPrizeAmount.String()
+	evt.TokenId = log.Topics[3].Big().Int64() // prizeFirstCosmicSignatureNftId (first of NumCSNfts sequential IDs)
+	evt.NumCSNfts = eth_evt.PrizeNumCosmicSignatureNfts.Int64()
+	evt.Timeout = eth_evt.TimeoutTimeToWithdrawSecondaryPrizes.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("MainPrizeClaimed (V3) {\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tWinner%v\n",evt.WinnerAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tCstAmount: %v\n",evt.CstAmount)
+	Info.Printf("\tFirstTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tNumCSNfts: %v\n",evt.NumCSNfts)
 	Info.Printf("\tTimeout to withdraw: %v\n",evt.Timeout)
 	Info.Printf("}\n")
 
@@ -419,6 +467,55 @@ func find_cosmic_token_transfer(bid_evtlog_id,tx_id int64,bidder_addr string) st
 	}
 	// No mint to the bidder in this transaction => the dynamic CST bid reward was 0.
 	return "0"
+}
+func find_bid_cst_rewards(bid_evtlog_id,tx_id int64,bidder_addr string) (string,string,string) {
+	// Returns (thisBidderReward, prevBidderReward, prevBidderAddr) for a bid transaction, derived from the
+	// CST mint Transfer events (ground truth) so it works for both eras without knowing the upgrade block:
+	//  - V2 (and the first bid of a V3 round): a single mint to the bidder placing the bid.
+	//  - V3 non-first bid (Comment-202607161): two mints — ~90% to the outbid (previous last) bidder and
+	//    ~10% to the new bidder. `token.mintMany`/`mintAndBurnMany` emit one Transfer per MintSpec, so even
+	//    when the previous and the new bidder are the same address there are two Transfer events.
+	// We classify by amount (the 90% share is always the larger), which is robust to event ordering and to
+	// the previous-and-new-bidder-are-equal case.
+	_ = bidder_addr
+	elog_rlps := storagew.S.Get_specific_event_logs_by_tx_backwards_from_id(tx_id,cosmic_tok_aid,bid_evtlog_id,hex.EncodeToString(evt_transfer[:4]))
+	type mintRec struct { to string; amount *big.Int }
+	mints := make([]mintRec,0,2)
+	total := big.NewInt(0)
+	for _,raw := range elog_rlps {
+		var lg types.Log
+		if err := rlp.DecodeBytes(raw,&lg); err != nil {
+			err_str := fmt.Sprintf("RLP Decode error at find_bid_cst_rewards(): %v\n",err)
+			Info.Printf(err_str); Error.Printf(err_str); os.Exit(1)
+		}
+		// ERC20 Transfer indexes `from` and `to`, so they live in the topics, not in Data.
+		if len(lg.Topics) < 3 { continue }
+		from := common.BytesToAddress(lg.Topics[1][12:])
+		if from != (common.Address{}) { continue } // only mints (from == zero address); ignores the CST-bid price burn
+		to := common.BytesToAddress(lg.Topics[2][12:])
+		var te ERC20Transfer
+		if err := erc20_abi.UnpackIntoInterface(&te,"Transfer",lg.Data); err != nil {
+			err_str := fmt.Sprintf("Event Transfer decode error at find_bid_cst_rewards(): %v\n",err)
+			Error.Printf(err_str); Info.Printf(err_str); os.Exit(1)
+		}
+		amt := new(big.Int).Set(te.Value)
+		mints = append(mints, mintRec{ to: to.String(), amount: amt })
+		total.Add(total,amt)
+	}
+	if len(mints) == 0 {
+		return "0","0",""	// dynamic CST bid reward was 0 (no mint)
+	}
+	if len(mints) == 1 {
+		return mints[0].amount.String(),"0",""	// V2, or the first bid of a V3 round
+	}
+	// V3 split: the previous (outbid) bidder receives the larger (90%) share.
+	prevIdx := 0
+	for i := 1; i < len(mints); i++ {
+		if mints[i].amount.Cmp(mints[prevIdx].amount) > 0 { prevIdx = i }
+	}
+	prevAmount := mints[prevIdx].amount
+	thisAmount := new(big.Int).Sub(total,prevAmount)
+	return thisAmount.String(), prevAmount.String(), mints[prevIdx].to
 }
 func find_cosmic_token_721_transfer(bid_evtlog_id int64) int64 {
 	// fetches the ERC721::Transfer event which has the id=evtlog-1 because it is
@@ -549,6 +646,7 @@ func proc_bid_event_v1(log *types.Log,elog *EthereumEventLog) {
 	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId,evt.TxId,evt.LastBidderAddr)
+	evt.ThisBidderReward, evt.PrevBidderReward, evt.PrevBidderAddr = find_bid_cst_rewards(evt.EvtId,evt.TxId,evt.LastBidderAddr)
 	evt.CstPrice = eth_evt.PaidCstPrice.String()
 	if evt.RandomWalkTokenId > -1 {
 		evt.BidType = 1;	// RandomWalk	
@@ -602,6 +700,7 @@ func proc_bid_event_v2(log *types.Log,elog *EthereumEventLog) {
 	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId,evt.TxId,evt.LastBidderAddr)
+	evt.ThisBidderReward, evt.PrevBidderReward, evt.PrevBidderAddr = find_bid_cst_rewards(evt.EvtId,evt.TxId,evt.LastBidderAddr)
 	evt.CstPrice = eth_evt.PaidCstPrice.String()
 	if evt.RandomWalkTokenId > -1 {
 		evt.BidType = 1;	// RandomWalk	
@@ -3041,10 +3140,138 @@ func proc_round_started_event(log *types.Log,elog *EthereumEventLog) {
     storagew.Delete_round_started_event(evt.EvtId)
 	storagew.Insert_round_started_event(&evt)
 }
+func proc_round_late_bid_duration_divisor_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRoundLateBidDurationDivisorChanged
+	var eth_evt CosmicSignatureGameV3RoundLateBidDurationDivisorChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		return
+	}
+	Info.Printf("Processing RoundLateBidDurationDivisorChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"RoundLateBidDurationDivisorChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event RoundLateBidDurationDivisorChanged decode error: %v",err)
+		os.Exit(1)
+	}
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue = eth_evt.NewValue.String()
+	Info.Printf("RoundLateBidDurationDivisorChanged{ NewValue: %v }\n",evt.NewValue)
+
+	storagew.Delete_round_late_bid_duration_divisor_changed_event(evt.EvtId)
+	storagew.Insert_round_late_bid_duration_divisor_changed_event(&evt)
+}
+func proc_round_late_bid_premium_base_multiplier_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRoundLateBidPricePremiumAmountBaseMultiplierChanged
+	var eth_evt CosmicSignatureGameV3RoundLateBidPricePremiumAmountBaseMultiplierChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		return
+	}
+	Info.Printf("Processing RoundLateBidPricePremiumAmountBaseMultiplierChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"RoundLateBidPricePremiumAmountBaseMultiplierChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event RoundLateBidPricePremiumAmountBaseMultiplierChanged decode error: %v",err)
+		os.Exit(1)
+	}
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue = eth_evt.NewValue.String()
+	Info.Printf("RoundLateBidPricePremiumAmountBaseMultiplierChanged{ NewValue: %v }\n",evt.NewValue)
+
+	storagew.Delete_round_late_bid_premium_base_multiplier_changed_event(evt.EvtId)
+	storagew.Insert_round_late_bid_premium_base_multiplier_changed_event(&evt)
+}
+func proc_round_late_bid_premium_exponent_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRoundLateBidPricePremiumAmountExponentChanged
+	var eth_evt CosmicSignatureGameV3RoundLateBidPricePremiumAmountExponentChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		return
+	}
+	Info.Printf("Processing RoundLateBidPricePremiumAmountExponentChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"RoundLateBidPricePremiumAmountExponentChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event RoundLateBidPricePremiumAmountExponentChanged decode error: %v",err)
+		os.Exit(1)
+	}
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue = eth_evt.NewValue.String()
+	Info.Printf("RoundLateBidPricePremiumAmountExponentChanged{ NewValue: %v }\n",evt.NewValue)
+
+	storagew.Delete_round_late_bid_premium_exponent_changed_event(evt.EvtId)
+	storagew.Insert_round_late_bid_premium_exponent_changed_event(&evt)
+}
+func proc_bid_cst_reward_amount_per_minute_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGBidCstRewardAmountPerMinuteChanged
+	var eth_evt CosmicSignatureGameV3BidCstRewardAmountPerMinuteChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		return
+	}
+	Info.Printf("Processing BidCstRewardAmountPerMinuteChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"BidCstRewardAmountPerMinuteChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event BidCstRewardAmountPerMinuteChanged decode error: %v",err)
+		os.Exit(1)
+	}
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue = eth_evt.NewValue.String()
+	Info.Printf("BidCstRewardAmountPerMinuteChanged{ NewValue: %v }\n",evt.NewValue)
+
+	storagew.Delete_bid_cst_reward_amount_per_minute_changed_event(evt.EvtId)
+	storagew.Insert_bid_cst_reward_amount_per_minute_changed_event(&evt)
+}
+func proc_main_prize_num_cs_nfts_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGMainPrizeNumCosmicSignatureNftsChanged
+	var eth_evt CosmicSignatureGameV3MainPrizeNumCosmicSignatureNftsChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		return
+	}
+	Info.Printf("Processing MainPrizeNumCosmicSignatureNftsChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_v3_abi.UnpackIntoInterface(&eth_evt,"MainPrizeNumCosmicSignatureNftsChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event MainPrizeNumCosmicSignatureNftsChanged decode error: %v",err)
+		os.Exit(1)
+	}
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewValue = eth_evt.NewValue.String()
+	Info.Printf("MainPrizeNumCosmicSignatureNftsChanged{ NewValue: %v }\n",evt.NewValue)
+
+	storagew.Delete_main_prize_num_cs_nfts_changed_event(evt.EvtId)
+	storagew.Insert_main_prize_num_cs_nfts_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
 		proc_prize_claim_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event_v3) {
+		proc_prize_claim_event_v3(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_bid_event) {
 		proc_bid_event_v1(log,evtlog)
@@ -3264,6 +3491,21 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_first_bid_event) {
 		proc_round_started_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_late_bid_duration_divisor_changed) {
+		proc_round_late_bid_duration_divisor_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_late_bid_premium_base_multiplier_changed) {
+		proc_round_late_bid_premium_base_multiplier_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_late_bid_premium_exponent_changed) {
+		proc_round_late_bid_premium_exponent_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_bid_cst_reward_amount_per_minute_changed) {
+		proc_bid_cst_reward_amount_per_minute_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_main_prize_num_cs_nfts_changed) {
+		proc_main_prize_num_cs_nfts_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

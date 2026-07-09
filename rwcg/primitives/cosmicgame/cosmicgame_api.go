@@ -71,8 +71,13 @@ type CGBidRec struct {
 	TimeUntilPrize				int64	// Seconds until prize (0 if already ended)
 	CSTReward				string
 	CSTRewardEth				float64
-	BidCstRewardAmount			string	// IBiddingV2 BidPlaced wei; "-1" = legacy bid v1
-	BidCstRewardAmountEth		float64	// /1e18 when BidCstRewardAmount >= 0; else -1
+	// V3 bid CST reward 90/10 split (Comment-202607161). PreviousBidder* is the 90% share minted to the
+	// outbid (previous last) bidder; ThisBidder* is the ~10% share minted to the bidder placing this bid.
+	// For V2/V1 bids the whole reward is the ThisBidder share and PreviousBidder* is 0.
+	PreviousBidderCstRewardAmount	string
+	PreviousCstRewardAmountEth		float64
+	ThisBidderCstRewardAmount		string
+	ThisCstRewardAmountEth			float64
 	CstDutchAuctionDuration		string	// per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
 	CstDutchAuctionDurationInt	int64	// numeric duration when >= 0; else -1
 	NFTDonationTokenId			int64
@@ -104,7 +109,9 @@ type CGMainPrizeInfo struct {
 	EthAmountEth				float64
 	CstAmount					string
 	CstAmountEth				float64
-	NftTokenId					uint64
+	NftTokenId					uint64	// V3: first of NumCSNfts sequential NFT IDs awarded to the winner
+	NumCSNfts					int64	// number of Cosmic Signature NFTs awarded (V2 = 1, V3 default 3)
+	NftTokenIds					[]int64	// all main-prize NFT IDs (NftTokenId .. NftTokenId+NumCSNfts-1); empty if no claim yet
 	Seed						string
 }
 type CGCharityDeposit struct {
@@ -719,6 +726,11 @@ type CGAdminEvent struct {
 										//			37		EthDutchAuctionEndingBidPriceDivisorChanged
 										//			38		ChronoWarriorEthPrizeAmountPercentageChanged
 										//			39		CstDutchAuctionDurationChangeDivisorChanged (V2)
+										//			40		RoundLateBidDurationDivisorChanged (V3)
+										//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
+										//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
+										//			43		BidCstRewardAmountPerMinuteChanged (V3)
+										//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
