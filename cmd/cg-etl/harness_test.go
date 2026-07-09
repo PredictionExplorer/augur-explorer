@@ -125,12 +125,10 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	}
 	eclient = ethclient.NewClient(rpcclient)
 
-	// One Store over the container's pool backs both the Repo and the
-	// legacy database/sql view, exactly like main().
+	// One Store over the container's pool backs every query, exactly like
+	// main().
 	dbStore = store.NewFromPool(db.Pool)
 	cgRepo = cgstore.NewRepo(dbStore)
-	storage = store.NewSQLStorageFromDB(dbStore.DB(), log.New(os.Stderr, "store: ", 0))
-	storage.Db_set_schema_name("public")
 
 	cosmic_game_abi = get_abi(cgc.CosmicSignatureGameABI)
 	cosmic_game_v2_abi = get_abi(cgc.CosmicSignatureGameV2ABI)
@@ -240,7 +238,6 @@ func resetDB(t *testing.T) {
 	if _, err := testDB.SQL.ExecContext(ctx, "TRUNCATE "+tables+" RESTART IDENTITY CASCADE"); err != nil {
 		t.Fatalf("truncating tables: %v", err)
 	}
-	store.ResetAddressCacheForTests()
 	dbStore.ResetAddressCache()
 
 	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
@@ -315,7 +312,7 @@ func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string
 // etlContext builds the shared-pipeline context exactly as the polling loop does.
 func etlContext() *etlcommon.ETLContext {
 	return &etlcommon.ETLContext{
-		Storage:   storage,
+		Store:     dbStore,
 		EthClient: eclient,
 		RpcClient: rpcclient,
 		Info:      Info,
@@ -342,14 +339,15 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 
 	evtIDs := make([]int64, 0, len(logs))
 	for _, l := range logs {
-		if _, err := etlcommon.EnsureBlockExists(etlCtx, blockNum, l.BlockHash.Hex()); err != nil {
+		ctx := context.Background()
+		if _, err := etlcommon.EnsureBlockExists(ctx, etlCtx, blockNum, l.BlockHash.Hex()); err != nil {
 			t.Fatalf("EnsureBlockExists(%d): %v", blockNum, err)
 		}
-		txID, _, err := etlcommon.EnsureTransactionExists(etlCtx, l.TxHash, blockNum)
+		txID, _, err := etlcommon.EnsureTransactionExists(ctx, etlCtx, l.TxHash, blockNum)
 		if err != nil {
 			t.Fatalf("EnsureTransactionExists(%s): %v", l.TxHash, err)
 		}
-		evtID, err := etlcommon.InsertEventLog(etlCtx, *l, txID)
+		evtID, err := etlcommon.InsertEventLog(ctx, etlCtx, *l, txID)
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}

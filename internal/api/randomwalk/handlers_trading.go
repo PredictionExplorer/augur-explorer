@@ -15,7 +15,10 @@ func apiRwalkTradingHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	p_market_addr := addrs.MarketPlace
 	var market_aid int64
 	if p_market_addr == "0x0000000000000000000000000000000000000000" {
@@ -27,10 +30,14 @@ func apiRwalkTradingHistory(c *gin.Context) {
 	if !success {
 		return
 	}
-	sales := rw_storagew.Get_trading_history(market_aid, offset, limit)
+	sales, err := rwRepo.TradingHistory(c.Request.Context(), market_aid, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":    1,
-		"error":     "",
+		"status":     1,
+		"error":      "",
 		"Sales":      sales,
 		"MarketAid":  market_aid,
 		"MarketAddr": p_market_addr,
@@ -44,7 +51,10 @@ func apiRwalkSaleHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	p_market_addr := addrs.MarketPlace
 	var market_aid int64
 	if p_market_addr == "0x0000000000000000000000000000000000000000" {
@@ -56,7 +66,11 @@ func apiRwalkSaleHistory(c *gin.Context) {
 	if !success {
 		return
 	}
-	sales := rw_storagew.Get_sale_history(market_aid, offset, limit)
+	sales, err := rwRepo.SaleHistory(c.Request.Context(), market_aid, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":          1,
 		"error":           "",
@@ -85,12 +99,16 @@ func apiRwalkTradingHistoryByUser(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_aid' parameter is not set")
 		return
 	}
-	user_addr, err := rw_storagew.S.Lookup_address(user_aid)
+	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
 	if err != nil {
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}
-	user_trading := rw_storagew.Get_trading_history_by_user(user_aid)
+	user_trading, err := rwRepo.TradingHistoryByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":      1,
 		"error":       "",

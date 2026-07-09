@@ -1,6 +1,7 @@
 package randomwalk
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -24,15 +25,15 @@ import (
 
 var errRankingBadPair = errors.New("randomwalk: nft1 and nft2 must be distinct non-negative token ids")
 
-func performRankingMatch(nft1, nft2 int64, nft1Won bool) (raNew, rbNew float64, err error) {
+func performRankingMatch(ctx context.Context, nft1, nft2 int64, nft1Won bool) (raNew, rbNew float64, err error) {
 	if nft1 < 0 || nft2 < 0 || nft1 == nft2 {
 		return 0, 0, errRankingBadPair
 	}
-	n, err := rw_storagew.Count_ranking_matches()
+	n, err := rwRepo.CountRankingMatches(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
-	ra, rb, err := rw_storagew.Get_rating_pair(nft1, nft2)
+	ra, rb, err := rwRepo.RatingPair(ctx, nft1, nft2)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -42,16 +43,16 @@ func performRankingMatch(nft1, nft2 int64, nft1Won bool) (raNew, rbNew float64, 
 	}
 	raNew, rbNew = computeEloUpdate(ra, rb, score, n)
 
-	tx, err := rw_storagew.S.Db().Begin()
+	tx, err := rwStore.Pool().Begin(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() { _ = tx.Rollback(ctx) }()
 
-	if err := rwdb.Apply_ranking_match_tx(tx, nft1, nft2, nft1Won, raNew, rbNew, nil); err != nil {
+	if err := rwdb.ApplyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, nil); err != nil {
 		return 0, 0, err
 	}
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return 0, 0, err
 	}
 	return raNew, rbNew, nil
@@ -67,12 +68,15 @@ func exploreRandomMaxTokenID() int64 {
 	return maxID
 }
 
-func fetchExploreRandomTokenIDs(limit int) ([]int64, error) {
+func fetchExploreRandomTokenIDs(ctx context.Context, limit int) ([]int64, error) {
 	maxID := exploreRandomMaxTokenID()
-	addrs := rw_storagew.Get_randomwalk_contract_addresses()
-	ids, err := rw_storagew.Get_explore_random_token_ids(addrs.RandomWalkAid, maxID, limit)
+	addrs, err := rwRepo.ContractAddrs(ctx)
 	if err != nil {
-		ids, err = rw_storagew.Get_fallback_random_token_ids(addrs.RandomWalkAid, maxID, limit)
+		return nil, err
+	}
+	ids, err := rwRepo.ExploreRandomTokenIDs(ctx, addrs.RandomWalkAid, maxID, limit)
+	if err != nil {
+		ids, err = rwRepo.FallbackRandomTokenIDs(ctx, addrs.RandomWalkAid, maxID, limit)
 	}
 	return ids, err
 }
@@ -90,7 +94,7 @@ func apiRandomwalkExploreRandom(c *gin.Context) {
 			limit = v
 		}
 	}
-	ids, err := fetchExploreRandomTokenIDs(limit)
+	ids, err := fetchExploreRandomTokenIDs(c.Request.Context(), limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -111,7 +115,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 	if !skipPairFilter {
 		v := strings.TrimSpace(c.Query("voter"))
 		if v != "" && ethcommon.IsHexAddress(v) {
-			aid, err := rw_storagew.S.Nonfatal_lookup_address_id(ethcommon.HexToAddress(v).Hex())
+			aid, err := rwStore.LookupAddressID(c.Request.Context(), ethcommon.HexToAddress(v).Hex())
 			if err == nil && aid > 0 {
 				voterAid = aid
 			}
@@ -126,7 +130,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 	if voterAid > 0 {
 		found := false
 		for attempt := 0; attempt < maxAttempts; attempt++ {
-			ids, err = fetchExploreRandomTokenIDs(2)
+			ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -134,7 +138,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 			if len(ids) < 2 {
 				break
 			}
-			voted, err := rw_storagew.Has_ranking_vote_for_voter_pair(voterAid, ids[0], ids[1])
+			voted, err := rwRepo.HasRankingVoteForVoterPair(c.Request.Context(), voterAid, ids[0], ids[1])
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -148,7 +152,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 			pairExhausted = true
 		}
 	} else {
-		ids, err = fetchExploreRandomTokenIDs(2)
+		ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -168,7 +172,7 @@ func apiRandomwalkVoteCount(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	n, err := rw_storagew.Count_ranking_matches()
+	n, err := rwRepo.CountRankingMatches(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -182,8 +186,12 @@ func apiRandomwalkTokenRankingOrder(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rw_storagew.Get_randomwalk_contract_addresses()
-	ids, err := rw_storagew.Get_rating_order(addrs.RandomWalkAid)
+	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ids, err := rwRepo.RatingOrder(c.Request.Context(), addrs.RandomWalkAid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -210,7 +218,7 @@ func apiRandomwalkTokenRankingMatch(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	raNew, rbNew, err := performRankingMatch(body.Nft1, body.Nft2, body.Nft1Won)
+	raNew, rbNew, err := performRankingMatch(c.Request.Context(), body.Nft1, body.Nft2, body.Nft1Won)
 	if err != nil {
 		if errors.Is(err, errRankingBadPair) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -282,7 +290,7 @@ func rankingVoteChainAllowed(chainID int64) bool {
 	return false
 }
 
-func performSignedBeautyVote(nft1, nft2 int64, nft1Won bool, chainID int64, signNonce, signature string) error {
+func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool, chainID int64, signNonce, signature string) error {
 	if nft1 < 0 || nft2 < 0 || nft1 == nft2 {
 		return errRankingBadPair
 	}
@@ -302,11 +310,11 @@ func performSignedBeautyVote(nft1, nft2 int64, nft1Won bool, chainID int64, sign
 		return fmt.Errorf("randomwalk: invalid signature: %w", err)
 	}
 
-	n, err := rw_storagew.Count_ranking_matches()
+	n, err := rwRepo.CountRankingMatches(ctx)
 	if err != nil {
 		return err
 	}
-	ra, rb, err := rw_storagew.Get_rating_pair(nft1, nft2)
+	ra, rb, err := rwRepo.RatingPair(ctx, nft1, nft2)
 	if err != nil {
 		return err
 	}
@@ -316,18 +324,18 @@ func performSignedBeautyVote(nft1, nft2 int64, nft1Won bool, chainID int64, sign
 	}
 	raNew, rbNew := computeEloUpdate(ra, rb, score, n)
 
-	voterAid, err := rw_storagew.S.Lookup_or_create_address(signer.Hex(), 0, 0)
+	voterAid, err := rwStore.LookupOrCreateAddress(ctx, signer.Hex(), 0, 0)
 	if err != nil {
 		return fmt.Errorf("randomwalk: voter address: %w", err)
 	}
 
-	tx, err := rw_storagew.S.Db().Begin()
+	tx, err := rwStore.Pool().Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() { _ = tx.Rollback(ctx) }()
 
-	ok, err := rw_storagew.Delete_ranking_vote_nonce_if_valid(tx, signNonce)
+	ok, err := rwdb.ConsumeRankingVoteNonce(ctx, tx, signNonce)
 	if err != nil {
 		return err
 	}
@@ -335,16 +343,15 @@ func performSignedBeautyVote(nft1, nft2 int64, nft1Won bool, chainID int64, sign
 		return errors.New("randomwalk: invalid or expired sign_nonce")
 	}
 
-	if err := rwdb.Apply_ranking_match_tx(tx, nft1, nft2, nft1Won, raNew, rbNew, &voterAid); err != nil {
-		// unique_violation; the storage layer connects via pgx so driver
-		// errors surface as *pgconn.PgError (previously *pq.Error).
+	if err := rwdb.ApplyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, &voterAid); err != nil {
+		// unique_violation: this wallet already voted on the pair.
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return errRankingDuplicateVoterPair
 		}
 		return err
 	}
-	return tx.Commit()
+	return tx.Commit(ctx)
 }
 
 var errRankingDuplicateVoterPair = errors.New("randomwalk: already voted on this pair")
@@ -361,7 +368,7 @@ func apiRandomwalkRankingSignChallenge(c *gin.Context) {
 		return
 	}
 	nonce := hex.EncodeToString(b[:])
-	if err := rw_storagew.Insert_ranking_vote_nonce(nonce, 15*time.Minute); err != nil {
+	if err := rwRepo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -386,7 +393,7 @@ func apiRandomwalkAddGameLegacy(c *gin.Context) {
 	}
 	nft1Won := body.Nft1Win != 0
 
-	err := performSignedBeautyVote(body.Nft1, body.Nft2, nft1Won, body.ChainID, body.SignNonce, body.Signature)
+	err := performSignedBeautyVote(c.Request.Context(), body.Nft1, body.Nft2, nft1Won, body.ChainID, body.SignNonce, body.Signature)
 	if err != nil {
 		if errors.Is(err, errRankingBadPair) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

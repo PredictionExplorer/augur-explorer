@@ -1,8 +1,9 @@
-// Block and transaction insertion methods.
+// Block, transaction and event-log insertion for the ETL pipeline.
 
 package store
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -11,98 +12,89 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-// Insert_block inserts a block header into the database
-func (ss *SQLStorage) Insert_block(header *types.Header) error {
-	var query string
-	query = `INSERT INTO block (
-		block_num, block_hash, ts, parent_hash
-	) VALUES (
-		$1, $2, TO_TIMESTAMP($3), $4
-	) ON CONFLICT (block_num) DO NOTHING`
-
-	_, err := ss.db.Exec(query,
-		header.Number.Int64(),
+// InsertBlock inserts a block header (idempotent on block_num) and advances
+// the last_block watermark when the block is higher than the stored one.
+func (s *Store) InsertBlock(ctx context.Context, header *types.Header) error {
+	blockNum := header.Number.Int64()
+	op := fmt.Sprintf("insert block %v", blockNum)
+	_, err := s.pool.Exec(ctx, `INSERT INTO block (
+			block_num, block_hash, ts, parent_hash
+		) VALUES (
+			$1, $2, TO_TIMESTAMP($3), $4
+		) ON CONFLICT (block_num) DO NOTHING`,
+		blockNum,
 		header.Hash().Hex(),
 		header.Time,
 		header.ParentHash.Hex(),
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Insert_block failed: %v", err))
-		return fmt.Errorf("insert block %v: %w", header.Number.Int64(), err)
+		return WrapError(op, err)
 	}
 
-	// Update last_block if this is a higher block
-	lastBlock, err := ss.Get_last_block_num()
+	lastBlock, err := s.LastBlockNum(ctx)
 	if err != nil {
-		return fmt.Errorf("insert block %v: get last block num: %w", header.Number.Int64(), err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
-	if header.Number.Int64() > lastBlock {
-		if err := ss.Set_last_block_num(header.Number.Int64()); err != nil {
-			return fmt.Errorf("insert block %v: set last block num: %w", header.Number.Int64(), err)
+	if blockNum > lastBlock {
+		if err := s.SetLastBlockNum(ctx, blockNum); err != nil {
+			return fmt.Errorf("%s: %w", op, err)
 		}
 	}
-
 	return nil
 }
 
-// Insert_minimal_transaction inserts a minimal transaction record when full tx data is unavailable
-// Used when RPC node doesn't have historical transaction data (non-archive node)
-// Returns the transaction ID
-func (ss *SQLStorage) Insert_minimal_transaction(txHash string, blockNum int64) (int64, error) {
-	var query string
-	query = `INSERT INTO transaction (
-		block_num, tx_hash, tx_index, 
-		from_aid, to_aid, value, 
-		gas_used, gas_price,
-		input_sig, num_logs, ctrct_create
-	) VALUES (
-		$1, $2, 0, 
-		0, 0, '0', 
-		0, '0',
-		'', 0, false
-	) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
-	RETURNING id`
-
-	var txId int64
-	err := ss.db.QueryRow(query, blockNum, txHash).Scan(&txId)
+// InsertMinimalTransaction inserts a placeholder transaction record when the
+// full data is unavailable (RPC node without historical transaction data and
+// no archive entry). Returns the transaction id.
+func (s *Store) InsertMinimalTransaction(ctx context.Context, txHash string, blockNum int64) (int64, error) {
+	var txID int64
+	err := s.pool.QueryRow(ctx, `INSERT INTO transaction (
+			block_num, tx_hash, tx_index,
+			from_aid, to_aid, value,
+			gas_used, gas_price,
+			input_sig, num_logs, ctrct_create
+		) VALUES (
+			$1, $2, 0,
+			0, 0, '0',
+			0, '0',
+			'', 0, false
+		) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
+		RETURNING id`, blockNum, txHash).Scan(&txID)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Insert_minimal_transaction failed: %v", err))
-		return 0, err
+		return 0, WrapError(fmt.Sprintf("insert minimal transaction %v", txHash), err)
 	}
-
-	return txId, nil
+	return txID, nil
 }
 
-// Insert_transaction inserts a transaction into the database
-// Returns the transaction ID
-func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, receipt *types.Receipt) (int64, error) {
-	// Get sender address
+// InsertTransaction inserts a full transaction record (idempotent on
+// tx_hash), resolving the from/to addresses through the address cache.
+// Returns the transaction id.
+func (s *Store) InsertTransaction(ctx context.Context, tx *types.Transaction, blockNum int64, receipt *types.Receipt) (int64, error) {
+	op := fmt.Sprintf("insert transaction %v", tx.Hash().Hex())
+
+	// Recover the sender; pre-EIP-155 transactions need the Homestead signer.
 	from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
 	if err != nil {
-		// Try legacy signer if chain ID signer fails
 		from, err = types.Sender(types.HomesteadSigner{}, tx)
 		if err != nil {
-			ss.Log_msg(fmt.Sprintf("Failed to get sender for tx %s: %v", tx.Hash().Hex(), err))
-			return 0, err
+			return 0, fmt.Errorf("%s: recover sender: %w", op, err)
 		}
 	}
 
-	// Lookup or create from address
-	fromAid, err := ss.Lookup_or_create_address(from.Hex(), blockNum, 0)
+	fromAid, err := s.LookupOrCreateAddress(ctx, from.Hex(), blockNum, 0)
 	if err != nil {
-		return 0, fmt.Errorf("insert transaction %v: from address: %w", tx.Hash().Hex(), err)
+		return 0, fmt.Errorf("%s: from address: %w", op, err)
 	}
 
-	// Get to address (may be nil for contract creation)
+	// To is nil for contract creation.
 	var toAid int64
 	if tx.To() != nil {
-		toAid, err = ss.Lookup_or_create_address(tx.To().Hex(), blockNum, 0)
+		toAid, err = s.LookupOrCreateAddress(ctx, tx.To().Hex(), blockNum, 0)
 		if err != nil {
-			return 0, fmt.Errorf("insert transaction %v: to address: %w", tx.Hash().Hex(), err)
+			return 0, fmt.Errorf("%s: to address: %w", op, err)
 		}
 	}
 
-	// Calculate gas price
 	var gasPrice *big.Int
 	if tx.Type() == types.DynamicFeeTxType {
 		gasPrice = tx.GasFeeCap()
@@ -110,28 +102,25 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 		gasPrice = tx.GasPrice()
 	}
 
-	// Get input signature (first 4 bytes of input data)
+	// Input signature: first 4 bytes of the call data.
 	var inputSig string
 	if len(tx.Data()) >= 4 {
 		inputSig = "0x" + hex.EncodeToString(tx.Data()[:4])
 	}
 
-	var query string
-	query = `INSERT INTO transaction (
-		block_num, tx_hash, tx_index, 
-		from_aid, to_aid, value, 
-		gas_used, gas_price,
-		input_sig, num_logs, ctrct_create
-	) VALUES (
-		$1, $2, $3, 
-		$4, $5, $6, 
-		$7, $8,
-		$9, $10, $11
-	) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
-	RETURNING id`
-
-	var txId int64
-	err = ss.db.QueryRow(query,
+	var txID int64
+	err = s.pool.QueryRow(ctx, `INSERT INTO transaction (
+			block_num, tx_hash, tx_index,
+			from_aid, to_aid, value,
+			gas_used, gas_price,
+			input_sig, num_logs, ctrct_create
+		) VALUES (
+			$1, $2, $3,
+			$4, $5, $6,
+			$7, $8,
+			$9, $10, $11
+		) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
+		RETURNING id`,
 		blockNum,
 		tx.Hash().Hex(),
 		receipt.TransactionIndex,
@@ -143,72 +132,57 @@ func (ss *SQLStorage) Insert_transaction(tx *types.Transaction, blockNum int64, 
 		inputSig,
 		len(receipt.Logs),
 		tx.To() == nil, // contract creation if To is nil
-	).Scan(&txId)
-
+	).Scan(&txID)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Insert_transaction failed: %v", err))
-		return 0, err
+		return 0, WrapError(op, err)
 	}
-
-	return txId, nil
+	return txID, nil
 }
 
-// Insert_event_log inserts an event log into the evt_log table
-// Uses INSERT ... ON CONFLICT to handle idempotent re-processing
-// Returns the event log ID
-func (ss *SQLStorage) Insert_event_log(log types.Log, txId int64, contractAid int64) (int64, error) {
+// InsertEventLog stores an Ethereum log in evt_log (RLP-encoded payload
+// included) and returns the new row id. Any existing row with the same
+// (block_num, log_index) is replaced first, which makes re-processing after
+// a chain reorganization idempotent even when the tx id changed.
+func (s *Store) InsertEventLog(ctx context.Context, log types.Log, txID, contractAid int64) (int64, error) {
+	op := fmt.Sprintf("insert event log block=%d log_index=%d", log.BlockNumber, log.Index)
 
-	// Get topic0 signature (first 4 bytes = 8 hex chars of first topic)
+	// topic0 signature: first 4 bytes (8 hex chars) of the first topic.
 	var topic0Sig string
 	if len(log.Topics) > 0 {
-		fullSig := log.Topics[0].Hex()[2:] // Remove 0x prefix
+		fullSig := log.Topics[0].Hex()[2:]
 		if len(fullSig) >= 8 {
-			topic0Sig = fullSig[:8] // First 4 bytes (8 hex chars)
+			topic0Sig = fullSig[:8]
 		} else {
 			topic0Sig = fullSig
 		}
 	}
 
-	// RLP encode the log (need pointer for EncodeRLP method)
 	rlpLog, err := rlp.EncodeToBytes(&log)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Failed to RLP encode log: %v", err))
-		return 0, err
+		return 0, fmt.Errorf("%s: RLP encode: %w", op, err)
 	}
 
-	// Use ON CONFLICT to handle idempotent re-processing
-	// First try to delete any existing record with same (block_num, log_index)
-	// This handles the case where tx_id might have changed due to chain reorganization
-	var deleteQuery string
-	deleteQuery = `DELETE FROM evt_log WHERE block_num = $1 AND log_index = $2`
-	_, err = ss.db.Exec(deleteQuery, log.BlockNumber, log.Index)
-	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Delete before insert failed for evt_log (block=%d, log_index=%d): %v",
-			log.BlockNumber, log.Index, err))
-		return 0, err
+	if _, err := s.pool.Exec(ctx,
+		"DELETE FROM evt_log WHERE block_num = $1 AND log_index = $2",
+		log.BlockNumber, log.Index); err != nil {
+		return 0, WrapError(op+": delete before insert", err)
 	}
 
-	var query string
-	query = `INSERT INTO evt_log (
-		block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
-	) VALUES (
-		$1, $2, $3, $4, $5, $6
-	) RETURNING id`
-
-	var evtId int64
-	err = ss.db.QueryRow(query,
+	var evtID int64
+	err = s.pool.QueryRow(ctx, `INSERT INTO evt_log (
+			block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
+		) VALUES (
+			$1, $2, $3, $4, $5, $6
+		) RETURNING id`,
 		log.BlockNumber,
-		txId,
+		txID,
 		contractAid,
 		topic0Sig,
-		log.Index, // Log index within the block
+		log.Index,
 		rlpLog,
-	).Scan(&evtId)
-
+	).Scan(&evtID)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Insert_event_log failed: %v", err))
-		return 0, err
+		return 0, WrapError(op, err)
 	}
-
-	return evtId, nil
+	return evtID, nil
 }

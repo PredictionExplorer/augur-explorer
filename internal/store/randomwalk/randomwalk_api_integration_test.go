@@ -3,102 +3,161 @@
 package randomwalk
 
 import (
+	"context"
+	"errors"
 	"testing"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func TestGetActiveOffers(t *testing.T) {
-	sw := wrapper(t)
+func TestActiveOffers(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	fetch := func(orderBy int) func() any {
+		return func() any {
+			offers, err := r.ActiveOffers(ctx, aidRandomWalk, aidMarketplace, orderBy)
+			if err != nil {
+				t.Fatalf("ActiveOffers(order %d): %v", orderBy, err)
+			}
+			return offers
+		}
+	}
 	// Offer 1 was bought and offer 4 cancelled; 2 and 3 remain active.
-	golden(t, "active_offers_default_order", func() any {
-		return sw.Get_active_offers(aidRandomWalk, aidMarketplace, 0)
-	})
-	golden(t, "active_offers_price_desc", func() any {
-		return sw.Get_active_offers(aidRandomWalk, aidMarketplace, 1)
-	})
-	golden(t, "active_offers_price_asc", func() any {
-		return sw.Get_active_offers(aidRandomWalk, aidMarketplace, 2)
-	})
+	golden(t, "active_offers_default_order", fetch(0))
+	golden(t, "active_offers_price_desc", fetch(1))
+	golden(t, "active_offers_price_asc", fetch(2))
 }
 
-func TestGetMintedTokensByPeriod(t *testing.T) {
-	sw := wrapper(t)
+func TestMintedTokensByPeriod(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "minted_tokens_by_period", func() any {
-		return sw.Get_minted_tokens_by_period(aidRandomWalk, 1767228600, 1767229000)
+		toks, err := r.MintedTokensByPeriod(ctx, aidRandomWalk, 1767228600, 1767229000)
+		if err != nil {
+			t.Fatalf("MintedTokensByPeriod: %v", err)
+		}
+		return toks
 	})
-	if got := sw.Get_minted_tokens_by_period(aidRandomWalk, 100, 200); len(got) != 0 {
+	got, err := r.MintedTokensByPeriod(ctx, aidRandomWalk, 100, 200)
+	if err != nil {
+		t.Fatalf("MintedTokensByPeriod(1970): %v", err)
+	}
+	if len(got) != 0 {
 		t.Errorf("expected no mints in 1970, got %d", len(got))
 	}
 }
 
-func TestGetMintedTokensSequentially(t *testing.T) {
-	sw := wrapper(t)
+func TestMintedTokensSequentially(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "minted_tokens_sequentially", func() any {
-		return sw.Get_minted_tokens_sequentially(aidRandomWalk, 0, 100)
+		toks, err := r.MintedTokensSequentially(ctx, aidRandomWalk, 0, 100)
+		if err != nil {
+			t.Fatalf("MintedTokensSequentially: %v", err)
+		}
+		return toks
 	})
 	golden(t, "minted_tokens_sequentially_paged", func() any {
-		return sw.Get_minted_tokens_sequentially(aidRandomWalk, 1, 2)
+		toks, err := r.MintedTokensSequentially(ctx, aidRandomWalk, 1, 2)
+		if err != nil {
+			t.Fatalf("MintedTokensSequentially(paged): %v", err)
+		}
+		return toks
 	})
 }
 
-func TestGetTradingHistory(t *testing.T) {
-	sw := wrapper(t)
+func TestTradingHistory(t *testing.T) {
+	r := repo(t)
 	golden(t, "trading_history", func() any {
-		return sw.Get_trading_history(aidMarketplace, 0, 100)
+		recs, err := r.TradingHistory(context.Background(), aidMarketplace, 0, 100)
+		if err != nil {
+			t.Fatalf("TradingHistory: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetRandomWalkStats(t *testing.T) {
-	sw := wrapper(t)
+func TestRandomWalkStats(t *testing.T) {
+	r := repo(t)
 	golden(t, "random_walk_stats", func() any {
-		return sw.Get_random_walk_stats(aidRandomWalk)
+		stats, err := r.RandomWalkStats(context.Background(), aidRandomWalk)
+		if err != nil {
+			t.Fatalf("RandomWalkStats: %v", err)
+		}
+		return stats
 	})
 }
 
-func TestGetMarketStats(t *testing.T) {
-	sw := wrapper(t)
+func TestMarketStats(t *testing.T) {
+	r := repo(t)
 	golden(t, "market_stats", func() any {
-		return sw.Get_market_stats(aidMarketplace)
+		stats, err := r.MarketStats(context.Background(), aidMarketplace)
+		if err != nil {
+			t.Fatalf("MarketStats: %v", err)
+		}
+		return stats
 	})
 }
 
-func TestGetTokenFullHistory(t *testing.T) {
-	sw := wrapper(t)
+func TestTokenFullHistory(t *testing.T) {
+	r := repo(t)
 	// Token 10: mint, name, offer, sale, relist, cancel, withdrawal.
 	golden(t, "token_full_history_10", func() any {
-		return sw.Get_token_full_history(aidRandomWalk, 10, 0, 100)
+		recs, err := r.TokenFullHistory(context.Background(), aidRandomWalk, 10, 0, 100)
+		if err != nil {
+			t.Fatalf("TokenFullHistory: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetMarketTradingVolumeByPeriod(t *testing.T) {
-	sw := wrapper(t)
+func TestMarketTradingVolumeByPeriod(t *testing.T) {
+	r := repo(t)
 	golden(t, "market_trading_volume_by_period", func() any {
-		return sw.Get_market_trading_volume_by_period(aidMarketplace, 1767229100, 1767229400, 300)
+		recs, err := r.MarketTradingVolumeByPeriod(context.Background(), aidMarketplace, 1767229100, 1767229400, 300)
+		if err != nil {
+			t.Fatalf("MarketTradingVolumeByPeriod: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetNameChangesForToken(t *testing.T) {
-	sw := wrapper(t)
+func TestTokenNameChanges(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "name_changes_for_token_10", func() any {
-		return sw.Get_name_changes_for_token(10)
+		recs, err := r.TokenNameChanges(ctx, 10)
+		if err != nil {
+			t.Fatalf("TokenNameChanges: %v", err)
+		}
+		return recs
 	})
-	if got := sw.Get_name_changes_for_token(11); len(got) != 0 {
+	got, err := r.TokenNameChanges(ctx, 11)
+	if err != nil {
+		t.Fatalf("TokenNameChanges(11): %v", err)
+	}
+	if len(got) != 0 {
 		t.Errorf("expected no name changes for token 11, got %d", len(got))
 	}
 }
 
-func TestGetRandomWalkTokensByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestTokensByUser(t *testing.T) {
+	r := repo(t)
 	// dave minted #11 and bought #10.
 	golden(t, "random_walk_tokens_by_user_dave", func() any {
-		return sw.Get_random_walk_tokens_by_user(aidDave)
+		toks, err := r.TokensByUser(context.Background(), aidDave)
+		if err != nil {
+			t.Fatalf("TokensByUser: %v", err)
+		}
+		return toks
 	})
 }
 
-func TestGetFloorPrice(t *testing.T) {
-	sw := wrapper(t)
-	noOffers, floorPrice, offerID, tokenID, err := sw.Get_floor_price(aidRandomWalk, aidMarketplace)
+func TestFloorPrice(t *testing.T) {
+	r := repo(t)
+	noOffers, floorPrice, offerID, tokenID, err := r.FloorPrice(context.Background(), aidRandomWalk, aidMarketplace)
 	if err != nil {
-		t.Fatalf("Get_floor_price: %v", err)
+		t.Fatalf("FloorPrice: %v", err)
 	}
 	if noOffers {
 		t.Fatal("expected active offers in the fixture set")
@@ -109,105 +168,140 @@ func TestGetFloorPrice(t *testing.T) {
 	}
 }
 
-func TestGetTradingHistoryByUser(t *testing.T) {
-	sw := wrapper(t)
+func TestTradingHistoryByUser(t *testing.T) {
+	r := repo(t)
 	golden(t, "trading_history_by_user_carol", func() any {
-		return sw.Get_trading_history_by_user(aidCarol)
+		recs, err := r.TradingHistoryByUser(context.Background(), aidCarol)
+		if err != nil {
+			t.Fatalf("TradingHistoryByUser: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetRwalkUserInfo(t *testing.T) {
-	sw := wrapper(t)
+func TestUserInfo(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "rwalk_user_info_carol", func() any {
-		info, err := sw.Get_rwalk_user_info(aidCarol, aidRandomWalk)
+		info, err := r.UserInfo(ctx, aidCarol, aidRandomWalk)
 		if err != nil {
-			t.Fatalf("Get_rwalk_user_info(carol): %v", err)
+			t.Fatalf("UserInfo(carol): %v", err)
 		}
 		return info
 	})
-	// A user with no RandomWalk activity yields ErrNoRows, not a crash.
-	if _, err := sw.Get_rwalk_user_info(aidAlice+979, aidRandomWalk); err == nil {
-		t.Error("expected error for user without rw_user_stats row")
+	// A user with no RandomWalk activity yields ErrNotFound, not a crash.
+	if _, err := r.UserInfo(ctx, aidAlice+979, aidRandomWalk); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("expected ErrNotFound for user without rw_user_stats row, got %v", err)
 	}
 }
 
-func TestGetTop5TradedTokens(t *testing.T) {
-	sw := wrapper(t)
+func TestTop5TradedTokens(t *testing.T) {
+	r := repo(t)
 	golden(t, "top5_traded_tokens", func() any {
-		return sw.Get_top5_traded_tokens()
+		toks, err := r.Top5TradedTokens(context.Background())
+		if err != nil {
+			t.Fatalf("Top5TradedTokens: %v", err)
+		}
+		return toks
 	})
 }
 
-func TestGetRwalkTokenInfo(t *testing.T) {
-	sw := wrapper(t)
+func TestTokenInfo(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
 	golden(t, "rwalk_token_info_10", func() any {
-		info, err := sw.Get_rwalk_token_info(aidRandomWalk, 10)
+		info, err := r.TokenInfo(ctx, aidRandomWalk, 10)
 		if err != nil {
-			t.Fatalf("Get_rwalk_token_info(10): %v", err)
+			t.Fatalf("TokenInfo(10): %v", err)
 		}
 		return info
 	})
-	if _, err := sw.Get_rwalk_token_info(aidRandomWalk, 999); err == nil {
-		t.Error("expected error for missing token 999")
+	if _, err := r.TokenInfo(ctx, aidRandomWalk, 999); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("expected ErrNotFound for missing token 999, got %v", err)
 	}
 }
 
-func TestCheckRwalkTokenExists(t *testing.T) {
-	sw := wrapper(t)
-	exists, err := sw.Check_rwalk_token_exists(10)
+func TestTokenMinted(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	exists, err := r.TokenMinted(ctx, 10)
 	if err != nil {
-		t.Fatalf("Check_rwalk_token_exists(10): %v", err)
+		t.Fatalf("TokenMinted(10): %v", err)
 	}
 	if !exists {
 		t.Error("expected token 10 to exist")
 	}
-	exists, err = sw.Check_rwalk_token_exists(999)
+	exists, err = r.TokenMinted(ctx, 999)
 	if err != nil {
-		t.Fatalf("Check_rwalk_token_exists(999): %v", err)
+		t.Fatalf("TokenMinted(999): %v", err)
 	}
 	if exists {
 		t.Error("expected token 999 to be missing")
 	}
 }
 
-func TestGetRwalkMintIntervals(t *testing.T) {
-	sw := wrapper(t)
+func TestMintIntervals(t *testing.T) {
+	r := repo(t)
 	golden(t, "rwalk_mint_intervals", func() any {
-		return sw.Get_rwalk_mint_intervals(aidRandomWalk)
+		recs, err := r.MintIntervals(context.Background(), aidRandomWalk)
+		if err != nil {
+			t.Fatalf("MintIntervals: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetRwalkWithdrawalChart(t *testing.T) {
-	sw := wrapper(t)
+func TestWithdrawalChart(t *testing.T) {
+	r := repo(t)
 	golden(t, "rwalk_withdrawal_chart", func() any {
-		return sw.Get_rwalk_withdrawal_chart(aidRandomWalk)
+		recs, err := r.WithdrawalChart(context.Background(), aidRandomWalk)
+		if err != nil {
+			t.Fatalf("WithdrawalChart: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetSaleHistory(t *testing.T) {
-	sw := wrapper(t)
+func TestSaleHistory(t *testing.T) {
+	r := repo(t)
 	golden(t, "sale_history", func() any {
-		return sw.Get_sale_history(aidMarketplace, 0, 100)
+		recs, err := r.SaleHistory(context.Background(), aidMarketplace, 0, 100)
+		if err != nil {
+			t.Fatalf("SaleHistory: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetRwalkFloorPriceForPeriods(t *testing.T) {
-	sw := wrapper(t)
+func TestFloorPriceByPeriod(t *testing.T) {
+	r := repo(t)
 	golden(t, "rwalk_floor_price_for_periods", func() any {
-		return sw.Get_rwalk_floor_price_for_periods(aidRandomWalk, aidMarketplace, 1767229100, 1767229700, 300)
+		recs, err := r.FloorPriceByPeriod(context.Background(), aidRandomWalk, aidMarketplace, 1767229100, 1767229700, 300)
+		if err != nil {
+			t.Fatalf("FloorPriceByPeriod: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetMintedTokensForCSV(t *testing.T) {
-	sw := wrapper(t)
+func TestMintedTokensCSV(t *testing.T) {
+	r := repo(t)
 	golden(t, "minted_tokens_for_csv", func() any {
-		return sw.Get_minted_tokens_for_CSV(aidRandomWalk)
+		recs, err := r.MintedTokensCSV(context.Background(), aidRandomWalk)
+		if err != nil {
+			t.Fatalf("MintedTokensCSV: %v", err)
+		}
+		return recs
 	})
 }
 
-func TestGetMintReport(t *testing.T) {
-	sw := wrapper(t)
+func TestMintReport(t *testing.T) {
+	r := repo(t)
 	golden(t, "mint_report", func() any {
-		return sw.Get_mint_report()
+		recs, err := r.MintReport(context.Background())
+		if err != nil {
+			t.Fatalf("MintReport: %v", err)
+		}
+		return recs
 	})
 }

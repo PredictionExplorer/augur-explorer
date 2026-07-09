@@ -41,7 +41,7 @@ func proc_bid_event_v1(ctx context.Context, log *types.Log, elog *EthereumEventL
 	evt.EthPrice = eth_evt.PaidEthPrice.String()
 	evt.BidType = 0 // ETH
 	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
-	evt.ERC20_Value, err = find_cosmic_token_transfer(evt.EvtId, evt.TxId, evt.LastBidderAddr)
+	evt.ERC20_Value, err = find_cosmic_token_transfer(ctx, evt.EvtId, evt.TxId, evt.LastBidderAddr)
 	if err != nil {
 		return fmt.Errorf("bid v1 (evt id %v): %w", elog.EvtId, err)
 	}
@@ -100,7 +100,7 @@ func proc_bid_event_v2(ctx context.Context, log *types.Log, elog *EthereumEventL
 	evt.EthPrice = eth_evt.PaidEthPrice.String()
 	evt.BidType = 0 // ETH
 	evt.RandomWalkTokenId = log.Topics[3].Big().Int64()
-	evt.ERC20_Value, err = find_cosmic_token_transfer(evt.EvtId, evt.TxId, evt.LastBidderAddr)
+	evt.ERC20_Value, err = find_cosmic_token_transfer(ctx, evt.EvtId, evt.TxId, evt.LastBidderAddr)
 	if err != nil {
 		return fmt.Errorf("bid v2 (evt id %v): %w", elog.EvtId, err)
 	}

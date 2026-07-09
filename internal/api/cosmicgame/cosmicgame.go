@@ -46,7 +46,7 @@ func Init(ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog 
 
 // Helper to check if database is initialized
 func dbInitialized() bool {
-	return common.Ctx != nil && common.Ctx.Db != nil
+	return common.Ctx != nil && common.Ctx.Store != nil
 }
 
 // RegisterAPIRoutes registers all CosmicGame JSON API routes.

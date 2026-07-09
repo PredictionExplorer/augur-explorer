@@ -38,21 +38,5 @@ func (r *Repo) addrID(ctx context.Context, addr string, blockNum, txID int64) (i
 // capHint) so an empty result marshals as [] — the shape every legacy caller
 // and golden file relies on.
 func queryList[T any](ctx context.Context, r *Repo, op string, capHint int, query string, scanRow func(pgx.Rows, *T) error, args ...any) ([]T, error) {
-	rows, err := r.pool().Query(ctx, query, args...)
-	if err != nil {
-		return nil, store.WrapError(op, err)
-	}
-	defer rows.Close()
-	records := make([]T, 0, capHint)
-	for rows.Next() {
-		var rec T
-		if err := scanRow(rows, &rec); err != nil {
-			return nil, store.WrapError(op, err)
-		}
-		records = append(records, rec)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, store.WrapError(op, err)
-	}
-	return records, nil
+	return store.QueryList(ctx, r.pool(), op, capHint, query, scanRow, args...)
 }

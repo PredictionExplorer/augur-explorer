@@ -26,12 +26,19 @@ func getContractAddresses() []ethcommon.Address {
 func process_events_filterlog(ctx context.Context) error {
 	// Create ETL context for common operations
 	etl_ctx := &etlcommon.ETLContext{
-		Storage:   storage,
+		Store:     dbStore,
 		EthClient: eclient,
 		RpcClient: rpcclient,
 		Info:      Info,
 		Error:     Error,
 	}
+
+	// ctx signals shutdown between batches only: in-flight DB work of the
+	// current batch (event processing, watermark writes) must complete even
+	// when a signal has already arrived, so it runs on a context that
+	// inherits values but not cancellation. Cancellable per-batch contexts
+	// with retry/backoff are Phase 3.
+	dbCtx := context.WithoutCancel(ctx)
 
 	// Adaptive batch sizing: start large, reduce if we get events
 	var batchSize uint64 = 100000     // Start with 100k blocks
@@ -53,16 +60,25 @@ func process_events_filterlog(ctx context.Context) error {
 		default:
 		}
 
-		// Get last processed block from status
-		status := storagew.Get_randomwalk_processing_status()
+		// Get last processed block from status. A failure here is a DB
+		// failure (the legacy method terminated the process from inside the
+		// store); crash from main with the batch left unacknowledged, so it
+		// re-processes on restart.
+		status, err := rwRepo.ProcessingStatus(dbCtx)
+		if err != nil {
+			return fmt.Errorf("reading processing status: %w", err)
+		}
 		lastProcessedBlock := status.LastBlockNum
 		if lastProcessedBlock == 0 {
 			// If no blocks processed yet, start from the block where contracts were deployed
-			lastProcessedBlock, _ = storage.Get_last_block_num()
+			lastProcessedBlock, err = dbStore.LastBlockNum(dbCtx)
+			if err != nil {
+				return fmt.Errorf("reading last block watermark: %w", err)
+			}
 		}
 
 		// Get current block from chain
-		currentBlock, err := etlcommon.GetCurrentBlockNumber(eclient)
+		currentBlock, err := etlcommon.GetCurrentBlockNumber(ctx, eclient)
 		if err != nil {
 			Error.Printf("Failed to get current block number: %v", err)
 			time.Sleep(5 * time.Second)
@@ -86,7 +102,7 @@ func process_events_filterlog(ctx context.Context) error {
 		Info.Printf("Fetching events from block %d to %d (batch size: %d)\n", fromBlock, toBlock, batchSize)
 
 		// Fetch events using FilterLogs
-		logs, err := etlcommon.FetchEvents(eclient, fromBlock, toBlock, contracts)
+		logs, err := etlcommon.FetchEvents(ctx, eclient, fromBlock, toBlock, contracts)
 		if err != nil {
 			Error.Printf("FetchEvents failed: %v", err)
 			// Reduce batch size on error (might be too large)
@@ -105,7 +121,7 @@ func process_events_filterlog(ctx context.Context) error {
 		var lastSuccessfulBlock uint64
 		for _, log := range logs {
 			// Ensure block exists with correct hash (chain split detection)
-			_, err := etlcommon.EnsureBlockExists(etl_ctx, int64(log.BlockNumber), log.BlockHash.Hex())
+			_, err := etlcommon.EnsureBlockExists(dbCtx, etl_ctx, int64(log.BlockNumber), log.BlockHash.Hex())
 			if err != nil {
 				Error.Printf("EnsureBlockExists failed for block %d: %v", log.BlockNumber, err)
 				processingFailed = true
@@ -114,7 +130,7 @@ func process_events_filterlog(ctx context.Context) error {
 			}
 
 			// Ensure transaction exists
-			txId, _, err := etlcommon.EnsureTransactionExists(etl_ctx, log.TxHash, int64(log.BlockNumber))
+			txId, _, err := etlcommon.EnsureTransactionExists(dbCtx, etl_ctx, log.TxHash, int64(log.BlockNumber))
 			if err != nil {
 				Error.Printf("EnsureTransactionExists failed for tx %s: %v", log.TxHash.Hex(), err)
 				processingFailed = true
@@ -123,7 +139,7 @@ func process_events_filterlog(ctx context.Context) error {
 			}
 
 			// Insert event log
-			evtId, err := etlcommon.InsertEventLog(etl_ctx, log, txId)
+			evtId, err := etlcommon.InsertEventLog(dbCtx, etl_ctx, log, txId)
 			if err != nil {
 				Error.Printf("InsertEventLog failed: %v", err)
 				processingFailed = true
@@ -131,12 +147,12 @@ func process_events_filterlog(ctx context.Context) error {
 				break
 			}
 
-			// Process the event using existing logic. Errors here are DB
-			// failures propagated from the store layer (which previously
+			// Process the event using existing logic. Errors here are decode
+			// or DB failures propagated from the handlers (which previously
 			// terminated the process from inside the store); terminate the
 			// loop without updating the processing status so the batch is
 			// re-processed on restart, exactly as before.
-			err = process_single_event(evtId)
+			err = process_single_event(dbCtx, evtId)
 			if err != nil {
 				Error.Printf("process_single_event failed for evt %d: %v", evtId, err)
 				return fmt.Errorf("processing event %d: %w", evtId, err)
@@ -146,14 +162,20 @@ func process_events_filterlog(ctx context.Context) error {
 			lastSuccessfulBlock = log.BlockNumber
 		}
 
-		// Only update status if processing succeeded
+		// Only update status if processing succeeded. The watermark write
+		// runs on dbCtx so a SIGTERM arriving mid-batch still gets the
+		// "finish batch, write status, exit 0" shutdown the loop promises.
 		if !processingFailed {
 			status.LastBlockNum = int64(toBlock)
-			storagew.Update_randomwalk_process_status(&status)
+			if err := rwRepo.UpdateProcessingStatus(dbCtx, &status); err != nil {
+				return fmt.Errorf("updating processing status: %w", err)
+			}
 		} else if lastSuccessfulBlock > 0 {
 			// Update to last successfully processed block
 			status.LastBlockNum = int64(lastSuccessfulBlock)
-			storagew.Update_randomwalk_process_status(&status)
+			if err := rwRepo.UpdateProcessingStatus(dbCtx, &status); err != nil {
+				return fmt.Errorf("updating processing status: %w", err)
+			}
 		}
 		// If processingFailed and lastSuccessfulBlock==0, don't update - will retry same batch
 

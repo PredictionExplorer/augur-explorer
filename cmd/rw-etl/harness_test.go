@@ -28,6 +28,7 @@ import (
 	rwc "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
@@ -104,9 +105,8 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	}
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage = store.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
-	storage.Db_set_schema_name("public")
-	storagew.S = storage
+	dbStore = store.NewFromPool(db.Pool)
+	rwRepo = rwdb.NewRepo(dbStore)
 
 	marketABI, err := abi.JSON(strings.NewReader(rwc.RWMarketABI))
 	if err != nil {
@@ -159,18 +159,22 @@ func resetDB(t *testing.T) {
 	if _, err := testDB.SQL.ExecContext(ctx, "TRUNCATE "+tables+" RESTART IDENTITY CASCADE"); err != nil {
 		t.Fatalf("truncating tables: %v", err)
 	}
-	store.ResetAddressCacheForTests()
+	dbStore.ResetAddressCache()
 
 	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
 		t.Fatalf("re-seeding database: %v", err)
 	}
 
 	for _, contractAddr := range []string{fxMarketplaceAddr, fxRandomWalkAddr} {
-		if _, err := storage.Lookup_or_create_address(contractAddr, 0, 0); err != nil {
+		if _, err := dbStore.LookupOrCreateAddress(ctx, contractAddr, 0, 0); err != nil {
 			t.Fatalf("registering contract address %v: %v", contractAddr, err)
 		}
 	}
-	rw_contracts = storagew.Get_randomwalk_contract_addresses()
+	var err2 error
+	rw_contracts, err2 = rwRepo.ContractAddrs(ctx)
+	if err2 != nil {
+		t.Fatalf("resolving contract addresses: %v", err2)
+	}
 	rwalk_addr = ethcommon.HexToAddress(rw_contracts.RandomWalk)
 	market_addr = ethcommon.HexToAddress(rw_contracts.MarketPlace)
 }
@@ -200,7 +204,7 @@ func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string
 // etlContext builds the shared-pipeline context exactly as the polling loop does.
 func etlContext() *etlcommon.ETLContext {
 	return &etlcommon.ETLContext{
-		Storage:   storage,
+		Store:     dbStore,
 		EthClient: eclient,
 		RpcClient: rpcclient,
 		Info:      Info,
@@ -209,8 +213,8 @@ func etlContext() *etlcommon.ETLContext {
 }
 
 // ingestTx records one transaction with its logs on the fake chain and runs
-// every log through the production pipeline.
-func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) {
+// every log through the production pipeline, returning the evt_log ids.
+func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) []int64 {
 	t.Helper()
 	etlCtx := etlContext()
 
@@ -224,22 +228,26 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 	}
 	testChain.AttachLogs(tx.Hash(), logs)
 
+	evtIDs := make([]int64, 0, len(logs))
 	for _, l := range logs {
-		if _, err := etlcommon.EnsureBlockExists(etlCtx, blockNum, l.BlockHash.Hex()); err != nil {
+		ctx := context.Background()
+		if _, err := etlcommon.EnsureBlockExists(ctx, etlCtx, blockNum, l.BlockHash.Hex()); err != nil {
 			t.Fatalf("EnsureBlockExists(%d): %v", blockNum, err)
 		}
-		txID, _, err := etlcommon.EnsureTransactionExists(etlCtx, l.TxHash, blockNum)
+		txID, _, err := etlcommon.EnsureTransactionExists(ctx, etlCtx, l.TxHash, blockNum)
 		if err != nil {
 			t.Fatalf("EnsureTransactionExists(%s): %v", l.TxHash, err)
 		}
-		evtID, err := etlcommon.InsertEventLog(etlCtx, *l, txID)
+		evtID, err := etlcommon.InsertEventLog(ctx, etlCtx, *l, txID)
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}
-		if err := process_single_event(evtID); err != nil {
+		if err := process_single_event(context.Background(), evtID); err != nil {
 			t.Fatalf("process_single_event(%d): %v", evtID, err)
 		}
+		evtIDs = append(evtIDs, evtID)
 	}
+	return evtIDs
 }
 
 func buildLog(t *testing.T, contractABI *abi.ABI, eventName string, address ethcommon.Address, indexed []any, nonIndexed []any) *types.Log {

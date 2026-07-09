@@ -1,13 +1,14 @@
 package randomwalk
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // Token list sequential (API)
@@ -17,9 +18,16 @@ func apiRwalkTokenListSeq(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
-	tokens := rw_storagew.Get_minted_tokens_sequentially(rwalk_aid, 0, 10000000000)
+	tokens, err := rwRepo.MintedTokensSequentially(c.Request.Context(), rwalk_aid, 0, 10000000000)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":       1,
 		"error":        "",
@@ -34,13 +42,20 @@ func apiRwalkTokenListPeriod(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	success, ini, fin := common.ParseTimeframeIniFin(c, JSON)
 	if !success {
 		return
 	}
-	tokens := rw_storagew.Get_minted_tokens_by_period(rwalk_aid, ini, fin)
+	tokens, err := rwRepo.MintedTokensByPeriod(c.Request.Context(), rwalk_aid, ini, fin)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":       1,
 		"error":        "",
@@ -58,7 +73,10 @@ func apiRwalkTokenInfo(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_token_id := c.Param("token_id")
 	var token_id int64
@@ -72,9 +90,15 @@ func apiRwalkTokenInfo(c *gin.Context) {
 		common.RespondErrorJSON(c, "'token_id' parameter is not set")
 		return
 	}
-	token_info, err := rw_storagew.Get_rwalk_token_info(rwalk_aid, token_id)
+	token_info, err := rwRepo.TokenInfo(c.Request.Context(), rwalk_aid, token_id)
 	if err != nil {
-		common.RespondErrorJSON(c, fmt.Sprintf("Error during query execution: %v", err))
+		if errors.Is(err, store.ErrNotFound) {
+			// Byte-identical legacy error text (pinned by the parity golden
+			// errors__missing_rw_token).
+			common.RespondErrorJSON(c, "Error during query execution: "+legacyNoRowsText)
+			return
+		}
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -103,14 +127,21 @@ func apiRwalkTokenHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "'token_id' parameter is not set")
 		return
 	}
-	addrs := rwContractAddrs()
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addrs.RandomWalkAid
 	p_rwalk_addr := addrs.RandomWalk
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
-	history := rw_storagew.Get_token_full_history(rwalk_aid, token_id, offset, limit)
+	history, err := rwRepo.TokenFullHistory(c.Request.Context(), rwalk_aid, token_id, offset, limit)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":       1,
 		"error":        "",
@@ -140,7 +171,11 @@ func apiRwalkTokenNameHistory(c *gin.Context) {
 		common.RespondErrorJSON(c, "'token_id' parameter is not set")
 		return
 	}
-	name_changes := rw_storagew.Get_name_changes_for_token(token_id)
+	name_changes, err := rwRepo.TokenNameChanges(c.Request.Context(), token_id)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":           1,
 		"error":            "",
@@ -165,7 +200,7 @@ func apiRwalkTokensByUser(c *gin.Context) {
 				common.RespondErrorJSON(c, "Can't resolve user identifier to valid address ID or address hex")
 				return
 			}
-			user_aid, err = rw_storagew.S.Nonfatal_lookup_address_id(p_user_aid)
+			user_aid, err = rwStore.LookupAddressID(c.Request.Context(), p_user_aid)
 			if err != nil {
 				common.RespondErrorJSON(c, "Cant find provided user")
 				return
@@ -175,12 +210,16 @@ func apiRwalkTokensByUser(c *gin.Context) {
 		common.RespondErrorJSON(c, "'user_aid' parameter is not set")
 		return
 	}
-	user_addr, err := rw_storagew.S.Lookup_address(user_aid)
+	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
 	if err != nil {
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}
-	user_tokens := rw_storagew.Get_random_walk_tokens_by_user(user_aid)
+	user_tokens, err := rwRepo.TokensByUser(c.Request.Context(), user_aid)
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":     1,
 		"error":      "",

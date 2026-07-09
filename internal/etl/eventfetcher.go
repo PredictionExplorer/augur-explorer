@@ -14,22 +14,22 @@ import (
 
 // FetchEvents retrieves events from the blockchain using FilterLogs
 // for the specified contract addresses in the given block range
-func FetchEvents(client *ethclient.Client, fromBlock, toBlock uint64, contracts []common.Address) ([]types.Log, error) {
+func FetchEvents(ctx context.Context, client *ethclient.Client, fromBlock, toBlock uint64, contracts []common.Address) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(int64(fromBlock)),
 		ToBlock:   big.NewInt(int64(toBlock)),
 		Addresses: contracts,
 	}
 
-	logs, err := client.FilterLogs(context.Background(), query)
+	logs, err := client.FilterLogs(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("FilterLogs failed: %v", err)
+		return nil, fmt.Errorf("FilterLogs failed: %w", err)
 	}
 
 	return logs, nil
 }
 
 // GetCurrentBlockNumber returns the current block number from the chain
-func GetCurrentBlockNumber(client *ethclient.Client) (uint64, error) {
-	return client.BlockNumber(context.Background())
+func GetCurrentBlockNumber(ctx context.Context, client *ethclient.Client) (uint64, error) {
+	return client.BlockNumber(ctx)
 }

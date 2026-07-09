@@ -4,8 +4,11 @@
 package store
 
 import (
-	"database/sql"
+	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ArchivedTransaction holds transaction data from archive
@@ -23,31 +26,17 @@ type ArchivedTransaction struct {
 	CtrctCreate bool
 }
 
-// ArchivedEventLog holds event log data from archive
-type ArchivedEventLog struct {
-	BlockNum     int64
-	EvtId        int64
-	LogIndex     int
-	TxHash       string
-	ContractAddr string
-	Topic0Sig    string
-	LogRlp       []byte
-}
-
-// Get_archived_transaction reads a transaction from arch_tx table
-// Returns nil if not found
-func (ss *SQLStorage) Get_archived_transaction(txHash string) (*ArchivedTransaction, error) {
+// ArchivedTransactionByHash reads a transaction from the arch_tx table.
+// A transaction absent from the archive yields (nil, nil).
+func (s *Store) ArchivedTransactionByHash(ctx context.Context, txHash string) (*ArchivedTransaction, error) {
 	var tx ArchivedTransaction
-	var query string
-	query = `SELECT 
-		block_num, tx_hash, tx_index,
-		from_aid, to_aid, value,
-		gas_used, gas_price, input_sig,
-		num_logs, ctrct_create
-	FROM arch_tx WHERE tx_hash = $1`
-
-	var inputSig sql.NullString
-	err := ss.db.QueryRow(query, txHash).Scan(
+	var inputSig *string
+	err := s.pool.QueryRow(ctx, `SELECT
+			block_num, tx_hash, tx_index,
+			from_aid, to_aid, value,
+			gas_used, gas_price, input_sig,
+			num_logs, ctrct_create
+		FROM arch_tx WHERE tx_hash = $1`, txHash).Scan(
 		&tx.BlockNum,
 		&tx.TxHash,
 		&tx.TxIndex,
@@ -61,73 +50,33 @@ func (ss *SQLStorage) Get_archived_transaction(txHash string) (*ArchivedTransact
 		&tx.CtrctCreate,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // Not found in archive
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil // not found in archive
 		}
-		return nil, fmt.Errorf("archive query failed: %w", err)
+		return nil, WrapError(fmt.Sprintf("archive lookup for %v", txHash), err)
 	}
-	if inputSig.Valid {
-		tx.InputSig = inputSig.String
+	if inputSig != nil {
+		tx.InputSig = *inputSig
 	}
 	return &tx, nil
 }
 
-// Get_archived_event_logs reads all event logs for a transaction from arch_evtlog
-func (ss *SQLStorage) Get_archived_event_logs(txHash string) ([]ArchivedEventLog, error) {
-	var query string
-	query = `SELECT 
-		block_num, COALESCE(evt_id, 0), log_index, tx_hash, contract_addr, topic0_sig, log_rlp
-	FROM arch_evtlog WHERE tx_hash = $1
-	ORDER BY log_index`
-
-	rows, err := ss.db.Query(query, txHash)
-	if err != nil {
-		return nil, fmt.Errorf("archive event log query failed: %w", err)
-	}
-	defer rows.Close()
-
-	var logs []ArchivedEventLog
-	for rows.Next() {
-		var log ArchivedEventLog
-		err := rows.Scan(
-			&log.BlockNum,
-			&log.EvtId,
-			&log.LogIndex,
-			&log.TxHash,
-			&log.ContractAddr,
-			&log.Topic0Sig,
-			&log.LogRlp,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("archive event log scan failed: %w", err)
-		}
-		logs = append(logs, log)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("archive event log iteration failed: %w", err)
-	}
-	return logs, nil
-}
-
-// Insert_transaction_from_archive inserts a transaction record using archived data
-// Returns the transaction ID
-func (ss *SQLStorage) Insert_transaction_from_archive(arch *ArchivedTransaction) (int64, error) {
-	var query string
-	query = `INSERT INTO transaction (
-		block_num, tx_hash, tx_index, 
-		from_aid, to_aid, value, 
-		gas_used, gas_price,
-		input_sig, num_logs, ctrct_create
-	) VALUES (
-		$1, $2, $3, 
-		$4, $5, $6, 
-		$7, $8,
-		$9, $10, $11
-	) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
-	RETURNING id`
-
-	var txId int64
-	err := ss.db.QueryRow(query,
+// InsertTransactionFromArchive inserts a transaction record using archived
+// data (idempotent on tx_hash) and returns the transaction id.
+func (s *Store) InsertTransactionFromArchive(ctx context.Context, arch *ArchivedTransaction) (int64, error) {
+	var txID int64
+	err := s.pool.QueryRow(ctx, `INSERT INTO transaction (
+			block_num, tx_hash, tx_index,
+			from_aid, to_aid, value,
+			gas_used, gas_price,
+			input_sig, num_logs, ctrct_create
+		) VALUES (
+			$1, $2, $3,
+			$4, $5, $6,
+			$7, $8,
+			$9, $10, $11
+		) ON CONFLICT (tx_hash) DO UPDATE SET id = transaction.id
+		RETURNING id`,
 		arch.BlockNum,
 		arch.TxHash,
 		arch.TxIndex,
@@ -139,12 +88,9 @@ func (ss *SQLStorage) Insert_transaction_from_archive(arch *ArchivedTransaction)
 		arch.InputSig,
 		arch.NumLogs,
 		arch.CtrctCreate,
-	).Scan(&txId)
-
+	).Scan(&txID)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Insert_transaction_from_archive failed: %v", err))
-		return 0, err
+		return 0, WrapError(fmt.Sprintf("insert transaction from archive %v", arch.TxHash), err)
 	}
-
-	return txId, nil
+	return txID, nil
 }

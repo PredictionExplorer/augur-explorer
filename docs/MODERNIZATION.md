@@ -33,25 +33,25 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-07 (CG write-layer + ETL error-propagation sprint). Update after each phase.
+Measured 2026-07-08 (Phase 1 completion sprint). Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 68,252 (growth = test code) | n/a (informational) | `rg --files internal cmd -g '*.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
-| snake_case functions | ~700 | **359** (api 135, store 91 — randomwalk 61 + base 30 —, cg-etl 88 `proc_*` renamed with the Phase-3 port, notibot 24, rw-etl 11) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
-| `os.Exit` in library code (`internal/`) | ~560 | **88** (store/randomwalk 77, api 7, primitives 1, test-harness `TestMain`s 3; **store/cosmicgame production code is exit-free**) | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 66,735 (legacy store layer + sqlc scaffolding deleted) | n/a (informational) | `rg --files internal cmd -g '*.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| snake_case functions | ~700 | **267** (api 135, cg-etl 88 `proc_*` renamed with the Phase-3 port, notibot 24, rw-etl 10, rwalk-alarm 4, misc 6; **the entire store layer is 0**) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
+| `os.Exit` in library code (`internal/`) | ~560 | **12 matches = 5 real calls** (3 test-harness `TestMain`s, the `cosmic_game_init` startup fatal, `primitives.Fatalf`; the other 7 are doc comments). **The whole store layer is exit-free.** | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **17** | **0** | `rg -l '^\s*\. "github' --type go` |
 | Package-level mutable globals (api + etl) | ~120 | ~80 (state.go ~50, cg-etl ~25, rw-etl ~8) | ~0 (DI everywhere) | manual review per package |
-| golangci-lint issues | 433 (first run) | **170** capped output (uncapped 674, down from 904 — deleting the legacy write layer removed its issue load) | **0** | `golangci-lint run` |
-| Test files | 17 | **93** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
+| golangci-lint issues | 433 (first run) | **145** capped output (uncapped 492, down from 674 — deleting the legacy base/RW store layers removed their issue load) | **0** | `golangci-lint run` |
+| Test files | 17 | **95** | 100+ | `rg --files -g '*_test.go' \| wc -l` |
 | Fuzz targets | 0 | **28** | **25+** (see §4.4) — met; grows with Phase 3 | `rg "func Fuzz" internal cmd contracts -c` |
-| Benchmarks | 0 | **4** (8 sub-benchmarks; baselines in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
+| Benchmarks | 0 | **4** (8 sub-benchmarks; baselines in `docs/benchmarks.md`, re-checked after Phase 1: no regression) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
 | Coverage on `internal/` (unit) | 2.4% | **8.2%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Coverage on `internal/` (integration, enforced) | n/a | **66.6%** (ratchet floor 64% in CI; +0.7pp — the write-error suite exercises the new error returns) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
-| Queries on sqlc | 0 | 8 (layer1 pattern; scope narrowed by D7) | simple static lookups (D7) | count in `internal/store/queries/*.sql` |
+| Coverage on `internal/` (integration, enforced) | n/a | **67.2%** (ratchet floor raised 64% → 66% in CI) | **≥70%**, floor only moves up | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
+| Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
 | Routes on stdlib router | 0 | 0 (gin) | all (v1 compat + v2) | n/a |
-| `context.Context` on store methods | 0% | **304 Repo methods** (the complete CosmicGame store — reads and writes; the CG `SQLStorageWrapper` is deleted) | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame` |
-| Store queries on pgx-native pool | 0 | 304 (same Repo methods; every binary already runs one shared `pgxpool`) | all | manual |
+| `context.Context` on store methods | 0% | **100% — 366 Repo methods (CosmicGame 304 + RandomWalk 62) + 22 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
+| Store queries on pgx-native pool | 0 | all (one shared `pgxpool` per process; the `database/sql` view is gone) | all | manual |
 
 ---
 
@@ -391,6 +391,12 @@ Goal: `internal/store` becomes a modern, context-first, error-returning,
 pool-based data layer with type-safe queries. Rewrite file-by-file; each file
 lands only with its §4.2 tests green.
 
+**Status: complete as of 2026-07-08.** The store layer (base + CosmicGame +
+RandomWalk) is fully pgx-native and context-first; `SQLStorage`, both
+`SQLStorageWrapper`s, the `database/sql` pool view and the package-level
+address cache are deleted. The only remaining §5.3 caller work (renaming the
+`proc_*` ETL handlers) is the Phase 3 port.
+
 ### 5.1 Structural groundwork (do once, first)
 
 **Sprint 2026-07-07: landed in full (see progress log).** Package renamed
@@ -406,16 +412,18 @@ lands only with its §4.2 tests green.
       `Connect_to_storage`/`openDB` deleted, all 9 call sites converted
       (apiserver, cg-etl, rw-etl, notibot, imggen-monitor, cgctl ×2, rwctl,
       opsctl). `ConnectHint` preserves the operator diagnostics of the old
-      `show_connect_error`.
+      `show_connect_error`. *2026-07-08: the transitional `Store.DB()` view
+      and the `SQLStorage` type are deleted — the pool is pgx-only.*
 - [x] All methods take `ctx context.Context` as the first parameter
       (established by the Repo pattern; applies per file as each converts)
 - [x] Typed sentinel errors: `ErrNotFound`, `ErrConflict`; `WrapError` maps
       pgx/sql no-rows and unique-violations, preserving chains (unit-tested)
-- [~] `SQLStorageWrapper` shrinks per converted file (deleted at the end of
+- [x] `SQLStorageWrapper` shrinks per converted file (deleted at the end of
       Phase 1); **D3 decided: separate injected repo structs** — the
-      CosmicGame wrapper is **deleted** (2026-07-07, write-layer sprint);
-      `randomwalk.SQLStorageWrapper` remains until its files convert
-      (`randomwalk.Repo` follows with them)
+      CosmicGame wrapper deleted 2026-07-07 (write-layer sprint), the
+      RandomWalk wrapper and the `SQLStorage` type itself deleted 2026-07-08
+      (Phase 1 completion sprint; `store.QueryList` extracted so both repos
+      share the scan loop)
 - [x] `SchemaName()` concatenation removed from converted queries (bare table
       names; pool pins `search_path=public`); unconverted files keep it until
       their conversion
@@ -565,21 +573,56 @@ they need the §4.3 ETL fixtures in place):
 
 `internal/store/randomwalk/`:
 
-- [ ] `ranking.go` (transactional Elo update via `pgx.Tx`)
-- [ ] `randomwalk_api.go`
-- [ ] `randomwalk.go`
+- [x] `ranking.go` (transactional Elo update via `pgx.Tx`) *(2026-07-08 —
+      9 methods incl. `ApplyRankingMatch(ctx, tx, ...)` and
+      `ConsumeRankingVoteNonce(ctx, tx, ...)` on `pgx.Tx`;
+      `handlers_ranking.go` runs both vote transactions on `Pool().Begin`;
+      nil-slice semantics of the ID-list queries preserved (handlers marshal
+      them directly))*
+- [x] `randomwalk_api.go` *(2026-07-08 — 23 methods: `ActiveOffers` (aids are
+      bound parameters now, ORDER BY stays the fuzzed whitelist),
+      `MintedTokensByPeriod`/`Sequentially`, `TradingHistory`,
+      `RandomWalkStats`, `MarketStats`, `TokenFullHistory`,
+      `MarketTradingVolumeByPeriod`, `TokenNameChanges`, `TokensByUser`,
+      `FloorPrice` (empty order book keeps the explicit noOffers flag for
+      notibot; the driver's ErrNoRows no longer leaks), `TradingHistoryByUser`,
+      `UserInfo`/`TokenInfo` (`(rec, error)` + `ErrNotFound`; handlers render
+      the byte-identical legacy not-found strings), `TokenMinted`,
+      `Top5TradedTokens`, `MintIntervals`, `WithdrawalChart`, `SaleHistory`,
+      `FloorPriceByPeriod`, `MintedTokensCSV`, `MintReport`)*
+- [x] `randomwalk.go` *(2026-07-08 — 30 methods: processing/messaging status
+      round trips (lazy singleton insert like the CG pattern),
+      `ContractAddrs` + new `RawContractAddrs` (replaces rw-etl's raw
+      `QueryRow` in main), all 7 ETL inserts on `Store.LookupOrCreateAddress`
+      (`must_lookup_or_create_address` and its `os.Exit` die),
+      `OfferExists`/`TokenExists` (**a DB failure during the existence check
+      used to silently skip the event — a data-loss bug; real errors now
+      abort the batch**), the rw_uranks rank upserts, notification reads,
+      `ServerTimestamp`, `LastMintTimestamp`, `TokenTransfersByTxHash`)*
 
 Base:
 
-- [ ] Migrate base files (`lookups.go`, `blockchain.go`, `blockchain_insert.go`,
+- [x] Migrate base files (`lookups.go`, `blockchain.go`, `blockchain_insert.go`,
       `archive.go`) from `database/sql` handles to the pgxpool-native `Store`
+      *(2026-07-08 — 17 ctx-first `Store` methods: `EventLog`,
+      `EventsBySigAndTx`, `EventLogRLPsBefore`, `BlockHash`, `LastBlockNum`,
+      `SetLastBlockNum`, `DeleteBlock`, `EvtLogExists`,
+      `CountEvtLogsForContract`, `TransactionIDByHash`, `InsertBlock`,
+      `InsertMinimalTransaction`, `InsertTransaction`, `InsertEventLog`,
+      `ArchivedTransactionByHash`, `InsertTransactionFromArchive`,
+      `AddressByID`; the 6 dead functions (`Get_evtlogs_by_signature*`,
+      `Get_last_evtlog_id`, `Get_last/first_block_timestamp`,
+      `Get_archived_event_logs`) deleted; `lookups.go` with the process-wide
+      `amap` cache deleted — every caller is on the per-Store LRU.
+      `internal/etl` (`ETLContext.Store *store.Store`) and all its callers
+      take a context; `FetchEvents`/`GetCurrentBlockNumber` too.)*
 - [x] Address cache: field on `Store` with an LRU bound *(2026-07-07 —
       `internal/store/address.go`: `LookupOrCreateAddress`/`LookupAddressID`
       on the pgx pool with a bounded per-Store LRU (`DefaultAddressCacheSize`
       64k, race-safe, unit + integration tested; concurrent-create races
-      resolve via the unique constraint + re-read). The package-level cache in
-      `lookups.go` remains only for the unconverted RandomWalk callers and
-      dies with the base-file migration.)*
+      resolve via the unique constraint + re-read). 2026-07-08: the
+      package-level cache in `lookups.go` is deleted with the base-file
+      migration; `AddressByID` added for the reverse lookups.)*
 
 ### 5.3 Callers updated as each file lands
 
@@ -593,8 +636,15 @@ Base:
       `state.go` background refreshers (`do_reload_database_variables` incl.
       the statistics aggregate) call converted methods with
       `context.Background()` and keep the previous value on failure
-      (ContractState extraction is Phase 2). `arb_storagew` remains only for
-      the unconverted base-store surface (`Nonfatal_lookup_address_id`).
+      (ContractState extraction is Phase 2). *2026-07-08: the last legacy
+      surface is gone — the ~39 `Nonfatal_lookup_address_id` sites (CG API)
+      and the RandomWalk handlers run on `Store.LookupAddressID`/`AddressByID`
+      with the request context; the RandomWalk package got its own
+      `respondStoreError` and its ~49 handler sites pass
+      `c.Request.Context()`; the three charity routes that called `os.Exit`
+      from inside a request handler on a failed contract-address lookup
+      answer HTTP 500 instead (a cancelled request could previously kill the
+      server); `/readyz` pings `Store.Pool()`.*
 - [x] `cmd/cg-etl` fully error-propagating *(2026-07-07 — every `proc_*`
       handler takes `ctx` and returns errors (decode failures included);
       `select_event_and_process` became a dispatch table that checks every
@@ -604,12 +654,26 @@ Base:
       `context.WithoutCancel`, so SIGTERM mid-batch still gets the promised
       "finish batch, write status, exit 0". Full batch retry w/ backoff is
       Phase 3.)*
-- [~] `cmd/notibot`, `cmd/imggen-monitor`, CLIs (`cgctl`, `rwctl`, `opsctl`)
+- [x] `cmd/notibot`, `cmd/imggen-monitor`, CLIs (`cgctl`, `rwctl`, `opsctl`)
       — all construct the shared `Store` (one pool per process) and handle
-      connect errors; per-query conversion follows their files
-- [ ] Delete `db/{layer1,cosmicgame,randomwalk}/` raw DDL dirs once nothing
+      connect errors; per-query conversion followed their files *(2026-07-08 —
+      notibot polls through the Repo with ctx (DB failures keep the legacy
+      crash-and-restart semantics under systemd, resuming from the persisted
+      watermark); `rwctl` commands run on `(Repo, Store)` from
+      `connectRWStorage` (top-rated rank writes now check errors); `cmd/rw-etl`
+      mirrors cg-etl: dispatch-table handlers return errors, RLP-decode panic
+      is a returned error, shutdown finishes the in-flight batch on
+      `context.WithoutCancel`; `opsctl archive node-fill` resolves addresses
+      through a pgx `Store` (its tool-local archive statements keep their own
+      DSN handle); the `Init_log`/`Log_msg` file loggers are replaced by the
+      pgx slog tracer writing to the same db.log files)*
+- [x] Delete `db/{layer1,cosmicgame,randomwalk}/` raw DDL dirs once nothing
       references them (update the `opsctl archive node-fill` error message);
-      goose migrations become the only schema source
+      goose migrations become the only schema source *(2026-07-08 — dirs
+      deleted; node-fill help/error text points at `db/migrations`, which
+      already carries the archive tables. The unused sqlc scaffolding
+      (`sqlc.yaml`, `internal/store/queries/`, `internal/store/sqlcgen/`,
+      `make generate`) is retired with it — D7 amended.)*
 
 ---
 
@@ -792,7 +856,7 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | D4 | `internal/primitives` future | rename to `internal/model` / dissolve into owners | open |
 | D5 | Property-testing lib | stdlib fuzz only / add `pgregory.net/rapid` | **decided 2026-07-06: stdlib-only** — the §4.4 fleet needed no extra dependency; revisit only if a future property needs structured generators |
 | D6 | v1 sunset criteria | zero traffic for 30d / hard date | open |
-| D7 | sqlc scope (amends the §5.2 blanket "convert static SQL to sqlc") | all static queries / simple lookups only | **decided 2026-07-07: hand-written pgx for the read layer** — the store's heavy COALESCE/CASE/outer-join UNIONs defeat sqlc's nullability inference and would force pointer-mapped row types that fight the pinned JSON shapes; sqlc stays the target for simple static lookups (the existing layer1 pattern). |
+| D7 | sqlc scope (amends the §5.2 blanket "convert static SQL to sqlc") | all static queries / simple lookups only / none | **decided 2026-07-07: hand-written pgx for the read layer** — the store's heavy COALESCE/CASE/outer-join UNIONs defeat sqlc's nullability inference and would force pointer-mapped row types that fight the pinned JSON shapes. **Amended 2026-07-08: sqlc retired entirely** — the base-file conversion superseded its 8 layer1 queries with hand-written `Store` methods and the never-imported scaffolding was deleted. |
 
 ---
 
@@ -809,4 +873,5 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | 2026-07-07 | `9018fcce` | **Read-layer conversion sprint 3 (§5.2: the four heavyweights — the CosmicGame read layer is now fully on the Repo):** `admin_events_resolve.go`, `staking.go`, `user-specific.go`, `statistics.go` converted to context-first, error-returning, pgx-native `Repo` methods (~52 public methods + ctx-aware helpers; `(bool, rec)` returns became `(rec, error)` + `ErrNotFound` on `UserInfo`/`StakeActionCstInfo`/`StakeActionRwalkInfo`); **every golden byte-identical except one deliberate fix** (see below). Safety/testability: the stake-action queries extracted to pure `stakeActionQueryCST/RWalk` functions with a no-Docker unit test pinning both production shapes; the admin-resolve lookups pass the `checkAdminIdent` guard; `RoiLeaderboard` keeps the fuzzed ORDER-BY whitelist; `BidsByUser`/`CosmicSignatureTokensByUser` reuse the whitelisted `bidList`/`nftListSelectSQL` builders and the legacy `buildBidSelectQuery`/`scanBidRecord` + `buildNFTSelectQuery`/`scanNFTRecord` twins are deleted (as are `donatedTokenDistributionLegacy` and the production-dead `Get_num_prize_claims`). Callers: all remaining CosmicGame read handlers (~35 sites incl. the big hybrid `api_cosmic_game_user_info`, the dashboard round-statistics call, 25 staking routes, admin-events resolve) now use `c.Request.Context()` + `respondStoreError`, with `ErrNotFound` mapped to the exact legacy not-found envelopes at all nine `Get_user_info` gates; `do_reload_database_variables` refreshes `bw_stats` via the Repo on `context.Background()` and keeps the previous value on failure. Store suite: the four integration test files moved to `repo(t)` (65 goldens unchanged), the legacy `wrapper(t)` harness deleted — the whole CG read suite runs the production one-pool wiring; `TestErrorPathsConvertedFiles` extended with 8 cancelled-context + 4 closed-pool cases; `BenchmarkStatisticsQueries` on the Repo (baselines re-recorded in `docs/benchmarks.md`: the stdlib-over-pool B/op inflation from the groundwork sprint is gone — statistics 40,830 → 14,390 B/op, claims 19,728 → 9,625 B/op; latency inside the container noise band). **Bug found & fixed:** `Get_staking_cst_mints_global` hardcoded `IsRWalk=true` on rows its own `WHERE is_rwalk=FALSE` filter selects (copy-paste from the RWalk variant), so `staking/cst/mints/global` mislabeled every CST-staker mint — store + parity goldens updated, regression assertion added. Metrics: snake_case 563 → 506, `os.Exit` in `internal/` 362 → 235 (the CG read layer is exit-free; 146 of the rest live in Phase-3 `inserts.go`/`deletes.go`), Repo methods 90 → 156, dot-import files 19 → 18, lint uncapped 1057 → 904 (capped 172), integration coverage 65.9% (−0.7pp: ~150 new error-only branches; floor stays 64%). |
 | 2026-07-07 | `449dae2d` | **Read-layer conversion sprint 2 (§5.2: eight more files, 66 functions — the CosmicGame read layer is converted except the four heavyweights):** `bidding_analytics.go`, `raffle-eth.go`, `nft-donations.go`, `erc20-donations.go`, `tokens-erc721.go`, `contract_params.go`, `bidding.go`, `eth-donations.go` converted to context-first, error-returning, pgx-native `Repo` methods with idiomatic names; **all goldens byte-identical** (2 new store goldens: the epoch-aligned hourly bucket branch and first `SearchTokensByName` coverage). Safety/testability: `bidding.go`'s string-passthrough query builder replaced by `bidSelectQuery` over WHERE/ORDER BY/paging whitelists (`TestBidSelectQueryWhitelists` walks every combination and the rejection paths — request input can never reach ORDER BY); `bidding_analytics.go`'s bucket SQL extracted to `bidFrequencySQL` (unit tests pin epoch-aligned vs anchored branch selection and that only the integer interval is interpolated); `contract_params.go` admin table/column names pass a lowercase-identifier guard, and the `SyncAdmin*` check-then-correct policy moved out of storage into `cmd/cg-etl` (`paramSyncer`) with lazy address resolution preserved (a clean sync run leaves the address table untouched); `store.NullTimeText` added for nullable timestamps. Callers: ~60 more API handlers on `c.Request.Context()` + `respondStoreError`; `state.go` background refreshers keep the previous value on failure and log real errors; cg-etl donation handlers use adapters preserving the -1/0 sentinels (crash only on real DB errors until Phase 3); `cgctl total-tokens`/`token-seed` and `imggen-monitor` build the `Repo` directly. New tests: `TestErrorPathsConvertedFiles` (cancelled context + closed pool per file), malformed-identifier rejections, admin-correction insert round trip restoring fixture state. `Get_donated_token_distribution` stays as a private legacy copy inside unconverted `statistics.go` (dies with that file's conversion). Metrics: snake_case 630 → 563, `os.Exit` in `internal/` 469 → 362, Repo methods 24 → 90, lint uncapped 1210 → 1057 (capped display 179), test files 87 → 89, golden files 489 → 491, integration coverage 66.6% (floor stays 64%). |
 | 2026-07-07 | `86b222ea` | **CG write-layer + ETL error-propagation sprint (§5.2 complete for CosmicGame: `deletes.go` + `inserts.go`, the §5.3 cg-etl item, and the §5.2-base address-cache item):** the 145 legacy write functions became context-first, error-returning, pgx-native `Repo` methods — `deletes.go` is one generic `deleteByEvtlogID` helper + 72 named methods, `inserts.go` 73 methods with `insertAdminValue` covering the ~35 single-value admin tables — and the CosmicGame `SQLStorageWrapper` (incl. `must_lookup_or_create_address`) is **deleted**. Address FKs resolve through the new `internal/store/address.go`: `Store.LookupOrCreateAddress`/`LookupAddressID` on the pgx pool with a bounded per-Store LRU (unit-tested incl. `-race`; insert races resolve via the unique constraint + re-read), pulled forward from the base-file batch. `cmd/cg-etl`: all 75 `proc_*` handlers take `ctx` and return errors (ABI-decode failures included — previously `os.Exit`), the if-chain dispatcher became a table that checks **every** handler's error (only bid v1/v2 were checked before), `process_single_event`'s RLP-decode `panic` is a returned error, and shutdown runs in-flight batch DB work on `context.WithoutCancel` so SIGTERM mid-batch still finishes the batch, writes status and exits 0 (previously the watermark write could fail with `context canceled` → exit 1). `internal/api/cosmicgame` dropped its wrapper handle (`arb_storage *store.SQLStorage` for the not-yet-converted base lookups; dead exported `ArbStoragew` deleted). **Behavior fixes:** (1) `InsertBid` no longer silently defaults `bid_position` to 1 when the position query fails — the legacy layer mislabeled every later bid of a round on any DB error; real errors now propagate. (2) The registry inspected `ERC20TransferFailed` (ICosmicSignatureErrors.sol) but never dispatched it, so fetched events were silently dropped with `cg_erc20_transf_err` forever empty; the event is now dispatched (`proc_erc20_transfer_failed_event` raw-decodes the body — no generated ABI carries the event; `TestERC20TransferFailedConstantMatchesSignature` pins the keccak signature and the no-ABI registry test guards the decode strategy) with fixture + golden. Dead `find_cosmic_token_721_transfer`/`find_cosmic_token_721_mint_event` (commented-out callers only) deleted. **Tests:** all 97 pre-existing ETL fixture goldens, replay-idempotence, reorg rollback, store read suite and the 183-golden parity suite **byte-identical** (1 new golden: `admin_erc20_transfer_failed`); new `TestWriteErrorPropagation` re-processes every fixture on a `default_transaction_read_only=on` pool and requires the error to surface from `process_single_event` for all 75 event types (and no error for the three no-write negative fixtures — proving their handlers write nothing); `TestDeleteMethodsValidSQL` reflection-sweeps all 73 `Delete*` methods against the real schema (the table-name-typo bug class found twice in §4.3); `TestLookupOrCreateAddress` integration round trip (create/cached/uncached/not-found/empty, first-seen block preserved); `TestErrorPathsConvertedFiles` extended with insert/delete cancelled-ctx + closed-pool cases. Metrics: snake_case 506 → 359, `os.Exit` in `internal/` 235 → **88** (store/cosmicgame production code exit-free; the rest is randomwalk 77 + api 7 + primitives 1 + test mains 3), Repo methods 156 → **304**, dot-import files 18 → 17, lint uncapped 904 → **674** (capped 170), test files 89 → 93, golden files 491 → 492, integration coverage 65.9% → **66.6%** (floor stays 64% until Phase 1 completes with the RandomWalk conversion). |
+| 2026-07-08 | | **Phase 1 completion sprint (§5 done: RandomWalk + base store on pgx, legacy bridge deleted):** the RandomWalk store's 62 legacy methods became context-first, error-returning, pgx-native `Repo` methods (`repo.go` mirrors CosmicGame's; the shared scan loop extracted to `store.QueryList`); the ranking transactions moved from `*sql.Tx` to `pgx.Tx` (`ApplyRankingMatch`/`ConsumeRankingVoteNonce`); the base files (`blockchain.go`, `blockchain_insert.go`, `archive.go`) became 17 ctx-first `Store` methods and 6 dead functions were deleted; `lookups.go` with the process-wide `amap` address cache is gone (per-Store LRU everywhere, new `AddressByID`). `internal/etl` runs on `ETLContext.Store *store.Store` with context-aware helpers. **The legacy bridge is deleted:** `SQLStorage`, `NewSQLStorageFromDB`, `Init_log`/`Log_msg` (replaced by the pgx slog tracer writing to the same db.log files), the transitional `Store.DB()` `database/sql` pool view, `common.Ctx.Db`, and the RandomWalk `SQLStorageWrapper`. Callers: ~49 RandomWalk API handler sites on `c.Request.Context()` + a package `respondStoreError` (not-found flows render the byte-identical legacy `DBError`/error strings via `store.ErrNotFound` mapping — pinned by the parity goldens incl. `errors__missing_rw_token`); ~39 CG API address-lookup sites on `Store.LookupAddressID`; three charity routes no longer `os.Exit` inside a request handler (a client disconnect could previously kill the whole API server once lookups became ctx-aware); rw-etl mirrors cg-etl (dispatch table checks every handler, RLP-decode panic → error, SIGTERM finishes the in-flight batch on `context.WithoutCancel`); notibot/rwctl/opsctl on Repo + Store with checked errors; `opsctl archive node-fill` resolves addresses through a pgx `Store`; `/readyz` pings `Store.Pool()`. Raw DDL dirs `db/{layer1,cosmicgame,randomwalk}` deleted (goose migrations are the only schema source; node-fill's help text updated) and the never-imported sqlc scaffolding retired (D7 amended). **Behavior fixes:** (1) `OfferExists`/`TokenExists` treated any DB failure during the existence check as "does not exist" and silently skipped the event — a data-loss bug; real errors now abort the batch for re-processing. (2) The rw-etl ABI-decode failures no longer kill the process mid-batch. **Tests:** all 492 goldens **byte-identical** (parity, CG+RW store suites, both ETL fixture suites incl. replay-idempotence and reorg; RW store suite rebuilt on `repo(t)` + production one-pool wiring); new rw-etl `TestWriteErrorPropagation` (read-only pool; all 7 event types must surface write errors, the 3 no-write negative fixtures must stay clean); new RW `TestErrorPathsConvertedFiles` (22 cancelled-ctx + 10 closed-pool cases across all three files); `TestStoreBaseHelpers` (AddressByID incl. ErrNotFound, case-insensitive `CountEvtLogsForContract`, `EvtLogExists`); blockops suite ported to the ctx-first API. Statistics benchmarks re-checked: no regression (2.24ms/787µs/259µs vs 2.53/936/315 baselines, B/op identical). Metrics: snake_case 359 → **267** (store layer 0), `os.Exit` in `internal/` 88 → **12 matches / 5 real calls** (3 test mains + startup fatal + `primitives.Fatalf`), Repo methods 304 → **366** (+ 22 base Store methods, ctx coverage 100%), lint uncapped 674 → **492** (capped 145), test files 93 → 95, LOC 68,252 → 66,735, integration coverage 66.6% → **67.2%** (CI floor raised 64% → 66%). |
 | | | |

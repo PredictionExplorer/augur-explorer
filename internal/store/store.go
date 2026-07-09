@@ -1,8 +1,11 @@
+// Package store provides pgx-native database access for rwcg: the
+// pool-owning Store with the base-layer queries (addresses, blocks,
+// transactions, event logs, archive) plus the domain repositories in the
+// randomwalk and cosmicgame subpackages.
 package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net"
@@ -12,7 +15,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 )
 
 // DefaultMaxConns bounds the connection pool when Config.MaxConns is zero.
@@ -97,12 +99,11 @@ func (cfg Config) connString() string {
 }
 
 // Store is the process-wide database handle: it owns a pgx connection pool
-// and hands out both native pgx access (Pool, for the rewritten query layer)
-// and a database/sql view over the same pool (DB, for legacy methods that
-// have not been converted yet). Create one per process with New and share it.
+// plus the bounded address-id cache, and every query method (directly on
+// Store or through the domain repos) runs on it. Create one per process with
+// New and share it.
 type Store struct {
 	pool      *pgxpool.Pool
-	sqlDB     *sql.DB
 	addrCache *addressCache
 }
 
@@ -147,22 +148,15 @@ func New(ctx context.Context, cfg Config) (*Store, error) {
 func NewFromPool(pool *pgxpool.Pool) *Store {
 	return &Store{
 		pool:      pool,
-		sqlDB:     stdlib.OpenDBFromPool(pool),
 		addrCache: newAddressCache(DefaultAddressCacheSize),
 	}
 }
 
-// Pool exposes the native pgx pool; converted query code runs on it.
+// Pool exposes the native pgx pool the query methods run on.
 func (s *Store) Pool() *pgxpool.Pool { return s.pool }
 
-// DB returns a database/sql view sharing the pool's connections. It exists
-// for the legacy SQLStorage methods that still speak database/sql; new code
-// uses Pool. It goes away when the Phase 1 store conversion completes.
-func (s *Store) DB() *sql.DB { return s.sqlDB }
-
-// Close releases the database/sql view and the underlying pool.
+// Close releases the underlying pool.
 func (s *Store) Close() {
-	_ = s.sqlDB.Close()
 	s.pool.Close()
 }
 

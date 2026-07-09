@@ -6,9 +6,8 @@ package randomwalk
 // every public query function runs against the shared fixture dataset plus a
 // suite-local extension seed (rw_uranks, which production fills from the
 // rwctl top-rated cron rather than triggers), with results pinned as goldens.
-//
-// Error paths on the legacy os.Exit methods stay untested until Phase 1
-// converts them to returned errors.
+// The suite runs on the production wiring: one pgx pool wrapped by
+// store.NewFromPool and queried through the Repo.
 
 import (
 	"context"
@@ -16,11 +15,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
@@ -45,8 +45,10 @@ const (
 var extensionSeedFS embed.FS
 
 var (
-	sharedWrapper *SQLStorageWrapper
-	errSetupSkip  error // non-nil: integration environment unavailable, skip
+	sharedStore      *store.Store
+	sharedRepo       *Repo
+	sharedConnString string
+	errSetupSkip     error // non-nil: integration environment unavailable, skip
 )
 
 func TestMain(m *testing.M) {
@@ -82,24 +84,42 @@ func runMain(m *testing.M) int {
 		return 1
 	}
 
-	storage := store.NewSQLStorageFromDB(db.SQL, log.New(os.Stderr, "store: ", 0))
-	storage.Db_set_schema_name("public")
-	sharedWrapper = &SQLStorageWrapper{S: storage}
+	sharedStore = store.NewFromPool(db.Pool)
+	sharedRepo = NewRepo(sharedStore)
+	sharedConnString = db.ConnString
 
 	return m.Run()
 }
 
-// wrapper returns the shared legacy wrapper, skipping the test when the
-// integration environment (Docker) is unavailable.
-func wrapper(t *testing.T) *SQLStorageWrapper {
+// spareStore opens a second Store on the same container so tests can
+// exercise closed-pool behavior without harming the shared pool.
+func spareStore(ctx context.Context) (*store.Store, error) {
+	pool, err := pgxpool.New(ctx, sharedConnString)
+	if err != nil {
+		return nil, err
+	}
+	return store.NewFromPool(pool), nil
+}
+
+// repo returns the shared Repo, skipping the test when the integration
+// environment (Docker) is unavailable.
+func repo(t *testing.T) *Repo {
 	t.Helper()
 	if errSetupSkip != nil {
 		t.Skipf("skipping: %v", errSetupSkip)
 	}
-	if sharedWrapper == nil {
+	if sharedRepo == nil {
 		t.Fatal("store harness not initialized (TestMain did not run?)")
 	}
-	return sharedWrapper
+	return sharedRepo
+}
+
+// pool exposes the shared pgx pool for the fixture-restoring cleanup
+// statements of the write tests.
+func pool(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+	repo(t)
+	return sharedStore.Pool()
 }
 
 // golden pins fetch() as testdata/golden/<name>.json, fetching twice to

@@ -15,7 +15,10 @@ func apiRwalkCurrentOffers(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addr := rwContractAddrs()
+	addr, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addr.RandomWalkAid
 	market_aid := addr.MarketPlaceAid
 	p_order_by := c.Param("order_by")
@@ -30,12 +33,16 @@ func apiRwalkCurrentOffers(c *gin.Context) {
 		common.RespondErrorJSON(c, "'order_by' parameter is not set")
 		return
 	}
-	offers := rw_storagew.Get_active_offers(rwalk_aid, market_aid, int(order_by))
+	offers, err := rwRepo.ActiveOffers(c.Request.Context(), rwalk_aid, market_aid, int(order_by))
+	if err != nil {
+		respondStoreError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":   1,
-		"error":    "",
-		"Offers":   offers,
-		"RWalkAid": rwalk_aid,
+		"status":    1,
+		"error":     "",
+		"Offers":    offers,
+		"RWalkAid":  rwalk_aid,
 		"MarketAid": market_aid,
 	})
 }
@@ -46,19 +53,28 @@ func apiRwalkFloorPrice(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addr := rwContractAddrs()
+	addr, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
 	rwalk_aid := addr.RandomWalkAid
 	market_aid := addr.MarketPlaceAid
 	p_rwalk_addr := addr.RandomWalk
 	p_market_addr := addr.MarketPlace
-	_, floor_price, _, _, err := rw_storagew.Get_floor_price(rwalk_aid, market_aid)
-	var db_err string
+	no_offers, floor_price, _, _, err := rwRepo.FloorPrice(c.Request.Context(), rwalk_aid, market_aid)
 	if err != nil {
-		db_err = err.Error()
+		respondStoreError(c, err)
+		return
+	}
+	// The legacy layer surfaced the driver's no-rows error text in DBError
+	// when the order book was empty; clients may key off it.
+	var db_err string
+	if no_offers {
+		db_err = legacyNoRowsText
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":    1,
-		"error":     "",
+		"status":     1,
+		"error":      "",
 		"FloorPrice": floor_price,
 		"DBError":    db_err,
 		"MarketAddr": p_market_addr,

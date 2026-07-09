@@ -32,9 +32,9 @@ import (
 // the real middleware stack, backed by the seeded test database and the
 // deterministic Ethereum stub.
 type harness struct {
-	router  *gin.Engine
-	db      *sql.DB
-	storage *store.SQLStorage
+	router *gin.Engine
+	db     *sql.DB
+	store  *store.Store
 
 	ipCounter atomic.Uint64
 }
@@ -65,15 +65,11 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	}
 	ethClient := ethclient.NewClient(rpcClient)
 
-	// One Store over the container's pool backs both the converted Repo
-	// queries and the legacy wrapper, exactly like cmd/apiserver. Store-layer
-	// errors of unconverted methods precede an os.Exit(1); keep them visible
-	// so a fixture/query problem that kills the test binary is diagnosable.
+	// One Store over the container's pool backs every query, exactly like
+	// cmd/apiserver.
 	st := store.NewFromPool(db.Pool)
-	storeLog := log.New(os.Stderr, "store: ", 0)
-	storage := store.NewSQLStorageFromDB(st.DB(), storeLog)
 
-	common.InitContext(st, storage, ethClient, discard, discard)
+	common.InitContext(st, ethClient, discard, discard)
 
 	// The reload_* refresh goroutines mutate package state on a timer, which
 	// would race with request handling and make snapshots drift; the initial
@@ -103,9 +99,9 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	// test output. The production rate limiter stays in place.
 	r.Use(common.RateLimit(50, 100))
 
-	registerAllRoutes(r, storage)
+	registerAllRoutes(r, st)
 
-	return &harness{router: r, db: db.SQL, storage: storage}, nil
+	return &harness{router: r, db: db.SQL, store: st}, nil
 }
 
 // request performs one HTTP exchange through the real router. Every call uses

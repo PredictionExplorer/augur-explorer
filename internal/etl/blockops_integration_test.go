@@ -9,9 +9,11 @@ package common
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"math/big"
+	"strings"
 	"testing"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -25,11 +27,13 @@ import (
 )
 
 // env is one isolated test environment: fresh database, fresh fake chain.
+// The per-Store address cache starts empty with each environment, so no
+// process-wide cache reset is needed.
 type env struct {
-	ctx     *ETLContext
-	db      *testdb.DB
-	chain   *testchain.Chain
-	storage *store.SQLStorage
+	etl   *ETLContext
+	db    *testdb.DB
+	chain *testchain.Chain
+	st    *store.Store
 }
 
 func newEnv(t *testing.T) *env {
@@ -44,41 +48,37 @@ func newEnv(t *testing.T) *env {
 	ethClient := ethclient.NewClient(rpcClient)
 	t.Cleanup(ethClient.Close)
 
-	// The address-id cache is package state in internal/store; every fresh
-	// database must start with a fresh cache.
-	store.ResetAddressCacheForTests()
-
-	storage := store.NewSQLStorageFromDB(db.SQL, log.New(io.Discard, "", 0))
-	storage.Db_set_schema_name("public")
+	st := store.NewFromPool(db.Pool)
 
 	return &env{
-		ctx: &ETLContext{
-			Storage:   storage,
+		etl: &ETLContext{
+			Store:     st,
 			EthClient: ethClient,
 			RpcClient: rpcClient,
 			Info:      log.New(io.Discard, "", 0),
 			Error:     log.New(io.Discard, "", 0),
 		},
-		db:      db,
-		chain:   chain,
-		storage: storage,
+		db:    db,
+		chain: chain,
+		st:    st,
 	}
 }
 
 func (e *env) blockHashInDB(t *testing.T, blockNum int64) string {
 	t.Helper()
-	hash, err := e.storage.Get_block_hash(blockNum)
+	hash, err := e.st.BlockHash(context.Background(), blockNum)
 	if err != nil {
-		t.Fatalf("Get_block_hash(%d): %v", blockNum, err)
+		t.Fatalf("BlockHash(%d): %v", blockNum, err)
 	}
 	return hash
 }
 
 func TestEnsureBlockExistsInsertsAndIsIdempotent(t *testing.T) {
 	e := newEnv(t)
+	ctx := context.Background()
 	hash := e.chain.BlockHash(100).Hex()
 
-	inserted, err := EnsureBlockExists(e.ctx, 100, hash)
+	inserted, err := EnsureBlockExists(ctx, e.etl, 100, hash)
 	if err != nil {
 		t.Fatalf("EnsureBlockExists: %v", err)
 	}
@@ -88,15 +88,15 @@ func TestEnsureBlockExistsInsertsAndIsIdempotent(t *testing.T) {
 	if got := e.blockHashInDB(t, 100); got != hash {
 		t.Errorf("stored hash = %s, want %s", got, hash)
 	}
-	last, err := e.storage.Get_last_block_num()
+	last, err := e.st.LastBlockNum(ctx)
 	if err != nil {
-		t.Fatalf("Get_last_block_num: %v", err)
+		t.Fatalf("LastBlockNum: %v", err)
 	}
 	if last != 100 {
 		t.Errorf("last_block watermark = %d, want 100 (requires the migration seeding the last_block row)", last)
 	}
 
-	inserted, err = EnsureBlockExists(e.ctx, 100, hash)
+	inserted, err = EnsureBlockExists(ctx, e.etl, 100, hash)
 	if err != nil {
 		t.Fatalf("EnsureBlockExists (second call): %v", err)
 	}
@@ -107,25 +107,27 @@ func TestEnsureBlockExistsInsertsAndIsIdempotent(t *testing.T) {
 
 func TestEnsureBlockExistsRejectsUnverifiableHash(t *testing.T) {
 	e := newEnv(t)
+	ctx := context.Background()
 	e.chain.EnsureBlock(100)
 
 	// The fetched log claims a hash the chain does not confirm: the block
 	// must not be inserted.
 	bogus := ethcommon.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
-	if _, err := EnsureBlockExists(e.ctx, 100, bogus.Hex()); err == nil {
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, bogus.Hex()); err == nil {
 		t.Fatal("expected hash-mismatch error, got nil")
 	}
-	if _, err := e.storage.Get_block_hash(100); err == nil {
+	if _, err := e.st.BlockHash(ctx, 100); err == nil {
 		t.Error("block was inserted despite failing hash verification")
 	}
 }
 
 func TestChainSplitRollsBackAndCascades(t *testing.T) {
 	e := newEnv(t)
+	ctx := context.Background()
 
 	// Build blocks 100..105 with one tx + evt_log in block 103.
 	for n := int64(100); n <= 105; n++ {
-		if _, err := EnsureBlockExists(e.ctx, n, e.chain.BlockHash(n).Hex()); err != nil {
+		if _, err := EnsureBlockExists(ctx, e.etl, n, e.chain.BlockHash(n).Hex()); err != nil {
 			t.Fatalf("seeding block %d: %v", n, err)
 		}
 	}
@@ -138,11 +140,11 @@ func TestChainSplitRollsBackAndCascades(t *testing.T) {
 		TxHash:      tx.Hash(),
 		Index:       0,
 	}})
-	txID, _, err := EnsureTransactionExists(e.ctx, tx.Hash(), 103)
+	txID, _, err := EnsureTransactionExists(ctx, e.etl, tx.Hash(), 103)
 	if err != nil {
 		t.Fatalf("EnsureTransactionExists: %v", err)
 	}
-	evtID, err := InsertEventLog(e.ctx, types.Log{
+	evtID, err := InsertEventLog(ctx, e.etl, types.Log{
 		Address:     to,
 		Topics:      []ethcommon.Hash{ethcommon.HexToHash("0x01")},
 		BlockNumber: 103,
@@ -159,7 +161,7 @@ func TestChainSplitRollsBackAndCascades(t *testing.T) {
 		t.Fatal("Reorg did not change the block hash")
 	}
 
-	inserted, err := EnsureBlockExists(e.ctx, 102, newHash)
+	inserted, err := EnsureBlockExists(ctx, e.etl, 102, newHash)
 	if err != nil {
 		t.Fatalf("EnsureBlockExists after reorg: %v", err)
 	}
@@ -172,47 +174,48 @@ func TestChainSplitRollsBackAndCascades(t *testing.T) {
 		t.Errorf("block 102 hash = %s, want fork hash %s", got, newHash)
 	}
 	for n := int64(103); n <= 105; n++ {
-		if _, err := e.storage.Get_block_hash(n); err == nil {
+		if _, err := e.st.BlockHash(ctx, n); err == nil {
 			t.Errorf("block %d survived the chain split", n)
 		}
 	}
 	// The tx and evt_log cascade away with their block.
-	if _, err := e.storage.Get_transaction_id_by_hash(tx.Hash().Hex()); err == nil {
+	if _, err := e.st.TransactionIDByHash(ctx, tx.Hash().Hex()); err == nil {
 		t.Error("transaction survived the chain split")
 	}
-	if _, err := e.storage.Get_event_log(evtID); err == nil {
+	if _, err := e.st.EventLog(ctx, evtID); err == nil {
 		t.Error("event log survived the chain split")
 	}
 	// Watermark: HandleChainSplit rewinds to divergent-1, the re-inserted
 	// block advances it to the divergent height.
-	last, err := e.storage.Get_last_block_num()
+	last, err := e.st.LastBlockNum(ctx)
 	if err != nil {
-		t.Fatalf("Get_last_block_num: %v", err)
+		t.Fatalf("LastBlockNum: %v", err)
 	}
 	if last != 102 {
 		t.Errorf("last_block after split = %d, want 102", last)
 	}
 	// Blocks below the split are untouched.
-	if _, err := e.storage.Get_block_hash(101); err != nil {
+	if _, err := e.st.BlockHash(ctx, 101); err != nil {
 		t.Errorf("block 101 lost in the chain split: %v", err)
 	}
 }
 
 func TestHandleChainSplitBelowWatermarkIsNoop(t *testing.T) {
 	e := newEnv(t)
-	if _, err := EnsureBlockExists(e.ctx, 100, e.chain.BlockHash(100).Hex()); err != nil {
+	ctx := context.Background()
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, e.chain.BlockHash(100).Hex()); err != nil {
 		t.Fatalf("seeding block: %v", err)
 	}
 	// Divergent block above the watermark: nothing to delete.
-	if err := HandleChainSplit(e.ctx, 200); err != nil {
+	if err := HandleChainSplit(ctx, e.etl, 200); err != nil {
 		t.Fatalf("HandleChainSplit: %v", err)
 	}
-	if _, err := e.storage.Get_block_hash(100); err != nil {
+	if _, err := e.st.BlockHash(ctx, 100); err != nil {
 		t.Errorf("block 100 deleted by a no-op chain split: %v", err)
 	}
-	last, err := e.storage.Get_last_block_num()
+	last, err := e.st.LastBlockNum(ctx)
 	if err != nil {
-		t.Fatalf("Get_last_block_num: %v", err)
+		t.Fatalf("LastBlockNum: %v", err)
 	}
 	if last != 100 {
 		t.Errorf("watermark moved by a no-op chain split: %d", last)
@@ -221,13 +224,14 @@ func TestHandleChainSplitBelowWatermarkIsNoop(t *testing.T) {
 
 func TestEnsureTransactionExistsFromRPC(t *testing.T) {
 	e := newEnv(t)
-	if _, err := EnsureBlockExists(e.ctx, 100, e.chain.BlockHash(100).Hex()); err != nil {
+	ctx := context.Background()
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, e.chain.BlockHash(100).Hex()); err != nil {
 		t.Fatalf("seeding block: %v", err)
 	}
 	to := ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
 	tx := e.chain.AddTx(100, to, []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee})
 
-	txID, inserted, err := EnsureTransactionExists(e.ctx, tx.Hash(), 100)
+	txID, inserted, err := EnsureTransactionExists(ctx, e.etl, tx.Hash(), 100)
 	if err != nil {
 		t.Fatalf("EnsureTransactionExists: %v", err)
 	}
@@ -236,7 +240,7 @@ func TestEnsureTransactionExistsFromRPC(t *testing.T) {
 	}
 
 	// Second call resolves from the database without inserting.
-	txID2, inserted2, err := EnsureTransactionExists(e.ctx, tx.Hash(), 100)
+	txID2, inserted2, err := EnsureTransactionExists(ctx, e.etl, tx.Hash(), 100)
 	if err != nil {
 		t.Fatalf("EnsureTransactionExists (second call): %v", err)
 	}
@@ -267,13 +271,14 @@ func TestEnsureTransactionExistsFromRPC(t *testing.T) {
 
 func TestEnsureTransactionExistsArchiveFallback(t *testing.T) {
 	e := newEnv(t)
-	if _, err := EnsureBlockExists(e.ctx, 100, e.chain.BlockHash(100).Hex()); err != nil {
+	ctx := context.Background()
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, e.chain.BlockHash(100).Hex()); err != nil {
 		t.Fatalf("seeding block: %v", err)
 	}
 
 	// The tx exists only in the archive: the RPC node reports "not found".
 	txHash := "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc01"
-	fromAid, err := e.storage.Lookup_or_create_address("0x2100000000000000000000000000000000000021", 100, 0)
+	fromAid, err := e.st.LookupOrCreateAddress(ctx, "0x2100000000000000000000000000000000000021", 100, 0)
 	if err != nil {
 		t.Fatalf("creating archive from-address: %v", err)
 	}
@@ -285,7 +290,7 @@ func TestEnsureTransactionExistsArchiveFallback(t *testing.T) {
 		t.Fatalf("seeding archive tx: %v", err)
 	}
 
-	txID, inserted, err := EnsureTransactionExists(e.ctx, ethcommon.HexToHash(txHash), 100)
+	txID, inserted, err := EnsureTransactionExists(ctx, e.etl, ethcommon.HexToHash(txHash), 100)
 	if err != nil {
 		t.Fatalf("EnsureTransactionExists (archive): %v", err)
 	}
@@ -303,14 +308,15 @@ func TestEnsureTransactionExistsArchiveFallback(t *testing.T) {
 
 func TestEnsureTransactionExistsMinimalFallback(t *testing.T) {
 	e := newEnv(t)
-	if _, err := EnsureBlockExists(e.ctx, 100, e.chain.BlockHash(100).Hex()); err != nil {
+	ctx := context.Background()
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, e.chain.BlockHash(100).Hex()); err != nil {
 		t.Fatalf("seeding block: %v", err)
 	}
 
 	// Neither the RPC node nor the archive knows this tx: a minimal record
 	// is created as the last resort.
 	txHash := ethcommon.HexToHash("0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd02")
-	txID, inserted, err := EnsureTransactionExists(e.ctx, txHash, 100)
+	txID, inserted, err := EnsureTransactionExists(ctx, e.etl, txHash, 100)
 	if err != nil {
 		t.Fatalf("EnsureTransactionExists (minimal): %v", err)
 	}
@@ -329,12 +335,13 @@ func TestEnsureTransactionExistsMinimalFallback(t *testing.T) {
 
 func TestInsertEventLogDeduplicatesByBlockAndIndex(t *testing.T) {
 	e := newEnv(t)
-	if _, err := EnsureBlockExists(e.ctx, 100, e.chain.BlockHash(100).Hex()); err != nil {
+	ctx := context.Background()
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, e.chain.BlockHash(100).Hex()); err != nil {
 		t.Fatalf("seeding block: %v", err)
 	}
 	to := ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
 	tx := e.chain.AddTx(100, to, nil)
-	txID, _, err := EnsureTransactionExists(e.ctx, tx.Hash(), 100)
+	txID, _, err := EnsureTransactionExists(ctx, e.etl, tx.Hash(), 100)
 	if err != nil {
 		t.Fatalf("EnsureTransactionExists: %v", err)
 	}
@@ -346,20 +353,20 @@ func TestInsertEventLogDeduplicatesByBlockAndIndex(t *testing.T) {
 		BlockNumber: 100,
 		Index:       4,
 	}
-	firstID, err := InsertEventLog(e.ctx, logTemplate, txID)
+	firstID, err := InsertEventLog(ctx, e.etl, logTemplate, txID)
 	if err != nil {
 		t.Fatalf("InsertEventLog: %v", err)
 	}
 	// Re-inserting the same (block, log index) replaces the previous row —
 	// the reorg-tolerant dedup path.
-	secondID, err := InsertEventLog(e.ctx, logTemplate, txID)
+	secondID, err := InsertEventLog(ctx, e.etl, logTemplate, txID)
 	if err != nil {
 		t.Fatalf("InsertEventLog (repeat): %v", err)
 	}
 	if secondID == firstID {
 		t.Errorf("expected a fresh evt_log id after dedup-replace, got the same id %d", firstID)
 	}
-	if _, err := e.storage.Get_event_log(firstID); err == nil {
+	if _, err := e.st.EventLog(ctx, firstID); err == nil {
 		t.Error("old evt_log row survived the dedup-replace")
 	}
 	var count int
@@ -371,8 +378,75 @@ func TestInsertEventLogDeduplicatesByBlockAndIndex(t *testing.T) {
 	}
 }
 
+// TestStoreBaseHelpers pins the base Store helpers that no pipeline path
+// exercises directly: address reverse lookup, per-contract evt_log counting
+// and the evt_log existence check the backfill uses.
+func TestStoreBaseHelpers(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	if _, err := EnsureBlockExists(ctx, e.etl, 100, e.chain.BlockHash(100).Hex()); err != nil {
+		t.Fatalf("seeding block: %v", err)
+	}
+	contract := ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
+	tx := e.chain.AddTx(100, contract, nil)
+	txID, _, err := EnsureTransactionExists(ctx, e.etl, tx.Hash(), 100)
+	if err != nil {
+		t.Fatalf("EnsureTransactionExists: %v", err)
+	}
+	if _, err := InsertEventLog(ctx, e.etl, types.Log{
+		Address:     contract,
+		Topics:      []ethcommon.Hash{ethcommon.BigToHash(big.NewInt(9))},
+		BlockNumber: 100,
+		Index:       2,
+	}, txID); err != nil {
+		t.Fatalf("InsertEventLog: %v", err)
+	}
+
+	// AddressByID inverts LookupAddressID; a missing id is ErrNotFound.
+	aid, err := e.st.LookupAddressID(ctx, contract.Hex())
+	if err != nil {
+		t.Fatalf("LookupAddressID: %v", err)
+	}
+	addr, err := e.st.AddressByID(ctx, aid)
+	if err != nil {
+		t.Fatalf("AddressByID(%d): %v", aid, err)
+	}
+	if addr != contract.Hex() {
+		t.Errorf("AddressByID(%d) = %s, want %s", aid, addr, contract.Hex())
+	}
+	if _, err := e.st.AddressByID(ctx, 999_999); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("AddressByID(missing) = %v, want ErrNotFound in chain", err)
+	}
+
+	// CountEvtLogsForContract is case-insensitive on the address.
+	count, err := e.st.CountEvtLogsForContract(ctx, strings.ToLower(contract.Hex()))
+	if err != nil {
+		t.Fatalf("CountEvtLogsForContract: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("CountEvtLogsForContract = %d, want 1", count)
+	}
+
+	// EvtLogExists distinguishes the stored (block, tx, log_index) triple.
+	exists, err := e.st.EvtLogExists(ctx, 100, txID, 2)
+	if err != nil {
+		t.Fatalf("EvtLogExists: %v", err)
+	}
+	if !exists {
+		t.Error("EvtLogExists = false for the inserted log")
+	}
+	exists, err = e.st.EvtLogExists(ctx, 100, txID, 3)
+	if err != nil {
+		t.Fatalf("EvtLogExists(miss): %v", err)
+	}
+	if exists {
+		t.Error("EvtLogExists = true for a log index never inserted")
+	}
+}
+
 func TestFetchEventsFiltersByRangeAndContract(t *testing.T) {
 	e := newEnv(t)
+	ctx := context.Background()
 	watched := ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
 	other := ethcommon.HexToAddress("0x3000000000000000000000000000000000000003")
 
@@ -381,7 +455,7 @@ func TestFetchEventsFiltersByRangeAndContract(t *testing.T) {
 	tx2 := e.chain.AddTx(101, other, nil)
 	e.chain.AttachLogs(tx2.Hash(), []*types.Log{{Address: other, Topics: []ethcommon.Hash{{}}, BlockNumber: 101, TxHash: tx2.Hash()}})
 
-	logs, err := FetchEvents(e.ctx.EthClient, 90, 110, []ethcommon.Address{watched})
+	logs, err := FetchEvents(ctx, e.etl.EthClient, 90, 110, []ethcommon.Address{watched})
 	if err != nil {
 		t.Fatalf("FetchEvents: %v", err)
 	}
@@ -389,7 +463,7 @@ func TestFetchEventsFiltersByRangeAndContract(t *testing.T) {
 		t.Errorf("FetchEvents = %+v, want exactly the watched-contract log", logs)
 	}
 
-	tip, err := GetCurrentBlockNumber(e.ctx.EthClient)
+	tip, err := GetCurrentBlockNumber(ctx, e.etl.EthClient)
 	if err != nil {
 		t.Fatalf("GetCurrentBlockNumber: %v", err)
 	}

@@ -8,6 +8,7 @@
 package main
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
@@ -288,7 +289,7 @@ func TestReorgRollbackAndReplay(t *testing.T) {
 
 	// The polling loop detects the split when a fetched log's block hash
 	// disagrees with the stored one.
-	inserted, err := etlcommon.EnsureBlockExists(etlContext(), divergentBlock, newHash.Hex())
+	inserted, err := etlcommon.EnsureBlockExists(context.Background(), etlContext(), divergentBlock, newHash.Hex())
 	if err != nil {
 		t.Fatalf("EnsureBlockExists after reorg: %v", err)
 	}
@@ -305,7 +306,7 @@ func TestReorgRollbackAndReplay(t *testing.T) {
 	// story) — the claim, withdrawals, staking and their trigger effects.
 	testutil.CompareGolden(t, filepath.Join("testdata", "golden", "story_reorg_rollback.json"), diff)
 
-	lastBlock, err := storage.Get_last_block_num()
+	lastBlock, err := dbStore.LastBlockNum(context.Background())
 	if err != nil {
 		t.Fatalf("Get_last_block_num: %v", err)
 	}

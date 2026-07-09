@@ -34,7 +34,7 @@ func getContractAddresses() []ethcommon.Address {
 func process_events_filterlog(ctx context.Context) error {
 	// Create ETL context for common operations
 	etl_ctx := &etlcommon.ETLContext{
-		Storage:   storage,
+		Store:     dbStore,
 		EthClient: eclient,
 		RpcClient: rpcclient,
 		Info:      Info,
@@ -73,11 +73,14 @@ func process_events_filterlog(ctx context.Context) error {
 		lastProcessedBlock := status.LastBlockNum
 		if lastProcessedBlock == 0 {
 			// If no blocks processed yet, start from the block where contracts were deployed
-			lastProcessedBlock, _ = storage.Get_last_block_num()
+			lastProcessedBlock, err = dbStore.LastBlockNum(dbCtx)
+			if err != nil {
+				return fmt.Errorf("reading last block watermark: %w", err)
+			}
 		}
 
 		// Get current block from chain
-		currentBlock, err := etlcommon.GetCurrentBlockNumber(eclient)
+		currentBlock, err := etlcommon.GetCurrentBlockNumber(ctx, eclient)
 		if err != nil {
 			Error.Printf("Failed to get current block number: %v", err)
 			time.Sleep(5 * time.Second)
@@ -101,7 +104,7 @@ func process_events_filterlog(ctx context.Context) error {
 		Info.Printf("Fetching events from block %d to %d (batch size: %d)\n", fromBlock, toBlock, batchSize)
 
 		// Fetch events using FilterLogs
-		logs, err := etlcommon.FetchEvents(eclient, fromBlock, toBlock, contracts)
+		logs, err := etlcommon.FetchEvents(ctx, eclient, fromBlock, toBlock, contracts)
 		if err != nil {
 			Error.Printf("FetchEvents failed: %v", err)
 			// Reduce batch size on error (might be too large)
@@ -120,7 +123,7 @@ func process_events_filterlog(ctx context.Context) error {
 		var lastSuccessfulBlock uint64
 		for _, log := range logs {
 			// Ensure block exists with correct hash (chain split detection)
-			_, err := etlcommon.EnsureBlockExists(etl_ctx, int64(log.BlockNumber), log.BlockHash.Hex())
+			_, err := etlcommon.EnsureBlockExists(dbCtx, etl_ctx, int64(log.BlockNumber), log.BlockHash.Hex())
 			if err != nil {
 				Error.Printf("EnsureBlockExists failed for block %d: %v", log.BlockNumber, err)
 				processingFailed = true
@@ -129,7 +132,7 @@ func process_events_filterlog(ctx context.Context) error {
 			}
 
 			// Ensure transaction exists
-			txId, _, err := etlcommon.EnsureTransactionExists(etl_ctx, log.TxHash, int64(log.BlockNumber))
+			txId, _, err := etlcommon.EnsureTransactionExists(dbCtx, etl_ctx, log.TxHash, int64(log.BlockNumber))
 			if err != nil {
 				Error.Printf("EnsureTransactionExists failed for tx %s: %v", log.TxHash.Hex(), err)
 				processingFailed = true
@@ -138,7 +141,7 @@ func process_events_filterlog(ctx context.Context) error {
 			}
 
 			// Insert event log
-			evtId, err := etlcommon.InsertEventLog(etl_ctx, log, txId)
+			evtId, err := etlcommon.InsertEventLog(dbCtx, etl_ctx, log, txId)
 			if err != nil {
 				Error.Printf("InsertEventLog failed: %v", err)
 				processingFailed = true

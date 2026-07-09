@@ -16,12 +16,8 @@ import (
 
 // ServerContext holds shared dependencies for all handlers
 type ServerContext struct {
-	// Store owns the connection pool; converted (context-first) query code
-	// runs on it.
-	Store *store.Store
-	// Db is the legacy view of the same pool, used by query methods that
-	// have not been converted yet. It goes away at the end of Phase 1.
-	Db        *store.SQLStorage
+	// Store owns the process-wide connection pool; all query code runs on it.
+	Store     *store.Store
 	EthClient *ethclient.Client
 	Info      *log.Logger
 	Error     *log.Logger
@@ -32,12 +28,10 @@ var (
 	Ctx *ServerContext
 )
 
-// InitContext initializes the global server context. st and db must share
-// the same pool (db comes from store.NewSQLStorageFromDB(st.DB(), ...)).
-func InitContext(st *store.Store, db *store.SQLStorage, ethClient *ethclient.Client, info, errorLog *log.Logger) {
+// InitContext initializes the global server context.
+func InitContext(st *store.Store, ethClient *ethclient.Client, info, errorLog *log.Logger) {
 	Ctx = &ServerContext{
 		Store:     st,
-		Db:        db,
 		EthClient: ethClient,
 		Info:      info,
 		Error:     errorLog,
@@ -62,7 +56,7 @@ func IsAddressValid(c *gin.Context, jsonOutput bool, addr string) (string, bool)
 	if len(addr) != 40 {
 		c.JSON(http.StatusOK, gin.H{
 			"status": 0,
-			"error":  fmt.Sprintf("Invalid address length"),
+			"error":  "Invalid address length",
 		})
 		return "", false
 	}

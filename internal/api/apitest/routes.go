@@ -27,8 +27,8 @@ import (
 //
 // Keep in sync with cmd/apiserver/main.go until Phase 2 extracts a shared
 // router constructor.
-func registerAllRoutes(r *gin.Engine, storage *store.SQLStorage) {
-	common.RegisterHealthRoutes(r, storage)
+func registerAllRoutes(r *gin.Engine, st *store.Store) {
+	common.RegisterHealthRoutes(r, st)
 
 	randomwalk.RegisterAPIRoutes(r)
 	cosmicgame.RegisterAPIRoutes(r)

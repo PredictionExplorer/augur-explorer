@@ -79,10 +79,8 @@ var (
 	// contract counters	(collected via DB)
 	bw_stats					CGStatistics
 
-	// arb_storage exposes the shared base store; the handlers use it only
-	// for the unconverted address lookups (they migrate with the base-file
-	// conversion in Phase 1).
-	arb_storage					*store.SQLStorage
+	// arbStore exposes the shared base store for address lookups.
+	arbStore					*store.Store
 
 	// arbRepo carries the queries already converted to the context-first,
 	// error-returning Repo (Phase 1).
@@ -384,8 +382,7 @@ func cosmic_game_init() {
 		Info.Print(err_str)
 		Error.Print(err_str)
 	}
-	arb_storage = common.Ctx.Db
-	arb_storage.Db_set_schema_name("public")
+	arbStore = common.Ctx.Store
 	arbRepo = NewRepo(common.Ctx.Store)
 	bw_caddrs, err := arbRepo.ContractAddrs(context.Background())
 	if err != nil {

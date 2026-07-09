@@ -617,7 +617,7 @@ func select_event_and_process(ctx context.Context, log *types.Log, evtlog *Ether
 // returned to the caller.
 func process_single_event(ctx context.Context, evt_id int64) error {
 
-	evtlog, err := storage.Get_event_log(evt_id)
+	evtlog, err := dbStore.EventLog(ctx, evt_id)
 	if err != nil {
 		return fmt.Errorf("process_single_event(%v): %w", evt_id, err)
 	}

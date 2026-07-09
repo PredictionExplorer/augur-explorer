@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -58,12 +59,9 @@ var (
 
 	cg_contracts CosmicGameContractAddrs
 	// dbStore owns the process-wide connection pool; cgRepo runs every
-	// CosmicGame query on it. storage is the same pool's database/sql view
-	// for the base-store methods that have not been converted yet
-	// (evt_log/block reads — they move with the Phase 1 base-file batch).
+	// CosmicGame query on it.
 	dbStore *store.Store
 	cgRepo  *Repo
-	storage *store.SQLStorage
 	RPC_URL = os.Getenv("RPC_URL")
 	Error   *log.Logger
 	Info    *log.Logger
@@ -107,20 +105,22 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n", RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	dbStore, err = store.New(context.Background(), store.ConfigFromEnv())
+	// Database log output (failed and slow queries) goes through the pgx
+	// slog tracer into the file the legacy Init_log wrote to.
+	dbLogHandle, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
+		os.Exit(1)
+	}
+	cfg := store.ConfigFromEnv()
+	cfg.Logger = slog.New(slog.NewTextHandler(dbLogHandle, nil))
+	dbStore, err = store.New(context.Background(), cfg)
 	if err != nil {
 		Info.Printf("failed to connect to storage: %v", err)
 		fmt.Fprintf(os.Stderr, "Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
 		os.Exit(1)
 	}
 	cgRepo = NewRepo(dbStore)
-	storage = store.NewSQLStorageFromDB(dbStore.DB(), Info)
-	storage.Db_set_schema_name("public")
-	if err := storage.Init_log(db_log_file); err != nil {
-		fmt.Fprintf(os.Stderr, "Can't initialize DB log: %v\n", err)
-		os.Exit(1)
-	}
-	storage.Log_msg("Log initialized\n")
 
 	cosmic_game_abi = get_abi(CosmicSignatureGameABI)
 	cosmic_game_v2_abi = get_abi(CosmicSignatureGameV2ABI)
@@ -184,7 +184,7 @@ func main() {
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
 	implementation_addr = ethcommon.HexToAddress(cg_contracts.ImplementationAddr)
 
-	if err := syncContractParamsFromChain(context.Background(), cgRepo, dbStore, storage, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
+	if err := syncContractParamsFromChain(context.Background(), cgRepo, dbStore, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
 		Error.Printf("Contract param chain sync failed: %v", err)
 		os.Exit(1)
 	}

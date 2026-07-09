@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -14,7 +15,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 )
 
-func find_cosmic_token_transfer(bid_evtlog_id, tx_id int64, bidder_addr string) (string, error) {
+func find_cosmic_token_transfer(ctx context.Context, bid_evtlog_id, tx_id int64, bidder_addr string) (string, error) {
 	// Returns the CST bid reward (the amount minted to the bidder) for this bid transaction.
 	//
 	// We locate the reward by MATCHING the correct Transfer event rather than by positional
@@ -26,7 +27,7 @@ func find_cosmic_token_transfer(bid_evtlog_id, tx_id int64, bidder_addr string) 
 	// In V2 the reward is dynamic (BiddingV2.getBidCstRewardAmountAdvanced) and is 0 for the
 	// earliest bid(s) of a round. When it is 0 the contract performs no mint, so there is no
 	// matching Transfer and we correctly return "0" instead of failing.
-	elog_rlps, err := storage.Get_specific_event_logs_by_tx_backwards_from_id(tx_id, cosmic_tok_aid, bid_evtlog_id, hex.EncodeToString(evt_transfer[:4]))
+	elog_rlps, err := dbStore.EventLogRLPsBefore(ctx, tx_id, cosmic_tok_aid, bid_evtlog_id, hex.EncodeToString(evt_transfer[:4]))
 	if err != nil {
 		return "", fmt.Errorf("find_cosmic_token_transfer(): %w", err)
 	}
@@ -61,8 +62,8 @@ func find_cosmic_token_transfer(bid_evtlog_id, tx_id int64, bidder_addr string) 
 
 // find_prize_num returns the round number of the MainPrizeClaimed event in
 // tx_id, or -1 when the transaction contains none (a standalone donation).
-func find_prize_num(tx_id int64) (int64, error) {
-	evt_list, err := storage.Get_events_by_sig_and_tx_id(tx_id, hex.EncodeToString(evt_prize_claim_event[0:4]))
+func find_prize_num(ctx context.Context, tx_id int64) (int64, error) {
+	evt_list, err := dbStore.EventsBySigAndTx(ctx, tx_id, hex.EncodeToString(evt_prize_claim_event[0:4]))
 	if err != nil {
 		return 0, fmt.Errorf("find_prize_num(): %w", err)
 	}

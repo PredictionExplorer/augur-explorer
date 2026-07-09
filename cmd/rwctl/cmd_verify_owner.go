@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
@@ -20,11 +21,15 @@ func newVerifyOwnerCmd() *cobra.Command {
 			"Environment variables:\n  RPC_URL  Ethereum RPC endpoint (required)\n  PGSQL_*  PostgreSQL connection (required)",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			storagew, err := connectRWStorage(newInfoLogger())
+			ctx := context.Background()
+			repo, baseStore, err := connectRWStorage(newInfoLogger())
 			if err != nil {
 				return err
 			}
-			caddrs := storagew.Get_randomwalk_contract_addresses()
+			caddrs, err := repo.ContractAddrs(ctx)
+			if err != nil {
+				return fmt.Errorf("resolving contract addresses: %w", err)
+			}
 
 			eclient, err := dialEthClient()
 			if err != nil {
@@ -42,14 +47,17 @@ func newVerifyOwnerCmd() *cobra.Command {
 			}
 			numToks := numToksBig.Int64()
 
-			rwalkAid, err := storagew.S.Nonfatal_lookup_address_id(rwalkAddr.String())
+			rwalkAid, err := baseStore.LookupAddressID(ctx, rwalkAddr.String())
 			if err != nil {
 				return fmt.Errorf("error looking up contract address id: %w", err)
 			}
 
 			fmt.Printf("num tokens: %v\n", numToks)
 
-			stats := storagew.Get_random_walk_stats(rwalkAid)
+			stats, err := repo.RandomWalkStats(ctx, rwalkAid)
+			if err != nil {
+				return fmt.Errorf("error getting contract stats: %w", err)
+			}
 			if stats.TokensMinted != numToks {
 				fmt.Printf(
 					"Error: num tokens doesn't match: real num tokens = %v, db num tokens = %v\n",
@@ -64,11 +72,11 @@ func newVerifyOwnerCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("error during Owner() call: %w", err)
 				}
-				chainOwnerAid, err := storagew.S.Nonfatal_lookup_address_id(chainOwnerAddr.String())
+				chainOwnerAid, err := baseStore.LookupAddressID(ctx, chainOwnerAddr.String())
 				if err != nil {
 					return fmt.Errorf("error during addr lookup: %w", err)
 				}
-				tokInfo, err := storagew.Get_rwalk_token_info(rwalkAid, i)
+				tokInfo, err := repo.TokenInfo(ctx, rwalkAid, i)
 				if err != nil {
 					return fmt.Errorf("error getting token info from db: %w", err)
 				}

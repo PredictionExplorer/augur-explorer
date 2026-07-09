@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"math/big"
 	"os"
 	"strconv"
@@ -67,15 +68,18 @@ func newInfoLogger() *log.Logger {
 }
 
 // connectRWStorage connects to PostgreSQL using the PGSQL_* environment
-// variables and wraps the connection with the RandomWalk-specific queries.
-// The pool lives for the remainder of the process (rwctl runs one command
-// and exits).
-func connectRWStorage(info *log.Logger) (*rwstore.SQLStorageWrapper, error) {
-	st, err := store.New(context.Background(), store.ConfigFromEnv())
+// variables and returns the RandomWalk repository plus the base Store for
+// address lookups. The pool lives for the remainder of the process (rwctl
+// runs one command and exits). The logger receives connect-retry and query
+// traces.
+func connectRWStorage(info *log.Logger) (*rwstore.Repo, *store.Store, error) {
+	cfg := store.ConfigFromEnv()
+	cfg.Logger = slog.New(slog.NewTextHandler(info.Writer(), nil))
+	st, err := store.New(context.Background(), cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to storage: %w", err)
+		return nil, nil, fmt.Errorf("failed to connect to storage: %w", err)
 	}
-	return &rwstore.SQLStorageWrapper{S: store.NewSQLStorageFromDB(st.DB(), info)}, nil
+	return rwstore.NewRepo(st), st, nil
 }
 
 // parseInt64 parses a base-10 int64 command argument, reporting the argument

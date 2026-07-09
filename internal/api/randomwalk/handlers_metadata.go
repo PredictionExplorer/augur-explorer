@@ -1,7 +1,7 @@
 package randomwalk
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // TokenMetadataHandler is the exported entry point for the bare ERC-721
@@ -40,9 +41,12 @@ func apiRandomwalkTokenMetadata(c *gin.Context) {
 		common.RespondErrorJSON(c, "invalid token_id")
 		return
 	}
-	addrs := rw_storagew.Get_randomwalk_contract_addresses()
-	info, err := rw_storagew.Get_rwalk_token_info(addrs.RandomWalkAid, tokenID)
-	if err == sql.ErrNoRows {
+	addrs, ok := rwContractAddrs(c)
+	if !ok {
+		return
+	}
+	info, err := rwRepo.TokenInfo(c.Request.Context(), addrs.RandomWalkAid, tokenID)
+	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "token not found"})
 		return
 	}

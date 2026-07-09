@@ -68,8 +68,7 @@ flowchart LR
 | `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons |
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Operator CLIs (contract interaction, social tools, data ops) |
 | `internal/api` | HTTP handlers: `cosmicgame`, `randomwalk`, `faq` proxy, `common` middleware |
-| `internal/store` | Database layer (being migrated to pgx/sqlc — see ADR-0002) |
-| `internal/store/queries` + `internal/store/sqlcgen` | sqlc source queries and generated code |
+| `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
 | `internal/etl` | Shared ETL machinery: event fetching, block ops, chain-split handling |
 | `internal/primitives` | Domain types and API response structs |
 | `internal/freezer` | Geth freezer/ancient store readers |
@@ -90,7 +89,8 @@ Recorded as ADRs in [docs/adr/](adr/):
 
 - **ADR-0001** — single Go module, `cmd/` + `internal/` layout.
 - **ADR-0002** — database layer strategy: pgx/v5 driver, goose migrations,
-  incremental sqlc adoption for queries.
+  hand-written pgx queries (the interim sqlc scaffolding was retired when
+  Phase 1 completed).
 - **ADR-0003** — JSON-only API: the server-rendered `/black/*` HTML explorer
   was removed; frontends consume the JSON API.
 - **ADR-0004** — mutating endpoints require a shared-secret header and fail
