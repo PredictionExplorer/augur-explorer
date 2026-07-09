@@ -2,6 +2,21 @@
 /bin/
 /dist/
 
+# Stray `go build` binaries at the repo root (use `make build` → bin/)
+/apiserver
+/cg-etl
+/cgctl
+/freezer-scan
+/freezer-verify
+/imggen-monitor
+/loganomaly
+/notibot
+/opsctl
+/rw-etl
+/rwalk-alarm
+/rwctl
+/srvmonitor
+
 # Test and coverage artifacts
 *.test
 *.out
