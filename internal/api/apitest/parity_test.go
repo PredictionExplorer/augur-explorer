@@ -61,7 +61,7 @@ var parityCases = map[string][]parityCase{
 	"/readyz":  {{path: "/readyz"}},
 
 	// --- bare ERC-721 metadata (host dispatch) -------------------------------
-	"/metadata/:token_id": {
+	"/metadata/{token_id}": {
 		{path: "/metadata/10", host: "api.randomwalknft.com"},
 		{path: "/metadata/1", host: "nfts.cosmicsignature.com"},
 	},
@@ -70,77 +70,77 @@ var parityCases = map[string][]parityCase{
 	"/api/cosmicgame/faq/health": {{path: "/api/cosmicgame/faq/health"}},
 
 	// --- CosmicGame: statistics ----------------------------------------------
-	"/api/cosmicgame/statistics/dashboard":                {{path: "/api/cosmicgame/statistics/dashboard"}},
-	"/api/cosmicgame/statistics/counters":                 {{path: "/api/cosmicgame/statistics/counters"}},
-	"/api/cosmicgame/statistics/unique/bidders":           {{path: "/api/cosmicgame/statistics/unique/bidders"}},
-	"/api/cosmicgame/statistics/unique/winners":           {{path: "/api/cosmicgame/statistics/unique/winners"}},
-	"/api/cosmicgame/statistics/leaderboard/roi":          {{path: "/api/cosmicgame/statistics/leaderboard/roi"}},
-	"/api/cosmicgame/statistics/claims/by_round":          {{path: "/api/cosmicgame/statistics/claims/by_round"}},
-	"/api/cosmicgame/statistics/claims/detail/:round_num": {{path: "/api/cosmicgame/statistics/claims/detail/0"}},
-	"/api/cosmicgame/statistics/unique/donors":            {{path: "/api/cosmicgame/statistics/unique/donors"}},
-	"/api/cosmicgame/statistics/unique/stakers/cst":       {{path: "/api/cosmicgame/statistics/unique/stakers/cst"}},
+	"/api/cosmicgame/statistics/dashboard":                 {{path: "/api/cosmicgame/statistics/dashboard"}},
+	"/api/cosmicgame/statistics/counters":                  {{path: "/api/cosmicgame/statistics/counters"}},
+	"/api/cosmicgame/statistics/unique/bidders":            {{path: "/api/cosmicgame/statistics/unique/bidders"}},
+	"/api/cosmicgame/statistics/unique/winners":            {{path: "/api/cosmicgame/statistics/unique/winners"}},
+	"/api/cosmicgame/statistics/leaderboard/roi":           {{path: "/api/cosmicgame/statistics/leaderboard/roi"}},
+	"/api/cosmicgame/statistics/claims/by_round":           {{path: "/api/cosmicgame/statistics/claims/by_round"}},
+	"/api/cosmicgame/statistics/claims/detail/{round_num}": {{path: "/api/cosmicgame/statistics/claims/detail/0"}},
+	"/api/cosmicgame/statistics/unique/donors":             {{path: "/api/cosmicgame/statistics/unique/donors"}},
+	"/api/cosmicgame/statistics/unique/stakers/cst":        {{path: "/api/cosmicgame/statistics/unique/stakers/cst"}},
 	"/api/cosmicgame/statistics/unique/stakers/randomwalk": {
 		{path: "/api/cosmicgame/statistics/unique/stakers/randomwalk"},
 	},
 	"/api/cosmicgame/statistics/unique/stakers/rwalk": {{path: "/api/cosmicgame/statistics/unique/stakers/rwalk"}},
 	"/api/cosmicgame/statistics/unique/stakers/both":  {{path: "/api/cosmicgame/statistics/unique/stakers/both"}},
-	"/api/cosmicgame/statistics/bidding/activity/:init_ts/:fin_ts/:interval_secs": {
+	"/api/cosmicgame/statistics/bidding/activity/{init_ts}/{fin_ts}/{interval_secs}": {
 		{path: "/api/cosmicgame/statistics/bidding/activity/" + cgFrom + "/" + cgTo + "/" + cgStep},
 	},
-	"/api/cosmicgame/statistics/bidding/frequency/:init_ts/:fin_ts/:interval_secs": {
+	"/api/cosmicgame/statistics/bidding/frequency/{init_ts}/{fin_ts}/{interval_secs}": {
 		{path: "/api/cosmicgame/statistics/bidding/frequency/" + cgFrom + "/" + cgTo + "/" + cgStep},
 	},
-	"/api/cosmicgame/statistics/bidding/top_active_periods/:n/:init_ts/:fin_ts": {
+	"/api/cosmicgame/statistics/bidding/top_active_periods/{n}/{init_ts}/{fin_ts}": {
 		{path: "/api/cosmicgame/statistics/bidding/top_active_periods/3/" + cgFrom + "/" + cgTo},
 	},
 	"/api/cosmicgame/statistics/bidding/time_bounds": {{path: "/api/cosmicgame/statistics/bidding/time_bounds"}},
 
 	// --- CosmicGame: rounds ----------------------------------------------------
-	"/api/cosmicgame/rounds/list/:offset/:limit": {{path: "/api/cosmicgame/rounds/list/0/10"}},
-	"/api/cosmicgame/rounds/info/:prize_num":     {{path: "/api/cosmicgame/rounds/info/0"}},
-	"/api/cosmicgame/rounds/current/time":        {{path: "/api/cosmicgame/rounds/current/time"}},
+	"/api/cosmicgame/rounds/list/{offset}/{limit}": {{path: "/api/cosmicgame/rounds/list/0/10"}},
+	"/api/cosmicgame/rounds/info/{prize_num}":      {{path: "/api/cosmicgame/rounds/info/0"}},
+	"/api/cosmicgame/rounds/current/time":          {{path: "/api/cosmicgame/rounds/current/time"}},
 
 	// --- CosmicGame: prizes ------------------------------------------------------
-	"/api/cosmicgame/prizes/history/global/:offset/:limit": {{path: "/api/cosmicgame/prizes/history/global/0/10"}},
-	"/api/cosmicgame/prizes/history/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/prizes/history/global/{offset}/{limit}": {{path: "/api/cosmicgame/prizes/history/global/0/10"}},
+	"/api/cosmicgame/prizes/history/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/prizes/history/by_user/" + addrAlice + "/0/10"},
 	},
-	"/api/cosmicgame/prizes/eth/all/global":                {{path: "/api/cosmicgame/prizes/eth/all/global"}},
-	"/api/cosmicgame/prizes/eth/all/global/:offset/:limit": {{path: "/api/cosmicgame/prizes/eth/all/global/0/10"}},
-	"/api/cosmicgame/prizes/eth/raffle/global":             {{path: "/api/cosmicgame/prizes/eth/raffle/global"}},
-	"/api/cosmicgame/prizes/eth/raffle/global/:offset/:limit": {
+	"/api/cosmicgame/prizes/eth/all/global":                  {{path: "/api/cosmicgame/prizes/eth/all/global"}},
+	"/api/cosmicgame/prizes/eth/all/global/{offset}/{limit}": {{path: "/api/cosmicgame/prizes/eth/all/global/0/10"}},
+	"/api/cosmicgame/prizes/eth/raffle/global":               {{path: "/api/cosmicgame/prizes/eth/raffle/global"}},
+	"/api/cosmicgame/prizes/eth/raffle/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/prizes/eth/raffle/global/0/10"},
 	},
 	"/api/cosmicgame/prizes/eth/chronowarrior/global": {{path: "/api/cosmicgame/prizes/eth/chronowarrior/global"}},
-	"/api/cosmicgame/prizes/eth/chronowarrior/global/:offset/:limit": {
+	"/api/cosmicgame/prizes/eth/chronowarrior/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/prizes/eth/chronowarrior/global/0/10"},
 	},
-	"/api/cosmicgame/prizes/eth/all/by_user/:user_addr":    {{path: "/api/cosmicgame/prizes/eth/all/by_user/" + addrBob}},
-	"/api/cosmicgame/prizes/eth/raffle/by_user/:user_addr": {{path: "/api/cosmicgame/prizes/eth/raffle/by_user/" + addrBob}},
-	"/api/cosmicgame/prizes/eth/chronowarrior/by_user/:user_addr": {
+	"/api/cosmicgame/prizes/eth/all/by_user/{user_addr}":    {{path: "/api/cosmicgame/prizes/eth/all/by_user/" + addrBob}},
+	"/api/cosmicgame/prizes/eth/raffle/by_user/{user_addr}": {{path: "/api/cosmicgame/prizes/eth/raffle/by_user/" + addrBob}},
+	"/api/cosmicgame/prizes/eth/chronowarrior/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/prizes/eth/chronowarrior/by_user/" + addrAlice},
 	},
-	"/api/cosmicgame/prizes/eth/unclaimed/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/prizes/eth/unclaimed/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/prizes/eth/unclaimed/by_user/" + addrCarol + "/0/10"},
 	},
-	"/api/cosmicgame/prizes/deposits/raffle/by_user/:user_addr": {
+	"/api/cosmicgame/prizes/deposits/raffle/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/prizes/deposits/raffle/by_user/" + addrBob},
 	},
-	"/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/:user_addr": {
+	"/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/" + addrAlice},
 	},
-	"/api/cosmicgame/prizes/deposits/unclaimed/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/prizes/deposits/unclaimed/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/prizes/deposits/unclaimed/by_user/" + addrCarol + "/0/10"},
 	},
 
 	// --- CosmicGame: bids ---------------------------------------------------------
-	"/api/cosmicgame/bid/list/all/:offset/:limit": {{path: "/api/cosmicgame/bid/list/all/0/20"}},
-	"/api/cosmicgame/bid/info/:evtlog_id":         {{path: "/api/cosmicgame/bid/info/5004"}},
-	"/api/cosmicgame/bid/info_by_pos/:round_num/:bid_position": {
+	"/api/cosmicgame/bid/list/all/{offset}/{limit}": {{path: "/api/cosmicgame/bid/list/all/0/20"}},
+	"/api/cosmicgame/bid/info/{evtlog_id}":          {{path: "/api/cosmicgame/bid/info/5004"}},
+	"/api/cosmicgame/bid/info_by_pos/{round_num}/{bid_position}": {
 		{path: "/api/cosmicgame/bid/info_by_pos/0/1"},
 	},
-	"/api/cosmicgame/bid/with_message/by_round/:round": {{path: "/api/cosmicgame/bid/with_message/by_round/0"}},
-	"/api/cosmicgame/bid/list/by_round/:round_num/:sort/:offset/:limit": {
+	"/api/cosmicgame/bid/with_message/by_round/{round}": {{path: "/api/cosmicgame/bid/with_message/by_round/0"}},
+	"/api/cosmicgame/bid/list/by_round/{round_num}/{sort}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/bid/list/by_round/0/0/0/10"},
 		{path: "/api/cosmicgame/bid/list/by_round/0/1/0/10"},
 	},
@@ -159,20 +159,20 @@ var parityCases = map[string][]parityCase{
 	"/api/cosmicgame/get_banned_bids": {{path: "/api/cosmicgame/get_banned_bids"}},
 
 	// --- CosmicGame: CS NFTs (cst/*) -----------------------------------------------
-	"/api/cosmicgame/cst/list/all/:offset/:limit": {{path: "/api/cosmicgame/cst/list/all/0/20"}},
-	"/api/cosmicgame/cst/list/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/cst/list/all/{offset}/{limit}": {{path: "/api/cosmicgame/cst/list/all/0/20"}},
+	"/api/cosmicgame/cst/list/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/cst/list/by_user/" + addrCarol + "/0/10"},
 	},
-	"/api/cosmicgame/cst/info/:token_id":          {{path: "/api/cosmicgame/cst/info/1"}},
-	"/api/cosmicgame/cst/metadata/:token_id":      {{path: "/api/cosmicgame/cst/metadata/1"}},
-	"/cg/metadata/:token_id":                      {{path: "/cg/metadata/1"}},
-	"/api/cosmicgame/cst/names/history/:token_id": {{path: "/api/cosmicgame/cst/names/history/1"}},
-	"/api/cosmicgame/cst/names/search/:name":      {{path: "/api/cosmicgame/cst/names/search/Genesis"}},
-	"/api/cosmicgame/cst/names/named_only":        {{path: "/api/cosmicgame/cst/names/named_only"}},
-	"/api/cosmicgame/cst/transfers/all/:token_id/:offset/:limit": {
+	"/api/cosmicgame/cst/info/{token_id}":          {{path: "/api/cosmicgame/cst/info/1"}},
+	"/api/cosmicgame/cst/metadata/{token_id}":      {{path: "/api/cosmicgame/cst/metadata/1"}},
+	"/cg/metadata/{token_id}":                      {{path: "/cg/metadata/1"}},
+	"/api/cosmicgame/cst/names/history/{token_id}": {{path: "/api/cosmicgame/cst/names/history/1"}},
+	"/api/cosmicgame/cst/names/search/{name}":      {{path: "/api/cosmicgame/cst/names/search/Genesis"}},
+	"/api/cosmicgame/cst/names/named_only":         {{path: "/api/cosmicgame/cst/names/named_only"}},
+	"/api/cosmicgame/cst/transfers/all/{token_id}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/cst/transfers/all/2/0/10"},
 	},
-	"/api/cosmicgame/cst/transfers/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/cst/transfers/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/cst/transfers/by_user/" + addrDave + "/0/10"},
 	},
 	"/api/cosmicgame/cst/distribution": {{path: "/api/cosmicgame/cst/distribution"}},
@@ -180,42 +180,42 @@ var parityCases = map[string][]parityCase{
 	// --- CosmicGame: CosmicToken (ct/*) ---------------------------------------------
 	"/api/cosmicgame/ct/balances":   {{path: "/api/cosmicgame/ct/balances"}},
 	"/api/cosmicgame/ct/statistics": {{path: "/api/cosmicgame/ct/statistics"}},
-	"/api/cosmicgame/ct/summary/by_user/:user_addr": {
+	"/api/cosmicgame/ct/summary/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/ct/summary/by_user/" + addrAlice},
 	},
-	"/api/cosmicgame/ct/transfers/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/ct/transfers/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/ct/transfers/by_user/" + addrAlice + "/0/10"},
 	},
 	"/api/cosmicgame/ct/total_supply_history_by_bid": {{path: "/api/cosmicgame/ct/total_supply_history_by_bid"}},
-	"/api/cosmicgame/ct/total_supply_history_by_date/:from_date/:to_date": {
+	"/api/cosmicgame/ct/total_supply_history_by_date/{from_date}/{to_date}": {
 		{path: "/api/cosmicgame/ct/total_supply_history_by_date/20260101/20260102"},
 	},
 
 	// --- CosmicGame: users ------------------------------------------------------------
-	"/api/cosmicgame/user/info/:user_addr":          {{path: "/api/cosmicgame/user/info/" + addrAlice}},
-	"/api/cosmicgame/user/notif_red_box/:user_addr": {{path: "/api/cosmicgame/user/notif_red_box/" + addrAlice}},
-	"/api/cosmicgame/user/balances/:user_addr":      {{path: "/api/cosmicgame/user/balances/" + addrAlice}},
+	"/api/cosmicgame/user/info/{user_addr}":          {{path: "/api/cosmicgame/user/info/" + addrAlice}},
+	"/api/cosmicgame/user/notif_red_box/{user_addr}": {{path: "/api/cosmicgame/user/notif_red_box/" + addrAlice}},
+	"/api/cosmicgame/user/balances/{user_addr}":      {{path: "/api/cosmicgame/user/balances/" + addrAlice}},
 
 	// --- CosmicGame: donations -----------------------------------------------------------
-	"/api/cosmicgame/donations/eth/simple/list/:offset/:limit": {
+	"/api/cosmicgame/donations/eth/simple/list/{offset}/{limit}": {
 		{path: "/api/cosmicgame/donations/eth/simple/list/0/10"},
 	},
-	"/api/cosmicgame/donations/eth/simple/by_round/:round_num": {
+	"/api/cosmicgame/donations/eth/simple/by_round/{round_num}": {
 		{path: "/api/cosmicgame/donations/eth/simple/by_round/0"},
 	},
-	"/api/cosmicgame/donations/eth/with_info/list/:offset/:limit": {
+	"/api/cosmicgame/donations/eth/with_info/list/{offset}/{limit}": {
 		{path: "/api/cosmicgame/donations/eth/with_info/list/0/10"},
 	},
-	"/api/cosmicgame/donations/eth/with_info/by_round/:round_num": {
+	"/api/cosmicgame/donations/eth/with_info/by_round/{round_num}": {
 		{path: "/api/cosmicgame/donations/eth/with_info/by_round/0"},
 	},
-	"/api/cosmicgame/donations/eth/with_info/info/:record_id": {
+	"/api/cosmicgame/donations/eth/with_info/info/{record_id}": {
 		{path: "/api/cosmicgame/donations/eth/with_info/info/0"},
 	},
-	"/api/cosmicgame/donations/eth/by_user/:user_addr": {
+	"/api/cosmicgame/donations/eth/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/eth/by_user/" + addrDave},
 	},
-	"/api/cosmicgame/donations/eth/both/by_round/:round_num": {
+	"/api/cosmicgame/donations/eth/both/by_round/{round_num}": {
 		{path: "/api/cosmicgame/donations/eth/both/by_round/0"},
 	},
 	"/api/cosmicgame/donations/eth/both/all":        {{path: "/api/cosmicgame/donations/eth/both/all"}},
@@ -223,174 +223,174 @@ var parityCases = map[string][]parityCase{
 	"/api/cosmicgame/donations/charity/cg_deposits": {{path: "/api/cosmicgame/donations/charity/cg_deposits"}},
 	"/api/cosmicgame/donations/charity/voluntary":   {{path: "/api/cosmicgame/donations/charity/voluntary"}},
 	"/api/cosmicgame/donations/charity/withdrawals": {{path: "/api/cosmicgame/donations/charity/withdrawals"}},
-	"/api/cosmicgame/donations/nft/list/:offset/:limit": {
+	"/api/cosmicgame/donations/nft/list/{offset}/{limit}": {
 		{path: "/api/cosmicgame/donations/nft/list/0/10"},
 	},
-	"/api/cosmicgame/donations/nft/info/:record_id": {{path: "/api/cosmicgame/donations/nft/info/1"}},
-	"/api/cosmicgame/donations/nft/by_user/:user_addr": {
+	"/api/cosmicgame/donations/nft/info/{record_id}": {{path: "/api/cosmicgame/donations/nft/info/1"}},
+	"/api/cosmicgame/donations/nft/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/nft/by_user/" + addrBob},
 	},
 	"/api/cosmicgame/donations/nft/claims": {{path: "/api/cosmicgame/donations/nft/claims"}},
-	"/api/cosmicgame/donations/nft/claims/:offset/:limit": {
+	"/api/cosmicgame/donations/nft/claims/{offset}/{limit}": {
 		{path: "/api/cosmicgame/donations/nft/claims/0/10"},
 	},
-	"/api/cosmicgame/donations/nft/claims/by_user/:user_addr": {
+	"/api/cosmicgame/donations/nft/claims/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/nft/claims/by_user/" + addrAlice},
 	},
 	"/api/cosmicgame/donations/nft/statistics": {{path: "/api/cosmicgame/donations/nft/statistics"}},
-	"/api/cosmicgame/donations/nft/by_round/:prize_num": {
+	"/api/cosmicgame/donations/nft/by_round/{prize_num}": {
 		{path: "/api/cosmicgame/donations/nft/by_round/0"},
 	},
-	"/api/cosmicgame/donations/nft/by_token/:token_addr": {
+	"/api/cosmicgame/donations/nft/by_token/{token_addr}": {
 		{path: "/api/cosmicgame/donations/nft/by_token/" + nftDonationContract},
 	},
-	"/api/cosmicgame/donations/nft/unclaimed/by_round/:prize_num": {
+	"/api/cosmicgame/donations/nft/unclaimed/by_round/{prize_num}": {
 		{path: "/api/cosmicgame/donations/nft/unclaimed/by_round/0"}, // fully claimed round
 		{path: "/api/cosmicgame/donations/nft/unclaimed/by_round/2"}, // emma's donation pending
 	},
-	"/api/cosmicgame/donations/nft/unclaimed/by_user/:user_addr": {
+	"/api/cosmicgame/donations/nft/unclaimed/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/nft/unclaimed/by_user/" + addrEmma},
 	},
-	"/api/cosmicgame/donations/erc20/by_round/detailed/:round_num": {
+	"/api/cosmicgame/donations/erc20/by_round/detailed/{round_num}": {
 		{path: "/api/cosmicgame/donations/erc20/by_round/detailed/0"},
 	},
-	"/api/cosmicgame/donations/erc20/by_round/all/:round_num": {
+	"/api/cosmicgame/donations/erc20/by_round/all/{round_num}": {
 		{path: "/api/cosmicgame/donations/erc20/by_round/all/0"},
 	},
-	"/api/cosmicgame/donations/erc20/by_round/summarized/:round_num": {
+	"/api/cosmicgame/donations/erc20/by_round/summarized/{round_num}": {
 		{path: "/api/cosmicgame/donations/erc20/by_round/summarized/0"},
 	},
-	"/api/cosmicgame/donations/erc20/donated/by_user/:user_addr": {
+	"/api/cosmicgame/donations/erc20/donated/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/erc20/donated/by_user/" + addrAlice},
 	},
-	"/api/cosmicgame/donations/erc20/by_user/:user_addr": {
+	"/api/cosmicgame/donations/erc20/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/erc20/by_user/" + addrAlice},
 	},
-	"/api/cosmicgame/donations/erc20/global/:offset/:limit": {
+	"/api/cosmicgame/donations/erc20/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/donations/erc20/global/0/10"},
 	},
-	"/api/cosmicgame/donations/erc20/info/:record_id": {{path: "/api/cosmicgame/donations/erc20/info/1"}},
-	"/api/cosmicgame/donations/erc20/claims":          {{path: "/api/cosmicgame/donations/erc20/claims"}},
-	"/api/cosmicgame/donations/erc20/claims/:offset/:limit": {
+	"/api/cosmicgame/donations/erc20/info/{record_id}": {{path: "/api/cosmicgame/donations/erc20/info/1"}},
+	"/api/cosmicgame/donations/erc20/claims":           {{path: "/api/cosmicgame/donations/erc20/claims"}},
+	"/api/cosmicgame/donations/erc20/claims/{offset}/{limit}": {
 		{path: "/api/cosmicgame/donations/erc20/claims/0/10"},
 	},
-	"/api/cosmicgame/donations/erc20/claims/by_user/:user_addr": {
+	"/api/cosmicgame/donations/erc20/claims/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/donations/erc20/claims/by_user/" + addrAlice},
 	},
-	"/api/cosmicgame/donations/erc20/claims/by_round/:round_num": {
+	"/api/cosmicgame/donations/erc20/claims/by_round/{round_num}": {
 		{path: "/api/cosmicgame/donations/erc20/claims/by_round/0"},
 	},
 
 	// --- CosmicGame: raffles -----------------------------------------------------------------
-	"/api/cosmicgame/raffle/deposits/list":                {{path: "/api/cosmicgame/raffle/deposits/list"}},
-	"/api/cosmicgame/raffle/deposits/list/:offset/:limit": {{path: "/api/cosmicgame/raffle/deposits/list/0/10"}},
-	"/api/cosmicgame/raffle/deposits/by_round/:round_num": {{path: "/api/cosmicgame/raffle/deposits/by_round/0"}},
-	"/api/cosmicgame/eth_deposits/all/list/:offset/:limit": {
+	"/api/cosmicgame/raffle/deposits/list":                  {{path: "/api/cosmicgame/raffle/deposits/list"}},
+	"/api/cosmicgame/raffle/deposits/list/{offset}/{limit}": {{path: "/api/cosmicgame/raffle/deposits/list/0/10"}},
+	"/api/cosmicgame/raffle/deposits/by_round/{round_num}":  {{path: "/api/cosmicgame/raffle/deposits/by_round/0"}},
+	"/api/cosmicgame/eth_deposits/all/list/{offset}/{limit}": {
 		{path: "/api/cosmicgame/eth_deposits/all/list/0/10"},
 	},
-	"/api/cosmicgame/eth_deposits/raffle_eth/list/:offset/:limit": {
+	"/api/cosmicgame/eth_deposits/raffle_eth/list/{offset}/{limit}": {
 		{path: "/api/cosmicgame/eth_deposits/raffle_eth/list/0/10"},
 	},
-	"/api/cosmicgame/eth_deposits/chronowarrior_eth/list/:offset/:limit": {
+	"/api/cosmicgame/eth_deposits/chronowarrior_eth/list/{offset}/{limit}": {
 		{path: "/api/cosmicgame/eth_deposits/chronowarrior_eth/list/0/10"},
 	},
-	"/api/cosmicgame/raffle/nft/all/list":                {{path: "/api/cosmicgame/raffle/nft/all/list"}},
-	"/api/cosmicgame/raffle/nft/all/list/:offset/:limit": {{path: "/api/cosmicgame/raffle/nft/all/list/0/10"}},
-	"/api/cosmicgame/raffle/nft/by_round/:round_num":     {{path: "/api/cosmicgame/raffle/nft/by_round/0"}},
-	"/api/cosmicgame/raffle/nft/by_user/:user_addr":      {{path: "/api/cosmicgame/raffle/nft/by_user/" + addrDave}},
+	"/api/cosmicgame/raffle/nft/all/list":                  {{path: "/api/cosmicgame/raffle/nft/all/list"}},
+	"/api/cosmicgame/raffle/nft/all/list/{offset}/{limit}": {{path: "/api/cosmicgame/raffle/nft/all/list/0/10"}},
+	"/api/cosmicgame/raffle/nft/by_round/{round_num}":      {{path: "/api/cosmicgame/raffle/nft/by_round/0"}},
+	"/api/cosmicgame/raffle/nft/by_user/{user_addr}":       {{path: "/api/cosmicgame/raffle/nft/by_user/" + addrDave}},
 
 	// --- CosmicGame: staking CST ------------------------------------------------------------------
 	"/api/cosmicgame/staking/cst/staked_tokens/all": {{path: "/api/cosmicgame/staking/cst/staked_tokens/all"}},
-	"/api/cosmicgame/staking/cst/staked_tokens/by_user/:user_addr": {
+	"/api/cosmicgame/staking/cst/staked_tokens/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/cst/staked_tokens/by_user/" + addrBob},
 	},
-	"/api/cosmicgame/staking/cst/actions/global/:offset/:limit": {
+	"/api/cosmicgame/staking/cst/actions/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/cst/actions/global/0/10"},
 	},
-	"/api/cosmicgame/staking/cst/actions/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/staking/cst/actions/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/cst/actions/by_user/" + addrAlice + "/0/10"},
 	},
-	"/api/cosmicgame/staking/cst/actions/info/:action_id": {
+	"/api/cosmicgame/staking/cst/actions/info/{action_id}": {
 		{path: "/api/cosmicgame/staking/cst/actions/info/1"},
 	},
 	"/api/cosmicgame/staking/cst/rewards/global": {{path: "/api/cosmicgame/staking/cst/rewards/global"}},
-	"/api/cosmicgame/staking/cst/rewards/to_claim/by_user/:user_addr": {
+	"/api/cosmicgame/staking/cst/rewards/to_claim/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/to_claim/by_user/" + addrBob},
 	},
-	"/api/cosmicgame/staking/cst/rewards/collected/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/staking/cst/rewards/collected/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/collected/by_user/" + addrAlice + "/0/10"},
 	},
-	"/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/:user_addr/:deposit_id": {
+	"/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{user_addr}/{deposit_id}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/" + addrBob + "/501"},
 	},
-	"/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/:user_addr": {
+	"/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/{user_addr}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/" + addrBob},
 	},
-	"/api/cosmicgame/staking/cst/rewards/by_user/by_token/details/:user_addr/:token_id": {
+	"/api/cosmicgame/staking/cst/rewards/by_user/by_token/details/{user_addr}/{token_id}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/by_user/by_token/details/" + addrBob + "/5"},
 	},
-	"/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/:user_addr": {
+	"/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{user_addr}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/" + addrBob},
 	},
-	"/api/cosmicgame/staking/cst/rewards/by_round/:round_num": {
+	"/api/cosmicgame/staking/cst/rewards/by_round/{round_num}": {
 		{path: "/api/cosmicgame/staking/cst/rewards/by_round/0"},
 	},
-	"/api/cosmicgame/staking/cst/mints/global/:offset/:limit": {
+	"/api/cosmicgame/staking/cst/mints/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/cst/mints/global/0/10"},
 	},
-	"/api/cosmicgame/staking/cst/mints/by_user/:user_addr": {
+	"/api/cosmicgame/staking/cst/mints/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/cst/mints/by_user/" + addrBob},
 	},
 
 	// --- CosmicGame: staking RandomWalk (canonical + legacy aliases) ---------------------------------
-	"/api/cosmicgame/staking/randomwalk/actions/info/:action_id": {
+	"/api/cosmicgame/staking/randomwalk/actions/info/{action_id}": {
 		{path: "/api/cosmicgame/staking/randomwalk/actions/info/101"},
 	},
-	"/api/cosmicgame/staking/randomwalk/actions/global/:offset/:limit": {
+	"/api/cosmicgame/staking/randomwalk/actions/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/randomwalk/actions/global/0/10"},
 	},
-	"/api/cosmicgame/staking/randomwalk/actions/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/staking/randomwalk/actions/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/randomwalk/actions/by_user/" + addrCarol + "/0/10"},
 	},
-	"/api/cosmicgame/staking/randomwalk/mints/global/:offset/:limit": {
+	"/api/cosmicgame/staking/randomwalk/mints/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/randomwalk/mints/global/0/10"},
 	},
-	"/api/cosmicgame/staking/randomwalk/mints/by_user/:user_addr": {
+	"/api/cosmicgame/staking/randomwalk/mints/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/randomwalk/mints/by_user/" + addrCarol},
 	},
 	"/api/cosmicgame/staking/randomwalk/staked_tokens/all": {
 		{path: "/api/cosmicgame/staking/randomwalk/staked_tokens/all"},
 	},
-	"/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/:user_addr": {
+	"/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/" + addrDave},
 	},
-	"/api/cosmicgame/staking/rwalk/actions/info/:action_id": {
+	"/api/cosmicgame/staking/rwalk/actions/info/{action_id}": {
 		{path: "/api/cosmicgame/staking/rwalk/actions/info/101"},
 	},
-	"/api/cosmicgame/staking/rwalk/actions/global/:offset/:limit": {
+	"/api/cosmicgame/staking/rwalk/actions/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/rwalk/actions/global/0/10"},
 	},
-	"/api/cosmicgame/staking/rwalk/actions/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/staking/rwalk/actions/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/rwalk/actions/by_user/" + addrCarol + "/0/10"},
 	},
-	"/api/cosmicgame/staking/rwalk/mints/global/:offset/:limit": {
+	"/api/cosmicgame/staking/rwalk/mints/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/staking/rwalk/mints/global/0/10"},
 	},
-	"/api/cosmicgame/staking/rwalk/mints/by_user/:user_addr": {
+	"/api/cosmicgame/staking/rwalk/mints/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/rwalk/mints/by_user/" + addrCarol},
 	},
 	"/api/cosmicgame/staking/rwalk/staked_tokens/all": {
 		{path: "/api/cosmicgame/staking/rwalk/staked_tokens/all"},
 	},
-	"/api/cosmicgame/staking/rwalk/staked_tokens/by_user/:user_addr": {
+	"/api/cosmicgame/staking/rwalk/staked_tokens/by_user/{user_addr}": {
 		{path: "/api/cosmicgame/staking/rwalk/staked_tokens/by_user/" + addrDave},
 	},
 
 	// --- CosmicGame: marketing ------------------------------------------------------------------------
-	"/api/cosmicgame/marketing/rewards/global/:offset/:limit": {
+	"/api/cosmicgame/marketing/rewards/global/{offset}/{limit}": {
 		{path: "/api/cosmicgame/marketing/rewards/global/0/10"},
 	},
-	"/api/cosmicgame/marketing/rewards/by_user/:user_addr/:offset/:limit": {
+	"/api/cosmicgame/marketing/rewards/by_user/{user_addr}/{offset}/{limit}": {
 		{path: "/api/cosmicgame/marketing/rewards/by_user/" + addrEmma + "/0/10"},
 	},
 	"/api/cosmicgame/marketing/config/current": {{path: "/api/cosmicgame/marketing/config/current"}},
@@ -399,43 +399,43 @@ var parityCases = map[string][]parityCase{
 	"/api/cosmicgame/time/current":     {{path: "/api/cosmicgame/time/current"}},
 	"/api/cosmicgame/time/until_prize": {{path: "/api/cosmicgame/time/until_prize"}},
 	"/api/cosmicgame/system/modelist":  {{path: "/api/cosmicgame/system/modelist"}},
-	"/api/cosmicgame/system/modelist/:offset/:limit": {
+	"/api/cosmicgame/system/modelist/{offset}/{limit}": {
 		{path: "/api/cosmicgame/system/modelist/0/10"},
 	},
-	"/api/cosmicgame/system/admin_events/:evtlog_start/:evtlog_end": {
+	"/api/cosmicgame/system/admin_events/{evtlog_start}/{evtlog_end}": {
 		{path: "/api/cosmicgame/system/admin_events/5001/5100"},
 	},
 
 	// --- RandomWalk -----------------------------------------------------------------------------------------
-	"/api/randomwalk/current_offers/:order_by": {{path: "/api/randomwalk/current_offers/0"}},
-	"/api/randomwalk/floor_price":              {{path: "/api/randomwalk/floor_price"}},
-	"/api/randomwalk/tokens/list/sequential":   {{path: "/api/randomwalk/tokens/list/sequential"}},
-	"/api/randomwalk/tokens/list/by_period/:init_ts/:fin_ts": {
+	"/api/randomwalk/current_offers/{order_by}": {{path: "/api/randomwalk/current_offers/0"}},
+	"/api/randomwalk/floor_price":               {{path: "/api/randomwalk/floor_price"}},
+	"/api/randomwalk/tokens/list/sequential":    {{path: "/api/randomwalk/tokens/list/sequential"}},
+	"/api/randomwalk/tokens/list/by_period/{init_ts}/{fin_ts}": {
 		{path: "/api/randomwalk/tokens/list/by_period/" + rwFrom + "/" + rwTo},
 	},
-	"/api/randomwalk/tokens/info/:token_id":            {{path: "/api/randomwalk/tokens/info/10"}},
-	"/api/cosmicgame/randomwalk/tokens/info/:token_id": {{path: "/api/cosmicgame/randomwalk/tokens/info/10"}},
-	"/api/randomwalk/tokens/name_changes/:token_id":    {{path: "/api/randomwalk/tokens/name_changes/10"}},
-	"/api/randomwalk/trading/history/:offset/:limit":   {{path: "/api/randomwalk/trading/history/0/10"}},
-	"/api/randomwalk/trading/by_user/:user_aid/:offset/:limit": {
+	"/api/randomwalk/tokens/info/{token_id}":            {{path: "/api/randomwalk/tokens/info/10"}},
+	"/api/cosmicgame/randomwalk/tokens/info/{token_id}": {{path: "/api/cosmicgame/randomwalk/tokens/info/10"}},
+	"/api/randomwalk/tokens/name_changes/{token_id}":    {{path: "/api/randomwalk/tokens/name_changes/10"}},
+	"/api/randomwalk/trading/history/{offset}/{limit}":  {{path: "/api/randomwalk/trading/history/0/10"}},
+	"/api/randomwalk/trading/by_user/{user_aid}/{offset}/{limit}": {
 		{path: "/api/randomwalk/trading/by_user/" + aidCarol + "/0/10"},
 	},
-	"/api/randomwalk/trading/sales/:offset/:limit": {{path: "/api/randomwalk/trading/sales/0/10"}},
-	"/api/randomwalk/tokens/history/:token_id/:offset/:limit": {
+	"/api/randomwalk/trading/sales/{offset}/{limit}": {{path: "/api/randomwalk/trading/sales/0/10"}},
+	"/api/randomwalk/tokens/history/{token_id}/{offset}/{limit}": {
 		{path: "/api/randomwalk/tokens/history/10/0/10"},
 	},
-	"/api/randomwalk/tokens/by_user/:user_aid": {{path: "/api/randomwalk/tokens/by_user/" + aidDave}},
-	"/api/randomwalk/statistics/by_token":      {{path: "/api/randomwalk/statistics/by_token"}},
-	"/api/randomwalk/statistics/by_market":     {{path: "/api/randomwalk/statistics/by_market"}},
-	"/api/randomwalk/statistics/trading_volume/:init_ts/:fin_ts/:interval_secs": {
+	"/api/randomwalk/tokens/by_user/{user_aid}": {{path: "/api/randomwalk/tokens/by_user/" + aidDave}},
+	"/api/randomwalk/statistics/by_token":       {{path: "/api/randomwalk/statistics/by_token"}},
+	"/api/randomwalk/statistics/by_market":      {{path: "/api/randomwalk/statistics/by_market"}},
+	"/api/randomwalk/statistics/trading_volume/{init_ts}/{fin_ts}/{interval_secs}": {
 		{path: "/api/randomwalk/statistics/trading_volume/" + rwFrom + "/" + rwTo + "/600"},
 	},
 	"/api/randomwalk/statistics/mint_intervals": {{path: "/api/randomwalk/statistics/mint_intervals"}},
-	"/api/randomwalk/statistics/floor_price/:init_ts/:fin_ts/:interval_secs": {
+	"/api/randomwalk/statistics/floor_price/{init_ts}/{fin_ts}/{interval_secs}": {
 		{path: "/api/randomwalk/statistics/floor_price/" + rwFrom + "/" + rwTo + "/600"},
 	},
 	"/api/randomwalk/statistics/withdrawal_chart": {{path: "/api/randomwalk/statistics/withdrawal_chart"}},
-	"/api/randomwalk/user/info/:user_aid":         {{path: "/api/randomwalk/user/info/" + aidCarol}},
+	"/api/randomwalk/user/info/{user_aid}":        {{path: "/api/randomwalk/user/info/" + aidCarol}},
 	"/api/randomwalk/top5tokens":                  {{path: "/api/randomwalk/top5tokens"}},
 	"/api/randomwalk/mint_report":                 {{path: "/api/randomwalk/mint_report"}},
 	"/api/randomwalk/contracts":                   {{path: "/api/randomwalk/contracts"}},
@@ -448,7 +448,7 @@ var parityCases = map[string][]parityCase{
 		{path: "/api/randomwalk/ranking/sign-challenge", redact: redactStringFields("nonce")},
 	},
 	"/api/randomwalk/ranking/beauty-pair-ids": {{path: "/api/randomwalk/ranking/beauty-pair-ids"}},
-	"/api/randomwalk/metadata/:token_id":      {{path: "/api/randomwalk/metadata/10"}},
+	"/api/randomwalk/metadata/{token_id}":     {{path: "/api/randomwalk/metadata/10"}},
 }
 
 // TestAPIParity snapshots every registered GET route against the fixture
@@ -461,7 +461,7 @@ func TestAPIParity(t *testing.T) {
 	registeredGET := make(map[string]bool)
 	for _, r := range routes {
 		if r.Method == http.MethodGet {
-			registeredGET[r.Path] = true
+			registeredGET[r.Pattern] = true
 		}
 	}
 

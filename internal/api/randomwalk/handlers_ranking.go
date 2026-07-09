@@ -16,8 +16,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
@@ -83,7 +84,7 @@ func fetchExploreRandomTokenIDs(ctx context.Context, limit int) ([]int64, error)
 
 // GET /api/randomwalk/explore/random and GET /api/randomwalk/random — default 2 token IDs unless ?limit=.
 // Optional query: limit=1..100 (homepage / legacy random_token uses a higher limit).
-func apiRandomwalkExploreRandom(c *gin.Context) {
+func apiRandomwalkExploreRandom(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
@@ -96,7 +97,7 @@ func apiRandomwalkExploreRandom(c *gin.Context) {
 	}
 	ids, err := fetchExploreRandomTokenIDs(c.Request.Context(), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, ids)
@@ -105,7 +106,7 @@ func apiRandomwalkExploreRandom(c *gin.Context) {
 // GET /api/randomwalk/ranking/beauty-pair-ids — two token ids for the beauty contest.
 // Optional query voter=0x… re-rolls up to 50 times to avoid pairs this wallet already voted on.
 // skip_pair_filter=1 ignores that (one random pair; vote may still 409 if already voted).
-func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
+func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
@@ -132,7 +133,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 		for attempt := 0; attempt < maxAttempts; attempt++ {
 			ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 				return
 			}
 			if len(ids) < 2 {
@@ -140,7 +141,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 			}
 			voted, err := rwRepo.HasRankingVoteForVoterPair(c.Request.Context(), voterAid, ids[0], ids[1])
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 				return
 			}
 			if !voted {
@@ -154,12 +155,12 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 	} else {
 		ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 			return
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"token_ids":      ids,
 		"pair_exhausted": pairExhausted,
 	})
@@ -167,33 +168,33 @@ func apiRandomwalkRankingBeautyPairIDs(c *gin.Context) {
 
 // GET /api/randomwalk/vote_count — total pairwise beauty votes (rw_ranking_match count).
 // total pairwise comparisons (Python GameModel count == rows in rw_ranking_match).
-func apiRandomwalkVoteCount(c *gin.Context) {
+func apiRandomwalkVoteCount(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	n, err := rwRepo.CountRankingMatches(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"total_count": n})
+	c.JSON(http.StatusOK, httpx.H{"total_count": n})
 }
 
 // GET /api/randomwalk/token-ranking/order and GET /api/randomwalk/rating_order — token ids by Elo ascending.
-func apiRandomwalkTokenRankingOrder(c *gin.Context) {
+func apiRandomwalkTokenRankingOrder(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
 	ids, err := rwRepo.RatingOrder(c.Request.Context(), addrs.RandomWalkAid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, ids)
@@ -208,26 +209,26 @@ type rankingMatchBody struct {
 // POST /api/randomwalk/token-ranking/match — records pairwise result and updates Elo.
 // Authentication is enforced by the RequireAdminKey middleware at registration
 // (X-Ranking-Admin-Key, fails closed when no key is configured).
-func apiRandomwalkTokenRankingMatch(c *gin.Context) {
+func apiRandomwalkTokenRankingMatch(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	var body rankingMatchBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 		return
 	}
 	raNew, rbNew, err := performRankingMatch(c.Request.Context(), body.Nft1, body.Nft2, body.Nft1Won)
 	if err != nil {
 		if errors.Is(err, errRankingBadPair) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"nft1": body.Nft1, "nft2": body.Nft2, "rating_nft1": raNew, "rating_nft2": rbNew})
+	c.JSON(http.StatusOK, httpx.H{"nft1": body.Nft1, "nft2": body.Nft2, "rating_nft1": raNew, "rating_nft2": rbNew})
 }
 
 // addGameLegacyBody matches POST /api/randomwalk/add_game (beauty contest frontend).
@@ -357,38 +358,38 @@ func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool
 var errRankingDuplicateVoterPair = errors.New("randomwalk: already voted on this pair")
 
 // GET /api/randomwalk/ranking/sign-challenge — issue one-time nonce for wallet-signed /api/randomwalk/add_game.
-func apiRandomwalkRankingSignChallenge(c *gin.Context) {
+func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	var b [32]byte
 	if _, err := rand.Read(b[:]); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
 	nonce := hex.EncodeToString(b[:])
 	if err := rwRepo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"nonce": nonce})
+	c.JSON(http.StatusOK, httpx.H{"nonce": nonce})
 }
 
 // POST /api/randomwalk/add_game — beauty contest with EIP-191 wallet signature; stores voter_aid and enforces one vote per pair per wallet.
 // Response shape matches actionResponseSchema: {"result":"success"}.
-func apiRandomwalkAddGameLegacy(c *gin.Context) {
+func apiRandomwalkAddGameLegacy(c *httpx.Context) {
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	var body addGameLegacyBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 		return
 	}
 	if body.Nft1Win != 0 && body.Nft1Win != 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "nft1_win must be 0 or 1"})
+		c.JSON(http.StatusBadRequest, httpx.H{"error": "nft1_win must be 0 or 1"})
 		return
 	}
 	nft1Won := body.Nft1Win != 0
@@ -396,22 +397,22 @@ func apiRandomwalkAddGameLegacy(c *gin.Context) {
 	err := performSignedBeautyVote(c.Request.Context(), body.Nft1, body.Nft2, nft1Won, body.ChainID, body.SignNonce, body.Signature)
 	if err != nil {
 		if errors.Is(err, errRankingBadPair) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, errRankingDuplicateVoterPair) {
-			c.JSON(http.StatusConflict, gin.H{"error": "already voted on this pair"})
+			c.JSON(http.StatusConflict, httpx.H{"error": "already voted on this pair"})
 			return
 		}
 		if strings.Contains(err.Error(), "sign_nonce") || strings.Contains(err.Error(), "signature") ||
 			strings.Contains(err.Error(), "chain_id") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"result": "success"})
+	c.JSON(http.StatusOK, httpx.H{"result": "success"})
 }
 
 func computeEloUpdate(ra, rb, score float64, totalMatches int64) (raNew, rbNew float64) {

@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func api_cosmic_game_staking_action_rwalk_info(c *gin.Context) {
+func api_cosmic_game_staking_action_rwalk_info(c *httpx.Context) {
 
 	if !dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
@@ -40,13 +40,13 @@ func api_cosmic_game_staking_action_rwalk_info(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                         req_status,
 		"error":                          err_str,
 		"CombinedRWalkStakingRecordInfo": action_info,
 	})
 }
-func api_cosmic_game_staking_actions_rwalk_global(c *gin.Context) {
+func api_cosmic_game_staking_actions_rwalk_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -64,7 +64,7 @@ func api_cosmic_game_staking_actions_rwalk_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                    req_status,
 		"error":                     err_str,
 		"Offset":                    offset,
@@ -72,7 +72,7 @@ func api_cosmic_game_staking_actions_rwalk_global(c *gin.Context) {
 		"GlobalStakingActionsRWalk": actions,
 	})
 }
-func api_cosmic_game_staking_actions_rwalk_by_user(c *gin.Context) {
+func api_cosmic_game_staking_actions_rwalk_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -91,7 +91,7 @@ func api_cosmic_game_staking_actions_rwalk_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": p_user_addr,
 			"Offset": offset, "Limit": limit, "UserStakingActionsRWalk": []interface{}{},
 		})
@@ -104,7 +104,7 @@ func api_cosmic_game_staking_actions_rwalk_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                  req_status,
 		"error":                   err_str,
 		"UserAid":                 user_aid,
@@ -114,7 +114,7 @@ func api_cosmic_game_staking_actions_rwalk_by_user(c *gin.Context) {
 		"UserStakingActionsRWalk": actions,
 	})
 }
-func api_cosmic_game_user_unique_stakers_rwalk(c *gin.Context) {
+func api_cosmic_game_user_unique_stakers_rwalk(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -130,13 +130,13 @@ func api_cosmic_game_user_unique_stakers_rwalk(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             req_status,
 		"error":              err_str,
 		"UniqueStakersRWalk": unique_stakers,
 	})
 }
-func api_cosmic_game_staking_rwalk_mints_global(c *gin.Context) {
+func api_cosmic_game_staking_rwalk_mints_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -155,13 +155,13 @@ func api_cosmic_game_staking_rwalk_mints_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                   req_status,
 		"error":                    err_str,
 		"StakingRWalkRewardsMints": mints,
 	})
 }
-func api_cosmic_game_staking_rwalk_mints_by_user(c *gin.Context) {
+func api_cosmic_game_staking_rwalk_mints_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -178,7 +178,7 @@ func api_cosmic_game_staking_rwalk_mints_by_user(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "RWalkStakingRewardMints": []interface{}{},
 		})
 		return
@@ -191,13 +191,13 @@ func api_cosmic_game_staking_rwalk_mints_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                  req_status,
 		"error":                   err_str,
 		"RWalkStakingRewardMints": mints,
 	})
 }
-func api_cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
+func api_cosmic_game_staked_tokens_rwalk_by_user(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -211,7 +211,7 @@ func api_cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "StakedTokensRWalk": []interface{}{},
 		})
 		return
@@ -223,7 +223,7 @@ func api_cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"UserAddr":          p_user_addr,
@@ -231,7 +231,7 @@ func api_cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
 		"StakedTokensRWalk": tokens,
 	})
 }
-func api_cosmic_game_staked_tokens_rwalk_global(c *gin.Context) {
+func api_cosmic_game_staked_tokens_rwalk_global(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -244,7 +244,7 @@ func api_cosmic_game_staked_tokens_rwalk_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"StakedTokensRWalk": tokens,

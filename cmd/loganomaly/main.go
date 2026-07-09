@@ -1,9 +1,11 @@
-// Command loganomaly scans the websrv (Gin) access log and writes a compact
-// list of the most recent anomalies to an output file.
+// Command loganomaly scans the websrv access log and writes a compact list
+// of the most recent anomalies to an output file. It understands both the
+// current slog text format (msg=request access lines, msg="panic recovered")
+// and the legacy [GIN] format still present in older log files.
 //
 // An "anomaly" is a genuine server-side problem, not routine bot noise:
-//   - any Gin request logged with an HTTP status >= 500 (configurable), and
-//   - any line containing a Go panic.
+//   - any request logged with an HTTP status >= 500 (configurable), and
+//   - any recovered or fatal Go panic.
 //
 // Ordinary 4xx responses (404 probes for /.env, /wp-admin, etc.) are ignored.
 //
@@ -31,7 +33,7 @@ func main() {
 	defaultIn := filepath.Join(home, "ae_logs", "webserver_cosmic_nohup.log")
 	defaultOut := filepath.Join(home, "ae_logs", "webserver_anomalies.log")
 
-	inPath := flag.String("in", defaultIn, "path to the Gin access log to scan")
+	inPath := flag.String("in", defaultIn, "path to the websrv access log to scan")
 	outPath := flag.String("out", defaultOut, "path to write the anomalies file")
 	minStatus := flag.Int("min-status", 500, "minimum HTTP status treated as an anomaly")
 	keep := flag.Int("keep", 50, "max number of most-recent anomalies to keep")
@@ -67,7 +69,7 @@ func scan(path string, minStatus, keep int) ([]string, error) {
 	}
 
 	sc := bufio.NewScanner(f)
-	// Gin panic/recovery lines can be long; allow up to 1 MiB per line.
+	// Panic/recovery lines carry stack traces; allow up to 1 MiB per line.
 	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for sc.Scan() {
 		if rec, ok := parseAnomaly(sc.Text(), minStatus); ok {
@@ -83,16 +85,23 @@ func scan(path string, minStatus, keep int) ([]string, error) {
 // parseAnomaly returns a compact one-line record when the log line represents
 // an anomaly, and false otherwise.
 func parseAnomaly(line string, minStatus int) (string, bool) {
-	// Panics are always anomalies, regardless of format.
+	// Fatal panics are always anomalies, regardless of format.
 	if strings.Contains(line, "panic:") {
 		return "PANIC | " + strings.TrimSpace(line), true
 	}
-
-	// Gin access lines look like:
-	//   [GIN] 2026/07/03 - 13:21:06 | 500 |   50.7ms | 69.10.55.2 | GET  "/api/..."
-	if !strings.HasPrefix(line, "[GIN]") {
-		return "", false
+	if strings.HasPrefix(line, "[GIN]") {
+		return parseGinAnomaly(line, minStatus)
 	}
+	if strings.HasPrefix(line, "time=") {
+		return parseSlogAnomaly(line, minStatus)
+	}
+	return "", false
+}
+
+// parseGinAnomaly handles the legacy framework access-log format:
+//
+//	[GIN] 2026/07/03 - 13:21:06 | 500 |   50.7ms | 69.10.55.2 | GET  "/api/..."
+func parseGinAnomaly(line string, minStatus int) (string, bool) {
 	parts := strings.Split(line, "|")
 	if len(parts) < 5 {
 		return "", false
@@ -113,6 +122,87 @@ func parseAnomaly(line string, minStatus int) (string, bool) {
 	method, path := splitRequest(strings.TrimSpace(strings.Join(parts[4:], "|")))
 
 	return fmt.Sprintf("%s | %d | %s %s | %s", ts, status, method, path, latency), true
+}
+
+// parseSlogAnomaly handles the slog text format the stdlib-router websrv
+// emits (internal/api/common AccessLog and Recovery middleware):
+//
+//	time=2026-07-09T02:42:09.121-05:00 level=INFO msg=request method=GET path="/api/x?y=1" route=... status=500 bytes=11 duration_ms=1.2 ip=1.2.3.4
+//	time=2026-07-09T02:42:09.121-05:00 level=ERROR msg="panic recovered" method=GET path=/api/x panic=... stack="..."
+func parseSlogAnomaly(line string, minStatus int) (string, bool) {
+	kv := parseLogfmt(line)
+	switch kv["msg"] {
+	case "panic recovered":
+		return "PANIC | " + strings.TrimSpace(line), true
+	case "request":
+		status, err := strconv.Atoi(kv["status"])
+		if err != nil || status < minStatus {
+			return "", false
+		}
+		latency := kv["duration_ms"]
+		if latency != "" {
+			latency += "ms"
+		}
+		return fmt.Sprintf("%s | %d | %s %s | %s",
+			kv["time"], status, kv["method"], kv["path"], latency), true
+	default:
+		return "", false
+	}
+}
+
+// parseLogfmt splits a slog text line into key/value pairs. Values may be
+// bare tokens or Go-quoted strings (as slog emits them); malformed input
+// never panics — unparsable segments are skipped.
+func parseLogfmt(line string) map[string]string {
+	kv := make(map[string]string)
+	i := 0
+	for i < len(line) {
+		for i < len(line) && line[i] == ' ' {
+			i++
+		}
+		start := i
+		for i < len(line) && line[i] != '=' && line[i] != ' ' {
+			i++
+		}
+		if i >= len(line) || line[i] != '=' {
+			continue // bare token without '='; the space skip advances i
+		}
+		key := line[start:i]
+		i++ // consume '='
+
+		var val string
+		if i < len(line) && line[i] == '"' {
+			j := i + 1
+			for j < len(line) && line[j] != '"' {
+				if line[j] == '\\' {
+					j++ // skip the escaped byte
+				}
+				j++
+			}
+			if j >= len(line) {
+				val = line[i+1:] // unterminated quote: take the rest raw
+				i = len(line)
+			} else {
+				if unquoted, err := strconv.Unquote(line[i : j+1]); err == nil {
+					val = unquoted
+				} else {
+					val = line[i+1 : j]
+				}
+				i = j + 1
+			}
+		} else {
+			j := i
+			for j < len(line) && line[j] != ' ' {
+				j++
+			}
+			val = line[i:j]
+			i = j
+		}
+		if key != "" {
+			kv[key] = val
+		}
+	}
+	return kv
 }
 
 // splitRequest parses `GET      "/api/..."` into method and unquoted path.

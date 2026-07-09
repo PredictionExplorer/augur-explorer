@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -17,24 +16,25 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
-	"github.com/gin-gonic/gin"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 )
 
-// harness is the fully wired API server under test: the real gin router with
+// harness is the fully wired API server under test: the real router with
 // the real middleware stack, backed by the seeded test database and the
 // deterministic in-memory Ethereum node (internal/testchain) serving
 // fixture-coherent contract state.
 type harness struct {
-	router *gin.Engine
+	router *httpx.Router
 	db     *sql.DB
 	store  *store.Store
 
@@ -48,11 +48,11 @@ func seedDatabase(ctx context.Context, db *sql.DB) error {
 
 // newHarness initializes the API modules exactly like cmd/apiserver/main.go
 // (common context, cosmicgame, randomwalk, faq) against the test database and
-// fake chain, then assembles the production middleware chain and route table.
-// It must be called exactly once per process: the API packages hold their
-// dependencies in package-level state until Phase 2 makes them injectable.
+// fake chain, then assembles the production middleware chain and route table
+// through the shared constructor (internal/api/routes). It must be called
+// exactly once per process: the API packages hold their dependencies in
+// package-level state until Phase 2 makes them injectable.
 func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
-	gin.SetMode(gin.TestMode)
 	discard := log.New(io.Discard, "", 0)
 
 	chain, _ := testchain.Start() // lives for the whole test process
@@ -83,40 +83,24 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	randomwalk.Init(true)
 	faq.Init(discard, discard, true)
 
-	r := gin.New()
-	if err := r.SetTrustedProxies(nil); err != nil {
-		return nil, err
-	}
-	// CORS middleware replicated from cmd/apiserver/main.go.
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With")
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
-		c.Next()
-	})
-	r.Use(gin.Recovery())
-	// gin.Logger() is omitted: it only writes to stdout and would drown the
-	// test output. The production rate limiter stays in place.
-	r.Use(common.RateLimit(50, 100))
-
-	registerAllRoutes(r, st)
+	// The zero Options build the production chain minus the stdout access
+	// log (it would drown test output), metrics and static assets — the
+	// same CORS, recovery and rate-limit middleware in the same order.
+	r := routes.New(st, routes.Options{})
 
 	return &harness{router: r, db: db.SQL, store: st}, nil
 }
 
 // request performs one HTTP exchange through the real router. Every call uses
 // a fresh client IP so the per-IP rate limiter behaves as it would across
-// distinct production clients.
+// distinct production clients; remoteAddr pins one (rate-limit tests).
 type request struct {
-	method  string
-	path    string
-	body    io.Reader
-	headers map[string]string
-	host    string // overrides the request Host (metadata dispatch)
+	method     string
+	path       string
+	body       io.Reader
+	headers    map[string]string
+	host       string // overrides the request Host (metadata dispatch)
+	remoteAddr string // overrides the per-request unique client IP
 }
 
 func (h *harness) do(t *testing.T, req request) *httptest.ResponseRecorder {
@@ -127,6 +111,9 @@ func (h *harness) do(t *testing.T, req request) *httptest.ResponseRecorder {
 	httpReq := httptest.NewRequest(req.method, req.path, req.body)
 	n := h.ipCounter.Add(1)
 	httpReq.RemoteAddr = fmt.Sprintf("10.%d.%d.%d:4242", (n>>16)&0xff, (n>>8)&0xff, n&0xff)
+	if req.remoteAddr != "" {
+		httpReq.RemoteAddr = req.remoteAddr
+	}
 	if req.host != "" {
 		httpReq.Host = req.host
 	}

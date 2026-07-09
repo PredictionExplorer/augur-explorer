@@ -5,17 +5,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-func newHealthRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
+func newHealthRouter() *httpx.Router {
+	r := httpx.NewRouter()
 	RegisterHealthRoutes(r, nil)
 	return r
 }
 
-func doGet(r *gin.Engine, path string) *httptest.ResponseRecorder {
+func doGet(r *httpx.Router, path string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
 	return w

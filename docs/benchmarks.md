@@ -34,8 +34,8 @@ against runs captured the same way.
 | `BenchmarkEventDecode` (cg-etl) | 2,130 | 2,920 | 43 | v1 `BidPlaced` ABI unpack + topic extraction |
 | `BenchmarkReceiptsDecode/raw_rlp` (freezer) | 24,600 | 31,617 | 287 | 10 receipts x 3 logs, ~300 MB/s |
 | `BenchmarkReceiptsDecode/snappy` (freezer) | 26,800 | 39,822 | 288 | same payload, snappy-compressed |
-| `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,510 | 5,357 | 15 | parallel, per-IP limiter map path |
-| `BenchmarkRateLimiter/shared_ip` (api/common) | 1,600 | 5,356 | 15 | parallel, single-bucket contention |
+| `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,144 | 5,373 | 15 | parallel, per-IP limiter map path (stdlib router) |
+| `BenchmarkRateLimiter/shared_ip` (api/common) | 1,298 | 5,374 | 15 | parallel, single-bucket contention (stdlib router) |
 | `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,530,000 | 14,390 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/claims_by_round` | 936,000 | 9,625 | 82 | per-round claim summary CTE (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/roi_leaderboard` | 315,000 | 23,870 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
@@ -66,3 +66,11 @@ History:
   latency is unchanged inside the container noise band (ns/op medians moved
   −4%/+11%/+18% vs the bridge run and −5%/−2%/+1% vs the original
   database/sql baselines).
+- **2026-07-09 (stdlib router sprint)** — the rate-limiter benchmark now
+  drives the `httpx.Router` (net/http ServeMux) instead of the gin engine;
+  table re-based. The full stack got faster: `distinct_ips` 1,510 → 1,144
+  ns/op (−24%), `shared_ip` 1,600 → 1,298 ns/op (−19%), B/op within 20 bytes
+  and allocs identical at 15. The statistics queries (untouched by the
+  router) re-ran clean: 2,219,000 / 780,000 / 259,000 ns/op medians vs the
+  2,530,000 / 936,000 / 315,000 baselines with byte-identical B/op and
+  allocs — no regression.

@@ -9,7 +9,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/gin-gonic/gin"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
@@ -41,10 +42,10 @@ func InitContext(st *store.Store, ethClient *ethclient.Client, info, errorLog *l
 // IsAddressValid validates an Ethereum address and returns the checksummed version.
 // The jsonOutput flag used to select between JSON and HTML error rendering;
 // HTML pages are gone, so both branches now emit the same JSON error.
-func IsAddressValid(c *gin.Context, jsonOutput bool, addr string) (string, bool) {
+func IsAddressValid(c *httpx.Context, jsonOutput bool, addr string) (string, bool) {
 	if (len(addr) != 40) && (len(addr) != 42) {
 		var errMsg = fmt.Sprintf("Provided address has invalid length (len=%v)", len(addr))
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 0,
 			"error":  errMsg,
 		})
@@ -54,7 +55,7 @@ func IsAddressValid(c *gin.Context, jsonOutput bool, addr string) (string, bool)
 		addr = addr[2:]
 	}
 	if len(addr) != 40 {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 0,
 			"error":  "Invalid address length",
 		})
@@ -66,7 +67,7 @@ func IsAddressValid(c *gin.Context, jsonOutput bool, addr string) (string, bool)
 		addr := common.BytesToAddress(addrBytes)
 		formattedAddr = addr.String()
 	} else {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 0,
 			"error":  fmt.Sprintf("Provided address parameter is invalid : %v", err),
 		})

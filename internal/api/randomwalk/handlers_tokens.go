@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // Token list sequential (API)
-func apiRwalkTokenListSeq(c *gin.Context) {
+func apiRwalkTokenListSeq(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -28,7 +28,7 @@ func apiRwalkTokenListSeq(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       1,
 		"error":        "",
 		"MintedTokens": tokens,
@@ -36,7 +36,7 @@ func apiRwalkTokenListSeq(c *gin.Context) {
 }
 
 // Token list by period (API)
-func apiRwalkTokenListPeriod(c *gin.Context) {
+func apiRwalkTokenListPeriod(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -56,7 +56,7 @@ func apiRwalkTokenListPeriod(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       1,
 		"error":        "",
 		"MintedTokens": tokens,
@@ -67,7 +67,7 @@ func apiRwalkTokenListPeriod(c *gin.Context) {
 }
 
 // Token info (API)
-func apiRwalkTokenInfo(c *gin.Context) {
+func apiRwalkTokenInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -101,7 +101,7 @@ func apiRwalkTokenInfo(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":    1,
 		"error":     "",
 		"TokenInfo": token_info,
@@ -109,7 +109,7 @@ func apiRwalkTokenInfo(c *gin.Context) {
 }
 
 // Token history (API)
-func apiRwalkTokenHistory(c *gin.Context) {
+func apiRwalkTokenHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -142,7 +142,7 @@ func apiRwalkTokenHistory(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       1,
 		"error":        "",
 		"TokenId":      token_id,
@@ -153,7 +153,7 @@ func apiRwalkTokenHistory(c *gin.Context) {
 }
 
 // Token name history (API)
-func apiRwalkTokenNameHistory(c *gin.Context) {
+func apiRwalkTokenNameHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -176,7 +176,7 @@ func apiRwalkTokenNameHistory(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           1,
 		"error":            "",
 		"TokenNameChanges": name_changes,
@@ -184,7 +184,7 @@ func apiRwalkTokenNameHistory(c *gin.Context) {
 }
 
 // Tokens by user (API)
-func apiRwalkTokensByUser(c *gin.Context) {
+func apiRwalkTokensByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -220,7 +220,7 @@ func apiRwalkTokensByUser(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":     1,
 		"error":      "",
 		"UserTokens": user_tokens,

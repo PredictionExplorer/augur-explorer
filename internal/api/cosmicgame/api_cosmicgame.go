@@ -15,7 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/gin-gonic/gin"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
@@ -31,24 +32,24 @@ const (
 
 // respondUserAddrNotIndexedJSON returns 200 with empty user-shaped data when the wallet
 // is not in the indexer DB yet (common for new connections).
-func respondUserAddrNotIndexedUserInfoJSON(c *gin.Context, userAddr string) {
-	emptyUserInfo := gin.H{
+func respondUserAddrNotIndexedUserInfoJSON(c *httpx.Context, userAddr string) {
+	emptyUserInfo := httpx.H{
 		"AddressId": int64(0), "Address": userAddr, "NumPrizes": int64(0), "NumBids": int64(0),
 		"MaxWinAmount": 0.0, "MaxBidAmount": 0.0, "SumRaffleEthWinnings": 0.0, "SumRaffleEthWithdrawal": 0.0,
 		"NumRaffleEthWinnings": int64(0), "RaffleNFTsCount": int64(0), "RewardNFTsCount": int64(0),
 		"UnclaimedNFTs": int64(0), "TotalCSTokensWon": int64(0), "CosmicSignatureNumTransfers": int64(0),
 		"TotalDonatedCount": int64(0), "TotalDonatedAmountEth": 0.0,
-		"StakingStatisticsRWalk": gin.H{},
+		"StakingStatisticsRWalk": httpx.H{},
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status": 1, "error": "", "UserInfo": emptyUserInfo,
 		"Bids": []interface{}{}, "MainPrizeClaims": []interface{}{}, "PrizeHistory": []interface{}{},
-		"TokenDonationsMade": gin.H{"NFTDonations": []interface{}{}, "ERC20Donations": []interface{}{}},
+		"TokenDonationsMade": httpx.H{"NFTDonations": []interface{}{}, "ERC20Donations": []interface{}{}},
 		"ETHDonationsMade":   []interface{}{}, "MarketingRewardsAwarded": []interface{}{},
 		"DonatedNFTsClaimed": []interface{}{}, "DonatedTokensClaimed": []interface{}{},
-		"UnclaimedAssets":       gin.H{"ETHPrizes": []interface{}{}, "DonatedNFTs": []interface{}{}},
-		"CurrentlyStakedTokens": gin.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
-		"StakingActions":        gin.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
+		"UnclaimedAssets":       httpx.H{"ETHPrizes": []interface{}{}, "DonatedNFTs": []interface{}{}},
+		"CurrentlyStakedTokens": httpx.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
+		"StakingActions":        httpx.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
 		"ERC20Transfers":        []interface{}{}, "ERC721Transfers": []interface{}{},
 		"CosmicSignatureTokensOwned": []interface{}{},
 	})
@@ -59,7 +60,7 @@ func respondUserAddrNotIndexedUserInfoJSON(c *gin.Context, userAddr string) {
 // A cancelled request context (client went away) is not worth logging.
 // These paths previously killed the whole process via os.Exit(1) inside the
 // store methods, so any response at all is an improvement.
-func respondStoreError(c *gin.Context, err error) {
+func respondStoreError(c *httpx.Context, err error) {
 	if !errors.Is(err, context.Canceled) {
 		err_str := fmt.Sprintf("%s: %v", c.FullPath(), err)
 		Error.Print(err_str)
@@ -180,7 +181,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 // DASHBOARD & STATISTICS API
 // =============================================================================
 
-func api_cosmic_game_dashboard(c *gin.Context) {
+func api_cosmic_game_dashboard(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -241,7 +242,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 	sanitizeFloatsForJSON(&bw_stats_copy)
 	var req_status int = 1
 	var err_str string = ""
-	payload := gin.H{
+	payload := httpx.H{
 		"status":                               req_status,
 		"error":                                err_str,
 		"CosmicGameAddr":                       snap.Addrs.CosmicGame,
@@ -311,7 +312,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 // ROUNDS & PRIZES API
 // =============================================================================
 
-func api_cosmic_game_prize_list(c *gin.Context) {
+func api_cosmic_game_prize_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -330,7 +331,7 @@ func api_cosmic_game_prize_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status": req_status,
 		"error":  err_str,
 		"Rounds": prizes,
@@ -341,7 +342,7 @@ func api_cosmic_game_prize_list(c *gin.Context) {
 // BIDS API
 // =============================================================================
 
-func api_cosmic_game_bid_list(c *gin.Context) {
+func api_cosmic_game_bid_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -360,7 +361,7 @@ func api_cosmic_game_bid_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status": req_status,
 		"error":  err_str,
 		"Bids":   bids,
@@ -368,7 +369,7 @@ func api_cosmic_game_bid_list(c *gin.Context) {
 		"Limit":  limit,
 	})
 }
-func api_cosmic_game_bid_list_by_round(c *gin.Context) {
+func api_cosmic_game_bid_list_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -412,7 +413,7 @@ func api_cosmic_game_bid_list_by_round(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      req_status,
 		"error":       err_str,
 		"RoundNum":    round_num,
@@ -472,7 +473,7 @@ func bidRecToWithMessageJSON(rec p.CGBidRec) bidWithMessageJSON {
 	}
 }
 
-func respondBidInfoJSON(c *gin.Context, evtlog_id int64) {
+func respondBidInfoJSON(c *httpx.Context, evtlog_id int64) {
 	bid_info, err := arbRepo.BidInfo(c.Request.Context(), evtlog_id)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
@@ -482,14 +483,14 @@ func respondBidInfoJSON(c *gin.Context, evtlog_id int64) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":  1,
 		"error":   "",
 		"BidInfo": bid_info,
 	})
 }
 
-func api_cosmic_game_bid_info(c *gin.Context) {
+func api_cosmic_game_bid_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -512,7 +513,7 @@ func api_cosmic_game_bid_info(c *gin.Context) {
 	respondBidInfoJSON(c, evtlog_id)
 }
 
-func api_cosmic_game_bid_info_by_pos(c *gin.Context) {
+func api_cosmic_game_bid_info_by_pos(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -558,7 +559,7 @@ func api_cosmic_game_bid_info_by_pos(c *gin.Context) {
 	respondBidInfoJSON(c, evtlog_id)
 }
 
-func api_cosmic_game_bid_with_message_by_round(c *gin.Context) {
+func api_cosmic_game_bid_with_message_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -596,7 +597,7 @@ func api_cosmic_game_bid_with_message_by_round(c *gin.Context) {
 		messages = append(messages, bidRecToWithMessageJSON(bid))
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":   1,
 		"error":    "",
 		"Bids":     bids,
@@ -605,7 +606,7 @@ func api_cosmic_game_bid_with_message_by_round(c *gin.Context) {
 		"limit":    limit,
 	})
 }
-func api_cosmic_game_round_info(c *gin.Context) {
+func api_cosmic_game_round_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -636,13 +637,13 @@ func api_cosmic_game_round_info(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":    req_status,
 		"error":     err_str,
 		"RoundInfo": prize_info,
 	})
 }
-func api_cosmic_game_user_info(c *gin.Context) {
+func api_cosmic_game_user_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -777,14 +778,14 @@ func api_cosmic_game_user_info(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":          req_status,
 		"error":           err_str,
 		"UserInfo":        user_info,
 		"Bids":            bids,
 		"MainPrizeClaims": main_prize_claims,
 		"PrizeHistory":    prize_history,
-		"TokenDonationsMade": gin.H{
+		"TokenDonationsMade": httpx.H{
 			"NFTDonations":   nft_donations,
 			"ERC20Donations": erc20_donations,
 		},
@@ -792,15 +793,15 @@ func api_cosmic_game_user_info(c *gin.Context) {
 		"MarketingRewardsAwarded": marketing_rewards,
 		"DonatedNFTsClaimed":      claimed_nfts,
 		"DonatedTokensClaimed":    claimed_tokens,
-		"UnclaimedAssets": gin.H{
+		"UnclaimedAssets": httpx.H{
 			"ETHPrizes":   unclaimed_eth,
 			"DonatedNFTs": unclaimed_nfts,
 		},
-		"CurrentlyStakedTokens": gin.H{
+		"CurrentlyStakedTokens": httpx.H{
 			"CST":   staked_cst,
 			"RWalk": staked_rwalk,
 		},
-		"StakingActions": gin.H{
+		"StakingActions": httpx.H{
 			"CST":   stake_actions_cst,
 			"RWalk": stake_actions_rwalk,
 		},
@@ -814,7 +815,7 @@ func api_cosmic_game_user_info(c *gin.Context) {
 // CHARITY DONATIONS API
 // =============================================================================
 
-func api_cosmic_game_charity_cosmicgame_deposits(c *gin.Context) {
+func api_cosmic_game_charity_cosmicgame_deposits(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -836,13 +837,13 @@ func api_cosmic_game_charity_cosmicgame_deposits(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"CharityDonations": donations,
 	})
 }
-func api_cosmic_game_charity_voluntary_deposits(c *gin.Context) {
+func api_cosmic_game_charity_voluntary_deposits(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -864,13 +865,13 @@ func api_cosmic_game_charity_voluntary_deposits(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"CharityDonations": donations,
 	})
 }
-func api_cosmic_game_charity_donations_deposits(c *gin.Context) {
+func api_cosmic_game_charity_donations_deposits(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -892,13 +893,13 @@ func api_cosmic_game_charity_donations_deposits(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"CharityDonations": donations,
 	})
 }
-func api_cosmic_game_charity_donations_withdrawals(c *gin.Context) {
+func api_cosmic_game_charity_donations_withdrawals(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -913,7 +914,7 @@ func api_cosmic_game_charity_donations_withdrawals(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             req_status,
 		"error":              err_str,
 		"CharityWithdrawals": withdrawals,
@@ -924,7 +925,7 @@ func api_cosmic_game_charity_donations_withdrawals(c *gin.Context) {
 // UNIQUE PARTICIPANTS API
 // =============================================================================
 
-func api_cosmic_game_user_unique_bidders(c *gin.Context) {
+func api_cosmic_game_user_unique_bidders(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -940,13 +941,13 @@ func api_cosmic_game_user_unique_bidders(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        req_status,
 		"error":         err_str,
 		"UniqueBidders": unique_bidders,
 	})
 }
-func api_cosmic_game_user_unique_winners(c *gin.Context) {
+func api_cosmic_game_user_unique_winners(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -962,13 +963,13 @@ func api_cosmic_game_user_unique_winners(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        req_status,
 		"error":         err_str,
 		"UniqueWinners": unique_winners,
 	})
 }
-func api_cosmic_game_roi_leaderboard(c *gin.Context) {
+func api_cosmic_game_roi_leaderboard(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -996,7 +997,7 @@ func api_cosmic_game_roi_leaderboard(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         1,
 		"error":          "",
 		"MinBids":        min_bids,
@@ -1006,7 +1007,7 @@ func api_cosmic_game_roi_leaderboard(c *gin.Context) {
 		"RoiLeaderboard": leaderboard,
 	})
 }
-func api_cosmic_game_claims_by_round(c *gin.Context) {
+func api_cosmic_game_claims_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1020,13 +1021,13 @@ func api_cosmic_game_claims_by_round(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        1,
 		"error":         "",
 		"ClaimsByRound": claims,
 	})
 }
-func api_cosmic_game_claim_detail_by_round(c *gin.Context) {
+func api_cosmic_game_claim_detail_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1046,7 +1047,7 @@ func api_cosmic_game_claim_detail_by_round(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            1,
 		"error":             "",
 		"RoundNum":          detail.RoundNum,
@@ -1054,7 +1055,7 @@ func api_cosmic_game_claim_detail_by_round(c *gin.Context) {
 		"AttachedTokens":    detail.AttachedTokens,
 	})
 }
-func api_cosmic_game_user_unique_donors(c *gin.Context) {
+func api_cosmic_game_user_unique_donors(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1070,7 +1071,7 @@ func api_cosmic_game_user_unique_donors(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       req_status,
 		"error":        err_str,
 		"UniqueDonors": unique_donors,
@@ -1081,7 +1082,7 @@ func api_cosmic_game_user_unique_donors(c *gin.Context) {
 // NFT DONATIONS API
 // =============================================================================
 
-func api_cosmic_game_donations_nft_list(c *gin.Context) {
+func api_cosmic_game_donations_nft_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1101,7 +1102,7 @@ func api_cosmic_game_donations_nft_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       req_status,
 		"error":        err_str,
 		"NFTDonations": nft_donations,
@@ -1109,7 +1110,7 @@ func api_cosmic_game_donations_nft_list(c *gin.Context) {
 		"Limit":        limit,
 	})
 }
-func api_cosmic_game_nft_donation_stats(c *gin.Context) {
+func api_cosmic_game_nft_donation_stats(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1125,13 +1126,13 @@ func api_cosmic_game_nft_donation_stats(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"NFTDonationStats": nft_donation_stats,
 	})
 }
-func api_cosmic_game_nft_donations_by_user(c *gin.Context) {
+func api_cosmic_game_nft_donations_by_user(c *httpx.Context) {
 	// DONOR PERSPECTIVE: Returns NFTs this user DONATED
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -1146,7 +1147,7 @@ func api_cosmic_game_nft_donations_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "NFTDonationsByDonor": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": int64(0),
 		})
@@ -1160,7 +1161,7 @@ func api_cosmic_game_nft_donations_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":              req_status,
 		"error":               err_str,
 		"NFTDonationsByDonor": donations,
@@ -1168,7 +1169,7 @@ func api_cosmic_game_nft_donations_by_user(c *gin.Context) {
 		"UserAid":             user_aid,
 	})
 }
-func api_cosmic_game_record_counters(c *gin.Context) {
+func api_cosmic_game_record_counters(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1184,13 +1185,13 @@ func api_cosmic_game_record_counters(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"RecordCounters": record_counters,
 	})
 }
-func api_cosmic_game_donated_nft_info(c *gin.Context) {
+func api_cosmic_game_donated_nft_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1219,7 +1220,7 @@ func api_cosmic_game_donated_nft_info(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      1,
 		"error":       "",
 		"NFTDonation": nftdonation,
@@ -1230,7 +1231,7 @@ func api_cosmic_game_donated_nft_info(c *gin.Context) {
 // PRIZE & RAFFLE DEPOSITS API
 // =============================================================================
 
-func api_cosmic_game_prize_deposits_list(c *gin.Context) {
+func api_cosmic_game_prize_deposits_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1261,7 +1262,7 @@ func api_cosmic_game_prize_deposits_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"RaffleDeposits": deposits,
@@ -1269,7 +1270,7 @@ func api_cosmic_game_prize_deposits_list(c *gin.Context) {
 		"Limit":          limit,
 	})
 }
-func api_cosmic_game_all_eth_deposits_list(c *gin.Context) {
+func api_cosmic_game_all_eth_deposits_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1300,7 +1301,7 @@ func api_cosmic_game_all_eth_deposits_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      req_status,
 		"error":       err_str,
 		"AllDeposits": deposits,
@@ -1308,7 +1309,7 @@ func api_cosmic_game_all_eth_deposits_list(c *gin.Context) {
 		"Limit":       limit,
 	})
 }
-func api_cosmic_game_raffle_eth_deposits_list(c *gin.Context) {
+func api_cosmic_game_raffle_eth_deposits_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1339,7 +1340,7 @@ func api_cosmic_game_raffle_eth_deposits_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"RaffleDeposits": deposits,
@@ -1347,7 +1348,7 @@ func api_cosmic_game_raffle_eth_deposits_list(c *gin.Context) {
 		"Limit":          limit,
 	})
 }
-func api_cosmic_game_chronowarrior_eth_deposits_list(c *gin.Context) {
+func api_cosmic_game_chronowarrior_eth_deposits_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1378,7 +1379,7 @@ func api_cosmic_game_chronowarrior_eth_deposits_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                req_status,
 		"error":                 err_str,
 		"ChronoWarriorDeposits": deposits,
@@ -1388,7 +1389,7 @@ func api_cosmic_game_chronowarrior_eth_deposits_list(c *gin.Context) {
 }
 
 // Unified URI scheme handlers - per-user
-func api_cosmic_game_unified_eth_all_by_user(c *gin.Context) {
+func api_cosmic_game_unified_eth_all_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1414,7 +1415,7 @@ func api_cosmic_game_unified_eth_all_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      req_status,
 		"error":       err_str,
 		"UserAddr":    p_user_addr,
@@ -1422,7 +1423,7 @@ func api_cosmic_game_unified_eth_all_by_user(c *gin.Context) {
 		"AllDeposits": deposits,
 	})
 }
-func api_cosmic_game_unified_eth_raffle_by_user(c *gin.Context) {
+func api_cosmic_game_unified_eth_raffle_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1448,7 +1449,7 @@ func api_cosmic_game_unified_eth_raffle_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"UserAddr":       p_user_addr,
@@ -1456,7 +1457,7 @@ func api_cosmic_game_unified_eth_raffle_by_user(c *gin.Context) {
 		"RaffleDeposits": deposits,
 	})
 }
-func api_cosmic_game_unified_eth_chronowarrior_by_user(c *gin.Context) {
+func api_cosmic_game_unified_eth_chronowarrior_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1482,7 +1483,7 @@ func api_cosmic_game_unified_eth_chronowarrior_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                req_status,
 		"error":                 err_str,
 		"UserAddr":              p_user_addr,
@@ -1490,7 +1491,7 @@ func api_cosmic_game_unified_eth_chronowarrior_by_user(c *gin.Context) {
 		"ChronoWarriorDeposits": deposits,
 	})
 }
-func api_cosmic_game_prize_deposits_by_round(c *gin.Context) {
+func api_cosmic_game_prize_deposits_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1519,14 +1520,14 @@ func api_cosmic_game_prize_deposits_by_round(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"RaffleDeposits": deposits,
 		"RoundNum":       round_num,
 	})
 }
-func api_cosmic_game_raffle_nft_winners_list(c *gin.Context) {
+func api_cosmic_game_raffle_nft_winners_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1557,7 +1558,7 @@ func api_cosmic_game_raffle_nft_winners_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"RaffleNFTWinners": winners,
@@ -1565,7 +1566,7 @@ func api_cosmic_game_raffle_nft_winners_list(c *gin.Context) {
 		"Limit":            limit,
 	})
 }
-func api_cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
+func api_cosmic_game_raffle_nft_winners_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1599,7 +1600,7 @@ func api_cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"RaffleNFTWinners":  winners_raffle,
@@ -1607,7 +1608,7 @@ func api_cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 		"RoundNum":          round_num,
 	})
 }
-func api_cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
+func api_cosmic_game_user_raffle_nft_winnings(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1644,14 +1645,14 @@ func api_cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                req_status,
 		"error":                 err_str,
 		"UserRaffleNFTWinnings": winnings,
 		"UserInfo":              user_info,
 	})
 }
-func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *gin.Context) {
+func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1686,14 +1687,14 @@ func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             req_status,
 		"error":              err_str,
 		"UserRaffleDeposits": deposits,
 		"UserInfo":           user_info,
 	})
 }
-func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *gin.Context) {
+func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1728,14 +1729,14 @@ func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                    req_status,
 		"error":                     err_str,
 		"UserChronoWarriorDeposits": deposits,
 		"UserInfo":                  user_info,
 	})
 }
-func api_cosmic_game_nft_donations_by_prize(c *gin.Context) {
+func api_cosmic_game_nft_donations_by_prize(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1762,14 +1763,14 @@ func api_cosmic_game_nft_donations_by_prize(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       req_status,
 		"error":        err_str,
 		"NFTDonations": nft_donations,
 		"RoundNum":     prize_num,
 	})
 }
-func api_cosmic_game_nft_donations_by_token(c *gin.Context) {
+func api_cosmic_game_nft_donations_by_token(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1790,14 +1791,14 @@ func api_cosmic_game_nft_donations_by_token(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       1,
 		"error":        "",
 		"NFTDonations": nft_donations,
 		"TokenAddr":    p_token_addr,
 	})
 }
-func api_cosmic_game_cosmic_signature_token_list(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_token_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1817,7 +1818,7 @@ func api_cosmic_game_cosmic_signature_token_list(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                   req_status,
 		"error":                    err_str,
 		"CosmicSignatureTokenList": tokens,
@@ -1825,7 +1826,7 @@ func api_cosmic_game_cosmic_signature_token_list(c *gin.Context) {
 		"Limit":                    limit,
 	})
 }
-func api_cosmic_game_cosmic_signature_token_info(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_token_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1868,21 +1869,21 @@ func api_cosmic_game_cosmic_signature_token_info(c *gin.Context) {
 			respondStoreError(c, err)
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status":    req_status,
 			"error":     err_str,
 			"TokenInfo": token_info,
 			"PrizeInfo": prize_info,
 		})
 	} else {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status":    req_status,
 			"error":     err_str,
 			"TokenInfo": token_info,
 		})
 	}
 }
-func api_cosmic_game_donated_nft_claims_all(c *gin.Context) {
+func api_cosmic_game_donated_nft_claims_all(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1913,7 +1914,7 @@ func api_cosmic_game_donated_nft_claims_all(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"DonatedNFTClaims": claims,
@@ -1921,7 +1922,7 @@ func api_cosmic_game_donated_nft_claims_all(c *gin.Context) {
 		"Limit":            limit,
 	})
 }
-func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
+func api_cosmic_game_donated_nft_claims_by_user(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1934,7 +1935,7 @@ func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
 			"UserInfo": p.CGUserInfo{Address: p_user_addr},
 		})
@@ -1942,7 +1943,7 @@ func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 	}
 	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
 	if errors.Is(err, store.ErrNotFound) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
 			"UserInfo": p.CGUserInfo{Address: p_user_addr},
 		})
@@ -1959,14 +1960,14 @@ func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"DonatedNFTClaims": claims,
 		"UserInfo":         user_info,
 	})
 }
-func api_cosmic_game_time_current(c *gin.Context) {
+func api_cosmic_game_time_current(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -1995,13 +1996,13 @@ func api_cosmic_game_time_current(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"CurrentTimeStamp": ts,
 	})
 }
-func api_cosmic_game_time_until_prize(c *gin.Context) {
+func api_cosmic_game_time_until_prize(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2029,13 +2030,13 @@ func api_cosmic_game_time_until_prize(c *gin.Context) {
 	ts_big := ethcommon.HexToHash(ts_hex).Big()
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
-func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
+func api_cosmic_game_prize_cur_round_time(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2071,13 +2072,13 @@ func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"CurRoundPrizeTime": prize_time,
 	})
 }
-func api_cosmic_game_user_global_winnings(c *gin.Context) {
+func api_cosmic_game_user_global_winnings(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2092,7 +2093,7 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty winnings so UI works
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Winnings": []interface{}{}, "UserAddr": p_user_addr, "UserAid": int64(0),
 		})
 		return
@@ -2106,7 +2107,7 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":   req_status,
 		"error":    err_str,
 		"Winnings": claim_info,
@@ -2114,7 +2115,7 @@ func api_cosmic_game_user_global_winnings(c *gin.Context) {
 		"UserAid":  user_aid,
 	})
 }
-func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
+func api_cosmic_game_prize_history_detail_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2132,7 +2133,7 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
 			"UserPrizeHistory": []interface{}{},
 		})
@@ -2140,7 +2141,7 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 	}
 	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
 	if errors.Is(err, store.ErrNotFound) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
 			"UserPrizeHistory": []interface{}{},
 		})
@@ -2159,7 +2160,7 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"UserAddr":         p_user_addr,
@@ -2167,7 +2168,7 @@ func api_cosmic_game_prize_history_detail_by_user(c *gin.Context) {
 		"UserPrizeHistory": claim_history,
 	})
 }
-func api_cosmic_game_global_claim_history_detail(c *gin.Context) {
+func api_cosmic_game_global_claim_history_detail(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2187,13 +2188,13 @@ func api_cosmic_game_global_claim_history_detail(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             req_status,
 		"error":              err_str,
 		"GlobalPrizeHistory": claim_history,
 	})
 }
-func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
+func api_cosmic_game_unclaimed_donated_nfts_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2207,7 +2208,7 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": int64(0),
 		})
@@ -2215,7 +2216,7 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 	}
 	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
 	if errors.Is(err, store.ErrNotFound) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": user_aid,
 		})
@@ -2234,7 +2235,7 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":               req_status,
 		"error":                err_str,
 		"UnclaimedDonatedNFTs": nfts,
@@ -2242,7 +2243,7 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 		"UserAid":              user_aid,
 	})
 }
-func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
+func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2270,14 +2271,14 @@ func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       req_status,
 		"error":        err_str,
 		"NFTDonations": nft_donations,
 		"RoundNum":     prize_num,
 	})
 }
-func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
+func api_cosmic_game_unclaimed_prize_deposits_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2295,7 +2296,7 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
 			"UnclaimedDeposits": []interface{}{},
 		})
@@ -2303,7 +2304,7 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 	}
 	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
 	if errors.Is(err, store.ErrNotFound) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
 			"UnclaimedDeposits": []interface{}{},
 		})
@@ -2322,7 +2323,7 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"UserAddr":          p_user_addr,
@@ -2330,7 +2331,7 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *gin.Context) {
 		"UnclaimedDeposits": deposits,
 	})
 }
-func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_token_list_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2349,7 +2350,7 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 		if !success {
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
 			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
 		})
@@ -2361,7 +2362,7 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 		if !success {
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
 			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
 		})
@@ -2384,7 +2385,7 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":     req_status,
 		"error":      err_str,
 		"UserAddr":   p_user_addr,
@@ -2392,7 +2393,7 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 		"UserTokens": user_tokens,
 	})
 }
-func api_cosmic_game_token_name_history(c *gin.Context) {
+func api_cosmic_game_token_name_history(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2421,14 +2422,14 @@ func api_cosmic_game_token_name_history(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"TokenId":          token_id,
 		"TokenNameHistory": tokname_history,
 	})
 }
-func api_cosmic_game_token_name_search(c *gin.Context) {
+func api_cosmic_game_token_name_search(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2451,14 +2452,14 @@ func api_cosmic_game_token_name_search(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                 req_status,
 		"error":                  err_str,
 		"SearchText":             p_name,
 		"TokenNameSearchResults": results,
 	})
 }
-func api_cosmic_game_named_tokens_only(c *gin.Context) {
+func api_cosmic_game_named_tokens_only(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2474,13 +2475,13 @@ func api_cosmic_game_named_tokens_only(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      req_status,
 		"error":       err_str,
 		"NamedTokens": results,
 	})
 }
-func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
+func api_cosmic_game_token_ownership_transfers(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2513,7 +2514,7 @@ func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"Offset":         offset,
@@ -2522,7 +2523,7 @@ func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
 		"TokenTransfers": transfers,
 	})
 }
-func api_cosmic_game_cs_token_distribution(c *gin.Context) {
+func api_cosmic_game_cs_token_distribution(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if !dbInitialized() {
@@ -2538,13 +2539,13 @@ func api_cosmic_game_cs_token_distribution(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                           req_status,
 		"error":                            err_str,
 		"CosmicSignatureTokenDistribution": distribution,
 	})
 }
-func api_cosmic_game_user_balances(c *gin.Context) {
+func api_cosmic_game_user_balances(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2586,7 +2587,7 @@ func api_cosmic_game_user_balances(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             req_status,
 		"error":              err_str,
 		"UserAddr":           p_user_addr,
@@ -2595,7 +2596,7 @@ func api_cosmic_game_user_balances(c *gin.Context) {
 		"CosmicTokenBalance": ct_balance.String(),
 	})
 }
-func api_cosmic_game_cosmic_token_balances(c *gin.Context) {
+func api_cosmic_game_cosmic_token_balances(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2611,13 +2612,13 @@ func api_cosmic_game_cosmic_token_balances(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":              req_status,
 		"error":               err_str,
 		"CosmicTokenBalances": balances,
 	})
 }
-func api_cosmic_game_cosmic_token_statistics(c *gin.Context) {
+func api_cosmic_game_cosmic_token_statistics(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2682,7 +2683,7 @@ func api_cosmic_game_cosmic_token_statistics(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"TokenName":        token_name,
@@ -2693,7 +2694,7 @@ func api_cosmic_game_cosmic_token_statistics(c *gin.Context) {
 		"Statistics":       stats,
 	})
 }
-func api_cosmic_game_cosmic_token_summary_by_user(c *gin.Context) {
+func api_cosmic_game_cosmic_token_summary_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2720,13 +2721,13 @@ func api_cosmic_game_cosmic_token_summary_by_user(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":  req_status,
 		"error":   err_str,
 		"Summary": summary,
 	})
 }
-func parseCosmicTokenHistoryDateParam(c *gin.Context, paramName string) (string, bool) {
+func parseCosmicTokenHistoryDateParam(c *httpx.Context, paramName string) (string, bool) {
 	val := c.Param(paramName)
 	if len(val) != 8 {
 		common.RespondErrorJSON(c, fmt.Sprintf("'%s' must be YYYYMMDD (8 digits)", paramName))
@@ -2739,7 +2740,7 @@ func parseCosmicTokenHistoryDateParam(c *gin.Context, paramName string) (string,
 	return val, true
 }
 
-func api_cosmic_game_cosmic_token_total_supply_history_by_bid(c *gin.Context) {
+func api_cosmic_game_cosmic_token_total_supply_history_by_bid(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2752,13 +2753,13 @@ func api_cosmic_game_cosmic_token_total_supply_history_by_bid(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             1,
 		"error":              "",
 		"TotalSupplyHistory": history,
 	})
 }
-func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *gin.Context) {
+func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2784,7 +2785,7 @@ func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             1,
 		"error":              "",
 		"DateFrom":           fromDate,
@@ -2792,7 +2793,7 @@ func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *gin.Context) {
 		"TotalSupplyHistory": history,
 	})
 }
-func api_cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
+func api_cosmic_game_cosmic_token_transfers_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2821,7 +2822,7 @@ func api_cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":               req_status,
 		"error":                err_str,
 		"UserAddr":             p_user_addr,
@@ -2831,7 +2832,7 @@ func api_cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
 		"CosmicTokenTransfers": transfers,
 	})
 }
-func api_cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_transfers_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2860,7 +2861,7 @@ func api_cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                   req_status,
 		"error":                    err_str,
 		"UserAddr":                 p_user_addr,
@@ -2870,7 +2871,7 @@ func api_cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
 		"CosmicSignatureTransfers": transfers,
 	})
 }
-func api_cosmic_game_used_rwalk_nfts(c *gin.Context) {
+func api_cosmic_game_used_rwalk_nfts(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -2886,13 +2887,13 @@ func api_cosmic_game_used_rwalk_nfts(c *gin.Context) {
 	var req_status int = 1
 	var err_str string = ""
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        req_status,
 		"error":         err_str,
 		"UsedRwalkNFTs": used_nfts,
 	})
 }
-func api_cosmic_game_marketing_rewards_global(c *gin.Context) {
+func api_cosmic_game_marketing_rewards_global(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2909,7 +2910,7 @@ func api_cosmic_game_marketing_rewards_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           req_status,
 		"error":            err_str,
 		"Offset":           offset,
@@ -2917,7 +2918,7 @@ func api_cosmic_game_marketing_rewards_global(c *gin.Context) {
 		"MarketingRewards": rewards,
 	})
 }
-func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
+func api_cosmic_game_marketing_rewards_by_user(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2935,7 +2936,7 @@ func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 		if !success {
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
 			"UserAddr": p_user_addr, "UserAid": int64(0), "UserMarketingRewards": []interface{}{},
 		})
@@ -2952,7 +2953,7 @@ func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":               req_status,
 		"error":                err_str,
 		"Offset":               offset,
@@ -2962,7 +2963,7 @@ func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 		"UserMarketingRewards": rewards,
 	})
 }
-func api_cosmic_game_marketing_config_current(c *gin.Context) {
+func api_cosmic_game_marketing_config_current(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -3013,7 +3014,7 @@ func api_cosmic_game_marketing_config_current(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":              req_status,
 		"error":               err_str,
 		"MarketingWalletAddr": marketingWalletAddr.String(),
@@ -3022,7 +3023,7 @@ func api_cosmic_game_marketing_config_current(c *gin.Context) {
 		"OwnerAddr":           owner_addr.String(),
 	})
 }
-func api_cosmic_game_get_cst_price(c *gin.Context) {
+func api_cosmic_game_get_cst_price(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	var copts bind.CallOpts
@@ -3047,7 +3048,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 			} else {
 				var req_status int = 1
 				var err_str string = ""
-				c.JSON(http.StatusOK, gin.H{
+				c.JSON(http.StatusOK, httpx.H{
 					"status":          req_status,
 					"error":           err_str,
 					"CSTPrice":        cst_price.String(),
@@ -3058,7 +3059,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 		}
 	}
 }
-func api_cosmic_game_get_eth_price(c *gin.Context) {
+func api_cosmic_game_get_eth_price(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	var copts bind.CallOpts
@@ -3083,7 +3084,7 @@ func api_cosmic_game_get_eth_price(c *gin.Context) {
 			} else {
 				var req_status int = 1
 				var err_str string = ""
-				c.JSON(http.StatusOK, gin.H{
+				c.JSON(http.StatusOK, httpx.H{
 					"status":          req_status,
 					"error":           err_str,
 					"ETHPrice":        eth_price.String(),
@@ -3094,7 +3095,7 @@ func api_cosmic_game_get_eth_price(c *gin.Context) {
 		}
 	}
 }
-func api_cosmic_game_sysmode_changes(c *gin.Context) {
+func api_cosmic_game_sysmode_changes(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -3135,7 +3136,7 @@ func api_cosmic_game_sysmode_changes(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"Offset":            offset,
@@ -3143,7 +3144,7 @@ func api_cosmic_game_sysmode_changes(c *gin.Context) {
 		"SystemModeChanges": system_mode_changes,
 	})
 }
-func api_cosmic_game_admin_events_in_range(c *gin.Context) {
+func api_cosmic_game_admin_events_in_range(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -3188,7 +3189,7 @@ func api_cosmic_game_admin_events_in_range(c *gin.Context) {
 
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        req_status,
 		"error":         err_str,
 		"AdminEvents":   event_list,
@@ -3196,7 +3197,7 @@ func api_cosmic_game_admin_events_in_range(c *gin.Context) {
 		"EvtLogIdEnd":   evtlog_end,
 	})
 }
-func api_cosmic_game_bid_special_winners(c *gin.Context) {
+func api_cosmic_game_bid_special_winners(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -3214,7 +3215,7 @@ func api_cosmic_game_bid_special_winners(c *gin.Context) {
 		return
 	}
 
-	resp := gin.H{
+	resp := httpx.H{
 		"status":                          1,
 		"error":                           "",
 		"LastBidderAddress":               state.LastBidderAddress,
@@ -3244,7 +3245,7 @@ func api_cosmic_game_bid_special_winners(c *gin.Context) {
 // BANNED BIDS API (mirrors FastAPI get_banned_bids / ban_bid / unban_bid)
 // =============================================================================
 
-func api_cosmic_game_get_banned_bids(c *gin.Context) {
+func api_cosmic_game_get_banned_bids(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -3260,18 +3261,19 @@ func api_cosmic_game_get_banned_bids(c *gin.Context) {
 }
 
 type banBidPayload struct {
-	BidId    int64  `json:"bid_id" binding:"required"`
-	UserAddr string `json:"user_addr" binding:"required"`
+	BidId    int64  `json:"bid_id"`
+	UserAddr string `json:"user_addr"`
 }
 
-func api_cosmic_game_ban_bid(c *gin.Context) {
+func api_cosmic_game_ban_bid(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
+	// Zero values are rejected like the legacy required-field binding did.
 	var payload banBidPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.BidId == 0 || payload.UserAddr == "" {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id and user_addr required")
 		return
 	}
@@ -3279,21 +3281,22 @@ func api_cosmic_game_ban_bid(c *gin.Context) {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to insert banned bid: %v", err))
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"result": "success"})
+	c.JSON(http.StatusCreated, httpx.H{"result": "success"})
 }
 
 type unbanBidPayload struct {
-	BidId int64 `json:"bid_id" binding:"required"`
+	BidId int64 `json:"bid_id"`
 }
 
-func api_cosmic_game_unban_bid(c *gin.Context) {
+func api_cosmic_game_unban_bid(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
+	// A zero bid_id is rejected like the legacy required-field binding did.
 	var payload unbanBidPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.BidId == 0 {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id required")
 		return
 	}
@@ -3301,5 +3304,5 @@ func api_cosmic_game_unban_bid(c *gin.Context) {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to unban bid: %v", err))
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"result": "success"})
+	c.JSON(http.StatusCreated, httpx.H{"result": "success"})
 }

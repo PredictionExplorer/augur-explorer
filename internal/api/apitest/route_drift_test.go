@@ -13,16 +13,19 @@ import (
 )
 
 // TestRouteDriftAgainstOpenAPI pins the route table to docs/openapi.yaml in
-// both directions: every documented operation must be registered on the gin
+// both directions: every documented operation must be registered on the
 // router, and every registered route must be documented. The spec is the v1
 // contract for the rewrite — this test makes silent drift impossible.
+//
+// OpenAPI path templates ("/a/{b}") and ServeMux patterns share one syntax,
+// so operations compare directly against the route registry.
 func TestRouteDriftAgainstOpenAPI(t *testing.T) {
 	specOps := loadSpecOperations(t)
 
 	r := buildBareRouter()
 	registered := make(map[string]bool)
 	for _, route := range r.Routes() {
-		registered[route.Method+" "+route.Path] = true
+		registered[route.Method+" "+route.Pattern] = true
 	}
 
 	var missingFromRouter []string
@@ -49,7 +52,7 @@ func TestRouteDriftAgainstOpenAPI(t *testing.T) {
 }
 
 // loadSpecOperations parses docs/openapi.yaml and returns the set of
-// "METHOD /gin/style/:path" operation keys it documents.
+// "METHOD /path/{param}" operation keys it documents.
 func loadSpecOperations(t *testing.T) map[string]bool {
 	t.Helper()
 
@@ -75,37 +78,15 @@ func loadSpecOperations(t *testing.T) map[string]bool {
 
 	ops := make(map[string]bool)
 	for specPath, item := range doc.Paths {
-		ginPath := openAPIPathToGin(specPath)
 		for key := range item {
 			lk := strings.ToLower(key)
 			if !methods[lk] {
 				continue // parameters, summary, etc.
 			}
-			ops[fmt.Sprintf("%s %s", strings.ToUpper(lk), ginPath)] = true
+			ops[fmt.Sprintf("%s %s", strings.ToUpper(lk), specPath)] = true
 		}
 	}
 	return ops
-}
-
-// openAPIPathToGin converts /a/{b}/c template syntax to gin's /a/:b/c.
-func openAPIPathToGin(p string) string {
-	var b strings.Builder
-	for _, seg := range strings.Split(p, "/") {
-		if seg == "" {
-			continue
-		}
-		b.WriteByte('/')
-		if strings.HasPrefix(seg, "{") && strings.HasSuffix(seg, "}") {
-			b.WriteByte(':')
-			b.WriteString(seg[1 : len(seg)-1])
-			continue
-		}
-		b.WriteString(seg)
-	}
-	if b.Len() == 0 {
-		return "/"
-	}
-	return b.String()
 }
 
 // openapiPath locates docs/openapi.yaml relative to this source file.

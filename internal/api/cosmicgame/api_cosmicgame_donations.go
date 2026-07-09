@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func api_cosmic_game_donations_cg_simple_list(c *gin.Context) {
+func api_cosmic_game_donations_cg_simple_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -29,7 +29,7 @@ func api_cosmic_game_donations_cg_simple_list(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"DirectCGDonations": donations,
@@ -37,7 +37,7 @@ func api_cosmic_game_donations_cg_simple_list(c *gin.Context) {
 		"Limit":             limit,
 	})
 }
-func api_cosmic_game_donations_cg_simple_by_round(c *gin.Context) {
+func api_cosmic_game_donations_cg_simple_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -64,13 +64,13 @@ func api_cosmic_game_donations_cg_simple_by_round(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"DirectCGDonations": donations,
 	})
 }
-func api_cosmic_game_donations_cg_with_info_list(c *gin.Context) {
+func api_cosmic_game_donations_cg_with_info_list(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -89,7 +89,7 @@ func api_cosmic_game_donations_cg_with_info_list(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"DirectCGDonations": donations,
@@ -97,7 +97,7 @@ func api_cosmic_game_donations_cg_with_info_list(c *gin.Context) {
 		"Limit":             limit,
 	})
 }
-func api_cosmic_game_donations_cg_with_info_by_round(c *gin.Context) {
+func api_cosmic_game_donations_cg_with_info_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -124,14 +124,14 @@ func api_cosmic_game_donations_cg_with_info_by_round(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":            req_status,
 		"error":             err_str,
 		"DirectCGDonations": donations,
 		"RoundNum":          round_num,
 	})
 }
-func api_cosmic_game_donations_cg_with_info_record_info(c *gin.Context) {
+func api_cosmic_game_donations_cg_with_info_record_info(c *httpx.Context) {
 
 	if !dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
@@ -158,14 +158,14 @@ func api_cosmic_game_donations_cg_with_info_record_info(c *gin.Context) {
 	// parity goldens pin that shape); ErrNotFound keeps exactly that.
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      req_status,
 		"error":       err_str,
 		"ETHDonation": record_info,
 		"RecordId":    record_id,
 	})
 }
-func api_cosmic_game_donations_by_user(c *gin.Context) {
+func api_cosmic_game_donations_by_user(c *httpx.Context) {
 
 	if !dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
@@ -178,7 +178,7 @@ func api_cosmic_game_donations_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "CombinedDonationRecords": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": int64(0),
 		})
@@ -192,7 +192,7 @@ func api_cosmic_game_donations_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                  req_status,
 		"error":                   err_str,
 		"CombinedDonationRecords": donations,
@@ -200,7 +200,7 @@ func api_cosmic_game_donations_by_user(c *gin.Context) {
 		"UserAid":                 user_aid,
 	})
 }
-func api_cosmic_game_donations_cg_both_by_round(c *gin.Context) {
+func api_cosmic_game_donations_cg_both_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -227,14 +227,14 @@ func api_cosmic_game_donations_cg_both_by_round(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":              req_status,
 		"error":               err_str,
 		"CosmicGameDonations": donations,
 		"RoundNum":            round_num,
 	})
 }
-func api_cosmic_game_donations_cg_both_all(c *gin.Context) {
+func api_cosmic_game_donations_cg_both_all(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -249,13 +249,13 @@ func api_cosmic_game_donations_cg_both_all(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":              req_status,
 		"error":               err_str,
 		"CosmicGameDonations": donations,
 	})
 }
-func api_cosmic_game_donations_erc20_by_round_detailed(c *gin.Context) {
+func api_cosmic_game_donations_erc20_by_round_detailed(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -282,14 +282,14 @@ func api_cosmic_game_donations_erc20_by_round_detailed(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                        req_status,
 		"error":                         err_str,
 		"DonationsERC20ByRoundDetailed": donations,
 		"RoundNum":                      round_num,
 	})
 }
-func api_cosmic_game_donations_erc20_by_round_all(c *gin.Context) {
+func api_cosmic_game_donations_erc20_by_round_all(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -316,14 +316,14 @@ func api_cosmic_game_donations_erc20_by_round_all(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                   req_status,
 		"error":                    err_str,
 		"DonationsERC20ByRoundAll": donations,
 		"RoundNum":                 round_num,
 	})
 }
-func api_cosmic_game_donations_erc20_by_round_summarized(c *gin.Context) {
+func api_cosmic_game_donations_erc20_by_round_summarized(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -350,14 +350,14 @@ func api_cosmic_game_donations_erc20_by_round_summarized(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                          req_status,
 		"error":                           err_str,
 		"DonationsERC20ByRoundSummarized": donations,
 		"RoundNum":                        round_num,
 	})
 }
-func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
+func api_cosmic_game_donations_erc20_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -371,7 +371,7 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedPrizesERC20ByWinner": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": int64(0),
 		})
@@ -385,7 +385,7 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                     req_status,
 		"error":                      err_str,
 		"DonatedPrizesERC20ByWinner": donated_prizes,
@@ -393,7 +393,7 @@ func api_cosmic_game_donations_erc20_by_user(c *gin.Context) {
 		"UserAid":                    user_aid,
 	})
 }
-func api_cosmic_game_donations_erc20_global(c *gin.Context) {
+func api_cosmic_game_donations_erc20_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -412,7 +412,7 @@ func api_cosmic_game_donations_erc20_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":         req_status,
 		"error":          err_str,
 		"DonationsERC20": donations,
@@ -420,7 +420,7 @@ func api_cosmic_game_donations_erc20_global(c *gin.Context) {
 		"Limit":          limit,
 	})
 }
-func api_cosmic_game_donated_erc20_info(c *gin.Context) {
+func api_cosmic_game_donated_erc20_info(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -449,13 +449,13 @@ func api_cosmic_game_donated_erc20_info(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        1,
 		"error":         "",
 		"ERC20Donation": nftdonation,
 	})
 }
-func api_cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
+func api_cosmic_game_donations_erc20_donated_by_user(c *httpx.Context) {
 	// DONOR PERSPECTIVE: Returns ERC20 tokens this user DONATED (not won)
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -470,7 +470,7 @@ func api_cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonationsERC20ByDonor": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": int64(0),
 		})
@@ -484,7 +484,7 @@ func api_cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":                req_status,
 		"error":                 err_str,
 		"DonationsERC20ByDonor": donations,
@@ -492,7 +492,7 @@ func api_cosmic_game_donations_erc20_donated_by_user(c *gin.Context) {
 		"UserAid":               user_aid,
 	})
 }
-func api_cosmic_game_erc20_claims_global(c *gin.Context) {
+func api_cosmic_game_erc20_claims_global(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -522,7 +522,7 @@ func api_cosmic_game_erc20_claims_global(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      req_status,
 		"error":       err_str,
 		"ERC20Claims": claims,
@@ -530,7 +530,7 @@ func api_cosmic_game_erc20_claims_global(c *gin.Context) {
 		"Limit":       limit,
 	})
 }
-func api_cosmic_game_erc20_claims_by_user(c *gin.Context) {
+func api_cosmic_game_erc20_claims_by_user(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -544,7 +544,7 @@ func api_cosmic_game_erc20_claims_by_user(c *gin.Context) {
 	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "ERC20ClaimsByWinner": []interface{}{},
 			"UserAddr": p_user_addr, "UserAid": int64(0),
 		})
@@ -558,7 +558,7 @@ func api_cosmic_game_erc20_claims_by_user(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":              req_status,
 		"error":               err_str,
 		"ERC20ClaimsByWinner": claims,
@@ -566,7 +566,7 @@ func api_cosmic_game_erc20_claims_by_user(c *gin.Context) {
 		"UserAid":             user_aid,
 	})
 }
-func api_cosmic_game_erc20_claims_by_round(c *gin.Context) {
+func api_cosmic_game_erc20_claims_by_round(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
@@ -593,7 +593,7 @@ func api_cosmic_game_erc20_claims_by_round(c *gin.Context) {
 	}
 	var req_status int = 1
 	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             req_status,
 		"error":              err_str,
 		"ERC20ClaimsByRound": claims,

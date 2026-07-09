@@ -4,13 +4,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 // NFTImagePublicBase is the absolute URL prefix for NFT files served at GET /images/... (no trailing slash).
 // When NFT_ASSETS_PUBLIC_BASE is unset, it is derived from the request (same scheme/host as this API).
 // Set NFT_ASSETS_PUBLIC_BASE when the public asset URL must differ (CDN, external hostname, etc.).
-func NFTImagePublicBase(c *gin.Context) string {
+func NFTImagePublicBase(c *httpx.Context) string {
 	if b := strings.TrimSpace(os.Getenv("NFT_ASSETS_PUBLIC_BASE")); b != "" {
 		return NormalizeNFTAssetsPublicBase(b)
 	}

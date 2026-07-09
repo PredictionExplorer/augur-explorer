@@ -3,7 +3,7 @@ info:
   title: RWCG Backend API
   version: 1.0.0
   description: |
-    JSON API served by cmd/apiserver (gin) for two related on-chain projects:
+    JSON API served by cmd/apiserver (net/http) for two related on-chain projects:
 
     * **CosmicGame / Cosmic Signature** - a bidding game on Arbitrum. Endpoints under
       `/api/cosmicgame/*` expose bids, rounds, prizes (main prize, raffle ETH,

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
@@ -12,7 +12,7 @@ import (
 
 const recentSpikeWindowSecs = 30 * 24 * 3600
 
-func api_cosmic_game_bidding_activity(c *gin.Context) {
+func api_cosmic_game_bidding_activity(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -42,7 +42,7 @@ func api_cosmic_game_bidding_activity(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           1,
 		"error":            "",
 		"InitTs":           initTs,
@@ -55,7 +55,7 @@ func api_cosmic_game_bidding_activity(c *gin.Context) {
 	})
 }
 
-func api_cosmic_game_bidding_frequency(c *gin.Context) {
+func api_cosmic_game_bidding_frequency(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -75,7 +75,7 @@ func api_cosmic_game_bidding_frequency(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           1,
 		"error":            "",
 		"InitTs":           initTs,
@@ -85,7 +85,7 @@ func api_cosmic_game_bidding_frequency(c *gin.Context) {
 	})
 }
 
-func api_cosmic_game_bidding_top_active_periods(c *gin.Context) {
+func api_cosmic_game_bidding_top_active_periods(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -106,7 +106,7 @@ func api_cosmic_game_bidding_top_active_periods(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        1,
 		"error":         "",
 		"InitTs":        initTs,
@@ -125,7 +125,7 @@ func api_cosmic_game_bidding_top_active_periods(c *gin.Context) {
 //	from_ts       unix seconds, start of range (default 0)
 //	to_ts         unix seconds, end of range   (default now / 2147483647)
 //	interval_secs sampling window size         (default 86400 = 1 day)
-func api_cosmic_game_bid_type_ratio(c *gin.Context) {
+func api_cosmic_game_bid_type_ratio(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -144,7 +144,7 @@ func api_cosmic_game_bid_type_ratio(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":       1,
 		"error":        "",
 		"FromTs":       fromTs,
@@ -154,7 +154,7 @@ func api_cosmic_game_bid_type_ratio(c *gin.Context) {
 	})
 }
 
-func api_cosmic_game_bidding_time_bounds(c *gin.Context) {
+func api_cosmic_game_bidding_time_bounds(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -166,7 +166,7 @@ func api_cosmic_game_bidding_time_bounds(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status": 1,
 		"error":  "",
 		"MinTs":  minTs,

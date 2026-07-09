@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 )
 
 // Token stats (API)
-func apiRwalkTokenStats(c *gin.Context) {
+func apiRwalkTokenStats(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -27,7 +27,7 @@ func apiRwalkTokenStats(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":     1,
 		"error":      "",
 		"TokenStats": stats,
@@ -37,7 +37,7 @@ func apiRwalkTokenStats(c *gin.Context) {
 }
 
 // Market stats (API)
-func apiRwalkMarketStats(c *gin.Context) {
+func apiRwalkMarketStats(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -54,7 +54,7 @@ func apiRwalkMarketStats(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":      1,
 		"error":       "",
 		"MarketStats": stats,
@@ -64,7 +64,7 @@ func apiRwalkMarketStats(c *gin.Context) {
 }
 
 // Trading volume by period (API)
-func apiRwalkTradingVolumeByPeriod(c *gin.Context) {
+func apiRwalkTradingVolumeByPeriod(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -84,7 +84,7 @@ func apiRwalkTradingVolumeByPeriod(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        1,
 		"error":         "",
 		"VolumeHistory": vol_hist,
@@ -95,7 +95,7 @@ func apiRwalkTradingVolumeByPeriod(c *gin.Context) {
 }
 
 // Mint intervals (API)
-func apiRwalkMintIntervals(c *gin.Context) {
+func apiRwalkMintIntervals(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -112,7 +112,7 @@ func apiRwalkMintIntervals(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":        1,
 		"error":         "",
 		"MintIntervals": mint_intervals,
@@ -122,7 +122,7 @@ func apiRwalkMintIntervals(c *gin.Context) {
 }
 
 // Withdrawal chart (API)
-func apiRwalkWithdrawalChart(c *gin.Context) {
+func apiRwalkWithdrawalChart(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -145,7 +145,7 @@ func apiRwalkWithdrawalChart(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             1,
 		"error":              "",
 		"WithdrawalEntries":  withdrawal_entries,
@@ -157,7 +157,7 @@ func apiRwalkWithdrawalChart(c *gin.Context) {
 }
 
 // Floor price over time (API)
-func apiRwalkFloorPriceOverTime(c *gin.Context) {
+func apiRwalkFloorPriceOverTime(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -195,7 +195,7 @@ func apiRwalkFloorPriceOverTime(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":             1,
 		"error":              "",
 		"PriceEntries":       price_entries,
@@ -212,7 +212,7 @@ func apiRwalkFloorPriceOverTime(c *gin.Context) {
 }
 
 // Top 5 traded tokens (API only)
-func apiRwalkTop5TradedTokens(c *gin.Context) {
+func apiRwalkTop5TradedTokens(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -223,7 +223,7 @@ func apiRwalkTop5TradedTokens(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":           1,
 		"error":            "",
 		"Top5TradedTokens": top5toks,
@@ -231,7 +231,7 @@ func apiRwalkTop5TradedTokens(c *gin.Context) {
 }
 
 // Mint report (API)
-func apiRwalkMintReport(c *gin.Context) {
+func apiRwalkMintReport(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -242,7 +242,7 @@ func apiRwalkMintReport(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, httpx.H{
 		"status":  1,
 		"error":   "",
 		"Records": records,
