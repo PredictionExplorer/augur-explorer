@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -81,7 +81,7 @@ addresses; see cmd/opsctl/tx-collector.example.json for the format.`,
 				return fmt.Errorf("rpc connect: %w", err)
 			}
 
-			head, err := etlcommon.GetCurrentBlockNumber(cmd.Context(), client)
+			head, err := client.BlockNumber(cmd.Context())
 			if err != nil {
 				return fmt.Errorf("chain head: %w", err)
 			}
@@ -131,7 +131,7 @@ func runCollector(client *ethclient.Client, outputDir string, contracts []ethcom
 		st.BlocksScanned += to - from + 1
 		log.Printf("FilterLogs blocks %d .. %d", from, to)
 
-		logs, err := etlcommon.FetchEvents(ctx, client, from, to, contracts)
+		logs, err := indexer.FetchLogs(ctx, client, from, to, contracts)
 		if err != nil {
 			log.Printf("FilterLogs error [%d..%d]: %v", from, to, err)
 			st.FilterLogErrors++

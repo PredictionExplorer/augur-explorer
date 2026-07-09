@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -285,9 +286,11 @@ func proc_transfer_event(ctx context.Context, log *types.Log, elog *EthereumEven
 	return rwRepo.InsertTransfer(ctx, &evt)
 }
 
-// eventDispatchEntry pairs a decoded topic-0 signature with its handler.
+// eventDispatchEntry pairs a decoded topic-0 signature with its handler and
+// a human-readable event name (the rwcg_etl_events_total metric label).
 type eventDispatchEntry struct {
 	topic0  []byte
+	name    string
 	handler func(context.Context, *types.Log, *EthereumEventLog) error
 }
 
@@ -296,14 +299,29 @@ type eventDispatchEntry struct {
 // package globals initialized by main()/the test harness.
 func eventDispatchTable() []eventDispatchEntry {
 	return []eventDispatchEntry{
-		{evt_new_offer, proc_new_offer},
-		{evt_item_bought, proc_item_bought},
-		{evt_offer_canceled, proc_offer_cancelled},
-		{evt_withdrawal, proc_withdrawal},
-		{evt_token_name, proc_token_name},
-		{evt_transfer, proc_transfer_event},
-		{evt_mint_event, proc_mint_event},
+		{evt_new_offer, "NewOffer", proc_new_offer},
+		{evt_item_bought, "ItemBought", proc_item_bought},
+		{evt_offer_canceled, "OfferCanceled", proc_offer_cancelled},
+		{evt_withdrawal, "WithdrawalEvent", proc_withdrawal},
+		{evt_token_name, "TokenNameEvent", proc_token_name},
+		{evt_transfer, "Transfer", proc_transfer_event},
+		{evt_mint_event, "MintEvent", proc_mint_event},
 	}
+}
+
+// topicNames maps every dispatched topic0 to its event name, for the engine's
+// events_total metric label.
+var topicNames = sync.OnceValue(func() map[common.Hash]string {
+	m := make(map[common.Hash]string)
+	for _, entry := range eventDispatchTable() {
+		m[common.BytesToHash(entry.topic0)] = entry.name
+	}
+	return m
+})
+
+// eventTopicName resolves the metric label of a topic0 hash ("" = unknown).
+func eventTopicName(topic0 common.Hash) string {
+	return topicNames()[topic0]
 }
 
 // select_event_and_process dispatches the log to every matching event

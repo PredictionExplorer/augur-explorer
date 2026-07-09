@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"math/big"
 	"os"
 	"strings"
@@ -28,7 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
@@ -70,7 +71,8 @@ const seedCstRewardForBidding = "100000000000000000000"
 var (
 	testDB       *testdb.DB
 	testChain    *testchain.Chain
-	errSetupSkip error // non-nil: integration environment unavailable, skip
+	testIndexer  *indexer.Engine // the production pipeline the fixtures run through
+	errSetupSkip error           // non-nil: integration environment unavailable, skip
 )
 
 // TestMain owns the database container, the fake chain and the package
@@ -118,8 +120,7 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	Info = log.New(io.Discard, "", 0)
 	Error = log.New(os.Stderr, "cg-etl ERROR: ", 0)
 
-	var err error
-	rpcclient, err = rpc.DialContext(ctx, testChain.URL())
+	rpcclient, err := rpc.DialContext(ctx, testChain.URL())
 	if err != nil {
 		return fmt.Errorf("dialing fake chain: %w", err)
 	}
@@ -130,10 +131,19 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	dbStore = store.NewFromPool(db.Pool)
 	cgRepo = cgstore.NewRepo(dbStore)
 
+	// The fixtures push logs through the same engine pipeline main() runs.
+	testIndexer, err = indexer.New(indexer.Config{
+		Store:  dbStore,
+		Client: eclient,
+		Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		return fmt.Errorf("building indexer engine: %w", err)
+	}
+
 	cosmic_game_abi = get_abi(cgc.CosmicSignatureGameABI)
 	cosmic_game_v2_abi = get_abi(cgc.CosmicSignatureGameV2ABI)
 	cosmic_signature_abi = get_abi(cgc.CosmicSignatureNftABI)
-	cosmic_token_abi = get_abi(cgc.CosmicSignatureTokenABI)
 	charity_wallet_abi = get_abi(cgc.CharityWalletABI)
 	prizes_wallet_abi = get_abi(cgc.PrizesWalletABI)
 	staking_wallet_cst_abi = get_abi(cgc.IStakingWalletCosmicSignatureNftABI)
@@ -267,10 +277,6 @@ func resetDB(t *testing.T) {
 			t.Fatalf("registering contract address %v: %v", contractAddr, err)
 		}
 	}
-	cosmic_sig_aid, err = dbStore.LookupAddressID(ctx, cg_contracts.CosmicSignatureAddr)
-	if err != nil {
-		t.Fatalf("looking up CosmicSignature aid: %v", err)
-	}
 	cosmic_tok_aid, err = dbStore.LookupAddressID(ctx, cg_contracts.CosmicTokenAddr)
 	if err != nil {
 		t.Fatalf("looking up CosmicToken aid: %v", err)
@@ -309,23 +315,11 @@ func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string
 	}
 }
 
-// etlContext builds the shared-pipeline context exactly as the polling loop does.
-func etlContext() *etlcommon.ETLContext {
-	return &etlcommon.ETLContext{
-		Store:     dbStore,
-		EthClient: eclient,
-		RpcClient: rpcclient,
-		Info:      Info,
-		Error:     Error,
-	}
-}
-
 // ingestTx records one transaction with its logs on the fake chain and runs
 // every log through the production pipeline, returning the evt_log ids.
 // Log indexes continue across transactions of the same block via startLogIndex.
 func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) []int64 {
 	t.Helper()
-	etlCtx := etlContext()
 
 	tx := testChain.AddTx(blockNum, to, nil)
 	for i, l := range logs {
@@ -340,14 +334,14 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 	evtIDs := make([]int64, 0, len(logs))
 	for _, l := range logs {
 		ctx := context.Background()
-		if _, err := etlcommon.EnsureBlockExists(ctx, etlCtx, blockNum, l.BlockHash.Hex()); err != nil {
+		if _, err := testIndexer.EnsureBlockExists(ctx, blockNum, l.BlockHash.Hex()); err != nil {
 			t.Fatalf("EnsureBlockExists(%d): %v", blockNum, err)
 		}
-		txID, _, err := etlcommon.EnsureTransactionExists(ctx, etlCtx, l.TxHash, blockNum)
+		txID, _, err := testIndexer.EnsureTransactionExists(ctx, l.TxHash, blockNum)
 		if err != nil {
 			t.Fatalf("EnsureTransactionExists(%s): %v", l.TxHash, err)
 		}
-		evtID, err := etlcommon.InsertEventLog(ctx, etlCtx, *l, txID)
+		evtID, err := testIndexer.InsertEventLog(ctx, *l, txID)
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}

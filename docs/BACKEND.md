@@ -513,9 +513,9 @@ the full environment-variable reference is [.env.example](../.env.example).
 │   ├── blockchain_insert.go # Raw event insertion
 │   ├── cosmicgame/         # CosmicGame queries
 │   └── randomwalk/         # RandomWalk queries
-├── internal/etl/           # Shared ETL utilities
-├── cmd/cg-etl/             # CosmicGame indexer
-├── cmd/rw-etl/             # RandomWalk indexer
+├── internal/indexer/       # Shared indexing engine (polling loop, block ops, retries, metrics)
+├── cmd/cg-etl/             # CosmicGame indexer (engine configuration + event handlers)
+├── cmd/rw-etl/             # RandomWalk indexer (engine configuration + event handlers)
 ├── db/migrations/          # goose schema migrations
 └── cmd/apiserver/          # Web API server
     └── (handlers in internal/api/)

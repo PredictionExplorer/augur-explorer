@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"math/big"
 	"os"
 	"strings"
@@ -26,7 +27,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	rwc "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
-	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
@@ -50,7 +51,8 @@ const (
 var (
 	testDB       *testdb.DB
 	testChain    *testchain.Chain
-	errSetupSkip error // non-nil: integration environment unavailable, skip
+	testIndexer  *indexer.Engine // the production pipeline the fixtures run through
+	errSetupSkip error           // non-nil: integration environment unavailable, skip
 )
 
 // TestMain owns the database container, the fake chain and the package
@@ -98,8 +100,7 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	Info = log.New(io.Discard, "", 0)
 	Error = log.New(os.Stderr, "rw-etl ERROR: ", 0)
 
-	var err error
-	rpcclient, err = rpc.DialContext(ctx, testChain.URL())
+	rpcclient, err := rpc.DialContext(ctx, testChain.URL())
 	if err != nil {
 		return fmt.Errorf("dialing fake chain: %w", err)
 	}
@@ -107,6 +108,16 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 
 	dbStore = store.NewFromPool(db.Pool)
 	rwRepo = rwdb.NewRepo(dbStore)
+
+	// The fixtures push logs through the same engine pipeline main() runs.
+	testIndexer, err = indexer.New(indexer.Config{
+		Store:  dbStore,
+		Client: eclient,
+		Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		return fmt.Errorf("building indexer engine: %w", err)
+	}
 
 	marketABI, err := abi.JSON(strings.NewReader(rwc.RWMarketABI))
 	if err != nil {
@@ -201,22 +212,10 @@ func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string
 	}
 }
 
-// etlContext builds the shared-pipeline context exactly as the polling loop does.
-func etlContext() *etlcommon.ETLContext {
-	return &etlcommon.ETLContext{
-		Store:     dbStore,
-		EthClient: eclient,
-		RpcClient: rpcclient,
-		Info:      Info,
-		Error:     Error,
-	}
-}
-
 // ingestTx records one transaction with its logs on the fake chain and runs
 // every log through the production pipeline, returning the evt_log ids.
 func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) []int64 {
 	t.Helper()
-	etlCtx := etlContext()
 
 	tx := testChain.AddTx(blockNum, to, nil)
 	for i, l := range logs {
@@ -231,14 +230,14 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 	evtIDs := make([]int64, 0, len(logs))
 	for _, l := range logs {
 		ctx := context.Background()
-		if _, err := etlcommon.EnsureBlockExists(ctx, etlCtx, blockNum, l.BlockHash.Hex()); err != nil {
+		if _, err := testIndexer.EnsureBlockExists(ctx, blockNum, l.BlockHash.Hex()); err != nil {
 			t.Fatalf("EnsureBlockExists(%d): %v", blockNum, err)
 		}
-		txID, _, err := etlcommon.EnsureTransactionExists(ctx, etlCtx, l.TxHash, blockNum)
+		txID, _, err := testIndexer.EnsureTransactionExists(ctx, l.TxHash, blockNum)
 		if err != nil {
 			t.Fatalf("EnsureTransactionExists(%s): %v", l.TxHash, err)
 		}
-		evtID, err := etlcommon.InsertEventLog(ctx, etlCtx, *l, txID)
+		evtID, err := testIndexer.InsertEventLog(ctx, *l, txID)
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}

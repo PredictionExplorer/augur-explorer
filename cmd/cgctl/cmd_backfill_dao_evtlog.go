@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
-	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -43,8 +43,7 @@ Environment:
 }
 
 func runBackfillDaoEvtlog(ctx context.Context, fromBlock, toBlock uint64) error {
-	logger := log.New(os.Stdout, "", log.Ltime)
-	errLogger := log.New(os.Stderr, "ERROR: ", log.Ltime)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	rpcURL := os.Getenv("RPC_URL")
 	if rpcURL == "" {
@@ -56,7 +55,7 @@ func runBackfillDaoEvtlog(ctx context.Context, fromBlock, toBlock uint64) error 
 		return fmt.Errorf("rpc connect: %w", err)
 	}
 	client := ethclient.NewClient(rpcclient)
-	logger.Printf("RPC: %s", rpcURL)
+	logger.Info("connected", "rpc", rpcURL)
 
 	st, err := store.New(ctx, store.ConfigFromEnv())
 	if err != nil {
@@ -73,7 +72,7 @@ func runBackfillDaoEvtlog(ctx context.Context, fromBlock, toBlock uint64) error 
 	if (daoAddr == ethcommon.Address{}) {
 		return fmt.Errorf("cosmic_dao_addr is zero in cg_contracts")
 	}
-	logger.Printf("cosmic_dao: %s", daoAddr.Hex())
+	logger.Info("resolved contract", "cosmic_dao", daoAddr.Hex())
 
 	endBlock := toBlock
 	if endBlock == 0 {
@@ -94,34 +93,24 @@ func runBackfillDaoEvtlog(ctx context.Context, fromBlock, toBlock uint64) error 
 		return fmt.Errorf("to-block %d < from-block %d", endBlock, fromBlock)
 	}
 
-	etlCtx := &etlcommon.ETLContext{
-		Store:     st,
-		EthClient: client,
-		RpcClient: rpcclient,
-		Info:      logger,
-		Error:     errLogger,
+	engine, err := indexer.New(indexer.Config{Store: st, Client: client, Logger: logger})
+	if err != nil {
+		return fmt.Errorf("building indexer engine: %w", err)
 	}
 
-	logger.Printf("Backfilling cosmic_dao evt_log blocks %d .. %d", fromBlock, endBlock)
-	stats, err := etlcommon.BackfillContractEvtLogs(
-		ctx,
-		etlCtx,
-		client,
-		[]ethcommon.Address{daoAddr},
-		fromBlock,
-		endBlock,
-		100_000,
-	)
+	logger.Info("backfilling cosmic_dao evt_log", "from_block", fromBlock, "to_block", endBlock)
+	stats, err := engine.BackfillContractEvtLogs(ctx, []ethcommon.Address{daoAddr}, fromBlock, endBlock, 100_000)
 	if err != nil {
 		return fmt.Errorf("backfill failed: %w", err)
 	}
-	logger.Printf("done: logs_seen=%d inserted=%d skipped=%d", stats.LogsSeen, stats.Inserted, stats.Skipped)
+	logger.Info("backfill done",
+		"logs_seen", stats.LogsSeen, "inserted", stats.Inserted, "skipped", stats.Skipped)
 
 	count, err := st.CountEvtLogsForContract(ctx, contracts.CosmicDaoAddr)
 	if err != nil {
 		return fmt.Errorf("counting cosmic_dao evt_log rows: %w", err)
 	}
-	logger.Printf("cosmic_dao evt_log rows now: %d", count)
+	logger.Info("cosmic_dao evt_log total", "rows", count)
 	if stats.Inserted == 0 && count == 0 {
 		return fmt.Errorf("no cosmic_dao evt_log rows found or inserted")
 	}

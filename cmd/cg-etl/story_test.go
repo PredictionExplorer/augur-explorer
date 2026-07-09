@@ -14,7 +14,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 
-	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
 )
 
@@ -289,7 +288,7 @@ func TestReorgRollbackAndReplay(t *testing.T) {
 
 	// The polling loop detects the split when a fetched log's block hash
 	// disagrees with the stored one.
-	inserted, err := etlcommon.EnsureBlockExists(context.Background(), etlContext(), divergentBlock, newHash.Hex())
+	inserted, err := testIndexer.EnsureBlockExists(context.Background(), divergentBlock, newHash.Hex())
 	if err != nil {
 		t.Fatalf("EnsureBlockExists after reorg: %v", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -188,326 +189,16 @@ var (
 	// MarketingWallet events
 	evt_marketing_reward_paid, _ = hex.DecodeString(MARKETING_REWARD_PAID)
 	evt_treasurer_changed, _     = hex.DecodeString(TREASURER_CHANGED)
-
-	inspected_events []InspectedEvent
 )
 
-func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEvent {
-
-	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
-	inspected_events = make([]InspectedEvent, 0, 32)
-	inspected_events = append(inspected_events,
-		// this list matches the order of main.go event variables in `var` declaration
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_prize_claim_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_bid_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_bid_event_v2[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_eth_donated_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_eth_donated_wi_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_erc20_donated[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_nft_donation_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_raffle_nft_prize_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_raffle_eth_prize_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_endurance_prize_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_lastcst_bidder_prize_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_donated_token_claimed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_donated_nft_claimed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_charity_percentage_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_prize_percentage_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_raffle_percentage_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_staking_percentage_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_chrono_percentage_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_num_raffle_eth_winners_bidding_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_num_raffle_nft_winners_bidding_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_num_raffle_nft_winners_staking_rwalk_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_charity_wallet_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_rwalk_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_prizes_wallet_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_staking_wallet_cst_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_staking_wallet_rwalk_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_marketing_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_treasurer_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_costok_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cossig_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_time_increase_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_timeout_claimprize_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_timeout_to_withdraw_prize[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_price_increase_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_prize_microsecond_increase_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_initial_seconds_until_prize_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_activation_time_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cst_dutch_auction_duration_divisor_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cst_dutch_auction_duration_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cst_dutch_auction_duration_change_divisor_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_eth_dutch_auction_duration_divisor_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_eth_dutch_auction_ending_bidprice_divisor[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_donation_received_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_donation_sent_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_charity_receiver_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_token_name_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_mint_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_eth_prize_deposit[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_staking_eth_deposit[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_eth_prize_withdrawal[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_transfer[:4]),
-			ContractAid: cosmic_sig_aid,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cst_nft_staked[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_rwalk_nft_staked[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_nft_unstaked_rwalk[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_nft_unstaked_cst[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_marketing_reward_paid[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cst_reward_for_bidding_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_bid_cst_reward_amount_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_bid_cst_reward_amount_multiplier_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_static_cst_reward[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_max_msg_length_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_token_script_url[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_base_uri[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_proxy_upgraded[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_admin_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_marketing_reward_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_ownership_transferred[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_initialized[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_chrono_warrior_prize_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_cst_min_limit[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_fund_transf_err[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_erc20_transf_err[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_funds2charity[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_delay_duration_round[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent{
-			Signature:   hex.EncodeToString(evt_first_bid_event[:4]),
-			ContractAid: 0,
-		},
-	)
-	return inspected_events
-}
-
-// eventDispatchEntry pairs a decoded topic-0 signature with its handler.
+// eventDispatchEntry pairs a decoded topic-0 signature with its handler and
+// a human-readable event name (the rwcg_etl_events_total metric label).
 // select_event_and_process walks the table; the two duplicate-topic events
 // (CharityAddressChanged from two contracts, Transfer from two token
 // contracts) are disambiguated inside their handlers by contract address.
 type eventDispatchEntry struct {
 	topic0  []byte
+	name    string
 	handler func(context.Context, *types.Log, *EthereumEventLog) error
 }
 
@@ -516,82 +207,98 @@ type eventDispatchEntry struct {
 // package globals initialized by main()/the test harness.
 func eventDispatchTable() []eventDispatchEntry {
 	return []eventDispatchEntry{
-		{evt_prize_claim_event, proc_prize_claim_event},
-		{evt_bid_event, proc_bid_event_v1},
-		{evt_bid_event_v2, proc_bid_event_v2},
-		{evt_eth_donated_event, proc_donation_event},
-		{evt_eth_donated_wi_event, proc_donation_with_info_event},
-		{evt_donation_received_event, proc_donation_received_event},
-		{evt_donation_sent_event, proc_donation_sent_event},
-		{evt_nft_donation_event, proc_nft_donation_event},
-		{evt_erc20_donated, proc_erc20_donated_event},
-		{evt_charity_receiver_changed, proc_charity_address_changed_unified},
-		{evt_token_name_event, proc_token_name_event},
-		{evt_mint_event, proc_mint_event},
-		{evt_eth_prize_deposit, proc_prizes_eth_deposit_event},
-		{evt_eth_prize_withdrawal, proc_eth_prize_withdrawal_event},
-		{evt_raffle_eth_prize_event, proc_raffle_eth_winner_event},
-		{evt_raffle_nft_prize_event, proc_raffle_nft_winner_event},
-		{evt_endurance_prize_event, proc_endurance_winner_event},
-		{evt_lastcst_bidder_prize_event, proc_lastcst_bidder_winner_event},
-		{evt_chrono_warrior_prize_event, proc_chrono_warrior_event},
-		{evt_donated_token_claimed, proc_donated_token_claimed_event},
-		{evt_donated_nft_claimed, proc_donated_nft_claimed_event},
-		{evt_transfer, proc_transfer_event_common},
-		{evt_cst_nft_staked, proc_cst_nft_staked_event},
-		{evt_rwalk_nft_staked, proc_rwalk_nft_staked_event},
-		{evt_nft_unstaked_rwalk, proc_nft_unstaked_rwalk_event},
-		{evt_nft_unstaked_cst, proc_nft_unstaked_cst_event},
-		{evt_staking_eth_deposit, proc_staking_eth_deposit_event},
-		{evt_marketing_reward_paid, proc_marketing_reward_paid_event},
-		{evt_charity_percentage_changed, proc_charity_percentage_changed_event},
-		{evt_prize_percentage_changed, proc_prize_percentage_changed_event},
-		{evt_raffle_percentage_changed, proc_raffle_percentage_changed_event},
-		{evt_staking_percentage_changed, proc_staking_percentage_changed_event},
-		{evt_chrono_percentage_changed, proc_chrono_percentage_changed_event},
-		{evt_num_raffle_eth_winners_bidding_changed, proc_num_raffle_eth_winners_bidding_changed_event},
-		{evt_num_raffle_nft_winners_bidding_changed, proc_num_raffle_nft_winners_bidding_changed_event},
-		{evt_num_raffle_nft_winners_staking_rwalk_changed, proc_num_raffle_nft_winners_staking_rwalk_changed_event},
-		{evt_charity_wallet_changed, proc_charity_address_changed_unified},
-		{evt_rwalk_address_changed, proc_random_walk_address_changed_event},
-		{evt_prizes_wallet_address_changed, proc_raffle_address_changed_event},
-		{evt_staking_wallet_cst_address_changed, proc_staking_wallet_cst_address_changed_event},
-		{evt_staking_wallet_rwalk_address_changed, proc_staking_wallet_rwalk_address_changed_event},
-		{evt_marketing_address_changed, proc_marketing_wallet_address_changed_event},
-		{evt_treasurer_changed, proc_treasurer_changed_event},
-		{evt_costok_address_changed, proc_cosmic_token_address_changed_event},
-		{evt_cossig_address_changed, proc_cosmic_signature_address_changed_event},
-		{evt_proxy_upgraded, proc_proxy_upgraded_event},
-		{evt_admin_changed, proc_admin_changed_event},
-		{evt_time_increase_changed, proc_time_increase_changed_event},
-		{evt_timeout_claimprize_changed, proc_timeout_claimprize_changed_event},
-		{evt_timeout_to_withdraw_prize, proc_timeout_duration_to_withdraw_prize_event},
-		{evt_price_increase_changed, proc_price_increase_changed_event},
-		{evt_prize_microsecond_increase_changed, proc_mainprize_microsecond_increase_changed},
-		{evt_initial_seconds_until_prize_changed, proc_initial_seconds_until_prize_changed_event},
-		{evt_activation_time_changed, proc_activation_time_changed_event},
-		{evt_cst_dutch_auction_duration_divisor_changed, proc_cst_dutch_auction_duration_divisor_changed_event},
-		{evt_cst_dutch_auction_duration_changed, proc_cst_dutch_auction_duration_changed_event},
-		{evt_cst_dutch_auction_duration_change_divisor_changed, proc_cst_dutch_auction_duration_change_divisor_changed_event},
-		{evt_eth_dutch_auction_duration_divisor_changed, proc_eth_dutch_auction_duration_divisor_changed_event},
-		{evt_eth_dutch_auction_ending_bidprice_divisor, proc_eth_dutch_auction_ending_bid_price_divisor_changed__event},
-		{evt_cst_reward_for_bidding_changed, proc_erc20_token_reward_changed_event},
-		{evt_bid_cst_reward_amount_changed, proc_bid_cst_reward_amount_changed_event},
-		{evt_bid_cst_reward_amount_multiplier_changed, proc_bid_cst_reward_amount_multiplier_changed_event},
-		{evt_static_cst_reward, proc_static_cst_reward_changed_event},
-		{evt_max_msg_length_changed, proc_max_msg_length_changed_event},
-		{evt_token_script_url, proc_token_generation_script_url_event},
-		{evt_base_uri, proc_base_uri_event},
-		{evt_marketing_reward_changed, proc_marketing_reward_changed},
-		{evt_ownership_transferred, proc_ownership_transferred_event},
-		{evt_initialized, proc_initialized_event},
-		{evt_cst_min_limit, proc_starting_bid_price_cst_min_limit_event},
-		{evt_fund_transf_err, proc_fund_transfer_failed_event},
-		{evt_erc20_transf_err, proc_erc20_transfer_failed_event},
-		{evt_funds2charity, proc_funds_transferred_to_charity_event},
-		{evt_delay_duration_round, proc_delay_duration_before_next_round_changed_event},
-		{evt_first_bid_event, proc_round_started_event},
+		{evt_prize_claim_event, "MainPrizeClaimed", proc_prize_claim_event},
+		{evt_bid_event, "BidPlaced", proc_bid_event_v1},
+		{evt_bid_event_v2, "BidPlacedV2", proc_bid_event_v2},
+		{evt_eth_donated_event, "EthDonated", proc_donation_event},
+		{evt_eth_donated_wi_event, "EthDonatedWithInfo", proc_donation_with_info_event},
+		{evt_donation_received_event, "DonationReceived", proc_donation_received_event},
+		{evt_donation_sent_event, "FundsTransferredToCharity", proc_donation_sent_event},
+		{evt_nft_donation_event, "NftDonated", proc_nft_donation_event},
+		{evt_erc20_donated, "TokenDonated", proc_erc20_donated_event},
+		{evt_charity_receiver_changed, "CharityAddressChanged", proc_charity_address_changed_unified},
+		{evt_token_name_event, "NftNameChanged", proc_token_name_event},
+		{evt_mint_event, "NftMinted", proc_mint_event},
+		{evt_eth_prize_deposit, "EthReceived", proc_prizes_eth_deposit_event},
+		{evt_eth_prize_withdrawal, "EthWithdrawn", proc_eth_prize_withdrawal_event},
+		{evt_raffle_eth_prize_event, "RaffleWinnerBidderEthPrizeAllocated", proc_raffle_eth_winner_event},
+		{evt_raffle_nft_prize_event, "RaffleWinnerPrizePaid", proc_raffle_nft_winner_event},
+		{evt_endurance_prize_event, "EnduranceChampionPrizePaid", proc_endurance_winner_event},
+		{evt_lastcst_bidder_prize_event, "LastCstBidderPrizePaid", proc_lastcst_bidder_winner_event},
+		{evt_chrono_warrior_prize_event, "ChronoWarriorPrizePaid", proc_chrono_warrior_event},
+		{evt_donated_token_claimed, "DonatedTokenClaimed", proc_donated_token_claimed_event},
+		{evt_donated_nft_claimed, "DonatedNftClaimed", proc_donated_nft_claimed_event},
+		{evt_transfer, "Transfer", proc_transfer_event_common},
+		{evt_cst_nft_staked, "NftStakedCST", proc_cst_nft_staked_event},
+		{evt_rwalk_nft_staked, "NftStakedRWalk", proc_rwalk_nft_staked_event},
+		{evt_nft_unstaked_rwalk, "NftUnstakedRWalk", proc_nft_unstaked_rwalk_event},
+		{evt_nft_unstaked_cst, "NftUnstakedCST", proc_nft_unstaked_cst_event},
+		{evt_staking_eth_deposit, "EthDepositReceived", proc_staking_eth_deposit_event},
+		{evt_marketing_reward_paid, "RewardPaid", proc_marketing_reward_paid_event},
+		{evt_charity_percentage_changed, "CharityEthDonationAmountPercentageChanged", proc_charity_percentage_changed_event},
+		{evt_prize_percentage_changed, "MainEthPrizeAmountPercentageChanged", proc_prize_percentage_changed_event},
+		{evt_raffle_percentage_changed, "RaffleTotalEthPrizeAmountForBiddersPercentageChanged", proc_raffle_percentage_changed_event},
+		{evt_staking_percentage_changed, "CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged", proc_staking_percentage_changed_event},
+		{evt_chrono_percentage_changed, "ChronoWarriorEthPrizeAmountPercentageChanged", proc_chrono_percentage_changed_event},
+		{evt_num_raffle_eth_winners_bidding_changed, "NumRaffleEthPrizesForBiddersChanged", proc_num_raffle_eth_winners_bidding_changed_event},
+		{evt_num_raffle_nft_winners_bidding_changed, "NumRaffleCosmicSignatureNftsForBiddersChanged", proc_num_raffle_nft_winners_bidding_changed_event},
+		{evt_num_raffle_nft_winners_staking_rwalk_changed, "NumRaffleCosmicSignatureNftsForRandomWalkNftStakersChanged", proc_num_raffle_nft_winners_staking_rwalk_changed_event},
+		{evt_charity_wallet_changed, "CharityAddressChanged", proc_charity_address_changed_unified},
+		{evt_rwalk_address_changed, "RandomWalkNftAddressChanged", proc_random_walk_address_changed_event},
+		{evt_prizes_wallet_address_changed, "PrizesWalletAddressChanged", proc_raffle_address_changed_event},
+		{evt_staking_wallet_cst_address_changed, "StakingWalletCosmicSignatureNftAddressChanged", proc_staking_wallet_cst_address_changed_event},
+		{evt_staking_wallet_rwalk_address_changed, "StakingWalletRandomWalkNftAddressChanged", proc_staking_wallet_rwalk_address_changed_event},
+		{evt_marketing_address_changed, "MarketingWalletAddressChanged", proc_marketing_wallet_address_changed_event},
+		{evt_treasurer_changed, "TreasurerAddressChanged", proc_treasurer_changed_event},
+		{evt_costok_address_changed, "CosmicSignatureTokenAddressChanged", proc_cosmic_token_address_changed_event},
+		{evt_cossig_address_changed, "CosmicSignatureNftAddressChanged", proc_cosmic_signature_address_changed_event},
+		{evt_proxy_upgraded, "Upgraded", proc_proxy_upgraded_event},
+		{evt_admin_changed, "AdminChanged", proc_admin_changed_event},
+		{evt_time_increase_changed, "MainPrizeTimeIncrementIncreaseDivisorChanged", proc_time_increase_changed_event},
+		{evt_timeout_claimprize_changed, "TimeoutDurationToClaimMainPrizeChanged", proc_timeout_claimprize_changed_event},
+		{evt_timeout_to_withdraw_prize, "TimeoutDurationToWithdrawPrizesChanged", proc_timeout_duration_to_withdraw_prize_event},
+		{evt_price_increase_changed, "EthBidPriceIncreaseDivisorChanged", proc_price_increase_changed_event},
+		{evt_prize_microsecond_increase_changed, "MainPrizeTimeIncrementInMicroSecondsChanged", proc_mainprize_microsecond_increase_changed},
+		{evt_initial_seconds_until_prize_changed, "InitialDurationUntilMainPrizeDivisorChanged", proc_initial_seconds_until_prize_changed_event},
+		{evt_activation_time_changed, "RoundActivationTimeChanged", proc_activation_time_changed_event},
+		{evt_cst_dutch_auction_duration_divisor_changed, "CstDutchAuctionDurationDivisorChanged", proc_cst_dutch_auction_duration_divisor_changed_event},
+		{evt_cst_dutch_auction_duration_changed, "CstDutchAuctionDurationChanged", proc_cst_dutch_auction_duration_changed_event},
+		{evt_cst_dutch_auction_duration_change_divisor_changed, "CstDutchAuctionDurationChangeDivisorChanged", proc_cst_dutch_auction_duration_change_divisor_changed_event},
+		{evt_eth_dutch_auction_duration_divisor_changed, "EthDutchAuctionDurationDivisorChanged", proc_eth_dutch_auction_duration_divisor_changed_event},
+		{evt_eth_dutch_auction_ending_bidprice_divisor, "EthDutchAuctionEndingBidPriceDivisorChanged", proc_eth_dutch_auction_ending_bid_price_divisor_changed__event},
+		{evt_cst_reward_for_bidding_changed, "CstRewardAmountForBiddingChanged", proc_erc20_token_reward_changed_event},
+		{evt_bid_cst_reward_amount_changed, "BidCstRewardAmountChanged", proc_bid_cst_reward_amount_changed_event},
+		{evt_bid_cst_reward_amount_multiplier_changed, "BidCstRewardAmountMultiplierChanged", proc_bid_cst_reward_amount_multiplier_changed_event},
+		{evt_static_cst_reward, "CstPrizeAmountChanged", proc_static_cst_reward_changed_event},
+		{evt_max_msg_length_changed, "BidMessageLengthMaxLimitChanged", proc_max_msg_length_changed_event},
+		{evt_token_script_url, "NftGenerationScriptUriChanged", proc_token_generation_script_url_event},
+		{evt_base_uri, "NftBaseUriChanged", proc_base_uri_event},
+		{evt_marketing_reward_changed, "MarketingWalletCstContributionAmountChanged", proc_marketing_reward_changed},
+		{evt_ownership_transferred, "OwnershipTransferred", proc_ownership_transferred_event},
+		{evt_initialized, "Initialized", proc_initialized_event},
+		{evt_cst_min_limit, "CstDutchAuctionBeginningBidPriceMinLimitChanged", proc_starting_bid_price_cst_min_limit_event},
+		{evt_fund_transf_err, "FundTransferFailed", proc_fund_transfer_failed_event},
+		{evt_erc20_transf_err, "ERC20TransferFailed", proc_erc20_transfer_failed_event},
+		{evt_funds2charity, "FundsTransferredToCharity", proc_funds_transferred_to_charity_event},
+		{evt_delay_duration_round, "DelayDurationBeforeRoundActivationChanged", proc_delay_duration_before_next_round_changed_event},
+		{evt_first_bid_event, "FirstBidPlacedInRound", proc_round_started_event},
 	}
+}
+
+// topicNames maps every dispatched topic0 to its event name, for the engine's
+// events_total metric label. Entries sharing a topic0 carry the same name
+// (asserted by TestDispatchTableNames), so the mapping is deterministic.
+var topicNames = sync.OnceValue(func() map[common.Hash]string {
+	m := make(map[common.Hash]string)
+	for _, entry := range eventDispatchTable() {
+		m[common.BytesToHash(entry.topic0)] = entry.name
+	}
+	return m
+})
+
+// eventTopicName resolves the metric label of a topic0 hash ("" = unknown).
+func eventTopicName(topic0 common.Hash) string {
+	return topicNames()[topic0]
 }
 
 // select_event_and_process dispatches the log to every matching event

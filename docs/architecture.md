@@ -40,14 +40,18 @@ flowchart LR
 
 ## Data flow
 
-1. **Ingest.** `cg-etl` and `rw-etl` poll the chain head and fetch contract
-   logs in adaptive batches via `eth_getLogs`. Each log's block and
-   transaction are persisted (`block`, `transaction`, `evt_log` with the raw
-   RLP), chain reorganizations are detected via parent-hash checks, then the
-   event is decoded against the contract ABI and written to its domain table
-   (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...). PostgreSQL triggers
-   maintain aggregate tables (`cg_bidder`, `cg_glob_stats`, ...) so reads stay
-   cheap.
+1. **Ingest.** `cg-etl` and `rw-etl` are thin configurations of the shared
+   indexing engine (`internal/indexer`), which polls the chain head and
+   fetches contract logs in adaptive batches via `eth_getLogs`. Each log's
+   block and transaction are persisted (`block`, `transaction`, `evt_log`
+   with the raw RLP), chain reorganizations are detected via block-hash
+   checks and rolled back, then the event is decoded against the contract ABI
+   and written to its domain table (`cg_bid`, `cg_prize_claim`,
+   `rw_mint_evt`, ...). Failed batches retry with exponential backoff (the
+   process exits only after repeated consecutive failures), and the
+   processing watermark only advances past fully processed blocks.
+   PostgreSQL triggers maintain aggregate tables (`cg_bidder`,
+   `cg_glob_stats`, ...) so reads stay cheap.
 2. **Serve.** `apiserver` exposes the domain tables as a JSON API (see
    [docs/openapi.yaml](openapi.yaml)), plus ERC-721 `tokenURI` metadata at
    `/metadata/:token_id` (host-dispatched between the two collections) and the
@@ -69,7 +73,7 @@ flowchart LR
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Operator CLIs (contract interaction, social tools, data ops) |
 | `internal/api` | HTTP handlers: `cosmicgame`, `randomwalk`, `faq` proxy, `common` middleware |
 | `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
-| `internal/etl` | Shared ETL machinery: event fetching, block ops, chain-split handling |
+| `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics |
 | `internal/primitives` | Domain types and API response structs |
 | `internal/freezer` | Geth freezer/ancient store readers |
 | `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients |

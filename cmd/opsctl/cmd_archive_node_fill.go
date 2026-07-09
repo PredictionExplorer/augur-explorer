@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	etlcommon "github.com/PredictionExplorer/augur-explorer/internal/etl"
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -109,7 +109,7 @@ the goose migrations under db/migrations.`,
 				return fmt.Errorf("rpc connect: %w", err)
 			}
 
-			head, err := etlcommon.GetCurrentBlockNumber(ctx, eclient)
+			head, err := eclient.BlockNumber(ctx)
 			if err != nil {
 				return fmt.Errorf("chain head: %w", err)
 			}
@@ -289,7 +289,7 @@ func runNodeFillProject(ctx context.Context, db *sql.DB, addrStore *store.Store,
 		st.BlocksScanned += to - from + 1
 		log.Printf("FilterLogs blocks %d .. %d", from, to)
 
-		logs, err := etlcommon.FetchEvents(ctx, client, from, to, contracts)
+		logs, err := indexer.FetchLogs(ctx, client, from, to, contracts)
 		if err != nil {
 			log.Printf("FilterLogs error [%d..%d]: %v", from, to, err)
 			st.RPCErrors++

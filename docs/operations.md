@@ -113,6 +113,18 @@ each command for the transition; delete them once systemd is live).
   Since the stdlib-router migration the `route` label uses ServeMux syntax
   (`/api/.../{param}` instead of `/api/.../:param`) — update dashboards that
   filter on route values.
+- The ETLs (`cg-etl`, `rw-etl`) honor `METRICS_ADDR` too (each process needs
+  its own port on a shared host) and expose `rwcg_etl_last_block` (the
+  processing watermark — alert when it stops advancing),
+  `rwcg_etl_events_total{type}`, `rwcg_etl_batch_duration_seconds`,
+  `rwcg_etl_reorgs_total` and `rwcg_etl_batch_failures_total{stage}`.
+- ETL failure behavior (since the indexer-engine migration): a failed batch —
+  RPC or database — is retried in-process with exponential backoff instead of
+  crashing; the process exits non-zero only after 10 consecutive failures
+  (systemd restarts it). A restart never skips events: the watermark only
+  advances past fully processed blocks, and the engine re-reads it from
+  `cg_proc_status`/`rw_proc_status` at startup (rewind it with the ETL
+  stopped if you need a manual replay).
 - `GET /readyz` returns 503 whenever the database is unreachable — wire it
   into your load balancer health checks.
 

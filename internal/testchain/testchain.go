@@ -1,7 +1,7 @@
 // Package testchain provides a deterministic in-memory fake Ethereum node for
-// integration tests. It serves just enough of the JSON-RPC surface for the ETL
-// pipeline (internal/etl and the cmd/*-etl binaries) to run against it exactly
-// as it would against a real node:
+// integration tests. It serves just enough of the JSON-RPC surface for the
+// indexing pipeline (internal/indexer and the cmd/*-etl binaries) to run
+// against it exactly as it would against a real node:
 //
 //   - eth_getBlockByNumber returns real types.Header objects whose hashes are
 //     computed by go-ethereum, so hash-verification paths (insertBlockFromChain)
