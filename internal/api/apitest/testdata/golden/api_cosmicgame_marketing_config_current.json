@@ -1,8 +1,12 @@
 {
-  "status": 400,
+  "status": 200,
   "contentType": "application/json",
   "body": {
-    "error": "Error reading TreasurerAddress: apitest eth stub: method eth_call not supported",
-    "status": 0
+    "MarketingWalletAddr": "0x1100000000000000000000000000000000000011",
+    "OwnerAddr": "0x2100000000000000000000000000000000000021",
+    "TokenAddr": "0x4000000000000000000000000000000000000004",
+    "TreasurerAddr": "0x2500000000000000000000000000000000000025",
+    "error": "",
+    "status": 1
   }
 }

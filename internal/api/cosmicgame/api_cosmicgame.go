@@ -184,10 +184,12 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
+	snap := contractState.Snapshot()
+
 	// Use live contract price when cache is empty or failed (avoids frontend showing 0 before first refresh or after RPC errors)
-	responseBidPrice, responseBidPriceEth := bid_price, bid_price_eth
+	responseBidPrice, responseBidPriceEth := snap.BidPrice, snap.BidPriceEth
 	if (responseBidPrice == "" || responseBidPrice == "error" || responseBidPriceEth == 0) && EthClient != nil {
-		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
+		if contract, err := NewCosmicSignatureGame(snap.Addrs.CosmicGame, EthClient); err == nil {
 			var copts bind.CallOpts
 			if tmpVal, err := contract.GetNextEthBidPrice(&copts); err == nil {
 				responseBidPrice = tmpVal.String()
@@ -195,7 +197,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 				fBidPrice := big.NewFloat(0.0).SetInt(tmpVal)
 				fQuo := big.NewFloat(0.0).Quo(fBidPrice, fDivisor)
 				responseBidPriceEth, _ = fQuo.Float64()
-				bid_price, bid_price_eth = responseBidPrice, responseBidPriceEth
+				contractState.SetBidPrice(responseBidPrice, responseBidPriceEth)
 			}
 		}
 	}
@@ -205,29 +207,29 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		respondStoreError(c, err)
 		return
 	}
-	cur_round_stats, err := arbRepo.CosmicGameRoundStatistics(c.Request.Context(), round_num)
+	cur_round_stats, err := arbRepo.CosmicGameRoundStatistics(c.Request.Context(), snap.RoundNum)
 	if err != nil {
 		respondStoreError(c, err)
 		return
 	}
 	// Live contract: delay before round activation (always); activation time when DB has none
 	if EthClient != nil {
-		if contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient); err == nil {
+		if contract, err := NewCosmicSignatureGame(snap.Addrs.CosmicGame, EthClient); err == nil {
 			var copts bind.CallOpts
 			if d, err := contract.DelayDurationBeforeRoundActivation(&copts); err == nil {
 				cur_round_stats.DelayDurationBeforeRoundActivation = d.Int64()
 			}
-			if cur_round_stats.ActivationTime == 0 && round_num >= 0 {
+			if cur_round_stats.ActivationTime == 0 && snap.RoundNum >= 0 {
 				if actTime, err := contract.RoundActivationTime(&copts); err == nil {
 					cur_round_stats.ActivationTime = actTime.Int64()
 				}
 			}
 		}
 	}
-	cg_balance := get_cosmic_game_contract_balance()
+	cg_balance := contractState.CosmicGameBalanceEth(c.Request.Context())
 	curNumBids := int64(0)
-	if round_num >= 0 {
-		curNumBids, err = arbRepo.BidCountForRound(c.Request.Context(), round_num)
+	if snap.RoundNum >= 0 {
+		curNumBids, err = arbRepo.BidCountForRound(c.Request.Context(), snap.RoundNum)
 		if err != nil {
 			respondStoreError(c, err)
 			return
@@ -235,60 +237,60 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 	}
 	// Sanitize floats so JSON encoding never sees NaN/Inf (avoids "json: unsupported value: NaN" panic)
 	sanitizeFloatsForJSON(&cur_round_stats)
-	bw_stats_copy := bw_stats
+	bw_stats_copy := snap.Stats
 	sanitizeFloatsForJSON(&bw_stats_copy)
 	var req_status int = 1
 	var err_str string = ""
 	payload := gin.H{
 		"status":                               req_status,
 		"error":                                err_str,
-		"CosmicGameAddr":                       cosmic_game_addr,
+		"CosmicGameAddr":                       snap.Addrs.CosmicGame,
 		"CosmicGameBalanceEth":                 safeFloat64(cg_balance),
-		"CosmicSignatureAddr":                  cosmic_signature_addr,
-		"CosmicSignatureTokenAddr":             cosmic_token_addr,
-		"CharityWalletAddr":                    charity_wallet_addr,
+		"CosmicSignatureAddr":                  snap.Addrs.CosmicSignature,
+		"CosmicSignatureTokenAddr":             snap.Addrs.CosmicToken,
+		"CharityWalletAddr":                    snap.Addrs.CharityWallet,
 		"BidPrice":                             responseBidPrice,
 		"BidPriceEth":                          safeFloat64(responseBidPriceEth),
-		"PrizeClaimDate":                       time.Unix(prize_claim_date, 0).Format(time.RFC822),
-		"PrizeClaimTs":                         prize_claim_date,
-		"CurRoundNum":                          round_num,
+		"PrizeClaimDate":                       time.Unix(snap.PrizeClaimTimestamp, 0).Format(time.RFC822),
+		"PrizeClaimTs":                         snap.PrizeClaimTimestamp,
+		"CurRoundNum":                          snap.RoundNum,
 		"CurNumBids":                           curNumBids,
-		"PrizeAmount":                          prize_amount,
-		"PrizeAmountEth":                       safeFloat64(prize_amount_eth),
-		"RaffleAmount":                         raffle_amount,
-		"RaffleAmountEth":                      safeFloat64(raffle_amount_eth),
-		"StakingAmount":                        staking_amount,
-		"StakingAmountEth":                     safeFloat64(staking_amount_eth),
+		"PrizeAmount":                          snap.PrizeAmount,
+		"PrizeAmountEth":                       safeFloat64(snap.PrizeAmountEth),
+		"RaffleAmount":                         snap.RaffleAmount,
+		"RaffleAmountEth":                      safeFloat64(snap.RaffleAmountEth),
+		"StakingAmount":                        snap.StakingAmount,
+		"StakingAmountEth":                     safeFloat64(snap.StakingAmountEth),
 		"TotalPrizes":                          bw_stats_copy.TotalPrizes,
 		"TotalPrizeAwards":                     bw_stats_copy.TotalPrizeAwards,
 		"CgPrizeRowCount":                      bw_stats_copy.CgPrizeRowCount,
 		"TotalPrizesPaidAmountEth":             bw_stats_copy.TotalPrizesPaidAmountEth,
 		"TotalEthDonatedAmount":                bw_stats_copy.TotalEthDonatedAmount,
 		"TotalEthDonatedAmountEth":             bw_stats_copy.TotalEthDonatedAmountEth,
-		"LastBidderAddr":                       last_bidder.String(),
+		"LastBidderAddr":                       snap.LastBidder.String(),
 		"NumVoluntaryDonations":                bw_stats_copy.NumVoluntaryDonations,
 		"SumVoluntaryDonationsEth":             bw_stats_copy.SumVoluntaryDonationsEth,
 		"NumRwalkTokensUsed":                   bw_stats_copy.NumRwalkTokensUsed,
-		"PriceIncrease":                        price_increase,
-		"TimeIncrease":                         time_increase,
-		"MainPrizeTimeIncrementInMicroSeconds": mainprize_microseconds_inc,
-		"InitialSecondsUntilPrize":             initial_seconds,
-		"TimeoutClaimPrize":                    timeout_claim,
-		"RoundStartCSTAuctionLength":           roundstart_auclen,
-		"CstDutchAuctionDurationChangeDivisor": cst_dutch_auction_duration_change_divisor,
-		"ContractMechanicsVersion":             getContractMechanicsVersion(),
-		"TokenReward":                          token_reward,
-		"PrizePercentage":                      prize_percentage,
-		"RafflePercentage":                     raffle_percentage,
-		"ChronoWarriorPercentage":              chrono_percentage,
-		"StakingPercentage":                    staking_percentage,
-		"CharityAddr":                          charity_addr.String(),
-		"CharityPercentage":                    charity_percentage,
-		"CharityBalance":                       charity_balance,
-		"CharityBalanceEth":                    safeFloat64(charity_balance_eth),
-		"NumRaffleEthWinnersBidding":           raffle_eth_winners_bidding,
-		"NumRaffleNFTWinnersBidding":           raffle_nft_winners_bidding,
-		"NumRaffleNFTWinnersStakingRWalk":      raffle_nft_winners_staking_rwalk,
+		"PriceIncrease":                        snap.PriceIncrease,
+		"TimeIncrease":                         snap.TimeIncrease,
+		"MainPrizeTimeIncrementInMicroSeconds": snap.MainPrizeTimeIncrement,
+		"InitialSecondsUntilPrize":             snap.InitialSecondsUntilPrize,
+		"TimeoutClaimPrize":                    snap.TimeoutClaimPrize,
+		"RoundStartCSTAuctionLength":           snap.RoundStartAuctionLength,
+		"CstDutchAuctionDurationChangeDivisor": snap.CSTAuctionDurationChangeDivisor,
+		"ContractMechanicsVersion":             snap.MechanicsVersion,
+		"TokenReward":                          snap.TokenReward,
+		"PrizePercentage":                      snap.PrizePercentage,
+		"RafflePercentage":                     snap.RafflePercentage,
+		"ChronoWarriorPercentage":              snap.ChronoPercentage,
+		"StakingPercentage":                    snap.StakingPercentage,
+		"CharityAddr":                          snap.CharityAddr.String(),
+		"CharityPercentage":                    snap.CharityPercentage,
+		"CharityBalance":                       snap.CharityBalance,
+		"CharityBalanceEth":                    safeFloat64(snap.CharityBalanceEth),
+		"NumRaffleEthWinnersBidding":           snap.RaffleEthWinnersBidding,
+		"NumRaffleNFTWinnersBidding":           snap.RaffleNFTWinnersBidding,
+		"NumRaffleNFTWinnersStakingRWalk":      snap.RaffleNFTWinnersStakingRWalk,
 		"NumUniqueBidders":                     bw_stats_copy.NumUniqueBidders,
 		"NumUniqueWinners":                     bw_stats_copy.NumUniqueWinners,
 		"NumUniqueDonors":                      bw_stats_copy.NumUniqueDonors,
@@ -298,7 +300,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"NumDonatedNFTs":                       bw_stats_copy.NumDonatedNFTs,
 		"MainStats":                            bw_stats_copy,
 		"CurRoundStats":                        cur_round_stats,
-		"TsRoundStart":                         round_start_ts,
+		"TsRoundStart":                         snap.RoundStartTimestamp,
 		"ContractAddrs":                        caddrs,
 	}
 	sanitizeMapFloatsForJSON(payload)
@@ -819,7 +821,7 @@ func api_cosmic_game_charity_cosmicgame_deposits(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), cosmic_game_addr.String())
+	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), contractState.Snapshot().Addrs.CosmicGame.String())
 	if err != nil {
 		// Previously this path killed the whole API server (os.Exit); a
 		// missing registry row or DB blip now answers HTTP 500 instead.
@@ -847,7 +849,7 @@ func api_cosmic_game_charity_voluntary_deposits(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), cosmic_game_addr.String())
+	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), contractState.Snapshot().Addrs.CosmicGame.String())
 	if err != nil {
 		// Previously this path killed the whole API server (os.Exit); a
 		// missing registry row or DB blip now answers HTTP 500 instead.
@@ -875,7 +877,7 @@ func api_cosmic_game_charity_donations_deposits(c *gin.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), cosmic_game_addr.String())
+	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), contractState.Snapshot().Addrs.CosmicGame.String())
 	if err != nil {
 		// Previously this path killed the whole API server (os.Exit); a
 		// missing registry row or DB blip now answers HTTP 500 instead.
@@ -2010,7 +2012,7 @@ func api_cosmic_game_time_until_prize(c *gin.Context) {
 	const time_until_prize_sig string = "0x36750d2c"
 	var raw json.RawMessage
 	args := map[string]interface{}{
-		"to":   cosmic_game_addr.String(),
+		"to":   contractState.Snapshot().Addrs.CosmicGame.String(),
 		"data": time_until_prize_sig,
 	}
 	err := rpcclient.CallContext(context.Background(), &raw, "eth_call", args, "pending")
@@ -2052,7 +2054,7 @@ func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
 		prize_time = big.NewInt(0)
 	} else {
 		var copts bind.CallOpts
-		bwcontract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient)
+		bwcontract, err := NewCosmicSignatureGame(contractState.Snapshot().Addrs.CosmicGame, EthClient)
 		if err != nil {
 			req_status = 0
 			err_str = fmt.Sprintf("Can't instantiate CG contract: %v", err)
@@ -2567,7 +2569,7 @@ func api_cosmic_game_user_balances(c *gin.Context) {
 		common.RespondErrorJSON(c, err_str)
 		return
 	}
-	ct_contract, err := NewERC20(cosmic_token_addr, EthClient)
+	ct_contract, err := NewERC20(contractState.Snapshot().Addrs.CosmicToken, EthClient)
 	if err != nil {
 		err_str := fmt.Sprintf("Error at instantiation of ERC20 contract: %v\n", err)
 		common.RespondErrorJSON(c, err_str)
@@ -2629,9 +2631,11 @@ func api_cosmic_game_cosmic_token_statistics(c *gin.Context) {
 		return
 	}
 
+	cosmicTokenAddr := contractState.Snapshot().Addrs.CosmicToken
+
 	// Read contract info from blockchain
 	var copts bind.CallOpts
-	contract, err := NewCosmicSignatureToken(cosmic_token_addr, EthClient)
+	contract, err := NewCosmicSignatureToken(cosmicTokenAddr, EthClient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicSignatureToken contract: %v", err)
 		Error.Print(err_str)
@@ -2685,7 +2689,7 @@ func api_cosmic_game_cosmic_token_statistics(c *gin.Context) {
 		"TokenSymbol":      token_symbol,
 		"TokenDecimals":    decimals,
 		"GameContractAddr": game_addr.String(),
-		"CosmicTokenAddr":  cosmic_token_addr.String(),
+		"CosmicTokenAddr":  cosmicTokenAddr.String(),
 		"Statistics":       stats,
 	})
 }
@@ -2965,8 +2969,10 @@ func api_cosmic_game_marketing_config_current(c *gin.Context) {
 		return
 	}
 
+	marketingWalletAddr := contractState.Snapshot().Addrs.MarketingWallet
+
 	var copts bind.CallOpts
-	contract, err := NewMarketingWallet(marketing_wallet_addr, EthClient)
+	contract, err := NewMarketingWallet(marketingWalletAddr, EthClient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate MarketingWallet contract: %v", err)
 		Error.Print(err_str)
@@ -3010,7 +3016,7 @@ func api_cosmic_game_marketing_config_current(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":              req_status,
 		"error":               err_str,
-		"MarketingWalletAddr": marketing_wallet_addr.String(),
+		"MarketingWalletAddr": marketingWalletAddr.String(),
 		"TreasurerAddr":       treasurer_addr.String(),
 		"TokenAddr":           token_addr.String(),
 		"OwnerAddr":           owner_addr.String(),
@@ -3020,7 +3026,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	var copts bind.CallOpts
-	contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient)
+	contract, err := NewCosmicSignatureGame(contractState.Snapshot().Addrs.CosmicGame, EthClient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n", err)
 		Error.Print(err_str)
@@ -3056,7 +3062,7 @@ func api_cosmic_game_get_eth_price(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	var copts bind.CallOpts
-	contract, err := NewCosmicSignatureGame(cosmic_game_addr, EthClient)
+	contract, err := NewCosmicSignatureGame(contractState.Snapshot().Addrs.CosmicGame, EthClient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n", err)
 		Error.Print(err_str)
@@ -3202,7 +3208,7 @@ func api_cosmic_game_bid_special_winners(c *gin.Context) {
 		return
 	}
 
-	state := fetchLiveSpecialWinnersState()
+	state := contractState.FetchLiveSpecialWinners(c.Request.Context())
 	if state.Err != nil {
 		common.RespondErrorJSON(c, state.Err.Error())
 		return

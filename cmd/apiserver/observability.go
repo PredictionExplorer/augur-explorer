@@ -59,10 +59,11 @@ func statusClass(code int) string {
 // startInternalServer serves /metrics and /debug/pprof on a private listener.
 // These must never be exposed publicly, so they live on their own port,
 // controlled by METRICS_ADDR (e.g. "127.0.0.1:9090"). Unset means disabled.
-func startInternalServer() {
+// The returned server (nil when disabled) participates in graceful shutdown.
+func startInternalServer() *http.Server {
 	addr := strings.TrimSpace(os.Getenv("METRICS_ADDR"))
 	if addr == "" {
-		return
+		return nil
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
@@ -72,15 +73,16 @@ func startInternalServer() {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 	go func() {
-		srv := &http.Server{
-			Addr:              addr,
-			Handler:           mux,
-			ReadHeaderTimeout: 5 * time.Second,
-		}
 		Info.Printf("internal metrics/pprof server listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			Error.Printf("internal metrics server: %v", err)
 		}
 	}()
+	return srv
 }

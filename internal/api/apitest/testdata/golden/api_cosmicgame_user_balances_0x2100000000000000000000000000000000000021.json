@@ -1,8 +1,12 @@
 {
-  "status": 400,
+  "status": 200,
   "contentType": "application/json",
   "body": {
-    "error": "Error at BalanceOf() call: apitest eth stub: method eth_call not supported\n",
-    "status": 0
+    "CosmicTokenBalance": "150000000000000000000",
+    "ETH_Balance": "0",
+    "UserAddr": "0x2100000000000000000000000000000000000021",
+    "UserAid": 21,
+    "error": "",
+    "status": 1
   }
 }

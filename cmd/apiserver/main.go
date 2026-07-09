@@ -9,19 +9,26 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 )
+
+// shutdownTimeout bounds how long in-flight requests may take to finish once
+// SIGTERM/SIGINT arrives before the listeners are closed forcefully.
+const shutdownTimeout = 15 * time.Second
 
 var (
 	RPC_URL   = os.Getenv("RPC_URL")
@@ -47,7 +54,7 @@ func envBoolDefaultTrue(key string) bool {
 	return true
 }
 
-func initialize() {
+func initialize(ctx context.Context) {
 	// Initialize the common context
 	common.InitContext(rwcg_srv.store, eclient, Info, Error)
 
@@ -55,7 +62,15 @@ func initialize() {
 	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")
 	enableFAQRoutes := envBoolDefaultTrue("ENABLE_ROUTES_FAQ")
 
-	cosmicgame.Init(eclient, rpcclient, Info, Error, enableCGRoutes)
+	if err := cosmicgame.Init(ctx, eclient, rpcclient, Info, Error, enableCGRoutes); err != nil {
+		// Startup cannot proceed without the CosmicGame contract registry.
+		err_str := fmt.Sprintf("CosmicGame module init failed: %v", err)
+		Error.Print(err_str)
+		Info.Print(err_str)
+		fmt.Printf("\nFATAL: %s\n", err_str)
+		fmt.Printf("HINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env\n\n")
+		os.Exit(1)
+	}
 	if enableCGRoutes {
 		Info.Printf("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
 	} else {
@@ -84,8 +99,13 @@ func main() {
 			" Please set RPC_URL environment variable\n")
 		os.Exit(1)
 	}
+
+	// Root context: cancelled on SIGINT/SIGTERM, which starts the drain.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	var err error
-	rpcclient, err = ethrpc.DialContext(context.Background(), RPC_URL)
+	rpcclient, err = ethrpc.DialContext(ctx, RPC_URL)
 	if err != nil {
 		fmt.Printf("Can't establish connection to RPC service: %v\n", err)
 		os.Exit(1)
@@ -93,7 +113,8 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 	rwcg_srv = create_rwcg_server()
 
-	initialize()
+	initialize(ctx)
+	cosmicgame.StartBackgroundRefresh(ctx)
 
 	port_plain := os.Getenv("HTTP_PORT")
 	host_secure := os.Getenv("HTTPS_HOSTNAME")
@@ -130,7 +151,7 @@ func main() {
 
 	// Liveness/readiness probes and the internal metrics/pprof listener.
 	common.RegisterHealthRoutes(r, rwcg_srv.store)
-	startInternalServer()
+	internalSrv := startInternalServer()
 
 	// NFT asset files (nft-assets mirror) and optional /static ABI JSON; see static_assets.go
 	registerStaticAssetRoutes(r)
@@ -153,13 +174,28 @@ func main() {
 		randomwalk.TokenMetadataHandler(c)
 	})
 
-	m := &autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist(host_secure),
-		Cache:      autocert.DirCache(os.Getenv("HOME") + "/.tls-autocert-cache"),
+	// Public listeners. Each runs in its own goroutine and is tracked for
+	// the coordinated Shutdown below.
+	var servers []*http.Server
+	var wg sync.WaitGroup
+
+	serve := func(srv *http.Server, ln net.Listener, useTLS bool) {
+		servers = append(servers, srv)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var err error
+			if useTLS {
+				err = srv.ServeTLS(ln, "", "")
+			} else {
+				err = srv.Serve(ln)
+			}
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				Error.Printf("HTTP server %s: %v", ln.Addr(), err)
+				log.Printf("HTTP server %s: %v", ln.Addr(), err)
+			}
+		}()
 	}
-	_ = m
-	log.Printf("Listening on port %s", port_plain)
 
 	// TLS: HTTPS_HOSTNAME is the primary bind address (e.g. :443 or 0.0.0.0:443).
 	// Optional HTTPS_EXTRA_LISTEN_ADDR starts a second TLS listener (e.g. :1443) with the same routes and certs.
@@ -176,26 +212,52 @@ func main() {
 					return
 				}
 				log.Printf("HTTPS bound and listening on %s", ln.Addr().String())
-				server := http.Server{
-					Handler:   r,
-					TLSConfig: tlsConfig,
-				}
-				if err := server.ServeTLS(ln, "", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					log.Printf("HTTPS server %s: %v", addr, err)
-				}
+				serve(&http.Server{Handler: r, TLSConfig: tlsConfig, ReadHeaderTimeout: 10 * time.Second}, ln, true)
 			}
-			go startTLS(host_secure)
+			startTLS(host_secure)
 			if httpsExtra != "" {
-				go startTLS(httpsExtra)
+				startTLS(httpsExtra)
 			}
 		}
 	}
 	if len(port_plain) > 0 {
-		go func() {
-			r.Run(":" + port_plain)
-		}()
+		ln, err := net.Listen("tcp", ":"+port_plain)
+		if err != nil {
+			fmt.Printf("HTTP bind failed on port %s: %v\n", port_plain, err)
+			os.Exit(1)
+		}
+		log.Printf("Listening on port %s", port_plain)
+		serve(&http.Server{Handler: r, ReadHeaderTimeout: 10 * time.Second}, ln, false)
 	}
-	select {} // infinite suspend for the main go-routine
+	if len(servers) == 0 {
+		fmt.Printf("Configuration error: no listeners configured. Set HTTP_PORT and/or HTTPS_HOSTNAME.\n")
+		os.Exit(1)
+	}
+
+	// Block until SIGINT/SIGTERM, then drain: readiness flips false so load
+	// balancers stop sending traffic, in-flight requests get shutdownTimeout
+	// to finish, background refresh loops stop via ctx, and the store pool
+	// closes last.
+	<-ctx.Done()
+	log.Printf("shutdown: signal received, draining (timeout %s)", shutdownTimeout)
+	common.SetDraining()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+	for _, srv := range servers {
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			Error.Printf("shutdown: %v", err)
+			log.Printf("shutdown: %v", err)
+		}
+	}
+	wg.Wait()
+	if internalSrv != nil {
+		if err := internalSrv.Shutdown(shutdownCtx); err != nil {
+			Error.Printf("shutdown internal server: %v", err)
+		}
+	}
+	rwcg_srv.store.Close()
+	log.Printf("shutdown: complete")
 }
 
 // loadHTTPSCertificates returns TLS cert/key pairs for one listener. Go picks the right leaf cert per TLS SNI
