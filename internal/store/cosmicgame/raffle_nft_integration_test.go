@@ -3,8 +3,14 @@
 package cosmicgame
 
 import (
+	"cmp"
 	"context"
+	"errors"
+	"reflect"
+	"slices"
 	"testing"
+
+	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 )
 
 func TestRaffleNFTWinnersByRound(t *testing.T) {
@@ -26,6 +32,85 @@ func TestRaffleNFTWinnersByRound(t *testing.T) {
 			}
 			return recs
 		})
+	}
+}
+
+func TestRaffleNFTWinnersByRoundPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	tests := []struct {
+		round    int64
+		isStaker bool
+	}{
+		{round: 0, isStaker: false},
+		{round: 0, isStaker: true},
+		{round: 2, isStaker: false},
+	}
+	for _, tc := range tests {
+		legacy, err := r.RaffleNFTWinnersByRound(ctx, tc.round, tc.isStaker)
+		if err != nil {
+			t.Fatalf("legacy round %d pool %v: %v", tc.round, tc.isStaker, err)
+		}
+		var (
+			after *RaffleNFTWinnerPageCursor
+			paged = make([]cgprimitives.CGRaffleNFTWinnerRec, 0)
+		)
+		for {
+			page, hasMore, err := r.RaffleNFTWinnersByRoundPage(ctx, tc.round, tc.isStaker, after, 1)
+			if err != nil {
+				t.Fatalf("page round %d pool %v after %+v: %v", tc.round, tc.isStaker, after, err)
+			}
+			if page == nil {
+				t.Fatal("page encoded as nil")
+			}
+			paged = append(paged, page...)
+			if !hasMore {
+				break
+			}
+			last := page[len(page)-1]
+			after = &RaffleNFTWinnerPageCursor{
+				WinnerIndex: last.WinnerIndex,
+				EventLogID:  last.Tx.EvtLogId,
+			}
+		}
+		sortWinners := func(records []cgprimitives.CGRaffleNFTWinnerRec) {
+			slices.SortFunc(records, func(a, b cgprimitives.CGRaffleNFTWinnerRec) int {
+				if byIndex := cmp.Compare(a.WinnerIndex, b.WinnerIndex); byIndex != 0 {
+					return byIndex
+				}
+				return cmp.Compare(a.Tx.EvtLogId, b.Tx.EvtLogId)
+			})
+		}
+		sortWinners(legacy)
+		sortWinners(paged)
+		if !reflect.DeepEqual(legacy, paged) {
+			t.Fatalf("legacy/page records differ for round %d pool %v\nlegacy: %#v\npaged:  %#v",
+				tc.round, tc.isStaker, legacy, paged)
+		}
+
+		if len(paged) > 0 {
+			last := paged[len(paged)-1]
+			exhausted, hasMore, err := r.RaffleNFTWinnersByRoundPage(ctx, tc.round, tc.isStaker, &RaffleNFTWinnerPageCursor{
+				WinnerIndex: last.WinnerIndex,
+				EventLogID:  last.Tx.EvtLogId,
+			}, 1)
+			if err != nil {
+				t.Fatalf("exhausted page: %v", err)
+			}
+			if hasMore || exhausted == nil || len(exhausted) != 0 {
+				t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+			}
+		}
+	}
+}
+
+func TestRaffleNFTWinnersByRoundPagePropagatesCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, _, err := r.RaffleNFTWinnersByRoundPage(ctx, 0, false, nil, 1); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page error = %v, want context.Canceled", err)
 	}
 }
 

@@ -47,6 +47,24 @@ func (e BidType) Valid() bool {
 	}
 }
 
+// Defines values for RaffleNftPool.
+const (
+	Bidder           RaffleNftPool = "bidder"
+	RandomWalkStaker RaffleNftPool = "randomWalkStaker"
+)
+
+// Valid indicates whether the value is a known member of the RaffleNftPool enum.
+func (e RaffleNftPool) Valid() bool {
+	switch e {
+	case Bidder:
+		return true
+	case RandomWalkStaker:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RoundPrizeType.
 const (
 	BidderRaffleCst           RoundPrizeType = "bidderRaffleCst"
@@ -251,6 +269,9 @@ type Problem struct {
 	Type     string  `json:"type"`
 }
 
+// RaffleNftPool defines model for RaffleNftPool.
+type RaffleNftPool string
+
 // RoundBidPage defines model for RoundBidPage.
 type RoundBidPage struct {
 	Data []Bid    `json:"data"`
@@ -294,6 +315,45 @@ type RoundPrizePage struct {
 
 // RoundPrizeType defines model for RoundPrizeType.
 type RoundPrizeType string
+
+// RoundRaffleEthDeposit defines model for RoundRaffleEthDeposit.
+type RoundRaffleEthDeposit struct {
+	BlockNumber     int64     `json:"blockNumber"`
+	Claimed         bool      `json:"claimed"`
+	EthAmountWei    string    `json:"ethAmountWei"`
+	EventLogId      int64     `json:"eventLogId"`
+	OccurredAt      time.Time `json:"occurredAt"`
+	Round           int64     `json:"round"`
+	TransactionHash string    `json:"transactionHash"`
+	WinnerAddress   string    `json:"winnerAddress"`
+	WinnerIndex     int64     `json:"winnerIndex"`
+}
+
+// RoundRaffleEthDepositPage defines model for RoundRaffleEthDepositPage.
+type RoundRaffleEthDepositPage struct {
+	Data []RoundRaffleEthDeposit `json:"data"`
+	Meta PageMeta                `json:"meta"`
+}
+
+// RoundRaffleNftWinner defines model for RoundRaffleNftWinner.
+type RoundRaffleNftWinner struct {
+	BlockNumber     int64     `json:"blockNumber"`
+	CstAmountWei    string    `json:"cstAmountWei"`
+	EventLogId      int64     `json:"eventLogId"`
+	IsRandomWalk    bool      `json:"isRandomWalk"`
+	NftTokenId      int64     `json:"nftTokenId"`
+	OccurredAt      time.Time `json:"occurredAt"`
+	Round           int64     `json:"round"`
+	TransactionHash string    `json:"transactionHash"`
+	WinnerAddress   string    `json:"winnerAddress"`
+	WinnerIndex     int64     `json:"winnerIndex"`
+}
+
+// RoundRaffleNftWinnerPage defines model for RoundRaffleNftWinnerPage.
+type RoundRaffleNftWinnerPage struct {
+	Data []RoundRaffleNftWinner `json:"data"`
+	Meta PageMeta               `json:"meta"`
+}
 
 // RoundStatistics defines model for RoundStatistics.
 type RoundStatistics struct {
@@ -339,6 +399,9 @@ type Cursor = string
 // Limit defines model for Limit.
 type Limit = int
 
+// RaffleNftPoolParam defines model for RaffleNftPoolParam.
+type RaffleNftPoolParam = RaffleNftPool
+
 // Round defines model for Round.
 type Round = int64
 
@@ -381,6 +444,27 @@ type ListRoundPrizesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListRoundRaffleEthDepositsParams defines parameters for ListRoundRaffleEthDeposits.
+type ListRoundRaffleEthDepositsParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListRoundRaffleNftWinnersParams defines parameters for ListRoundRaffleNftWinners.
+type ListRoundRaffleNftWinnersParams struct {
+	// Pool Select bidder winners or RandomWalk-staker winners.
+	Pool RaffleNftPoolParam `form:"pool" json:"pool"`
+
+	// Cursor Opaque continuation cursor returned by the previous page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// List completed CosmicGame rounds
@@ -401,6 +485,12 @@ type ServerInterface interface {
 	// List prizes awarded in one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/prizes)
 	ListRoundPrizes(w http.ResponseWriter, r *http.Request, round Round, params ListRoundPrizesParams)
+	// List bidder raffle ETH wallet deposits in one completed round
+	// (GET /api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits)
+	ListRoundRaffleEthDeposits(w http.ResponseWriter, r *http.Request, round Round, params ListRoundRaffleEthDepositsParams)
+	// List raffle NFT winners in one completed round
+	// (GET /api/v2/cosmicgame/rounds/{round}/raffle-nft-winners)
+	ListRoundRaffleNftWinners(w http.ResponseWriter, r *http.Request, round Round, params ListRoundRaffleNftWinnersParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -643,6 +733,129 @@ func (siw *ServerInterfaceWrapper) ListRoundPrizes(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListRoundRaffleEthDeposits operation middleware
+func (siw *ServerInterfaceWrapper) ListRoundRaffleEthDeposits(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "round" -------------
+	var round Round
+
+	err = runtime.BindStyledParameterWithOptions("simple", "round", r.PathValue("round"), &round, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "round", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRoundRaffleEthDepositsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRoundRaffleEthDeposits(w, r, round, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRoundRaffleNftWinners operation middleware
+func (siw *ServerInterfaceWrapper) ListRoundRaffleNftWinners(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "round" -------------
+	var round Round
+
+	err = runtime.BindStyledParameterWithOptions("simple", "round", r.PathValue("round"), &round, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "round", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRoundRaffleNftWinnersParams
+
+	// ------------- Required query parameter "pool" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "pool", r.URL.Query(), &params.Pool, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pool"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pool", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRoundRaffleNftWinners(w, r, round, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -769,6 +982,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids", wrapper.ListRoundBids)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids/{position}", wrapper.GetRoundBid)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/prizes", wrapper.ListRoundPrizes)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits", wrapper.ListRoundRaffleEthDeposits)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners", wrapper.ListRoundRaffleNftWinners)
 
 	return m
 }
@@ -790,6 +1005,10 @@ type RoundBidPageJSONResponse RoundBidPage
 type RoundPageJSONResponse RoundPage
 
 type RoundPrizePageJSONResponse RoundPrizePage
+
+type RoundRaffleEthDepositPageJSONResponse RoundRaffleEthDepositPage
+
+type RoundRaffleNftWinnerPageJSONResponse RoundRaffleNftWinnerPage
 
 type ServiceUnavailableResponseHeaders struct {
 	RetryAfter int
@@ -1177,6 +1396,152 @@ func (response ListRoundPrizes500ApplicationProblemPlusJSONResponse) VisitListRo
 	return err
 }
 
+type ListRoundRaffleEthDepositsRequestObject struct {
+	Round  Round `json:"round"`
+	Params ListRoundRaffleEthDepositsParams
+}
+
+type ListRoundRaffleEthDepositsResponseObject interface {
+	VisitListRoundRaffleEthDepositsResponse(w http.ResponseWriter) error
+}
+
+type ListRoundRaffleEthDeposits200JSONResponse struct {
+	RoundRaffleEthDepositPageJSONResponse
+}
+
+func (response ListRoundRaffleEthDeposits200JSONResponse) VisitListRoundRaffleEthDepositsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleEthDeposits400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundRaffleEthDeposits400ApplicationProblemPlusJSONResponse) VisitListRoundRaffleEthDepositsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleEthDeposits404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundRaffleEthDeposits404ApplicationProblemPlusJSONResponse) VisitListRoundRaffleEthDepositsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleEthDeposits500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundRaffleEthDeposits500ApplicationProblemPlusJSONResponse) VisitListRoundRaffleEthDepositsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleNftWinnersRequestObject struct {
+	Round  Round `json:"round"`
+	Params ListRoundRaffleNftWinnersParams
+}
+
+type ListRoundRaffleNftWinnersResponseObject interface {
+	VisitListRoundRaffleNftWinnersResponse(w http.ResponseWriter) error
+}
+
+type ListRoundRaffleNftWinners200JSONResponse struct {
+	RoundRaffleNftWinnerPageJSONResponse
+}
+
+func (response ListRoundRaffleNftWinners200JSONResponse) VisitListRoundRaffleNftWinnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleNftWinners400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundRaffleNftWinners400ApplicationProblemPlusJSONResponse) VisitListRoundRaffleNftWinnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleNftWinners404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundRaffleNftWinners404ApplicationProblemPlusJSONResponse) VisitListRoundRaffleNftWinnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundRaffleNftWinners500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundRaffleNftWinners500ApplicationProblemPlusJSONResponse) VisitListRoundRaffleNftWinnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// List completed CosmicGame rounds
@@ -1197,6 +1562,12 @@ type StrictServerInterface interface {
 	// List prizes awarded in one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/prizes)
 	ListRoundPrizes(ctx context.Context, request ListRoundPrizesRequestObject) (ListRoundPrizesResponseObject, error)
+	// List bidder raffle ETH wallet deposits in one completed round
+	// (GET /api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits)
+	ListRoundRaffleEthDeposits(ctx context.Context, request ListRoundRaffleEthDepositsRequestObject) (ListRoundRaffleEthDepositsResponseObject, error)
+	// List raffle NFT winners in one completed round
+	// (GET /api/v2/cosmicgame/rounds/{round}/raffle-nft-winners)
+	ListRoundRaffleNftWinners(ctx context.Context, request ListRoundRaffleNftWinnersRequestObject) (ListRoundRaffleNftWinnersResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1385,53 +1756,112 @@ func (sh *strictHandler) ListRoundPrizes(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// ListRoundRaffleEthDeposits operation middleware
+func (sh *strictHandler) ListRoundRaffleEthDeposits(w http.ResponseWriter, r *http.Request, round Round, params ListRoundRaffleEthDepositsParams) {
+	var request ListRoundRaffleEthDepositsRequestObject
+
+	request.Round = round
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRoundRaffleEthDeposits(ctx, request.(ListRoundRaffleEthDepositsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRoundRaffleEthDeposits")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRoundRaffleEthDepositsResponseObject); ok {
+		if err := validResponse.VisitListRoundRaffleEthDepositsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRoundRaffleNftWinners operation middleware
+func (sh *strictHandler) ListRoundRaffleNftWinners(w http.ResponseWriter, r *http.Request, round Round, params ListRoundRaffleNftWinnersParams) {
+	var request ListRoundRaffleNftWinnersRequestObject
+
+	request.Round = round
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRoundRaffleNftWinners(ctx, request.(ListRoundRaffleNftWinnersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRoundRaffleNftWinners")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRoundRaffleNftWinnersResponseObject); ok {
+		if err := validResponse.VisitListRoundRaffleNftWinnersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"3FtdTxs59/8qlv97txOSUrpScweBdpFaFhH6R3q6PJIzPkm8zNhT2xPIonz3R7bnfSYvMwmU3StIYh8f",
-	"/877sf2MfRFGggPXCg+fcUQkCUGDtJ/OGL0WimkmuPlIQfmSRe4j/oNDb0IUUDRhFEXJOPTI9JxxpOeA",
-	"pIg5PcIeZmZ8RPQce5iTEMynlK6HJfyImQSKh1rG4GHlzyEkZsGpkCHReIgZ17+dYA+HjLMwDvHwnYf1",
-	"MgL3E8xA4tXKw6NYKiEbWI3IjxiQL7hmPCaWT9+ORRJ0LLnZxNLyHElYMBErFJEZZLz/iEEuc+bdXFxk",
-	"NSRPX4DP9BwPP7w7tpymn3NelZaMzyyrX1jIdJ3Tr+TJbBDxOJyARGKKJCgRSx8U0iLhdh1bgaVZ5IrC",
-	"lMSBxsMPA8+w6MA7Hgy2QnljZFfn7z8gRSL1kVAh8z+TMBF0wvMaedshHYU9aOBwZUipSHAFTlUJvYEf",
-	"MSgLqpE0cPsviaKA+Vbm/UiKSQDhr38pp9D54r9ImOIh/r9+bg5996vqX7tZbtEyHKfI7BIJiawoUGY+",
-	"iCnE+IIEjB7hlWcsaQNf7fgxtBp4uTUW5yBwNmkXzqU0iqUErjPBHoSXNeTXsOe7MUhEwBOlmUoRWsPz",
-	"iT8HigK2cIYqia+R0kRDZR8vtYGNnOfAGhoBmP8S97by8CXXIDkJLqR07ue19K/AGvJFHFDEhUYTyLm0",
-	"/F0J/WkLai/JmsEq8WKIClCWSXhiSlvuLPAm1JAZHEyuJaIN7P3BwWjXJADr6a2ntQo5YVTlbB2epxYM",
-	"VVStyJZkf8ML8JaR3Y3ByIxXiDwSSYEixhFptI8xyAXz4RsnC8ICQ+K1NXG9dzGe2uhj4puCJcqYNKFs",
-	"DoQm2dANaLnsnU41NKQYY/AFpwrFXLPAOjQOTxoZ9mgcJEv33IoSphLU/GhjONwYn+0uk60niZqFkVKb",
-	"VJHgWooIpGYmOE5JoMDDUeGrZzxhdKT0DRjRnYYi5voOmMsAtXFmeIj/+33Q+3j/6y+4lr94Zvqt/W5r",
-	"qLLD3AwK8pRSCUpVFho8maVIb3ra+3T/fDJYNa8ZCP/hyiYZrfMFD/tKn8fan5/GvoHoPJZW3RK5dSN4",
-	"LZkPrXDzU8xbzQLpHw/OBSdpJr4J84vSYDNbz9szCgvg+ouYXdLWibiHQ1AqcU41wnyqd93JVWHoysPC",
-	"tzZKT3WJJUo09DQLoWkbUaF8abkJ69zarCUJpyK8I8HDrXgAvg25RqWSaZhuOU9LwhWxmv07UfON9vXb",
-	"SZN9rYrO6HtR/mXLq69VkkzV0L0s8y9UfKn3yEGuWMZ9xp6Y/AW+TlLo1OUAN0B8N5qNi7g7MtjDMX/g",
-	"4pEX6ORiGs2JZHp5GgTCz9Swheck7b2lnyzpMHFkmIawmx9MviBSkmVNbrWlvALDTbCO5lJwcUekZELa",
-	"BKAlHr7SHQII6HmHWXyqu9vWI+N8nwhUQbpMrrIjrwxLifNGKQSEhbe5YbWN5nuFxr18fRev/Ga8VaMo",
-	"1lbMLQQSEKXP9s54QsK4NckOppLNvWUhXHJfQghcf2W+FCrPeXY0O3jSF3puyqnWiYQk02kAXXfRNR4m",
-	"W/xmsvGvKRJd6GjywPisc55sEn6mNPPVTgXYOB+eTI53nxirml2ksTeh1CjJdWA1qt8aea4Faic9LMG0",
-	"2SS72GISErd2gmp5gY3chei4nUItlBoSxrVvnVr1/8YtcxpLwn0YzUkY7ZAv2wCTrWtc0Cj1Qu2mhkWL",
-	"2TQt15Z9bNWpzra1xm5YWT5vzb6csIsItlXucRyGRC7b6njadWkThqkproBeTfXI2GuXzKFYa3Yl0lHb",
-	"rB+60PNzsJWF6hCV9tj5HsreVuc8rIUmwRnr0KbYqq8FvSlrbb5mXVEaBb9GJDWsm2zgotrgeNl6TBtv",
-	"d7BCoERtW7lVSkb+jVWWC+pELu0ubVw7B0IDxmF3z6QAaGP36HVruC1F21W5ldVCmnsqYKLBneRjZ36T",
-	"rAHeJr22FVVFwzMSTaBckxl8BU3aFkzpefjup9Qum83P/NsewRf36pZv3E9ysNBuOxQ0YUGjCjOutMnq",
-	"SrKLJetJmIIE88uaQsLFjQygDx8/FgA6GTSLm+mguRGrk2ZadkcAk4mI9XASEP6AvZ15q2qNa+y5dTO+",
-	"m5Ctnvu1gZc4BcuaaFvPy6ttMw+HiZJuPFVKlbm6S8tAQmPt3l56Y2syx5+z1w4xbe8DnVJsK5/HXUtQ",
-	"9qoBD5ZoKiQajW97FLgImc1l3NklMmTVEfY6xtMta17c/n6ANffpzpVD+TaIrD6hMZtxomMJ6OrTbZXn",
-	"lkLq0h38eWcguVPc7ag8PdusZSWVk/OQaSN+g3F2L673yCjUIU+KYUSyMreiKbvlB46jS07had+aoftJ",
-	"UFptFJlJltvsR17acRY81s9zltXDrKz4urCnWtnHkSqVZldT87HU3Gn4yk2qdZDcyNrXbnSp1+WYKH3V",
-	"MMrRcyd+N2n1V/nGTSt+42blx3ZjTR7Ko5t/c/N8azKZxSRtIbNu02lfte3Tsrb0NVuQV2+r0KSq6FC7",
-	"0T2bMQfp6GTXIO8Yp+Jx/7sWFYJjTWRLobyFdtH+OFgyF5x2CKgdMDtY2+nFeklVfW8ynbVeeJyVVKkL",
-	"zrphJpJF0Hx/oN6H7tKvugZpE7NWatih1UUdfJddG/NALZvd9L4aGzNeilvxGhBpWLtJjIVTi9fopr3l",
-	"2wcF3iqlUR24le1CTEU9U71Jrun2hGTATc56en1p89abLCIjwouX/4/Q/x+72+5aChr7QP/kLD3mI0Gw",
-	"RI9zFoBNfKdS/A0cLd7ldzAlmMxGFS5d/smz9sEQ39yNPqMz4j8Ad7wsjrGHFyCVY3hwdHI0sIVGBJxE",
-	"DA/x+6PB0XuXM88t0H0Ssf7iuO8ShxkJoe/u05ofZ2DV2iiHNWYjW/yFKXfqr7BXehLzvTkrzIf0k3bU",
-	"yts60r0AWd1XHjIcDwbrks9sXPEmsYdPdplReB+x8vCHXaaUb7XbG6fp2ZRFqHDVt/oWxHYJycwghuu/",
-	"3Rtaa6XST27irpXOZ9ClmxldAFz3bqEbNGbW++2zGq5Bl1H9DNq9hSi+k6jitw+0z/bvahO0Kabt1D6B",
-	"734/WWRC6KDSJ4OT7VOyhxCHsAEjLcFhgxkcQFT9CdvFUSXJVSeheW/JqWVPNn6iXzOQI8atcHcTqRVS",
-	"C4H2n9PbsNtt8YzRl5Ns8YVnN6kl3fV/lMVOmH3vybTK363axyuHl7Z7IrPdgK/duH+DCRdeEf1D9MJa",
-	"ff0xUxfnnsj73r3QAblIBRnLAA9xH6/uV/8LAAD//w==",
+	"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",
+	"JPCt/x2HrmizD3jlMoVALAM8xkO8uln9LwAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

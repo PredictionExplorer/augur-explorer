@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.4.0
+  version: 0.5.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -108,6 +108,45 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits:
+    get:
+      operationId: listRoundRaffleEthDeposits
+      summary: List bidder raffle ETH wallet deposits in one completed round
+      tags:
+        - CosmicGame raffles
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundRaffleEthDepositPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/raffle-nft-winners:
+    get:
+      operationId: listRoundRaffleNftWinners
+      summary: List raffle NFT winners in one completed round
+      tags:
+        - CosmicGame raffles
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/RaffleNftPoolParam"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundRaffleNftWinnerPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   parameters:
     Round:
@@ -147,6 +186,13 @@ components:
         minimum: 1
         maximum: 200
         default: 50
+    RaffleNftPoolParam:
+      name: pool
+      in: query
+      required: true
+      description: Select bidder winners or RandomWalk-staker winners.
+      schema:
+        $ref: "#/components/schemas/RaffleNftPool"
   schemas:
     Problem:
       type: object
@@ -579,6 +625,130 @@ components:
             $ref: "#/components/schemas/RoundPrize"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    RoundRaffleEthDeposit:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - winnerIndex
+        - winnerAddress
+        - ethAmountWei
+        - claimed
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        winnerIndex:
+          type: integer
+          format: int64
+          minimum: 0
+        winnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        ethAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        claimed:
+          type: boolean
+    RoundRaffleEthDepositPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundRaffleEthDeposit"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RaffleNftPool:
+      type: string
+      enum:
+        - bidder
+        - randomWalkStaker
+    RoundRaffleNftWinner:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - winnerIndex
+        - winnerAddress
+        - nftTokenId
+        - cstAmountWei
+        - isRandomWalk
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        winnerIndex:
+          type: integer
+          format: int64
+          minimum: 0
+        winnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        cstAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        isRandomWalk:
+          type: boolean
+    RoundRaffleNftWinnerPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundRaffleNftWinner"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
     BidType:
       type: string
       enum:
@@ -751,6 +921,18 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoundPrizePage"
+    RoundRaffleEthDepositPage:
+      description: One stable page of bidder raffle ETH wallet deposits.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundRaffleEthDepositPage"
+    RoundRaffleNftWinnerPage:
+      description: One stable page of raffle NFT winners in one pool.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundRaffleNftWinnerPage"
     BadRequest:
       description: A path or query parameter is invalid.
       content:

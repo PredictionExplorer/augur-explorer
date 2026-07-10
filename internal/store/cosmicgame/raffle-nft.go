@@ -2,6 +2,7 @@ package cosmicgame
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -58,6 +59,60 @@ func (r *Repo) RaffleNFTWinnersByRound(ctx context.Context, roundNum int64, isSt
 		WHERE p.round_num=$1 AND p.is_staker=$2
 		ORDER BY p.id DESC`
 	return queryList(ctx, r, "raffle nft winners by round", 256, query, scanRaffleNFTWinner, roundNum, isStaker)
+}
+
+// RaffleNFTWinnerPageCursor identifies the last winner returned by
+// RaffleNFTWinnersByRoundPage.
+type RaffleNFTWinnerPageCursor struct {
+	WinnerIndex int64
+	EventLogID  int64
+}
+
+// RaffleNFTWinnersByRoundPage returns at most limit winners from one raffle
+// pool after the supplied ascending keyset cursor. A nil cursor starts at the
+// first winner index.
+func (r *Repo) RaffleNFTWinnersByRoundPage(
+	ctx context.Context,
+	roundNum int64,
+	isStaker bool,
+	after *RaffleNFTWinnerPageCursor,
+	limit int,
+) (records []p.CGRaffleNFTWinnerRec, hasMore bool, err error) {
+	const op = "raffle nft winners by round page"
+	if roundNum < 0 {
+		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
+	}
+	if limit <= 0 {
+		return nil, false, fmt.Errorf("%s: limit must be positive", op)
+	}
+
+	query := "SELECT " + raffleNFTWinnerColumns + `
+		WHERE p.round_num=$1 AND p.is_staker=$2
+		ORDER BY p.winner_idx, p.evtlog_id
+		LIMIT $3`
+	args := []any{roundNum, isStaker, limit + 1}
+	if after != nil {
+		if after.WinnerIndex < 0 || after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		query = "SELECT " + raffleNFTWinnerColumns + `
+			WHERE p.round_num=$1
+				AND p.is_staker=$2
+				AND (p.winner_idx, p.evtlog_id) > ($3, $4)
+			ORDER BY p.winner_idx, p.evtlog_id
+			LIMIT $5`
+		args = []any{roundNum, isStaker, after.WinnerIndex, after.EventLogID, limit + 1}
+	}
+
+	records, err = queryList(ctx, r, op, limit+1, query, scanRaffleNFTWinner, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
 }
 
 // RaffleNFTWinners returns raffle NFT winners across all rounds, newest

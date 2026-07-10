@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "claimed": true,
+        "ethAmountWei": "50000000000000000",
+        "eventLogId": 5022,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerAddress": "0x2200000000000000000000000000000000000022",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJyIjowLCJ3IjowLCJlIjo1MDIyfQ"
+    }
+  }
+}

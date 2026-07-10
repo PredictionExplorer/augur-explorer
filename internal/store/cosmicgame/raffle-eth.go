@@ -3,6 +3,7 @@ package cosmicgame
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -202,9 +203,9 @@ func (r *Repo) ChronoWarriorEthDepositsByUser(ctx context.Context, winnerAid int
 	return queryList(ctx, r, "chrono warrior eth deposits by user", 256, query, scanPrizeDeposit, winnerAid)
 }
 
-// PrizeDepositsByRound returns the raffle ETH deposits of one round (with
-// the chrono warrior deposit tagged record_type 7, plain raffle 10), ordered
-// by winner index. Repo.PrizeInfo composes it.
+// PrizeDepositsByRound returns the bidder-raffle ETH deposits of one round,
+// ordered by winner index. The cg_prize ptype=10 join deliberately excludes
+// chrono-warrior wallet deposits. Repo.PrizeInfo composes it.
 func (r *Repo) PrizeDepositsByRound(ctx context.Context, roundNum int64) ([]p.CGPrizeDepositRec, error) {
 	query := `SELECT
 			p.id,
@@ -229,4 +230,105 @@ func (r *Repo) PrizeDepositsByRound(ctx context.Context, roundNum int64) ([]p.CG
 		WHERE p.round_num = $1
 		ORDER BY p.winner_index`
 	return queryList(ctx, r, "prize deposits by round", 32, query, scanPrizeDeposit, roundNum)
+}
+
+// RaffleEthDepositRecord is the exact-wei store projection used by the v2
+// round raffle-deposit resource. The legacy CGPrizeDepositRec retains its
+// float amount for frozen v1 responses.
+type RaffleEthDepositRecord struct {
+	Tx           p.Transaction
+	RoundNum     int64
+	WinnerIndex  int64
+	WinnerAddr   string
+	EthAmountWei string
+	Claimed      bool
+}
+
+// RaffleEthDepositPageCursor identifies the last deposit returned by
+// RaffleEthDepositsByRoundPage.
+type RaffleEthDepositPageCursor struct {
+	WinnerIndex int64
+	EventLogID  int64
+}
+
+const raffleEthDepositsByRoundSelect = `SELECT
+			p.evtlog_id,
+			p.block_num,
+			t.id,
+			t.tx_hash,
+			EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,
+			p.time_stamp,
+			wa.addr,
+			p.winner_index,
+			p.round_num,
+			p.amount::text,
+			p.claimed
+		FROM cg_prize_deposit p
+			INNER JOIN cg_prize pr ON (
+				pr.round_num = p.round_num
+				AND pr.winner_index = p.winner_index
+				AND pr.ptype = 10
+			)
+			LEFT JOIN transaction t ON t.id=p.tx_id
+			LEFT JOIN address wa ON p.winner_aid=wa.address_id`
+
+func scanRaffleEthDepositRecord(rows pgx.Rows, rec *RaffleEthDepositRecord) error {
+	return rows.Scan(
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		store.TimeText(&rec.Tx.DateTime),
+		&rec.WinnerAddr,
+		&rec.WinnerIndex,
+		&rec.RoundNum,
+		&rec.EthAmountWei,
+		&rec.Claimed,
+	)
+}
+
+// RaffleEthDepositsByRoundPage returns at most limit bidder-raffle ETH
+// wallet deposits after the supplied ascending keyset cursor. A nil cursor
+// starts at the first winner index.
+func (r *Repo) RaffleEthDepositsByRoundPage(
+	ctx context.Context,
+	roundNum int64,
+	after *RaffleEthDepositPageCursor,
+	limit int,
+) (records []RaffleEthDepositRecord, hasMore bool, err error) {
+	const op = "raffle eth deposits by round page"
+	if roundNum < 0 {
+		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
+	}
+	if limit <= 0 {
+		return nil, false, fmt.Errorf("%s: limit must be positive", op)
+	}
+
+	query := raffleEthDepositsByRoundSelect + `
+		WHERE p.round_num=$1
+		ORDER BY p.winner_index, p.evtlog_id
+		LIMIT $2`
+	args := []any{roundNum, limit + 1}
+	if after != nil {
+		if after.WinnerIndex < 0 || after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		query = raffleEthDepositsByRoundSelect + `
+			WHERE p.round_num=$1
+				AND (p.winner_index, p.evtlog_id) > ($2, $3)
+			ORDER BY p.winner_index, p.evtlog_id
+			LIMIT $4`
+		args = []any{roundNum, after.WinnerIndex, after.EventLogID, limit + 1}
+	}
+
+	records, err = queryList(ctx, r, op, limit+1, query, scanRaffleEthDepositRecord, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
 }

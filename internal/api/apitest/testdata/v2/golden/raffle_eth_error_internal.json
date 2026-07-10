@@ -1,0 +1,11 @@
+{
+  "status": 500,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The request could not be completed.",
+    "instance": "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits",
+    "status": 500,
+    "title": "Internal server error",
+    "type": "https://api.cosmicsignature.com/problems/internal"
+  }
+}

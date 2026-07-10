@@ -61,13 +61,7 @@ func (s *Server) ListRoundPrizes(
 		return listRoundPrizesInternal(internalProblem(instance)), nil
 	}
 	if !exists {
-		return listRoundPrizesNotFound(newProblem(
-			http.StatusNotFound,
-			"round-not-found",
-			"Round not found",
-			"No completed round exists with that number.",
-			instance,
-		)), nil
+		return listRoundPrizesNotFound(roundNotFoundProblem(instance)), nil
 	}
 
 	records, hasMore, err := s.prizes.AllPrizesForRoundPage(ctx, request.Round, after, limit)

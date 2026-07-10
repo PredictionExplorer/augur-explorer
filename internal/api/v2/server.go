@@ -37,6 +37,12 @@ type roundPrizeReader interface {
 	AllPrizesForRoundPage(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error)
 }
 
+type roundRaffleReader interface {
+	CompletedRoundExists(context.Context, int64) (bool, error)
+	RaffleEthDepositsByRoundPage(context.Context, int64, *cgstore.RaffleEthDepositPageCursor, int) ([]cgstore.RaffleEthDepositRecord, bool, error)
+	RaffleNFTWinnersByRoundPage(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -50,6 +56,7 @@ type Server struct {
 	rounds        roundReader
 	currentRounds currentRoundReader
 	prizes        roundPrizeReader
+	raffles       roundRaffleReader
 	contractState contractStateReader
 	logger        *slog.Logger
 }
@@ -66,7 +73,7 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, repo, repo, state, logger)
+	return newServer(st, repo, repo, repo, repo, repo, state, logger)
 }
 
 func newServer(
@@ -75,6 +82,7 @@ func newServer(
 	rounds roundReader,
 	currentRounds currentRoundReader,
 	prizes roundPrizeReader,
+	raffles roundRaffleReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -90,6 +98,9 @@ func newServer(
 	if prizes == nil {
 		return nil, errors.New("api v2: round-prize repository is required")
 	}
+	if raffles == nil {
+		return nil, errors.New("api v2: round-raffle repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -102,6 +113,7 @@ func newServer(
 		rounds:        rounds,
 		currentRounds: currentRounds,
 		prizes:        prizes,
+		raffles:       raffles,
 		contractState: state,
 		logger:        logger,
 	}, nil
@@ -181,6 +193,16 @@ func internalProblem(instance string) Problem {
 		"internal",
 		"Internal server error",
 		"The request could not be completed.",
+		instance,
+	)
+}
+
+func roundNotFoundProblem(instance string) Problem {
+	return newProblem(
+		http.StatusNotFound,
+		"round-not-found",
+		"Round not found",
+		"No completed round exists with that number.",
 		instance,
 	)
 }

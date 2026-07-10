@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "No completed round exists with that number.",
+    "instance": "/api/v2/cosmicgame/rounds/3/raffle-nft-winners",
+    "status": 404,
+    "title": "Round not found",
+    "type": "https://api.cosmicsignature.com/problems/round-not-found"
+  }
+}

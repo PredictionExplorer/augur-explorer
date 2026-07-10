@@ -25,6 +25,8 @@ const (
 	v2ListRoundBidsPath = "/api/v2/cosmicgame/rounds/{round}/bids"
 	v2GetRoundBidPath   = "/api/v2/cosmicgame/rounds/{round}/bids/{position}"
 	v2ListRoundPrizes   = "/api/v2/cosmicgame/rounds/{round}/prizes"
+	v2ListRaffleEth     = "/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits"
+	v2ListRaffleNft     = "/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners"
 )
 
 type v2GoldenCase struct {
@@ -194,6 +196,191 @@ func TestAPIV2RoundPrizes(t *testing.T) {
 			name:       "prizes_error_internal",
 			target:     firstPath,
 			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+	}
+
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2RoundRaffles(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	firstEthPath := "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits?limit=1"
+	firstEthResponse := h.get(t, firstEthPath)
+	if firstEthResponse.Code != http.StatusOK {
+		t.Fatalf("first ETH page: status=%d body=%s", firstEthResponse.Code, firstEthResponse.Body.String())
+	}
+	var firstEthPage apiv2.RoundRaffleEthDepositPage
+	if err := json.Unmarshal(firstEthResponse.Body.Bytes(), &firstEthPage); err != nil {
+		t.Fatalf("decoding first ETH page: %v", err)
+	}
+	if firstEthPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first ETH page did not return a continuation cursor")
+	}
+
+	afterLastEth := base64.RawURLEncoding.EncodeToString([]byte(`{"v":1,"r":0,"w":1,"e":5024}`))
+	bidderNftCursor := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":0,"p":"bidder","w":0,"e":5025}`),
+	)
+	stakerNftCursor := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":0,"p":"randomWalkStaker","w":0,"e":5028}`),
+	)
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	cases := []v2GoldenCase{
+		{
+			name:       "raffle_eth_list_first_page",
+			target:     firstEthPath,
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_eth_list_next_page",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits?limit=1&cursor=" + *firstEthPage.Meta.NextCursor,
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_eth_list_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits?limit=1&cursor=" + afterLastEth,
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_eth_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits?cursor=bad",
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_eth_error_cross_round_cursor",
+			target:     "/api/v2/cosmicgame/rounds/1/raffle-eth-deposits?cursor=" + *firstEthPage.Meta.NextCursor,
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "1"},
+		},
+		{
+			name:       "raffle_eth_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits?limit=201",
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_eth_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-eth-deposits?limit=wat",
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_eth_error_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/raffle-eth-deposits",
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "raffle_eth_error_not_found",
+			target:     "/api/v2/cosmicgame/rounds/999/raffle-eth-deposits",
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "999"},
+		},
+		{
+			name:       "raffle_eth_error_internal",
+			target:     firstEthPath,
+			template:   v2ListRaffleEth,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "raffle_nft_bidder_page",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_staker_page",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=randomWalkStaker",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder&cursor=" + bidderNftCursor,
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_staker_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=randomWalkStaker&cursor=" + stakerNftCursor,
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_missing_pool",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_invalid_pool",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=other",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder&cursor=bad",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_cross_pool_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder&cursor=" + stakerNftCursor,
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_cross_round_cursor",
+			target:     "/api/v2/cosmicgame/rounds/1/raffle-nft-winners?pool=bidder&cursor=" + bidderNftCursor,
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "1"},
+		},
+		{
+			name:       "raffle_nft_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder&limit=201",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder&limit=wat",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "raffle_nft_error_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/raffle-nft-winners?pool=bidder",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "raffle_nft_error_not_found",
+			target:     "/api/v2/cosmicgame/rounds/999/raffle-nft-winners?pool=bidder",
+			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "999"},
+		},
+		{
+			name:       "raffle_nft_error_internal",
+			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder",
+			template:   v2ListRaffleNft,
 			pathParams: map[string]string{"round": "0"},
 			ctx:        cancelledCtx,
 		},

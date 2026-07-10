@@ -124,13 +124,9 @@ func (s *Server) GetRound(ctx context.Context, request GetRoundRequestObject) (G
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			return GetRound404ApplicationProblemPlusJSONResponse{
-				NotFoundApplicationProblemPlusJSONResponse: NotFoundApplicationProblemPlusJSONResponse(newProblem(
-					http.StatusNotFound,
-					"round-not-found",
-					"Round not found",
-					"No completed round exists with that number.",
-					instance,
-				)),
+				NotFoundApplicationProblemPlusJSONResponse: NotFoundApplicationProblemPlusJSONResponse(
+					roundNotFoundProblem(instance),
+				),
 			}, nil
 		}
 		s.logInternal(ctx, "get completed round", err, "round", request.Round)
