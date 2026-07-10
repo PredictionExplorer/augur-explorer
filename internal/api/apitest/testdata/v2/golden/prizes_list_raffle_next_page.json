@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "eventLogId": 5028,
+        "nftTokenId": 3,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "randomWalkStakerRaffleNft",
+        "winnerAddress": "0x2300000000000000000000000000000000000023",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 115,
+        "ethAmountWei": "2000000000000000000",
+        "eventLogId": 5055,
+        "occurredAt": "2026-01-01T00:25:00Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001016",
+        "type": "cosmicSignatureStakingEth",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 5
+    }
+  }
+}

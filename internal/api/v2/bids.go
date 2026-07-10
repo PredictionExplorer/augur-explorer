@@ -17,11 +17,6 @@ import (
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
-const (
-	defaultPageLimit = 50
-	maxPageLimit     = 200
-)
-
 // ListRoundBids implements GET /api/v2/cosmicgame/rounds/{round}/bids.
 func (s *Server) ListRoundBids(ctx context.Context, request ListRoundBidsRequestObject) (ListRoundBidsResponseObject, error) {
 	instance := fmt.Sprintf("/api/v2/cosmicgame/rounds/%d/bids", request.Round)
@@ -35,16 +30,13 @@ func (s *Server) ListRoundBids(ctx context.Context, request ListRoundBidsRequest
 		)), nil
 	}
 
-	limit := defaultPageLimit
-	if request.Params.Limit != nil {
-		limit = *request.Params.Limit
-	}
-	if limit < 1 || limit > maxPageLimit {
+	limit, validLimit := resolvePageLimit(request.Params.Limit)
+	if !validLimit {
 		return listBadRequest(newProblem(
 			http.StatusBadRequest,
 			"invalid-parameter",
 			"Invalid parameter",
-			fmt.Sprintf("Limit must be between 1 and %d.", maxPageLimit),
+			pageLimitProblemDetail(),
 			instance,
 		)), nil
 	}

@@ -257,6 +257,7 @@ func newCurrentRoundTestServer(
 		fakeBidReader{},
 		fakeRoundReader{},
 		currentRounds,
+		fakeRoundPrizeReader{},
 		state,
 		logger,
 	)

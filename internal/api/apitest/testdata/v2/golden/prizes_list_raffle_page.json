@@ -1,0 +1,67 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "ethAmountWei": "50000000000000000",
+        "eventLogId": 5021,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "bidderRaffleEth",
+        "winnerAddress": "0x2200000000000000000000000000000000000022",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "ethAmountWei": "50000000000000000",
+        "eventLogId": 5023,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "bidderRaffleEth",
+        "winnerAddress": "0x2300000000000000000000000000000000000023",
+        "winnerIndex": 1
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "30000000000000000000",
+        "eventLogId": 5025,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "bidderRaffleCst",
+        "winnerAddress": "0x2400000000000000000000000000000000000024",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "eventLogId": 5025,
+        "nftTokenId": 2,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "bidderRaffleNft",
+        "winnerAddress": "0x2400000000000000000000000000000000000024",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "30000000000000000000",
+        "eventLogId": 5028,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "randomWalkStakerRaffleCst",
+        "winnerAddress": "0x2300000000000000000000000000000000000023",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 5,
+      "nextCursor": "eyJ2IjoxLCJyIjowLCJ0IjoxMywidyI6MH0"
+    }
+  }
+}

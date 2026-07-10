@@ -32,6 +32,11 @@ type currentRoundReader interface {
 	BidCountForRound(context.Context, int64) (int64, error)
 }
 
+type roundPrizeReader interface {
+	CompletedRoundExists(context.Context, int64) (bool, error)
+	AllPrizesForRoundPage(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -44,6 +49,7 @@ type Server struct {
 	bids          bidReader
 	rounds        roundReader
 	currentRounds currentRoundReader
+	prizes        roundPrizeReader
 	contractState contractStateReader
 	logger        *slog.Logger
 }
@@ -60,7 +66,7 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, repo, state, logger)
+	return newServer(st, repo, repo, repo, repo, state, logger)
 }
 
 func newServer(
@@ -68,6 +74,7 @@ func newServer(
 	bids bidReader,
 	rounds roundReader,
 	currentRounds currentRoundReader,
+	prizes roundPrizeReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -80,6 +87,9 @@ func newServer(
 	if currentRounds == nil {
 		return nil, errors.New("api v2: current-round repository is required")
 	}
+	if prizes == nil {
+		return nil, errors.New("api v2: round-prize repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -91,6 +101,7 @@ func newServer(
 		bids:          bids,
 		rounds:        rounds,
 		currentRounds: currentRounds,
+		prizes:        prizes,
 		contractState: state,
 		logger:        logger,
 	}, nil

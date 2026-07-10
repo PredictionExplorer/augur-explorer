@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -151,5 +152,93 @@ func TestAllPrizesForRound(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Errorf("expected no prizes for round 999, got %d", len(got))
+	}
+}
+
+func TestAllPrizesForRoundPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	want, err := r.AllPrizesForRound(ctx, 0)
+	if err != nil {
+		t.Fatalf("AllPrizesForRound: %v", err)
+	}
+	var (
+		after *PrizePageCursor
+		got   []cgprimitives.CGPrizeHistory
+	)
+	for {
+		page, hasMore, err := r.AllPrizesForRoundPage(ctx, 0, after, 4)
+		if err != nil {
+			t.Fatalf("AllPrizesForRoundPage(after=%+v): %v", after, err)
+		}
+		if page == nil {
+			t.Fatal("page encoded as nil")
+		}
+		got = append(got, page...)
+		if !hasMore {
+			break
+		}
+		if len(page) != 4 {
+			t.Fatalf("short page reported hasMore: %d records", len(page))
+		}
+		last := page[len(page)-1]
+		after = &PrizePageCursor{
+			PrizeType:   last.RecordType,
+			WinnerIndex: last.WinnerIndex,
+		}
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("paged prizes differ from full list\ngot:  %#v\nwant: %#v", got, want)
+	}
+
+	last := want[len(want)-1]
+	exhausted, hasMore, err := r.AllPrizesForRoundPage(ctx, 0, &PrizePageCursor{
+		PrizeType:   last.RecordType,
+		WinnerIndex: last.WinnerIndex,
+	}, 4)
+	if err != nil {
+		t.Fatalf("exhausted page: %v", err)
+	}
+	if hasMore || exhausted == nil || len(exhausted) != 0 {
+		t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+	}
+}
+
+func TestRoundPrizeQueriesPropagateCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, _, err := r.AllPrizesForRoundPage(ctx, 0, nil, 2); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled prize page error = %v, want context.Canceled", err)
+	}
+	if _, err := r.CompletedRoundExists(ctx, 0); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled existence error = %v, want context.Canceled", err)
+	}
+}
+
+func TestCompletedRoundExists(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	for _, round := range []int64{0, 1, 2} {
+		exists, err := r.CompletedRoundExists(ctx, round)
+		if err != nil {
+			t.Fatalf("CompletedRoundExists(%d): %v", round, err)
+		}
+		if !exists {
+			t.Errorf("completed round %d was not found", round)
+		}
+	}
+	for _, round := range []int64{3, 999} {
+		exists, err := r.CompletedRoundExists(ctx, round)
+		if err != nil {
+			t.Fatalf("CompletedRoundExists(%d): %v", round, err)
+		}
+		if exists {
+			t.Errorf("uncompleted round %d reported complete", round)
+		}
 	}
 }

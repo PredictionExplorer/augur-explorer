@@ -3,6 +3,7 @@ package cosmicgame
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -523,11 +524,7 @@ func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, err
 	return rec, nil
 }
 
-// AllPrizesForRound returns every prize row of one round from the cg_prize
-// registry with the type-specific amount/token columns resolved, ordered by
-// prize type then winner index.
-func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]p.CGPrizeHistory, error) {
-	query := `SELECT
+const allPrizesSelect = `SELECT
 			p.ptype AS record_type,
 			COALESCE(pc.evtlog_id, rew.evtlog_id, rnw_bidder.evtlog_id, rnw_rwalk.evtlog_id, ew.evtlog_id, lw.evtlog_id, cw.evtlog_id, ed.evtlog_id) AS evtlog_id,
 			COALESCE(EXTRACT(EPOCH FROM pc.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rew.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rnw_bidder.time_stamp)::BIGINT, EXTRACT(EPOCH FROM rnw_rwalk.time_stamp)::BIGINT, EXTRACT(EPOCH FROM ew.time_stamp)::BIGINT, EXTRACT(EPOCH FROM lw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM cw.time_stamp)::BIGINT, EXTRACT(EPOCH FROM ed.time_stamp)::BIGINT) AS tstmp,
@@ -600,29 +597,105 @@ func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]p.CGPri
 			LEFT JOIN transaction trnw_rwalk ON trnw_rwalk.id = rnw_rwalk.tx_id
 			LEFT JOIN address wa_rnw_rwalk ON rnw_rwalk.winner_aid = wa_rnw_rwalk.address_id
 			LEFT JOIN cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15)
-			LEFT JOIN transaction ted ON ted.id = ed.tx_id
+			LEFT JOIN transaction ted ON ted.id = ed.tx_id`
+
+func scanPrizeHistoryRow(rows pgx.Rows, rec *p.CGPrizeHistory) error {
+	return rows.Scan(
+		&rec.RecordType,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.TimeStamp,
+		store.TimeText(&rec.Tx.DateTime),
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.RoundNum,
+		&rec.Amount,
+		&rec.AmountEth,
+		&rec.TokenAddress,
+		&rec.TokenId,
+		&rec.TokenURI,
+		&rec.WinnerIndex,
+		&rec.Claimed,
+		&rec.WinnerAddr,
+		&rec.WinnerAid,
+	)
+}
+
+// AllPrizesForRound returns every prize row of one round from the cg_prize
+// registry with the type-specific amount/token columns resolved, ordered by
+// prize type then winner index.
+func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]p.CGPrizeHistory, error) {
+	query := allPrizesSelect + `
 		WHERE p.round_num = $1
-			ORDER BY p.ptype, p.winner_index`
-	scan := func(rows pgx.Rows, rec *p.CGPrizeHistory) error {
-		return rows.Scan(
-			&rec.RecordType,
-			&rec.Tx.EvtLogId,
-			&rec.Tx.TimeStamp,
-			store.TimeText(&rec.Tx.DateTime),
-			&rec.Tx.BlockNum,
-			&rec.Tx.TxId,
-			&rec.Tx.TxHash,
-			&rec.RoundNum,
-			&rec.Amount,
-			&rec.AmountEth,
-			&rec.TokenAddress,
-			&rec.TokenId,
-			&rec.TokenURI,
-			&rec.WinnerIndex,
-			&rec.Claimed,
-			&rec.WinnerAddr,
-			&rec.WinnerAid,
-		)
+		ORDER BY p.ptype, p.winner_index`
+	return queryList(ctx, r, "all prizes for round", 64, query, scanPrizeHistoryRow, roundNum)
+}
+
+// PrizePageCursor identifies the last prize returned by
+// AllPrizesForRoundPage. The pair is unique within a round by cg_prize's
+// primary key.
+type PrizePageCursor struct {
+	PrizeType   int64
+	WinnerIndex int64
+}
+
+// AllPrizesForRoundPage returns at most limit prizes after the supplied
+// ascending keyset cursor. A nil cursor starts at the first prize type.
+func (r *Repo) AllPrizesForRoundPage(
+	ctx context.Context,
+	roundNum int64,
+	after *PrizePageCursor,
+	limit int,
+) (records []p.CGPrizeHistory, hasMore bool, err error) {
+	const op = "all prizes for round page"
+	if roundNum < 0 {
+		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
 	}
-	return queryList(ctx, r, "all prizes for round", 64, query, scan, roundNum)
+	if limit <= 0 {
+		return nil, false, fmt.Errorf("%s: limit must be positive", op)
+	}
+
+	query := allPrizesSelect + `
+		WHERE p.round_num = $1
+		ORDER BY p.ptype, p.winner_index
+		LIMIT $2`
+	args := []any{roundNum, limit + 1}
+	if after != nil {
+		if after.PrizeType < 0 || after.PrizeType > 15 || after.WinnerIndex < 0 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		query = allPrizesSelect + `
+			WHERE p.round_num = $1
+				AND (p.ptype, p.winner_index) > ($2, $3)
+			ORDER BY p.ptype, p.winner_index
+			LIMIT $4`
+		args = []any{roundNum, after.PrizeType, after.WinnerIndex, limit + 1}
+	}
+
+	records, err = queryList(ctx, r, op, limit+1, query, scanPrizeHistoryRow, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
+}
+
+// CompletedRoundExists reports whether roundNum has a main-prize claim and is
+// therefore a completed round.
+func (r *Repo) CompletedRoundExists(ctx context.Context, roundNum int64) (bool, error) {
+	if roundNum < 0 {
+		return false, errors.New("completed round exists: round must be non-negative")
+	}
+	var exists bool
+	err := r.pool().QueryRow(ctx,
+		"SELECT EXISTS (SELECT 1 FROM cg_prize_claim WHERE round_num=$1)",
+		roundNum,
+	).Scan(&exists)
+	if err != nil {
+		return false, store.WrapError("completed round exists", err)
+	}
+	return exists, nil
 }

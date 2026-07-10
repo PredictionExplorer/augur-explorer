@@ -24,6 +24,7 @@ const (
 	v2GetRoundPath      = "/api/v2/cosmicgame/rounds/{round}"
 	v2ListRoundBidsPath = "/api/v2/cosmicgame/rounds/{round}/bids"
 	v2GetRoundBidPath   = "/api/v2/cosmicgame/rounds/{round}/bids/{position}"
+	v2ListRoundPrizes   = "/api/v2/cosmicgame/rounds/{round}/prizes"
 )
 
 type v2GoldenCase struct {
@@ -81,6 +82,124 @@ func TestAPIV2CurrentRound(t *testing.T) {
 			pathParams: map[string]string{},
 		},
 	})
+}
+
+func TestAPIV2RoundPrizes(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	firstPath := "/api/v2/cosmicgame/rounds/0/prizes?limit=5"
+	firstResponse := h.get(t, firstPath)
+	if firstResponse.Code != http.StatusOK {
+		t.Fatalf("first page: status=%d body=%s", firstResponse.Code, firstResponse.Body.String())
+	}
+	var firstPage apiv2.RoundPrizePage
+	if err := json.Unmarshal(firstResponse.Body.Bytes(), &firstPage); err != nil {
+		t.Fatalf("decoding first page: %v", err)
+	}
+	if firstPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first page did not return a continuation cursor")
+	}
+
+	afterChrono := base64.RawURLEncoding.EncodeToString([]byte(`{"v":1,"r":0,"t":9,"w":2}`))
+	rafflePath := "/api/v2/cosmicgame/rounds/0/prizes?limit=5&cursor=" + afterChrono
+	raffleResponse := h.get(t, rafflePath)
+	if raffleResponse.Code != http.StatusOK {
+		t.Fatalf("raffle page: status=%d body=%s", raffleResponse.Code, raffleResponse.Body.String())
+	}
+	var rafflePage apiv2.RoundPrizePage
+	if err := json.Unmarshal(raffleResponse.Body.Bytes(), &rafflePage); err != nil {
+		t.Fatalf("decoding raffle page: %v", err)
+	}
+	if rafflePage.Meta.NextCursor == nil {
+		t.Fatal("fixture raffle page did not return a continuation cursor")
+	}
+	afterLastPrize := base64.RawURLEncoding.EncodeToString([]byte(`{"v":1,"r":0,"t":15,"w":0}`))
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "prizes_list_first_page",
+			target:     firstPath,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_list_next_page",
+			target:     "/api/v2/cosmicgame/rounds/0/prizes?limit=5&cursor=" + *firstPage.Meta.NextCursor,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_list_raffle_page",
+			target:     rafflePath,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_list_raffle_next_page",
+			target:     "/api/v2/cosmicgame/rounds/0/prizes?limit=5&cursor=" + *rafflePage.Meta.NextCursor,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_list_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/prizes?limit=5&cursor=" + afterLastPrize,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/prizes?cursor=not-a-cursor",
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/prizes?limit=201",
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/prizes?limit=wat",
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "prizes_error_cross_round_cursor",
+			target:     "/api/v2/cosmicgame/rounds/1/prizes?cursor=" + *firstPage.Meta.NextCursor,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "1"},
+		},
+		{
+			name:       "prizes_error_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/prizes",
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "prizes_error_not_found",
+			target:     "/api/v2/cosmicgame/rounds/999/prizes",
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "999"},
+		},
+		{
+			name:       "prizes_error_internal",
+			target:     firstPath,
+			template:   v2ListRoundPrizes,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+	}
+
+	runV2GoldenCases(t, h, spec, cases)
 }
 
 func TestAPIV2RoundBids(t *testing.T) {

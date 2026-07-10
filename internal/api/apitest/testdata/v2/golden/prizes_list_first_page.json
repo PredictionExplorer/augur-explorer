@@ -1,0 +1,67 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "ethAmountWei": "500000000000000000",
+        "eventLogId": 5018,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "mainPrizeEth",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "100000000000000000000",
+        "eventLogId": 5018,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "mainPrizeCst",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "eventLogId": 5018,
+        "nftTokenId": 1,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "mainPrizeNft",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "eventLogId": 5031,
+        "nftTokenId": 4,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "lastCstBidderNft",
+        "winnerAddress": "0x2300000000000000000000000000000000000023",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "40000000000000000000",
+        "eventLogId": 5031,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "lastCstBidderCst",
+        "winnerAddress": "0x2300000000000000000000000000000000000023",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 5,
+      "nextCursor": "eyJ2IjoxLCJyIjowLCJ0Ijo0LCJ3IjowfQ"
+    }
+  }
+}

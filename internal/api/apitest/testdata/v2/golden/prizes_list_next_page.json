@@ -1,0 +1,67 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "eventLogId": 5034,
+        "nftTokenId": 5,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "enduranceChampionNft",
+        "winnerAddress": "0x2200000000000000000000000000000000000022",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "45000000000000000000",
+        "eventLogId": 5034,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "enduranceChampionCst",
+        "winnerAddress": "0x2200000000000000000000000000000000000022",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "ethAmountWei": "80000000000000000",
+        "eventLogId": 5037,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "chronoWarriorEth",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 2
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "35000000000000000000",
+        "eventLogId": 5037,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "chronoWarriorCst",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 2
+      },
+      {
+        "blockNumber": 110,
+        "eventLogId": 5037,
+        "nftTokenId": 6,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "chronoWarriorNft",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 2
+      }
+    ],
+    "meta": {
+      "limit": 5,
+      "nextCursor": "eyJ2IjoxLCJyIjowLCJ0Ijo5LCJ3IjoyfQ"
+    }
+  }
+}

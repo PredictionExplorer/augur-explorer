@@ -47,6 +47,66 @@ func (e BidType) Valid() bool {
 	}
 }
 
+// Defines values for RoundPrizeType.
+const (
+	BidderRaffleCst           RoundPrizeType = "bidderRaffleCst"
+	BidderRaffleEth           RoundPrizeType = "bidderRaffleEth"
+	BidderRaffleNft           RoundPrizeType = "bidderRaffleNft"
+	ChronoWarriorCst          RoundPrizeType = "chronoWarriorCst"
+	ChronoWarriorEth          RoundPrizeType = "chronoWarriorEth"
+	ChronoWarriorNft          RoundPrizeType = "chronoWarriorNft"
+	CosmicSignatureStakingEth RoundPrizeType = "cosmicSignatureStakingEth"
+	EnduranceChampionCst      RoundPrizeType = "enduranceChampionCst"
+	EnduranceChampionNft      RoundPrizeType = "enduranceChampionNft"
+	LastCstBidderCst          RoundPrizeType = "lastCstBidderCst"
+	LastCstBidderNft          RoundPrizeType = "lastCstBidderNft"
+	MainPrizeCst              RoundPrizeType = "mainPrizeCst"
+	MainPrizeEth              RoundPrizeType = "mainPrizeEth"
+	MainPrizeNft              RoundPrizeType = "mainPrizeNft"
+	RandomWalkStakerRaffleCst RoundPrizeType = "randomWalkStakerRaffleCst"
+	RandomWalkStakerRaffleNft RoundPrizeType = "randomWalkStakerRaffleNft"
+)
+
+// Valid indicates whether the value is a known member of the RoundPrizeType enum.
+func (e RoundPrizeType) Valid() bool {
+	switch e {
+	case BidderRaffleCst:
+		return true
+	case BidderRaffleEth:
+		return true
+	case BidderRaffleNft:
+		return true
+	case ChronoWarriorCst:
+		return true
+	case ChronoWarriorEth:
+		return true
+	case ChronoWarriorNft:
+		return true
+	case CosmicSignatureStakingEth:
+		return true
+	case EnduranceChampionCst:
+		return true
+	case EnduranceChampionNft:
+		return true
+	case LastCstBidderCst:
+		return true
+	case LastCstBidderNft:
+		return true
+	case MainPrizeCst:
+		return true
+	case MainPrizeEth:
+		return true
+	case MainPrizeNft:
+		return true
+	case RandomWalkStakerRaffleCst:
+		return true
+	case RandomWalkStakerRaffleNft:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RoundStatus.
 const (
 	Completed RoundStatus = "completed"
@@ -203,6 +263,38 @@ type RoundPage struct {
 	Meta PageMeta                 `json:"meta"`
 }
 
+// RoundPrize defines model for RoundPrize.
+type RoundPrize struct {
+	BlockNumber int64 `json:"blockNumber"`
+
+	// CstAmountWei Present only for CST-denominated prize types.
+	CstAmountWei *string `json:"cstAmountWei,omitempty"`
+
+	// EthAmountWei Present only for ETH-denominated prize types.
+	EthAmountWei *string `json:"ethAmountWei,omitempty"`
+	EventLogId   int64   `json:"eventLogId"`
+
+	// NftTokenId Present only for Cosmic Signature NFT prize types.
+	NftTokenId      *int64         `json:"nftTokenId,omitempty"`
+	OccurredAt      time.Time      `json:"occurredAt"`
+	Round           int64          `json:"round"`
+	TransactionHash string         `json:"transactionHash"`
+	Type            RoundPrizeType `json:"type"`
+
+	// WinnerAddress Omitted for the round-wide Cosmic Signature staking allocation.
+	WinnerAddress *string `json:"winnerAddress,omitempty"`
+	WinnerIndex   int64   `json:"winnerIndex"`
+}
+
+// RoundPrizePage defines model for RoundPrizePage.
+type RoundPrizePage struct {
+	Data []RoundPrize `json:"data"`
+	Meta PageMeta     `json:"meta"`
+}
+
+// RoundPrizeType defines model for RoundPrizeType.
+type RoundPrizeType string
+
 // RoundStatistics defines model for RoundStatistics.
 type RoundStatistics struct {
 	ActivatedAt                    *time.Time `json:"activatedAt,omitempty"`
@@ -280,6 +372,15 @@ type ListRoundBidsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListRoundPrizesParams defines parameters for ListRoundPrizes.
+type ListRoundPrizesParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// List completed CosmicGame rounds
@@ -297,6 +398,9 @@ type ServerInterface interface {
 	// Get one bid by its position in a CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/bids/{position})
 	GetRoundBid(w http.ResponseWriter, r *http.Request, round Round, position BidPosition)
+	// List prizes awarded in one completed CosmicGame round
+	// (GET /api/v2/cosmicgame/rounds/{round}/prizes)
+	ListRoundPrizes(w http.ResponseWriter, r *http.Request, round Round, params ListRoundPrizesParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -484,6 +588,61 @@ func (siw *ServerInterfaceWrapper) GetRoundBid(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// ListRoundPrizes operation middleware
+func (siw *ServerInterfaceWrapper) ListRoundPrizes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "round" -------------
+	var round Round
+
+	err = runtime.BindStyledParameterWithOptions("simple", "round", r.PathValue("round"), &round, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "round", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRoundPrizesParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRoundPrizes(w, r, round, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -609,6 +768,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}", wrapper.GetRound)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids", wrapper.ListRoundBids)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids/{position}", wrapper.GetRoundBid)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/prizes", wrapper.ListRoundPrizes)
 
 	return m
 }
@@ -628,6 +788,8 @@ type NotFoundApplicationProblemPlusJSONResponse Problem
 type RoundBidPageJSONResponse RoundBidPage
 
 type RoundPageJSONResponse RoundPage
+
+type RoundPrizePageJSONResponse RoundPrizePage
 
 type ServiceUnavailableResponseHeaders struct {
 	RetryAfter int
@@ -944,6 +1106,77 @@ func (response GetRoundBid500ApplicationProblemPlusJSONResponse) VisitGetRoundBi
 	return err
 }
 
+type ListRoundPrizesRequestObject struct {
+	Round  Round `json:"round"`
+	Params ListRoundPrizesParams
+}
+
+type ListRoundPrizesResponseObject interface {
+	VisitListRoundPrizesResponse(w http.ResponseWriter) error
+}
+
+type ListRoundPrizes200JSONResponse struct{ RoundPrizePageJSONResponse }
+
+func (response ListRoundPrizes200JSONResponse) VisitListRoundPrizesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundPrizes400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundPrizes400ApplicationProblemPlusJSONResponse) VisitListRoundPrizesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundPrizes404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundPrizes404ApplicationProblemPlusJSONResponse) VisitListRoundPrizesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundPrizes500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundPrizes500ApplicationProblemPlusJSONResponse) VisitListRoundPrizesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// List completed CosmicGame rounds
@@ -961,6 +1194,9 @@ type StrictServerInterface interface {
 	// Get one bid by its position in a CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/bids/{position})
 	GetRoundBid(ctx context.Context, request GetRoundBidRequestObject) (GetRoundBidResponseObject, error)
+	// List prizes awarded in one completed CosmicGame round
+	// (GET /api/v2/cosmicgame/rounds/{round}/prizes)
+	ListRoundPrizes(ctx context.Context, request ListRoundPrizesRequestObject) (ListRoundPrizesResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1122,48 +1358,80 @@ func (sh *strictHandler) GetRoundBid(w http.ResponseWriter, r *http.Request, rou
 	}
 }
 
+// ListRoundPrizes operation middleware
+func (sh *strictHandler) ListRoundPrizes(w http.ResponseWriter, r *http.Request, round Round, params ListRoundPrizesParams) {
+	var request ListRoundPrizesRequestObject
+
+	request.Round = round
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRoundPrizes(ctx, request.(ListRoundPrizesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRoundPrizes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRoundPrizesResponseObject); ok {
+		if err := validResponse.VisitListRoundPrizesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

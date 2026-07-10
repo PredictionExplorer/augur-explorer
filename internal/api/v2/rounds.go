@@ -14,16 +14,13 @@ import (
 func (s *Server) ListRounds(ctx context.Context, request ListRoundsRequestObject) (ListRoundsResponseObject, error) {
 	const instance = "/api/v2/cosmicgame/rounds"
 
-	limit := defaultPageLimit
-	if request.Params.Limit != nil {
-		limit = *request.Params.Limit
-	}
-	if limit < 1 || limit > maxPageLimit {
+	limit, validLimit := resolvePageLimit(request.Params.Limit)
+	if !validLimit {
 		return listRoundsBadRequest(newProblem(
 			http.StatusBadRequest,
 			"invalid-parameter",
 			"Invalid parameter",
-			fmt.Sprintf("Limit must be between 1 and %d.", maxPageLimit),
+			pageLimitProblemDetail(),
 			instance,
 		)), nil
 	}
