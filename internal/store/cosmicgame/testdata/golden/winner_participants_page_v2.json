@@ -1,0 +1,27 @@
+{
+  "Rows": [
+    {
+      "WinnerAid": 21,
+      "Address": "0x2100000000000000000000000000000000000021",
+      "PrizeCount": 7,
+      "MaxMainPrizeETHWei": "500000000000000000",
+      "TotalETHWonWei": "640000000000000000",
+      "CSTPrizeCount": 2,
+      "NFTPrizeCount": 2,
+      "UnclaimedNFTCount": 0,
+      "TotalETHSpentWei": "430000000000000000"
+    },
+    {
+      "WinnerAid": 22,
+      "Address": "0x2200000000000000000000000000000000000022",
+      "PrizeCount": 5,
+      "MaxMainPrizeETHWei": "0",
+      "TotalETHWonWei": "50000000000000000",
+      "CSTPrizeCount": 2,
+      "NFTPrizeCount": 2,
+      "UnclaimedNFTCount": 0,
+      "TotalETHSpentWei": "205000000000000000"
+    }
+  ],
+  "HasMore": true
+}

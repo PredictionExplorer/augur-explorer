@@ -289,6 +289,7 @@ func newPrizeTestServer(t *testing.T, prizes roundPrizeReader) *Server {
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
+		fakeParticipantReader{},
 		fakeContractState{},
 		logger,
 	)

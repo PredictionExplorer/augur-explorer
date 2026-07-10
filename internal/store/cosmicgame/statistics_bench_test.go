@@ -72,4 +72,64 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("participant_bidders", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.BidderParticipantsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("bidder participants: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("participant_winners", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.WinnerParticipantsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("winner participants: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("participant_donors", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.DonorParticipantsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("donor participants: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("participant_cst_stakers", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.CSTStakerParticipantsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("CST-staker participants: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("participant_randomwalk_stakers", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.RandomWalkStakerParticipantsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("RandomWalk-staker participants: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("participant_dual_stakers", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.DualStakerParticipantsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("dual-staker participants: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
 }

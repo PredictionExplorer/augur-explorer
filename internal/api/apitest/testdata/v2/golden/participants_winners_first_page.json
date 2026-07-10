@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "cstPrizeCount": 2,
+        "maxMainPrizeEthWei": "500000000000000000",
+        "nftPrizeCount": 2,
+        "prizeCount": 7,
+        "totalEthSpentWei": "430000000000000000",
+        "totalEthWonWei": "640000000000000000",
+        "unclaimedNftCount": 0,
+        "winnerAddress": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "cstPrizeCount": 2,
+        "maxMainPrizeEthWei": "0",
+        "nftPrizeCount": 2,
+        "prizeCount": 5,
+        "totalEthSpentWei": "205000000000000000",
+        "totalEthWonWei": "50000000000000000",
+        "unclaimedNftCount": 0,
+        "winnerAddress": "0x2200000000000000000000000000000000000022"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJrIjoid2lubmVycyIsInMiOiI1IiwiYSI6MjJ9"
+    }
+  }
+}

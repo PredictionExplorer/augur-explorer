@@ -1,0 +1,19 @@
+{
+  "Rows": [
+    {
+      "StakerAid": 22,
+      "Address": "0x2200000000000000000000000000000000000022",
+      "TotalStakedTokenCount": 2,
+      "CSTStakedTokenCount": 1,
+      "CSTStakeActionCount": 1,
+      "CSTUnstakeActionCount": 0,
+      "CSTTotalRewardWei": "1000000000000000000",
+      "CSTUnclaimedRewardWei": "1000000000000000000",
+      "RandomWalkStakedTokenCount": 1,
+      "RandomWalkStakeActionCount": 1,
+      "RandomWalkUnstakeActionCount": 0,
+      "RandomWalkMintedTokenCount": 0
+    }
+  ],
+  "HasMore": false
+}

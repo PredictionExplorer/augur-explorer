@@ -1,0 +1,21 @@
+{
+  "Rows": [
+    {
+      "StakerAid": 22,
+      "Address": "0x2200000000000000000000000000000000000022",
+      "StakedTokenCount": 1,
+      "StakeActionCount": 1,
+      "UnstakeActionCount": 0,
+      "MintedTokenCount": 0
+    },
+    {
+      "StakerAid": 24,
+      "Address": "0x2400000000000000000000000000000000000024",
+      "StakedTokenCount": 1,
+      "StakeActionCount": 1,
+      "UnstakeActionCount": 0,
+      "MintedTokenCount": 0
+    }
+  ],
+  "HasMore": true
+}

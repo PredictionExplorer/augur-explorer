@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "stakerAddress": "0x2400000000000000000000000000000000000024",
+        "staking": {
+          "mintedTokenCount": 0,
+          "stakeActionCount": 1,
+          "stakedTokenCount": 1,
+          "unstakeActionCount": 0
+        }
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJrIjoicmFuZG9tV2Fsa1N0YWtlcnMiLCJzIjoiMSIsImEiOjI0fQ"
+    }
+  }
+}

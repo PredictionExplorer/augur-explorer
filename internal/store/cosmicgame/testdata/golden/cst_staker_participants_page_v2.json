@@ -1,0 +1,14 @@
+{
+  "Rows": [
+    {
+      "StakerAid": 21,
+      "Address": "0x2100000000000000000000000000000000000021",
+      "StakedTokenCount": 0,
+      "StakeActionCount": 1,
+      "UnstakeActionCount": 1,
+      "TotalRewardWei": "1000000000000000000",
+      "UnclaimedRewardWei": "0"
+    }
+  ],
+  "HasMore": true
+}

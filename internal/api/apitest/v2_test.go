@@ -34,6 +34,12 @@ const (
 	v2StatisticsCounters = "/api/v2/cosmicgame/statistics/counters"
 	v2StatisticsROI      = "/api/v2/cosmicgame/statistics/leaderboard/roi"
 	v2StatisticsClaims   = "/api/v2/cosmicgame/statistics/claims"
+	v2ParticipantBidders = "/api/v2/cosmicgame/statistics/participants/bidders"
+	v2ParticipantWinners = "/api/v2/cosmicgame/statistics/participants/winners"
+	v2ParticipantDonors  = "/api/v2/cosmicgame/statistics/participants/donors"
+	v2ParticipantCST     = "/api/v2/cosmicgame/statistics/participants/stakers/cst"
+	v2ParticipantRWalk   = "/api/v2/cosmicgame/statistics/participants/stakers/random-walk"
+	v2ParticipantBoth    = "/api/v2/cosmicgame/statistics/participants/stakers/both"
 	v2RoundClaims        = "/api/v2/cosmicgame/rounds/{round}/claims"
 )
 
@@ -727,6 +733,94 @@ func TestAPIV2StatisticsAndClaims(t *testing.T) {
 	runV2GoldenCases(t, h, spec, cases)
 }
 
+func TestAPIV2ParticipantDirectories(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	nextCursor := func(path string) string {
+		response := h.get(t, path)
+		if response.Code != http.StatusOK {
+			t.Fatalf("%s: status=%d body=%s", path, response.Code, response.Body.String())
+		}
+		var page struct {
+			Meta apiv2.PageMeta `json:"meta"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &page); err != nil {
+			t.Fatalf("decoding %s: %v", path, err)
+		}
+		if page.Meta.NextCursor == nil {
+			t.Fatalf("%s did not return a continuation cursor", path)
+		}
+		return *page.Meta.NextCursor
+	}
+
+	bidderFirst := v2ParticipantBidders + "?limit=2"
+	bidderCursor := nextCursor(bidderFirst)
+	winnerFirst := v2ParticipantWinners + "?limit=2"
+	winnerCursor := nextCursor(winnerFirst)
+	donorFirst := v2ParticipantDonors + "?limit=1"
+	donorCursor := nextCursor(donorFirst)
+	cstFirst := v2ParticipantCST + "?limit=1"
+	cstCursor := nextCursor(cstFirst)
+	rwalkFirst := v2ParticipantRWalk + "?limit=1"
+	rwalkCursor := nextCursor(rwalkFirst)
+
+	afterLast := func(payload string) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(payload))
+	}
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	cases := []v2GoldenCase{
+		{name: "participants_bidders_first_page", target: bidderFirst, template: v2ParticipantBidders, pathParams: map[string]string{}},
+		{name: "participants_bidders_next_page", target: bidderFirst + "&cursor=" + bidderCursor, template: v2ParticipantBidders, pathParams: map[string]string{}},
+		{name: "participants_bidders_empty_page", target: bidderFirst + "&cursor=" + afterLast(`{"v":1,"k":"bidders","s":"1","a":25}`), template: v2ParticipantBidders, pathParams: map[string]string{}},
+		{name: "participants_winners_first_page", target: winnerFirst, template: v2ParticipantWinners, pathParams: map[string]string{}},
+		{name: "participants_winners_next_page", target: winnerFirst + "&cursor=" + winnerCursor, template: v2ParticipantWinners, pathParams: map[string]string{}},
+		{name: "participants_winners_empty_page", target: winnerFirst + "&cursor=" + afterLast(`{"v":1,"k":"winners","s":"3","a":25}`), template: v2ParticipantWinners, pathParams: map[string]string{}},
+		{name: "participants_donors_first_page", target: donorFirst, template: v2ParticipantDonors, pathParams: map[string]string{}},
+		{name: "participants_donors_next_page", target: donorFirst + "&cursor=" + donorCursor, template: v2ParticipantDonors, pathParams: map[string]string{}},
+		{name: "participants_donors_empty_page", target: donorFirst + "&cursor=" + afterLast(`{"v":1,"k":"donors","s":"200000000000000000","a":24}`), template: v2ParticipantDonors, pathParams: map[string]string{}},
+		{name: "participants_cst_stakers_first_page", target: cstFirst, template: v2ParticipantCST, pathParams: map[string]string{}},
+		{name: "participants_cst_stakers_next_page", target: cstFirst + "&cursor=" + cstCursor, template: v2ParticipantCST, pathParams: map[string]string{}},
+		{name: "participants_cst_stakers_empty_page", target: cstFirst + "&cursor=" + afterLast(`{"v":1,"k":"cstStakers","s":"1000000000000000000","a":22}`), template: v2ParticipantCST, pathParams: map[string]string{}},
+		{name: "participants_randomwalk_stakers_first_page", target: rwalkFirst, template: v2ParticipantRWalk, pathParams: map[string]string{}},
+		{name: "participants_randomwalk_stakers_next_page", target: rwalkFirst + "&cursor=" + rwalkCursor, template: v2ParticipantRWalk, pathParams: map[string]string{}},
+		{name: "participants_randomwalk_stakers_empty_page", target: rwalkFirst + "&cursor=" + afterLast(`{"v":1,"k":"randomWalkStakers","s":"0","a":23}`), template: v2ParticipantRWalk, pathParams: map[string]string{}},
+		{name: "participants_dual_stakers_page", target: v2ParticipantBoth + "?limit=1", template: v2ParticipantBoth, pathParams: map[string]string{}},
+		{name: "participants_dual_stakers_empty_page", target: v2ParticipantBoth + "?limit=1&cursor=" + afterLast(`{"v":1,"k":"dualStakers","s":"2","a":22}`), template: v2ParticipantBoth, pathParams: map[string]string{}},
+		{name: "participants_error_cross_directory_cursor", target: winnerFirst + "&cursor=" + bidderCursor, template: v2ParticipantWinners, pathParams: map[string]string{}},
+		{name: "participants_error_invalid_limit", target: v2ParticipantBidders + "?limit=201", template: v2ParticipantBidders, pathParams: map[string]string{}},
+		{name: "participants_error_bind_limit", target: v2ParticipantWinners + "?limit=bad", template: v2ParticipantWinners, pathParams: map[string]string{}},
+	}
+	for name, path := range map[string]string{
+		"bidders":            v2ParticipantBidders,
+		"winners":            v2ParticipantWinners,
+		"donors":             v2ParticipantDonors,
+		"cst_stakers":        v2ParticipantCST,
+		"randomwalk_stakers": v2ParticipantRWalk,
+		"dual_stakers":       v2ParticipantBoth,
+	} {
+		cases = append(cases,
+			v2GoldenCase{
+				name:   "participants_" + name + "_error_malformed_cursor",
+				target: path + "?cursor=bad", template: path, pathParams: map[string]string{},
+			},
+			v2GoldenCase{
+				name:   "participants_" + name + "_error_internal",
+				target: path, template: path, pathParams: map[string]string{}, ctx: cancelledCtx,
+			},
+		)
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
 func TestAPIV2RoundBids(t *testing.T) {
 	h := server(t)
 	spec, err := apiv2.GetSpec()
@@ -964,6 +1058,11 @@ func validateV2Response(t *testing.T, spec *openapi3.T, tc v2GoldenCase, respons
 		Request:    request,
 		PathParams: tc.pathParams,
 		Route:      route,
+	}
+	if response.Code < http.StatusBadRequest {
+		if err := openapi3filter.ValidateRequest(context.Background(), requestInput); err != nil {
+			t.Fatalf("%s request violates OpenAPI v2: %v", tc.name, err)
+		}
 	}
 	responseInput := &openapi3filter.ResponseValidationInput{
 		RequestValidationInput: requestInput,

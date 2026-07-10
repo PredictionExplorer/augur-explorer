@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.7.0
+  version: 0.8.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -231,6 +231,102 @@ paths:
           $ref: "#/components/responses/CosmicGameCounters"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/participants/bidders:
+    get:
+      operationId: listCosmicGameBidders
+      summary: List CosmicGame bidders by bid count
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/BidderParticipantPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/participants/winners:
+    get:
+      operationId: listCosmicGameWinners
+      summary: List CosmicGame prize winners by prize count
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/WinnerParticipantPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/participants/donors:
+    get:
+      operationId: listCosmicGameDonors
+      summary: List CosmicGame ETH donors by donated amount
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/DonorParticipantPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/participants/stakers/cst:
+    get:
+      operationId: listCosmicGameCstStakers
+      summary: List Cosmic Signature Token stakers by earned reward
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CstStakerParticipantPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/participants/stakers/random-walk:
+    get:
+      operationId: listCosmicGameRandomWalkStakers
+      summary: List RandomWalk NFT stakers by current staked-token count
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkStakerParticipantPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/participants/stakers/both:
+    get:
+      operationId: listCosmicGameDualStakers
+      summary: List addresses currently staking both NFT families
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/DualStakerParticipantPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/v2/cosmicgame/statistics/leaderboard/roi:
     get:
       operationId: listCosmicGameRoiLeaderboard
@@ -315,6 +411,19 @@ components:
         stable positions, not live subscriptions: while paging an open
         collection, newly indexed events ahead of the cursor are visible by
         polling again without a cursor.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
+    ParticipantCursor:
+      name: cursor
+      in: query
+      required: false
+      description: |
+        Opaque continuation cursor for one ranked participant directory.
+        Aggregate ranks can change while a client traverses pages; clients
+        should de-duplicate addresses and restart from the first page when
+        they need a fresh ranking.
       schema:
         type: string
         minLength: 1
@@ -1457,6 +1566,260 @@ components:
             $ref: "#/components/schemas/RoiLeaderboardEntry"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    BidderParticipant:
+      type: object
+      additionalProperties: false
+      required:
+        - bidderAddress
+        - bidCount
+      properties:
+        bidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        bidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        maxBidWei:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Largest ETH-denominated bid, omitted when no such bid exists.
+    BidderParticipantPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BidderParticipant"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    WinnerParticipant:
+      type: object
+      additionalProperties: false
+      required:
+        - winnerAddress
+        - prizeCount
+        - maxMainPrizeEthWei
+        - totalEthWonWei
+        - cstPrizeCount
+        - nftPrizeCount
+        - unclaimedNftCount
+        - totalEthSpentWei
+      properties:
+        winnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        prizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        maxMainPrizeEthWei:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Largest ETH component of a main-prize claim.
+        totalEthWonWei:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Main-prize, raffle and chrono-warrior ETH won.
+        cstPrizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        nftPrizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        unclaimedNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalEthSpentWei:
+          type: string
+          pattern: "^[0-9]+$"
+    WinnerParticipantPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WinnerParticipant"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    DonorParticipant:
+      type: object
+      additionalProperties: false
+      required:
+        - donorAddress
+        - donationCount
+        - totalDonatedWei
+      properties:
+        donorAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        donationCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalDonatedWei:
+          type: string
+          pattern: "^[0-9]+$"
+    DonorParticipantPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DonorParticipant"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CstStakingParticipantStats:
+      type: object
+      additionalProperties: false
+      required:
+        - stakedTokenCount
+        - stakeActionCount
+        - unstakeActionCount
+        - totalRewardWei
+        - unclaimedRewardWei
+      properties:
+        stakedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+        stakeActionCount:
+          type: integer
+          format: int64
+          minimum: 0
+        unstakeActionCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalRewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+        unclaimedRewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CstStakerParticipant:
+      type: object
+      additionalProperties: false
+      required:
+        - stakerAddress
+        - staking
+      properties:
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        staking:
+          $ref: "#/components/schemas/CstStakingParticipantStats"
+    CstStakerParticipantPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CstStakerParticipant"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkStakingParticipantStats:
+      type: object
+      additionalProperties: false
+      required:
+        - stakedTokenCount
+        - stakeActionCount
+        - unstakeActionCount
+        - mintedTokenCount
+      properties:
+        stakedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+        stakeActionCount:
+          type: integer
+          format: int64
+          minimum: 0
+        unstakeActionCount:
+          type: integer
+          format: int64
+          minimum: 0
+        mintedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+    RandomWalkStakerParticipant:
+      type: object
+      additionalProperties: false
+      required:
+        - stakerAddress
+        - staking
+      properties:
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        staking:
+          $ref: "#/components/schemas/RandomWalkStakingParticipantStats"
+    RandomWalkStakerParticipantPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkStakerParticipant"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    DualStakerParticipant:
+      type: object
+      additionalProperties: false
+      required:
+        - stakerAddress
+        - totalStakedTokenCount
+        - cst
+        - randomWalk
+      properties:
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        totalStakedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+        cst:
+          $ref: "#/components/schemas/CstStakingParticipantStats"
+        randomWalk:
+          $ref: "#/components/schemas/RandomWalkStakingParticipantStats"
+    DualStakerParticipantPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DualStakerParticipant"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
     ClaimAssetType:
       type: string
       enum:
@@ -1924,6 +2287,42 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoiLeaderboardPage"
+    BidderParticipantPage:
+      description: One ranked page of CosmicGame bidders.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BidderParticipantPage"
+    WinnerParticipantPage:
+      description: One ranked page of CosmicGame prize winners.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/WinnerParticipantPage"
+    DonorParticipantPage:
+      description: One ranked page of CosmicGame ETH donors.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DonorParticipantPage"
+    CstStakerParticipantPage:
+      description: One ranked page of Cosmic Signature Token stakers.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CstStakerParticipantPage"
+    RandomWalkStakerParticipantPage:
+      description: One ranked page of RandomWalk NFT stakers.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkStakerParticipantPage"
+    DualStakerParticipantPage:
+      description: One ranked page of addresses currently staking both token families.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DualStakerParticipantPage"
     ClaimSummaryPage:
       description: One stable page of claimable-asset summaries.
       content:

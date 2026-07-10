@@ -39,6 +39,12 @@ against runs captured the same way.
 | `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,530,000 | 14,390 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/claims_by_round` | 936,000 | 9,625 | 82 | per-round claim summary CTE (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/roi_leaderboard` | 315,000 | 23,870 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/participant_bidders` | 172,000 | 4,092 | 26 | first 50 bidders on the indexed bid-count keyset |
+| `BenchmarkStatisticsQueries/participant_winners` | 465,000 | 7,844 | 33 | canonical prize/event reconstruction; independent of replay-sensitive aggregates |
+| `BenchmarkStatisticsQueries/participant_donors` | 172,000 | 3,555 | 14 | first 50 donors on the indexed exact-wei keyset |
+| `BenchmarkStatisticsQueries/participant_cst_stakers` | 173,000 | 5,243 | 15 | first 50 CST stakers on the indexed reward keyset |
+| `BenchmarkStatisticsQueries/participant_randomwalk_stakers` | 171,000 | 4,259 | 15 | first 50 RandomWalk stakers on the indexed token-count keyset |
+| `BenchmarkStatisticsQueries/participant_dual_stakers` | 194,000 | 7,316 | 11 | first 50 dual stakers; computed cross-table token-count order |
 
 History:
 
@@ -74,3 +80,11 @@ History:
   router) re-ran clean: 2,219,000 / 780,000 / 259,000 ns/op medians vs the
   2,530,000 / 936,000 / 315,000 baselines with byte-identical B/op and
   allocs — no regression.
+- **2026-07-10 (API-v2 participant-directory sprint)** — added first-page
+  baselines for all six directories after their deterministic keyset queries and
+  concurrent read indexes landed. Five queries run in 171–194 µs against the
+  seeded container. Winners take 465 µs because counts and ETH totals are
+  reconstructed from canonical prize/event rows instead of the
+  replay-sensitive `cg_winner` aggregate. The computed dual-staker order
+  remains in the indexed-query latency band, so no ineffective cross-table
+  index or materialized cache was added.

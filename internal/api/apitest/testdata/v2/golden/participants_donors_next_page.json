@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "donationCount": 1,
+        "donorAddress": "0x2400000000000000000000000000000000000024",
+        "totalDonatedWei": "200000000000000000"
+      }
+    ],
+    "meta": {
+      "limit": 1
+    }
+  }
+}

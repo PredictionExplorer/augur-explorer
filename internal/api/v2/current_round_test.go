@@ -261,6 +261,7 @@ func newCurrentRoundTestServer(
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
+		fakeParticipantReader{},
 		state,
 		logger,
 	)

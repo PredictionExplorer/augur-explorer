@@ -299,6 +299,7 @@ func newStatisticsTestServer(t *testing.T, statistics statisticsReader) *Server 
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
 		statistics,
+		fakeParticipantReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

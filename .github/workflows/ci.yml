@@ -55,10 +55,10 @@ jobs:
         run: go test -race -tags=integration -timeout 20m -coverprofile=coverage-integration.out -coverpkg=./internal/... ./...
       - name: Enforce internal/ coverage ratchet
         # Ratchet, never lower: raise the floor after each phase lands
-        # (docs/MODERNIZATION.md §4.6). Current measured coverage: 74.8%.
+        # (docs/MODERNIZATION.md §4.6). Current measured coverage: 75.1%.
         run: |
           total=$(go tool cover -func=coverage-integration.out | tail -1 | awk '{print $3}' | tr -d '%')
-          floor=74.7
+          floor=75.0
           echo "internal/ statement coverage: ${total}% (ratchet floor: ${floor}%)"
           if ! awk -v t="$total" -v f="$floor" 'BEGIN { exit !(t+0 >= f+0) }'; then
             echo "::error::internal/ coverage ${total}% fell below the ratchet floor ${floor}%"

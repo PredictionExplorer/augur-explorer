@@ -61,6 +61,15 @@ type statisticsReader interface {
 	UnclaimedItemsPage(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error)
 }
 
+type participantReader interface {
+	BidderParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.BidderParticipantRecord, bool, error)
+	WinnerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.WinnerParticipantRecord, bool, error)
+	DonorParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.DonorParticipantRecord, bool, error)
+	CSTStakerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.CSTStakerParticipantRecord, bool, error)
+	RandomWalkStakerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.RandomWalkStakerParticipantRecord, bool, error)
+	DualStakerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.DualStakerParticipantRecord, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -77,6 +86,7 @@ type Server struct {
 	raffles       roundRaffleReader
 	donations     roundDonationReader
 	statistics    statisticsReader
+	participants  participantReader
 	contractState contractStateReader
 	logger        *slog.Logger
 }
@@ -93,7 +103,7 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	return newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 }
 
 func newServer(
@@ -105,6 +115,7 @@ func newServer(
 	raffles roundRaffleReader,
 	donations roundDonationReader,
 	statistics statisticsReader,
+	participants participantReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -129,6 +140,9 @@ func newServer(
 	if statistics == nil {
 		return nil, errors.New("api v2: statistics repository is required")
 	}
+	if participants == nil {
+		return nil, errors.New("api v2: participant repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -144,6 +158,7 @@ func newServer(
 		raffles:       raffles,
 		donations:     donations,
 		statistics:    statistics,
+		participants:  participants,
 		contractState: state,
 		logger:        logger,
 	}, nil

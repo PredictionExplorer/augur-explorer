@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidCount": 5,
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "maxBidWei": "120000000000000000"
+      },
+      {
+        "bidCount": 3,
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "maxBidWei": "100000000000000000"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJrIjoiYmlkZGVycyIsInMiOiIzIiwiYSI6MjJ9"
+    }
+  }
+}
