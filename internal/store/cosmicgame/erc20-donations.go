@@ -3,6 +3,7 @@ package cosmicgame
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -359,4 +360,89 @@ func (r *Repo) ERC20DonationClaimsByRound(ctx context.Context, roundNum int64) (
 		WHERE c.round_num=$1
 		ORDER BY c.id DESC`
 	return queryList(ctx, r, "erc20 donation claims by round", 256, query, scanERC20Claim, roundNum)
+}
+
+// RoundERC20DonationRecord is the exact-base-unit event projection used by
+// the v2 round donation collection. It intentionally does not join the
+// eventual prize winner or aggregate claims onto an immutable donation event.
+type RoundERC20DonationRecord struct {
+	Tx              p.Transaction
+	RoundNum        int64
+	DonorAddr       string
+	TokenAddr       string
+	AmountBaseUnits string
+}
+
+const roundERC20DonationsSelect = `SELECT
+			tok.evtlog_id,
+			tok.block_num,
+			t.id,
+			t.tx_hash,
+			EXTRACT(EPOCH FROM tok.time_stamp)::BIGINT,
+			tok.time_stamp,
+			tok.round_num,
+			da.addr,
+			token.addr,
+			tok.amount::TEXT
+		FROM cg_erc20_donation tok
+			LEFT JOIN transaction t ON t.id=tok.tx_id
+			LEFT JOIN address da ON da.address_id=tok.donor_aid
+			LEFT JOIN address token ON token.address_id=tok.token_aid`
+
+func scanRoundERC20Donation(rows pgx.Rows, rec *RoundERC20DonationRecord) error {
+	return rows.Scan(
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		store.TimeText(&rec.Tx.DateTime),
+		&rec.RoundNum,
+		&rec.DonorAddr,
+		&rec.TokenAddr,
+		&rec.AmountBaseUnits,
+	)
+}
+
+// ERC20DonationsByRoundPage returns at most limit ERC-20 donation events
+// before the supplied newest-first event cursor.
+func (r *Repo) ERC20DonationsByRoundPage(
+	ctx context.Context,
+	roundNum int64,
+	after *DonationPageCursor,
+	limit int,
+) (records []RoundERC20DonationRecord, hasMore bool, err error) {
+	const op = "erc20 donations by round page"
+	if roundNum < 0 {
+		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
+	}
+	if limit <= 0 || limit > maxDonationPageLimit {
+		return nil, false, fmt.Errorf("%s: limit must be between 1 and %d", op, maxDonationPageLimit)
+	}
+
+	query := roundERC20DonationsSelect + `
+		WHERE tok.round_num=$1
+		ORDER BY tok.evtlog_id DESC
+		LIMIT $2`
+	args := []any{roundNum, limit + 1}
+	if after != nil {
+		if after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		query = roundERC20DonationsSelect + `
+			WHERE tok.round_num=$1 AND tok.evtlog_id < $2
+			ORDER BY tok.evtlog_id DESC
+			LIMIT $3`
+		args = []any{roundNum, after.EventLogID, limit + 1}
+	}
+
+	records, err = queryList(ctx, r, op, limit+1, query, scanRoundERC20Donation, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
 }

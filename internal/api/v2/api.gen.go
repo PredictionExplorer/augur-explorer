@@ -65,6 +65,24 @@ func (e RaffleNftPool) Valid() bool {
 	}
 }
 
+// Defines values for RoundEthDonationKind.
+const (
+	Plain    RoundEthDonationKind = "plain"
+	WithInfo RoundEthDonationKind = "withInfo"
+)
+
+// Valid indicates whether the value is a known member of the RoundEthDonationKind enum.
+func (e RoundEthDonationKind) Valid() bool {
+	switch e {
+	case Plain:
+		return true
+	case WithInfo:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RoundPrizeType.
 const (
 	BidderRaffleCst           RoundPrizeType = "bidderRaffleCst"
@@ -278,6 +296,71 @@ type RoundBidPage struct {
 	Meta PageMeta `json:"meta"`
 }
 
+// RoundErc20Donation defines model for RoundErc20Donation.
+type RoundErc20Donation struct {
+	AmountBaseUnits string    `json:"amountBaseUnits"`
+	BlockNumber     int64     `json:"blockNumber"`
+	DonorAddress    string    `json:"donorAddress"`
+	EventLogId      int64     `json:"eventLogId"`
+	OccurredAt      time.Time `json:"occurredAt"`
+	Round           int64     `json:"round"`
+	TokenAddress    string    `json:"tokenAddress"`
+	TransactionHash string    `json:"transactionHash"`
+}
+
+// RoundErc20DonationPage defines model for RoundErc20DonationPage.
+type RoundErc20DonationPage struct {
+	Data []RoundErc20Donation `json:"data"`
+	Meta PageMeta             `json:"meta"`
+}
+
+// RoundEthDonation defines model for RoundEthDonation.
+type RoundEthDonation struct {
+	BlockNumber int64 `json:"blockNumber"`
+
+	// ContractRecordId Present only for an info-carrying donation.
+	ContractRecordId *int64 `json:"contractRecordId,omitempty"`
+
+	// Data Contract-provided data string; present only with kind `withInfo`.
+	Data            *string              `json:"data,omitempty"`
+	DonorAddress    string               `json:"donorAddress"`
+	EthAmountWei    string               `json:"ethAmountWei"`
+	EventLogId      int64                `json:"eventLogId"`
+	Kind            RoundEthDonationKind `json:"kind"`
+	OccurredAt      time.Time            `json:"occurredAt"`
+	Round           int64                `json:"round"`
+	TransactionHash string               `json:"transactionHash"`
+}
+
+// RoundEthDonationKind defines model for RoundEthDonationKind.
+type RoundEthDonationKind string
+
+// RoundEthDonationPage defines model for RoundEthDonationPage.
+type RoundEthDonationPage struct {
+	Data []RoundEthDonation `json:"data"`
+	Meta PageMeta           `json:"meta"`
+}
+
+// RoundNftDonation defines model for RoundNftDonation.
+type RoundNftDonation struct {
+	BlockNumber     int64     `json:"blockNumber"`
+	DonationIndex   int64     `json:"donationIndex"`
+	DonorAddress    string    `json:"donorAddress"`
+	EventLogId      int64     `json:"eventLogId"`
+	OccurredAt      time.Time `json:"occurredAt"`
+	Round           int64     `json:"round"`
+	TokenAddress    string    `json:"tokenAddress"`
+	TokenId         int64     `json:"tokenId"`
+	TokenUri        string    `json:"tokenUri"`
+	TransactionHash string    `json:"transactionHash"`
+}
+
+// RoundNftDonationPage defines model for RoundNftDonationPage.
+type RoundNftDonationPage struct {
+	Data []RoundNftDonation `json:"data"`
+	Meta PageMeta           `json:"meta"`
+}
+
 // RoundPage defines model for RoundPage.
 type RoundPage struct {
 	Data []CosmicGameRoundSummary `json:"data"`
@@ -419,7 +502,10 @@ type ServiceUnavailable = Problem
 
 // ListRoundsParams defines parameters for ListRounds.
 type ListRoundsParams struct {
-	// Cursor Opaque continuation cursor returned by the previous page.
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Maximum number of resources to return.
@@ -428,7 +514,46 @@ type ListRoundsParams struct {
 
 // ListRoundBidsParams defines parameters for ListRoundBids.
 type ListRoundBidsParams struct {
-	// Cursor Opaque continuation cursor returned by the previous page.
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListRoundErc20DonationsParams defines parameters for ListRoundErc20Donations.
+type ListRoundErc20DonationsParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListRoundEthDonationsParams defines parameters for ListRoundEthDonations.
+type ListRoundEthDonationsParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListRoundNftDonationsParams defines parameters for ListRoundNftDonations.
+type ListRoundNftDonationsParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Maximum number of resources to return.
@@ -437,7 +562,10 @@ type ListRoundBidsParams struct {
 
 // ListRoundPrizesParams defines parameters for ListRoundPrizes.
 type ListRoundPrizesParams struct {
-	// Cursor Opaque continuation cursor returned by the previous page.
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Maximum number of resources to return.
@@ -446,7 +574,10 @@ type ListRoundPrizesParams struct {
 
 // ListRoundRaffleEthDepositsParams defines parameters for ListRoundRaffleEthDeposits.
 type ListRoundRaffleEthDepositsParams struct {
-	// Cursor Opaque continuation cursor returned by the previous page.
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Maximum number of resources to return.
@@ -458,7 +589,10 @@ type ListRoundRaffleNftWinnersParams struct {
 	// Pool Select bidder winners or RandomWalk-staker winners.
 	Pool RaffleNftPoolParam `form:"pool" json:"pool"`
 
-	// Cursor Opaque continuation cursor returned by the previous page.
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Maximum number of resources to return.
@@ -482,6 +616,15 @@ type ServerInterface interface {
 	// Get one bid by its position in a CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/bids/{position})
 	GetRoundBid(w http.ResponseWriter, r *http.Request, round Round, position BidPosition)
+	// List ERC-20 donations made during one round
+	// (GET /api/v2/cosmicgame/rounds/{round}/erc20-donations)
+	ListRoundErc20Donations(w http.ResponseWriter, r *http.Request, round Round, params ListRoundErc20DonationsParams)
+	// List direct ETH donations made during one round
+	// (GET /api/v2/cosmicgame/rounds/{round}/eth-donations)
+	ListRoundEthDonations(w http.ResponseWriter, r *http.Request, round Round, params ListRoundEthDonationsParams)
+	// List NFT donations made during one round
+	// (GET /api/v2/cosmicgame/rounds/{round}/nft-donations)
+	ListRoundNftDonations(w http.ResponseWriter, r *http.Request, round Round, params ListRoundNftDonationsParams)
 	// List prizes awarded in one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/prizes)
 	ListRoundPrizes(w http.ResponseWriter, r *http.Request, round Round, params ListRoundPrizesParams)
@@ -669,6 +812,171 @@ func (siw *ServerInterfaceWrapper) GetRoundBid(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRoundBid(w, r, round, position)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRoundErc20Donations operation middleware
+func (siw *ServerInterfaceWrapper) ListRoundErc20Donations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "round" -------------
+	var round Round
+
+	err = runtime.BindStyledParameterWithOptions("simple", "round", r.PathValue("round"), &round, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "round", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRoundErc20DonationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRoundErc20Donations(w, r, round, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRoundEthDonations operation middleware
+func (siw *ServerInterfaceWrapper) ListRoundEthDonations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "round" -------------
+	var round Round
+
+	err = runtime.BindStyledParameterWithOptions("simple", "round", r.PathValue("round"), &round, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "round", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRoundEthDonationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRoundEthDonations(w, r, round, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRoundNftDonations operation middleware
+func (siw *ServerInterfaceWrapper) ListRoundNftDonations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "round" -------------
+	var round Round
+
+	err = runtime.BindStyledParameterWithOptions("simple", "round", r.PathValue("round"), &round, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "round", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRoundNftDonationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRoundNftDonations(w, r, round, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -981,6 +1289,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}", wrapper.GetRound)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids", wrapper.ListRoundBids)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids/{position}", wrapper.GetRoundBid)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/erc20-donations", wrapper.ListRoundErc20Donations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/eth-donations", wrapper.ListRoundEthDonations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/nft-donations", wrapper.ListRoundNftDonations)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/prizes", wrapper.ListRoundPrizes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits", wrapper.ListRoundRaffleEthDeposits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners", wrapper.ListRoundRaffleNftWinners)
@@ -1001,6 +1312,12 @@ type InternalErrorApplicationProblemPlusJSONResponse Problem
 type NotFoundApplicationProblemPlusJSONResponse Problem
 
 type RoundBidPageJSONResponse RoundBidPage
+
+type RoundErc20DonationPageJSONResponse RoundErc20DonationPage
+
+type RoundEthDonationPageJSONResponse RoundEthDonationPage
+
+type RoundNftDonationPageJSONResponse RoundNftDonationPage
 
 type RoundPageJSONResponse RoundPage
 
@@ -1325,6 +1642,177 @@ func (response GetRoundBid500ApplicationProblemPlusJSONResponse) VisitGetRoundBi
 	return err
 }
 
+type ListRoundErc20DonationsRequestObject struct {
+	Round  Round `json:"round"`
+	Params ListRoundErc20DonationsParams
+}
+
+type ListRoundErc20DonationsResponseObject interface {
+	VisitListRoundErc20DonationsResponse(w http.ResponseWriter) error
+}
+
+type ListRoundErc20Donations200JSONResponse struct {
+	RoundErc20DonationPageJSONResponse
+}
+
+func (response ListRoundErc20Donations200JSONResponse) VisitListRoundErc20DonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundErc20Donations400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundErc20Donations400ApplicationProblemPlusJSONResponse) VisitListRoundErc20DonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundErc20Donations500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundErc20Donations500ApplicationProblemPlusJSONResponse) VisitListRoundErc20DonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundEthDonationsRequestObject struct {
+	Round  Round `json:"round"`
+	Params ListRoundEthDonationsParams
+}
+
+type ListRoundEthDonationsResponseObject interface {
+	VisitListRoundEthDonationsResponse(w http.ResponseWriter) error
+}
+
+type ListRoundEthDonations200JSONResponse struct {
+	RoundEthDonationPageJSONResponse
+}
+
+func (response ListRoundEthDonations200JSONResponse) VisitListRoundEthDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundEthDonations400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundEthDonations400ApplicationProblemPlusJSONResponse) VisitListRoundEthDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundEthDonations500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundEthDonations500ApplicationProblemPlusJSONResponse) VisitListRoundEthDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundNftDonationsRequestObject struct {
+	Round  Round `json:"round"`
+	Params ListRoundNftDonationsParams
+}
+
+type ListRoundNftDonationsResponseObject interface {
+	VisitListRoundNftDonationsResponse(w http.ResponseWriter) error
+}
+
+type ListRoundNftDonations200JSONResponse struct {
+	RoundNftDonationPageJSONResponse
+}
+
+func (response ListRoundNftDonations200JSONResponse) VisitListRoundNftDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundNftDonations400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundNftDonations400ApplicationProblemPlusJSONResponse) VisitListRoundNftDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRoundNftDonations500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListRoundNftDonations500ApplicationProblemPlusJSONResponse) VisitListRoundNftDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListRoundPrizesRequestObject struct {
 	Round  Round `json:"round"`
 	Params ListRoundPrizesParams
@@ -1559,6 +2047,15 @@ type StrictServerInterface interface {
 	// Get one bid by its position in a CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/bids/{position})
 	GetRoundBid(ctx context.Context, request GetRoundBidRequestObject) (GetRoundBidResponseObject, error)
+	// List ERC-20 donations made during one round
+	// (GET /api/v2/cosmicgame/rounds/{round}/erc20-donations)
+	ListRoundErc20Donations(ctx context.Context, request ListRoundErc20DonationsRequestObject) (ListRoundErc20DonationsResponseObject, error)
+	// List direct ETH donations made during one round
+	// (GET /api/v2/cosmicgame/rounds/{round}/eth-donations)
+	ListRoundEthDonations(ctx context.Context, request ListRoundEthDonationsRequestObject) (ListRoundEthDonationsResponseObject, error)
+	// List NFT donations made during one round
+	// (GET /api/v2/cosmicgame/rounds/{round}/nft-donations)
+	ListRoundNftDonations(ctx context.Context, request ListRoundNftDonationsRequestObject) (ListRoundNftDonationsResponseObject, error)
 	// List prizes awarded in one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round}/prizes)
 	ListRoundPrizes(ctx context.Context, request ListRoundPrizesRequestObject) (ListRoundPrizesResponseObject, error)
@@ -1729,6 +2226,87 @@ func (sh *strictHandler) GetRoundBid(w http.ResponseWriter, r *http.Request, rou
 	}
 }
 
+// ListRoundErc20Donations operation middleware
+func (sh *strictHandler) ListRoundErc20Donations(w http.ResponseWriter, r *http.Request, round Round, params ListRoundErc20DonationsParams) {
+	var request ListRoundErc20DonationsRequestObject
+
+	request.Round = round
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRoundErc20Donations(ctx, request.(ListRoundErc20DonationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRoundErc20Donations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRoundErc20DonationsResponseObject); ok {
+		if err := validResponse.VisitListRoundErc20DonationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRoundEthDonations operation middleware
+func (sh *strictHandler) ListRoundEthDonations(w http.ResponseWriter, r *http.Request, round Round, params ListRoundEthDonationsParams) {
+	var request ListRoundEthDonationsRequestObject
+
+	request.Round = round
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRoundEthDonations(ctx, request.(ListRoundEthDonationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRoundEthDonations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRoundEthDonationsResponseObject); ok {
+		if err := validResponse.VisitListRoundEthDonationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRoundNftDonations operation middleware
+func (sh *strictHandler) ListRoundNftDonations(w http.ResponseWriter, r *http.Request, round Round, params ListRoundNftDonationsParams) {
+	var request ListRoundNftDonationsRequestObject
+
+	request.Round = round
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRoundNftDonations(ctx, request.(ListRoundNftDonationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRoundNftDonations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRoundNftDonationsResponseObject); ok {
+		if err := validResponse.VisitListRoundNftDonationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListRoundPrizes operation middleware
 func (sh *strictHandler) ListRoundPrizes(w http.ResponseWriter, r *http.Request, round Round, params ListRoundPrizesParams) {
 	var request ListRoundPrizesRequestObject
@@ -1815,53 +2393,64 @@ func (sh *strictHandler) ListRoundRaffleNftWinners(w http.ResponseWriter, r *htt
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"JPCt/x2HrmizD3jlMoVALAM8xkO8uln9LwAA//8=",
+	"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",
+	"ixQCiQi9I+/AW92s/hsAAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -32,6 +32,60 @@ func TestERC20DonationsByRoundAll(t *testing.T) {
 	})
 }
 
+func TestERC20DonationsByRoundPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	page, hasMore, err := r.ERC20DonationsByRoundPage(ctx, 0, nil, 1)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if hasMore || len(page) != 1 || page[0].Tx.EvtLogId != 5015 ||
+		page[0].AmountBaseUnits != "500000000000000000000" {
+		t.Fatalf("page = %+v, hasMore=%v", page, hasMore)
+	}
+
+	legacy, err := r.ERC20DonationsByRoundAll(ctx, 0)
+	if err != nil {
+		t.Fatalf("ERC20DonationsByRoundAll: %v", err)
+	}
+	if len(legacy) != len(page) ||
+		legacy[0].Tx.EvtLogId != page[0].Tx.EvtLogId ||
+		legacy[0].RoundNum != page[0].RoundNum ||
+		legacy[0].DonorAddr != page[0].DonorAddr ||
+		legacy[0].TokenAddr != page[0].TokenAddr ||
+		legacy[0].Amount != page[0].AmountBaseUnits {
+		t.Fatalf("legacy/page records differ: %+v / %+v", legacy, page)
+	}
+
+	exhausted, hasMore, err := r.ERC20DonationsByRoundPage(ctx, 0, &DonationPageCursor{
+		EventLogID: page[0].Tx.EvtLogId,
+	}, 1)
+	if err != nil {
+		t.Fatalf("exhausted page: %v", err)
+	}
+	if hasMore || exhausted == nil || len(exhausted) != 0 {
+		t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+	}
+
+	empty, hasMore, err := r.ERC20DonationsByRoundPage(ctx, 3, nil, 1)
+	if err != nil {
+		t.Fatalf("open-round page: %v", err)
+	}
+	if hasMore || empty == nil || len(empty) != 0 {
+		t.Fatalf("open-round page = %#v, hasMore=%v; want non-nil empty,false", empty, hasMore)
+	}
+}
+
+func TestERC20DonationsByRoundPagePropagatesCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, _, err := r.ERC20DonationsByRoundPage(ctx, 0, nil, 1); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page error = %v, want context.Canceled", err)
+	}
+}
+
 func TestERC20DonationsByRoundSummarized(t *testing.T) {
 	r := repo(t)
 	golden(t, "erc20_donations_by_round_summarized_0", func() any {

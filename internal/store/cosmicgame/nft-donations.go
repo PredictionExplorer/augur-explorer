@@ -2,6 +2,7 @@ package cosmicgame
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -271,4 +272,95 @@ func (r *Repo) NFTDonationsByUser(ctx context.Context, donorAid int64) ([]p.CGNF
 		WHERE d.donor_aid=$1
 		ORDER BY d.id DESC`
 	return queryList(ctx, r, "nft donations by user", 256, query, scanNFTDonationDonorFirst, donorAid)
+}
+
+// RoundNFTDonationRecord is the public event projection used by the v2
+// round donation collection. DonationIndex is the PrizesWallet contract
+// index, not the internal database row id.
+type RoundNFTDonationRecord struct {
+	Tx            p.Transaction
+	RoundNum      int64
+	DonorAddr     string
+	TokenAddr     string
+	TokenID       int64
+	DonationIndex int64
+	TokenURI      string
+}
+
+const roundNFTDonationsSelect = `SELECT
+			d.evtlog_id,
+			d.block_num,
+			t.id,
+			t.tx_hash,
+			EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,
+			d.time_stamp,
+			d.round_num,
+			da.addr,
+			token.addr,
+			d.token_id,
+			d.idx,
+			d.token_uri
+		FROM cg_nft_donation d
+			LEFT JOIN transaction t ON t.id=d.tx_id
+			LEFT JOIN address da ON da.address_id=d.donor_aid
+			LEFT JOIN address token ON token.address_id=d.token_aid`
+
+func scanRoundNFTDonation(rows pgx.Rows, rec *RoundNFTDonationRecord) error {
+	return rows.Scan(
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		store.TimeText(&rec.Tx.DateTime),
+		&rec.RoundNum,
+		&rec.DonorAddr,
+		&rec.TokenAddr,
+		&rec.TokenID,
+		&rec.DonationIndex,
+		&rec.TokenURI,
+	)
+}
+
+// NFTDonationsByRoundPage returns at most limit NFT donation events before
+// the supplied newest-first event cursor.
+func (r *Repo) NFTDonationsByRoundPage(
+	ctx context.Context,
+	roundNum int64,
+	after *DonationPageCursor,
+	limit int,
+) (records []RoundNFTDonationRecord, hasMore bool, err error) {
+	const op = "nft donations by round page"
+	if roundNum < 0 {
+		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
+	}
+	if limit <= 0 || limit > maxDonationPageLimit {
+		return nil, false, fmt.Errorf("%s: limit must be between 1 and %d", op, maxDonationPageLimit)
+	}
+
+	query := roundNFTDonationsSelect + `
+		WHERE d.round_num=$1
+		ORDER BY d.evtlog_id DESC
+		LIMIT $2`
+	args := []any{roundNum, limit + 1}
+	if after != nil {
+		if after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		query = roundNFTDonationsSelect + `
+			WHERE d.round_num=$1 AND d.evtlog_id < $2
+			ORDER BY d.evtlog_id DESC
+			LIMIT $3`
+		args = []any{roundNum, after.EventLogID, limit + 1}
+	}
+
+	records, err = queryList(ctx, r, op, limit+1, query, scanRoundNFTDonation, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
 }

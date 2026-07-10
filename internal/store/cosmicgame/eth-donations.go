@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -388,4 +389,167 @@ func (r *Repo) EthDonationsByRound(ctx context.Context, roundNum int64) ([]p.CGD
 func (r *Repo) EthDonations(ctx context.Context) ([]p.CGDonationCombinedRec, error) {
 	query := combinedEthDonationsSQL("")
 	return queryList(ctx, r, "eth donations", 32, query, scanCombinedEthDonation)
+}
+
+// RoundEthDonationKind identifies which direct-donation contract event
+// produced a v2 round donation record.
+type RoundEthDonationKind string
+
+const (
+	RoundEthDonationPlain    RoundEthDonationKind = "plain"
+	RoundEthDonationWithInfo RoundEthDonationKind = "withInfo"
+)
+
+// RoundEthDonationRecord is the exact-wei store projection used by the v2
+// round donation collection. The legacy records retain float amounts and
+// sentinel fields for frozen v1 responses.
+type RoundEthDonationRecord struct {
+	Tx               p.Transaction
+	RoundNum         int64
+	DonorAddr        string
+	EthAmountWei     string
+	Kind             RoundEthDonationKind
+	ContractRecordID *int64
+	Data             *string
+}
+
+func roundEthDonationsPageSQL(after bool) string {
+	filter := "WHERE d.round_num = $1"
+	limitPlaceholder := "$2"
+	if after {
+		filter += " AND d.evtlog_id < $2"
+		limitPlaceholder = "$3"
+	}
+	return fmt.Sprintf(`SELECT
+			donation_kind,
+			evtlog_id,
+			block_num,
+			tx_id,
+			tx_hash,
+			ts,
+			date_time,
+			donor_addr,
+			amount_wei,
+			round_num,
+			contract_record_id,
+			data
+		FROM (
+			(SELECT
+				'plain'::TEXT AS donation_kind,
+				d.evtlog_id,
+				d.block_num,
+				t.id AS tx_id,
+				t.tx_hash,
+				EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts,
+				d.time_stamp AS date_time,
+				da.addr AS donor_addr,
+				d.amount::TEXT AS amount_wei,
+				d.round_num,
+				NULL::BIGINT AS contract_record_id,
+				NULL::TEXT AS data
+			FROM cg_eth_donated d
+				LEFT JOIN transaction t ON t.id=d.tx_id
+				LEFT JOIN address da ON da.address_id=d.donor_aid
+			%s
+			ORDER BY d.evtlog_id DESC
+			LIMIT %s)
+			UNION ALL
+			(SELECT
+				'withInfo'::TEXT AS donation_kind,
+				d.evtlog_id,
+				d.block_num,
+				t.id AS tx_id,
+				t.tx_hash,
+				EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts,
+				d.time_stamp AS date_time,
+				da.addr AS donor_addr,
+				d.amount::TEXT AS amount_wei,
+				d.round_num,
+				d.record_id AS contract_record_id,
+				dj.data
+			FROM cg_eth_donated_wi d
+				LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id
+				LEFT JOIN transaction t ON t.id=d.tx_id
+				LEFT JOIN address da ON da.address_id=d.donor_aid
+			%s
+			ORDER BY d.evtlog_id DESC
+			LIMIT %s)
+		) donations
+		ORDER BY evtlog_id DESC
+		LIMIT %s`, filter, limitPlaceholder, filter, limitPlaceholder, limitPlaceholder)
+}
+
+func scanRoundEthDonation(rows pgx.Rows, rec *RoundEthDonationRecord) error {
+	var (
+		kind     string
+		recordID sql.NullInt64
+		data     sql.NullString
+	)
+	if err := rows.Scan(
+		&kind,
+		&rec.Tx.EvtLogId,
+		&rec.Tx.BlockNum,
+		&rec.Tx.TxId,
+		&rec.Tx.TxHash,
+		&rec.Tx.TimeStamp,
+		store.TimeText(&rec.Tx.DateTime),
+		&rec.DonorAddr,
+		&rec.EthAmountWei,
+		&rec.RoundNum,
+		&recordID,
+		&data,
+	); err != nil {
+		return err
+	}
+	rec.Kind = RoundEthDonationKind(kind)
+	if recordID.Valid {
+		value := recordID.Int64
+		rec.ContractRecordID = &value
+	}
+	if data.Valid {
+		value := data.String
+		rec.Data = &value
+	}
+	return nil
+}
+
+// EthDonationsByRoundPage returns at most limit plain and info-carrying ETH
+// donations before the supplied newest-first event cursor.
+func (r *Repo) EthDonationsByRoundPage(
+	ctx context.Context,
+	roundNum int64,
+	after *DonationPageCursor,
+	limit int,
+) (records []RoundEthDonationRecord, hasMore bool, err error) {
+	const op = "eth donations by round page"
+	if roundNum < 0 {
+		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
+	}
+	if limit <= 0 || limit > maxDonationPageLimit {
+		return nil, false, fmt.Errorf("%s: limit must be between 1 and %d", op, maxDonationPageLimit)
+	}
+	args := []any{roundNum, limit + 1}
+	if after != nil {
+		if after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		args = []any{roundNum, after.EventLogID, limit + 1}
+	}
+	records, err = queryList(
+		ctx,
+		r,
+		op,
+		limit+1,
+		roundEthDonationsPageSQL(after != nil),
+		scanRoundEthDonation,
+		args...,
+	)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
 }

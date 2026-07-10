@@ -27,6 +27,9 @@ const (
 	v2ListRoundPrizes   = "/api/v2/cosmicgame/rounds/{round}/prizes"
 	v2ListRaffleEth     = "/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits"
 	v2ListRaffleNft     = "/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners"
+	v2ListDonationEth   = "/api/v2/cosmicgame/rounds/{round}/eth-donations"
+	v2ListDonationERC20 = "/api/v2/cosmicgame/rounds/{round}/erc20-donations"
+	v2ListDonationNFT   = "/api/v2/cosmicgame/rounds/{round}/nft-donations"
 )
 
 type v2GoldenCase struct {
@@ -381,6 +384,221 @@ func TestAPIV2RoundRaffles(t *testing.T) {
 			name:       "raffle_nft_error_internal",
 			target:     "/api/v2/cosmicgame/rounds/0/raffle-nft-winners?pool=bidder",
 			template:   v2ListRaffleNft,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+	}
+
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2RoundDonations(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	firstEthPath := "/api/v2/cosmicgame/rounds/0/eth-donations?limit=1"
+	firstEthResponse := h.get(t, firstEthPath)
+	if firstEthResponse.Code != http.StatusOK {
+		t.Fatalf("first ETH page: status=%d body=%s", firstEthResponse.Code, firstEthResponse.Body.String())
+	}
+	var firstEthPage apiv2.RoundEthDonationPage
+	if err := json.Unmarshal(firstEthResponse.Body.Bytes(), &firstEthPage); err != nil {
+		t.Fatalf("decoding first ETH page: %v", err)
+	}
+	if firstEthPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first ETH donation page did not return a continuation cursor")
+	}
+
+	afterLastEth := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":0,"k":"eth","e":5012}`),
+	)
+	afterLastERC20 := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":0,"k":"erc20","e":5015}`),
+	)
+	afterLastNFT := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":0,"k":"nft","e":5016}`),
+	)
+	crossRoundETH := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":1,"k":"eth","e":5012}`),
+	)
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	cases := []v2GoldenCase{
+		{
+			name:       "donation_eth_list_first_page",
+			target:     firstEthPath,
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_list_next_page",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?limit=1&cursor=" + *firstEthPage.Meta.NextCursor,
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_list_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?limit=1&cursor=" + afterLastEth,
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_list_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/eth-donations",
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "donation_eth_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?cursor=bad",
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_error_cross_round_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?cursor=" + crossRoundETH,
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_error_cross_resource_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?cursor=" + afterLastNFT,
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?limit=201",
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/eth-donations?limit=wat",
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_eth_error_internal",
+			target:     firstEthPath,
+			template:   v2ListDonationEth,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "donation_erc20_list_page",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations?limit=1",
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_erc20_list_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations?limit=1&cursor=" + afterLastERC20,
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_erc20_list_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/erc20-donations",
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "donation_erc20_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations?cursor=bad",
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_erc20_error_cross_round_cursor",
+			target:     "/api/v2/cosmicgame/rounds/1/erc20-donations?cursor=" + afterLastERC20,
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "1"},
+		},
+		{
+			name:       "donation_erc20_error_cross_resource_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations?cursor=" + afterLastNFT,
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_erc20_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations?limit=201",
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_erc20_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations?limit=wat",
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_erc20_error_internal",
+			target:     "/api/v2/cosmicgame/rounds/0/erc20-donations",
+			template:   v2ListDonationERC20,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "donation_nft_list_page",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations?limit=1",
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_nft_list_empty_page",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations?limit=1&cursor=" + afterLastNFT,
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_nft_list_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/nft-donations",
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "donation_nft_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations?cursor=bad",
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_nft_error_cross_round_cursor",
+			target:     "/api/v2/cosmicgame/rounds/1/nft-donations?cursor=" + afterLastNFT,
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "1"},
+		},
+		{
+			name:       "donation_nft_error_cross_resource_cursor",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations?cursor=" + afterLastERC20,
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_nft_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations?limit=201",
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_nft_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations?limit=wat",
+			template:   v2ListDonationNFT,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "donation_nft_error_internal",
+			target:     "/api/v2/cosmicgame/rounds/0/nft-donations",
+			template:   v2ListDonationNFT,
 			pathParams: map[string]string{"round": "0"},
 			ctx:        cancelledCtx,
 		},

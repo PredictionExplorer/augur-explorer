@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.5.0
+  version: 0.6.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -147,6 +147,68 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/eth-donations:
+    get:
+      operationId: listRoundEthDonations
+      summary: List direct ETH donations made during one round
+      description: |
+        Returns plain and info-carrying direct donations in newest-first event
+        order. Donations are available while a round is open; a nonnegative
+        round without donation records returns an empty page.
+      tags:
+        - CosmicGame donations
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundEthDonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/erc20-donations:
+    get:
+      operationId: listRoundErc20Donations
+      summary: List ERC-20 donations made during one round
+      description: |
+        Returns donation events in newest-first event order. Token amounts are
+        exact base-unit integers because arbitrary ERC-20 tokens need not use
+        18 decimals. A nonnegative round without records returns an empty page.
+      tags:
+        - CosmicGame donations
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundErc20DonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/nft-donations:
+    get:
+      operationId: listRoundNftDonations
+      summary: List NFT donations made during one round
+      description: |
+        Returns donation events in newest-first event order. A nonnegative
+        round without records returns an empty page.
+      tags:
+        - CosmicGame donations
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundNftDonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   parameters:
     Round:
@@ -171,7 +233,11 @@ components:
       name: cursor
       in: query
       required: false
-      description: Opaque continuation cursor returned by the previous page.
+      description: |
+        Opaque continuation cursor returned by the previous page. Cursors are
+        stable positions, not live subscriptions: while paging an open
+        collection, newly indexed events ahead of the cursor are visible by
+        polling again without a cursor.
       schema:
         type: string
         minLength: 1
@@ -749,6 +815,186 @@ components:
             $ref: "#/components/schemas/RoundRaffleNftWinner"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    RoundEthDonationKind:
+      type: string
+      enum:
+        - plain
+        - withInfo
+    RoundEthDonation:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - donorAddress
+        - ethAmountWei
+        - kind
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        donorAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        ethAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        kind:
+          $ref: "#/components/schemas/RoundEthDonationKind"
+        contractRecordId:
+          description: Present only for an info-carrying donation.
+          type: integer
+          format: int64
+          minimum: 0
+        data:
+          description: Contract-provided data string; present only with kind `withInfo`.
+          type: string
+    RoundEthDonationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundEthDonation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RoundErc20Donation:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - donorAddress
+        - tokenAddress
+        - amountBaseUnits
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        donorAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        amountBaseUnits:
+          type: string
+          pattern: "^[0-9]+$"
+    RoundErc20DonationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundErc20Donation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RoundNftDonation:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - donorAddress
+        - tokenAddress
+        - tokenId
+        - donationIndex
+        - tokenUri
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        donorAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        donationIndex:
+          type: integer
+          format: int64
+          minimum: 0
+        tokenUri:
+          type: string
+    RoundNftDonationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundNftDonation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
     BidType:
       type: string
       enum:
@@ -933,6 +1179,24 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoundRaffleNftWinnerPage"
+    RoundEthDonationPage:
+      description: One stable page of direct ETH donations.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundEthDonationPage"
+    RoundErc20DonationPage:
+      description: One stable page of ERC-20 donation events.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundErc20DonationPage"
+    RoundNftDonationPage:
+      description: One stable page of NFT donation events.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundNftDonationPage"
     BadRequest:
       description: A path or query parameter is invalid.
       content:

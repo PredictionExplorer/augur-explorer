@@ -43,6 +43,12 @@ type roundRaffleReader interface {
 	RaffleNFTWinnersByRoundPage(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error)
 }
 
+type roundDonationReader interface {
+	EthDonationsByRoundPage(context.Context, int64, *cgstore.DonationPageCursor, int) ([]cgstore.RoundEthDonationRecord, bool, error)
+	ERC20DonationsByRoundPage(context.Context, int64, *cgstore.DonationPageCursor, int) ([]cgstore.RoundERC20DonationRecord, bool, error)
+	NFTDonationsByRoundPage(context.Context, int64, *cgstore.DonationPageCursor, int) ([]cgstore.RoundNFTDonationRecord, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -57,6 +63,7 @@ type Server struct {
 	currentRounds currentRoundReader
 	prizes        roundPrizeReader
 	raffles       roundRaffleReader
+	donations     roundDonationReader
 	contractState contractStateReader
 	logger        *slog.Logger
 }
@@ -73,7 +80,7 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, repo, repo, repo, state, logger)
+	return newServer(st, repo, repo, repo, repo, repo, repo, state, logger)
 }
 
 func newServer(
@@ -83,6 +90,7 @@ func newServer(
 	currentRounds currentRoundReader,
 	prizes roundPrizeReader,
 	raffles roundRaffleReader,
+	donations roundDonationReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -101,6 +109,9 @@ func newServer(
 	if raffles == nil {
 		return nil, errors.New("api v2: round-raffle repository is required")
 	}
+	if donations == nil {
+		return nil, errors.New("api v2: round-donation repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -114,6 +125,7 @@ func newServer(
 		currentRounds: currentRounds,
 		prizes:        prizes,
 		raffles:       raffles,
+		donations:     donations,
 		contractState: state,
 		logger:        logger,
 	}, nil

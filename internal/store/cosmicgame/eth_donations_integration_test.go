@@ -162,6 +162,78 @@ func TestEthDonationsByRound(t *testing.T) {
 	})
 }
 
+func TestEthDonationsByRoundPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	first, hasMore, err := r.EthDonationsByRoundPage(ctx, 0, nil, 1)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if !hasMore || len(first) != 1 || first[0].Tx.EvtLogId != 5014 ||
+		first[0].Kind != RoundEthDonationWithInfo ||
+		first[0].ContractRecordID == nil || *first[0].ContractRecordID != 0 ||
+		first[0].Data == nil {
+		t.Fatalf("first page = %+v, hasMore=%v", first, hasMore)
+	}
+
+	second, hasMore, err := r.EthDonationsByRoundPage(ctx, 0, &DonationPageCursor{
+		EventLogID: first[0].Tx.EvtLogId,
+	}, 1)
+	if err != nil {
+		t.Fatalf("second page: %v", err)
+	}
+	if hasMore || len(second) != 1 || second[0].Tx.EvtLogId != 5012 ||
+		second[0].Kind != RoundEthDonationPlain ||
+		second[0].ContractRecordID != nil || second[0].Data != nil {
+		t.Fatalf("second page = %+v, hasMore=%v", second, hasMore)
+	}
+
+	legacy, err := r.EthDonationsByRound(ctx, 0)
+	if err != nil {
+		t.Fatalf("EthDonationsByRound: %v", err)
+	}
+	paged := append(first, second...)
+	if len(legacy) != len(paged) {
+		t.Fatalf("legacy/page lengths = %d/%d", len(legacy), len(paged))
+	}
+	for i := range legacy {
+		if legacy[i].Tx.EvtLogId != paged[i].Tx.EvtLogId ||
+			legacy[i].RoundNum != paged[i].RoundNum ||
+			legacy[i].DonorAddr != paged[i].DonorAddr ||
+			legacy[i].Amount != paged[i].EthAmountWei {
+			t.Fatalf("legacy/page record %d differs: %+v / %+v", i, legacy[i], paged[i])
+		}
+	}
+
+	exhausted, hasMore, err := r.EthDonationsByRoundPage(ctx, 0, &DonationPageCursor{
+		EventLogID: second[0].Tx.EvtLogId,
+	}, 1)
+	if err != nil {
+		t.Fatalf("exhausted page: %v", err)
+	}
+	if hasMore || exhausted == nil || len(exhausted) != 0 {
+		t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+	}
+
+	empty, hasMore, err := r.EthDonationsByRoundPage(ctx, 3, nil, 1)
+	if err != nil {
+		t.Fatalf("open-round page: %v", err)
+	}
+	if hasMore || empty == nil || len(empty) != 0 {
+		t.Fatalf("open-round page = %#v, hasMore=%v; want non-nil empty,false", empty, hasMore)
+	}
+}
+
+func TestEthDonationsByRoundPagePropagatesCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, _, err := r.EthDonationsByRoundPage(ctx, 0, nil, 1); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page error = %v, want context.Canceled", err)
+	}
+}
+
 func TestEthDonations(t *testing.T) {
 	r := repo(t)
 	golden(t, "donations_to_cosmic_game_both_all", func() any {

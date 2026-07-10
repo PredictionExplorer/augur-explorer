@@ -66,6 +66,62 @@ func TestNFTDonationsByRound(t *testing.T) {
 	})
 }
 
+func TestNFTDonationsByRoundPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	page, hasMore, err := r.NFTDonationsByRoundPage(ctx, 0, nil, 1)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if hasMore || len(page) != 1 || page[0].Tx.EvtLogId != 5016 ||
+		page[0].TokenID != 777 || page[0].DonationIndex != 0 {
+		t.Fatalf("page = %+v, hasMore=%v", page, hasMore)
+	}
+
+	legacy, err := r.NFTDonationsByRound(ctx, 0)
+	if err != nil {
+		t.Fatalf("NFTDonationsByRound: %v", err)
+	}
+	if len(legacy) != len(page) ||
+		legacy[0].Tx.EvtLogId != page[0].Tx.EvtLogId ||
+		legacy[0].RoundNum != page[0].RoundNum ||
+		legacy[0].DonorAddr != page[0].DonorAddr ||
+		legacy[0].TokenAddr != page[0].TokenAddr ||
+		legacy[0].NFTTokenId != page[0].TokenID ||
+		legacy[0].Index != page[0].DonationIndex ||
+		legacy[0].NFTTokenURI != page[0].TokenURI {
+		t.Fatalf("legacy/page records differ: %+v / %+v", legacy, page)
+	}
+
+	exhausted, hasMore, err := r.NFTDonationsByRoundPage(ctx, 0, &DonationPageCursor{
+		EventLogID: page[0].Tx.EvtLogId,
+	}, 1)
+	if err != nil {
+		t.Fatalf("exhausted page: %v", err)
+	}
+	if hasMore || exhausted == nil || len(exhausted) != 0 {
+		t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+	}
+
+	empty, hasMore, err := r.NFTDonationsByRoundPage(ctx, 3, nil, 1)
+	if err != nil {
+		t.Fatalf("open-round page: %v", err)
+	}
+	if hasMore || empty == nil || len(empty) != 0 {
+		t.Fatalf("open-round page = %#v, hasMore=%v; want non-nil empty,false", empty, hasMore)
+	}
+}
+
+func TestNFTDonationsByRoundPagePropagatesCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, _, err := r.NFTDonationsByRoundPage(ctx, 0, nil, 1); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page error = %v, want context.Canceled", err)
+	}
+}
+
 func TestNFTDonationsByToken(t *testing.T) {
 	r := repo(t)
 	golden(t, "nft_donations_by_token_aid", func() any {
