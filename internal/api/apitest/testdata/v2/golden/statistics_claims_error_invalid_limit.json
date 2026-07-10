@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Limit must be between 1 and 200.",
+    "instance": "/api/v2/cosmicgame/statistics/claims",
+    "status": 400,
+    "title": "Invalid parameter",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

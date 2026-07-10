@@ -19,17 +19,22 @@ import (
 )
 
 const (
-	v2ListRoundsPath    = "/api/v2/cosmicgame/rounds"
-	v2CurrentRoundPath  = "/api/v2/cosmicgame/rounds/current"
-	v2GetRoundPath      = "/api/v2/cosmicgame/rounds/{round}"
-	v2ListRoundBidsPath = "/api/v2/cosmicgame/rounds/{round}/bids"
-	v2GetRoundBidPath   = "/api/v2/cosmicgame/rounds/{round}/bids/{position}"
-	v2ListRoundPrizes   = "/api/v2/cosmicgame/rounds/{round}/prizes"
-	v2ListRaffleEth     = "/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits"
-	v2ListRaffleNft     = "/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners"
-	v2ListDonationEth   = "/api/v2/cosmicgame/rounds/{round}/eth-donations"
-	v2ListDonationERC20 = "/api/v2/cosmicgame/rounds/{round}/erc20-donations"
-	v2ListDonationNFT   = "/api/v2/cosmicgame/rounds/{round}/nft-donations"
+	v2ListRoundsPath     = "/api/v2/cosmicgame/rounds"
+	v2CurrentRoundPath   = "/api/v2/cosmicgame/rounds/current"
+	v2GetRoundPath       = "/api/v2/cosmicgame/rounds/{round}"
+	v2ListRoundBidsPath  = "/api/v2/cosmicgame/rounds/{round}/bids"
+	v2GetRoundBidPath    = "/api/v2/cosmicgame/rounds/{round}/bids/{position}"
+	v2ListRoundPrizes    = "/api/v2/cosmicgame/rounds/{round}/prizes"
+	v2ListRaffleEth      = "/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits"
+	v2ListRaffleNft      = "/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners"
+	v2ListDonationEth    = "/api/v2/cosmicgame/rounds/{round}/eth-donations"
+	v2ListDonationERC20  = "/api/v2/cosmicgame/rounds/{round}/erc20-donations"
+	v2ListDonationNFT    = "/api/v2/cosmicgame/rounds/{round}/nft-donations"
+	v2GlobalStatistics   = "/api/v2/cosmicgame/statistics"
+	v2StatisticsCounters = "/api/v2/cosmicgame/statistics/counters"
+	v2StatisticsROI      = "/api/v2/cosmicgame/statistics/leaderboard/roi"
+	v2StatisticsClaims   = "/api/v2/cosmicgame/statistics/claims"
+	v2RoundClaims        = "/api/v2/cosmicgame/rounds/{round}/claims"
 )
 
 type v2GoldenCase struct {
@@ -604,6 +609,121 @@ func TestAPIV2RoundDonations(t *testing.T) {
 		},
 	}
 
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2StatisticsAndClaims(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	firstROIPath := "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&limit=2"
+	firstROIResponse := h.get(t, firstROIPath)
+	if firstROIResponse.Code != http.StatusOK {
+		t.Fatalf("first ROI page: status=%d body=%s", firstROIResponse.Code, firstROIResponse.Body.String())
+	}
+	var firstROIPage apiv2.RoiLeaderboardPage
+	if err := json.Unmarshal(firstROIResponse.Body.Bytes(), &firstROIPage); err != nil {
+		t.Fatalf("decoding first ROI page: %v", err)
+	}
+	if firstROIPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first ROI page did not return a continuation cursor")
+	}
+	secondROIPath := firstROIPath + "&cursor=" + *firstROIPage.Meta.NextCursor
+	secondROIResponse := h.get(t, secondROIPath)
+	if secondROIResponse.Code != http.StatusOK {
+		t.Fatalf("second ROI page: status=%d body=%s", secondROIResponse.Code, secondROIResponse.Body.String())
+	}
+	var secondROIPage apiv2.RoiLeaderboardPage
+	if err := json.Unmarshal(secondROIResponse.Body.Bytes(), &secondROIPage); err != nil {
+		t.Fatalf("decoding second ROI page: %v", err)
+	}
+	if secondROIPage.Meta.NextCursor == nil {
+		t.Fatal("fixture second ROI page did not return a continuation cursor")
+	}
+	lastROICursor := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"s":"netProfit","m":0,"k":"-155000000000000000","x":0,"a":22}`),
+	)
+
+	firstClaimsPath := "/api/v2/cosmicgame/statistics/claims?limit=1"
+	firstClaimsResponse := h.get(t, firstClaimsPath)
+	if firstClaimsResponse.Code != http.StatusOK {
+		t.Fatalf("first claims page: status=%d body=%s", firstClaimsResponse.Code, firstClaimsResponse.Body.String())
+	}
+	var firstClaimsPage apiv2.ClaimSummaryPage
+	if err := json.Unmarshal(firstClaimsResponse.Body.Bytes(), &firstClaimsPage); err != nil {
+		t.Fatalf("decoding first claims page: %v", err)
+	}
+	if firstClaimsPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first claims page did not return a continuation cursor")
+	}
+	afterLastClaim := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"r":0,"e":5018}`),
+	)
+
+	firstDetailPath := "/api/v2/cosmicgame/rounds/0/claims?limit=1"
+	firstDetailResponse := h.get(t, firstDetailPath)
+	if firstDetailResponse.Code != http.StatusOK {
+		t.Fatalf("first claim detail: status=%d body=%s", firstDetailResponse.Code, firstDetailResponse.Body.String())
+	}
+	var firstDetail apiv2.RoundClaimsDetail
+	if err := json.Unmarshal(firstDetailResponse.Body.Bytes(), &firstDetail); err != nil {
+		t.Fatalf("decoding first claim detail: %v", err)
+	}
+	if firstDetail.ClaimTransactions.Meta.NextCursor == nil ||
+		firstDetail.AttachedTokens.Meta.NextCursor == nil ||
+		firstDetail.UnclaimedItems.Meta.NextCursor == nil {
+		t.Fatal("fixture claim detail did not return all section cursors")
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{name: "statistics_global_get", target: v2GlobalStatistics, template: v2GlobalStatistics, pathParams: map[string]string{}},
+		{name: "statistics_global_error_internal", target: v2GlobalStatistics, template: v2GlobalStatistics, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "statistics_counters_get", target: v2StatisticsCounters, template: v2StatisticsCounters, pathParams: map[string]string{}},
+		{name: "statistics_counters_error_internal", target: v2StatisticsCounters, template: v2StatisticsCounters, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "statistics_roi_first_page", target: firstROIPath, template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_next_page", target: secondROIPath, template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_final_page", target: firstROIPath + "&cursor=" + *secondROIPage.Meta.NextCursor, template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_empty_page", target: firstROIPath + "&cursor=" + lastROICursor, template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_sort_roi", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&sort=roi&limit=2", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_sort_win_rate", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&sort=winRate&limit=2", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_sort_spent", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&sort=spent&limit=2", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_sort_nfts", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&sort=nfts&limit=2", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_sort_bids", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&sort=bids&limit=2", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_malformed_cursor", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?cursor=bad", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_cross_sort_cursor", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=0&sort=roi&cursor=" + *firstROIPage.Meta.NextCursor, template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_cross_filter_cursor", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?minBids=1&cursor=" + *firstROIPage.Meta.NextCursor, template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_invalid_sort", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?sort=other", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_invalid_limit", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?limit=201", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_bind_limit", target: "/api/v2/cosmicgame/statistics/leaderboard/roi?limit=bad", template: v2StatisticsROI, pathParams: map[string]string{}},
+		{name: "statistics_roi_error_internal", target: firstROIPath, template: v2StatisticsROI, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "statistics_claims_first_page", target: firstClaimsPath, template: v2StatisticsClaims, pathParams: map[string]string{}},
+		{name: "statistics_claims_next_page", target: firstClaimsPath + "&cursor=" + *firstClaimsPage.Meta.NextCursor, template: v2StatisticsClaims, pathParams: map[string]string{}},
+		{name: "statistics_claims_empty_page", target: firstClaimsPath + "&cursor=" + afterLastClaim, template: v2StatisticsClaims, pathParams: map[string]string{}},
+		{name: "statistics_claims_error_malformed_cursor", target: "/api/v2/cosmicgame/statistics/claims?cursor=bad", template: v2StatisticsClaims, pathParams: map[string]string{}},
+		{name: "statistics_claims_error_invalid_limit", target: "/api/v2/cosmicgame/statistics/claims?limit=201", template: v2StatisticsClaims, pathParams: map[string]string{}},
+		{name: "statistics_claims_error_bind_limit", target: "/api/v2/cosmicgame/statistics/claims?limit=bad", template: v2StatisticsClaims, pathParams: map[string]string{}},
+		{name: "statistics_claims_error_internal", target: firstClaimsPath, template: v2StatisticsClaims, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "round_claims_detail", target: "/api/v2/cosmicgame/rounds/0/claims", template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_detail_first_pages", target: firstDetailPath, template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_detail_next_pages", target: firstDetailPath + "&claimTransactionsCursor=" + *firstDetail.ClaimTransactions.Meta.NextCursor + "&attachedTokensCursor=" + *firstDetail.AttachedTokens.Meta.NextCursor + "&unclaimedItemsCursor=" + *firstDetail.UnclaimedItems.Meta.NextCursor, template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_detail_round_1", target: "/api/v2/cosmicgame/rounds/1/claims", template: v2RoundClaims, pathParams: map[string]string{"round": "1"}},
+		{name: "round_claims_error_open_round", target: "/api/v2/cosmicgame/rounds/3/claims", template: v2RoundClaims, pathParams: map[string]string{"round": "3"}},
+		{name: "round_claims_error_not_found", target: "/api/v2/cosmicgame/rounds/999/claims", template: v2RoundClaims, pathParams: map[string]string{"round": "999"}},
+		{name: "round_claims_error_malformed_cursor", target: "/api/v2/cosmicgame/rounds/0/claims?claimTransactionsCursor=bad", template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_error_cross_section_cursor", target: "/api/v2/cosmicgame/rounds/0/claims?attachedTokensCursor=" + *firstDetail.ClaimTransactions.Meta.NextCursor, template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_error_cross_round_cursor", target: "/api/v2/cosmicgame/rounds/1/claims?claimTransactionsCursor=" + *firstDetail.ClaimTransactions.Meta.NextCursor, template: v2RoundClaims, pathParams: map[string]string{"round": "1"}},
+		{name: "round_claims_error_invalid_limit", target: "/api/v2/cosmicgame/rounds/0/claims?limit=201", template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_error_bind_limit", target: "/api/v2/cosmicgame/rounds/0/claims?limit=bad", template: v2RoundClaims, pathParams: map[string]string{"round": "0"}},
+		{name: "round_claims_error_internal", target: "/api/v2/cosmicgame/rounds/0/claims", template: v2RoundClaims, pathParams: map[string]string{"round": "0"}, ctx: cancelledCtx},
+	}
 	runV2GoldenCases(t, h, spec, cases)
 }
 

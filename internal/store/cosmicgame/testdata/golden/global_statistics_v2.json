@@ -1,0 +1,60 @@
+{
+  "TotalBids": 12,
+  "CurrentRoundBids": 3,
+  "CompletedRounds": 3,
+  "TotalPrizeAwards": 25,
+  "PrizeRegistryRows": 26,
+  "UniqueBidders": 5,
+  "UniqueWinners": 5,
+  "UniqueDonors": 2,
+  "UniqueCSTStakers": 2,
+  "UniqueRandomWalkStakers": 3,
+  "UniqueDualStakers": 1,
+  "TotalPrizesPaidWei": "2040000000000000000",
+  "TotalEthDonatedWei": "500000000000000000",
+  "VoluntaryDonationCount": 1,
+  "VoluntaryDonationsTotalWei": "10000000000000000",
+  "CosmicGameDonationCount": 1,
+  "CosmicGameDonationsTotalWei": "90000000000000000",
+  "DirectDonationCount": 2,
+  "DirectDonationsTotalWei": "500000000000000000",
+  "CharityWithdrawalCount": 1,
+  "CharityWithdrawalsTotalWei": "50000000000000000",
+  "RandomWalkTokensUsedInBids": 1,
+  "DonatedNFTCount": 2,
+  "CosmicSignatureMints": 9,
+  "NamedTokens": 1,
+  "RaffleEthDepositsTotalWei": "160000000000000000",
+  "RaffleEthWithdrawnTotalWei": "50000000000000000",
+  "ChronoWarriorEthDepositsTotalWei": "80000000000000000",
+  "CSTGivenInPrizesTotalWei": "542000000000000000000",
+  "WinnersWithPendingRaffleWithdrawal": 2,
+  "CSTConsumedTotalWei": "410000000000000000000",
+  "CSTBidCount": 2,
+  "MarketingRewardsTotalWei": "50000000000000000000",
+  "MarketingRewardCount": 1,
+  "DonatedTokenDistribution": [
+    {
+      "ContractAddr": "0x2700000000000000000000000000000000000027",
+      "NumDonatedTokens": 2
+    }
+  ],
+  "CSTStaking": {
+    "TotalNumStakeActions": 0,
+    "TotalNumUnstakeActions": 0,
+    "TotalTokensStaked": 1,
+    "TotalReward": "2000000000000000000",
+    "TotalRewardEth": 2,
+    "UnclaimedReward": "1000000000000000000",
+    "UnclaimedRewardEth": 1,
+    "NumActiveStakers": 1,
+    "NumDeposits": 1
+  },
+  "RandomWalkStaking": {
+    "TotalNumStakeActions": 0,
+    "TotalNumUnstakeActions": 0,
+    "TotalTokensStaked": 2,
+    "TotalTokensMinted": 1,
+    "NumActiveStakers": 2
+  }
+}

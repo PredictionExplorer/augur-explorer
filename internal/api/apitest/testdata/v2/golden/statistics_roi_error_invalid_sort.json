@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Sort must be one of netProfit, roi, winRate, spent, nfts, or bids.",
+    "instance": "/api/v2/cosmicgame/statistics/leaderboard/roi",
+    "status": 400,
+    "title": "Invalid parameter",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

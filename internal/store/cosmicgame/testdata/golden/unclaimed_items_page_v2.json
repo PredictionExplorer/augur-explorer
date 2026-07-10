@@ -1,0 +1,24 @@
+[
+  {
+    "Segment": 0,
+    "Key": 5024,
+    "RoundNum": 0,
+    "AssetType": "eth",
+    "RecipientAddr": "0x2300000000000000000000000000000000000023",
+    "EthAmountWei": "50000000000000000",
+    "TokenAddr": null,
+    "TokenID": null,
+    "AmountBaseUnits": null
+  },
+  {
+    "Segment": 0,
+    "Key": 5040,
+    "RoundNum": 0,
+    "AssetType": "eth",
+    "RecipientAddr": "0x2100000000000000000000000000000000000021",
+    "EthAmountWei": "80000000000000000",
+    "TokenAddr": null,
+    "TokenID": null,
+    "AmountBaseUnits": null
+  }
+]

@@ -1,0 +1,98 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "attachedTokens": {
+      "data": [
+        {
+          "amountBaseUnits": "500000000000000000000",
+          "assetType": "erc20",
+          "contributorAddress": "0x2100000000000000000000000000000000000021",
+          "occurredAt": "2026-01-01T00:11:40Z",
+          "tokenAddress": "0x2600000000000000000000000000000000000026",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001008"
+        },
+        {
+          "assetType": "erc721",
+          "contributorAddress": "0x2200000000000000000000000000000000000022",
+          "occurredAt": "2026-01-01T00:13:20Z",
+          "tokenAddress": "0x2700000000000000000000000000000000000027",
+          "tokenId": 777,
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001009"
+        }
+      ],
+      "meta": {
+        "limit": 50
+      }
+    },
+    "claimTransactions": {
+      "data": [
+        {
+          "assetType": "eth",
+          "beneficiaryAddress": "0x2200000000000000000000000000000000000022",
+          "claimedAfterSeconds": 100,
+          "claimedAt": "2026-01-01T00:18:20Z",
+          "ethAmountWei": "50000000000000000",
+          "recipientAddress": "0x2200000000000000000000000000000000000022",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001012"
+        },
+        {
+          "assetType": "erc721",
+          "beneficiaryAddress": "0x2100000000000000000000000000000000000021",
+          "claimedAfterSeconds": 200,
+          "claimedAt": "2026-01-01T00:20:00Z",
+          "recipientAddress": "0x2100000000000000000000000000000000000021",
+          "tokenAddress": "0x2700000000000000000000000000000000000027",
+          "tokenId": 777,
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001013"
+        },
+        {
+          "amountBaseUnits": "500000000000000000000",
+          "assetType": "erc20",
+          "beneficiaryAddress": "0x2100000000000000000000000000000000000021",
+          "claimedAfterSeconds": 200,
+          "claimedAt": "2026-01-01T00:20:00Z",
+          "recipientAddress": "0x2100000000000000000000000000000000000021",
+          "tokenAddress": "0x2600000000000000000000000000000000000026",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001013"
+        }
+      ],
+      "meta": {
+        "limit": 50
+      }
+    },
+    "summary": {
+      "avgClaimLatencySeconds": 167,
+      "awardedAt": "2026-01-01T00:16:40Z",
+      "claimWindowExpiresAt": "2026-01-11T00:00:00Z",
+      "erc20Awarded": 1,
+      "erc20Unclaimed": 0,
+      "ethAwarded": 3,
+      "ethUnclaimed": 2,
+      "isExpired": true,
+      "nftAwarded": 1,
+      "nftUnclaimed": 0,
+      "round": 0,
+      "totalAwarded": 5,
+      "totalUnclaimed": 2,
+      "unclaimedEthAmountWei": "130000000000000000"
+    },
+    "unclaimedItems": {
+      "data": [
+        {
+          "assetType": "eth",
+          "ethAmountWei": "50000000000000000",
+          "recipientAddress": "0x2300000000000000000000000000000000000023"
+        },
+        {
+          "assetType": "eth",
+          "ethAmountWei": "80000000000000000",
+          "recipientAddress": "0x2100000000000000000000000000000000000021"
+        }
+      ],
+      "meta": {
+        "limit": 50
+      }
+    }
+  }
+}

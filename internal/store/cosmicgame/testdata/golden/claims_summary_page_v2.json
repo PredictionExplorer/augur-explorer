@@ -1,0 +1,50 @@
+[
+  {
+    "RoundNum": 2,
+    "EventLogID": 5072,
+    "ClaimWindowTimeout": 1768091100,
+    "AwardedTimestamp": 1767228100,
+    "EthAwarded": 0,
+    "EthUnclaimed": 0,
+    "UnclaimedEthAmountWei": "0",
+    "NFTAwarded": 1,
+    "NFTUnclaimed": 1,
+    "ERC20Awarded": 0,
+    "ERC20Unclaimed": 0,
+    "TotalAwarded": 1,
+    "TotalUnclaimed": 1,
+    "AvgClaimLatencySecs": 0
+  },
+  {
+    "RoundNum": 1,
+    "EventLogID": 5062,
+    "ClaimWindowTimeout": 1768090600,
+    "AwardedTimestamp": 1767227600,
+    "EthAwarded": 1,
+    "EthUnclaimed": 1,
+    "UnclaimedEthAmountWei": "60000000000000000",
+    "NFTAwarded": 0,
+    "NFTUnclaimed": 0,
+    "ERC20Awarded": 0,
+    "ERC20Unclaimed": 0,
+    "TotalAwarded": 1,
+    "TotalUnclaimed": 1,
+    "AvgClaimLatencySecs": 0
+  },
+  {
+    "RoundNum": 0,
+    "EventLogID": 5018,
+    "ClaimWindowTimeout": 1768089600,
+    "AwardedTimestamp": 1767226600,
+    "EthAwarded": 3,
+    "EthUnclaimed": 2,
+    "UnclaimedEthAmountWei": "130000000000000000",
+    "NFTAwarded": 1,
+    "NFTUnclaimed": 0,
+    "ERC20Awarded": 1,
+    "ERC20Unclaimed": 0,
+    "TotalAwarded": 5,
+    "TotalUnclaimed": 2,
+    "AvgClaimLatencySecs": 167
+  }
+]

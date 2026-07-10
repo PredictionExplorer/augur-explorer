@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidCount": 1,
+        "bidderAddress": "0x2500000000000000000000000000000000000025",
+        "cstPrizeCount": 1,
+        "ethWonWei": "700000000000000000",
+        "netProfitWei": "610000000000000000",
+        "nftPrizeCount": 1,
+        "prizeCount": 3,
+        "roiRatio": "6.7777777777777778",
+        "roundsParticipated": 1,
+        "roundsWon": 1,
+        "totalCstSpentWei": "0",
+        "totalEthSpentWei": "90000000000000000",
+        "winRateRatio": "1"
+      },
+      {
+        "bidCount": 1,
+        "bidderAddress": "0x2400000000000000000000000000000000000024",
+        "cstPrizeCount": 2,
+        "ethWonWei": "600000000000000000",
+        "netProfitWei": "490000000000000000",
+        "nftPrizeCount": 2,
+        "prizeCount": 5,
+        "roiRatio": "4.4545454545454545",
+        "roundsParticipated": 1,
+        "roundsWon": 2,
+        "totalCstSpentWei": "0",
+        "totalEthSpentWei": "110000000000000000",
+        "winRateRatio": "2"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJzIjoibmV0UHJvZml0IiwibSI6MCwiayI6IjQ5MDAwMDAwMDAwMDAwMDAwMCIsIngiOjAsImEiOjI0fQ"
+    }
+  }
+}

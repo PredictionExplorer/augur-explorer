@@ -49,6 +49,18 @@ type roundDonationReader interface {
 	NFTDonationsByRoundPage(context.Context, int64, *cgstore.DonationPageCursor, int) ([]cgstore.RoundNFTDonationRecord, bool, error)
 }
 
+type statisticsReader interface {
+	CosmicGameGlobalStatistics(context.Context) (cgstore.GlobalStatisticsRecord, error)
+	RecordCounters(context.Context) (cgprimitives.CGRecordCounters, error)
+	ROILeaderboardPage(context.Context, int, cgstore.ROILeaderboardSort, *cgstore.ROILeaderboardPageCursor, int) ([]cgstore.ROILeaderboardRecord, bool, error)
+	ClaimsSummaryPage(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error)
+	CompletedRoundExists(context.Context, int64) (bool, error)
+	ClaimSummaryByRound(context.Context, int64) (cgstore.ClaimSummaryRecord, error)
+	ClaimTransactionsPage(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.ClaimTransactionRecord, bool, error)
+	AttachedTokensPage(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.AttachedTokenRecord, bool, error)
+	UnclaimedItemsPage(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -64,6 +76,7 @@ type Server struct {
 	prizes        roundPrizeReader
 	raffles       roundRaffleReader
 	donations     roundDonationReader
+	statistics    statisticsReader
 	contractState contractStateReader
 	logger        *slog.Logger
 }
@@ -80,7 +93,7 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, repo, repo, repo, repo, state, logger)
+	return newServer(st, repo, repo, repo, repo, repo, repo, repo, state, logger)
 }
 
 func newServer(
@@ -91,6 +104,7 @@ func newServer(
 	prizes roundPrizeReader,
 	raffles roundRaffleReader,
 	donations roundDonationReader,
+	statistics statisticsReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -112,6 +126,9 @@ func newServer(
 	if donations == nil {
 		return nil, errors.New("api v2: round-donation repository is required")
 	}
+	if statistics == nil {
+		return nil, errors.New("api v2: statistics repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -126,6 +143,7 @@ func newServer(
 		prizes:        prizes,
 		raffles:       raffles,
 		donations:     donations,
+		statistics:    statistics,
 		contractState: state,
 		logger:        logger,
 	}, nil

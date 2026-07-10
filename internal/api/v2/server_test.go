@@ -51,6 +51,18 @@ type fakeRoundDonationReader struct {
 	nft   func(context.Context, int64, *cgstore.DonationPageCursor, int) ([]cgstore.RoundNFTDonationRecord, bool, error)
 }
 
+type fakeStatisticsReader struct {
+	global       func(context.Context) (cgstore.GlobalStatisticsRecord, error)
+	counters     func(context.Context) (cgprimitives.CGRecordCounters, error)
+	roi          func(context.Context, int, cgstore.ROILeaderboardSort, *cgstore.ROILeaderboardPageCursor, int) ([]cgstore.ROILeaderboardRecord, bool, error)
+	claims       func(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error)
+	exists       func(context.Context, int64) (bool, error)
+	summary      func(context.Context, int64) (cgstore.ClaimSummaryRecord, error)
+	transactions func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.ClaimTransactionRecord, bool, error)
+	attached     func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.AttachedTokenRecord, bool, error)
+	unclaimed    func(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error)
+}
+
 type fakeContractState struct {
 	snapshot func() contractstate.Snapshot
 }
@@ -182,6 +194,94 @@ func (f fakeRoundDonationReader) NFTDonationsByRoundPage(
 		return []cgstore.RoundNFTDonationRecord{}, false, nil
 	}
 	return f.nft(ctx, round, after, limit)
+}
+
+func (f fakeStatisticsReader) CosmicGameGlobalStatistics(ctx context.Context) (cgstore.GlobalStatisticsRecord, error) {
+	if f.global == nil {
+		return validGlobalStatisticsRecord(), nil
+	}
+	return f.global(ctx)
+}
+
+func (f fakeStatisticsReader) RecordCounters(ctx context.Context) (cgprimitives.CGRecordCounters, error) {
+	if f.counters == nil {
+		return cgprimitives.CGRecordCounters{}, nil
+	}
+	return f.counters(ctx)
+}
+
+func (f fakeStatisticsReader) ROILeaderboardPage(
+	ctx context.Context,
+	minBids int,
+	sort cgstore.ROILeaderboardSort,
+	after *cgstore.ROILeaderboardPageCursor,
+	limit int,
+) ([]cgstore.ROILeaderboardRecord, bool, error) {
+	if f.roi == nil {
+		return []cgstore.ROILeaderboardRecord{}, false, nil
+	}
+	return f.roi(ctx, minBids, sort, after, limit)
+}
+
+func (f fakeStatisticsReader) ClaimsSummaryPage(
+	ctx context.Context,
+	after *cgstore.ClaimSummaryCursor,
+	limit int,
+) ([]cgstore.ClaimSummaryRecord, bool, error) {
+	if f.claims == nil {
+		return []cgstore.ClaimSummaryRecord{}, false, nil
+	}
+	return f.claims(ctx, after, limit)
+}
+
+func (f fakeStatisticsReader) CompletedRoundExists(ctx context.Context, round int64) (bool, error) {
+	if f.exists == nil {
+		return true, nil
+	}
+	return f.exists(ctx, round)
+}
+
+func (f fakeStatisticsReader) ClaimSummaryByRound(ctx context.Context, round int64) (cgstore.ClaimSummaryRecord, error) {
+	if f.summary == nil {
+		return validClaimSummaryRecord(round), nil
+	}
+	return f.summary(ctx, round)
+}
+
+func (f fakeStatisticsReader) ClaimTransactionsPage(
+	ctx context.Context,
+	round int64,
+	after *cgstore.ClaimEventCursor,
+	limit int,
+) ([]cgstore.ClaimTransactionRecord, bool, error) {
+	if f.transactions == nil {
+		return []cgstore.ClaimTransactionRecord{}, false, nil
+	}
+	return f.transactions(ctx, round, after, limit)
+}
+
+func (f fakeStatisticsReader) AttachedTokensPage(
+	ctx context.Context,
+	round int64,
+	after *cgstore.ClaimEventCursor,
+	limit int,
+) ([]cgstore.AttachedTokenRecord, bool, error) {
+	if f.attached == nil {
+		return []cgstore.AttachedTokenRecord{}, false, nil
+	}
+	return f.attached(ctx, round, after, limit)
+}
+
+func (f fakeStatisticsReader) UnclaimedItemsPage(
+	ctx context.Context,
+	round int64,
+	after *cgstore.UnclaimedItemCursor,
+	limit int,
+) ([]cgstore.UnclaimedItemRecord, bool, error) {
+	if f.unclaimed == nil {
+		return []cgstore.UnclaimedItemRecord{}, false, nil
+	}
+	return f.unclaimed(ctx, round, after, limit)
 }
 
 func (f fakeContractState) Snapshot() contractstate.Snapshot {
@@ -410,25 +510,28 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 	if _, err := NewServer(&store.Store{}, nil, nil); err == nil {
 		t.Fatal("NewServer accepted a nil contract state")
 	}
-	if _, err := newServer(nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil bid repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil current-round repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-prize repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-raffle repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-donation repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, nil, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil statistics repository")
+	}
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil contract state")
 	}
 	server, err := newServer(
@@ -439,6 +542,7 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 		fakeRoundPrizeReader{},
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
+		fakeStatisticsReader{},
 		fakeContractState{},
 		nil,
 	)
@@ -461,6 +565,7 @@ func newTestServer(t *testing.T, bids bidReader) *Server {
 		fakeRoundPrizeReader{},
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
+		fakeStatisticsReader{},
 		fakeContractState{},
 		logger,
 	)

@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidCount": 3,
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "cstPrizeCount": 2,
+        "ethWonWei": "50000000000000000",
+        "netProfitWei": "-155000000000000000",
+        "nftPrizeCount": 2,
+        "prizeCount": 5,
+        "roiRatio": "-0.7560975609756097561",
+        "roundsParticipated": 3,
+        "roundsWon": 2,
+        "totalCstSpentWei": "0",
+        "totalEthSpentWei": "205000000000000000",
+        "winRateRatio": "0.66666666666666666667"
+      }
+    ],
+    "meta": {
+      "limit": 2
+    }
+  }
+}

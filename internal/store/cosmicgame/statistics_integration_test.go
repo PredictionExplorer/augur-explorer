@@ -4,6 +4,8 @@ package cosmicgame
 
 import (
 	"context"
+	"errors"
+	"reflect"
 	"testing"
 )
 
@@ -13,6 +15,17 @@ func TestGetCosmicGameStatistics(t *testing.T) {
 		stats, err := r.CosmicGameStatistics(context.Background())
 		if err != nil {
 			t.Fatalf("CosmicGameStatistics: %v", err)
+		}
+		return stats
+	})
+}
+
+func TestCosmicGameGlobalStatistics(t *testing.T) {
+	r := repo(t)
+	golden(t, "global_statistics_v2", func() any {
+		stats, err := r.CosmicGameGlobalStatistics(context.Background())
+		if err != nil {
+			t.Fatalf("CosmicGameGlobalStatistics: %v", err)
 		}
 		return stats
 	})
@@ -105,6 +118,77 @@ func TestGetRoiLeaderboard(t *testing.T) {
 	})
 }
 
+func TestROILeaderboardPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	tests := []struct {
+		sort   ROILeaderboardSort
+		legacy string
+	}{
+		{ROILeaderboardNetProfit, ""},
+		{ROILeaderboardROI, "roi"},
+		{ROILeaderboardWinRate, "winrate"},
+		{ROILeaderboardSpent, "spent"},
+		{ROILeaderboardNFTs, "nfts"},
+		{ROILeaderboardBids, "bids"},
+	}
+	for _, tc := range tests {
+		t.Run(string(tc.sort), func(t *testing.T) {
+			legacy, err := r.RoiLeaderboard(ctx, 0, tc.legacy, 0, 100)
+			if err != nil {
+				t.Fatalf("legacy ROI: %v", err)
+			}
+			var (
+				after *ROILeaderboardPageCursor
+				paged []ROILeaderboardRecord
+			)
+			for {
+				page, hasMore, err := r.ROILeaderboardPage(ctx, 0, tc.sort, after, 1)
+				if err != nil {
+					t.Fatalf("ROI page after %+v: %v", after, err)
+				}
+				if page == nil {
+					t.Fatal("ROI page encoded as nil")
+				}
+				paged = append(paged, page...)
+				if !hasMore {
+					break
+				}
+				last := page[len(page)-1]
+				after = &ROILeaderboardPageCursor{
+					Sort:      tc.sort,
+					MinBids:   0,
+					SortValue: ROILeaderboardSortValue(last, tc.sort),
+					Secondary: func() int64 {
+						if tc.sort == ROILeaderboardWinRate {
+							return last.RoundsParticipated
+						}
+						return 0
+					}(),
+					BidderAid: last.BidderAid,
+				}
+			}
+			if len(legacy) != len(paged) {
+				t.Fatalf("legacy/page lengths = %d/%d", len(legacy), len(paged))
+			}
+			for i := range legacy {
+				if legacy[i].BidderAid != paged[i].BidderAid ||
+					legacy[i].TotalEthSpent != paged[i].TotalEthSpentWei ||
+					legacy[i].EthWon != paged[i].EthWonWei {
+					t.Fatalf("legacy/page row %d differs: %+v / %+v", i, legacy[i], paged[i])
+				}
+			}
+		})
+	}
+	golden(t, "roi_leaderboard_page_v2", func() any {
+		page, _, err := r.ROILeaderboardPage(ctx, 0, ROILeaderboardNetProfit, nil, 100)
+		if err != nil {
+			t.Fatalf("ROILeaderboardPage golden: %v", err)
+		}
+		return page
+	})
+}
+
 func TestGetClaimsByRound(t *testing.T) {
 	r := repo(t)
 	golden(t, "claims_by_round", func() any {
@@ -114,6 +198,214 @@ func TestGetClaimsByRound(t *testing.T) {
 		}
 		return recs
 	})
+}
+
+func TestClaimsSummaryPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	legacy, err := r.ClaimsByRound(ctx)
+	if err != nil {
+		t.Fatalf("ClaimsByRound: %v", err)
+	}
+	var (
+		after *ClaimSummaryCursor
+		paged []ClaimSummaryRecord
+	)
+	for {
+		page, hasMore, err := r.ClaimsSummaryPage(ctx, after, 1)
+		if err != nil {
+			t.Fatalf("claims page after %+v: %v", after, err)
+		}
+		if page == nil {
+			t.Fatal("claims page encoded as nil")
+		}
+		paged = append(paged, page...)
+		if !hasMore {
+			break
+		}
+		last := page[len(page)-1]
+		after = &ClaimSummaryCursor{RoundNum: last.RoundNum, EventLogID: last.EventLogID}
+	}
+	if len(legacy) != len(paged) {
+		t.Fatalf("legacy/page lengths = %d/%d", len(legacy), len(paged))
+	}
+	for i := range legacy {
+		if legacy[i].RoundNum != paged[i].RoundNum ||
+			legacy[i].TotalAwarded != paged[i].TotalAwarded ||
+			legacy[i].TotalUnclaimed != paged[i].TotalUnclaimed {
+			t.Fatalf("legacy/page row %d differs: %+v / %+v", i, legacy[i], paged[i])
+		}
+	}
+	for i := range paged {
+		if paged[i].RoundNum == 0 && paged[i].UnclaimedEthAmountWei != "130000000000000000" {
+			t.Fatalf("round-0 exact unclaimed ETH = %q", paged[i].UnclaimedEthAmountWei)
+		}
+	}
+	golden(t, "claims_summary_page_v2", func() any {
+		page, _, err := r.ClaimsSummaryPage(ctx, nil, 100)
+		if err != nil {
+			t.Fatalf("ClaimsSummaryPage golden: %v", err)
+		}
+		return page
+	})
+}
+
+func TestRoundClaimDetailPages(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	legacy, err := r.ClaimDetailByRound(ctx, 0)
+	if err != nil {
+		t.Fatalf("ClaimDetailByRound(0): %v", err)
+	}
+	summary, err := r.ClaimSummaryByRound(ctx, 0)
+	if err != nil || summary.RoundNum != 0 {
+		t.Fatalf("ClaimSummaryByRound(0) = %+v, %v", summary, err)
+	}
+	golden(t, "claim_transactions_page_v2", func() any {
+		page, _, err := r.ClaimTransactionsPage(ctx, 0, nil, 100)
+		if err != nil {
+			t.Fatalf("ClaimTransactionsPage: %v", err)
+		}
+		return page
+	})
+	golden(t, "attached_tokens_page_v2", func() any {
+		page, _, err := r.AttachedTokensPage(ctx, 0, nil, 100)
+		if err != nil {
+			t.Fatalf("AttachedTokensPage: %v", err)
+		}
+		return page
+	})
+	golden(t, "unclaimed_items_page_v2", func() any {
+		page, _, err := r.UnclaimedItemsPage(ctx, 0, nil, 100)
+		if err != nil {
+			t.Fatalf("UnclaimedItemsPage: %v", err)
+		}
+		return page
+	})
+	allTransactions, _, err := r.ClaimTransactionsPage(ctx, 0, nil, 100)
+	if err != nil || len(allTransactions) != len(legacy.ClaimTransactions) {
+		t.Fatalf("transaction parity lengths = %d/%d, err=%v",
+			len(allTransactions), len(legacy.ClaimTransactions), err)
+	}
+	allAttached, _, err := r.AttachedTokensPage(ctx, 0, nil, 100)
+	if err != nil || len(allAttached) != len(legacy.AttachedTokens) {
+		t.Fatalf("attached parity lengths = %d/%d, err=%v",
+			len(allAttached), len(legacy.AttachedTokens), err)
+	}
+
+	for name, fetch := range map[string]func(*ClaimEventCursor) (int64, bool, error){
+		"transactions": func(after *ClaimEventCursor) (int64, bool, error) {
+			page, more, err := r.ClaimTransactionsPage(ctx, 0, after, 1)
+			if len(page) == 0 {
+				return 0, more, err
+			}
+			return page[0].EventLogID, more, err
+		},
+		"attached": func(after *ClaimEventCursor) (int64, bool, error) {
+			page, more, err := r.AttachedTokensPage(ctx, 0, after, 1)
+			if len(page) == 0 {
+				return 0, more, err
+			}
+			return page[0].EventLogID, more, err
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var (
+				after *ClaimEventCursor
+				ids   []int64
+			)
+			for {
+				id, more, err := fetch(after)
+				if err != nil {
+					t.Fatalf("page: %v", err)
+				}
+				if id > 0 {
+					ids = append(ids, id)
+				}
+				if !more {
+					break
+				}
+				after = &ClaimEventCursor{EventLogID: id}
+			}
+			for i := 1; i < len(ids); i++ {
+				if ids[i] <= ids[i-1] {
+					t.Fatalf("event ids are not ascending: %v", ids)
+				}
+			}
+		})
+	}
+
+	allUnclaimed, _, err := r.UnclaimedItemsPage(ctx, 0, nil, 100)
+	if err != nil {
+		t.Fatalf("all unclaimed items: %v", err)
+	}
+	var (
+		unclaimedAfter *UnclaimedItemCursor
+		unclaimedPaged []UnclaimedItemRecord
+	)
+	for {
+		page, more, err := r.UnclaimedItemsPage(ctx, 0, unclaimedAfter, 1)
+		if err != nil {
+			t.Fatalf("unclaimed page: %v", err)
+		}
+		unclaimedPaged = append(unclaimedPaged, page...)
+		if !more {
+			break
+		}
+		last := page[len(page)-1]
+		unclaimedAfter = &UnclaimedItemCursor{Segment: last.Segment, Key: last.Key}
+	}
+	if !reflect.DeepEqual(allUnclaimed, unclaimedPaged) {
+		t.Fatalf("unclaimed full/page differ:\nfull=%#v\npage=%#v", allUnclaimed, unclaimedPaged)
+	}
+
+	emptyTransactions, more, err := r.ClaimTransactionsPage(ctx, 1, nil, 10)
+	if err != nil || more || emptyTransactions == nil {
+		t.Fatalf("round-1 transactions = %#v, more=%v, err=%v", emptyTransactions, more, err)
+	}
+}
+
+func TestStatisticsV2PagesPropagateCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	checks := map[string]func() error{
+		"global": func() error {
+			_, err := r.CosmicGameGlobalStatistics(ctx)
+			return err
+		},
+		"roi": func() error {
+			_, _, err := r.ROILeaderboardPage(ctx, 0, ROILeaderboardNetProfit, nil, 1)
+			return err
+		},
+		"claims": func() error {
+			_, _, err := r.ClaimsSummaryPage(ctx, nil, 1)
+			return err
+		},
+		"summary": func() error {
+			_, err := r.ClaimSummaryByRound(ctx, 0)
+			return err
+		},
+		"transactions": func() error {
+			_, _, err := r.ClaimTransactionsPage(ctx, 0, nil, 1)
+			return err
+		},
+		"attached": func() error {
+			_, _, err := r.AttachedTokensPage(ctx, 0, nil, 1)
+			return err
+		},
+		"unclaimed": func() error {
+			_, _, err := r.UnclaimedItemsPage(ctx, 0, nil, 1)
+			return err
+		},
+	}
+	for name, check := range checks {
+		t.Run(name, func(t *testing.T) {
+			if err := check(); !errors.Is(err, context.Canceled) {
+				t.Fatalf("error = %v, want context.Canceled", err)
+			}
+		})
+	}
 }
 
 func TestGetClaimDetailByRound(t *testing.T) {

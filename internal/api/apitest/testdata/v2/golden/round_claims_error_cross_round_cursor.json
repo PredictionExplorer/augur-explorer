@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The cursor is malformed, unsupported, or belongs to another round or claim section.",
+    "instance": "/api/v2/cosmicgame/rounds/1/claims",
+    "status": 400,
+    "title": "Invalid cursor",
+    "type": "https://api.cosmicsignature.com/problems/invalid-cursor"
+  }
+}

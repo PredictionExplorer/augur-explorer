@@ -1,0 +1,44 @@
+[
+  {
+    "EventLogID": 5044,
+    "RoundNum": 0,
+    "AssetType": "eth",
+    "RecipientAddr": "0x2200000000000000000000000000000000000022",
+    "BeneficiaryAddr": "0x2200000000000000000000000000000000000022",
+    "EthAmountWei": "50000000000000000",
+    "TokenAddr": null,
+    "TokenID": null,
+    "AmountBaseUnits": null,
+    "ClaimedAfterSecs": 100,
+    "ClaimedTimestamp": 1767226700,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001012"
+  },
+  {
+    "EventLogID": 5045,
+    "RoundNum": 0,
+    "AssetType": "erc721",
+    "RecipientAddr": "0x2100000000000000000000000000000000000021",
+    "BeneficiaryAddr": "0x2100000000000000000000000000000000000021",
+    "EthAmountWei": null,
+    "TokenAddr": "0x2700000000000000000000000000000000000027",
+    "TokenID": 777,
+    "AmountBaseUnits": null,
+    "ClaimedAfterSecs": 200,
+    "ClaimedTimestamp": 1767226800,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001013"
+  },
+  {
+    "EventLogID": 5046,
+    "RoundNum": 0,
+    "AssetType": "erc20",
+    "RecipientAddr": "0x2100000000000000000000000000000000000021",
+    "BeneficiaryAddr": "0x2100000000000000000000000000000000000021",
+    "EthAmountWei": null,
+    "TokenAddr": "0x2600000000000000000000000000000000000026",
+    "TokenID": null,
+    "AmountBaseUnits": "500000000000000000000",
+    "ClaimedAfterSecs": 200,
+    "ClaimedTimestamp": 1767226800,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001013"
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "avgClaimLatencySeconds": 0,
+        "awardedAt": "2026-01-01T00:41:40Z",
+        "claimWindowExpiresAt": "2026-01-11T00:25:00Z",
+        "erc20Awarded": 0,
+        "erc20Unclaimed": 0,
+        "ethAwarded": 0,
+        "ethUnclaimed": 0,
+        "isExpired": true,
+        "nftAwarded": 1,
+        "nftUnclaimed": 1,
+        "round": 2,
+        "totalAwarded": 1,
+        "totalUnclaimed": 1,
+        "unclaimedEthAmountWei": "0"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJyIjoyLCJlIjo1MDcyfQ"
+    }
+  }
+}

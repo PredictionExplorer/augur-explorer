@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "completedRounds": 3,
+    "donatedNfts": 2,
+    "totalBids": 12
+  }
+}

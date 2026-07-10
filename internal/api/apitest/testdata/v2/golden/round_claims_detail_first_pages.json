@@ -1,0 +1,68 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "attachedTokens": {
+      "data": [
+        {
+          "amountBaseUnits": "500000000000000000000",
+          "assetType": "erc20",
+          "contributorAddress": "0x2100000000000000000000000000000000000021",
+          "occurredAt": "2026-01-01T00:11:40Z",
+          "tokenAddress": "0x2600000000000000000000000000000000000026",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001008"
+        }
+      ],
+      "meta": {
+        "limit": 1,
+        "nextCursor": "eyJ2IjoxLCJyIjowLCJzIjoiYXR0YWNoZWQiLCJlIjo1MDE1LCJnIjowLCJrIjowfQ"
+      }
+    },
+    "claimTransactions": {
+      "data": [
+        {
+          "assetType": "eth",
+          "beneficiaryAddress": "0x2200000000000000000000000000000000000022",
+          "claimedAfterSeconds": 100,
+          "claimedAt": "2026-01-01T00:18:20Z",
+          "ethAmountWei": "50000000000000000",
+          "recipientAddress": "0x2200000000000000000000000000000000000022",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001012"
+        }
+      ],
+      "meta": {
+        "limit": 1,
+        "nextCursor": "eyJ2IjoxLCJyIjowLCJzIjoidHJhbnNhY3Rpb25zIiwiZSI6NTA0NCwiZyI6MCwiayI6MH0"
+      }
+    },
+    "summary": {
+      "avgClaimLatencySeconds": 167,
+      "awardedAt": "2026-01-01T00:16:40Z",
+      "claimWindowExpiresAt": "2026-01-11T00:00:00Z",
+      "erc20Awarded": 1,
+      "erc20Unclaimed": 0,
+      "ethAwarded": 3,
+      "ethUnclaimed": 2,
+      "isExpired": true,
+      "nftAwarded": 1,
+      "nftUnclaimed": 0,
+      "round": 0,
+      "totalAwarded": 5,
+      "totalUnclaimed": 2,
+      "unclaimedEthAmountWei": "130000000000000000"
+    },
+    "unclaimedItems": {
+      "data": [
+        {
+          "assetType": "eth",
+          "ethAmountWei": "50000000000000000",
+          "recipientAddress": "0x2300000000000000000000000000000000000023"
+        }
+      ],
+      "meta": {
+        "limit": 1,
+        "nextCursor": "eyJ2IjoxLCJyIjowLCJzIjoidW5jbGFpbWVkIiwiZSI6MCwiZyI6MCwiayI6NTAyNH0"
+      }
+    }
+  }
+}

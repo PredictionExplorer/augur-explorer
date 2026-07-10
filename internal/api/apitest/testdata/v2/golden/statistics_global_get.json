@@ -1,0 +1,58 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "charityWithdrawalCount": 1,
+    "charityWithdrawalsTotalWei": "50000000000000000",
+    "chronoWarriorEthDepositsTotalWei": "80000000000000000",
+    "completedRounds": 3,
+    "cosmicGameDonationCount": 1,
+    "cosmicGameDonationsTotalWei": "90000000000000000",
+    "cosmicSignatureMints": 9,
+    "cstBidCount": 2,
+    "cstConsumedTotalWei": "410000000000000000000",
+    "cstGivenInPrizesTotalWei": "542000000000000000000",
+    "cstStaking": {
+      "activeStakers": 1,
+      "deposits": 1,
+      "totalRewardWei": "2000000000000000000",
+      "totalTokensStaked": 1,
+      "unclaimedRewardWei": "1000000000000000000"
+    },
+    "currentRoundBids": 3,
+    "directDonationCount": 2,
+    "directDonationsTotalWei": "500000000000000000",
+    "donatedNftCount": 2,
+    "donatedTokenDistribution": [
+      {
+        "donatedCount": 2,
+        "tokenAddress": "0x2700000000000000000000000000000000000027"
+      }
+    ],
+    "marketingRewardCount": 1,
+    "marketingRewardsTotalWei": "50000000000000000000",
+    "namedTokens": 1,
+    "prizeRegistryRows": 26,
+    "raffleEthDepositsTotalWei": "160000000000000000",
+    "raffleEthWithdrawnTotalWei": "50000000000000000",
+    "randomWalkStaking": {
+      "activeStakers": 2,
+      "totalTokensMinted": 1,
+      "totalTokensStaked": 2
+    },
+    "randomWalkTokensUsedInBids": 1,
+    "totalBids": 12,
+    "totalEthDonatedWei": "500000000000000000",
+    "totalPrizeAwards": 25,
+    "totalPrizesPaidWei": "2040000000000000000",
+    "uniqueBidders": 5,
+    "uniqueCstStakers": 2,
+    "uniqueDonors": 2,
+    "uniqueDualStakers": 1,
+    "uniqueRandomWalkStakers": 3,
+    "uniqueWinners": 5,
+    "voluntaryDonationCount": 1,
+    "voluntaryDonationsTotalWei": "10000000000000000",
+    "winnersWithPendingRaffleWithdrawal": 2
+  }
+}
