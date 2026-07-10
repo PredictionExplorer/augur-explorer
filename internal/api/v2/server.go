@@ -27,6 +27,15 @@ type roundReader interface {
 	RoundInfo(context.Context, int64) (cgprimitives.CGRoundRec, error)
 }
 
+type currentRoundReader interface {
+	CosmicGameRoundStatistics(context.Context, int64) (cgprimitives.CGRoundStats, error)
+	BidCountForRound(context.Context, int64) (int64, error)
+}
+
+type contractStateReader interface {
+	Snapshot() contractstate.Snapshot
+}
+
 // Server implements the generated v2 strict-server contract. Every runtime
 // dependency is injected once at construction; handlers do not read package
 // globals.
@@ -34,7 +43,8 @@ type Server struct {
 	store         *store.Store
 	bids          bidReader
 	rounds        roundReader
-	contractState *contractstate.State
+	currentRounds currentRoundReader
+	contractState contractStateReader
 	logger        *slog.Logger
 }
 
@@ -50,15 +60,28 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, state, logger)
+	return newServer(st, repo, repo, repo, state, logger)
 }
 
-func newServer(st *store.Store, bids bidReader, rounds roundReader, state *contractstate.State, logger *slog.Logger) (*Server, error) {
+func newServer(
+	st *store.Store,
+	bids bidReader,
+	rounds roundReader,
+	currentRounds currentRoundReader,
+	state contractStateReader,
+	logger *slog.Logger,
+) (*Server, error) {
 	if bids == nil {
 		return nil, errors.New("api v2: bid repository is required")
 	}
 	if rounds == nil {
 		return nil, errors.New("api v2: round repository is required")
+	}
+	if currentRounds == nil {
+		return nil, errors.New("api v2: current-round repository is required")
+	}
+	if state == nil {
+		return nil, errors.New("api v2: contract state is required")
 	}
 	if logger == nil {
 		logger = slog.Default()
@@ -67,6 +90,7 @@ func newServer(st *store.Store, bids bidReader, rounds roundReader, state *contr
 		store:         st,
 		bids:          bids,
 		rounds:        rounds,
+		currentRounds: currentRounds,
 		contractState: state,
 		logger:        logger,
 	}, nil

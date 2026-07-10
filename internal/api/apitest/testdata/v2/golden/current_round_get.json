@@ -1,0 +1,28 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "lastBidderAddress": "0x2100000000000000000000000000000000000021",
+    "mainPrizeAmountWei": "2500000000000000000",
+    "mainPrizeTimeIncrementMicroseconds": "3600000000",
+    "nextEthBidPriceWei": "1010000000000000",
+    "rafflePrizeAmountWei": "50000000000000000",
+    "round": 3,
+    "secondsUntilMainPrize": 3600,
+    "stakingRewardAmountWei": "100000000000000000",
+    "statistics": {
+      "activatedAt": "2026-01-01T00:45:00Z",
+      "donatedNftCount": 0,
+      "donationAmountWei": "0",
+      "donationCount": 0,
+      "erc20DonationCount": 0,
+      "parameterWindowDurationSeconds": 200,
+      "parameterWindowStartedAt": "2026-01-01T00:41:40Z",
+      "raffleEthDepositsWei": "0",
+      "raffleNftCount": 0,
+      "roundStartedAt": "2026-01-01T00:45:00Z",
+      "totalBids": 3
+    },
+    "status": "open"
+  }
+}

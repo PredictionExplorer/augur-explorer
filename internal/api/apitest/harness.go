@@ -20,6 +20,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
@@ -39,6 +40,7 @@ type harness struct {
 	router *httpx.Router
 	db     *sql.DB
 	store  *store.Store
+	state  *contractstate.State
 
 	ipCounter atomic.Uint64
 }
@@ -96,7 +98,7 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	// same CORS, recovery and rate-limit middleware in the same order.
 	r := routes.New(st, routes.Options{V2: v2Server})
 
-	return &harness{router: r, db: db.SQL, store: st}, nil
+	return &harness{router: r, db: db.SQL, store: st, state: cgState}, nil
 }
 
 // request performs one HTTP exchange through the real router. Every call uses

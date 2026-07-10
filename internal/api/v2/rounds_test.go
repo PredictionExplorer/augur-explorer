@@ -225,7 +225,14 @@ func TestGetRoundResponses(t *testing.T) {
 func newRoundTestServer(t *testing.T, rounds roundReader) *Server {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	server, err := newServer(nil, fakeBidReader{}, rounds, nil, logger)
+	server, err := newServer(
+		nil,
+		fakeBidReader{},
+		rounds,
+		fakeCurrentRoundReader{},
+		fakeContractState{},
+		logger,
+	)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

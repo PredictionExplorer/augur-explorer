@@ -207,12 +207,25 @@ func TestBidCountForRound(t *testing.T) {
 	if got != 4 {
 		t.Errorf("bid count round 0: got %d, want 4", got)
 	}
+	got, err = r.BidCountForRound(ctx, 3)
+	if err != nil {
+		t.Fatalf("BidCountForRound(3): %v", err)
+	}
+	if got != 3 {
+		t.Errorf("bid count open round 3: got %d, want 3", got)
+	}
 	got, err = r.BidCountForRound(ctx, 999)
 	if err != nil {
 		t.Fatalf("BidCountForRound(999): %v", err)
 	}
 	if got != 0 {
 		t.Errorf("bid count round 999: got %d, want 0", got)
+	}
+
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := r.BidCountForRound(cancelled, 3); !errors.Is(err, context.Canceled) {
+		t.Errorf("cancelled bid count error = %v, want context.Canceled", err)
 	}
 }
 

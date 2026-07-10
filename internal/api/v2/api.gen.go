@@ -50,12 +50,15 @@ func (e BidType) Valid() bool {
 // Defines values for RoundStatus.
 const (
 	Completed RoundStatus = "completed"
+	Open      RoundStatus = "open"
 )
 
 // Valid indicates whether the value is a known member of the RoundStatus enum.
 func (e RoundStatus) Valid() bool {
 	switch e {
 	case Completed:
+		return true
+	case Open:
 		return true
 	default:
 		return false
@@ -107,6 +110,20 @@ type ClaimTransaction struct {
 	EventLogId      int64     `json:"eventLogId"`
 	OccurredAt      time.Time `json:"occurredAt"`
 	TransactionHash string    `json:"transactionHash"`
+}
+
+// CosmicGameCurrentRound defines model for CosmicGameCurrentRound.
+type CosmicGameCurrentRound struct {
+	LastBidderAddress                  *string         `json:"lastBidderAddress,omitempty"`
+	MainPrizeAmountWei                 string          `json:"mainPrizeAmountWei"`
+	MainPrizeTimeIncrementMicroseconds string          `json:"mainPrizeTimeIncrementMicroseconds"`
+	NextEthBidPriceWei                 string          `json:"nextEthBidPriceWei"`
+	RafflePrizeAmountWei               string          `json:"rafflePrizeAmountWei"`
+	Round                              int64           `json:"round"`
+	SecondsUntilMainPrize              int64           `json:"secondsUntilMainPrize"`
+	StakingRewardAmountWei             string          `json:"stakingRewardAmountWei"`
+	Statistics                         RoundStatistics `json:"statistics"`
+	Status                             RoundStatus     `json:"status"`
 }
 
 // CosmicGameRound defines model for CosmicGameRound.
@@ -242,6 +259,9 @@ type InternalError = Problem
 // NotFound defines model for NotFound.
 type NotFound = Problem
 
+// ServiceUnavailable defines model for ServiceUnavailable.
+type ServiceUnavailable = Problem
+
 // ListRoundsParams defines parameters for ListRounds.
 type ListRoundsParams struct {
 	// Cursor Opaque continuation cursor returned by the previous page.
@@ -265,6 +285,9 @@ type ServerInterface interface {
 	// List completed CosmicGame rounds
 	// (GET /api/v2/cosmicgame/rounds)
 	ListRounds(w http.ResponseWriter, r *http.Request, params ListRoundsParams)
+	// Get the current open CosmicGame round
+	// (GET /api/v2/cosmicgame/rounds/current)
+	GetCurrentRound(w http.ResponseWriter, r *http.Request)
 	// Get one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round})
 	GetRound(w http.ResponseWriter, r *http.Request, round Round)
@@ -322,6 +345,20 @@ func (siw *ServerInterfaceWrapper) ListRounds(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListRounds(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCurrentRound operation middleware
+func (siw *ServerInterfaceWrapper) GetCurrentRound(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCurrentRound(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -568,6 +605,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds", wrapper.ListRounds)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/current", wrapper.GetCurrentRound)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}", wrapper.GetRound)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids", wrapper.ListRoundBids)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids/{position}", wrapper.GetRoundBid)
@@ -579,6 +617,8 @@ type BadRequestApplicationProblemPlusJSONResponse Problem
 
 type BidJSONResponse Bid
 
+type CosmicGameCurrentRoundJSONResponse CosmicGameCurrentRound
+
 type CosmicGameRoundJSONResponse CosmicGameRound
 
 type InternalErrorApplicationProblemPlusJSONResponse Problem
@@ -588,6 +628,15 @@ type NotFoundApplicationProblemPlusJSONResponse Problem
 type RoundBidPageJSONResponse RoundBidPage
 
 type RoundPageJSONResponse RoundPage
+
+type ServiceUnavailableResponseHeaders struct {
+	RetryAfter int
+}
+type ServiceUnavailableApplicationProblemPlusJSONResponse struct {
+	Body Problem
+
+	Headers ServiceUnavailableResponseHeaders
+}
 
 type ListRoundsRequestObject struct {
 	Params ListRoundsParams
@@ -639,6 +688,62 @@ func (response ListRounds500ApplicationProblemPlusJSONResponse) VisitListRoundsR
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRoundRequestObject struct {
+}
+
+type GetCurrentRoundResponseObject interface {
+	VisitGetCurrentRoundResponse(w http.ResponseWriter) error
+}
+
+type GetCurrentRound200JSONResponse struct {
+	CosmicGameCurrentRoundJSONResponse
+}
+
+func (response GetCurrentRound200JSONResponse) VisitGetCurrentRoundResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRound500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCurrentRound500ApplicationProblemPlusJSONResponse) VisitGetCurrentRoundResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentRound503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetCurrentRound503ApplicationProblemPlusJSONResponse) VisitGetCurrentRoundResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.Header().Set("Retry-After", fmt.Sprint(response.Headers.RetryAfter))
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -844,6 +949,9 @@ type StrictServerInterface interface {
 	// List completed CosmicGame rounds
 	// (GET /api/v2/cosmicgame/rounds)
 	ListRounds(ctx context.Context, request ListRoundsRequestObject) (ListRoundsResponseObject, error)
+	// Get the current open CosmicGame round
+	// (GET /api/v2/cosmicgame/rounds/current)
+	GetCurrentRound(ctx context.Context, request GetCurrentRoundRequestObject) (GetCurrentRoundResponseObject, error)
 	// Get one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round})
 	GetRound(ctx context.Context, request GetRoundRequestObject) (GetRoundResponseObject, error)
@@ -903,6 +1011,30 @@ func (sh *strictHandler) ListRounds(w http.ResponseWriter, r *http.Request, para
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListRoundsResponseObject); ok {
 		if err := validResponse.VisitListRoundsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCurrentRound operation middleware
+func (sh *strictHandler) GetCurrentRound(w http.ResponseWriter, r *http.Request) {
+	var request GetCurrentRoundRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCurrentRound(ctx, request.(GetCurrentRoundRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCurrentRound")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCurrentRoundResponseObject); ok {
+		if err := validResponse.VisitGetCurrentRoundResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -995,39 +1127,43 @@ func (sh *strictHandler) GetRoundBid(w http.ResponseWriter, r *http.Request, rou
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -177,6 +177,29 @@ func TestMapCharityAllocationSplitsAddresses(t *testing.T) {
 	}
 }
 
+func TestOptionalTimestampAcceptsRepositoryFormats(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]string{
+		"RFC3339":                    "2026-01-01T00:41:40-05:00",
+		"PostgreSQL hour offset":     "2026-01-01 05:41:40+00",
+		"PostgreSQL minute offset":   "2026-01-01 05:41:40+00:00",
+		"PostgreSQL fractional time": "2026-01-01 05:41:40.123456+00",
+	}
+	for name, input := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got, err := optionalTimestamp(input)
+			if err != nil {
+				t.Fatalf("optionalTimestamp(%q): %v", input, err)
+			}
+			if got == nil || got.Location().String() != "UTC" {
+				t.Fatalf("timestamp = %v, want UTC value", got)
+			}
+		})
+	}
+}
+
 func validRoundRecord() cgprimitives.CGRoundRec {
 	// #nosec G101 -- deterministic chain fixture values, not credentials.
 	return cgprimitives.CGRoundRec{

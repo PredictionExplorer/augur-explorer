@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -24,6 +24,19 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/current:
+    get:
+      operationId: getCurrentRound
+      summary: Get the current open CosmicGame round
+      tags:
+        - CosmicGame rounds
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCurrentRound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /api/v2/cosmicgame/rounds/{round}:
     get:
       operationId: getRound
@@ -143,6 +156,7 @@ components:
       type: string
       enum:
         - completed
+        - open
     ClaimTransaction:
       type: object
       additionalProperties: false
@@ -404,6 +418,50 @@ components:
           $ref: "#/components/schemas/TokenPrize"
         chronoWarrior:
           $ref: "#/components/schemas/ChronoWarriorPrize"
+    CosmicGameCurrentRound:
+      type: object
+      additionalProperties: false
+      required:
+        - round
+        - status
+        - nextEthBidPriceWei
+        - secondsUntilMainPrize
+        - mainPrizeAmountWei
+        - rafflePrizeAmountWei
+        - stakingRewardAmountWei
+        - mainPrizeTimeIncrementMicroseconds
+        - statistics
+      properties:
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/RoundStatus"
+        nextEthBidPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        secondsUntilMainPrize:
+          type: integer
+          format: int64
+          minimum: 0
+        mainPrizeAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        rafflePrizeAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        stakingRewardAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        mainPrizeTimeIncrementMicroseconds:
+          type: string
+          pattern: "^[0-9]+$"
+        lastBidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        statistics:
+          $ref: "#/components/schemas/RoundStatistics"
     RoundPage:
       type: object
       additionalProperties: false
@@ -565,6 +623,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CosmicGameRound"
+    CosmicGameCurrentRound:
+      description: The current open round from the cached live contract state.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCurrentRound"
     RoundBidPage:
       description: One stable page of round bids.
       content:
@@ -591,6 +655,19 @@ components:
             $ref: "#/components/schemas/Problem"
     InternalError:
       description: The request could not be completed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailable:
+      description: The cached live contract state is not currently available.
+      headers:
+        Retry-After:
+          description: Seconds until the next scheduled live-state refresh.
+          required: true
+          schema:
+            type: integer
+            minimum: 1
       content:
         application/problem+json:
           schema:

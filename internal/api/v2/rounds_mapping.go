@@ -321,11 +321,28 @@ func optionalTimestamp(value string) (*time.Time, error) {
 		return nil, nil
 	}
 	parsed, err := time.Parse(time.RFC3339Nano, value)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		parsed = parsed.UTC()
+		return &parsed, nil
 	}
-	parsed = parsed.UTC()
-	return &parsed, nil
+
+	// CosmicGameRoundStatistics is shared with frozen v1 and therefore
+	// retains PostgreSQL's timestamptz text representation. Accept both of
+	// PostgreSQL's UTC-offset widths here while keeping the v2 wire format
+	// strictly RFC 3339.
+	for _, layout := range [...]string{
+		"2006-01-02 15:04:05Z07",
+		"2006-01-02 15:04:05.999999999Z07",
+		"2006-01-02 15:04:05Z07:00",
+		"2006-01-02 15:04:05.999999999Z07:00",
+	} {
+		parsed, err = time.Parse(layout, value)
+		if err == nil {
+			parsed = parsed.UTC()
+			return &parsed, nil
+		}
+	}
+	return nil, err
 }
 
 func amountOrZero(value string) (string, error) {

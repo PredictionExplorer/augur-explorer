@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -26,6 +27,15 @@ type fakeBidReader struct {
 type fakeRoundReader struct {
 	page func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error)
 	item func(context.Context, int64) (cgprimitives.CGRoundRec, error)
+}
+
+type fakeCurrentRoundReader struct {
+	statistics func(context.Context, int64) (cgprimitives.CGRoundStats, error)
+	bidCount   func(context.Context, int64) (int64, error)
+}
+
+type fakeContractState struct {
+	snapshot func() contractstate.Snapshot
 }
 
 func (f fakeRoundReader) PrizeClaimsPage(ctx context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgprimitives.CGRoundRec, bool, error) {
@@ -54,6 +64,27 @@ func (f fakeBidReader) BidByRoundAndPosition(ctx context.Context, round, positio
 		return cgprimitives.CGBidRec{}, store.ErrNotFound
 	}
 	return f.item(ctx, round, position)
+}
+
+func (f fakeCurrentRoundReader) CosmicGameRoundStatistics(ctx context.Context, round int64) (cgprimitives.CGRoundStats, error) {
+	if f.statistics == nil {
+		return cgprimitives.CGRoundStats{RoundNum: round}, nil
+	}
+	return f.statistics(ctx, round)
+}
+
+func (f fakeCurrentRoundReader) BidCountForRound(ctx context.Context, round int64) (int64, error) {
+	if f.bidCount == nil {
+		return 0, nil
+	}
+	return f.bidCount(ctx, round)
+}
+
+func (f fakeContractState) Snapshot() contractstate.Snapshot {
+	if f.snapshot == nil {
+		return contractstate.Snapshot{}
+	}
+	return f.snapshot()
 }
 
 func TestListRoundBidsPaginatesWithOpaqueCursor(t *testing.T) {
@@ -275,13 +306,26 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 	if _, err := NewServer(&store.Store{}, nil, nil); err == nil {
 		t.Fatal("NewServer accepted a nil contract state")
 	}
-	if _, err := newServer(nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil bid repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round repository")
 	}
-	server, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil)
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil current-round repository")
+	}
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil contract state")
+	}
+	server, err := newServer(
+		nil,
+		fakeBidReader{},
+		fakeRoundReader{},
+		fakeCurrentRoundReader{},
+		fakeContractState{},
+		nil,
+	)
 	if err != nil {
 		t.Fatalf("newServer rejected test dependencies: %v", err)
 	}
@@ -293,7 +337,14 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 func newTestServer(t *testing.T, bids bidReader) *Server {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	server, err := newServer(nil, bids, fakeRoundReader{}, nil, logger)
+	server, err := newServer(
+		nil,
+		bids,
+		fakeRoundReader{},
+		fakeCurrentRoundReader{},
+		fakeContractState{},
+		logger,
+	)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

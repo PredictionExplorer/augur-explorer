@@ -20,6 +20,7 @@ import (
 
 const (
 	v2ListRoundsPath    = "/api/v2/cosmicgame/rounds"
+	v2CurrentRoundPath  = "/api/v2/cosmicgame/rounds/current"
 	v2GetRoundPath      = "/api/v2/cosmicgame/rounds/{round}"
 	v2ListRoundBidsPath = "/api/v2/cosmicgame/rounds/{round}/bids"
 	v2GetRoundBidPath   = "/api/v2/cosmicgame/rounds/{round}/bids/{position}"
@@ -31,6 +32,55 @@ type v2GoldenCase struct {
 	template   string
 	pathParams map[string]string
 	ctx        context.Context
+}
+
+func TestAPIV2CurrentRound(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "current_round_get",
+			target:     v2CurrentRoundPath,
+			template:   v2CurrentRoundPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "current_round_error_internal",
+			target:     v2CurrentRoundPath,
+			template:   v2CurrentRoundPath,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+	}
+
+	runV2GoldenCases(t, h, spec, cases)
+
+	original := h.state.Snapshot()
+	h.state.SetBidPrice("error", 0)
+	defer h.state.SetBidPrice(original.BidPrice, original.BidPriceEth)
+	unavailable := h.get(t, v2CurrentRoundPath)
+	if unavailable.Code != http.StatusServiceUnavailable ||
+		unavailable.Header().Get("Retry-After") != "5" {
+		t.Fatalf("unavailable live state = status %d Retry-After %q, want 503/5",
+			unavailable.Code, unavailable.Header().Get("Retry-After"))
+	}
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{
+			name:       "current_round_error_unavailable",
+			target:     v2CurrentRoundPath,
+			template:   v2CurrentRoundPath,
+			pathParams: map[string]string{},
+		},
+	})
 }
 
 func TestAPIV2RoundBids(t *testing.T) {
