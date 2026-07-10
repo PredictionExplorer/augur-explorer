@@ -250,17 +250,17 @@ VALUES ($1, $2, $3, $4, $5, $6)
 
 ### Event Processing
 
-**Location**: 
-- `cmd/cg-etl/events_registry.go` → `process_single_event()`
-- `cmd/rw-etl/events.go` → `process_single_event()`
+**Location**:
+- `internal/indexer/handler.go` → `LogProcessor` + `Registry.ProcessLog` (shared dispatch)
+- `internal/indexer/cosmicgame/` → CosmicGame decode/store handler pairs
+- `internal/indexer/randomwalk/` → RandomWalk decode/store handler pairs
 
 Process flow:
-1. Retrieve event log from `evt_log` by ID
+1. Retrieve event log from `evt_log` by ID (`LogProcessor`)
 2. RLP-decode back to `types.Log`
-3. Match event signature (`Topics[0]`) to handler
-4. Decode event data using contract ABI
-5. Extract indexed parameters from `Topics[]`
-6. Insert into domain-specific table
+3. Match event signature (`Topics[0]`) and emitting contract to the registered handlers
+4. `Decode` step: decode event data using the contract ABI, extract indexed parameters from `Topics[]` (pure — fuzzed per package)
+5. `Store` step: enrichment queries/contract reads, then insert into the domain-specific table
 
 ### Running the ETL
 
@@ -513,9 +513,11 @@ the full environment-variable reference is [.env.example](../.env.example).
 │   ├── blockchain_insert.go # Raw event insertion
 │   ├── cosmicgame/         # CosmicGame queries
 │   └── randomwalk/         # RandomWalk queries
-├── internal/indexer/       # Shared indexing engine (polling loop, block ops, retries, metrics)
-├── cmd/cg-etl/             # CosmicGame indexer (engine configuration + event handlers)
-├── cmd/rw-etl/             # RandomWalk indexer (engine configuration + event handlers)
+├── internal/indexer/       # Shared indexing engine (polling loop, block ops, retries, metrics, handler registry)
+│   ├── cosmicgame/         # CosmicGame event handlers (decode/store pairs) + startup contract sync
+│   └── randomwalk/         # RandomWalk event handlers (decode/store pairs)
+├── cmd/cg-etl/             # CosmicGame indexer binary (pure wiring)
+├── cmd/rw-etl/             # RandomWalk indexer binary (pure wiring)
 ├── db/migrations/          # goose schema migrations
 └── cmd/apiserver/          # Web API server
     └── (handlers in internal/api/)

@@ -33,21 +33,21 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-09 (indexer-engine sprint). Update after each phase.
+Measured 2026-07-09 (EventHandler-port sprint). Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 71,010 (+1,536: `internal/indexer` engine + its unit/loop tests, minus the deleted `internal/etl` and both `loop.go` copies) | n/a (informational) | `rg --files internal cmd -g '*.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
-| snake_case functions | ~700 | **256** (api 127, cg-etl 86 `proc_*` renamed with the Phase-3 handler port, notibot 24, rw-etl 9, rwalk-alarm 4, misc 6; **the entire store layer is 0**) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
-| `os.Exit` in library code (`internal/`) | ~560 | **11 matches = 4 real calls** (3 test-harness `TestMain`s + `primitives.Fatalf`; the rest are doc comments). The new `internal/indexer` returns errors everywhere. | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
-| Dot-import files | ~70 | **15** | **0** | `rg -l '^\s*\. "github' --type go internal cmd contracts` |
-| Package-level mutable globals (api + etl) | ~120 | ~30 (cg-etl ~23, rw-etl ~7; loop state moved into the injected `indexer.Engine`; the remaining handler-facing ABIs/addresses/loggers go with the Phase-3 handler port) | ~0 (DI everywhere) | manual review per package |
-| golangci-lint issues | 433 (first run) | **120** capped output (uncapped 459, down from 471; `internal/indexer` is lint-clean) | **0** | `golangci-lint run` |
-| Test files | 17 | **109** | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
-| Fuzz targets | 0 | **28** | **25+** (see §4.4) — met; grows with Phase 3 | `rg "func Fuzz" internal cmd contracts -c` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | 71,159 (+149: the handler port trades the `proc_*` bodies for decode/store pairs + registry + new unit/fuzz tests; both ETL mains shrink to wiring) | n/a (informational) | `rg --files internal cmd -g '*.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| snake_case functions | ~700 | **161** (api 127, notibot 24, rwalk-alarm 4, primitives 3, notify 2, apiserver 1; **the store layer and both ETLs are 0**) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
+| `os.Exit` in library code (`internal/`) | ~560 | **15 matches = 6 real calls** (5 test-harness `TestMain`s + `primitives.Fatalf`; the rest are doc comments). | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
+| Dot-import files | ~70 | **4** (apiserver 1, notibot 1, api/cosmicgame 2) | **0** | `rg -l '^\s*\. "github' --type go internal cmd contracts` |
+| Package-level mutable globals (api + etl) | ~120 | ~12 (api only: the Init-time handles going with the v2 `Server`; **both ETL binaries have zero package-level state** — handlers run on injected `Handlers` deps) | ~0 (DI everywhere) | manual review per package |
+| golangci-lint issues | 433 (first run) | **119** capped output (uncapped 428, down from 459; `internal/indexer` + both handler packages are lint-clean) | **0** | `golangci-lint run` |
+| Test files | 17 | **112** | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
+| Fuzz targets | 0 | **30** (the two §4.4 decode targets unblocked by the handler port) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
 | Benchmarks | 0 | **4** (8 sub-benchmarks; baselines in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
 | Coverage on `internal/` (unit) | 2.4% | **8.2%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Coverage on `internal/` (integration, enforced) | n/a | **70.3%** (floor 69%) | **≥70%, floor only moves up — met** | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
+| Coverage on `internal/` (integration, enforced) | n/a | **72.8%** (floor 71%) | **≥70%, floor only moves up — met** | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
 | Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
 | Routes on stdlib router | 0 | **all** — 138 registrations (187 OpenAPI operations incl. aliases) + health + host-dispatched metadata + env-gated static assets on `net/http` ServeMux via `internal/api/httpx`; **gin is out of the build graph** (survives in go.mod only as an indirect test-dependency of notibot's Discord websocket lib) | all (v1 compat + v2) — v1 done | `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
 | `context.Context` on store methods | 0% | **100% — 366 Repo methods (CosmicGame 304 + RandomWalk 62) + 22 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
@@ -240,7 +240,9 @@ txs, receipts, `eth_getLogs`, registrable `eth_call` handlers, `Reorg()`)
 and `internal/testutil` (golden compare + canonical DB snapshot/diff with
 FK resolution to natural keys — addresses, tx hashes, `evt:block/logindex`).
 
-- [x] `cmd/cg-etl/fixtures_test.go`: one fixture per dispatched event type
+- [x] `cmd/cg-etl/fixtures_test.go` (now
+      `internal/indexer/cosmicgame/fixtures_test.go` since the Phase-3
+      handler port): one fixture per dispatched event type
       (all `select_event_and_process` branches — 74 at the time, 75 since the
       write-layer sprint added the missing ERC20TransferFailed dispatch —
       incl. both address-guarded
@@ -258,7 +260,8 @@ FK resolution to natural keys — addresses, tx hashes, `evt:block/logindex`).
       round (admin bootstrap, ETH/RandomWalk/CST bids, donations of every
       kind, the 13-log claim transaction, withdrawal, donated-prize claims,
       transfers, staking with reward deposit) — one cumulative golden
-- [x] Same for `cmd/rw-etl` (all 7 dispatched event types + skip paths for
+- [x] Same for `cmd/rw-etl` (now `internal/indexer/randomwalk`; all 7
+      dispatched event types + skip paths for
       unknown token/offer, marketplace story golden). RW handlers insert
       without delete-first, so single-event replay is impossible by design
       (UNIQUE(evtlog_id) aborts); re-processing is pinned via the reorg test.
@@ -295,14 +298,14 @@ Decoders (highest value — they consume chain data):
       (+ `FuzzArbitrumLogDecode` for the single-log decoder)
 - [x] `FuzzFreezerIndexRead` — `internal/freezer`: corrupt index/data-file bytes
       (+ `FuzzUint48RoundTrip`; found the OOM bug above)
-- [~] `FuzzEventDecodeCG` — decode-only half landed as `FuzzABIEventUnpack` in
-      `contracts/cosmicgame` (fuzzes every event decoder in all 10 CosmicGame
-      ABIs). The full registry-driven fuzz over the `cmd/cg-etl` `proc_*`
-      handlers is blocked until Phase 3 separates decode from persistence.
-- [~] `FuzzEventDecodeRW` — same split: `FuzzABIEventUnpack` in
-      `contracts/randomwalk` landed; handler-level fuzz waits for Phase 3
-- [x] `FuzzEvtlogRLP` — lives in `cmd/cg-etl` (the real decode site of stored
-      `log_rlp`; the engine package only fetches and stores); includes
+- [x] `FuzzEventDecodeCG` — landed 2026-07-09 with the Phase-3 handler port:
+      iterates every registered handler in `internal/indexer/cosmicgame` and
+      fuzzes its `Decode` with arbitrary topics/data (never panics; indexed-
+      topic bounds now checked instead of trusted). The ABI-level
+      `FuzzABIEventUnpack` in `contracts/cosmicgame` stays as the lower layer.
+- [x] `FuzzEventDecodeRW` — same, over `internal/indexer/randomwalk`
+- [x] `FuzzEvtlogRLP` — lives in `internal/indexer` (moved with
+      `LogProcessor`, the real decode site of stored `log_rlp`); includes
       decode→encode→decode round-trip property
 
 HTTP/API input handling (security-relevant):
@@ -789,12 +792,11 @@ migrated.
 Goal: one shared, tested indexing engine; the two binaries become thin
 configuration of it. §4.3 fixtures must be green before starting.
 
-**Status: engine core landed 2026-07-09 (indexer-engine sprint).** The
-polling loop, batch/retry policy, chain-split handling, metrics and logging
-are one shared, tested component; `internal/etl` (the copy-paste `common`
-package) and both per-binary `loop.go` copies are deleted. What remains of
-the phase is the handler port (`EventHandler` interface + the ~89 `proc_*`
-functions) and the transactional-status decision below.
+**Status: complete as of 2026-07-09 (EventHandler-port sprint)** — the
+engine core (loop, retry, metrics, slog) landed in the indexer-engine
+sprint; the handler port finished the phase. Both ETL binaries are pure
+wiring; the only open item is the deliberately deferred per-event
+transactional status (see below).
 
 - [x] `internal/indexer` package: `Engine` struct (rpc client, store, registry,
       slog logger, batch policy) with `Run(ctx) error` *(2026-07-09 — deps are
@@ -805,17 +807,42 @@ functions) and the transactional-status decision below.
       registry stays in the binaries as `ProcessFunc` until the EventHandler
       port below; blockops/chainsplit/backfill moved in as Engine methods
       with their integration suite (`pipeline_integration_test.go`).)*
-- [ ] `EventHandler` interface: `Topic() common.Hash; Decode(types.Log) (Event, error);
+- [x] `EventHandler` interface: `Topic() common.Hash; Decode(types.Log) (Event, error);
       Store(ctx, Store, Event) error` — decode separated from persistence
       (enables the decode-only fuzz/golden tests to bypass the DB)
-- [ ] Port all ~80 CosmicGame handlers from `proc_*` functions to the registry;
-      delete `cmd/cg-etl/events_*.go` bodies as they move
-- [ ] Port the 9 RandomWalk handlers
-- [~] Replace package-level globals (eclient, ABIs, `evt_*` vars, storagew,
-      Info/Error) with injected dependencies *(loop-side state is engine-owned
-      now; `rpcclient`, the dead `inspected_events` registry (~310 LOC) and
-      two orphaned globals are deleted. The handler-facing globals go with
-      the EventHandler port.)*
+      *(2026-07-09 — landed as `indexer.EventHandler` with `Name()` (metric
+      label) and `Sources()` (emitting contracts; the registry filters by
+      source before Decode, replacing the in-handler address guards).
+      `indexer.NewHandler[E]` keeps per-event type safety between the decode
+      and store steps; `indexer.Registry` supports multiple handlers per
+      topic0 (the two CharityAddressChanged meanings, the two
+      FundsTransferredToCharity emitters, ERC721-vs-ERC20 Transfer) and
+      validates at construction that same-topic handlers agree on one metric
+      name. `indexer.LogProcessor(store, registry)` replaces the two
+      byte-identical `process_single_event` copies and produces the engine's
+      `ProcessFunc`. All unit-tested without Docker.)*
+- [x] Port all ~80 CosmicGame handlers from `proc_*` functions to the registry;
+      delete `cmd/cg-etl/events_*.go` bodies as they move *(2026-07-09 — the
+      76 dispatched handlers (78 registrations incl. the Transfer split)
+      live in `internal/indexer/cosmicgame` as decode/store method pairs on
+      an injected `Handlers` set (`Config{Repo, Store, Caller, Contracts,
+      Logger}`); ABIs parse once in `New`; `BootstrapContracts` replaces the
+      main()/harness duplicated address bootstrap; the `decode.go` helpers
+      became `Handlers` methods; `contract_sync.go` moved along as
+      `SyncContractParams`. Decode steps are total: indexed-topic counts are
+      bounds-checked (a malformed log now errors the batch instead of
+      panicking the process).)*
+- [x] Port the 9 RandomWalk handlers *(2026-07-09 —
+      `internal/indexer/randomwalk`, same pattern; the existence-guard skips
+      (unknown offer/token) live in the store steps where the DB read
+      happens)*
+- [x] Replace package-level globals (eclient, ABIs, `evt_*` vars, storagew,
+      Info/Error) with injected dependencies *(2026-07-09 — both ETL binaries
+      have zero package-level variables; every handler dependency is a
+      `Handlers` field. The `evt_*` byte-slice vars are gone — registration
+      uses the topic constants directly; handler logging is one structured
+      slog record per event through the injected logger (the dual-file
+      handler in production).)*
 - [x] Batch loop: context-aware retry with exponential backoff + jitter on RPC
       and DB errors (no more crash-per-blip); circuit-break to exit only after
       N consecutive failures *(2026-07-09 — any failed batch retries from the
@@ -824,17 +851,22 @@ functions) and the transactional-status decision below.
       a row, so systemd restarts resume from the watermark. Two data-loss bugs
       of the legacy loops fixed on the way — see the progress log.)*
 - [ ] Status/progress persisted transactionally with the batch's inserts
-      *(deliberately deferred: per-event delete-then-insert replay is
-      idempotent (pinned by the §4.3 replay tests), so batch-level
-      transactionality buys no correctness today. Revisit with the
-      EventHandler port, where a per-event `pgx.Tx` becomes natural — needs a
-      querier abstraction on the repos and a tx-aware address cache.)*
-- [~] `log/slog` structured logging (block ranges, event counts, timings);
+      *(deliberately deferred, re-affirmed with the EventHandler port
+      2026-07-09: per-event delete-then-insert replay is idempotent (pinned
+      by the §4.3 replay tests), so batch-level transactionality buys no
+      correctness today. The `Store(ctx, event)` seam is where a per-event
+      `pgx.Tx` would slot in, but it still needs a querier abstraction
+      across the 366 repo methods and a tx-aware address cache — not worth
+      it for zero behavior change. Revisit only if a non-idempotent handler
+      ever appears.)*
+- [x] `log/slog` structured logging (block ranges, event counts, timings);
       keep file output via slog handler during transition *(2026-07-09 — the
       engine, startup sync and both mains log structured records through
       `indexer.NewDualLogHandler` into the legacy two-file layout (info +
-      errors-duplicated-to-error-file). The `proc_*` handlers keep their
-      `Info.Printf` until the handler port; §8.3 replaces file logging.)*
+      errors-duplicated-to-error-file). EventHandler-port sprint: the
+      handlers emit one structured record per processed event through the
+      injected logger — the `Info.Printf` multi-line dumps and the `Info`/
+      `Error` `*log.Logger` globals are gone. §8.3 replaces file logging.)*
 - [x] Prometheus metrics: `rwcg_etl_last_block`, `rwcg_etl_events_total{type}`,
       `rwcg_etl_batch_duration_seconds`, `rwcg_etl_reorgs_total`
       *(2026-07-09 — plus `rwcg_etl_batch_failures_total{stage}` for alerting
@@ -869,8 +901,11 @@ package per PR, parity suite green after each.
 
 - [ ] `internal/store` + subpackages (387 funcs — mostly renamed during Phase 1; this item is the sweep for leftovers)
 - [ ] `internal/api` (135 funcs; handler names like `api_cosmic_game_bid_list` → `handleBidList`)
-- [ ] `cmd/cg-etl` (89 — superseded by Phase 3 port; sweep leftovers)
-- [ ] `cmd/notibot` (24), `cmd/rw-etl` (11), `cmd/rwalk-alarm` (4)
+- [x] `cmd/cg-etl` — done by the Phase-3 handler port (0 snake_case funcs;
+      the SCREAMING_SNAKE topic constants moved as-is to
+      `internal/indexer/{cosmicgame,randomwalk}/topics.go` and are this
+      item's remaining sweep)
+- [ ] `cmd/notibot` (24), ~~`cmd/rw-etl`~~ (0 — handler port), `cmd/rwalk-alarm` (4)
 - [ ] `internal/primitives` (3) + rename package to `internal/model` (or fold
       types into their owning packages — decide in §11)
 - [ ] Local variables and struct fields in touched files follow along
@@ -878,9 +913,9 @@ package per PR, parity suite green after each.
 
 ### 8.2 Imports and files
 
-Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame` (5),
-`cmd/rw-etl` (2), `cmd/notibot` (1), `cmd/apiserver` (1), `internal/api/common` (1),
-`internal/store/cosmicgame` (2 incl. test).
+Eliminate all dot-imports (4 files left after the Phase-3 handler port
+removed the 11 ETL ones): `internal/api/cosmicgame` (2), `cmd/apiserver` (1),
+`cmd/notibot` (1).
 
 - [ ] Replace with named imports/aliases (`cgstore`, `rwcontracts`, ...)
 - [ ] Enable `gci` + `gofumpt` in `.golangci.yml` formatters once the big moves
@@ -982,4 +1017,5 @@ Eliminate all dot-imports (21 files): `cmd/cg-etl` (9), `internal/api/cosmicgame
 | 2026-07-09 | `49c07f07` | **ContractState extraction sprint (Phase 2 kickoff: §6.2 ContractState + graceful shutdown; §4.1 happy-path goldens):** the ~70 package-level contract/database state globals in `internal/api/cosmicgame/state.go`, the three unkillable `for { refresh; sleep }` goroutines, the `DisableBackgroundRefresh` test hook and the `contract_live_reads.go` mutex state became one injected component, `internal/api/cosmicgame/contractstate.State`: `New(Config{EthClient, DataSource, Addrs, loggers, intervals})` → `LoadInitial(ctx)` (synchronous startup loads, legacy order) → `Run(ctx)` (ticker loops, stop on cancel) with `Snapshot()` value copies behind one RWMutex (refreshes publish per-group batches — no more torn reads), `SetBidPrice` (dashboard live-read write-back), `FetchLiveSpecialWinners(ctx)` and the V1/V2 mechanics detection cache. Handlers read one snapshot per request; 7 dead globals (`endurance_champ_addr`, `chrono_warrior_*`, `last_bidder_bid_time`, `lastcst_bidder_addr`, `round_activation_time_ts`) and their 3 refresh contract calls per 5s cycle are deleted rather than ported (written, never read). `cosmicgame.Init(ctx, ...)` returns an error — the `cosmic_game_init` startup `os.Exit(1)` is gone (`cmd/apiserver` keeps the fatal + HINT at main). **Graceful shutdown (§6.2):** `signal.NotifyContext` root ctx; public TLS/plain listeners are tracked `http.Server`s with `ReadHeaderTimeout`; SIGTERM flips `/readyz` to `503 draining` (`common.SetDraining`, unit-tested), drains in-flight requests 15s, stops refresh loops via ctx, shuts the metrics/pprof server, closes the pool; `select {}` and the dead autocert manager are deleted (`x/crypto` now indirect). **Parity harness (§4.1 deferred item resolved):** new ABI-driven `testchain.ContractStub` (selector-dispatched `Return`/`Handle` stubs packed via the real ABI codec, concurrency-safe re-stubbing); the apitest eth stub is replaced by `internal/testchain` serving fixture-coherent V1 game + CosmicToken/ERC-20 + MarketingWallet state (round 3 open, alice last bidder, tip block 142); the 10 RPC-dependent goldens regenerated in their happy-path shape (dashboard now pins live prices, percentages, `ContractMechanicsVersion=1`, real `ActivationTime`; `current_special_winners` drops its error redaction — response fully deterministic incl. the chrono-live derivation). Degraded-RPC shapes stay pinned by contractstate unit tests (reachable-node sentinels + dead-node balance failure + NaN game balance). **Tests:** +19 unit test funcs across `contractstate` (happy/sentinels/mechanics-flip/Run lifecycle/`-race` concurrency/special winners) and `common` health probes (draining wins, liveness holds); all 482 other goldens byte-identical; full `-race` integration suite green; fuzz smoke 28/28; statistics benchmarks unchanged (B/op & allocs identical to baselines). Metrics: snake_case 267 → **259**, `os.Exit` in `internal/` 12 matches/5 calls → **11 matches/4 calls**, dot-import files 17 → **15**, api+etl mutable globals ~80 → **~33**, lint uncapped 492 → **474** (new packages 0 issues), test files 95 → 96, integration coverage 67.2% → **69.1%** (CI floor 66% → 68%). |
 | 2026-07-09 | `42100ea3` | **Indexer-engine sprint (Phase 3 kickoff: §7 engine core — batch loop, retry policy, metrics, slog, contract-sync tests):** the two near-identical `loop.go` polling loops and the `internal/etl` "common" package became one injected, tested component, [internal/indexer](../internal/indexer)`.Engine` — `New(Config{Store, Client, Progress, Process, Contracts, Logger, Metrics, TopicName, Batch, Retry})` and `Run(ctx) error`. The `Client` interface narrows `*ethclient.Client` to the five calls the engine makes (scriptable fakes in tests); each binary adapts its domain status row through a 20-line `Progress` implementation (preserving `last_evt_id`); the handlers stay behind a `ProcessFunc` until the EventHandler port. Blockops/chainsplit/backfill moved in as Engine methods with their integration suite. **Reliability semantics changed as planned (§7):** any failed batch — RPC, DB or handler — now retries in-process from the last fully completed block with exponential backoff (±25% jitter, 1s→60s cap) instead of crashing per blip; `Run` exits only after 10 consecutive failures (circuit breaker), and SIGTERM mid-batch still finishes the batch on `context.WithoutCancel` before exiting 0. **Two data-loss bugs of the legacy loops found & fixed:** (1) a pipeline failure (EnsureTransaction/InsertEventLog) on a later log of a block whose earlier logs had succeeded advanced the watermark *to that block*, so the failed log was never fetched again — silently lost; the engine only ever acknowledges completed block boundaries (regression test `TestRunMidBlockFailureDoesNotSkipRemainingLogs`). (2) On a fresh status row (`last_block_num=0`) the loops re-resolved the watermark *every iteration* through the store's block watermark, which a failed batch's own inserted blocks advance — the retry resumed past the events the batch still owed; the engine resolves the watermark once at startup and tracks it in memory. **Observability (§7):** Prometheus metrics `rwcg_etl_last_block`, `rwcg_etl_events_total{type}` (labels from the dispatch tables, which now carry event names), `rwcg_etl_batch_duration_seconds`, `rwcg_etl_reorgs_total`, `rwcg_etl_batch_failures_total{stage}`; both ETLs serve `/metrics`+pprof on `METRICS_ADDR` (`indexer.StartMetricsServer`); the engine, startup sync and mains log structured slog records into the legacy two-file layout via `indexer.NewDualLogHandler` (all records → info log, errors duplicated → error log). **contract_sync (§7 item done):** loggers ported to slog; mechanics probe + versioned read fallbacks unit-tested against abigen bindings over `testchain.ContractStub` (no Docker); check-then-correct policy integration-tested (fresh-DB corrections, clean-re-run no-op with untouched address table, targeted correction on a changed chain value, unreadable-params degraded mode). Tools ported: `cgctl backfill-dao-evtlog` runs on `Engine.BackfillContractEvtLogs` (first test coverage: insert + skip idempotence); `opsctl` uses `indexer.FetchLogs`/`client.BlockNumber`; dead code deleted (`inspected_events` registry ~310 LOC, `IMGGEN_PATH`, `rpcclient` globals, 2 orphaned vars). **Tests:** all 492 goldens byte-identical (parity, both store suites, both ETL fixture suites incl. replay-idempotence and reorg — the harnesses now push fixtures through the Engine pipeline); +30 test funcs: batch-policy/backoff/metrics/dual-handler/metrics-server unit tests, loop unit tests (breaker trip + reset, cancellation during caught-up/backoff, fetch-error batch shrink + empty-success growth + watermark acks), loop integration tests (end-to-end batches, transient processor-failure recovery, mid-block regression, shutdown-mid-batch completes the batch, reorg detected by the loop, backfill), contract-sync unit + integration, dispatch-name uniqueness per binary. Full `-race` integration suite green; fuzz smoke 28/28; `internal/indexer` lints clean. Metrics: snake_case 259 → **256**, LOC 69,474 → 71,010, test files 101 → **109**, lint capped 127 → **120** (uncapped 471 → 459), integration coverage 69.5% → **70.3%** (CI floor 68% → 69%; the ≥70% Phase-5 target is met). |
 | 2026-07-09 | `d413ac62` | **Stdlib router sprint (§6.2: v1 API off gin onto net/http ServeMux; gin removed from the build):** new dependency-free `internal/api/httpx` package — `Router` over Go 1.22+ `http.ServeMux` (method+pattern routes, route registry replacing gin's `r.Routes()`, global + per-route middleware in standard `func(http.Handler) http.Handler` form, registration-time conflict panics, gin-parity trailing-slash redirect with the query preserved and scheme-relative `//` targets refused, freeze-after-first-request) and `Context` reproducing the wire behavior the goldens pin (`Param`/`Query`/`JSON` (marshal-before-write, panic → Recovery 500 like gin's render)/`String`/`Data`/`File`/`Status`/`ShouldBindJSON` with encoding/json error text incl. `EOF`); status-recording `ResponseWriter` with `Unwrap` for `http.ResponseController`. Middleware ported to standard form in `internal/api/common`: `CORS` (OPTIONS → 204 pre-routing), `Recovery` (broken-pipe silent, re-panics `ErrAbortHandler`, 500 only if unwritten), new slog `AccessLog` (route = matched pattern; replaces `gin.Logger()`), `RateLimit` + `RequireAdminKey` (same envelopes); Prometheus middleware reads `Request.Pattern` (labels now `{param}` syntax, noted in docs/operations.md). **The 160 v1 handlers kept their bodies** — mechanical `gofmt -r` port to `*httpx.Context`/`httpx.H` (a type alias, so map semantics and sorted-key JSON are unchanged); the four `binding:"required"` structs became explicit zero-value checks with identical 400 messages. **Shared router construction:** new `internal/api/routes.New(st, Options)` builds the middleware chain + full route table for both `cmd/apiserver` (Options inject access log, metrics, static assets) and the apitest harness — the "keep in sync with main.go" duplication is deleted. Static assets: `/images/{filepath...}` + `/static/{filepath...}` (files only, no directory listings) with the cache/log subtree middleware, first handler-level tests (200/404/HEAD/Cache-Control/traversal/no-cache env/registration gating). `cmd/loganomaly` parses the new slog access-log format alongside legacy `[GIN]` lines (logfmt parser fuzz-hardened). **gin removed:** zero imports; `go mod tidy` dropped gin, gin-contrib/sse, go-playground/validator, bytedance/sonic, ugorji et al.; `go list -deps` proves gin links into zero packages (one `// indirect` line remains — nhooyr.io/websocket (disgord test dep) lists it; never compiled). Go toolchain bumped 1.26.4 → 1.26.5 (fixes stdlib GO-2026-5856 crypto/tls finding; govulncheck now clean). **Deliberate router-level deltas, all pinned by new tests (`apitest/router_behavior_test.go`):** wrong method → 405 + `Allow` (gin: 404); router-level 404 body gains stdlib's trailing newline; HEAD served by GET routes (gin: 404); OPTIONS/trailing-slash/CORS-on-404/429-envelope re-pinned unchanged. **Tests:** all 196 parity + 12 error-shape goldens byte-identical with zero regenerations; route-drift test now compares OpenAPI `{param}` templates directly against the router registry (one syntax — the `openAPIPathToGin` translator is deleted); +40 unit test funcs (httpx Context/Router/writer, CORS/Recovery/AccessLog, static assets); full `-race` integration suite green; fuzz fleet 28/28 (one `FuzzConnStringEscape` CI-runner timeout reproduced 0/3 — infra flake, not a finding). Benchmarks: rate limiter re-based on the stdlib stack — `distinct_ips` 1,510 → 1,144 ns/op (−24%), `shared_ip` 1,600 → 1,298 (−19%), allocs identical; statistics queries unchanged (B/op byte-identical). Metrics: lint capped 130 → **127** (uncapped 474 → **471**, new packages 0 issues), test files 96 → **101**, LOC 67,875 → 69,474, integration coverage 69.1% → **69.5%** (floor stays 68%). |
+| 2026-07-09 | | **EventHandler-port sprint (Phase 3 complete: §7 handler port + the two blocked §4.4 fuzz targets):** the ~83 `proc_*` functions and their package-global wiring became typed, dependency-injected handler sets. New in [internal/indexer](../internal/indexer): `EventHandler` (`Topic`/`Name`/`Sources`/`Decode`/`Store`), the generic `NewHandler[E]` adapter (concrete event types survive the decode→store handoff), `Registry` (multi-handler-per-topic, source-address filtering before decode — the in-handler `bytes.Equal` guards became declarative registrations; construction validates that same-topic handlers share one metric label) and `LogProcessor` (the one copy of the twin `process_single_event`s, over a narrow `EventLogSource` seam; `FuzzEvtlogRLP` moved with it). New packages: [internal/indexer/cosmicgame](../internal/indexer/cosmicgame) — 76 handlers (78 registrations: the single legacy Transfer row split into ERC721/ERC20 per source) as `decode*`/`store*` method pairs on `Handlers` (`Config{Repo, Store, Caller (bind.ContractCaller), Contracts, Logger}`), ABIs parsed once in `New`, DB/RPC enrichment (CST-reward mint lookup, prize-round resolution, donation-info + tokenURI reads) in the store steps so every decode is pure; `BootstrapContracts` deduplicates the main()/harness address bootstrap; `contract_sync.go` moved in as `SyncContractParams`; [internal/indexer/randomwalk](../internal/indexer/randomwalk) — the 7 RW handlers, existence-guard skips in the store steps. **Both mains are pure wiring with zero package-level variables** (the ~30 ETL globals — 11 ABIs, 11 addresses, repos, eclient, `Info`/`Error`, ~67 `evt_*` topic slices — are deleted); handler logging is one structured slog record per event (dual-file layout preserved in prod). **Robustness:** decode steps bounds-check indexed-topic counts — a malformed log matching a known topic0 now fails the batch instead of panicking the process (pinned by the new fuzz targets). **Tests:** all 492 goldens byte-identical, zero regenerated (both fixture suites + story/reorg/replay/write-error suites moved into the handler packages as pure `git mv` renames; harnesses build `Handlers` + `Registry` per reset instead of mutating globals; the write-error suites re-process through a second read-only-pool handler set); +13 unit test funcs for the registry/LogProcessor (dispatch, source filtering, error propagation, RLP reconstruction, foreign-event-type rejection) plus registry-shape tests per package (metric-name consistency now enforced at construction, superseding `dispatch_names_test.go`); §4.4 unblocked: `FuzzEventDecodeCG`/`FuzzEventDecodeRW` iterate every registered handler's `Decode` (fleet 28 → 30, all green in the smoke run; one deadline flake on FuzzEventDecodeRW reproduced 0/3 — infra, not a finding). `BenchmarkEventDecode` moved with the bid handler and re-run: 2,105 ns/op / 2,920 B/op / 43 allocs — B/op and allocs byte-identical to the `docs/benchmarks.md` baseline. Full `-race` integration suite green. Docs: architecture/BACKEND/benchmarks/README updated to the new layout. Metrics: snake_case 256 → **161** (both ETLs 0), dot-import files 15 → **4**, api+etl mutable globals ~30 → **~12** (ETLs 0), lint capped 120 → **119** (uncapped 459 → **428**; all three indexer packages 0 issues), test files 109 → **112**, fuzz targets 28 → **30**, LOC 71,010 → 71,159, integration coverage 70.3% → **72.8%** (CI floor 69% → 71%). |
 | | | |

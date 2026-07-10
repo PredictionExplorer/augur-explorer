@@ -10,7 +10,7 @@ introduces it.
 
 ```sh
 # Unit benchmarks (no Docker)
-go test ./cmd/cg-etl/            -bench BenchmarkEventDecode    -benchmem -count=6 -run '^$' | tee old.txt
+go test ./internal/indexer/cosmicgame/ -bench BenchmarkEventDecode -benchmem -count=6 -run '^$' | tee old.txt
 go test ./internal/freezer/decode/ -bench BenchmarkReceiptsDecode -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench BenchmarkRateLimiter    -benchmem -count=6 -run '^$'
 

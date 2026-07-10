@@ -6,7 +6,7 @@
 // every readable parameter, a repeated run with unchanged chain state inserts
 // nothing (and leaves the address table untouched), and a changed chain value
 // produces exactly one new correction.
-package main
+package cosmicgame
 
 import (
 	"context"
@@ -102,7 +102,7 @@ func TestSyncContractParamsFromChain(t *testing.T) {
 	ctx := context.Background()
 
 	// First run on a fresh database: every parameter gets a correction row.
-	if err := syncContractParamsFromChain(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
+	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
 		t.Fatalf("first sync run: %v", err)
 	}
 
@@ -141,7 +141,7 @@ func TestSyncContractParamsFromChain(t *testing.T) {
 	// nothing and the address table stays untouched.
 	watched := append([]string{"address"}, syncedAdminTables...)
 	before := tableCounts(t, watched)
-	if err := syncContractParamsFromChain(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
+	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
 		t.Fatalf("second sync run: %v", err)
 	}
 	after := tableCounts(t, watched)
@@ -153,7 +153,7 @@ func TestSyncContractParamsFromChain(t *testing.T) {
 
 	// An on-chain admin change: exactly that parameter gains a correction.
 	gameStub.Return("ethBidPriceIncreaseDivisor", big.NewInt(125))
-	if err := syncContractParamsFromChain(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
+	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
 		t.Fatalf("third sync run: %v", err)
 	}
 	requireLatestParam(t, "cg_adm_price_inc", "new_price_increase", "125")
@@ -185,7 +185,7 @@ func TestSyncContractParamsSkipsUnreadableParams(t *testing.T) {
 	testChain.RegisterCall(addr(fxPrizesAddr), testchain.MustContractStub(cgc.PrizesWalletABI).Handler())
 
 	ctx := context.Background()
-	if err := syncContractParamsFromChain(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler)); err != nil {
+	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler)); err != nil {
 		t.Fatalf("sync with unreadable params: %v", err)
 	}
 

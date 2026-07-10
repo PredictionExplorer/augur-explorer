@@ -2,7 +2,7 @@
 // logic: contract-mechanics detection (V1 divisor model vs V2 duration model)
 // and the versioned read fallbacks, exercised against real abigen bindings
 // over the deterministic fake chain (internal/testchain + ContractStub).
-package main
+package cosmicgame
 
 import (
 	"context"

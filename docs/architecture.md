@@ -45,9 +45,11 @@ flowchart LR
    fetches contract logs in adaptive batches via `eth_getLogs`. Each log's
    block and transaction are persisted (`block`, `transaction`, `evt_log`
    with the raw RLP), chain reorganizations are detected via block-hash
-   checks and rolled back, then the event is decoded against the contract ABI
-   and written to its domain table (`cg_bid`, `cg_prize_claim`,
-   `rw_mint_evt`, ...). Failed batches retry with exponential backoff (the
+   checks and rolled back, then the event is dispatched through the typed
+   handler registry (`internal/indexer/cosmicgame`, `.../randomwalk`): a pure
+   decode step turns the log into a domain event, a store step writes it to
+   its domain table (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...). Failed
+   batches retry with exponential backoff (the
    process exits only after repeated consecutive failures), and the
    processing watermark only advances past fully processed blocks.
    PostgreSQL triggers maintain aggregate tables (`cg_bidder`,
@@ -73,7 +75,7 @@ flowchart LR
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Operator CLIs (contract interaction, social tools, data ops) |
 | `internal/api` | HTTP handlers: `cosmicgame`, `randomwalk`, `faq` proxy, `common` middleware |
 | `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
-| `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics |
+| `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry with the `cosmicgame` and `randomwalk` handler sets as subpackages |
 | `internal/primitives` | Domain types and API response structs |
 | `internal/freezer` | Geth freezer/ancient store readers |
 | `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients |

@@ -1,67 +1,34 @@
-## ETL (Extract Transform Load) daemon for Cosmic Signature Token
+# cg-etl — CosmicGame chain indexer
 
-#### Dependencies:
+Indexes every CosmicGame-family contract event into PostgreSQL. The binary is
+pure wiring: it connects the RPC node and the database, bootstraps the
+contract addresses, runs the startup contract-parameter sync and hands
+control to the shared indexing engine.
 
-	Layer 1 ETL daemon located in adjacent directory (../cmd/layer1)
-	
-#### Installation
+- Engine (polling loop, batch/retry policy, reorg handling, metrics):
+  [`internal/indexer`](../../internal/indexer)
+- Event handlers (decode/store pairs per event type):
+  [`internal/indexer/cosmicgame`](../../internal/indexer/cosmicgame)
+- Schema: goose migrations under [`db/migrations`](../../db/migrations)
 
-##### Create a Unix account to run the daemon (i.e. 'cosmicgame'):
+## Build and run
 
-    useradd -m 'cosmicgame'
-    (setup the password and configure the shell)
+```bash
+make cg-etl          # builds bin/cg-etl
+./bin/cg-etl
+```
 
-##### Create postgres user for this new account:
+Required environment variables:
 
-    su - postgres
-    psql
-    postgres-#  CREATE ROLE cosmicgame WITH LOGIN CREATEDB ENCRYPTED PASSWORD 'cosmicgame_pass';
-    \q
+| Variable | Purpose |
+|---|---|
+| `RPC_URL` | Ethereum JSON-RPC endpoint |
+| `PGSQL_HOST`, `PGSQL_USERNAME`, `PGSQL_PASSWORD`, `PGSQL_DATABASE` | PostgreSQL connection |
+| `METRICS_ADDR` (optional) | private Prometheus `/metrics` + pprof listener |
 
-    su - cosmicgame
-    createdb cosmicgamedb
+Log files are written to `$HOME/ae_logs/`:
+`cosmicgame_info.log`, `cosmicgame_error.log`, `cosmicgame_db.log`.
 
-##### Execute the following SQL scripts:
-
-    cd ../../sql/cosmicgame/
-    psql < tables-cosmicgame.sql
-    psql < indices_cosmicgame.sql
-    psql < cosmicgame-funcs.sql
-    psql < triggers-cosmicgame.sql
-
-(the tables of Layer 1 ETL should be already there, if not, follow instructions at ../cmd/layer1)
-
-##### Create configuration directory:
-
-    mkdir ~/config
-
-In this directory, create file 'etl-config.env' with the following content:
-
-        export RPC_URL="http://127.0.0.1:8545"
-        export PGSQL_HOST="127.0.0.1:5432"
-        export PGSQL_USERNAME="user"
-        export PGSQL_DATABASE="database"
-        export PGSQL_PASSWORD="pass"
-
-(Replace values of the variables with values of your configuration)
-
-##### Build executables (in cmd/cosmicgame directory):
-
-	cd cmd/cosmicgame
-    go build .
-
-##### Load environment variables (the file created in the step above):
-
-    . ~/config/etl-config.env
-
-##### Run CosmicGame ETL daemon
-
-    ./cosmicgame
-
-The log files will be created in $HOME/ae_logs:
-
-    cosmicgame_info.log
-    cosmicgame_error.log
-    cosmicgame_db.log
-
-
+Shutdown: SIGINT/SIGTERM finishes the in-flight batch, persists the
+watermark and exits 0. See [docs/operations.md](../../docs/operations.md)
+for systemd deployment.

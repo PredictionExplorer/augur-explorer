@@ -1,9 +1,10 @@
 // Fuzz target for the stored evt_log RLP decode path (MODERNIZATION.md §4.4).
-// process_single_event feeds evt_log.log_rlp bytes into rlp.DecodeBytes; the
-// bytes come from the database, so a corrupt row must never be able to panic
-// the decoder itself (process_single_event reports a decode failure as a
-// returned error, which aborts the batch).
-package main
+// LogProcessor feeds evt_log.log_rlp bytes into rlp.DecodeBytes; the bytes
+// come from the database, so a corrupt row must never be able to panic the
+// decoder itself (LogProcessor reports a decode failure as a returned error,
+// which aborts the batch).
+
+package indexer
 
 import (
 	"bytes"
@@ -18,7 +19,8 @@ func FuzzEvtlogRLP(f *testing.F) {
 	good, err := rlp.EncodeToBytes(&types.Log{
 		Address: common.HexToAddress("0x1234567890123456789012345678901234567890"),
 		Topics: []common.Hash{
-			common.HexToHash("0x" + BID_EVENT),
+			// BidPlaced, the most common stored topic0.
+			common.HexToHash("0xbcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549"),
 			common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
 		},
 		Data: []byte{0x01, 0x02, 0x03},

@@ -1,20 +1,18 @@
 //go:build integration
 
-// Test harness for the CosmicGame ETL fixture suite (§4.3 of the
+// Test harness for the CosmicGame handler fixture suite (§4.3 of the
 // modernization roadmap): one testcontainers Postgres plus one fake Ethereum
-// node per test process, package globals initialized exactly like main(), and
-// helpers that push synthetic logs through the real production pipeline
+// node per test process, a Handlers set built exactly like main() builds it,
+// and helpers that push synthetic logs through the real production pipeline
 // (EnsureBlockExists -> EnsureTransactionExists -> InsertEventLog ->
-// process_single_event).
-package main
+// LogProcessor -> Registry).
+package cosmicgame
 
 import (
 	"context"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"log"
 	"log/slog"
 	"math/big"
 	"os"
@@ -64,7 +62,7 @@ const (
 )
 
 // seedCstRewardForBidding stands in for the ETL's startup chain sync
-// (syncContractParamsFromChain), which populates cg_glob_stats from contract
+// (SyncContractParams), which populates cg_glob_stats from contract
 // state; V1 BidPlaced inserts refuse to run without it.
 const seedCstRewardForBidding = "100000000000000000000"
 
@@ -73,11 +71,33 @@ var (
 	testChain    *testchain.Chain
 	testIndexer  *indexer.Engine // the production pipeline the fixtures run through
 	errSetupSkip error           // non-nil: integration environment unavailable, skip
+
+	dbStore *store.Store
+	cgRepo  *cgstore.Repo
+	eclient *ethclient.Client
+
+	// Rebuilt by resetDB over the freshly re-registered contract addresses.
+	testHandlers  *Handlers
+	testProcess   indexer.ProcessFunc
+	testContracts Contracts
+
+	// ABI handles for the fixture-log builders (parsed once in TestMain).
+	gameABI            *abi.ABI
+	gameV2ABI          *abi.ABI
+	signatureABI       *abi.ABI
+	charityWalletABI   *abi.ABI
+	prizesWalletABI    *abi.ABI
+	stakingCSTABI      *abi.ABI
+	stakingRWalkABI    *abi.ABI
+	marketingWalletABI *abi.ABI
+	erc20ABI           *abi.ABI
+	erc721ABI          *abi.ABI
+	erc1967ABI         *abi.ABI
 )
 
-// TestMain owns the database container, the fake chain and the package
-// globals (storage, ABIs, addresses, loggers) that main() would normally
-// initialize. Fixtures reset the database, not the process, between cases.
+// TestMain owns the database container, the fake chain and the harness state
+// (storage, ABIs, addresses) that main() would normally initialize. Fixtures
+// reset the database, not the process, between cases.
 func TestMain(m *testing.M) {
 	os.Exit(runMain(m))
 }
@@ -95,7 +115,7 @@ func runMain(m *testing.M) int {
 			errSetupSkip = err
 			return m.Run() // every test skips with the reason
 		}
-		fmt.Fprintf(os.Stderr, "cg-etl test: starting test database: %v\n", err)
+		fmt.Fprintf(os.Stderr, "cosmicgame handler test: starting test database: %v\n", err)
 		return 1
 	}
 	defer stopDB()
@@ -105,21 +125,19 @@ func runMain(m *testing.M) int {
 	defer stopChain()
 	testChain = chain
 
-	if err := initPackageGlobals(ctx, db); err != nil {
-		fmt.Fprintf(os.Stderr, "cg-etl test: initializing globals: %v\n", err)
+	if err := initHarness(ctx, db); err != nil {
+		fmt.Fprintf(os.Stderr, "cosmicgame handler test: initializing harness: %v\n", err)
 		return 1
 	}
 
 	return m.Run()
 }
 
-// initPackageGlobals mirrors the initialization order of main(): loggers,
-// RPC clients, storage, ABIs. Contract addresses are (re)established by
-// resetDB, which is the per-fixture equivalent of the address bootstrap.
-func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
-	Info = log.New(io.Discard, "", 0)
-	Error = log.New(os.Stderr, "cg-etl ERROR: ", 0)
-
+// initHarness mirrors the initialization order of main(): RPC client,
+// storage, ABIs. The contract addresses and the Handlers set are
+// (re)established by resetDB, which is the per-fixture equivalent of the
+// address bootstrap.
+func initHarness(ctx context.Context, db *testdb.DB) error {
 	rpcclient, err := rpc.DialContext(ctx, testChain.URL())
 	if err != nil {
 		return fmt.Errorf("dialing fake chain: %w", err)
@@ -141,17 +159,28 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 		return fmt.Errorf("building indexer engine: %w", err)
 	}
 
-	cosmic_game_abi = get_abi(cgc.CosmicSignatureGameABI)
-	cosmic_game_v2_abi = get_abi(cgc.CosmicSignatureGameV2ABI)
-	cosmic_signature_abi = get_abi(cgc.CosmicSignatureNftABI)
-	charity_wallet_abi = get_abi(cgc.CharityWalletABI)
-	prizes_wallet_abi = get_abi(cgc.PrizesWalletABI)
-	staking_wallet_cst_abi = get_abi(cgc.IStakingWalletCosmicSignatureNftABI)
-	staking_wallet_rwalk_abi = get_abi(cgc.IStakingWalletRandomWalkNftABI)
-	marketing_wallet_abi = get_abi(cgc.MarketingWalletABI)
-	erc20_abi = get_abi(cgc.ERC20ABI)
-	erc721_abi = get_abi(cgc.ERC721ABI)
-	erc1967_abi = get_abi(cgc.IERC1967ABI)
+	for _, a := range []struct {
+		dst *(*abi.ABI)
+		raw string
+	}{
+		{&gameABI, cgc.CosmicSignatureGameABI},
+		{&gameV2ABI, cgc.CosmicSignatureGameV2ABI},
+		{&signatureABI, cgc.CosmicSignatureNftABI},
+		{&charityWalletABI, cgc.CharityWalletABI},
+		{&prizesWalletABI, cgc.PrizesWalletABI},
+		{&stakingCSTABI, cgc.IStakingWalletCosmicSignatureNftABI},
+		{&stakingRWalkABI, cgc.IStakingWalletRandomWalkNftABI},
+		{&marketingWalletABI, cgc.MarketingWalletABI},
+		{&erc20ABI, cgc.ERC20ABI},
+		{&erc721ABI, cgc.ERC721ABI},
+		{&erc1967ABI, cgc.IERC1967ABI},
+	} {
+		parsed, err := abi.JSON(strings.NewReader(a.raw))
+		if err != nil {
+			return fmt.Errorf("parsing fixture ABI: %w", err)
+		}
+		*a.dst = &parsed
+	}
 
 	registerCallHandlers()
 	return nil
@@ -162,7 +191,7 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 // NFT collections. Responses are deterministic functions of the arguments.
 func registerCallHandlers() {
 	game := ethcommon.HexToAddress(fxGameAddr)
-	donationRecords := cosmic_game_abi.Methods["ethDonationWithInfoRecords"]
+	donationRecords := gameABI.Methods["ethDonationWithInfoRecords"]
 	testChain.RegisterCall(game, func(input []byte) ([]byte, error) {
 		if len(input) < 4 || string(input[:4]) != string(donationRecords.ID) {
 			return nil, fmt.Errorf("unexpected call to game contract: %x", input)
@@ -180,7 +209,7 @@ func registerCallHandlers() {
 		)
 	})
 
-	tokenURI := cosmic_signature_abi.Methods["tokenURI"]
+	tokenURI := signatureABI.Methods["tokenURI"]
 	testChain.RegisterCall(ethcommon.HexToAddress(fxDonatedNFT), func(input []byte) ([]byte, error) {
 		if len(input) < 4 || string(input[:4]) != string(tokenURI.ID) {
 			return nil, fmt.Errorf("unexpected call to donated NFT contract: %x", input)
@@ -200,7 +229,7 @@ func requireHarness(t *testing.T) {
 		t.Skipf("skipping: %v", errSetupSkip)
 	}
 	if testDB == nil {
-		t.Fatal("cg-etl test harness not initialized (TestMain did not run?)")
+		t.Fatal("cosmicgame handler test harness not initialized (TestMain did not run?)")
 	}
 }
 
@@ -229,8 +258,9 @@ UPDATE cg_glob_stats SET cst_reward_for_bidding = '` + seedCstRewardForBidding +
 `
 
 // resetDB truncates every user table, restarts all sequences, re-applies the
-// seed and re-registers the contract addresses (mirroring main()'s address
-// bootstrap), leaving the database exactly as fixtures expect it.
+// seed, re-registers the contract addresses (the same BootstrapContracts
+// call main() makes) and rebuilds the Handlers set over them, leaving the
+// database exactly as fixtures expect it.
 func resetDB(t *testing.T) {
 	t.Helper()
 	requireHarness(t)
@@ -254,43 +284,31 @@ func resetDB(t *testing.T) {
 		t.Fatalf("re-seeding database: %v", err)
 	}
 
-	// Same bootstrap as main(): register all contract addresses, then resolve
-	// the two address ids the decode helpers need.
-	cg_contracts, err = cgRepo.ContractAddrs(ctx)
+	// Same bootstrap as main(): register all contract addresses, resolve the
+	// ids the handlers need, build the handler set.
+	testContracts, _, err = BootstrapContracts(ctx, cgRepo, dbStore)
 	if err != nil {
-		t.Fatalf("reading contract addresses: %v", err)
+		t.Fatalf("bootstrapping contract addresses: %v", err)
 	}
-	for _, contractAddr := range []string{
-		cg_contracts.CosmicGameAddr,
-		cg_contracts.CosmicSignatureAddr,
-		cg_contracts.CosmicTokenAddr,
-		cg_contracts.CosmicDaoAddr,
-		cg_contracts.CharityWalletAddr,
-		cg_contracts.PrizesWalletAddr,
-		cg_contracts.RandomWalkAddr,
-		cg_contracts.StakingWalletCSTAddr,
-		cg_contracts.StakingWalletRWalkAddr,
-		cg_contracts.MarketingWalletAddr,
-		cg_contracts.ImplementationAddr,
-	} {
-		if _, err := dbStore.LookupOrCreateAddress(ctx, contractAddr, 0, 0); err != nil {
-			t.Fatalf("registering contract address %v: %v", contractAddr, err)
-		}
-	}
-	cosmic_tok_aid, err = dbStore.LookupAddressID(ctx, cg_contracts.CosmicTokenAddr)
+	testHandlers = newTestHandlers(t, cgRepo, dbStore, testContracts)
+	testProcess = indexer.LogProcessor(dbStore, testHandlers.Registry())
+}
+
+// newTestHandlers builds a Handlers set with the harness's eth client and a
+// discarding logger.
+func newTestHandlers(t *testing.T, repo *cgstore.Repo, st *store.Store, contracts Contracts) *Handlers {
+	t.Helper()
+	h, err := New(Config{
+		Repo:      repo,
+		Store:     st,
+		Caller:    eclient,
+		Contracts: contracts,
+		Logger:    slog.New(slog.DiscardHandler),
+	})
 	if err != nil {
-		t.Fatalf("looking up CosmicToken aid: %v", err)
+		t.Fatalf("building handlers: %v", err)
 	}
-	cosmic_game_addr = ethcommon.HexToAddress(cg_contracts.CosmicGameAddr)
-	cosmic_signature_addr = ethcommon.HexToAddress(cg_contracts.CosmicSignatureAddr)
-	cosmic_token_addr = ethcommon.HexToAddress(cg_contracts.CosmicTokenAddr)
-	cosmic_dao_addr = ethcommon.HexToAddress(cg_contracts.CosmicDaoAddr)
-	charity_wallet_addr = ethcommon.HexToAddress(cg_contracts.CharityWalletAddr)
-	prizes_wallet_addr = ethcommon.HexToAddress(cg_contracts.PrizesWalletAddr)
-	staking_wallet_cst_addr = ethcommon.HexToAddress(cg_contracts.StakingWalletCSTAddr)
-	staking_wallet_rwalk_addr = ethcommon.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
-	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
-	implementation_addr = ethcommon.HexToAddress(cg_contracts.ImplementationAddr)
+	return h
 }
 
 // snapshot captures the canonical database state.
@@ -345,8 +363,8 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}
-		if err := process_single_event(context.Background(), evtID); err != nil {
-			t.Fatalf("process_single_event(%d): %v", evtID, err)
+		if err := testProcess(context.Background(), evtID); err != nil {
+			t.Fatalf("processing event %d: %v", evtID, err)
 		}
 		evtIDs = append(evtIDs, evtID)
 	}

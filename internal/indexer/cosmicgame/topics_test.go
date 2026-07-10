@@ -3,7 +3,7 @@
 // regenerated and an event signature changes, the constant here goes stale
 // and the ETL silently stops dispatching that event. This test turns silent
 // drift into a build-time failure.
-package main
+package cosmicgame
 
 import (
 	"strings"

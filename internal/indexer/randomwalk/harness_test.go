@@ -1,18 +1,16 @@
 //go:build integration
 
-// Test harness for the RandomWalk ETL fixture suite (§4.3): one testcontainers
-// Postgres plus one fake Ethereum node per test process, package globals
-// initialized exactly like main(), and helpers that push synthetic logs
-// through the real production pipeline.
-package main
+// Test harness for the RandomWalk handler fixture suite (§4.3): one
+// testcontainers Postgres plus one fake Ethereum node per test process, a
+// Handlers set built exactly like main() builds it, and helpers that push
+// synthetic logs through the real production pipeline.
+package randomwalk
 
 import (
 	"context"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"log"
 	"log/slog"
 	"math/big"
 	"os"
@@ -29,7 +27,7 @@ import (
 	rwc "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
-	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
+	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
@@ -53,11 +51,24 @@ var (
 	testChain    *testchain.Chain
 	testIndexer  *indexer.Engine // the production pipeline the fixtures run through
 	errSetupSkip error           // non-nil: integration environment unavailable, skip
+
+	dbStore *store.Store
+	rwRepo  *rwstore.Repo
+	eclient *ethclient.Client
+
+	// Rebuilt by resetDB over the freshly re-registered contract addresses.
+	testHandlers  *Handlers
+	testProcess   indexer.ProcessFunc
+	testContracts Contracts
+
+	// ABI handles for the fixture-log builders (parsed once in TestMain).
+	fxMarketABI *abi.ABI
+	fxRwalkABI  *abi.ABI
 )
 
-// TestMain owns the database container, the fake chain and the package
-// globals (storage, ABIs, addresses, loggers) that main() would normally
-// initialize. Fixtures reset the database, not the process, between cases.
+// TestMain owns the database container, the fake chain and the harness state
+// that main() would normally initialize. Fixtures reset the database, not
+// the process, between cases.
 func TestMain(m *testing.M) {
 	os.Exit(runMain(m))
 }
@@ -75,7 +86,7 @@ func runMain(m *testing.M) int {
 			errSetupSkip = err
 			return m.Run() // every test skips with the reason
 		}
-		fmt.Fprintf(os.Stderr, "rw-etl test: starting test database: %v\n", err)
+		fmt.Fprintf(os.Stderr, "randomwalk handler test: starting test database: %v\n", err)
 		return 1
 	}
 	defer stopDB()
@@ -85,21 +96,18 @@ func runMain(m *testing.M) int {
 	defer stopChain()
 	testChain = chain
 
-	if err := initPackageGlobals(ctx, db); err != nil {
-		fmt.Fprintf(os.Stderr, "rw-etl test: initializing globals: %v\n", err)
+	if err := initHarness(ctx, db); err != nil {
+		fmt.Fprintf(os.Stderr, "randomwalk handler test: initializing harness: %v\n", err)
 		return 1
 	}
 
 	return m.Run()
 }
 
-// initPackageGlobals mirrors the initialization order of main(): loggers,
-// RPC clients, storage, ABIs. The contract addresses are (re)established by
-// resetDB.
-func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
-	Info = log.New(io.Discard, "", 0)
-	Error = log.New(os.Stderr, "rw-etl ERROR: ", 0)
-
+// initHarness mirrors the initialization order of main(): RPC client,
+// storage, ABIs. The contract addresses and the Handlers set are
+// (re)established by resetDB.
+func initHarness(ctx context.Context, db *testdb.DB) error {
 	rpcclient, err := rpc.DialContext(ctx, testChain.URL())
 	if err != nil {
 		return fmt.Errorf("dialing fake chain: %w", err)
@@ -107,7 +115,7 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	eclient = ethclient.NewClient(rpcclient)
 
 	dbStore = store.NewFromPool(db.Pool)
-	rwRepo = rwdb.NewRepo(dbStore)
+	rwRepo = rwstore.NewRepo(dbStore)
 
 	// The fixtures push logs through the same engine pipeline main() runs.
 	testIndexer, err = indexer.New(indexer.Config{
@@ -123,12 +131,12 @@ func initPackageGlobals(ctx context.Context, db *testdb.DB) error {
 	if err != nil {
 		return fmt.Errorf("parsing marketplace ABI: %w", err)
 	}
-	marketplace_abi = &marketABI
+	fxMarketABI = &marketABI
 	rwalkABI, err := abi.JSON(strings.NewReader(rwc.RWalkABI))
 	if err != nil {
 		return fmt.Errorf("parsing randomwalk ABI: %w", err)
 	}
-	randomwalk_abi = &rwalkABI
+	fxRwalkABI = &rwalkABI
 	return nil
 }
 
@@ -139,7 +147,7 @@ func requireHarness(t *testing.T) {
 		t.Skipf("skipping: %v", errSetupSkip)
 	}
 	if testDB == nil {
-		t.Fatal("rw-etl test harness not initialized (TestMain did not run?)")
+		t.Fatal("randomwalk handler test harness not initialized (TestMain did not run?)")
 	}
 }
 
@@ -152,7 +160,8 @@ INSERT INTO last_block(block_num) VALUES (0);
 `
 
 // resetDB truncates every user table, restarts all sequences, re-applies the
-// seed and re-registers the contract addresses (mirroring main()'s bootstrap).
+// seed, re-registers the contract addresses (the same BootstrapContracts
+// call main() makes) and rebuilds the Handlers set over them.
 func resetDB(t *testing.T) {
 	t.Helper()
 	requireHarness(t)
@@ -176,18 +185,26 @@ func resetDB(t *testing.T) {
 		t.Fatalf("re-seeding database: %v", err)
 	}
 
-	for _, contractAddr := range []string{fxMarketplaceAddr, fxRandomWalkAddr} {
-		if _, err := dbStore.LookupOrCreateAddress(ctx, contractAddr, 0, 0); err != nil {
-			t.Fatalf("registering contract address %v: %v", contractAddr, err)
-		}
+	testContracts, _, err = BootstrapContracts(ctx, rwRepo, dbStore)
+	if err != nil {
+		t.Fatalf("bootstrapping contract addresses: %v", err)
 	}
-	var err2 error
-	rw_contracts, err2 = rwRepo.ContractAddrs(ctx)
-	if err2 != nil {
-		t.Fatalf("resolving contract addresses: %v", err2)
+	testHandlers = newTestHandlers(t, rwRepo, testContracts)
+	testProcess = indexer.LogProcessor(dbStore, testHandlers.Registry())
+}
+
+// newTestHandlers builds a Handlers set with a discarding logger.
+func newTestHandlers(t *testing.T, repo *rwstore.Repo, contracts Contracts) *Handlers {
+	t.Helper()
+	h, err := New(Config{
+		Repo:      repo,
+		Contracts: contracts,
+		Logger:    slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		t.Fatalf("building handlers: %v", err)
 	}
-	rwalk_addr = ethcommon.HexToAddress(rw_contracts.RandomWalk)
-	market_addr = ethcommon.HexToAddress(rw_contracts.MarketPlace)
+	return h
 }
 
 // snapshot captures the canonical database state.
@@ -241,8 +258,8 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 		if err != nil {
 			t.Fatalf("InsertEventLog: %v", err)
 		}
-		if err := process_single_event(context.Background(), evtID); err != nil {
-			t.Fatalf("process_single_event(%d): %v", evtID, err)
+		if err := testProcess(context.Background(), evtID); err != nil {
+			t.Fatalf("processing event %d: %v", evtID, err)
 		}
 		evtIDs = append(evtIDs, evtID)
 	}

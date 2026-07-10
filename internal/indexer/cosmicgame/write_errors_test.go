@@ -4,15 +4,14 @@
 // DB write failures to the polling loop instead of terminating the process
 // (the legacy layer called os.Exit(1) inside the store on these paths).
 //
-// Mechanism: each fixture is ingested normally, then re-processed with the
-// package Repo swapped onto a second pool whose connections run with
-// default_transaction_read_only=on. Reads succeed on that pool (the
-// existence guards and address lookups), the handler's INSERT fails with
-// SQLSTATE 25006, and the error must surface from process_single_event.
-// Fixtures whose events store nothing (wrong address, unknown token/offer)
-// must keep replaying cleanly — proving their handlers really perform no
-// writes.
-package main
+// Mechanism: each fixture is ingested normally, then re-processed through a
+// second Handlers set built over a pool whose connections run with
+// default_transaction_read_only=on. Reads succeed on that pool, the
+// handler's first write (the delete-before-insert) fails with SQLSTATE
+// 25006, and the error must surface from the processor. Fixtures whose
+// events store nothing (wrong address, unknown topic, no topics) must keep
+// replaying cleanly — proving their handlers really perform no writes.
+package cosmicgame
 
 import (
 	"context"
@@ -21,16 +20,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
-	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
+	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
-// fixturesWithoutWrites lists the fixtures whose only event never reaches a
-// store write (address-guard and existence-guard negative cases).
+// fixturesWithoutWrites lists the fixtures whose events never reach a store
+// write (dispatch/address-guard negative cases).
 var fixturesWithoutWrites = map[string]bool{
-	"token_name_unknown_token_skipped":     true,
-	"transfer_wrong_address_skipped":       true,
-	"offer_canceled_unknown_offer_skipped": true,
+	"bid_wrong_address_skipped": true,
+	"unknown_topic_noop":        true,
+	"no_topics_noop":            true,
 }
 
 func TestWriteErrorPropagation(t *testing.T) {
@@ -50,7 +50,7 @@ func TestWriteErrorPropagation(t *testing.T) {
 	}
 	roStore := store.NewFromPool(roPool)
 	defer roStore.Close()
-	roRepo := rwdb.NewRepo(roStore)
+	roRepo := cgstore.NewRepo(roStore)
 
 	for _, fx := range eventFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
@@ -70,14 +70,13 @@ func TestWriteErrorPropagation(t *testing.T) {
 				evtIDs = append(evtIDs, ids...)
 			}
 
-			// Swap the package Repo onto the read-only pool for the replay;
-			// restore before the next subtest regardless of outcome.
-			origRepo := rwRepo
-			rwRepo = roRepo
-			defer func() { rwRepo = origRepo }()
+			// Replay through a handler set whose writes go to the read-only
+			// pool (resetDB rebuilt testContracts, so ids are current).
+			roHandlers := newTestHandlers(t, roRepo, roStore, testContracts)
+			roProcess := indexer.LogProcessor(roStore, roHandlers.Registry())
 
 			for _, id := range evtIDs {
-				err := process_single_event(ctx, id)
+				err := roProcess(ctx, id)
 				if fixturesWithoutWrites[fx.name] {
 					if err != nil {
 						t.Errorf("event %d of no-write fixture errored on a read-only pool: %v", id, err)

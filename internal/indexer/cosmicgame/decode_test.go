@@ -1,6 +1,6 @@
 // Unit tests (no Docker) for the raw-data decode helpers of events whose
 // signatures no generated ABI defines.
-package main
+package cosmicgame
 
 import (
 	"math/big"
@@ -42,7 +42,7 @@ func TestErc20TransferFailedAmount(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			data := packERC20TransferFailedData(t, c.errStr, c.amount)
-			got, err := erc20_transfer_failed_amount(data)
+			got, err := erc20TransferFailedAmount(data)
 			if err != nil {
 				t.Fatalf("erc20_transfer_failed_amount: %v", err)
 			}
@@ -55,7 +55,7 @@ func TestErc20TransferFailedAmount(t *testing.T) {
 
 func TestErc20TransferFailedAmountShortData(t *testing.T) {
 	for _, n := range []int{0, 31, 32, 63} {
-		if _, err := erc20_transfer_failed_amount(make([]byte, n)); err == nil {
+		if _, err := erc20TransferFailedAmount(make([]byte, n)); err == nil {
 			t.Errorf("%d-byte data: want error, got nil", n)
 		}
 	}
@@ -65,14 +65,14 @@ func TestAdminUint256FromLogData(t *testing.T) {
 	// Single-word body: the value is the last (and only) 32-byte word.
 	word := make([]byte, 32)
 	word[31] = 42
-	got, err := admin_uint256_from_log_data(word)
+	got, err := adminUint256FromLogData(word)
 	if err != nil {
 		t.Fatalf("admin_uint256_from_log_data: %v", err)
 	}
 	if got.Int64() != 42 {
 		t.Fatalf("value = %v, want 42", got)
 	}
-	if _, err := admin_uint256_from_log_data(make([]byte, 31)); err == nil {
+	if _, err := adminUint256FromLogData(make([]byte, 31)); err == nil {
 		t.Error("short data: want error, got nil")
 	}
 }

@@ -5,7 +5,7 @@
 // pipeline and its cumulative database state pinned; then a chain split rolls
 // part of it back (golden) and re-processing the replacement fork must
 // reproduce the exact original state.
-package main
+package cosmicgame
 
 import (
 	"context"
@@ -38,22 +38,22 @@ func scriptedRound(startBlock int64) []storyTx {
 		// Admin bootstrap: reward parameter + round activation.
 		{block: b(0), to: fxGameAddr, logs: []fixtureLog{
 			{CST_REWARD_FOR_BIDDING_CHANGED, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "CstRewardAmountForBiddingChanged", addr(fxGameAddr), nil, []any{eth(100)})
+				return buildLog(t, gameABI, "CstRewardAmountForBiddingChanged", addr(fxGameAddr), nil, []any{eth(100)})
 			}},
 			{ROUND_ACTIVATION_TIME_CHANGED, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "RoundActivationTimeChanged", addr(fxGameAddr), nil, []any{bigInt(1767225600)})
+				return buildLog(t, gameABI, "RoundActivationTimeChanged", addr(fxGameAddr), nil, []any{bigInt(1767225600)})
 			}},
 		}},
 		// Round 0 starts: alice places the first (ETH) bid, reward minted.
 		{block: b(1), to: fxGameAddr, logs: []fixtureLog{
 			{FIRST_BID_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "FirstBidPlacedInRound", addr(fxGameAddr), []any{bigInt(0)}, []any{bigInt(1767225700)})
+				return buildLog(t, gameABI, "FirstBidPlacedInRound", addr(fxGameAddr), []any{bigInt(0)}, []any{bigInt(1767225700)})
 			}},
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc20_abi, "Transfer", addr(fxTokenAddr), []any{addr(zero), addr(fxAlice)}, []any{eth(100)})
+				return buildLog(t, erc20ABI, "Transfer", addr(fxTokenAddr), []any{addr(zero), addr(fxAlice)}, []any{eth(100)})
 			}},
 			{BID_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "BidPlaced", addr(fxGameAddr),
+				return buildLog(t, gameABI, "BidPlaced", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxAlice), bigInt(-1)},
 					[]any{bigInt(100000000000000000), bigInt(-1), "alice opens round 0", bigInt(1767229200)})
 			}},
@@ -61,10 +61,10 @@ func scriptedRound(startBlock int64) []storyTx {
 		// Bob bids with a RandomWalk NFT.
 		{block: b(2), to: fxGameAddr, logs: []fixtureLog{
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc20_abi, "Transfer", addr(fxTokenAddr), []any{addr(zero), addr(fxBob)}, []any{eth(100)})
+				return buildLog(t, erc20ABI, "Transfer", addr(fxTokenAddr), []any{addr(zero), addr(fxBob)}, []any{eth(100)})
 			}},
 			{BID_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "BidPlaced", addr(fxGameAddr),
+				return buildLog(t, gameABI, "BidPlaced", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxBob), bigInt(7)},
 					[]any{bigInt(50000000000000000), bigInt(-1), "bob rwalk bid", bigInt(1767230000)})
 			}},
@@ -72,13 +72,13 @@ func scriptedRound(startBlock int64) []storyTx {
 		// Carol bids with CST (V2 event: burn of the price + reward mint).
 		{block: b(3), to: fxGameAddr, logs: []fixtureLog{
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc20_abi, "Transfer", addr(fxTokenAddr), []any{addr(fxCarol), addr(zero)}, []any{eth(5)})
+				return buildLog(t, erc20ABI, "Transfer", addr(fxTokenAddr), []any{addr(fxCarol), addr(zero)}, []any{eth(5)})
 			}},
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc20_abi, "Transfer", addr(fxTokenAddr), []any{addr(zero), addr(fxCarol)}, []any{eth(110)})
+				return buildLog(t, erc20ABI, "Transfer", addr(fxTokenAddr), []any{addr(zero), addr(fxCarol)}, []any{eth(110)})
 			}},
 			{BID_EVENT_V2, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_v2_abi, "BidPlaced", addr(fxGameAddr),
+				return buildLog(t, gameV2ABI, "BidPlaced", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxCarol), bigInt(-1)},
 					[]any{bigInt(-1), eth(5), "carol cst bid", eth(110), bigInt(1800), bigInt(1767230800)})
 			}},
@@ -86,144 +86,144 @@ func scriptedRound(startBlock int64) []storyTx {
 		// Donations: plain ETH, ETH-with-info, ERC20 after a bid, an NFT.
 		{block: b(4), to: fxGameAddr, logs: []fixtureLog{
 			{ETH_DONATED_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "EthDonated", addr(fxGameAddr), []any{bigInt(0), addr(fxDave)}, []any{eth(2)})
+				return buildLog(t, gameABI, "EthDonated", addr(fxGameAddr), []any{bigInt(0), addr(fxDave)}, []any{eth(2)})
 			}},
 		}},
 		{block: b(5), to: fxGameAddr, logs: []fixtureLog{
 			{ETH_DONATED_WI_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "EthDonatedWithInfo", addr(fxGameAddr), []any{bigInt(0), addr(fxEmma), bigInt(1)}, []any{eth(3)})
+				return buildLog(t, gameABI, "EthDonatedWithInfo", addr(fxGameAddr), []any{bigInt(0), addr(fxEmma), bigInt(1)}, []any{eth(3)})
 			}},
 		}},
 		{block: b(6), to: fxGameAddr, logs: []fixtureLog{
 			{BID_EVENT_V2, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_v2_abi, "BidPlaced", addr(fxGameAddr),
+				return buildLog(t, gameV2ABI, "BidPlaced", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxAlice), bigInt(-1)},
 					[]any{bigInt(110000000000000000), bigInt(-1), "alice bidAndDonateToken", eth(1), bigInt(900), bigInt(1767231600)})
 			}},
 			{ERC20_DONATED, func(t *testing.T) *types.Log {
-				return buildLog(t, prizes_wallet_abi, "TokenDonated", addr(fxPrizesAddr),
+				return buildLog(t, prizesWalletABI, "TokenDonated", addr(fxPrizesAddr),
 					[]any{bigInt(0), addr(fxAlice), addr(fxMockERC20)}, []any{eth(50)})
 			}},
 		}},
 		{block: b(7), to: fxPrizesAddr, logs: []fixtureLog{
 			{NFT_ETH_DONATED_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, prizes_wallet_abi, "NftDonated", addr(fxPrizesAddr),
+				return buildLog(t, prizesWalletABI, "NftDonated", addr(fxPrizesAddr),
 					[]any{bigInt(0), addr(fxBob), addr(fxDonatedNFT)}, []any{bigInt(5), bigInt(0)})
 			}},
 		}},
 		// Marketing reward for emma.
 		{block: b(8), to: fxMarketingAddr, logs: []fixtureLog{
 			{MARKETING_REWARD_PAID, func(t *testing.T) *types.Log {
-				return buildLog(t, marketing_wallet_abi, "RewardPaid", addr(fxMarketingAddr), []any{addr(fxEmma)}, []any{eth(12)})
+				return buildLog(t, marketingWalletABI, "RewardPaid", addr(fxMarketingAddr), []any{addr(fxEmma)}, []any{eth(12)})
 			}},
 		}},
 		// Alice claims round 0: the big multi-log transaction.
 		{block: b(9), to: fxGameAddr, logs: []fixtureLog{
 			{PRIZE_CLAIM_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "MainPrizeClaimed", addr(fxGameAddr),
+				return buildLog(t, gameABI, "MainPrizeClaimed", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxAlice), bigInt(1)}, []any{eth(3), eth(10), bigInt(600)})
 			}},
 			{MINT_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_signature_abi, "NftMinted", addr(fxSignatureAddr),
+				return buildLog(t, signatureABI, "NftMinted", addr(fxSignatureAddr),
 					[]any{bigInt(0), addr(fxAlice), bigInt(1)}, []any{bigInt(0xa11ce)})
 			}},
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc721_abi, "Transfer", addr(fxSignatureAddr),
+				return buildLog(t, erc721ABI, "Transfer", addr(fxSignatureAddr),
 					[]any{addr(zero), addr(fxAlice), bigInt(1)}, nil)
 			}},
 			{RAFFLE_ETH_PRIZE_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "RaffleWinnerBidderEthPrizeAllocated", addr(fxGameAddr),
+				return buildLog(t, gameABI, "RaffleWinnerBidderEthPrizeAllocated", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxBob)}, []any{bigInt(0), eth(1)})
 			}},
 			{ETH_PRIZE_DEPOSIT_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, prizes_wallet_abi, "EthReceived", addr(fxPrizesAddr),
+				return buildLog(t, prizesWalletABI, "EthReceived", addr(fxPrizesAddr),
 					[]any{bigInt(0), addr(fxBob)}, []any{bigInt(0), eth(1)})
 			}},
 			{RAFFLE_NFT_PRIZE_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "RaffleWinnerPrizePaid", addr(fxGameAddr),
+				return buildLog(t, gameABI, "RaffleWinnerPrizePaid", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxDave), bigInt(2)}, []any{false, bigInt(1), eth(5)})
 			}},
 			{MINT_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_signature_abi, "NftMinted", addr(fxSignatureAddr),
+				return buildLog(t, signatureABI, "NftMinted", addr(fxSignatureAddr),
 					[]any{bigInt(0), addr(fxDave), bigInt(2)}, []any{bigInt(0xda7e)})
 			}},
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc721_abi, "Transfer", addr(fxSignatureAddr),
+				return buildLog(t, erc721ABI, "Transfer", addr(fxSignatureAddr),
 					[]any{addr(zero), addr(fxDave), bigInt(2)}, nil)
 			}},
 			{ENDURANCE_PRIZE_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "EnduranceChampionPrizePaid", addr(fxGameAddr),
+				return buildLog(t, gameABI, "EnduranceChampionPrizePaid", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxBob), bigInt(3)}, []any{eth(7)})
 			}},
 			{CHRONO_WARRIOR_PRIZE_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "ChronoWarriorPrizePaid", addr(fxGameAddr),
+				return buildLog(t, gameABI, "ChronoWarriorPrizePaid", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxCarol), bigInt(4)}, []any{bigInt(0), eth(2), eth(8)})
 			}},
 			{LASTCST_BIDDER_PRIZE_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "LastCstBidderPrizePaid", addr(fxGameAddr),
+				return buildLog(t, gameABI, "LastCstBidderPrizePaid", addr(fxGameAddr),
 					[]any{bigInt(0), addr(fxCarol), bigInt(5)}, []any{eth(6)})
 			}},
 			{DONATION_RECEIVED_EVENT, func(t *testing.T) *types.Log {
 				// Emitted by the charity wallet within the claim tx: the
 				// handler resolves the round via find_prize_num.
-				return buildLog(t, charity_wallet_abi, "DonationReceived", addr(fxCharityAddr),
+				return buildLog(t, charityWalletABI, "DonationReceived", addr(fxCharityAddr),
 					[]any{addr(fxGameAddr)}, []any{eth(1)})
 			}},
 			{FUNDS_TO_CHARITY, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_game_abi, "FundsTransferredToCharity", addr(fxMarketingAddr),
+				return buildLog(t, gameABI, "FundsTransferredToCharity", addr(fxMarketingAddr),
 					[]any{addr(fxCharityRcv)}, []any{eth(1)})
 			}},
 		}},
 		// Bob withdraws his raffle ETH.
 		{block: b(10), to: fxPrizesAddr, logs: []fixtureLog{
 			{ETH_PRIZE_WITHDRAWAL_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, prizes_wallet_abi, "EthWithdrawn", addr(fxPrizesAddr),
+				return buildLog(t, prizesWalletABI, "EthWithdrawn", addr(fxPrizesAddr),
 					[]any{bigInt(0), addr(fxBob), addr(fxBob)}, []any{eth(1)})
 			}},
 		}},
 		// Alice claims the donated prizes.
 		{block: b(11), to: fxPrizesAddr, logs: []fixtureLog{
 			{DONATED_NFT_CLAIMED, func(t *testing.T) *types.Log {
-				return buildLog(t, prizes_wallet_abi, "DonatedNftClaimed", addr(fxPrizesAddr),
+				return buildLog(t, prizesWalletABI, "DonatedNftClaimed", addr(fxPrizesAddr),
 					[]any{bigInt(0), addr(fxAlice), addr(fxDonatedNFT)}, []any{bigInt(5), bigInt(0)})
 			}},
 			{DONATED_TOKEN_CLAIMED, func(t *testing.T) *types.Log {
-				return buildLog(t, prizes_wallet_abi, "DonatedTokenClaimed", addr(fxPrizesAddr),
+				return buildLog(t, prizesWalletABI, "DonatedTokenClaimed", addr(fxPrizesAddr),
 					[]any{bigInt(0), addr(fxAlice), addr(fxMockERC20)}, []any{eth(50)})
 			}},
 		}},
 		// Alice names her NFT and transfers it to bob.
 		{block: b(12), to: fxSignatureAddr, logs: []fixtureLog{
 			{TOKEN_NAME_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, cosmic_signature_abi, "NftNameChanged", addr(fxSignatureAddr),
+				return buildLog(t, signatureABI, "NftNameChanged", addr(fxSignatureAddr),
 					[]any{bigInt(1)}, []any{"Round Zero Genesis"})
 			}},
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, erc721_abi, "Transfer", addr(fxSignatureAddr),
+				return buildLog(t, erc721ABI, "Transfer", addr(fxSignatureAddr),
 					[]any{addr(fxAlice), addr(fxBob), bigInt(1)}, nil)
 			}},
 		}},
 		// Staking: alice stakes her CS NFT, carol stakes a RandomWalk NFT.
 		{block: b(13), to: fxStakingCSTAddr, logs: []fixtureLog{
 			{CST_NFT_STAKED_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, staking_wallet_cst_abi, "NftStaked", addr(fxStakingCSTAddr),
+				return buildLog(t, stakingCSTABI, "NftStaked", addr(fxStakingCSTAddr),
 					[]any{bigInt(1), bigInt(1), addr(fxAlice)}, []any{bigInt(1), bigInt(0)})
 			}},
 			{RWALK_NFT_STAKED_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, staking_wallet_rwalk_abi, "NftStaked", addr(fxStakingRWKAddr),
+				return buildLog(t, stakingRWalkABI, "NftStaked", addr(fxStakingRWKAddr),
 					[]any{bigInt(2), bigInt(10), addr(fxCarol)}, []any{bigInt(1)})
 			}},
 		}},
 		// Staking reward deposit, then alice unstakes.
 		{block: b(14), to: fxStakingCSTAddr, logs: []fixtureLog{
 			{STAKING_ETH_DEPOSIT_EVENT, func(t *testing.T) *types.Log {
-				return buildLog(t, staking_wallet_cst_abi, "EthDepositReceived", addr(fxStakingCSTAddr),
+				return buildLog(t, stakingCSTABI, "EthDepositReceived", addr(fxStakingCSTAddr),
 					[]any{bigInt(0)}, []any{bigInt(3), eth(2), eth(2), bigInt(1)})
 			}},
 		}},
 		{block: b(15), to: fxStakingCSTAddr, logs: []fixtureLog{
 			{NFT_UNSTAKED_CST, func(t *testing.T) *types.Log {
-				return buildLog(t, staking_wallet_cst_abi, "NftUnstaked", addr(fxStakingCSTAddr),
+				return buildLog(t, stakingCSTABI, "NftUnstaked", addr(fxStakingCSTAddr),
 					[]any{bigInt(1), bigInt(1), addr(fxAlice)}, []any{bigInt(4), bigInt(0), eth(2), eth(2)})
 			}},
 		}},

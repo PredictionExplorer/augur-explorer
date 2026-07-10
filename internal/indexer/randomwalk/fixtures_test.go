@@ -10,7 +10,7 @@
 // terminates the process. Re-processing therefore only happens through the
 // reorg path (cascade delete + fresh evt_log rows), which is what
 // TestReorgRollbackAndReplay exercises.
-package main
+package randomwalk
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func mintLog(tokenID int64, owner string) func(t *testing.T) *types.Log {
 		var seed [32]byte
 		seed[0] = 0x5e
 		seed[31] = byte(tokenID)
-		return buildLog(t, randomwalk_abi, "MintEvent", addr(fxRandomWalkAddr),
+		return buildLog(t, fxRwalkABI, "MintEvent", addr(fxRandomWalkAddr),
 			[]any{bigInt(tokenID), addr(owner)}, []any{seed, eth(1)})
 	}
 }
@@ -55,7 +55,7 @@ func mintLog(tokenID int64, owner string) func(t *testing.T) *types.Log {
 // transferLog builds the RandomWalk ERC721 Transfer.
 func transferLog(from, to string, tokenID int64) func(t *testing.T) *types.Log {
 	return func(t *testing.T) *types.Log {
-		return buildLog(t, randomwalk_abi, "Transfer", addr(fxRandomWalkAddr),
+		return buildLog(t, fxRwalkABI, "Transfer", addr(fxRandomWalkAddr),
 			[]any{addr(from), addr(to), bigInt(tokenID)}, nil)
 	}
 }
@@ -63,7 +63,7 @@ func transferLog(from, to string, tokenID int64) func(t *testing.T) *types.Log {
 // offerLog builds a marketplace NewOffer (sell offer when seller != 0x0).
 func offerLog(offerID, tokenID int64, seller, buyer string, priceEth int64) func(t *testing.T) *types.Log {
 	return func(t *testing.T) *types.Log {
-		return buildLog(t, marketplace_abi, "NewOffer", addr(fxMarketplaceAddr),
+		return buildLog(t, fxMarketABI, "NewOffer", addr(fxMarketplaceAddr),
 			[]any{addr(fxRandomWalkAddr), bigInt(offerID), bigInt(tokenID)},
 			[]any{addr(seller), addr(buyer), eth(priceEth)})
 	}
@@ -85,7 +85,7 @@ func eventFixtures() []fixture {
 			}},
 			{blockOffset: 1, to: rwalk, logs: []fixtureLog{
 				{TOKEN_NAME_EVT, func(t *testing.T) *types.Log {
-					return buildLog(t, randomwalk_abi, "TokenNameEvent", addr(rwalk),
+					return buildLog(t, fxRwalkABI, "TokenNameEvent", addr(rwalk),
 						nil, []any{bigInt(10), "Fixture Walker"})
 				}},
 			}},
@@ -94,7 +94,7 @@ func eventFixtures() []fixture {
 			{TOKEN_NAME_EVT, func(t *testing.T) *types.Log {
 				// No mint for token 99: RWalk_token_exists fails and the
 				// handler skips the insert (layer-1 rows still land).
-				return buildLog(t, randomwalk_abi, "TokenNameEvent", addr(rwalk),
+				return buildLog(t, fxRwalkABI, "TokenNameEvent", addr(rwalk),
 					nil, []any{bigInt(99), "Ghost Token"})
 			}},
 		}}}},
@@ -109,7 +109,7 @@ func eventFixtures() []fixture {
 		}},
 		{name: "transfer_wrong_address_skipped", block: 1040, txs: []fixtureTx{{to: rwalk, logs: []fixtureLog{
 			{TRANSFER_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, randomwalk_abi, "Transfer", addr(fxAlice),
+				return buildLog(t, fxRwalkABI, "Transfer", addr(fxAlice),
 					[]any{addr(fxCarol), addr(fxDave), bigInt(10)}, nil)
 			}},
 		}}}},
@@ -142,7 +142,7 @@ func eventFixtures() []fixture {
 			}},
 			{blockOffset: 2, to: market, logs: []fixtureLog{
 				{ITEM_BOUGHT, func(t *testing.T) *types.Log {
-					return buildLog(t, marketplace_abi, "ItemBought", addr(market),
+					return buildLog(t, fxMarketABI, "ItemBought", addr(market),
 						[]any{bigInt(1), addr(fxCarol), addr(fxDave)}, nil)
 				}},
 				{TRANSFER_EVT, transferLog(fxCarol, fxDave, 10)},
@@ -158,7 +158,7 @@ func eventFixtures() []fixture {
 			}},
 			{blockOffset: 2, to: market, logs: []fixtureLog{
 				{OFFER_CANCELED, func(t *testing.T) *types.Log {
-					return buildLog(t, marketplace_abi, "OfferCanceled", addr(market),
+					return buildLog(t, fxMarketABI, "OfferCanceled", addr(market),
 						[]any{bigInt(1)}, nil)
 				}},
 			}},
@@ -167,7 +167,7 @@ func eventFixtures() []fixture {
 			{OFFER_CANCELED, func(t *testing.T) *types.Log {
 				// Offer 77 was never created: Offer_exists fails and the
 				// handler skips the insert.
-				return buildLog(t, marketplace_abi, "OfferCanceled", addr(market),
+				return buildLog(t, fxMarketABI, "OfferCanceled", addr(market),
 					[]any{bigInt(77)}, nil)
 			}},
 		}}}},
@@ -178,7 +178,7 @@ func eventFixtures() []fixture {
 			}},
 			{blockOffset: 1, to: rwalk, logs: []fixtureLog{
 				{WITHDRAWAL_EVT, func(t *testing.T) *types.Log {
-					return buildLog(t, randomwalk_abi, "WithdrawalEvent", addr(rwalk),
+					return buildLog(t, fxRwalkABI, "WithdrawalEvent", addr(rwalk),
 						[]any{bigInt(10)}, []any{addr(fxCarol), eth(1)})
 				}},
 			}},
@@ -244,7 +244,7 @@ func marketplaceStory() []fixtureTx {
 		}},
 		{blockOffset: 4, to: fxRandomWalkAddr, logs: []fixtureLog{
 			{TOKEN_NAME_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, randomwalk_abi, "TokenNameEvent", addr(fxRandomWalkAddr),
+				return buildLog(t, fxRwalkABI, "TokenNameEvent", addr(fxRandomWalkAddr),
 					nil, []any{bigInt(10), "Story Walker"})
 			}},
 		}},
@@ -253,7 +253,7 @@ func marketplaceStory() []fixtureTx {
 		}},
 		{blockOffset: 6, to: fxMarketplaceAddr, logs: []fixtureLog{
 			{ITEM_BOUGHT, func(t *testing.T) *types.Log {
-				return buildLog(t, marketplace_abi, "ItemBought", addr(fxMarketplaceAddr),
+				return buildLog(t, fxMarketABI, "ItemBought", addr(fxMarketplaceAddr),
 					[]any{bigInt(1), addr(fxCarol), addr(fxDave)}, nil)
 			}},
 			{TRANSFER_EVT, transferLog(fxCarol, fxDave, 10)},
@@ -269,13 +269,13 @@ func marketplaceStory() []fixtureTx {
 		}},
 		{blockOffset: 10, to: fxMarketplaceAddr, logs: []fixtureLog{
 			{OFFER_CANCELED, func(t *testing.T) *types.Log {
-				return buildLog(t, marketplace_abi, "OfferCanceled", addr(fxMarketplaceAddr),
+				return buildLog(t, fxMarketABI, "OfferCanceled", addr(fxMarketplaceAddr),
 					[]any{bigInt(4)}, nil)
 			}},
 		}},
 		{blockOffset: 11, to: fxRandomWalkAddr, logs: []fixtureLog{
 			{WITHDRAWAL_EVT, func(t *testing.T) *types.Log {
-				return buildLog(t, randomwalk_abi, "WithdrawalEvent", addr(fxRandomWalkAddr),
+				return buildLog(t, fxRwalkABI, "WithdrawalEvent", addr(fxRandomWalkAddr),
 					[]any{bigInt(10)}, []any{addr(fxCarol), eth(1)})
 			}},
 		}},

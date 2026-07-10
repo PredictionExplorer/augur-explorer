@@ -1,4 +1,4 @@
-package main
+package cosmicgame
 
 // Benchmarks for the ETL hot path (§4.5 of docs/MODERNIZATION.md): decoding
 // the most common event, BidPlaced. Baselines live in docs/benchmarks.md;

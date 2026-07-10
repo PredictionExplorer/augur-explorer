@@ -1,4 +1,8 @@
-package main
+// The startup contract-parameter sync: reads live monetary/timing settings
+// from the chain and inserts admin-correction rows when the stored values
+// disagree (check-then-correct; a clean run writes nothing).
+
+package cosmicgame
 
 import (
 	"context"
@@ -12,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -30,7 +34,7 @@ type contractParamSync struct {
 	table        string
 	column       string
 	contractAddr string
-	read         func(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error)
+	read         func(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error)
 }
 
 func chainSyncLogIndex() uint {
@@ -162,15 +166,16 @@ func (s *paramSyncer) syncCstReward(wantValue string) (bool, error) {
 	return true, nil
 }
 
-// syncContractParamsFromChain reads live monetary/timed settings from RPC and inserts SQL
+// SyncContractParams reads live monetary/timed settings from RPC and inserts SQL
 // correction rows when the latest admin/history value differs from chain.
-func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store.Store, client *ethclient.Client, gameAddr, prizesWalletAddr string, logger *slog.Logger) error {
+// cmd/cg-etl runs it once at startup, before the polling loop.
+func SyncContractParams(ctx context.Context, repo *cgdb.Repo, st *store.Store, client *ethclient.Client, gameAddr, prizesWalletAddr string, logger *slog.Logger) error {
 	if client == nil {
 		return fmt.Errorf("eth client is nil")
 	}
 	game := ethcommon.HexToAddress(gameAddr)
-	v1, _ := cosmicgame.NewCosmicSignatureGame(game, client)
-	v2, _ := cosmicgame.NewCosmicSignatureGameV2(game, client)
+	v1, _ := cgc.NewCosmicSignatureGame(game, client)
+	v2, _ := cgc.NewCosmicSignatureGameV2(game, client)
 	if v1 == nil && v2 == nil {
 		return fmt.Errorf("can't bind CosmicGame at %s", gameAddr)
 	}
@@ -220,7 +225,7 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 	}
 
 	if prizesWalletAddr != "" {
-		pw, err := cosmicgame.NewPrizesWallet(ethcommon.HexToAddress(prizesWalletAddr), client)
+		pw, err := cgc.NewPrizesWallet(ethcommon.HexToAddress(prizesWalletAddr), client)
 		if err != nil {
 			logger.Warn("chain sync: parameter skipped", "param", "timeout_withdraw_prizes", "err", fmt.Errorf("bind PrizesWallet: %w", err))
 		} else if val, err := pw.TimeoutDurationToWithdrawPrizes(&copts); err != nil {
@@ -256,7 +261,7 @@ func syncContractParamsFromChain(ctx context.Context, repo *cgdb.Repo, st *store
 	return nil
 }
 
-func probeContractMechanics(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) int64 {
+func probeContractMechanics(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) int64 {
 	if v2 != nil {
 		if _, err := v2.CstDutchAuctionDuration(opts); err == nil {
 			return contractMechanicsV2
@@ -275,7 +280,7 @@ func probeContractMechanics(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.C
 	return contractMechanicsUnknown
 }
 
-func readDelayDuration(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) (int64, error) {
+func readDelayDuration(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (int64, error) {
 	if v1 != nil {
 		if val, err := v1.DelayDurationBeforeRoundActivation(opts); err == nil {
 			return val.Int64(), nil
@@ -289,7 +294,7 @@ func readDelayDuration(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.Cosmic
 	return 0, fmt.Errorf("can't read delayDurationBeforeRoundActivation")
 }
 
-func readCstReward(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) (string, error) {
+func readCstReward(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) (string, error) {
 	if mechanics == contractMechanicsV2 && v2 != nil {
 		if val, err := v2.BidCstRewardAmountMultiplier(opts); err == nil {
 			return val.String(), nil
@@ -308,7 +313,7 @@ func readCstReward(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSign
 	return "", fmt.Errorf("can't read CST bid reward")
 }
 
-func readRoundStartCSTAuction(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) (string, error) {
+func readRoundStartCSTAuction(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) (string, error) {
 	if mechanics == contractMechanicsV2 && v2 != nil {
 		if val, err := v2.CstDutchAuctionDuration(opts); err == nil {
 			return val.String(), nil
@@ -327,7 +332,7 @@ func readRoundStartCSTAuction(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame
 	return "", fmt.Errorf("can't read CST dutch auction duration")
 }
 
-func readCSTAuctionDurationChangeDivisor(v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) int64 {
+func readCSTAuctionDurationChangeDivisor(v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) int64 {
 	if mechanics == contractMechanicsV1 || v2 == nil {
 		return -1
 	}
@@ -338,8 +343,8 @@ func readCSTAuctionDurationChangeDivisor(v2 *cosmicgame.CosmicSignatureGameV2, o
 }
 
 func buildContractParamSyncList(mechanics int64) []contractParamSync {
-	v1Big := func(read func(*cosmicgame.CosmicSignatureGame, *bind.CallOpts) (*big.Int, error)) func(*cosmicgame.CosmicSignatureGame, *cosmicgame.CosmicSignatureGameV2, *bind.CallOpts) (string, error) {
-		return func(v1 *cosmicgame.CosmicSignatureGame, _ *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
+	v1Big := func(read func(*cgc.CosmicSignatureGame, *bind.CallOpts) (*big.Int, error)) func(*cgc.CosmicSignatureGame, *cgc.CosmicSignatureGameV2, *bind.CallOpts) (string, error) {
+		return func(v1 *cgc.CosmicSignatureGame, _ *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
 			if v1 == nil {
 				return "", fmt.Errorf("v1 binding unavailable")
 			}
@@ -354,67 +359,67 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 	return []contractParamSync{
 		{
 			name: "cst_reward_for_bidding", table: "cg_adm_erc20_reward", column: "new_reward",
-			read: func(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
+			read: func(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
 				return readCstReward(v1, v2, opts, mechanics)
 			},
 		},
 		{
 			name: "cst_dutch_auction_duration", table: "cg_adm_cst_auclen", column: "new_len",
-			read: func(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
+			read: func(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
 				return readRoundStartCSTAuction(v1, v2, opts, mechanics)
 			},
 		},
 		{
 			name: "timeout_claim_main_prize", table: "cg_adm_timeout_claimprize", column: "new_timeout",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.TimeoutDurationToClaimMainPrize(opts)
 			}),
 		},
 		{
 			name: "eth_bid_price_increase_divisor", table: "cg_adm_price_inc", column: "new_price_increase",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.EthBidPriceIncreaseDivisor(opts)
 			}),
 		},
 		{
 			name: "main_prize_time_increment_divisor", table: "cg_adm_time_inc", column: "new_time_inc",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.MainPrizeTimeIncrementIncreaseDivisor(opts)
 			}),
 		},
 		{
 			name: "main_prize_microseconds_increment", table: "cg_adm_prize_microsec", column: "new_microseconds",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.MainPrizeTimeIncrementInMicroSeconds(opts)
 			}),
 		},
 		{
 			name: "initial_duration_until_main_prize_divisor", table: "cg_adm_inisecprize", column: "new_inisec",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.InitialDurationUntilMainPrizeDivisor(opts)
 			}),
 		},
 		{
 			name: "eth_dutch_auction_duration_divisor", table: "cg_adm_eth_auclen", column: "new_len",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.EthDutchAuctionDurationDivisor(opts)
 			}),
 		},
 		{
 			name: "eth_dutch_auction_ending_bid_price_divisor", table: "cg_adm_eth_auc_endprice", column: "new_len",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.EthDutchAuctionEndingBidPriceDivisor(opts)
 			}),
 		},
 		{
 			name: "cst_dutch_auction_beginning_bid_price_min_limit", table: "cg_adm_cst_min_limit", column: "min_limit",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.CstDutchAuctionBeginningBidPriceMinLimit(opts)
 			}),
 		},
 		{
 			name: "marketing_wallet_cst_contribution", table: "cg_adm_mkt_reward", column: "new_reward",
-			read: v1Big(func(v1 *cosmicgame.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
 				return v1.MarketingWalletCstContributionAmount(opts)
 			}),
 		},
