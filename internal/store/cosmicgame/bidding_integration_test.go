@@ -125,6 +125,78 @@ func TestBidsByRound(t *testing.T) {
 	})
 }
 
+func TestBidsByRoundPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	first, hasMore, err := r.BidsByRoundPage(ctx, 0, BidPageCursor{}, 2)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if !hasMore || len(first) != 2 {
+		t.Fatalf("first page = %d records, hasMore=%v; want 2,true", len(first), hasMore)
+	}
+	if first[0].BidPosition != 1 || first[0].Tx.EvtLogId != 5004 ||
+		first[1].BidPosition != 2 || first[1].Tx.EvtLogId != 5006 {
+		t.Fatalf("first page order = (%d,%d),(%d,%d)",
+			first[0].BidPosition, first[0].Tx.EvtLogId,
+			first[1].BidPosition, first[1].Tx.EvtLogId)
+	}
+
+	second, hasMore, err := r.BidsByRoundPage(ctx, 0, BidPageCursor{
+		BidPosition: first[1].BidPosition,
+		EventLogID:  first[1].Tx.EvtLogId,
+	}, 2)
+	if err != nil {
+		t.Fatalf("second page: %v", err)
+	}
+	if hasMore || len(second) != 2 {
+		t.Fatalf("second page = %d records, hasMore=%v; want 2,false", len(second), hasMore)
+	}
+	if second[0].BidPosition != 3 || second[0].Tx.EvtLogId != 5008 ||
+		second[1].BidPosition != 4 || second[1].Tx.EvtLogId != 5010 {
+		t.Fatalf("second page order = (%d,%d),(%d,%d)",
+			second[0].BidPosition, second[0].Tx.EvtLogId,
+			second[1].BidPosition, second[1].Tx.EvtLogId)
+	}
+
+	exhausted, hasMore, err := r.BidsByRoundPage(ctx, 0, BidPageCursor{
+		BidPosition: second[1].BidPosition,
+		EventLogID:  second[1].Tx.EvtLogId,
+	}, 2)
+	if err != nil {
+		t.Fatalf("exhausted page: %v", err)
+	}
+	if hasMore || exhausted == nil || len(exhausted) != 0 {
+		t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+	}
+}
+
+func TestBidByRoundAndPosition(t *testing.T) {
+	r := repo(t)
+	record, err := r.BidByRoundAndPosition(context.Background(), 0, 3)
+	if err != nil {
+		t.Fatalf("BidByRoundAndPosition: %v", err)
+	}
+	if record.Tx.EvtLogId != 5008 || record.BidPosition != 3 {
+		t.Fatalf("record = event %d position %d, want event 5008 position 3",
+			record.Tx.EvtLogId, record.BidPosition)
+	}
+	if _, err := r.BidByRoundAndPosition(context.Background(), 0, 99); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("missing bid error = %v, want ErrNotFound", err)
+	}
+}
+
+func TestBidsByRoundPagePropagatesCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, _, err := r.BidsByRoundPage(ctx, 0, BidPageCursor{}, 2); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page error = %v, want context.Canceled", err)
+	}
+}
+
 func TestBidCountForRound(t *testing.T) {
 	r := repo(t)
 	ctx := context.Background()

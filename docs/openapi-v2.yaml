@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: RWCG Backend API v2
+  version: 0.1.0
+  description: |
+    Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
+    incrementally while the frozen v1 contract remains available.
+servers:
+  - url: /
+paths:
+  /api/v2/cosmicgame/rounds/{round}/bids:
+    get:
+      operationId: listRoundBids
+      summary: List bids in one CosmicGame round
+      tags:
+        - CosmicGame bids
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundBidPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/bids/{position}:
+    get:
+      operationId: getRoundBid
+      summary: Get one bid by its position in a CosmicGame round
+      tags:
+        - CosmicGame bids
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/BidPosition"
+      responses:
+        "200":
+          $ref: "#/components/responses/Bid"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  parameters:
+    Round:
+      name: round
+      in: path
+      required: true
+      description: Zero-based CosmicGame round number.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    BidPosition:
+      name: position
+      in: path
+      required: true
+      description: One-based bid position within the round.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque continuation cursor returned by the previous page.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of bids to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+  schemas:
+    Problem:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+    BidType:
+      type: string
+      enum:
+        - eth
+        - randomWalk
+        - cst
+        - unknown
+    NftDonation:
+      type: object
+      additionalProperties: false
+      required:
+        - tokenId
+        - tokenAddress
+        - tokenUri
+      properties:
+        tokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        tokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenUri:
+          type: string
+    Erc20Donation:
+      type: object
+      additionalProperties: false
+      required:
+        - tokenAddress
+        - amountWei
+      properties:
+        tokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+    Bid:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - bidderAddress
+        - round
+        - position
+        - bidType
+        - prizeAt
+        - cstRewardWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        bidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        position:
+          type: integer
+          format: int64
+          minimum: 1
+        bidType:
+          $ref: "#/components/schemas/BidType"
+        ethPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cstPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        randomWalkTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        message:
+          type: string
+        prizeAt:
+          type: string
+          format: date-time
+        cstRewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+        bidCstRewardAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cstDutchAuctionDurationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        nftDonation:
+          $ref: "#/components/schemas/NftDonation"
+        erc20Donation:
+          $ref: "#/components/schemas/Erc20Donation"
+    PageMeta:
+      type: object
+      additionalProperties: false
+      required:
+        - limit
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+        nextCursor:
+          type: string
+          minLength: 1
+          maxLength: 512
+    RoundBidPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Bid"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+  responses:
+    RoundBidPage:
+      description: One stable page of round bids.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundBidPage"
+    Bid:
+      description: The requested bid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Bid"
+    BadRequest:
+      description: A path or query parameter is invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: The requested bid does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: The request could not be completed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

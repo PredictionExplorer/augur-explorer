@@ -460,7 +460,9 @@ func TestAPIParity(t *testing.T) {
 	routes := h.router.Routes()
 	registeredGET := make(map[string]bool)
 	for _, r := range routes {
-		if r.Method == http.MethodGet {
+		// V2 has a separate OpenAPI contract and golden suite. This table
+		// remains the byte-for-byte freeze for v1 only.
+		if r.Method == http.MethodGet && !strings.HasPrefix(r.Pattern, "/api/v2/") {
 			registeredGET[r.Pattern] = true
 		}
 	}

@@ -227,6 +227,43 @@ func TestRouterConflictingPatternsPanicAtRegistration(t *testing.T) {
 	r.GET("/a/{y}", func(c *Context) {})
 }
 
+func TestRouterGeneratedHandleFunc(t *testing.T) {
+	r := NewRouter()
+	var pathID string
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("X-Global", "yes")
+			next.ServeHTTP(w, req)
+		})
+	})
+	r.HandleFunc("GET /generated/{id}", func(w http.ResponseWriter, req *http.Request) {
+		pathID = req.PathValue("id")
+		_, _ = io.WriteString(w, "generated")
+	})
+
+	response := serve(r, http.MethodGet, "/generated/42")
+	if response.Code != http.StatusOK || response.Body.String() != "generated" || pathID != "42" {
+		t.Fatalf("generated handler response = %d %q", response.Code, response.Body.String())
+	}
+	if response.Header().Get("X-Global") != "yes" {
+		t.Fatal("generated handler bypassed global middleware")
+	}
+	want := []Route{{Method: http.MethodGet, Pattern: "/generated/{id}"}}
+	if got := r.Routes(); !slices.Equal(got, want) {
+		t.Fatalf("Routes() = %v, want %v", got, want)
+	}
+}
+
+func TestRouterGeneratedHandleFuncRequiresMethodPattern(t *testing.T) {
+	r := NewRouter()
+	defer func() {
+		if recover() == nil {
+			t.Fatal("HandleFunc accepted a path without a method")
+		}
+	}()
+	r.HandleFunc("/missing-method", func(http.ResponseWriter, *http.Request) {})
+}
+
 func TestRouterFreezesAfterFirstRequest(t *testing.T) {
 	r := NewRouter()
 	r.GET("/x", func(c *Context) { c.Status(http.StatusOK) })
@@ -243,6 +280,9 @@ func TestRouterFreezesAfterFirstRequest(t *testing.T) {
 	}
 	assertPanics("Use", func() { r.Use(func(h http.Handler) http.Handler { return h }) })
 	assertPanics("Handle", func() { r.GET("/y", func(c *Context) {}) })
+	assertPanics("HandleFunc", func() {
+		r.HandleFunc("GET /generated", func(http.ResponseWriter, *http.Request) {})
+	})
 }
 
 func TestRouterRoutesRegistry(t *testing.T) {

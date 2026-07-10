@@ -21,7 +21,9 @@ Arbitrum RPC ──► cg-etl / rw-etl ──► PostgreSQL ──► apiserver 
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full picture,
-[docs/openapi.yaml](docs/openapi.yaml) for the API contract, and
+[docs/openapi.yaml](docs/openapi.yaml) for the frozen v1 contract,
+[docs/openapi-v2.yaml](docs/openapi-v2.yaml) for the incremental v2 contract,
+and
 [docs/adr/](docs/adr/) for the key design decisions.
 
 ## Quick start
@@ -60,6 +62,7 @@ Or everything in containers: `docker compose --profile etl up`.
 ## Development
 
 ```bash
+make generate          # regenerate OpenAPI v2 models/server
 make test              # unit tests (race detector)
 make test-integration  # + real Postgres via testcontainers
 make lint              # golangci-lint

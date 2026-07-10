@@ -10,7 +10,7 @@ COMMANDS := apiserver cg-etl rw-etl notibot freezer-scan freezer-verify \
             srvmonitor loganomaly imggen-monitor rwalk-alarm \
             cgctl rwctl opsctl
 
-.PHONY: all build $(COMMANDS) test test-integration fuzz-smoke lint migrate-up fmt vet vuln clean help
+.PHONY: all build $(COMMANDS) generate generate-check test test-integration fuzz-smoke lint migrate-up fmt vet vuln clean help
 
 all: build
 
@@ -23,6 +23,15 @@ build:
 $(COMMANDS):
 	@mkdir -p $(BIN)
 	go build -o $(BIN)/$@ ./cmd/$@
+
+## generate: regenerate committed OpenAPI v2 server/models
+generate:
+	go generate ./internal/api/v2
+
+## generate-check: fail when committed OpenAPI v2 generated code is stale
+generate-check:
+	go generate ./internal/api/v2
+	git diff --exit-code -- internal/api/v2/api.gen.go
 
 ## test: run unit tests with the race detector
 test:

@@ -67,3 +67,14 @@ func TestBidSelectQueryIncludesV2Columns(t *testing.T) {
 		}
 	}
 }
+
+func TestBidsByRoundPageRejectsNonPositiveLimit(t *testing.T) {
+	t.Parallel()
+
+	var repo Repo
+	for _, limit := range []int{0, -1} {
+		if _, _, err := repo.BidsByRoundPage(t.Context(), 0, BidPageCursor{}, limit); err == nil {
+			t.Errorf("BidsByRoundPage(limit=%d) succeeded", limit)
+		}
+	}
+}

@@ -22,10 +22,12 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 )
 
 // shutdownTimeout bounds how long in-flight requests may take to finish once
@@ -56,7 +58,7 @@ func envBoolDefaultTrue(key string) bool {
 	return true
 }
 
-func initialize(ctx context.Context) {
+func initialize(ctx context.Context) *contractstate.State {
 	// Initialize the common context
 	common.InitContext(rwcg_srv.store, eclient, Info, Error)
 
@@ -64,7 +66,8 @@ func initialize(ctx context.Context) {
 	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")
 	enableFAQRoutes := envBoolDefaultTrue("ENABLE_ROUTES_FAQ")
 
-	if err := cosmicgame.Init(ctx, eclient, rpcclient, Info, Error, enableCGRoutes); err != nil {
+	cgState, err := cosmicgame.Init(ctx, eclient, rpcclient, Info, Error, enableCGRoutes)
+	if err != nil {
 		// Startup cannot proceed without the CosmicGame contract registry.
 		err_str := fmt.Sprintf("CosmicGame module init failed: %v", err)
 		Error.Print(err_str)
@@ -92,6 +95,7 @@ func initialize(ctx context.Context) {
 	if !enableFAQRoutes {
 		fmt.Printf("INFO: FAQ bot proxy routes are not registered (ENABLE_ROUTES_FAQ=false).\n")
 	}
+	return cgState
 }
 
 func main() {
@@ -115,7 +119,7 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 	rwcg_srv = create_rwcg_server()
 
-	initialize(ctx)
+	cgState := initialize(ctx)
 	cosmicgame.StartBackgroundRefresh(ctx)
 
 	port_plain := os.Getenv("HTTP_PORT")
@@ -124,13 +128,24 @@ func main() {
 
 	// The shared constructor (internal/api/routes) builds the middleware
 	// chain — CORS, panic recovery, access log, per-IP rate limiting,
-	// Prometheus metrics — and registers the full v1 route table: health
-	// probes, static assets (env-gated, see static_assets.go), the three
-	// API modules and the host-dispatched bare /metadata route. The parity
-	// suite builds its router through the same constructor.
+	// Prometheus metrics — and registers the frozen v1 table, generated v2
+	// server, health probes, static assets (env-gated, see static_assets.go),
+	// and host-dispatched bare /metadata route. The integration suites build
+	// through the same constructor.
+	accessLogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	errorLogger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	var v2Server *v2.Server
+	if cgState != nil {
+		v2Server, err = v2.NewServer(rwcg_srv.store, cgState, errorLogger)
+		if err != nil {
+			fmt.Printf("API v2 initialization failed: %v\n", err)
+			os.Exit(1)
+		}
+	}
 	r := routes.New(rwcg_srv.store, routes.Options{
-		AccessLog:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
-		PanicLog:      slog.New(slog.NewTextHandler(os.Stderr, nil)),
+		AccessLog:     accessLogger,
+		PanicLog:      errorLogger,
+		V2:            v2Server,
 		Extra:         []httpx.Middleware{metricsMiddleware()},
 		RegisterExtra: registerStaticAssetRoutes,
 	})

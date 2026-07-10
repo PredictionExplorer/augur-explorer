@@ -8,6 +8,7 @@ keep the characterization test suite green.
 ## Development workflow
 
 ```bash
+make generate     # regenerate committed OpenAPI v2 code
 make build       # compile all binaries into ./bin
 make test        # unit tests (race detector, shuffled)
 make fuzz-smoke  # every fuzz target briefly (FUZZTIME=30s to change)
@@ -58,6 +59,10 @@ every PR — all must pass.
   A route-drift test also asserts `docs/openapi.yaml` and the registered
   routes match exactly, in both directions; new routes must be added to the
   spec and given a parity case in the same PR.
+- **API v2** (`internal/api/v2`): edit `docs/openapi-v2.yaml` first, run
+  `make generate`, then implement the generated strict interface. V2 route
+  drift and kin-openapi response validation run in the unit/integration
+  suites; generated-code drift is a CI failure.
 - CI enforces a coverage ratchet on `internal/` (integration profile); the
   floor only ever moves up.
 - Fuzz targets (`func Fuzz*`) guard everything that parses untrusted bytes

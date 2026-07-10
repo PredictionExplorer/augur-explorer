@@ -34,16 +34,16 @@ var (
 // and performs the synchronous initial loads. The refresh loops are started
 // separately via StartBackgroundRefresh, so tests get deterministic
 // snapshots by simply not starting them.
-func initContractState(ctx context.Context) error {
+func initContractState(ctx context.Context) (*contractstate.State, error) {
 	if !dbInitialized() {
-		return errors.New("cosmicgame: database link wasn't configured")
+		return nil, errors.New("cosmicgame: database link wasn't configured")
 	}
 	arbStore = common.Ctx.Store
 	arbRepo = cgdb.NewRepo(common.Ctx.Store)
 
 	caddrs, err := arbRepo.ContractAddrs(ctx)
 	if err != nil {
-		return fmt.Errorf("cosmicgame: reading contract addresses: %w", err)
+		return nil, fmt.Errorf("cosmicgame: reading contract addresses: %w", err)
 	}
 	st, err := contractstate.New(contractstate.Config{
 		EthClient: EthClient,
@@ -59,11 +59,11 @@ func initContractState(ctx context.Context) error {
 		Error: Error,
 	})
 	if err != nil {
-		return fmt.Errorf("cosmicgame: building contract state: %w", err)
+		return nil, fmt.Errorf("cosmicgame: building contract state: %w", err)
 	}
 	contractState = st
 	contractState.LoadInitial(ctx)
-	return nil
+	return st, nil
 }
 
 // StartBackgroundRefresh launches the periodic contract/database state

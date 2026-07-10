@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
@@ -35,11 +36,13 @@ var (
 // link or unreadable contract registry); the caller decides whether that is
 // fatal. Init does not start the periodic refresh loops — call
 // StartBackgroundRefresh for that.
-func Init(ctx context.Context, ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) error {
+// The returned state is the same component used by v1 handlers and can be
+// injected into v2 without another cache or refresh loop.
+func Init(ctx context.Context, ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) (*contractstate.State, error) {
 	Enabled = enabled
 	if !enabled {
 		info.Printf("CosmicGame module init skipped (ENABLE_ROUTES_COSMICGAME=false)")
-		return nil
+		return nil, nil
 	}
 
 	EthClient = ethClient

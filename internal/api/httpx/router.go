@@ -87,6 +87,22 @@ func (r *Router) Handle(method, pattern string, h HandlerFunc, mw ...Middleware)
 	r.routes = append(r.routes, Route{Method: method, Pattern: pattern})
 }
 
+// HandleFunc implements the narrow mux interface used by generated stdlib
+// OpenAPI servers. pattern must use the ServeMux "METHOD /path" form. The
+// route is retained in the registry so generated and handwritten operations
+// participate in the same drift tests and conflict checks.
+func (r *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	if r.frozen.Load() {
+		panic("httpx: HandleFunc called after the router started serving")
+	}
+	method, routePattern, ok := strings.Cut(pattern, " ")
+	if !ok || method == "" || routePattern == "" {
+		panic("httpx: HandleFunc requires a METHOD /path pattern")
+	}
+	r.mux.HandleFunc(pattern, handler)
+	r.routes = append(r.routes, Route{Method: method, Pattern: routePattern})
+}
+
 // Routes returns the registered route table (a copy, in registration order).
 func (r *Router) Routes() []Route {
 	return slices.Clone(r.routes)

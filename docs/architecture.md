@@ -54,10 +54,14 @@ flowchart LR
    processing watermark only advances past fully processed blocks.
    PostgreSQL triggers maintain aggregate tables (`cg_bidder`,
    `cg_glob_stats`, ...) so reads stay cheap.
-2. **Serve.** `apiserver` exposes the domain tables as a JSON API (see
-   [docs/openapi.yaml](openapi.yaml)), plus ERC-721 `tokenURI` metadata at
-   `/metadata/:token_id` (host-dispatched between the two collections) and the
-   NFT image/video asset mirror at `/images/*`.
+2. **Serve.** `apiserver` exposes the domain tables through the frozen v1 JSON
+   API ([openapi.yaml](openapi.yaml)) and the incremental, OpenAPI-first v2
+   API ([openapi-v2.yaml](openapi-v2.yaml)). V2 handlers implement generated
+   strict stdlib interfaces on an injected `internal/api/v2.Server`; both
+   versions share the same middleware and pgx store. The server also exposes
+   ERC-721 `tokenURI` metadata at `/metadata/:token_id` (host-dispatched
+   between the two collections) and the NFT image/video asset mirror at
+   `/images/*`.
 3. **Notify.** `notibot` polls for new events and posts to Discord/Twitter;
    `rwalk-alarm` and `srvmonitor` watch service health and alert via WhatsApp
    and a terminal dashboard.
@@ -73,7 +77,7 @@ flowchart LR
 | `cmd/imggen-monitor` | Verifies/regenerates NFT image+video artifacts |
 | `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons |
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Operator CLIs (contract interaction, social tools, data ops) |
-| `internal/api` | HTTP handlers: `cosmicgame`, `randomwalk`, `faq` proxy, `common` middleware |
+| `internal/api` | HTTP stack: frozen v1 handlers, generated/injected `v2`, `httpx` router, `faq` proxy, shared middleware |
 | `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
 | `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry with the `cosmicgame` and `randomwalk` handler sets as subpackages |
 | `internal/primitives` | Domain types and API response structs |
@@ -101,6 +105,8 @@ Recorded as ADRs in [docs/adr/](adr/):
   was removed; frontends consume the JSON API.
 - **ADR-0004** — mutating endpoints require a shared-secret header and fail
   closed; all routes are rate limited per client IP.
+- **ADR-0005** — OpenAPI-first API v2 with generated strict stdlib handlers,
+  opaque cursor pagination, RFC 9457 errors, and traffic-gated v1 retirement.
 
 ## Databases and schemas
 

@@ -1,8 +1,7 @@
-// Package routes assembles the v1 API router: the shared global middleware
-// chain and the complete route table. cmd/apiserver and the API parity suite
-// (internal/api/apitest) build their routers through this package, so the
-// surface that is served in production is exactly the surface the golden
-// tests pin — the two can no longer drift apart.
+// Package routes assembles the shared API router: global middleware, the
+// frozen v1 table, and an optional generated v2 server. cmd/apiserver and the
+// API integration suites build through this package, so production and test
+// wiring cannot drift.
 package routes
 
 import (
@@ -13,18 +12,23 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// Options carries the production-only extras. The zero value builds the
-// test-harness router: full middleware chain and route table, but no access
-// log, no metrics and no static assets.
+// Options carries optional API modules and production-only extras. The zero
+// value builds the frozen v1 router with its standard middleware, but no v2,
+// access log, metrics, or static assets.
 type Options struct {
 	// AccessLog enables the per-request structured log line (production).
 	AccessLog *slog.Logger
 
 	// PanicLog receives recovered handler panics; nil uses slog.Default().
 	PanicLog *slog.Logger
+
+	// V2 registers the generated /api/v2 surface. Nil builds v1 only, which
+	// is useful for the frozen v1 route-drift test.
+	V2 *v2.Server
 
 	// Extra is appended to the global middleware chain after the standard
 	// stack (production adds Prometheus request metrics here).
@@ -36,9 +40,9 @@ type Options struct {
 }
 
 // New builds the standard middleware chain — CORS, panic recovery, optional
-// access log, per-IP rate limiting, extras — and registers every v1 route:
-// health probes, the three API modules, and the host-dispatched bare
-// /metadata route. Module routes honor their enable flags (module Init).
+// access log, per-IP rate limiting, extras — and registers every v1 route,
+// the injected v2 surface, health probes, and host-dispatched metadata.
+// Legacy module routes honor their enable flags (module Init).
 // st may be nil (bare route-table construction for drift tests).
 func New(st *store.Store, opts Options) *httpx.Router {
 	r := httpx.NewRouter()
@@ -65,6 +69,9 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	randomwalk.RegisterAPIRoutes(r)
 	cosmicgame.RegisterAPIRoutes(r)
 	faq.RegisterAPIRoutes(r)
+	if opts.V2 != nil {
+		opts.V2.RegisterRoutes(r)
+	}
 
 	// Bare ERC-721 tokenURI route. Both projects' on-chain baseURI is
 	// https://<host>/metadata/, and this single webserv serves both the

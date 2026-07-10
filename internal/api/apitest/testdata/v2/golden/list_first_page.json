@@ -1,0 +1,49 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 101,
+        "cstRewardWei": "100000000000000000000",
+        "erc20Donation": {
+          "amountWei": "500000000000000000000",
+          "tokenAddress": "0x2600000000000000000000000000000000000026"
+        },
+        "ethPriceWei": "100000000000000000",
+        "eventLogId": 5004,
+        "message": "hello world",
+        "occurredAt": "2026-01-01T00:01:40Z",
+        "position": 1,
+        "prizeAt": "2026-01-01T01:01:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001002"
+      },
+      {
+        "bidType": "randomWalk",
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "blockNumber": 102,
+        "cstRewardWei": "100000000000000000000",
+        "ethPriceWei": "50000000000000000",
+        "eventLogId": 5006,
+        "nftDonation": {
+          "tokenAddress": "0x2700000000000000000000000000000000000027",
+          "tokenId": 777,
+          "tokenUri": "https://nft.example/777"
+        },
+        "occurredAt": "2026-01-01T00:03:20Z",
+        "position": 2,
+        "prizeAt": "2026-01-01T01:03:20Z",
+        "randomWalkTokenId": 13,
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001003"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJyIjowLCJwIjoyLCJlIjo1MDA2fQ"
+    }
+  }
+}

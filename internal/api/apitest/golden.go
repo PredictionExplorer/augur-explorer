@@ -53,6 +53,10 @@ func goldenPath(name string) string {
 	return filepath.Join("testdata", "golden", name+".json")
 }
 
+func v2GoldenPath(name string) string {
+	return filepath.Join("testdata", "v2", "golden", name+".json")
+}
+
 // goldenName converts a route path (with concrete parameters substituted)
 // into a filesystem-safe golden file name.
 func goldenName(method, path string, suffix string) string {
@@ -74,6 +78,16 @@ func goldenName(method, path string, suffix string) string {
 // file when -update is set.
 func compareGolden(t *testing.T, name string, got response) {
 	t.Helper()
+	compareGoldenFile(t, goldenPath(name), name, got)
+}
+
+func compareV2Golden(t *testing.T, name string, got response) {
+	t.Helper()
+	compareGoldenFile(t, v2GoldenPath(name), name, got)
+}
+
+func compareGoldenFile(t *testing.T, path, name string, got response) {
+	t.Helper()
 
 	encoded, err := json.MarshalIndent(got, "", "  ")
 	if err != nil {
@@ -81,7 +95,6 @@ func compareGolden(t *testing.T, name string, got response) {
 	}
 	encoded = append(encoded, '\n')
 
-	path := goldenPath(name)
 	if *update {
 		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			t.Fatalf("%s: creating golden dir: %v", name, err)

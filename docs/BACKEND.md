@@ -496,8 +496,10 @@ Required environment variables:
 - `RPC_URL` (for live blockchain queries)
 - `ENABLE_ROUTES_COSMICGAME` / `ENABLE_ROUTES_RANDOMWALK` (optional, default true)
 
-The complete endpoint reference is the OpenAPI spec at [openapi.yaml](openapi.yaml);
-the full environment-variable reference is [.env.example](../.env.example).
+The frozen v1 endpoint reference is [openapi.yaml](openapi.yaml). The
+incremental, resource-oriented v2 surface is documented in
+[openapi-v2.yaml](openapi-v2.yaml) and [ADR-0005](adr/0005-api-v2.md). The
+full environment-variable reference is [.env.example](../.env.example).
 
 ---
 

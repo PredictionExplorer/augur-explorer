@@ -1,13 +1,13 @@
-// Package apitest hosts the v1 API parity suite: it boots the real router
-// against a seeded testcontainers database and pins every route's JSON
-// response as a golden file (docs/MODERNIZATION.md §4.1).
+// Package apitest hosts the frozen v1 parity suite and the v2 contract/golden
+// suite. Both boot the real router against the same seeded testcontainers
+// database (docs/MODERNIZATION.md §§4.1 and 6.2).
 //
 // The package has two halves:
 //
-//   - Unit half (no build tag): the OpenAPI route-drift test, which builds
+//   - Unit half (no build tag): the v1 OpenAPI route-drift test, which builds
 //     the shared route table (internal/api/routes) with no database.
-//   - Integration half (//go:build integration): the parity harness, seed
-//     fixtures and golden tests, run via `make test-integration`.
+//   - Integration half (//go:build integration): the shared harness, v1
+//     parity goldens, and v2 kin-openapi-validated goldens.
 package apitest
 
 import (

@@ -43,23 +43,28 @@ const bidSelectBase = "SELECT b.evtlog_id,b.block_num,t.id,t.tx_hash," +
 // every entry and the rejection path.
 var (
 	bidWhereWhitelist = map[string]bool{
-		"":                true,
-		"b.evtlog_id=$1":  true,
-		"b.round_num=$1":  true,
-		"b.bidder_aid=$1": true,
+		"":                                     true,
+		"b.evtlog_id=$1":                       true,
+		"b.round_num=$1":                       true,
+		"b.bidder_aid=$1":                      true,
+		"b.round_num=$1 AND b.bid_position=$2": true,
+		"b.round_num=$1 AND (b.bid_position,b.evtlog_id)>($2,$3)":    true,
 		"b.round_num=$1 AND b.msg IS NOT NULL AND TRIM(b.msg) <> ''": true,
 	}
 	bidOrderWhitelist = map[string]bool{
-		"":                    true,
-		"b.id ASC":            true,
-		"b.id DESC":           true,
-		"b.bid_position ASC":  true,
-		"b.bid_position DESC": true,
+		"":                                    true,
+		"b.id ASC":                            true,
+		"b.id DESC":                           true,
+		"b.bid_position ASC":                  true,
+		"b.bid_position DESC":                 true,
+		"b.bid_position ASC, b.evtlog_id ASC": true,
 	}
 	bidPagingWhitelist = map[string]bool{
 		"":                   true,
 		"OFFSET $1 LIMIT $2": true,
 		"OFFSET $2 LIMIT $3": true,
+		"LIMIT $4":           true,
+		"LIMIT 2":            true,
 	}
 )
 
@@ -246,6 +251,59 @@ func (r *Repo) BidsByRound(ctx context.Context, roundNum int64, sort, offset, li
 		return nil, 0, store.WrapError(op+": total count", err)
 	}
 	return records, totalRows, nil
+}
+
+// BidPageCursor identifies the last row returned by BidsByRoundPage. Both
+// fields participate in ordering so pagination stays deterministic even if
+// corrupt historical data repeats a bid position.
+type BidPageCursor struct {
+	BidPosition int64
+	EventLogID  int64
+}
+
+// BidsByRoundPage returns at most limit bids after the supplied keyset
+// cursor, ordered by bid position and event-log ID. hasMore reports whether
+// another page exists. The zero cursor starts at the beginning.
+func (r *Repo) BidsByRoundPage(ctx context.Context, roundNum int64, after BidPageCursor, limit int) (records []p.CGBidRec, hasMore bool, err error) {
+	const op = "bids by round page"
+	if limit <= 0 {
+		return nil, false, fmt.Errorf("%s: limit must be positive", op)
+	}
+
+	records, err = bidList(ctx, r, op,
+		"b.round_num=$1 AND (b.bid_position,b.evtlog_id)>($2,$3)",
+		"b.bid_position ASC, b.evtlog_id ASC", "LIMIT $4", limit+1,
+		roundNum, after.BidPosition, after.EventLogID, limit+1)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
+}
+
+// BidByRoundAndPosition returns the bid at a one-based position in a round.
+// Duplicate positions are treated as data corruption rather than selecting
+// an arbitrary row.
+func (r *Repo) BidByRoundAndPosition(ctx context.Context, roundNum, bidPosition int64) (p.CGBidRec, error) {
+	const op = "bid by round and position"
+	records, err := bidList(ctx, r, op,
+		"b.round_num=$1 AND b.bid_position=$2",
+		"b.bid_position ASC, b.evtlog_id ASC", "LIMIT 2", 2,
+		roundNum, bidPosition)
+	if err != nil {
+		return p.CGBidRec{}, err
+	}
+	switch len(records) {
+	case 0:
+		return p.CGBidRec{}, store.WrapError(op, pgx.ErrNoRows)
+	case 1:
+		return records[0], nil
+	default:
+		return p.CGBidRec{}, fmt.Errorf("%s: duplicate rows: %w", op, store.ErrConflict)
+	}
 }
 
 // BidCountForRound returns the number of bids in cg_bid for the given round.

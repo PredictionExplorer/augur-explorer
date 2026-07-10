@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidCstRewardAmountWei": "98000000000000000000",
+        "bidType": "cst",
+        "bidderAddress": "0x2300000000000000000000000000000000000023",
+        "blockNumber": 103,
+        "cstDutchAuctionDurationSeconds": 1800,
+        "cstPriceWei": "200000000000000000000",
+        "cstRewardWei": "100000000000000000000",
+        "eventLogId": 5008,
+        "message": "cst bid",
+        "occurredAt": "2026-01-01T00:05:00Z",
+        "position": 3,
+        "prizeAt": "2026-01-01T01:05:00Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001004"
+      },
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 104,
+        "cstRewardWei": "100000000000000000000",
+        "ethPriceWei": "120000000000000000",
+        "eventLogId": 5010,
+        "occurredAt": "2026-01-01T00:06:40Z",
+        "position": 4,
+        "prizeAt": "2026-01-01T01:06:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001005"
+      }
+    ],
+    "meta": {
+      "limit": 2
+    }
+  }
+}

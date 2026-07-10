@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
@@ -77,16 +79,22 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	// StartBackgroundRefresh is deliberately not called: the refresh loops
 	// would mutate the contract-state snapshot on a timer and make golden
 	// snapshots drift. Init's synchronous loads pin the state once.
-	if err := cosmicgame.Init(ctx, ethClient, rpcClient, discard, discard, true); err != nil {
+	cgState, err := cosmicgame.Init(ctx, ethClient, rpcClient, discard, discard, true)
+	if err != nil {
 		return nil, fmt.Errorf("initializing cosmicgame module: %w", err)
 	}
 	randomwalk.Init(true)
 	faq.Init(discard, discard, true)
 
+	v2Server, err := v2.NewServer(st, cgState, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		return nil, fmt.Errorf("initializing api v2: %w", err)
+	}
+
 	// The zero Options build the production chain minus the stdout access
 	// log (it would drown test output), metrics and static assets — the
 	// same CORS, recovery and rate-limit middleware in the same order.
-	r := routes.New(st, routes.Options{})
+	r := routes.New(st, routes.Options{V2: v2Server})
 
 	return &harness{router: r, db: db.SQL, store: st}, nil
 }
@@ -101,6 +109,7 @@ type request struct {
 	headers    map[string]string
 	host       string // overrides the request Host (metadata dispatch)
 	remoteAddr string // overrides the per-request unique client IP
+	ctx        context.Context
 }
 
 func (h *harness) do(t *testing.T, req request) *httptest.ResponseRecorder {
@@ -124,6 +133,9 @@ func (h *harness) do(t *testing.T, req request) *httptest.ResponseRecorder {
 		httpReq.Header.Set("Content-Type", "application/json")
 	}
 	w := httptest.NewRecorder()
+	if req.ctx != nil {
+		httpReq = httpReq.WithContext(req.ctx)
+	}
 	h.router.ServeHTTP(w, httpReq)
 	return w
 }
