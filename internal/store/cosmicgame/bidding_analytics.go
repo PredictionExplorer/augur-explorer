@@ -12,7 +12,12 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-const roundOpenExcludeSecs = 3600
+const (
+	roundOpenExcludeSecs = 3600
+
+	// MaxBiddingActivePeriods bounds the non-paginated v2 analytics response.
+	MaxBiddingActivePeriods = 2000
+)
 
 // excludeFirstHourAfterRoundStartSQL filters out bids placed in the first
 // hour after each cycle's round_start_time (FirstBidPlacedInRound), so the
@@ -84,6 +89,53 @@ func bidFrequencySQL(intervalSecs int) (query string, epochAligned bool) {
 		"ORDER BY p.start_ts", false
 }
 
+// bidFrequencyBoundedSQL is the v2 query shape. It first filters and assigns
+// each bid to one DATE_BIN bucket, then joins those aggregates to the bounded
+// zero-fill series. This prevents a range join from comparing every bid with
+// every generated bucket and enforces the exclusive upper timestamp.
+func bidFrequencyBoundedSQL(intervalSecs int) (query string, epochAligned bool) {
+	intervalStr := strconv.Itoa(intervalSecs)
+	excl := excludeFirstHourAfterRoundStartSQL()
+	if intervalSecs == 3600 || intervalSecs == 86400 {
+		return "WITH periods AS (" +
+			"SELECT generate_series AS start_ts " +
+			"FROM generate_series(" +
+			"TO_TIMESTAMP((FLOOR($1::float / " + intervalStr + ") * " + intervalStr + ")::bigint), " +
+			"TO_TIMESTAMP((FLOOR(($2::bigint - 1)::float / " + intervalStr + ") * " + intervalStr + ")::bigint), " +
+			"('" + intervalStr + " seconds')::interval" +
+			") AS generate_series" +
+			"), bucketed AS (" +
+			"SELECT DATE_BIN(('" + intervalStr + " seconds')::interval, b.time_stamp, TO_TIMESTAMP(0)) AS start_ts, " +
+			"COUNT(*)::BIGINT AS num_bids, COUNT(DISTINCT b.bidder_aid)::BIGINT AS unique_bidders " +
+			"FROM cg_bid b " +
+			"WHERE b.time_stamp >= TO_TIMESTAMP($1) AND b.time_stamp < TO_TIMESTAMP($2)" +
+			excl + " " +
+			"GROUP BY 1" +
+			") " +
+			"SELECT FLOOR(EXTRACT(EPOCH FROM p.start_ts))::BIGINT, " +
+			"COALESCE(b.num_bids, 0)::BIGINT, COALESCE(b.unique_bidders, 0)::BIGINT " +
+			"FROM periods p LEFT JOIN bucketed b ON b.start_ts = p.start_ts " +
+			"ORDER BY p.start_ts", true
+	}
+	return "WITH periods AS (" +
+		"SELECT generate_series AS start_ts " +
+		"FROM generate_series(" +
+		"TO_TIMESTAMP($1), TO_TIMESTAMP($2::bigint - 1), ($3 || ' seconds')::interval" +
+		") AS generate_series" +
+		"), bucketed AS (" +
+		"SELECT DATE_BIN(($3 || ' seconds')::interval, b.time_stamp, TO_TIMESTAMP($1)) AS start_ts, " +
+		"COUNT(*)::BIGINT AS num_bids, COUNT(DISTINCT b.bidder_aid)::BIGINT AS unique_bidders " +
+		"FROM cg_bid b " +
+		"WHERE b.time_stamp >= TO_TIMESTAMP($1) AND b.time_stamp < TO_TIMESTAMP($2)" +
+		excl + " " +
+		"GROUP BY 1" +
+		") " +
+		"SELECT FLOOR(EXTRACT(EPOCH FROM p.start_ts))::BIGINT, " +
+		"COALESCE(b.num_bids, 0)::BIGINT, COALESCE(b.unique_bidders, 0)::BIGINT " +
+		"FROM periods p LEFT JOIN bucketed b ON b.start_ts = p.start_ts " +
+		"ORDER BY p.start_ts", false
+}
+
 // BidFrequencyByPeriod returns the bid-count series over [initTs, finTs) in
 // buckets of intervalSecs seconds. Empty buckets are zero-filled so the
 // caller can render a continuous series; bids in the first hour after a
@@ -107,6 +159,28 @@ func (r *Repo) BidFrequencyByPeriod(ctx context.Context, initTs, finTs, interval
 		return rows.Scan(&rec.BucketTs, &rec.NumBids, &rec.UniqueBidders)
 	}
 	return queryList(ctx, r, "bid frequency by period", 256, query, scan, args...)
+}
+
+// BidFrequencyByPeriodBounded is the v2 frequency projection. It preserves
+// BidFrequencyByPeriod's bucket alignment and round-open exclusion while
+// guaranteeing that bids at or after finTs cannot enter a partial final
+// bucket.
+func (r *Repo) BidFrequencyByPeriodBounded(ctx context.Context, initTs, finTs, intervalSecs int) ([]p.CGBidFrequencyBucket, error) {
+	if intervalSecs <= 0 {
+		intervalSecs = finTs - initTs
+		if intervalSecs <= 0 {
+			intervalSecs = 3600
+		}
+	}
+	query, epochAligned := bidFrequencyBoundedSQL(intervalSecs)
+	args := []any{initTs, finTs}
+	if !epochAligned {
+		args = append(args, strconv.Itoa(intervalSecs))
+	}
+	scan := func(rows pgx.Rows, rec *p.CGBidFrequencyBucket) error {
+		return rows.Scan(&rec.BucketTs, &rec.NumBids, &rec.UniqueBidders)
+	}
+	return queryList(ctx, r, "bounded bid frequency by period", 256, query, scan, args...)
 }
 
 // BidTypeRatioByPeriod returns the bid-type composition per sampling window
@@ -145,24 +219,72 @@ func (r *Repo) BidTypeRatioByPeriod(ctx context.Context, initTs, finTs, interval
 		"GROUP BY p.start_ts " +
 		"ORDER BY p.start_ts"
 
-	scan := func(rows pgx.Rows, rec *p.CGBidTypeRatioBucket) error {
-		if err := rows.Scan(&rec.BucketTs, &rec.EthBids, &rec.RwalkBids, &rec.CstBids, &rec.TotalBids); err != nil {
-			return err
+	return queryList(ctx, r, "bid type ratio by period", 256, query, scanBidTypeRatioBucket, initTs, finTs)
+}
+
+// BidTypeRatioByPeriodBounded is the v2 bid-type projection. It assigns each
+// filtered bid to one bucket before zero-filling the series and strictly
+// excludes bids at or after finTs from the partial final bucket.
+func (r *Repo) BidTypeRatioByPeriodBounded(ctx context.Context, initTs, finTs, intervalSecs int) ([]p.CGBidTypeRatioBucket, error) {
+	if intervalSecs <= 0 {
+		intervalSecs = finTs - initTs
+		if intervalSecs <= 0 {
+			intervalSecs = 86400
 		}
-		if rec.TotalBids > 0 {
-			total := float64(rec.TotalBids)
-			rec.EthPct = math.Round(float64(rec.EthBids)/total*10000) / 100
-			rec.RwalkPct = math.Round(float64(rec.RwalkBids)/total*10000) / 100
-			rec.CstPct = math.Round(float64(rec.CstBids)/total*10000) / 100
-		}
-		return nil
 	}
-	return queryList(ctx, r, "bid type ratio by period", 256, query, scan, initTs, finTs)
+	intervalStr := strconv.Itoa(intervalSecs)
+	query := "WITH periods AS (" +
+		"SELECT generate_series AS start_ts " +
+		"FROM generate_series(" +
+		"TO_TIMESTAMP($1), TO_TIMESTAMP($2::bigint - 1), ('" + intervalStr + " seconds')::interval" +
+		") AS generate_series" +
+		"), bucketed AS (" +
+		"SELECT DATE_BIN(('" + intervalStr + " seconds')::interval, b.time_stamp, TO_TIMESTAMP($1)) AS start_ts, " +
+		"COUNT(*) FILTER (WHERE b.bid_type = 0)::BIGINT AS eth_bids, " +
+		"COUNT(*) FILTER (WHERE b.bid_type = 1)::BIGINT AS rwalk_bids, " +
+		"COUNT(*) FILTER (WHERE b.bid_type = 2)::BIGINT AS cst_bids, " +
+		"COUNT(*)::BIGINT AS total_bids " +
+		"FROM cg_bid b " +
+		"WHERE b.time_stamp >= TO_TIMESTAMP($1) AND b.time_stamp < TO_TIMESTAMP($2) " +
+		"GROUP BY 1" +
+		") " +
+		"SELECT FLOOR(EXTRACT(EPOCH FROM p.start_ts))::BIGINT, " +
+		"COALESCE(b.eth_bids, 0)::BIGINT, COALESCE(b.rwalk_bids, 0)::BIGINT, " +
+		"COALESCE(b.cst_bids, 0)::BIGINT, COALESCE(b.total_bids, 0)::BIGINT " +
+		"FROM periods p LEFT JOIN bucketed b ON b.start_ts = p.start_ts " +
+		"ORDER BY p.start_ts"
+	return queryList(
+		ctx,
+		r,
+		"bounded bid type ratio by period",
+		256,
+		query,
+		scanBidTypeRatioBucket,
+		initTs,
+		finTs,
+	)
+}
+
+func scanBidTypeRatioBucket(rows pgx.Rows, rec *p.CGBidTypeRatioBucket) error {
+	if err := rows.Scan(&rec.BucketTs, &rec.EthBids, &rec.RwalkBids, &rec.CstBids, &rec.TotalBids); err != nil {
+		return err
+	}
+	if rec.TotalBids > 0 {
+		total := float64(rec.TotalBids)
+		rec.EthPct = math.Round(float64(rec.EthBids)/total*10000) / 100
+		rec.RwalkPct = math.Round(float64(rec.RwalkBids)/total*10000) / 100
+		rec.CstPct = math.Round(float64(rec.CstBids)/total*10000) / 100
+	}
+	return nil
 }
 
 // TopBidders returns the most active bidders by lifetime bid count,
 // descending. A non-positive limit defaults to 20.
 func (r *Repo) TopBidders(ctx context.Context, limit int) ([]p.CGTopBidderInfo, error) {
+	return r.topBidders(ctx, limit, false)
+}
+
+func (r *Repo) topBidders(ctx context.Context, limit int, stableTies bool) ([]p.CGTopBidderInfo, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -170,12 +292,19 @@ func (r *Repo) TopBidders(ctx context.Context, limit int) ([]p.CGTopBidderInfo, 
 		"FROM cg_bidder b " +
 		"LEFT JOIN address a ON b.bidder_aid = a.address_id " +
 		"WHERE b.num_bids > 0 " +
-		"ORDER BY b.num_bids DESC " +
+		topBiddersOrderBy(stableTies) +
 		"LIMIT $1"
 	scan := func(rows pgx.Rows, rec *p.CGTopBidderInfo) error {
 		return rows.Scan(&rec.BidderAid, &rec.BidderAddr, &rec.NumBids)
 	}
 	return queryList(ctx, r, "top bidders", limit, query, scan, limit)
+}
+
+func topBiddersOrderBy(stableTies bool) string {
+	if stableTies {
+		return "ORDER BY b.num_bids DESC, b.bidder_aid "
+	}
+	return "ORDER BY b.num_bids DESC "
 }
 
 // TopBidderActivePeriods segments the bids of the topN bidders inside
@@ -184,6 +313,37 @@ func (r *Repo) TopBidders(ctx context.Context, limit int) ([]p.CGTopBidderInfo, 
 // Non-positive knobs default to topN=20, gapHours=6, minBids=2. When there
 // are no bidders at all the period list is nil.
 func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, gapHours, minBids int) ([]p.CGTopBidderInfo, []p.CGBidderActivePeriod, error) {
+	bidders, periods, _, err := r.topBidderActivePeriods(
+		ctx, topN, initTs, finTs, gapHours, minBids, false, 0,
+	)
+	return bidders, periods, err
+}
+
+// TopBidderActivePeriodsBounded is the deterministic v2 projection of
+// TopBidderActivePeriods. Equal lifetime bid counts use the internal address
+// ID as a final tie-breaker, and equal period starts have stable secondary
+// keys. At most MaxBiddingActivePeriods rows are returned; hasMore asks the
+// caller to reject an over-broad request instead of serializing an unbounded
+// response. Internal IDs remain repository-only.
+func (r *Repo) TopBidderActivePeriodsBounded(ctx context.Context, topN, initTs, finTs, gapHours, minBids int) ([]p.CGTopBidderInfo, []p.CGBidderActivePeriod, bool, error) {
+	return r.topBidderActivePeriods(
+		ctx,
+		topN,
+		initTs,
+		finTs,
+		gapHours,
+		minBids,
+		true,
+		MaxBiddingActivePeriods,
+	)
+}
+
+func (r *Repo) topBidderActivePeriods(
+	ctx context.Context,
+	topN, initTs, finTs, gapHours, minBids int,
+	stableTies bool,
+	periodLimit int,
+) ([]p.CGTopBidderInfo, []p.CGBidderActivePeriod, bool, error) {
 	if topN <= 0 {
 		topN = 20
 	}
@@ -194,12 +354,12 @@ func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, 
 		minBids = 2
 	}
 
-	topBidders, err := r.TopBidders(ctx, topN)
+	topBidders, err := r.topBidders(ctx, topN, stableTies)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, err
 	}
 	if len(topBidders) == 0 {
-		return topBidders, nil, nil
+		return topBidders, nil, false, nil
 	}
 
 	bidderAids := make([]int64, 0, len(topBidders))
@@ -230,7 +390,12 @@ func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, 
 		"FROM sessions " +
 		"GROUP BY bidder_aid, addr, session_id " +
 		"HAVING COUNT(*) >= $5 " +
-		"ORDER BY MIN(time_stamp)"
+		activePeriodsOrderBy(stableTies)
+	args := []any{bidderAids, initTs, finTs, strconv.Itoa(gapHours), minBids}
+	if periodLimit > 0 {
+		query += " LIMIT $6"
+		args = append(args, periodLimit+1)
+	}
 
 	scan := func(rows pgx.Rows, rec *p.CGBidderActivePeriod) error {
 		var sessionID int64
@@ -253,12 +418,22 @@ func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, 
 	// bidderAids is a native []int64, encoded by pgx as bigint[]. gapHours
 	// feeds a text concatenation ("$4 || ' hours'") and must be a string for
 	// the same reason as in bidFrequencySQL.
-	periods, err := queryList(ctx, r, "top bidder active periods", 128, query, scan,
-		bidderAids, initTs, finTs, strconv.Itoa(gapHours), minBids)
+	periods, err := queryList(ctx, r, "top bidder active periods", 128, query, scan, args...)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, err
 	}
-	return topBidders, periods, nil
+	hasMore := periodLimit > 0 && len(periods) > periodLimit
+	if hasMore {
+		periods = periods[:periodLimit]
+	}
+	return topBidders, periods, hasMore, nil
+}
+
+func activePeriodsOrderBy(stableTies bool) string {
+	if stableTies {
+		return "ORDER BY MIN(time_stamp), bidder_aid, MAX(time_stamp)"
+	}
+	return "ORDER BY MIN(time_stamp)"
 }
 
 // BidTimeBounds returns the epoch timestamps of the first and last bid ever
@@ -274,19 +449,28 @@ func (r *Repo) BidTimeBounds(ctx context.Context) (minTs, maxTs int64, err error
 	return minTs, maxTs, nil
 }
 
-// DetectBidSpikes finds merged runs of buckets whose bid count exceeds a dynamic threshold.
+// DetectBidSpikes finds merged runs of ordered buckets whose non-negative bid
+// count exceeds a dynamic threshold. Invalid input returns no spikes.
 func DetectBidSpikes(buckets []p.CGBidFrequencyBucket, intervalSecs int) []p.CGBidSpike {
-	if len(buckets) == 0 {
+	if len(buckets) == 0 || intervalSecs <= 0 {
 		return nil
 	}
 
 	counts := make([]int64, len(buckets))
-	var sum int64
+	var sum float64
+	var previousTimestamp int64
 	for i, b := range buckets {
+		if b.NumBids < 0 {
+			return nil
+		}
+		if i > 0 && b.BucketTs <= previousTimestamp {
+			return nil
+		}
 		counts[i] = b.NumBids
-		sum += b.NumBids
+		sum += float64(b.NumBids)
+		previousTimestamp = b.BucketTs
 	}
-	mean := float64(sum) / float64(len(buckets))
+	mean := sum / float64(len(buckets))
 
 	var variance float64
 	for _, c := range counts {
@@ -333,12 +517,21 @@ func DetectBidSpikes(buckets []p.CGBidFrequencyBucket, intervalSecs int) []p.CGB
 		spike := p.CGBidSpike{Index: idx}
 		spike.StartTs = buckets[run.startIdx].BucketTs
 		lastBucket := buckets[run.endIdx]
-		spike.EndTs = lastBucket.BucketTs + int64(intervalSecs)
+		interval := int64(intervalSecs)
+		if lastBucket.BucketTs > math.MaxInt64-interval {
+			spike.EndTs = math.MaxInt64
+		} else {
+			spike.EndTs = lastBucket.BucketTs + interval
+		}
 
 		var peakIdx int
 		var peakBids int64
 		for i := run.startIdx; i <= run.endIdx; i++ {
-			spike.TotalBids += buckets[i].NumBids
+			if buckets[i].NumBids > math.MaxInt64-spike.TotalBids {
+				spike.TotalBids = math.MaxInt64
+			} else {
+				spike.TotalBids += buckets[i].NumBids
+			}
 			if buckets[i].NumBids >= peakBids {
 				peakBids = buckets[i].NumBids
 				peakIdx = i

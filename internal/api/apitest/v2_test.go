@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -32,6 +33,11 @@ const (
 	v2ListDonationNFT    = "/api/v2/cosmicgame/rounds/{round}/nft-donations"
 	v2GlobalStatistics   = "/api/v2/cosmicgame/statistics"
 	v2StatisticsCounters = "/api/v2/cosmicgame/statistics/counters"
+	v2BiddingActivity    = "/api/v2/cosmicgame/statistics/bidding/activity"
+	v2BiddingFrequency   = "/api/v2/cosmicgame/statistics/bidding/frequency"
+	v2BiddingTypeRatio   = "/api/v2/cosmicgame/statistics/bidding/type-ratio"
+	v2BiddingTopPeriods  = "/api/v2/cosmicgame/statistics/bidding/top-active-periods"
+	v2BiddingTimeBounds  = "/api/v2/cosmicgame/statistics/bidding/time-bounds"
 	v2StatisticsROI      = "/api/v2/cosmicgame/statistics/leaderboard/roi"
 	v2StatisticsClaims   = "/api/v2/cosmicgame/statistics/claims"
 	v2ParticipantBidders = "/api/v2/cosmicgame/statistics/participants/bidders"
@@ -98,6 +104,94 @@ func TestAPIV2CurrentRound(t *testing.T) {
 			pathParams: map[string]string{},
 		},
 	})
+}
+
+func TestAPIV2BiddingAnalytics(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	var originalRoundStart time.Time
+	if err := h.db.QueryRowContext(
+		context.Background(),
+		"SELECT round_start_time FROM cg_round_stats WHERE round_num = 0",
+	).Scan(&originalRoundStart); err != nil {
+		t.Fatalf("reading fixture round start: %v", err)
+	}
+	if _, err := h.db.ExecContext(
+		context.Background(),
+		"UPDATE cg_round_stats SET round_start_time = TO_TIMESTAMP($1) WHERE round_num = 0",
+		1767222000,
+	); err != nil {
+		t.Fatalf("moving fixture round start: %v", err)
+	}
+	const syntheticBidID = 9_000_001
+	t.Cleanup(func() {
+		if _, err := h.db.ExecContext(
+			context.Background(),
+			"DELETE FROM cg_bid WHERE id = $1",
+			syntheticBidID,
+		); err != nil {
+			t.Errorf("deleting synthetic analytics bid: %v", err)
+		}
+		if _, err := h.db.ExecContext(
+			context.Background(),
+			"UPDATE cg_round_stats SET round_start_time = $1 WHERE round_num = 0",
+			originalRoundStart,
+		); err != nil {
+			t.Errorf("restoring fixture round start: %v", err)
+		}
+	})
+	if _, err := h.db.ExecContext(
+		context.Background(),
+		`INSERT INTO cg_bid(
+			id, evtlog_id, block_num, tx_id, time_stamp, contract_aid, bidder_aid,
+			rwalk_nft_id, round_num, bid_type, bid_position, prize_time,
+			eth_price, cst_price, cst_reward, bid_cst_reward_amount,
+			cst_dutch_auction_duration, msg
+		) VALUES (
+			$1, NULL, 105, 1006, TO_TIMESTAMP(1767226100), 2, 24,
+			-1, 0, 0, 5, TO_TIMESTAMP(1767229700),
+			130000000000000000, -1, 100000000000000000000, -1, -1,
+			'analytics spike fixture'
+		)`,
+		syntheticBidID,
+	); err != nil {
+		t.Fatalf("inserting synthetic analytics bid: %v", err)
+	}
+
+	const window = "?from=1767225600&to=1767230000&intervalSeconds=600"
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{name: "bidding_activity", target: v2BiddingActivity + window, template: v2BiddingActivity, pathParams: map[string]string{}},
+		{name: "bidding_activity_default_interval", target: v2BiddingActivity + "?from=1767225600&to=1767230000", template: v2BiddingActivity, pathParams: map[string]string{}},
+		{name: "bidding_frequency", target: v2BiddingFrequency + window, template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_frequency_default_interval", target: v2BiddingFrequency + "?from=1767225600&to=1767230000", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_frequency_exact_boundary", target: v2BiddingFrequency + "?from=1767225600&to=1767229200&intervalSeconds=600", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_frequency_empty_window", target: v2BiddingFrequency + "?from=100&to=200&intervalSeconds=60", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_type_ratio", target: v2BiddingTypeRatio + window, template: v2BiddingTypeRatio, pathParams: map[string]string{}},
+		{name: "bidding_top_active_periods", target: v2BiddingTopPeriods + "?from=1767225600&to=1767230000&top=3&gapHours=1&minBids=1", template: v2BiddingTopPeriods, pathParams: map[string]string{}},
+		{name: "bidding_time_bounds", target: v2BiddingTimeBounds, template: v2BiddingTimeBounds, pathParams: map[string]string{}},
+		{name: "bidding_error_missing_from", target: v2BiddingFrequency + "?to=2", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_error_inverted_range", target: v2BiddingFrequency + "?from=2&to=2", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_error_window_limit", target: v2BiddingFrequency + "?from=0&to=158112001", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_error_timestamp_limit", target: v2BiddingFrequency + "?from=253402300799&to=253402300800", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_error_bucket_limit", target: v2BiddingFrequency + "?from=0&to=2001&intervalSeconds=1", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_error_bind_interval", target: v2BiddingFrequency + "?from=0&to=2&intervalSeconds=bad", template: v2BiddingFrequency, pathParams: map[string]string{}},
+		{name: "bidding_error_top_limit", target: v2BiddingTopPeriods + "?from=0&to=2&top=101", template: v2BiddingTopPeriods, pathParams: map[string]string{}},
+		{name: "bidding_activity_error_internal", target: v2BiddingActivity + window, template: v2BiddingActivity, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "bidding_frequency_error_internal", target: v2BiddingFrequency + window, template: v2BiddingFrequency, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "bidding_type_ratio_error_internal", target: v2BiddingTypeRatio + window, template: v2BiddingTypeRatio, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "bidding_top_active_periods_error_internal", target: v2BiddingTopPeriods + "?from=1767225600&to=1767230000&top=3&gapHours=1&minBids=1", template: v2BiddingTopPeriods, pathParams: map[string]string{}, ctx: cancelledCtx},
+		{name: "bidding_time_bounds_error_internal", target: v2BiddingTimeBounds, template: v2BiddingTimeBounds, pathParams: map[string]string{}, ctx: cancelledCtx},
+	}
+	runV2GoldenCases(t, h, spec, cases)
 }
 
 func TestAPIV2RoundPrizes(t *testing.T) {

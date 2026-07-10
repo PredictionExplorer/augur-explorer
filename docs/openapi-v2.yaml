@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.8.0
+  version: 0.9.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -229,6 +229,133 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/CosmicGameCounters"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/bidding/activity:
+    get:
+      operationId: getCosmicGameBiddingActivity
+      summary: Get bounded bid-frequency analytics with detected spikes
+      description: |
+        Returns UTC/anchor-aligned frequency buckets after excluding bids made
+        during the first hour of a round. Above-normal contiguous buckets are
+        merged into spikes. A recent spike is one whose start falls in the
+        30-day window ending at the server's current time.
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsFrom"
+        - $ref: "#/components/parameters/AnalyticsTo"
+        - name: intervalSeconds
+          in: query
+          required: false
+          description: Positive bucket width in seconds; defaults to one hour.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 158112000
+            default: 3600
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameBiddingActivity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/bidding/frequency:
+    get:
+      operationId: getCosmicGameBiddingFrequency
+      summary: Get bounded bid-frequency buckets
+      description: |
+        Bids in the first hour after each round opens are excluded. One-hour
+        and one-day buckets align to UTC epoch boundaries; other widths anchor
+        at `from`.
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsFrom"
+        - $ref: "#/components/parameters/AnalyticsTo"
+        - name: intervalSeconds
+          in: query
+          required: false
+          description: Positive bucket width in seconds; defaults to one day.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 158112000
+            default: 86400
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameBiddingFrequency"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/bidding/type-ratio:
+    get:
+      operationId: getCosmicGameBiddingTypeRatio
+      summary: Get bounded bid-type composition buckets
+      description: |
+        Returns raw ETH, RandomWalk and CST bid counts plus deterministic
+        decimal-string percentages for a 100-percent stacked chart. Unlike
+        activity/frequency, this composition includes bids from the first
+        hour after a round opens.
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsFrom"
+        - $ref: "#/components/parameters/AnalyticsTo"
+        - name: intervalSeconds
+          in: query
+          required: false
+          description: Positive bucket width in seconds; defaults to one day.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 158112000
+            default: 86400
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameBiddingTypeRatio"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/bidding/top-active-periods:
+    get:
+      operationId: getCosmicGameBiddingTopActivePeriods
+      summary: Get active periods for the lifetime top bidders
+      description: |
+        Ranks bidders by lifetime bid count, then segments their bids inside
+        `[from,to)` into periods separated by more than `gapHours`. Results
+        are limited to 2,000 periods; broader filters return 400 so clients
+        can narrow the window or increase `gapHours` or `minBids`.
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsFrom"
+        - $ref: "#/components/parameters/AnalyticsTo"
+        - $ref: "#/components/parameters/AnalyticsTop"
+        - $ref: "#/components/parameters/AnalyticsGapHours"
+        - $ref: "#/components/parameters/AnalyticsMinBids"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameBiddingTopActivePeriods"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/statistics/bidding/time-bounds:
+    get:
+      operationId: getCosmicGameBiddingTimeBounds
+      summary: Get the first and last indexed bid timestamps
+      tags:
+        - CosmicGame statistics
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameBiddingTimeBounds"
         "500":
           $ref: "#/components/responses/InternalError"
   /api/v2/cosmicgame/statistics/participants/bidders:
@@ -462,6 +589,56 @@ components:
         type: integer
         minimum: 0
         default: 5
+    AnalyticsFrom:
+      name: from
+      in: query
+      required: true
+      description: Inclusive beginning of the analytics window as Unix seconds.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        maximum: 253402300799
+    AnalyticsTo:
+      name: to
+      in: query
+      required: true
+      description: Exclusive end of the analytics window as Unix seconds.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 253402300799
+    AnalyticsTop:
+      name: top
+      in: query
+      required: false
+      description: Number of lifetime top bidders whose activity is analyzed.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    AnalyticsGapHours:
+      name: gapHours
+      in: query
+      required: false
+      description: A larger gap starts a new bidder activity period.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 8760
+        default: 6
+    AnalyticsMinBids:
+      name: minBids
+      in: query
+      required: false
+      description: Minimum number of bids required to retain an activity period.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000000
+        default: 2
     ClaimTransactionsCursor:
       name: claimTransactionsCursor
       in: query
@@ -1481,6 +1658,302 @@ components:
           type: integer
           format: int64
           minimum: 0
+    BidFrequencyBucket:
+      type: object
+      additionalProperties: false
+      required:
+        - bucketTimestamp
+        - bidCount
+        - uniqueBidderCount
+      properties:
+        bucketTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Inclusive beginning of this bucket as Unix seconds.
+        bidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        uniqueBidderCount:
+          type: integer
+          format: int64
+          minimum: 0
+    BidSpike:
+      type: object
+      additionalProperties: false
+      required:
+        - index
+        - startTimestamp
+        - endTimestamp
+        - peakTimestamp
+        - peakBidCount
+        - totalBidCount
+        - bucketCount
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        startTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        endTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        peakTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        peakBidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalBidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        bucketCount:
+          type: integer
+          format: int64
+          minimum: 1
+    BiddingActivity:
+      type: object
+      additionalProperties: false
+      required:
+        - from
+        - to
+        - intervalSeconds
+        - buckets
+        - spikes
+        - recentWindowSeconds
+      properties:
+        from:
+          type: integer
+          format: int64
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          minimum: 1
+        intervalSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+        buckets:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/BidFrequencyBucket"
+        spikes:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/BidSpike"
+        recentSpikeIndex:
+          type: integer
+          minimum: 0
+          description: Omitted when no spike starts within the recent window.
+        recentWindowSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+    BiddingFrequency:
+      type: object
+      additionalProperties: false
+      required:
+        - from
+        - to
+        - intervalSeconds
+        - buckets
+      properties:
+        from:
+          type: integer
+          format: int64
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          minimum: 1
+        intervalSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+        buckets:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/BidFrequencyBucket"
+    DecimalPercentage:
+      type: string
+      pattern: "^(?:100|(?:0|[1-9][0-9]?)(?:\\.[0-9]{1,2})?)$"
+      description: Canonical decimal percentage from 0 through 100, rounded to two places.
+    BidTypeRatioBucket:
+      type: object
+      additionalProperties: false
+      required:
+        - bucketTimestamp
+        - ethBidCount
+        - randomWalkBidCount
+        - cstBidCount
+        - totalBidCount
+        - ethPercentage
+        - randomWalkPercentage
+        - cstPercentage
+      properties:
+        bucketTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        ethBidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        randomWalkBidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        cstBidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalBidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        ethPercentage:
+          $ref: "#/components/schemas/DecimalPercentage"
+        randomWalkPercentage:
+          $ref: "#/components/schemas/DecimalPercentage"
+        cstPercentage:
+          $ref: "#/components/schemas/DecimalPercentage"
+    BiddingTypeRatio:
+      type: object
+      additionalProperties: false
+      required:
+        - from
+        - to
+        - intervalSeconds
+        - buckets
+      properties:
+        from:
+          type: integer
+          format: int64
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          minimum: 1
+        intervalSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+        buckets:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/BidTypeRatioBucket"
+    TopBidder:
+      type: object
+      additionalProperties: false
+      required:
+        - bidderAddress
+        - lifetimeBidCount
+      properties:
+        bidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        lifetimeBidCount:
+          type: integer
+          format: int64
+          minimum: 1
+    BidderActivePeriod:
+      type: object
+      additionalProperties: false
+      required:
+        - bidderAddress
+        - startTimestamp
+        - endTimestamp
+        - bidCount
+        - durationSeconds
+      properties:
+        bidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        startTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        endTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        bidCount:
+          type: integer
+          format: int64
+          minimum: 1
+        durationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+    BiddingTopActivePeriods:
+      type: object
+      additionalProperties: false
+      required:
+        - from
+        - to
+        - top
+        - gapHours
+        - minBids
+        - topBidders
+        - activePeriods
+      properties:
+        from:
+          type: integer
+          format: int64
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          minimum: 1
+        top:
+          type: integer
+          minimum: 1
+          maximum: 100
+        gapHours:
+          type: integer
+          minimum: 1
+          maximum: 8760
+        minBids:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        topBidders:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/TopBidder"
+        activePeriods:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/BidderActivePeriod"
+    BiddingTimeBounds:
+      type: object
+      additionalProperties: false
+      required:
+        - minTimestamp
+        - maxTimestamp
+      properties:
+        minTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        maxTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
     RoiLeaderboardSort:
       type: string
       enum:
@@ -2281,6 +2754,36 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CosmicGameCounters"
+    CosmicGameBiddingActivity:
+      description: Bounded bid-frequency buckets with detected activity spikes.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BiddingActivity"
+    CosmicGameBiddingFrequency:
+      description: Bounded bid-frequency buckets.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BiddingFrequency"
+    CosmicGameBiddingTypeRatio:
+      description: Bounded bid-type composition buckets.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BiddingTypeRatio"
+    CosmicGameBiddingTopActivePeriods:
+      description: Lifetime top bidders and their bounded active periods.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BiddingTopActivePeriods"
+    CosmicGameBiddingTimeBounds:
+      description: First and last indexed bid timestamps, or zeroes when empty.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BiddingTimeBounds"
     RoiLeaderboardPage:
       description: One stable page of ROI leaderboard entries.
       content:

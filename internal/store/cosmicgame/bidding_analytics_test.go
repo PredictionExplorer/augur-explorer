@@ -1,9 +1,12 @@
 package cosmicgame
 
 import (
+	"math"
 	"strconv"
 	"strings"
 	"testing"
+
+	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
 )
 
 func TestParseOptionalIntQuery(t *testing.T) {
@@ -106,4 +109,181 @@ func TestBidFrequencySQLInterpolationIsNumeric(t *testing.T) {
 	if normalized(a, "3600") != normalized(b, "86400") {
 		t.Error("epoch-aligned queries differ beyond the interval literal")
 	}
+}
+
+func TestBidFrequencyBoundedSQLFiltersBeforeBucketing(t *testing.T) {
+	t.Parallel()
+	for _, interval := range []int{900, 3600} {
+		query, _ := bidFrequencyBoundedSQL(interval)
+		for _, required := range []string{
+			"bucketed AS",
+			"DATE_BIN(",
+			"b.time_stamp >= TO_TIMESTAMP($1)",
+			"b.time_stamp < TO_TIMESTAMP($2)",
+			"$2::bigint - 1",
+		} {
+			if !strings.Contains(query, required) {
+				t.Errorf("bidFrequencyBoundedSQL(%d) missing %q", interval, required)
+			}
+		}
+		if strings.Contains(query, "b.time_stamp >= p.start_ts") {
+			t.Errorf("bidFrequencyBoundedSQL(%d) retained the bucket×bid range join", interval)
+		}
+	}
+}
+
+func TestBiddingAnalyticsV2TieBreakersAreIsolated(t *testing.T) {
+	t.Parallel()
+	if got := topBiddersOrderBy(false); got != "ORDER BY b.num_bids DESC " {
+		t.Fatalf("legacy top-bidder order = %q", got)
+	}
+	if got := topBiddersOrderBy(true); got != "ORDER BY b.num_bids DESC, b.bidder_aid " {
+		t.Fatalf("stable top-bidder order = %q", got)
+	}
+	if got := activePeriodsOrderBy(false); got != "ORDER BY MIN(time_stamp)" {
+		t.Fatalf("legacy active-period order = %q", got)
+	}
+	if got := activePeriodsOrderBy(true); got !=
+		"ORDER BY MIN(time_stamp), bidder_aid, MAX(time_stamp)" {
+		t.Fatalf("stable active-period order = %q", got)
+	}
+}
+
+func TestDetectBidSpikes(t *testing.T) {
+	t.Parallel()
+	buckets := make([]p.CGBidFrequencyBucket, 10)
+	for i := range buckets {
+		buckets[i].BucketTs = int64(i * 10)
+	}
+	buckets[4].NumBids = 20
+	buckets[5].NumBids = 20
+
+	spikes := DetectBidSpikes(buckets, 10)
+	if len(spikes) != 1 {
+		t.Fatalf("spikes = %+v", spikes)
+	}
+	got := spikes[0]
+	if got.Index != 0 || got.StartTs != 40 || got.EndTs != 60 ||
+		got.PeakTs != 50 || got.PeakNumBids != 20 ||
+		got.TotalBids != 40 || got.BucketCount != 2 {
+		t.Fatalf("spike = %+v", got)
+	}
+}
+
+func TestDetectBidSpikesKeepsSeparateRunsOrdered(t *testing.T) {
+	t.Parallel()
+	buckets := make([]p.CGBidFrequencyBucket, 10)
+	for i := range buckets {
+		buckets[i].BucketTs = int64(i * 60)
+	}
+	buckets[2].NumBids = 20
+	buckets[7].NumBids = 20
+
+	spikes := DetectBidSpikes(buckets, 60)
+	if len(spikes) != 2 ||
+		spikes[0].Index != 0 || spikes[0].StartTs != 120 ||
+		spikes[1].Index != 1 || spikes[1].StartTs != 420 {
+		t.Fatalf("spikes = %+v", spikes)
+	}
+}
+
+func TestDetectBidSpikesRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		buckets  []p.CGBidFrequencyBucket
+		interval int
+	}{
+		"empty":         {interval: 1},
+		"zero interval": {buckets: []p.CGBidFrequencyBucket{{BucketTs: 1, NumBids: 10}}},
+		"negative count": {
+			buckets:  []p.CGBidFrequencyBucket{{BucketTs: 1, NumBids: -1}},
+			interval: 1,
+		},
+		"unordered": {
+			buckets: []p.CGBidFrequencyBucket{
+				{BucketTs: 2, NumBids: 10},
+				{BucketTs: 1, NumBids: 10},
+			},
+			interval: 1,
+		},
+		"duplicate timestamp": {
+			buckets: []p.CGBidFrequencyBucket{
+				{BucketTs: 1, NumBids: 10},
+				{BucketTs: 1, NumBids: 10},
+			},
+			interval: 1,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if got := DetectBidSpikes(test.buckets, test.interval); got != nil {
+				t.Fatalf("DetectBidSpikes = %+v, want nil", got)
+			}
+		})
+	}
+}
+
+func TestDetectBidSpikesSupportsPreEpochWindows(t *testing.T) {
+	t.Parallel()
+	buckets := make([]p.CGBidFrequencyBucket, 10)
+	for i := range buckets {
+		buckets[i].BucketTs = int64(-100 + i*10)
+	}
+	buckets[5].NumBids = 20
+	spikes := DetectBidSpikes(buckets, 10)
+	if len(spikes) != 1 || spikes[0].StartTs != -50 || spikes[0].EndTs != -40 {
+		t.Fatalf("pre-epoch spikes = %+v", spikes)
+	}
+}
+
+func TestDetectBidSpikesSaturatesOverflow(t *testing.T) {
+	t.Parallel()
+	buckets := make([]p.CGBidFrequencyBucket, 10)
+	for i := range buckets {
+		buckets[i].BucketTs = int64(i)
+	}
+	buckets[9].BucketTs = math.MaxInt64 - 5
+	buckets[9].NumBids = math.MaxInt64
+
+	spikes := DetectBidSpikes(buckets, 10)
+	if len(spikes) != 1 || spikes[0].EndTs != math.MaxInt64 ||
+		spikes[0].TotalBids != math.MaxInt64 {
+		t.Fatalf("spikes = %+v", spikes)
+	}
+}
+
+func FuzzDetectBidSpikes(f *testing.F) {
+	f.Add([]byte{0, 0, 20, 20, 0}, 60)
+	f.Add([]byte{}, 1)
+	f.Add([]byte{255}, 0)
+	f.Fuzz(func(t *testing.T, counts []byte, interval int) {
+		if len(counts) > 512 {
+			counts = counts[:512]
+		}
+		buckets := make([]p.CGBidFrequencyBucket, len(counts))
+		for i := range counts {
+			buckets[i] = p.CGBidFrequencyBucket{
+				BucketTs: int64(i * 1000),
+				NumBids:  int64(counts[i]),
+			}
+		}
+		spikes := DetectBidSpikes(buckets, interval)
+		if interval <= 0 {
+			if spikes != nil {
+				t.Fatalf("non-positive interval returned %+v", spikes)
+			}
+			return
+		}
+		for i := range spikes {
+			if spikes[i].Index != i || spikes[i].StartTs >= spikes[i].EndTs ||
+				spikes[i].PeakTs < spikes[i].StartTs ||
+				spikes[i].PeakTs >= spikes[i].EndTs ||
+				spikes[i].PeakNumBids > spikes[i].TotalBids ||
+				spikes[i].BucketCount < 1 ||
+				(i > 0 && spikes[i].StartTs <= spikes[i-1].StartTs) {
+				t.Fatalf("invalid spike %d: %+v", i, spikes[i])
+			}
+		}
+	})
 }

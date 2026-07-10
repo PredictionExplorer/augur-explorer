@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "buckets": [
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 100,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 160,
+        "uniqueBidderCount": 0
+      }
+    ],
+    "from": 100,
+    "intervalSeconds": 60,
+    "to": 200
+  }
+}

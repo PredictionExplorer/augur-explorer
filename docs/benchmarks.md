@@ -24,10 +24,11 @@ benchstat old.txt new.txt
 
 ## Baselines — 2026-07-07
 
-Recorded on an Apple M4 Max (arm64, 16 threads), Go 1.26.4, macOS 15.
-Numbers are medians of `-count=6`. The statistics queries include the
-testcontainers-Postgres round trip on the same machine — compare them only
-against runs captured the same way.
+The initial rows were recorded on an Apple M4 Max (arm64, 16 threads), Go
+1.26.4, macOS 15. The 2026-07-10 bidding-analytics rows use the same machine
+with Go 1.26.5 and macOS 26.5.1. Numbers are medians of `-count=6`. The
+statistics queries include the testcontainers-Postgres round trip on the same
+machine — compare them only against runs captured the same way.
 
 | Benchmark | ns/op | B/op | allocs/op | Notes |
 |---|---|---|---|---|
@@ -39,6 +40,11 @@ against runs captured the same way.
 | `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,530,000 | 14,390 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/claims_by_round` | 936,000 | 9,625 | 82 | per-round claim summary CTE (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/roi_leaderboard` | 315,000 | 23,870 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/bidding_frequency_15m` | 196,000 | 8,604 | 37 | indexed, zero-filled 15-minute frequency series with round-open exclusion |
+| `BenchmarkStatisticsQueries/bidding_frequency_1h` | 192,000 | 8,131 | 20 | indexed UTC epoch-aligned hourly frequency branch |
+| `BenchmarkStatisticsQueries/bidding_type_ratio_15m` | 188,000 | 19,308 | 32 | indexed, zero-filled 15-minute bid-type composition series |
+| `BenchmarkStatisticsQueries/top_bidder_active_periods` | 400,000 | 13,831 | 54 | bounded lifetime top-20 lookup plus windowed session segmentation |
+| `BenchmarkStatisticsQueries/bid_time_bounds` | 167,000 | 468 | 6 | first/last indexed bid timestamps |
 | `BenchmarkStatisticsQueries/participant_bidders` | 172,000 | 4,092 | 26 | first 50 bidders on the indexed bid-count keyset |
 | `BenchmarkStatisticsQueries/participant_winners` | 465,000 | 7,844 | 33 | canonical prize/event reconstruction; independent of replay-sensitive aggregates |
 | `BenchmarkStatisticsQueries/participant_donors` | 172,000 | 3,555 | 14 | first 50 donors on the indexed exact-wei keyset |
@@ -88,3 +94,11 @@ History:
   replay-sensitive `cg_winner` aggregate. The computed dual-staker order
   remains in the indexed-query latency band, so no ineffective cross-table
   index or materialized cache was added.
+- **2026-07-10 (API-v2 bidding-analytics sprint)** — added six-run medians for
+  the four backing queries, including both anchored 15-minute and UTC
+  epoch-aligned hourly frequency branches. Migration 00016 adds the timestamp
+  range index; v2 queries filter once and use `DATE_BIN` before joining the
+  zero-fill series, fixing partial-tail leakage and avoiding bucket-by-row
+  range joins. Frequency, type composition and time bounds run in 167–196 µs;
+  the bounded two-query top-bidder/session path takes 400 µs. All remain below
+  the existing 465 µs participant ceiling on the seeded container.

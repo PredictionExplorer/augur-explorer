@@ -1,0 +1,91 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "buckets": [
+      {
+        "bucketTimestamp": 1767225600,
+        "cstBidCount": 1,
+        "cstPercentage": "20",
+        "ethBidCount": 3,
+        "ethPercentage": "60",
+        "randomWalkBidCount": 1,
+        "randomWalkPercentage": "20",
+        "totalBidCount": 5
+      },
+      {
+        "bucketTimestamp": 1767226200,
+        "cstBidCount": 0,
+        "cstPercentage": "0",
+        "ethBidCount": 0,
+        "ethPercentage": "0",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 0
+      },
+      {
+        "bucketTimestamp": 1767226800,
+        "cstBidCount": 0,
+        "cstPercentage": "0",
+        "ethBidCount": 0,
+        "ethPercentage": "0",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 0
+      },
+      {
+        "bucketTimestamp": 1767227400,
+        "cstBidCount": 1,
+        "cstPercentage": "25",
+        "ethBidCount": 3,
+        "ethPercentage": "75",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 4
+      },
+      {
+        "bucketTimestamp": 1767228000,
+        "cstBidCount": 0,
+        "cstPercentage": "0",
+        "ethBidCount": 4,
+        "ethPercentage": "100",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 4
+      },
+      {
+        "bucketTimestamp": 1767228600,
+        "cstBidCount": 0,
+        "cstPercentage": "0",
+        "ethBidCount": 0,
+        "ethPercentage": "0",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 0
+      },
+      {
+        "bucketTimestamp": 1767229200,
+        "cstBidCount": 0,
+        "cstPercentage": "0",
+        "ethBidCount": 0,
+        "ethPercentage": "0",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 0
+      },
+      {
+        "bucketTimestamp": 1767229800,
+        "cstBidCount": 0,
+        "cstPercentage": "0",
+        "ethBidCount": 0,
+        "ethPercentage": "0",
+        "randomWalkBidCount": 0,
+        "randomWalkPercentage": "0",
+        "totalBidCount": 0
+      }
+    ],
+    "from": 1767225600,
+    "intervalSeconds": 600,
+    "to": 1767230000
+  }
+}

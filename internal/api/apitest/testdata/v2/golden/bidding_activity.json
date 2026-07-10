@@ -1,0 +1,64 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "buckets": [
+      {
+        "bidCount": 5,
+        "bucketTimestamp": 1767225600,
+        "uniqueBidderCount": 4
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767226200,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767226800,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767227400,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767228000,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767228600,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767229200,
+        "uniqueBidderCount": 0
+      },
+      {
+        "bidCount": 0,
+        "bucketTimestamp": 1767229800,
+        "uniqueBidderCount": 0
+      }
+    ],
+    "from": 1767225600,
+    "intervalSeconds": 600,
+    "recentSpikeIndex": 0,
+    "recentWindowSeconds": 2592000,
+    "spikes": [
+      {
+        "bucketCount": 1,
+        "endTimestamp": 1767226200,
+        "index": 0,
+        "peakBidCount": 5,
+        "peakTimestamp": 1767225600,
+        "startTimestamp": 1767225600,
+        "totalBidCount": 5
+      }
+    ],
+    "to": 1767230000
+  }
+}

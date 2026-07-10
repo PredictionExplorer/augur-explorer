@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
@@ -61,6 +62,13 @@ type statisticsReader interface {
 	UnclaimedItemsPage(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error)
 }
 
+type biddingAnalyticsReader interface {
+	BidFrequencyByPeriodBounded(context.Context, int, int, int) ([]cgprimitives.CGBidFrequencyBucket, error)
+	BidTypeRatioByPeriodBounded(context.Context, int, int, int) ([]cgprimitives.CGBidTypeRatioBucket, error)
+	TopBidderActivePeriodsBounded(context.Context, int, int, int, int, int) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error)
+	BidTimeBounds(context.Context) (int64, int64, error)
+}
+
 type participantReader interface {
 	BidderParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.BidderParticipantRecord, bool, error)
 	WinnerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.WinnerParticipantRecord, bool, error)
@@ -86,16 +94,34 @@ type Server struct {
 	raffles       roundRaffleReader
 	donations     roundDonationReader
 	statistics    statisticsReader
+	analytics     biddingAnalyticsReader
 	participants  participantReader
 	contractState contractStateReader
 	logger        *slog.Logger
+	now           func() time.Time
+}
+
+// ServerOption customizes a Server at construction.
+type ServerOption func(*Server)
+
+// WithClock replaces the server clock. It is primarily useful for
+// deterministic tests of time-relative response fields.
+func WithClock(now func() time.Time) ServerOption {
+	return func(server *Server) {
+		server.now = now
+	}
 }
 
 var _ StrictServerInterface = (*Server)(nil)
 
 // NewServer constructs the production v2 server over the shared store and
 // contract-state cache.
-func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger) (*Server, error) {
+func NewServer(
+	st *store.Store,
+	state *contractstate.State,
+	logger *slog.Logger,
+	options ...ServerOption,
+) (*Server, error) {
 	if st == nil {
 		return nil, errors.New("api v2: store is required")
 	}
@@ -103,7 +129,20 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	return newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	if err != nil {
+		return nil, err
+	}
+	for _, option := range options {
+		if option == nil {
+			return nil, errors.New("api v2: server option is nil")
+		}
+		option(server)
+	}
+	if server.now == nil {
+		return nil, errors.New("api v2: clock is required")
+	}
+	return server, nil
 }
 
 func newServer(
@@ -115,6 +154,7 @@ func newServer(
 	raffles roundRaffleReader,
 	donations roundDonationReader,
 	statistics statisticsReader,
+	analytics biddingAnalyticsReader,
 	participants participantReader,
 	state contractStateReader,
 	logger *slog.Logger,
@@ -140,6 +180,9 @@ func newServer(
 	if statistics == nil {
 		return nil, errors.New("api v2: statistics repository is required")
 	}
+	if analytics == nil {
+		return nil, errors.New("api v2: bidding analytics repository is required")
+	}
 	if participants == nil {
 		return nil, errors.New("api v2: participant repository is required")
 	}
@@ -158,9 +201,11 @@ func newServer(
 		raffles:       raffles,
 		donations:     donations,
 		statistics:    statistics,
+		analytics:     analytics,
 		participants:  participants,
 		contractState: state,
 		logger:        logger,
+		now:           time.Now,
 	}, nil
 }
 

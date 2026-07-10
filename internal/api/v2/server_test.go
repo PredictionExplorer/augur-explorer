@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
@@ -61,6 +62,13 @@ type fakeStatisticsReader struct {
 	transactions func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.ClaimTransactionRecord, bool, error)
 	attached     func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.AttachedTokenRecord, bool, error)
 	unclaimed    func(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error)
+}
+
+type fakeBiddingAnalyticsReader struct {
+	frequency func(context.Context, int, int, int) ([]cgprimitives.CGBidFrequencyBucket, error)
+	ratio     func(context.Context, int, int, int) ([]cgprimitives.CGBidTypeRatioBucket, error)
+	periods   func(context.Context, int, int, int, int, int) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error)
+	bounds    func(context.Context) (int64, int64, error)
 }
 
 type fakeParticipantReader struct {
@@ -291,6 +299,51 @@ func (f fakeStatisticsReader) UnclaimedItemsPage(
 		return []cgstore.UnclaimedItemRecord{}, false, nil
 	}
 	return f.unclaimed(ctx, round, after, limit)
+}
+
+func (f fakeBiddingAnalyticsReader) BidFrequencyByPeriodBounded(
+	ctx context.Context,
+	from int,
+	to int,
+	interval int,
+) ([]cgprimitives.CGBidFrequencyBucket, error) {
+	if f.frequency == nil {
+		return []cgprimitives.CGBidFrequencyBucket{}, nil
+	}
+	return f.frequency(ctx, from, to, interval)
+}
+
+func (f fakeBiddingAnalyticsReader) BidTypeRatioByPeriodBounded(
+	ctx context.Context,
+	from int,
+	to int,
+	interval int,
+) ([]cgprimitives.CGBidTypeRatioBucket, error) {
+	if f.ratio == nil {
+		return []cgprimitives.CGBidTypeRatioBucket{}, nil
+	}
+	return f.ratio(ctx, from, to, interval)
+}
+
+func (f fakeBiddingAnalyticsReader) TopBidderActivePeriodsBounded(
+	ctx context.Context,
+	top int,
+	from int,
+	to int,
+	gapHours int,
+	minBids int,
+) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error) {
+	if f.periods == nil {
+		return []cgprimitives.CGTopBidderInfo{}, []cgprimitives.CGBidderActivePeriod{}, false, nil
+	}
+	return f.periods(ctx, top, from, to, gapHours, minBids)
+}
+
+func (f fakeBiddingAnalyticsReader) BidTimeBounds(ctx context.Context) (int64, int64, error) {
+	if f.bounds == nil {
+		return 0, 0, nil
+	}
+	return f.bounds(ctx)
 }
 
 func (f fakeParticipantReader) BidderParticipantsPage(
@@ -585,31 +638,52 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 	if _, err := NewServer(&store.Store{}, nil, nil); err == nil {
 		t.Fatal("NewServer accepted a nil contract state")
 	}
-	if _, err := newServer(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := NewServer(
+		&store.Store{},
+		&contractstate.State{},
+		nil,
+		WithClock(nil),
+	); err == nil {
+		t.Fatal("NewServer accepted a nil clock")
+	}
+	fixedNow := time.Unix(123, 0)
+	configured, err := NewServer(
+		&store.Store{},
+		&contractstate.State{},
+		nil,
+		WithClock(func() time.Time { return fixedNow }),
+	)
+	if err != nil || !configured.now().Equal(fixedNow) {
+		t.Fatalf("NewServer clock option: server=%v err=%v", configured, err)
+	}
+	if _, err := newServer(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil bid repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil current-round repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-prize repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-raffle repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-donation repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil statistics repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, nil, nil, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil bidding analytics repository")
+	}
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil participant repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeParticipantReader{}, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, fakeParticipantReader{}, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil contract state")
 	}
 	server, err := newServer(
@@ -621,6 +695,7 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
+		fakeBiddingAnalyticsReader{},
 		fakeParticipantReader{},
 		fakeContractState{},
 		nil,
@@ -630,6 +705,9 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 	}
 	if server.logger == nil {
 		t.Fatal("newServer did not install a default logger")
+	}
+	if server.now == nil {
+		t.Fatal("newServer did not install a clock")
 	}
 }
 
@@ -645,6 +723,7 @@ func newTestServer(t *testing.T, bids bidReader) *Server {
 		fakeRoundRaffleReader{},
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
+		fakeBiddingAnalyticsReader{},
 		fakeParticipantReader{},
 		fakeContractState{},
 		logger,

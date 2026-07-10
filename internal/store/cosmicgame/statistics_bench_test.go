@@ -73,6 +73,60 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 		}
 	})
 
+	b.Run("bidding_frequency_15m", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, err := r.BidFrequencyByPeriodBounded(ctx, fixtureStartTs, fixtureEndTs, 900)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("bidding frequency: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("bidding_frequency_1h", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, err := r.BidFrequencyByPeriodBounded(ctx, fixtureStartTs, fixtureEndTs, 3600)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("hourly bidding frequency: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("bidding_type_ratio_15m", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, err := r.BidTypeRatioByPeriodBounded(ctx, fixtureStartTs, fixtureEndTs, 900)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("bidding type ratio: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("top_bidder_active_periods", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			bidders, periods, hasMore, err := r.TopBidderActivePeriodsBounded(
+				ctx, 20, fixtureStartTs, fixtureEndTs, 6, 2,
+			)
+			if err != nil || hasMore || len(bidders) == 0 || len(periods) == 0 {
+				b.Fatalf("top bidder active periods: bidders=%d periods=%d more=%v err=%v",
+					len(bidders), len(periods), hasMore, err)
+			}
+		}
+	})
+
+	b.Run("bid_time_bounds", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			minTimestamp, maxTimestamp, err := r.BidTimeBounds(ctx)
+			if err != nil || minTimestamp == 0 || maxTimestamp < minTimestamp {
+				b.Fatalf("bid time bounds: min=%d max=%d err=%v",
+					minTimestamp, maxTimestamp, err)
+			}
+		}
+	})
+
 	b.Run("participant_bidders", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {

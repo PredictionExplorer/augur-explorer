@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
@@ -88,7 +89,13 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	randomwalk.Init(true)
 	faq.Init(discard, discard, true)
 
-	v2Server, err := v2.NewServer(st, cgState, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	v2Server, err := v2.NewServer(
+		st,
+		cgState,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		// Pin relative-time fields so HTTP goldens do not age.
+		v2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("initializing api v2: %w", err)
 	}

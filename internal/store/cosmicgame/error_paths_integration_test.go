@@ -26,8 +26,24 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			_, err := r.BidFrequencyByPeriod(cancelled, fixtureStartTs, fixtureEndTs, 900)
 			return err
 		},
+		"BidFrequencyByPeriodBounded (bidding_analytics.go)": func() error {
+			_, err := r.BidFrequencyByPeriodBounded(cancelled, fixtureStartTs, fixtureEndTs, 900)
+			return err
+		},
+		"BidTypeRatioByPeriod (bidding_analytics.go)": func() error {
+			_, err := r.BidTypeRatioByPeriod(cancelled, fixtureStartTs, fixtureEndTs, 900)
+			return err
+		},
+		"BidTypeRatioByPeriodBounded (bidding_analytics.go)": func() error {
+			_, err := r.BidTypeRatioByPeriodBounded(cancelled, fixtureStartTs, fixtureEndTs, 900)
+			return err
+		},
 		"TopBidderActivePeriods (bidding_analytics.go)": func() error {
 			_, _, err := r.TopBidderActivePeriods(cancelled, 3, fixtureStartTs, fixtureEndTs, 1, 1)
+			return err
+		},
+		"TopBidderActivePeriodsBounded (bidding_analytics.go)": func() error {
+			_, _, _, err := r.TopBidderActivePeriodsBounded(cancelled, 3, fixtureStartTs, fixtureEndTs, 1, 1)
 			return err
 		},
 		"BidTimeBounds (bidding_analytics.go)": func() error {

@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "activePeriods": [
+      {
+        "bidCount": 5,
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "durationSeconds": 2800,
+        "endTimestamp": 1767228500,
+        "startTimestamp": 1767225700
+      },
+      {
+        "bidCount": 3,
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "durationSeconds": 2600,
+        "endTimestamp": 1767228400,
+        "startTimestamp": 1767225800
+      },
+      {
+        "bidCount": 2,
+        "bidderAddress": "0x2300000000000000000000000000000000000023",
+        "durationSeconds": 1900,
+        "endTimestamp": 1767227800,
+        "startTimestamp": 1767225900
+      }
+    ],
+    "from": 1767225600,
+    "gapHours": 1,
+    "minBids": 1,
+    "to": 1767230000,
+    "top": 3,
+    "topBidders": [
+      {
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "lifetimeBidCount": 5
+      },
+      {
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "lifetimeBidCount": 3
+      },
+      {
+        "bidderAddress": "0x2300000000000000000000000000000000000023",
+        "lifetimeBidCount": 2
+      }
+    ]
+  }
+}

@@ -404,6 +404,7 @@ func newRaffleTestServer(t *testing.T, raffles roundRaffleReader) *Server {
 		raffles,
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
+		fakeBiddingAnalyticsReader{},
 		fakeParticipantReader{},
 		fakeContractState{},
 		logger,

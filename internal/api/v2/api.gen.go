@@ -265,8 +265,55 @@ type Bid struct {
 	TransactionHash                string         `json:"transactionHash"`
 }
 
+// BidFrequencyBucket defines model for BidFrequencyBucket.
+type BidFrequencyBucket struct {
+	BidCount int64 `json:"bidCount"`
+
+	// BucketTimestamp Inclusive beginning of this bucket as Unix seconds.
+	BucketTimestamp   int64 `json:"bucketTimestamp"`
+	UniqueBidderCount int64 `json:"uniqueBidderCount"`
+}
+
+// BidSpike defines model for BidSpike.
+type BidSpike struct {
+	BucketCount    int64 `json:"bucketCount"`
+	EndTimestamp   int64 `json:"endTimestamp"`
+	Index          int   `json:"index"`
+	PeakBidCount   int64 `json:"peakBidCount"`
+	PeakTimestamp  int64 `json:"peakTimestamp"`
+	StartTimestamp int64 `json:"startTimestamp"`
+	TotalBidCount  int64 `json:"totalBidCount"`
+}
+
 // BidType defines model for BidType.
 type BidType string
+
+// BidTypeRatioBucket defines model for BidTypeRatioBucket.
+type BidTypeRatioBucket struct {
+	BucketTimestamp int64 `json:"bucketTimestamp"`
+	CstBidCount     int64 `json:"cstBidCount"`
+
+	// CstPercentage Canonical decimal percentage from 0 through 100, rounded to two places.
+	CstPercentage DecimalPercentage `json:"cstPercentage"`
+	EthBidCount   int64             `json:"ethBidCount"`
+
+	// EthPercentage Canonical decimal percentage from 0 through 100, rounded to two places.
+	EthPercentage      DecimalPercentage `json:"ethPercentage"`
+	RandomWalkBidCount int64             `json:"randomWalkBidCount"`
+
+	// RandomWalkPercentage Canonical decimal percentage from 0 through 100, rounded to two places.
+	RandomWalkPercentage DecimalPercentage `json:"randomWalkPercentage"`
+	TotalBidCount        int64             `json:"totalBidCount"`
+}
+
+// BidderActivePeriod defines model for BidderActivePeriod.
+type BidderActivePeriod struct {
+	BidCount        int64  `json:"bidCount"`
+	BidderAddress   string `json:"bidderAddress"`
+	DurationSeconds int64  `json:"durationSeconds"`
+	EndTimestamp    int64  `json:"endTimestamp"`
+	StartTimestamp  int64  `json:"startTimestamp"`
+}
 
 // BidderParticipant defines model for BidderParticipant.
 type BidderParticipant struct {
@@ -281,6 +328,52 @@ type BidderParticipant struct {
 type BidderParticipantPage struct {
 	Data []BidderParticipant `json:"data"`
 	Meta PageMeta            `json:"meta"`
+}
+
+// BiddingActivity defines model for BiddingActivity.
+type BiddingActivity struct {
+	Buckets         []BidFrequencyBucket `json:"buckets"`
+	From            int64                `json:"from"`
+	IntervalSeconds int64                `json:"intervalSeconds"`
+
+	// RecentSpikeIndex Omitted when no spike starts within the recent window.
+	RecentSpikeIndex    *int       `json:"recentSpikeIndex,omitempty"`
+	RecentWindowSeconds int64      `json:"recentWindowSeconds"`
+	Spikes              []BidSpike `json:"spikes"`
+	To                  int64      `json:"to"`
+}
+
+// BiddingFrequency defines model for BiddingFrequency.
+type BiddingFrequency struct {
+	Buckets         []BidFrequencyBucket `json:"buckets"`
+	From            int64                `json:"from"`
+	IntervalSeconds int64                `json:"intervalSeconds"`
+	To              int64                `json:"to"`
+}
+
+// BiddingTimeBounds defines model for BiddingTimeBounds.
+type BiddingTimeBounds struct {
+	MaxTimestamp int64 `json:"maxTimestamp"`
+	MinTimestamp int64 `json:"minTimestamp"`
+}
+
+// BiddingTopActivePeriods defines model for BiddingTopActivePeriods.
+type BiddingTopActivePeriods struct {
+	ActivePeriods []BidderActivePeriod `json:"activePeriods"`
+	From          int64                `json:"from"`
+	GapHours      int                  `json:"gapHours"`
+	MinBids       int                  `json:"minBids"`
+	To            int64                `json:"to"`
+	Top           int                  `json:"top"`
+	TopBidders    []TopBidder          `json:"topBidders"`
+}
+
+// BiddingTypeRatio defines model for BiddingTypeRatio.
+type BiddingTypeRatio struct {
+	Buckets         []BidTypeRatioBucket `json:"buckets"`
+	From            int64                `json:"from"`
+	IntervalSeconds int64                `json:"intervalSeconds"`
+	To              int64                `json:"to"`
 }
 
 // CharityAllocation defines model for CharityAllocation.
@@ -456,6 +549,9 @@ type CstStakingStatistics struct {
 	TotalTokensStaked  int64  `json:"totalTokensStaked"`
 	UnclaimedRewardWei string `json:"unclaimedRewardWei"`
 }
+
+// DecimalPercentage Canonical decimal percentage from 0 through 100, rounded to two places.
+type DecimalPercentage = string
 
 // DonatedTokenStatistic defines model for DonatedTokenStatistic.
 type DonatedTokenStatistic struct {
@@ -775,6 +871,12 @@ type TokenPrize struct {
 	WinnerAddress string `json:"winnerAddress"`
 }
 
+// TopBidder defines model for TopBidder.
+type TopBidder struct {
+	BidderAddress    string `json:"bidderAddress"`
+	LifetimeBidCount int64  `json:"lifetimeBidCount"`
+}
+
 // UnclaimedItem defines model for UnclaimedItem.
 type UnclaimedItem struct {
 	AmountBaseUnits  *string        `json:"amountBaseUnits,omitempty"`
@@ -813,6 +915,21 @@ type WinnerParticipantPage struct {
 	Meta PageMeta            `json:"meta"`
 }
 
+// AnalyticsFrom defines model for AnalyticsFrom.
+type AnalyticsFrom = int64
+
+// AnalyticsGapHours defines model for AnalyticsGapHours.
+type AnalyticsGapHours = int
+
+// AnalyticsMinBids defines model for AnalyticsMinBids.
+type AnalyticsMinBids = int
+
+// AnalyticsTo defines model for AnalyticsTo.
+type AnalyticsTo = int64
+
+// AnalyticsTop defines model for AnalyticsTop.
+type AnalyticsTop = int
+
 // AttachedTokensCursor defines model for AttachedTokensCursor.
 type AttachedTokensCursor = string
 
@@ -848,6 +965,21 @@ type UnclaimedItemsCursor = string
 
 // BadRequest defines model for BadRequest.
 type BadRequest = Problem
+
+// CosmicGameBiddingActivity defines model for CosmicGameBiddingActivity.
+type CosmicGameBiddingActivity = BiddingActivity
+
+// CosmicGameBiddingFrequency defines model for CosmicGameBiddingFrequency.
+type CosmicGameBiddingFrequency = BiddingFrequency
+
+// CosmicGameBiddingTimeBounds defines model for CosmicGameBiddingTimeBounds.
+type CosmicGameBiddingTimeBounds = BiddingTimeBounds
+
+// CosmicGameBiddingTopActivePeriods defines model for CosmicGameBiddingTopActivePeriods.
+type CosmicGameBiddingTopActivePeriods = BiddingTopActivePeriods
+
+// CosmicGameBiddingTypeRatio defines model for CosmicGameBiddingTypeRatio.
+type CosmicGameBiddingTypeRatio = BiddingTypeRatio
 
 // InternalError defines model for InternalError.
 type InternalError = Problem
@@ -970,6 +1102,60 @@ type ListRoundRaffleNftWinnersParams struct {
 
 	// Limit Maximum number of resources to return.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetCosmicGameBiddingActivityParams defines parameters for GetCosmicGameBiddingActivity.
+type GetCosmicGameBiddingActivityParams struct {
+	// From Inclusive beginning of the analytics window as Unix seconds.
+	From AnalyticsFrom `form:"from" json:"from"`
+
+	// To Exclusive end of the analytics window as Unix seconds.
+	To AnalyticsTo `form:"to" json:"to"`
+
+	// IntervalSeconds Positive bucket width in seconds; defaults to one hour.
+	IntervalSeconds *int64 `form:"intervalSeconds,omitempty" json:"intervalSeconds,omitempty"`
+}
+
+// GetCosmicGameBiddingFrequencyParams defines parameters for GetCosmicGameBiddingFrequency.
+type GetCosmicGameBiddingFrequencyParams struct {
+	// From Inclusive beginning of the analytics window as Unix seconds.
+	From AnalyticsFrom `form:"from" json:"from"`
+
+	// To Exclusive end of the analytics window as Unix seconds.
+	To AnalyticsTo `form:"to" json:"to"`
+
+	// IntervalSeconds Positive bucket width in seconds; defaults to one day.
+	IntervalSeconds *int64 `form:"intervalSeconds,omitempty" json:"intervalSeconds,omitempty"`
+}
+
+// GetCosmicGameBiddingTopActivePeriodsParams defines parameters for GetCosmicGameBiddingTopActivePeriods.
+type GetCosmicGameBiddingTopActivePeriodsParams struct {
+	// From Inclusive beginning of the analytics window as Unix seconds.
+	From AnalyticsFrom `form:"from" json:"from"`
+
+	// To Exclusive end of the analytics window as Unix seconds.
+	To AnalyticsTo `form:"to" json:"to"`
+
+	// Top Number of lifetime top bidders whose activity is analyzed.
+	Top *AnalyticsTop `form:"top,omitempty" json:"top,omitempty"`
+
+	// GapHours A larger gap starts a new bidder activity period.
+	GapHours *AnalyticsGapHours `form:"gapHours,omitempty" json:"gapHours,omitempty"`
+
+	// MinBids Minimum number of bids required to retain an activity period.
+	MinBids *AnalyticsMinBids `form:"minBids,omitempty" json:"minBids,omitempty"`
+}
+
+// GetCosmicGameBiddingTypeRatioParams defines parameters for GetCosmicGameBiddingTypeRatio.
+type GetCosmicGameBiddingTypeRatioParams struct {
+	// From Inclusive beginning of the analytics window as Unix seconds.
+	From AnalyticsFrom `form:"from" json:"from"`
+
+	// To Exclusive end of the analytics window as Unix seconds.
+	To AnalyticsTo `form:"to" json:"to"`
+
+	// IntervalSeconds Positive bucket width in seconds; defaults to one day.
+	IntervalSeconds *int64 `form:"intervalSeconds,omitempty" json:"intervalSeconds,omitempty"`
 }
 
 // ListCosmicGameClaimsParams defines parameters for ListCosmicGameClaims.
@@ -1115,6 +1301,21 @@ type ServerInterface interface {
 	// Get exact global CosmicGame statistics
 	// (GET /api/v2/cosmicgame/statistics)
 	GetCosmicGameStatistics(w http.ResponseWriter, r *http.Request)
+	// Get bounded bid-frequency analytics with detected spikes
+	// (GET /api/v2/cosmicgame/statistics/bidding/activity)
+	GetCosmicGameBiddingActivity(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingActivityParams)
+	// Get bounded bid-frequency buckets
+	// (GET /api/v2/cosmicgame/statistics/bidding/frequency)
+	GetCosmicGameBiddingFrequency(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingFrequencyParams)
+	// Get the first and last indexed bid timestamps
+	// (GET /api/v2/cosmicgame/statistics/bidding/time-bounds)
+	GetCosmicGameBiddingTimeBounds(w http.ResponseWriter, r *http.Request)
+	// Get active periods for the lifetime top bidders
+	// (GET /api/v2/cosmicgame/statistics/bidding/top-active-periods)
+	GetCosmicGameBiddingTopActivePeriods(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingTopActivePeriodsParams)
+	// Get bounded bid-type composition buckets
+	// (GET /api/v2/cosmicgame/statistics/bidding/type-ratio)
+	GetCosmicGameBiddingTypeRatio(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingTypeRatioParams)
 	// List claimable-asset summaries by completed round
 	// (GET /api/v2/cosmicgame/statistics/claims)
 	ListCosmicGameClaims(w http.ResponseWriter, r *http.Request, params ListCosmicGameClaimsParams)
@@ -1767,6 +1968,282 @@ func (siw *ServerInterfaceWrapper) GetCosmicGameStatistics(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// GetCosmicGameBiddingActivity operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameBiddingActivity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCosmicGameBiddingActivityParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "intervalSeconds" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "intervalSeconds", r.URL.Query(), &params.IntervalSeconds, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "intervalSeconds"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "intervalSeconds", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameBiddingActivity(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameBiddingFrequency operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameBiddingFrequency(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCosmicGameBiddingFrequencyParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "intervalSeconds" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "intervalSeconds", r.URL.Query(), &params.IntervalSeconds, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "intervalSeconds"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "intervalSeconds", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameBiddingFrequency(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameBiddingTimeBounds operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameBiddingTimeBounds(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameBiddingTimeBounds(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameBiddingTopActivePeriods operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameBiddingTopActivePeriods(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCosmicGameBiddingTopActivePeriodsParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "top" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "top", r.URL.Query(), &params.Top, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "top"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "top", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "gapHours" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "gapHours", r.URL.Query(), &params.GapHours, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "gapHours"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gapHours", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "minBids" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "minBids", r.URL.Query(), &params.MinBids, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "minBids"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "minBids", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameBiddingTopActivePeriods(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameBiddingTypeRatio operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameBiddingTypeRatio(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCosmicGameBiddingTypeRatioParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "intervalSeconds" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "intervalSeconds", r.URL.Query(), &params.IntervalSeconds, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "intervalSeconds"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "intervalSeconds", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameBiddingTypeRatio(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListCosmicGameClaims operation middleware
 func (siw *ServerInterfaceWrapper) ListCosmicGameClaims(w http.ResponseWriter, r *http.Request) {
 
@@ -2308,6 +2785,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/raffle-eth-deposits", wrapper.ListRoundRaffleEthDeposits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/raffle-nft-winners", wrapper.ListRoundRaffleNftWinners)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics", wrapper.GetCosmicGameStatistics)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/bidding/activity", wrapper.GetCosmicGameBiddingActivity)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/bidding/frequency", wrapper.GetCosmicGameBiddingFrequency)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/bidding/time-bounds", wrapper.GetCosmicGameBiddingTimeBounds)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/bidding/top-active-periods", wrapper.GetCosmicGameBiddingTopActivePeriods)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/bidding/type-ratio", wrapper.GetCosmicGameBiddingTypeRatio)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/claims", wrapper.ListCosmicGameClaims)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/counters", wrapper.GetCosmicGameCounters)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/leaderboard/roi", wrapper.ListCosmicGameRoiLeaderboard)
@@ -2328,6 +2810,16 @@ type BidJSONResponse Bid
 type BidderParticipantPageJSONResponse BidderParticipantPage
 
 type ClaimSummaryPageJSONResponse ClaimSummaryPage
+
+type CosmicGameBiddingActivityJSONResponse BiddingActivity
+
+type CosmicGameBiddingFrequencyJSONResponse BiddingFrequency
+
+type CosmicGameBiddingTimeBoundsJSONResponse BiddingTimeBounds
+
+type CosmicGameBiddingTopActivePeriodsJSONResponse BiddingTopActivePeriods
+
+type CosmicGameBiddingTypeRatioJSONResponse BiddingTypeRatio
 
 type CosmicGameCountersJSONResponse CosmicGameCounters
 
@@ -3184,6 +3676,269 @@ func (response GetCosmicGameStatistics500ApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type GetCosmicGameBiddingActivityRequestObject struct {
+	Params GetCosmicGameBiddingActivityParams
+}
+
+type GetCosmicGameBiddingActivityResponseObject interface {
+	VisitGetCosmicGameBiddingActivityResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameBiddingActivity200JSONResponse struct {
+	CosmicGameBiddingActivityJSONResponse
+}
+
+func (response GetCosmicGameBiddingActivity200JSONResponse) VisitGetCosmicGameBiddingActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingActivity400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingActivity400ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingActivity500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingActivity500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingFrequencyRequestObject struct {
+	Params GetCosmicGameBiddingFrequencyParams
+}
+
+type GetCosmicGameBiddingFrequencyResponseObject interface {
+	VisitGetCosmicGameBiddingFrequencyResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameBiddingFrequency200JSONResponse struct {
+	CosmicGameBiddingFrequencyJSONResponse
+}
+
+func (response GetCosmicGameBiddingFrequency200JSONResponse) VisitGetCosmicGameBiddingFrequencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingFrequency400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingFrequency400ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingFrequencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingFrequency500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingFrequency500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingFrequencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTimeBoundsRequestObject struct {
+}
+
+type GetCosmicGameBiddingTimeBoundsResponseObject interface {
+	VisitGetCosmicGameBiddingTimeBoundsResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameBiddingTimeBounds200JSONResponse struct {
+	CosmicGameBiddingTimeBoundsJSONResponse
+}
+
+func (response GetCosmicGameBiddingTimeBounds200JSONResponse) VisitGetCosmicGameBiddingTimeBoundsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTimeBounds500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingTimeBounds500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingTimeBoundsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTopActivePeriodsRequestObject struct {
+	Params GetCosmicGameBiddingTopActivePeriodsParams
+}
+
+type GetCosmicGameBiddingTopActivePeriodsResponseObject interface {
+	VisitGetCosmicGameBiddingTopActivePeriodsResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameBiddingTopActivePeriods200JSONResponse struct {
+	CosmicGameBiddingTopActivePeriodsJSONResponse
+}
+
+func (response GetCosmicGameBiddingTopActivePeriods200JSONResponse) VisitGetCosmicGameBiddingTopActivePeriodsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTopActivePeriods400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingTopActivePeriods400ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingTopActivePeriodsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTopActivePeriods500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingTopActivePeriods500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingTopActivePeriodsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTypeRatioRequestObject struct {
+	Params GetCosmicGameBiddingTypeRatioParams
+}
+
+type GetCosmicGameBiddingTypeRatioResponseObject interface {
+	VisitGetCosmicGameBiddingTypeRatioResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameBiddingTypeRatio200JSONResponse struct {
+	CosmicGameBiddingTypeRatioJSONResponse
+}
+
+func (response GetCosmicGameBiddingTypeRatio200JSONResponse) VisitGetCosmicGameBiddingTypeRatioResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTypeRatio400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingTypeRatio400ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingTypeRatioResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameBiddingTypeRatio500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameBiddingTypeRatio500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameBiddingTypeRatioResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListCosmicGameClaimsRequestObject struct {
 	Params ListCosmicGameClaimsParams
 }
@@ -3706,6 +4461,21 @@ type StrictServerInterface interface {
 	// Get exact global CosmicGame statistics
 	// (GET /api/v2/cosmicgame/statistics)
 	GetCosmicGameStatistics(ctx context.Context, request GetCosmicGameStatisticsRequestObject) (GetCosmicGameStatisticsResponseObject, error)
+	// Get bounded bid-frequency analytics with detected spikes
+	// (GET /api/v2/cosmicgame/statistics/bidding/activity)
+	GetCosmicGameBiddingActivity(ctx context.Context, request GetCosmicGameBiddingActivityRequestObject) (GetCosmicGameBiddingActivityResponseObject, error)
+	// Get bounded bid-frequency buckets
+	// (GET /api/v2/cosmicgame/statistics/bidding/frequency)
+	GetCosmicGameBiddingFrequency(ctx context.Context, request GetCosmicGameBiddingFrequencyRequestObject) (GetCosmicGameBiddingFrequencyResponseObject, error)
+	// Get the first and last indexed bid timestamps
+	// (GET /api/v2/cosmicgame/statistics/bidding/time-bounds)
+	GetCosmicGameBiddingTimeBounds(ctx context.Context, request GetCosmicGameBiddingTimeBoundsRequestObject) (GetCosmicGameBiddingTimeBoundsResponseObject, error)
+	// Get active periods for the lifetime top bidders
+	// (GET /api/v2/cosmicgame/statistics/bidding/top-active-periods)
+	GetCosmicGameBiddingTopActivePeriods(ctx context.Context, request GetCosmicGameBiddingTopActivePeriodsRequestObject) (GetCosmicGameBiddingTopActivePeriodsResponseObject, error)
+	// Get bounded bid-type composition buckets
+	// (GET /api/v2/cosmicgame/statistics/bidding/type-ratio)
+	GetCosmicGameBiddingTypeRatio(ctx context.Context, request GetCosmicGameBiddingTypeRatioRequestObject) (GetCosmicGameBiddingTypeRatioResponseObject, error)
 	// List claimable-asset summaries by completed round
 	// (GET /api/v2/cosmicgame/statistics/claims)
 	ListCosmicGameClaims(ctx context.Context, request ListCosmicGameClaimsRequestObject) (ListCosmicGameClaimsResponseObject, error)
@@ -4107,6 +4877,134 @@ func (sh *strictHandler) GetCosmicGameStatistics(w http.ResponseWriter, r *http.
 	}
 }
 
+// GetCosmicGameBiddingActivity operation middleware
+func (sh *strictHandler) GetCosmicGameBiddingActivity(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingActivityParams) {
+	var request GetCosmicGameBiddingActivityRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameBiddingActivity(ctx, request.(GetCosmicGameBiddingActivityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameBiddingActivity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameBiddingActivityResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameBiddingActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameBiddingFrequency operation middleware
+func (sh *strictHandler) GetCosmicGameBiddingFrequency(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingFrequencyParams) {
+	var request GetCosmicGameBiddingFrequencyRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameBiddingFrequency(ctx, request.(GetCosmicGameBiddingFrequencyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameBiddingFrequency")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameBiddingFrequencyResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameBiddingFrequencyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameBiddingTimeBounds operation middleware
+func (sh *strictHandler) GetCosmicGameBiddingTimeBounds(w http.ResponseWriter, r *http.Request) {
+	var request GetCosmicGameBiddingTimeBoundsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameBiddingTimeBounds(ctx, request.(GetCosmicGameBiddingTimeBoundsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameBiddingTimeBounds")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameBiddingTimeBoundsResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameBiddingTimeBoundsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameBiddingTopActivePeriods operation middleware
+func (sh *strictHandler) GetCosmicGameBiddingTopActivePeriods(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingTopActivePeriodsParams) {
+	var request GetCosmicGameBiddingTopActivePeriodsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameBiddingTopActivePeriods(ctx, request.(GetCosmicGameBiddingTopActivePeriodsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameBiddingTopActivePeriods")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameBiddingTopActivePeriodsResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameBiddingTopActivePeriodsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameBiddingTypeRatio operation middleware
+func (sh *strictHandler) GetCosmicGameBiddingTypeRatio(w http.ResponseWriter, r *http.Request, params GetCosmicGameBiddingTypeRatioParams) {
+	var request GetCosmicGameBiddingTypeRatioRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameBiddingTypeRatio(ctx, request.(GetCosmicGameBiddingTypeRatioRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameBiddingTypeRatio")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameBiddingTypeRatioResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameBiddingTypeRatioResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListCosmicGameClaims operation middleware
 func (sh *strictHandler) ListCosmicGameClaims(w http.ResponseWriter, r *http.Request, params ListCosmicGameClaimsParams) {
 	var request ListCosmicGameClaimsRequestObject
@@ -4344,106 +5242,136 @@ func (sh *strictHandler) ListCosmicGameWinners(w http.ResponseWriter, r *http.Re
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"7H1tc9s4kv9XQfG/L/5XK9lONrO343mxZTtOxrWxx2U7l6ob52ohsiVhQwIKANrWpPzdrwDwASRBiQT1",
-	"4OT21YwVotHo/qHRaHQD34KQJQtGgUoRHH8LFpjjBCRw/deJlDicQ3THvgAVZykXjKvfIxAhJwtJGA2O",
-	"g98W+GsKKGRUEppi9SsK9bdoyjiSc0A4IzSWmhISEKrPDoJRQBSJrynwZTAKKE4gOA6wq99RIMI5JFgx",
-	"kOCnD0Bnch4c//Tq9ShICM3/fjUK5HKhqAjJCZ0Fz8+j4JRE10wQw3CDfwrjCRYQoQmJ0CL7Dj0SOSdU",
-	"s89ZSqOC2QWW85LX/PtgFHD4mhIOUXAseQo2v1PGEyyD44BQ+dc3gWaYJGlis0uohBlwze9ZjElyxzEV",
-	"WAtqiOxDRWssLWLrxB+29D5EAx4D4CBTTpValnogCw4PhKUCLfAMDpChKBDmcE+FxJMYCuWJEaJMopg8",
-	"ABLppOhQHKPHOVEf4hmhM4QpYgug9zRkcWyEMkIUHuMlIjSCJ4gQPKi5gfAccITY1IjUMIg5oAciiOp5",
-	"srynCxbHmuoME4MflkqEs88P7mmbvIeL9wNJiGxK9xI/KZghmiYT4Ip9DoKlPASBJMsk3AaDWNO0uYpg",
-	"itNYBsc/HY0UiwbCr4+O1gL6ktBTEgkHh6YdiskUJElAz8GQpVSifDppJMeAI+AThnmECA3jVKwAcJL1",
-	"5ubdYvbIyew15pKEZIGp9Jx3jALimH6BCC1KYigiHELJ+PLgnp7MZhxmWJoPBQoxReEc0xlkEMUojAlQ",
-	"iSTHD8AFGOCLX7LfxT0Vc5bGEYpgHKWLmISKGo4iDkJ9jWmk1C0xl2jKWaKhOyVcSE0IPc4V8uUclogC",
-	"RAijKQcx1/wQOtsqXm/wdBrD1VReMxZfq0WnKeNbUFNSASICjh4JpcAFYhzdYBqx5BOOv4yFxF/Kf2zD",
-	"w4KxeKV9/hOHaXAc/L/DcjU8NP8qDiusGuYZuWVctrB9CZKTEKVqQZEMMa64V6K/+e3ChnEbs4Lx6qxb",
-	"yRwjH0qSiquMw5RGTdb+GzjLlrozJhISvsdJtrplJqJlkdOfeK5w7jn2kepVBqILCcmQ5S3NCY2JorRu",
-	"bUtd/foj+VnJRCwYFaCN2ymObuBrCkIbY8U3UP2/eGEmKGH0cMHZJIbkz/8Sxh3ppupr08p0WhXTCVLq",
-	"UlNDjxYVXhwiAhH6gGMSHQTGD1rBVz9+FC0HL3fKXzIiMB5V3nEE3DKs13gGm2TFQd3B3G+2XZ6BWhCt",
-	"iWAsjdAMaw/sNk0SzJcb5bVBuIXN3KPJ2NSoVb+MsRAgkdAUCGTcFoM4U0tn5r5vht8maQfHZ5gySkIc",
-	"VwwLhIxnq3kh15JcyjlQWZiqTXNrk2/BaWi+0T5gZgaLhTLUOxDjQirWOA6lUoqE2jjex2yC41uJJRGS",
-	"hNuQfKMLx3jOnxSDEZZYGfjxBIcK5TPd0laKKKjUxrEtRazUQGkpFI0Y1P9luy3FnJC3eoHfluFo7aCP",
-	"7UC3ZEaxTDkgvWFFxikx8n3LKNsa+07ivc3e+d2vKFKUMo5TDbUtSr29h268ly5uNoHjpZa52ntNmJwj",
-	"HWVAU5yQOLeQF8oEURyfc24cjV2tzRbKlSWMI70znUAJeM3fFZPv1kzAbbIGUbEzRBEDoZmEJyKk5q70",
-	"uLeLjHX9dMNHSQVdvburTMeqv7xZ3pukuy3ttX0BAiqLhV0bz1OyaU4tot14NIvjhEQWW9qTEW9BYhJv",
-	"lrcKZQeDp+ojtWao71Ckv8sdf1FswF0riiZ/zsPXR28Z1fxtXrJN8t1kfH5zNn59pEyx2eiYyJPFtpxv",
-	"keka8W4sm4BGvoLo1hbDV1O5PYbrxLsxrOxBq4A3z2QfB7+KVpstTv6ALfBWkO3G4EJ9LxB+xFzNPUIR",
-	"bp9iJmiiQAU6Jrt59p09dBtJFlHimoIG7yOOY5AoMqREfRxXU/lJR5i2NYxqBx1NsmFfITqPjRGqDd+C",
-	"sVgP4Rb4AwnhI8UPmMSq9a7di/ZdFCLGyShduILJg2AUzPWCqDdTNyD5cnwylcBdQcKQ0UiglEoS640b",
-	"hSeJFHtRGmddj02PHHSA82BlIGtlIFsNMlfUdjwgN/XePr2erGVYVDXPetDnekKArJ8xab6jSJ+f4Pia",
-	"swVwSUAEx1McCxgFC+unbwFO1Lb+FAv4SEl+eCiVkx0cB//z+9H4589//lPQiJiNAh2/uNO/doiUnBRf",
-	"P4+CCVCYkpBgvjwxe4Bat0dPqmM8np6M333+9ubo2clBFgHUiMrw0zuEWVKRlbYRljCWJAFXxyDnJ1ps",
-	"n4B0FxiHkCwIUDlkzHpLNJjAReQhKOvo8Vcs5it7/+sbV+/P9oT93UKQQzhOlLh1buuwyebngg02+ReE",
-	"Ug2lciD+HUwYbXLJJJWMD9E9C7WV7oX1HxVwDpHWBluRlweu8vWkB7YiLPXKoo9A1sGkCuLngh3MOV6q",
-	"vxOQ69d9PINL9V1dVpqVjIZrqNkRRI/BTUh0JuQNKMfTw3xOSNRl8pxmn5kWEQyaMJOYhV+u9Imaz8oi",
-	"5NtUhvOTVKPmbcq1JzFgqRLympMQesktzGXeqxXYm991Mq/slLMFsj+jehv3gc3W2YpXLtEkIEQ23xqE",
-	"abnFXDcSazfqazAXVoJSz0Fob69PX7yIkN15W1mehyv3bZ0t/VdnXrOvmmmuTvRRccxt5XTl1qMUcm1m",
-	"tNi43OQAVYL4XSE7sOVuyASjIKVfKHukFp1STY1zTQ/Lqeylh5aG28AEP52S3HhU9y4fMJ+B0HGjcQSU",
-	"JYTi7LR4hFhCpPrjcQ4UUYZEGs51VpAOR+scjy52oQaSuqoL0bToz31ava0luanoXS/LZ3PMiVyexDEL",
-	"sfd2sN8Ck3WZn+ZUpNXfXaxIqzb6Rlcji2G3ODij7BPmnDCuI2U95REK6eGr+G0Q6VT6m3ETI/Cf6DVJ",
-	"V8nVRjSqiqXCuVML1Q1Nw5wCD//z9asg8zqaJnQUPI1Vi/ED5hQnSjO/W0TPNRHr75xc5SdFuJYQ0ndu",
-	"PMx06w9YAg2X/n5cFnvts9LrHe4nQiP2eP60IBxEr4CFGv6J6dWDX928yPTyISDnA3qX8yF9E2EEFlm+",
-	"4YSxGDDNJp0/a3Qqh7Dm7XoxiWN/rnXzIXwXyXfnHnauZmhyX80JcHuq2JqsIKqGkDb2Kqquqa42QxqI",
-	"r4m8IcJRm21otYa1lLRtOSQVa7dzX2RYZHrY5nvQbtIrUPZS9kNdVLH12JTzZGLnAHSmU/bx/vJzUX3G",
-	"57PU60NqiK6mUvha6rzgom9qti2pktCoMagqk2vkWEv27CHLGAt5uoHdKKHaj/fwr4u2dySBCxpySIDK",
-	"SxJyJkpfrqOvDk/K7zwlUf9Alznx9R2Fr9OQDfEjlSS+zCXhQ8dk6HnHcUUlw3btwbqdLWsap90bpqLV",
-	"38goOTXZJiwn/Fr02SqoTjisiGn1lHTlLfcxcWZL/YnIecTxI459I00NQuJOGZ2eoQRru17mhPhQGmy5",
-	"w0LCeUTYWzINSl4DUkSKFOVLQqXnEcKpfzQxFPKMUZEmEHmMQMj35AHohQG/8KJwayZVx4RwQmdV+xFa",
-	"65fXujoKTK7cUExUqXjIolyzvVkwFHTg5i0R5jQ0c9M7OXlvLQKFmJ1OHuZfQBa20JfhGhkPoVGc5NXo",
-	"Hv3rk4MbmClZLW/Yow8NXkt38xhEQSI3tdSHhp2g3WFC3dQbVOdV7SBKfBQQXVDPGebv9WZt8yRY6Hfm",
-	"qduaZVzjy7d7Y96uMenXfUrJ1xSMiyy8ojKqfVEK409Cl6MMaF6UhfjTqBcQ+FMyiXg+7R9YnFKJ+XKo",
-	"rW8Q8pj0WQqgmvLXQCNlBLUZKN2tjW4R68uka9fYmC4uC1mHdV0tNcw5UNwOCRfgnFPQaRZaFbxSYe1+",
-	"4Wo/z+03tPsBozbHfKWjvdIQN32GFq+yuk6uWrNWLkYd3PkVTmEnyLs90qqXu8JvaPFMVrhGFR/UtYyu",
-	"3qv5xE0yda/1eBsHv/X91HoKjbPS/OCpU5i5FukDGqUc0xDO5jhZdMi9MUlzeb8xFvIsjxj1a5rY0Y1V",
-	"zcqd/ZC4SjcHKgNIVT8vLRZilG1LsEcgwvTkdbJaLC59Au7Dd0CVJDf/XYkX2uo21WMLMGDkA8DeF3Mb",
-	"jGI38Wrhpopa25tpLnsOxbeopCFr5xxwlJ/3nAGmuHVIZFz0jYxYzCpdNc1Dlaeyh64i2PrhpkvsOz9j",
-	"apenBwJOwiGmSJMwXosvCT1vPPKFizN3r7aDx+5Cri2IUVO8zn4bAnCObDUOvEPxynd6AP8Nb172uEO1",
-	"63Zmo6D5HpRN0rt/1w62wkw3dY5qkrck6dK0O+zZ084ZGv6zdFBRTkNulaqXCm8tAmADlrpoaOhcdT+s",
-	"IkniuH+AsL4w2GyMaqNqdtJFkNteMBuK2/Vi6bwxpn9G7hAfp5K83zfo7SI33HPTULkdunavcd7cneTV",
-	"C5ZMOutt62h1gmXXkD2vF0JtN5l+q5Z9da58JSnkR0yRN8kVmC/1KHXM6i3gKCYUukcdBFQyiesR+l0l",
-	"4K/JuL+qlrz10OY+631Vy4+cOMTrwvVF1KzYLUi4hFLYgJ6Ja/mdzN1vSjZZReVtqH2v1bXHarp3jie7",
-	"s6OnDS4uemqojqgNEQ2rsyHlZMxhChzUv7QkdJmYUCGgn37+2RLQmyO3uomM3QWbMqsSKe56DvCEpfJ4",
-	"EmP6JRh15q2OGlMAaPot+HZJtnpXsFWvYsrPGpF/4M66vxXXoL3U8FAHl2dAlKjD/XPb8iZW6WLXPsV6",
-	"IfcTRKJm1bC4z8uIPr2oSFBDqp1UubfojxX9uNScD6PhGc7pGpKpMFoPwDgFXbmW8ZzK3odMe62iNlc3",
-	"/AHeR1Vy/onRfr4yyGvOpsThYY//vtrHHsTqYkhjzsiNcltbGP7/9/cH5v/+4+/t2fGisKfSvy5PfFp3",
-	"h0P7FDoT8nYBvbd+Jkelf8tHQm+wBJfgOomta429U7y2uGqsOMbkEJAN7gp66rOmDs0axC3wrDcgW3c3",
-	"HOZq525G81EJy5UtZGcEV+pOLZFKN0beGQCE28GtXWu7xXsV9iA9x924fdbzyuNXvS5zMncFjpoPOPXN",
-	"w8kJiTIro0+1aPWRjXWtK0+BZNcd1pyxjLRrZKO6wBrdtyppeIjO4za3YdWpg88wdl7e6l+rPjSe9HLu",
-	"GcrzT2pHP84oawmpbrjd/oLUmCl7sajWBdU7rQfPb6290Y+ZXDheVbrmIPQrIjRe6svHMUWETtk4xJwv",
-	"CZ0VN04f2DGojhM+01XtuZWMqfGCswcSQaQf/kAGuL+ghc3RI5Fz9IXQCP1T/e8FnbJ/HrTkxQ20LV6h",
-	"+UEWSY2r7/3m/1Btdm3NXrwxqp0TaMF2mYz/yDSQu4eLGBPj0Bustft/jvvst2vELAuyFxPmf7gy2GnQ",
-	"nV7QCJ7+7XRs1enYxiHWd+jLlAdtVfCtOWlrezZiq3ahdnfn7u3C1vNd3an2+xmrR6LA4Nt0K17JGuft",
-	"7PaucieluUlfke189WTTE1rTZ/0eTL8+hxjZan7EOhHVnz27endX57mnkr4vX6w8ae72ykp+sXQj1aP2",
-	"pEN282n+tKke4PiRRNAUef7eGS7qgmpI6bZeGY78HIONLyk2M1l3q+3ITpaHovRmT8ayfvVlUa1irq8s",
-	"/jwTlVqWq6n6s1IN5/jJNGqU3JkvGz+br+vVmfWfHF8ZeuZ8oHi4p/aLaWb/YlrVMybsr93/ZtrVSlSz",
-	"Y1bVb+uOpP6m0G7XqfJaxeZtk3vYWn9vJnloHt2LNobrrtXNsNNqSdre49qq5WxMp70Y0doLW3v1PXcw",
-	"bYm4qeSpO2+u9c+F/bdVeMFWwdJs46rtCi66TpYdmolygu7FSgxLv8I7L0HPwyoe5mVoHdVGqt8XmOME",
-	"JHBzdfPwN25qBG8l5j2V8hJK64fLQZM5p5GHifaQ2VYumt1o3X2zwq45dVZaBZOinu++ipsDlIVegPvd",
-	"luadHT7JBdfAtTXvBUOP0qGsaPUi2kfubt1WF7zYQxk5JOLo26VG64aXXVQnveSnONq9A5fgKlk538FT",
-	"h/8X39bs8y7mWh1v29erAmrXTl7jXd3+5mBQcnOCny6twN26Z7FQMXbEpgijBBM6NiF2LcXuxwJ7zcr2",
-	"T03OW5bJ61VZXRYCGeUvYWMaIRN1HD+asKN527sRGu9yHckAR27LZryS6OyAVUN269Ohm6N2qK7TrNq2",
-	"EWlO490akmdd7ThlTUDegGApD2HMuDK7EKGT6wt9lFPuuzVEy9PYA/RfrxERiFDJWZSGEN1Tkl/rjuN4",
-	"iR7nJAZ9FjTl7A+g6OFV+Yw6B2UVhPVu+j0tyhSPg5tPZ+/RKQ6/ADW8PLwORsEDcGEYPjr428GRDuks",
-	"gOIFCY6DvxwcHfzFzJW5VsUhXpDDh9eHJpY+wwkc8uJe9Bno2aF0aU74I2XDiJDFTZ/FnkwEx7+79VF+",
-	"cpiVvT6P1n75QZe2Pn9WmhMLRrPH414fHbWpvfjusDxxfx4Fb7q0OMXRDXxNQWiw/dSlyQVVEx7H55wz",
-	"s04XmdRaQqjYRtiPtvPihlQ8M0+VNf7ts6LVqpXD7P7VVu28B1l5icNHgC2PeniKRrX6y/pWt8AfSAgf",
-	"aQH2mlTfg9TzJJMAUqBuyHaIaL/p/z6vEm0u036wz8T3eZguCiV4QPrN0Zv1Ta6YfDdE0Q1tMQorpsEG",
-	"VHU4IV0MVRZ08FLa6CUZtbyeZp92TYkcEaqV202lpkaou0IPv+Wv866fi6ck2p5mlbjzd4L9tJZVJ31X",
-	"M3ZCIjRZIiIFyvWg9I23oG3tk4q1SjalVtvTczYvO0z1em1S97lfqeLq0a6ypy7a+ZuQStna9wTNiaIG",
-	"kdkcI3NVidDed3WZWQFN+77ibgDVUelxHk62kVrfGsiUU1GUgSB9DqjtJIVHEHI8JVxI8zNiPAJ+gDQU",
-	"kImkCYQ53FN4Um7/BAsYp5RIlO05BZpAiFMBCPMJkRzzJTq/ORu/PkI6sCQQBYgQZRKlAu7pq7+hCEKS",
-	"4FgcoBNEGaUww5I8ZDNXV4ywVG0wQsYjgXjGP6YIkoVcogWeZZuNljW1Ui/0Y6yuzaKrfa6zmX4L7KEE",
-	"R4CilBM605BfAfQSsF1xLuc9UK4LQPROt1YEpV8ssFh2wv+eZvgv0KOwX+5xsy0xzqBKhPb0f0HYxvE9",
-	"rQK5mHgDEF0Wj/wgeK5V3+wTzRk0zu9+3RGi6VRuy26frAKiP/6sIoUfA3/1Ko994u/q3d2OgKeDtx02",
-	"peZRkx9C0WWm9vfiUGpMGE2h7B3xfE/bN2CR6bsjOsxBxlivt9ad3KuhUs+y/DFQ40xY/a4AZDLZ88Mp",
-	"fRKF4xgkylXbxNSqyJcm0xdJap17LB8y6wKkIg9viziqXJN4rX5/keirpkF+V+DLUKcWtkz/G0Vb9f2h",
-	"1qOGgqCVXTkszN14tHhTAQSzt55p8sgdFfCNGpSfrAtpKdVZxyt+ga3dTBP7yp/9n6YpZtTucKxTYJD5",
-	"ZwICTZYbC/7YamQplatsagX8Z/nXA0/bcjKbgnyIKaMkrOLd7FBQWPI8WFpxeZfYIWekI/qrl5B5rEXk",
-	"lnHZeXG5JOaxwxe0DjWundvnFJPzyoHOzW8XKK6oZzBMFmVShziclK/ZdsBK+UhoP5BYeSS7UaphtJ4v",
-	"s0+9Vs9mIh1NXupTnjBPBNqoYqPijeAOei0ed33hanW+x/JCtJoF1ZhRbJZan50rbFy75k5vcThhct5V",
-	"x5VHeF+6olvfM9mntrHJDQSRZ7/Ey+J+AKUJvQ2Y4oTEBMTWdJ69r9PFsbUfaX7hGm99n3D/09u6DcIc",
-	"FmaaUPMcMKfK49VvlW1N5ab8fvyYlZp28eocj3G/cASse3tgn0CwUkvVHLcAkOfBmSKZsT4I3tKS3iXA",
-	"VPbkG1zaud7duc0vZFU3pQB5aGeyzH7orGD9IBF/yGWf8jg4Dg6D58/P/xsAAP//",
+	"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",
+	"58f/DQAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

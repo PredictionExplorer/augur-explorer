@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "maxTimestamp": 1767228500,
+    "minTimestamp": 1767225700
+  }
+}
