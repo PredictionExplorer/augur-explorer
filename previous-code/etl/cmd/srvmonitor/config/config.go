@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	
 	"github.com/PredictionExplorer/augur-explorer/previous-code/etl/cmd/srvmonitor/types"
@@ -209,11 +210,18 @@ func LoadFromEnv() (*Config, error) {
 	}
 
 	// Load WebSrv anomaly monitoring (optional; enabled when user/host/file set)
+	staleSecs := 0
+	if v := os.Getenv("ANOMALY_STALE_SECS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			staleSecs = n
+		}
+	}
 	cfg.Anomaly = types.AnomalyConfig{
-		Title:      os.Getenv("ANOMALY_TITLE"),
-		User:       os.Getenv("ANOMALY_SSH_USER"),
-		Host:       os.Getenv("ANOMALY_SSH_HOST"),
-		RemoteFile: os.Getenv("ANOMALY_REMOTE_FILE"),
+		Title:       os.Getenv("ANOMALY_TITLE"),
+		User:        os.Getenv("ANOMALY_SSH_USER"),
+		Host:        os.Getenv("ANOMALY_SSH_HOST"),
+		RemoteFile:  os.Getenv("ANOMALY_REMOTE_FILE"),
+		StaleSecond: staleSecs,
 	}
 
 	// Load RWalk Image Monitoring

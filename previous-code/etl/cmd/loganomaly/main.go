@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -142,6 +143,13 @@ func writeOut(path string, lines []string) error {
 	}
 
 	w := bufio.NewWriter(f)
+	// First line is a generation-time marker (unix seconds). It is rewritten on
+	// every run, even when there are zero anomalies, so a consumer can detect a
+	// dead parser by noticing the timestamp has stopped advancing.
+	if _, err := fmt.Fprintf(w, "#TS=%d\n", time.Now().Unix()); err != nil {
+		f.Close()
+		return err
+	}
 	for _, l := range lines {
 		if _, err := fmt.Fprintln(w, l); err != nil {
 			f.Close()

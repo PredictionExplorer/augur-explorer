@@ -111,10 +111,11 @@ type SSLCertConfig struct {
 // AnomalyConfig holds configuration for fetching the websrv anomalies file
 // (produced by the loganomaly tool on the production host) via scp.
 type AnomalyConfig struct {
-	Title      string // optional display label
-	User       string // ssh user, e.g. "cgprod"
-	Host       string // ssh host/alias, e.g. "cosmic1"
-	RemoteFile string // path to the anomalies file on the remote host
+	Title       string // optional display label
+	User        string // ssh user, e.g. "cgprod"
+	Host        string // ssh host/alias, e.g. "cosmic1"
+	RemoteFile  string // path to the anomalies file on the remote host
+	StaleSecond int    // flag the feed STALE if not regenerated within this many seconds (0 = default)
 }
 
 // EventTableConfig holds event table monitoring configuration
