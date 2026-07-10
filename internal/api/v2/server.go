@@ -22,12 +22,18 @@ type bidReader interface {
 	BidByRoundAndPosition(context.Context, int64, int64) (cgprimitives.CGBidRec, error)
 }
 
+type roundReader interface {
+	PrizeClaimsPage(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error)
+	RoundInfo(context.Context, int64) (cgprimitives.CGRoundRec, error)
+}
+
 // Server implements the generated v2 strict-server contract. Every runtime
 // dependency is injected once at construction; handlers do not read package
 // globals.
 type Server struct {
 	store         *store.Store
 	bids          bidReader
+	rounds        roundReader
 	contractState *contractstate.State
 	logger        *slog.Logger
 }
@@ -43,12 +49,16 @@ func NewServer(st *store.Store, state *contractstate.State, logger *slog.Logger)
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
-	return newServer(st, cgstore.NewRepo(st), state, logger)
+	repo := cgstore.NewRepo(st)
+	return newServer(st, repo, repo, state, logger)
 }
 
-func newServer(st *store.Store, bids bidReader, state *contractstate.State, logger *slog.Logger) (*Server, error) {
+func newServer(st *store.Store, bids bidReader, rounds roundReader, state *contractstate.State, logger *slog.Logger) (*Server, error) {
 	if bids == nil {
 		return nil, errors.New("api v2: bid repository is required")
+	}
+	if rounds == nil {
+		return nil, errors.New("api v2: round repository is required")
 	}
 	if logger == nil {
 		logger = slog.Default()
@@ -56,6 +66,7 @@ func newServer(st *store.Store, bids bidReader, state *contractstate.State, logg
 	return &Server{
 		store:         st,
 		bids:          bids,
+		rounds:        rounds,
 		contractState: state,
 		logger:        logger,
 	}, nil

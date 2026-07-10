@@ -3,6 +3,7 @@ package cosmicgame
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
@@ -10,14 +11,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// PrizeClaims returns the main prize claims of all rounds (newest first,
-// offset/limit paginated; limit 0 means unbounded) with the per-round stats,
-// charity, staking, endurance and chrono warrior columns the round list needs.
-func (r *Repo) PrizeClaims(ctx context.Context, offset, limit int) ([]p.CGRoundRec, error) {
-	if limit == 0 {
-		limit = 1000000
-	}
-	query := `SELECT
+const prizeClaimsSelect = `SELECT
 			p.evtlog_id,
 			p.block_num,
 			t.id,
@@ -76,127 +70,173 @@ func (r *Repo) PrizeClaims(ctx context.Context, offset, limit int) ([]p.CGRoundR
 					WHERE round_num >= 0
 					GROUP BY round_num
 			) d ON p.round_num = d.round_num
-		ORDER BY p.id DESC
-		OFFSET $1 LIMIT $2`
+	`
 
-	scan := func(rows pgx.Rows, rec *p.CGRoundRec) error {
-		var nullSeed sql.NullString
-		var nullDepAmount, nullDepAmountPerTok sql.NullString
-		var nullDepAmountEth, nullDepAmountPerTokenEth sql.NullFloat64
-		var nullDepDepositNum, nullNumStakedNfts sql.NullInt64
-		var nullCharityAmount, nullCharityAddr sql.NullString
-		var nullCharityAmountEth sql.NullFloat64
-		var nullMainCstAmount sql.NullString
-		var nullMainCstEthFloat sql.NullFloat64
-		var nullEnduranceAddr sql.NullString
-		var nullEnduranceTid sql.NullInt64
-		var nullEnduranceErc20Amount sql.NullString
-		var nullEnduranceCstEth sql.NullFloat64
-		var nullChronoAddr sql.NullString
-		var nullChronoEthAmount, nullChronoCstAmount sql.NullString
-		var nullChronoEthEth, nullChronoCstEth sql.NullFloat64
-		var nullChronoNftID sql.NullInt64
-		// Scan order must match SELECT column order exactly (see query above).
-		err := rows.Scan(
-			&rec.ClaimPrizeTx.Tx.EvtLogId,
-			&rec.ClaimPrizeTx.Tx.BlockNum,
-			&rec.ClaimPrizeTx.Tx.TxId,
-			&rec.ClaimPrizeTx.Tx.TxHash,
-			&rec.ClaimPrizeTx.Tx.TimeStamp,
-			store.TimeText(&rec.ClaimPrizeTx.Tx.DateTime),
-			&rec.MainPrize.WinnerAid,
-			&rec.MainPrize.WinnerAddr,
-			&rec.MainPrize.TimeoutTs,
-			&rec.MainPrize.EthAmount,
-			&rec.MainPrize.EthAmountEth,
-			&rec.RoundNum,
-			&rec.MainPrize.NftTokenId,
-			&nullSeed,
-			&rec.RoundStats.TotalBids,
-			&rec.RoundStats.TotalDonatedNFTs,
-			&rec.RoundStats.NumERC20Donations,
-			&rec.RoundStats.TotalRaffleEthDeposits,
-			&rec.RoundStats.TotalRaffleEthDepositsEth,
-			&rec.RoundStats.TotalRaffleNFTs,
-			&nullCharityAmount,
-			&nullCharityAmountEth,
-			&nullCharityAddr,
-			&nullDepAmount,
-			&nullDepAmountEth,
-			&nullDepAmountPerTok,
-			&nullDepAmountPerTokenEth,
-			&nullDepDepositNum,
-			&nullNumStakedNfts,
-			&nullMainCstAmount,
-			&nullMainCstEthFloat,
-			&nullEnduranceAddr,
-			&nullEnduranceTid,
-			&nullEnduranceErc20Amount,
-			&nullEnduranceCstEth,
-			&nullChronoAddr,
-			&nullChronoEthAmount,
-			&nullChronoEthEth,
-			&nullChronoCstAmount,
-			&nullChronoCstEth,
-			&nullChronoNftID,
-		)
-		if err != nil {
-			return err
-		}
-		if nullSeed.Valid {
-			rec.MainPrize.Seed = nullSeed.String
-		} else {
-			rec.MainPrize.Seed = "???"
-		}
-		if nullMainCstAmount.Valid {
-			rec.MainPrize.CstAmount = nullMainCstAmount.String
-			if nullMainCstEthFloat.Valid {
-				rec.MainPrize.CstAmountEth = nullMainCstEthFloat.Float64
-			}
-		}
-		if nullEnduranceAddr.Valid {
-			rec.EnduranceChampion.WinnerAddr = nullEnduranceAddr.String
-		}
-		if nullEnduranceTid.Valid {
-			rec.EnduranceChampion.NftTokenId = nullEnduranceTid.Int64
-		}
-		if nullEnduranceErc20Amount.Valid {
-			rec.EnduranceChampion.CstAmount = nullEnduranceErc20Amount.String
-			if nullEnduranceCstEth.Valid {
-				rec.EnduranceChampion.CstAmountEth = nullEnduranceCstEth.Float64
-			}
-		}
-		if nullChronoAddr.Valid {
-			rec.ChronoWarrior.WinnerAddr = nullChronoAddr.String
-		}
-		if nullChronoEthAmount.Valid {
-			rec.ChronoWarrior.EthAmount = nullChronoEthAmount.String
-			if nullChronoEthEth.Valid {
-				rec.ChronoWarrior.EthAmountEth = nullChronoEthEth.Float64
-			}
-		}
-		if nullChronoCstAmount.Valid {
-			rec.ChronoWarrior.CstAmount = nullChronoCstAmount.String
-			if nullChronoCstEth.Valid {
-				rec.ChronoWarrior.CstAmountEth = nullChronoCstEth.Float64
-			}
-		}
-		if nullChronoNftID.Valid {
-			rec.ChronoWarrior.NftTokenId = nullChronoNftID.Int64
-		}
-		if nullCharityAmount.Valid {
-			rec.CharityDeposit.CharityAmount = nullCharityAmount.String
-		}
-		if nullCharityAmountEth.Valid {
-			rec.CharityDeposit.CharityAmountETH = nullCharityAmountEth.Float64
-		}
-		if nullCharityAddr.Valid {
-			rec.CharityDeposit.CharityAddress = nullCharityAddr.String
-		}
-		applyStakingDeposit(&rec.StakingDeposit, nullDepAmount, nullDepAmountEth, nullDepAmountPerTok, nullDepAmountPerTokenEth, nullDepDepositNum, nullNumStakedNfts)
-		return nil
+func scanPrizeClaimRow(rows pgx.Rows, rec *p.CGRoundRec) error {
+	var nullSeed sql.NullString
+	var nullDepAmount, nullDepAmountPerTok sql.NullString
+	var nullDepAmountEth, nullDepAmountPerTokenEth sql.NullFloat64
+	var nullDepDepositNum, nullNumStakedNfts sql.NullInt64
+	var nullCharityAmount, nullCharityAddr sql.NullString
+	var nullCharityAmountEth sql.NullFloat64
+	var nullMainCstAmount sql.NullString
+	var nullMainCstEthFloat sql.NullFloat64
+	var nullEnduranceAddr sql.NullString
+	var nullEnduranceTid sql.NullInt64
+	var nullEnduranceErc20Amount sql.NullString
+	var nullEnduranceCstEth sql.NullFloat64
+	var nullChronoAddr sql.NullString
+	var nullChronoEthAmount, nullChronoCstAmount sql.NullString
+	var nullChronoEthEth, nullChronoCstEth sql.NullFloat64
+	var nullChronoNftID sql.NullInt64
+	// Scan order must match prizeClaimsSelect exactly.
+	err := rows.Scan(
+		&rec.ClaimPrizeTx.Tx.EvtLogId,
+		&rec.ClaimPrizeTx.Tx.BlockNum,
+		&rec.ClaimPrizeTx.Tx.TxId,
+		&rec.ClaimPrizeTx.Tx.TxHash,
+		&rec.ClaimPrizeTx.Tx.TimeStamp,
+		store.TimeText(&rec.ClaimPrizeTx.Tx.DateTime),
+		&rec.MainPrize.WinnerAid,
+		&rec.MainPrize.WinnerAddr,
+		&rec.MainPrize.TimeoutTs,
+		&rec.MainPrize.EthAmount,
+		&rec.MainPrize.EthAmountEth,
+		&rec.RoundNum,
+		&rec.MainPrize.NftTokenId,
+		&nullSeed,
+		&rec.RoundStats.TotalBids,
+		&rec.RoundStats.TotalDonatedNFTs,
+		&rec.RoundStats.NumERC20Donations,
+		&rec.RoundStats.TotalRaffleEthDeposits,
+		&rec.RoundStats.TotalRaffleEthDepositsEth,
+		&rec.RoundStats.TotalRaffleNFTs,
+		&nullCharityAmount,
+		&nullCharityAmountEth,
+		&nullCharityAddr,
+		&nullDepAmount,
+		&nullDepAmountEth,
+		&nullDepAmountPerTok,
+		&nullDepAmountPerTokenEth,
+		&nullDepDepositNum,
+		&nullNumStakedNfts,
+		&nullMainCstAmount,
+		&nullMainCstEthFloat,
+		&nullEnduranceAddr,
+		&nullEnduranceTid,
+		&nullEnduranceErc20Amount,
+		&nullEnduranceCstEth,
+		&nullChronoAddr,
+		&nullChronoEthAmount,
+		&nullChronoEthEth,
+		&nullChronoCstAmount,
+		&nullChronoCstEth,
+		&nullChronoNftID,
+	)
+	if err != nil {
+		return err
 	}
-	return queryList(ctx, r, "prize claims", 256, query, scan, offset, limit)
+	if nullSeed.Valid {
+		rec.MainPrize.Seed = nullSeed.String
+	} else {
+		rec.MainPrize.Seed = "???"
+	}
+	if nullMainCstAmount.Valid {
+		rec.MainPrize.CstAmount = nullMainCstAmount.String
+		if nullMainCstEthFloat.Valid {
+			rec.MainPrize.CstAmountEth = nullMainCstEthFloat.Float64
+		}
+	}
+	if nullEnduranceAddr.Valid {
+		rec.EnduranceChampion.WinnerAddr = nullEnduranceAddr.String
+	}
+	if nullEnduranceTid.Valid {
+		rec.EnduranceChampion.NftTokenId = nullEnduranceTid.Int64
+	}
+	if nullEnduranceErc20Amount.Valid {
+		rec.EnduranceChampion.CstAmount = nullEnduranceErc20Amount.String
+		if nullEnduranceCstEth.Valid {
+			rec.EnduranceChampion.CstAmountEth = nullEnduranceCstEth.Float64
+		}
+	}
+	if nullChronoAddr.Valid {
+		rec.ChronoWarrior.WinnerAddr = nullChronoAddr.String
+	}
+	if nullChronoEthAmount.Valid {
+		rec.ChronoWarrior.EthAmount = nullChronoEthAmount.String
+		if nullChronoEthEth.Valid {
+			rec.ChronoWarrior.EthAmountEth = nullChronoEthEth.Float64
+		}
+	}
+	if nullChronoCstAmount.Valid {
+		rec.ChronoWarrior.CstAmount = nullChronoCstAmount.String
+		if nullChronoCstEth.Valid {
+			rec.ChronoWarrior.CstAmountEth = nullChronoCstEth.Float64
+		}
+	}
+	if nullChronoNftID.Valid {
+		rec.ChronoWarrior.NftTokenId = nullChronoNftID.Int64
+	}
+	if nullCharityAmount.Valid {
+		rec.CharityDeposit.CharityAmount = nullCharityAmount.String
+	}
+	if nullCharityAmountEth.Valid {
+		rec.CharityDeposit.CharityAmountETH = nullCharityAmountEth.Float64
+	}
+	if nullCharityAddr.Valid {
+		rec.CharityDeposit.CharityAddress = nullCharityAddr.String
+	}
+	applyStakingDeposit(&rec.StakingDeposit, nullDepAmount, nullDepAmountEth, nullDepAmountPerTok, nullDepAmountPerTokenEth, nullDepDepositNum, nullNumStakedNfts)
+	return nil
+}
+
+// PrizeClaims returns the main prize claims of all rounds (newest first,
+// offset/limit paginated; limit 0 means unbounded) with the per-round stats,
+// charity, staking, endurance and chrono warrior columns the round list needs.
+func (r *Repo) PrizeClaims(ctx context.Context, offset, limit int) ([]p.CGRoundRec, error) {
+	if limit == 0 {
+		limit = 1000000
+	}
+	query := prizeClaimsSelect + " ORDER BY p.id DESC OFFSET $1 LIMIT $2"
+	return queryList(ctx, r, "prize claims", 256, query, scanPrizeClaimRow, offset, limit)
+}
+
+// RoundPageCursor identifies the last completed round returned by
+// PrizeClaimsPage.
+type RoundPageCursor struct {
+	RoundNum   int64
+	EventLogID int64
+}
+
+// PrizeClaimsPage returns at most limit completed rounds after the supplied
+// descending keyset cursor. A nil cursor starts at the newest round.
+func (r *Repo) PrizeClaimsPage(ctx context.Context, after *RoundPageCursor, limit int) (records []p.CGRoundRec, hasMore bool, err error) {
+	const op = "prize claims page"
+	if limit <= 0 {
+		return nil, false, fmt.Errorf("%s: limit must be positive", op)
+	}
+
+	query := prizeClaimsSelect + " ORDER BY p.round_num DESC, p.evtlog_id DESC LIMIT $1"
+	args := []any{limit + 1}
+	if after != nil {
+		if after.RoundNum < 0 || after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		query = prizeClaimsSelect +
+			" WHERE (p.round_num, p.evtlog_id) < ($1, $2)" +
+			" ORDER BY p.round_num DESC, p.evtlog_id DESC LIMIT $3"
+		args = []any{after.RoundNum, after.EventLogID, limit + 1}
+	}
+
+	records, err = queryList(ctx, r, op, limit+1, query, scanPrizeClaimRow, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
 }
 
 // applyStakingDeposit copies the nullable staking-deposit columns into the
@@ -224,11 +264,10 @@ func applyStakingDeposit(dst *p.CGStakingDeposit, amount sql.NullString, amountE
 	}
 }
 
-// PrizeInfo returns the complete detail of one round: the main prize claim
-// row plus the composed raffle NFT winners, staking raffle winners, raffle
-// ETH deposits and the full prize list. A round with no prize claim yet
-// yields store.ErrNotFound.
-func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, error) {
+// RoundInfo returns the lean detail of one completed round without loading
+// the legacy nested prize collections. A round with no prize claim yet yields
+// store.ErrNotFound.
+func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, error) {
 	const op = "prize info"
 	var rec p.CGRoundRec
 	query := `SELECT
@@ -406,19 +445,6 @@ func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, err
 		rec.CharityDeposit.CharityAddress = nullCharityAddr.String
 	}
 
-	if rec.RaffleNFTWinners, err = r.RaffleNFTWinnersByRound(ctx, roundNum, false); err != nil {
-		return rec, store.WrapError(op, err)
-	}
-	if rec.StakingNFTWinners, err = r.RaffleNFTWinnersByRound(ctx, roundNum, true); err != nil {
-		return rec, store.WrapError(op, err)
-	}
-	if rec.RaffleETHDeposits, err = r.PrizeDepositsByRound(ctx, roundNum); err != nil {
-		return rec, store.WrapError(op, err)
-	}
-	if rec.AllPrizes, err = r.AllPrizesForRound(ctx, roundNum); err != nil {
-		return rec, store.WrapError(op, err)
-	}
-
 	applyStakingDeposit(&rec.StakingDeposit, nullDepAmount, nullDepAmountEth, nullDepAmountPerTok, nullDepAmountPerTokenEth, nullDepDepositNum, nullNumStakedNfts)
 	if nullEnduranceTid.Valid {
 		rec.EnduranceChampion.WinnerAddr = nullEnduranceAddr.String
@@ -471,6 +497,29 @@ func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, err
 		rec.RoundStats.RoundDurationSeconds = nullRoundDuration.Int64
 	}
 
+	return rec, nil
+}
+
+// PrizeInfo preserves the v1 round detail by composing RoundInfo with the
+// nested raffle, staking, deposit and prize collections.
+func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, error) {
+	const op = "prize info"
+	rec, err := r.RoundInfo(ctx, roundNum)
+	if err != nil {
+		return rec, err
+	}
+	if rec.RaffleNFTWinners, err = r.RaffleNFTWinnersByRound(ctx, roundNum, false); err != nil {
+		return rec, store.WrapError(op, err)
+	}
+	if rec.StakingNFTWinners, err = r.RaffleNFTWinnersByRound(ctx, roundNum, true); err != nil {
+		return rec, store.WrapError(op, err)
+	}
+	if rec.RaffleETHDeposits, err = r.PrizeDepositsByRound(ctx, roundNum); err != nil {
+		return rec, store.WrapError(op, err)
+	}
+	if rec.AllPrizes, err = r.AllPrizesForRound(ctx, roundNum); err != nil {
+		return rec, store.WrapError(op, err)
+	}
 	return rec, nil
 }
 

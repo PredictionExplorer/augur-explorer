@@ -1,0 +1,37 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "claim": {
+      "blockNumber": 125,
+      "eventLogId": 5072,
+      "occurredAt": "2026-01-01T00:41:40Z",
+      "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001026"
+    },
+    "mainPrize": {
+      "cstAmountWei": "120000000000000000000",
+      "ethAmountWei": "700000000000000000",
+      "nftTokenId": 8,
+      "secondaryPrizeClaimDeadline": "2026-01-11T00:25:00Z",
+      "seed": "seed0000000000000000000000000000000000000000000000000000000008",
+      "winnerAddress": "0x2500000000000000000000000000000000000025"
+    },
+    "round": 2,
+    "statistics": {
+      "activatedAt": "2026-01-01T00:36:40Z",
+      "donatedNftCount": 1,
+      "donationAmountWei": "0",
+      "donationCount": 0,
+      "erc20DonationCount": 0,
+      "parameterWindowDurationSeconds": 200,
+      "parameterWindowStartedAt": "2026-01-01T00:33:20Z",
+      "raffleEthDepositsWei": "0",
+      "raffleNftCount": 1,
+      "roundDurationSeconds": 300,
+      "roundEndedAt": "2026-01-01T00:41:40Z",
+      "roundStartedAt": "2026-01-01T00:36:40Z",
+      "totalBids": 3
+    },
+    "status": "completed"
+  }
+}

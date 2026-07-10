@@ -4,6 +4,7 @@ package apitest
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +19,8 @@ import (
 )
 
 const (
+	v2ListRoundsPath    = "/api/v2/cosmicgame/rounds"
+	v2GetRoundPath      = "/api/v2/cosmicgame/rounds/{round}"
 	v2ListRoundBidsPath = "/api/v2/cosmicgame/rounds/{round}/bids"
 	v2GetRoundBidPath   = "/api/v2/cosmicgame/rounds/{round}/bids/{position}"
 )
@@ -120,6 +123,111 @@ func TestAPIV2RoundBids(t *testing.T) {
 		},
 	}
 
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2Rounds(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	firstPath := "/api/v2/cosmicgame/rounds?limit=2"
+	firstResponse := h.get(t, firstPath)
+	if firstResponse.Code != http.StatusOK {
+		t.Fatalf("first page: status=%d body=%s", firstResponse.Code, firstResponse.Body.String())
+	}
+	var firstPage apiv2.RoundPage
+	if err := json.Unmarshal(firstResponse.Body.Bytes(), &firstPage); err != nil {
+		t.Fatalf("decoding first page: %v", err)
+	}
+	if firstPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first page did not return a continuation cursor")
+	}
+
+	afterRoundZero := base64.RawURLEncoding.EncodeToString([]byte(`{"v":1,"r":0,"e":5018}`))
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	cases := []v2GoldenCase{
+		{
+			name:       "rounds_list_first_page",
+			target:     firstPath,
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "rounds_list_next_page",
+			target:     "/api/v2/cosmicgame/rounds?limit=2&cursor=" + *firstPage.Meta.NextCursor,
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "rounds_list_empty_page",
+			target:     "/api/v2/cosmicgame/rounds?limit=2&cursor=" + afterRoundZero,
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "rounds_get_0",
+			target:     "/api/v2/cosmicgame/rounds/0",
+			template:   v2GetRoundPath,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "rounds_get_2",
+			target:     "/api/v2/cosmicgame/rounds/2",
+			template:   v2GetRoundPath,
+			pathParams: map[string]string{"round": "2"},
+		},
+		{
+			name:       "rounds_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/rounds?cursor=not-a-cursor",
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "rounds_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/rounds?limit=201",
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "rounds_error_bind_limit",
+			target:     "/api/v2/cosmicgame/rounds?limit=wat",
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "rounds_error_not_found",
+			target:     "/api/v2/cosmicgame/rounds/999",
+			template:   v2GetRoundPath,
+			pathParams: map[string]string{"round": "999"},
+		},
+		{
+			name:       "rounds_error_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3",
+			template:   v2GetRoundPath,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name:       "rounds_error_internal",
+			target:     "/api/v2/cosmicgame/rounds?limit=2",
+			template:   v2ListRoundsPath,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+	}
+
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func runV2GoldenCases(t *testing.T, h *harness, spec *openapi3.T, cases []v2GoldenCase) {
+	t.Helper()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			request := request{path: tc.target, ctx: tc.ctx}

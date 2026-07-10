@@ -1,0 +1,63 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "charity": {
+      "amountWei": "90000000000000000",
+      "charityAddresses": [
+        "0x6000000000000000000000000000000000000006"
+      ]
+    },
+    "chronoWarrior": {
+      "cstAmountWei": "35000000000000000000",
+      "ethAmountWei": "80000000000000000",
+      "nftTokenId": 6,
+      "winnerAddress": "0x2100000000000000000000000000000000000021"
+    },
+    "claim": {
+      "blockNumber": 110,
+      "eventLogId": 5018,
+      "occurredAt": "2026-01-01T00:16:40Z",
+      "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011"
+    },
+    "enduranceChampion": {
+      "cstAmountWei": "45000000000000000000",
+      "nftTokenId": 5,
+      "winnerAddress": "0x2200000000000000000000000000000000000022"
+    },
+    "lastCstBidder": {
+      "cstAmountWei": "40000000000000000000",
+      "nftTokenId": 4,
+      "winnerAddress": "0x2300000000000000000000000000000000000023"
+    },
+    "mainPrize": {
+      "cstAmountWei": "100000000000000000000",
+      "ethAmountWei": "500000000000000000",
+      "nftTokenId": 1,
+      "secondaryPrizeClaimDeadline": "2026-01-11T00:00:00Z",
+      "seed": "seed0000000000000000000000000000000000000000000000000000000001",
+      "winnerAddress": "0x2100000000000000000000000000000000000021"
+    },
+    "round": 0,
+    "staking": {
+      "amountPerTokenWei": "1000000000000000000",
+      "amountWei": "2000000000000000000",
+      "depositId": 501,
+      "stakedTokenCount": 2
+    },
+    "statistics": {
+      "activatedAt": "2026-01-01T00:00:50Z",
+      "donatedNftCount": 1,
+      "donationAmountWei": "500000000000000000",
+      "donationCount": 2,
+      "erc20DonationCount": 1,
+      "raffleEthDepositsWei": "100000000000000000",
+      "raffleNftCount": 2,
+      "roundDurationSeconds": 900,
+      "roundEndedAt": "2026-01-01T00:16:40Z",
+      "roundStartedAt": "2026-01-01T00:01:40Z",
+      "totalBids": 4
+    },
+    "status": "completed"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "completedAt": "2026-01-01T00:41:40Z",
+        "donatedNftCount": 1,
+        "erc20DonationCount": 0,
+        "mainPrize": {
+          "cstAmountWei": "120000000000000000000",
+          "ethAmountWei": "700000000000000000",
+          "nftTokenId": 8,
+          "secondaryPrizeClaimDeadline": "2026-01-11T00:25:00Z",
+          "seed": "seed0000000000000000000000000000000000000000000000000000000008",
+          "winnerAddress": "0x2500000000000000000000000000000000000025"
+        },
+        "raffleEthDepositsWei": "0",
+        "raffleNftCount": 1,
+        "round": 2,
+        "status": "completed",
+        "totalBids": 3
+      },
+      {
+        "completedAt": "2026-01-01T00:33:20Z",
+        "donatedNftCount": 0,
+        "erc20DonationCount": 0,
+        "mainPrize": {
+          "cstAmountWei": "110000000000000000000",
+          "ethAmountWei": "600000000000000000",
+          "nftTokenId": 7,
+          "secondaryPrizeClaimDeadline": "2026-01-11T00:16:40Z",
+          "seed": "seed0000000000000000000000000000000000000000000000000000000007",
+          "winnerAddress": "0x2400000000000000000000000000000000000024"
+        },
+        "raffleEthDepositsWei": "60000000000000000",
+        "raffleNftCount": 0,
+        "round": 1,
+        "status": "completed",
+        "totalBids": 2
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJyIjoxLCJlIjo1MDYyfQ"
+    }
+  }
+}

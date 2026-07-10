@@ -1,0 +1,29 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "completedAt": "2026-01-01T00:16:40Z",
+        "donatedNftCount": 1,
+        "erc20DonationCount": 1,
+        "mainPrize": {
+          "cstAmountWei": "100000000000000000000",
+          "ethAmountWei": "500000000000000000",
+          "nftTokenId": 1,
+          "secondaryPrizeClaimDeadline": "2026-01-11T00:00:00Z",
+          "seed": "seed0000000000000000000000000000000000000000000000000000000001",
+          "winnerAddress": "0x2100000000000000000000000000000000000021"
+        },
+        "raffleEthDepositsWei": "100000000000000000",
+        "raffleNftCount": 2,
+        "round": 0,
+        "status": "completed",
+        "totalBids": 4
+      }
+    ],
+    "meta": {
+      "limit": 2
+    }
+  }
+}

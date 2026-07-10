@@ -1,13 +1,46 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
 servers:
   - url: /
 paths:
+  /api/v2/cosmicgame/rounds:
+    get:
+      operationId: listRounds
+      summary: List completed CosmicGame rounds
+      tags:
+        - CosmicGame rounds
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RoundPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}:
+    get:
+      operationId: getRound
+      summary: Get one completed CosmicGame round
+      tags:
+        - CosmicGame rounds
+      parameters:
+        - $ref: "#/components/parameters/Round"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameRound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/v2/cosmicgame/rounds/{round}/bids:
     get:
       operationId: listRoundBids
@@ -76,7 +109,7 @@ components:
       name: limit
       in: query
       required: false
-      description: Maximum number of bids to return.
+      description: Maximum number of resources to return.
       schema:
         type: integer
         minimum: 1
@@ -106,6 +139,284 @@ components:
         instance:
           type: string
           format: uri-reference
+    RoundStatus:
+      type: string
+      enum:
+        - completed
+    ClaimTransaction:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+    MainPrize:
+      type: object
+      additionalProperties: false
+      required:
+        - winnerAddress
+        - ethAmountWei
+        - nftTokenId
+      properties:
+        winnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        ethAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cstAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        seed:
+          type: string
+        secondaryPrizeClaimDeadline:
+          type: string
+          format: date-time
+    RoundStatistics:
+      type: object
+      additionalProperties: false
+      required:
+        - totalBids
+        - donatedNftCount
+        - erc20DonationCount
+        - raffleEthDepositsWei
+        - raffleNftCount
+        - donationCount
+        - donationAmountWei
+      properties:
+        totalBids:
+          type: integer
+          format: int64
+          minimum: 0
+        donatedNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+        erc20DonationCount:
+          type: integer
+          format: int64
+          minimum: 0
+        raffleEthDepositsWei:
+          type: string
+          pattern: "^[0-9]+$"
+        raffleNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+        donationCount:
+          type: integer
+          format: int64
+          minimum: 0
+        donationAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        parameterWindowStartedAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+        parameterWindowDurationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        roundStartedAt:
+          type: string
+          format: date-time
+        roundEndedAt:
+          type: string
+          format: date-time
+        roundDurationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+    CharityAllocation:
+      type: object
+      additionalProperties: false
+      required:
+        - charityAddresses
+        - amountWei
+      properties:
+        charityAddresses:
+          type: array
+          items:
+            type: string
+            pattern: "^0x[0-9a-fA-F]{40}$"
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+    StakingAllocation:
+      type: object
+      additionalProperties: false
+      required:
+        - depositId
+        - amountWei
+        - amountPerTokenWei
+        - stakedTokenCount
+      properties:
+        depositId:
+          type: integer
+          format: int64
+          minimum: 0
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        amountPerTokenWei:
+          type: string
+          pattern: "^[0-9]+$"
+        stakedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+    TokenPrize:
+      type: object
+      additionalProperties: false
+      required:
+        - winnerAddress
+        - nftTokenId
+        - cstAmountWei
+      properties:
+        winnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        cstAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+    ChronoWarriorPrize:
+      type: object
+      additionalProperties: false
+      required:
+        - winnerAddress
+        - ethAmountWei
+        - cstAmountWei
+        - nftTokenId
+      properties:
+        winnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        ethAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cstAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+    CosmicGameRoundSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - round
+        - status
+        - completedAt
+        - mainPrize
+        - totalBids
+        - donatedNftCount
+        - erc20DonationCount
+        - raffleEthDepositsWei
+        - raffleNftCount
+      properties:
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/RoundStatus"
+        completedAt:
+          type: string
+          format: date-time
+        mainPrize:
+          $ref: "#/components/schemas/MainPrize"
+        totalBids:
+          type: integer
+          format: int64
+          minimum: 0
+        donatedNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+        erc20DonationCount:
+          type: integer
+          format: int64
+          minimum: 0
+        raffleEthDepositsWei:
+          type: string
+          pattern: "^[0-9]+$"
+        raffleNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+    CosmicGameRound:
+      type: object
+      additionalProperties: false
+      required:
+        - round
+        - status
+        - claim
+        - mainPrize
+        - statistics
+      properties:
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/RoundStatus"
+        claim:
+          $ref: "#/components/schemas/ClaimTransaction"
+        mainPrize:
+          $ref: "#/components/schemas/MainPrize"
+        statistics:
+          $ref: "#/components/schemas/RoundStatistics"
+        charity:
+          $ref: "#/components/schemas/CharityAllocation"
+        staking:
+          $ref: "#/components/schemas/StakingAllocation"
+        enduranceChampion:
+          $ref: "#/components/schemas/TokenPrize"
+        lastCstBidder:
+          $ref: "#/components/schemas/TokenPrize"
+        chronoWarrior:
+          $ref: "#/components/schemas/ChronoWarriorPrize"
+    RoundPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicGameRoundSummary"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
     BidType:
       type: string
       enum:
@@ -242,6 +553,18 @@ components:
         meta:
           $ref: "#/components/schemas/PageMeta"
   responses:
+    RoundPage:
+      description: One stable page of completed rounds.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoundPage"
+    CosmicGameRound:
+      description: The requested completed round.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameRound"
     RoundBidPage:
       description: One stable page of round bids.
       content:
@@ -261,7 +584,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     NotFound:
-      description: The requested bid does not exist.
+      description: The requested resource does not exist.
       content:
         application/problem+json:
           schema:

@@ -5,6 +5,7 @@ package cosmicgame
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -43,6 +44,87 @@ func TestPrizeInfo(t *testing.T) {
 	}
 	if _, err := r.PrizeInfo(ctx, 999); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("PrizeInfo(999) = %v, want store.ErrNotFound", err)
+	}
+}
+
+func TestPrizeClaimsPage(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	first, hasMore, err := r.PrizeClaimsPage(ctx, nil, 2)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if !hasMore || len(first) != 2 {
+		t.Fatalf("first page = %d records, hasMore=%v; want 2,true", len(first), hasMore)
+	}
+	if first[0].RoundNum != 2 || first[0].ClaimPrizeTx.Tx.EvtLogId != 5072 ||
+		first[1].RoundNum != 1 || first[1].ClaimPrizeTx.Tx.EvtLogId != 5062 {
+		t.Fatalf("first page order = (%d,%d),(%d,%d)",
+			first[0].RoundNum, first[0].ClaimPrizeTx.Tx.EvtLogId,
+			first[1].RoundNum, first[1].ClaimPrizeTx.Tx.EvtLogId)
+	}
+
+	second, hasMore, err := r.PrizeClaimsPage(ctx, &RoundPageCursor{
+		RoundNum:   int64(first[1].RoundNum),
+		EventLogID: first[1].ClaimPrizeTx.Tx.EvtLogId,
+	}, 2)
+	if err != nil {
+		t.Fatalf("second page: %v", err)
+	}
+	if hasMore || len(second) != 1 {
+		t.Fatalf("second page = %d records, hasMore=%v; want 1,false", len(second), hasMore)
+	}
+	if second[0].RoundNum != 0 || second[0].ClaimPrizeTx.Tx.EvtLogId != 5018 {
+		t.Fatalf("second page record = (%d,%d), want (0,5018)",
+			second[0].RoundNum, second[0].ClaimPrizeTx.Tx.EvtLogId)
+	}
+
+	exhausted, hasMore, err := r.PrizeClaimsPage(ctx, &RoundPageCursor{
+		RoundNum:   0,
+		EventLogID: 5018,
+	}, 2)
+	if err != nil {
+		t.Fatalf("exhausted page: %v", err)
+	}
+	if hasMore || exhausted == nil || len(exhausted) != 0 {
+		t.Fatalf("exhausted page = %#v, hasMore=%v; want non-nil empty,false", exhausted, hasMore)
+	}
+}
+
+func TestPrizeClaimsPagePropagatesCancellation(t *testing.T) {
+	r := repo(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, _, err := r.PrizeClaimsPage(ctx, nil, 2); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled page error = %v, want context.Canceled", err)
+	}
+}
+
+func TestRoundInfoIsLeanPrizeInfoBase(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+
+	lean, err := r.RoundInfo(ctx, 0)
+	if err != nil {
+		t.Fatalf("RoundInfo: %v", err)
+	}
+	if lean.RaffleNFTWinners != nil || lean.StakingNFTWinners != nil ||
+		lean.RaffleETHDeposits != nil || lean.AllPrizes != nil {
+		t.Fatalf("RoundInfo loaded nested collections: %+v", lean)
+	}
+
+	full, err := r.PrizeInfo(ctx, 0)
+	if err != nil {
+		t.Fatalf("PrizeInfo: %v", err)
+	}
+	full.RaffleNFTWinners = nil
+	full.StakingNFTWinners = nil
+	full.RaffleETHDeposits = nil
+	full.AllPrizes = nil
+	if !reflect.DeepEqual(lean, full) {
+		t.Fatal("RoundInfo base differs from PrizeInfo base")
 	}
 }
 

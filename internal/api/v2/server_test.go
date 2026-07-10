@@ -23,6 +23,25 @@ type fakeBidReader struct {
 	item func(context.Context, int64, int64) (cgprimitives.CGBidRec, error)
 }
 
+type fakeRoundReader struct {
+	page func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error)
+	item func(context.Context, int64) (cgprimitives.CGRoundRec, error)
+}
+
+func (f fakeRoundReader) PrizeClaimsPage(ctx context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgprimitives.CGRoundRec, bool, error) {
+	if f.page == nil {
+		return []cgprimitives.CGRoundRec{}, false, nil
+	}
+	return f.page(ctx, after, limit)
+}
+
+func (f fakeRoundReader) RoundInfo(ctx context.Context, round int64) (cgprimitives.CGRoundRec, error) {
+	if f.item == nil {
+		return cgprimitives.CGRoundRec{}, store.ErrNotFound
+	}
+	return f.item(ctx, round)
+}
+
 func (f fakeBidReader) BidsByRoundPage(ctx context.Context, round int64, after cgstore.BidPageCursor, limit int) ([]cgprimitives.CGBidRec, bool, error) {
 	if f.page == nil {
 		return []cgprimitives.CGBidRec{}, false, nil
@@ -256,10 +275,13 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 	if _, err := NewServer(&store.Store{}, nil, nil); err == nil {
 		t.Fatal("NewServer accepted a nil contract state")
 	}
-	if _, err := newServer(nil, nil, nil, nil); err == nil {
-		t.Fatal("newServer accepted a nil repository")
+	if _, err := newServer(nil, nil, nil, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil bid repository")
 	}
-	server, err := newServer(nil, fakeBidReader{}, nil, nil)
+	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil round repository")
+	}
+	server, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil)
 	if err != nil {
 		t.Fatalf("newServer rejected test dependencies: %v", err)
 	}
@@ -271,7 +293,7 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 func newTestServer(t *testing.T, bids bidReader) *Server {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	server, err := newServer(nil, bids, nil, logger)
+	server, err := newServer(nil, bids, fakeRoundReader{}, nil, logger)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}
