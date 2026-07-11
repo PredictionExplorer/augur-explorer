@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"sync"
 
@@ -43,15 +44,20 @@ type LiveSpecialWinners struct {
 // return value so the handler keeps its legacy single-error response shape.
 func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners {
 	var out LiveSpecialWinners
-	out.RoundNum = s.Snapshot().RoundNum
 
 	header, err := s.client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		out.Err = fmt.Errorf("failed to fetch latest block header: %w", err)
 		return out
 	}
-	out.SourceBlockNumber = header.Number.Uint64()
-	out.SourceBlockTimeStamp = int64(header.Time) // #nosec G115 -- block timestamps fit in int64 until year 292277026596
+	if header.Number == nil || !header.Number.IsInt64() || header.Number.Sign() < 0 ||
+		header.Time > math.MaxInt64 {
+		out.Err = errors.New("latest block header exceeds int64")
+		return out
+	}
+	sourceBlockNumber := header.Number.Int64()
+	out.SourceBlockNumber = uint64(sourceBlockNumber)
+	out.SourceBlockTimeStamp = int64(header.Time) // #nosec G115 -- checked above
 
 	contract, err := cg.NewCosmicSignatureGame(s.addrs.CosmicGame, s.client)
 	if err != nil {
@@ -77,6 +83,7 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		storedChronoWarriorDur      *big.Int
 		lastBidderLastBidTime       *big.Int
 		lastCstBidderLastBidTime    *big.Int
+		roundNum                    *big.Int
 	)
 
 	var wg sync.WaitGroup
@@ -92,7 +99,7 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		}
 	}
 
-	wg.Add(8)
+	wg.Add(9)
 	go func() {
 		defer wg.Done()
 		result, err := contract.TryGetCurrentChampions(&copts)
@@ -181,16 +188,43 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		storedEnduranceChampionDur = val
 		mu.Unlock()
 	}()
+	go func() {
+		defer wg.Done()
+		val, err := contract.RoundNum(&copts)
+		if err != nil {
+			recordErr("RoundNum", err)
+			return
+		}
+		mu.Lock()
+		roundNum = val
+		mu.Unlock()
+	}()
 	wg.Wait()
 
 	if out.Err != nil {
 		return out
 	}
+	if roundNum == nil || !roundNum.IsInt64() || roundNum.Sign() < 0 {
+		out.Err = errors.New("RoundNum returned an invalid value")
+		return out
+	}
+	out.RoundNum = roundNum.Int64()
+	enduranceDuration, enduranceOK := nonNegativeInt64(champs.EnduranceChampionDuration)
+	chronoDuration, chronoOK := nonNegativeInt64(champs.ChronoWarriorDuration)
+	enduranceStart, startOK := nonNegativeInt64(enduranceStartTs)
+	previousEnduranceDuration, previousOK := nonNegativeInt64(prevEnduranceDuration)
+	storedEnduranceDuration, storedEnduranceOK := nonNegativeInt64(storedEnduranceChampionDur)
+	storedChronoDuration, storedChronoOK := nonNegativeInt64(storedChronoWarriorDur)
+	if !enduranceOK || !chronoOK || !startOK || !previousOK ||
+		!storedEnduranceOK || !storedChronoOK {
+		out.Err = errors.New("special-winner timing exceeds int64")
+		return out
+	}
 
 	out.EnduranceChampionAddress = champs.EnduranceChampionAddress.String()
-	out.EnduranceChampionDuration = champs.EnduranceChampionDuration.Int64()
+	out.EnduranceChampionDuration = enduranceDuration
 	out.ChronoWarriorAddress = champs.ChronoWarriorAddress.String()
-	out.ChronoWarriorDuration = champs.ChronoWarriorDuration.Int64()
+	out.ChronoWarriorDuration = chronoDuration
 	out.LastBidderAddress = lastBidder.String()
 	out.LastCstBidderAddress = lastCstBidder.String()
 	// The chrono-segment anchor (EnduranceChampionStartTimeStamp /
@@ -231,11 +265,21 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 			return out
 		}
 
+		lastBidTime, lastBidTimeOK := nonNegativeInt64(lastBidderLastBidTime)
+		if lastBidderLastBidTime != nil && !lastBidTimeOK {
+			out.Err = errors.New("last-bidder timestamp exceeds int64")
+			return out
+		}
 		if lastBidderLastBidTime != nil {
-			out.LastBidderLastBidTime = lastBidderLastBidTime.Int64()
+			out.LastBidderLastBidTime = lastBidTime
+		}
+		lastCSTBidTime, lastCSTBidTimeOK := nonNegativeInt64(lastCstBidderLastBidTime)
+		if lastCstBidderLastBidTime != nil && !lastCSTBidTimeOK {
+			out.Err = errors.New("last-CST-bidder timestamp exceeds int64")
+			return out
 		}
 		if lastCstBidderLastBidTime != nil {
-			out.LastCstBidderLastBidTime = lastCstBidderLastBidTime.Int64()
+			out.LastCstBidderLastBidTime = lastCSTBidTime
 			out.HasLastCstBidderLastBidTime = true
 		}
 
@@ -247,33 +291,42 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		// (stale) anchor. Mixing the live champion with that stale anchor
 		// produced a wrong Chrono-Warrior "record-growing segment" and
 		// "is live" status.
-		liveEnduranceStart := enduranceStartTs.Int64()
-		livePrevDuration := prevEnduranceDuration.Int64()
+		liveEnduranceStart := enduranceStart
+		livePrevDuration := previousEnduranceDuration
 		if lastBidder != (ethcommon.Address{}) && lastBidderLastBidTime != nil {
-			lastBidDuration := out.SourceBlockTimeStamp - lastBidderLastBidTime.Int64()
+			lastBidDuration := out.SourceBlockTimeStamp - lastBidTime
 			if storedEnduranceChampionAddr == (ethcommon.Address{}) {
 				// No champion recorded yet: the last bidder is the (live)
 				// endurance champion.
-				liveEnduranceStart = lastBidderLastBidTime.Int64()
-			} else if storedEnduranceChampionDur != nil && lastBidDuration > storedEnduranceChampionDur.Int64() {
+				liveEnduranceStart = lastBidTime
+			} else if lastBidDuration > storedEnduranceDuration {
 				// Last bidder overtook the stored record: champion start/prev
 				// are recomputed live.
-				livePrevDuration = storedEnduranceChampionDur.Int64()
-				liveEnduranceStart = lastBidderLastBidTime.Int64()
+				livePrevDuration = storedEnduranceDuration
+				liveEnduranceStart = lastBidTime
 			}
 		}
 		out.EnduranceChampionStartTimeStamp = liveEnduranceStart
 		out.PrevEnduranceChampionDuration = livePrevDuration
 
+		if liveEnduranceStart > math.MaxInt64-livePrevDuration {
+			out.Err = errors.New("chrono-warrior segment timestamp overflows int64")
+			return out
+		}
 		chronoSegmentStart := liveEnduranceStart + livePrevDuration
 		currentChronoSegmentDuration := out.SourceBlockTimeStamp - chronoSegmentStart
-		out.ChronoWarriorIsLive = currentChronoSegmentDuration > storedChronoWarriorDur.Int64()
+		out.ChronoWarriorIsLive = currentChronoSegmentDuration > storedChronoDuration
 
 		if lastCstBidder != (ethcommon.Address{}) {
-			// Any error — including ErrNotFound — leaves the field unset,
+			// Any error, including ErrNotFound, leaves the field unset,
 			// matching the legacy (id, ok) behavior; real DB failures are
 			// logged so they are not silently absorbed.
-			evtlogID, err := s.db.LastCstBidEvtlogForBidder(ctx, out.RoundNum, lastCstBidder.String())
+			evtlogID, err := s.db.LastCstBidEvtlogForBidderAtBlock(
+				ctx,
+				out.RoundNum,
+				lastCstBidder.String(),
+				sourceBlockNumber,
+			)
 			switch {
 			case err == nil:
 				out.LastCstBidEventLogId = evtlogID
@@ -285,4 +338,25 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 	}
 
 	return out
+}
+
+func (s *State) refreshSpecialWinners(ctx context.Context) {
+	s.specialWinnersRefreshMu.Lock()
+	defer s.specialWinnersRefreshMu.Unlock()
+	ctx, cancel := context.WithTimeout(ctx, s.rpcReadTimeout)
+	defer cancel()
+
+	current := s.FetchLiveSpecialWinners(ctx)
+	if current.Err != nil {
+		s.logf("Error refreshing live special winners: %v\n", current.Err)
+		s.mu.Lock()
+		s.snap.SpecialWinnersReady = false
+		s.mu.Unlock()
+		return
+	}
+	current.Err = nil
+	s.mu.Lock()
+	s.snap.SpecialWinners = current
+	s.snap.SpecialWinnersReady = true
+	s.mu.Unlock()
 }

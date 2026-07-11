@@ -1,0 +1,11 @@
+{
+  "status": 503,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The cached live state for current bid prices is temporarily unavailable.",
+    "instance": "/api/v2/cosmicgame/rounds/current/bid-prices",
+    "status": 503,
+    "title": "Live state unavailable",
+    "type": "https://api.cosmicsignature.com/problems/live-state-unavailable"
+  }
+}

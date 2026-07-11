@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "charityAddress": "0x6000000000000000000000000000000000000006",
+    "charityDonationPercentage": 10,
+    "chronoWarriorPercentage": 7,
+    "cstBidRewardMode": "fixed",
+    "cstRoundStartAuctionMode": "divisor",
+    "cstRoundStartAuctionValue": 11,
+    "ethBidPriceIncreaseDivisor": "100",
+    "fixedCstBidRewardWei": "100000000000000000000",
+    "initialDurationUntilMainPrizeDivisor": 2,
+    "mainPrizePercentage": 25,
+    "mainPrizeTimeIncrementIncreaseDivisor": "50",
+    "mechanicsVersion": "v1",
+    "raffleEthWinnerCount": 3,
+    "raffleNftBidderWinnerCount": 5,
+    "raffleNftRandomWalkStakerWinnerCount": 4,
+    "rafflePercentage": 5,
+    "stakingPercentage": 10,
+    "timeoutMainPrizeClaimSeconds": 86400
+  }
+}

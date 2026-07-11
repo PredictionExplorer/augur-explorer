@@ -88,8 +88,8 @@ func TestNormalizeCurrentRoundSnapshotRejectsUnavailableState(t *testing.T) {
 	tests := map[string]func(*contractstate.Snapshot){
 		"round sentinel":        func(s *contractstate.Snapshot) { s.RoundNum = -1 },
 		"duration sentinel":     func(s *contractstate.Snapshot) { s.PrizeClaimTimestamp = -1 },
-		"empty bid price":       func(s *contractstate.Snapshot) { s.BidPrice = "" },
-		"failed bid price":      func(s *contractstate.Snapshot) { s.BidPrice = "error" },
+		"empty bid price":       func(s *contractstate.Snapshot) { s.BlockPinnedBidPrice = "" },
+		"failed bid price":      func(s *contractstate.Snapshot) { s.BlockPinnedBidPrice = "error" },
 		"empty main prize":      func(s *contractstate.Snapshot) { s.PrizeAmount = "" },
 		"failed main prize":     func(s *contractstate.Snapshot) { s.PrizeAmount = "error" },
 		"empty raffle prize":    func(s *contractstate.Snapshot) { s.RaffleAmount = "" },
@@ -116,7 +116,7 @@ func TestNormalizeCurrentRoundSnapshotRejectsMalformedData(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]func(*contractstate.Snapshot){
-		"negative bid price":     func(s *contractstate.Snapshot) { s.BidPrice = "-1" },
+		"negative bid price":     func(s *contractstate.Snapshot) { s.BlockPinnedBidPrice = "-1" },
 		"fractional main prize":  func(s *contractstate.Snapshot) { s.PrizeAmount = "1.5" },
 		"invalid raffle prize":   func(s *contractstate.Snapshot) { s.RaffleAmount = "wat" },
 		"negative staking prize": func(s *contractstate.Snapshot) { s.StakingAmount = "-10" },
@@ -201,6 +201,7 @@ func TestMapCurrentRoundRejectsInconsistentData(t *testing.T) {
 func validCurrentRoundSnapshot() contractstate.Snapshot {
 	return contractstate.Snapshot{
 		BidPrice:                 "001010000000000000",
+		BlockPinnedBidPrice:      "001010000000000000",
 		PrizeClaimTimestamp:      3600,
 		PrizeAmount:              "02500000000000000000",
 		RaffleAmount:             "050000000000000000",

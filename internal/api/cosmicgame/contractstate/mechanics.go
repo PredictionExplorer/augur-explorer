@@ -26,6 +26,9 @@ func (s *State) mechanicsVersion() int64 {
 
 func (s *State) setMechanicsVersion(v int64) {
 	s.mu.Lock()
+	if s.snap.MechanicsVersion != v {
+		s.snap.ConfigurationReady = false
+	}
 	s.snap.MechanicsVersion = v
 	s.mu.Unlock()
 }
@@ -46,21 +49,34 @@ func (s *State) roundStartCSTAuctionSetting(v1 *cg.CosmicSignatureGame, v2 *cg.C
 	cached := s.mechanicsVersion()
 	if cached == mechanicsV2 && v2 != nil {
 		if val, err := v2.CstDutchAuctionDuration(opts); err == nil {
-			return val.Int64()
+			parsed, ok := nonNegativeInt64(val)
+			if !ok {
+				s.setMechanicsVersion(mechanicsUnknown)
+				return -1
+			}
+			return parsed
 		}
 		s.setMechanicsVersion(mechanicsUnknown)
 		cached = mechanicsUnknown
 	}
 	if cached != mechanicsV2 && v1 != nil {
 		if val, err := v1.CstDutchAuctionDurationDivisor(opts); err == nil {
+			parsed, ok := nonNegativeInt64(val)
+			if !ok {
+				return -1
+			}
 			s.setMechanicsVersion(mechanicsV1)
-			return val.Int64()
+			return parsed
 		}
 	}
 	if v2 != nil {
 		if val, err := v2.CstDutchAuctionDuration(opts); err == nil {
+			parsed, ok := nonNegativeInt64(val)
+			if !ok {
+				return -1
+			}
 			s.setMechanicsVersion(mechanicsV2)
-			return val.Int64()
+			return parsed
 		}
 	}
 	return -1
@@ -68,23 +84,31 @@ func (s *State) roundStartCSTAuctionSetting(v1 *cg.CosmicSignatureGame, v2 *cg.C
 
 // cstAuctionDurationChangeDivisor returns the V2
 // cstDutchAuctionDurationChangeDivisor, or -1 on V1 or error.
-func (s *State) cstAuctionDurationChangeDivisor(v1 *cg.CosmicSignatureGame, v2 *cg.CosmicSignatureGameV2, opts *bind.CallOpts) int64 {
+func (s *State) cstAuctionDurationChangeDivisor(
+	v1 *cg.CosmicSignatureGame,
+	v2 *cg.CosmicSignatureGameV2,
+	opts *bind.CallOpts,
+) (int64, bool) {
 	if s.mechanicsVersion() == mechanicsV1 {
-		return -1
+		return -1, true
 	}
 	if v2 != nil {
 		if val, err := v2.CstDutchAuctionDurationChangeDivisor(opts); err == nil {
+			parsed, ok := nonNegativeInt64(val)
+			if !ok {
+				return -1, false
+			}
 			s.setMechanicsVersion(mechanicsV2)
-			return val.Int64()
+			return parsed, true
 		}
 	}
 	if v1 != nil {
 		if _, err := v1.CstDutchAuctionDurationDivisor(opts); err == nil {
 			s.setMechanicsVersion(mechanicsV1)
-			return -1
+			return -1, true
 		}
 	}
-	return -1
+	return -1, false
 }
 
 // tokenReward returns the CST reward for bidding: the fixed amount on V1,
@@ -111,4 +135,35 @@ func (s *State) tokenReward(v1 *cg.CosmicSignatureGame, v2 *cg.CosmicSignatureGa
 		}
 	}
 	return "", errors.New("can't read CST bid reward from contract")
+}
+
+// bidCSTRewardConfiguration returns the mechanics-specific static reward
+// setting: a fixed wei amount on V1 or the V2 multiplier. The dynamic V2
+// next-bid reward is refreshed with the live variable group instead.
+func (s *State) bidCSTRewardConfiguration(
+	v1 *cg.CosmicSignatureGame,
+	v2 *cg.CosmicSignatureGameV2,
+	opts *bind.CallOpts,
+) (fixedAmount, multiplier string, err error) {
+	cached := s.mechanicsVersion()
+	if cached == mechanicsV2 && v2 != nil {
+		if val, callErr := v2.BidCstRewardAmountMultiplier(opts); callErr == nil {
+			return "", val.String(), nil
+		}
+		s.setMechanicsVersion(mechanicsUnknown)
+		cached = mechanicsUnknown
+	}
+	if cached != mechanicsV2 && v1 != nil {
+		if val, callErr := v1.CstRewardAmountForBidding(opts); callErr == nil {
+			s.setMechanicsVersion(mechanicsV1)
+			return val.String(), "", nil
+		}
+	}
+	if v2 != nil {
+		if val, callErr := v2.BidCstRewardAmountMultiplier(opts); callErr == nil {
+			s.setMechanicsVersion(mechanicsV2)
+			return "", val.String(), nil
+		}
+	}
+	return "", "", errors.New("can't read CST bid reward configuration")
 }

@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "cstAuctionDurationSeconds": 28800,
+    "cstAuctionElapsedSeconds": 10800,
+    "ethAuctionDurationSeconds": 86400,
+    "ethAuctionElapsedSeconds": 7200,
+    "nextCstBidPriceWei": "55000000000000000000",
+    "nextCstBidRewardWei": "99000000000000000000",
+    "nextEthBidPriceWei": "1010000000000000"
+  }
+}

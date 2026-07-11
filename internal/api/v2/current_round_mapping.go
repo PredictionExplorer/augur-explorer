@@ -31,7 +31,7 @@ func normalizeCurrentRoundSnapshot(snapshot contractstate.Snapshot) (currentRoun
 		return currentRoundSnapshot{}, fmt.Errorf("main-prize duration: %w", errCurrentRoundUnavailable)
 	}
 
-	nextBidPrice, err := normalizeLiveDecimal("next ETH bid price", snapshot.BidPrice)
+	nextBidPrice, err := normalizeLiveDecimal("next ETH bid price", snapshot.BlockPinnedBidPrice)
 	if err != nil {
 		return currentRoundSnapshot{}, err
 	}

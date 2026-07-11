@@ -245,6 +245,13 @@ func TestLastCstBidEvtlogForBidder(t *testing.T) {
 	if _, err := r.LastCstBidEvtlogForBidder(ctx, 0, "0x2100000000000000000000000000000000000021"); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("LastCstBidEvtlogForBidder(alice) = %v, want ErrNotFound", err)
 	}
+	evtlogID, err = r.LastCstBidEvtlogForBidderAtBlock(ctx, 0, carol, 103)
+	if err != nil || evtlogID != 5008 {
+		t.Errorf("block-pinned CST bid: got (%d,%v), want (5008,nil)", evtlogID, err)
+	}
+	if _, err := r.LastCstBidEvtlogForBidderAtBlock(ctx, 0, carol, 102); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("pre-bid block lookup = %v, want ErrNotFound", err)
+	}
 }
 
 func TestRoundStartTimestamp(t *testing.T) {

@@ -30,13 +30,36 @@ var (
 
 // fakeDB is an in-memory DataSource with settable results and errors.
 type fakeDB struct {
-	mu            sync.Mutex
-	stats         cgp.CGStatistics
-	statsErr      error
-	roundStart    int64
-	roundStartErr error
-	lastCst       int64
-	lastCstErr    error
+	mu              sync.Mutex
+	stats           cgp.CGStatistics
+	statsErr        error
+	roundStart      int64
+	roundStartErr   error
+	lastCst         int64
+	lastCstErr      error
+	lastCstMaxBlock int64
+}
+
+type blockingDB struct{}
+
+func (blockingDB) CosmicGameStatistics(ctx context.Context) (cgp.CGStatistics, error) {
+	<-ctx.Done()
+	return cgp.CGStatistics{}, ctx.Err()
+}
+
+func (blockingDB) RoundStartTimestamp(ctx context.Context, _ uint64) (int64, error) {
+	<-ctx.Done()
+	return 0, ctx.Err()
+}
+
+func (blockingDB) LastCstBidEvtlogForBidderAtBlock(
+	ctx context.Context,
+	_ int64,
+	_ string,
+	_ int64,
+) (int64, error) {
+	<-ctx.Done()
+	return 0, ctx.Err()
 }
 
 func (f *fakeDB) CosmicGameStatistics(context.Context) (cgp.CGStatistics, error) {
@@ -51,9 +74,15 @@ func (f *fakeDB) RoundStartTimestamp(context.Context, uint64) (int64, error) {
 	return f.roundStart, f.roundStartErr
 }
 
-func (f *fakeDB) LastCstBidEvtlogForBidder(context.Context, int64, string) (int64, error) {
+func (f *fakeDB) LastCstBidEvtlogForBidderAtBlock(
+	_ context.Context,
+	_ int64,
+	_ string,
+	maxBlockNum int64,
+) (int64, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.lastCstMaxBlock = maxBlockNum
 	return f.lastCst, f.lastCstErr
 }
 
@@ -78,6 +107,9 @@ func newV1GameStub() *testchain.ContractStub {
 
 	// Variables.
 	stub.Return("getNextEthBidPrice", mustBig("1010000000000000")) // 0.00101 ETH
+	stub.Return("getNextCstBidPrice", mustBig("55000000000000000000"))
+	stub.Return("getEthDutchAuctionDurations", big.NewInt(86400), big.NewInt(7200))
+	stub.Return("getCstDutchAuctionDurations", big.NewInt(28800), big.NewInt(3600))
 	stub.Return("getDurationUntilMainPrize", big.NewInt(3600))
 	stub.Return("getMainEthPrizeAmount", mustBig("2000000000000000000"))                           // 2 ETH
 	stub.Return("getCosmicSignatureNftStakingTotalEthRewardAmount", mustBig("300000000000000000")) // 0.3 ETH
@@ -116,10 +148,29 @@ func newV1GameStub() *testchain.ContractStub {
 // methods are absent from its ABI, the V2 ones answer.
 func newV2GameStub() *testchain.ContractStub {
 	stub := testchain.MustContractStub(cg.CosmicSignatureGameV2MetaData.ABI)
+	stub.Return("ethBidPriceIncreaseDivisor", big.NewInt(100))
+	stub.Return("charityAddress", charityAddr)
+	stub.Return("charityEthDonationAmountPercentage", big.NewInt(10))
+	stub.Return("mainEthPrizeAmountPercentage", big.NewInt(25))
+	stub.Return("raffleTotalEthPrizeAmountForBiddersPercentage", big.NewInt(5))
+	stub.Return("chronoWarriorEthPrizeAmountPercentage", big.NewInt(7))
+	stub.Return("cosmicSignatureNftStakingTotalEthRewardAmountPercentage", big.NewInt(10))
+	stub.Return("mainPrizeTimeIncrementIncreaseDivisor", big.NewInt(50))
+	stub.Return("numRaffleEthPrizesForBidders", big.NewInt(3))
+	stub.Return("numRaffleCosmicSignatureNftsForBidders", big.NewInt(5))
+	stub.Return("numRaffleCosmicSignatureNftsForRandomWalkNftStakers", big.NewInt(4))
 	stub.Return("cstDutchAuctionDuration", big.NewInt(28800))
 	stub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(33))
 	stub.Return("getBidCstRewardAmount", mustBig("99000000000000000000")) // 99 CST
+	stub.Return("bidCstRewardAmountMultiplier", big.NewInt(7))
 	stub.Return("getNextEthBidPrice", mustBig("1010000000000000"))
+	stub.Return("getNextCstBidPrice", mustBig("55000000000000000000"))
+	stub.Return("getEthDutchAuctionDurations", big.NewInt(86400), big.NewInt(7200))
+	stub.Return(
+		"getCstDutchAuctionDurations",
+		big.NewInt(28800),
+		big.NewInt(int64(testchain.BlockTime(0))-100),
+	)
 	stub.Return("getDurationUntilMainPrize", big.NewInt(3600))
 	stub.Return("getMainEthPrizeAmount", mustBig("2000000000000000000"))
 	stub.Return("getCosmicSignatureNftStakingTotalEthRewardAmount", mustBig("300000000000000000"))
@@ -151,6 +202,7 @@ func defaultFakeDB() *fakeDB {
 // newTestState dials the chain and builds a State around it.
 func newTestState(t *testing.T, chain *testchain.Chain, db DataSource) *State {
 	t.Helper()
+	chain.EnsureBlock(0)
 	client, err := ethclient.Dial(chain.URL())
 	if err != nil {
 		t.Fatalf("dialing test chain: %v", err)
@@ -219,6 +271,10 @@ func TestLoadInitialHappyPath(t *testing.T) {
 	if snap.TokenReward != "100000000000000000000" {
 		t.Errorf("TokenReward = %q", snap.TokenReward)
 	}
+	if snap.FixedCSTBidReward != snap.TokenReward || snap.BidCSTRewardMultiplier != "" {
+		t.Errorf("V1 reward configuration = fixed:%q multiplier:%q",
+			snap.FixedCSTBidReward, snap.BidCSTRewardMultiplier)
+	}
 	if snap.PrizePercentage != 25 || snap.RafflePercentage != 5 || snap.ChronoPercentage != 7 || snap.StakingPercentage != 10 {
 		t.Errorf("percentages = %d/%d/%d/%d", snap.PrizePercentage, snap.RafflePercentage, snap.ChronoPercentage, snap.StakingPercentage)
 	}
@@ -233,8 +289,18 @@ func TestLoadInitialHappyPath(t *testing.T) {
 	if snap.BidPrice != "1010000000000000" {
 		t.Errorf("BidPrice = %q", snap.BidPrice)
 	}
+	if snap.BlockPinnedBidPrice != snap.BidPrice {
+		t.Errorf("BlockPinnedBidPrice = %q, want %q", snap.BlockPinnedBidPrice, snap.BidPrice)
+	}
 	if math.Abs(snap.BidPriceEth-0.00101) > 1e-12 {
 		t.Errorf("BidPriceEth = %v, want 0.00101", snap.BidPriceEth)
+	}
+	if snap.NextCSTBidPrice != "55000000000000000000" ||
+		snap.NextCSTBidReward != "100000000000000000000" ||
+		snap.ETHAuctionDuration != 86400 || snap.ETHAuctionElapsed != 7200 ||
+		snap.CSTAuctionDuration != 28800 || snap.CSTAuctionElapsed != 3600 ||
+		!snap.BidPricesReady {
+		t.Errorf("cached bid prices = %+v", snap)
 	}
 	if snap.PrizeClaimTimestamp != 3600 {
 		t.Errorf("PrizeClaimTimestamp = %d, want 3600", snap.PrizeClaimTimestamp)
@@ -266,6 +332,9 @@ func TestLoadInitialHappyPath(t *testing.T) {
 	if snap.CharityBalance != "0" || snap.CharityBalanceEth != 0 {
 		t.Errorf("CharityBalance = %q / %v", snap.CharityBalance, snap.CharityBalanceEth)
 	}
+	if snap.CosmicGameBalance != "0" || !snap.BalancesReady {
+		t.Errorf("CosmicGameBalance/BalancesReady = %q/%v", snap.CosmicGameBalance, snap.BalancesReady)
+	}
 
 	// Mechanics: the V1 divisor answered, the V2 change divisor did not.
 	if snap.MechanicsVersion != mechanicsV1 {
@@ -273,6 +342,9 @@ func TestLoadInitialHappyPath(t *testing.T) {
 	}
 	if snap.CSTAuctionDurationChangeDivisor != -1 {
 		t.Errorf("CSTAuctionDurationChangeDivisor = %d, want -1 on V1", snap.CSTAuctionDurationChangeDivisor)
+	}
+	if !snap.ConstantsReady || !snap.ConfigurationReady {
+		t.Errorf("constant/configuration readiness = %v/%v", snap.ConstantsReady, snap.ConfigurationReady)
 	}
 
 	// Database aggregates.
@@ -302,6 +374,13 @@ func TestLoadInitialRPCUnavailable(t *testing.T) {
 
 	if snap.BidPrice != "error" || snap.BidPriceEth != 0 {
 		t.Errorf("BidPrice = %q / %v", snap.BidPrice, snap.BidPriceEth)
+	}
+	if snap.BlockPinnedBidPrice != "error" || snap.NextCSTBidReward != "error" {
+		t.Errorf("pinned price/reward = %q/%q", snap.BlockPinnedBidPrice, snap.NextCSTBidReward)
+	}
+	if snap.ConstantsReady || snap.BidPricesReady || snap.ConfigurationReady {
+		t.Errorf("cache readiness = constants:%v prices:%v configuration:%v",
+			snap.ConstantsReady, snap.BidPricesReady, snap.ConfigurationReady)
 	}
 	if snap.PrizeClaimTimestamp != -1 {
 		t.Errorf("PrizeClaimTimestamp = %d, want -1", snap.PrizeClaimTimestamp)
@@ -340,6 +419,9 @@ func TestLoadInitialRPCUnavailable(t *testing.T) {
 	if snap.CharityBalance != "0" {
 		t.Errorf("CharityBalance = %q, want 0", snap.CharityBalance)
 	}
+	if snap.BalancesReady {
+		t.Error("BalancesReady = true without a charity address")
+	}
 	// The DB half is independent of the RPC node.
 	if snap.Stats.TotalPrizes != 3 || snap.RoundStartTimestamp != 1767225700 {
 		t.Errorf("DB fields = %+v / %d", snap.Stats, snap.RoundStartTimestamp)
@@ -365,11 +447,126 @@ func TestLoadInitialNodeDown(t *testing.T) {
 	if snap.CharityBalance != "error" || snap.CharityBalanceEth != 0 {
 		t.Errorf("CharityBalance = %q / %v, want error / 0", snap.CharityBalance, snap.CharityBalanceEth)
 	}
+	if snap.CosmicGameBalance != "error" || snap.BalancesReady {
+		t.Errorf("CosmicGameBalance/BalancesReady = %q/%v", snap.CosmicGameBalance, snap.BalancesReady)
+	}
 	if snap.BidPrice != "error" || snap.RoundNum != -1 {
 		t.Errorf("BidPrice/RoundNum = %q/%d", snap.BidPrice, snap.RoundNum)
 	}
 	if got := s.CosmicGameBalanceEth(context.Background()); !math.IsNaN(got) {
 		t.Errorf("CosmicGameBalanceEth = %v, want NaN", got)
+	}
+}
+
+func TestLiveCacheReadinessRecovers(t *testing.T) {
+	chain := testchain.New(t)
+	chain.EnsureBlock(50)
+	s := newTestState(t, chain, defaultFakeDB())
+	s.LoadInitial(context.Background())
+	initial := s.Snapshot()
+	if initial.ConfigurationReady || initial.BidPricesReady || initial.BalancesReady {
+		t.Fatalf("unavailable cache marked ready: %+v", initial)
+	}
+
+	chain.RegisterCall(gameAddr, newV1GameStub().Handler())
+	s.refreshVariables(context.Background())
+	s.refreshConstants(context.Background())
+	s.refreshBalances(context.Background())
+	recovered := s.Snapshot()
+	if !recovered.ConfigurationReady || !recovered.BidPricesReady || !recovered.BalancesReady {
+		t.Fatalf("cache did not recover: configuration=%v prices=%v balances=%v",
+			recovered.ConfigurationReady, recovered.BidPricesReady, recovered.BalancesReady)
+	}
+}
+
+func TestConfigurationReadinessRequiresBothRefreshGroups(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	stub.Handle("timeoutDurationToClaimMainPrize", func([]any) ([]any, error) {
+		return nil, errors.New("variable read failed")
+	})
+	chain.RegisterCall(gameAddr, stub.Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+
+	s.LoadInitial(context.Background())
+	snap := s.Snapshot()
+	if !snap.ConstantsReady || snap.ConfigurationReady {
+		t.Fatalf("readiness with variable failure = constants:%v configuration:%v",
+			snap.ConstantsReady, snap.ConfigurationReady)
+	}
+	if !snap.BidPricesReady {
+		t.Fatal("independent bid-price cache should remain ready")
+	}
+}
+
+func TestConstantsFailureKeepsValueButMarksConfigurationUnavailable(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	chain.RegisterCall(gameAddr, stub.Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+	s.LoadInitial(context.Background())
+	originalCharity := s.Snapshot().CharityAddr
+
+	stub.Handle("charityAddress", func([]any) ([]any, error) {
+		return nil, errors.New("constant read failed")
+	})
+	s.refreshConstants(context.Background())
+	snap := s.Snapshot()
+	if snap.CharityAddr != originalCharity {
+		t.Fatalf("charity address changed on failed refresh: %v", snap.CharityAddr)
+	}
+	if snap.ConstantsReady || snap.ConfigurationReady {
+		t.Fatalf("failed constant refresh stayed ready: constants:%v configuration:%v",
+			snap.ConstantsReady, snap.ConfigurationReady)
+	}
+}
+
+func TestCharityAddressChangeInvalidatesBalanceGeneration(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	chain.RegisterCall(gameAddr, stub.Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+	s.LoadInitial(context.Background())
+	if !s.Snapshot().BalancesReady {
+		t.Fatal("initial balances are unavailable")
+	}
+
+	newCharity := ethcommon.HexToAddress("0xdddd000000000000000000000000000000000ddd")
+	stub.Return("charityAddress", newCharity)
+	s.refreshConstants(context.Background())
+	changed := s.Snapshot()
+	if changed.CharityAddr != newCharity || changed.BalancesReady ||
+		changed.BalanceCharityAddr == changed.CharityAddr {
+		t.Fatalf("changed charity generation = addr:%v balanceAddr:%v ready:%v",
+			changed.CharityAddr, changed.BalanceCharityAddr, changed.BalancesReady)
+	}
+
+	s.refreshBalances(context.Background())
+	refreshed := s.Snapshot()
+	if !refreshed.BalancesReady || refreshed.BalanceCharityAddr != newCharity {
+		t.Fatalf("refreshed charity balance generation = addr:%v ready:%v",
+			refreshed.BalanceCharityAddr, refreshed.BalancesReady)
+	}
+}
+
+func TestRewardConfigurationFailureDoesNotCorruptLiveBidPrices(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	chain.RegisterCall(gameAddr, stub.Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+	s.LoadInitial(context.Background())
+	originalReward := s.Snapshot().NextCSTBidReward
+
+	stub.Handle("cstRewardAmountForBidding", func([]any) ([]any, error) {
+		return nil, errors.New("fixed reward read failed")
+	})
+	s.refreshConstants(context.Background())
+	s.refreshVariables(context.Background())
+	snap := s.Snapshot()
+	if snap.ConfigurationReady || !snap.BidPricesReady ||
+		snap.NextCSTBidReward != originalReward || snap.TokenReward != "error" {
+		t.Fatalf("reward failure state = configuration:%v prices:%v next:%q legacy:%q",
+			snap.ConfigurationReady, snap.BidPricesReady, snap.NextCSTBidReward, snap.TokenReward)
 	}
 }
 
@@ -407,6 +604,29 @@ func TestDBStatsFailureKeepsPreviousValues(t *testing.T) {
 	}
 }
 
+func TestDBRefreshDeadline(t *testing.T) {
+	chain := testchain.New(t)
+	chain.EnsureBlock(0)
+	client, err := ethclient.Dial(chain.URL())
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer client.Close()
+	s, err := New(Config{
+		EthClient:     client,
+		DB:            blockingDB{},
+		DBReadTimeout: 5 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	start := time.Now()
+	s.refreshDBStats(context.Background())
+	if elapsed := time.Since(start); elapsed > time.Second {
+		t.Fatalf("DB refresh ignored timeout: %v", elapsed)
+	}
+}
+
 func TestMechanicsV2Detection(t *testing.T) {
 	chain := testchain.New(t)
 	chain.RegisterCall(gameAddr, newV2GameStub().Handler())
@@ -427,6 +647,31 @@ func TestMechanicsV2Detection(t *testing.T) {
 	if snap.TokenReward != "99000000000000000000" {
 		t.Errorf("TokenReward = %q, want the V2 computed reward", snap.TokenReward)
 	}
+	if snap.NextCSTBidReward != snap.TokenReward ||
+		snap.FixedCSTBidReward != "" ||
+		snap.BidCSTRewardMultiplier != "7" ||
+		!snap.ConfigurationReady || !snap.BidPricesReady {
+		t.Errorf("V2 reward/cache state = next:%q fixed:%q multiplier:%q configuration:%v prices:%v",
+			snap.NextCSTBidReward, snap.FixedCSTBidReward, snap.BidCSTRewardMultiplier,
+			snap.ConfigurationReady, snap.BidPricesReady)
+	}
+}
+
+func TestV2ChangeDivisorFailureMarksConstantsUnavailable(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV2GameStub()
+	stub.Handle("cstDutchAuctionDurationChangeDivisor", func([]any) ([]any, error) {
+		return nil, errors.New("divisor read failed")
+	})
+	chain.RegisterCall(gameAddr, stub.Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+
+	s.LoadInitial(context.Background())
+	snap := s.Snapshot()
+	if snap.ConstantsReady || snap.ConfigurationReady {
+		t.Fatalf("failed V2 divisor stayed ready: constants=%v configuration=%v",
+			snap.ConstantsReady, snap.ConfigurationReady)
+	}
 }
 
 // TestMechanicsUpgradeFlip simulates the proxy upgrading V1 -> V2 between
@@ -442,6 +687,11 @@ func TestMechanicsUpgradeFlip(t *testing.T) {
 
 	chain.RegisterCall(gameAddr, newV2GameStub().Handler()) // proxy upgraded
 	s.refreshConstants(context.Background())
+	if snap := s.Snapshot(); snap.ConfigurationReady ||
+		snap.ConstantsMechanicsVersion != mechanicsV2 ||
+		snap.VariablesMechanicsVersion != mechanicsV1 {
+		t.Fatalf("mixed mechanics snapshot was exposed as ready: %+v", snap)
+	}
 	s.refreshVariables(context.Background())
 
 	snap := s.Snapshot()
@@ -454,6 +704,10 @@ func TestMechanicsUpgradeFlip(t *testing.T) {
 	if snap.RoundStartAuctionLength != 28800 {
 		t.Errorf("RoundStartAuctionLength = %d, want V2 duration", snap.RoundStartAuctionLength)
 	}
+	if !snap.ConfigurationReady || snap.BidCSTRewardMultiplier != "7" {
+		t.Errorf("upgraded configuration = ready:%v multiplier:%q",
+			snap.ConfigurationReady, snap.BidCSTRewardMultiplier)
+	}
 }
 
 func TestLiveReadHelpersWithoutBindings(t *testing.T) {
@@ -464,11 +718,47 @@ func TestLiveReadHelpersWithoutBindings(t *testing.T) {
 	if got := s.roundStartCSTAuctionSetting(nil, nil, opts); got != -1 {
 		t.Errorf("roundStartCSTAuctionSetting(nil, nil) = %d, want -1", got)
 	}
-	if got := s.cstAuctionDurationChangeDivisor(nil, nil, opts); got != -1 {
-		t.Errorf("cstAuctionDurationChangeDivisor(nil, nil) = %d, want -1", got)
+	if got, ok := s.cstAuctionDurationChangeDivisor(nil, nil, opts); got != -1 || ok {
+		t.Errorf("cstAuctionDurationChangeDivisor(nil, nil) = %d,%v, want -1,false", got, ok)
 	}
 	if _, err := s.tokenReward(nil, nil, opts); err == nil {
 		t.Error("tokenReward(nil, nil) should error")
+	}
+}
+
+func TestNormalizeAuctionProgress(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		duration     *big.Int
+		second       *big.Int
+		blockTime    int64
+		mayBeStart   bool
+		wantDuration int64
+		wantElapsed  int64
+		wantOK       bool
+	}{
+		{"elapsed", big.NewInt(100), big.NewInt(25), 1000, false, 100, 25, true},
+		{"before activation", big.NewInt(100), big.NewInt(-10), 1000, false, 100, 0, true},
+		{"past floor", big.NewInt(100), big.NewInt(150), 1000, false, 100, 100, true},
+		{"start timestamp", big.NewInt(100), big.NewInt(1_700_000_000), 1_700_000_025, true, 100, 25, true},
+		{"future start", big.NewInt(100), big.NewInt(1_700_000_100), 1_700_000_025, true, 100, 0, true},
+		{"overflow", new(big.Int).Lsh(big.NewInt(1), 80), big.NewInt(1), 1000, false, 0, 0, false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			duration, elapsed, ok := normalizeAuctionProgress(
+				test.duration,
+				test.second,
+				test.blockTime,
+				test.mayBeStart,
+			)
+			if duration != test.wantDuration || elapsed != test.wantElapsed || ok != test.wantOK {
+				t.Fatalf("normalizeAuctionProgress = %d,%d,%v; want %d,%d,%v",
+					duration, elapsed, ok, test.wantDuration, test.wantElapsed, test.wantOK)
+			}
+		})
 	}
 }
 
@@ -481,10 +771,15 @@ func TestSetBidPriceWriteBack(t *testing.T) {
 	if snap.BidPrice != "42" || snap.BidPriceEth != 42e-18 {
 		t.Fatalf("SetBidPrice not visible in snapshot: %q / %v", snap.BidPrice, snap.BidPriceEth)
 	}
+	if snap.BlockPinnedBidPrice != "" || snap.BidPricesReady {
+		t.Fatalf("SetBidPrice mutated v2 cache: pinned=%q ready=%v",
+			snap.BlockPinnedBidPrice, snap.BidPricesReady)
+	}
 }
 
 func TestRunRefreshesAndStops(t *testing.T) {
 	chain := testchain.New(t)
+	chain.EnsureBlock(0)
 	stub := newV1GameStub()
 	chain.RegisterCall(gameAddr, stub.Handler())
 
@@ -494,12 +789,13 @@ func TestRunRefreshesAndStops(t *testing.T) {
 	}
 	defer client.Close()
 	s, err := New(Config{
-		EthClient:         client,
-		DB:                defaultFakeDB(),
-		Addrs:             Addresses{CosmicGame: gameAddr},
-		ConstantsInterval: time.Millisecond,
-		VariablesInterval: time.Millisecond,
-		DBStatsInterval:   time.Millisecond,
+		EthClient:              client,
+		DB:                     defaultFakeDB(),
+		Addrs:                  Addresses{CosmicGame: gameAddr},
+		ConstantsInterval:      time.Millisecond,
+		VariablesInterval:      time.Millisecond,
+		DBStatsInterval:        time.Millisecond,
+		SpecialWinnersInterval: time.Millisecond,
 	})
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -539,6 +835,7 @@ func TestRunRefreshesAndStops(t *testing.T) {
 // setter and the refresh loops under -race.
 func TestSnapshotConcurrency(t *testing.T) {
 	chain := testchain.New(t)
+	chain.EnsureBlock(0)
 	chain.RegisterCall(gameAddr, newV1GameStub().Handler())
 
 	client, err := ethclient.Dial(chain.URL())
@@ -547,12 +844,13 @@ func TestSnapshotConcurrency(t *testing.T) {
 	}
 	defer client.Close()
 	s, err := New(Config{
-		EthClient:         client,
-		DB:                defaultFakeDB(),
-		Addrs:             Addresses{CosmicGame: gameAddr},
-		ConstantsInterval: time.Millisecond,
-		VariablesInterval: time.Millisecond,
-		DBStatsInterval:   time.Millisecond,
+		EthClient:              client,
+		DB:                     defaultFakeDB(),
+		Addrs:                  Addresses{CosmicGame: gameAddr},
+		ConstantsInterval:      time.Millisecond,
+		VariablesInterval:      time.Millisecond,
+		DBStatsInterval:        time.Millisecond,
+		SpecialWinnersInterval: time.Millisecond,
 	})
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -595,6 +893,12 @@ func TestFetchLiveSpecialWinnersHappyPath(t *testing.T) {
 	s := newTestState(t, chain, db)
 	s.LoadInitial(context.Background())
 
+	cached := s.Snapshot()
+	if !cached.SpecialWinnersReady || cached.SpecialWinners.SourceBlockNumber != 50 {
+		t.Fatalf("cached special winners = %+v ready=%v",
+			cached.SpecialWinners, cached.SpecialWinnersReady)
+	}
+
 	out := s.FetchLiveSpecialWinners(context.Background())
 	if out.Err != nil {
 		t.Fatalf("unexpected error: %v", out.Err)
@@ -629,6 +933,12 @@ func TestFetchLiveSpecialWinnersHappyPath(t *testing.T) {
 	if !out.HasLastCstBidEventLogId || out.LastCstBidEventLogId != 5099 {
 		t.Errorf("cst bid evtlog = %v / %d", out.HasLastCstBidEventLogId, out.LastCstBidEventLogId)
 	}
+	db.mu.Lock()
+	maxBlock := db.lastCstMaxBlock
+	db.mu.Unlock()
+	if maxBlock != 50 {
+		t.Errorf("CST bid lookup max block = %d, want 50", maxBlock)
+	}
 }
 
 func TestFetchLiveSpecialWinnersCstBidNotFound(t *testing.T) {
@@ -649,6 +959,41 @@ func TestFetchLiveSpecialWinnersCstBidNotFound(t *testing.T) {
 	}
 }
 
+func TestSpecialWinnersCacheKeepsOptionalDBFailureNonFatal(t *testing.T) {
+	chain := testchain.New(t)
+	chain.RegisterCall(gameAddr, newV1GameStub().Handler())
+	chain.EnsureBlock(50)
+	db := defaultFakeDB()
+	db.lastCstErr = errors.New("database unavailable")
+	s := newTestState(t, chain, db)
+
+	s.LoadInitial(context.Background())
+	snap := s.Snapshot()
+	if !snap.SpecialWinnersReady || snap.SpecialWinners.Err != nil {
+		t.Fatalf("special-winners cache = %+v ready=%v",
+			snap.SpecialWinners, snap.SpecialWinnersReady)
+	}
+	if snap.SpecialWinners.HasLastCstBidEventLogId {
+		t.Fatal("optional CST event-log ID survived a DB failure")
+	}
+}
+
+func TestSpecialWinnersCacheRequiresBlockPinnedRound(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	stub.Handle("roundNum", func([]any) ([]any, error) {
+		return nil, errors.New("round read failed")
+	})
+	chain.RegisterCall(gameAddr, stub.Handler())
+	chain.EnsureBlock(50)
+	s := newTestState(t, chain, defaultFakeDB())
+
+	s.LoadInitial(context.Background())
+	if s.Snapshot().SpecialWinnersReady {
+		t.Fatal("special-winners cache is ready without a live round number")
+	}
+}
+
 func TestFetchLiveSpecialWinnersRPCFailure(t *testing.T) {
 	chain := testchain.New(t)
 	chain.EnsureBlock(50) // header fetch works, contract reads fail
@@ -657,5 +1002,26 @@ func TestFetchLiveSpecialWinnersRPCFailure(t *testing.T) {
 	out := s.FetchLiveSpecialWinners(context.Background())
 	if out.Err == nil {
 		t.Fatal("expected error when contract reads fail")
+	}
+}
+
+func TestSpecialWinnersCacheRecovers(t *testing.T) {
+	chain := testchain.New(t)
+	chain.EnsureBlock(50)
+	s := newTestState(t, chain, defaultFakeDB())
+
+	s.refreshVariables(context.Background())
+	s.refreshSpecialWinners(context.Background())
+	if s.Snapshot().SpecialWinnersReady {
+		t.Fatal("special-winners cache is ready after failed contract reads")
+	}
+
+	chain.RegisterCall(gameAddr, newV1GameStub().Handler())
+	s.refreshSpecialWinners(context.Background())
+	snap := s.Snapshot()
+	if !snap.SpecialWinnersReady || snap.SpecialWinners.Err != nil ||
+		snap.SpecialWinners.SourceBlockNumber != 50 {
+		t.Fatalf("recovered special-winners cache = %+v ready=%v",
+			snap.SpecialWinners, snap.SpecialWinnersReady)
 	}
 }

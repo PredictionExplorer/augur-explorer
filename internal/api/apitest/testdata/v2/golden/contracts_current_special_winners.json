@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "chronoWarrior": {
+      "address": "0x2300000000000000000000000000000000000023",
+      "durationSeconds": 800,
+      "isLive": true
+    },
+    "enduranceChampion": {
+      "address": "0x2200000000000000000000000000000000000022",
+      "durationSeconds": 600,
+      "previousDurationSeconds": 600,
+      "startedAt": 1767228500
+    },
+    "lastBidder": {
+      "address": "0x2100000000000000000000000000000000000021",
+      "lastBidAt": 1767228500
+    },
+    "lastCstBidder": {
+      "address": "0x2300000000000000000000000000000000000023"
+    },
+    "round": 3,
+    "sourceBlockNumber": 142,
+    "sourceBlockTimestamp": 1767239800
+  }
+}

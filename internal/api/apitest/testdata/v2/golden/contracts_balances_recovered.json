@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "charityAddress": "0x6000000000000000000000000000000000000006",
+    "charityBalanceWei": "0",
+    "cosmicGameBalanceWei": "0"
+  }
+}

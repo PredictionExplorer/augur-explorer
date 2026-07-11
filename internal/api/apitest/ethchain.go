@@ -42,7 +42,7 @@ const (
 // registerChainState populates the fake chain the parity harness dials:
 // the head block and the eth_call surface of every contract the v1 API
 // reads live (CosmicSignatureGame V1, CosmicToken, MarketingWallet).
-func registerChainState(chain *testchain.Chain) {
+func registerChainState(chain *testchain.Chain) *testchain.ContractStub {
 	chain.EnsureBlock(chainTipBlock)
 
 	game := ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
@@ -56,7 +56,10 @@ func registerChainState(chain *testchain.Chain) {
 
 	// CosmicSignatureGame, V1 generation: the V1-only CST auction divisor
 	// answers, so the mechanics detector pins ContractMechanicsVersion=1.
-	gameStub := testchain.MustContractStub(cg.CosmicSignatureGameMetaData.ABI)
+	gameStub := testchain.MustContractStub(
+		cg.CosmicSignatureGameMetaData.ABI,
+		cg.CosmicSignatureGameV2MetaData.ABI,
+	)
 
 	// Owner-tunable constants.
 	gameStub.Return("ethBidPriceIncreaseDivisor", big.NewInt(100))
@@ -72,6 +75,10 @@ func registerChainState(chain *testchain.Chain) {
 	gameStub.Return("numRaffleCosmicSignatureNftsForBidders", big.NewInt(5))
 	gameStub.Return("numRaffleCosmicSignatureNftsForRandomWalkNftStakers", big.NewInt(4))
 	gameStub.Return("cstDutchAuctionDurationDivisor", big.NewInt(11)) // V1 marker
+	gameStub.Return("cstDutchAuctionDuration", big.NewInt(28800))
+	gameStub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(33))
+	gameStub.Return("getBidCstRewardAmount", wei("99000000000000000000"))
+	gameStub.Return("bidCstRewardAmountMultiplier", big.NewInt(7))
 
 	// Per-round live state.
 	gameStub.Return("roundNum", big.NewInt(chainRoundNum))
@@ -129,6 +136,7 @@ func registerChainState(chain *testchain.Chain) {
 	marketingStub.Return("token", token)
 	marketingStub.Return("owner", alice)
 	chain.RegisterCall(marketing, marketingStub.Handler())
+	return gameStub
 }
 
 // wei parses a decimal wei literal.

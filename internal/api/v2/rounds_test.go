@@ -235,6 +235,7 @@ func newRoundTestServer(t *testing.T, rounds roundReader) *Server {
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
 		fakeBiddingAnalyticsReader{},
+		fakeContractAddressReader{},
 		fakeParticipantReader{},
 		fakeContractState{},
 		logger,

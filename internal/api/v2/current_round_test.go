@@ -67,7 +67,7 @@ func TestGetCurrentRoundReturnsServiceUnavailableForCacheSentinel(t *testing.T) 
 	tests := map[string]func(*contractstate.Snapshot){
 		"round":       func(s *contractstate.Snapshot) { s.RoundNum = -1 },
 		"countdown":   func(s *contractstate.Snapshot) { s.PrizeClaimTimestamp = -1 },
-		"bid price":   func(s *contractstate.Snapshot) { s.BidPrice = "error" },
+		"bid price":   func(s *contractstate.Snapshot) { s.BlockPinnedBidPrice = "error" },
 		"prize pool":  func(s *contractstate.Snapshot) { s.PrizeAmount = "error" },
 		"time config": func(s *contractstate.Snapshot) { s.MainPrizeTimeIncrement = "error" },
 	}
@@ -262,6 +262,7 @@ func newCurrentRoundTestServer(
 		fakeRoundDonationReader{},
 		fakeStatisticsReader{},
 		fakeBiddingAnalyticsReader{},
+		fakeContractAddressReader{},
 		fakeParticipantReader{},
 		state,
 		logger,

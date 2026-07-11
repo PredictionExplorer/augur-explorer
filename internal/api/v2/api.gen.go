@@ -68,6 +68,150 @@ func (e ClaimAssetType) Valid() bool {
 	}
 }
 
+// Defines values for ContractConfiguration0CstBidRewardMode.
+const (
+	Fixed ContractConfiguration0CstBidRewardMode = "fixed"
+)
+
+// Valid indicates whether the value is a known member of the ContractConfiguration0CstBidRewardMode enum.
+func (e ContractConfiguration0CstBidRewardMode) Valid() bool {
+	switch e {
+	case Fixed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractConfiguration0CstRoundStartAuctionMode.
+const (
+	ContractConfiguration0CstRoundStartAuctionModeDivisor ContractConfiguration0CstRoundStartAuctionMode = "divisor"
+)
+
+// Valid indicates whether the value is a known member of the ContractConfiguration0CstRoundStartAuctionMode enum.
+func (e ContractConfiguration0CstRoundStartAuctionMode) Valid() bool {
+	switch e {
+	case ContractConfiguration0CstRoundStartAuctionModeDivisor:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractConfiguration0MechanicsVersion.
+const (
+	ContractConfiguration0MechanicsVersionV1 ContractConfiguration0MechanicsVersion = "v1"
+)
+
+// Valid indicates whether the value is a known member of the ContractConfiguration0MechanicsVersion enum.
+func (e ContractConfiguration0MechanicsVersion) Valid() bool {
+	switch e {
+	case ContractConfiguration0MechanicsVersionV1:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractConfiguration1CstBidRewardMode.
+const (
+	Dynamic ContractConfiguration1CstBidRewardMode = "dynamic"
+)
+
+// Valid indicates whether the value is a known member of the ContractConfiguration1CstBidRewardMode enum.
+func (e ContractConfiguration1CstBidRewardMode) Valid() bool {
+	switch e {
+	case Dynamic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractConfiguration1CstRoundStartAuctionMode.
+const (
+	DurationSeconds ContractConfiguration1CstRoundStartAuctionMode = "durationSeconds"
+)
+
+// Valid indicates whether the value is a known member of the ContractConfiguration1CstRoundStartAuctionMode enum.
+func (e ContractConfiguration1CstRoundStartAuctionMode) Valid() bool {
+	switch e {
+	case DurationSeconds:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractConfiguration1MechanicsVersion.
+const (
+	V2 ContractConfiguration1MechanicsVersion = "v2"
+)
+
+// Valid indicates whether the value is a known member of the ContractConfiguration1MechanicsVersion enum.
+func (e ContractConfiguration1MechanicsVersion) Valid() bool {
+	switch e {
+	case V2:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractMechanicsVersion.
+const (
+	ContractMechanicsVersionV1 ContractMechanicsVersion = "v1"
+	ContractMechanicsVersionV2 ContractMechanicsVersion = "v2"
+)
+
+// Valid indicates whether the value is a known member of the ContractMechanicsVersion enum.
+func (e ContractMechanicsVersion) Valid() bool {
+	switch e {
+	case ContractMechanicsVersionV1:
+		return true
+	case ContractMechanicsVersionV2:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CstBidRewardMode.
+const (
+	CstBidRewardDynamic CstBidRewardMode = "dynamic"
+	CstBidRewardFixed   CstBidRewardMode = "fixed"
+)
+
+// Valid indicates whether the value is a known member of the CstBidRewardMode enum.
+func (e CstBidRewardMode) Valid() bool {
+	switch e {
+	case CstBidRewardDynamic:
+		return true
+	case CstBidRewardFixed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CstRoundStartAuctionMode.
+const (
+	CstRoundStartAuctionModeDivisor         CstRoundStartAuctionMode = "divisor"
+	CstRoundStartAuctionModeDurationSeconds CstRoundStartAuctionMode = "durationSeconds"
+)
+
+// Valid indicates whether the value is a known member of the CstRoundStartAuctionMode enum.
+func (e CstRoundStartAuctionMode) Valid() bool {
+	switch e {
+	case CstRoundStartAuctionModeDivisor:
+		return true
+	case CstRoundStartAuctionModeDurationSeconds:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RaffleNftPool.
 const (
 	Bidder           RaffleNftPool = "bidder"
@@ -390,6 +534,13 @@ type ChronoWarriorPrize struct {
 	WinnerAddress string `json:"winnerAddress"`
 }
 
+// ChronoWarriorStanding defines model for ChronoWarriorStanding.
+type ChronoWarriorStanding struct {
+	Address         string `json:"address"`
+	DurationSeconds int64  `json:"durationSeconds"`
+	IsLive          bool   `json:"isLive"`
+}
+
 // ClaimAssetType defines model for ClaimAssetType.
 type ClaimAssetType string
 
@@ -430,6 +581,103 @@ type ClaimTransactionPage struct {
 	Data []AssetClaimTransaction `json:"data"`
 	Meta PageMeta                `json:"meta"`
 }
+
+// ContractAddressRegistry defines model for ContractAddressRegistry.
+type ContractAddressRegistry struct {
+	CharityWalletAddress           string `json:"charityWalletAddress"`
+	CosmicDaoAddress               string `json:"cosmicDaoAddress"`
+	CosmicGameAddress              string `json:"cosmicGameAddress"`
+	CosmicSignatureAddress         string `json:"cosmicSignatureAddress"`
+	CosmicTokenAddress             string `json:"cosmicTokenAddress"`
+	CstStakingWalletAddress        string `json:"cstStakingWalletAddress"`
+	ImplementationAddress          string `json:"implementationAddress"`
+	MarketingWalletAddress         string `json:"marketingWalletAddress"`
+	MarketplaceAddress             string `json:"marketplaceAddress"`
+	PrizesWalletAddress            string `json:"prizesWalletAddress"`
+	RandomWalkAddress              string `json:"randomWalkAddress"`
+	RandomWalkStakingWalletAddress string `json:"randomWalkStakingWalletAddress"`
+}
+
+// ContractBalances defines model for ContractBalances.
+type ContractBalances struct {
+	CharityAddress       string `json:"charityAddress"`
+	CharityBalanceWei    string `json:"charityBalanceWei"`
+	CosmicGameBalanceWei string `json:"cosmicGameBalanceWei"`
+}
+
+// ContractConfiguration defines model for ContractConfiguration.
+type ContractConfiguration struct {
+	CharityAddress            string `json:"charityAddress"`
+	CharityDonationPercentage int64  `json:"charityDonationPercentage"`
+	ChronoWarriorPercentage   int64  `json:"chronoWarriorPercentage"`
+
+	// CstBidRewardMode Fixed on v1 mechanics and dynamic on v2 mechanics.
+	CstBidRewardMode CstBidRewardMode `json:"cstBidRewardMode"`
+
+	// CstBidRewardMultiplier Present only for v2 mechanics.
+	CstBidRewardMultiplier *string `json:"cstBidRewardMultiplier,omitempty"`
+
+	// CstDutchAuctionDurationChangeDivisor Present only for v2 mechanics.
+	CstDutchAuctionDurationChangeDivisor *int64                   `json:"cstDutchAuctionDurationChangeDivisor,omitempty"`
+	CstRoundStartAuctionMode             CstRoundStartAuctionMode `json:"cstRoundStartAuctionMode"`
+	CstRoundStartAuctionValue            int64                    `json:"cstRoundStartAuctionValue"`
+	EthBidPriceIncreaseDivisor           string                   `json:"ethBidPriceIncreaseDivisor"`
+
+	// FixedCstBidRewardWei Present only for v1 mechanics.
+	FixedCstBidRewardWei                  *string `json:"fixedCstBidRewardWei,omitempty"`
+	InitialDurationUntilMainPrizeDivisor  int64   `json:"initialDurationUntilMainPrizeDivisor"`
+	MainPrizePercentage                   int64   `json:"mainPrizePercentage"`
+	MainPrizeTimeIncrementIncreaseDivisor string  `json:"mainPrizeTimeIncrementIncreaseDivisor"`
+
+	// MechanicsVersion Selects the mechanics-specific fields: v1 uses a fixed CST bid reward
+	// and auction divisor; v2 uses a dynamic reward multiplier, auction
+	// duration, and duration-change divisor.
+	MechanicsVersion                     ContractMechanicsVersion `json:"mechanicsVersion"`
+	RaffleEthWinnerCount                 int64                    `json:"raffleEthWinnerCount"`
+	RaffleNftBidderWinnerCount           int64                    `json:"raffleNftBidderWinnerCount"`
+	RaffleNftRandomWalkStakerWinnerCount int64                    `json:"raffleNftRandomWalkStakerWinnerCount"`
+	RafflePercentage                     int64                    `json:"rafflePercentage"`
+	StakingPercentage                    int64                    `json:"stakingPercentage"`
+	TimeoutMainPrizeClaimSeconds         int64                    `json:"timeoutMainPrizeClaimSeconds"`
+	union                                json.RawMessage
+}
+
+// ContractConfiguration0 defines model for .
+type ContractConfiguration0 struct {
+	CstBidRewardMode         *ContractConfiguration0CstBidRewardMode         `json:"cstBidRewardMode,omitempty"`
+	CstRoundStartAuctionMode *ContractConfiguration0CstRoundStartAuctionMode `json:"cstRoundStartAuctionMode,omitempty"`
+	MechanicsVersion         *ContractConfiguration0MechanicsVersion         `json:"mechanicsVersion,omitempty"`
+}
+
+// ContractConfiguration0CstBidRewardMode defines model for ContractConfiguration.0.CstBidRewardMode.
+type ContractConfiguration0CstBidRewardMode string
+
+// ContractConfiguration0CstRoundStartAuctionMode defines model for ContractConfiguration.0.CstRoundStartAuctionMode.
+type ContractConfiguration0CstRoundStartAuctionMode string
+
+// ContractConfiguration0MechanicsVersion defines model for ContractConfiguration.0.MechanicsVersion.
+type ContractConfiguration0MechanicsVersion string
+
+// ContractConfiguration1 defines model for .
+type ContractConfiguration1 struct {
+	CstBidRewardMode         *ContractConfiguration1CstBidRewardMode         `json:"cstBidRewardMode,omitempty"`
+	CstRoundStartAuctionMode *ContractConfiguration1CstRoundStartAuctionMode `json:"cstRoundStartAuctionMode,omitempty"`
+	MechanicsVersion         *ContractConfiguration1MechanicsVersion         `json:"mechanicsVersion,omitempty"`
+}
+
+// ContractConfiguration1CstBidRewardMode defines model for ContractConfiguration.1.CstBidRewardMode.
+type ContractConfiguration1CstBidRewardMode string
+
+// ContractConfiguration1CstRoundStartAuctionMode defines model for ContractConfiguration.1.CstRoundStartAuctionMode.
+type ContractConfiguration1CstRoundStartAuctionMode string
+
+// ContractConfiguration1MechanicsVersion defines model for ContractConfiguration.1.MechanicsVersion.
+type ContractConfiguration1MechanicsVersion string
+
+// ContractMechanicsVersion Selects the mechanics-specific fields: v1 uses a fixed CST bid reward
+// and auction divisor; v2 uses a dynamic reward multiplier, auction
+// duration, and duration-change divisor.
+type ContractMechanicsVersion string
 
 // CosmicGameCounters defines model for CosmicGameCounters.
 type CosmicGameCounters struct {
@@ -520,6 +768,12 @@ type CosmicGameRoundSummary struct {
 	TotalBids            int64       `json:"totalBids"`
 }
 
+// CstBidRewardMode Fixed on v1 mechanics and dynamic on v2 mechanics.
+type CstBidRewardMode string
+
+// CstRoundStartAuctionMode defines model for CstRoundStartAuctionMode.
+type CstRoundStartAuctionMode string
+
 // CstStakerParticipant defines model for CstStakerParticipant.
 type CstStakerParticipant struct {
 	StakerAddress string                     `json:"stakerAddress"`
@@ -548,6 +802,30 @@ type CstStakingStatistics struct {
 	TotalRewardWei     string `json:"totalRewardWei"`
 	TotalTokensStaked  int64  `json:"totalTokensStaked"`
 	UnclaimedRewardWei string `json:"unclaimedRewardWei"`
+}
+
+// CurrentBidPrices defines model for CurrentBidPrices.
+type CurrentBidPrices struct {
+	CstAuctionDurationSeconds int64  `json:"cstAuctionDurationSeconds"`
+	CstAuctionElapsedSeconds  int64  `json:"cstAuctionElapsedSeconds"`
+	EthAuctionDurationSeconds int64  `json:"ethAuctionDurationSeconds"`
+	EthAuctionElapsedSeconds  int64  `json:"ethAuctionElapsedSeconds"`
+	NextCstBidPriceWei        string `json:"nextCstBidPriceWei"`
+
+	// NextCstBidRewardWei Fixed V1 reward or the computed reward for the next V2 bid.
+	NextCstBidRewardWei string `json:"nextCstBidRewardWei"`
+	NextEthBidPriceWei  string `json:"nextEthBidPriceWei"`
+}
+
+// CurrentSpecialWinners defines model for CurrentSpecialWinners.
+type CurrentSpecialWinners struct {
+	ChronoWarrior        *ChronoWarriorStanding     `json:"chronoWarrior,omitempty"`
+	EnduranceChampion    *EnduranceChampionStanding `json:"enduranceChampion,omitempty"`
+	LastBidder           *LastBidderStanding        `json:"lastBidder,omitempty"`
+	LastCstBidder        *LastCstBidderStanding     `json:"lastCstBidder,omitempty"`
+	Round                int64                      `json:"round"`
+	SourceBlockNumber    int64                      `json:"sourceBlockNumber"`
+	SourceBlockTimestamp int64                      `json:"sourceBlockTimestamp"`
 }
 
 // DecimalPercentage Canonical decimal percentage from 0 through 100, rounded to two places.
@@ -586,10 +864,33 @@ type DualStakerParticipantPage struct {
 	Meta PageMeta                `json:"meta"`
 }
 
+// EnduranceChampionStanding defines model for EnduranceChampionStanding.
+type EnduranceChampionStanding struct {
+	Address                 string `json:"address"`
+	DurationSeconds         int64  `json:"durationSeconds"`
+	PreviousDurationSeconds int64  `json:"previousDurationSeconds"`
+	StartedAt               int64  `json:"startedAt"`
+}
+
 // Erc20Donation defines model for Erc20Donation.
 type Erc20Donation struct {
 	AmountWei    string `json:"amountWei"`
 	TokenAddress string `json:"tokenAddress"`
+}
+
+// LastBidderStanding defines model for LastBidderStanding.
+type LastBidderStanding struct {
+	Address   string `json:"address"`
+	LastBidAt int64  `json:"lastBidAt"`
+}
+
+// LastCstBidderStanding defines model for LastCstBidderStanding.
+type LastCstBidderStanding struct {
+	Address string `json:"address"`
+
+	// EventLogId Best-effort indexed event ID; omitted when unavailable.
+	EventLogId *int64 `json:"eventLogId,omitempty"`
+	LastBidAt  *int64 `json:"lastBidAt,omitempty"`
 }
 
 // MainPrize defines model for MainPrize.
@@ -981,6 +1282,21 @@ type CosmicGameBiddingTopActivePeriods = BiddingTopActivePeriods
 // CosmicGameBiddingTypeRatio defines model for CosmicGameBiddingTypeRatio.
 type CosmicGameBiddingTypeRatio = BiddingTypeRatio
 
+// CosmicGameContractAddresses defines model for CosmicGameContractAddresses.
+type CosmicGameContractAddresses = ContractAddressRegistry
+
+// CosmicGameContractBalances defines model for CosmicGameContractBalances.
+type CosmicGameContractBalances = ContractBalances
+
+// CosmicGameContractConfiguration defines model for CosmicGameContractConfiguration.
+type CosmicGameContractConfiguration = ContractConfiguration
+
+// CosmicGameCurrentBidPrices defines model for CosmicGameCurrentBidPrices.
+type CosmicGameCurrentBidPrices = CurrentBidPrices
+
+// CosmicGameCurrentSpecialWinners defines model for CosmicGameCurrentSpecialWinners.
+type CosmicGameCurrentSpecialWinners = CurrentSpecialWinners
+
 // InternalError defines model for InternalError.
 type InternalError = Problem
 
@@ -1260,14 +1576,358 @@ type ListCosmicGameWinnersParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// AsContractConfiguration0 returns the union data inside the ContractConfiguration as a ContractConfiguration0
+func (t ContractConfiguration) AsContractConfiguration0() (ContractConfiguration0, error) {
+	var body ContractConfiguration0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromContractConfiguration0 overwrites any union data inside the ContractConfiguration as the provided ContractConfiguration0
+func (t *ContractConfiguration) FromContractConfiguration0(v ContractConfiguration0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeContractConfiguration0 performs a merge with any union data inside the ContractConfiguration, using the provided ContractConfiguration0
+func (t *ContractConfiguration) MergeContractConfiguration0(v ContractConfiguration0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsContractConfiguration1 returns the union data inside the ContractConfiguration as a ContractConfiguration1
+func (t ContractConfiguration) AsContractConfiguration1() (ContractConfiguration1, error) {
+	var body ContractConfiguration1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromContractConfiguration1 overwrites any union data inside the ContractConfiguration as the provided ContractConfiguration1
+func (t *ContractConfiguration) FromContractConfiguration1(v ContractConfiguration1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeContractConfiguration1 performs a merge with any union data inside the ContractConfiguration, using the provided ContractConfiguration1
+func (t *ContractConfiguration) MergeContractConfiguration1(v ContractConfiguration1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ContractConfiguration) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	object["charityAddress"], err = json.Marshal(t.CharityAddress)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'charityAddress': %w", err)
+	}
+
+	object["charityDonationPercentage"], err = json.Marshal(t.CharityDonationPercentage)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'charityDonationPercentage': %w", err)
+	}
+
+	object["chronoWarriorPercentage"], err = json.Marshal(t.ChronoWarriorPercentage)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'chronoWarriorPercentage': %w", err)
+	}
+
+	object["cstBidRewardMode"], err = json.Marshal(t.CstBidRewardMode)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'cstBidRewardMode': %w", err)
+	}
+
+	if t.CstBidRewardMultiplier != nil {
+		object["cstBidRewardMultiplier"], err = json.Marshal(t.CstBidRewardMultiplier)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'cstBidRewardMultiplier': %w", err)
+		}
+	}
+
+	if t.CstDutchAuctionDurationChangeDivisor != nil {
+		object["cstDutchAuctionDurationChangeDivisor"], err = json.Marshal(t.CstDutchAuctionDurationChangeDivisor)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'cstDutchAuctionDurationChangeDivisor': %w", err)
+		}
+	}
+
+	object["cstRoundStartAuctionMode"], err = json.Marshal(t.CstRoundStartAuctionMode)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'cstRoundStartAuctionMode': %w", err)
+	}
+
+	object["cstRoundStartAuctionValue"], err = json.Marshal(t.CstRoundStartAuctionValue)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'cstRoundStartAuctionValue': %w", err)
+	}
+
+	object["ethBidPriceIncreaseDivisor"], err = json.Marshal(t.EthBidPriceIncreaseDivisor)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'ethBidPriceIncreaseDivisor': %w", err)
+	}
+
+	if t.FixedCstBidRewardWei != nil {
+		object["fixedCstBidRewardWei"], err = json.Marshal(t.FixedCstBidRewardWei)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'fixedCstBidRewardWei': %w", err)
+		}
+	}
+
+	object["initialDurationUntilMainPrizeDivisor"], err = json.Marshal(t.InitialDurationUntilMainPrizeDivisor)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'initialDurationUntilMainPrizeDivisor': %w", err)
+	}
+
+	object["mainPrizePercentage"], err = json.Marshal(t.MainPrizePercentage)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'mainPrizePercentage': %w", err)
+	}
+
+	object["mainPrizeTimeIncrementIncreaseDivisor"], err = json.Marshal(t.MainPrizeTimeIncrementIncreaseDivisor)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'mainPrizeTimeIncrementIncreaseDivisor': %w", err)
+	}
+
+	object["mechanicsVersion"], err = json.Marshal(t.MechanicsVersion)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'mechanicsVersion': %w", err)
+	}
+
+	object["raffleEthWinnerCount"], err = json.Marshal(t.RaffleEthWinnerCount)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'raffleEthWinnerCount': %w", err)
+	}
+
+	object["raffleNftBidderWinnerCount"], err = json.Marshal(t.RaffleNftBidderWinnerCount)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'raffleNftBidderWinnerCount': %w", err)
+	}
+
+	object["raffleNftRandomWalkStakerWinnerCount"], err = json.Marshal(t.RaffleNftRandomWalkStakerWinnerCount)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'raffleNftRandomWalkStakerWinnerCount': %w", err)
+	}
+
+	object["rafflePercentage"], err = json.Marshal(t.RafflePercentage)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'rafflePercentage': %w", err)
+	}
+
+	object["stakingPercentage"], err = json.Marshal(t.StakingPercentage)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'stakingPercentage': %w", err)
+	}
+
+	object["timeoutMainPrizeClaimSeconds"], err = json.Marshal(t.TimeoutMainPrizeClaimSeconds)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'timeoutMainPrizeClaimSeconds': %w", err)
+	}
+
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *ContractConfiguration) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["charityAddress"]; found {
+		err = json.Unmarshal(raw, &t.CharityAddress)
+		if err != nil {
+			return fmt.Errorf("error reading 'charityAddress': %w", err)
+		}
+	}
+
+	if raw, found := object["charityDonationPercentage"]; found {
+		err = json.Unmarshal(raw, &t.CharityDonationPercentage)
+		if err != nil {
+			return fmt.Errorf("error reading 'charityDonationPercentage': %w", err)
+		}
+	}
+
+	if raw, found := object["chronoWarriorPercentage"]; found {
+		err = json.Unmarshal(raw, &t.ChronoWarriorPercentage)
+		if err != nil {
+			return fmt.Errorf("error reading 'chronoWarriorPercentage': %w", err)
+		}
+	}
+
+	if raw, found := object["cstBidRewardMode"]; found {
+		err = json.Unmarshal(raw, &t.CstBidRewardMode)
+		if err != nil {
+			return fmt.Errorf("error reading 'cstBidRewardMode': %w", err)
+		}
+	}
+
+	if raw, found := object["cstBidRewardMultiplier"]; found {
+		err = json.Unmarshal(raw, &t.CstBidRewardMultiplier)
+		if err != nil {
+			return fmt.Errorf("error reading 'cstBidRewardMultiplier': %w", err)
+		}
+	}
+
+	if raw, found := object["cstDutchAuctionDurationChangeDivisor"]; found {
+		err = json.Unmarshal(raw, &t.CstDutchAuctionDurationChangeDivisor)
+		if err != nil {
+			return fmt.Errorf("error reading 'cstDutchAuctionDurationChangeDivisor': %w", err)
+		}
+	}
+
+	if raw, found := object["cstRoundStartAuctionMode"]; found {
+		err = json.Unmarshal(raw, &t.CstRoundStartAuctionMode)
+		if err != nil {
+			return fmt.Errorf("error reading 'cstRoundStartAuctionMode': %w", err)
+		}
+	}
+
+	if raw, found := object["cstRoundStartAuctionValue"]; found {
+		err = json.Unmarshal(raw, &t.CstRoundStartAuctionValue)
+		if err != nil {
+			return fmt.Errorf("error reading 'cstRoundStartAuctionValue': %w", err)
+		}
+	}
+
+	if raw, found := object["ethBidPriceIncreaseDivisor"]; found {
+		err = json.Unmarshal(raw, &t.EthBidPriceIncreaseDivisor)
+		if err != nil {
+			return fmt.Errorf("error reading 'ethBidPriceIncreaseDivisor': %w", err)
+		}
+	}
+
+	if raw, found := object["fixedCstBidRewardWei"]; found {
+		err = json.Unmarshal(raw, &t.FixedCstBidRewardWei)
+		if err != nil {
+			return fmt.Errorf("error reading 'fixedCstBidRewardWei': %w", err)
+		}
+	}
+
+	if raw, found := object["initialDurationUntilMainPrizeDivisor"]; found {
+		err = json.Unmarshal(raw, &t.InitialDurationUntilMainPrizeDivisor)
+		if err != nil {
+			return fmt.Errorf("error reading 'initialDurationUntilMainPrizeDivisor': %w", err)
+		}
+	}
+
+	if raw, found := object["mainPrizePercentage"]; found {
+		err = json.Unmarshal(raw, &t.MainPrizePercentage)
+		if err != nil {
+			return fmt.Errorf("error reading 'mainPrizePercentage': %w", err)
+		}
+	}
+
+	if raw, found := object["mainPrizeTimeIncrementIncreaseDivisor"]; found {
+		err = json.Unmarshal(raw, &t.MainPrizeTimeIncrementIncreaseDivisor)
+		if err != nil {
+			return fmt.Errorf("error reading 'mainPrizeTimeIncrementIncreaseDivisor': %w", err)
+		}
+	}
+
+	if raw, found := object["mechanicsVersion"]; found {
+		err = json.Unmarshal(raw, &t.MechanicsVersion)
+		if err != nil {
+			return fmt.Errorf("error reading 'mechanicsVersion': %w", err)
+		}
+	}
+
+	if raw, found := object["raffleEthWinnerCount"]; found {
+		err = json.Unmarshal(raw, &t.RaffleEthWinnerCount)
+		if err != nil {
+			return fmt.Errorf("error reading 'raffleEthWinnerCount': %w", err)
+		}
+	}
+
+	if raw, found := object["raffleNftBidderWinnerCount"]; found {
+		err = json.Unmarshal(raw, &t.RaffleNftBidderWinnerCount)
+		if err != nil {
+			return fmt.Errorf("error reading 'raffleNftBidderWinnerCount': %w", err)
+		}
+	}
+
+	if raw, found := object["raffleNftRandomWalkStakerWinnerCount"]; found {
+		err = json.Unmarshal(raw, &t.RaffleNftRandomWalkStakerWinnerCount)
+		if err != nil {
+			return fmt.Errorf("error reading 'raffleNftRandomWalkStakerWinnerCount': %w", err)
+		}
+	}
+
+	if raw, found := object["rafflePercentage"]; found {
+		err = json.Unmarshal(raw, &t.RafflePercentage)
+		if err != nil {
+			return fmt.Errorf("error reading 'rafflePercentage': %w", err)
+		}
+	}
+
+	if raw, found := object["stakingPercentage"]; found {
+		err = json.Unmarshal(raw, &t.StakingPercentage)
+		if err != nil {
+			return fmt.Errorf("error reading 'stakingPercentage': %w", err)
+		}
+	}
+
+	if raw, found := object["timeoutMainPrizeClaimSeconds"]; found {
+		err = json.Unmarshal(raw, &t.TimeoutMainPrizeClaimSeconds)
+		if err != nil {
+			return fmt.Errorf("error reading 'timeoutMainPrizeClaimSeconds': %w", err)
+		}
+	}
+
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get the deployed CosmicGame contract registry
+	// (GET /api/v2/cosmicgame/contracts/addresses)
+	GetCosmicGameContractAddresses(w http.ResponseWriter, r *http.Request)
+	// Get cached CosmicGame and charity ETH balances
+	// (GET /api/v2/cosmicgame/contracts/balances)
+	GetCosmicGameContractBalances(w http.ResponseWriter, r *http.Request)
+	// Get cached CosmicGame contract configuration
+	// (GET /api/v2/cosmicgame/contracts/configuration)
+	GetCosmicGameContractConfiguration(w http.ResponseWriter, r *http.Request)
 	// List completed CosmicGame rounds
 	// (GET /api/v2/cosmicgame/rounds)
 	ListRounds(w http.ResponseWriter, r *http.Request, params ListRoundsParams)
 	// Get the current open CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/current)
 	GetCurrentRound(w http.ResponseWriter, r *http.Request)
+	// Get cached next-bid prices and Dutch-auction progress
+	// (GET /api/v2/cosmicgame/rounds/current/bid-prices)
+	GetCosmicGameCurrentBidPrices(w http.ResponseWriter, r *http.Request)
+	// Get cached live endurance and chrono-warrior standings
+	// (GET /api/v2/cosmicgame/rounds/current/special-winners)
+	GetCosmicGameCurrentSpecialWinners(w http.ResponseWriter, r *http.Request)
 	// Get one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round})
 	GetRound(w http.ResponseWriter, r *http.Request, round Round)
@@ -1354,6 +2014,48 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// GetCosmicGameContractAddresses operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameContractAddresses(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameContractAddresses(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameContractBalances operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameContractBalances(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameContractBalances(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameContractConfiguration operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameContractConfiguration(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameContractConfiguration(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRounds operation middleware
 func (siw *ServerInterfaceWrapper) ListRounds(w http.ResponseWriter, r *http.Request) {
 
@@ -1405,6 +2107,34 @@ func (siw *ServerInterfaceWrapper) GetCurrentRound(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCurrentRound(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameCurrentBidPrices operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameCurrentBidPrices(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameCurrentBidPrices(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameCurrentSpecialWinners operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameCurrentSpecialWinners(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameCurrentSpecialWinners(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2772,8 +3502,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/contracts/addresses", wrapper.GetCosmicGameContractAddresses)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/contracts/balances", wrapper.GetCosmicGameContractBalances)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/contracts/configuration", wrapper.GetCosmicGameContractConfiguration)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds", wrapper.ListRounds)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/current", wrapper.GetCurrentRound)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/current/bid-prices", wrapper.GetCosmicGameCurrentBidPrices)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/current/special-winners", wrapper.GetCosmicGameCurrentSpecialWinners)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}", wrapper.GetRound)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids", wrapper.ListRoundBids)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/rounds/{round}/bids/{position}", wrapper.GetRoundBid)
@@ -2821,9 +3556,27 @@ type CosmicGameBiddingTopActivePeriodsJSONResponse BiddingTopActivePeriods
 
 type CosmicGameBiddingTypeRatioJSONResponse BiddingTypeRatio
 
+type CosmicGameContractAddressesJSONResponse ContractAddressRegistry
+
+type CosmicGameContractBalancesJSONResponse ContractBalances
+
+type CosmicGameContractConfigurationJSONResponse ContractConfiguration
+
+func (t CosmicGameContractConfigurationJSONResponse) MarshalJSON() ([]byte, error) {
+	return ContractConfiguration(t).MarshalJSON()
+}
+
+func (t *CosmicGameContractConfigurationJSONResponse) UnmarshalJSON(b []byte) error {
+	return (*ContractConfiguration)(t).UnmarshalJSON(b)
+}
+
 type CosmicGameCountersJSONResponse CosmicGameCounters
 
+type CosmicGameCurrentBidPricesJSONResponse CurrentBidPrices
+
 type CosmicGameCurrentRoundJSONResponse CosmicGameCurrentRound
+
+type CosmicGameCurrentSpecialWinnersJSONResponse CurrentSpecialWinners
 
 type CosmicGameGlobalStatisticsJSONResponse CosmicGameGlobalStatistics
 
@@ -2871,6 +3624,157 @@ type ServiceUnavailableApplicationProblemPlusJSONResponse struct {
 }
 
 type WinnerParticipantPageJSONResponse WinnerParticipantPage
+
+type GetCosmicGameContractAddressesRequestObject struct {
+}
+
+type GetCosmicGameContractAddressesResponseObject interface {
+	VisitGetCosmicGameContractAddressesResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameContractAddresses200JSONResponse struct {
+	CosmicGameContractAddressesJSONResponse
+}
+
+func (response GetCosmicGameContractAddresses200JSONResponse) VisitGetCosmicGameContractAddressesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractAddresses500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameContractAddresses500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameContractAddressesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractBalancesRequestObject struct {
+}
+
+type GetCosmicGameContractBalancesResponseObject interface {
+	VisitGetCosmicGameContractBalancesResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameContractBalances200JSONResponse struct {
+	CosmicGameContractBalancesJSONResponse
+}
+
+func (response GetCosmicGameContractBalances200JSONResponse) VisitGetCosmicGameContractBalancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractBalances500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameContractBalances500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameContractBalancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractBalances503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameContractBalances503ApplicationProblemPlusJSONResponse) VisitGetCosmicGameContractBalancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.Header().Set("Retry-After", fmt.Sprint(response.Headers.RetryAfter))
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractConfigurationRequestObject struct {
+}
+
+type GetCosmicGameContractConfigurationResponseObject interface {
+	VisitGetCosmicGameContractConfigurationResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameContractConfiguration200JSONResponse struct {
+	CosmicGameContractConfigurationJSONResponse
+}
+
+func (response GetCosmicGameContractConfiguration200JSONResponse) VisitGetCosmicGameContractConfigurationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractConfiguration500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameContractConfiguration500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameContractConfigurationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameContractConfiguration503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameContractConfiguration503ApplicationProblemPlusJSONResponse) VisitGetCosmicGameContractConfigurationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.Header().Set("Retry-After", fmt.Sprint(response.Headers.RetryAfter))
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListRoundsRequestObject struct {
 	Params ListRoundsParams
@@ -2970,6 +3874,118 @@ type GetCurrentRound503ApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetCurrentRound503ApplicationProblemPlusJSONResponse) VisitGetCurrentRoundResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.Header().Set("Retry-After", fmt.Sprint(response.Headers.RetryAfter))
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameCurrentBidPricesRequestObject struct {
+}
+
+type GetCosmicGameCurrentBidPricesResponseObject interface {
+	VisitGetCosmicGameCurrentBidPricesResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameCurrentBidPrices200JSONResponse struct {
+	CosmicGameCurrentBidPricesJSONResponse
+}
+
+func (response GetCosmicGameCurrentBidPrices200JSONResponse) VisitGetCosmicGameCurrentBidPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameCurrentBidPrices500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameCurrentBidPrices500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameCurrentBidPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameCurrentBidPrices503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameCurrentBidPrices503ApplicationProblemPlusJSONResponse) VisitGetCosmicGameCurrentBidPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.Header().Set("Retry-After", fmt.Sprint(response.Headers.RetryAfter))
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameCurrentSpecialWinnersRequestObject struct {
+}
+
+type GetCosmicGameCurrentSpecialWinnersResponseObject interface {
+	VisitGetCosmicGameCurrentSpecialWinnersResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameCurrentSpecialWinners200JSONResponse struct {
+	CosmicGameCurrentSpecialWinnersJSONResponse
+}
+
+func (response GetCosmicGameCurrentSpecialWinners200JSONResponse) VisitGetCosmicGameCurrentSpecialWinnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameCurrentSpecialWinners500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameCurrentSpecialWinners500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameCurrentSpecialWinnersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameCurrentSpecialWinners503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameCurrentSpecialWinners503ApplicationProblemPlusJSONResponse) VisitGetCosmicGameCurrentSpecialWinnersResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -4422,12 +5438,27 @@ func (response ListCosmicGameWinners500ApplicationProblemPlusJSONResponse) Visit
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Get the deployed CosmicGame contract registry
+	// (GET /api/v2/cosmicgame/contracts/addresses)
+	GetCosmicGameContractAddresses(ctx context.Context, request GetCosmicGameContractAddressesRequestObject) (GetCosmicGameContractAddressesResponseObject, error)
+	// Get cached CosmicGame and charity ETH balances
+	// (GET /api/v2/cosmicgame/contracts/balances)
+	GetCosmicGameContractBalances(ctx context.Context, request GetCosmicGameContractBalancesRequestObject) (GetCosmicGameContractBalancesResponseObject, error)
+	// Get cached CosmicGame contract configuration
+	// (GET /api/v2/cosmicgame/contracts/configuration)
+	GetCosmicGameContractConfiguration(ctx context.Context, request GetCosmicGameContractConfigurationRequestObject) (GetCosmicGameContractConfigurationResponseObject, error)
 	// List completed CosmicGame rounds
 	// (GET /api/v2/cosmicgame/rounds)
 	ListRounds(ctx context.Context, request ListRoundsRequestObject) (ListRoundsResponseObject, error)
 	// Get the current open CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/current)
 	GetCurrentRound(ctx context.Context, request GetCurrentRoundRequestObject) (GetCurrentRoundResponseObject, error)
+	// Get cached next-bid prices and Dutch-auction progress
+	// (GET /api/v2/cosmicgame/rounds/current/bid-prices)
+	GetCosmicGameCurrentBidPrices(ctx context.Context, request GetCosmicGameCurrentBidPricesRequestObject) (GetCosmicGameCurrentBidPricesResponseObject, error)
+	// Get cached live endurance and chrono-warrior standings
+	// (GET /api/v2/cosmicgame/rounds/current/special-winners)
+	GetCosmicGameCurrentSpecialWinners(ctx context.Context, request GetCosmicGameCurrentSpecialWinnersRequestObject) (GetCosmicGameCurrentSpecialWinnersResponseObject, error)
 	// Get one completed CosmicGame round
 	// (GET /api/v2/cosmicgame/rounds/{round})
 	GetRound(ctx context.Context, request GetRoundRequestObject) (GetRoundResponseObject, error)
@@ -4534,6 +5565,78 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
+// GetCosmicGameContractAddresses operation middleware
+func (sh *strictHandler) GetCosmicGameContractAddresses(w http.ResponseWriter, r *http.Request) {
+	var request GetCosmicGameContractAddressesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameContractAddresses(ctx, request.(GetCosmicGameContractAddressesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameContractAddresses")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameContractAddressesResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameContractAddressesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameContractBalances operation middleware
+func (sh *strictHandler) GetCosmicGameContractBalances(w http.ResponseWriter, r *http.Request) {
+	var request GetCosmicGameContractBalancesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameContractBalances(ctx, request.(GetCosmicGameContractBalancesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameContractBalances")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameContractBalancesResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameContractBalancesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameContractConfiguration operation middleware
+func (sh *strictHandler) GetCosmicGameContractConfiguration(w http.ResponseWriter, r *http.Request) {
+	var request GetCosmicGameContractConfigurationRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameContractConfiguration(ctx, request.(GetCosmicGameContractConfigurationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameContractConfiguration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameContractConfigurationResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameContractConfigurationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListRounds operation middleware
 func (sh *strictHandler) ListRounds(w http.ResponseWriter, r *http.Request, params ListRoundsParams) {
 	var request ListRoundsRequestObject
@@ -4577,6 +5680,54 @@ func (sh *strictHandler) GetCurrentRound(w http.ResponseWriter, r *http.Request)
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCurrentRoundResponseObject); ok {
 		if err := validResponse.VisitGetCurrentRoundResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameCurrentBidPrices operation middleware
+func (sh *strictHandler) GetCosmicGameCurrentBidPrices(w http.ResponseWriter, r *http.Request) {
+	var request GetCosmicGameCurrentBidPricesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameCurrentBidPrices(ctx, request.(GetCosmicGameCurrentBidPricesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameCurrentBidPrices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameCurrentBidPricesResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameCurrentBidPricesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameCurrentSpecialWinners operation middleware
+func (sh *strictHandler) GetCosmicGameCurrentSpecialWinners(w http.ResponseWriter, r *http.Request) {
+	var request GetCosmicGameCurrentSpecialWinnersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameCurrentSpecialWinners(ctx, request.(GetCosmicGameCurrentSpecialWinnersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameCurrentSpecialWinners")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameCurrentSpecialWinnersResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameCurrentSpecialWinnersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5242,136 +6393,165 @@ func (sh *strictHandler) ListCosmicGameWinners(w http.ResponseWriter, r *http.Re
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"58f/DQAA//8=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

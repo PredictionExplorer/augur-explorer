@@ -1,13 +1,61 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.9.0
+  version: 0.10.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
 servers:
   - url: /
 paths:
+  /api/v2/cosmicgame/contracts/addresses:
+    get:
+      operationId: getCosmicGameContractAddresses
+      summary: Get the deployed CosmicGame contract registry
+      description: |
+        Returns the complete database-backed CosmicGame registry plus the
+        RandomWalk marketplace registry entry. Addresses are canonical, an
+        incomplete registry is an internal error, and the response performs
+        no contract RPC.
+      tags:
+        - CosmicGame contracts
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameContractAddresses"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/contracts/configuration:
+    get:
+      operationId: getCosmicGameContractConfiguration
+      summary: Get cached CosmicGame contract configuration
+      description: |
+        Returns a mechanics-consistent cache snapshot of owner-tunable
+        parameters. Constants refresh every five minutes; dependent live
+        timing fields refresh every five seconds. The handler never performs
+        request-time RPC.
+      tags:
+        - CosmicGame contracts
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameContractConfiguration"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v2/cosmicgame/contracts/balances:
+    get:
+      operationId: getCosmicGameContractBalances
+      summary: Get cached CosmicGame and charity ETH balances
+      description: Exact wei balances from one block-pinned five-second cache refresh; no request-time RPC.
+      tags:
+        - CosmicGame contracts
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameContractBalances"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /api/v2/cosmicgame/rounds:
     get:
       operationId: listRounds
@@ -33,6 +81,43 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/CosmicGameCurrentRound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v2/cosmicgame/rounds/current/bid-prices:
+    get:
+      operationId: getCosmicGameCurrentBidPrices
+      summary: Get cached next-bid prices and Dutch-auction progress
+      description: |
+        Returns exact ETH/CST prices and duration/elapsed values from one
+        block-pinned five-second cache refresh. Auction progress is clamped
+        to the inclusive range from zero through duration. The handler never
+        performs request-time RPC.
+      tags:
+        - CosmicGame rounds
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCurrentBidPrices"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v2/cosmicgame/rounds/current/special-winners:
+    get:
+      operationId: getCosmicGameCurrentSpecialWinners
+      summary: Get cached live endurance and chrono-warrior standings
+      description: |
+        Returns block-coherent special-winner standings from the 30-second
+        cache. Cache refresh combines block-pinned contract reads with a
+        best-effort database lookup for the last CST bid event ID; a missing
+        event omits that optional field. The handler never performs
+        request-time RPC.
+      tags:
+        - CosmicGame rounds
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCurrentSpecialWinners"
         "500":
           $ref: "#/components/responses/InternalError"
         "503":
@@ -690,6 +775,371 @@ components:
         instance:
           type: string
           format: uri-reference
+    ContractAddressRegistry:
+      type: object
+      additionalProperties: false
+      required:
+        - cosmicGameAddress
+        - cosmicSignatureAddress
+        - cosmicTokenAddress
+        - cosmicDaoAddress
+        - charityWalletAddress
+        - prizesWalletAddress
+        - randomWalkAddress
+        - cstStakingWalletAddress
+        - randomWalkStakingWalletAddress
+        - marketingWalletAddress
+        - marketplaceAddress
+        - implementationAddress
+      properties:
+        cosmicGameAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        cosmicSignatureAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        cosmicTokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        cosmicDaoAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        charityWalletAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        prizesWalletAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        randomWalkAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        cstStakingWalletAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        randomWalkStakingWalletAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        marketingWalletAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        marketplaceAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        implementationAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    ContractMechanicsVersion:
+      type: string
+      description: |
+        Selects the mechanics-specific fields: v1 uses a fixed CST bid reward
+        and auction divisor; v2 uses a dynamic reward multiplier, auction
+        duration, and duration-change divisor.
+      enum:
+        - v1
+        - v2
+    CstBidRewardMode:
+      type: string
+      description: Fixed on v1 mechanics and dynamic on v2 mechanics.
+      enum:
+        - fixed
+        - dynamic
+      x-enum-varnames:
+        - CstBidRewardFixed
+        - CstBidRewardDynamic
+    CstRoundStartAuctionMode:
+      type: string
+      enum:
+        - divisor
+        - durationSeconds
+    ContractConfiguration:
+      type: object
+      additionalProperties: false
+      oneOf:
+        - title: V1 contract configuration
+          required:
+            - fixedCstBidRewardWei
+          properties:
+            mechanicsVersion:
+              type: string
+              enum: [v1]
+            cstBidRewardMode:
+              type: string
+              enum: [fixed]
+            cstRoundStartAuctionMode:
+              type: string
+              enum: [divisor]
+          not:
+            anyOf:
+              - required: [cstBidRewardMultiplier]
+              - required: [cstDutchAuctionDurationChangeDivisor]
+        - title: V2 contract configuration
+          required:
+            - cstBidRewardMultiplier
+            - cstDutchAuctionDurationChangeDivisor
+          properties:
+            mechanicsVersion:
+              type: string
+              enum: [v2]
+            cstBidRewardMode:
+              type: string
+              enum: [dynamic]
+            cstRoundStartAuctionMode:
+              type: string
+              enum: [durationSeconds]
+          not:
+            required: [fixedCstBidRewardWei]
+      required:
+        - mechanicsVersion
+        - ethBidPriceIncreaseDivisor
+        - charityAddress
+        - charityDonationPercentage
+        - cstBidRewardMode
+        - mainPrizePercentage
+        - rafflePercentage
+        - chronoWarriorPercentage
+        - stakingPercentage
+        - mainPrizeTimeIncrementIncreaseDivisor
+        - raffleEthWinnerCount
+        - raffleNftBidderWinnerCount
+        - raffleNftRandomWalkStakerWinnerCount
+        - initialDurationUntilMainPrizeDivisor
+        - timeoutMainPrizeClaimSeconds
+        - cstRoundStartAuctionMode
+        - cstRoundStartAuctionValue
+      properties:
+        mechanicsVersion:
+          $ref: "#/components/schemas/ContractMechanicsVersion"
+        ethBidPriceIncreaseDivisor:
+          type: string
+          pattern: "^[0-9]+$"
+        charityAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        charityDonationPercentage:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100
+        cstBidRewardMode:
+          $ref: "#/components/schemas/CstBidRewardMode"
+        fixedCstBidRewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Present only for v1 mechanics.
+        cstBidRewardMultiplier:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Present only for v2 mechanics.
+        mainPrizePercentage:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100
+        rafflePercentage:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100
+        chronoWarriorPercentage:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100
+        stakingPercentage:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 100
+        mainPrizeTimeIncrementIncreaseDivisor:
+          type: string
+          pattern: "^[0-9]+$"
+        raffleEthWinnerCount:
+          type: integer
+          format: int64
+          minimum: 0
+        raffleNftBidderWinnerCount:
+          type: integer
+          format: int64
+          minimum: 0
+        raffleNftRandomWalkStakerWinnerCount:
+          type: integer
+          format: int64
+          minimum: 0
+        initialDurationUntilMainPrizeDivisor:
+          type: integer
+          format: int64
+          minimum: 1
+        timeoutMainPrizeClaimSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        cstRoundStartAuctionMode:
+          $ref: "#/components/schemas/CstRoundStartAuctionMode"
+        cstRoundStartAuctionValue:
+          type: integer
+          format: int64
+          minimum: 1
+        cstDutchAuctionDurationChangeDivisor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Present only for v2 mechanics.
+    ContractBalances:
+      type: object
+      additionalProperties: false
+      required:
+        - cosmicGameBalanceWei
+        - charityAddress
+        - charityBalanceWei
+      properties:
+        cosmicGameBalanceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        charityAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        charityBalanceWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CurrentBidPrices:
+      type: object
+      additionalProperties: false
+      required:
+        - nextEthBidPriceWei
+        - nextCstBidPriceWei
+        - nextCstBidRewardWei
+        - ethAuctionDurationSeconds
+        - ethAuctionElapsedSeconds
+        - cstAuctionDurationSeconds
+        - cstAuctionElapsedSeconds
+      properties:
+        nextEthBidPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        nextCstBidPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        nextCstBidRewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Fixed V1 reward or the computed reward for the next V2 bid.
+        ethAuctionDurationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        ethAuctionElapsedSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        cstAuctionDurationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        cstAuctionElapsedSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+    EnduranceChampionStanding:
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - durationSeconds
+        - startedAt
+        - previousDurationSeconds
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        durationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        startedAt:
+          type: integer
+          format: int64
+          minimum: 0
+        previousDurationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+    ChronoWarriorStanding:
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - durationSeconds
+        - isLive
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        durationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        isLive:
+          type: boolean
+    LastBidderStanding:
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - lastBidAt
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        lastBidAt:
+          type: integer
+          format: int64
+          minimum: 0
+    LastCstBidderStanding:
+      type: object
+      additionalProperties: false
+      required:
+        - address
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        lastBidAt:
+          type: integer
+          format: int64
+          minimum: 0
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Best-effort indexed event ID; omitted when unavailable.
+    CurrentSpecialWinners:
+      type: object
+      additionalProperties: false
+      required:
+        - round
+        - sourceBlockNumber
+        - sourceBlockTimestamp
+      properties:
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        sourceBlockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        sourceBlockTimestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        enduranceChampion:
+          $ref: "#/components/schemas/EnduranceChampionStanding"
+        chronoWarrior:
+          $ref: "#/components/schemas/ChronoWarriorStanding"
+        lastBidder:
+          $ref: "#/components/schemas/LastBidderStanding"
+        lastCstBidder:
+          $ref: "#/components/schemas/LastCstBidderStanding"
     RoundStatus:
       type: string
       enum:
@@ -2676,6 +3126,36 @@ components:
         meta:
           $ref: "#/components/schemas/PageMeta"
   responses:
+    CosmicGameContractAddresses:
+      description: Complete deployed CosmicGame contract registry.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ContractAddressRegistry"
+    CosmicGameContractConfiguration:
+      description: Cached owner-tunable CosmicGame configuration.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ContractConfiguration"
+    CosmicGameContractBalances:
+      description: Cached exact CosmicGame and charity balances.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ContractBalances"
+    CosmicGameCurrentBidPrices:
+      description: Cached next-bid prices and Dutch-auction progress.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CurrentBidPrices"
+    CosmicGameCurrentSpecialWinners:
+      description: Cached block-coherent special-winner standings.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CurrentSpecialWinners"
     RoundPage:
       description: One stable page of completed rounds.
       content:

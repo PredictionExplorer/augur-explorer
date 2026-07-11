@@ -6,12 +6,16 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
@@ -31,6 +35,11 @@ const (
 	v2ListDonationEth    = "/api/v2/cosmicgame/rounds/{round}/eth-donations"
 	v2ListDonationERC20  = "/api/v2/cosmicgame/rounds/{round}/erc20-donations"
 	v2ListDonationNFT    = "/api/v2/cosmicgame/rounds/{round}/nft-donations"
+	v2ContractAddresses  = "/api/v2/cosmicgame/contracts/addresses"
+	v2ContractConfig     = "/api/v2/cosmicgame/contracts/configuration"
+	v2ContractBalances   = "/api/v2/cosmicgame/contracts/balances"
+	v2CurrentBidPrices   = "/api/v2/cosmicgame/rounds/current/bid-prices"
+	v2CurrentWinners     = "/api/v2/cosmicgame/rounds/current/special-winners"
 	v2GlobalStatistics   = "/api/v2/cosmicgame/statistics"
 	v2StatisticsCounters = "/api/v2/cosmicgame/statistics/counters"
 	v2BiddingActivity    = "/api/v2/cosmicgame/statistics/bidding/activity"
@@ -87,9 +96,14 @@ func TestAPIV2CurrentRound(t *testing.T) {
 
 	runV2GoldenCases(t, h, spec, cases)
 
-	original := h.state.Snapshot()
-	h.state.SetBidPrice("error", 0)
-	defer h.state.SetBidPrice(original.BidPrice, original.BidPriceEth)
+	h.gameStub.Handle("getNextEthBidPrice", func([]any) ([]any, error) {
+		return nil, errors.New("forced bid-price failure")
+	})
+	h.state.LoadInitial(context.Background())
+	t.Cleanup(func() {
+		h.gameStub.Return("getNextEthBidPrice", wei("1010000000000000"))
+		h.state.LoadInitial(context.Background())
+	})
 	unavailable := h.get(t, v2CurrentRoundPath)
 	if unavailable.Code != http.StatusServiceUnavailable ||
 		unavailable.Header().Get("Retry-After") != "5" {
@@ -104,6 +118,253 @@ func TestAPIV2CurrentRound(t *testing.T) {
 			pathParams: map[string]string{},
 		},
 	})
+	h.gameStub.Return("getNextEthBidPrice", wei("1010000000000000"))
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_current_bid_prices_recovered", target: v2CurrentBidPrices, template: v2CurrentBidPrices, pathParams: map[string]string{}},
+	})
+}
+
+func TestAPIV2ContractResources(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_addresses", target: v2ContractAddresses, template: v2ContractAddresses, pathParams: map[string]string{}},
+		{name: "contracts_configuration", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
+		{name: "contracts_balances", target: v2ContractBalances, template: v2ContractBalances, pathParams: map[string]string{}},
+		{name: "contracts_current_bid_prices", target: v2CurrentBidPrices, template: v2CurrentBidPrices, pathParams: map[string]string{}},
+		{name: "contracts_current_special_winners", target: v2CurrentWinners, template: v2CurrentWinners, pathParams: map[string]string{}},
+		{name: "contracts_addresses_error_internal", target: v2ContractAddresses, template: v2ContractAddresses, pathParams: map[string]string{}, ctx: cancelledCtx},
+	})
+
+	var marketplaceAddress string
+	if err := h.db.QueryRowContext(
+		context.Background(),
+		"SELECT marketplace_addr FROM rw_contracts LIMIT 1",
+	).Scan(&marketplaceAddress); err != nil {
+		t.Fatalf("reading marketplace address: %v", err)
+	}
+	if _, err := h.db.ExecContext(
+		context.Background(),
+		"UPDATE rw_contracts SET marketplace_addr = ''",
+	); err != nil {
+		t.Fatalf("clearing marketplace address: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := h.db.ExecContext(
+			context.Background(),
+			"UPDATE rw_contracts SET marketplace_addr = $1",
+			marketplaceAddress,
+		); err != nil {
+			t.Errorf("restoring marketplace address: %v", err)
+		}
+	})
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_addresses_error_invalid_registry", target: v2ContractAddresses, template: v2ContractAddresses, pathParams: map[string]string{}},
+	})
+	if _, err := h.db.ExecContext(
+		context.Background(),
+		"UPDATE rw_contracts SET marketplace_addr = $1",
+		marketplaceAddress,
+	); err != nil {
+		t.Fatalf("restoring marketplace address: %v", err)
+	}
+
+	rpcFailure := func([]any) ([]any, error) {
+		return nil, errors.New("forced contract read failure")
+	}
+	restoreV1 := func() {
+		h.gameStub.Return("ethBidPriceIncreaseDivisor", big.NewInt(100))
+		h.gameStub.Return("getNextEthBidPrice", wei("1010000000000000"))
+		h.gameStub.Return("charityAddress", ethcommon.HexToAddress("0x6000000000000000000000000000000000000006"))
+		h.gameStub.Return(
+			"tryGetCurrentChampions",
+			ethcommon.HexToAddress(addrBob),
+			big.NewInt(600),
+			ethcommon.HexToAddress(addrCarol),
+			big.NewInt(800),
+		)
+		h.gameStub.Return("cstDutchAuctionDurationDivisor", big.NewInt(11))
+		h.gameStub.Return("getCstDutchAuctionDurations", big.NewInt(28800), big.NewInt(3600))
+		h.gameStub.Handle("cstDutchAuctionDuration", rpcFailure)
+		h.state.LoadInitial(context.Background())
+		h.gameStub.Return("cstDutchAuctionDuration", big.NewInt(28800))
+	}
+	t.Cleanup(restoreV1)
+
+	h.gameStub.Handle("getNextEthBidPrice", rpcFailure)
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_current_bid_prices_error_unavailable", target: v2CurrentBidPrices, template: v2CurrentBidPrices, pathParams: map[string]string{}},
+	})
+	h.gameStub.Return("getNextEthBidPrice", wei("1010000000000000"))
+	h.state.LoadInitial(context.Background())
+
+	h.gameStub.Handle("ethBidPriceIncreaseDivisor", rpcFailure)
+	h.state.LoadInitial(context.Background())
+	configUnavailable := h.get(t, v2ContractConfig)
+	if configUnavailable.Code != http.StatusServiceUnavailable ||
+		configUnavailable.Header().Get("Retry-After") != "300" {
+		t.Fatalf("configuration unavailable = %d Retry-After %q",
+			configUnavailable.Code, configUnavailable.Header().Get("Retry-After"))
+	}
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_configuration_error_unavailable", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
+	})
+	h.gameStub.Return("ethBidPriceIncreaseDivisor", big.NewInt(100))
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_configuration_recovered", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
+	})
+
+	h.gameStub.Return("charityAddress", ethcommon.Address{})
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_balances_error_unavailable", target: v2ContractBalances, template: v2ContractBalances, pathParams: map[string]string{}},
+	})
+	h.gameStub.Return("charityAddress", ethcommon.HexToAddress("0x6000000000000000000000000000000000000006"))
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_balances_recovered", target: v2ContractBalances, template: v2ContractBalances, pathParams: map[string]string{}},
+	})
+
+	h.gameStub.Handle("tryGetCurrentChampions", rpcFailure)
+	h.state.LoadInitial(context.Background())
+	specialUnavailable := h.get(t, v2CurrentWinners)
+	if specialUnavailable.Code != http.StatusServiceUnavailable ||
+		specialUnavailable.Header().Get("Retry-After") != "30" {
+		t.Fatalf("special-winners unavailable = %d Retry-After %q",
+			specialUnavailable.Code, specialUnavailable.Header().Get("Retry-After"))
+	}
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_special_winners_error_unavailable", target: v2CurrentWinners, template: v2CurrentWinners, pathParams: map[string]string{}},
+	})
+	h.gameStub.Return(
+		"tryGetCurrentChampions",
+		ethcommon.HexToAddress(addrBob),
+		big.NewInt(600),
+		ethcommon.HexToAddress(addrCarol),
+		big.NewInt(800),
+	)
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_special_winners_recovered", target: v2CurrentWinners, template: v2CurrentWinners, pathParams: map[string]string{}},
+	})
+
+	h.gameStub.Handle("cstDutchAuctionDurationDivisor", rpcFailure)
+	h.gameStub.Return(
+		"getCstDutchAuctionDurations",
+		big.NewInt(28800),
+		big.NewInt(1767229000),
+	)
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_configuration_v2", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
+		{name: "contracts_current_bid_prices_v2", target: v2CurrentBidPrices, template: v2CurrentBidPrices, pathParams: map[string]string{}},
+	})
+	restoreV1()
+}
+
+func TestAPIV2ContractResourcesMatchV1Semantics(t *testing.T) {
+	h := server(t)
+	var dashboard map[string]any
+	decodeV2JSON(t, h.get(t, "/api/cosmicgame/statistics/dashboard"), &dashboard)
+	var addresses apiv2.ContractAddressRegistry
+	decodeV2JSON(t, h.get(t, v2ContractAddresses), &addresses)
+	legacyAddresses := dashboard["ContractAddrs"].(map[string]any)
+	addressPairs := map[string]string{
+		"CosmicGameAddr":         addresses.CosmicGameAddress,
+		"CosmicSignatureAddr":    addresses.CosmicSignatureAddress,
+		"CosmicTokenAddr":        addresses.CosmicTokenAddress,
+		"CosmicDaoAddr":          addresses.CosmicDaoAddress,
+		"CharityWalletAddr":      addresses.CharityWalletAddress,
+		"PrizesWalletAddr":       addresses.PrizesWalletAddress,
+		"RandomWalkAddr":         addresses.RandomWalkAddress,
+		"StakingWalletCSTAddr":   addresses.CstStakingWalletAddress,
+		"StakingWalletRWalkAddr": addresses.RandomWalkStakingWalletAddress,
+		"MarketingWalletAddr":    addresses.MarketingWalletAddress,
+		"MarketplaceAddr":        addresses.MarketplaceAddress,
+		"ImplementationAddr":     addresses.ImplementationAddress,
+	}
+	for legacyField, v2Value := range addressPairs {
+		if v2Value != legacyAddresses[legacyField] {
+			t.Fatalf("%s diverged: v1=%v v2=%s", legacyField, legacyAddresses[legacyField], v2Value)
+		}
+	}
+
+	var configuration apiv2.ContractConfiguration
+	decodeV2JSON(t, h.get(t, v2ContractConfig), &configuration)
+	if configuration.EthBidPriceIncreaseDivisor != dashboard["PriceIncrease"] ||
+		configuration.CstBidRewardMode != apiv2.CstBidRewardFixed ||
+		configuration.FixedCstBidRewardWei == nil ||
+		*configuration.FixedCstBidRewardWei != dashboard["TokenReward"] ||
+		configuration.CharityDonationPercentage != int64(dashboard["CharityPercentage"].(float64)) ||
+		configuration.ChronoWarriorPercentage != int64(dashboard["ChronoWarriorPercentage"].(float64)) ||
+		configuration.MainPrizePercentage != int64(dashboard["PrizePercentage"].(float64)) ||
+		configuration.RaffleEthWinnerCount != int64(dashboard["NumRaffleEthWinnersBidding"].(float64)) ||
+		configuration.RaffleNftBidderWinnerCount != int64(dashboard["NumRaffleNFTWinnersBidding"].(float64)) ||
+		configuration.RaffleNftRandomWalkStakerWinnerCount != int64(dashboard["NumRaffleNFTWinnersStakingRWalk"].(float64)) {
+		t.Fatalf("configuration split diverged: dashboard=%+v v2=%+v", dashboard, configuration)
+	}
+	var balances apiv2.ContractBalances
+	decodeV2JSON(t, h.get(t, v2ContractBalances), &balances)
+	if balances.CharityAddress != dashboard["CharityAddr"] ||
+		balances.CharityBalanceWei != dashboard["CharityBalance"] ||
+		balances.CosmicGameBalanceWei != "0" {
+		t.Fatalf("balance split diverged: dashboard=%+v v2=%+v", dashboard, balances)
+	}
+
+	var cstPrice, ethPrice map[string]any
+	decodeV2JSON(t, h.get(t, "/api/cosmicgame/bid/cst_price"), &cstPrice)
+	decodeV2JSON(t, h.get(t, "/api/cosmicgame/bid/eth_price"), &ethPrice)
+	var prices apiv2.CurrentBidPrices
+	decodeV2JSON(t, h.get(t, v2CurrentBidPrices), &prices)
+	if prices.NextCstBidPriceWei != cstPrice["CSTPrice"] ||
+		prices.NextEthBidPriceWei != ethPrice["ETHPrice"] ||
+		prices.NextCstBidRewardWei != dashboard["TokenReward"] ||
+		strconv.FormatInt(prices.CstAuctionDurationSeconds, 10) != cstPrice["AuctionDuration"] ||
+		strconv.FormatInt(prices.CstAuctionElapsedSeconds, 10) != cstPrice["SecondsElapsed"] ||
+		strconv.FormatInt(prices.EthAuctionDurationSeconds, 10) != ethPrice["AuctionDuration"] ||
+		strconv.FormatInt(prices.EthAuctionElapsedSeconds, 10) != ethPrice["SecondsElapsed"] {
+		t.Fatalf("bid-price split diverged: cst=%+v eth=%+v v2=%+v", cstPrice, ethPrice, prices)
+	}
+
+	var legacyWinners map[string]any
+	decodeV2JSON(t, h.get(t, "/api/cosmicgame/bid/current_special_winners"), &legacyWinners)
+	var winners apiv2.CurrentSpecialWinners
+	decodeV2JSON(t, h.get(t, v2CurrentWinners), &winners)
+	if winners.EnduranceChampion == nil || winners.ChronoWarrior == nil ||
+		winners.LastBidder == nil || winners.LastCstBidder == nil ||
+		winners.EnduranceChampion.Address != legacyWinners["EnduranceChampionAddress"] ||
+		winners.EnduranceChampion.DurationSeconds != int64(legacyWinners["EnduranceChampionDuration"].(float64)) ||
+		winners.EnduranceChampion.StartedAt != int64(legacyWinners["EnduranceChampionStartTimeStamp"].(float64)) ||
+		winners.EnduranceChampion.PreviousDurationSeconds != int64(legacyWinners["PrevEnduranceChampionDuration"].(float64)) ||
+		winners.ChronoWarrior.Address != legacyWinners["ChronoWarriorAddress"] ||
+		winners.ChronoWarrior.DurationSeconds != int64(legacyWinners["ChronoWarriorDuration"].(float64)) ||
+		winners.ChronoWarrior.IsLive != legacyWinners["ChronoWarriorIsLive"] ||
+		winners.LastBidder.Address != legacyWinners["LastBidderAddress"] ||
+		winners.LastBidder.LastBidAt != int64(legacyWinners["LastBidderLastBidTime"].(float64)) ||
+		winners.LastCstBidder.Address != legacyWinners["LastCstBidderAddress"] ||
+		winners.Round != int64(legacyWinners["RoundNum"].(float64)) ||
+		winners.SourceBlockNumber != int64(legacyWinners["SourceBlockNumber"].(float64)) ||
+		winners.SourceBlockTimestamp != int64(legacyWinners["SourceBlockTimeStamp"].(float64)) {
+		t.Fatalf("special-winner split diverged: v1=%+v v2=%+v", legacyWinners, winners)
+	}
+	// V2 intentionally omits the legacy epoch-zero CST timestamp sentinel.
+	if winners.LastCstBidder.LastBidAt != nil ||
+		legacyWinners["LastCstBidderLastBidTime"].(float64) != 0 {
+		t.Fatalf("last-CST sentinel semantics changed: v1=%+v v2=%+v",
+			legacyWinners["LastCstBidderLastBidTime"], winners.LastCstBidder)
+	}
 }
 
 func TestAPIV2BiddingAnalytics(t *testing.T) {
@@ -1130,6 +1391,16 @@ func runV2GoldenCases(t *testing.T, h *harness, spec *openapi3.T, cases []v2Gold
 				Body:        firstBody,
 			})
 		})
+	}
+}
+
+func decodeV2JSON(t *testing.T, response *httptest.ResponseRecorder, target any) {
+	t.Helper()
+	if response.Code != http.StatusOK {
+		t.Fatalf("response = %d %s", response.Code, response.Body.String())
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), target); err != nil {
+		t.Fatalf("decoding response: %v\n%s", err, response.Body.String())
 	}
 }
 

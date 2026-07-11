@@ -69,6 +69,10 @@ type biddingAnalyticsReader interface {
 	BidTimeBounds(context.Context) (int64, int64, error)
 }
 
+type contractAddressReader interface {
+	ContractAddrs(context.Context) (cgprimitives.CosmicGameContractAddrs, error)
+}
+
 type participantReader interface {
 	BidderParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.BidderParticipantRecord, bool, error)
 	WinnerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.WinnerParticipantRecord, bool, error)
@@ -86,19 +90,20 @@ type contractStateReader interface {
 // dependency is injected once at construction; handlers do not read package
 // globals.
 type Server struct {
-	store         *store.Store
-	bids          bidReader
-	rounds        roundReader
-	currentRounds currentRoundReader
-	prizes        roundPrizeReader
-	raffles       roundRaffleReader
-	donations     roundDonationReader
-	statistics    statisticsReader
-	analytics     biddingAnalyticsReader
-	participants  participantReader
-	contractState contractStateReader
-	logger        *slog.Logger
-	now           func() time.Time
+	store             *store.Store
+	bids              bidReader
+	rounds            roundReader
+	currentRounds     currentRoundReader
+	prizes            roundPrizeReader
+	raffles           roundRaffleReader
+	donations         roundDonationReader
+	statistics        statisticsReader
+	analytics         biddingAnalyticsReader
+	contractAddresses contractAddressReader
+	participants      participantReader
+	contractState     contractStateReader
+	logger            *slog.Logger
+	now               func() time.Time
 }
 
 // ServerOption customizes a Server at construction.
@@ -129,7 +134,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +160,7 @@ func newServer(
 	donations roundDonationReader,
 	statistics statisticsReader,
 	analytics biddingAnalyticsReader,
+	contractAddresses contractAddressReader,
 	participants participantReader,
 	state contractStateReader,
 	logger *slog.Logger,
@@ -183,6 +189,9 @@ func newServer(
 	if analytics == nil {
 		return nil, errors.New("api v2: bidding analytics repository is required")
 	}
+	if contractAddresses == nil {
+		return nil, errors.New("api v2: contract-address repository is required")
+	}
 	if participants == nil {
 		return nil, errors.New("api v2: participant repository is required")
 	}
@@ -193,19 +202,20 @@ func newServer(
 		logger = slog.Default()
 	}
 	return &Server{
-		store:         st,
-		bids:          bids,
-		rounds:        rounds,
-		currentRounds: currentRounds,
-		prizes:        prizes,
-		raffles:       raffles,
-		donations:     donations,
-		statistics:    statistics,
-		analytics:     analytics,
-		participants:  participants,
-		contractState: state,
-		logger:        logger,
-		now:           time.Now,
+		store:             st,
+		bids:              bids,
+		rounds:            rounds,
+		currentRounds:     currentRounds,
+		prizes:            prizes,
+		raffles:           raffles,
+		donations:         donations,
+		statistics:        statistics,
+		analytics:         analytics,
+		contractAddresses: contractAddresses,
+		participants:      participants,
+		contractState:     state,
+		logger:            logger,
+		now:               time.Now,
 	}, nil
 }
 

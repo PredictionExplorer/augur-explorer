@@ -333,6 +333,28 @@ func (r *Repo) LastCstBidEvtlogForBidder(ctx context.Context, roundNum int64, bi
 	return evtlogID, nil
 }
 
+// LastCstBidEvtlogForBidderAtBlock returns the latest deterministic CST-bid
+// event at or before maxBlockNum. It is used to align cached special-winner
+// metadata with the block-pinned contract reads.
+func (r *Repo) LastCstBidEvtlogForBidderAtBlock(
+	ctx context.Context,
+	roundNum int64,
+	bidderAddr string,
+	maxBlockNum int64,
+) (int64, error) {
+	query := `SELECT b.evtlog_id FROM cg_bid b
+		JOIN address ba ON b.bidder_aid=ba.address_id
+		WHERE b.round_num=$1 AND lower(ba.addr)=lower($2)
+			AND b.bid_type = 2 AND b.block_num <= $3
+		ORDER BY b.block_num DESC, b.evtlog_id DESC LIMIT 1`
+	var evtlogID int64
+	err := r.pool().QueryRow(ctx, query, roundNum, bidderAddr, maxBlockNum).Scan(&evtlogID)
+	if err != nil {
+		return 0, store.WrapError("last block-pinned cst bid evtlog for bidder", err)
+	}
+	return evtlogID, nil
+}
+
 // RoundStartTimestamp returns the epoch timestamp of a round's first bid, or
 // 0 when the round has no bids yet (the callers treat 0 as "unknown").
 func (r *Repo) RoundStartTimestamp(ctx context.Context, roundNum uint64) (int64, error) {
