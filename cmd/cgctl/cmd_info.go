@@ -1,19 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"io"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
-func init() {
-	c := &cobra.Command{
+// newInfoCmd builds the info subcommand.
+func newInfoCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "info [cosmicgame-addr]",
 		Short: "Dump comprehensive CosmicGame contract state",
 		Long: `Dump comprehensive CosmicGame contract state: round status, timing,
@@ -23,33 +25,33 @@ addresses.
 If no address is given, the default local Hardhat deployment address
 ` + defaultLocalGameAddr + ` is used.
 
-Environment:
-  RPC_URL  Ethereum RPC endpoint (required)`,
+` + readEnvHelp,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			addr := defaultLocalGameAddr
 			if len(args) == 1 {
 				addr = args[0]
 			} else {
-				fmt.Printf("Setting default cosmic game contract address to %s\n", defaultLocalGameAddr)
+				fmt.Fprintf(cmd.OutOrStdout(), "Setting default cosmic game contract address to %s\n", defaultLocalGameAddr)
 			}
-			return runInfo(cmd.Context(), ethtx.NewPrinter(true), addr)
+			return runInfo(cmd, addr)
 		},
 	}
-	register(c)
 }
 
-func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
+func init() { register(newInfoCmd()) }
+
+func runInfo(cmd *cobra.Command, addrArg string) error {
 	gameAddr, err := parseAddress("cosmicgame-addr", addrArg)
 	if err != nil {
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
+	net, out, err := connectNetwork(cmd)
 	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
+		return err
 	}
-	out.NetworkInfo(net)
+	w := cmd.OutOrStdout()
 
 	copts := ethtx.CallOpts()
 	out.ContractInfo("CosmicSignatureGame", gameAddr)
@@ -62,7 +64,46 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 
 	blockTime := int64(net.BlockTime)
 
-	// Round status.
+	if err := printRoundStatus(w, out, game, copts, blockTime); err != nil {
+		return err
+	}
+	timeoutMainPrize, err := printTiming(out, game, copts)
+	if err != nil {
+		return err
+	}
+	if err := printBiddingPrices(w, out, game, gameV2, copts, blockTime); err != nil {
+		return err
+	}
+	printV2Parameters(out, gameV2, copts, timeoutMainPrize)
+	if err := printChampions(out, game, copts); err != nil {
+		return err
+	}
+	if err := printPrizeDistribution(cmd, w, out, net, game, gameAddr, copts); err != nil {
+		return err
+	}
+	if err := printRaffleConfig(out, game, copts); err != nil {
+		return err
+	}
+	if err := printPrizesWallet(out, net, game, copts); err != nil {
+		return err
+	}
+	if err := printCharity(out, net, game, copts); err != nil {
+		return err
+	}
+	if err := printContractAddresses(w, out, game, copts); err != nil {
+		return err
+	}
+
+	bidMsgMaxLen, err := game.BidMessageLengthMaxLimit(copts)
+	if err != nil {
+		return fmt.Errorf("BidMessageLengthMaxLimit(): %w", err)
+	}
+	out.Section("CONFIG PARAMETERS")
+	out.KeyValue("Bid message max length", bidMsgMaxLen)
+	return nil
+}
+
+func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts, blockTime int64) error {
 	roundNum, err := game.RoundNum(copts)
 	if err != nil {
 		return fmt.Errorf("RoundNum(): %w", err)
@@ -91,54 +132,56 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.KeyValue("Block time (current)", blockTime)
 	out.KeyValue("Delay before activation", delayUntilActivation)
 	if secsToStart > 0 {
-		fmt.Printf("%-28s= INACTIVE - activates in %s\n", "Round status", ethtx.FmtDuration(secsToStart))
+		fmt.Fprintf(w, "%-28s= INACTIVE - activates in %s\n", "Round status", ethtx.FmtDuration(secsToStart))
 	} else {
-		fmt.Printf("%-28s= ACTIVE - started %s ago\n", "Round status", ethtx.FmtDuration(-secsToStart))
+		fmt.Fprintf(w, "%-28s= ACTIVE - started %s ago\n", "Round status", ethtx.FmtDuration(-secsToStart))
 	}
 	out.KeyValue("Total bids this round", totalBids.String())
 	out.KeyValue("Unique bidders this round", numRaffleParticipants.Int64())
+	return nil
+}
 
-	// Timing / countdown.
+func printTiming(out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) (*big.Int, error) {
 	timeUntilPrize, err := game.GetDurationUntilMainPrize(copts)
 	if err != nil {
-		return fmt.Errorf("GetDurationUntilMainPrize(): %w", err)
+		return nil, fmt.Errorf("GetDurationUntilMainPrize(): %w", err)
 	}
 	durationUntilPrizeRaw, err := game.GetDurationUntilMainPrizeRaw(copts)
 	if err != nil {
-		return fmt.Errorf("GetDurationUntilMainPrizeRaw(): %w", err)
+		return nil, fmt.Errorf("GetDurationUntilMainPrizeRaw(): %w", err)
 	}
 	prizeTime, err := game.MainPrizeTime(copts)
 	if err != nil {
-		return fmt.Errorf("MainPrizeTime(): %w", err)
+		return nil, fmt.Errorf("MainPrizeTime(): %w", err)
 	}
 	timeoutMainPrize, err := game.TimeoutDurationToClaimMainPrize(copts)
 	if err != nil {
-		return fmt.Errorf("TimeoutDurationToClaimMainPrize(): %w", err)
+		return nil, fmt.Errorf("TimeoutDurationToClaimMainPrize(): %w", err)
 	}
 	durationUntilAnyoneCanClaim := new(big.Int).Add(durationUntilPrizeRaw, timeoutMainPrize)
 	anyoneCanClaim := durationUntilAnyoneCanClaim.Sign() <= 0
 
 	timeIncMicrosec, err := game.MainPrizeTimeIncrementInMicroSeconds(copts)
 	if err != nil {
-		return fmt.Errorf("MainPrizeTimeIncrementInMicroSeconds(): %w", err)
+		return nil, fmt.Errorf("MainPrizeTimeIncrementInMicroSeconds(): %w", err)
 	}
 	timeIncrement := float64(timeIncMicrosec.Int64()) / float64(1000000)
 	timeIncOnBid, err := game.GetMainPrizeTimeIncrement(copts)
 	if err != nil {
-		return fmt.Errorf("GetMainPrizeTimeIncrement(): %w", err)
+		return nil, fmt.Errorf("GetMainPrizeTimeIncrement(): %w", err)
 	}
 	timeIncIncreaseDivisor, err := game.MainPrizeTimeIncrementIncreaseDivisor(copts)
 	if err != nil {
-		return fmt.Errorf("MainPrizeTimeIncrementIncreaseDivisor(): %w", err)
+		return nil, fmt.Errorf("MainPrizeTimeIncrementIncreaseDivisor(): %w", err)
 	}
 	initialDurationDivisor, err := game.InitialDurationUntilMainPrizeDivisor(copts)
 	if err != nil {
-		return fmt.Errorf("InitialDurationUntilMainPrizeDivisor(): %w", err)
+		return nil, fmt.Errorf("InitialDurationUntilMainPrizeDivisor(): %w", err)
 	}
 	initialDurationInc := ethtx.ConvertToPercentage(initialDurationDivisor)
 	initialDurationSeconds, err := game.GetInitialDurationUntilMainPrize(copts)
 	if err != nil {
-		return fmt.Errorf("GetInitialDurationUntilMainPrize(): %w", err)
+		return nil, fmt.Errorf("GetInitialDurationUntilMainPrize(): %w", err)
 	}
 
 	out.Section("TIMING / COUNTDOWN")
@@ -158,8 +201,10 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.KeyValue("Time increment increase divisor", timeIncIncreaseDivisor)
 	out.KeyValue("First bid time bump", fmt.Sprintf("%.2f%% (divisor=%v)", initialDurationInc, initialDurationDivisor))
 	out.KeyValue("First bid time bump (seconds)", initialDurationSeconds)
+	return timeoutMainPrize, nil
+}
 
-	// Bidding / prices.
+func printBiddingPrices(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, gameV2 *cgcontracts.CosmicSignatureGameV2, copts *bind.CallOpts, blockTime int64) error {
 	nextBidPrice, err := game.NextEthBidPrice(copts)
 	if err != nil {
 		return fmt.Errorf("NextEthBidPrice(): %w", err)
@@ -220,59 +265,65 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.Section("BIDDING / PRICES")
 	out.KeyValueEth("storage::nextEthBidPrice", nextBidPrice)
 	out.KeyValueEth("NextEthBidPrice (auction)", bidPriceAuction)
-	fmt.Printf("%-28s  ^ effective price to pay (storage=0 until first bid)\n", "")
-	fmt.Printf("%-28s= %s CST\n", "NextCstBidPrice", ethtx.WeiToEth(cstPrice))
+	fmt.Fprintf(w, "%-28s  ^ effective price to pay (storage=0 until first bid)\n", "")
+	fmt.Fprintf(w, "%-28s= %s CST\n", "NextCstBidPrice", ethtx.WeiToEthText(cstPrice))
 	out.KeyValue("ETH bid price increase div", fmt.Sprintf("%v (%.2f%%)", ethBidPriceIncreaseDivisor, priceIncrease))
 	if isV2Reward {
-		fmt.Printf("%-28s= %s CST\n", "getBidCstRewardAmount (next bid)", ethtx.WeiToEth(bidCstRewardAmount))
-		fmt.Printf("%-28s  ^ V2 dynamic CST reward (dashboard TokenReward); 0 right after a bid\n", "")
+		fmt.Fprintf(w, "%-28s= %s CST\n", "getBidCstRewardAmount (next bid)", ethtx.WeiToEthText(bidCstRewardAmount))
+		fmt.Fprintf(w, "%-28s  ^ V2 dynamic CST reward (dashboard TokenReward); 0 right after a bid\n", "")
 		if bidCstRewardMultiplier != nil {
 			out.KeyValue("bidCstRewardAmountMultiplier", bidCstRewardMultiplier)
 		}
 	} else {
-		fmt.Printf("%-28s= %s CST\n", "CST reward per bid (fixed)", ethtx.WeiToEth(cstRewardFixed))
+		fmt.Fprintf(w, "%-28s= %s CST\n", "CST reward per bid (fixed)", ethtx.WeiToEthText(cstRewardFixed))
 	}
 	out.KeyValue("ETH Dutch auction elapsed/total", fmt.Sprintf("%v / %v", ethAuctionElapsed.String(), ethAuctionDuration.String()))
 	out.KeyValueEth("ETH Dutch auction begin price", ethDutchBeginPrice)
 	if ethDutchBeginPrice.Sign() == 0 {
-		fmt.Printf("%-28s  ^ when 0, contract uses a minimum floor (e.g. 0.0001 ETH); effective price = NextEthBidPrice (auction) above\n", "")
-		fmt.Printf("%-28s    (stored begin price is only set after first bid; getter returns min until then)\n", "")
+		fmt.Fprintf(w, "%-28s  ^ when 0, contract uses a minimum floor (e.g. 0.0001 ETH); effective price = NextEthBidPrice (auction) above\n", "")
+		fmt.Fprintf(w, "%-28s    (stored begin price is only set after first bid; getter returns min until then)\n", "")
 	}
 	out.KeyValue("ETH Dutch auction end divisor", ethDutchEndingDivisor)
 	// CST auction: contract may return (duration, startTimestamp) not
 	// (duration, secondsElapsed); startTimestamp is Unix seconds.
-	cstElapsedSec := cstAuctionElapsed
 	if cstAuctionElapsed.Cmp(cstAuctionDuration) > 0 && cstAuctionElapsed.Cmp(big.NewInt(1e9)) > 0 {
 		elapsed := blockTime - cstAuctionElapsed.Int64()
 		if elapsed < 0 {
 			elapsed = 0
 		}
-		cstElapsedSec = big.NewInt(elapsed)
-		fmt.Printf("%-28s= %v / %v (elapsed from start_ts; raw 2nd value was start timestamp)\n", "CST Dutch auction elapsed/total", cstElapsedSec.String(), cstAuctionDuration.String())
+		fmt.Fprintf(w, "%-28s= %v / %v (elapsed from start_ts; raw 2nd value was start timestamp)\n", "CST Dutch auction elapsed/total", elapsed, cstAuctionDuration.String())
 	} else {
 		out.KeyValue("CST Dutch auction elapsed/total", fmt.Sprintf("%v / %v", cstAuctionElapsed.String(), cstAuctionDuration.String()))
 	}
-	fmt.Printf("%-28s= %s CST\n", "storage::cstDutchAuctionBeginningBidPrice", ethtx.WeiToEth(cstDutchBeginPrice))
+	fmt.Fprintf(w, "%-28s= %s CST\n", "storage::cstDutchAuctionBeginningBidPrice", ethtx.WeiToEthText(cstDutchBeginPrice))
 	if cstDutchBeginPrice.Sign() == 0 {
-		fmt.Printf("%-28s  ^ when 0, effective CST price = getNextCstBidPrice() (min limit / auction)\n", "")
+		fmt.Fprintf(w, "%-28s  ^ when 0, effective CST price = getNextCstBidPrice() (min limit / auction)\n", "")
 	}
+	return nil
+}
 
-	// V2 initialized parameters (initializeV2). Only printed when the proxy is
-	// on V2 (the V2-only getters succeed); on a V1 contract they revert.
-	if gameV2 != nil {
-		if cstAucChgDiv, errV2 := gameV2.CstDutchAuctionDurationChangeDivisor(copts); errV2 == nil {
-			cstAucDurationV2, _ := gameV2.CstDutchAuctionDuration(copts)
-			bidCstRewardMultiplierV2, _ := gameV2.BidCstRewardAmountMultiplier(copts)
-
-			out.Section("V2 INITIALIZED PARAMETERS (initializeV2)")
-			out.KeyValueDuration("cstDutchAuctionDuration", cstAucDurationV2.Int64())
-			out.KeyValue("cstDutchAuctionDurationChangeDivisor", cstAucChgDiv)
-			out.KeyValue("bidCstRewardAmountMultiplier", bidCstRewardMultiplierV2)
-			out.KeyValueDuration("timeoutDurationToClaimMainPrize", timeoutMainPrize.Int64())
-		}
+// printV2Parameters prints the initializeV2 parameters when the proxy is on
+// V2 (the V2-only getters succeed); on a V1 contract they revert and the
+// section is skipped.
+func printV2Parameters(out ethtx.Output, gameV2 *cgcontracts.CosmicSignatureGameV2, copts *bind.CallOpts, timeoutMainPrize *big.Int) {
+	if gameV2 == nil {
+		return
 	}
+	cstAucChgDiv, errV2 := gameV2.CstDutchAuctionDurationChangeDivisor(copts)
+	if errV2 != nil {
+		return
+	}
+	cstAucDurationV2, _ := gameV2.CstDutchAuctionDuration(copts)
+	bidCstRewardMultiplierV2, _ := gameV2.BidCstRewardAmountMultiplier(copts)
 
-	// Current bidders / champions.
+	out.Section("V2 INITIALIZED PARAMETERS (initializeV2)")
+	out.KeyValueDuration("cstDutchAuctionDuration", cstAucDurationV2.Int64())
+	out.KeyValue("cstDutchAuctionDurationChangeDivisor", cstAucChgDiv)
+	out.KeyValue("bidCstRewardAmountMultiplier", bidCstRewardMultiplierV2)
+	out.KeyValueDuration("timeoutDurationToClaimMainPrize", timeoutMainPrize.Int64())
+}
+
+func printChampions(out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) error {
 	lastBidder, err := game.LastBidderAddress(copts)
 	if err != nil {
 		return fmt.Errorf("LastBidderAddress(): %w", err)
@@ -309,9 +360,11 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.KeyValueDuration("Prev endurance champion dur", prevEnduranceDuration.Int64())
 	out.KeyValue("Chrono Warrior", currentChampions.ChronoWarriorAddress.String())
 	out.KeyValueDuration("Chrono Warrior duration", currentChampions.ChronoWarriorDuration.Int64())
+	return nil
+}
 
-	// Prize distribution.
-	balance, err := net.Client.BalanceAt(ctx, gameAddr, nil)
+func printPrizeDistribution(cmd *cobra.Command, w io.Writer, out ethtx.Output, net *ethtx.Network, game *cgcontracts.CosmicSignatureGame, gameAddr common.Address, copts *bind.CallOpts) error {
+	balance, err := net.Client.BalanceAt(cmd.Context(), gameAddr, nil)
 	if err != nil {
 		return fmt.Errorf("BalanceAt(): %w", err)
 	}
@@ -362,14 +415,16 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 
 	out.Section("PRIZE DISTRIBUTION")
 	out.KeyValueEth("Contract balance", balance)
-	fmt.Printf("%-28s= %s ETH (%v%%)\n", "Main prize amount", ethtx.WeiToEth(prizeAmount), mainPrizePercentage)
-	fmt.Printf("%-28s= %s ETH (%v%%)\n", "Charity amount", ethtx.WeiToEth(charityAmount), charityPercentage)
-	fmt.Printf("%-28s= %s ETH (%v%%)\n", "Raffle amount (bidders)", ethtx.WeiToEth(raffleAmount), rafflePercentage)
-	fmt.Printf("%-28s= %s ETH (%v%%)\n", "Chrono Warrior amount", ethtx.WeiToEth(chronoAmount), chronoPercentage)
-	fmt.Printf("%-28s= %s ETH (%v%%)\n", "Staking reward amount", ethtx.WeiToEth(stakingAmount), stakingPercentage)
-	fmt.Printf("%-28s= %s CST\n", "CST prize amount", ethtx.WeiToEth(cstPrizeAmount))
+	fmt.Fprintf(w, "%-28s= %s ETH (%v%%)\n", "Main prize amount", ethtx.WeiToEthText(prizeAmount), mainPrizePercentage)
+	fmt.Fprintf(w, "%-28s= %s ETH (%v%%)\n", "Charity amount", ethtx.WeiToEthText(charityAmount), charityPercentage)
+	fmt.Fprintf(w, "%-28s= %s ETH (%v%%)\n", "Raffle amount (bidders)", ethtx.WeiToEthText(raffleAmount), rafflePercentage)
+	fmt.Fprintf(w, "%-28s= %s ETH (%v%%)\n", "Chrono Warrior amount", ethtx.WeiToEthText(chronoAmount), chronoPercentage)
+	fmt.Fprintf(w, "%-28s= %s ETH (%v%%)\n", "Staking reward amount", ethtx.WeiToEthText(stakingAmount), stakingPercentage)
+	fmt.Fprintf(w, "%-28s= %s CST\n", "CST prize amount", ethtx.WeiToEthText(cstPrizeAmount))
+	return nil
+}
 
-	// Raffle config.
+func printRaffleConfig(out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) error {
 	numEthWinners, err := game.NumRaffleEthPrizesForBidders(copts)
 	if err != nil {
 		return fmt.Errorf("NumRaffleEthPrizesForBidders(): %w", err)
@@ -387,8 +442,10 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.KeyValue("Num ETH raffle winners", numEthWinners)
 	out.KeyValue("Num NFT winners (bidders)", nftBidders)
 	out.KeyValue("Num NFT winners (RW stakers)", nftStakers)
+	return nil
+}
 
-	// Prizes wallet.
+func printPrizesWallet(out ethtx.Output, net *ethtx.Network, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) error {
 	prizeWalletAddr, err := game.PrizesWallet(copts)
 	if err != nil {
 		return fmt.Errorf("PrizesWallet(): %w", err)
@@ -410,8 +467,10 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.KeyValue("PrizesWallet address", prizeWalletAddr.String())
 	out.KeyValue("Num donated NFTs", numDonatedNfts.String())
 	out.KeyValueDuration("Timeout to withdraw prizes", timeoutClaim.Int64())
+	return nil
+}
 
-	// Charity.
+func printCharity(out ethtx.Output, net *ethtx.Network, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) error {
 	charityAddr, err := game.CharityAddress(copts)
 	if err != nil {
 		return fmt.Errorf("CharityAddress(): %w", err)
@@ -428,8 +487,10 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.Section("CHARITY")
 	out.KeyValue("CharityWallet address", charityAddr.String())
 	out.KeyValue("Charity donation receiver", charityRecvAddr.String())
+	return nil
+}
 
-	// Contract addresses.
+func printContractAddresses(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) error {
 	nftAddr, err := game.Nft(copts)
 	if err != nil {
 		return fmt.Errorf("Nft(): %w", err)
@@ -470,16 +531,7 @@ func runInfo(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 	out.KeyValue("StakingWallet (CST NFT)", stakingAddrCst.String())
 	out.KeyValue("StakingWallet (RandomWalk)", stakingAddrRwalk.String())
 	out.KeyValue("MarketingWallet", marketingAddr.String())
-	fmt.Printf("%-28s= %s CST\n", "MarketingWallet CST contrib", ethtx.WeiToEth(marketingCstAmount))
+	fmt.Fprintf(w, "%-28s= %s CST\n", "MarketingWallet CST contrib", ethtx.WeiToEthText(marketingCstAmount))
 	out.KeyValue("Owner", ownerAddr.String())
-
-	// Config parameters.
-	bidMsgMaxLen, err := game.BidMessageLengthMaxLimit(copts)
-	if err != nil {
-		return fmt.Errorf("BidMessageLengthMaxLimit(): %w", err)
-	}
-
-	out.Section("CONFIG PARAMETERS")
-	out.KeyValue("Bid message max length", bidMsgMaxLen)
 	return nil
 }

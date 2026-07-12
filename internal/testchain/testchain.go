@@ -30,6 +30,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -65,6 +66,9 @@ type txEntry struct {
 	logs     []*types.Log
 	status   uint64
 	pending  bool // receipt withheld until ReleasePendingTxs
+	// contractAddr is the deployment address for transactions without a
+	// `to`, served in the receipt's contractAddress field.
+	contractAddr common.Address
 }
 
 // Chain is the in-memory chain state plus the JSON-RPC server exposing it.
@@ -80,6 +84,11 @@ type Chain struct {
 	logs    []types.Log
 	tip     int64
 
+	// timeOffset shifts the timestamps of newly built blocks; accumulated by
+	// evm_increaseTime (devtime.go). Atomic so eth_call stub handlers, which
+	// run under the chain lock, can read it.
+	timeOffset atomic.Uint64
+
 	calls map[common.Address]CallHandler
 
 	// Transaction-submission state (sendtx.go).
@@ -89,6 +98,14 @@ type Chain struct {
 	nextTxReverted bool
 	nextTxPending  bool
 	nextSendError  string
+	// rpcFailures maps a JSON-RPC method to a scheduled one-shot failure
+	// (FailNextRPC / FailRPCAfter).
+	rpcFailures map[string]*rpcFailure
+	// submittedTxs is atomic (not mutex-guarded) so eth_call stub handlers,
+	// which run under the chain lock, can read it to script reactions to
+	// mined transactions.
+	submittedTxs atomic.Int64
+	minedTxLogs  func(tx *types.Transaction, blockNum int64) []*types.Log
 
 	server *httptest.Server
 }
@@ -172,7 +189,7 @@ func (c *Chain) buildHeaderLocked(blockNum int64) *types.Header {
 		Number:      big.NewInt(blockNum),
 		GasLimit:    30_000_000,
 		GasUsed:     0,
-		Time:        BlockTime(blockNum),
+		Time:        BlockTime(blockNum) + c.timeOffset.Load(),
 		Extra:       extra,
 		MixDigest:   common.Hash{},
 		Nonce:       types.BlockNonce{},
@@ -277,6 +294,33 @@ func (c *Chain) RegisterCall(to common.Address, handler CallHandler) {
 	c.calls[to] = handler
 }
 
+// rpcFailure is one scheduled per-method failure: skip calls pass through
+// before the failing one.
+type rpcFailure struct {
+	skip int
+	msg  string
+}
+
+// FailNextRPC makes the next call of the given JSON-RPC method (e.g.
+// "eth_gasPrice", "eth_getTransactionCount") fail once with the message, so
+// per-call error branches of RPC consumers are testable.
+func (c *Chain) FailNextRPC(method, msg string) {
+	c.FailRPCAfter(method, 0, msg)
+}
+
+// FailRPCAfter schedules a one-shot failure of the given JSON-RPC method
+// after skip successful calls (skip=0 fails the next call). Useful when the
+// code under test makes the same call several times and a later one must
+// fail.
+func (c *Chain) FailRPCAfter(method string, skip int, msg string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.rpcFailures == nil {
+		c.rpcFailures = make(map[string]*rpcFailure)
+	}
+	c.rpcFailures[method] = &rpcFailure{skip: skip, msg: msg}
+}
+
 // --- JSON-RPC plumbing ---
 
 type rpcRequest struct {
@@ -331,6 +375,14 @@ func (c *Chain) handleRPC(w http.ResponseWriter, r *http.Request) {
 func (c *Chain) dispatch(req rpcRequest) (any, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if failure, ok := c.rpcFailures[req.Method]; ok {
+		if failure.skip > 0 {
+			failure.skip--
+		} else {
+			delete(c.rpcFailures, req.Method)
+			return nil, fmt.Errorf("%s", failure.msg)
+		}
+	}
 	switch req.Method {
 	case "eth_chainId":
 		return hexUint64(c.chainID.Uint64()), nil
@@ -356,6 +408,10 @@ func (c *Chain) dispatch(req rpcRequest) (any, error) {
 		return c.getTransactionCount(req.Params)
 	case "eth_sendRawTransaction":
 		return c.sendRawTransaction(req.Params)
+	case "evm_increaseTime":
+		return c.evmIncreaseTime(req.Params)
+	case "evm_mine":
+		return c.evmMine(), nil
 	default:
 		return nil, fmt.Errorf("testchain: method %s not supported", req.Method)
 	}
@@ -468,6 +524,7 @@ func (c *Chain) getTransactionReceipt(params []json.RawMessage) (any, error) {
 		Bloom:             types.Bloom{},
 		Logs:              logs,
 		TxHash:            entry.tx.Hash(),
+		ContractAddress:   entry.contractAddr,
 		GasUsed:           21_000,
 		EffectiveGasPrice: entry.tx.GasPrice(),
 		BlockHash:         header.Hash(),

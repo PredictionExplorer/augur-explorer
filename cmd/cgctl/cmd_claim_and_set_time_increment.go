@@ -8,11 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
-func init() {
+// newClaimAndSetTimeIncrementCmd builds the claim-and-set-time-increment
+// subcommand.
+func newClaimAndSetTimeIncrementCmd() *cobra.Command {
 	var info bool
 	c := &cobra.Command{
 		Use:   "claim-and-set-time-increment <cosmicgame-addr> <time-increment-seconds> [delay-seconds]",
@@ -33,18 +35,17 @@ The command picks a path from on-chain state:
 
 delay-seconds defaults to 300.
 
-Environment:
-  RPC_URL   Ethereum RPC endpoint (required)
-  PKEY_HEX  64-char hex private key, no 0x prefix (required; owner for admin calls;
-            last bidder when claiming)`,
+` + txEnvHelp,
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runClaimAndSetTimeIncrement(cmd.Context(), ethtx.NewPrinter(info), args)
+			return runClaimAndSetTimeIncrement(cmd, info, args)
 		},
 	}
-	c.Flags().BoolVarP(&info, "info", "i", false, "print detailed output")
-	register(c)
+	addInfoFlag(c, &info)
+	return c
 }
+
+func init() { register(newClaimAndSetTimeIncrementCmd()) }
 
 // roundState is a snapshot of the CosmicGame round used to plan which
 // transactions claim-and-set-time-increment must send.
@@ -148,139 +149,91 @@ func (s *roundState) canClaim(caller common.Address) (bool, string) {
 	return false, "prize not claimable yet"
 }
 
-// refreshNetwork re-reads gas price, block info, and the account nonce.
-func refreshNetwork(ctx context.Context, pkeyHex string) (*ethtx.NetworkInfo, *ethtx.AccountInfo, error) {
-	net, err := ethtx.Connect(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	acc, err := net.PrepareAccount(ctx, pkeyHex)
-	if err != nil {
-		return nil, nil, err
-	}
-	return net, acc, nil
-}
-
-func sendDelay(
-	ctx context.Context,
-	out *ethtx.Printer,
-	game *cgcontracts.CosmicSignatureGame,
-	net *ethtx.NetworkInfo,
-	acc *ethtx.AccountInfo,
-	delaySeconds int64,
-) error {
-	out.TxSubmitting("SetDelayDurationBeforeRoundActivation", nil, ethtx.GasLimitAdminCall, net.GasPrice)
+func sendDelay(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, delaySeconds int64) error {
+	s.Out.TxSubmitting("SetDelayDurationBeforeRoundActivation", nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
 	tx, err := game.SetDelayDurationBeforeRoundActivation(
-		net.TransactOpts(acc, nil, ethtx.GasLimitAdminCall),
+		s.TransactOpts(nil, ethtx.GasLimitAdminCall),
 		big.NewInt(delaySeconds),
 	)
-	if err != nil {
+	if err = s.FinishTx(ctx, tx, err); err != nil {
 		return fmt.Errorf("setDelayDurationBeforeRoundActivation: %w", err)
 	}
-	return out.TxMined(ctx, net.Client, tx)
+	return nil
 }
 
-func sendDeferActivation(
-	ctx context.Context,
-	out *ethtx.Printer,
-	game *cgcontracts.CosmicSignatureGame,
-	net *ethtx.NetworkInfo,
-	acc *ethtx.AccountInfo,
-	delaySeconds int64,
-) error {
-	newActivation := big.NewInt(int64(net.BlockTime) + delaySeconds + 5)
-	out.TxSubmitting("SetRoundActivationTime", nil, ethtx.GasLimitAdminCall, net.GasPrice)
-	out.KeyValue("New activation time", newActivation.String())
+func sendDeferActivation(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, delaySeconds int64) error {
+	newActivation := big.NewInt(int64(s.Net.BlockTime) + delaySeconds + 5)
+	s.Out.TxSubmitting("SetRoundActivationTime", nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
+	s.Out.KeyValue("New activation time", newActivation.String())
 	tx, err := game.SetRoundActivationTime(
-		net.TransactOpts(acc, nil, ethtx.GasLimitAdminCall),
+		s.TransactOpts(nil, ethtx.GasLimitAdminCall),
 		newActivation,
 	)
-	if err != nil {
+	if err = s.FinishTx(ctx, tx, err); err != nil {
 		return fmt.Errorf("setRoundActivationTime: %w", err)
 	}
-	return out.TxMined(ctx, net.Client, tx)
+	return nil
 }
 
 // openInactiveWindow defers round activation until the round reads as
 // inactive, retrying a few times to absorb block-time races.
-func openInactiveWindow(
-	ctx context.Context,
-	out *ethtx.Printer,
-	game *cgcontracts.CosmicSignatureGame,
-	pkeyHex string,
-	delaySeconds int64,
-) (*ethtx.NetworkInfo, *ethtx.AccountInfo, error) {
+func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, delaySeconds int64) error {
 	const maxAttempts = 3
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		net, acc, err := refreshNetwork(ctx, pkeyHex)
-		if err != nil {
-			return nil, nil, err
+		if err := s.Refresh(ctx); err != nil {
+			return err
 		}
-		state, err := readRoundState(game, net.BlockTime, big.NewInt(0), delaySeconds)
+		state, err := readRoundState(game, s.Net.BlockTime, big.NewInt(0), delaySeconds)
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
 		if state.roundInactive {
-			return net, acc, nil
+			return nil
 		}
-		if attempt > 1 || out.Verbose {
-			out.Section(fmt.Sprintf("DEFER ROUND ACTIVATION (attempt %d/%d)", attempt, maxAttempts))
+		if attempt > 1 || s.Out.Verbose {
+			s.Out.Section(fmt.Sprintf("DEFER ROUND ACTIVATION (attempt %d/%d)", attempt, maxAttempts))
 		}
-		if err := sendDeferActivation(ctx, out, game, net, acc, delaySeconds); err != nil {
-			return nil, nil, fmt.Errorf("setRoundActivationTime failed on attempt %d: %w", attempt, err)
+		if err := sendDeferActivation(ctx, s, game, delaySeconds); err != nil {
+			return fmt.Errorf("setRoundActivationTime failed on attempt %d: %w", attempt, err)
 		}
 	}
-	net, acc, err := refreshNetwork(ctx, pkeyHex)
-	if err != nil {
-		return nil, nil, err
+	if err := s.Refresh(ctx); err != nil {
+		return err
 	}
-	state, err := readRoundState(game, net.BlockTime, big.NewInt(0), delaySeconds)
+	state, err := readRoundState(game, s.Net.BlockTime, big.NewInt(0), delaySeconds)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	if !state.roundInactive {
-		return nil, nil, fmt.Errorf(
+		return fmt.Errorf(
 			"round is still active after %d defer attempts (activation=%s, block=%d)",
 			maxAttempts,
 			state.roundActivation.String(),
-			net.BlockTime,
+			s.Net.BlockTime,
 		)
 	}
-	return net, acc, nil
+	return nil
 }
 
-func sendClaim(
-	ctx context.Context,
-	out *ethtx.Printer,
-	game *cgcontracts.CosmicSignatureGame,
-	net *ethtx.NetworkInfo,
-	acc *ethtx.AccountInfo,
-) error {
-	out.TxSubmitting("ClaimMainPrize", nil, ethtx.GasLimitClaimPrize, net.GasPrice)
-	tx, err := game.ClaimMainPrize(net.TransactOpts(acc, nil, ethtx.GasLimitClaimPrize))
-	if err != nil {
+func sendClaim(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame) error {
+	s.Out.TxSubmitting("ClaimMainPrize", nil, ethtx.GasLimitClaimPrize, s.AdjustedGasPrice())
+	tx, err := game.ClaimMainPrize(s.TransactOpts(nil, ethtx.GasLimitClaimPrize))
+	if err = s.FinishTx(ctx, tx, err); err != nil {
 		return fmt.Errorf("claimMainPrize: %w", err)
 	}
-	return out.TxMined(ctx, net.Client, tx)
+	return nil
 }
 
-func sendIncrement(
-	ctx context.Context,
-	out *ethtx.Printer,
-	game *cgcontracts.CosmicSignatureGame,
-	net *ethtx.NetworkInfo,
-	acc *ethtx.AccountInfo,
-	newIncrementMicros *big.Int,
-) error {
-	out.TxSubmitting("SetMainPrizeTimeIncrementInMicroSeconds", nil, ethtx.GasLimitAdminCall, net.GasPrice)
+func sendIncrement(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, newIncrementMicros *big.Int) error {
+	s.Out.TxSubmitting("SetMainPrizeTimeIncrementInMicroSeconds", nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
 	tx, err := game.SetMainPrizeTimeIncrementInMicroSeconds(
-		net.TransactOpts(acc, nil, ethtx.GasLimitAdminCall),
+		s.TransactOpts(nil, ethtx.GasLimitAdminCall),
 		newIncrementMicros,
 	)
-	if err != nil {
+	if err = s.FinishTx(ctx, tx, err); err != nil {
 		return fmt.Errorf("setMainPrizeTimeIncrementInMicroSeconds: %w", err)
 	}
-	return out.TxMined(ctx, net.Client, tx)
+	return nil
 }
 
 func ensureInactiveRound(game *cgcontracts.CosmicSignatureGame, blockTime uint64) error {
@@ -300,21 +253,15 @@ func ensureInactiveRound(game *cgcontracts.CosmicSignatureGame, blockTime uint64
 
 // maybeAdvanceForClaim waits out the prize timer on Hardhat by advancing block
 // time; on real networks it fails when the prize is not yet claimable.
-func maybeAdvanceForClaim(
-	ctx context.Context,
-	out *ethtx.Printer,
-	game *cgcontracts.CosmicSignatureGame,
-	net *ethtx.NetworkInfo,
-	state *roundState,
-) error {
+func maybeAdvanceForClaim(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, state *roundState) error {
 	if state.durationUntilPrize.Int64() <= 0 {
 		return nil
 	}
 	waitSec := state.durationUntilPrize.Int64() + 1
-	if net.ChainID.Int64() == 31337 {
-		out.Section("ADVANCE HARDHAT TIME FOR CLAIM")
-		out.KeyValueDuration("Waiting for prize timer", waitSec)
-		if err := net.AdvanceHardhatTime(ctx, waitSec); err != nil {
+	if s.Net.IsDevChain() {
+		s.Out.Section("ADVANCE HARDHAT TIME FOR CLAIM")
+		s.Out.KeyValueDuration("Waiting for prize timer", waitSec)
+		if err := s.Net.AdvanceDevChainTime(ctx, waitSec); err != nil {
 			return fmt.Errorf("advance hardhat time: %w", err)
 		}
 		durationUntilPrize, err := game.GetDurationUntilMainPrize(ethtx.CallOpts())
@@ -333,7 +280,8 @@ func maybeAdvanceForClaim(
 	)
 }
 
-func runClaimAndSetTimeIncrement(ctx context.Context, out *ethtx.Printer, args []string) error {
+func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string) error {
+	ctx := cmd.Context()
 	gameAddr, err := parseAddress("cosmicgame-addr", args[0])
 	if err != nil {
 		return err
@@ -350,172 +298,145 @@ func runClaimAndSetTimeIncrement(ctx context.Context, out *ethtx.Printer, args [
 		}
 	}
 
-	pkeyHex, err := ethtx.PrivateKeyHexFromEnv()
+	newIncrementMicros := new(big.Int).Mul(big.NewInt(timeIncrementSeconds), big.NewInt(1_000_000))
+
+	s, err := newTxSession(cmd, verbose)
 	if err != nil {
 		return err
 	}
-	newIncrementMicros := new(big.Int).Mul(big.NewInt(timeIncrementSeconds), big.NewInt(1_000_000))
 
-	net, err := ethtx.Connect(ctx)
-	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
-	}
-	out.NetworkInfo(net)
-
-	acc, err := net.PrepareAccount(ctx, pkeyHex)
-	if err != nil {
-		return fmt.Errorf("account setup failed: %w", err)
-	}
-	out.AccountInfo(acc)
-
-	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, net.Client)
+	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, s.Net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame: %w", err)
 	}
-	out.ContractInfo("CosmicGame Address", gameAddr)
+	s.Out.ContractInfo("CosmicGame Address", gameAddr)
 
-	state, err := readRoundState(game, net.BlockTime, newIncrementMicros, delaySeconds)
+	state, err := readRoundState(game, s.Net.BlockTime, newIncrementMicros, delaySeconds)
 	if err != nil {
 		return fmt.Errorf("failed to read contract state: %w", err)
 	}
 
-	claimOK, claimReason := state.canClaim(acc.Address)
+	claimOK, claimReason := state.canClaim(s.Acc.Address)
 
-	out.Section("PLAN")
-	out.KeyValue("Round", state.roundNum.String())
-	out.KeyValue("Round inactive", state.roundInactive)
-	out.KeyValue("Bids this round", state.totalBids.String())
-	out.KeyValue("Last bidder", state.lastBidder.String())
-	out.KeyValueDuration("Duration until prize", state.durationUntilPrize.Int64())
-	out.KeyValue("Increment already set", state.incrementAlreadySet)
-	out.KeyValue("Delay already set", state.delayAlreadySet)
-	out.KeyValue("Can claim now", fmt.Sprintf("%v (%s)", claimOK, claimReason))
-	out.KeyValue("Target increment", fmt.Sprintf("%d sec (%s µs)", timeIncrementSeconds, newIncrementMicros))
-	out.KeyValueDuration("Target delay", delaySeconds)
+	s.Out.Section("PLAN")
+	s.Out.KeyValue("Round", state.roundNum.String())
+	s.Out.KeyValue("Round inactive", state.roundInactive)
+	s.Out.KeyValue("Bids this round", state.totalBids.String())
+	s.Out.KeyValue("Last bidder", state.lastBidder.String())
+	s.Out.KeyValueDuration("Duration until prize", state.durationUntilPrize.Int64())
+	s.Out.KeyValue("Increment already set", state.incrementAlreadySet)
+	s.Out.KeyValue("Delay already set", state.delayAlreadySet)
+	s.Out.KeyValue("Can claim now", fmt.Sprintf("%v (%s)", claimOK, claimReason))
+	s.Out.KeyValue("Target increment", fmt.Sprintf("%d sec (%s µs)", timeIncrementSeconds, newIncrementMicros))
+	s.Out.KeyValueDuration("Target delay", delaySeconds)
 
-	if acc.Address != state.owner {
-		out.Section("WARNING")
-		out.KeyValue("Note", "PKEY_HEX is not the contract owner; admin setters will fail")
+	if s.Acc.Address != state.owner {
+		s.Out.Section("WARNING")
+		s.Out.KeyValue("Note", "PKEY_HEX is not the contract owner; admin setters will fail")
 	}
 
 	if state.incrementAlreadySet && state.delayAlreadySet {
-		if !out.Verbose {
-			fmt.Printf(
+		if !s.Out.Verbose {
+			fmt.Fprintf(cmd.OutOrStdout(),
 				"Success. Already configured (increment=%d sec, delay=%d sec, round=%s).\n",
 				timeIncrementSeconds,
 				delaySeconds,
 				state.roundNum.String(),
 			)
 		} else {
-			out.Section("SUMMARY")
-			out.KeyValue("Status", "Nothing to do — increment and delay already match")
+			s.Out.Section("SUMMARY")
+			s.Out.KeyValue("Status", "Nothing to do — increment and delay already match")
 		}
 		return nil
 	}
 
-	if acc.Address != state.owner {
+	if s.Acc.Address != state.owner {
 		return fmt.Errorf("PKEY_HEX must be the contract owner to set time increment")
 	}
 
-	txCount := 0
-
 	if !state.delayAlreadySet {
-		out.Section("SET DELAY BEFORE NEXT ROUND")
-		if err := sendDelay(ctx, out, game, net, acc, delaySeconds); err != nil {
+		s.Out.Section("SET DELAY BEFORE NEXT ROUND")
+		if err := sendDelay(ctx, s, game, delaySeconds); err != nil {
 			return err
 		}
-		txCount++
-		net, acc, err = refreshNetwork(ctx, pkeyHex)
-		if err != nil {
+		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed after delay tx: %w", err)
 		}
-		state, err = readRoundState(game, net.BlockTime, newIncrementMicros, delaySeconds)
+		state, err = readRoundState(game, s.Net.BlockTime, newIncrementMicros, delaySeconds)
 		if err != nil {
 			return fmt.Errorf("failed to re-read contract state: %w", err)
 		}
-		claimOK, claimReason = state.canClaim(acc.Address)
-	} else if out.Verbose {
-		out.Section("SKIP")
-		out.KeyValue("SetDelayDurationBeforeRoundActivation", "already set")
+		claimOK, claimReason = state.canClaim(s.Acc.Address)
+	} else if s.Out.Verbose {
+		s.Out.Section("SKIP")
+		s.Out.KeyValue("SetDelayDurationBeforeRoundActivation", "already set")
 	}
 
+	// Reaching this with the increment matching means the delay was just
+	// updated (a matching increment plus a matching delay exits above), so
+	// quiet mode already printed the delay transaction's success line.
 	if state.incrementAlreadySet {
-		if !out.Verbose {
-			if txCount == 0 {
-				fmt.Printf(
-					"Success. Already configured (increment=%d sec, delay=%d sec, round=%s).\n",
-					timeIncrementSeconds,
-					delaySeconds,
-					state.roundNum.String(),
-				)
-			}
-		} else {
-			out.Section("SUMMARY")
-			out.KeyValue("Status", "Delay updated; increment already matches target")
+		if s.Out.Verbose {
+			s.Out.Section("SUMMARY")
+			s.Out.KeyValue("Status", "Delay updated; increment already matches target")
 		}
 		return nil
 	}
 
 	if state.roundInactive {
-		out.Section("SET TIME INCREMENT (INACTIVE ROUND)")
-		net, acc, err = refreshNetwork(ctx, pkeyHex)
-		if err != nil {
+		s.Out.Section("SET TIME INCREMENT (INACTIVE ROUND)")
+		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed: %w", err)
 		}
-		if err := ensureInactiveRound(game, net.BlockTime); err != nil {
+		if err := ensureInactiveRound(game, s.Net.BlockTime); err != nil {
 			return err
 		}
-		if err := sendIncrement(ctx, out, game, net, acc, newIncrementMicros); err != nil {
+		if err := sendIncrement(ctx, s, game, newIncrementMicros); err != nil {
 			return err
 		}
 	} else if claimOK {
-		out.Section("CLAIM MAIN PRIZE")
-		if err := maybeAdvanceForClaim(ctx, out, game, net, state); err != nil {
+		s.Out.Section("CLAIM MAIN PRIZE")
+		if err := maybeAdvanceForClaim(ctx, s, game, state); err != nil {
 			return err
 		}
-		net, acc, err = refreshNetwork(ctx, pkeyHex)
-		if err != nil {
+		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed before claim: %w", err)
 		}
-		if err := sendClaim(ctx, out, game, net, acc); err != nil {
+		if err := sendClaim(ctx, s, game); err != nil {
 			return err
 		}
-		txCount++
-		net, acc, err = refreshNetwork(ctx, pkeyHex)
-		if err != nil {
+		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed after claim: %w", err)
 		}
-		if err := ensureInactiveRound(game, net.BlockTime); err != nil {
+		if err := ensureInactiveRound(game, s.Net.BlockTime); err != nil {
 			return err
 		}
-		out.Section("SET TIME INCREMENT (POST-CLAIM INACTIVE WINDOW)")
-		if err := sendIncrement(ctx, out, game, net, acc, newIncrementMicros); err != nil {
+		s.Out.Section("SET TIME INCREMENT (POST-CLAIM INACTIVE WINDOW)")
+		if err := sendIncrement(ctx, s, game, newIncrementMicros); err != nil {
 			return err
 		}
 	} else {
-		if out.Verbose {
-			out.Section("DEFER ROUND ACTIVATION (NO CLAIMABLE PRIZE)")
-			out.KeyValue("Reason", claimReason)
+		if s.Out.Verbose {
+			s.Out.Section("DEFER ROUND ACTIVATION (NO CLAIMABLE PRIZE)")
+			s.Out.KeyValue("Reason", claimReason)
 		}
-		net, acc, err = openInactiveWindow(ctx, out, game, pkeyHex, delaySeconds)
-		if err != nil {
+		if err := openInactiveWindow(ctx, s, game, delaySeconds); err != nil {
 			return err
 		}
-		txCount++
-		out.Section("SET TIME INCREMENT (DEFERRED INACTIVE WINDOW)")
-		if err := sendIncrement(ctx, out, game, net, acc, newIncrementMicros); err != nil {
+		s.Out.Section("SET TIME INCREMENT (DEFERRED INACTIVE WINDOW)")
+		if err := sendIncrement(ctx, s, game, newIncrementMicros); err != nil {
 			return err
 		}
 	}
 
-	out.Section("SUMMARY")
-	out.KeyValue("Status", "Time increment updated")
-	out.KeyValueDuration("Per-bid extension", timeIncrementSeconds)
-	out.KeyValueDuration("Round delay setting", delaySeconds)
+	s.Out.Section("SUMMARY")
+	s.Out.KeyValue("Status", "Time increment updated")
+	s.Out.KeyValueDuration("Per-bid extension", timeIncrementSeconds)
+	s.Out.KeyValueDuration("Round delay setting", delaySeconds)
 	if claimOK {
-		out.KeyValue("Note", "Prize was claimed; next round activates after the delay")
+		s.Out.KeyValue("Note", "Prize was claimed; next round activates after the delay")
 	} else {
-		out.KeyValue("Note", "Round activation deferred; bidding resumes after the delay")
+		s.Out.KeyValue("Note", "Round activation deferred; bidding resumes after the delay")
 	}
 	return nil
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // defaultGasPrice is the eth_gasPrice answer until SetGasPrice overrides it.
@@ -83,6 +84,25 @@ func (c *Chain) RejectNextSendWith(msg string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.nextSendError = msg
+}
+
+// SubmittedTxCount returns how many transactions have been submitted through
+// eth_sendRawTransaction. It is safe to call from eth_call stub handlers
+// (which run under the chain lock): tests script contract state that
+// "reacts" to mined transactions with it.
+func (c *Chain) SubmittedTxCount() int {
+	return int(c.submittedTxs.Load())
+}
+
+// SetMinedTxLogs installs a hook that produces the receipt logs of every
+// subsequently submitted transaction (the fake chain does not execute EVM
+// code, so tests that need event logs on submitted transactions script them
+// here). The hook runs under the chain lock and must not call back into the
+// chain.
+func (c *Chain) SetMinedTxLogs(hook func(tx *types.Transaction, blockNum int64) []*types.Log) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.minedTxLogs = hook
 }
 
 // gasPriceLocked returns the configured or default gas price.
@@ -165,13 +185,27 @@ func (c *Chain) sendRawTransaction(params []json.RawMessage) (any, error) {
 	pending := c.nextTxPending
 	c.nextTxPending = false
 
-	c.txs[tx.Hash()] = &txEntry{
+	entry := &txEntry{
 		tx:       tx,
 		blockNum: blockNum,
 		txIndex:  0,
 		status:   status,
 		pending:  pending,
 	}
+	if tx.To() == nil {
+		entry.contractAddr = crypto.CreateAddress(sender, tx.Nonce())
+	}
+	if c.minedTxLogs != nil {
+		for _, l := range c.minedTxLogs(tx, blockNum) {
+			if l.Topics == nil {
+				l.Topics = []common.Hash{}
+			}
+			entry.logs = append(entry.logs, l)
+			c.logs = append(c.logs, *l)
+		}
+	}
+	c.txs[tx.Hash()] = entry
+	c.submittedTxs.Add(1)
 	if c.nonces == nil {
 		c.nonces = make(map[common.Address]uint64)
 	}

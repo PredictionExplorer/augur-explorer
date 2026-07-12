@@ -1,42 +1,41 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
-func init() {
-	c := &cobra.Command{
+// newOwnerCmd builds the owner subcommand.
+func newOwnerCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "owner <contract-addr>",
 		Short: "Show the owner of an Ownable contract",
 		Long: `Show the owner of an Ownable contract and the owner's ETH balance.
 
-Environment:
-  RPC_URL  Ethereum RPC endpoint (required)`,
+` + readEnvHelp,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runOwner(cmd.Context(), ethtx.NewPrinter(true), args[0])
+			return runOwner(cmd, args[0])
 		},
 	}
-	register(c)
 }
 
-func runOwner(ctx context.Context, out *ethtx.Printer, addrArg string) error {
+func init() { register(newOwnerCmd()) }
+
+func runOwner(cmd *cobra.Command, addrArg string) error {
 	contractAddr, err := parseAddress("contract-addr", addrArg)
 	if err != nil {
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
+	net, out, err := connectNetwork(cmd)
 	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
+		return err
 	}
-	out.NetworkInfo(net)
 	out.ContractInfo("Contract Address", contractAddr)
 
 	ownable, err := cgcontracts.NewOwnable(contractAddr, net.Client)
@@ -49,7 +48,7 @@ func runOwner(ctx context.Context, out *ethtx.Printer, addrArg string) error {
 		return fmt.Errorf("calling Owner(): %w", err)
 	}
 
-	ownerBalance, err := net.Balance(ctx, owner)
+	ownerBalance, err := net.Balance(cmd.Context(), owner)
 	if err != nil {
 		ownerBalance = nil
 	}

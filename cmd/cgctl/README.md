@@ -17,7 +17,7 @@ Transaction subcommands (those that send transactions) require:
 
 - **RPC_URL** – Ethereum RPC endpoint
 - **PKEY_HEX** – Signer private key as 64 hex characters (no `0x` prefix). Never pass the private key on the command line; set it in the environment.
-- **GAS_PRICE_MULTIPLIER** – (optional) Multiplier applied to the RPC-suggested gas price. Default is `2.0` so transactions stay above block base fee. Use e.g. `1.5` or `3` to tune.
+- **GAS_PRICE_MULTIPLIER** – (optional) Multiplier applied to the RPC-suggested gas price. Default is `2.0` so transactions stay above block base fee. Use e.g. `1.5` or `3` to tune. A value that does not parse to a positive number is a configuration error (the legacy scripts silently fell back to `2.0`). The `autobid` bot honors it too (legacy autobid hardcoded `2.0`).
 
 ```bash
 export RPC_URL="http://localhost:8545"  # Local Hardhat/Anvil
@@ -34,12 +34,20 @@ Database-backed subcommands (`backfill-dao-evtlog`, `total-tokens`,
 
 ## Architecture
 
-All subcommands share the `internal/ethtx` package, which provides:
+All subcommands share the repository-wide `internal/ethtx` package (the same
+transaction plumbing rwctl uses), which provides:
 
 - **Network Connection**: chain ID and gas price are always read from the network (never hardcoded)
 - **Account Management**: private key parsing, address derivation, nonce fetching
 - **Transaction Creation**: standardized transaction options with EIP-155 signing
+- **Receipt Waiting**: every transaction subcommand waits for its transaction to be mined and fails when it reverted on-chain. (The legacy scripts printed `Success` on submission without waiting, so reverts were invisible; `claim-prize --delay` fired its second transaction after a blind two-second sleep.)
 - **Output**: by default, transaction subcommands print only `Success. Tx hash = <hash>` or the error. Add **`-i`/`--info`** for full detailed output (network, account, round info, etc.). Read-only subcommands always print the detailed sections.
+
+The automated bidding bot lives in `internal/autobid`: a pure decision core
+(`autobid.Decide`) plus an engine that owns the market-refresh loop,
+transaction tracking, reconnection and session statistics. `cgctl autobid` is
+environment parsing plus `autobid.New(...).Run(ctx)`; malformed numeric
+configuration is now a startup error instead of a silent fallback to defaults.
 
 ## Subcommands
 
@@ -209,8 +217,10 @@ RPC URL             = http://localhost:8545
 Chain ID            = 31337
 ...
 ==================== TRANSACTION RESULT ====================
-Status              = SUBMITTED
+Status              = SUCCESS
 Tx Hash             = 0x...
+Block               = 123
+Gas Used            = 21000
 ```
 
 ## Key design principles
@@ -228,7 +238,7 @@ The `internal/ethtx` package defines standard gas limits:
 
 | Constant | Value | Use Case |
 |----------|-------|----------|
-| `GasLimitERC20Approve` | 100,000 | Token approvals |
+| `GasLimitApprove` | 100,000 | Token approvals |
 | `GasLimitBid` | 500,000 | CosmicGame bids |
 | `GasLimitClaimPrize` | 3,500,000 | Prize claims (V2 needs ~3M) |
 | `GasLimitDonate` | 300,000 | Donations |

@@ -1,17 +1,17 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
-func init() {
+// newSetTimeIncrementCmd builds the set-time-increment subcommand.
+func newSetTimeIncrementCmd() *cobra.Command {
 	var info bool
 	c := &cobra.Command{
 		Use:   "set-time-increment <cosmicgame-addr> <time-increment-seconds>",
@@ -21,19 +21,19 @@ until the main prize by the given number of seconds. Requires an inactive
 round; see claim-and-set-time-increment for a variant that opens the inactive
 window automatically.
 
-Environment:
-  RPC_URL   Ethereum RPC endpoint (required)
-  PKEY_HEX  64-char hex private key, no 0x prefix (required)`,
+` + txEnvHelp,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSetTimeIncrement(cmd.Context(), ethtx.NewPrinter(info), args)
+			return runSetTimeIncrement(cmd, info, args)
 		},
 	}
-	c.Flags().BoolVarP(&info, "info", "i", false, "print detailed output")
-	register(c)
+	addInfoFlag(c, &info)
+	return c
 }
 
-func runSetTimeIncrement(ctx context.Context, out *ethtx.Printer, args []string) error {
+func init() { register(newSetTimeIncrementCmd()) }
+
+func runSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string) error {
 	gameAddr, err := parseAddress("cosmicgame-addr", args[0])
 	if err != nil {
 		return err
@@ -46,24 +46,12 @@ func runSetTimeIncrement(ctx context.Context, out *ethtx.Printer, args []string)
 		return fmt.Errorf("time_increment_seconds must be positive")
 	}
 
-	net, err := ethtx.Connect(ctx)
-	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
-	}
-	out.NetworkInfo(net)
-
-	pkeyHex, err := ethtx.PrivateKeyHexFromEnv()
+	s, err := newTxSession(cmd, verbose)
 	if err != nil {
 		return err
 	}
-	acc, err := net.PrepareAccount(ctx, pkeyHex)
-	if err != nil {
-		return fmt.Errorf("account setup failed: %w", err)
-	}
-	out.AccountInfo(acc)
-
-	out.ContractInfo("CosmicGame Address", gameAddr)
-	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, net.Client)
+	s.Out.ContractInfo("CosmicGame Address", gameAddr)
+	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, s.Net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame: %w", err)
 	}
@@ -83,29 +71,23 @@ func runSetTimeIncrement(ctx context.Context, out *ethtx.Printer, args []string)
 
 	newMicroseconds := new(big.Int).Mul(big.NewInt(desiredSeconds), big.NewInt(1000000))
 
-	out.Section("CURRENT STATE")
-	out.KeyValue("Contract Owner", owner.String())
-	out.KeyValue("Current Microseconds", currentMicroseconds.String())
-	out.KeyValueDuration("Current Time Increment", currentSeconds.Int64())
+	s.Out.Section("CURRENT STATE")
+	s.Out.KeyValue("Contract Owner", owner.String())
+	s.Out.KeyValue("Current Microseconds", currentMicroseconds.String())
+	s.Out.KeyValueDuration("Current Time Increment", currentSeconds.Int64())
 
-	out.Section("NEW VALUES")
-	out.KeyValue("New Microseconds", newMicroseconds.String())
-	out.KeyValueDuration("New Time Increment", desiredSeconds)
-	out.KeyValue("Formula", "timeIncrement (seconds) = microseconds / 1,000,000")
+	s.Out.Section("NEW VALUES")
+	s.Out.KeyValue("New Microseconds", newMicroseconds.String())
+	s.Out.KeyValueDuration("New Time Increment", desiredSeconds)
+	s.Out.KeyValue("Formula", "timeIncrement (seconds) = microseconds / 1,000,000")
 
-	if acc.Address != owner {
-		out.Section("WARNING")
-		out.KeyValue("Your Address", acc.Address.String())
-		out.KeyValue("Note", "You are NOT the contract owner. Transaction will likely fail.")
+	if s.Acc.Address != owner {
+		s.Out.Section("WARNING")
+		s.Out.KeyValue("Your Address", s.Acc.Address.String())
+		s.Out.KeyValue("Note", "You are NOT the contract owner. Transaction will likely fail.")
 	}
 
-	out.TxSubmitting("SetMainPrizeTimeIncrementInMicroSeconds", nil, ethtx.GasLimitAdminCall, net.GasPrice)
-	txopts := net.TransactOpts(acc, nil, ethtx.GasLimitAdminCall)
-
-	tx, err := game.SetMainPrizeTimeIncrementInMicroSeconds(txopts, newMicroseconds)
-	if err != nil {
-		return fmt.Errorf("setMainPrizeTimeIncrementInMicroSeconds: %w", err)
-	}
-	out.TxSubmitted(tx)
-	return nil
+	s.Out.TxSubmitting("SetMainPrizeTimeIncrementInMicroSeconds", nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
+	tx, err := game.SetMainPrizeTimeIncrementInMicroSeconds(s.TransactOpts(nil, ethtx.GasLimitAdminCall), newMicroseconds)
+	return s.FinishTx(cmd.Context(), tx, err)
 }

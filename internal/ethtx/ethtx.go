@@ -29,13 +29,27 @@ import (
 
 // Gas limits by operation type (same values the legacy scripts used).
 const (
-	// GasLimitApprove covers ERC-721 setApprovalForAll calls.
+	// GasLimitApprove covers ERC-721 setApprovalForAll and ERC-20 approve calls.
 	GasLimitApprove = uint64(100000)
 	// GasLimitContractCall covers ordinary contract calls (transfer, set name).
 	GasLimitContractCall = uint64(300000)
 	// GasLimitHighComplexity covers minting and marketplace operations.
 	GasLimitHighComplexity = uint64(5000000)
+	// GasLimitBid covers CosmicGame bidding operations.
+	GasLimitBid = uint64(500000)
+	// GasLimitClaimPrize covers CosmicGame prize claiming (complex operation;
+	// V2 needs ~3M).
+	GasLimitClaimPrize = uint64(3500000)
+	// GasLimitDonate covers CosmicGame donation operations.
+	GasLimitDonate = uint64(300000)
+	// GasLimitAdminCall covers owner-only setter operations.
+	GasLimitAdminCall = uint64(100000)
 )
+
+// DefaultGasPriceMultiplier is the factor applied to the node-suggested gas
+// price when Options.GasPriceMultiplier is unset — the fixed 2.0 policy every
+// legacy script used.
+const DefaultGasPriceMultiplier = 2.0
 
 // DefaultReceiptTimeout bounds how long FinishTx waits for a transaction
 // receipt unless Options.ReceiptTimeout overrides it.
@@ -55,6 +69,10 @@ type Options struct {
 	// ReceiptTimeout bounds the receipt wait; defaults to
 	// DefaultReceiptTimeout.
 	ReceiptTimeout time.Duration
+	// GasPriceMultiplier scales the node-suggested gas price on every
+	// transaction the session builds. Zero or negative applies
+	// DefaultGasPriceMultiplier.
+	GasPriceMultiplier float64
 }
 
 // Network holds chain and RPC information fetched from the network.
@@ -83,6 +101,7 @@ type Session struct {
 	Out Output
 
 	receiptTimeout time.Duration
+	gasMultiplier  float64
 }
 
 // New connects to the RPC endpoint, loads the signer key and prints
@@ -106,7 +125,17 @@ func New(ctx context.Context, opts Options) (*Session, error) {
 	if timeout <= 0 {
 		timeout = DefaultReceiptTimeout
 	}
-	return &Session{Net: net, Acc: acc, Out: out, receiptTimeout: timeout}, nil
+	multiplier := opts.GasPriceMultiplier
+	if multiplier <= 0 {
+		multiplier = DefaultGasPriceMultiplier
+	}
+	return &Session{
+		Net:            net,
+		Acc:            acc,
+		Out:            out,
+		receiptTimeout: timeout,
+		gasMultiplier:  multiplier,
+	}, nil
 }
 
 // Connect dials the endpoint and fetches the chain ID, suggested gas price
@@ -170,16 +199,39 @@ func PrepareAccount(ctx context.Context, net *Network, pkeyHex string) (*Account
 	}, nil
 }
 
-// AdjustGasPrice doubles the node-suggested gas price for faster inclusion,
-// the same fixed 2.0 multiplier every legacy script applied.
+// AdjustGasPrice scales the node-suggested gas price by the fixed legacy
+// default of 2.0 for faster inclusion. Sessions with a configured multiplier
+// use AdjustedGasPrice instead.
 func AdjustGasPrice(basePrice *big.Int) *big.Int {
+	return AdjustGasPriceBy(basePrice, DefaultGasPriceMultiplier)
+}
+
+// AdjustGasPriceBy scales the node-suggested gas price by an arbitrary
+// positive multiplier. Multipliers of exactly 1.0 return the base price
+// untouched; nil base prices yield zero.
+func AdjustGasPriceBy(basePrice *big.Int, multiplier float64) *big.Int {
 	if basePrice == nil {
 		return big.NewInt(0)
 	}
-	adjusted := new(big.Float).Mul(new(big.Float).SetInt(basePrice), big.NewFloat(2.0))
+	if multiplier == 1.0 {
+		return new(big.Int).Set(basePrice)
+	}
+	adjusted := new(big.Float).Mul(new(big.Float).SetInt(basePrice), big.NewFloat(multiplier))
 	result := new(big.Int)
 	adjusted.Int(result)
 	return result
+}
+
+// AdjustedGasPrice returns the network's suggested gas price scaled by the
+// session's gas-price multiplier — the price TransactOpts attaches to
+// transactions.
+func (s *Session) AdjustedGasPrice() *big.Int {
+	return AdjustGasPriceBy(s.Net.GasPrice, s.gasMultiplier)
+}
+
+// CallOpts returns options for read-only contract calls.
+func CallOpts() *bind.CallOpts {
+	return &bind.CallOpts{}
 }
 
 // TransactOpts builds transaction options signing with an EIP-155 signer for
@@ -192,7 +244,7 @@ func (s *Session) TransactOpts(value *big.Int, gasLimit uint64) *bind.TransactOp
 		Nonce:    big.NewInt(int64(s.Acc.Nonce)),
 		Value:    value,
 		GasLimit: gasLimit,
-		GasPrice: AdjustGasPrice(s.Net.GasPrice),
+		GasPrice: s.AdjustedGasPrice(),
 		Signer: func(_ common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			signer := types.NewEIP155Signer(chainID)
 			signature, err := crypto.Sign(signer.Hash(tx).Bytes(), key)
@@ -202,6 +254,40 @@ func (s *Session) TransactOpts(value *big.Int, gasLimit uint64) *bind.TransactOp
 			return tx.WithSignature(signer, signature)
 		},
 	}
+}
+
+// Balance fetches the current ETH balance of an address.
+func (n *Network) Balance(ctx context.Context, addr common.Address) (*big.Int, error) {
+	return n.Client.BalanceAt(ctx, addr, nil)
+}
+
+// Refresh re-reads the network state (gas price, latest block) and the
+// account state (nonce, balance) over the existing connection. Multi-
+// transaction commands call it between transactions so the next
+// TransactOpts carries a fresh nonce and gas price.
+func (s *Session) Refresh(ctx context.Context) error {
+	gasPrice, err := s.Net.Client.SuggestGasPrice(ctx)
+	if err != nil {
+		return fmt.Errorf("error refreshing gas price: %w", err)
+	}
+	header, err := s.Net.Client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error refreshing latest block: %w", err)
+	}
+	nonce, err := s.Net.Client.PendingNonceAt(ctx, s.Acc.Address)
+	if err != nil {
+		return fmt.Errorf("error refreshing account nonce: %w", err)
+	}
+	balance, err := s.Net.Client.BalanceAt(ctx, s.Acc.Address, nil)
+	if err != nil {
+		return fmt.Errorf("error refreshing account balance: %w", err)
+	}
+	s.Net.GasPrice = gasPrice
+	s.Net.BlockNum = header.Number
+	s.Net.BlockTime = header.Time
+	s.Acc.Nonce = nonce
+	s.Acc.Balance = balance
+	return nil
 }
 
 // WaitForReceipt waits (bounded by the session's receipt timeout) until the

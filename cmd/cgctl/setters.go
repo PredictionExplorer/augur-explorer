@@ -1,17 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
-
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // gameSetterSpec describes a simple CosmicGame owner-only setter subcommand:
@@ -34,21 +32,17 @@ func newGameSetterCmd(spec gameSetterSpec) *cobra.Command {
 	c := &cobra.Command{
 		Use:   spec.use,
 		Short: spec.short,
-		Long: spec.long + `
-
-Environment:
-  RPC_URL   Ethereum RPC endpoint (required)
-  PKEY_HEX  64-char hex private key, no 0x prefix (required)`,
-		Args: cobra.ExactArgs(2),
+		Long:  spec.long + "\n\n" + txEnvHelp,
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runGameSetter(cmd.Context(), ethtx.NewPrinter(info), spec, args[0], args[1])
+			return runGameSetter(cmd, info, spec, args[0], args[1])
 		},
 	}
-	c.Flags().BoolVarP(&info, "info", "i", false, "print detailed output")
+	addInfoFlag(c, &info)
 	return c
 }
 
-func runGameSetter(ctx context.Context, out *ethtx.Printer, spec gameSetterSpec, addrArg, valueArg string) error {
+func runGameSetter(cmd *cobra.Command, verbose bool, spec gameSetterSpec, addrArg, valueArg string) error {
 	gameAddr, err := parseAddress("cosmicgame-addr", addrArg)
 	if err != nil {
 		return err
@@ -58,24 +52,12 @@ func runGameSetter(ctx context.Context, out *ethtx.Printer, spec gameSetterSpec,
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
-	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
-	}
-	out.NetworkInfo(net)
-
-	pkeyHex, err := ethtx.PrivateKeyHexFromEnv()
+	s, err := newTxSession(cmd, verbose)
 	if err != nil {
 		return err
 	}
-	acc, err := net.PrepareAccount(ctx, pkeyHex)
-	if err != nil {
-		return fmt.Errorf("account setup failed: %w", err)
-	}
-	out.AccountInfo(acc)
-
-	out.ContractInfo("CosmicGame Address", gameAddr)
-	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, net.Client)
+	s.Out.ContractInfo("CosmicGame Address", gameAddr)
+	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, s.Net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame: %w", err)
 	}
@@ -89,17 +71,11 @@ func runGameSetter(ctx context.Context, out *ethtx.Printer, spec gameSetterSpec,
 	if spec.percent {
 		suffix = "%"
 	}
-	out.Section(spec.section)
-	out.KeyValue("Current Value", currentValue.String()+suffix)
-	out.KeyValue("New Value", newValue.String()+suffix)
+	s.Out.Section(spec.section)
+	s.Out.KeyValue("Current Value", currentValue.String()+suffix)
+	s.Out.KeyValue("New Value", newValue.String()+suffix)
 
-	out.TxSubmitting(spec.action, nil, ethtx.GasLimitAdminCall, net.GasPrice)
-	txopts := net.TransactOpts(acc, nil, ethtx.GasLimitAdminCall)
-
-	tx, err := spec.write(game, txopts, newValue)
-	if err != nil {
-		return fmt.Errorf("%s: %w", spec.action, err)
-	}
-	out.TxSubmitted(tx)
-	return nil
+	s.Out.TxSubmitting(spec.action, nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
+	tx, err := spec.write(game, s.TransactOpts(nil, ethtx.GasLimitAdminCall), newValue)
+	return s.FinishTx(cmd.Context(), tx, err)
 }

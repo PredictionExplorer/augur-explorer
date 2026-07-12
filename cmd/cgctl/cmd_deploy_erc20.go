@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -10,8 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
-
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 )
 
 // SampTokenMetaData contains all meta data concerning the SampToken contract.
@@ -38,57 +35,48 @@ func deploySampToken(auth *bind.TransactOpts, backend bind.ContractBackend) (com
 	return address, tx, nil
 }
 
-func init() {
-	register(&cobra.Command{
+// newDeployERC20Cmd builds the deploy-erc20 subcommand.
+func newDeployERC20Cmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "deploy-erc20",
 		Short: "Deploy a sample ERC-20 token for donation testing",
 		Long: `Deploy a sample ERC-20 token (100 billion tokens with 18 decimals) for
 testing the token donation mechanism.
 Token Name: ERC20 Token Sample1, Symbol: Sample 1.
 
-Environment:
-  RPC_URL   Ethereum RPC endpoint (required)
-  PKEY_HEX  64-char hex private key, no 0x prefix (required)`,
+` + txEnvHelp,
 		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDeployERC20(cmd.Context())
-		},
-	})
+		RunE: runDeployERC20,
+	}
 }
 
-func runDeployERC20(ctx context.Context) error {
-	net, err := ethtx.Connect(ctx)
-	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
-	}
-	fmt.Printf("Using chain_id=%v\n", net.ChainID.String())
+func init() { register(newDeployERC20Cmd()) }
 
-	pkeyHex, err := ethtx.PrivateKeyHexFromEnv()
+func runDeployERC20(cmd *cobra.Command, _ []string) error {
+	w := cmd.OutOrStdout()
+	s, err := newTxSession(cmd, false)
 	if err != nil {
 		return err
 	}
-	acc, err := net.PrepareAccount(ctx, pkeyHex)
-	if err != nil {
-		return fmt.Errorf("account setup failed: %w", err)
-	}
-	fmt.Printf("Deployer address: %v\n", acc.Address.Hex())
+	fmt.Fprintf(w, "Using chain_id=%v\n", s.Net.ChainID.String())
+	fmt.Fprintf(w, "Deployer address: %v\n", s.Acc.Address.Hex())
 
-	// Gas price headroom above the block base fee comes from the shared
+	// Gas price headroom above the block base fee comes from the session's
 	// GAS_PRICE_MULTIPLIER policy (default 2x, same as the old script).
-	txopts := net.TransactOpts(acc, big.NewInt(0), uint64(3000000))
-	fmt.Printf("Gas price: %v\n", txopts.GasPrice.String())
+	txopts := s.TransactOpts(big.NewInt(0), uint64(3000000))
+	fmt.Fprintf(w, "Gas price: %v\n", txopts.GasPrice.String())
 
-	fmt.Printf("Deploying SampToken contract...\n")
-	contractAddr, tx, err := deploySampToken(txopts, net.Client)
+	fmt.Fprintf(w, "Deploying SampToken contract...\n")
+	contractAddr, tx, err := deploySampToken(txopts, s.Net.Client)
 	if err != nil {
 		return fmt.Errorf("deploying contract: %w", err)
 	}
 
-	fmt.Printf("Deployment tx hash: %v\n", tx.Hash().String())
-	fmt.Printf("Contract will be deployed at: %v\n", contractAddr.Hex())
-	fmt.Printf("\nWaiting for transaction to be mined...\n")
+	fmt.Fprintf(w, "Deployment tx hash: %v\n", tx.Hash().String())
+	fmt.Fprintf(w, "Contract will be deployed at: %v\n", contractAddr.Hex())
+	fmt.Fprintf(w, "\nWaiting for transaction to be mined...\n")
 
-	receipt, err := bind.WaitMined(ctx, net.Client, tx)
+	receipt, err := s.WaitForReceipt(cmd.Context(), tx)
 	if err != nil {
 		return fmt.Errorf("waiting for mining: %w", err)
 	}
@@ -96,12 +84,12 @@ func runDeployERC20(ctx context.Context) error {
 	if receipt.Status != types.ReceiptStatusSuccessful {
 		return fmt.Errorf("transaction failed with status: %v", receipt.Status)
 	}
-	fmt.Printf("\n=== DEPLOYMENT SUCCESSFUL ===\n")
-	fmt.Printf("Contract Address: %v\n", receipt.ContractAddress.Hex())
-	fmt.Printf("Block Number: %v\n", receipt.BlockNumber)
-	fmt.Printf("Gas Used: %v\n", receipt.GasUsed)
-	fmt.Printf("Token Name: ERC20 Token Sample1\n")
-	fmt.Printf("Token Symbol: Sample 1\n")
-	fmt.Printf("Total Supply: 100,000,000,000 tokens (with 18 decimals)\n")
+	fmt.Fprintf(w, "\n=== DEPLOYMENT SUCCESSFUL ===\n")
+	fmt.Fprintf(w, "Contract Address: %v\n", receipt.ContractAddress.Hex())
+	fmt.Fprintf(w, "Block Number: %v\n", receipt.BlockNumber)
+	fmt.Fprintf(w, "Gas Used: %v\n", receipt.GasUsed)
+	fmt.Fprintf(w, "Token Name: ERC20 Token Sample1\n")
+	fmt.Fprintf(w, "Token Symbol: Sample 1\n")
+	fmt.Fprintf(w, "Total Supply: 100,000,000,000 tokens (with 18 decimals)\n")
 	return nil
 }

@@ -1,86 +1,91 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
-func init() {
+// newNFTCmd builds the nft command group.
+func newNFTCmd() *cobra.Command {
 	group := &cobra.Command{
 		Use:   "nft",
 		Short: "ERC-721 / CosmicSignature NFT helpers",
 	}
+	group.AddCommand(newNFTApprovedCmd(), newNFTIsApprovedForAllCmd(), newNFTOwnerOfCmd(), newNFTSetNameCmd())
+	return group
+}
 
-	group.AddCommand(&cobra.Command{
+func init() { register(newNFTCmd()) }
+
+func newNFTApprovedCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "approved <erc721-addr> <token-id>",
 		Short: "Show the approved operator of a single ERC-721 token",
 		Long: `Show the ERC-721 single-token approval status (getApproved) together with
 the token owner.
 
-Environment:
-  RPC_URL  Ethereum RPC endpoint (required)`,
+` + readEnvHelp,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTApproved(cmd.Context(), ethtx.NewPrinter(true), args)
+			return runNFTApproved(cmd, args)
 		},
-	})
+	}
+}
 
-	group.AddCommand(&cobra.Command{
+func newNFTIsApprovedForAllCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "is-approved-for-all <erc721-addr> <owner-addr> <operator-addr>",
 		Short: "Show the ERC-721 operator-level approval status",
 		Long: `Show the ERC-721 isApprovedForAll status (operator-level approval).
 
-Environment:
-  RPC_URL  Ethereum RPC endpoint (required)`,
+` + readEnvHelp,
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTIsApprovedForAll(cmd.Context(), ethtx.NewPrinter(true), args)
+			return runNFTIsApprovedForAll(cmd, args)
 		},
-	})
+	}
+}
 
-	group.AddCommand(&cobra.Command{
+func newNFTOwnerOfCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "owner-of <erc721-addr> <token-id>",
 		Short: "Show the owner of a specific ERC-721 token",
 		Long: `Show the owner of a specific ERC-721 token, plus the owner's NFT count
 and ETH balance.
 
-Environment:
-  RPC_URL  Ethereum RPC endpoint (required)`,
+` + readEnvHelp,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTOwnerOf(cmd.Context(), ethtx.NewPrinter(true), args)
+			return runNFTOwnerOf(cmd, args)
 		},
-	})
+	}
+}
 
-	var setNameInfo bool
-	setName := &cobra.Command{
+func newNFTSetNameCmd() *cobra.Command {
+	var info bool
+	c := &cobra.Command{
 		Use:   "set-name <cosmicsignaturenft-addr> <token-id> [name]",
 		Short: "Set the name of a CosmicSignatureNft token",
 		Long: `Set the NFT name for a CosmicSignatureNft token. If the name is omitted,
 the name is set to the empty string.
 
-Environment:
-  RPC_URL   Ethereum RPC endpoint (required)
-  PKEY_HEX  64-char hex private key, no 0x prefix (required)`,
+` + txEnvHelp,
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTSetName(cmd.Context(), ethtx.NewPrinter(setNameInfo), args)
+			return runNFTSetName(cmd, info, args)
 		},
 	}
-	setName.Flags().BoolVarP(&setNameInfo, "info", "i", false, "print detailed output")
-	group.AddCommand(setName)
-
-	register(group)
+	addInfoFlag(c, &info)
+	return c
 }
 
-func runNFTApproved(ctx context.Context, out *ethtx.Printer, args []string) error {
+func runNFTApproved(cmd *cobra.Command, args []string) error {
 	nftAddr, err := parseAddress("erc721-addr", args[0])
 	if err != nil {
 		return err
@@ -90,12 +95,10 @@ func runNFTApproved(ctx context.Context, out *ethtx.Printer, args []string) erro
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
+	net, out, err := connectNetwork(cmd)
 	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
+		return err
 	}
-	out.NetworkInfo(net)
-
 	erc721, err := cgcontracts.NewCosmicSignatureNft(nftAddr, net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate ERC721 contract: %w", err)
@@ -128,7 +131,7 @@ func runNFTApproved(ctx context.Context, out *ethtx.Printer, args []string) erro
 	return nil
 }
 
-func runNFTIsApprovedForAll(ctx context.Context, out *ethtx.Printer, args []string) error {
+func runNFTIsApprovedForAll(cmd *cobra.Command, args []string) error {
 	tokenAddr, err := parseAddress("erc721-addr", args[0])
 	if err != nil {
 		return err
@@ -142,12 +145,10 @@ func runNFTIsApprovedForAll(ctx context.Context, out *ethtx.Printer, args []stri
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
+	net, out, err := connectNetwork(cmd)
 	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
+		return err
 	}
-	out.NetworkInfo(net)
-
 	erc721, err := cgcontracts.NewCosmicSignatureNft(tokenAddr, net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate ERC721 contract: %w", err)
@@ -183,7 +184,7 @@ func runNFTIsApprovedForAll(ctx context.Context, out *ethtx.Printer, args []stri
 	return nil
 }
 
-func runNFTOwnerOf(ctx context.Context, out *ethtx.Printer, args []string) error {
+func runNFTOwnerOf(cmd *cobra.Command, args []string) error {
 	contractAddr, err := parseAddress("erc721-addr", args[0])
 	if err != nil {
 		return err
@@ -193,12 +194,10 @@ func runNFTOwnerOf(ctx context.Context, out *ethtx.Printer, args []string) error
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
+	net, out, err := connectNetwork(cmd)
 	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
+		return err
 	}
-	out.NetworkInfo(net)
-
 	erc721, err := cgcontracts.NewERC721(contractAddr, net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate ERC721 contract: %w", err)
@@ -214,7 +213,7 @@ func runNFTOwnerOf(ctx context.Context, out *ethtx.Printer, args []string) error
 	if err != nil {
 		balance = nil
 	}
-	ownerEthBalance, err := net.Balance(ctx, owner)
+	ownerEthBalance, err := net.Balance(cmd.Context(), owner)
 	if err != nil {
 		ownerEthBalance = nil
 	}
@@ -234,7 +233,7 @@ func runNFTOwnerOf(ctx context.Context, out *ethtx.Printer, args []string) error
 	return nil
 }
 
-func runNFTSetName(ctx context.Context, out *ethtx.Printer, args []string) error {
+func runNFTSetName(cmd *cobra.Command, verbose bool, args []string) error {
 	nftAddr, err := parseAddress("cosmicsignaturenft-addr", args[0])
 	if err != nil {
 		return err
@@ -248,43 +247,25 @@ func runNFTSetName(ctx context.Context, out *ethtx.Printer, args []string) error
 		nftName = args[2]
 	}
 
-	net, err := ethtx.Connect(ctx)
-	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
-	}
-	out.NetworkInfo(net)
-
-	pkeyHex, err := ethtx.PrivateKeyHexFromEnv()
+	s, err := newTxSession(cmd, verbose)
 	if err != nil {
 		return err
 	}
-	acc, err := net.PrepareAccount(ctx, pkeyHex)
-	if err != nil {
-		return fmt.Errorf("account setup failed: %w", err)
-	}
-	out.AccountInfo(acc)
-
-	out.ContractInfo("CosmicSignatureNft Address", nftAddr)
-	nft, err := cgcontracts.NewCosmicSignatureNft(nftAddr, net.Client)
+	s.Out.ContractInfo("CosmicSignatureNft Address", nftAddr)
+	nft, err := cgcontracts.NewCosmicSignatureNft(nftAddr, s.Net.Client)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicSignatureNft: %w", err)
 	}
 
-	out.Section("NFT NAME CONFIG")
-	out.KeyValue("Token ID", tokenID.String())
+	s.Out.Section("NFT NAME CONFIG")
+	s.Out.KeyValue("Token ID", tokenID.String())
 	if nftName == "" {
-		out.KeyValue("New Name", "(empty)")
+		s.Out.KeyValue("New Name", "(empty)")
 	} else {
-		out.KeyValue("New Name", nftName)
+		s.Out.KeyValue("New Name", nftName)
 	}
 
-	out.TxSubmitting("SetNftName", nil, ethtx.GasLimitAdminCall, net.GasPrice)
-	txopts := net.TransactOpts(acc, nil, ethtx.GasLimitAdminCall)
-
-	tx, err := nft.SetNftName(txopts, tokenID, nftName)
-	if err != nil {
-		return fmt.Errorf("setNftName: %w", err)
-	}
-	out.TxSubmitted(tx)
-	return nil
+	s.Out.TxSubmitting("SetNftName", nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
+	tx, err := nft.SetNftName(s.TransactOpts(nil, ethtx.GasLimitAdminCall), tokenID, nftName)
+	return s.FinishTx(cmd.Context(), tx, err)
 }

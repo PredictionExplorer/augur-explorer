@@ -7,7 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/autobid"
 )
 
 // Default values for the user-configurable autobid parameters.
@@ -19,8 +22,9 @@ const (
 	defaultCstBidAnyway        = true // keep bidding with CST even when last bidder
 )
 
-func init() {
-	register(&cobra.Command{
+// newAutobidCmd builds the autobid subcommand.
+func newAutobidCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "autobid",
 		Short: "Run the automated CosmicGame bidding bot",
 		Long: `Run the automated CosmicGame bidding bot: an event-based state machine
@@ -39,50 +43,75 @@ Environment (optional):
   RWALK_MIN_PRICE                   min ETH bid price before RandomWalk bidding is considered (default 0.1)
   TIME_BEFORE_PRIZE                 seconds before prize to start bidding (default 15)
   CST_BID_ANYWAY                    keep bidding with CST even when last bidder (default true)
-  AT_STARTUP_BID_UP_TO_PRICE_LEVEL  bid at round start until price reaches this level (ETH)`,
+  AT_STARTUP_BID_UP_TO_PRICE_LEVEL  bid at round start until price reaches this level (ETH)
+  GAS_PRICE_MULTIPLIER              multiplier applied to the suggested gas price (default 2.0)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := loadAutobidConfig()
 			if err != nil {
 				return err
 			}
-			bot, err := newBiddingBot(cfg)
+			cfg.Out = cmd.OutOrStdout()
+			engine, err := autobid.New(cmd.Context(), cfg)
 			if err != nil {
 				return fmt.Errorf("failed to initialize bot: %w", err)
 			}
-			return bot.run()
+			return engine.Run(cmd.Context())
 		},
-	})
+	}
 }
 
-// autobidConfig holds the user-configurable autobid parameters.
-type autobidConfig struct {
-	maxEthBid        *big.Int // maximum ETH to spend on bidding (wei)
-	maxCstBid        *big.Int // max CST price for bidding (wei)
-	rwalkMinPrice    *big.Int // only use RWALK when bid price above this (wei)
-	timeBeforePrize  int64    // seconds before prize to start bidding
-	cstBidAnyway     bool     // keep bidding with CST even when last bidder
-	initialBidPrice  *big.Int // initial bid price level (optional)
-	rpcURL           string
-	privateKeyHex    string
-	gameContractAddr string
-}
+func init() { register(newAutobidCmd()) }
 
 // loadAutobidConfig reads the autobid configuration from the environment.
-func loadAutobidConfig() (autobidConfig, error) {
+// Malformed numeric values are configuration errors — the legacy bot
+// silently substituted its defaults, which could bid with 50x the intended
+// limit on a typo.
+func loadAutobidConfig() (autobid.Config, error) {
 	if err := validateAutobidEnv(); err != nil {
-		return autobidConfig{}, err
+		return autobid.Config{}, err
 	}
-	return autobidConfig{
-		rpcURL:           os.Getenv("RPC_URL"),
-		privateKeyHex:    os.Getenv("PKEY_HEX"),
-		gameContractAddr: os.Getenv("CGAME_ADDR"),
-		maxEthBid:        envBigIntEth("MAX_ETH_BID", defaultMaxEthBidEther),
-		maxCstBid:        envBigIntEth("MAX_CST_BID", defaultMaxCstBidAmount),
-		rwalkMinPrice:    envBigIntEth("RWALK_MIN_PRICE", defaultRWalkBidStartPrice),
-		timeBeforePrize:  envInt64("TIME_BEFORE_PRIZE", defaultTimeUntilPrizeLimit),
-		cstBidAnyway:     envBool("CST_BID_ANYWAY", defaultCstBidAnyway),
-		initialBidPrice:  envBigIntEthOptional("AT_STARTUP_BID_UP_TO_PRICE_LEVEL"),
+	maxEthBid, err := envBigIntEth("MAX_ETH_BID", defaultMaxEthBidEther)
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	maxCstBid, err := envBigIntEth("MAX_CST_BID", defaultMaxCstBidAmount)
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	rwalkMinPrice, err := envBigIntEth("RWALK_MIN_PRICE", defaultRWalkBidStartPrice)
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	timeBeforePrize, err := envInt64("TIME_BEFORE_PRIZE", defaultTimeUntilPrizeLimit)
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	cstBidAnyway, err := envBool("CST_BID_ANYWAY", defaultCstBidAnyway)
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	initialBidPrice, err := envBigIntEthOptional("AT_STARTUP_BID_UP_TO_PRICE_LEVEL")
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	multiplier, err := gasMultiplierFromEnv()
+	if err != nil {
+		return autobid.Config{}, err
+	}
+	return autobid.Config{
+		RPCURL:        os.Getenv("RPC_URL"),
+		PrivateKeyHex: os.Getenv("PKEY_HEX"),
+		GameAddr:      common.HexToAddress(os.Getenv("CGAME_ADDR")),
+		Limits: autobid.Limits{
+			MaxEthBid:       maxEthBid,
+			MaxCstBid:       maxCstBid,
+			RWalkMinPrice:   rwalkMinPrice,
+			TimeBeforePrize: timeBeforePrize,
+			CstBidAnyway:    cstBidAnyway,
+		},
+		InitialBidPrice:    initialBidPrice,
+		GasPriceMultiplier: multiplier,
 	}, nil
 }
 
@@ -103,8 +132,8 @@ func validateAutobidEnv() error {
 	addr := os.Getenv("CGAME_ADDR")
 	if addr == "" {
 		problems = append(problems, "CGAME_ADDR is required")
-	} else if len(addr) != 40 {
-		problems = append(problems, fmt.Sprintf("CGAME_ADDR must be 40 chars (got %d)", len(addr)))
+	} else if len(strings.TrimPrefix(addr, "0x")) != 40 {
+		problems = append(problems, fmt.Sprintf("CGAME_ADDR must be 40 hex chars without 0x prefix (got %d)", len(addr)))
 	}
 
 	if len(problems) > 0 {
@@ -114,49 +143,60 @@ func validateAutobidEnv() error {
 	return nil
 }
 
-// envBigIntEth reads an ETH-denominated float from the environment and returns
-// it in wei, falling back to defaultVal (also ETH) when unset or invalid.
-func envBigIntEth(key string, defaultVal float64) *big.Int {
-	if val := os.Getenv(key); val != "" {
-		if f, err := strconv.ParseFloat(val, 64); err == nil {
-			wei := new(big.Float).Mul(big.NewFloat(f), big.NewFloat(1e18))
-			result, _ := wei.Int(nil)
-			return result
-		}
-		botLog("Warning: invalid %s, using default", key)
-	}
-	wei := new(big.Float).Mul(big.NewFloat(defaultVal), big.NewFloat(1e18))
+// ethFloatToWei converts an ETH-denominated float to wei.
+func ethFloatToWei(f float64) *big.Int {
+	wei := new(big.Float).Mul(big.NewFloat(f), big.NewFloat(1e18))
 	result, _ := wei.Int(nil)
 	return result
 }
 
+// envBigIntEth reads an ETH-denominated float from the environment and
+// returns it in wei, using defaultVal (also ETH) when unset.
+func envBigIntEth(key string, defaultVal float64) (*big.Int, error) {
+	val := os.Getenv(key)
+	if val == "" {
+		return ethFloatToWei(defaultVal), nil
+	}
+	f, err := strconv.ParseFloat(val, 64)
+	if err != nil || f < 0 {
+		return nil, fmt.Errorf("%s must be a non-negative number (got %q)", key, val)
+	}
+	return ethFloatToWei(f), nil
+}
+
 // envBigIntEthOptional is like envBigIntEth but returns nil when unset.
-func envBigIntEthOptional(key string) *big.Int {
-	if val := os.Getenv(key); val != "" {
-		if f, err := strconv.ParseFloat(val, 64); err == nil {
-			wei := new(big.Float).Mul(big.NewFloat(f), big.NewFloat(1e18))
-			result, _ := wei.Int(nil)
-			return result
-		}
-		botLog("Warning: invalid %s, ignoring", key)
+func envBigIntEthOptional(key string) (*big.Int, error) {
+	val := os.Getenv(key)
+	if val == "" {
+		return nil, nil
 	}
-	return nil
+	f, err := strconv.ParseFloat(val, 64)
+	if err != nil || f < 0 {
+		return nil, fmt.Errorf("%s must be a non-negative number (got %q)", key, val)
+	}
+	return ethFloatToWei(f), nil
 }
 
-func envInt64(key string, defaultVal int64) int64 {
-	if val := os.Getenv(key); val != "" {
-		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
-			return i
-		}
+func envInt64(key string, defaultVal int64) (int64, error) {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal, nil
 	}
-	return defaultVal
+	i, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be an integer (got %q)", key, val)
+	}
+	return i, nil
 }
 
-func envBool(key string, defaultVal bool) bool {
-	if val := os.Getenv(key); val != "" {
-		if b, err := strconv.ParseBool(val); err == nil {
-			return b
-		}
+func envBool(key string, defaultVal bool) (bool, error) {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal, nil
 	}
-	return defaultVal
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		return false, fmt.Errorf("%s must be a boolean (got %q)", key, val)
+	}
+	return b, nil
 }

@@ -15,16 +15,19 @@ import (
 // helper binary used by imgcheck.sh: they read CosmicSignature token data
 // from the database so image/video artifacts can be checked and regenerated.
 
-func init() {
-	register(&cobra.Command{
+const tokenDBEnvHelp = `Environment:
+  PGSQL_*  PostgreSQL connection (PGSQL_HOST, PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD)`
+
+// newTotalTokensCmd builds the total-tokens subcommand.
+func newTotalTokensCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "total-tokens",
 		Short: "Print the total number of CosmicSignature tokens (from the DB)",
 		Long: `Print the total number of CosmicSignature ERC-721 tokens recorded in the
 database. The value is printed without a trailing newline so shell scripts can
 capture it directly.
 
-Environment:
-  PGSQL_*  PostgreSQL connection (PGSQL_HOST, PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD)`,
+` + tokenDBEnvHelp,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repo, err := connectTokenRepo(cmd.Context())
@@ -35,20 +38,22 @@ Environment:
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%v", total)
+			fmt.Fprintf(cmd.OutOrStdout(), "%v", total)
 			return nil
 		},
-	})
+	}
+}
 
-	register(&cobra.Command{
+// newTokenSeedCmd builds the token-seed subcommand.
+func newTokenSeedCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "token-seed <token-id>",
 		Short: "Print the seed of a CosmicSignature token (from the DB)",
 		Long: `Print the seed of the given CosmicSignature ERC-721 token as recorded in
 the database. The value is printed without a trailing newline so shell scripts
 can capture it directly.
 
-Environment:
-  PGSQL_*  PostgreSQL connection (PGSQL_HOST, PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD)`,
+` + tokenDBEnvHelp,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tokenID, err := parseInt64("token-id", args[0])
@@ -64,15 +69,19 @@ Environment:
 				// The legacy helper printed an empty string for unknown
 				// token ids; imgcheck.sh relies on that contract.
 				if errors.Is(err, store.ErrNotFound) {
-					fmt.Printf("%v", "")
 					return nil
 				}
 				return err
 			}
-			fmt.Printf("%v", seed)
+			fmt.Fprintf(cmd.OutOrStdout(), "%v", seed)
 			return nil
 		},
-	})
+	}
+}
+
+func init() {
+	register(newTotalTokensCmd())
+	register(newTokenSeedCmd())
 }
 
 // connectTokenRepo connects to PostgreSQL (PGSQL_* env vars) and returns the

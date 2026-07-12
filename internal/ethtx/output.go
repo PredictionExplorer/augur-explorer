@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -70,6 +71,25 @@ func (o Output) KeyValueEth(key string, wei *big.Int) {
 		return
 	}
 	o.printf("%-28s= %s ETH\n", key, WeiToEthText(wei))
+}
+
+// KeyValueDuration prints a seconds value with its human-readable rendering
+// when verbose output is enabled.
+func (o Output) KeyValueDuration(key string, secs int64) {
+	if !o.Verbose {
+		return
+	}
+	o.printf("%-28s= %d (%s)\n", key, secs, FmtDuration(secs))
+}
+
+// ContractInfo prints a contract address section when verbose output is
+// enabled.
+func (o Output) ContractInfo(name string, addr common.Address) {
+	if !o.Verbose {
+		return
+	}
+	o.Section("CONTRACT")
+	o.printf("%-20s= %s\n", name, addr.String())
 }
 
 // NetworkInfo prints the connected-network details when verbose output is

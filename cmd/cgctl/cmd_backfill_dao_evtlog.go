@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
-	"os"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -21,7 +19,8 @@ import (
 // added to FilterLogs.
 const backfillDefaultFromBlock uint64 = 455_767_500
 
-func init() {
+// newBackfillDaoEvtlogCmd builds the backfill-dao-evtlog subcommand.
+func newBackfillDaoEvtlogCmd() *cobra.Command {
 	var fromBlock, toBlock uint64
 	c := &cobra.Command{
 		Use:   "backfill-dao-evtlog",
@@ -34,20 +33,23 @@ Environment:
   PGSQL_*  PostgreSQL connection (PGSQL_HOST, PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runBackfillDaoEvtlog(cmd.Context(), fromBlock, toBlock)
+			return runBackfillDaoEvtlog(cmd, fromBlock, toBlock)
 		},
 	}
 	c.Flags().Uint64Var(&fromBlock, "from-block", backfillDefaultFromBlock, "first block to scan (inclusive)")
 	c.Flags().Uint64Var(&toBlock, "to-block", 0, "last block to scan (inclusive); 0 = ETL last processed block")
-	register(c)
+	return c
 }
 
-func runBackfillDaoEvtlog(ctx context.Context, fromBlock, toBlock uint64) error {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+func init() { register(newBackfillDaoEvtlogCmd()) }
 
-	rpcURL := os.Getenv("RPC_URL")
-	if rpcURL == "" {
-		return fmt.Errorf("RPC_URL must be set")
+func runBackfillDaoEvtlog(cmd *cobra.Command, fromBlock, toBlock uint64) error {
+	ctx := cmd.Context()
+	logger := slog.New(slog.NewTextHandler(cmd.OutOrStdout(), nil))
+
+	rpcURL, err := rpcURLFromEnv()
+	if err != nil {
+		return err
 	}
 
 	rpcclient, err := rpc.DialContext(ctx, rpcURL)

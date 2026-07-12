@@ -1,19 +1,19 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
-	"github.com/PredictionExplorer/augur-explorer/cmd/cgctl/internal/ethtx"
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
-func init() {
-	c := &cobra.Command{
+// newDonationRecordsCmd builds the donation-records subcommand.
+func newDonationRecordsCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "donation-records [cosmicgame-addr]",
 		Short: "Dump the ETH donation-with-info records from CosmicGame",
 		Long: `Dump all EthDonationWithInfo records stored in the CosmicGame contract.
@@ -21,35 +21,34 @@ func init() {
 If no address is given, the default local Hardhat deployment address
 ` + defaultLocalGameAddr + ` is used.
 
-Environment:
-  RPC_URL  Ethereum RPC endpoint (required)`,
+` + readEnvHelp,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out := ethtx.NewPrinter(true)
 			addr := defaultLocalGameAddr
 			if len(args) == 1 {
 				addr = args[0]
 			} else {
+				out := ethtx.Output{Verbose: true, W: cmd.OutOrStdout()}
 				out.Section("DEFAULT ADDRESS")
 				out.KeyValue("Using default", addr)
 			}
-			return runDonationRecords(cmd.Context(), out, addr)
+			return runDonationRecords(cmd, addr)
 		},
 	}
-	register(c)
 }
 
-func runDonationRecords(ctx context.Context, out *ethtx.Printer, addrArg string) error {
+func init() { register(newDonationRecordsCmd()) }
+
+func runDonationRecords(cmd *cobra.Command, addrArg string) error {
 	gameAddr, err := parseAddress("cosmicgame-addr", addrArg)
 	if err != nil {
 		return err
 	}
 
-	net, err := ethtx.Connect(ctx)
+	net, out, err := connectNetwork(cmd)
 	if err != nil {
-		return fmt.Errorf("network connection failed: %w", err)
+		return err
 	}
-	out.NetworkInfo(net)
 	out.ContractInfo("CosmicGame Address", gameAddr)
 
 	game, err := cgcontracts.NewCosmicSignatureGame(gameAddr, net.Client)
