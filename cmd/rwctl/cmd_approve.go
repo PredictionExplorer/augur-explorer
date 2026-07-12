@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newApproveCmd builds the approve subcommand (legacy approve script).
@@ -22,24 +23,24 @@ func newApproveCmd() *cobra.Command {
 			rwalkAddr := common.HexToAddress(args[0])
 			operatorAddr := common.HexToAddress(args[1])
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.net.client)
+			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWalk contract: %w", err)
 			}
 
-			s.out.section("APPROVAL INFO")
-			s.out.keyValue("Operator", operatorAddr.String())
+			s.Out.Section("APPROVAL INFO")
+			s.Out.KeyValue("Operator", operatorAddr.String())
 
-			gasLimit := gasLimitERC721Approve
-			txopts := transactOpts(s.net, s.acc, big.NewInt(0), gasLimit)
-			s.out.txSubmitting("SetApprovalForAll", big.NewInt(0), gasLimit, adjustGasPrice(s.net.gasPrice))
+			gasLimit := ethtx.GasLimitApprove
+			txopts := s.TransactOpts(big.NewInt(0), gasLimit)
+			s.Out.TxSubmitting("SetApprovalForAll", big.NewInt(0), gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
 			tx, err := rwalk.SetApprovalForAll(txopts, operatorAddr, true)
-			return s.finishTx(tx, err)
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)

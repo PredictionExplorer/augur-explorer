@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newAcceptOfferCmd builds the accept-offer subcommand (legacy accept_offer script).
@@ -27,11 +28,11 @@ func newAcceptOfferCmd() *cobra.Command {
 				return err
 			}
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			market, err := rwcontracts.NewRWMarket(marketAddr, s.net.client)
+			market, err := rwcontracts.NewRWMarket(marketAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWMarket contract: %w", err)
 			}
@@ -48,19 +49,19 @@ func newAcceptOfferCmd() *cobra.Command {
 			if !isSellOffer {
 				offerType = "BUY"
 			}
-			s.out.section("ACCEPT OFFER INFO")
-			s.out.keyValue("Offer ID", offerID)
-			s.out.keyValue("Token ID", offer.TokenId.String())
-			s.out.keyValue("Type", offerType)
-			s.out.keyValueEth("Price", amount)
+			s.Out.Section("ACCEPT OFFER INFO")
+			s.Out.KeyValue("Offer ID", offerID)
+			s.Out.KeyValue("Token ID", offer.TokenId.String())
+			s.Out.KeyValue("Type", offerType)
+			s.Out.KeyValueEth("Price", amount)
 
-			gasLimit := gasLimitHighComplexity
+			gasLimit := ethtx.GasLimitHighComplexity
 			value := big.NewInt(0)
 			if isSellOffer {
 				value.Set(amount)
 			}
-			txopts := transactOpts(s.net, s.acc, value, gasLimit)
-			s.out.txSubmitting("Accept"+offerType+"Offer", value, gasLimit, adjustGasPrice(s.net.gasPrice))
+			txopts := s.TransactOpts(value, gasLimit)
+			s.Out.TxSubmitting("Accept"+offerType+"Offer", value, gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
 			var tx *types.Transaction
 			if isSellOffer {
@@ -68,7 +69,7 @@ func newAcceptOfferCmd() *cobra.Command {
 			} else {
 				tx, err = market.AcceptBuyOffer(txopts, big.NewInt(offerID))
 			}
-			return s.finishTx(tx, err)
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)

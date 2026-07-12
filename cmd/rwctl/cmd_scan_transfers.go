@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"math/big"
 
-	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 )
 
@@ -34,42 +32,22 @@ func newScanTransfersCmd() *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
-			latestBlock, err := eclient.HeaderByNumber(ctx, nil)
-			if err != nil {
-				return fmt.Errorf("error getting latest block: %w", err)
-			}
-			latestBnum := latestBlock.Number.Int64()
-
-			filter := ethereum.FilterQuery{
-				Topics:    [][]common.Hash{{transferEventTopic}},
-				Addresses: []common.Address{rwalkAddr},
-			}
-			for fromBlock := int64(0); fromBlock <= latestBnum; fromBlock += scanTransfersMaxBlocks {
-				filter.FromBlock = big.NewInt(fromBlock)
-				filter.ToBlock = big.NewInt(fromBlock + scanTransfersMaxBlocks)
-				logs, err := eclient.FilterLogs(ctx, filter)
-				if err != nil {
-					return fmt.Errorf("error querying events: %w", err)
-				}
-				for i := range logs {
-					lg := &logs[i]
-					if lg.Removed {
-						continue
-					}
+			return scanLogsByRange(cmd.Context(), eclient, rwalkAddr, transferEventTopic,
+				0, scanTransfersMaxBlocks, nil,
+				func(lg *types.Log) error {
 					from := common.BytesToAddress(lg.Topics[1][12:]).String()
 					to := common.BytesToAddress(lg.Topics[2][12:]).String()
 					tok := lg.Topics[3].Big().Int64()
 					if tok != tokenID {
-						continue
+						return nil
 					}
-					fmt.Printf(
+					fmt.Fprintf(cmd.OutOrStdout(),
 						"Block %v: Transfer %v -> %v (tok %v) tx %v\n",
 						lg.BlockNumber, from, to, tok, lg.TxHash.String(),
 					)
-				}
-			}
-			return nil
+					return nil
+				},
+			)
 		},
 	}
 	c.Flags().Int64Var(&tokenID, "token-id", scanTransfersDefaultToken,

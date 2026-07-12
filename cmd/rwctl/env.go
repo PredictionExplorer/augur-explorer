@@ -14,20 +14,14 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/spf13/cobra"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
-)
-
-// Well-known RandomWalk contract addresses on Arbitrum One, kept for operator
-// reference (subcommands take contract addresses as arguments).
-const (
-	// rwalkContractAddr is the RandomWalk NFT contract.
-	rwalkContractAddr = "0x895a6F444BE4ba9d124F61DF736605792B35D66b"
-	// rwMarketContractAddr is the RandomWalk marketplace contract.
-	rwMarketContractAddr = "0x47eF85Dfb775aCE0934fBa9EEd09D22e6eC0Cc08"
 )
 
 // Event signature topics used by the scan/verify subcommands.
@@ -101,23 +95,39 @@ func parseBigInt(name, value string) (*big.Int, error) {
 	return n, nil
 }
 
-// weiToEthText formats a wei amount as a decimal ETH string with 18 decimal
-// places, matching Ethereum precision.
-func weiToEthText(wei *big.Int) string {
-	if wei == nil {
-		return "0.000000000000000000"
-	}
-	ether := new(big.Float).SetInt(wei)
-	eth := new(big.Float).Quo(ether, big.NewFloat(1e18))
-	return eth.Text('f', 18)
+// txEnvHelp documents the environment variables shared by all transaction
+// subcommands; it is appended to their long help text.
+const txEnvHelp = `Environment variables:
+  RPC_URL   Ethereum RPC endpoint (required)
+  PKEY_HEX  64-char hex private key, no 0x prefix (required)`
+
+// addInfoFlag registers the -i/--info flag used by transaction subcommands to
+// switch from quiet output (only success or error) to detailed output.
+func addInfoFlag(c *cobra.Command, verbose *bool) {
+	c.Flags().BoolVarP(verbose, "info", "i", false, "print detailed network, account and transaction information")
 }
 
-// weiToGwei converts a wei amount to gwei as float64 for display.
-func weiToGwei(wei *big.Int) float64 {
-	if wei == nil {
-		return 0
+// newTxSession connects to the RPC endpoint (RPC_URL), loads the signer from
+// PKEY_HEX and prints network/account details on the command's output when
+// verbose is enabled. The plumbing lives in internal/ethtx.
+func newTxSession(cmd *cobra.Command, verbose bool) (*ethtx.Session, error) {
+	rpcURL := os.Getenv("RPC_URL")
+	if rpcURL == "" {
+		return nil, errors.New("RPC_URL environment variable not set")
 	}
-	gwei := new(big.Float).Quo(new(big.Float).SetInt(wei), big.NewFloat(1e9))
-	f, _ := gwei.Float64()
-	return f
+	pkey, err := pkeyHexFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return ethtx.New(cmd.Context(), ethtx.Options{
+		RPCURL:        rpcURL,
+		PrivateKeyHex: pkey,
+		Verbose:       verbose,
+		Out:           cmd.OutOrStdout(),
+	})
+}
+
+// callOpts returns options for read-only contract calls.
+func callOpts() *bind.CallOpts {
+	return &bind.CallOpts{}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newTransferCmd builds the transfer subcommand (legacy transfer script).
@@ -26,26 +27,26 @@ func newTransferCmd() *cobra.Command {
 			}
 			dstAddr := common.HexToAddress(args[2])
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.net.client)
+			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWalk contract: %w", err)
 			}
 
-			s.out.section("TRANSFER INFO")
-			s.out.keyValue("Token ID", tokenID)
-			s.out.keyValue("From", s.acc.address.String())
-			s.out.keyValue("To", dstAddr.String())
+			s.Out.Section("TRANSFER INFO")
+			s.Out.KeyValue("Token ID", tokenID)
+			s.Out.KeyValue("From", s.Acc.Address.String())
+			s.Out.KeyValue("To", dstAddr.String())
 
-			gasLimit := gasLimitContractCall
-			txopts := transactOpts(s.net, s.acc, big.NewInt(0), gasLimit)
-			s.out.txSubmitting("ERC721 TransferFrom", big.NewInt(0), gasLimit, adjustGasPrice(s.net.gasPrice))
+			gasLimit := ethtx.GasLimitContractCall
+			txopts := s.TransactOpts(big.NewInt(0), gasLimit)
+			s.Out.TxSubmitting("ERC721 TransferFrom", big.NewInt(0), gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
-			tx, err := rwalk.TransferFrom(txopts, s.acc.address, dstAddr, big.NewInt(tokenID))
-			return s.finishTx(tx, err)
+			tx, err := rwalk.TransferFrom(txopts, s.Acc.Address, dstAddr, big.NewInt(tokenID))
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)

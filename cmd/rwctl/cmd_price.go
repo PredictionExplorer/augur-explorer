@@ -22,7 +22,7 @@ func newPriceCmd() *cobra.Command {
 				return err
 			}
 			rwalkAddr := common.HexToAddress(args[0])
-			fmt.Printf("Calling to contract at %v\n", rwalkAddr.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Calling to contract at %v\n", rwalkAddr.String())
 
 			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, eclient)
 			if err != nil {
@@ -32,7 +32,7 @@ func newPriceCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error at GetMintPrice(): %w", err)
 			}
-			fmt.Printf("Mint price = %v\n", price.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Mint price = %v\n", price.String())
 			return nil
 		},
 	}

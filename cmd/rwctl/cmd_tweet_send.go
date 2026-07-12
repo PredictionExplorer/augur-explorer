@@ -40,9 +40,9 @@ func newTweetSendCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error sending tweet (status %v; body = %v): %w", statusCode, body, err)
 			}
-			fmt.Printf("Successfuly sent\n")
-			fmt.Printf("dump body:\n")
-			fmt.Println(body)
+			fmt.Fprintf(cmd.OutOrStdout(), "Successfully sent\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "dump body:\n")
+			fmt.Fprintln(cmd.OutOrStdout(), body)
 			return nil
 		},
 	}

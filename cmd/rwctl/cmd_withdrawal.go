@@ -22,7 +22,7 @@ func newWithdrawalCmd() *cobra.Command {
 				return err
 			}
 			rwalkAddr := common.HexToAddress(args[0])
-			fmt.Printf("Calling to contract at %v\n", rwalkAddr.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Calling to contract at %v\n", rwalkAddr.String())
 
 			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, eclient)
 			if err != nil {
@@ -32,7 +32,7 @@ func newWithdrawalCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error at WithdrawalAmount(): %w", err)
 			}
-			fmt.Printf("Withdrawal amount = %v\n", amount.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Withdrawal amount = %v\n", amount.String())
 			return nil
 		},
 	}

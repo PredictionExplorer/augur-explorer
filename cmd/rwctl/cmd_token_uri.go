@@ -27,7 +27,7 @@ func newTokenURICmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Calling to contract at %v\n", rwalkAddr.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Calling to contract at %v\n", rwalkAddr.String())
 
 			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, eclient)
 			if err != nil {
@@ -37,7 +37,7 @@ func newTokenURICmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error at TokenURI(): %w", err)
 			}
-			fmt.Printf("URI = %v\n", uri)
+			fmt.Fprintf(cmd.OutOrStdout(), "URI = %v\n", uri)
 			return nil
 		},
 	}

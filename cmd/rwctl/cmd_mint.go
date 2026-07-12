@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newMintCmd builds the mint subcommand (legacy mint script).
@@ -25,31 +26,31 @@ func newMintCmd() *cobra.Command {
 				return err
 			}
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.net.client)
+			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWalk contract: %w", err)
 			}
 
-			s.out.section("MINT INFO")
-			s.out.keyValueEth("Amount (wei)", amount)
+			s.Out.Section("MINT INFO")
+			s.Out.KeyValueEth("Amount (wei)", amount)
 
-			gasLimit := gasLimitHighComplexity
-			totalNeeded := new(big.Int).Mul(s.net.gasPrice, big.NewInt(int64(gasLimit)))
+			gasLimit := ethtx.GasLimitHighComplexity
+			totalNeeded := new(big.Int).Mul(s.Net.GasPrice, big.NewInt(int64(gasLimit)))
 			totalNeeded.Add(totalNeeded, amount)
-			if s.acc.balance.Cmp(totalNeeded) < 0 {
+			if s.Acc.Balance.Cmp(totalNeeded) < 0 {
 				return fmt.Errorf("insufficient balance: need %s ETH (amount + gas), have %s ETH",
-					weiToEthText(totalNeeded), weiToEthText(s.acc.balance))
+					ethtx.WeiToEthText(totalNeeded), ethtx.WeiToEthText(s.Acc.Balance))
 			}
 
-			txopts := transactOpts(s.net, s.acc, amount, gasLimit)
-			s.out.txSubmitting("Mint", amount, gasLimit, adjustGasPrice(s.net.gasPrice))
+			txopts := s.TransactOpts(amount, gasLimit)
+			s.Out.TxSubmitting("Mint", amount, gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
 			tx, err := rwalk.Mint(txopts)
-			return s.finishTx(tx, err)
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)

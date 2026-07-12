@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/big"
+	"io"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
@@ -21,21 +20,32 @@ const (
 	scanMintsMaxBlocks  = int64(1024 * 1024)
 )
 
+// mintChecker verifies minted tokens against the database, retrying
+// transient database errors.
+type mintChecker struct {
+	repo  *rwstore.Repo
+	out   io.Writer
+	sleep func(time.Duration) // injected in tests
+}
+
 // checkMintLog verifies that the minted token from a MintEvent log exists in
 // the database, retrying on transient database errors.
-func checkMintLog(ctx context.Context, repo *rwstore.Repo, lg *types.Log) {
+func (m *mintChecker) checkMintLog(ctx context.Context, lg *types.Log) error {
 	tokenID := lg.Topics[1].Big().Int64()
 	for {
-		exists, err := repo.TokenMinted(ctx, tokenID)
+		exists, err := m.repo.TokenMinted(ctx, tokenID)
 		if err != nil {
-			fmt.Printf("Error accessing database: %v\n", err)
-			time.Sleep(1 * time.Second)
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			fmt.Fprintf(m.out, "Error accessing database: %v\n", err)
+			m.sleep(1 * time.Second)
 			continue
 		}
 		if !exists {
-			fmt.Printf("Token %v DOES NOT exist in the DB\n", tokenID)
+			fmt.Fprintf(m.out, "Token %v DOES NOT exist in the DB\n", tokenID)
 		}
-		return
+		return nil
 	}
 }
 
@@ -58,33 +68,13 @@ func newScanMintsCmd() *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
-			latestBlock, err := eclient.HeaderByNumber(ctx, nil)
-			if err != nil {
-				return fmt.Errorf("error getting latest block: %w", err)
-			}
-			latestBnum := latestBlock.Number.Int64()
-
-			filter := ethereum.FilterQuery{
-				Topics:    [][]common.Hash{{mintEventTopic}},
-				Addresses: []common.Address{rwalkAddr},
-			}
-			for fromBlock := scanMintsStartBlock; fromBlock <= latestBnum; fromBlock += scanMintsMaxBlocks {
-				filter.FromBlock = big.NewInt(fromBlock)
-				filter.ToBlock = big.NewInt(fromBlock + scanMintsMaxBlocks)
-				fmt.Printf("From %v , to %v\n", filter.FromBlock.Int64(), filter.ToBlock.Int64())
-				logs, err := eclient.FilterLogs(ctx, filter)
-				if err != nil {
-					return fmt.Errorf("error querying events: %w", err)
-				}
-				for i := range logs {
-					if logs[i].Removed {
-						continue
-					}
-					checkMintLog(ctx, repo, &logs[i])
-				}
-			}
-			return nil
+			ctx := cmd.Context()
+			checker := &mintChecker{repo: repo, out: cmd.OutOrStdout(), sleep: time.Sleep}
+			return scanLogsByRange(ctx, eclient, rwalkAddr, mintEventTopic,
+				scanMintsStartBlock, scanMintsMaxBlocks,
+				func(from, to int64) { fmt.Fprintf(cmd.OutOrStdout(), "From %v , to %v\n", from, to) },
+				func(lg *types.Log) error { return checker.checkMintLog(ctx, lg) },
+			)
 		},
 	}
 }

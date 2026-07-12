@@ -19,10 +19,9 @@ for per-command usage.
 
 | Variable | Used by | Description |
 |----------|---------|-------------|
-| `RPC_URL` | all chain subcommands except `notify-bot`/`tweet-mints` | Ethereum/Arbitrum JSON-RPC endpoint |
+| `RPC_URL` | all chain subcommands | Ethereum/Arbitrum JSON-RPC endpoint (`notify-bot`/`tweet-mints` used the legacy `AUGUR_ETH_NODE_RPC_URL` name before the rwbot unification) |
 | `PKEY_HEX` | transaction subcommands | Signer private key, 64 hex chars, no `0x` prefix. Set in the environment; never pass on the command line |
 | `PGSQL_HOST`, `PGSQL_USERNAME`, `PGSQL_PASSWORD`, `PGSQL_DATABASE` | DB-backed subcommands | PostgreSQL connection (empty `PGSQL_HOST` selects the local Unix socket) |
-| `AUGUR_ETH_NODE_RPC_URL` | `notify-bot`, `tweet-mints` | Ethereum RPC endpoint (legacy variable name, preserved as-is) |
 | `TWITTER_KEYS_FILE` | `notify-bot`, `tweet-mints`, `tweet-reply-image` | Name of the JSON file under `$HOME/configs/` holding `ApiKey`, `ApiSecret`, `TokenKey`, `TokenSecret` |
 
 ## Transaction subcommands (write operations)
@@ -72,7 +71,7 @@ Require `RPC_URL`; those marked DB also require the `PGSQL_*` variables.
 | Subcommand | Description |
 |------------|-------------|
 | `top-rated` (DB) | Recompute top-100 trader / profit / volume rankings (run once a day) |
-| `notify-bot` | Monitor mint/offer/purchase events and floor-price changes, announce them on Twitter (uses `AUGUR_ETH_NODE_RPC_URL`, `TWITTER_KEYS_FILE`, `PGSQL_*`) |
+| `notify-bot` | Monitor mint/offer/purchase events and floor-price changes, announce them on Twitter (uses `RPC_URL`, `TWITTER_KEYS_FILE`, `PGSQL_*`). Runs the shared `internal/notify/rwbot` engine and resumes from the persisted `rw_messaging_status` watermark, like `notibot` |
 | `tweet-mints` | Same monitor as `notify-bot` (the two legacy tools were identical copies) |
 | `tweet-send [api_key] [api_secret] [access_token] [token_secret] [nonce] [message]` | Send a tweet using raw OAuth 1.0a credentials; `message` is optional and defaults to the legacy test message |
 | `tweet-reply-image [reply_to_id] [media_file] [message]` | Send a tweet with attached media (image or video) as a reply (uses `TWITTER_KEYS_FILE`) |

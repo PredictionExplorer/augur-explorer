@@ -72,8 +72,8 @@ flowchart LR
 |------|----------|
 | `cmd/apiserver` | JSON API server (net/http ServeMux via `internal/api/httpx`): routing, TLS, static assets, health, metrics |
 | `cmd/cg-etl`, `cmd/rw-etl` | Chain indexers, one per contract family |
-| `cmd/notibot` | Discord/Twitter mint & trade notifications |
-| `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill |
+| `cmd/notibot` | Discord/Twitter mint & trade notifications (thin wiring of `internal/notify/rwbot`, shared with `rwctl notify-bot`) |
+| `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill (scan pipeline in `internal/freezer/scan`) |
 | `cmd/imggen-monitor` | Verifies/regenerates NFT image+video artifacts |
 | `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons |
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Operator CLIs (contract interaction, social tools, data ops) |

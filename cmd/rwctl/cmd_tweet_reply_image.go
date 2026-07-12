@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ func newTweetReplyImageCmd() *cobra.Command {
 			message := args[2]
 			fmt.Printf("Media file: %v\n", mediaFilename)
 			fmt.Printf("Reply to id: %v\n", replyToID)
-			mediaData, err := os.ReadFile(mediaFilename)
+			mediaData, err := os.ReadFile(filepath.Clean(mediaFilename))
 			if err != nil {
 				return fmt.Errorf("can't read media data at %v: %w", mediaFilename, err)
 			}

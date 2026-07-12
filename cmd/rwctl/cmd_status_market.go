@@ -22,7 +22,7 @@ func newStatusMarketCmd() *cobra.Command {
 				return err
 			}
 			marketAddr := common.HexToAddress(args[0])
-			fmt.Printf("Calling to contract at %v\n", marketAddr.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Calling to contract at %v\n", marketAddr.String())
 
 			market, err := rwcontracts.NewRWMarket(marketAddr, eclient)
 			if err != nil {
@@ -32,7 +32,7 @@ func newStatusMarketCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error at NumOffers(): %w", err)
 			}
-			fmt.Printf("NumOffers = %v\n", numOffers.Int64())
+			fmt.Fprintf(cmd.OutOrStdout(), "NumOffers = %v\n", numOffers.Int64())
 			return nil
 		},
 	}

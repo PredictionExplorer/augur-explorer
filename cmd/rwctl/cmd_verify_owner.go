@@ -52,21 +52,21 @@ func newVerifyOwnerCmd() *cobra.Command {
 				return fmt.Errorf("error looking up contract address id: %w", err)
 			}
 
-			fmt.Printf("num tokens: %v\n", numToks)
+			fmt.Fprintf(cmd.OutOrStdout(), "num tokens: %v\n", numToks)
 
 			stats, err := repo.RandomWalkStats(ctx, rwalkAid)
 			if err != nil {
 				return fmt.Errorf("error getting contract stats: %w", err)
 			}
 			if stats.TokensMinted != numToks {
-				fmt.Printf(
+				fmt.Fprintf(cmd.OutOrStdout(),
 					"Error: num tokens doesn't match: real num tokens = %v, db num tokens = %v\n",
-					numToks, stats.TokensMinted,
-				)
+					numToks, stats.TokensMinted)
+
 			} else {
-				fmt.Printf("Num tokens in database is set correctly (%v tokens)\n", numToks)
+				fmt.Fprintf(cmd.OutOrStdout(), "Num tokens in database is set correctly (%v tokens)\n", numToks)
 			}
-			fmt.Printf("Starting verification process, will loop %v times\n", numToks)
+			fmt.Fprintf(cmd.OutOrStdout(), "Starting verification process, will loop %v times\n", numToks)
 			for i := int64(0); i < numToks; i++ {
 				chainOwnerAddr, err := rwalk.OwnerOf(copts, big.NewInt(i))
 				if err != nil {
@@ -81,10 +81,10 @@ func newVerifyOwnerCmd() *cobra.Command {
 					return fmt.Errorf("error getting token info from db: %w", err)
 				}
 				if tokInfo.CurOwnerAid != chainOwnerAid {
-					fmt.Printf(
+					fmt.Fprintf(cmd.OutOrStdout(),
 						"DB invalid: token_id=%v; owner mismatch, real owner %v, owner in db %v\n",
-						i, chainOwnerAddr.String(), tokInfo.CurOwnerAddr,
-					)
+						i, chainOwnerAddr.String(), tokInfo.CurOwnerAddr)
+
 				}
 			}
 			return nil

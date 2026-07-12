@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newCancelOfferCmd builds the cancel-offer subcommand (legacy cancel_offer script).
@@ -27,11 +28,11 @@ func newCancelOfferCmd() *cobra.Command {
 				return err
 			}
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			market, err := rwcontracts.NewRWMarket(marketAddr, s.net.client)
+			market, err := rwcontracts.NewRWMarket(marketAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWMarket contract: %w", err)
 			}
@@ -47,14 +48,14 @@ func newCancelOfferCmd() *cobra.Command {
 			if !isSellOffer {
 				offerType = "BUY"
 			}
-			s.out.section("CANCEL OFFER INFO")
-			s.out.keyValue("Offer ID", offerID)
-			s.out.keyValue("Token ID", offer.TokenId.String())
-			s.out.keyValue("Type", offerType)
+			s.Out.Section("CANCEL OFFER INFO")
+			s.Out.KeyValue("Offer ID", offerID)
+			s.Out.KeyValue("Token ID", offer.TokenId.String())
+			s.Out.KeyValue("Type", offerType)
 
-			gasLimit := gasLimitHighComplexity
-			txopts := transactOpts(s.net, s.acc, big.NewInt(0), gasLimit)
-			s.out.txSubmitting("CancelOffer", big.NewInt(0), gasLimit, adjustGasPrice(s.net.gasPrice))
+			gasLimit := ethtx.GasLimitHighComplexity
+			txopts := s.TransactOpts(big.NewInt(0), gasLimit)
+			s.Out.TxSubmitting("CancelOffer", big.NewInt(0), gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
 			var tx *types.Transaction
 			if isSellOffer {
@@ -62,7 +63,7 @@ func newCancelOfferCmd() *cobra.Command {
 			} else {
 				tx, err = market.CancelBuyOffer(txopts, big.NewInt(offerID))
 			}
-			return s.finishTx(tx, err)
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)

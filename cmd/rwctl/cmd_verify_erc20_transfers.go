@@ -3,9 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/big"
+	"io"
 
-	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
@@ -18,8 +17,8 @@ import (
 const verifyTransfersMaxBlocks = int64(1024)
 
 // checkTransferLog verifies that a chain Transfer log has a matching record
-// in the rw_transfer table and prints a message when it is missing.
-func checkTransferLog(ctx context.Context, repo *rwstore.Repo, lg *types.Log) error {
+// in the rw_transfer table and reports missing ones on out.
+func checkTransferLog(ctx context.Context, repo *rwstore.Repo, out io.Writer, lg *types.Log) error {
 	from := common.BytesToAddress(lg.Topics[1][12:]).String()
 	to := common.BytesToAddress(lg.Topics[2][12:]).String()
 	tokenID := lg.Topics[3].Big().Int64()
@@ -35,7 +34,7 @@ func checkTransferLog(ctx context.Context, repo *rwstore.Repo, lg *types.Log) er
 		}
 	}
 	if !found {
-		fmt.Printf(
+		fmt.Fprintf(out,
 			"Block %v: Transfer %v -> %v (tok %v) tx %v, transfer missing\n",
 			lg.BlockNumber, from, to, tokenID, lg.TxHash.String(),
 		)
@@ -54,7 +53,7 @@ func newVerifyTransfersCmd() *cobra.Command {
 			"Environment variables:\n  RPC_URL  Ethereum RPC endpoint (required)\n  PGSQL_*  PostgreSQL connection (required)",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := cmd.Context()
 			repo, _, err := connectRWStorage(newInfoLogger())
 			if err != nil {
 				return err
@@ -69,33 +68,12 @@ func newVerifyTransfersCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			latestBlock, err := eclient.HeaderByNumber(ctx, nil)
-			if err != nil {
-				return fmt.Errorf("error getting latest block: %w", err)
-			}
-			latestBnum := latestBlock.Number.Int64()
-
-			filter := ethereum.FilterQuery{
-				Topics:    [][]common.Hash{{transferEventTopic}},
-				Addresses: []common.Address{rwalkAddr},
-			}
-			for fromBlock := int64(0); fromBlock <= latestBnum; fromBlock += verifyTransfersMaxBlocks {
-				filter.FromBlock = big.NewInt(fromBlock)
-				filter.ToBlock = big.NewInt(fromBlock + verifyTransfersMaxBlocks)
-				logs, err := eclient.FilterLogs(ctx, filter)
-				if err != nil {
-					return fmt.Errorf("error querying events: %w", err)
-				}
-				for i := range logs {
-					if logs[i].Removed {
-						continue
-					}
-					if err := checkTransferLog(ctx, repo, &logs[i]); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
+			return scanLogsByRange(ctx, eclient, rwalkAddr, transferEventTopic,
+				0, verifyTransfersMaxBlocks, nil,
+				func(lg *types.Log) error {
+					return checkTransferLog(ctx, repo, cmd.OutOrStdout(), lg)
+				},
+			)
 		},
 	}
 }

@@ -27,6 +27,11 @@ linters:
       exclude-functions:
         # Best-effort writes to HTTP clients / loggers.
         - (*net/http.Response.Body).Close
+        # Best-effort human-readable output (CLI writers, stdout); code that
+        # writes data files checks errors explicitly via bufio/Close.
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
     gosec:
       excludes:
         - G115 # integer overflow conversions — pervasive in chain math; revisit per-case

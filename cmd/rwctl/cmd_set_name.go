@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newSetNameCmd builds the set-name subcommand (legacy setname script).
@@ -26,25 +27,25 @@ func newSetNameCmd() *cobra.Command {
 			}
 			newName := args[2]
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.net.client)
+			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWalk contract: %w", err)
 			}
 
-			s.out.section("SET NAME INFO")
-			s.out.keyValue("Token ID", tokenID)
-			s.out.keyValue("New Name", newName)
+			s.Out.Section("SET NAME INFO")
+			s.Out.KeyValue("Token ID", tokenID)
+			s.Out.KeyValue("New Name", newName)
 
-			gasLimit := gasLimitContractCall
-			txopts := transactOpts(s.net, s.acc, big.NewInt(0), gasLimit)
-			s.out.txSubmitting("SetTokenName", big.NewInt(0), gasLimit, adjustGasPrice(s.net.gasPrice))
+			gasLimit := ethtx.GasLimitContractCall
+			txopts := s.TransactOpts(big.NewInt(0), gasLimit)
+			s.Out.TxSubmitting("SetTokenName", big.NewInt(0), gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
 			tx, err := rwalk.SetTokenName(txopts, big.NewInt(tokenID), newName)
-			return s.finishTx(tx, err)
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)

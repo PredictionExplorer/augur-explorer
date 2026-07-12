@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newStatusCmd builds the status subcommand (legacy status script).
@@ -23,7 +24,7 @@ func newStatusCmd() *cobra.Command {
 				return err
 			}
 			rwalkAddr := common.HexToAddress(args[0])
-			fmt.Printf("Calling to contract at %v\n", rwalkAddr.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Calling to contract at %v\n", rwalkAddr.String())
 
 			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, eclient)
 			if err != nil {
@@ -55,12 +56,12 @@ func newStatusCmd() *cobra.Command {
 				return fmt.Errorf("error at TokenURI(): %w", err)
 			}
 
-			fmt.Printf("Next token ID = %v\n", nextTokenID.Int64())
-			fmt.Printf("Time remaining: %v\n", timeRemaining.Int64())
-			fmt.Printf("Withdrawal amount: %v\n", weiToEthText(withdrawalAmount))
-			fmt.Printf("Num withdrawals: %v\n", numWithdrawals.Int64())
-			fmt.Printf("Last minter: %v\n", lastMinter.Hex())
-			fmt.Printf("Base uri: %v\n", baseURI)
+			fmt.Fprintf(cmd.OutOrStdout(), "Next token ID = %v\n", nextTokenID.Int64())
+			fmt.Fprintf(cmd.OutOrStdout(), "Time remaining: %v\n", timeRemaining.Int64())
+			fmt.Fprintf(cmd.OutOrStdout(), "Withdrawal amount: %v\n", ethtx.WeiToEthText(withdrawalAmount))
+			fmt.Fprintf(cmd.OutOrStdout(), "Num withdrawals: %v\n", numWithdrawals.Int64())
+			fmt.Fprintf(cmd.OutOrStdout(), "Last minter: %v\n", lastMinter.Hex())
+			fmt.Fprintf(cmd.OutOrStdout(), "Base uri: %v\n", baseURI)
 			return nil
 		},
 	}

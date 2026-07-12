@@ -63,6 +63,8 @@ type txEntry struct {
 	blockNum int64
 	txIndex  uint
 	logs     []*types.Log
+	status   uint64
+	pending  bool // receipt withheld until ReleasePendingTxs
 }
 
 // Chain is the in-memory chain state plus the JSON-RPC server exposing it.
@@ -79,6 +81,14 @@ type Chain struct {
 	tip     int64
 
 	calls map[common.Address]CallHandler
+
+	// Transaction-submission state (sendtx.go).
+	gasPrice       *big.Int
+	balances       map[common.Address]*big.Int
+	nonces         map[common.Address]uint64
+	nextTxReverted bool
+	nextTxPending  bool
+	nextSendError  string
 
 	server *httptest.Server
 }
@@ -203,7 +213,7 @@ func (c *Chain) AddTx(blockNum int64, to common.Address, data []byte) *types.Tra
 	if err != nil {
 		panic(fmt.Sprintf("testchain: signing tx: %v", err))
 	}
-	c.txs[signed.Hash()] = &txEntry{tx: signed, blockNum: blockNum, txIndex: txIndex}
+	c.txs[signed.Hash()] = &txEntry{tx: signed, blockNum: blockNum, txIndex: txIndex, status: types.ReceiptStatusSuccessful}
 	return signed
 }
 
@@ -337,9 +347,15 @@ func (c *Chain) dispatch(req rpcRequest) (any, error) {
 	case "eth_call":
 		return c.ethCall(req.Params)
 	case "eth_getBalance":
-		return "0x0", nil
+		return c.getBalance(req.Params)
 	case "eth_getCode":
 		return "0x", nil
+	case "eth_gasPrice":
+		return "0x" + c.gasPriceLocked().Text(16), nil
+	case "eth_getTransactionCount":
+		return c.getTransactionCount(req.Params)
+	case "eth_sendRawTransaction":
+		return c.sendRawTransaction(req.Params)
 	default:
 		return nil, fmt.Errorf("testchain: method %s not supported", req.Method)
 	}
@@ -437,7 +453,7 @@ func (c *Chain) getTransactionReceipt(params []json.RawMessage) (any, error) {
 		return nil, err
 	}
 	entry, ok := c.txs[hash]
-	if !ok {
+	if !ok || entry.pending {
 		return nil, nil
 	}
 	header := c.ensureBlockLocked(entry.blockNum)
@@ -447,7 +463,7 @@ func (c *Chain) getTransactionReceipt(params []json.RawMessage) (any, error) {
 	}
 	receipt := &types.Receipt{
 		Type:              entry.tx.Type(),
-		Status:            types.ReceiptStatusSuccessful,
+		Status:            entry.status,
 		CumulativeGasUsed: 21_000,
 		Bloom:             types.Bloom{},
 		Logs:              logs,

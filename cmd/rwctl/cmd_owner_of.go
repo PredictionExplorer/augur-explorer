@@ -27,7 +27,7 @@ func newOwnerOfCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Calling to contract at %v\n", rwalkAddr.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Calling to contract at %v\n", rwalkAddr.String())
 
 			rwalk, err := rwcontracts.NewRWalk(rwalkAddr, eclient)
 			if err != nil {
@@ -37,7 +37,7 @@ func newOwnerOfCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error at OwnerOf(): %w", err)
 			}
-			fmt.Printf("Owner  = %v\n", owner.String())
+			fmt.Fprintf(cmd.OutOrStdout(), "Owner  = %v\n", owner.String())
 			return nil
 		},
 	}

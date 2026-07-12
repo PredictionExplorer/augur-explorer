@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
 )
 
 // newNewOfferCmd builds the new-offer subcommand (legacy new_offer script).
@@ -35,29 +36,29 @@ func newNewOfferCmd() *cobra.Command {
 				return err
 			}
 
-			s, err := newTxSession(verbose)
+			s, err := newTxSession(cmd, verbose)
 			if err != nil {
 				return err
 			}
-			market, err := rwcontracts.NewRWMarket(marketAddr, s.net.client)
+			market, err := rwcontracts.NewRWMarket(marketAddr, s.Net.Client)
 			if err != nil {
 				return fmt.Errorf("failed to instantiate RWMarket contract: %w", err)
 			}
 
-			s.out.section("OFFER INFO")
-			s.out.keyValue("Type", method)
-			s.out.keyValue("Market", marketAddr.String())
-			s.out.keyValue("NFT", nftAddr.String())
-			s.out.keyValue("Token ID", tokenID)
-			s.out.keyValueEth("Price", amount)
+			s.Out.Section("OFFER INFO")
+			s.Out.KeyValue("Type", method)
+			s.Out.KeyValue("Market", marketAddr.String())
+			s.Out.KeyValue("NFT", nftAddr.String())
+			s.Out.KeyValue("Token ID", tokenID)
+			s.Out.KeyValueEth("Price", amount)
 
-			gasLimit := gasLimitHighComplexity
+			gasLimit := ethtx.GasLimitHighComplexity
 			value := big.NewInt(0)
 			if method == "BUY" {
 				value.Set(amount)
 			}
-			txopts := transactOpts(s.net, s.acc, value, gasLimit)
-			s.out.txSubmitting("Make"+method+"Offer", value, gasLimit, adjustGasPrice(s.net.gasPrice))
+			txopts := s.TransactOpts(value, gasLimit)
+			s.Out.TxSubmitting("Make"+method+"Offer", value, gasLimit, ethtx.AdjustGasPrice(s.Net.GasPrice))
 
 			var tx *types.Transaction
 			if method == "BUY" {
@@ -65,7 +66,7 @@ func newNewOfferCmd() *cobra.Command {
 			} else {
 				tx, err = market.MakeSellOffer(txopts, nftAddr, big.NewInt(tokenID), amount)
 			}
-			return s.finishTx(tx, err)
+			return s.FinishTx(cmd.Context(), tx, err)
 		},
 	}
 	addInfoFlag(c, &verbose)
