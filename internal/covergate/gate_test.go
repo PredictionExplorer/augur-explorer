@@ -57,6 +57,34 @@ func TestEvaluateIgnoresNonApplicablePatch(t *testing.T) {
 	}
 }
 
+func TestEvaluateHonorsFractionalRatchetBoundary(t *testing.T) {
+	t.Parallel()
+	policy, err := DecodePolicy(strings.NewReader(strings.Replace(
+		validPolicyJSON,
+		`"internalFloor": 70`,
+		`"internalFloor": 85.8`,
+		1,
+	)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	analysis := Analysis{
+		LegacyInternal: Metric{Covered: 80, Total: 100, Percent: 80},
+		Internal:       Metric{Covered: 858, Total: 1000, Percent: 85.8},
+		Production:     Metric{Covered: 60, Total: 100, Percent: 60},
+	}
+	if report := Evaluate(policy, analysis, nil); !report.Passed() {
+		t.Fatalf("exact floor should pass: %+v", report)
+	}
+
+	analysis.Internal = Metric{Covered: 85799, Total: 100000, Percent: 85.799}
+	report := Evaluate(policy, analysis, nil)
+	if report.Passed() || len(report.Failures) != 1 ||
+		!strings.Contains(report.Failures[0], "handwritten internal coverage") {
+		t.Fatalf("just-below-floor report = %+v", report)
+	}
+}
+
 func TestEvaluateRejectsEmptyGlobalMetric(t *testing.T) {
 	t.Parallel()
 	policy, err := DecodePolicy(strings.NewReader(validPolicyJSON))

@@ -52,9 +52,6 @@ func api_cosmic_game_donations_cg_simple_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	donations, err := arbRepo.SimpleEthDonationsByRound(c.Request.Context(), round_num)
@@ -112,9 +109,6 @@ func api_cosmic_game_donations_cg_with_info_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	donations, err := arbRepo.EthDonationsWithInfoByRound(c.Request.Context(), round_num)
@@ -145,9 +139,6 @@ func api_cosmic_game_donations_cg_with_info_record_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondError(c, "'record_id' parameter is not set")
-		return
 	}
 	record_info, err := arbRepo.EthDonationWithInfoRecord(c.Request.Context(), record_id)
 	if err != nil && !errors.Is(err, store.ErrNotFound) {
@@ -172,10 +163,6 @@ func api_cosmic_game_donations_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -215,9 +202,6 @@ func api_cosmic_game_donations_cg_both_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	donations, err := arbRepo.EthDonationsByRound(c.Request.Context(), round_num)
@@ -270,9 +254,6 @@ func api_cosmic_game_donations_erc20_by_round_detailed(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	donations, err := arbRepo.ERC20DonationsByRoundDetailed(c.Request.Context(), round_num)
@@ -304,9 +285,6 @@ func api_cosmic_game_donations_erc20_by_round_all(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	donations, err := arbRepo.ERC20DonationsByRoundAll(c.Request.Context(), round_num)
@@ -338,9 +316,6 @@ func api_cosmic_game_donations_erc20_by_round_summarized(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	donations, err := arbRepo.ERC20DonationsByRoundSummarized(c.Request.Context(), round_num)
@@ -365,10 +340,6 @@ func api_cosmic_game_donations_erc20_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -436,9 +407,6 @@ func api_cosmic_game_donated_erc20_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'record_id' parameter is not set")
-		return
 	}
 	nftdonation, err := arbRepo.ERC20DonationInfo(c.Request.Context(), record_id)
 	if err != nil {
@@ -464,10 +432,6 @@ func api_cosmic_game_donations_erc20_donated_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -538,10 +502,6 @@ func api_cosmic_game_erc20_claims_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -581,9 +541,6 @@ func api_cosmic_game_erc20_claims_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	claims, err := arbRepo.ERC20DonationClaimsByRound(c.Request.Context(), round_num)

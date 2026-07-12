@@ -48,6 +48,10 @@ func (s *Server) ListRounds(ctx context.Context, request ListRoundsRequestObject
 		s.logInternal(ctx, "list completed rounds", err)
 		return listRoundsInternal(internalProblem(instance)), nil
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate completed round page cardinality", err)
+		return listRoundsInternal(internalProblem(instance)), nil
+	}
 
 	data := make([]CosmicGameRoundSummary, 0, len(records))
 	previous := after

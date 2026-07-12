@@ -64,6 +64,10 @@ func (s *Server) ListRoundBids(ctx context.Context, request ListRoundBidsRequest
 		s.logInternal(ctx, "list round bids", err, "round", request.Round)
 		return listInternal(internalProblem(instance)), nil
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate round bid page cardinality", err, "round", request.Round)
+		return listInternal(internalProblem(instance)), nil
+	}
 
 	data := make([]Bid, 0, len(records))
 	previous := after

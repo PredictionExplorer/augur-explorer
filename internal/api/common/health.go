@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"net/http"
 	"sync/atomic"
 
@@ -21,6 +22,18 @@ func SetDraining() { draining.Store(true) }
 // RegisterHealthRoutes adds liveness and readiness probes to the public router.
 // st may be nil, in which case /readyz always reports unready.
 func RegisterHealthRoutes(r *httpx.Router, st *store.Store) {
+	var ping func(context.Context) error
+	if st != nil {
+		ping = func(ctx context.Context) error {
+			return st.Pool().Ping(ctx)
+		}
+	}
+	registerHealthRoutes(r, ping)
+}
+
+// registerHealthRoutes keeps readiness behavior deterministic in tests without
+// requiring a live PostgreSQL pool.
+func registerHealthRoutes(r *httpx.Router, ping func(context.Context) error) {
 	// Liveness: the process is up and serving.
 	r.GET("/healthz", func(c *httpx.Context) {
 		c.String(http.StatusOK, "ok")
@@ -31,11 +44,11 @@ func RegisterHealthRoutes(r *httpx.Router, st *store.Store) {
 			c.JSON(http.StatusServiceUnavailable, httpx.H{"status": "draining"})
 			return
 		}
-		if st == nil {
+		if ping == nil {
 			c.JSON(http.StatusServiceUnavailable, httpx.H{"status": "unready", "reason": "database not configured"})
 			return
 		}
-		if err := st.Pool().Ping(c.Request.Context()); err != nil {
+		if err := ping(c.Request.Context()); err != nil {
 			c.JSON(http.StatusServiceUnavailable, httpx.H{"status": "unready", "reason": err.Error()})
 			return
 		}

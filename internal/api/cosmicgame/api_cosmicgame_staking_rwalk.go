@@ -25,9 +25,6 @@ func api_cosmic_game_staking_action_rwalk_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'action_id' parameter is not set")
-		return
 	}
 	action_info, err := arbRepo.StakeActionRwalkInfo(c.Request.Context(), action_id)
 	if errors.Is(err, store.ErrNotFound) {
@@ -80,10 +77,6 @@ func api_cosmic_game_staking_actions_rwalk_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
@@ -170,10 +163,6 @@ func api_cosmic_game_staking_rwalk_mints_by_user(c *httpx.Context) {
 	}
 
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
@@ -204,10 +193,6 @@ func api_cosmic_game_staked_tokens_rwalk_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work

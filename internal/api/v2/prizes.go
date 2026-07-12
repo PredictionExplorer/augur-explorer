@@ -69,6 +69,10 @@ func (s *Server) ListRoundPrizes(
 		s.logInternal(ctx, "list round prizes", err, "round", request.Round)
 		return listRoundPrizesInternal(internalProblem(instance)), nil
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate round prize page cardinality", err, "round", request.Round)
+		return listRoundPrizesInternal(internalProblem(instance)), nil
+	}
 
 	data := make([]RoundPrize, 0, len(records))
 	previous := after

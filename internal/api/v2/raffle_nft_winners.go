@@ -89,6 +89,12 @@ func (s *Server) ListRoundRaffleNftWinners(
 			"pool", pool)
 		return listRoundRaffleNftWinnersInternal(internalProblem(instance)), nil
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate raffle NFT winner page cardinality", err,
+			"round", request.Round,
+			"pool", pool)
+		return listRoundRaffleNftWinnersInternal(internalProblem(instance)), nil
+	}
 
 	data := make([]RoundRaffleNftWinner, 0, len(records))
 	previous := after

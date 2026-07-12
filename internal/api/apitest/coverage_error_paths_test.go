@@ -242,3 +242,142 @@ func TestRankingReadFailuresAfterPartialSuccessAreOpaque(t *testing.T) {
 		})
 	}
 }
+
+func TestUserInfoFailuresAfterAddressResolutionAreOpaque(t *testing.T) {
+	h := server(t)
+	tests := []struct {
+		stage string
+		table string
+	}{
+		{stage: "profile", table: "cg_bidder"},
+		{stage: "bids", table: "cg_bid"},
+		{stage: "main prize claims", table: "cg_prize_claim"},
+		{stage: "prize history", table: "cg_prize"},
+		{stage: "NFT donations", table: "cg_nft_donation"},
+		{stage: "ERC-20 donations", table: "cg_erc20_donation"},
+		{stage: "ETH donations", table: "cg_eth_donated"},
+		{stage: "marketing rewards", table: "cg_mkt_reward"},
+		{stage: "unclaimed ETH", table: "cg_prize_deposit"},
+		{stage: "unclaimed donated NFTs", table: "cg_donated_nft_claimed"},
+		{stage: "claimed donated tokens", table: "cg_erc20_donation_stats"},
+		{stage: "staked CST tokens", table: "cg_staked_token_cst"},
+		{stage: "staked RandomWalk tokens", table: "cg_staked_token_rwalk"},
+		{stage: "CST unstake history", table: "cg_nft_unstaked_cst"},
+		{stage: "RandomWalk unstake history", table: "cg_nft_unstaked_rwalk"},
+		{stage: "CosmicToken transfers", table: "cg_erc20_transfer"},
+		{stage: "CosmicSignature transfers", table: "cg_erc721_transfer"},
+	}
+	for _, test := range tests {
+		t.Run(test.stage, func(t *testing.T) {
+			backup := test.table + "_user_info_failure_backup"
+			if _, err := h.db.Exec("ALTER TABLE " + test.table + " RENAME TO " + backup); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if _, err := h.db.Exec("ALTER TABLE " + backup + " RENAME TO " + test.table); err != nil {
+					t.Errorf("restore %s: %v", test.table, err)
+				}
+			})
+
+			response := h.get(t, "/api/cosmicgame/user/info/"+addrAlice)
+			assertOpaqueInternalResponse(t, response.Code, response.Body.Bytes())
+		})
+	}
+}
+
+func TestUserScopedReadFailuresAfterAddressResolutionAreOpaque(t *testing.T) {
+	h := server(t)
+	tests := []struct {
+		name  string
+		table string
+		path  string
+	}{
+		{name: "prize history", table: "cg_prize", path: "/api/cosmicgame/prizes/history/by_user/" + addrAlice + "/0/10"},
+		{name: "all ETH deposits", table: "cg_prize_deposit", path: "/api/cosmicgame/prizes/eth/all/by_user/" + addrBob},
+		{name: "raffle ETH deposits", table: "cg_prize_deposit", path: "/api/cosmicgame/prizes/eth/raffle/by_user/" + addrBob},
+		{name: "chrono ETH deposits", table: "cg_chrono_warrior_prize", path: "/api/cosmicgame/prizes/eth/chronowarrior/by_user/" + addrAlice},
+		{name: "unclaimed ETH deposits", table: "cg_prize_deposit", path: "/api/cosmicgame/prizes/eth/unclaimed/by_user/" + addrCarol + "/0/10"},
+		{name: "raffle allocation history", table: "cg_raffle_eth_prize", path: "/api/cosmicgame/prizes/deposits/raffle/by_user/" + addrBob},
+		{name: "chrono allocation history", table: "cg_chrono_warrior_prize", path: "/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/" + addrAlice},
+		{name: "raffle NFT winnings", table: "cg_raffle_nft_prize", path: "/api/cosmicgame/raffle/nft/by_user/" + addrDave},
+		{name: "owned CosmicSignature tokens", table: "cg_mint_event", path: "/api/cosmicgame/cst/list/by_user/" + addrCarol + "/0/10"},
+		{name: "CosmicSignature transfers", table: "cg_erc721_transfer", path: "/api/cosmicgame/cst/transfers/by_user/" + addrDave + "/0/10"},
+		{name: "CosmicToken transfers", table: "cg_erc20_transfer", path: "/api/cosmicgame/ct/transfers/by_user/" + addrAlice + "/0/10"},
+		{name: "ETH donations", table: "cg_eth_donated", path: "/api/cosmicgame/donations/eth/by_user/" + addrDave},
+		{name: "NFT donations", table: "cg_nft_donation", path: "/api/cosmicgame/donations/nft/by_user/" + addrBob},
+		{name: "NFT claims", table: "cg_donated_nft_claimed", path: "/api/cosmicgame/donations/nft/claims/by_user/" + addrAlice},
+		{name: "unclaimed NFTs", table: "cg_donated_nft_claimed", path: "/api/cosmicgame/donations/nft/unclaimed/by_user/" + addrEmma},
+		{name: "ERC20 donations", table: "cg_erc20_donation", path: "/api/cosmicgame/donations/erc20/donated/by_user/" + addrAlice},
+		{name: "ERC20 prize summary", table: "cg_erc20_donation_stats", path: "/api/cosmicgame/donations/erc20/by_user/" + addrAlice},
+		{name: "ERC20 claims", table: "cg_donated_tok_claimed", path: "/api/cosmicgame/donations/erc20/claims/by_user/" + addrAlice},
+		{name: "staked CST tokens", table: "cg_staked_token_cst", path: "/api/cosmicgame/staking/cst/staked_tokens/by_user/" + addrBob},
+		{name: "CST action history", table: "cg_nft_unstaked_cst", path: "/api/cosmicgame/staking/cst/actions/by_user/" + addrAlice + "/0/10"},
+		{name: "CST claimable rewards", table: "cg_st_reward", path: "/api/cosmicgame/staking/cst/rewards/to_claim/by_user/" + addrBob},
+		{name: "CST raffle mints", table: "cg_raffle_nft_prize", path: "/api/cosmicgame/staking/cst/mints/by_user/" + addrBob},
+		{name: "RandomWalk action history", table: "cg_nft_unstaked_rwalk", path: "/api/cosmicgame/staking/randomwalk/actions/by_user/" + addrCarol + "/0/10"},
+		{name: "RandomWalk raffle mints", table: "cg_raffle_nft_prize", path: "/api/cosmicgame/staking/randomwalk/mints/by_user/" + addrCarol},
+		{name: "staked RandomWalk tokens", table: "cg_staked_token_rwalk", path: "/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/" + addrDave},
+		{name: "marketing rewards", table: "cg_mkt_reward", path: "/api/cosmicgame/marketing/rewards/by_user/" + addrEmma + "/0/10"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			backup := test.table + "_scoped_failure_backup"
+			if _, err := h.db.Exec("ALTER TABLE " + test.table + " RENAME TO " + backup); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if _, err := h.db.Exec("ALTER TABLE " + backup + " RENAME TO " + test.table); err != nil {
+					t.Errorf("restore %s: %v", test.table, err)
+				}
+			})
+
+			response := h.get(t, test.path)
+			assertOpaqueInternalResponse(t, response.Code, response.Body.Bytes())
+		})
+	}
+}
+
+func TestDashboardRepositoryFailuresAreOpaque(t *testing.T) {
+	h := server(t)
+	tests := []struct {
+		stage string
+		table string
+	}{
+		{stage: "contract registry", table: "cg_contracts"},
+		{stage: "round statistics", table: "cg_round_stats"},
+		{stage: "bid count", table: "cg_bid"},
+	}
+	for _, test := range tests {
+		t.Run(test.stage, func(t *testing.T) {
+			backup := test.table + "_dashboard_failure_backup"
+			if _, err := h.db.Exec("ALTER TABLE " + test.table + " RENAME TO " + backup); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if _, err := h.db.Exec("ALTER TABLE " + backup + " RENAME TO " + test.table); err != nil {
+					t.Errorf("restore %s: %v", test.table, err)
+				}
+			})
+
+			response := h.get(t, "/api/cosmicgame/statistics/dashboard")
+			assertOpaqueInternalResponse(t, response.Code, response.Body.Bytes())
+		})
+	}
+}
+
+func assertOpaqueInternalResponse(t *testing.T, status int, body []byte) {
+	t.Helper()
+	if status != http.StatusInternalServerError {
+		t.Fatalf("status = %d, body=%s", status, body)
+	}
+	var envelope struct {
+		Status int    `json:"status"`
+		Error  string `json:"error"`
+	}
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		t.Fatalf("decode response: %v\n%s", err, body)
+	}
+	if envelope.Status != 0 || envelope.Error != "Internal server error" {
+		t.Fatalf("envelope = %+v", envelope)
+	}
+}

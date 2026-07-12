@@ -121,6 +121,130 @@ func TestMapContractConfigurationFailures(t *testing.T) {
 	}
 }
 
+func TestCachedContractMappersReturnExactInvariantErrors(t *testing.T) {
+	t.Parallel()
+
+	mapConfiguration := func(snapshot contractstate.Snapshot) error {
+		_, err := mapContractConfiguration(snapshot)
+		return err
+	}
+	mapBalances := func(snapshot contractstate.Snapshot) error {
+		_, err := mapContractBalances(snapshot)
+		return err
+	}
+	mapPrices := func(snapshot contractstate.Snapshot) error {
+		_, err := mapCurrentBidPrices(snapshot)
+		return err
+	}
+	mapWinners := func(snapshot contractstate.Snapshot) error {
+		_, err := mapCurrentSpecialWinners(snapshot)
+		return err
+	}
+	makeV2 := func(snapshot *contractstate.Snapshot) {
+		snapshot.MechanicsVersion = 2
+		snapshot.ConstantsMechanicsVersion = 2
+		snapshot.VariablesMechanicsVersion = 2
+		snapshot.CSTAuctionDurationChangeDivisor = 33
+		snapshot.FixedCSTBidReward = ""
+		snapshot.BidCSTRewardMultiplier = "7"
+	}
+
+	tests := []struct {
+		name   string
+		mapper func(contractstate.Snapshot) error
+		mutate func(*contractstate.Snapshot)
+		want   string
+	}{
+		{
+			name:   "time divisor",
+			mapper: mapConfiguration,
+			mutate: func(snapshot *contractstate.Snapshot) { snapshot.TimeIncrease = "bad" },
+			want:   `time-increment divisor: invalid non-negative decimal "bad"`,
+		},
+		{
+			name:   "v1 fixed reward",
+			mapper: mapConfiguration,
+			mutate: func(snapshot *contractstate.Snapshot) { snapshot.FixedCSTBidReward = "" },
+			want:   "fixed CST bid reward: amount is empty",
+		},
+		{
+			name:   "v2 change divisor",
+			mapper: mapConfiguration,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				makeV2(snapshot)
+				snapshot.CSTAuctionDurationChangeDivisor = 0
+			},
+			want: "v2 mechanics lacks an auction-change divisor",
+		},
+		{
+			name:   "v2 reward multiplier",
+			mapper: mapConfiguration,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				makeV2(snapshot)
+				snapshot.BidCSTRewardMultiplier = "bad"
+			},
+			want: `CST bid reward multiplier: invalid non-negative decimal "bad"`,
+		},
+		{
+			name:   "game balance",
+			mapper: mapBalances,
+			mutate: func(snapshot *contractstate.Snapshot) { snapshot.CosmicGameBalance = "-1" },
+			want:   `CosmicGame balance: invalid non-negative decimal "-1"`,
+		},
+		{
+			name:   "charity balance generation",
+			mapper: mapBalances,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				snapshot.BalanceCharityAddr = ethcommon.HexToAddress(
+					"0x7000000000000000000000000000000000000007",
+				)
+			},
+			want: "charity balance belongs to another address",
+		},
+		{
+			name:   "CST bid price",
+			mapper: mapPrices,
+			mutate: func(snapshot *contractstate.Snapshot) { snapshot.NextCSTBidPrice = "bad" },
+			want:   `next CST bid price: invalid non-negative decimal "bad"`,
+		},
+		{
+			name:   "auction progress",
+			mapper: mapPrices,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				snapshot.CSTAuctionElapsed = snapshot.CSTAuctionDuration + 1
+			},
+			want: "cached Dutch-auction progress is inconsistent",
+		},
+		{
+			name:   "endurance address",
+			mapper: mapWinners,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				snapshot.SpecialWinners.EnduranceChampionAddress = "bad"
+			},
+			want: "invalid endurance champion address",
+		},
+		{
+			name:   "zero CST bidder attachments",
+			mapper: mapWinners,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				snapshot.SpecialWinners.LastCstBidderAddress = ethcommon.Address{}.Hex()
+			},
+			want: "zero last-CST bidder has attached values",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			snapshot := validContractSnapshot()
+			test.mutate(&snapshot)
+			err := test.mapper(snapshot)
+			if err == nil || err.Error() != test.want {
+				t.Fatalf("error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
 func TestMapContractBalancesAndBidPrices(t *testing.T) {
 	t.Parallel()
 	snapshot := validContractSnapshot()

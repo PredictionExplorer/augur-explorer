@@ -112,6 +112,11 @@ func (s *Server) ListCosmicGameRoiLeaderboard(
 			"sort", string(sortBy), "min_bids", minBids)
 		return listROILeaderboardInternal(internalProblem(instance)), nil
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate ROI leaderboard page cardinality", err,
+			"sort", string(sortBy), "min_bids", minBids)
+		return listROILeaderboardInternal(internalProblem(instance)), nil
+	}
 	data := make([]RoiLeaderboardEntry, 0, len(records))
 	previous := after
 	for i := range records {
@@ -196,6 +201,10 @@ func (s *Server) ListCosmicGameClaims(
 	records, hasMore, err := s.statistics.ClaimsSummaryPage(ctx, after, limit)
 	if err != nil {
 		s.logInternal(ctx, "list claim summaries", err)
+		return listClaimsInternal(internalProblem(instance)), nil
+	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate claim summary page cardinality", err)
 		return listClaimsInternal(internalProblem(instance)), nil
 	}
 	data := make([]ClaimSummary, 0, len(records))
@@ -365,6 +374,9 @@ func buildClaimTransactionPage(
 	after *cgstore.ClaimEventCursor,
 	limit int,
 ) (ClaimTransactionPage, error) {
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		return ClaimTransactionPage{}, err
+	}
 	data := make([]AssetClaimTransaction, 0, len(records))
 	previous := int64(0)
 	if after != nil {
@@ -407,6 +419,9 @@ func buildAttachedTokenPage(
 	after *cgstore.ClaimEventCursor,
 	limit int,
 ) (AttachedTokenPage, error) {
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		return AttachedTokenPage{}, err
+	}
 	data := make([]AttachedToken, 0, len(records))
 	previous := int64(0)
 	if after != nil {
@@ -449,6 +464,9 @@ func buildUnclaimedItemPage(
 	after *cgstore.UnclaimedItemCursor,
 	limit int,
 ) (UnclaimedItemPage, error) {
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		return UnclaimedItemPage{}, err
+	}
 	data := make([]UnclaimedItem, 0, len(records))
 	previous := cgstore.UnclaimedItemCursor{Segment: -1}
 	if after != nil {

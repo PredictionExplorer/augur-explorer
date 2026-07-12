@@ -19,7 +19,12 @@ func NFTImagePublicBase(c *httpx.Context) string {
 		scheme = "https"
 	}
 	if xf := strings.TrimSpace(c.Request.Header.Get("X-Forwarded-Proto")); xf != "" {
-		scheme = strings.ToLower(xf)
+		if i := strings.IndexByte(xf, ','); i >= 0 {
+			xf = strings.TrimSpace(xf[:i])
+		}
+		if xf != "" {
+			scheme = strings.ToLower(xf)
+		}
 	}
 	host := strings.TrimSpace(c.Request.Host)
 	if xfh := strings.TrimSpace(c.Request.Header.Get("X-Forwarded-Host")); xfh != "" {

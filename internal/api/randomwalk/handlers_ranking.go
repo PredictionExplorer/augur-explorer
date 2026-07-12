@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
@@ -24,17 +26,82 @@ import (
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
-var errRankingBadPair = errors.New("randomwalk: nft1 and nft2 must be distinct non-negative token ids")
+var (
+	errRankingBadPair                 = errors.New("randomwalk: nft1 and nft2 must be distinct non-negative token ids")
+	errRankingDuplicateVoterPair      = errors.New("randomwalk: already voted on this pair")
+	errRankingVoteCredentialsRequired = errors.New("randomwalk: sign_nonce and signature are required")
+	errRankingVoteChainNotAllowed     = errors.New("randomwalk: chain_id not allowed for beauty votes")
+	errRankingVoteInvalidSignature    = errors.New("randomwalk: invalid signature")
+	errRankingVoteInvalidNonce        = errors.New("randomwalk: invalid or expired sign_nonce")
+)
+
+type rankingMatchDependencies struct {
+	countRankingMatches func(context.Context) (int64, error)
+	ratingPair          func(context.Context, int64, int64) (float64, float64, error)
+	withTransaction     func(context.Context, func(pgx.Tx) error) error
+	applyRankingMatch   func(context.Context, pgx.Tx, int64, int64, bool, float64, float64, *int64) error
+}
+
+type signedBeautyVoteDependencies struct {
+	rankingMatchDependencies
+	lookupOrCreateAddress   func(context.Context, string, int64, int64) (int64, error)
+	consumeRankingVoteNonce func(context.Context, pgx.Tx, string) (bool, error)
+}
+
+func productionRankingMatchDependencies() rankingMatchDependencies {
+	return rankingMatchDependencies{
+		countRankingMatches: func(ctx context.Context) (int64, error) {
+			return rwRepo.CountRankingMatches(ctx)
+		},
+		ratingPair: func(ctx context.Context, nft1, nft2 int64) (float64, float64, error) {
+			return rwRepo.RatingPair(ctx, nft1, nft2)
+		},
+		withTransaction:   withRankingTransaction,
+		applyRankingMatch: rwdb.ApplyRankingMatch,
+	}
+}
+
+func productionSignedBeautyVoteDependencies() signedBeautyVoteDependencies {
+	return signedBeautyVoteDependencies{
+		rankingMatchDependencies: productionRankingMatchDependencies(),
+		lookupOrCreateAddress: func(ctx context.Context, addr string, blockNum, txID int64) (int64, error) {
+			return rwStore.LookupOrCreateAddress(ctx, addr, blockNum, txID)
+		},
+		consumeRankingVoteNonce: rwdb.ConsumeRankingVoteNonce,
+	}
+}
+
+func withRankingTransaction(ctx context.Context, fn func(pgx.Tx) error) error {
+	tx, err := rwStore.Pool().Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
 
 func performRankingMatch(ctx context.Context, nft1, nft2 int64, nft1Won bool) (raNew, rbNew float64, err error) {
+	return performRankingMatchWithDependencies(ctx, nft1, nft2, nft1Won, productionRankingMatchDependencies())
+}
+
+func performRankingMatchWithDependencies(
+	ctx context.Context,
+	nft1, nft2 int64,
+	nft1Won bool,
+	deps rankingMatchDependencies,
+) (raNew, rbNew float64, err error) {
 	if nft1 < 0 || nft2 < 0 || nft1 == nft2 {
 		return 0, 0, errRankingBadPair
 	}
-	n, err := rwRepo.CountRankingMatches(ctx)
+	n, err := deps.countRankingMatches(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
-	ra, rb, err := rwRepo.RatingPair(ctx, nft1, nft2)
+	ra, rb, err := deps.ratingPair(ctx, nft1, nft2)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -44,16 +111,10 @@ func performRankingMatch(ctx context.Context, nft1, nft2 int64, nft1Won bool) (r
 	}
 	raNew, rbNew = computeEloUpdate(ra, rb, score, n)
 
-	tx, err := rwStore.Pool().Begin(ctx)
+	err = deps.withTransaction(ctx, func(tx pgx.Tx) error {
+		return deps.applyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, nil)
+	})
 	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	if err := rwdb.ApplyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, nil); err != nil {
-		return 0, 0, err
-	}
-	if err := tx.Commit(ctx); err != nil {
 		return 0, 0, err
 	}
 	return raNew, rbNew, nil
@@ -67,6 +128,16 @@ func exploreRandomMaxTokenID() int64 {
 		}
 	}
 	return maxID
+}
+
+func exploreRandomLimit(raw string) int {
+	limit := 2
+	if s := strings.TrimSpace(raw); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v > 0 && v <= 100 {
+			limit = v
+		}
+	}
+	return limit
 }
 
 func fetchExploreRandomTokenIDs(ctx context.Context, limit int) ([]int64, error) {
@@ -89,12 +160,7 @@ func apiRandomwalkExploreRandom(c *httpx.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	limit := 2
-	if s := strings.TrimSpace(c.Query("limit")); s != "" {
-		if v, err := strconv.Atoi(s); err == nil && v > 0 && v <= 100 {
-			limit = v
-		}
-	}
+	limit := exploreRandomLimit(c.Query("limit"))
 	ids, err := fetchExploreRandomTokenIDs(c.Request.Context(), limit)
 	if err != nil {
 		respondStoreError(c, err)
@@ -292,14 +358,34 @@ func rankingVoteChainAllowed(chainID int64) bool {
 }
 
 func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool, chainID int64, signNonce, signature string) error {
+	return performSignedBeautyVoteWithDependencies(
+		ctx,
+		nft1,
+		nft2,
+		nft1Won,
+		chainID,
+		signNonce,
+		signature,
+		productionSignedBeautyVoteDependencies(),
+	)
+}
+
+func performSignedBeautyVoteWithDependencies(
+	ctx context.Context,
+	nft1, nft2 int64,
+	nft1Won bool,
+	chainID int64,
+	signNonce, signature string,
+	deps signedBeautyVoteDependencies,
+) error {
 	if nft1 < 0 || nft2 < 0 || nft1 == nft2 {
 		return errRankingBadPair
 	}
 	if strings.TrimSpace(signNonce) == "" || strings.TrimSpace(signature) == "" {
-		return errors.New("randomwalk: sign_nonce and signature are required")
+		return errRankingVoteCredentialsRequired
 	}
 	if !rankingVoteChainAllowed(chainID) {
-		return errors.New("randomwalk: chain_id not allowed for beauty votes")
+		return errRankingVoteChainNotAllowed
 	}
 	winner := nft2
 	if nft1Won {
@@ -308,14 +394,14 @@ func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool
 	msg := beautyVoteSignMessage(chainID, signNonce, nft1, nft2, winner)
 	signer, err := recoverPersonalSignSigner(msg, signature)
 	if err != nil {
-		return fmt.Errorf("randomwalk: invalid signature: %w", err)
+		return fmt.Errorf("%w: %w", errRankingVoteInvalidSignature, err)
 	}
 
-	n, err := rwRepo.CountRankingMatches(ctx)
+	n, err := deps.countRankingMatches(ctx)
 	if err != nil {
 		return err
 	}
-	ra, rb, err := rwRepo.RatingPair(ctx, nft1, nft2)
+	ra, rb, err := deps.ratingPair(ctx, nft1, nft2)
 	if err != nil {
 		return err
 	}
@@ -325,37 +411,59 @@ func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool
 	}
 	raNew, rbNew := computeEloUpdate(ra, rb, score, n)
 
-	voterAid, err := rwStore.LookupOrCreateAddress(ctx, signer.Hex(), 0, 0)
+	voterAid, err := deps.lookupOrCreateAddress(ctx, signer.Hex(), 0, 0)
 	if err != nil {
 		return fmt.Errorf("randomwalk: voter address: %w", err)
 	}
 
-	tx, err := rwStore.Pool().Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	ok, err := rwdb.ConsumeRankingVoteNonce(ctx, tx, signNonce)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return errors.New("randomwalk: invalid or expired sign_nonce")
-	}
-
-	if err := rwdb.ApplyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, &voterAid); err != nil {
-		// unique_violation: this wallet already voted on the pair.
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return errRankingDuplicateVoterPair
+	return deps.withTransaction(ctx, func(tx pgx.Tx) error {
+		ok, err := deps.consumeRankingVoteNonce(ctx, tx, signNonce)
+		if err != nil {
+			return err
 		}
-		return err
-	}
-	return tx.Commit(ctx)
+		if !ok {
+			return errRankingVoteInvalidNonce
+		}
+
+		applyErr := deps.applyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, &voterAid)
+		return classifyRankingMatchApplyError(applyErr)
+	})
 }
 
-var errRankingDuplicateVoterPair = errors.New("randomwalk: already voted on this pair")
+func classifyRankingMatchApplyError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return errRankingDuplicateVoterPair
+	}
+	return err
+}
+
+func respondRankingVoteError(c *httpx.Context, err error) {
+	switch {
+	case errors.Is(err, errRankingBadPair):
+		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
+	case errors.Is(err, errRankingDuplicateVoterPair):
+		c.JSON(http.StatusConflict, httpx.H{"error": "already voted on this pair"})
+	case errors.Is(err, errRankingVoteCredentialsRequired),
+		errors.Is(err, errRankingVoteChainNotAllowed),
+		errors.Is(err, errRankingVoteInvalidSignature),
+		errors.Is(err, errRankingVoteInvalidNonce):
+		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
+	default:
+		respondStoreError(c, err)
+	}
+}
+
+func generateRankingVoteNonce(r io.Reader) (string, error) {
+	var b [32]byte
+	if _, err := io.ReadFull(r, b[:]); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b[:]), nil
+}
 
 // GET /api/randomwalk/ranking/sign-challenge — issue one-time nonce for wallet-signed /api/randomwalk/add_game.
 func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
@@ -363,12 +471,11 @@ func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	var b [32]byte
-	if _, err := rand.Read(b[:]); err != nil {
+	nonce, err := generateRankingVoteNonce(rand.Reader)
+	if err != nil {
 		common.RespondInternalErrorJSON(c)
 		return
 	}
-	nonce := hex.EncodeToString(b[:])
 	if err := rwRepo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
 		respondStoreError(c, err)
 		return
@@ -396,20 +503,7 @@ func apiRandomwalkAddGameLegacy(c *httpx.Context) {
 
 	err := performSignedBeautyVote(c.Request.Context(), body.Nft1, body.Nft2, nft1Won, body.ChainID, body.SignNonce, body.Signature)
 	if err != nil {
-		if errors.Is(err, errRankingBadPair) {
-			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, errRankingDuplicateVoterPair) {
-			c.JSON(http.StatusConflict, httpx.H{"error": "already voted on this pair"})
-			return
-		}
-		if strings.Contains(err.Error(), "sign_nonce") || strings.Contains(err.Error(), "signature") ||
-			strings.Contains(err.Error(), "chain_id") {
-			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
-			return
-		}
-		respondStoreError(c, err)
+		respondRankingVoteError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"result": "success"})

@@ -177,6 +177,13 @@ func listRoundDonationPage[StoreRecord, APIRecord any](
 		problem := internalProblem(instance)
 		return nil, PageMeta{}, &problem
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate round donation page cardinality", err,
+			"resource", string(resource),
+			"round", round)
+		problem := internalProblem(instance)
+		return nil, PageMeta{}, &problem
+	}
 
 	data := make([]APIRecord, 0, len(records))
 	previousEventLogID := int64(0)

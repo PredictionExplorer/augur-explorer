@@ -2,8 +2,10 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -88,7 +90,7 @@ func TestRateLimitEnforcesBurst(t *testing.T) {
 	r := httpx.NewRouter()
 	r.GET("/limited", func(c *httpx.Context) {
 		c.JSON(http.StatusOK, httpx.H{"ok": true})
-	}, RateLimit(1, 2))
+	}, RateLimit(0, 2))
 
 	codes := make([]int, 0, 4)
 	for range 4 {
@@ -99,11 +101,87 @@ func TestRateLimitEnforcesBurst(t *testing.T) {
 		codes = append(codes, w.Code)
 	}
 
-	if codes[0] != http.StatusOK || codes[1] != http.StatusOK {
-		t.Fatalf("first two requests should pass the burst, got %v", codes)
+	want := []int{http.StatusOK, http.StatusOK, http.StatusTooManyRequests, http.StatusTooManyRequests}
+	for i := range want {
+		if codes[i] != want[i] {
+			t.Fatalf("request statuses = %v, want %v", codes, want)
+		}
 	}
-	if codes[2] != http.StatusTooManyRequests && codes[3] != http.StatusTooManyRequests {
-		t.Fatalf("expected 429 once burst exhausted, got %v", codes)
+}
+
+func TestRateLimitConfiguration(t *testing.T) {
+	tests := []struct {
+		name      string
+		rps       float64
+		burst     int
+		requests  int
+		wantCodes []int
+		wantCalls int
+	}{
+		{
+			name:      "zero burst rejects every request",
+			rps:       10,
+			burst:     0,
+			requests:  2,
+			wantCodes: []int{http.StatusTooManyRequests, http.StatusTooManyRequests},
+		},
+		{
+			name:      "zero rate spends initial burst without refill",
+			rps:       0,
+			burst:     1,
+			requests:  3,
+			wantCodes: []int{http.StatusOK, http.StatusTooManyRequests, http.StatusTooManyRequests},
+			wantCalls: 1,
+		},
+		{
+			name:      "infinite rate still requires positive burst",
+			rps:       math.Inf(1),
+			burst:     0,
+			requests:  3,
+			wantCodes: []int{http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests},
+		},
+		{
+			name:      "infinite rate refills immediately",
+			rps:       math.Inf(1),
+			burst:     1,
+			requests:  3,
+			wantCodes: []int{http.StatusOK, http.StatusOK, http.StatusOK},
+			wantCalls: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handlerCalls := 0
+			r := httpx.NewRouter()
+			r.GET("/limited", func(c *httpx.Context) {
+				handlerCalls++
+				c.JSON(http.StatusOK, httpx.H{"ok": true})
+			}, RateLimit(tt.rps, tt.burst))
+
+			for i := 0; i < tt.requests; i++ {
+				w := httptest.NewRecorder()
+				req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+				req.RemoteAddr = "203.0.113.10:1234"
+				r.ServeHTTP(w, req)
+
+				if w.Code != tt.wantCodes[i] {
+					t.Errorf("request %d status = %d, want %d", i+1, w.Code, tt.wantCodes[i])
+				}
+				if tt.wantCodes[i] == http.StatusTooManyRequests {
+					if got := w.Body.String(); got != `{"error":"rate limit exceeded, slow down","status":0}` {
+						t.Errorf("request %d body = %q", i+1, got)
+					}
+					if got := w.Header().Get("Content-Type"); got != "application/json; charset=utf-8" {
+						t.Errorf("request %d Content-Type = %q, want JSON", i+1, got)
+					}
+				}
+			}
+
+			if handlerCalls != tt.wantCalls {
+				t.Errorf("handler calls = %d, want %d", handlerCalls, tt.wantCalls)
+			}
+		})
 	}
 }
 
@@ -140,8 +218,15 @@ func TestCORSSetsHeadersAndShortCircuitsOptions(t *testing.T) {
 	t.Run("headers_on_normal_response", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/x", nil))
-		if w.Header().Get("Access-Control-Allow-Origin") != "*" {
-			t.Errorf("missing CORS origin header")
+		wantHeaders := map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+			"Access-Control-Allow-Headers": "Origin, Content-Type, Accept, Authorization, X-Requested-With",
+		}
+		for name, want := range wantHeaders {
+			if got := w.Header().Get(name); got != want {
+				t.Errorf("%s = %q, want %q", name, got, want)
+			}
 		}
 	})
 
@@ -192,6 +277,65 @@ func TestRecoveryTurnsPanicsInto500(t *testing.T) {
 	}
 }
 
+func TestRecoveryPassesNormalResponsesWithDefaultLogger(t *testing.T) {
+	h := Recovery(nil)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	}))
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/ok", nil))
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusAccepted)
+	}
+}
+
+func TestRecoveryHandlesOrdinaryErrorPanic(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	h := Recovery(logger)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		panic(errors.New("ordinary failure"))
+	}))
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/boom", nil))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", w.Code)
+	}
+	if w.Body.Len() != 0 {
+		t.Errorf("recovery body = %q, want empty", w.Body.String())
+	}
+}
+
+func TestRecoveryRepanicsAbortHandler(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+	}{
+		{name: "direct sentinel", err: http.ErrAbortHandler},
+		{name: "wrapped sentinel", err: fmt.Errorf("wrapped: %w", http.ErrAbortHandler)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := Recovery(slog.New(slog.NewTextHandler(io.Discard, nil)))(
+				http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+					panic(tt.err)
+				}),
+			)
+
+			var recovered any
+			func() {
+				defer func() { recovered = recover() }()
+				h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/abort", nil))
+			}()
+
+			err, ok := recovered.(error)
+			if !ok || !errors.Is(err, http.ErrAbortHandler) {
+				t.Fatalf("recovered panic = %#v, want http.ErrAbortHandler", recovered)
+			}
+		})
+	}
+}
+
 func TestRecoveryDoesNotOverrideStartedResponse(t *testing.T) {
 	r := httpx.NewRouter()
 	r.Use(Recovery(slog.New(slog.NewTextHandler(io.Discard, nil))))
@@ -207,24 +351,77 @@ func TestRecoveryDoesNotOverrideStartedResponse(t *testing.T) {
 	}
 }
 
-func TestRecoveryStaysSilentOnClientDisconnect(t *testing.T) {
-	logs := &strings.Builder{}
-	r := httpx.NewRouter()
-	r.Use(Recovery(slog.New(slog.NewTextHandler(logs, nil))))
-	r.GET("/gone", func(c *httpx.Context) {
-		panic(&net.OpError{Op: "write", Err: errors.New("write: broken pipe")})
-	})
-
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/gone", nil))
-
-	// No 500 is written: the client is gone. (The recorder keeps its 200
-	// default because nothing was written at all.)
-	if w.Body.Len() != 0 {
-		t.Errorf("disconnect recovery must not write a body, got %q", w.Body.String())
+func TestIsClientDisconnect(t *testing.T) {
+	brokenPipe := &net.OpError{Op: "write", Err: errors.New("write: broken pipe")}
+	tests := []struct {
+		name string
+		rec  any
+		want bool
+	}{
+		{name: "non-error panic", rec: "boom", want: false},
+		{name: "ordinary error", rec: errors.New("broken pipe"), want: false},
+		{name: "broken pipe operation", rec: brokenPipe, want: true},
+		{
+			name: "connection reset operation",
+			rec:  &net.OpError{Op: "write", Err: errors.New("connection reset by peer")},
+			want: true,
+		},
+		{
+			name: "matching is case insensitive",
+			rec:  &net.OpError{Op: "write", Err: errors.New("BROKEN PIPE")},
+			want: true,
+		},
+		{name: "wrapped operation", rec: fmt.Errorf("render response: %w", brokenPipe), want: true},
+		{
+			name: "other network operation error",
+			rec:  &net.OpError{Op: "write", Err: errors.New("i/o timeout")},
+			want: false,
+		},
 	}
-	if !strings.Contains(logs.String(), "client disconnected") {
-		t.Errorf("disconnect must be logged as a warning, logs: %s", logs.String())
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isClientDisconnect(tt.rec); got != tt.want {
+				t.Errorf("isClientDisconnect(%#v) = %v, want %v", tt.rec, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRecoveryStaysSilentOnClientDisconnect(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+	}{
+		{name: "broken pipe", err: &net.OpError{Op: "write", Err: errors.New("write: broken pipe")}},
+		{name: "connection reset", err: &net.OpError{Op: "write", Err: errors.New("connection reset by peer")}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logs := &strings.Builder{}
+			r := httpx.NewRouter()
+			r.Use(Recovery(slog.New(slog.NewTextHandler(logs, nil))))
+			r.GET("/gone", func(c *httpx.Context) {
+				panic(tt.err)
+			})
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/gone", nil))
+
+			// No 500 is written: the client is gone. (The recorder keeps its
+			// 200 default because nothing was written at all.)
+			if w.Body.Len() != 0 {
+				t.Errorf("disconnect recovery must not write a body, got %q", w.Body.String())
+			}
+			if !strings.Contains(logs.String(), "level=WARN") ||
+				!strings.Contains(logs.String(), "client disconnected") {
+				t.Errorf("disconnect must be logged as a warning, logs: %s", logs.String())
+			}
+			if strings.Contains(logs.String(), "panic recovered") {
+				t.Errorf("disconnect must not be logged as a server panic, logs: %s", logs.String())
+			}
+		})
 	}
 }
 
@@ -247,6 +444,34 @@ func TestAccessLogEmitsStructuredFields(t *testing.T) {
 		"route=/api/things/{id}",
 		"status=200",
 		"ip=203.0.113.5",
+	} {
+		if !strings.Contains(line, want) {
+			t.Errorf("access log line missing %q: %s", want, line)
+		}
+	}
+}
+
+func TestAccessLogUsesDefaultLoggerAndCountsBytes(t *testing.T) {
+	logs := &strings.Builder{}
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	r := httpx.NewRouter()
+	r.Use(AccessLog(nil))
+	r.GET("/plain", func(c *httpx.Context) {
+		c.String(http.StatusCreated, "abc")
+	})
+
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/plain", nil))
+
+	line := logs.String()
+	for _, want := range []string{
+		"method=GET",
+		"path=/plain",
+		"route=/plain",
+		"status=201",
+		"bytes=3",
 	} {
 		if !strings.Contains(line, want) {
 			t.Errorf("access log line missing %q: %s", want, line)

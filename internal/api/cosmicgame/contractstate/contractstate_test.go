@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math"
 	"math/big"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -710,6 +711,183 @@ func TestMechanicsUpgradeFlip(t *testing.T) {
 	}
 }
 
+func TestMechanicsHelpersRecoverFromStaleV2Cache(t *testing.T) {
+	chain := testchain.New(t)
+	chain.RegisterCall(gameAddr, newV1GameStub().Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+	copts, _, err := s.latestCallOpts(context.Background())
+	if err != nil {
+		t.Fatalf("latestCallOpts: %v", err)
+	}
+	v1, v2 := s.bindLiveReaders()
+
+	tests := []struct {
+		name   string
+		invoke func() (string, bool)
+		want   string
+	}{
+		{
+			name: "round-start setting",
+			invoke: func() (string, bool) {
+				value := s.roundStartCSTAuctionSetting(v1, v2, &copts)
+				return strconv.FormatInt(value, 10), value >= 0
+			},
+			want: "11",
+		},
+		{
+			name: "duration-change divisor",
+			invoke: func() (string, bool) {
+				value, ok := s.cstAuctionDurationChangeDivisor(v1, v2, &copts)
+				return strconv.FormatInt(value, 10), ok
+			},
+			want: "-1",
+		},
+		{
+			name: "live reward",
+			invoke: func() (string, bool) {
+				value, err := s.tokenReward(v1, v2, &copts)
+				return value, err == nil
+			},
+			want: "100000000000000000000",
+		},
+		{
+			name: "reward configuration",
+			invoke: func() (string, bool) {
+				fixed, multiplier, err := s.bidCSTRewardConfiguration(v1, v2, &copts)
+				return fixed + multiplier, err == nil && multiplier == ""
+			},
+			want: "100000000000000000000",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s.setMechanicsVersion(mechanicsV2)
+			value, ok := test.invoke()
+			if !ok || value != test.want {
+				t.Fatalf("result = %q,%v; want %q,true", value, ok, test.want)
+			}
+			if got := s.mechanicsVersion(); got != mechanicsV1 {
+				t.Fatalf("mechanics version = %d, want V1", got)
+			}
+		})
+	}
+}
+
+func TestRefreshNormalizesInvalidContractValuesWithoutPoisoningIndependentCaches(t *testing.T) {
+	overflow := new(big.Int).Lsh(big.NewInt(1), 80)
+	tests := []struct {
+		name   string
+		v2     bool
+		mutate func(*testchain.ContractStub)
+		assert func(*testing.T, Snapshot)
+	}{
+		{
+			name: "percentage outside configuration domain",
+			mutate: func(stub *testchain.ContractStub) {
+				stub.Return("charityEthDonationAmountPercentage", big.NewInt(101))
+			},
+			assert: func(t *testing.T, snapshot Snapshot) {
+				t.Helper()
+				if snapshot.CharityPercentage != 101 ||
+					!snapshot.ConstantsReady ||
+					snapshot.ConfigurationReady ||
+					!snapshot.BidPricesReady {
+					t.Fatalf("percentage readiness state = value:%d constants:%v configuration:%v bids:%v",
+						snapshot.CharityPercentage, snapshot.ConstantsReady,
+						snapshot.ConfigurationReady, snapshot.BidPricesReady)
+				}
+			},
+		},
+		{
+			name: "zero V2 duration-change divisor",
+			v2:   true,
+			mutate: func(stub *testchain.ContractStub) {
+				stub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(0))
+			},
+			assert: func(t *testing.T, snapshot Snapshot) {
+				t.Helper()
+				if snapshot.CSTAuctionDurationChangeDivisor != 0 ||
+					!snapshot.ConstantsReady ||
+					snapshot.ConfigurationReady ||
+					!snapshot.BidPricesReady {
+					t.Fatalf("V2 divisor readiness state = divisor:%d constants:%v configuration:%v bids:%v",
+						snapshot.CSTAuctionDurationChangeDivisor, snapshot.ConstantsReady,
+						snapshot.ConfigurationReady, snapshot.BidPricesReady)
+				}
+			},
+		},
+		{
+			name: "overflowing constant count",
+			mutate: func(stub *testchain.ContractStub) {
+				stub.Return("numRaffleEthPrizesForBidders", overflow)
+			},
+			assert: func(t *testing.T, snapshot Snapshot) {
+				t.Helper()
+				if snapshot.RaffleEthWinnersBidding != -1 ||
+					snapshot.ConstantsReady ||
+					snapshot.ConfigurationReady ||
+					!snapshot.BidPricesReady {
+					t.Fatalf("constant overflow state = count:%d constants:%v configuration:%v bids:%v",
+						snapshot.RaffleEthWinnersBidding, snapshot.ConstantsReady,
+						snapshot.ConfigurationReady, snapshot.BidPricesReady)
+				}
+			},
+		},
+		{
+			name: "overflowing round number",
+			mutate: func(stub *testchain.ContractStub) {
+				stub.Return("roundNum", overflow)
+			},
+			assert: func(t *testing.T, snapshot Snapshot) {
+				t.Helper()
+				if snapshot.RoundNum != -1 ||
+					!snapshot.ConstantsReady ||
+					!snapshot.ConfigurationReady ||
+					!snapshot.BidPricesReady {
+					t.Fatalf("round overflow state = round:%d constants:%v configuration:%v bids:%v",
+						snapshot.RoundNum, snapshot.ConstantsReady,
+						snapshot.ConfigurationReady, snapshot.BidPricesReady)
+				}
+			},
+		},
+		{
+			name: "overflowing auction duration",
+			mutate: func(stub *testchain.ContractStub) {
+				stub.Return("getEthDutchAuctionDurations", overflow, big.NewInt(1))
+			},
+			assert: func(t *testing.T, snapshot Snapshot) {
+				t.Helper()
+				if snapshot.ETHAuctionDuration != -1 ||
+					snapshot.ETHAuctionElapsed != -1 ||
+					!snapshot.ConstantsReady ||
+					!snapshot.ConfigurationReady ||
+					snapshot.BidPricesReady {
+					t.Fatalf("auction overflow state = duration:%d elapsed:%d constants:%v configuration:%v bids:%v",
+						snapshot.ETHAuctionDuration, snapshot.ETHAuctionElapsed,
+						snapshot.ConstantsReady, snapshot.ConfigurationReady,
+						snapshot.BidPricesReady)
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			chain := testchain.New(t)
+			stub := newV1GameStub()
+			if test.v2 {
+				stub = newV2GameStub()
+			}
+			test.mutate(stub)
+			chain.RegisterCall(gameAddr, stub.Handler())
+			s := newTestState(t, chain, defaultFakeDB())
+
+			s.LoadInitial(context.Background())
+			test.assert(t, s.Snapshot())
+		})
+	}
+}
+
 func TestLiveReadHelpersWithoutBindings(t *testing.T) {
 	chain := testchain.New(t)
 	s := newTestState(t, chain, defaultFakeDB())
@@ -743,7 +921,12 @@ func TestNormalizeAuctionProgress(t *testing.T) {
 		{"past floor", big.NewInt(100), big.NewInt(150), 1000, false, 100, 100, true},
 		{"start timestamp", big.NewInt(100), big.NewInt(1_700_000_000), 1_700_000_025, true, 100, 25, true},
 		{"future start", big.NewInt(100), big.NewInt(1_700_000_100), 1_700_000_025, true, 100, 0, true},
-		{"overflow", new(big.Int).Lsh(big.NewInt(1), 80), big.NewInt(1), 1000, false, 0, 0, false},
+		{"timestamp threshold is elapsed", big.NewInt(100), big.NewInt(1_000_000_000), 1_700_000_025, true, 100, 100, true},
+		{"nil duration", nil, big.NewInt(1), 1000, false, 0, 0, false},
+		{"nil second value", big.NewInt(100), nil, 1000, false, 0, 0, false},
+		{"negative duration", big.NewInt(-1), big.NewInt(1), 1000, false, 0, 0, false},
+		{"duration overflow", new(big.Int).Lsh(big.NewInt(1), 80), big.NewInt(1), 1000, false, 0, 0, false},
+		{"second value overflow", big.NewInt(100), new(big.Int).Lsh(big.NewInt(1), 80), 1000, false, 0, 0, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -757,6 +940,150 @@ func TestNormalizeAuctionProgress(t *testing.T) {
 			if duration != test.wantDuration || elapsed != test.wantElapsed || ok != test.wantOK {
 				t.Fatalf("normalizeAuctionProgress = %d,%d,%v; want %d,%d,%v",
 					duration, elapsed, ok, test.wantDuration, test.wantElapsed, test.wantOK)
+			}
+		})
+	}
+}
+
+func TestReadinessRejectsIncoherentSnapshots(t *testing.T) {
+	t.Parallel()
+
+	valid := func() Snapshot {
+		return Snapshot{
+			PriceIncrease:                   "1",
+			CharityAddr:                     charityAddr,
+			CharityPercentage:               10,
+			FixedCSTBidReward:               "2",
+			PrizePercentage:                 25,
+			RafflePercentage:                5,
+			ChronoPercentage:                7,
+			StakingPercentage:               10,
+			TimeIncrease:                    "3",
+			RaffleEthWinnersBidding:         1,
+			RaffleNFTWinnersBidding:         1,
+			RaffleNFTWinnersStakingRWalk:    1,
+			CSTAuctionDurationChangeDivisor: -1,
+			ConstantsMechanicsVersion:       mechanicsV1,
+			BlockPinnedBidPrice:             "4",
+			NextCSTBidPrice:                 "5",
+			NextCSTBidReward:                "2",
+			ETHAuctionDuration:              100,
+			ETHAuctionElapsed:               10,
+			CSTAuctionDuration:              200,
+			CSTAuctionElapsed:               20,
+			VariablesMechanicsVersion:       mechanicsV1,
+			InitialSecondsUntilPrize:        2,
+			TimeoutClaimPrize:               0,
+			RoundStartAuctionLength:         11,
+			MechanicsVersion:                mechanicsV1,
+		}
+	}
+	tests := []struct {
+		name              string
+		mutate            func(*Snapshot)
+		wantConfiguration bool
+		wantBidPrices     bool
+	}{
+		{
+			name:              "coherent V1",
+			wantConfiguration: true,
+			wantBidPrices:     true,
+		},
+		{
+			name: "coherent V2",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.MechanicsVersion = mechanicsV2
+				snapshot.ConstantsMechanicsVersion = mechanicsV2
+				snapshot.VariablesMechanicsVersion = mechanicsV2
+				snapshot.FixedCSTBidReward = ""
+				snapshot.BidCSTRewardMultiplier = "7"
+				snapshot.CSTAuctionDurationChangeDivisor = 33
+			},
+			wantConfiguration: true,
+			wantBidPrices:     true,
+		},
+		{
+			name: "mixed mechanics generations",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.VariablesMechanicsVersion = mechanicsV2
+			},
+			wantBidPrices: true,
+		},
+		{
+			name: "V1 carries dynamic multiplier",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.BidCSTRewardMultiplier = "7"
+			},
+			wantBidPrices: true,
+		},
+		{
+			name: "percentage exceeds domain",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.PrizePercentage = 101
+			},
+			wantBidPrices: true,
+		},
+		{
+			name: "invalid pinned price",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.BlockPinnedBidPrice = "error"
+			},
+			wantConfiguration: true,
+		},
+		{
+			name: "ETH elapsed exceeds duration",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.ETHAuctionElapsed = snapshot.ETHAuctionDuration + 1
+			},
+			wantConfiguration: true,
+		},
+		{
+			name: "negative CST duration",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.CSTAuctionDuration = -1
+			},
+			wantConfiguration: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			snapshot := valid()
+			if test.mutate != nil {
+				test.mutate(&snapshot)
+			}
+			if got := configurationReady(snapshot); got != test.wantConfiguration {
+				t.Errorf("configurationReady = %v, want %v", got, test.wantConfiguration)
+			}
+			if got := bidPricesReady(snapshot); got != test.wantBidPrices {
+				t.Errorf("bidPricesReady = %v, want %v", got, test.wantBidPrices)
+			}
+		})
+	}
+}
+
+func TestNonNegativeInt64Boundaries(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value *big.Int
+		want  int64
+		ok    bool
+	}{
+		{name: "nil"},
+		{name: "negative", value: big.NewInt(-1)},
+		{name: "overflow", value: new(big.Int).Lsh(big.NewInt(1), 80)},
+		{name: "zero", value: big.NewInt(0), ok: true},
+		{name: "maximum", value: big.NewInt(math.MaxInt64), want: math.MaxInt64, ok: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			got, ok := nonNegativeInt64(test.value)
+			if got != test.want || ok != test.ok {
+				t.Fatalf("nonNegativeInt64 = %d,%v; want %d,%v",
+					got, ok, test.want, test.ok)
 			}
 		})
 	}

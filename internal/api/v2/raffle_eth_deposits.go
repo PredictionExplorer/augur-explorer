@@ -68,6 +68,10 @@ func (s *Server) ListRoundRaffleEthDeposits(
 		s.logInternal(ctx, "list round raffle ETH deposits", err, "round", request.Round)
 		return listRoundRaffleEthDepositsInternal(internalProblem(instance)), nil
 	}
+	if err := validatePageCardinality(len(records), limit); err != nil {
+		s.logInternal(ctx, "validate raffle ETH deposit page cardinality", err, "round", request.Round)
+		return listRoundRaffleEthDepositsInternal(internalProblem(instance)), nil
+	}
 
 	data := make([]RoundRaffleEthDeposit, 0, len(records))
 	previous := after

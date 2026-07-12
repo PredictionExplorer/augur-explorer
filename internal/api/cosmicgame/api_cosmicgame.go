@@ -385,9 +385,6 @@ func api_cosmic_game_bid_list_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 	p_sort := c.Param("sort")
 	var sort int64
@@ -397,9 +394,6 @@ func api_cosmic_game_bid_list_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'sort' parameter is not set")
-		return
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
@@ -506,9 +500,6 @@ func api_cosmic_game_bid_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'evtlog_id' parameter is not set")
-		return
 	}
 	respondBidInfoJSON(c, evtlog_id)
 }
@@ -529,9 +520,6 @@ func api_cosmic_game_bid_info_by_pos(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	p_bid_position := c.Param("bid_position")
@@ -542,9 +530,6 @@ func api_cosmic_game_bid_info_by_pos(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'bid_position' parameter is not set")
-		return
 	}
 
 	evtlog_id, err := arbRepo.EvtlogIDByRoundAndBidPosition(c.Request.Context(), round_num, bid_position)
@@ -575,9 +560,6 @@ func api_cosmic_game_bid_with_message_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round' parameter is not set")
-		return
 	}
 
 	sortDesc := strings.EqualFold(c.Query("sort"), "desc")
@@ -622,9 +604,6 @@ func api_cosmic_game_round_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'prize_num' parameter is not set")
-		return
 	}
 	prize_info, err := arbRepo.PrizeInfo(c.Request.Context(), prize_num)
 	if errors.Is(err, store.ErrNotFound) {
@@ -652,10 +631,6 @@ func api_cosmic_game_user_info(c *httpx.Context) {
 	}
 
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		respondUserAddrNotIndexedUserInfoJSON(c, p_user_addr)
@@ -1141,10 +1116,6 @@ func api_cosmic_game_nft_donations_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -1207,9 +1178,6 @@ func api_cosmic_game_donated_nft_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'record_id' parameter is not set")
-		return
 	}
 	nftdonation, err := arbRepo.NFTDonationInfo(c.Request.Context(), record_id)
 	if err != nil {
@@ -1397,10 +1365,6 @@ func api_cosmic_game_unified_eth_all_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -1431,10 +1395,6 @@ func api_cosmic_game_unified_eth_raffle_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -1465,10 +1425,6 @@ func api_cosmic_game_unified_eth_chronowarrior_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -1507,9 +1463,6 @@ func api_cosmic_game_prize_deposits_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	deposits, err := arbRepo.PrizeDepositsByRound(c.Request.Context(), round_num)
@@ -1582,9 +1535,6 @@ func api_cosmic_game_raffle_nft_winners_by_round(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'round_num' parameter is not set")
-		return
 	}
 
 	winners_raffle, err := arbRepo.RaffleNFTWinnersByRound(c.Request.Context(), round_num, false)
@@ -1617,10 +1567,6 @@ func api_cosmic_game_user_raffle_nft_winnings(c *httpx.Context) {
 	}
 
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -1661,10 +1607,6 @@ func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *httpx.Context) {
 	}
 
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -1703,10 +1645,6 @@ func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *httpx.Context) {
 	}
 
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -1752,9 +1690,6 @@ func api_cosmic_game_nft_donations_by_prize(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'prize_num' parameter is not set")
-		return
 	}
 	nft_donations, err := arbRepo.NFTDonationsByRound(c.Request.Context(), prize_num)
 	if err != nil {
@@ -1777,10 +1712,6 @@ func api_cosmic_game_nft_donations_by_token(c *httpx.Context) {
 		return
 	}
 	p_token_addr := c.Param("token_addr")
-	if len(p_token_addr) == 0 {
-		common.RespondErrorJSON(c, "'token_addr' parameter is not set")
-		return
-	}
 	token_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_token_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Token address not found")
@@ -1842,9 +1773,6 @@ func api_cosmic_game_cosmic_signature_token_info(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'token_id' parameter is not set")
-		return
 	}
 
 	token_info, err := arbRepo.CosmicSignatureTokenInfo(c.Request.Context(), token_id)
@@ -1929,10 +1857,6 @@ func api_cosmic_game_donated_nft_claims_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -2086,10 +2010,6 @@ func api_cosmic_game_user_global_winnings(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty winnings so UI works
@@ -2123,10 +2043,6 @@ func api_cosmic_game_prize_history_detail_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
@@ -2202,10 +2118,6 @@ func api_cosmic_game_unclaimed_donated_nfts_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
@@ -2259,9 +2171,6 @@ func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'prize_num' parameter is not set")
-		return
 	}
 
 	nft_donations, err := arbRepo.UnclaimedDonatedNFTsByRound(c.Request.Context(), prize_num)
@@ -2286,10 +2195,6 @@ func api_cosmic_game_unclaimed_prize_deposits_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
@@ -2339,10 +2244,6 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
@@ -2409,9 +2310,6 @@ func api_cosmic_game_token_name_history(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'token_id' parameter is not set")
-		return
 	}
 
 	var req_status int = 1
@@ -2438,11 +2336,6 @@ func api_cosmic_game_token_name_search(c *httpx.Context) {
 	}
 
 	p_name := c.Param("name")
-	if len(p_name) > 0 {
-	} else {
-		common.RespondErrorJSON(c, "'search_text' parameter is not set")
-		return
-	}
 
 	results, err := arbRepo.SearchTokensByName(c.Request.Context(), p_name)
 	if err != nil {
@@ -2497,9 +2390,6 @@ func api_cosmic_game_token_ownership_transfers(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'token_id' parameter is not set")
-		return
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
@@ -2554,10 +2444,6 @@ func api_cosmic_game_user_balances(c *httpx.Context) {
 	}
 
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, addrLookupErr := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if addrLookupErr != nil {
 		user_aid = 0 // address not in DB yet; still return 200 with on-chain balances below
@@ -2702,10 +2588,6 @@ func api_cosmic_game_cosmic_token_summary_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -2801,10 +2683,6 @@ func api_cosmic_game_cosmic_token_transfers_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -2840,10 +2718,6 @@ func api_cosmic_game_cosmic_signature_transfers_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
@@ -2925,10 +2799,6 @@ func api_cosmic_game_marketing_rewards_by_user(c *httpx.Context) {
 		return
 	}
 	p_user_addr := c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		common.RespondErrorJSON(c, "'user_addr' parameter is not set")
-		return
-	}
 	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
@@ -3160,9 +3030,6 @@ func api_cosmic_game_admin_events_in_range(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'evtlog_start' parameter is not set")
-		return
 	}
 	p_evtlog_end := c.Param("evtlog_end")
 	var evtlog_end int64
@@ -3172,9 +3039,6 @@ func api_cosmic_game_admin_events_in_range(c *httpx.Context) {
 		if !success {
 			return
 		}
-	} else {
-		common.RespondErrorJSON(c, "'evtlog_end' parameter is not set")
-		return
 	}
 	event_list, err := arbRepo.AdminEventsInRange(c.Request.Context(), evtlog_start, evtlog_end)
 	if err != nil {

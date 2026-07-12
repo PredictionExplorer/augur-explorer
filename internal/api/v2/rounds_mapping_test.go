@@ -35,6 +35,61 @@ func TestMapRoundSummary(t *testing.T) {
 	}
 }
 
+func TestMapRoundSummaryRejectsInvalidStoreDataExactly(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		mutate func(*cgprimitives.CGRoundRec)
+		want   string
+	}{
+		{
+			name:   "round overflow",
+			mutate: func(record *cgprimitives.CGRoundRec) { record.RoundNum = math.MaxUint64 },
+			want:   "round number exceeds int64",
+		},
+		{
+			name: "claim identity",
+			mutate: func(record *cgprimitives.CGRoundRec) {
+				record.ClaimPrizeTx.Tx.EvtLogId = 0
+			},
+			want: "invalid claim transaction identity",
+		},
+		{
+			name: "main prize",
+			mutate: func(record *cgprimitives.CGRoundRec) {
+				record.MainPrize.WinnerAddr = "not-an-address"
+			},
+			want: "invalid main-prize winner address",
+		},
+		{
+			name: "aggregate count",
+			mutate: func(record *cgprimitives.CGRoundRec) {
+				record.RoundStats.TotalRaffleNFTs = -1
+			},
+			want: "negative round aggregate",
+		},
+		{
+			name: "raffle amount",
+			mutate: func(record *cgprimitives.CGRoundRec) {
+				record.RoundStats.TotalRaffleEthDeposits = "1.5"
+			},
+			want: `raffle ETH deposits: invalid non-negative decimal "1.5"`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			record := validRoundRecord()
+			test.mutate(&record)
+			_, err := mapRoundSummary(record)
+			if err == nil || err.Error() != test.want {
+				t.Fatalf("error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
 func TestMapRoundDetail(t *testing.T) {
 	t.Parallel()
 

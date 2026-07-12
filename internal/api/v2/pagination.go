@@ -1,6 +1,9 @@
 package v2
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	defaultPageLimit = 50
@@ -17,4 +20,11 @@ func resolvePageLimit(requested *int) (int, bool) {
 
 func pageLimitProblemDetail() string {
 	return fmt.Sprintf("Limit must be between 1 and %d.", maxPageLimit)
+}
+
+func validatePageCardinality(recordCount, limit int) error {
+	if recordCount > limit {
+		return errors.New("repository returned more rows than requested")
+	}
+	return nil
 }

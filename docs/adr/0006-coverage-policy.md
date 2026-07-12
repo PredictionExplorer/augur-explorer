@@ -96,5 +96,9 @@ closed.
 The first policy sprint raised handwritten internal coverage to 80.43%, the
 legacy metric to 79.07%, and truthful all-production coverage to 52.80% under
 the authoritative race-enabled CI command.
-Subsequent focused sprints raise these floors until the 90% internal target is
-reached and held.
+The API-boundary sprint raised those metrics to 86.07%, 83.73%, and 56.26%;
+their enforced floors are now 85.8%, 83.5%, and 56.0%, respectively, while
+changed executable code remains gated at 95%. The next milestone is 88%
+handwritten internal coverage through store/indexer/notification behavior,
+followed by operational-command extraction for the final 90% step. Commit
+blocking remains disabled until that 90% profile is measured and ratcheted.
