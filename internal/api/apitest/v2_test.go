@@ -56,6 +56,8 @@ const (
 	v2ParticipantRWalk   = "/api/v2/cosmicgame/statistics/participants/stakers/random-walk"
 	v2ParticipantBoth    = "/api/v2/cosmicgame/statistics/participants/stakers/both"
 	v2RoundClaims        = "/api/v2/cosmicgame/rounds/{round}/claims"
+	v2GetUser            = "/api/v2/cosmicgame/users/{address}"
+	v2ListUserBids       = "/api/v2/cosmicgame/users/{address}/bids"
 )
 
 type v2GoldenCase struct {
@@ -123,6 +125,145 @@ func TestAPIV2CurrentRound(t *testing.T) {
 	runV2GoldenCases(t, h, spec, []v2GoldenCase{
 		{name: "contracts_current_bid_prices_recovered", target: v2CurrentBidPrices, template: v2CurrentBidPrices, pathParams: map[string]string{}},
 	})
+}
+
+func TestAPIV2UserResources(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	const (
+		indexedZeroAddress = "0x2800000000000000000000000000000000000028"
+		unindexedAddress   = "0x9900000000000000000000000000000000000099"
+	)
+	firstPath := "/api/v2/cosmicgame/users/" + addrAlice + "/bids?limit=2"
+	firstResponse := h.get(t, firstPath)
+	if firstResponse.Code != http.StatusOK {
+		t.Fatalf("first user-bid page: status=%d body=%s",
+			firstResponse.Code, firstResponse.Body.String())
+	}
+	var firstPage apiv2.CosmicGameUserBidPage
+	if err := json.Unmarshal(firstResponse.Body.Bytes(), &firstPage); err != nil {
+		t.Fatalf("decoding first user-bid page: %v", err)
+	}
+	if firstPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first user-bid page did not return a continuation cursor")
+	}
+
+	afterLastAliceBid := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"a":"` + addrAlice + `","e":5004}`),
+	)
+	bobCursor := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"v":1,"a":"` + addrBob + `","e":5029}`),
+	)
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "user_profile_alice",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice,
+			template:   v2GetUser,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_profile_indexed_zero",
+			target:     "/api/v2/cosmicgame/users/" + indexedZeroAddress,
+			template:   v2GetUser,
+			pathParams: map[string]string{"address": indexedZeroAddress},
+		},
+		{
+			name:       "user_profile_unindexed_zero",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress,
+			template:   v2GetUser,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_profile_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address",
+			template:   v2GetUser,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_profile_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice,
+			template:   v2GetUser,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_bids_first_page",
+			target:     firstPath,
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_next_page",
+			target:     firstPath + "&cursor=" + *firstPage.Meta.NextCursor,
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_exhausted",
+			target:     firstPath + "&cursor=" + afterLastAliceBid,
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_empty_indexed",
+			target:     "/api/v2/cosmicgame/users/" + indexedZeroAddress + "/bids?limit=2",
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": indexedZeroAddress},
+		},
+		{
+			name:       "user_bids_empty_unindexed",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/bids?limit=2",
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_bids_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address/bids",
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_bids_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/bids?limit=201",
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/bids?limit=wat",
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/bids?cursor=bad",
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_error_cross_user_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/bids?cursor=" + bobCursor,
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_bids_error_internal",
+			target:     firstPath,
+			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
 }
 
 func TestAPIV2ContractResources(t *testing.T) {

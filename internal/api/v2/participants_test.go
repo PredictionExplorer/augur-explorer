@@ -260,6 +260,7 @@ func newParticipantTestServer(t *testing.T, participants participantReader) *Ser
 		fakeBiddingAnalyticsReader{},
 		fakeContractAddressReader{},
 		participants,
+		fakeUserReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

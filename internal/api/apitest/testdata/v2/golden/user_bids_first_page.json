@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 129,
+        "cstRewardWei": "100000000000000000000",
+        "ethPriceWei": "60000000000000000",
+        "eventLogId": 5097,
+        "message": "alice fifth bid",
+        "occurredAt": "2026-01-01T00:48:20Z",
+        "position": 3,
+        "prizeAt": "2026-01-01T01:48:20Z",
+        "round": 3,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001043"
+      },
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 127,
+        "cstRewardWei": "100000000000000000000",
+        "ethPriceWei": "50000000000000000",
+        "eventLogId": 5077,
+        "message": "round three begins",
+        "occurredAt": "2026-01-01T00:45:00Z",
+        "position": 1,
+        "prizeAt": "2026-01-01T01:45:00Z",
+        "round": 3,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001028"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJhIjoiMHgyMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDIxIiwiZSI6NTA3N30"
+    }
+  }
+}

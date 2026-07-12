@@ -34,6 +34,42 @@ resource composition:
 - Endurance-champion, chrono-warrior and last-bidder standings:
   `GET /api/v2/cosmicgame/rounds/current/special-winners`.
 
+## CosmicGame user profile
+
+Replace the aggregate portion of
+`GET /api/cosmicgame/user/info/{user_addr}` with:
+
+- `GET /api/v2/cosmicgame/users/{address}` for the bounded activity profile.
+- `GET /api/v2/cosmicgame/users/{address}/bids?limit=&cursor=` for bid history.
+
+The profile fields map as follows:
+
+- `UserInfo.Address` becomes the checksummed top-level `address`;
+  `AddressId` is intentionally removed.
+- `NumBids` and `MaxBidAmount` become `bidding.bidCount` and exact
+  `bidding.maxEthBidWei`. Exact lifetime ETH/CST spend is added as
+  `totalEthSpentWei` and `totalCstSpentWei`.
+- `NumPrizes`, `MaxWinAmount`, `RewardNFTsCount`, `TotalCSTokensWon` and
+  `UnclaimedNFTs` are replaced by canonical `prizes.*` counts and exact wei.
+  The ambiguous legacy “CSTokens” name actually counted ERC-721 prizes and is
+  not retained.
+- Raffle ETH/NFT totals become `raffles.*`, reconstructed from allocation
+  events rather than the mutable wallet-availability aggregate.
+- `TotalDonatedCount` and `TotalDonatedAmountEth` become exact
+  `ethDonations.donationCount` and `totalDonatedWei`.
+- `CosmicSignatureNumTransfers` becomes
+  `transfers.cosmicSignatureTransferCount`; the corresponding
+  `cosmicTokenTransferCount` is now exposed alongside it.
+- CST and RandomWalk staking counters are separate typed `cstStaking` and
+  `randomWalkStaking` objects with exact reward wei.
+
+A valid wallet absent from the index returns a zero-valued `200` profile and
+an empty bid page, so clients do not need a special not-found state. The v1
+mega-response's prize, donation, claim, staking-action, transfer and owned-NFT
+arrays remain on v1 until bounded user sub-resources land. Live
+`user/balances`, CosmicToken summary, marketing history and red-box claim
+status are also intentionally deferred.
+
 ## Contract field mapping
 
 The dashboard's `ContractAddrs` object maps one-for-one to
@@ -81,7 +117,7 @@ last-bid timestamp sentinel is omitted.
 
 ## Remaining endpoint groups
 
-User-scoped resources, RandomWalk resources, CosmicToken statistics and
-marketing-wallet configuration remain on v1 until their dedicated v2
-sprints land. Their presence does not require continued use of the v1
-dashboard.
+Remaining user-scoped histories, RandomWalk resources, CosmicToken statistics
+and marketing-wallet configuration stay on v1 until their dedicated v2
+sprints land. Their presence does not require continued use of either the v1
+dashboard or the v1 user mega-response for profile and bid data.

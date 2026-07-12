@@ -47,6 +47,7 @@ var (
 		"b.evtlog_id=$1":                       true,
 		"b.round_num=$1":                       true,
 		"b.bidder_aid=$1":                      true,
+		"b.bidder_aid=$1 AND b.evtlog_id<$2":   true,
 		"b.round_num=$1 AND b.bid_position=$2": true,
 		"b.round_num=$1 AND (b.bid_position,b.evtlog_id)>($2,$3)":    true,
 		"b.round_num=$1 AND b.msg IS NOT NULL AND TRIM(b.msg) <> ''": true,
@@ -58,11 +59,14 @@ var (
 		"b.bid_position ASC":                  true,
 		"b.bid_position DESC":                 true,
 		"b.bid_position ASC, b.evtlog_id ASC": true,
+		"b.evtlog_id DESC":                    true,
 	}
 	bidPagingWhitelist = map[string]bool{
 		"":                   true,
 		"OFFSET $1 LIMIT $2": true,
 		"OFFSET $2 LIMIT $3": true,
+		"LIMIT $2":           true,
+		"LIMIT $3":           true,
 		"LIMIT $4":           true,
 		"LIMIT 2":            true,
 	}
@@ -274,6 +278,46 @@ func (r *Repo) BidsByRoundPage(ctx context.Context, roundNum int64, after BidPag
 		"b.round_num=$1 AND (b.bid_position,b.evtlog_id)>($2,$3)",
 		"b.bid_position ASC, b.evtlog_id ASC", "LIMIT $4", limit+1,
 		roundNum, after.BidPosition, after.EventLogID, limit+1)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(records) > limit {
+		records = records[:limit]
+		hasMore = true
+	}
+	return records, hasMore, nil
+}
+
+// UserBidPageCursor identifies the final event returned by BidsByUserPage.
+type UserBidPageCursor struct {
+	EventLogID int64
+}
+
+// BidsByUserPage returns at most limit bids for userAid, newest first by
+// immutable event-log ID. A nil cursor starts at the newest bid.
+func (r *Repo) BidsByUserPage(
+	ctx context.Context,
+	userAid int64,
+	after *UserBidPageCursor,
+	limit int,
+) (records []p.CGBidRec, hasMore bool, err error) {
+	const op = "bids by user page"
+	if userAid < 1 || limit <= 0 {
+		return nil, false, fmt.Errorf("%s: invalid address id or limit", op)
+	}
+
+	if after == nil {
+		records, err = bidList(ctx, r, op,
+			"b.bidder_aid=$1", "b.evtlog_id DESC", "LIMIT $2", limit+1,
+			userAid, limit+1)
+	} else {
+		if after.EventLogID < 1 {
+			return nil, false, fmt.Errorf("%s: invalid cursor", op)
+		}
+		records, err = bidList(ctx, r, op,
+			"b.bidder_aid=$1 AND b.evtlog_id<$2", "b.evtlog_id DESC", "LIMIT $3", limit+1,
+			userAid, after.EventLogID, limit+1)
+	}
 	if err != nil {
 		return nil, false, err
 	}

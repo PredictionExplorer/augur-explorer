@@ -264,6 +264,7 @@ func newCurrentRoundTestServer(
 		fakeBiddingAnalyticsReader{},
 		fakeContractAddressReader{},
 		fakeParticipantReader{},
+		fakeUserReader{},
 		state,
 		logger,
 	)

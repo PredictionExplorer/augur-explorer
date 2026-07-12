@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "address": "0x9900000000000000000000000000000000000099",
+    "bidding": {
+      "bidCount": 0,
+      "totalCstSpentWei": "0",
+      "totalEthSpentWei": "0"
+    },
+    "cstStaking": {
+      "stakeActionCount": 0,
+      "stakedTokenCount": 0,
+      "totalRewardWei": "0",
+      "unclaimedRewardWei": "0",
+      "unstakeActionCount": 0
+    },
+    "ethDonations": {
+      "donationCount": 0,
+      "totalDonatedWei": "0"
+    },
+    "prizes": {
+      "cstPrizeCount": 0,
+      "maxMainPrizeEthWei": "0",
+      "nftPrizeCount": 0,
+      "prizeCount": 0,
+      "totalEthWonWei": "0",
+      "unclaimedNftCount": 0
+    },
+    "raffles": {
+      "ethPrizeCount": 0,
+      "nftPrizeCount": 0,
+      "totalCstWonWei": "0",
+      "totalEthWonWei": "0"
+    },
+    "randomWalkStaking": {
+      "mintedTokenCount": 0,
+      "stakeActionCount": 0,
+      "stakedTokenCount": 0,
+      "unstakeActionCount": 0
+    },
+    "transfers": {
+      "cosmicSignatureTransferCount": 0,
+      "cosmicTokenTransferCount": 0
+    }
+  }
+}

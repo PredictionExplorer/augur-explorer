@@ -183,7 +183,7 @@ func (r *Repo) BidderParticipantsPage(
 	return records, hasMore, nil
 }
 
-const winnerParticipantsBase = `WITH prize_winners AS (
+const canonicalWinnerPrizesCTE = `WITH prize_winners AS (
 		SELECT p.ptype,
 			COALESCE(pc.winner_aid,rew.winner_aid,rnw.winner_aid,
 				ew.winner_aid,lw.winner_aid,cw.winner_aid) AS winner_aid
@@ -235,7 +235,9 @@ const winnerParticipantsBase = `WITH prize_winners AS (
 			ON c.round_num=d.round_num AND c.idx=d.idx
 		WHERE c.id IS NULL
 		GROUP BY pc.winner_aid
-	)
+	)`
+
+const winnerParticipantsBase = canonicalWinnerPrizesCTE + `
 	SELECT wp.winner_aid,a.addr,wp.prize_count,
 		COALESCE(m.max_main_prize,0)::TEXT,
 		COALESCE(e.total_eth_won,0)::TEXT,

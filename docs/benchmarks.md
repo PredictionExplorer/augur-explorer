@@ -51,6 +51,8 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkStatisticsQueries/participant_cst_stakers` | 173,000 | 5,243 | 15 | first 50 CST stakers on the indexed reward keyset |
 | `BenchmarkStatisticsQueries/participant_randomwalk_stakers` | 171,000 | 4,259 | 15 | first 50 RandomWalk stakers on the indexed token-count keyset |
 | `BenchmarkStatisticsQueries/participant_dual_stakers` | 194,000 | 7,316 | 11 | first 50 dual stakers; computed cross-table token-count order |
+| `BenchmarkStatisticsQueries/user_profile` | 499,000 | 3,453 | 18 | exact bounded profile with canonical prize reconstruction |
+| `BenchmarkStatisticsQueries/user_bids_page` | 280,000 | 41,961 | 488 | first 50 full bid resources on the indexed user/event keyset |
 
 History:
 
@@ -102,3 +104,7 @@ History:
   range joins. Frequency, type composition and time bounds run in 167–196 µs;
   the bounded two-query top-bidder/session path takes 400 µs. All remain below
   the existing 465 µs participant ceiling on the seeded container.
+- **2026-07-11 (API-v2 user-foundation sprint)** — added six-run medians for
+  the collection-free profile and first 50 newest user bids. Canonical prize
+  reconstruction keeps the profile at 499 µs; the full bid projection is
+  280 µs on migration 00017's `(bidder_aid, evtlog_id DESC)` index.

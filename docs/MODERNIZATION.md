@@ -33,23 +33,23 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-10 (contract-configuration API-v2 sprint). Update after each phase.
+Measured 2026-07-11 (user-foundation API-v2 sprint). Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **91,300** (+2,335 this sprint: five contract/live resources, coherent cache refreshes and extensive tests); generated `internal/api/v2/api.gen.go` is a separate 6,646 lines | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **93,054** (+1,754 this sprint: exact user projection, handlers and extensive tests); generated `internal/api/v2/api.gen.go` is separate | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
 | snake_case functions | ~700 | **161** (api 127, notibot 24, rwalk-alarm 4, primitives 3, notify 2, apiserver 1; **the store layer and both ETLs are 0**) | **0** | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
 | `os.Exit` in library code (`internal/`) | ~560 | **15 matches = 6 real calls** (5 test-harness `TestMain`s + `primitives.Fatalf`; the rest are doc comments). | **0** (allowed only in `cmd/*/main.go` startup) | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **4** (apiserver 1, notibot 1, api/cosmicgame 2) | **0** | `rg -l '^\s*\. "github' --type go internal cmd contracts` |
 | Package-level mutable globals (api + etl) | ~120 | ~12 (**legacy v1 API only**; the new `v2.Server` and both ETL binaries have zero package-level mutable state) | ~0 (DI everywhere) | manual review per package |
 | golangci-lint issues | 433 (first run) | **119** capped / **405** uncapped (`internal/api/v2`, `internal/api/httpx`, `internal/store/cosmicgame`, `internal/indexer` + both handler packages are lint-clean) | **0** | `golangci-lint run` |
-| Test files | 17 | **149** | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
-| Fuzz targets | 0 | **46** (including all twelve bounded opaque-cursor decoders plus bidding and cached-contract-state invariants) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
+| Test files | 17 | **153** | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
+| Fuzz targets | 0 | **47** (including the wallet-scoped user-bid cursor plus all prior bounded opaque-cursor decoders, bidding and cached-contract-state invariants) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
 | Benchmarks | 0 | **4** (18 sub-benchmarks; baselines in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
 | Coverage on `internal/` (unit) | 2.4% | **29.3%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Coverage on `internal/` (integration, enforced) | n/a | **75.3%** (floor 75.2%) | **≥70%, floor only moves up — met** | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
+| Coverage on `internal/` (integration, enforced) | n/a | **75.5%** (floor 75.4%) | **≥70%, floor only moves up — met** | `go test -race -tags=integration -coverprofile=c.out -coverpkg=./internal/... ./... && go tool cover -func=c.out \| tail -1` |
 | Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
-| Routes on stdlib router | 0 | **all** — frozen v1 (187 OpenAPI operations) plus 32 generated v2 operations (round resources, exact statistics/claims, participant/bidding analytics and five contract/live resources), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
+| Routes on stdlib router | 0 | **all** — frozen v1 (187 OpenAPI operations) plus 34 generated v2 operations (round resources, exact statistics/claims, participant/bidding analytics, five contract/live resources and the user profile/bid foundation), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
 | `context.Context` on store methods | 0% | **100% — 396 Repo methods (CosmicGame 334 + RandomWalk 62) + 22 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
 | Store queries on pgx-native pool | 0 | all (one shared `pgxpool` per process; the `database/sql` view is gone) | all | manual |
 
@@ -796,19 +796,21 @@ migrated.
       slog access-log format alongside legacy `[GIN]` lines in old files.)*
 - [ ] Response compression + ETag/Cache-Control on hot read routes
 - [x] httptest suite for v2 (same fixtures as §4.1, new goldens)
-      *(2026-07-10 — 197 deterministic v2 goldens cover current/completed
+      *(2026-07-11 — 213 deterministic v2 goldens cover current/completed
       rounds, round bids, prizes, raffles, donations, global statistics,
       counters, all ROI sorts, bounded claim summaries/details and all six
       participant directories, five bidding analytics resources and five
-      contract/live resources: both mechanics generations, cache
+      contract/live resources plus the user profile/bid foundation: both
+      mechanics generations, cache
       failure/recovery, live-v1/cached-v2 semantic equivalence, keyset pages,
       lean items, bounded time series, decimal-string percentages,
       bind/limit/cursor/sort/window/pool errors, open-round donation pages,
-      open/missing 404s for completed-only resources and cancelled-context
-      500s; v1's 196 parity + 12 error goldens were not regenerated.)*
+      indexed/unindexed zero-user shapes, cross-wallet cursors, open/missing
+      404s for completed-only resources and cancelled-context 500s; v1's 196
+      parity + 12 error goldens were not regenerated.)*
 - [x] OpenAPI contract validation in tests (kin-openapi response validator)
-      *(2026-07-10 — the embedded spec is validated, spec and generated router
-      are compared bidirectionally (32 operations), and every v2 golden
+      *(updated 2026-07-11 — the embedded spec is validated, spec and generated router
+      are compared bidirectionally (34 operations), and every v2 golden
       status/header/body is response-validated with kin-openapi.)*
 
 #### 6.2.1 V2 endpoint slices
@@ -864,14 +866,22 @@ migrated.
       address tags to prevent mixed snapshots, and never performs
       request-time RPC. [api-v2-migration.md](api-v2-migration.md) maps every
       v1 dashboard field to its replacement without recreating the mega-response.
-- [ ] User resources
+- [~] User resources *(2026-07-11 — foundation landed:
+      `/api/v2/cosmicgame/users/{address}` is an exact, collection-free
+      profile over canonical bid/prize rows plus transfer/donation/staking
+      statistics; valid unindexed wallets return the same checksummed zero
+      shape. `/users/{address}/bids` reuses the typed Bid model and pages
+      newest-first on a wallet-scoped event-log cursor backed by migration
+      00017. Remaining prize/donation/claim/staking/transfer/token/marketing
+      histories and live balances stay separate bounded slices.)*
 - [ ] RandomWalk resources
 
 ### 6.3 Frontend migration
 
 - [~] Publish v2 spec + changelog mapping every v1 path to its v2 replacement
-      *(dashboard mapping published in [api-v2-migration.md](api-v2-migration.md);
-      user, RandomWalk, CosmicToken and marketing groups remain)*
+      *(dashboard and user profile/bid mappings published in
+      [api-v2-migration.md](api-v2-migration.md); remaining user histories,
+      RandomWalk, CosmicToken and marketing groups remain)*
 - [ ] Frontend switches endpoint-group by group (tracked as external checklist)
 - [ ] v1 marked deprecated in spec; add `Deprecation`/`Sunset` headers
 - [ ] Remove v1 layer + its goldens when traffic hits zero (final step, gated)
@@ -1120,3 +1130,4 @@ removed the 11 ETL ones): `internal/api/cosmicgame` (2), `cmd/apiserver` (1),
 | 2026-07-10 | — | **API-v2 participant-directories sprint (second dashboard slice):** expanded [openapi-v2.yaml](openapi-v2.yaml) v0.7.0 → v0.8.0 and the generated strict router from 16 → 22 operations with cursor-paginated bidder, winner, ETH-donor, CST-staker, RandomWalk-staker and dual-staker resources under `/api/v2/cosmicgame/statistics/participants/*`. V2-only projections expose canonical addresses, exact wei strings and deterministic descending aggregate keysets with an internal address-ID tie-breaker; legacy floats, IDs, duplicate winner shapes and zero-count bidder tombstones stay out of the contract. Winner counts and ETH totals are rebuilt from canonical prize/event rows rather than trusting the replay-sensitive `cg_winner` aggregate. Endpoint-scoped strict cursors reject cross-directory reuse and out-of-range count keys; ranked directories explicitly document their weak consistency under live aggregate changes, and handlers validate page cardinality/order/scope before mapping. Migration 00015 adds four concurrent aggregate read indexes. Five queries benchmark at 171–194µs; the canonical winner reconstruction is 465µs, still below the existing ROI/claims query class. **Tests:** 5 new test files (145 total), `FuzzDecodeParticipantCursor` (42/42 targets passed ten-second smoke), six deterministic store goldens and 32 twice-fetched, request/response OpenAPI-validated HTTP goldens covering first/next/empty pages, tie boundaries, malformed/cross-directory cursors, invalid limits and opaque 500s (159 v2 goldens total). Store integration proves full-list/page semantic equivalence for all six resources, independence from a corrupted winner aggregate, zero-count bidder exclusion, terminal exhaustion, cancellation/closed-pool behavior and a synthetic dual-staker tie. Full race+shuffle unit and race integration suites, build, vet, generated-code reproducibility and govulncheck are green; all 196 v1 parity goldens remained unchanged; touched packages are lint-clean. Integration coverage **74.8% → 75.1%**, CI floor **74.7% → 75.0%**. |
 | 2026-07-10 | — | **API-v2 bidding-analytics sprint (third dashboard slice):** expanded [openapi-v2.yaml](openapi-v2.yaml) v0.8.0 → v0.9.0 and the generated strict router from 22 → 27 operations with DB-only `/api/v2/cosmicgame/statistics/bidding/{activity,frequency,type-ratio,top-active-periods,time-bounds}`. Windowed resources require `from`/`to`, cap scans at five years and time series at 2,000 buckets, preserve UTC/anchored bucket and first-hour exclusion semantics, and omit the legacy exact-boundary terminal bucket. Bid-type percentages are deterministic decimal strings derived from integer counts; top-period responses hide address IDs, use a v2-only stable tie-breaker and reject results above 2,000 periods. Every analytics query has a five-second deadline, and an injected clock makes the optional 30-day recent-spike marker deterministic. V2-only bounded store projections preserve frozen v1 query behavior: half-open timestamp filters run through migration 00016's concurrent `cg_bid(time_stamp)` index and aggregate each bid once with `DATE_BIN` before joining the zero-fill series. Six-run medians are 167–196µs for the single queries and 400µs for the bounded two-query top-period path. **Tests:** 2 new test files (147 total), `FuzzResolveAnalyticsWindow` + `FuzzDetectBidSpikes` (fleet 44), expanded cancellation, post-2038, partial-tail, timestamp-index, SQL period-cap and stable-tie coverage, plus 21 twice-fetched, request/response OpenAPI-validated HTTP goldens covering nonzero frequency, spike/recent-spike output, exact-boundary trimming, defaults, bind/window/timestamp/limit and opaque 500 paths (180 v2 total). Full race+shuffle unit and race integration suites, build, vet, generation reproducibility and govulncheck are green; all 196 v1 parity goldens remain unchanged; touched packages report zero lint issues (repository baseline 119). The one-second full fuzz smoke had a pre-existing claim-cursor stop-deadline timeout with no crasher, reproduced cleanly in isolation; both new targets passed dedicated five-second runs. Integration coverage **75.1% → 75.2%**, CI floor **75.0% → 75.1%**. |
 | 2026-07-10 | — | **API-v2 contract-configuration sprint (dashboard decomposition complete):** expanded [openapi-v2.yaml](openapi-v2.yaml) v0.9.0 → v0.10.0 and the strict router from 27 → 32 operations with DB-backed `/contracts/addresses` plus cache-only `/contracts/configuration`, `/contracts/balances`, `/rounds/current/bid-prices` and `/rounds/current/special-winners`. The refresh engine now pins related RPC/balance reads to one block, serializes mechanics/address-dependent groups, bounds RPC/DB calls with deadlines, tags constant/variable mechanics generations and charity-balance generations, and exposes resource-specific readiness with accurate 5s/30s/300s retry guidance. V1 fixed and V2 dynamic CST rewards are modeled separately; V2 auction start timestamps normalize to clamped elapsed progress; special-winner round/contract reads and optional CST event lookup share one source block. The legacy dashboard write-back is isolated from v2's block-pinned price cache. [api-v2-migration.md](api-v2-migration.md) publishes the dashboard replacement map, so the §6.2.1 statistics/dashboard slice is complete without a v2 mega-response. **Tests:** 2 new test files (149 total), two cached-state fuzzers (fleet 46), 17 twice-fetched OpenAPI-validated HTTP goldens (197 v2 total), V1/V2 mechanics and bid-price goldens, symmetric cache 503/recovery cases, invalid-registry 500, complete address and v1/v2 semantic comparisons, block/generation/address coherence, overflow/auction normalization, optional DB failure, timeout and race coverage. Full build/vet/race unit gates are green; the first integration attempt hit an unrelated testcontainer connection reset and the immediate full race rerun passed. All 196 v1 parity goldens remain unchanged; touched packages are lint-clean and govulncheck reports no reachable vulnerability. Integration coverage **75.2% → 75.3%**, CI floor **75.1% → 75.2%**. |
+| 2026-07-11 | — | **API-v2 user-foundation sprint (first §6.2.1 user slice):** expanded [openapi-v2.yaml](openapi-v2.yaml) v0.10.0 → v0.11.0 and the strict router from 32 → 34 operations with exact `GET /api/v2/cosmicgame/users/{address}` and cursor-paginated `.../users/{address}/bids`. The profile is deliberately collection-free: one checksummed identity with nested bidding, canonical prize/raffle, direct ETH-donation, transfer, CST-staking and RandomWalk-staking statistics; internal IDs, float ETH, magic sentinels, request-time RPC and the v1 mega-response's unbounded arrays stay out. Bid totals are rebuilt from canonical rows and prize totals share the participant directory's canonical event reconstruction, so corrupting `cg_winner` cannot alter the response. A valid unindexed wallet gets the same stable zero `200` shape and empty bid page. User bids reuse the existing typed `Bid`, order newest-first by immutable `evtlog_id`, reject cross-wallet cursors and use migration 00017's `(bidder_aid, evtlog_id DESC)` index. **Tests:** 4 new test files (153 total), `FuzzDecodeUserBidCursor` (fleet 47), one deterministic store golden and 16 twice-fetched kin-openapi-validated HTTP goldens (213 v2 total) cover active/indexed-zero/unindexed profiles, exact large amounts, every nested mapping, first/next/exhausted/empty pages, invalid addresses/limits/cursors, cross-wallet reuse, malformed repository rows, error secrecy and cancellation. Store integration proves canonical-aggregate independence, full-list/page equivalence with no gaps or duplicates, cancellation/closed-pool behavior and index presence. Six-run medians are 499µs for the canonical profile and 280µs for a 50-bid page. Full race+shuffle unit and race integration suites are green; all 47 fuzz targets pass the smoke fleet and the new cursor passes a dedicated 10-second run; generated output is reproducible; govulncheck is clean; all 196 v1 parity goldens remain unchanged; touched packages are lint-clean. Metrics: LOC **91,300 → 93,054**, integration coverage **75.3% → 75.5%**, CI floor **75.2% → 75.4%**. |

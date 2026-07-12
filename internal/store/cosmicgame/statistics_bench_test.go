@@ -186,4 +186,24 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("user_profile", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			profile, err := r.UserProfile(ctx, aidAlice)
+			if err != nil || profile.BidCount == 0 {
+				b.Fatalf("user profile: bids=%d err=%v", profile.BidCount, err)
+			}
+		}
+	})
+
+	b.Run("user_bids_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.BidsByUserPage(ctx, aidAlice, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("user bids page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
 }

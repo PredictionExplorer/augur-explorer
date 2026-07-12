@@ -84,6 +84,12 @@ type fakeParticipantReader struct {
 	dualStakers       func(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.DualStakerParticipantRecord, bool, error)
 }
 
+type fakeUserReader struct {
+	addressID func(context.Context, string) (int64, error)
+	profile   func(context.Context, int64) (cgstore.UserProfileRecord, error)
+	bids      func(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error)
+}
+
 type fakeContractState struct {
 	snapshot func() contractstate.Snapshot
 }
@@ -423,6 +429,43 @@ func (f fakeParticipantReader) DualStakerParticipantsPage(
 	return f.dualStakers(ctx, after, limit)
 }
 
+func (f fakeUserReader) UserAddressID(ctx context.Context, address string) (int64, error) {
+	if f.addressID == nil {
+		return 1, nil
+	}
+	return f.addressID(ctx, address)
+}
+
+func (f fakeUserReader) UserProfile(ctx context.Context, userAid int64) (cgstore.UserProfileRecord, error) {
+	if f.profile == nil {
+		return cgstore.UserProfileRecord{
+			Address:               "0x0000000000000000000000000000000000000001",
+			TotalETHSpentWei:      "0",
+			TotalCSTSpentWei:      "0",
+			MaxMainPrizeETHWei:    "0",
+			TotalETHWonWei:        "0",
+			RaffleETHTotalWei:     "0",
+			RaffleCSTTotalWei:     "0",
+			ETHDonatedWei:         "0",
+			CSTTotalRewardWei:     "0",
+			CSTUnclaimedRewardWei: "0",
+		}, nil
+	}
+	return f.profile(ctx, userAid)
+}
+
+func (f fakeUserReader) BidsByUserPage(
+	ctx context.Context,
+	userAid int64,
+	after *cgstore.UserBidPageCursor,
+	limit int,
+) ([]cgprimitives.CGBidRec, bool, error) {
+	if f.bids == nil {
+		return []cgprimitives.CGBidRec{}, false, nil
+	}
+	return f.bids(ctx, userAid, after, limit)
+}
+
 func (f fakeContractState) Snapshot() contractstate.Snapshot {
 	if f.snapshot == nil {
 		return contractstate.Snapshot{}
@@ -667,37 +710,40 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 	if err != nil || !configured.now().Equal(fixedNow) {
 		t.Fatalf("NewServer clock option: server=%v err=%v", configured, err)
 	}
-	if _, err := newServer(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil bid repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil current-round repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-prize repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, nil, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-raffle repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, nil, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, nil, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil round-donation repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, nil, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, nil, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil statistics repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, nil, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil bidding analytics repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, nil, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, nil, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil contract-address repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, fakeContractAddressReader{}, nil, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, fakeContractAddressReader{}, nil, nil, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil participant repository")
 	}
-	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, fakeContractAddressReader{}, fakeParticipantReader{}, nil, nil); err == nil {
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, fakeContractAddressReader{}, fakeParticipantReader{}, nil, nil, nil); err == nil {
+		t.Fatal("newServer accepted a nil user repository")
+	}
+	if _, err := newServer(nil, fakeBidReader{}, fakeRoundReader{}, fakeCurrentRoundReader{}, fakeRoundPrizeReader{}, fakeRoundRaffleReader{}, fakeRoundDonationReader{}, fakeStatisticsReader{}, fakeBiddingAnalyticsReader{}, fakeContractAddressReader{}, fakeParticipantReader{}, fakeUserReader{}, nil, nil); err == nil {
 		t.Fatal("newServer accepted a nil contract state")
 	}
 	server, err := newServer(
@@ -712,6 +758,7 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 		fakeBiddingAnalyticsReader{},
 		fakeContractAddressReader{},
 		fakeParticipantReader{},
+		fakeUserReader{},
 		fakeContractState{},
 		nil,
 	)
@@ -741,6 +788,7 @@ func newTestServer(t *testing.T, bids bidReader) *Server {
 		fakeBiddingAnalyticsReader{},
 		fakeContractAddressReader{},
 		fakeParticipantReader{},
+		fakeUserReader{},
 		fakeContractState{},
 		logger,
 	)

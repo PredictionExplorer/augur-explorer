@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 124,
+        "cstRewardWei": "100000000000000000000",
+        "ethPriceWei": "100000000000000000",
+        "eventLogId": 5071,
+        "occurredAt": "2026-01-01T00:40:00Z",
+        "position": 3,
+        "prizeAt": "2026-01-01T01:40:00Z",
+        "round": 2,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001025"
+      },
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 104,
+        "cstRewardWei": "100000000000000000000",
+        "ethPriceWei": "120000000000000000",
+        "eventLogId": 5010,
+        "occurredAt": "2026-01-01T00:06:40Z",
+        "position": 4,
+        "prizeAt": "2026-01-01T01:06:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001005"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJhIjoiMHgyMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDIxIiwiZSI6NTAxMH0"
+    }
+  }
+}

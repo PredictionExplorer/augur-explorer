@@ -82,6 +82,12 @@ type participantReader interface {
 	DualStakerParticipantsPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.DualStakerParticipantRecord, bool, error)
 }
 
+type userReader interface {
+	UserAddressID(context.Context, string) (int64, error)
+	UserProfile(context.Context, int64) (cgstore.UserProfileRecord, error)
+	BidsByUserPage(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -101,6 +107,7 @@ type Server struct {
 	analytics         biddingAnalyticsReader
 	contractAddresses contractAddressReader
 	participants      participantReader
+	users             userReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -134,7 +141,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +169,7 @@ func newServer(
 	analytics biddingAnalyticsReader,
 	contractAddresses contractAddressReader,
 	participants participantReader,
+	users userReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -195,6 +203,9 @@ func newServer(
 	if participants == nil {
 		return nil, errors.New("api v2: participant repository is required")
 	}
+	if users == nil {
+		return nil, errors.New("api v2: user repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -213,6 +224,7 @@ func newServer(
 		analytics:         analytics,
 		contractAddresses: contractAddresses,
 		participants:      participants,
+		users:             users,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

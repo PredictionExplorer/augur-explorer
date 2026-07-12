@@ -78,3 +78,39 @@ func TestBidsByRoundPageRejectsNonPositiveLimit(t *testing.T) {
 		}
 	}
 }
+
+func TestBidsByUserPageRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	var repo Repo
+	tests := []struct {
+		userAid int64
+		after   *UserBidPageCursor
+		limit   int
+	}{
+		{userAid: 0, limit: 1},
+		{userAid: -1, limit: 1},
+		{userAid: 1, limit: 0},
+		{userAid: 1, limit: -1},
+		{userAid: 1, after: &UserBidPageCursor{}, limit: 1},
+		{userAid: 1, after: &UserBidPageCursor{EventLogID: -1}, limit: 1},
+	}
+	for _, test := range tests {
+		if _, _, err := repo.BidsByUserPage(
+			t.Context(), test.userAid, test.after, test.limit,
+		); err == nil {
+			t.Errorf("BidsByUserPage(%+v) succeeded", test)
+		}
+	}
+}
+
+func TestUserProfileRejectsInvalidAddressID(t *testing.T) {
+	t.Parallel()
+
+	var repo Repo
+	for _, userAid := range []int64{0, -1} {
+		if _, err := repo.UserProfile(t.Context(), userAid); err == nil {
+			t.Errorf("UserProfile(%d) succeeded", userAid)
+		}
+	}
+}

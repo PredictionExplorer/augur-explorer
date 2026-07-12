@@ -344,6 +344,7 @@ func newBiddingAnalyticsTestServer(t *testing.T, analytics biddingAnalyticsReade
 		analytics,
 		fakeContractAddressReader{},
 		fakeParticipantReader{},
+		fakeUserReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.10.0
+  version: 0.11.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -290,6 +290,47 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/RoundNftDonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}:
+    get:
+      operationId: getCosmicGameUser
+      summary: Get an exact CosmicGame activity profile for one wallet
+      description: |
+        Returns a bounded aggregate profile without inline history arrays or
+        request-time contract RPC. A syntactically valid wallet that has not
+        been indexed yet returns the same zero-activity shape with its
+        checksummed address.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/bids:
+    get:
+      operationId: listCosmicGameUserBids
+      summary: List bids made by one wallet
+      description: |
+        Returns bids newest first by immutable event-log ID. A cursor is
+        scoped to the normalized wallet and cannot be reused for another
+        user. A valid wallet with no indexed bids returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserBidPage"
         "400":
           $ref: "#/components/responses/BadRequest"
         "500":
@@ -614,6 +655,16 @@ components:
         type: integer
         format: int64
         minimum: 1
+    Address:
+      name: address
+      in: path
+      required: true
+      description: Ethereum wallet address.
+      schema:
+        type: string
+        minLength: 42
+        maxLength: 42
+        pattern: "^0x[0-9a-fA-F]{40}$"
     Cursor:
       name: cursor
       in: query
@@ -3027,6 +3078,143 @@ components:
         amountWei:
           type: string
           pattern: "^[0-9]+$"
+    UserBiddingStats:
+      type: object
+      additionalProperties: false
+      required:
+        - bidCount
+        - totalEthSpentWei
+        - totalCstSpentWei
+      properties:
+        bidCount:
+          type: integer
+          format: int64
+          minimum: 0
+        maxEthBidWei:
+          type: string
+          pattern: "^[0-9]+$"
+          description: Largest nonnegative ETH bid, omitted when none exists.
+        totalEthSpentWei:
+          type: string
+          pattern: "^[0-9]+$"
+        totalCstSpentWei:
+          type: string
+          pattern: "^[0-9]+$"
+    UserPrizeStats:
+      type: object
+      additionalProperties: false
+      required:
+        - prizeCount
+        - maxMainPrizeEthWei
+        - totalEthWonWei
+        - cstPrizeCount
+        - nftPrizeCount
+        - unclaimedNftCount
+      properties:
+        prizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        maxMainPrizeEthWei:
+          type: string
+          pattern: "^[0-9]+$"
+        totalEthWonWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cstPrizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        nftPrizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        unclaimedNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+    UserRaffleStats:
+      type: object
+      additionalProperties: false
+      required:
+        - ethPrizeCount
+        - totalEthWonWei
+        - nftPrizeCount
+        - totalCstWonWei
+      properties:
+        ethPrizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalEthWonWei:
+          type: string
+          pattern: "^[0-9]+$"
+        nftPrizeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalCstWonWei:
+          type: string
+          pattern: "^[0-9]+$"
+    UserEthDonationStats:
+      type: object
+      additionalProperties: false
+      required:
+        - donationCount
+        - totalDonatedWei
+      properties:
+        donationCount:
+          type: integer
+          format: int64
+          minimum: 0
+        totalDonatedWei:
+          type: string
+          pattern: "^[0-9]+$"
+    UserTransferStats:
+      type: object
+      additionalProperties: false
+      required:
+        - cosmicTokenTransferCount
+        - cosmicSignatureTransferCount
+      properties:
+        cosmicTokenTransferCount:
+          type: integer
+          format: int64
+          minimum: 0
+        cosmicSignatureTransferCount:
+          type: integer
+          format: int64
+          minimum: 0
+    CosmicGameUserProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - bidding
+        - prizes
+        - raffles
+        - ethDonations
+        - transfers
+        - cstStaking
+        - randomWalkStaking
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        bidding:
+          $ref: "#/components/schemas/UserBiddingStats"
+        prizes:
+          $ref: "#/components/schemas/UserPrizeStats"
+        raffles:
+          $ref: "#/components/schemas/UserRaffleStats"
+        ethDonations:
+          $ref: "#/components/schemas/UserEthDonationStats"
+        transfers:
+          $ref: "#/components/schemas/UserTransferStats"
+        cstStaking:
+          $ref: "#/components/schemas/CstStakingParticipantStats"
+        randomWalkStaking:
+          $ref: "#/components/schemas/RandomWalkStakingParticipantStats"
     Bid:
       type: object
       additionalProperties: false
@@ -3113,6 +3301,19 @@ components:
           minLength: 1
           maxLength: 512
     RoundBidPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Bid"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicGameUserBidPage:
       type: object
       additionalProperties: false
       required:
@@ -3222,6 +3423,18 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoundNftDonationPage"
+    CosmicGameUserProfile:
+      description: Exact bounded activity profile for one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserProfile"
+    CosmicGameUserBidPage:
+      description: One stable page of bids made by one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserBidPage"
     CosmicGameGlobalStatistics:
       description: Exact database-backed global CosmicGame statistics.
       content:
