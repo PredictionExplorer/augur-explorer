@@ -369,19 +369,6 @@ func (fr *FreezerReader) ValidateIndexRange(startBlock, endBlock uint64) error {
 	return nil
 }
 
-// CdatFileInfo returns information about discovered cdat files
-func (fr *FreezerReader) CdatFileInfo() []string {
-	fr.mu.RLock()
-	defer fr.mu.RUnlock()
-
-	var info []string
-	for _, entry := range fr.cdatFiles {
-		info = append(info, fmt.Sprintf("index=%d path=%s startOffset=%d size=%d",
-			entry.index, entry.path, entry.startOffset, entry.size))
-	}
-	return info
-}
-
 // Uint48ToBytes converts a 48-bit value to 6 bytes (for testing)
 func Uint48ToBytes(v uint64) []byte {
 	buf := make([]byte, 8)

@@ -339,6 +339,97 @@ func TestRunFetchErrorShrinksBatchAndEmptySuccessGrowsIt(t *testing.T) {
 	}
 }
 
+// errProgress scripts watermark failures.
+type errProgress struct {
+	readErr  error
+	writeErr error
+	last     int64
+}
+
+func (p *errProgress) LastBlock(ctx context.Context) (int64, error) {
+	if p.readErr != nil {
+		return 0, p.readErr
+	}
+	return p.last, nil
+}
+
+func (p *errProgress) SetLastBlock(ctx context.Context, block int64) error {
+	return p.writeErr
+}
+
+func TestRunStartupWatermarkFailureTripsBreaker(t *testing.T) {
+	// The startup watermark read is a database failure: retried with
+	// backoff, fatal only when persistent (the circuit breaker trips).
+	e := unitEngine(t, Config{
+		Client:    &fakeClient{},
+		Progress:  &errProgress{readErr: errors.New("status table on fire")},
+		Process:   func(context.Context, int64) error { return nil },
+		Contracts: []common.Address{{0x01}},
+		Retry:     RetryConfig{MaxConsecutiveFailures: 2, MinDelay: time.Millisecond, MaxDelay: time.Millisecond},
+	})
+	err := runWithTimeout(t, e, context.Background())
+	if err == nil || !strings.Contains(err.Error(), "reading processing status") {
+		t.Fatalf("Run = %v, want the wrapped watermark read failure", err)
+	}
+	if !strings.Contains(err.Error(), "2 consecutive batch failures") {
+		t.Errorf("Run = %v, want the circuit-breaker wrap", err)
+	}
+}
+
+func TestSetLastBlockPersistFailure(t *testing.T) {
+	e := unitEngine(t, Config{
+		Client:    &fakeClient{},
+		Progress:  &errProgress{writeErr: errors.New("disk full")},
+		Process:   func(context.Context, int64) error { return nil },
+		Contracts: []common.Address{{0x01}},
+	})
+	if err := e.setLastBlock(context.Background(), 7); err == nil ||
+		!strings.Contains(err.Error(), "updating processing status") {
+		t.Fatalf("setLastBlock = %v, want the wrapped persist failure", err)
+	}
+}
+
+func TestEventTypeLabel(t *testing.T) {
+	known := common.HexToHash("0xaaaa")
+	e := unitEngine(t, Config{
+		Client:    &fakeClient{},
+		Progress:  &fakeProgress{},
+		Process:   func(context.Context, int64) error { return nil },
+		Contracts: []common.Address{{0x01}},
+		TopicName: func(topic common.Hash) string {
+			if topic == known {
+				return "BidPlaced"
+			}
+			return ""
+		},
+	})
+	cases := []struct {
+		name   string
+		topics []common.Hash
+		want   string
+	}{
+		{"no topics", nil, "none"},
+		{"known topic", []common.Hash{known}, "BidPlaced"},
+		{"unknown topic", []common.Hash{common.HexToHash("0xbbbb")}, "other"},
+	}
+	for _, tc := range cases {
+		if got := e.eventTypeLabel(&types.Log{Topics: tc.topics}); got != tc.want {
+			t.Errorf("%s: eventTypeLabel = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+
+	// Without a TopicName resolver every topic is "other".
+	e2 := unitEngine(t, Config{
+		Client:    &fakeClient{},
+		Progress:  &fakeProgress{},
+		Process:   func(context.Context, int64) error { return nil },
+		Contracts: []common.Address{{0x01}},
+	})
+	if got := e2.eventTypeLabel(&types.Log{Topics: []common.Hash{known}}); got != "other" {
+		t.Errorf("eventTypeLabel without resolver = %q, want other", got)
+	}
+}
+
 func TestRunWatermarkZeroFallsBackToStoreWatermark(t *testing.T) {
 	// A fresh status row (LastBlock 0) must consult the store's block
 	// watermark; with a nil pool the call panics, which proves (and pins)

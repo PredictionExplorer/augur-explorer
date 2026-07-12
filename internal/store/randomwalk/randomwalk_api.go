@@ -1434,7 +1434,8 @@ func (r *Repo) MintReport(ctx context.Context) ([]rwp.API_MintReportRec, error) 
 		FROM periods p
 			JOIN rw_mint_evt m ON
 				p.yearmonth = extract(year from m.time_stamp)*100+extract(month from m.time_stamp)
-		GROUP BY p.yearmonth`
+		GROUP BY p.yearmonth
+		ORDER BY p.yearmonth`
 	var sumDeposited float64
 	return queryList(ctx, r, "mint report", 32, query, func(rows pgx.Rows, rec *rwp.API_MintReportRec) error {
 		var nTotalMinted sql.NullInt64

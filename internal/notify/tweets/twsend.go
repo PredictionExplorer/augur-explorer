@@ -13,98 +13,118 @@ import (
 	"time"
 )
 
-const (
-	URL       string = "https://api.twitter.com/1.1/statuses/update.json"
-	MEDIA_URL string = "https://upload.twitter.com/1.1/media/upload.json"
+// statusUpdateURL and mediaUploadURL are package variables (not constants) so
+// the httptest suite can point the senders at a stub server; production never
+// changes them.
+var (
+	statusUpdateURL = "https://api.twitter.com/1.1/statuses/update.json"
+	mediaUploadURL  = "https://upload.twitter.com/1.1/media/upload.json"
 )
 
+// videoStatusPollInterval is the wait between STATUS polls while Twitter
+// processes an uploaded video. A variable so tests do not sleep for real.
+var videoStatusPollInterval = 2 * time.Second
+
+// TwitterKeys carries the four credentials the send helpers need, as loaded
+// from the operator's TWITTER_KEYS_FILE config.
 type TwitterKeys struct {
 	ApiKey      string
 	ApiSecret   string
 	TokenKey    string
 	TokenSecret string
 }
+
+// MediaImage is the image block of a media-upload response.
 type MediaImage struct {
-	Image_type string `json:"image_type"`
-	W          int64  `json:"w"`
-	H          int64  `json:"h"`
+	ImageType string `json:"image_type"`
+	W         int64  `json:"w"`
+	H         int64  `json:"h"`
 }
+
+// ImageResponse is the media-upload endpoint's response (also used for the
+// INIT/FINALIZE stages of video uploads, which share the same shape).
 type ImageResponse struct {
-	Media_id           int64      `json:"media_id"`
-	Media_id_string    string     `json:"media_id_string"`
-	Media_key          string     `json:"media_key"`
-	Size               int64      `json:"size"`
-	Expires_after_secs int64      `json:"expires_after_secs"`
-	Image              MediaImage `json:"image"`
+	MediaID          int64      `json:"media_id"`
+	MediaIDString    string     `json:"media_id_string"`
+	MediaKey         string     `json:"media_key"`
+	Size             int64      `json:"size"`
+	ExpiresAfterSecs int64      `json:"expires_after_secs"`
+	Image            MediaImage `json:"image"`
 }
+
+// StatusUpdateResponse is the statuses/update response subset the callers
+// read back (the tweet id, used for reply threading).
 type StatusUpdateResponse struct {
 	Id    int64  `json:"id"`
 	IdStr string `json:"id_str"`
 }
+
+// ProcessingInfo reports Twitter's server-side video processing progress.
 type ProcessingInfo struct {
-	State            string `json:"in_progress"`
-	Check_after_secs int64  `json:"check_after_secs"`
-	Progress_percent int64  `json:"progress_percent"`
-}
-type VideoUploadStatus struct {
-	Media_id           int64          `json:"media_id"`
-	Media_id_string    string         `json:"media_id_string"`
-	Expires_after_secs int64          `json:"expires_after_secs"`
-	Processing_info    ProcessingInfo `json:"processing_info"`
+	State           string `json:"state"`
+	CheckAfterSecs  int64  `json:"check_after_secs"`
+	ProgressPercent int64  `json:"progress_percent"`
 }
 
-func decode_response(resp *http.Response, data interface{}) error {
+// VideoUploadStatus is the STATUS response polled after a video FINALIZE.
+type VideoUploadStatus struct {
+	MediaID          int64          `json:"media_id"`
+	MediaIDString    string         `json:"media_id_string"`
+	ExpiresAfterSecs int64          `json:"expires_after_secs"`
+	ProcessingInfo   ProcessingInfo `json:"processing_info"`
+}
+
+func decodeResponse(resp *http.Response, data interface{}) error {
 	p, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error reading response body: %w", err)
 	}
 	// note: we did ReadAll() because we need to have an option to dump the received body
-	body_stream := bytes.NewReader(p)
+	bodyStream := bytes.NewReader(p)
 	if (resp.StatusCode != http.StatusOK) && (resp.StatusCode != http.StatusAccepted) && (resp.StatusCode != http.StatusNoContent) {
 		return fmt.Errorf("get %s returned status %d, %s", resp.Request.URL, resp.StatusCode, string(p))
 	}
-	return json.NewDecoder(body_stream).Decode(data)
+	return json.NewDecoder(bodyStream).Decode(data)
 }
-func format_nonce(nonce_int uint64) string {
-	return strconv.FormatUint(nonce_int, 16)
+
+func formatNonce(nonce uint64) string {
+	return strconv.FormatUint(nonce, 16)
 }
 
 // readBodyAndStatusError reads the response body and builds the (status code,
 // body, error) triple returned by the Send* helpers. A non-nil error is
 // returned when the response status differs from http.StatusOK.
 func readBodyAndStatusError(resp *http.Response) (int, string, error) {
-	var err_out error
+	var errOut error
 	if resp.StatusCode != http.StatusOK {
-		err_out = fmt.Errorf("error at Twitter occurred: status = %v", resp.Status)
+		errOut = fmt.Errorf("error at Twitter occurred: status = %v", resp.Status)
 	}
 	b, err := io.ReadAll(resp.Body)
-	if err != nil && err_out == nil {
-		err_out = fmt.Errorf("error reading response body: %w", err)
+	if err != nil && errOut == nil {
+		errOut = fmt.Errorf("error reading response body: %w", err)
 	}
-	return resp.StatusCode, string(b), err_out
+	return resp.StatusCode, string(b), errOut
 }
-func newTwitterClient(api_key, api_secret, access_token string, session_nonce uint64) Client {
+
+func newTwitterClient(apiKey, apiSecret, accessToken string, sessionNonce uint64) Client {
 	var client Client
-	client.Credentials.Token = api_key     // user-generated token
-	client.Credentials.Secret = api_secret // app secret
-	client.APIKey = api_key
-	client.ClientToken = access_token
-	client.Nonce = format_nonce(session_nonce)
+	client.Credentials.Token = apiKey     // user-generated token
+	client.Credentials.Secret = apiSecret // app secret
+	client.APIKey = apiKey
+	client.ClientToken = accessToken
+	client.Nonce = formatNonce(sessionNonce)
 	return client
 }
-func SendTweet(api_key, api_secret, access_token, token_secret, message string, session_nonce uint64) (int, string, error) {
-	// Return values:
-	//		Status code
-	//		Body (converted to string)
-	//		Error from net/http, if any
-	client := newTwitterClient(api_key, api_secret, access_token, session_nonce)
 
-	var token_credentials Credentials
-	token_credentials.Token = access_token
-	token_credentials.Secret = token_secret
+// SendTweet posts a plain status update and returns the HTTP status code,
+// the raw response body and an error when the status is not 200.
+func SendTweet(apiKey, apiSecret, accessToken, tokenSecret, message string, sessionNonce uint64) (int, string, error) {
+	client := newTwitterClient(apiKey, apiSecret, accessToken, sessionNonce)
+
+	tokenCredentials := Credentials{Token: accessToken, Secret: tokenSecret}
 
 	form := url.Values{"status": {message}}
-	resp, err := client.Post(nil, &token_credentials, URL, form)
+	resp, err := client.Post(nil, &tokenCredentials, statusUpdateURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
@@ -112,38 +132,37 @@ func SendTweet(api_key, api_secret, access_token, token_secret, message string, 
 
 	return readBodyAndStatusError(resp)
 }
-func SendTweetWithImage(api_key, api_secret, access_token, token_secret, message string, session_nonce uint64, image_data []byte, reply_tweet string) (int, string, error) {
-	// Return values:
-	//		Status code
-	//		Body (converted to string)
-	//		Error from net/http, if any
-	client := newTwitterClient(api_key, api_secret, access_token, session_nonce)
 
-	encoded_image_data := base64.StdEncoding.EncodeToString(image_data)
+// SendTweetWithImage uploads imageData to the media endpoint and posts a
+// status update referencing it (optionally as a reply to replyTweet). Returns
+// the HTTP status code, raw response body and an error when the final status
+// is not 200.
+func SendTweetWithImage(apiKey, apiSecret, accessToken, tokenSecret, message string, sessionNonce uint64, imageData []byte, replyTweet string) (int, string, error) {
+	client := newTwitterClient(apiKey, apiSecret, accessToken, sessionNonce)
+
+	encodedImageData := base64.StdEncoding.EncodeToString(imageData)
 	form := url.Values{
-		"media_data": {encoded_image_data},
+		"media_data": {encodedImageData},
 	}
-	var token_credentials Credentials
-	token_credentials.Token = access_token
-	token_credentials.Secret = token_secret
+	tokenCredentials := Credentials{Token: accessToken, Secret: tokenSecret}
 
-	resp, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
+	resp, err := client.Post(nil, &tokenCredentials, mediaUploadURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
-	var image_response ImageResponse
-	err = decode_response(resp, &image_response)
-	_ = resp.Body.Close() // best-effort: body was fully read by decode_response
+	var imageResponse ImageResponse
+	err = decodeResponse(resp, &imageResponse)
+	_ = resp.Body.Close() // best-effort: body was fully read by decodeResponse
 	if err != nil {
 		return resp.StatusCode, "", fmt.Errorf("error decoding media upload response: %w", err)
 	}
 
 	form = url.Values{
 		"status":                {message},
-		"media_ids":             {image_response.Media_id_string},
-		"in_reply_to_status_id": {reply_tweet},
+		"media_ids":             {imageResponse.MediaIDString},
+		"in_reply_to_status_id": {replyTweet},
 	}
-	resp, err = client.Post(nil, &token_credentials, URL, form)
+	resp, err = client.Post(nil, &tokenCredentials, statusUpdateURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
@@ -151,131 +170,68 @@ func SendTweetWithImage(api_key, api_secret, access_token, token_secret, message
 
 	return readBodyAndStatusError(resp)
 }
-func SendTweetWithAttachment(api_key, api_secret, access_token, token_secret, message string, session_nonce uint64, reply_tweet_id string, attachment_url string) (int, string, error) {
-	// Return values:
-	//		Status code
-	//		Body (converted to string)
-	//		Error from net/http, if any
-	client := newTwitterClient(api_key, api_secret, access_token, session_nonce)
 
-	var token_credentials Credentials
-	token_credentials.Token = access_token
-	token_credentials.Secret = token_secret
-
-	form := url.Values{
-		"status":                {message},
-		"in_reply_to_status_id": {reply_tweet_id},
-		"attachment_url":        {attachment_url},
-	}
-	resp, err := client.Post(nil, &token_credentials, URL, form)
-	if err != nil {
-		return 0, "", fmt.Errorf("post error: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }() // best-effort close on read path
-
-	return readBodyAndStatusError(resp)
-}
-func SendTweetWithMedia(api_key, api_secret, access_token, token_secret, message string, session_nonce uint64, media_type string, image_data []byte, reply_tweet string) (int, string, error) {
-	// Return values:
-	//		Status code
-	//		Body (converted to string)
-	//		Error from net/http, if any
-	client := newTwitterClient(api_key, api_secret, access_token, session_nonce)
-	encoded_image_data := base64.StdEncoding.EncodeToString(image_data)
-	form := url.Values{
-		"media_data":     {encoded_image_data},
-		"media_category": {"tweet_video"},
-	}
-	var token_credentials Credentials
-	token_credentials.Token = access_token
-	token_credentials.Secret = token_secret
-
-	resp, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
-	if err != nil {
-		return 0, "", fmt.Errorf("post error: %w", err)
-	}
-	var image_response ImageResponse
-	err = decode_response(resp, &image_response)
-	_ = resp.Body.Close() // best-effort: body was fully read by decode_response
-	if err != nil {
-		return resp.StatusCode, "", fmt.Errorf("error decoding media upload response: %w", err)
-	}
-
-	form = url.Values{
-		"status":                {message},
-		"media_ids":             {image_response.Media_id_string},
-		"in_reply_to_status_id": {reply_tweet},
-	}
-	resp, err = client.Post(nil, &token_credentials, URL, form)
-	if err != nil {
-		return 0, "", fmt.Errorf("post error: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }() // best-effort close on read path
-
-	return readBodyAndStatusError(resp)
-}
-func SendTweetWithVideo(api_key, api_secret, access_token, token_secret, message string, session_nonce uint64, video_data []byte, reply_tweet string) (int, string, error) {
-	// Return values:
-	//		Status code
-	//		Body (converted to string)
-	//		Error from net/http, if any
-	client := newTwitterClient(api_key, api_secret, access_token, session_nonce)
-	encoded_video_data := base64.StdEncoding.EncodeToString(video_data)
+// SendTweetWithVideo runs Twitter's chunked video upload protocol
+// (INIT/APPEND/FINALIZE, then STATUS polling until processing completes) and
+// posts a status update referencing the uploaded video. Returns the HTTP
+// status code, raw response body and an error when the final status is not
+// 200; the poll loop aborts after eight attempts.
+func SendTweetWithVideo(apiKey, apiSecret, accessToken, tokenSecret, message string, sessionNonce uint64, videoData []byte, replyTweet string) (int, string, error) {
+	client := newTwitterClient(apiKey, apiSecret, accessToken, sessionNonce)
+	encodedVideoData := base64.StdEncoding.EncodeToString(videoData)
 	form := url.Values{
 		"command":        {"INIT"},
-		"total_bytes":    {fmt.Sprintf("%v", len(video_data))},
+		"total_bytes":    {fmt.Sprintf("%v", len(videoData))},
 		"media_category": {"tweet_video"},
 		"media_type":     {"video/mp4"},
 	}
-	var token_credentials Credentials
-	token_credentials.Token = access_token
-	token_credentials.Secret = token_secret
+	tokenCredentials := Credentials{Token: accessToken, Secret: tokenSecret}
 
 	//---------- INIT
-	resp_init, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
+	respInit, err := client.Post(nil, &tokenCredentials, mediaUploadURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
-	defer func() { _ = resp_init.Body.Close() }() // best-effort close on read path
-	if resp_init.StatusCode != http.StatusAccepted {
-		b, read_err := io.ReadAll(resp_init.Body)
-		if read_err != nil {
-			return resp_init.StatusCode, "", fmt.Errorf("error reading INIT response body: %w", read_err)
+	defer func() { _ = respInit.Body.Close() }() // best-effort close on read path
+	if respInit.StatusCode != http.StatusAccepted {
+		b, readErr := io.ReadAll(respInit.Body)
+		if readErr != nil {
+			return respInit.StatusCode, "", fmt.Errorf("error reading INIT response body: %w", readErr)
 		}
-		return resp_init.StatusCode, string(b), fmt.Errorf("twitter INIT request returned status %v", resp_init.Status)
+		return respInit.StatusCode, string(b), fmt.Errorf("twitter INIT request returned status %v", respInit.Status)
 	}
-	var img_response_init ImageResponse
-	err = decode_response(resp_init, &img_response_init)
+	var imgResponseInit ImageResponse
+	err = decodeResponse(respInit, &imgResponseInit)
 	if err != nil {
 		return 0, "", err
 	}
-	upload_id := img_response_init.Media_id_string
+	uploadID := imgResponseInit.MediaIDString
 
 	//------------ APPEND
 	form = url.Values{
 		"command":       {"APPEND"},
-		"media_id":      {upload_id},
-		"media_data":    {encoded_video_data + "\r\n"},
+		"media_id":      {uploadID},
+		"media_data":    {encodedVideoData + "\r\n"},
 		"segment_index": {fmt.Sprintf("%v", 0)},
 	}
 	client.Header = make(map[string][]string)
 	client.Header.Set("Content-Type", "application/octet-stream")
 	client.Header.Set("Content-Transfer-Encoding", "base64")
-	resp_append, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
+	respAppend, err := client.Post(nil, &tokenCredentials, mediaUploadURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
-	defer func() { _ = resp_append.Body.Close() }() // best-effort close on read path
-	if (resp_append.StatusCode != http.StatusOK) && (resp_append.StatusCode != http.StatusNoContent) {
-		b, read_err := io.ReadAll(resp_append.Body)
-		if read_err != nil {
-			return resp_append.StatusCode, "", fmt.Errorf("error reading APPEND response body: %w", read_err)
+	defer func() { _ = respAppend.Body.Close() }() // best-effort close on read path
+	if (respAppend.StatusCode != http.StatusOK) && (respAppend.StatusCode != http.StatusNoContent) {
+		b, readErr := io.ReadAll(respAppend.Body)
+		if readErr != nil {
+			return respAppend.StatusCode, "", fmt.Errorf("error reading APPEND response body: %w", readErr)
 		}
-		return resp_append.StatusCode, string(b), fmt.Errorf("twitter APPEND request returned status %v", resp_append.Status)
+		return respAppend.StatusCode, string(b), fmt.Errorf("twitter APPEND request returned status %v", respAppend.Status)
 	}
-	if resp_append.StatusCode != http.StatusNoContent {
-		var img_response_append ImageResponse
-		err = decode_response(resp_append, &img_response_append)
+	if respAppend.StatusCode != http.StatusNoContent {
+		var imgResponseAppend ImageResponse
+		err = decodeResponse(respAppend, &imgResponseAppend)
 		if err != nil {
 			return 0, "", err
 		}
@@ -285,23 +241,23 @@ func SendTweetWithVideo(api_key, api_secret, access_token, token_secret, message
 	//----------- FINALIZE
 	form = url.Values{
 		"command":  {"FINALIZE"},
-		"media_id": {upload_id},
+		"media_id": {uploadID},
 	}
-	resp_finalize, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
+	respFinalize, err := client.Post(nil, &tokenCredentials, mediaUploadURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
-	defer func() { _ = resp_finalize.Body.Close() }() // best-effort close on read path
-	if (resp_finalize.StatusCode != http.StatusOK) && (resp_finalize.StatusCode != http.StatusNoContent) {
-		b, read_err := io.ReadAll(resp_finalize.Body)
-		if read_err != nil {
-			return resp_finalize.StatusCode, "", fmt.Errorf("error reading FINALIZE response body: %w", read_err)
+	defer func() { _ = respFinalize.Body.Close() }() // best-effort close on read path
+	if (respFinalize.StatusCode != http.StatusOK) && (respFinalize.StatusCode != http.StatusNoContent) {
+		b, readErr := io.ReadAll(respFinalize.Body)
+		if readErr != nil {
+			return respFinalize.StatusCode, "", fmt.Errorf("error reading FINALIZE response body: %w", readErr)
 		}
-		return resp_finalize.StatusCode, string(b), fmt.Errorf("twitter FINALIZE request returned status %v", resp_finalize.Status)
+		return respFinalize.StatusCode, string(b), fmt.Errorf("twitter FINALIZE request returned status %v", respFinalize.Status)
 	}
-	if resp_finalize.StatusCode != http.StatusNoContent {
-		var img_response_finalize ImageResponse
-		err = decode_response(resp_finalize, &img_response_finalize)
+	if respFinalize.StatusCode != http.StatusNoContent {
+		var imgResponseFinalize ImageResponse
+		err = decodeResponse(respFinalize, &imgResponseFinalize)
 		if err != nil {
 			return 0, "", err
 		}
@@ -310,27 +266,27 @@ func SendTweetWithVideo(api_key, api_secret, access_token, token_secret, message
 	// Now check if Twitter have processed the video and finished on its end
 	form = url.Values{
 		"command":  {"STATUS"},
-		"media_id": {upload_id},
+		"media_id": {uploadID},
 	}
-	const MAX_LOOP_LIMIT int = 8
+	const maxLoopLimit int = 8
 	counter := 0
 	for {
-		resp_media_status, err := client.Get(nil, &token_credentials, MEDIA_URL, form)
+		respMediaStatus, err := client.Get(nil, &tokenCredentials, mediaUploadURL, form)
 		if err != nil {
 			return 0, "", fmt.Errorf("get error: %w", err)
 		}
-		var vid_upload_status VideoUploadStatus
-		err = decode_response(resp_media_status, &vid_upload_status)
-		_ = resp_media_status.Body.Close() // best-effort: body was fully read by decode_response
+		var vidUploadStatus VideoUploadStatus
+		err = decodeResponse(respMediaStatus, &vidUploadStatus)
+		_ = respMediaStatus.Body.Close() // best-effort: body was fully read by decodeResponse
 		if err != nil {
 			return 0, "", err
 		}
-		if vid_upload_status.Processing_info.Progress_percent == 100 {
+		if vidUploadStatus.ProcessingInfo.ProgressPercent == 100 {
 			break
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(videoStatusPollInterval)
 		counter++
-		if counter >= MAX_LOOP_LIMIT {
+		if counter >= maxLoopLimit {
 			return 0, "", errors.New("aborted due to infinite loop condition check")
 		}
 	}
@@ -338,14 +294,14 @@ func SendTweetWithVideo(api_key, api_secret, access_token, token_secret, message
 	// Send STATUS UPDATE request
 	form = url.Values{
 		"status":                {message},
-		"media_ids":             {upload_id},
-		"in_reply_to_status_id": {reply_tweet},
+		"media_ids":             {uploadID},
+		"in_reply_to_status_id": {replyTweet},
 	}
-	resp_update_status, err := client.Post(nil, &token_credentials, URL, form)
+	respUpdateStatus, err := client.Post(nil, &tokenCredentials, statusUpdateURL, form)
 	if err != nil {
 		return 0, "", fmt.Errorf("post error: %w", err)
 	}
-	defer func() { _ = resp_update_status.Body.Close() }() // best-effort close on read path
+	defer func() { _ = respUpdateStatus.Body.Close() }() // best-effort close on read path
 
-	return readBodyAndStatusError(resp_update_status)
+	return readBodyAndStatusError(respUpdateStatus)
 }

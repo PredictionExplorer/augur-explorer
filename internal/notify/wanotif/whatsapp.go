@@ -18,6 +18,12 @@ type Whatsapp struct {
 	APIVersion    string
 	PhoneNumberID string
 	Language      TemplateLanguage
+
+	// BaseURL is the Graph API root; empty selects the production
+	// https://graph.facebook.com (tests point it at an httptest server).
+	BaseURL string
+	// HTTPClient issues the requests; nil selects http.DefaultClient.
+	HTTPClient *http.Client
 }
 type TemplateLanguage struct {
 	Code string `json:"code,omitempty"`
@@ -74,7 +80,6 @@ func parseHTTPError(body io.Reader) (err error) {
 	return errors.New(msg)
 }
 func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}, err error) {
-
 	jsonRequest, err := json.Marshal(request)
 	if err != nil {
 		return res, err
@@ -82,7 +87,11 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 
 	body := bytes.NewReader(jsonRequest)
 
-	endpoint := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", wa.APIVersion, wa.PhoneNumberID)
+	baseURL := wa.BaseURL
+	if baseURL == "" {
+		baseURL = "https://graph.facebook.com"
+	}
+	endpoint := fmt.Sprintf("%s/%s/%s/messages", baseURL, wa.APIVersion, wa.PhoneNumberID)
 	req, err := http.NewRequest(http.MethodPost, endpoint, body)
 	if err != nil {
 		return res, err
@@ -90,8 +99,11 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 	req.Header.Set("Authorization", "Bearer "+wa.Token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
-	fmt.Printf("Do(): resp=%v, err=%v\n", resp, err)
+	client := wa.HTTPClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return res, err
 	}
@@ -99,20 +111,12 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 	defer func() { _ = resp.Body.Close() }() // best-effort close on read path
 
 	if resp.StatusCode != http.StatusOK {
-		err := parseHTTPError(resp.Body)
+		return res, parseHTTPError(resp.Body)
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return res, err
 	}
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return res, err
-	}
-	fmt.Printf("body bytes=%+v\n", string(bodyBytes))
-	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&res)
-	if err != nil {
-		return res, err
-	}
-
-	return res, err
+	return res, nil
 }
 func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
 

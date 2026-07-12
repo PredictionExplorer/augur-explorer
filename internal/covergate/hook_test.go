@@ -74,20 +74,24 @@ func TestCursorCommitHook(t *testing.T) {
 	}
 }
 
-func TestCursorCommitHookAllowsBypassWhileDeferred(t *testing.T) {
+func TestCursorCommitHookDeniesBypassUnderRealPolicy(t *testing.T) {
 	t.Parallel()
 	repoRoot := covergateRepoRoot(t)
 	script := filepath.Join(repoRoot, ".cursor", "hooks", "coverage-commit-gate.sh")
+	// The tracked policy has the commit gate enabled (activated when the
+	// race-enabled handwritten internal coverage first exceeded 90%), so
+	// bypassing the pre-commit hook must be denied.
 	// #nosec G204 -- the script path is derived from this test's repository.
 	command := exec.Command("bash", script)
 	command.Dir = repoRoot
 	command.Stdin = strings.NewReader(`{"command":"git commit --no-verify -m test"}`)
 	output, err := command.CombinedOutput()
 	if err != nil {
-		t.Fatalf("deferred Cursor hook failed: %v\n%s", err, output)
+		t.Fatalf("Cursor hook failed under the real policy: %v\n%s", err, output)
 	}
-	if !strings.Contains(string(output), `"permission": "allow"`) {
-		t.Fatalf("deferred Cursor hook output = %s", output)
+	if !strings.Contains(string(output), `"permission": "deny"`) ||
+		!strings.Contains(string(output), "forbids bypassing") {
+		t.Fatalf("real-policy bypass output = %s", output)
 	}
 }
 
@@ -111,19 +115,21 @@ func TestCursorHookConfigurationReferencesFailClosedGate(t *testing.T) {
 	}
 }
 
-func TestNativeCommitGateIsDeferredBeforeNinetyPercent(t *testing.T) {
+func TestNativeCommitGateIsEnabledAtNinetyPercent(t *testing.T) {
 	t.Parallel()
 	repoRoot := covergateRepoRoot(t)
-	script := filepath.Join(repoRoot, ".githooks", "pre-commit")
-	// #nosec G204 -- the script path is derived from this test's repository.
-	command := exec.Command("bash", script)
+	// The pre-commit hook itself would launch the full coverage run;
+	// asserting the policy status pins the activation without that cost.
+	command := exec.Command("go", "run", "./cmd/covergate",
+		"-policy", "coverage/policy.json", "-commit-status")
 	command.Dir = repoRoot
 	output, err := command.CombinedOutput()
 	if err != nil {
-		t.Fatalf("native hook failed before activation: %v\n%s", err, output)
+		t.Fatalf("commit-status query failed: %v\n%s", err, output)
 	}
-	if !strings.Contains(string(output), "deferred until handwritten internal coverage reaches 90%") {
-		t.Fatalf("native hook output = %s", output)
+	status := strings.TrimSpace(string(output))
+	if status != "enabled 90.00" {
+		t.Fatalf("commit gate status = %q, want permanently enabled at the 90%% floor", status)
 	}
 }
 

@@ -3,6 +3,8 @@ package wanotif
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -45,6 +47,111 @@ func TestCreateSendWithTemplateRequest(t *testing.T) {
 	}
 	if p := req.Template.Components[0].Parameters; len(p) != 1 || p[0].Type != "text" || p[0].Text != "hello" {
 		t.Fatalf("unexpected parameters: %+v", p)
+	}
+}
+
+// newStubWhatsapp returns a client pointed at a stub Graph API server that
+// records the request and answers with the scripted status/body.
+func newStubWhatsapp(t *testing.T, status int, respBody string) (*Whatsapp, *http.Request, *[]byte) {
+	t.Helper()
+	var gotReq http.Request
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotReq = *r
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+		gotBody = buf.Bytes()
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(respBody))
+	}))
+	t.Cleanup(srv.Close)
+
+	wa := NewWhatsapp("secret-token", "12345")
+	wa.BaseURL = srv.URL
+	wa.HTTPClient = srv.Client()
+	return wa, &gotReq, &gotBody
+}
+
+func TestSendText(t *testing.T) {
+	wa, gotReq, gotBody := newStubWhatsapp(t, http.StatusOK,
+		`{"messaging_product":"whatsapp","messages":[{"id":"wamid.X"}]}`)
+
+	res, err := wa.SendText("15550001111", "server down")
+	if err != nil {
+		t.Fatalf("SendText: %v", err)
+	}
+	if res["messaging_product"] != "whatsapp" {
+		t.Errorf("response not decoded: %v", res)
+	}
+
+	if gotReq.URL.Path != "/v14.0/12345/messages" {
+		t.Errorf("path = %q, want /v14.0/12345/messages", gotReq.URL.Path)
+	}
+	if auth := gotReq.Header.Get("Authorization"); auth != "Bearer secret-token" {
+		t.Errorf("Authorization = %q", auth)
+	}
+	if ct := gotReq.Header.Get("Content-Type"); ct != "application/json" {
+		t.Errorf("Content-Type = %q", ct)
+	}
+	var payload map[string]interface{}
+	if err := json.Unmarshal(*gotBody, &payload); err != nil {
+		t.Fatalf("request body is not JSON: %v", err)
+	}
+	if payload["to"] != "15550001111" || payload["type"] != "text" {
+		t.Errorf("payload envelope = %v", payload)
+	}
+	if text, ok := payload["text"].(map[string]interface{}); !ok || text["body"] != "server down" {
+		t.Errorf("payload text = %v", payload["text"])
+	}
+}
+
+func TestSendWithTemplate(t *testing.T) {
+	wa, _, gotBody := newStubWhatsapp(t, http.StatusOK, `{"messages":[{"id":"wamid.Y"}]}`)
+
+	_, err := wa.SendWithTemplate("15550001111", "alert", []Components{
+		{Type: "body", Parameters: wa.GenerateTemplateParameters("", "disk full")},
+	})
+	if err != nil {
+		t.Fatalf("SendWithTemplate: %v", err)
+	}
+	var back SendWithTemplateRequest
+	if err := json.Unmarshal(*gotBody, &back); err != nil {
+		t.Fatalf("request body is not the template payload: %v", err)
+	}
+	if back.Template.Name != "alert" || back.Template.Language.Code != "en" {
+		t.Errorf("template payload = %+v", back.Template)
+	}
+}
+
+func TestSendTextGraphAPIError(t *testing.T) {
+	wa, _, _ := newStubWhatsapp(t, http.StatusUnauthorized,
+		`{"error":{"message":"Invalid OAuth access token"}}`)
+
+	_, err := wa.SendText("15550001111", "x")
+	if err == nil || err.Error() != "Invalid OAuth access token" {
+		t.Fatalf("want the Graph API error message, got %v", err)
+	}
+}
+
+func TestSendTextMalformedSuccessBody(t *testing.T) {
+	wa, _, _ := newStubWhatsapp(t, http.StatusOK, `{not json`)
+	if _, err := wa.SendText("1", "x"); err == nil {
+		t.Fatal("want JSON decode error for malformed 200 body")
+	}
+}
+
+func TestSendTextTransportError(t *testing.T) {
+	wa := NewWhatsapp("tok", "42")
+	wa.BaseURL = "http://127.0.0.1:1"
+	if _, err := wa.SendText("1", "x"); err == nil {
+		t.Fatal("want transport error for unreachable endpoint")
+	}
+}
+
+func TestSendMessageUnmarshalableRequest(t *testing.T) {
+	wa := NewWhatsapp("tok", "42")
+	if _, err := wa.sendMessage(func() {}); err == nil {
+		t.Fatal("want marshal error for unmarshalable request payload")
 	}
 }
 

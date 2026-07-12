@@ -109,11 +109,6 @@ func (pr *ParallelReader) indexCdatFiles() error {
 	return nil
 }
 
-// ItemCount returns the number of blocks in the index
-func (pr *ParallelReader) ItemCount() uint64 {
-	return pr.itemCount
-}
-
 // getOffset reads the offset for a block directly from the in-memory index (no syscall!)
 func (pr *ParallelReader) getOffset(blockNum uint64) uint64 {
 	pos := blockNum * IndexEntrySize

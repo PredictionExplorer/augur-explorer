@@ -3,6 +3,8 @@
 package apitest
 
 import (
+	"encoding/json"
+	"io"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -39,10 +41,18 @@ const (
 	chainLastBidTime = 1767228500
 )
 
+// chainStubs bundles the re-stubbable contract handlers the failure-matrix
+// tests manipulate per case.
+type chainStubs struct {
+	game      *testchain.ContractStub
+	token     *testchain.ContractStub
+	marketing *testchain.ContractStub
+}
+
 // registerChainState populates the fake chain the parity harness dials:
 // the head block and the eth_call surface of every contract the v1 API
 // reads live (CosmicSignatureGame V1, CosmicToken, MarketingWallet).
-func registerChainState(chain *testchain.Chain) *testchain.ContractStub {
+func registerChainState(chain *testchain.Chain) chainStubs {
 	chain.EnsureBlock(chainTipBlock)
 
 	game := ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
@@ -136,7 +146,7 @@ func registerChainState(chain *testchain.Chain) *testchain.ContractStub {
 	marketingStub.Return("token", token)
 	marketingStub.Return("owner", alice)
 	chain.RegisterCall(marketing, marketingStub.Handler())
-	return gameStub
+	return chainStubs{game: gameStub, token: tokenStub, marketing: marketingStub}
 }
 
 // wei parses a decimal wei literal.
@@ -157,8 +167,16 @@ func newFAQStub() *httptest.Server {
 		_, _ = w.Write([]byte(`{"status":"ok","service":"faq-bot-stub"}`))
 	})
 	mux.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
+		// Echo the request body and Accept header so the proxy tests can
+		// assert body/header forwarding (the /health golden stays fixed).
+		body, _ := io.ReadAll(r.Body)
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"answer":"stub answer","sources":[]}`))
+		resp := map[string]string{
+			"answer":   "stub answer",
+			"received": string(body),
+			"accept":   r.Header.Get("Accept"),
+		}
+		_ = json.NewEncoder(w).Encode(resp)
 	})
 	mux.HandleFunc("/api/reindex", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

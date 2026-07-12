@@ -149,6 +149,24 @@ func TestReadRoundStartCSTAuctionPerMechanics(t *testing.T) {
 	}
 }
 
+func TestReadRoundStartCSTAuctionFallbackTail(t *testing.T) {
+	// The divisor read reverts under V1 mechanics, but the final V2
+	// duration retry answers — the mechanics probe can be stale across a
+	// contract upgrade.
+	stub := gameStub().Return("cstDutchAuctionDuration", big.NewInt(2500))
+	v1, v2 := newSyncBindings(t, stub)
+	got, err := readRoundStartCSTAuction(v1, v2, &bind.CallOpts{}, contractMechanicsV1)
+	if err != nil || got != "2500" {
+		t.Errorf("readRoundStartCSTAuction(stale V1) = %s, %v; want the V2 duration 2500", got, err)
+	}
+
+	// Nothing answers at all: the error propagates.
+	v1none, v2none := newSyncBindings(t, gameStub())
+	if _, err := readRoundStartCSTAuction(v1none, v2none, &bind.CallOpts{}, contractMechanicsV1); err == nil {
+		t.Error("readRoundStartCSTAuction with no readable method returned nil error")
+	}
+}
+
 func TestReadDelayDuration(t *testing.T) {
 	stub := gameStub().Return("delayDurationBeforeRoundActivation", big.NewInt(1234))
 	v1, v2 := newSyncBindings(t, stub)

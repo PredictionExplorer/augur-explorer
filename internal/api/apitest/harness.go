@@ -38,11 +38,13 @@ import (
 // deterministic in-memory Ethereum node (internal/testchain) serving
 // fixture-coherent contract state.
 type harness struct {
-	router   *httpx.Router
-	db       *sql.DB
-	store    *store.Store
-	state    *contractstate.State
-	gameStub *testchain.ContractStub
+	router        *httpx.Router
+	db            *sql.DB
+	store         *store.Store
+	state         *contractstate.State
+	gameStub      *testchain.ContractStub
+	tokenStub     *testchain.ContractStub
+	marketingStub *testchain.ContractStub
 
 	ipCounter atomic.Uint64
 }
@@ -62,7 +64,7 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	discard := log.New(io.Discard, "", 0)
 
 	chain, _ := testchain.Start() // lives for the whole test process
-	gameStub := registerChainState(chain)
+	stubs := registerChainState(chain)
 	faqSrv := newFAQStub()
 	if err := os.Setenv("AI_BOT_BACKEND_URL", faqSrv.URL); err != nil {
 		return nil, err
@@ -106,7 +108,15 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	// same CORS, recovery and rate-limit middleware in the same order.
 	r := routes.New(st, routes.Options{V2: v2Server})
 
-	return &harness{router: r, db: db.SQL, store: st, state: cgState, gameStub: gameStub}, nil
+	return &harness{
+		router:        r,
+		db:            db.SQL,
+		store:         st,
+		state:         cgState,
+		gameStub:      stubs.game,
+		tokenStub:     stubs.token,
+		marketingStub: stubs.marketing,
+	}, nil
 }
 
 // request performs one HTTP exchange through the real router. Every call uses

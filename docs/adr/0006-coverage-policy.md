@@ -51,24 +51,22 @@ location and unions execution counts before calculating any percentage.
 - `scripts/coverage-gate.sh` generates an atomic integration profile over
   `cmd/...` and `internal/...`, caches successful staged-source runs under
   `.git/coverage-gate`, and invokes the tested `cmd/covergate` policy engine.
-- `.githooks/pre-commit` is installed now but reads
-  `commitGateEnabled=false` and deliberately allows commits during the staged
-  climb. Only after handwritten internal coverage first reaches 90% will the
-  policy flip to `true`; from then on it fails closed on test, Docker, profile,
-  policy, global or changed-code failures. `make hooks-install` installs the
-  tracked hook without changing Git configuration or overwriting unrelated
-  hooks.
-- `.cursor/hooks.json` also remains permissive before 90%. Once the policy is
-  activated, it denies Agent attempts to use `git commit --no-verify` and
-  denies commits when the native hook is missing or stale.
+- `.githooks/pre-commit` reads the policy's commit-gate status. **Activated
+  2026-07-12:** handwritten internal coverage first reached 90% (91.82%
+  measured under the race-enabled profile), so `commitGateEnabled` is `true`
+  with a 90.0 commit floor and a 91.5 internal floor; the hook now fails
+  closed on test, Docker, profile, policy, global or changed-code failures.
+  `make hooks-install` installs the tracked hook without changing Git
+  configuration or overwriting unrelated hooks.
+- `.cursor/hooks.json` denies Agent attempts to use `git commit --no-verify`
+  and denies commits when the native hook is missing or stale.
 - GitHub Actions runs the same policy engine with race-enabled integration
   coverage and the PR diff. The stable **Coverage Gate** check must be required
   by branch protection and is the authoritative merge barrier.
 
-Before 90%, CI ratchets and changed-code coverage are authoritative but local
-commits are not blocked. The activation change must set both the handwritten
-internal and commit floors to at least 90%, prove below-90 rejection, and never
-lower either floor afterward.
+The activation change set both the handwritten internal and commit floors to
+at least 90%, proved a sub-floor profile is rejected and the measured ≥90
+profile passes; neither floor is ever lowered afterward.
 
 Native Git hooks are local and can be bypassed deliberately. Repository code
 cannot make that impossible; required CI branch protection closes that gap.
@@ -86,19 +84,18 @@ Generated response visitors are not tested merely to inflate the percentage.
 
 ## Consequences
 
-Until the 90% milestone, the installed local hook performs only a lightweight
-policy check and reports that commit enforcement is deferred. After activation,
-commits that change Go code can take tens of seconds with a warm Docker cache
-and longer on first use. Successful profiles are cached by staged-source hash;
-ambiguous partial staging, missing Docker and malformed evidence then fail
-closed.
+With the commit gate active, commits that change Go code can take tens of
+seconds with a warm Docker cache and longer on first use. Successful profiles
+are cached by staged-source hash; ambiguous partial staging, missing Docker
+and malformed evidence fail closed.
 
 The first policy sprint raised handwritten internal coverage to 80.43%, the
 legacy metric to 79.07%, and truthful all-production coverage to 52.80% under
 the authoritative race-enabled CI command.
-The API-boundary sprint raised those metrics to 86.07%, 83.73%, and 56.26%;
-their enforced floors are now 85.8%, 83.5%, and 56.0%, respectively, while
-changed executable code remains gated at 95%. The next milestone is 88%
-handwritten internal coverage through store/indexer/notification behavior,
-followed by operational-command extraction for the final 90% step. Commit
-blocking remains disabled until that 90% profile is measured and ratcheted.
+The API-boundary sprint raised those metrics to 86.07%, 83.73%, and 56.26%.
+The store/indexer/notification sprint raised them to 91.82%, 88.48%, and
+59.65% — past the 90% handwritten-internal milestone — and activated the
+commit gate; the enforced floors are now 91.5%, 88.2%, and 59.4%, while
+changed executable code remains gated at 95%. The next milestones are 95%
+handwritten internal coverage and the operational-command extraction that
+moves all-production coverage toward 90%.

@@ -353,28 +353,12 @@ func decodeReceiptLogsOnly(data []byte, index uint) (*DecodedReceipt, error) {
 	return receipt, nil
 }
 
-// skipStreamValue skips a single value in the RLP stream
+// skipStreamValue skips a single scalar (byte/string) value in the RLP
+// stream. Its only caller, decodeReceiptLogsOnly, stops skipping at the
+// first list — which it treats as the logs array — so list skipping is
+// deliberately unsupported and returns rlp's kind-mismatch error.
 func skipStreamValue(stream *rlp.Stream) error {
-	kind, size, err := stream.Kind()
-	if err != nil {
-		return err
-	}
-
-	switch kind {
-	case rlp.Byte, rlp.String:
-		_, err = stream.Bytes()
-	case rlp.List:
-		if _, err = stream.List(); err != nil {
-			return err
-		}
-		for {
-			if err := skipStreamValue(stream); err != nil {
-				break
-			}
-		}
-		err = stream.ListEnd()
-	}
-	_ = size
+	_, err := stream.Bytes()
 	return err
 }
 

@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "legacyInternalFloor": 83.5,
-  "internalFloor": 85.8,
-  "productionFloor": 56.0,
+  "legacyInternalFloor": 88.2,
+  "internalFloor": 91.5,
+  "productionFloor": 59.4,
   "patchFloor": 95.0,
-  "internalTarget": 90.0,
+  "internalTarget": 95.0,
   "productionTarget": 90.0,
   "criticalPackageTarget": 95.0,
-  "commitGateEnabled": false,
+  "commitGateEnabled": true,
   "commitFloor": 90.0,
   "excludeFiles": [
     "internal/api/v2/api.gen.go"
