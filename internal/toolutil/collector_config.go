@@ -36,6 +36,7 @@ type ContractAddrs struct {
 
 // LoadCollectorConfig reads and validates a collector JSON config file.
 func LoadCollectorConfig(path string) (*CollectorConfig, error) {
+	// #nosec G304 -- the operator explicitly chooses the collector config path.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

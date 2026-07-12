@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -137,6 +138,29 @@ func (s *Store) InsertTransaction(ctx context.Context, tx *types.Transaction, bl
 		return 0, WrapError(op, err)
 	}
 	return txID, nil
+}
+
+// NextEventLogIndex returns the first unused log index at or above minimum
+// for blockNum. Synthetic events use this to avoid deleting an earlier event
+// through InsertEventLog's delete-before-insert replay semantics.
+func (s *Store) NextEventLogIndex(ctx context.Context, blockNum int64, minimum uint) (uint, error) {
+	if blockNum < 0 || uint64(minimum) > math.MaxInt32 {
+		return 0, fmt.Errorf("next event log index: invalid block or minimum")
+	}
+	var next int64
+	err := s.pool.QueryRow(ctx, `SELECT GREATEST(
+			COALESCE(MAX(log_index)::BIGINT + 1, $2::BIGINT),
+			$2::BIGINT
+		)
+		FROM evt_log
+		WHERE block_num=$1`, blockNum, minimum).Scan(&next)
+	if err != nil {
+		return 0, WrapError("next event log index", err)
+	}
+	if next < 0 || next > math.MaxInt32 {
+		return 0, fmt.Errorf("next event log index: exhausted int32 range")
+	}
+	return uint(next), nil
 }
 
 // InsertEventLog stores an Ethereum log in evt_log (RLP-encoded payload

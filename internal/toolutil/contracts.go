@@ -47,7 +47,7 @@ func GetContractAddressIds(db *sql.DB, projectType string) ([]int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var aids []int64
 	for rows.Next() {
@@ -69,7 +69,7 @@ func GetContractAddrsByAids(db *sql.DB, contractAids []int64) ([]string, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var addrs []string
 	for rows.Next() {

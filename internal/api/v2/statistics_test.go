@@ -288,6 +288,209 @@ func TestRoundClaimsResponses(t *testing.T) {
 	})
 }
 
+func TestRoundClaimsRejectsAllInvalidInputs(t *testing.T) {
+	t.Parallel()
+	attachedCursor, err := encodeClaimDetailCursor(claimDetailCursor{
+		Version: claimDetailCursorVersion, Round: 0,
+		Section: claimDetailTransactions, EventLogID: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	unclaimedCursor, err := encodeClaimDetailCursor(claimDetailCursor{
+		Version: claimDetailCursorVersion, Round: 0,
+		Section: claimDetailAttached, EventLogID: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{
+		"/api/v2/cosmicgame/rounds/-1/claims",
+		"/api/v2/cosmicgame/rounds/0/claims?limit=0",
+		"/api/v2/cosmicgame/rounds/0/claims?limit=201",
+		"/api/v2/cosmicgame/rounds/0/claims?attachedTokensCursor=bad",
+		"/api/v2/cosmicgame/rounds/0/claims?unclaimedItemsCursor=bad",
+		"/api/v2/cosmicgame/rounds/0/claims?attachedTokensCursor=" + attachedCursor,
+		"/api/v2/cosmicgame/rounds/0/claims?unclaimedItemsCursor=" + unclaimedCursor,
+	} {
+		assertProblem(t, serve(t, newStatisticsTestServer(t, fakeStatisticsReader{}), path),
+			http.StatusBadRequest)
+	}
+}
+
+func TestRoundClaimsRejectsEveryRepositoryFailureStage(t *testing.T) {
+	t.Parallel()
+	secret := errors.New("private repository detail")
+	wrongTransaction := validClaimTransactionRecord(cgstore.ClaimAssetETH, func(*cgstore.ClaimTransactionRecord) {})
+	wrongTransaction.RoundNum, wrongTransaction.EventLogID = 1, 1
+	wrongAttached := validAttachedTokenRecord(cgstore.ClaimAssetERC721)
+	wrongAttached.RoundNum, wrongAttached.EventLogID = 1, 1
+	wrongUnclaimed := validUnclaimedItemRecord(cgstore.ClaimAssetETH, func(*cgstore.UnclaimedItemRecord) {})
+	wrongUnclaimed.RoundNum, wrongUnclaimed.Segment, wrongUnclaimed.Key = 1, 0, 1
+
+	tests := map[string]fakeStatisticsReader{
+		"summary error": {
+			summary: func(context.Context, int64) (cgstore.ClaimSummaryRecord, error) {
+				return cgstore.ClaimSummaryRecord{}, secret
+			},
+		},
+		"summary wrong round": {
+			summary: func(context.Context, int64) (cgstore.ClaimSummaryRecord, error) {
+				return validClaimSummaryRecord(1), nil
+			},
+		},
+		"transaction error": {
+			transactions: func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.ClaimTransactionRecord, bool, error) {
+				return nil, false, secret
+			},
+		},
+		"transaction empty has more": {
+			transactions: func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.ClaimTransactionRecord, bool, error) {
+				return []cgstore.ClaimTransactionRecord{}, true, nil
+			},
+		},
+		"transaction wrong round": {
+			transactions: func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.ClaimTransactionRecord, bool, error) {
+				return []cgstore.ClaimTransactionRecord{wrongTransaction}, false, nil
+			},
+		},
+		"attached error": {
+			attached: func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.AttachedTokenRecord, bool, error) {
+				return nil, false, secret
+			},
+		},
+		"attached empty has more": {
+			attached: func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.AttachedTokenRecord, bool, error) {
+				return []cgstore.AttachedTokenRecord{}, true, nil
+			},
+		},
+		"attached wrong round": {
+			attached: func(context.Context, int64, *cgstore.ClaimEventCursor, int) ([]cgstore.AttachedTokenRecord, bool, error) {
+				return []cgstore.AttachedTokenRecord{wrongAttached}, false, nil
+			},
+		},
+		"unclaimed error": {
+			unclaimed: func(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error) {
+				return nil, false, secret
+			},
+		},
+		"unclaimed empty has more": {
+			unclaimed: func(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error) {
+				return []cgstore.UnclaimedItemRecord{}, true, nil
+			},
+		},
+		"unclaimed wrong round": {
+			unclaimed: func(context.Context, int64, *cgstore.UnclaimedItemCursor, int) ([]cgstore.UnclaimedItemRecord, bool, error) {
+				return []cgstore.UnclaimedItemRecord{wrongUnclaimed}, false, nil
+			},
+		},
+	}
+	for name, reader := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			response := serve(t, newStatisticsTestServer(t, reader),
+				"/api/v2/cosmicgame/rounds/0/claims")
+			assertProblem(t, response, http.StatusInternalServerError)
+			if strings.Contains(response.Body.String(), "private") {
+				t.Fatalf("error leaked: %s", response.Body.String())
+			}
+		})
+	}
+}
+
+func TestClaimsSummaryRejectsRepositoryViolations(t *testing.T) {
+	t.Parallel()
+	tests := map[string]fakeStatisticsReader{
+		"empty has more": {
+			claims: func(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error) {
+				return []cgstore.ClaimSummaryRecord{}, true, nil
+			},
+		},
+		"unordered": {
+			claims: func(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error) {
+				return []cgstore.ClaimSummaryRecord{
+					validClaimSummaryRecord(1),
+					validClaimSummaryRecord(2),
+				}, false, nil
+			},
+		},
+		"malformed": {
+			claims: func(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error) {
+				record := validClaimSummaryRecord(1)
+				record.UnclaimedEthAmountWei = "-1"
+				return []cgstore.ClaimSummaryRecord{record}, false, nil
+			},
+		},
+	}
+	for name, reader := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assertProblem(t, serve(t, newStatisticsTestServer(t, reader),
+				"/api/v2/cosmicgame/statistics/claims"), http.StatusInternalServerError)
+		})
+	}
+}
+
+func TestROIRecordOrderingBranches(t *testing.T) {
+	t.Parallel()
+	record := validROILeaderboardRecord()
+	record.BidderAid = 3
+	tests := []struct {
+		name     string
+		sort     cgstore.ROILeaderboardSort
+		value    string
+		rounds   int64
+		previous cgstore.ROILeaderboardPageCursor
+		want     bool
+	}{
+		{
+			name: "lower primary", sort: cgstore.ROILeaderboardNetProfit,
+			value: "4", previous: cgstore.ROILeaderboardPageCursor{SortValue: "5", BidderAid: 2},
+			want: true,
+		},
+		{
+			name: "higher primary", sort: cgstore.ROILeaderboardNetProfit,
+			value: "6", previous: cgstore.ROILeaderboardPageCursor{SortValue: "5", BidderAid: 2},
+		},
+		{
+			name: "malformed primary", sort: cgstore.ROILeaderboardNetProfit,
+			value: "bad", previous: cgstore.ROILeaderboardPageCursor{SortValue: "5", BidderAid: 2},
+		},
+		{
+			name: "win rate lower secondary", sort: cgstore.ROILeaderboardWinRate,
+			value: "0.5", rounds: 1,
+			previous: cgstore.ROILeaderboardPageCursor{SortValue: "0.5", Secondary: 2, BidderAid: 2},
+			want:     true,
+		},
+		{
+			name: "win rate higher secondary", sort: cgstore.ROILeaderboardWinRate,
+			value: "0.5", rounds: 3,
+			previous: cgstore.ROILeaderboardPageCursor{SortValue: "0.5", Secondary: 2, BidderAid: 2},
+		},
+		{
+			name: "bidder tie break", sort: cgstore.ROILeaderboardWinRate,
+			value: "0.5", rounds: 2,
+			previous: cgstore.ROILeaderboardPageCursor{SortValue: "0.5", Secondary: 2, BidderAid: 2},
+			want:     true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			current := record
+			current.RoundsParticipated = test.rounds
+			switch test.sort {
+			case cgstore.ROILeaderboardWinRate:
+				current.WinRateRatio = test.value
+			default:
+				current.NetProfitWei = test.value
+			}
+			if got := roiRecordFollows(current, test.previous, test.sort); got != test.want {
+				t.Fatalf("roiRecordFollows = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
 func newStatisticsTestServer(t *testing.T, statistics statisticsReader) *Server {
 	t.Helper()
 	server, err := newServer(

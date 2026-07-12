@@ -172,6 +172,9 @@ func TestUserV2StoreErrorPaths(t *testing.T) {
 	}
 	closedRepo := NewRepo(st)
 	st.Close()
+	if _, err := st.NextEventLogIndex(context.Background(), 100, 990000); err == nil {
+		t.Error("NextEventLogIndex succeeded on closed pool")
+	}
 	if _, err := closedRepo.UserProfile(context.Background(), aidAlice); err == nil {
 		t.Error("UserProfile succeeded on closed pool")
 	}

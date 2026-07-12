@@ -1,11 +1,13 @@
 package randomwalk
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // Trading history (API)
@@ -101,6 +103,10 @@ func apiRwalkTradingHistoryByUser(c *httpx.Context) {
 	}
 	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
 	if err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			respondStoreError(c, err)
+			return
+		}
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}

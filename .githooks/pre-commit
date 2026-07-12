@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# augur-explorer managed coverage hook
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+status=$(go run ./cmd/covergate -policy coverage/policy.json -commit-status)
+case "$status" in
+	deferred\ *)
+		echo "coverage commit gate: deferred until handwritten internal coverage reaches 90%"
+		exit 0
+		;;
+	enabled\ *)
+		exec "$repo_root/scripts/coverage-gate.sh"
+		;;
+	*)
+		echo "coverage commit gate: invalid policy status: $status" >&2
+		exit 2
+		;;
+esac

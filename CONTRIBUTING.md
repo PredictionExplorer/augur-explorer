@@ -11,9 +11,11 @@ keep the characterization test suite green.
 make generate     # regenerate committed OpenAPI v2 code
 make build       # compile all binaries into ./bin
 make test        # unit tests (race detector, shuffled)
+make coverage-check # full integration + global/staged coverage policy
 make fuzz-smoke  # every fuzz target briefly (FUZZTIME=30s to change)
 make lint        # golangci-lint (config in .golangci.yml)
 make fmt         # gofmt the tree
+make hooks-install # install the repository's pre-commit coverage gate
 ```
 
 CI runs build, tidy-check, unit + integration tests, lint, and govulncheck on
@@ -63,8 +65,20 @@ every PR — all must pass.
   `make generate`, then implement the generated strict interface. V2 route
   drift and kin-openapi response validation run in the unit/integration
   suites; generated-code drift is a CI failure.
-- CI enforces a coverage ratchet on `internal/` (integration profile); the
-  floor only ever moves up.
+- Coverage policy is defined by
+  [ADR-0006](docs/adr/0006-coverage-policy.md) and
+  [`coverage/policy.json`](coverage/policy.json). CI and the local hook use the
+  same tested `covergate` implementation. Current policy enforces legacy and
+  handwritten-internal ratchets, a truthful all-production ratchet, and at
+  least 95% coverage of changed executable Go statements. Floors only move up.
+- Run `make hooks-install` once per clone. Commit enforcement is intentionally
+  deferred while handwritten internal coverage climbs to 90%; CI still
+  enforces every current ratchet and 95% changed-code coverage. Once the
+  modernization checklist activates `commitGateEnabled`, the hook becomes
+  fail-closed, requires Docker, caches successful profiles under
+  `.git/coverage-gate/`, and refuses ambiguous partially staged Go changes.
+  Local hooks can be bypassed by Git, so the GitHub **Coverage Gate** check
+  must remain required by branch protection.
 - Fuzz targets (`func Fuzz*`) guard everything that parses untrusted bytes
   (chain data, HTTP input, signatures) — see the inventory in
   [docs/MODERNIZATION.md §4.4](docs/MODERNIZATION.md). Seeds are committed

@@ -8,9 +8,9 @@ BIN   := bin
 # Every runnable service and CLI in cmd/.
 COMMANDS := apiserver cg-etl rw-etl notibot freezer-scan freezer-verify \
             srvmonitor loganomaly imggen-monitor rwalk-alarm \
-            cgctl rwctl opsctl
+            cgctl rwctl opsctl covergate
 
-.PHONY: all build $(COMMANDS) generate generate-check test test-integration fuzz-smoke lint migrate-up fmt vet vuln clean help
+.PHONY: all build $(COMMANDS) generate generate-check test test-integration coverage-check hooks-install fuzz-smoke lint migrate-up fmt vet vuln clean help
 
 all: build
 
@@ -40,6 +40,14 @@ test:
 ## test-integration: run tests that need Docker (testcontainers)
 test-integration:
 	go test -race -tags=integration -timeout 20m ./...
+
+## coverage-check: run the staged-diff and repository coverage gates
+coverage-check:
+	./scripts/coverage-gate.sh
+
+## hooks-install: install the pre-commit hook (coverage blocking activates at 90%)
+hooks-install:
+	./scripts/install-hooks.sh
 
 ## fuzz-smoke: run every fuzz target briefly (10s each; FUZZTIME=30s to change)
 fuzz-smoke:

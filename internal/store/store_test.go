@@ -1,6 +1,7 @@
 package store
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -114,6 +115,21 @@ func TestConnectHint(t *testing.T) {
 	}
 	if !strings.Contains(other, "Environment variable status:") {
 		t.Errorf("env status missing for unrelated error:\n%s", other)
+	}
+}
+
+func TestNextEventLogIndexRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
+	var store Store
+	if _, err := store.NextEventLogIndex(t.Context(), -1, 0); err == nil {
+		t.Fatal("negative block was accepted")
+	}
+	if uint64(^uint(0)) > math.MaxInt32 {
+		if _, err := store.NextEventLogIndex(
+			t.Context(), 0, uint(math.MaxInt32)+1,
+		); err == nil {
+			t.Fatal("out-of-range minimum was accepted")
+		}
 	}
 }
 

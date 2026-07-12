@@ -97,7 +97,7 @@ func apiRandomwalkExploreRandom(c *httpx.Context) {
 	}
 	ids, err := fetchExploreRandomTokenIDs(c.Request.Context(), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, ids)
@@ -133,7 +133,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 		for attempt := 0; attempt < maxAttempts; attempt++ {
 			ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+				respondStoreError(c, err)
 				return
 			}
 			if len(ids) < 2 {
@@ -141,7 +141,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 			}
 			voted, err := rwRepo.HasRankingVoteForVoterPair(c.Request.Context(), voterAid, ids[0], ids[1])
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+				respondStoreError(c, err)
 				return
 			}
 			if !voted {
@@ -155,7 +155,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 	} else {
 		ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+			respondStoreError(c, err)
 			return
 		}
 	}
@@ -175,7 +175,7 @@ func apiRandomwalkVoteCount(c *httpx.Context) {
 	}
 	n, err := rwRepo.CountRankingMatches(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"total_count": n})
@@ -189,12 +189,12 @@ func apiRandomwalkTokenRankingOrder(c *httpx.Context) {
 	}
 	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	ids, err := rwRepo.RatingOrder(c.Request.Context(), addrs.RandomWalkAid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, ids)
@@ -225,7 +225,7 @@ func apiRandomwalkTokenRankingMatch(c *httpx.Context) {
 			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"nft1": body.Nft1, "nft2": body.Nft2, "rating_nft1": raNew, "rating_nft2": rbNew})
@@ -365,12 +365,12 @@ func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
 	}
 	var b [32]byte
 	if _, err := rand.Read(b[:]); err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		common.RespondInternalErrorJSON(c)
 		return
 	}
 	nonce := hex.EncodeToString(b[:])
 	if err := rwRepo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"nonce": nonce})
@@ -409,7 +409,7 @@ func apiRandomwalkAddGameLegacy(c *httpx.Context) {
 			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, httpx.H{"error": err.Error()})
+		respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"result": "success"})

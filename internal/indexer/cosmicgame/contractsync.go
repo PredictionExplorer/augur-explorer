@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -22,6 +21,7 @@ import (
 )
 
 const chainSyncTxHash = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+const chainSyncLogIndexFloor uint = 990000
 
 const (
 	contractMechanicsUnknown int64 = 0
@@ -35,10 +35,6 @@ type contractParamSync struct {
 	column       string
 	contractAddr string
 	read         func(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error)
-}
-
-func chainSyncLogIndex() uint {
-	return 990000 + uint(time.Now().UnixNano()%10000)
 }
 
 func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
@@ -55,6 +51,10 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 	if err != nil {
 		return nil, fmt.Errorf("InsertMinimalTransaction: %w", err)
 	}
+	logIndex, err := st.NextEventLogIndex(ctx, blockNum, chainSyncLogIndexFloor)
+	if err != nil {
+		return nil, fmt.Errorf("NextEventLogIndex: %w", err)
+	}
 
 	contractAid, err := st.LookupOrCreateAddress(ctx, contractAddr, blockNum, txId)
 	if err != nil {
@@ -64,7 +64,7 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 		Address:     ethcommon.HexToAddress(contractAddr),
 		BlockNumber: header.Number.Uint64(),
 		TxHash:      ethcommon.HexToHash(chainSyncTxHash),
-		Index:       chainSyncLogIndex(),
+		Index:       logIndex,
 	}
 
 	evtId, err := st.InsertEventLog(ctx, syncLog, txId, contractAid)

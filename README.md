@@ -65,6 +65,8 @@ Or everything in containers: `docker compose --profile etl up`.
 make generate          # regenerate OpenAPI v2 models/server
 make test              # unit tests (race detector)
 make test-integration  # + real Postgres via testcontainers
+make coverage-check    # enforced global + changed-code coverage policy
+make hooks-install     # install the staged pre-commit policy hook
 make lint              # golangci-lint
 make help              # all targets
 ```

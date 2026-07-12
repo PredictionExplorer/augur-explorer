@@ -44,26 +44,47 @@ jobs:
         run: go tool cover -func=coverage.out | tail -1
 
   test-integration:
-    name: Integration tests
+    name: Coverage Gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - name: Run integration tests (testcontainers)
-        run: go test -race -tags=integration -timeout 20m -coverprofile=coverage-integration.out -coverpkg=./internal/... ./...
-      - name: Enforce internal/ coverage ratchet
-        # Ratchet, never lower: raise the floor after each phase lands
-        # (docs/MODERNIZATION.md §4.6). Current measured coverage: 75.5%.
         run: |
-          total=$(go tool cover -func=coverage-integration.out | tail -1 | awk '{print $3}' | tr -d '%')
-          floor=75.4
-          echo "internal/ statement coverage: ${total}% (ratchet floor: ${floor}%)"
-          if ! awk -v t="$total" -v f="$floor" 'BEGIN { exit !(t+0 >= f+0) }'; then
-            echo "::error::internal/ coverage ${total}% fell below the ratchet floor ${floor}%"
-            exit 1
+          go test -race -tags=integration -timeout 20m \
+            -covermode=atomic \
+            -coverprofile=coverage-integration.out \
+            -coverpkg=./cmd/...,./internal/... \
+            ./...
+      - name: Build changed-code coverage diff
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --unified=0 --no-color --diff-filter=ACMR \
+              "${{ github.event.pull_request.base.sha }}...${{ github.sha }}" \
+              -- '*.go' > coverage.diff
+          else
+            : > coverage.diff
           fi
+      - name: Enforce coverage policy
+        run: |
+          ./scripts/coverage-gate.sh \
+            --profile coverage-integration.out \
+            --diff coverage.diff \
+            --report coverage-report.json
+      - name: Upload coverage evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-evidence
+          path: |
+            coverage-integration.out
+            coverage.diff
+            coverage-report.json
+          if-no-files-found: ignore
 
   lint:
     name: Lint

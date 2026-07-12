@@ -30,7 +30,7 @@ func NormalizeAddr(addr string) string {
 	return common.HexToAddress(addr).Hex()
 }
 
-// EncodeLogRLPFromBytes decodes DB log_rlp and re-encodes for canonical compare (optional).
+// LogRLPEqual compares stored log RLP with the canonical encoding of lg.
 func LogRLPEqual(dbBytes []byte, lg *types.Log) (bool, error) {
 	encoded, err := EncodeLogRLP(lg)
 	if err != nil {

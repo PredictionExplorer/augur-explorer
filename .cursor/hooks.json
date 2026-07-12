@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/coverage-commit-gate.sh",
+        "matcher": "(^|[;&|]\\s*)git\\s+commit\\b",
+        "failClosed": true,
+        "timeout": 10
+      }
+    ]
+  }
+}

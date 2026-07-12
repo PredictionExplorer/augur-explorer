@@ -37,6 +37,10 @@ func apiRwalkUserInfo(c *httpx.Context) {
 	}
 	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
 	if err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			respondStoreError(c, err)
+			return
+		}
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}

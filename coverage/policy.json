@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "legacyInternalFloor": 78.8,
+  "internalFloor": 80.1,
+  "productionFloor": 52.5,
+  "patchFloor": 95.0,
+  "internalTarget": 90.0,
+  "productionTarget": 90.0,
+  "criticalPackageTarget": 95.0,
+  "commitGateEnabled": false,
+  "commitFloor": 90.0,
+  "excludeFiles": [
+    "internal/api/v2/api.gen.go"
+  ],
+  "excludePrefixes": [
+    "internal/api/apitest/",
+    "internal/testchain/",
+    "internal/testdb/",
+    "internal/testfixtures/",
+    "internal/testutil/"
+  ]
+}

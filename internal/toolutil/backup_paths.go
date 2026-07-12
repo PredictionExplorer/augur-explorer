@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
 )
 
 // TxRLPPath returns the path for a backed-up transaction RLP blob.

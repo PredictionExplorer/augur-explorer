@@ -12,6 +12,7 @@
 
 - [ ] `make test` passes locally
 - [ ] `make test-integration` passes locally
+- [ ] `make coverage-check` passes for the staged diff
 - [ ] `make generate-check` passes locally
 - [ ] `make fuzz-smoke` passes locally when parsers/untrusted input changed
 - [ ] `make lint` passes locally
