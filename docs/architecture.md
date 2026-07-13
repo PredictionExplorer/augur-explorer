@@ -73,9 +73,9 @@ flowchart LR
 | `cmd/apiserver` | JSON API server (net/http ServeMux via `internal/api/httpx`): routing, TLS, static assets, health, metrics |
 | `cmd/cg-etl`, `cmd/rw-etl` | Chain indexers, one per contract family |
 | `cmd/notibot` | Discord/Twitter mint & trade notifications (thin wiring of `internal/notify/rwbot`, shared with `rwctl notify-bot`) |
-| `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill (scan pipeline in `internal/freezer/scan`) |
-| `cmd/imggen-monitor` | Verifies/regenerates NFT image+video artifacts |
-| `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons |
+| `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill (scan pipeline in `internal/freezer/scan`, DB comparison in `internal/freezer/verify`) |
+| `cmd/imggen-monitor` | Verifies/regenerates NFT image+video artifacts (engine in `internal/ops/imggen`) |
+| `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons (engines in `internal/srvmonitor` and `internal/notify/urlalarm`) |
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Thin operator CLI wiring (contract interaction, social tools, data ops) |
 | `internal/api` | HTTP stack: frozen v1 handlers, generated/injected `v2`, `httpx` router, `faq` proxy, shared middleware |
 | `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
@@ -83,7 +83,8 @@ flowchart LR
 | `internal/ops` | Context-aware engines behind `opsctl`: archive, assets, CST scan, DB verification, API smoke testing and transaction backups |
 | `internal/primitives` | Domain types and API response structs |
 | `internal/freezer` | Geth freezer/ancient store readers |
-| `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients |
+| `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients, the unified RandomWalk bot (`rwbot`) and the URL watchdog (`urlalarm`) |
+| `internal/srvmonitor` | Terminal server-monitoring engine (monitors, alarm tracker, layout; termbox UI in `termboxui`) |
 | `internal/testdb` | Disposable migrated Postgres for integration tests (testcontainers) |
 | `contracts/` | abigen-generated Go bindings (do not edit by hand) |
 | `db/migrations` | goose schema migrations — the source of truth for the schema |

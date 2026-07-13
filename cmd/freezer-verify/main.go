@@ -1,312 +1,121 @@
-// verify-events compares events from a JSONL file with events stored in a PostgreSQL database.
+// Command freezer-verify compares events extracted from a node freezer (the
+// JSONL output of freezer-scan) with events stored in a PostgreSQL database.
 //
 // Usage:
 //
-//	verify-events --input events.jsonl --db "user=cosmicgame dbname=cosmicgame sslmode=disable"
+//	freezer-verify --input events.jsonl --db "user=cosmicgame dbname=cosmicgame sslmode=disable"
+//
+// It exits non-zero when fewer than 99% of the database's
+// (block, topic0, contract) combinations match the freezer extract.
+// The comparison engine lives in internal/freezer/verify.
 package main
 
 import (
-	"bufio"
-	"database/sql"
-	"encoding/json"
+	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
-	"regexp"
-	"strings"
+	"syscall"
 
-	"github.com/lib/pq"
+	"github.com/PredictionExplorer/augur-explorer/internal/freezer/verify"
+	"github.com/jackc/pgx/v5"
 )
-
-var (
-	inputFile  = flag.String("input", "", "Path to JSONL file with extracted events")
-	dbConnStr  = flag.String("db", "user=cosmicgame dbname=cosmicgame sslmode=disable", "PostgreSQL connection string")
-	tableName  = flag.String("table", "evt_log", "Event log table name")
-	verbose    = flag.Bool("verbose", false, "Show detailed comparison results")
-	maxMissing = flag.Int("maxMissing", 10, "Maximum missing events to display")
-	maxExtra   = flag.Int("maxExtra", 10, "Maximum extra events to display")
-)
-
-// LogRecord matches the output format from freezer-scan
-type LogRecord struct {
-	BlockNumber  uint64   `json:"blockNumber"`
-	TxIndex      uint     `json:"txIndex"`
-	ReceiptIndex uint     `json:"receiptIndex"`
-	LogIndex     uint     `json:"logIndex"`
-	Contract     string   `json:"contract"`
-	Topic0       string   `json:"topic0"`
-	Topics       []string `json:"topics"`
-	DataKeccak   string   `json:"dataKeccak"`
-	DataLen      int      `json:"dataLen"`
-	DataHex      string   `json:"dataHex,omitempty"`
-}
-
-type eventKey struct {
-	blockNum int64
-	topic0   string // first 8 chars (4 bytes) of topic0
-	contract string
-}
-
-// validTableName restricts the -table flag to a plain SQL identifier, since it
-// is interpolated into the query text.
-var validTableName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 func main() {
-	flag.Parse()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	if *inputFile == "" {
-		fmt.Fprintln(os.Stderr, "Error: --input is required")
-		flag.Usage()
+	passed, err := run(ctx, os.Args[1:], os.Stdout, os.Stderr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "freezer-verify: %v\n", err)
 		os.Exit(1)
 	}
-	if !validTableName.MatchString(*tableName) {
-		log.Fatalf("Invalid table name %q: must be a plain SQL identifier", *tableName)
+	if !passed {
+		os.Exit(1)
+	}
+}
+
+// run executes the verification and reports whether it met the match
+// threshold.
+func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error) {
+	flags := flag.NewFlagSet("freezer-verify", flag.ContinueOnError)
+	flags.SetOutput(errOut)
+	inputFile := flags.String("input", "", "Path to JSONL file with extracted events")
+	dbConnStr := flags.String("db", "user=cosmicgame dbname=cosmicgame sslmode=disable", "PostgreSQL connection string")
+	tableName := flags.String("table", "evt_log", "Event log table name")
+	verbose := flags.Bool("verbose", false, "Show detailed comparison results")
+	maxMissing := flags.Int("maxMissing", 10, "Maximum missing events to display")
+	maxExtra := flags.Int("maxExtra", 10, "Maximum extra events to display")
+	if err := flags.Parse(args); err != nil {
+		return false, err
 	}
 
-	// Connect to database
-	db, err := sql.Open("postgres", *dbConnStr)
+	if *inputFile == "" {
+		return false, fmt.Errorf("--input is required")
+	}
+	if !verify.ValidTableName(*tableName) {
+		return false, fmt.Errorf("invalid table name %q: must be a plain SQL identifier", *tableName)
+	}
+
+	logger := log.New(errOut, "", log.LstdFlags)
+
+	// Load events from the JSONL file.
+	logger.Printf("Loading events from %s...", *inputFile)
+	file, err := os.Open(filepath.Clean(*inputFile))
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return false, fmt.Errorf("opening input: %w", err)
 	}
-	defer func() { _ = db.Close() }() // best-effort close on process exit
+	defer func() { _ = file.Close() }() // best-effort close on read path
 
-	if err := db.Ping(); err != nil {
-		log.Fatalf("Failed to ping database: %v", err)
-	}
-	log.Printf("Connected to database")
-
-	// Load events from JSONL file
-	log.Printf("Loading events from %s...", *inputFile)
-	freezerEvents, contracts, err := loadJSONLEvents(*inputFile)
+	freezerEvents, contracts, err := verify.LoadJSONL(file)
 	if err != nil {
-		log.Fatalf("Failed to load events: %v", err)
+		return false, fmt.Errorf("failed to load events: %w", err)
 	}
-	log.Printf("Loaded %d distinct (block, topic0, contract) combinations from file", len(freezerEvents))
-	log.Printf("Contracts found: %v", contracts)
+	logger.Printf("Loaded %d distinct (block, topic0, contract) combinations from file", len(freezerEvents))
+	logger.Printf("Contracts found: %v", contracts)
 
-	if len(freezerEvents) == 0 {
-		log.Fatal("No events found in input file")
+	minBlock, maxBlock, ok := verify.BlockRange(freezerEvents)
+	if !ok {
+		return false, fmt.Errorf("no events found in input file")
 	}
+	logger.Printf("Block range in file: %d - %d", minBlock, maxBlock)
 
-	// Get block range from freezer events
-	var minBlock, maxBlock int64 = 1 << 62, 0
-	for key := range freezerEvents {
-		if key.blockNum < minBlock {
-			minBlock = key.blockNum
-		}
-		if key.blockNum > maxBlock {
-			maxBlock = key.blockNum
-		}
+	// Connect to the database.
+	conn, err := pgx.Connect(ctx, *dbConnStr)
+	if err != nil {
+		return false, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	log.Printf("Block range in file: %d - %d", minBlock, maxBlock)
+	defer func() { _ = conn.Close(ctx) }() // best-effort close on process exit
+	logger.Printf("Connected to database")
 
-	// Get contract address IDs from database
+	// Resolve contract address ids.
 	contractAddrs := make([]string, 0, len(contracts))
 	for c := range contracts {
 		contractAddrs = append(contractAddrs, c)
 	}
-
-	contractAids, err := queryContractAids(db, contractAddrs)
+	contractAids, err := verify.ContractAids(ctx, conn, contractAddrs)
 	if err != nil {
-		log.Fatalf("Failed to query address table: %v", err)
+		return false, fmt.Errorf("failed to query address table: %w", err)
 	}
-
 	if len(contractAids) == 0 {
-		log.Fatalf("None of the contracts found in database address table: %v", contractAddrs)
+		return false, fmt.Errorf("none of the contracts found in database address table: %v", contractAddrs)
 	}
-	log.Printf("Found %d contract address IDs in database", len(contractAids))
+	logger.Printf("Found %d contract address IDs in database", len(contractAids))
 
-	// Query database for events
-	log.Printf("Querying database for events in block range %d - %d...", minBlock, maxBlock)
-	//nolint:gosec // G202: table name comes from an operator flag, validated against validTableName and quoted
-	eventsQuery := `
-		SELECT e.block_num, e.topic0_sig, a.addr, COUNT(*) as cnt
-		FROM ` + pq.QuoteIdentifier(*tableName) + ` e
-		JOIN address a ON e.contract_aid = a.address_id
-		WHERE e.block_num BETWEEN $1 AND $2
-		  AND e.contract_aid = ANY($3)
-		GROUP BY e.block_num, e.topic0_sig, a.addr
-		ORDER BY e.block_num
-	`
-	dbRows, err := db.Query(eventsQuery, minBlock, maxBlock, pq.Array(contractAids))
+	// Query database events and compare.
+	logger.Printf("Querying database for events in block range %d - %d...", minBlock, maxBlock)
+	dbEvents, err := verify.DBEvents(ctx, conn, *tableName, minBlock, maxBlock, contractAids)
 	if err != nil {
-		log.Fatalf("Failed to query events: %v", err)
+		return false, fmt.Errorf("failed to query events: %w", err)
 	}
-	defer func() { _ = dbRows.Close() }() // best-effort close on read path
+	logger.Printf("Found %d distinct (block, topic0, contract) combinations in database", len(dbEvents))
 
-	dbEvents := make(map[eventKey]int)
-	for dbRows.Next() {
-		var blockNum int64
-		var topic0, contract string
-		var cnt int
-		if err := dbRows.Scan(&blockNum, &topic0, &contract, &cnt); err != nil {
-			log.Fatalf("Failed to scan row: %v", err)
-		}
-		key := eventKey{
-			blockNum: blockNum,
-			topic0:   strings.ToLower(topic0),
-			contract: strings.ToLower(contract),
-		}
-		dbEvents[key] = cnt
-	}
-	if err := dbRows.Err(); err != nil {
-		log.Fatalf("Event rows error: %v", err)
-	}
-	log.Printf("Found %d distinct (block, topic0, contract) combinations in database", len(dbEvents))
+	report := verify.Compare(freezerEvents, dbEvents, *maxMissing, *maxExtra)
+	report.Write(out, *verbose)
 
-	// Compare
-	var match, missing, extra int
-	var missingDetails, extraDetails []string
-
-	for key, dbCount := range dbEvents {
-		if fCount, ok := freezerEvents[key]; ok {
-			if fCount == dbCount {
-				match++
-			} else {
-				// Count mismatch
-				if *verbose {
-					log.Printf("Count mismatch: block %d topic0 %s contract %s: db=%d freezer=%d",
-						key.blockNum, key.topic0, key.contract, dbCount, fCount)
-				}
-			}
-		} else {
-			missing++
-			if len(missingDetails) < *maxMissing {
-				missingDetails = append(missingDetails,
-					fmt.Sprintf("block=%d topic0=%s contract=%s (db count=%d)",
-						key.blockNum, key.topic0, key.contract, dbCount))
-			}
-		}
-	}
-
-	for key, fCount := range freezerEvents {
-		if _, ok := dbEvents[key]; !ok {
-			extra++
-			if len(extraDetails) < *maxExtra {
-				extraDetails = append(extraDetails,
-					fmt.Sprintf("block=%d topic0=%s contract=%s (freezer count=%d)",
-						key.blockNum, key.topic0, key.contract, fCount))
-			}
-		}
-	}
-
-	// Report results
-	fmt.Println()
-	fmt.Println("=== Verification Results ===")
-	fmt.Printf("Freezer events:  %d distinct (block, topic0, contract)\n", len(freezerEvents))
-	fmt.Printf("Database events: %d distinct (block, topic0, contract)\n", len(dbEvents))
-	fmt.Println()
-	fmt.Printf("Matching:          %d\n", match)
-	fmt.Printf("Missing (in DB, not in freezer): %d\n", missing)
-	fmt.Printf("Extra (in freezer, not in DB):   %d\n", extra)
-
-	total := len(dbEvents)
-	if total > 0 {
-		matchRate := float64(match) / float64(total) * 100
-		fmt.Printf("\nMatch rate: %.2f%%\n", matchRate)
-	}
-
-	if len(missingDetails) > 0 {
-		fmt.Println("\nMissing from freezer (sample):")
-		for _, d := range missingDetails {
-			fmt.Printf("  %s\n", d)
-		}
-		if missing > len(missingDetails) {
-			fmt.Printf("  ... and %d more\n", missing-len(missingDetails))
-		}
-	}
-
-	if len(extraDetails) > 0 {
-		fmt.Println("\nExtra in freezer (sample):")
-		for _, d := range extraDetails {
-			fmt.Printf("  %s\n", d)
-		}
-		if extra > len(extraDetails) {
-			fmt.Printf("  ... and %d more\n", extra-len(extraDetails))
-		}
-	}
-
-	// Exit with error if match rate is below threshold
-	if total > 0 && float64(match)/float64(total) < 0.99 {
-		os.Exit(1)
-	}
-}
-
-// queryContractAids resolves the address_id values for the given contract addresses.
-func queryContractAids(db *sql.DB, contractAddrs []string) ([]int64, error) {
-	rows, err := db.Query(`
-		SELECT address_id FROM address 
-		WHERE LOWER(addr) = ANY($1)
-	`, pq.Array(contractAddrs))
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }() // best-effort close on read path
-
-	var contractAids []int64
-	for rows.Next() {
-		var aid int64
-		if err := rows.Scan(&aid); err != nil {
-			return nil, err
-		}
-		contractAids = append(contractAids, aid)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return contractAids, nil
-}
-
-func loadJSONLEvents(path string) (map[eventKey]int, map[string]bool, error) {
-	file, err := os.Open(filepath.Clean(path))
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() { _ = file.Close() }() // best-effort close on read path
-
-	events := make(map[eventKey]int)
-	contracts := make(map[string]bool)
-	scanner := bufio.NewScanner(file)
-
-	// Increase buffer size for long lines
-	buf := make([]byte, 0, 64*1024)
-	scanner.Buffer(buf, 1024*1024)
-
-	lineNum := 0
-	for scanner.Scan() {
-		lineNum++
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
-
-		var record LogRecord
-		if err := json.Unmarshal([]byte(line), &record); err != nil {
-			return nil, nil, fmt.Errorf("line %d: invalid JSON: %w", lineNum, err)
-		}
-
-		// Extract first 8 chars of topic0 (matching DB format)
-		topic0 := strings.ToLower(record.Topic0)
-		if strings.HasPrefix(topic0, "0x") && len(topic0) >= 10 {
-			topic0 = topic0[2:10] // Get first 4 bytes (8 hex chars)
-		}
-
-		contract := strings.ToLower(record.Contract)
-		contracts[contract] = true
-
-		key := eventKey{
-			blockNum: int64(record.BlockNumber),
-			topic0:   topic0,
-			contract: contract,
-		}
-		events[key]++
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, nil, fmt.Errorf("scanner error: %w", err)
-	}
-
-	return events, contracts, nil
+	return report.Passed(), nil
 }

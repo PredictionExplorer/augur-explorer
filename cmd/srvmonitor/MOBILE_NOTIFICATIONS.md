@@ -75,11 +75,11 @@ To test if notifications work:
 **Too many notifications:**
 - The default threshold is 5 occurrences in 30 minutes
 - The cooldown period is 60 minutes between notifications for the same alarm
-- These can be adjusted in `monitor/alarm_tracker.go` if needed
+- These can be adjusted in `internal/srvmonitor/alarm.go` if needed
 
 ## Constants (Adjustable)
 
-In `monitor/alarm_tracker.go`:
+In `internal/srvmonitor/alarm.go`:
 - `AlarmThreshold`: Number of occurrences to trigger notification (default: 5)
 - `AlarmTimeWindow`: Time window to track alarms (default: 30 minutes)
 - `NotificationCooldown`: Minimum time between notifications for same alarm (default: 60 minutes)
