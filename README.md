@@ -52,7 +52,7 @@ Or everything in containers: `docker compose --profile etl up`.
 | Path | Purpose |
 |------|---------|
 | `cmd/` | One directory per binary: `apiserver`, `cg-etl`, `rw-etl`, `notibot`, `freezer-scan`, `srvmonitor`, CLIs (`cgctl`, `rwctl`, `opsctl`), ... |
-| `internal/` | Shared packages: `api` (handlers), `store` (database), `etl`, `primitives`, `freezer`, `notify`, `testdb` |
+| `internal/` | Shared packages: `api` (handlers), `store` (database), `indexer`, `model`, `freezer`, `notify`, `testdb` |
 | `contracts/` | Generated abigen contract bindings |
 | `db/migrations/` | goose schema migrations (source of truth for the schema) |
 | `deploy/` | Dockerfile and systemd units |
