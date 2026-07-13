@@ -9,8 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/jackc/pgx/v5"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 )
 
 // dbConfigFromConnString converts testdb's connection string (a URL) into

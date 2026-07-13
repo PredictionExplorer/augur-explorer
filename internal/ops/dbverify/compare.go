@@ -226,8 +226,10 @@ func occurrenceKey(base string, occurrence int) string {
 	return fmt.Sprintf("%s#%d", base, occurrence)
 }
 
-type summaryFunc func(key string) string
-type mismatchFunc func(key string) (summary string, fields []FieldMismatch)
+type (
+	summaryFunc  func(key string) string
+	mismatchFunc func(key string) (summary string, fields []FieldMismatch)
+)
 
 func compareMaps(
 	primaryCount int,

@@ -80,9 +80,9 @@ func TestAdminCorrectionRoundTrip(t *testing.T) {
 	// The fixture set has evt_log rows; reference one to satisfy the FK and
 	// mark the row so cleanup can target it precisely.
 	meta := &AdminCorrectionMeta{
-		EvtId:       5001,
+		EvtID:       5001,
 		BlockNum:    424242,
-		TxId:        1001,
+		TxID:        1001,
 		TimeStamp:   1767230000,
 		ContractAid: aidCosmicGame,
 	}

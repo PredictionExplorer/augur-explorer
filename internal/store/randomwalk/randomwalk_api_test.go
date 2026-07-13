@@ -25,10 +25,21 @@ func TestMonthName(t *testing.T) {
 		in   int64
 		want string
 	}{
-		{1, "January"}, {2, "February"}, {3, "March"}, {4, "April"},
-		{5, "May"}, {6, "June"}, {7, "July"}, {8, "August"},
-		{9, "September"}, {10, "October"}, {11, "November"}, {12, "December"},
-		{0, "???"}, {13, "???"}, {-1, "???"},
+		{1, "January"},
+		{2, "February"},
+		{3, "March"},
+		{4, "April"},
+		{5, "May"},
+		{6, "June"},
+		{7, "July"},
+		{8, "August"},
+		{9, "September"},
+		{10, "October"},
+		{11, "November"},
+		{12, "December"},
+		{0, "???"},
+		{13, "???"},
+		{-1, "???"},
 	}
 	for _, tc := range cases {
 		if got := monthName(tc.in); got != tc.want {

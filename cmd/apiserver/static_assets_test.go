@@ -10,10 +10,10 @@ import (
 // writeFile creates a file (and parent dirs) with trivial content.
 func writeFile(t *testing.T, path string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		t.Fatalf("mkdir %s: %v", filepath.Dir(path), err)
 	}
-	if err := os.WriteFile(path, []byte("x"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
 }

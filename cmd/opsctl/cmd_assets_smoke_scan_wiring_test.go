@@ -13,11 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/cstscan"
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestAssetsInventoryCommandWiring(t *testing.T) {

@@ -3,9 +3,8 @@ package randomwalk
 import (
 	"net/http"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 // GET /api/randomwalk/contracts — marketplace + RandomWalk NFT contract addresses from rw_contracts (same source as ETL).

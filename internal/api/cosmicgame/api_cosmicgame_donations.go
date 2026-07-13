@@ -4,14 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 func (a *API) handleDonationsCgSimpleList(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -27,8 +25,8 @@ func (a *API) handleDonationsCgSimpleList(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -37,8 +35,8 @@ func (a *API) handleDonationsCgSimpleList(c *httpx.Context) {
 		"Limit":             limit,
 	})
 }
-func (a *API) handleDonationsCgSimpleByRound(c *httpx.Context) {
 
+func (a *API) handleDonationsCgSimpleByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -59,16 +57,16 @@ func (a *API) handleDonationsCgSimpleByRound(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
 		"DirectCGDonations": donations,
 	})
 }
-func (a *API) handleDonationsCgWithInfoList(c *httpx.Context) {
 
+func (a *API) handleDonationsCgWithInfoList(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -84,8 +82,8 @@ func (a *API) handleDonationsCgWithInfoList(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -94,8 +92,8 @@ func (a *API) handleDonationsCgWithInfoList(c *httpx.Context) {
 		"Limit":             limit,
 	})
 }
-func (a *API) handleDonationsCgWithInfoByRound(c *httpx.Context) {
 
+func (a *API) handleDonationsCgWithInfoByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -116,8 +114,8 @@ func (a *API) handleDonationsCgWithInfoByRound(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -125,8 +123,8 @@ func (a *API) handleDonationsCgWithInfoByRound(c *httpx.Context) {
 		"RoundNum":          roundNum,
 	})
 }
-func (a *API) handleDonationsCgWithInfoRecordInfo(c *httpx.Context) {
 
+func (a *API) handleDonationsCgWithInfoRecordInfo(c *httpx.Context) {
 	if !a.dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
 		return
@@ -147,8 +145,8 @@ func (a *API) handleDonationsCgWithInfoRecordInfo(c *httpx.Context) {
 	}
 	// The legacy layer served the zero-value record for unknown ids (the
 	// parity goldens pin that shape); ErrNotFound keeps exactly that.
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":      reqStatus,
 		"error":       errStr,
@@ -156,8 +154,8 @@ func (a *API) handleDonationsCgWithInfoRecordInfo(c *httpx.Context) {
 		"RecordId":    recordID,
 	})
 }
-func (a *API) handleDonationsByUser(c *httpx.Context) {
 
+func (a *API) handleDonationsByUser(c *httpx.Context) {
 	if !a.dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
 		return
@@ -177,8 +175,8 @@ func (a *API) handleDonationsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                  reqStatus,
 		"error":                   errStr,
@@ -187,8 +185,8 @@ func (a *API) handleDonationsByUser(c *httpx.Context) {
 		"UserAid":                 userAid,
 	})
 }
-func (a *API) handleDonationsCgBothByRound(c *httpx.Context) {
 
+func (a *API) handleDonationsCgBothByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -209,8 +207,8 @@ func (a *API) handleDonationsCgBothByRound(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":              reqStatus,
 		"error":               errStr,
@@ -218,8 +216,8 @@ func (a *API) handleDonationsCgBothByRound(c *httpx.Context) {
 		"RoundNum":            roundNum,
 	})
 }
-func (a *API) handleDonationsCgBothAll(c *httpx.Context) {
 
+func (a *API) handleDonationsCgBothAll(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -231,16 +229,16 @@ func (a *API) handleDonationsCgBothAll(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":              reqStatus,
 		"error":               errStr,
 		"CosmicGameDonations": donations,
 	})
 }
-func (a *API) handleDonationsErc20ByRoundDetailed(c *httpx.Context) {
 
+func (a *API) handleDonationsErc20ByRoundDetailed(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -261,8 +259,8 @@ func (a *API) handleDonationsErc20ByRoundDetailed(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                        reqStatus,
 		"error":                         errStr,
@@ -270,8 +268,8 @@ func (a *API) handleDonationsErc20ByRoundDetailed(c *httpx.Context) {
 		"RoundNum":                      roundNum,
 	})
 }
-func (a *API) handleDonationsErc20ByRoundAll(c *httpx.Context) {
 
+func (a *API) handleDonationsErc20ByRoundAll(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -292,8 +290,8 @@ func (a *API) handleDonationsErc20ByRoundAll(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                   reqStatus,
 		"error":                    errStr,
@@ -301,8 +299,8 @@ func (a *API) handleDonationsErc20ByRoundAll(c *httpx.Context) {
 		"RoundNum":                 roundNum,
 	})
 }
-func (a *API) handleDonationsErc20ByRoundSummarized(c *httpx.Context) {
 
+func (a *API) handleDonationsErc20ByRoundSummarized(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -323,8 +321,8 @@ func (a *API) handleDonationsErc20ByRoundSummarized(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                          reqStatus,
 		"error":                           errStr,
@@ -332,8 +330,8 @@ func (a *API) handleDonationsErc20ByRoundSummarized(c *httpx.Context) {
 		"RoundNum":                        roundNum,
 	})
 }
-func (a *API) handleDonationsErc20ByUser(c *httpx.Context) {
 
+func (a *API) handleDonationsErc20ByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -354,8 +352,8 @@ func (a *API) handleDonationsErc20ByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                     reqStatus,
 		"error":                      errStr,
@@ -364,8 +362,8 @@ func (a *API) handleDonationsErc20ByUser(c *httpx.Context) {
 		"UserAid":                    userAid,
 	})
 }
-func (a *API) handleDonationsErc20Global(c *httpx.Context) {
 
+func (a *API) handleDonationsErc20Global(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -381,8 +379,8 @@ func (a *API) handleDonationsErc20Global(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
@@ -391,8 +389,8 @@ func (a *API) handleDonationsErc20Global(c *httpx.Context) {
 		"Limit":          limit,
 	})
 }
-func (a *API) handleDonatedErc20Info(c *httpx.Context) {
 
+func (a *API) handleDonatedErc20Info(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -423,6 +421,7 @@ func (a *API) handleDonatedErc20Info(c *httpx.Context) {
 		"ERC20Donation": nftdonation,
 	})
 }
+
 func (a *API) handleDonationsErc20DonatedByUser(c *httpx.Context) {
 	// DONOR PERSPECTIVE: Returns ERC20 tokens this user DONATED (not won)
 
@@ -446,8 +445,8 @@ func (a *API) handleDonationsErc20DonatedByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                reqStatus,
 		"error":                 errStr,
@@ -456,8 +455,8 @@ func (a *API) handleDonationsErc20DonatedByUser(c *httpx.Context) {
 		"UserAid":               userAid,
 	})
 }
-func (a *API) handleErc20ClaimsGlobal(c *httpx.Context) {
 
+func (a *API) handleErc20ClaimsGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -484,8 +483,8 @@ func (a *API) handleErc20ClaimsGlobal(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":      reqStatus,
 		"error":       errStr,
@@ -494,8 +493,8 @@ func (a *API) handleErc20ClaimsGlobal(c *httpx.Context) {
 		"Limit":       limit,
 	})
 }
-func (a *API) handleErc20ClaimsByUser(c *httpx.Context) {
 
+func (a *API) handleErc20ClaimsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -516,8 +515,8 @@ func (a *API) handleErc20ClaimsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":              reqStatus,
 		"error":               errStr,
@@ -526,8 +525,8 @@ func (a *API) handleErc20ClaimsByUser(c *httpx.Context) {
 		"UserAid":             userAid,
 	})
 }
-func (a *API) handleErc20ClaimsByRound(c *httpx.Context) {
 
+func (a *API) handleErc20ClaimsByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -548,8 +547,8 @@ func (a *API) handleErc20ClaimsByRound(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":             reqStatus,
 		"error":              errStr,

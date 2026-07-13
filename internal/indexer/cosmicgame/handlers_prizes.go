@@ -25,9 +25,9 @@ func (h *Handlers) decodeMainPrizeClaimed(lg *types.Log, elog *store.EthereumEve
 	}
 
 	evt := &cgmodel.CGPrizeClaimEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.RoundNum = lg.Topics[1].Big().Int64()
@@ -61,9 +61,9 @@ func (h *Handlers) decodePrizesEthReceived(lg *types.Log, elog *store.EthereumEv
 	}
 
 	evt := &cgmodel.CGPrizesEthDeposit{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Round = lg.Topics[1].Big().Int64()
@@ -94,9 +94,9 @@ func (h *Handlers) decodePrizesEthWithdrawn(lg *types.Log, elog *store.EthereumE
 	}
 
 	evt := &cgmodel.CGPrizesEthWithdrawal{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Round = lg.Topics[1].Big().Int64()
@@ -127,9 +127,9 @@ func (h *Handlers) decodeRaffleWinnerPrizePaid(lg *types.Log, elog *store.Ethere
 	}
 
 	evt := &cgmodel.CGRaffleNFTWinner{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -164,9 +164,9 @@ func (h *Handlers) decodeRaffleEthAllocated(lg *types.Log, elog *store.EthereumE
 	}
 
 	evt := &cgmodel.CGRaffleETHWinner{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -197,9 +197,9 @@ func (h *Handlers) decodeEnduranceChampionPrizePaid(lg *types.Log, elog *store.E
 	}
 
 	evt := &cgmodel.CGEnduranceWinner{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -230,9 +230,9 @@ func (h *Handlers) decodeLastCstBidderPrizePaid(lg *types.Log, elog *store.Ether
 	}
 
 	evt := &cgmodel.CGLastBidderWinner{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -263,9 +263,9 @@ func (h *Handlers) decodeChronoWarriorPrizePaid(lg *types.Log, elog *store.Ether
 	}
 
 	evt := &cgmodel.CGChronoWarrior{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -299,9 +299,9 @@ func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumE
 	}
 
 	evt := &cgmodel.CGFundTransferFailed{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Destination = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
@@ -333,9 +333,9 @@ func (h *Handlers) decodeERC20TransferFailed(lg *types.Log, elog *store.Ethereum
 	}
 
 	evt := &cgmodel.CGErc20TransferFailed{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Destination = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()

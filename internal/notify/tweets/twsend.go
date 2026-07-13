@@ -26,10 +26,11 @@ var (
 var videoStatusPollInterval = 2 * time.Second
 
 // TwitterKeys carries the four credentials the send helpers need, as loaded
-// from the operator's TWITTER_KEYS_FILE config.
+// from the operator's TWITTER_KEYS_FILE config. The tags pin the legacy key
+// spellings operators already have on disk.
 type TwitterKeys struct {
-	ApiKey      string
-	ApiSecret   string
+	APIKey      string `json:"ApiKey"`
+	APISecret   string `json:"ApiSecret"`
 	TokenKey    string
 	TokenSecret string
 }
@@ -55,8 +56,8 @@ type ImageResponse struct {
 // StatusUpdateResponse is the statuses/update response subset the callers
 // read back (the tweet id, used for reply threading).
 type StatusUpdateResponse struct {
-	Id    int64  `json:"id"`
-	IdStr string `json:"id_str"`
+	ID    int64  `json:"id"`
+	IDStr string `json:"id_str"`
 }
 
 // ProcessingInfo reports Twitter's server-side video processing progress.

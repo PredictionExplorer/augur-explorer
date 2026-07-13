@@ -207,7 +207,7 @@ func run(ctx context.Context, getenv func(string) string) error {
 		} else {
 			tlsConfig := &tls.Config{Certificates: certs}
 			startTLS := func(addr string) {
-				ln, err := net.Listen("tcp", addr)
+				ln, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
 				if err != nil {
 					log.Printf("HTTPS bind failed on %q: %v", addr, err)
 					return
@@ -222,7 +222,7 @@ func run(ctx context.Context, getenv func(string) string) error {
 		}
 	}
 	if len(portPlain) > 0 {
-		ln, err := net.Listen("tcp", ":"+portPlain)
+		ln, err := new(net.ListenConfig).Listen(ctx, "tcp", ":"+portPlain)
 		if err != nil {
 			return fmt.Errorf("HTTP bind failed on port %s: %w", portPlain, err)
 		}

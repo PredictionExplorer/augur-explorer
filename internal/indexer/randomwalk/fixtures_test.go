@@ -75,23 +75,23 @@ func eventFixtures() []fixture {
 
 	return []fixture{
 		{name: "mint_event", block: 1000, txs: []fixtureTx{{to: rwalk, logs: []fixtureLog{
-			{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-			{MINT_EVENT, mintLog(10, fxCarol)},
+			{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+			{TopicMintEvent, mintLog(10, fxCarol)},
 		}}}},
 		{name: "token_name_after_mint", block: 1010, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: rwalk, logs: []fixtureLog{
-				{TOKEN_NAME_EVT, func(t *testing.T) *types.Log {
+				{TopicTokenNameEvt, func(t *testing.T) *types.Log {
 					return buildLog(t, fxRwalkABI, "TokenNameEvent", addr(rwalk),
 						nil, []any{bigInt(10), "Fixture Walker"})
 				}},
 			}},
 		}},
 		{name: "token_name_unknown_token_skipped", block: 1020, txs: []fixtureTx{{to: rwalk, logs: []fixtureLog{
-			{TOKEN_NAME_EVT, func(t *testing.T) *types.Log {
+			{TopicTokenNameEvt, func(t *testing.T) *types.Log {
 				// No mint for token 99: RWalk_token_exists fails and the
 				// handler skips the insert (layer-1 rows still land).
 				return buildLog(t, fxRwalkABI, "TokenNameEvent", addr(rwalk),
@@ -100,71 +100,71 @@ func eventFixtures() []fixture {
 		}}}},
 		{name: "transfer_secondary", block: 1030, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxCarol, fxDave, 10)},
+				{TopicTransferEvt, transferLog(fxCarol, fxDave, 10)},
 			}},
 		}},
 		{name: "transfer_wrong_address_skipped", block: 1040, txs: []fixtureTx{{to: rwalk, logs: []fixtureLog{
-			{TRANSFER_EVT, func(t *testing.T) *types.Log {
+			{TopicTransferEvt, func(t *testing.T) *types.Log {
 				return buildLog(t, fxRwalkABI, "Transfer", addr(fxAlice),
 					[]any{addr(fxCarol), addr(fxDave), bigInt(10)}, nil)
 			}},
 		}}}},
 		{name: "new_offer_sell", block: 1050, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: market, logs: []fixtureLog{
-				{NEW_OFFER, offerLog(1, 10, fxCarol, fxZero, 3)},
+				{TopicNewOffer, offerLog(1, 10, fxCarol, fxZero, 3)},
 			}},
 		}},
 		{name: "new_offer_buy", block: 1060, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: market, logs: []fixtureLog{
 				// Buy offer: seller is the zero address, buyer bids for the token.
-				{NEW_OFFER, offerLog(2, 10, fxZero, fxDave, 2)},
+				{TopicNewOffer, offerLog(2, 10, fxZero, fxDave, 2)},
 			}},
 		}},
 		{name: "item_bought", block: 1070, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: market, logs: []fixtureLog{
-				{NEW_OFFER, offerLog(1, 10, fxCarol, fxZero, 3)},
+				{TopicNewOffer, offerLog(1, 10, fxCarol, fxZero, 3)},
 			}},
 			{blockOffset: 2, to: market, logs: []fixtureLog{
-				{ITEM_BOUGHT, func(t *testing.T) *types.Log {
+				{TopicItemBought, func(t *testing.T) *types.Log {
 					return buildLog(t, fxMarketABI, "ItemBought", addr(market),
 						[]any{bigInt(1), addr(fxCarol), addr(fxDave)}, nil)
 				}},
-				{TRANSFER_EVT, transferLog(fxCarol, fxDave, 10)},
+				{TopicTransferEvt, transferLog(fxCarol, fxDave, 10)},
 			}},
 		}},
 		{name: "offer_canceled", block: 1080, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: market, logs: []fixtureLog{
-				{NEW_OFFER, offerLog(1, 10, fxCarol, fxZero, 3)},
+				{TopicNewOffer, offerLog(1, 10, fxCarol, fxZero, 3)},
 			}},
 			{blockOffset: 2, to: market, logs: []fixtureLog{
-				{OFFER_CANCELED, func(t *testing.T) *types.Log {
+				{TopicOfferCanceled, func(t *testing.T) *types.Log {
 					return buildLog(t, fxMarketABI, "OfferCanceled", addr(market),
 						[]any{bigInt(1)}, nil)
 				}},
 			}},
 		}},
 		{name: "offer_canceled_unknown_offer_skipped", block: 1090, txs: []fixtureTx{{to: market, logs: []fixtureLog{
-			{OFFER_CANCELED, func(t *testing.T) *types.Log {
+			{TopicOfferCanceled, func(t *testing.T) *types.Log {
 				// Offer 77 was never created: Offer_exists fails and the
 				// handler skips the insert.
 				return buildLog(t, fxMarketABI, "OfferCanceled", addr(market),
@@ -173,11 +173,11 @@ func eventFixtures() []fixture {
 		}}}},
 		{name: "withdrawal_event", block: 1100, txs: []fixtureTx{
 			{blockOffset: 0, to: rwalk, logs: []fixtureLog{
-				{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-				{MINT_EVENT, mintLog(10, fxCarol)},
+				{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+				{TopicMintEvent, mintLog(10, fxCarol)},
 			}},
 			{blockOffset: 1, to: rwalk, logs: []fixtureLog{
-				{WITHDRAWAL_EVT, func(t *testing.T) *types.Log {
+				{TopicWithdrawalEvt, func(t *testing.T) *types.Log {
 					return buildLog(t, fxRwalkABI, "WithdrawalEvent", addr(rwalk),
 						[]any{bigInt(10)}, []any{addr(fxCarol), eth(1)})
 				}},
@@ -227,54 +227,54 @@ func TestEventFixtures(t *testing.T) {
 func marketplaceStory() []fixtureTx {
 	return []fixtureTx{
 		{blockOffset: 0, to: fxRandomWalkAddr, logs: []fixtureLog{
-			{TRANSFER_EVT, transferLog(fxZero, fxCarol, 10)},
-			{MINT_EVENT, mintLog(10, fxCarol)},
+			{TopicTransferEvt, transferLog(fxZero, fxCarol, 10)},
+			{TopicMintEvent, mintLog(10, fxCarol)},
 		}},
 		{blockOffset: 1, to: fxRandomWalkAddr, logs: []fixtureLog{
-			{TRANSFER_EVT, transferLog(fxZero, fxDave, 11)},
-			{MINT_EVENT, mintLog(11, fxDave)},
+			{TopicTransferEvt, transferLog(fxZero, fxDave, 11)},
+			{TopicMintEvent, mintLog(11, fxDave)},
 		}},
 		{blockOffset: 2, to: fxRandomWalkAddr, logs: []fixtureLog{
-			{TRANSFER_EVT, transferLog(fxZero, fxAlice, 12)},
-			{MINT_EVENT, mintLog(12, fxAlice)},
+			{TopicTransferEvt, transferLog(fxZero, fxAlice, 12)},
+			{TopicMintEvent, mintLog(12, fxAlice)},
 		}},
 		{blockOffset: 3, to: fxRandomWalkAddr, logs: []fixtureLog{
-			{TRANSFER_EVT, transferLog(fxZero, fxBob, 13)},
-			{MINT_EVENT, mintLog(13, fxBob)},
+			{TopicTransferEvt, transferLog(fxZero, fxBob, 13)},
+			{TopicMintEvent, mintLog(13, fxBob)},
 		}},
 		{blockOffset: 4, to: fxRandomWalkAddr, logs: []fixtureLog{
-			{TOKEN_NAME_EVT, func(t *testing.T) *types.Log {
+			{TopicTokenNameEvt, func(t *testing.T) *types.Log {
 				return buildLog(t, fxRwalkABI, "TokenNameEvent", addr(fxRandomWalkAddr),
 					nil, []any{bigInt(10), "Story Walker"})
 			}},
 		}},
 		{blockOffset: 5, to: fxMarketplaceAddr, logs: []fixtureLog{
-			{NEW_OFFER, offerLog(1, 10, fxCarol, fxZero, 3)},
+			{TopicNewOffer, offerLog(1, 10, fxCarol, fxZero, 3)},
 		}},
 		{blockOffset: 6, to: fxMarketplaceAddr, logs: []fixtureLog{
-			{ITEM_BOUGHT, func(t *testing.T) *types.Log {
+			{TopicItemBought, func(t *testing.T) *types.Log {
 				return buildLog(t, fxMarketABI, "ItemBought", addr(fxMarketplaceAddr),
 					[]any{bigInt(1), addr(fxCarol), addr(fxDave)}, nil)
 			}},
-			{TRANSFER_EVT, transferLog(fxCarol, fxDave, 10)},
+			{TopicTransferEvt, transferLog(fxCarol, fxDave, 10)},
 		}},
 		{blockOffset: 7, to: fxMarketplaceAddr, logs: []fixtureLog{
-			{NEW_OFFER, offerLog(2, 11, fxDave, fxZero, 5)},
+			{TopicNewOffer, offerLog(2, 11, fxDave, fxZero, 5)},
 		}},
 		{blockOffset: 8, to: fxMarketplaceAddr, logs: []fixtureLog{
-			{NEW_OFFER, offerLog(3, 13, fxBob, fxZero, 4)},
+			{TopicNewOffer, offerLog(3, 13, fxBob, fxZero, 4)},
 		}},
 		{blockOffset: 9, to: fxMarketplaceAddr, logs: []fixtureLog{
-			{NEW_OFFER, offerLog(4, 10, fxDave, fxZero, 6)},
+			{TopicNewOffer, offerLog(4, 10, fxDave, fxZero, 6)},
 		}},
 		{blockOffset: 10, to: fxMarketplaceAddr, logs: []fixtureLog{
-			{OFFER_CANCELED, func(t *testing.T) *types.Log {
+			{TopicOfferCanceled, func(t *testing.T) *types.Log {
 				return buildLog(t, fxMarketABI, "OfferCanceled", addr(fxMarketplaceAddr),
 					[]any{bigInt(4)}, nil)
 			}},
 		}},
 		{blockOffset: 11, to: fxRandomWalkAddr, logs: []fixtureLog{
-			{WITHDRAWAL_EVT, func(t *testing.T) *types.Log {
+			{TopicWithdrawalEvt, func(t *testing.T) *types.Log {
 				return buildLog(t, fxRwalkABI, "WithdrawalEvent", addr(fxRandomWalkAddr),
 					[]any{bigInt(10)}, []any{addr(fxCarol), eth(1)})
 			}},

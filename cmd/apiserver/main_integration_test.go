@@ -85,7 +85,7 @@ func TestRunBootServeAndGracefulShutdown(t *testing.T) {
 		"/api/randomwalk/floor_price":         http.StatusOK,
 		"/api/v2/cosmicgame/rounds/1":         http.StatusOK,
 	} {
-		resp, err := http.Get(base + path) //nolint:noctx // short-lived test client
+		resp, err := http.Get(base + path)
 		if err != nil {
 			t.Fatalf("GET %s: %v", path, err)
 		}
@@ -126,7 +126,7 @@ func waitForServer(t *testing.T, done chan error, cancel context.CancelFunc, pro
 			t.Fatalf("run exited during startup: %v", err)
 		default:
 		}
-		resp, err := http.Get(probe) //nolint:noctx // startup poll
+		resp, err := http.Get(probe) //nolint:gosec // G107: startup poll against a local test listener URL
 		if err == nil {
 			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
@@ -285,7 +285,7 @@ func TestRunStartupFailures(t *testing.T) {
 		registerBootChainState(chain)
 		setEnv(t, db.ConnString, chain.URL())
 		// Squat the wildcard port first so the server's bind fails.
-		ln, err := net.Listen("tcp", ":0")
+		ln, err := net.Listen("tcp", ":0") // #nosec G102 -- deliberately squats the wildcard port for the bind-failure case
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -305,9 +305,18 @@ func TestEnvBoolDefaultTrue(t *testing.T) {
 		value string
 		want  bool
 	}{
-		{"", true}, {"  ", true}, {"true", true}, {"1", true}, {"yes", true},
-		{"anything", true}, {"false", false}, {"FALSE", false}, {"0", false},
-		{"no", false}, {"off", false}, {" Off ", false},
+		{"", true},
+		{"  ", true},
+		{"true", true},
+		{"1", true},
+		{"yes", true},
+		{"anything", true},
+		{"false", false},
+		{"FALSE", false},
+		{"0", false},
+		{"no", false},
+		{"off", false},
+		{" Off ", false},
 	}
 	for _, tc := range cases {
 		getenv := func(string) string { return tc.value }

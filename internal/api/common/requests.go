@@ -56,7 +56,7 @@ func ParseIntFromRemoteOrError(c *httpx.Context, jsonOutput bool, asciiInt *stri
 func ParseTimeframeIniFin(c *httpx.Context, jsonOutput bool) (bool, int, int) {
 	var err error
 	pInitTs := c.Param("init_ts")
-	var initTs int = 0
+	var initTs int
 	if len(pInitTs) > 0 {
 		initTs, err = strconv.Atoi(pInitTs)
 		if err != nil {
@@ -75,7 +75,7 @@ func ParseTimeframeIniFin(c *httpx.Context, jsonOutput bool) (bool, int, int) {
 	}
 
 	pFinTs := c.Param("fin_ts")
-	var finTs int = 0
+	var finTs int
 	if len(pFinTs) > 0 {
 		finTs, err = strconv.Atoi(pFinTs)
 		if err != nil {

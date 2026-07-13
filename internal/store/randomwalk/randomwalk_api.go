@@ -101,6 +101,7 @@ func (r *Repo) ActiveOffers(ctx context.Context, rwalkAid, marketAid int64, orde
 // TOKEN MINT QUERIES
 // =============================================================================
 
+// #nosec G101 -- SQL column list, not a credential
 const mintedTokensSelect = `SELECT
 			t.block_num,
 			EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,

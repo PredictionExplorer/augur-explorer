@@ -40,8 +40,8 @@ func newTweetReplyImageCmd() *cobra.Command {
 
 			nonce := uint64(time.Now().UnixNano()) + 1
 			statusCode, body, err := tweets.SendTweetWithVideo(
-				keys.ApiKey,
-				keys.ApiSecret,
+				keys.APIKey,
+				keys.APISecret,
 				keys.TokenKey,
 				keys.TokenSecret,
 				message,
@@ -57,8 +57,8 @@ func newTweetReplyImageCmd() *cobra.Command {
 			if err := json.NewDecoder(strings.NewReader(body)).Decode(&statusResp); err != nil {
 				return fmt.Errorf("error at decode response: %w", err)
 			}
-			fmt.Printf("status_resp.Id=%v\n", statusResp.Id)
-			fmt.Printf("status_resp.IdStr=%v\n", statusResp.IdStr)
+			fmt.Printf("status_resp.Id=%v\n", statusResp.ID)
+			fmt.Printf("status_resp.IdStr=%v\n", statusResp.IDStr)
 			return nil
 		},
 	}

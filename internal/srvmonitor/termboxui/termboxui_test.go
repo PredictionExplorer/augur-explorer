@@ -4,8 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 	"github.com/nsf/termbox-go"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 )
 
 // recorded is one SetCell invocation.

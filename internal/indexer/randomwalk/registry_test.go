@@ -38,13 +38,13 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 		t.Errorf("registered handlers = %d, want 7", got)
 	}
 	for topic, want := range map[string]string{
-		NEW_OFFER:      "NewOffer",
-		ITEM_BOUGHT:    "ItemBought",
-		OFFER_CANCELED: "OfferCanceled",
-		WITHDRAWAL_EVT: "WithdrawalEvent",
-		TOKEN_NAME_EVT: "TokenNameEvent",
-		TRANSFER_EVT:   "Transfer",
-		MINT_EVENT:     "MintEvent",
+		TopicNewOffer:      "NewOffer",
+		TopicItemBought:    "ItemBought",
+		TopicOfferCanceled: "OfferCanceled",
+		TopicWithdrawalEvt: "WithdrawalEvent",
+		TopicTokenNameEvt:  "TokenNameEvent",
+		TopicTransferEvt:   "Transfer",
+		TopicMintEvent:     "MintEvent",
 	} {
 		if got := reg.TopicName(topicHash(topic)); got != want {
 			t.Errorf("TopicName(%s) = %q, want %q", topic, got, want)

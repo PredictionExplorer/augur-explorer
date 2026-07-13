@@ -39,7 +39,7 @@ func TestIndexEntryParsing(t *testing.T) {
 	tmpDir := t.TempDir()
 	cidxPath := filepath.Join(tmpDir, "receipts.cidx")
 	cdatDir := filepath.Join(tmpDir, "ancient")
-	if err := os.MkdirAll(cdatDir, 0750); err != nil {
+	if err := os.MkdirAll(cdatDir, 0o750); err != nil {
 		t.Fatalf("Failed to create cdat dir: %v", err)
 	}
 
@@ -50,7 +50,7 @@ func TestIndexEntryParsing(t *testing.T) {
 		offset := uint64(i * 10)
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
-	if err := os.WriteFile(cidxPath, cidxData, 0600); err != nil {
+	if err := os.WriteFile(cidxPath, cidxData, 0o600); err != nil {
 		t.Fatalf("Failed to create cidx file: %v", err)
 	}
 
@@ -60,7 +60,7 @@ func TestIndexEntryParsing(t *testing.T) {
 	for i := range cdatData {
 		cdatData[i] = byte(i)
 	}
-	if err := os.WriteFile(cdatPath, cdatData, 0600); err != nil {
+	if err := os.WriteFile(cdatPath, cdatData, 0o600); err != nil {
 		t.Fatalf("Failed to create cdat file: %v", err)
 	}
 
@@ -100,7 +100,7 @@ func TestValidateIndexRange(t *testing.T) {
 	tmpDir := t.TempDir()
 	cidxPath := filepath.Join(tmpDir, "receipts.cidx")
 	cdatDir := filepath.Join(tmpDir, "ancient")
-	if err := os.MkdirAll(cdatDir, 0750); err != nil {
+	if err := os.MkdirAll(cdatDir, 0o750); err != nil {
 		t.Fatalf("Failed to create cdat dir: %v", err)
 	}
 
@@ -110,13 +110,13 @@ func TestValidateIndexRange(t *testing.T) {
 	for _, offset := range offsets {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
-	if err := os.WriteFile(cidxPath, cidxData, 0600); err != nil {
+	if err := os.WriteFile(cidxPath, cidxData, 0o600); err != nil {
 		t.Fatalf("Failed to create cidx file: %v", err)
 	}
 
 	// Create mock cdat file
 	cdatPath := filepath.Join(cdatDir, "receipts.0000.cdat")
-	if err := os.WriteFile(cdatPath, make([]byte, 100), 0600); err != nil {
+	if err := os.WriteFile(cdatPath, make([]byte, 100), 0o600); err != nil {
 		t.Fatalf("Failed to create cdat file: %v", err)
 	}
 
@@ -136,7 +136,7 @@ func TestReadItem(t *testing.T) {
 	tmpDir := t.TempDir()
 	cidxPath := filepath.Join(tmpDir, "receipts.cidx")
 	cdatDir := filepath.Join(tmpDir, "ancient")
-	if err := os.MkdirAll(cdatDir, 0750); err != nil {
+	if err := os.MkdirAll(cdatDir, 0o750); err != nil {
 		t.Fatalf("Failed to create cdat dir: %v", err)
 	}
 
@@ -146,7 +146,7 @@ func TestReadItem(t *testing.T) {
 	for _, offset := range offsets {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
-	if err := os.WriteFile(cidxPath, cidxData, 0600); err != nil {
+	if err := os.WriteFile(cidxPath, cidxData, 0o600); err != nil {
 		t.Fatalf("Failed to create cidx file: %v", err)
 	}
 
@@ -159,7 +159,7 @@ func TestReadItem(t *testing.T) {
 	for i := range cdatData {
 		cdatData[i] = byte(i)
 	}
-	if err := os.WriteFile(cdatPath, cdatData, 0600); err != nil {
+	if err := os.WriteFile(cdatPath, cdatData, 0o600); err != nil {
 		t.Fatalf("Failed to create cdat file: %v", err)
 	}
 
@@ -210,10 +210,10 @@ func TestReadItemCorruptIndexHugeOffset(t *testing.T) {
 	for _, offset := range []uint64{0, 0xFFFFFFFFFFFF} {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "receipts.cidx"), cidxData, 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "receipts.cidx"), cidxData, 0o600); err != nil {
 		t.Fatalf("Failed to create cidx file: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "receipts.0000.cdat"), make([]byte, 10), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "receipts.0000.cdat"), make([]byte, 10), 0o600); err != nil {
 		t.Fatalf("Failed to create cdat file: %v", err)
 	}
 
@@ -243,7 +243,7 @@ func TestEmptyBlock(t *testing.T) {
 	tmpDir := t.TempDir()
 	cidxPath := filepath.Join(tmpDir, "receipts.cidx")
 	cdatDir := filepath.Join(tmpDir, "ancient")
-	if err := os.MkdirAll(cdatDir, 0750); err != nil {
+	if err := os.MkdirAll(cdatDir, 0o750); err != nil {
 		t.Fatalf("Failed to create cdat dir: %v", err)
 	}
 
@@ -256,12 +256,12 @@ func TestEmptyBlock(t *testing.T) {
 	for _, offset := range offsets {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
-	if err := os.WriteFile(cidxPath, cidxData, 0600); err != nil {
+	if err := os.WriteFile(cidxPath, cidxData, 0o600); err != nil {
 		t.Fatalf("Failed to create cidx file: %v", err)
 	}
 
 	cdatPath := filepath.Join(cdatDir, "receipts.0000.cdat")
-	if err := os.WriteFile(cdatPath, make([]byte, 15), 0600); err != nil {
+	if err := os.WriteFile(cdatPath, make([]byte, 15), 0o600); err != nil {
 		t.Fatalf("Failed to create cdat file: %v", err)
 	}
 

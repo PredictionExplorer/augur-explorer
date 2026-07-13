@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 )
 
 // imageProbeTimeout bounds one HEAD request against the image server.
@@ -28,7 +29,7 @@ type ImageCheckStatus struct {
 type ImageMonitorData struct {
 	LatestTokens    [3]ImageCheckStatus
 	RandomToken     ImageCheckStatus
-	DbTokenID       int64
+	DBTokenID       int64
 	ContractTokenID int64
 	TokensMatch     bool
 	ErrStr          string
@@ -90,7 +91,7 @@ func (m *ImageMonitor) checkImages(ctx context.Context, errorChan chan<- string)
 			m.data.LatestTokens[i] = ImageCheckStatus{TokenID: -1, ErrStr: fmt.Sprintf("DB Error: %v", err)}
 		}
 		m.data.RandomToken = ImageCheckStatus{TokenID: -1, ErrStr: fmt.Sprintf("DB Error: %v", err)}
-		m.data.DbTokenID = -1
+		m.data.DBTokenID = -1
 		m.data.ContractTokenID = -1
 		m.data.TokensMatch = false
 		m.data.ErrStr = fmt.Sprintf("DB Error: %v", err)
@@ -100,9 +101,9 @@ func (m *ImageMonitor) checkImages(ctx context.Context, errorChan chan<- string)
 
 	// Store DB token ID
 	if len(tokenIDs) > 0 {
-		m.data.DbTokenID = tokenIDs[0]
+		m.data.DBTokenID = tokenIDs[0]
 	} else {
-		m.data.DbTokenID = -1
+		m.data.DBTokenID = -1
 	}
 
 	// Get contract token ID
@@ -114,11 +115,11 @@ func (m *ImageMonitor) checkImages(ctx context.Context, errorChan chan<- string)
 		sendErr(ctx, errorChan, m.data.ErrStr)
 	} else {
 		m.data.ContractTokenID = contractTokenID
-		m.data.TokensMatch = (m.data.DbTokenID == m.data.ContractTokenID)
+		m.data.TokensMatch = (m.data.DBTokenID == m.data.ContractTokenID)
 		m.data.ErrStr = ""
 
 		if !m.data.TokensMatch {
-			errMsg := fmt.Sprintf("Token ID mismatch: DB=%d, Contract=%d", m.data.DbTokenID, m.data.ContractTokenID)
+			errMsg := fmt.Sprintf("Token ID mismatch: DB=%d, Contract=%d", m.data.DBTokenID, m.data.ContractTokenID)
 			m.data.ErrStr = errMsg
 			sendErr(ctx, errorChan, errMsg)
 		}
@@ -287,7 +288,7 @@ func (m *ImageMonitor) display(disp Display) {
 
 	// Line 2: DB vs Contract
 	x2 := 1
-	dbStr := fmt.Sprintf("Last token DB: %06d", m.data.DbTokenID)
+	dbStr := fmt.Sprintf("Last token DB: %06d", m.data.DBTokenID)
 	disp.DrawText(Position{X: x2, Y: y + 2}, dbStr, ColorWhite, ColorDefault)
 	x2 += len(dbStr) + 2
 

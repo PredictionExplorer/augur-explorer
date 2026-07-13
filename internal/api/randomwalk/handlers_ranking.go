@@ -20,9 +20,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 

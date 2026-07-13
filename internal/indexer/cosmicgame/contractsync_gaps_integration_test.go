@@ -126,7 +126,7 @@ func TestSyncContractParamsFailureModes(t *testing.T) {
 			ctx:   ctx,
 			repo:  cgstore.NewRepo(roStore),
 			store: roStore,
-			meta:  &cgstore.AdminCorrectionMeta{EvtId: -1, BlockNum: 500, TxId: 1, TimeStamp: 1, ContractAid: 1},
+			meta:  &cgstore.AdminCorrectionMeta{EvtID: -1, BlockNum: 500, TxID: 1, TimeStamp: 1, ContractAid: 1},
 		}
 		if _, err := syncer.syncDecimal("price_inc", "cg_adm_price_inc", "new_price_increase", "31337", ""); err == nil {
 			t.Error("syncDecimal on a read-only database succeeded")

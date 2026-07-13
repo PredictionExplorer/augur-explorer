@@ -41,8 +41,8 @@ type recordingHandler struct {
 func (rec *recordingHandler) handler(topic common.Hash, name string, sources ...common.Address) EventHandler {
 	return NewHandler(topic, name, sources,
 		func(lg *types.Log, elog *store.EthereumEventLog) (*testEvent, error) {
-			rec.decoded = append(rec.decoded, elog.EvtId)
-			return &testEvent{EvtID: elog.EvtId, Body: string(lg.Data)}, nil
+			rec.decoded = append(rec.decoded, elog.EvtID)
+			return &testEvent{EvtID: elog.EvtID, Body: string(lg.Data)}, nil
 		},
 		func(_ context.Context, evt *testEvent) error {
 			rec.stored = append(rec.stored, *evt)
@@ -55,7 +55,7 @@ func logWith(topic common.Hash, addr common.Address, data string) *types.Log {
 }
 
 func elogWith(id int64) *store.EthereumEventLog {
-	return &store.EthereumEventLog{EvtId: id}
+	return &store.EthereumEventLog{EvtID: id}
 }
 
 func TestRegistryDispatchesByTopicAndSource(t *testing.T) {
@@ -159,7 +159,7 @@ func TestRegistryStoreErrorPropagates(t *testing.T) {
 	reg, err := NewRegistry(
 		NewHandler(handlerTopicA, "EventA", nil,
 			func(_ *types.Log, elog *store.EthereumEventLog) (*testEvent, error) {
-				return &testEvent{EvtID: elog.EvtId}, nil
+				return &testEvent{EvtID: elog.EvtID}, nil
 			},
 			func(context.Context, *testEvent) error { return storeErr }),
 	)
@@ -262,7 +262,7 @@ func TestLogProcessorReconstructsAndDispatches(t *testing.T) {
 	})
 	src := fakeEventLogSource{
 		42: {
-			EvtId:           42,
+			EvtID:           42,
 			BlockNum:        1234,
 			TxHash:          "0x00000000000000000000000000000000000000000000000000000000000000aa",
 			ContractAddress: contractX.Hex(),
@@ -286,7 +286,7 @@ func TestLogProcessorZeroTopicsIsNoOp(t *testing.T) {
 		t.Fatalf("NewRegistry: %v", err)
 	}
 	src := fakeEventLogSource{
-		1: {EvtId: 1, ContractAddress: contractX.Hex(), RlpLog: mustRLP(t, &types.Log{Address: contractX, Data: []byte{1}})},
+		1: {EvtID: 1, ContractAddress: contractX.Hex(), RlpLog: mustRLP(t, &types.Log{Address: contractX, Data: []byte{1}})},
 	}
 	if err := LogProcessor(src, reg)(context.Background(), 1); err != nil {
 		t.Fatalf("process: %v", err)
@@ -303,7 +303,7 @@ func TestLogProcessorErrors(t *testing.T) {
 		t.Fatalf("NewRegistry: %v", err)
 	}
 	src := fakeEventLogSource{
-		1: {EvtId: 1, ContractAddress: contractX.Hex(), RlpLog: []byte{0xff, 0x00, 0x13}},
+		1: {EvtID: 1, ContractAddress: contractX.Hex(), RlpLog: []byte{0xff, 0x00, 0x13}},
 	}
 	process := LogProcessor(src, reg)
 

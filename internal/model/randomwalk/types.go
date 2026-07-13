@@ -34,7 +34,7 @@ type ContractAddresses struct {
 // =====================================================================
 
 type ENewOffer struct {
-	//signature: 55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a
+	// signature: 55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a
 	NftAddress common.Address
 	OfferId    *big.Int
 	TokenId    *big.Int
@@ -45,7 +45,7 @@ type ENewOffer struct {
 }
 
 type EItemBought struct {
-	//signature: 0xcaacc56f18ca259dc5175dae29eb0ca81407703a4819958c6885acbb7d4f3af3
+	// signature: 0xcaacc56f18ca259dc5175dae29eb0ca81407703a4819958c6885acbb7d4f3af3
 	OfferId *big.Int
 	Seller  common.Address
 	Buyer   common.Address
@@ -53,13 +53,13 @@ type EItemBought struct {
 }
 
 type EOfferCanceled struct {
-	//signature: 0x0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951
+	// signature: 0x0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951
 	OfferId *big.Int
 	Raw     types.Log
 }
 
 type EWithdrawalEvent struct {
-	//signature: 0xa11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7
+	// signature: 0xa11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7
 	TokenId     *big.Int
 	Destination common.Address
 	Amount      *big.Int
@@ -67,14 +67,14 @@ type EWithdrawalEvent struct {
 }
 
 type ETokenNameEvent struct {
-	//signature: 0x8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12
+	// signature: 0x8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12
 	TokenId *big.Int
 	NewName string
 	Raw     types.Log
 }
 
 type EMintEvent struct {
-	//signature: 0xad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec
+	// signature: 0xad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec
 	TokenId *big.Int
 	Owner   common.Address
 	Seed    [32]byte
@@ -83,7 +83,7 @@ type EMintEvent struct {
 }
 
 type ETransfer struct {
-	//signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+	// signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 	From    common.Address
 	To      common.Address
 	TokenId *big.Int
@@ -182,7 +182,7 @@ type NotificationEvent struct {
 	TimeStampMinted int64
 	Price           float64
 	SeedHex         string
-	EvtType         int64 //0-undefined,1-Mint,2-NewOffer Sell, 3-ItemBought, 4 -FloorPriceChanged, 5 - NewOffer Buy
+	EvtType         int64 // 0-undefined,1-Mint,2-NewOffer Sell, 3-ItemBought, 4 -FloorPriceChanged, 5 - NewOffer Buy
 }
 
 type NotificationEvent2 struct {
@@ -192,7 +192,7 @@ type NotificationEvent2 struct {
 	TimeStampMinted int64
 	Price           float64
 	SeedHex         string
-	EvtType         int64 //0-undefined,1-Mint,2-NewOffer Sell, 3-ItemBought, 4 -FloorPriceChanged, 5 - NewOffer Buy
+	EvtType         int64 // 0-undefined,1-Mint,2-NewOffer Sell, 3-ItemBought, 4 -FloorPriceChanged, 5 - NewOffer Buy
 }
 
 type TransferEntry struct {

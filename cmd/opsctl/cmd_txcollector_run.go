@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
-	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
+	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
 
 type txCollectorRunRPC interface {

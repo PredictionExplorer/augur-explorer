@@ -20,7 +20,7 @@ type ParallelReader struct {
 	chunkSize uint64       // Size of each cdat chunk (for offset calculation)
 }
 
-// NewParallelReader creates a new parallel freezer reader with the index loaded into memory
+// NewParallelReader creates a new parallel freezer reader with the index loaded into memory.
 func NewParallelReader(ancientDir string) (*ParallelReader, error) {
 	pr := &ParallelReader{
 		chunkSize: DefaultChunkSize,
@@ -65,7 +65,7 @@ func NewParallelReader(ancientDir string) (*ParallelReader, error) {
 	return pr, nil
 }
 
-// indexCdatFiles discovers and indexes all cdat files
+// indexCdatFiles discovers and indexes all cdat files.
 func (pr *ParallelReader) indexCdatFiles() error {
 	pattern := filepath.Join(pr.cdatDir, "receipts.*.cdat")
 	matches, err := filepath.Glob(pattern)
@@ -120,13 +120,13 @@ func (pr *ParallelReader) getOffset(blockNum uint64) uint64 {
 		uint64(pr.indexData[pos+5])
 }
 
-// BlockRange represents a range of blocks to process
+// BlockRange represents a range of blocks to process.
 type BlockRange struct {
 	Start uint64
 	End   uint64
 }
 
-// BlockData contains raw data for a single block
+// BlockData contains raw data for a single block.
 type BlockData struct {
 	BlockNum uint64
 	Data     []byte
@@ -134,14 +134,14 @@ type BlockData struct {
 }
 
 // WorkerReader is a reader instance for a single worker goroutine
-// Each worker has its own file handles to avoid contention
+// Each worker has its own file handles to avoid contention.
 type WorkerReader struct {
 	pr          *ParallelReader
 	fileHandles map[int]*os.File
 	mu          sync.Mutex
 }
 
-// NewWorkerReader creates a reader for a worker goroutine
+// NewWorkerReader creates a reader for a worker goroutine.
 func (pr *ParallelReader) NewWorkerReader() *WorkerReader {
 	return &WorkerReader{
 		pr:          pr,
@@ -149,7 +149,7 @@ func (pr *ParallelReader) NewWorkerReader() *WorkerReader {
 	}
 }
 
-// Close closes all file handles for this worker
+// Close closes all file handles for this worker.
 func (wr *WorkerReader) Close() error {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
@@ -164,7 +164,7 @@ func (wr *WorkerReader) Close() error {
 	return firstErr
 }
 
-// ReadItem reads the raw receipts data for a block
+// ReadItem reads the raw receipts data for a block.
 func (wr *WorkerReader) ReadItem(blockNum uint64) ([]byte, error) {
 	if blockNum >= wr.pr.itemCount {
 		return nil, fmt.Errorf("block %d >= item count %d", blockNum, wr.pr.itemCount)
@@ -209,7 +209,7 @@ func (pr *ParallelReader) dataEndOffset() uint64 {
 	return last.startOffset + uint64(last.size)
 }
 
-// readBytes reads data spanning potentially multiple cdat files
+// readBytes reads data spanning potentially multiple cdat files.
 func (wr *WorkerReader) readBytes(offset, length uint64, blockNum uint64) ([]byte, error) {
 	// Bound the allocation by the data that actually exists: a corrupt index
 	// must fail with an error, not make(2^48 bytes) and OOM the process.
@@ -257,7 +257,7 @@ func (wr *WorkerReader) readBytes(offset, length uint64, blockNum uint64) ([]byt
 	return result, nil
 }
 
-// findCdatForOffset finds which cdat file contains the offset
+// findCdatForOffset finds which cdat file contains the offset.
 func (wr *WorkerReader) findCdatForOffset(offset uint64) (*cdatEntry, error) {
 	for _, entry := range wr.pr.cdatFiles {
 		endOffset := entry.startOffset + uint64(entry.size)
@@ -268,7 +268,7 @@ func (wr *WorkerReader) findCdatForOffset(offset uint64) (*cdatEntry, error) {
 	return nil, fmt.Errorf("%w: no cdat file for offset %d", ErrDataFileMissing, offset)
 }
 
-// getFileHandle gets or opens a file handle for this worker
+// getFileHandle gets or opens a file handle for this worker.
 func (wr *WorkerReader) getFileHandle(entry *cdatEntry) (*os.File, error) {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
@@ -286,7 +286,7 @@ func (wr *WorkerReader) getFileHandle(entry *cdatEntry) (*os.File, error) {
 	return f, nil
 }
 
-// CdatFileInfo returns info about cdat files
+// CdatFileInfo returns info about cdat files.
 func (pr *ParallelReader) CdatFileInfo() []string {
 	var info []string
 	for _, entry := range pr.cdatFiles {
@@ -296,7 +296,7 @@ func (pr *ParallelReader) CdatFileInfo() []string {
 	return info
 }
 
-// MaxAvailableBlock returns the highest block number that has data available
+// MaxAvailableBlock returns the highest block number that has data available.
 func (pr *ParallelReader) MaxAvailableBlock() uint64 {
 	if len(pr.cdatFiles) == 0 {
 		return 0
@@ -324,7 +324,7 @@ func (pr *ParallelReader) MaxAvailableBlock() uint64 {
 	return 0
 }
 
-// ReadOffsetBatch reads multiple offsets efficiently (for debugging/validation)
+// ReadOffsetBatch reads multiple offsets efficiently (for debugging/validation).
 func (pr *ParallelReader) ReadOffsetBatch(start, count uint64) []uint64 {
 	offsets := make([]uint64, count)
 	for i := uint64(0); i < count && start+i < pr.itemCount; i++ {
@@ -333,7 +333,7 @@ func (pr *ParallelReader) ReadOffsetBatch(start, count uint64) []uint64 {
 	return offsets
 }
 
-// GetIndexStats returns statistics about the index
+// GetIndexStats returns statistics about the index.
 func (pr *ParallelReader) GetIndexStats() (totalBlocks uint64, indexSizeMB float64, cdatFiles int) {
 	return pr.itemCount, float64(len(pr.indexData)) / (1024 * 1024), len(pr.cdatFiles)
 }

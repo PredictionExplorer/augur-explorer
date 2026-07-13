@@ -13,15 +13,16 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/tweets"
 )
 
-// discordKeys is the JSON shape of the Discord credentials file.
+// discordKeys is the JSON shape of the Discord credentials file. The tags
+// pin the legacy key spellings operators already have on disk.
 type discordKeys struct {
 	TokenKey          string
-	ChannelId         uint64 // notifications channel
-	MainChannelId     uint64 // main chat channel
-	MintStatsChanId   uint64
-	PriceStatsChanId  uint64
-	DateStatsChanId   uint64
-	RewardStatsChanId uint64
+	ChannelID         uint64 `json:"ChannelId"`     // notifications channel
+	MainChannelID     uint64 `json:"MainChannelId"` // main chat channel
+	MintStatsChanID   uint64 `json:"MintStatsChanId"`
+	PriceStatsChanID  uint64 `json:"PriceStatsChanId"`
+	DateStatsChanID   uint64 `json:"DateStatsChanId"`
+	RewardStatsChanID uint64 `json:"RewardStatsChanId"`
 }
 
 // keysPath resolves the credential file named by envVar under $HOME/configs.

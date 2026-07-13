@@ -25,9 +25,9 @@ func (h *Handlers) decodeEthDonated(lg *types.Log, elog *store.EthereumEventLog)
 	}
 
 	evt := &cgmodel.CGDonationEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -56,9 +56,9 @@ func (h *Handlers) decodeEthDonatedWithInfo(lg *types.Log, elog *store.EthereumE
 	}
 
 	evt := &cgmodel.CGDonationWithInfoEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -97,9 +97,9 @@ func (h *Handlers) decodeDonationReceived(lg *types.Log, elog *store.EthereumEve
 	}
 
 	evt := &cgmodel.CGDonationReceivedEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
@@ -138,9 +138,9 @@ func (h *Handlers) decodeDonationSent(lg *types.Log, elog *store.EthereumEventLo
 	}
 
 	evt := &cgmodel.CGDonationSentEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.CharityAddr = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
@@ -168,9 +168,9 @@ func (h *Handlers) decodeTokenDonated(lg *types.Log, elog *store.EthereumEventLo
 	}
 
 	evt := &cgmodel.CGERC20DonationEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.RoundNum = lg.Topics[1].Big().Int64()
@@ -215,9 +215,9 @@ func (h *Handlers) decodeNftDonated(lg *types.Log, elog *store.EthereumEventLog)
 	}
 
 	evt := &cgmodel.CGNFTDonationEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -262,9 +262,9 @@ func (h *Handlers) decodeDonatedTokenClaimed(lg *types.Log, elog *store.Ethereum
 	}
 
 	evt := &cgmodel.CGDonatedTokenClaimed{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.RoundNum = lg.Topics[1].Big().Int64()
@@ -295,9 +295,9 @@ func (h *Handlers) decodeDonatedNftClaimed(lg *types.Log, elog *store.EthereumEv
 	}
 
 	evt := &cgmodel.CGDonatedNFTClaimed{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.RoundNum = lg.Topics[1].Big().Int64()
@@ -332,9 +332,9 @@ func (h *Handlers) decodeFundsToCharity(lg *types.Log, elog *store.EthereumEvent
 	}
 
 	evt := &cgmodel.CGFundsToCharity{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.CharityAddr = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()

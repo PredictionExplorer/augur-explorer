@@ -3,12 +3,11 @@ package randomwalk
 import (
 	"net/http"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-// Current offers (API)
+// Current offers (API).
 func (a *API) handleCurrentOffers(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -47,7 +46,7 @@ func (a *API) handleCurrentOffers(c *httpx.Context) {
 	})
 }
 
-// Floor price (API)
+// Floor price (API).
 func (a *API) handleFloorPrice(c *httpx.Context) {
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")

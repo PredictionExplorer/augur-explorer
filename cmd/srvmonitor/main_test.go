@@ -11,8 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 	"github.com/nsf/termbox-go"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 )
 
 // recordingDisplay implements srvmonitor.Display, counting operations.

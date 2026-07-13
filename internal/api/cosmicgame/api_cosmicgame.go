@@ -16,10 +16,9 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	cg "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
@@ -127,7 +126,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 		return
 	}
 	val := reflect.ValueOf(v)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 	if !val.IsValid() {
@@ -138,7 +137,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 		f := val.Float()
 		if math.IsNaN(f) || math.IsInf(f, 0) {
 			// v must be a settable pointer to float64
-			if p := reflect.ValueOf(v); p.Kind() == reflect.Ptr && p.Elem().CanSet() {
+			if p := reflect.ValueOf(v); p.Kind() == reflect.Pointer && p.Elem().CanSet() {
 				p.Elem().SetFloat(0)
 			}
 		}
@@ -156,7 +155,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 				}
 			case reflect.Struct:
 				sanitizeFloatsForJSON(f.Addr().Interface())
-			case reflect.Ptr:
+			case reflect.Pointer:
 				if !f.IsNil() {
 					sanitizeFloatsForJSON(f.Interface())
 				}
@@ -166,7 +165,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 				}
 			}
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if !val.IsNil() {
 			sanitizeFloatsForJSON(val.Interface())
 		}
@@ -182,7 +181,6 @@ func sanitizeFloatsForJSON(v interface{}) {
 // =============================================================================
 
 func (a *API) handleDashboard(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	snap := a.state.Snapshot()
@@ -240,8 +238,8 @@ func (a *API) handleDashboard(c *httpx.Context) {
 	sanitizeFloatsForJSON(&curRoundStats)
 	bwStatsCopy := snap.Stats
 	sanitizeFloatsForJSON(&bwStatsCopy)
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	payload := httpx.H{
 		"status":                               reqStatus,
 		"error":                                errStr,
@@ -313,7 +311,6 @@ func (a *API) handleDashboard(c *httpx.Context) {
 // =============================================================================
 
 func (a *API) handlePrizeList(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -329,8 +326,8 @@ func (a *API) handlePrizeList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status": reqStatus,
 		"error":  errStr,
@@ -343,7 +340,6 @@ func (a *API) handlePrizeList(c *httpx.Context) {
 // =============================================================================
 
 func (a *API) handleBidList(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -359,8 +355,8 @@ func (a *API) handleBidList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status": reqStatus,
 		"error":  errStr,
@@ -369,8 +365,8 @@ func (a *API) handleBidList(c *httpx.Context) {
 		"Limit":  limit,
 	})
 }
-func (a *API) handleBidListByRound(c *httpx.Context) {
 
+func (a *API) handleBidListByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -405,8 +401,8 @@ func (a *API) handleBidListByRound(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":      reqStatus,
 		"error":       errStr,
@@ -420,16 +416,16 @@ func (a *API) handleBidListByRound(c *httpx.Context) {
 }
 
 type bidMessageTxJSON struct {
-	EvtLogId  int64  `json:"evtLogId"`
+	EvtLogID  int64  `json:"evtLogId"`
 	BlockNum  int64  `json:"blockNum"`
-	TxId      int64  `json:"txId"`
+	TxID      int64  `json:"txId"`
 	TxHash    string `json:"txHash"`
 	TimeStamp int64  `json:"timeStamp"`
 	DateTime  string `json:"dateTime"`
 }
 
 type bidWithMessageJSON struct {
-	EvtLogId                   int64            `json:"evtLogId"`
+	EvtLogID                   int64            `json:"evtLogId"`
 	GesturePosition            int64            `json:"gesturePosition"`
 	RoundNum                   int64            `json:"roundNum"`
 	ParticipantAddr            string           `json:"participantAddr"`
@@ -445,7 +441,7 @@ type bidWithMessageJSON struct {
 
 func bidRecToWithMessageJSON(rec cgmodel.CGBidRec) bidWithMessageJSON {
 	return bidWithMessageJSON{
-		EvtLogId:                   rec.Tx.EvtLogId,
+		EvtLogID:                   rec.Tx.EvtLogId,
 		GesturePosition:            rec.BidPosition,
 		RoundNum:                   rec.RoundNum,
 		ParticipantAddr:            rec.BidderAddr,
@@ -457,9 +453,9 @@ func bidRecToWithMessageJSON(rec cgmodel.CGBidRec) bidWithMessageJSON {
 		CstDutchAuctionDuration:    rec.CstDutchAuctionDuration,
 		CstDutchAuctionDurationInt: rec.CstDutchAuctionDurationInt,
 		Tx: bidMessageTxJSON{
-			EvtLogId:  rec.Tx.EvtLogId,
+			EvtLogID:  rec.Tx.EvtLogId,
 			BlockNum:  rec.Tx.BlockNum,
-			TxId:      rec.Tx.TxId,
+			TxID:      rec.Tx.TxId,
 			TxHash:    rec.Tx.TxHash,
 			TimeStamp: rec.Tx.TimeStamp,
 			DateTime:  rec.Tx.DateTime,
@@ -485,7 +481,6 @@ func (a *API) respondBidInfoJSON(c *httpx.Context, evtlogID int64) {
 }
 
 func (a *API) handleBidInfo(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -505,7 +500,6 @@ func (a *API) handleBidInfo(c *httpx.Context) {
 }
 
 func (a *API) handleBidInfoByPos(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -545,7 +539,6 @@ func (a *API) handleBidInfoByPos(c *httpx.Context) {
 }
 
 func (a *API) handleBidWithMessageByRound(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -588,8 +581,8 @@ func (a *API) handleBidWithMessageByRound(c *httpx.Context) {
 		"limit":    limit,
 	})
 }
-func (a *API) handleRoundInfo(c *httpx.Context) {
 
+func (a *API) handleRoundInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -614,16 +607,16 @@ func (a *API) handleRoundInfo(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":    reqStatus,
 		"error":     errStr,
 		"RoundInfo": prizeInfo,
 	})
 }
-func (a *API) handleUserInfo(c *httpx.Context) {
 
+func (a *API) handleUserInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -751,8 +744,8 @@ func (a *API) handleUserInfo(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":          reqStatus,
 		"error":           errStr,
@@ -791,7 +784,6 @@ func (a *API) handleUserInfo(c *httpx.Context) {
 // =============================================================================
 
 func (a *API) handleCharityCosmicgameDeposits(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -810,16 +802,16 @@ func (a *API) handleCharityCosmicgameDeposits(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
 		"CharityDonations": donations,
 	})
 }
-func (a *API) handleCharityVoluntaryDeposits(c *httpx.Context) {
 
+func (a *API) handleCharityVoluntaryDeposits(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -838,16 +830,16 @@ func (a *API) handleCharityVoluntaryDeposits(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
 		"CharityDonations": donations,
 	})
 }
-func (a *API) handleCharityDonationsDeposits(c *httpx.Context) {
 
+func (a *API) handleCharityDonationsDeposits(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -866,16 +858,16 @@ func (a *API) handleCharityDonationsDeposits(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
 		"CharityDonations": donations,
 	})
 }
-func (a *API) handleCharityDonationsWithdrawals(c *httpx.Context) {
 
+func (a *API) handleCharityDonationsWithdrawals(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -887,8 +879,8 @@ func (a *API) handleCharityDonationsWithdrawals(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":             reqStatus,
 		"error":              errStr,
@@ -901,7 +893,6 @@ func (a *API) handleCharityDonationsWithdrawals(c *httpx.Context) {
 // =============================================================================
 
 func (a *API) handleUserUniqueBidders(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -914,16 +905,16 @@ func (a *API) handleUserUniqueBidders(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":        reqStatus,
 		"error":         errStr,
 		"UniqueBidders": uniqueBidders,
 	})
 }
-func (a *API) handleUserUniqueWinners(c *httpx.Context) {
 
+func (a *API) handleUserUniqueWinners(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -936,16 +927,16 @@ func (a *API) handleUserUniqueWinners(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":        reqStatus,
 		"error":         errStr,
 		"UniqueWinners": uniqueWinners,
 	})
 }
-func (a *API) handleRoiLeaderboard(c *httpx.Context) {
 
+func (a *API) handleRoiLeaderboard(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -982,8 +973,8 @@ func (a *API) handleRoiLeaderboard(c *httpx.Context) {
 		"RoiLeaderboard": leaderboard,
 	})
 }
-func (a *API) handleClaimsByRound(c *httpx.Context) {
 
+func (a *API) handleClaimsByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1002,8 +993,8 @@ func (a *API) handleClaimsByRound(c *httpx.Context) {
 		"ClaimsByRound": claims,
 	})
 }
-func (a *API) handleClaimDetailByRound(c *httpx.Context) {
 
+func (a *API) handleClaimDetailByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1030,8 +1021,8 @@ func (a *API) handleClaimDetailByRound(c *httpx.Context) {
 		"AttachedTokens":    detail.AttachedTokens,
 	})
 }
-func (a *API) handleUserUniqueDonors(c *httpx.Context) {
 
+func (a *API) handleUserUniqueDonors(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1044,8 +1035,8 @@ func (a *API) handleUserUniqueDonors(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":       reqStatus,
 		"error":        errStr,
@@ -1058,7 +1049,6 @@ func (a *API) handleUserUniqueDonors(c *httpx.Context) {
 // =============================================================================
 
 func (a *API) handleDonationsNftList(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1075,8 +1065,8 @@ func (a *API) handleDonationsNftList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":       reqStatus,
 		"error":        errStr,
@@ -1085,8 +1075,8 @@ func (a *API) handleDonationsNftList(c *httpx.Context) {
 		"Limit":        limit,
 	})
 }
-func (a *API) handleNftDonationStats(c *httpx.Context) {
 
+func (a *API) handleNftDonationStats(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1099,14 +1089,15 @@ func (a *API) handleNftDonationStats(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
 		"NFTDonationStats": nftDonationStats,
 	})
 }
+
 func (a *API) handleNftDonationsByUser(c *httpx.Context) {
 	// DONOR PERSPECTIVE: Returns NFTs this user DONATED
 
@@ -1130,8 +1121,8 @@ func (a *API) handleNftDonationsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":              reqStatus,
 		"error":               errStr,
@@ -1140,8 +1131,8 @@ func (a *API) handleNftDonationsByUser(c *httpx.Context) {
 		"UserAid":             userAid,
 	})
 }
-func (a *API) handleRecordCounters(c *httpx.Context) {
 
+func (a *API) handleRecordCounters(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1154,16 +1145,16 @@ func (a *API) handleRecordCounters(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
 		"RecordCounters": recordCounters,
 	})
 }
-func (a *API) handleDonatedNftInfo(c *httpx.Context) {
 
+func (a *API) handleDonatedNftInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1200,7 +1191,6 @@ func (a *API) handleDonatedNftInfo(c *httpx.Context) {
 // =============================================================================
 
 func (a *API) handlePrizeDepositsList(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1228,8 +1218,8 @@ func (a *API) handlePrizeDepositsList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
@@ -1238,8 +1228,8 @@ func (a *API) handlePrizeDepositsList(c *httpx.Context) {
 		"Limit":          limit,
 	})
 }
-func (a *API) handleAllEthDepositsList(c *httpx.Context) {
 
+func (a *API) handleAllEthDepositsList(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1267,8 +1257,8 @@ func (a *API) handleAllEthDepositsList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":      reqStatus,
 		"error":       errStr,
@@ -1277,8 +1267,8 @@ func (a *API) handleAllEthDepositsList(c *httpx.Context) {
 		"Limit":       limit,
 	})
 }
-func (a *API) handleRaffleEthDepositsList(c *httpx.Context) {
 
+func (a *API) handleRaffleEthDepositsList(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1306,8 +1296,8 @@ func (a *API) handleRaffleEthDepositsList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
@@ -1316,8 +1306,8 @@ func (a *API) handleRaffleEthDepositsList(c *httpx.Context) {
 		"Limit":          limit,
 	})
 }
-func (a *API) handleChronowarriorEthDepositsList(c *httpx.Context) {
 
+func (a *API) handleChronowarriorEthDepositsList(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1345,8 +1335,8 @@ func (a *API) handleChronowarriorEthDepositsList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                reqStatus,
 		"error":                 errStr,
@@ -1356,9 +1346,8 @@ func (a *API) handleChronowarriorEthDepositsList(c *httpx.Context) {
 	})
 }
 
-// Unified URI scheme handlers - per-user
+// Unified URI scheme handlers - per-user.
 func (a *API) handleUnifiedEthAllByUser(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1377,8 +1366,8 @@ func (a *API) handleUnifiedEthAllByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":      reqStatus,
 		"error":       errStr,
@@ -1387,8 +1376,8 @@ func (a *API) handleUnifiedEthAllByUser(c *httpx.Context) {
 		"AllDeposits": deposits,
 	})
 }
-func (a *API) handleUnifiedEthRaffleByUser(c *httpx.Context) {
 
+func (a *API) handleUnifiedEthRaffleByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1407,8 +1396,8 @@ func (a *API) handleUnifiedEthRaffleByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
@@ -1417,8 +1406,8 @@ func (a *API) handleUnifiedEthRaffleByUser(c *httpx.Context) {
 		"RaffleDeposits": deposits,
 	})
 }
-func (a *API) handleUnifiedEthChronowarriorByUser(c *httpx.Context) {
 
+func (a *API) handleUnifiedEthChronowarriorByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1437,8 +1426,8 @@ func (a *API) handleUnifiedEthChronowarriorByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                reqStatus,
 		"error":                 errStr,
@@ -1447,8 +1436,8 @@ func (a *API) handleUnifiedEthChronowarriorByUser(c *httpx.Context) {
 		"ChronoWarriorDeposits": deposits,
 	})
 }
-func (a *API) handlePrizeDepositsByRound(c *httpx.Context) {
 
+func (a *API) handlePrizeDepositsByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1471,8 +1460,8 @@ func (a *API) handlePrizeDepositsByRound(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
@@ -1480,8 +1469,8 @@ func (a *API) handlePrizeDepositsByRound(c *httpx.Context) {
 		"RoundNum":       roundNum,
 	})
 }
-func (a *API) handleRaffleNftWinnersList(c *httpx.Context) {
 
+func (a *API) handleRaffleNftWinnersList(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1509,8 +1498,8 @@ func (a *API) handleRaffleNftWinnersList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -1519,8 +1508,8 @@ func (a *API) handleRaffleNftWinnersList(c *httpx.Context) {
 		"Limit":            limit,
 	})
 }
-func (a *API) handleRaffleNftWinnersByRound(c *httpx.Context) {
 
+func (a *API) handleRaffleNftWinnersByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1548,8 +1537,8 @@ func (a *API) handleRaffleNftWinnersByRound(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -1558,8 +1547,8 @@ func (a *API) handleRaffleNftWinnersByRound(c *httpx.Context) {
 		"RoundNum":          roundNum,
 	})
 }
-func (a *API) handleUserRaffleNftWinnings(c *httpx.Context) {
 
+func (a *API) handleUserRaffleNftWinnings(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1589,8 +1578,8 @@ func (a *API) handleUserRaffleNftWinnings(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                reqStatus,
 		"error":                 errStr,
@@ -1598,8 +1587,8 @@ func (a *API) handleUserRaffleNftWinnings(c *httpx.Context) {
 		"UserInfo":              userInfo,
 	})
 }
-func (a *API) handlePrizeDepositsRaffleEthByUser(c *httpx.Context) {
 
+func (a *API) handlePrizeDepositsRaffleEthByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1627,8 +1616,8 @@ func (a *API) handlePrizeDepositsRaffleEthByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":             reqStatus,
 		"error":              errStr,
@@ -1636,8 +1625,8 @@ func (a *API) handlePrizeDepositsRaffleEthByUser(c *httpx.Context) {
 		"UserInfo":           userInfo,
 	})
 }
-func (a *API) handlePrizeDepositsChronoWarriorByUser(c *httpx.Context) {
 
+func (a *API) handlePrizeDepositsChronoWarriorByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1665,8 +1654,8 @@ func (a *API) handlePrizeDepositsChronoWarriorByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                    reqStatus,
 		"error":                     errStr,
@@ -1674,8 +1663,8 @@ func (a *API) handlePrizeDepositsChronoWarriorByUser(c *httpx.Context) {
 		"UserInfo":                  userInfo,
 	})
 }
-func (a *API) handleNftDonationsByPrize(c *httpx.Context) {
 
+func (a *API) handleNftDonationsByPrize(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1696,8 +1685,8 @@ func (a *API) handleNftDonationsByPrize(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":       reqStatus,
 		"error":        errStr,
@@ -1705,6 +1694,7 @@ func (a *API) handleNftDonationsByPrize(c *httpx.Context) {
 		"RoundNum":     prizeNum,
 	})
 }
+
 func (a *API) handleNftDonationsByToken(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -1729,8 +1719,8 @@ func (a *API) handleNftDonationsByToken(c *httpx.Context) {
 		"TokenAddr":    pTokenAddr,
 	})
 }
-func (a *API) handleCosmicSignatureTokenList(c *httpx.Context) {
 
+func (a *API) handleCosmicSignatureTokenList(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1747,8 +1737,8 @@ func (a *API) handleCosmicSignatureTokenList(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                   reqStatus,
 		"error":                    errStr,
@@ -1757,8 +1747,8 @@ func (a *API) handleCosmicSignatureTokenList(c *httpx.Context) {
 		"Limit":                    limit,
 	})
 }
-func (a *API) handleCosmicSignatureTokenInfo(c *httpx.Context) {
 
+func (a *API) handleCosmicSignatureTokenInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1785,8 +1775,8 @@ func (a *API) handleCosmicSignatureTokenInfo(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	if tokenInfo.RecordType == 3 {
 		// The legacy code ignored the found/not-found flag and rendered the
@@ -1811,8 +1801,8 @@ func (a *API) handleCosmicSignatureTokenInfo(c *httpx.Context) {
 		})
 	}
 }
-func (a *API) handleDonatedNftClaimsAll(c *httpx.Context) {
 
+func (a *API) handleDonatedNftClaimsAll(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1840,8 +1830,8 @@ func (a *API) handleDonatedNftClaimsAll(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -1850,6 +1840,7 @@ func (a *API) handleDonatedNftClaimsAll(c *httpx.Context) {
 		"Limit":            limit,
 	})
 }
+
 func (a *API) handleDonatedNftClaimsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -1882,8 +1873,8 @@ func (a *API) handleDonatedNftClaimsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -1891,8 +1882,8 @@ func (a *API) handleDonatedNftClaimsByUser(c *httpx.Context) {
 		"UserInfo":         userInfo,
 	})
 }
-func (a *API) handleTimeCurrent(c *httpx.Context) {
 
+func (a *API) handleTimeCurrent(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1904,8 +1895,7 @@ func (a *API) handleTimeCurrent(c *httpx.Context) {
 		common.RespondErrorJSON(c, fmt.Sprintf("%v", err))
 		return
 	}
-	var rpcobj map[string]interface{}
-	rpcobj = make(map[string]interface{})
+	rpcobj := make(map[string]interface{})
 	err = json.Unmarshal(raw, &rpcobj)
 	if err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Error decoding JSON: %v", err))
@@ -1918,16 +1908,16 @@ func (a *API) handleTimeCurrent(c *httpx.Context) {
 		common.RespondErrorJSON(c, fmt.Sprintf("Error decoding timestamp from hex: %v", err))
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
 		"CurrentTimeStamp": ts,
 	})
 }
-func (a *API) handleTimeUntilPrize(c *httpx.Context) {
 
+func (a *API) handleTimeUntilPrize(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1952,16 +1942,16 @@ func (a *API) handleTimeUntilPrize(c *httpx.Context) {
 		return
 	}
 	tsBig := ethcommon.HexToHash(tsHex).Big()
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
 		"TimeUntilPrize": tsBig.Int64(),
 	})
 }
-func (a *API) handlePrizeCurRoundTime(c *httpx.Context) {
 
+func (a *API) handlePrizeCurRoundTime(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -1969,7 +1959,7 @@ func (a *API) handlePrizeCurRoundTime(c *httpx.Context) {
 	}
 
 	// Return 200 with status/error in body when contract is unavailable, so frontend gets consistent response shape
-	var reqStatus int = 1
+	reqStatus := 1
 	var errStr string
 	var prizeTime *big.Int
 
@@ -1993,8 +1983,8 @@ func (a *API) handlePrizeCurRoundTime(c *httpx.Context) {
 		"CurRoundPrizeTime": prizeTime,
 	})
 }
-func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 
+func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2016,8 +2006,8 @@ func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":   reqStatus,
 		"error":    errStr,
@@ -2026,8 +2016,8 @@ func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 		"UserAid":  userAid,
 	})
 }
-func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 
+func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2065,8 +2055,8 @@ func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -2075,8 +2065,8 @@ func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 		"UserPrizeHistory": claimHistory,
 	})
 }
-func (a *API) handleGlobalClaimHistoryDetail(c *httpx.Context) {
 
+func (a *API) handleGlobalClaimHistoryDetail(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2093,16 +2083,16 @@ func (a *API) handleGlobalClaimHistoryDetail(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":             reqStatus,
 		"error":              errStr,
 		"GlobalPrizeHistory": claimHistory,
 	})
 }
-func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 
+func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2136,8 +2126,8 @@ func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":               reqStatus,
 		"error":                errStr,
@@ -2146,8 +2136,8 @@ func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 		"UserAid":              userAid,
 	})
 }
-func (a *API) handleUnclaimedDonatedNftsByPrize(c *httpx.Context) {
 
+func (a *API) handleUnclaimedDonatedNftsByPrize(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2169,8 +2159,8 @@ func (a *API) handleUnclaimedDonatedNftsByPrize(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":       reqStatus,
 		"error":        errStr,
@@ -2178,8 +2168,8 @@ func (a *API) handleUnclaimedDonatedNftsByPrize(c *httpx.Context) {
 		"RoundNum":     prizeNum,
 	})
 }
-func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 
+func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2217,8 +2207,8 @@ func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -2227,8 +2217,8 @@ func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 		"UnclaimedDeposits": deposits,
 	})
 }
-func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 
+func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2275,8 +2265,8 @@ func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":     reqStatus,
 		"error":      errStr,
@@ -2285,8 +2275,8 @@ func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 		"UserTokens": userTokens,
 	})
 }
-func (a *API) handleTokenNameHistory(c *httpx.Context) {
 
+func (a *API) handleTokenNameHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2303,8 +2293,8 @@ func (a *API) handleTokenNameHistory(c *httpx.Context) {
 		}
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	toknameHistory, err := a.repo.TokenNameHistory(c.Request.Context(), tokenID)
 	if err != nil {
@@ -2318,8 +2308,8 @@ func (a *API) handleTokenNameHistory(c *httpx.Context) {
 		"TokenNameHistory": toknameHistory,
 	})
 }
-func (a *API) handleTokenNameSearch(c *httpx.Context) {
 
+func (a *API) handleTokenNameSearch(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2333,8 +2323,8 @@ func (a *API) handleTokenNameSearch(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                 reqStatus,
@@ -2343,16 +2333,16 @@ func (a *API) handleTokenNameSearch(c *httpx.Context) {
 		"TokenNameSearchResults": results,
 	})
 }
-func (a *API) handleNamedTokensOnly(c *httpx.Context) {
 
+func (a *API) handleNamedTokensOnly(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	results, err := a.repo.NamedTokens(c.Request.Context())
 	if err != nil {
@@ -2365,8 +2355,8 @@ func (a *API) handleNamedTokensOnly(c *httpx.Context) {
 		"NamedTokens": results,
 	})
 }
-func (a *API) handleTokenOwnershipTransfers(c *httpx.Context) {
 
+func (a *API) handleTokenOwnershipTransfers(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2387,8 +2377,8 @@ func (a *API) handleTokenOwnershipTransfers(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	transfers, err := a.repo.TokenOwnershipTransfers(c.Request.Context(), tokenID, offset, limit)
 	if err != nil {
@@ -2404,6 +2394,7 @@ func (a *API) handleTokenOwnershipTransfers(c *httpx.Context) {
 		"TokenTransfers": transfers,
 	})
 }
+
 func (a *API) handleCsTokenDistribution(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -2417,8 +2408,8 @@ func (a *API) handleCsTokenDistribution(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                           reqStatus,
@@ -2426,8 +2417,8 @@ func (a *API) handleCsTokenDistribution(c *httpx.Context) {
 		"CosmicSignatureTokenDistribution": distribution,
 	})
 }
-func (a *API) handleUserBalances(c *httpx.Context) {
 
+func (a *API) handleUserBalances(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2458,8 +2449,8 @@ func (a *API) handleUserBalances(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":             reqStatus,
@@ -2470,8 +2461,8 @@ func (a *API) handleUserBalances(c *httpx.Context) {
 		"CosmicTokenBalance": ctBalance.String(),
 	})
 }
-func (a *API) handleCosmicTokenBalances(c *httpx.Context) {
 
+func (a *API) handleCosmicTokenBalances(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2483,8 +2474,8 @@ func (a *API) handleCosmicTokenBalances(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":              reqStatus,
@@ -2492,8 +2483,8 @@ func (a *API) handleCosmicTokenBalances(c *httpx.Context) {
 		"CosmicTokenBalances": balances,
 	})
 }
-func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 
+func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2549,8 +2540,8 @@ func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -2562,8 +2553,8 @@ func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 		"Statistics":       stats,
 	})
 }
-func (a *API) handleCosmicTokenSummaryByUser(c *httpx.Context) {
 
+func (a *API) handleCosmicTokenSummaryByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2583,14 +2574,15 @@ func (a *API) handleCosmicTokenSummaryByUser(c *httpx.Context) {
 	}
 	summary.UserAddr = pUserAddr
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":  reqStatus,
 		"error":   errStr,
 		"Summary": summary,
 	})
 }
+
 func parseCosmicTokenHistoryDateParam(c *httpx.Context, paramName string) (string, bool) {
 	val := c.Param(paramName)
 	if len(val) != 8 {
@@ -2605,7 +2597,6 @@ func parseCosmicTokenHistoryDateParam(c *httpx.Context, paramName string) (strin
 }
 
 func (a *API) handleCosmicTokenTotalSupplyHistoryByBid(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2623,8 +2614,8 @@ func (a *API) handleCosmicTokenTotalSupplyHistoryByBid(c *httpx.Context) {
 		"TotalSupplyHistory": history,
 	})
 }
-func (a *API) handleCosmicTokenTotalSupplyHistoryByDate(c *httpx.Context) {
 
+func (a *API) handleCosmicTokenTotalSupplyHistoryByDate(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2657,8 +2648,8 @@ func (a *API) handleCosmicTokenTotalSupplyHistoryByDate(c *httpx.Context) {
 		"TotalSupplyHistory": history,
 	})
 }
-func (a *API) handleCosmicTokenTransfersByUser(c *httpx.Context) {
 
+func (a *API) handleCosmicTokenTransfersByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2679,8 +2670,8 @@ func (a *API) handleCosmicTokenTransfersByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":               reqStatus,
@@ -2692,8 +2683,8 @@ func (a *API) handleCosmicTokenTransfersByUser(c *httpx.Context) {
 		"CosmicTokenTransfers": transfers,
 	})
 }
-func (a *API) handleCosmicSignatureTransfersByUser(c *httpx.Context) {
 
+func (a *API) handleCosmicSignatureTransfersByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2714,8 +2705,8 @@ func (a *API) handleCosmicSignatureTransfersByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                   reqStatus,
@@ -2727,8 +2718,8 @@ func (a *API) handleCosmicSignatureTransfersByUser(c *httpx.Context) {
 		"CosmicSignatureTransfers": transfers,
 	})
 }
-func (a *API) handleUsedRwalkNfts(c *httpx.Context) {
 
+func (a *API) handleUsedRwalkNfts(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2740,8 +2731,8 @@ func (a *API) handleUsedRwalkNfts(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":        reqStatus,
@@ -2749,6 +2740,7 @@ func (a *API) handleUsedRwalkNfts(c *httpx.Context) {
 		"UsedRwalkNFTs": usedNfts,
 	})
 }
+
 func (a *API) handleMarketingRewardsGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -2764,8 +2756,8 @@ func (a *API) handleMarketingRewardsGlobal(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -2774,6 +2766,7 @@ func (a *API) handleMarketingRewardsGlobal(c *httpx.Context) {
 		"MarketingRewards": rewards,
 	})
 }
+
 func (a *API) handleMarketingRewardsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -2803,8 +2796,8 @@ func (a *API) handleMarketingRewardsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":               reqStatus,
 		"error":                errStr,
@@ -2815,6 +2808,7 @@ func (a *API) handleMarketingRewardsByUser(c *httpx.Context) {
 		"UserMarketingRewards": rewards,
 	})
 }
+
 func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -2859,8 +2853,8 @@ func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":              reqStatus,
 		"error":               errStr,
@@ -2870,8 +2864,8 @@ func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 		"OwnerAddr":           ownerAddr.String(),
 	})
 }
-func (a *API) handleGetCstPrice(c *httpx.Context) {
 
+func (a *API) handleGetCstPrice(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	// The abigen constructor only fails parsing its embedded ABI constant —
 	// statically impossible.
@@ -2891,8 +2885,8 @@ func (a *API) handleGetCstPrice(c *httpx.Context) {
 		common.RespondError(c, err.Error())
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":          reqStatus,
 		"error":           errStr,
@@ -2901,8 +2895,8 @@ func (a *API) handleGetCstPrice(c *httpx.Context) {
 		"AuctionDuration": auctionDuration.String(),
 	})
 }
-func (a *API) handleGetEthPrice(c *httpx.Context) {
 
+func (a *API) handleGetEthPrice(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	// The abigen constructor only fails parsing its embedded ABI constant —
 	// statically impossible.
@@ -2922,8 +2916,8 @@ func (a *API) handleGetEthPrice(c *httpx.Context) {
 		common.RespondError(c, err.Error())
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":          reqStatus,
 		"error":           errStr,
@@ -2932,8 +2926,8 @@ func (a *API) handleGetEthPrice(c *httpx.Context) {
 		"AuctionDuration": auctionDuration.String(),
 	})
 }
-func (a *API) handleSysmodeChanges(c *httpx.Context) {
 
+func (a *API) handleSysmodeChanges(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -2971,8 +2965,8 @@ func (a *API) handleSysmodeChanges(c *httpx.Context) {
 		}}
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -2981,8 +2975,8 @@ func (a *API) handleSysmodeChanges(c *httpx.Context) {
 		"SystemModeChanges": systemModeChanges,
 	})
 }
-func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 
+func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -3018,8 +3012,8 @@ func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 	}
 	a.enrichAdminEventsResolvedValues(eventList)
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":        reqStatus,
 		"error":         errStr,
@@ -3028,8 +3022,8 @@ func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 		"EvtLogIdEnd":   evtlogEnd,
 	})
 }
-func (a *API) handleBidSpecialWinners(c *httpx.Context) {
 
+func (a *API) handleBidSpecialWinners(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -3062,8 +3056,8 @@ func (a *API) handleBidSpecialWinners(c *httpx.Context) {
 	if state.HasLastCstBidderLastBidTime {
 		resp["LastCstBidderLastBidTime"] = state.LastCstBidderLastBidTime
 	}
-	if state.HasLastCstBidEventLogId {
-		resp["LastCstBidEventLogId"] = state.LastCstBidEventLogId
+	if state.HasLastCstBidEventLogID {
+		resp["LastCstBidEventLogId"] = state.LastCstBidEventLogID
 	}
 	c.JSON(http.StatusOK, resp)
 }
@@ -3088,7 +3082,7 @@ func (a *API) handleGetBannedBids(c *httpx.Context) {
 }
 
 type banBidPayload struct {
-	BidId    int64  `json:"bid_id"`
+	BidID    int64  `json:"bid_id"`
 	UserAddr string `json:"user_addr"`
 }
 
@@ -3100,11 +3094,11 @@ func (a *API) handleBanBid(c *httpx.Context) {
 	}
 	// Zero values are rejected like the legacy required-field binding did.
 	var payload banBidPayload
-	if err := c.ShouldBindJSON(&payload); err != nil || payload.BidId == 0 || payload.UserAddr == "" {
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.BidID == 0 || payload.UserAddr == "" {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id and user_addr required")
 		return
 	}
-	if err := a.repo.InsertBannedBid(c.Request.Context(), payload.BidId, payload.UserAddr); err != nil {
+	if err := a.repo.InsertBannedBid(c.Request.Context(), payload.BidID, payload.UserAddr); err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to insert banned bid: %v", err))
 		return
 	}
@@ -3112,7 +3106,7 @@ func (a *API) handleBanBid(c *httpx.Context) {
 }
 
 type unbanBidPayload struct {
-	BidId int64 `json:"bid_id"`
+	BidID int64 `json:"bid_id"`
 }
 
 func (a *API) handleUnbanBid(c *httpx.Context) {
@@ -3123,11 +3117,11 @@ func (a *API) handleUnbanBid(c *httpx.Context) {
 	}
 	// A zero bid_id is rejected like the legacy required-field binding did.
 	var payload unbanBidPayload
-	if err := c.ShouldBindJSON(&payload); err != nil || payload.BidId == 0 {
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.BidID == 0 {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id required")
 		return
 	}
-	if err := a.repo.DeleteBannedBid(c.Request.Context(), payload.BidId); err != nil {
+	if err := a.repo.DeleteBannedBid(c.Request.Context(), payload.BidID); err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to unban bid: %v", err))
 		return
 	}

@@ -30,9 +30,9 @@ type LiveSpecialWinners struct {
 	LastBidderLastBidTime           int64
 	LastCstBidderAddress            string
 	LastCstBidderLastBidTime        int64
-	LastCstBidEventLogId            int64
+	LastCstBidEventLogID            int64
 	HasLastCstBidderLastBidTime     bool
-	HasLastCstBidEventLogId         bool
+	HasLastCstBidEventLogID         bool
 	RoundNum                        int64
 	SourceBlockNumber               uint64
 	SourceBlockTimeStamp            int64
@@ -329,8 +329,8 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 			)
 			switch {
 			case err == nil:
-				out.LastCstBidEventLogId = evtlogID
-				out.HasLastCstBidEventLogId = true
+				out.LastCstBidEventLogID = evtlogID
+				out.HasLastCstBidEventLogID = true
 			case !errors.Is(err, store.ErrNotFound):
 				s.errlog.Printf("state refresh: last CST bid lookup: %v", err)
 			}

@@ -8,10 +8,11 @@ import (
 	"regexp"
 	"strings"
 
-	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
-	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
+
+	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
+	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
 
 type assetsInventoryDeps struct {

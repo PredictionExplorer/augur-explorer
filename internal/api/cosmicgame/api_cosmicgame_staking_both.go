@@ -3,13 +3,11 @@ package cosmicgame
 import (
 	"net/http"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 func (a *API) handleUserUniqueStakersBoth(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -22,8 +20,8 @@ func (a *API) handleUserUniqueStakersBoth(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,

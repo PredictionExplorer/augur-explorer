@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
-	"github.com/lib/pq"
 )
 
 func TestDatabaseComparisonsMatchingAndDivergent(t *testing.T) {

@@ -300,9 +300,9 @@ func TestMapCurrentSpecialWinners(t *testing.T) {
 	withoutCST := snapshot
 	withoutCST.SpecialWinners.LastCstBidderAddress = ethcommon.Address{}.Hex()
 	withoutCST.SpecialWinners.HasLastCstBidderLastBidTime = false
-	withoutCST.SpecialWinners.HasLastCstBidEventLogId = false
+	withoutCST.SpecialWinners.HasLastCstBidEventLogID = false
 	withoutCST.SpecialWinners.LastCstBidderLastBidTime = 0
-	withoutCST.SpecialWinners.LastCstBidEventLogId = 0
+	withoutCST.SpecialWinners.LastCstBidEventLogID = 0
 	got, err = mapCurrentSpecialWinners(withoutCST)
 	if err != nil || got.LastCstBidder != nil {
 		t.Fatalf("optional last CST bidder = %+v, %v", got.LastCstBidder, err)
@@ -322,7 +322,7 @@ func TestMapCurrentSpecialWinnersFailures(t *testing.T) {
 		"overflow block":  func(w *contractstate.LiveSpecialWinners) { w.SourceBlockNumber = math.MaxUint64 },
 		"negative source": func(w *contractstate.LiveSpecialWinners) { w.SourceBlockTimeStamp = -1 },
 		"bad champion":    func(w *contractstate.LiveSpecialWinners) { w.EnduranceChampionDuration = -1 },
-		"bad event ID":    func(w *contractstate.LiveSpecialWinners) { w.LastCstBidEventLogId = 0 },
+		"bad event ID":    func(w *contractstate.LiveSpecialWinners) { w.LastCstBidEventLogID = 0 },
 	}
 	for name, mutate := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -460,9 +460,9 @@ func validContractSnapshot() contractstate.Snapshot {
 			LastBidderLastBidTime:           1200,
 			LastCstBidderAddress:            "0x2300000000000000000000000000000000000023",
 			LastCstBidderLastBidTime:        1100,
-			LastCstBidEventLogId:            99,
+			LastCstBidEventLogID:            99,
 			HasLastCstBidderLastBidTime:     true,
-			HasLastCstBidEventLogId:         true,
+			HasLastCstBidEventLogID:         true,
 			RoundNum:                        3,
 			SourceBlockNumber:               100,
 			SourceBlockTimeStamp:            1300,

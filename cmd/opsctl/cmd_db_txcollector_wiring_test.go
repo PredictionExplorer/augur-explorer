@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestDBVerifyCommandWiring(t *testing.T) {

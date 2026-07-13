@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
 )
 
 func TestResolveProjects(t *testing.T) {

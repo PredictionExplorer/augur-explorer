@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	// IndexEntrySize is the size of each entry in the .cidx file (6 bytes)
+	// IndexEntrySize is the size of each entry in the .cidx file (6 bytes).
 	IndexEntrySize = 6
 
-	// DefaultChunkSize is the typical size of each .cdat file (~2GB)
+	// DefaultChunkSize is the typical size of each .cdat file (~2GB).
 	DefaultChunkSize = uint64(2_000_000_000)
 )
 
@@ -30,7 +30,7 @@ var (
 	ErrReadBeyondBounds = errors.New("read beyond file bounds")
 )
 
-// FreezerReader provides access to geth freezer receipts data
+// FreezerReader provides access to geth freezer receipts data.
 type FreezerReader struct {
 	cidxPath    string       // Path to receipts.cidx
 	cdatDir     string       // Directory containing receipts.*.cdat files
@@ -43,7 +43,7 @@ type FreezerReader struct {
 	mu          sync.RWMutex
 }
 
-// cdatEntry represents a .cdat file with its global offset range
+// cdatEntry represents a .cdat file with its global offset range.
 type cdatEntry struct {
 	index       int // File index (e.g., 6 for receipts.0006.cdat)
 	path        string
@@ -52,7 +52,7 @@ type cdatEntry struct {
 }
 
 // NewFreezerReader creates a new freezer reader
-// ancientDir should be the directory containing receipts.cidx and optionally an "ancient" subdirectory
+// ancientDir should be the directory containing receipts.cidx and optionally an "ancient" subdirectory.
 func NewFreezerReader(ancientDir string) (*FreezerReader, error) {
 	fr := &FreezerReader{
 		chunkSize:   DefaultChunkSize,
@@ -107,7 +107,7 @@ func NewFreezerReader(ancientDir string) (*FreezerReader, error) {
 	return fr, nil
 }
 
-// indexCdatFiles discovers all .cdat files and builds the offset map
+// indexCdatFiles discovers all .cdat files and builds the offset map.
 func (fr *FreezerReader) indexCdatFiles() error {
 	pattern := filepath.Join(fr.cdatDir, "receipts.*.cdat")
 	matches, err := filepath.Glob(pattern)
@@ -156,12 +156,12 @@ func (fr *FreezerReader) indexCdatFiles() error {
 	return nil
 }
 
-// ItemCount returns the number of blocks indexed
+// ItemCount returns the number of blocks indexed.
 func (fr *FreezerReader) ItemCount() uint64 {
 	return fr.itemCount
 }
 
-// ReadOffset reads the offset for a given block number from the index
+// ReadOffset reads the offset for a given block number from the index.
 func (fr *FreezerReader) ReadOffset(blockNum uint64) (uint64, error) {
 	if blockNum >= fr.itemCount {
 		return 0, fmt.Errorf("%w: block %d >= item count %d", ErrBlockNotFound, blockNum, fr.itemCount)
@@ -185,7 +185,7 @@ func (fr *FreezerReader) ReadOffset(blockNum uint64) (uint64, error) {
 	return offset, nil
 }
 
-// ReadItem reads the raw receipts blob for a given block number
+// ReadItem reads the raw receipts blob for a given block number.
 func (fr *FreezerReader) ReadItem(blockNum uint64) ([]byte, error) {
 	// Get offset for this block
 	offset, err := fr.ReadOffset(blockNum)
@@ -231,7 +231,7 @@ func (fr *FreezerReader) dataEndOffset() uint64 {
 	return last.startOffset + uint64(last.size)
 }
 
-// readBytes reads a range of bytes from the cdat files, handling boundary spanning
+// readBytes reads a range of bytes from the cdat files, handling boundary spanning.
 func (fr *FreezerReader) readBytes(offset, length uint64, blockNum uint64) ([]byte, error) {
 	// Bound the allocation by the data that actually exists: a corrupt index
 	// must fail with an error, not make(2^48 bytes) and OOM the process.
@@ -284,7 +284,7 @@ func (fr *FreezerReader) readBytes(offset, length uint64, blockNum uint64) ([]by
 	return result, nil
 }
 
-// findCdatForOffset finds the cdat file containing the given global offset
+// findCdatForOffset finds the cdat file containing the given global offset.
 func (fr *FreezerReader) findCdatForOffset(offset uint64) (*cdatEntry, error) {
 	fr.mu.RLock()
 	defer fr.mu.RUnlock()
@@ -299,7 +299,7 @@ func (fr *FreezerReader) findCdatForOffset(offset uint64) (*cdatEntry, error) {
 	return nil, fmt.Errorf("%w: no cdat file for offset %d", ErrDataFileMissing, offset)
 }
 
-// getFileHandle gets or opens a file handle for the given cdat entry
+// getFileHandle gets or opens a file handle for the given cdat entry.
 func (fr *FreezerReader) getFileHandle(entry *cdatEntry) (*os.File, error) {
 	fr.mu.Lock()
 	defer fr.mu.Unlock()
@@ -317,7 +317,7 @@ func (fr *FreezerReader) getFileHandle(entry *cdatEntry) (*os.File, error) {
 	return f, nil
 }
 
-// Close closes all open file handles
+// Close closes all open file handles.
 func (fr *FreezerReader) Close() error {
 	fr.mu.Lock()
 	defer fr.mu.Unlock()
@@ -369,7 +369,7 @@ func (fr *FreezerReader) ValidateIndexRange(startBlock, endBlock uint64) error {
 	return nil
 }
 
-// Uint48ToBytes converts a 48-bit value to 6 bytes (for testing)
+// Uint48ToBytes converts a 48-bit value to 6 bytes (for testing).
 func Uint48ToBytes(v uint64) []byte {
 	buf := make([]byte, 8)
 	binary.BigEndian.PutUint64(buf, v)

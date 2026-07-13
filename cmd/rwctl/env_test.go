@@ -71,7 +71,7 @@ func TestReadTwitterKeysRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	keys, err := readTwitterKeys()
-	if err != nil || keys.ApiKey != "a" || keys.TokenSecret != "d" {
+	if err != nil || keys.APIKey != "a" || keys.TokenSecret != "d" {
 		t.Errorf("readTwitterKeys = (%+v, %v)", keys, err)
 	}
 }

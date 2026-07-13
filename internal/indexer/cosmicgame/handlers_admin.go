@@ -16,7 +16,7 @@ import (
 
 // adminEventBase fills the fields every admin event row shares.
 func adminEventBase(lg *types.Log, elog *store.EthereumEventLog) (evtID, blockNum, txID, timeStamp int64, contract string) {
-	return elog.EvtId, elog.BlockNum, elog.TxId, elog.TimeStamp, lg.Address.String()
+	return elog.EvtID, elog.BlockNum, elog.TxID, elog.TimeStamp, lg.Address.String()
 }
 
 // --- CST-bid-reward changes: three event types share cg_adm_erc20_reward ---
@@ -123,9 +123,9 @@ func (h *Handlers) decodeCharityReceiverChanged(lg *types.Log, elog *store.Ether
 		return nil, err
 	}
 	evt := &cgmodel.CGCharityUpdatedEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.NewCharityAddr = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()

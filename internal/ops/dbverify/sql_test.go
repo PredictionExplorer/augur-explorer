@@ -104,7 +104,6 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		})
 
 		got, err := dbverify.LoadRandomWalkContractAddressIDs(context.Background(), db)
-
 		if err != nil {
 			t.Fatalf("LoadRandomWalkContractAddressIDs() error = %v", err)
 		}
@@ -194,7 +193,6 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		})
 
 		got, err := loader.LoadEventRecords(context.Background(), nil)
-
 		if err != nil {
 			t.Fatalf("LoadEventRecords() error = %v", err)
 		}
@@ -217,7 +215,6 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 			})
 
 			got, err := loader.LoadEventRecords(context.Background(), filter)
-
 			if err != nil {
 				t.Fatalf("LoadEventRecords() error = %v", err)
 			}
@@ -295,7 +292,6 @@ func TestSQLLoaderTransactionHashesBranches(t *testing.T) {
 			})
 
 			got, err := loader.TransactionHashesFromEvents(context.Background(), filter)
-
 			if err != nil {
 				t.Fatalf("TransactionHashesFromEvents() error = %v", err)
 			}
@@ -360,7 +356,6 @@ func TestSQLLoaderLoadTransactionsBranches(t *testing.T) {
 			})
 
 			got, err := loader.LoadTransactions(context.Background(), test.filter)
-
 			if err != nil {
 				t.Fatalf("LoadTransactions() error = %v", err)
 			}
@@ -403,7 +398,6 @@ func TestSQLLoaderBlockNumbersBranches(t *testing.T) {
 			})
 
 			got, err := loader.BlockNumbersFromEvents(context.Background(), filter)
-
 			if err != nil {
 				t.Fatalf("BlockNumbersFromEvents() error = %v", err)
 			}
@@ -468,7 +462,6 @@ func TestSQLLoaderLoadBlocksBranches(t *testing.T) {
 			})
 
 			got, err := loader.LoadBlocks(context.Background(), test.filter)
-
 			if err != nil {
 				t.Fatalf("LoadBlocks() error = %v", err)
 			}
@@ -624,7 +617,6 @@ func TestSQLLoaderDetailedEventLogsBranches(t *testing.T) {
 			})
 
 			got, err := loader.LoadDetailedEventLogs(context.Background(), test.filter, test.limit)
-
 			if err != nil {
 				t.Fatalf("LoadDetailedEventLogs() error = %v", err)
 			}

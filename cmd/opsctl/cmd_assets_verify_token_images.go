@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
-	"github.com/spf13/cobra"
 )
 
 const (

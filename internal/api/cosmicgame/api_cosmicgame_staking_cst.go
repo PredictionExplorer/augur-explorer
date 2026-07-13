@@ -4,14 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 func (a *API) handleStakingActionCstInfo(c *httpx.Context) {
-
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
@@ -36,16 +34,16 @@ func (a *API) handleStakingActionCstInfo(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                    reqStatus,
 		"error":                     errStr,
 		"CombinedStakingRecordInfo": actionInfo,
 	})
 }
-func (a *API) handleStakingActionsCstGlobal(c *httpx.Context) {
 
+func (a *API) handleStakingActionsCstGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -60,8 +58,8 @@ func (a *API) handleStakingActionsCstGlobal(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -70,8 +68,8 @@ func (a *API) handleStakingActionsCstGlobal(c *httpx.Context) {
 		"StakingCSTActions": actions,
 	})
 }
-func (a *API) handleStakingCstActionsByUser(c *httpx.Context) {
 
+func (a *API) handleStakingCstActionsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -95,8 +93,8 @@ func (a *API) handleStakingCstActionsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
@@ -107,8 +105,8 @@ func (a *API) handleStakingCstActionsByUser(c *httpx.Context) {
 		"StakingCSTActions": actions,
 	})
 }
-func (a *API) handleUserUniqueStakersCst(c *httpx.Context) {
 
+func (a *API) handleUserUniqueStakersCst(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -121,16 +119,16 @@ func (a *API) handleUserUniqueStakersCst(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
 		"UniqueStakersCST": uniqueStakers,
 	})
 }
-func (a *API) handleStakingCstRewardsToClaimByUser(c *httpx.Context) {
 
+func (a *API) handleStakingCstRewardsToClaimByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -150,8 +148,8 @@ func (a *API) handleStakingCstRewardsToClaimByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":               reqStatus,
 		"error":                errStr,
@@ -160,6 +158,7 @@ func (a *API) handleStakingCstRewardsToClaimByUser(c *httpx.Context) {
 		"UnclaimedEthDeposits": deposits,
 	})
 }
+
 func (a *API) handleStakedTokensCstByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -180,8 +179,8 @@ func (a *API) handleStakedTokensCstByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":          reqStatus,
 		"error":           errStr,
@@ -190,6 +189,7 @@ func (a *API) handleStakedTokensCstByUser(c *httpx.Context) {
 		"StakedTokensCST": tokens,
 	})
 }
+
 func (a *API) handleStakedTokensCstGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -201,16 +201,16 @@ func (a *API) handleStakedTokensCstGlobal(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":          reqStatus,
 		"error":           errStr,
 		"StakedTokensCST": tokens,
 	})
 }
-func (a *API) handleStakingCstRewardsCollectedByUser(c *httpx.Context) {
 
+func (a *API) handleStakingCstRewardsCollectedByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -239,8 +239,8 @@ func (a *API) handleStakingCstRewardsCollectedByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                     reqStatus,
 		"error":                      errStr,
@@ -251,8 +251,8 @@ func (a *API) handleStakingCstRewardsCollectedByUser(c *httpx.Context) {
 		"CollectedStakingCSTRewards": actions,
 	})
 }
-func (a *API) handleStakingCstRewardsByRound(c *httpx.Context) {
 
+func (a *API) handleStakingCstRewardsByRound(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -274,8 +274,8 @@ func (a *API) handleStakingCstRewardsByRound(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":   reqStatus,
 		"error":    errStr,
@@ -283,8 +283,8 @@ func (a *API) handleStakingCstRewardsByRound(c *httpx.Context) {
 		"Rewards":  rewards,
 	})
 }
-func (a *API) handleStakingCstRewardsGlobal(c *httpx.Context) {
 
+func (a *API) handleStakingCstRewardsGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -295,16 +295,16 @@ func (a *API) handleStakingCstRewardsGlobal(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":            reqStatus,
 		"error":             errStr,
 		"StakingCSTRewards": rewards,
 	})
 }
-func (a *API) handleStakingCstMintsGlobal(c *httpx.Context) {
 
+func (a *API) handleStakingCstMintsGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -319,8 +319,8 @@ func (a *API) handleStakingCstMintsGlobal(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                 reqStatus,
 		"error":                  errStr,
@@ -329,8 +329,8 @@ func (a *API) handleStakingCstMintsGlobal(c *httpx.Context) {
 		"StakingCSTRewardsMints": mints,
 	})
 }
-func (a *API) handleStakingCstMintsByUser(c *httpx.Context) {
 
+func (a *API) handleStakingCstMintsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -352,16 +352,16 @@ func (a *API) handleStakingCstMintsByUser(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                reqStatus,
 		"error":                 errStr,
 		"CSTStakingRewardMints": mints,
 	})
 }
-func (a *API) handleStakingCstRewardsActionIDsByDeposit(c *httpx.Context) {
 
+func (a *API) handleStakingCstRewardsActionIDsByDeposit(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -390,8 +390,8 @@ func (a *API) handleStakingCstRewardsActionIDsByDeposit(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                 reqStatus,
 		"error":                  errStr,
@@ -401,8 +401,8 @@ func (a *API) handleStakingCstRewardsActionIDsByDeposit(c *httpx.Context) {
 		"ActionIdsWithClaimInfo": actionIDs,
 	})
 }
-func (a *API) handleStakingCstByUserByDepositRewards(c *httpx.Context) {
 
+func (a *API) handleStakingCstByUserByDepositRewards(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -423,8 +423,8 @@ func (a *API) handleStakingCstByUserByDepositRewards(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":           reqStatus,
 		"error":            errStr,
@@ -433,8 +433,8 @@ func (a *API) handleStakingCstByUserByDepositRewards(c *httpx.Context) {
 		"RewardsByDeposit": history,
 	})
 }
-func (a *API) handleStakingCstByUserByTokenRewards(c *httpx.Context) {
 
+func (a *API) handleStakingCstByUserByTokenRewards(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -455,8 +455,8 @@ func (a *API) handleStakingCstByUserByTokenRewards(c *httpx.Context) {
 		a.respondStoreError(c, err)
 		return
 	}
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         reqStatus,
 		"error":          errStr,
@@ -465,8 +465,8 @@ func (a *API) handleStakingCstByUserByTokenRewards(c *httpx.Context) {
 		"RewardsByToken": rewards,
 	})
 }
-func (a *API) handleStakingCstByUserByTokenRewardsDetails(c *httpx.Context) {
 
+func (a *API) handleStakingCstByUserByTokenRewardsDetails(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
@@ -497,8 +497,8 @@ func (a *API) handleStakingCstByUserByTokenRewardsDetails(c *httpx.Context) {
 		return
 	}
 
-	var reqStatus int = 1
-	var errStr string = ""
+	reqStatus := 1
+	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
 		"status":                reqStatus,
 		"error":                 errStr,

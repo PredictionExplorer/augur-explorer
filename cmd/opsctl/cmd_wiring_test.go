@@ -12,12 +12,13 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
 )
 
 type commandOutput struct {

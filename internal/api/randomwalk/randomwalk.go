@@ -10,15 +10,14 @@ import (
 	"io"
 	"log"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
-// Response format flags for handlers
+// Response format flags for handlers.
 const (
 	JSON = true
 	HTTP = false

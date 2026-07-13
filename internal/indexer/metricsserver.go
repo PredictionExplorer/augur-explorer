@@ -5,6 +5,7 @@
 package indexer
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"net/http"
@@ -18,8 +19,8 @@ import (
 // StartMetricsServer serves Prometheus metrics (from gatherer) and pprof on
 // addr (e.g. "127.0.0.1:9091"). It returns the running server — callers Close
 // it on shutdown — and the bound address (useful with a ":0" test listener).
-func StartMetricsServer(addr string, gatherer prometheus.Gatherer, logger *slog.Logger) (*http.Server, net.Addr, error) {
-	listener, err := net.Listen("tcp", addr)
+func StartMetricsServer(ctx context.Context, addr string, gatherer prometheus.Gatherer, logger *slog.Logger) (*http.Server, net.Addr, error) {
+	listener, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
 	if err != nil {
 		return nil, nil, err
 	}

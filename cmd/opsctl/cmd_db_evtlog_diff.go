@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
 	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
 )
 
 type dbEvtlogDiffDeps struct {

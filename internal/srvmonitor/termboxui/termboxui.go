@@ -6,8 +6,9 @@ package termboxui
 import (
 	"sync"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 	"github.com/nsf/termbox-go"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 )
 
 // Display renders to the terminal via termbox. The mutex serializes cell

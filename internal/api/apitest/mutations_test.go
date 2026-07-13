@@ -135,14 +135,14 @@ func bannedBidIDs(t *testing.T, h *harness) map[int64]bool {
 		t.Fatalf("get_banned_bids: %d %s", w.Code, w.Body.String())
 	}
 	var recs []struct {
-		BidId int64 `json:"bid_id"`
+		BidID int64 `json:"bid_id"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &recs); err != nil {
 		t.Fatalf("parsing get_banned_bids: %v", err)
 	}
 	ids := make(map[int64]bool, len(recs))
 	for _, b := range recs {
-		ids[b.BidId] = true
+		ids[b.BidID] = true
 	}
 	return ids
 }

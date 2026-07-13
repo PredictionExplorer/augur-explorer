@@ -127,13 +127,13 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 	market := []ethcommon.Address{h.c.Market}
 	rwalk := []ethcommon.Address{h.c.RandomWalk}
 	return []indexer.EventHandler{
-		indexer.NewHandler(topicHash(NEW_OFFER), "NewOffer", market, h.decodeNewOffer, h.storeNewOffer),
-		indexer.NewHandler(topicHash(ITEM_BOUGHT), "ItemBought", market, h.decodeItemBought, h.storeItemBought),
-		indexer.NewHandler(topicHash(OFFER_CANCELED), "OfferCanceled", market, h.decodeOfferCanceled, h.storeOfferCanceled),
-		indexer.NewHandler(topicHash(WITHDRAWAL_EVT), "WithdrawalEvent", rwalk, h.decodeWithdrawal, h.storeWithdrawal),
-		indexer.NewHandler(topicHash(TOKEN_NAME_EVT), "TokenNameEvent", rwalk, h.decodeTokenName, h.storeTokenName),
-		indexer.NewHandler(topicHash(TRANSFER_EVT), "Transfer", rwalk, h.decodeTransfer, h.storeTransfer),
-		indexer.NewHandler(topicHash(MINT_EVENT), "MintEvent", rwalk, h.decodeMintEvent, h.storeMintEvent),
+		indexer.NewHandler(topicHash(TopicNewOffer), "NewOffer", market, h.decodeNewOffer, h.storeNewOffer),
+		indexer.NewHandler(topicHash(TopicItemBought), "ItemBought", market, h.decodeItemBought, h.storeItemBought),
+		indexer.NewHandler(topicHash(TopicOfferCanceled), "OfferCanceled", market, h.decodeOfferCanceled, h.storeOfferCanceled),
+		indexer.NewHandler(topicHash(TopicWithdrawalEvt), "WithdrawalEvent", rwalk, h.decodeWithdrawal, h.storeWithdrawal),
+		indexer.NewHandler(topicHash(TopicTokenNameEvt), "TokenNameEvent", rwalk, h.decodeTokenName, h.storeTokenName),
+		indexer.NewHandler(topicHash(TopicTransferEvt), "Transfer", rwalk, h.decodeTransfer, h.storeTransfer),
+		indexer.NewHandler(topicHash(TopicMintEvent), "MintEvent", rwalk, h.decodeMintEvent, h.storeMintEvent),
 	}
 }
 

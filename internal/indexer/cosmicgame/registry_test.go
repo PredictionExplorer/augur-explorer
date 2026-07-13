@@ -64,15 +64,15 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 	}
 
 	for _, c := range []struct{ topic, want string }{
-		{BID_EVENT, "BidPlaced"},
-		{BID_EVENT_V2, "BidPlacedV2"},
-		{MINT_EVENT, "NftMinted"},
-		{TRANSFER_EVT, "Transfer"},
+		{TopicBidEvent, "BidPlaced"},
+		{TopicBidEventV2, "BidPlacedV2"},
+		{TopicMintEvent, "NftMinted"},
+		{TopicTransferEvt, "Transfer"},
 		// The two shared-signature pairs resolve to one label each
-		// (CHARITY_WALLET_CHANGED == CHARITY_RECEIVER_CHANGED and
-		// FUNDS_TO_CHARITY == DONATION_SENT_EVENT by construction).
-		{CHARITY_WALLET_CHANGED, "CharityAddressChanged"},
-		{FUNDS_TO_CHARITY, "FundsTransferredToCharity"},
+		// (TopicCharityWalletChanged == TopicCharityReceiverChanged and
+		// TopicFundsToCharity == TopicDonationSentEvent by construction).
+		{TopicCharityWalletChanged, "CharityAddressChanged"},
+		{TopicFundsToCharity, "FundsTransferredToCharity"},
 	} {
 		if got := reg.TopicName(topicHash(c.topic)); got != c.want {
 			t.Errorf("TopicName(%s) = %q, want %q", c.topic, got, c.want)

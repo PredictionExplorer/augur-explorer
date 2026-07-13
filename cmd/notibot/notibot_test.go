@@ -31,7 +31,7 @@ func TestReadTwitterKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readTwitterKeys: %v", err)
 	}
-	if keys.ApiKey != "a" || keys.ApiSecret != "b" || keys.TokenKey != "c" || keys.TokenSecret != "d" {
+	if keys.APIKey != "a" || keys.APISecret != "b" || keys.TokenKey != "c" || keys.TokenSecret != "d" {
 		t.Errorf("keys = %+v", keys)
 	}
 }
@@ -60,8 +60,8 @@ func TestReadDiscordKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readDiscordKeys: %v", err)
 	}
-	if keys.TokenKey != "tok" || keys.ChannelId != 1 || keys.MintStatsChanId != 3 ||
-		keys.PriceStatsChanId != 4 || keys.DateStatsChanId != 5 || keys.RewardStatsChanId != 6 {
+	if keys.TokenKey != "tok" || keys.ChannelID != 1 || keys.MintStatsChanID != 3 ||
+		keys.PriceStatsChanID != 4 || keys.DateStatsChanID != 5 || keys.RewardStatsChanID != 6 {
 		t.Errorf("keys = %+v", keys)
 	}
 }

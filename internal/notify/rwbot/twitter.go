@@ -43,7 +43,7 @@ func NewTwitterNotifier(keys tweets.TwitterKeys) *TwitterNotifier {
 // tweet's id.
 func (t *TwitterNotifier) TweetWithImage(_ context.Context, msg string, image []byte) (string, error) {
 	status, body, err := t.sendImage(
-		t.keys.ApiKey, t.keys.ApiSecret, t.keys.TokenKey, t.keys.TokenSecret,
+		t.keys.APIKey, t.keys.APISecret, t.keys.TokenKey, t.keys.TokenSecret,
 		msg, t.nonce.Add(1), image, "",
 	)
 	if err != nil {
@@ -59,7 +59,7 @@ func (t *TwitterNotifier) TweetWithImage(_ context.Context, msg string, image []
 // replyToID when non-empty.
 func (t *TwitterNotifier) TweetWithVideo(_ context.Context, msg string, video []byte, replyToID string) error {
 	status, body, err := t.sendVideo(
-		t.keys.ApiKey, t.keys.ApiSecret, t.keys.TokenKey, t.keys.TokenSecret,
+		t.keys.APIKey, t.keys.APISecret, t.keys.TokenKey, t.keys.TokenSecret,
 		msg, t.nonce.Add(1), video, replyToID,
 	)
 	if err != nil {
@@ -77,5 +77,5 @@ func parseTweetID(body string) (string, error) {
 	if err := json.Unmarshal([]byte(body), &resp); err != nil {
 		return "", fmt.Errorf("decoding status update response: %w", err)
 	}
-	return resp.IdStr, nil
+	return resp.IDStr, nil
 }

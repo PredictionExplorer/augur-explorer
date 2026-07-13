@@ -19,8 +19,8 @@ func warnNFTAssetsLayout(abs string, mount string) {
 	if len(thumbsNested) > 0 || len(thumbsRoot) > 0 {
 		return
 	}
-	log.Printf("NFT_ASSETS_ROOT: no *_black_thumb.jpg under %q or %q (detail page images will 404 until assets exist).", rwNested, abs)
-	log.Printf("Current mount: %s -> filesystem root %q", mount, abs)
+	log.Printf("NFT_ASSETS_ROOT: no *_black_thumb.jpg under %q or %q (detail page images will 404 until assets exist).", rwNested, abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
+	log.Printf("Current mount: %s -> filesystem root %q", mount, abs)                                                                   // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 }
 
 // resolveNFTStaticMount chooses how GET /images/... maps to disk.
@@ -33,19 +33,19 @@ func resolveNFTStaticMount(abs string) (mount string, fsRoot string) {
 	thumbsNested, _ := filepath.Glob(filepath.Join(rwNested, "*_black_thumb.jpg"))
 	if len(thumbsNested) > 0 {
 		if flat {
-			log.Printf("NFT assets: found RandomWalk thumbs under %s (flat layout -> URL /images/<file>)", rwNested)
+			log.Printf("NFT assets: found RandomWalk thumbs under %s (flat layout -> URL /images/<file>)", rwNested) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 			return "/images", rwNested
 		}
-		log.Printf("NFT assets: found RandomWalk thumbs under %s (standard layout)", rwNested)
+		log.Printf("NFT assets: found RandomWalk thumbs under %s (standard layout)", rwNested) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 		return "/images", abs
 	}
 	thumbsRoot, _ := filepath.Glob(filepath.Join(abs, "*_black_thumb.jpg"))
 	if len(thumbsRoot) > 0 {
 		if flat {
-			log.Printf("NFT assets: found RandomWalk thumbs in %s (flat layout -> URL /images/<file>)", abs)
+			log.Printf("NFT assets: found RandomWalk thumbs in %s (flat layout -> URL /images/<file>)", abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 			return "/images", abs
 		}
-		log.Printf("NFT assets: found RandomWalk thumbs in %s (compact layout -> URL /images/randomwalk/)", abs)
+		log.Printf("NFT assets: found RandomWalk thumbs in %s (compact layout -> URL /images/randomwalk/)", abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 		return "/images/randomwalk", abs
 	}
 	if st, err := os.Stat(rwNested); err == nil && st.IsDir() {
@@ -173,7 +173,10 @@ func normalizeSeedSegment(seg string) string {
 
 func isHex(s string) bool {
 	for _, r := range s {
-		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+		isDigit := r >= '0' && r <= '9'
+		isLower := r >= 'a' && r <= 'f'
+		isUpper := r >= 'A' && r <= 'F'
+		if !isDigit && !isLower && !isUpper {
 			return false
 		}
 	}
@@ -203,7 +206,7 @@ func imageCacheAndLogMiddleware() httpx.Middleware {
 				return
 			}
 			if st := rw.Status(); strings.TrimSpace(os.Getenv("WEBSRV_LOG_IMAGE_REQUESTS")) == "1" || st >= 400 {
-				log.Printf("[images] %d %s", st, path)
+				log.Printf("[images] %d %q", st, path) // #nosec G706 -- request path is %q-quoted
 			}
 		})
 	}
@@ -242,12 +245,12 @@ func registerStaticAssetRoutes(r *httpx.Router) {
 		r.HEAD(mount+"/{filepath...}", handler)
 
 		if mount == "/images/randomwalk" {
-			log.Printf("Serving RandomWalk NFT files from %q at %s/ (token assets live directly in NFT_ASSETS_ROOT)", fsRoot, mount)
+			log.Printf("Serving RandomWalk NFT files from %q at %s/ (token assets live directly in NFT_ASSETS_ROOT)", fsRoot, mount) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 			log.Printf("Note: /images/new/... needs NFT_ASSETS_ROOT set to the parent of randomwalk/ if you use Cosmic assets too.")
 		} else if fsRoot != abs {
-			log.Printf("Serving RandomWalk NFT files from %q at %s/ (flat URL layout, files under randomwalk/)", fsRoot, mount)
+			log.Printf("Serving RandomWalk NFT files from %q at %s/ (flat URL layout, files under randomwalk/)", fsRoot, mount) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 		} else {
-			log.Printf("Serving NFT assets from %q at %s/ (expect randomwalk/ and optional new/ under that root)", fsRoot, mount)
+			log.Printf("Serving NFT assets from %q at %s/ (expect randomwalk/ and optional new/ under that root)", fsRoot, mount) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 		}
 		if strings.TrimSpace(os.Getenv("WEBSRV_IMAGE_NO_CACHE")) == "1" {
 			log.Printf("WEBSRV_IMAGE_NO_CACHE=1: /images responses use Cache-Control: no-store (each reload should hit websrv).")
@@ -273,6 +276,6 @@ func registerStaticAssetRoutes(r *httpx.Router) {
 		}
 		r.GET("/static/{filepath...}", staticHandler)
 		r.HEAD("/static/{filepath...}", staticHandler)
-		log.Printf("Serving /static from %s", abs)
+		log.Printf("Serving /static from %s", abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 	}
 }

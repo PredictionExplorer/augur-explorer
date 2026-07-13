@@ -8,12 +8,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
-	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 type archiveNodeFillRPC interface {

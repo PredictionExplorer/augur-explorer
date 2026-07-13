@@ -1257,8 +1257,8 @@ func TestFetchLiveSpecialWinnersHappyPath(t *testing.T) {
 	if !out.HasLastCstBidderLastBidTime || out.LastCstBidderLastBidTime != 1767229500 {
 		t.Errorf("cst bidder last bid = %v / %d", out.HasLastCstBidderLastBidTime, out.LastCstBidderLastBidTime)
 	}
-	if !out.HasLastCstBidEventLogId || out.LastCstBidEventLogId != 5099 {
-		t.Errorf("cst bid evtlog = %v / %d", out.HasLastCstBidEventLogId, out.LastCstBidEventLogId)
+	if !out.HasLastCstBidEventLogID || out.LastCstBidEventLogID != 5099 {
+		t.Errorf("cst bid evtlog = %v / %d", out.HasLastCstBidEventLogID, out.LastCstBidEventLogID)
 	}
 	db.mu.Lock()
 	maxBlock := db.lastCstMaxBlock
@@ -1281,8 +1281,8 @@ func TestFetchLiveSpecialWinnersCstBidNotFound(t *testing.T) {
 	if out.Err != nil {
 		t.Fatalf("unexpected error: %v", out.Err)
 	}
-	if out.HasLastCstBidEventLogId {
-		t.Error("HasLastCstBidEventLogId should be false on ErrNotFound")
+	if out.HasLastCstBidEventLogID {
+		t.Error("HasLastCstBidEventLogID should be false on ErrNotFound")
 	}
 }
 
@@ -1300,7 +1300,7 @@ func TestSpecialWinnersCacheKeepsOptionalDBFailureNonFatal(t *testing.T) {
 		t.Fatalf("special-winners cache = %+v ready=%v",
 			snap.SpecialWinners, snap.SpecialWinnersReady)
 	}
-	if snap.SpecialWinners.HasLastCstBidEventLogId {
+	if snap.SpecialWinners.HasLastCstBidEventLogID {
 		t.Fatal("optional CST event-log ID survived a DB failure")
 	}
 }

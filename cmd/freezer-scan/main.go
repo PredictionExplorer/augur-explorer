@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	// Command line flags
+	// Command line flags.
 	ancientDir   = flag.String("ancientDir", "", "Path to directory containing freezer data (receipts.cidx)")
 	receiptsCidx = flag.String("receiptsCidx", "", "Explicit path to receipts.cidx (optional)")
 	startBlock   = flag.Uint64("startBlock", 0, "Starting block number")

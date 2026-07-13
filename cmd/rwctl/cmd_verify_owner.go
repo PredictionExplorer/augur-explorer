@@ -62,7 +62,6 @@ func newVerifyOwnerCmd() *cobra.Command {
 				fmt.Fprintf(cmd.OutOrStdout(),
 					"Error: num tokens doesn't match: real num tokens = %v, db num tokens = %v\n",
 					numToks, stats.TokensMinted)
-
 			} else {
 				fmt.Fprintf(cmd.OutOrStdout(), "Num tokens in database is set correctly (%v tokens)\n", numToks)
 			}
@@ -84,7 +83,6 @@ func newVerifyOwnerCmd() *cobra.Command {
 					fmt.Fprintf(cmd.OutOrStdout(),
 						"DB invalid: token_id=%v; owner mismatch, real owner %v, owner in db %v\n",
 						i, chainOwnerAddr.String(), tokInfo.CurOwnerAddr)
-
 				}
 			}
 			return nil

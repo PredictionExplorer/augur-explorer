@@ -1,6 +1,6 @@
 package cosmicgame
 
-// Transaction contains common transaction/event fields
+// Transaction contains common transaction/event fields.
 type Transaction struct {
 	EvtLogId  int64
 	BlockNum  int64
@@ -85,7 +85,7 @@ type CGBidRec struct {
 	DonatedERC20TokenAmountEth float64
 }
 
-// CGBannedBidRec is one row from cg_banned_bids (API: get_banned_bids)
+// CGBannedBidRec is one row from cg_banned_bids (API: get_banned_bids).
 type CGBannedBidRec struct {
 	Id        int64  `json:"id"`
 	BidId     int64  `json:"bid_id"`

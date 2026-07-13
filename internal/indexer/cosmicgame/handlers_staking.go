@@ -25,9 +25,9 @@ func (h *Handlers) decodeNftStakedCST(lg *types.Log, elog *store.EthereumEventLo
 	}
 
 	evt := &cgmodel.CGNftStakedCst{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = lg.Topics[1].Big().Int64()
@@ -60,9 +60,9 @@ func (h *Handlers) decodeNftStakedRWalk(lg *types.Log, elog *store.EthereumEvent
 	}
 
 	evt := &cgmodel.CGNftStakedRWalk{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = lg.Topics[1].Big().Int64()
@@ -93,9 +93,9 @@ func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *store.EthereumEv
 	}
 
 	evt := &cgmodel.CGEthDeposit{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DepositTime = elog.TimeStamp
@@ -134,9 +134,9 @@ func (h *Handlers) decodeNftUnstakedRWalk(lg *types.Log, elog *store.EthereumEve
 	}
 
 	evt := &cgmodel.CGNftUnstakedRWalk{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = lg.Topics[1].Big().Int64()
@@ -167,9 +167,9 @@ func (h *Handlers) decodeNftUnstakedCST(lg *types.Log, elog *store.EthereumEvent
 	}
 
 	evt := &cgmodel.CGNftUnstakedCst{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = lg.Topics[1].Big().Int64()

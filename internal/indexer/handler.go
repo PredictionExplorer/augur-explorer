@@ -153,7 +153,7 @@ func (r *Registry) ProcessLog(ctx context.Context, lg *types.Log, elog *store.Et
 		}
 		event, err := h.Decode(lg, elog)
 		if err != nil {
-			return fmt.Errorf("%s (evt id %v): decode: %w", h.Name(), elog.EvtId, err)
+			return fmt.Errorf("%s (evt id %v): decode: %w", h.Name(), elog.EvtID, err)
 		}
 		if err := h.Store(ctx, event); err != nil {
 			return err

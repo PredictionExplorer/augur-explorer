@@ -24,9 +24,9 @@ func (h *Handlers) decodeNewOffer(lg *types.Log, elog *store.EthereumEventLog) (
 	}
 
 	evt := &rwmodel.NewOffer{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Seller = ethEvt.Seller.String()
@@ -51,9 +51,9 @@ func (h *Handlers) decodeItemBought(lg *types.Log, elog *store.EthereumEventLog)
 		return nil, err
 	}
 	evt := &rwmodel.ItemBought{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.OfferId = lg.Topics[1].Big().Int64()
@@ -74,9 +74,9 @@ func (h *Handlers) decodeOfferCanceled(lg *types.Log, elog *store.EthereumEventL
 		return nil, err
 	}
 	evt := &rwmodel.OfferCanceled{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.OfferId = lg.Topics[1].Big().Int64()
@@ -111,9 +111,9 @@ func (h *Handlers) decodeWithdrawal(lg *types.Log, elog *store.EthereumEventLog)
 	}
 
 	evt := &rwmodel.Withdrawal{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = lg.Topics[1].Big().Int64()
@@ -136,9 +136,9 @@ func (h *Handlers) decodeTokenName(lg *types.Log, elog *store.EthereumEventLog) 
 	}
 
 	evt := &rwmodel.TokenName{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = ethEvt.TokenId.Int64()
@@ -173,9 +173,9 @@ func (h *Handlers) decodeMintEvent(lg *types.Log, elog *store.EthereumEventLog) 
 	}
 
 	evt := &rwmodel.MintEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = lg.Topics[1].Big().Int64()
@@ -202,9 +202,9 @@ func (h *Handlers) decodeTransfer(lg *types.Log, elog *store.EthereumEventLog) (
 		return nil, err
 	}
 	evt := &rwmodel.Transfer{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.From = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()

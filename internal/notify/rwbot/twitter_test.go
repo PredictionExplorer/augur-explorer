@@ -19,7 +19,7 @@ type recordedSend struct {
 
 func stubbedNotifier(imageStatus int, imageBody string, imageErr error, videoStatus int, videoBody string, videoErr error) (*TwitterNotifier, *[]recordedSend) {
 	var calls []recordedSend
-	n := NewTwitterNotifier(tweets.TwitterKeys{ApiKey: "k", ApiSecret: "s", TokenKey: "tk", TokenSecret: "ts"})
+	n := NewTwitterNotifier(tweets.TwitterKeys{APIKey: "k", APISecret: "s", TokenKey: "tk", TokenSecret: "ts"})
 	n.nonce.Store(100)
 	n.sendImage = func(_, _, _, _, message string, nonce uint64, media []byte, reply string) (int, string, error) {
 		calls = append(calls, recordedSend{msg: message, nonce: nonce, media: media, reply: reply})

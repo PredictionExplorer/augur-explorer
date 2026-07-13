@@ -9,11 +9,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/cstscan"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/cstscan"
 )
 
 const (

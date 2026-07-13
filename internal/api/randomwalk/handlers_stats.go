@@ -4,12 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-// Token stats (API)
+// Token stats (API).
 func (a *API) handleTokenStats(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -36,7 +35,7 @@ func (a *API) handleTokenStats(c *httpx.Context) {
 	})
 }
 
-// Market stats (API)
+// Market stats (API).
 func (a *API) handleMarketStats(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -63,7 +62,7 @@ func (a *API) handleMarketStats(c *httpx.Context) {
 	})
 }
 
-// Trading volume by period (API)
+// Trading volume by period (API).
 func (a *API) handleTradingVolumeByPeriod(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -94,7 +93,7 @@ func (a *API) handleTradingVolumeByPeriod(c *httpx.Context) {
 	})
 }
 
-// Mint intervals (API)
+// Mint intervals (API).
 func (a *API) handleMintIntervals(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -121,7 +120,7 @@ func (a *API) handleMintIntervals(c *httpx.Context) {
 	})
 }
 
-// Withdrawal chart (API)
+// Withdrawal chart (API).
 func (a *API) handleWithdrawalChart(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -156,7 +155,7 @@ func (a *API) handleWithdrawalChart(c *httpx.Context) {
 	})
 }
 
-// Floor price over time (API)
+// Floor price over time (API).
 func (a *API) handleFloorPriceOverTime(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -211,7 +210,7 @@ func (a *API) handleFloorPriceOverTime(c *httpx.Context) {
 	})
 }
 
-// Top 5 traded tokens (API only)
+// Top 5 traded tokens (API only).
 func (a *API) handleTop5TradedTokens(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -230,7 +229,7 @@ func (a *API) handleTop5TradedTokens(c *httpx.Context) {
 	})
 }
 
-// Mint report (API)
+// Mint report (API).
 func (a *API) handleMintReport(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {

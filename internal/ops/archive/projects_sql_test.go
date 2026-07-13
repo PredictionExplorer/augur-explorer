@@ -114,7 +114,7 @@ func TestLoadProjectContractsFailures(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var db = openScriptDB(t, test.ops...)
+			db := openScriptDB(t, test.ops...)
 			_, err := LoadProjectContracts(context.Background(), db, test.project)
 			if err == nil || !strings.Contains(err.Error(), test.want) {
 				t.Fatalf("error = %v, want containing %q", err, test.want)

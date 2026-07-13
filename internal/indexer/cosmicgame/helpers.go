@@ -35,7 +35,7 @@ import (
 // no mint, so there is no matching Transfer and "0" is correctly reported
 // instead of failing.
 func (h *Handlers) cstBidReward(ctx context.Context, bidEvtlogID, txID int64, bidderAddr string) (string, error) {
-	elogRLPs, err := h.store.EventLogRLPsBefore(ctx, txID, h.c.CosmicTokenAid, bidEvtlogID, TRANSFER_EVT[:8])
+	elogRLPs, err := h.store.EventLogRLPsBefore(ctx, txID, h.c.CosmicTokenAid, bidEvtlogID, TopicTransferEvt[:8])
 	if err != nil {
 		return "", fmt.Errorf("cstBidReward(): %w", err)
 	}
@@ -69,7 +69,7 @@ func (h *Handlers) cstBidReward(ctx context.Context, bidEvtlogID, txID int64, bi
 // prizeRoundInTx returns the round number of the MainPrizeClaimed event in
 // txID, or -1 when the transaction contains none (a standalone donation).
 func (h *Handlers) prizeRoundInTx(ctx context.Context, txID int64) (int64, error) {
-	evtList, err := h.store.EventsBySigAndTx(ctx, txID, PRIZE_CLAIM_EVENT[:8])
+	evtList, err := h.store.EventsBySigAndTx(ctx, txID, TopicPrizeClaimEvent[:8])
 	if err != nil {
 		return 0, fmt.Errorf("prizeRoundInTx(): %w", err)
 	}

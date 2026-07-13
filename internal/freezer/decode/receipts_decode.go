@@ -13,7 +13,7 @@ import (
 	"github.com/golang/snappy"
 )
 
-// DecodedLog represents a single log entry with all relevant fields
+// DecodedLog represents a single log entry with all relevant fields.
 type DecodedLog struct {
 	ReceiptIndex uint // Index of receipt within the block
 	LogIndex     uint // Index of log within the receipt
@@ -23,7 +23,7 @@ type DecodedLog struct {
 	DataKeccak   common.Hash
 }
 
-// DecodedReceipt represents a decoded receipt with its logs
+// DecodedReceipt represents a decoded receipt with its logs.
 type DecodedReceipt struct {
 	Index             uint
 	Status            uint64
@@ -31,14 +31,14 @@ type DecodedReceipt struct {
 	Logs              []*DecodedLog
 }
 
-// BlockReceipts represents all receipts for a block
+// BlockReceipts represents all receipts for a block.
 type BlockReceipts struct {
 	Receipts []*DecodedReceipt
 	AllLogs  []*DecodedLog // Flattened list of all logs
 }
 
 // DecodeReceipts decodes a raw freezer receipts blob into structured receipts
-// It handles snappy decompression and RLP decoding
+// It handles snappy decompression and RLP decoding.
 func DecodeReceipts(data []byte) (*BlockReceipts, error) {
 	if len(data) == 0 {
 		return &BlockReceipts{}, nil
@@ -112,7 +112,7 @@ func trySnappyDecompress(data []byte) []byte {
 	return data
 }
 
-// decodeVarint decodes a varint from data, returns value and bytes consumed
+// decodeVarint decodes a varint from data, returns value and bytes consumed.
 func decodeVarint(data []byte) (uint64, int) {
 	var value uint64
 	for i := 0; i < len(data) && i < 10; i++ {
@@ -125,7 +125,7 @@ func decodeVarint(data []byte) (uint64, int) {
 	return value, 0
 }
 
-// isValidRLPPrefix checks if a byte could be a valid RLP prefix
+// isValidRLPPrefix checks if a byte could be a valid RLP prefix.
 func isValidRLPPrefix(b byte) bool {
 	// RLP encoding rules:
 	// - 0x00-0x7f: single byte
@@ -163,7 +163,7 @@ func rlpListCoversExactly(data []byte) bool {
 }
 
 // ReceiptForStorage is a minimal struct for RLP decoding storage receipts
-// This matches geth's internal storage format
+// This matches geth's internal storage format.
 type ReceiptForStorage struct {
 	PostStateOrStatus []byte
 	CumulativeGasUsed uint64
@@ -171,7 +171,7 @@ type ReceiptForStorage struct {
 	Logs              []*types.Log
 }
 
-// decodeRLPReceipts decodes RLP-encoded receipts
+// decodeRLPReceipts decodes RLP-encoded receipts.
 func decodeRLPReceipts(data []byte) (*BlockReceipts, error) {
 	// First, try to decode as a list of raw values
 	var rawReceipts []rlp.RawValue
@@ -196,7 +196,7 @@ func decodeRLPReceipts(data []byte) (*BlockReceipts, error) {
 	return result, nil
 }
 
-// decodeStorageReceipt decodes a single receipt from storage format
+// decodeStorageReceipt decodes a single receipt from storage format.
 func decodeStorageReceipt(data []byte, index uint) (*DecodedReceipt, error) {
 	// Handle typed receipts (EIP-2718): first byte is tx type if < 0x80
 	payload := data
@@ -244,14 +244,14 @@ func decodeStorageReceipt(data []byte, index uint) (*DecodedReceipt, error) {
 	return receipt, nil
 }
 
-// StoredLog is a minimal log structure for alternative decoding
+// StoredLog is a minimal log structure for alternative decoding.
 type StoredLog struct {
 	Address common.Address
 	Topics  []common.Hash
 	Data    []byte
 }
 
-// decodeReceiptAlternative tries an alternative decoding format
+// decodeReceiptAlternative tries an alternative decoding format.
 func decodeReceiptAlternative(data []byte, index uint) (*DecodedReceipt, error) {
 	// Try decoding as a simple struct without bloom
 	type SimpleReceipt struct {
@@ -290,7 +290,7 @@ func decodeReceiptAlternative(data []byte, index uint) (*DecodedReceipt, error) 
 	return receipt, nil
 }
 
-// decodeReceiptLogsOnly extracts logs using stream decoding when struct decode fails
+// decodeReceiptLogsOnly extracts logs using stream decoding when struct decode fails.
 func decodeReceiptLogsOnly(data []byte, index uint) (*DecodedReceipt, error) {
 	receipt := &DecodedReceipt{
 		Index: index,
@@ -362,7 +362,7 @@ func skipStreamValue(stream *rlp.Stream) error {
 	return err
 }
 
-// FilterLogs filters logs by contract addresses and event signatures
+// FilterLogs filters logs by contract addresses and event signatures.
 func FilterLogs(logs []*DecodedLog, contracts map[common.Address]bool, eventSigs map[common.Hash]bool) []*DecodedLog {
 	var result []*DecodedLog
 
@@ -389,7 +389,7 @@ func FilterLogs(logs []*DecodedLog, contracts map[common.Address]bool, eventSigs
 }
 
 // ComputeLogIdentityHash computes a unique hash for a log entry
-// This can be used for deduplication and comparison
+// This can be used for deduplication and comparison.
 func ComputeLogIdentityHash(blockNum uint64, txIndex, logIndex uint, log *DecodedLog) common.Hash {
 	var buf bytes.Buffer
 

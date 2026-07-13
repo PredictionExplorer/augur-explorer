@@ -9,16 +9,20 @@ import (
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 )
 
+// BuildJSRandomwalkWithdrawalChart renders the withdrawal-chart rows as the
+// legacy inline-JavaScript array the frontend charts consume. Every field is
+// numeric or a Go-formatted timestamp, so the unescaped template.JS cannot
+// carry attacker-controlled markup.
 func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry) template.JS {
-	var dataStr string = "["
+	dataStr := "["
 
 	for i := 0; i < len(*intervals); i++ {
 		if len(dataStr) > 1 {
 			dataStr = dataStr + ","
 		}
-		var e = &(*intervals)[i]
+		e := &(*intervals)[i]
 		var entry string
-		ts := time.Unix(int64(e.TimeStamp), 0)
+		ts := time.Unix(e.TimeStamp, 0)
 		dateStr := fmt.Sprintf("%v", ts)
 		entry = "{" +
 			"x:" + fmt.Sprintf("new Date(%v * 1000)", e.TimeStamp) + "," +
@@ -30,19 +34,21 @@ func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry)
 		dataStr = dataStr + entry
 	}
 	dataStr = dataStr + "]"
-	return template.JS(dataStr)
+	return template.JS(dataStr) // #nosec G203 -- numeric-only content built above; no user-controlled strings
 }
 
+// BuildJSFloorPriceData renders the floor-price rows as the legacy inline
+// JavaScript array; like the withdrawal chart, the content is numeric-only.
 func BuildJSFloorPriceData(intervals *[]rwmodel.FloorPrice) template.JS {
-	var dataStr string = "["
+	dataStr := "["
 
 	for i := 0; i < len(*intervals); i++ {
 		if len(dataStr) > 1 {
 			dataStr = dataStr + ","
 		}
-		var e = &(*intervals)[i]
+		e := &(*intervals)[i]
 		var entry string
-		ts := time.Unix(int64(e.TimeStamp), 0)
+		ts := time.Unix(e.TimeStamp, 0)
 		dateStr := fmt.Sprintf("%v", ts)
 		entry = "{" +
 			"x:" + fmt.Sprintf("new Date(%v * 1000)", e.TimeStamp) + "," +
@@ -53,5 +59,5 @@ func BuildJSFloorPriceData(intervals *[]rwmodel.FloorPrice) template.JS {
 		dataStr = dataStr + entry
 	}
 	dataStr = dataStr + "]"
-	return template.JS(dataStr)
+	return template.JS(dataStr) // #nosec G203 -- numeric-only content built above; no user-controlled strings
 }

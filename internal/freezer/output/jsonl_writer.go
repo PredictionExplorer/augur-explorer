@@ -18,7 +18,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/freezer/decode"
 )
 
-// LogRecord represents a single log entry for output
+// LogRecord represents a single log entry for output.
 type LogRecord struct {
 	BlockNumber  uint64   `json:"blockNumber"`
 	TxIndex      uint     `json:"txIndex"`
@@ -32,14 +32,14 @@ type LogRecord struct {
 	DataHex      string   `json:"dataHex,omitempty"`
 }
 
-// Writer is the interface for output writers
+// Writer is the interface for output writers.
 type Writer interface {
 	Write(record *LogRecord) error
 	Flush() error
 	Close() error
 }
 
-// JSONLWriter writes records in JSON Lines format
+// JSONLWriter writes records in JSON Lines format.
 type JSONLWriter struct {
 	w       io.Writer
 	encoder *json.Encoder
@@ -47,7 +47,7 @@ type JSONLWriter struct {
 	closer  io.Closer
 }
 
-// NewJSONLWriter creates a new JSONL writer
+// NewJSONLWriter creates a new JSONL writer.
 func NewJSONLWriter(path string) (*JSONLWriter, error) {
 	var w io.Writer
 	var closer io.Closer
@@ -87,7 +87,7 @@ func (jw *JSONLWriter) Close() error {
 	return nil
 }
 
-// CSVWriter writes records in CSV format
+// CSVWriter writes records in CSV format.
 type CSVWriter struct {
 	w      *csv.Writer
 	mu     sync.Mutex
@@ -95,7 +95,7 @@ type CSVWriter struct {
 	header bool
 }
 
-// NewCSVWriter creates a new CSV writer
+// NewCSVWriter creates a new CSV writer.
 func NewCSVWriter(path string) (*CSVWriter, error) {
 	var w io.Writer
 	var closer io.Closer
@@ -169,12 +169,12 @@ func (cw *CSVWriter) Close() error {
 	return nil
 }
 
-// NewWriter creates a writer based on format
+// NewWriter creates a writer based on format.
 func NewWriter(format, path string) (Writer, error) {
 	return NewWriterWithMode(format, path, false)
 }
 
-// NewWriterWithMode creates a writer with optional append mode
+// NewWriterWithMode creates a writer with optional append mode.
 func NewWriterWithMode(format, path string, appendMode bool) (Writer, error) {
 	switch format {
 	case "jsonl", "json", "":
@@ -189,7 +189,7 @@ func NewWriterWithMode(format, path string, appendMode bool) (Writer, error) {
 	}
 }
 
-// NewJSONLWriterWithMode creates a JSONL writer with optional append mode
+// NewJSONLWriterWithMode creates a JSONL writer with optional append mode.
 func NewJSONLWriterWithMode(path string, appendMode bool) (*JSONLWriter, error) {
 	var w io.Writer
 	var closer io.Closer
@@ -203,7 +203,7 @@ func NewJSONLWriterWithMode(path string, appendMode bool) (*JSONLWriter, error) 
 		} else {
 			flags |= os.O_TRUNC
 		}
-		f, err := os.OpenFile(filepath.Clean(path), flags, 0644) //nolint:gosec // G302/G304: operator-chosen output path; 0644 is intentional for shareable output
+		f, err := os.OpenFile(filepath.Clean(path), flags, 0o644) //nolint:gosec // G302/G304: operator-chosen output path; 0644 is intentional for shareable output
 		if err != nil {
 			return nil, fmt.Errorf("failed to open output file: %w", err)
 		}
@@ -218,9 +218,9 @@ func NewJSONLWriterWithMode(path string, appendMode bool) (*JSONLWriter, error) 
 	}, nil
 }
 
-// NewCSVWriterAppend creates a CSV writer in append mode (no header)
+// NewCSVWriterAppend creates a CSV writer in append mode (no header).
 func NewCSVWriterAppend(path string) (*CSVWriter, error) {
-	f, err := os.OpenFile(filepath.Clean(path), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644) //nolint:gosec // G302/G304: operator-chosen output path; 0644 is intentional for shareable output
+	f, err := os.OpenFile(filepath.Clean(path), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644) //nolint:gosec // G302/G304: operator-chosen output path; 0644 is intentional for shareable output
 	if err != nil {
 		return nil, fmt.Errorf("failed to open output file: %w", err)
 	}
@@ -232,7 +232,7 @@ func NewCSVWriterAppend(path string) (*CSVWriter, error) {
 	}, nil
 }
 
-// DecodedLogToRecord converts a decoded log to an output record
+// DecodedLogToRecord converts a decoded log to an output record.
 func DecodedLogToRecord(blockNum uint64, txIndex uint, log *decode.DecodedLog, includeData bool) *LogRecord {
 	record := &LogRecord{
 		BlockNumber:  blockNum,
@@ -265,7 +265,7 @@ func DecodedLogToRecord(blockNum uint64, txIndex uint, log *decode.DecodedLog, i
 	return record
 }
 
-// LogEntryToRecord converts a decode.Log to an output record
+// LogEntryToRecord converts a decode.Log to an output record.
 func LogEntryToRecord(blockNum uint64, logIdx uint, log *decode.Log, includeData bool) *LogRecord {
 	record := &LogRecord{
 		BlockNumber:  blockNum,

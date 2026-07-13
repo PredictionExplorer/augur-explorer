@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
-	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
+	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
 
 type txCollectorVerifyDeps struct {

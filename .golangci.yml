@@ -13,8 +13,10 @@ linters:
     - copyloopvar    # detects pre-Go1.22 loop-var copies that are now redundant
     - errname        # error vars named errFoo, types named FooError
     - errorlint      # errors compared/wrapped with errors.Is/As/%w
+    - godot          # comments end in a period
     - gosec          # security checks (SQL building, file perms, crypto)
     - misspell       # commonly misspelled English words
+    - noctx          # HTTP requests must carry a context
     - nolintlint     # nolint directives must be specific and justified
     - rowserrcheck   # sql.Rows.Err must be checked
     - sqlclosecheck  # sql.Rows/Stmt must be closed
@@ -22,6 +24,11 @@ linters:
     - unparam        # unused function parameters
     - usestdlibvars  # http.StatusOK instead of 200, etc.
     - wastedassign   # assignments never read
+    # Deliberately not enabled (§8.4): contextcheck (its inherited-context
+    # heuristics fight the engines' deliberate context.WithoutCancel batch
+    # completion), paralleltest (t.Parallel over the shared testcontainer
+    # harnesses would race the fixture-restoring mutation tests), testifylint
+    # (the repository uses the standard library test style, not testify).
   settings:
     errcheck:
       exclude-functions:
@@ -38,7 +45,13 @@ linters:
     staticcheck:
       checks:
         - all
-        - "-ST1003" # legacy snake_case identifiers are being renamed incrementally
+      # The staticcheck default list minus "TS": short timestamp suffixes
+      # (initTs, finTs) are pervasive and "TS" adds no clarity.
+      initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID",
+        "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC",
+        "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID",
+        "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF",
+        "XSS", "SIP", "RTP", "AMQP", "DB"]
   exclusions:
     generated: lax
     warn-unused: false
@@ -52,10 +65,29 @@ linters:
           - unused
           - unconvert
           - unparam
+      # The v1 wire model serializes by field name (no JSON tags), so the
+      # legacy Id/Ts field spellings are frozen by the parity goldens and
+      # cannot follow the initialism convention until v1 is retired with
+      # docs/MODERNIZATION.md §6.3.
+      - path: ^internal/model/
+        text: "ST1003"
+      # Context-free request/listen constructors are idiomatic in tests
+      # (httptest.NewRequest carries context.Background by design).
+      - path: _test\.go$
+        linters:
+          - noctx
 
 formatters:
   enable:
     - gofmt
+    - gofumpt
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
   exclusions:
     paths:
       - ^contracts/

@@ -6,6 +6,7 @@ package wanotif
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,26 +30,26 @@ type TemplateLanguage struct {
 	Code string `json:"code,omitempty"`
 }
 
-// Components for WhatsApp template messages
+// Components for WhatsApp template messages.
 type Components struct {
 	Type       string               `json:"type,omitempty"`
 	Parameters []TemplateParameters `json:"parameters,omitempty"`
 }
 
-// TemplateParameters for WhatsApp template messages
+// TemplateParameters for WhatsApp template messages.
 type TemplateParameters struct {
 	Type string `json:"type,omitempty"`
 	Text string `json:"text,omitempty"`
 }
 
-// Template for WhatsApp template messages
+// Template for WhatsApp template messages.
 type Template struct {
 	Name       string           `json:"name,omitempty"`
 	Language   TemplateLanguage `json:"language,omitempty"`
 	Components []Components     `json:"components,omitempty"`
 }
 
-// SendWithTemplateRequest for WhatsApp API
+// SendWithTemplateRequest for WhatsApp API.
 type SendWithTemplateRequest struct {
 	MessagingProduct string   `json:"messaging_product,omitempty"`
 	To               string   `json:"to,omitempty"`
@@ -56,11 +57,9 @@ type SendWithTemplateRequest struct {
 	Template         Template `json:"template,omitempty"`
 }
 
-var (
-	LanguageEnglish = TemplateLanguage{
-		Code: "en",
-	}
-)
+var LanguageEnglish = TemplateLanguage{
+	Code: "en",
+}
 
 func NewWhatsapp(token string, phoneNumberID string) *Whatsapp {
 	return &Whatsapp{
@@ -70,6 +69,7 @@ func NewWhatsapp(token string, phoneNumberID string) *Whatsapp {
 		PhoneNumberID: phoneNumberID,
 	}
 }
+
 func parseHTTPError(body io.Reader) (err error) {
 	var errRes map[string]map[string]interface{}
 	err = json.NewDecoder(body).Decode(&errRes)
@@ -79,6 +79,7 @@ func parseHTTPError(body io.Reader) (err error) {
 	msg := fmt.Sprintf("%s", errRes["error"]["message"])
 	return errors.New(msg)
 }
+
 func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}, err error) {
 	jsonRequest, err := json.Marshal(request)
 	if err != nil {
@@ -92,7 +93,7 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 		baseURL = "https://graph.facebook.com"
 	}
 	endpoint := fmt.Sprintf("%s/%s/%s/messages", baseURL, wa.APIVersion, wa.PhoneNumberID)
-	req, err := http.NewRequest(http.MethodPost, endpoint, body)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, body)
 	if err != nil {
 		return res, err
 	}
@@ -118,8 +119,8 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 	}
 	return res, nil
 }
-func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
 
+func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
 	request := wa.createSendWithTemplateRequest(toPhoneNumber, templateName, wa.Language, components)
 
 	return wa.sendMessage(request)
@@ -131,7 +132,6 @@ func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, 
 // first, otherwise the message will be classified as spam and won't be
 // delivered, though no error is reported.
 func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]interface{}, err error) {
-
 	request := map[string]interface{}{
 		"messaging_product": "whatsapp",
 		"to":                toPhoneNumber,
@@ -141,8 +141,8 @@ func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]
 		},
 	}
 	return wa.sendMessage(request)
-
 }
+
 func (wa *Whatsapp) createSendWithTemplateRequest(receiverPhoneNumber string, templateName string, language TemplateLanguage, components []Components) (res SendWithTemplateRequest) {
 	return SendWithTemplateRequest{
 		MessagingProduct: "whatsapp",
@@ -156,8 +156,8 @@ func (wa *Whatsapp) createSendWithTemplateRequest(receiverPhoneNumber string, te
 		},
 	}
 }
-func (wa *Whatsapp) GenerateTemplateParameters(parameterType string, args ...string) (res []TemplateParameters) {
 
+func (wa *Whatsapp) GenerateTemplateParameters(parameterType string, args ...string) (res []TemplateParameters) {
 	if parameterType == "" {
 		parameterType = "text"
 	}

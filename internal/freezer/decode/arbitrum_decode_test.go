@@ -7,10 +7,10 @@ import (
 	freezerscanner "github.com/PredictionExplorer/augur-explorer/internal/freezer"
 )
 
-// RandomWalk contract address on Arbitrum
+// RandomWalk contract address on Arbitrum.
 const RandomWalkAddr = "0x895a6F444BE4ba9d124F61DF736605792B35D66b"
 
-// RandomWalk event signatures (first 4 bytes of keccak256)
+// RandomWalk event signatures (first 4 bytes of keccak256).
 var RandomWalkEventSigs = map[string]string{
 	"0ff09947": "SeedInfoEvent",
 	"17307eab": "ApprovalForAll",

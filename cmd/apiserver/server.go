@@ -60,7 +60,7 @@ func newServerDeps(ctx context.Context, getenv func(string) string) (*serverDeps
 // openAppendLog opens (creating if needed) one of the server's append-only
 // log files.
 func openAppendLog(path string) (*os.File, error) {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666) // #nosec G302 G304 -- operational log under $HOME/ae_logs, world-readable by design
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666) // #nosec G302 G304 -- operational log under $HOME/ae_logs, world-readable by design
 	if err != nil {
 		return nil, fmt.Errorf("can't open log file: %w", err)
 	}

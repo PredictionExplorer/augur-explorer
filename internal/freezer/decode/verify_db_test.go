@@ -5,11 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	freezerscanner "github.com/PredictionExplorer/augur-explorer/internal/freezer"
 	"github.com/lib/pq"
+
+	freezerscanner "github.com/PredictionExplorer/augur-explorer/internal/freezer"
 )
 
-// ProjectConfig defines contract addresses and expected event signatures for a project
+// ProjectConfig defines contract addresses and expected event signatures for a project.
 type ProjectConfig struct {
 	Name      string
 	Contracts []string // contract addresses (hex with 0x prefix)
@@ -35,7 +36,7 @@ var RandomWalkConfig = ProjectConfig{
 	},
 }
 
-// CosmicGameConfig - ready for when mainnet data is available
+// CosmicGameConfig - ready for when mainnet data is available.
 var CosmicGameConfig = ProjectConfig{
 	Name:      "CosmicGame",
 	Contracts: []string{
@@ -52,10 +53,10 @@ var CosmicGameConfig = ProjectConfig{
 	},
 }
 
-// verifyProject compares freezer events with database events for a project
+// verifyProject compares freezer events with database events for a project.
 func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
-	config ProjectConfig, startBlock, endBlock uint64) (match, missing, extra int) {
-
+	config ProjectConfig, startBlock, endBlock uint64,
+) (match, missing, extra int) {
 	if len(config.Contracts) == 0 {
 		t.Logf("Skipping %s - no contracts configured", config.Name)
 		return 0, 0, 0
@@ -182,7 +183,7 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 	return match, missing, extra
 }
 
-// TestVerifyRandomWalk verifies RandomWalk project events
+// TestVerifyRandomWalk verifies RandomWalk project events.
 func TestVerifyRandomWalk(t *testing.T) {
 	db, err := sql.Open("postgres", "user=cosmicgame dbname=cosmicgame sslmode=disable")
 	if err != nil {
@@ -218,7 +219,7 @@ func TestVerifyRandomWalk(t *testing.T) {
 	}
 }
 
-// TestVerifyCosmicGame verifies CosmicGame project events
+// TestVerifyCosmicGame verifies CosmicGame project events.
 func TestVerifyCosmicGame(t *testing.T) {
 	if len(CosmicGameConfig.Contracts) == 0 {
 		t.Skip("CosmicGame mainnet contracts not configured yet")
@@ -275,7 +276,7 @@ func TestVerifyCosmicGame(t *testing.T) {
 	}
 }
 
-// TestVerifyAllProjects runs verification for all configured projects
+// TestVerifyAllProjects runs verification for all configured projects.
 func TestVerifyAllProjects(t *testing.T) {
 	db, err := sql.Open("postgres", "user=cosmicgame dbname=cosmicgame sslmode=disable")
 	if err != nil {

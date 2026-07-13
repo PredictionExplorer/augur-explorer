@@ -9,12 +9,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/indexer/logscan"
-	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/lib/pq"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer/logscan"
+	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
 
 const (

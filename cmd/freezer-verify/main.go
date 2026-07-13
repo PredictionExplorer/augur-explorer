@@ -21,8 +21,9 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/freezer/verify"
 	"github.com/jackc/pgx/v5"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/freezer/verify"
 )
 
 func main() {

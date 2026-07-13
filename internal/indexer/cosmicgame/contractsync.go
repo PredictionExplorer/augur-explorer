@@ -20,8 +20,10 @@ import (
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
-const chainSyncTxHash = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-const chainSyncLogIndexFloor uint = 990000
+const (
+	chainSyncTxHash             = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+	chainSyncLogIndexFloor uint = 990000
+)
 
 const (
 	contractMechanicsUnknown int64 = 0
@@ -47,7 +49,7 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 	}
 
 	blockNum := header.Number.Int64()
-	txId, err := st.InsertMinimalTransaction(ctx, chainSyncTxHash, blockNum)
+	txID, err := st.InsertMinimalTransaction(ctx, chainSyncTxHash, blockNum)
 	if err != nil {
 		return nil, fmt.Errorf("InsertMinimalTransaction: %w", err)
 	}
@@ -56,7 +58,7 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 		return nil, fmt.Errorf("NextEventLogIndex: %w", err)
 	}
 
-	contractAid, err := st.LookupOrCreateAddress(ctx, contractAddr, blockNum, txId)
+	contractAid, err := st.LookupOrCreateAddress(ctx, contractAddr, blockNum, txID)
 	if err != nil {
 		return nil, fmt.Errorf("LookupOrCreateAddress: %w", err)
 	}
@@ -67,15 +69,15 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 		Index:       logIndex,
 	}
 
-	evtId, err := st.InsertEventLog(ctx, syncLog, txId, contractAid)
+	evtID, err := st.InsertEventLog(ctx, syncLog, txID, contractAid)
 	if err != nil {
 		return nil, fmt.Errorf("InsertEventLog: %w", err)
 	}
 
 	return &cgdb.AdminCorrectionMeta{
-		EvtId:       evtId,
+		EvtID:       evtID,
 		BlockNum:    blockNum,
-		TxId:        txId,
+		TxID:        txID,
 		TimeStamp:   int64(header.Time),
 		ContractAid: contractAid,
 	}, nil
@@ -97,7 +99,7 @@ func (s *paramSyncer) contractAid(contractAddr string) (int64, error) {
 	if contractAddr == "" {
 		return 0, nil // Repo substitutes meta.ContractAid
 	}
-	aid, err := s.store.LookupOrCreateAddress(s.ctx, contractAddr, s.meta.BlockNum, s.meta.TxId)
+	aid, err := s.store.LookupOrCreateAddress(s.ctx, contractAddr, s.meta.BlockNum, s.meta.TxID)
 	if err != nil {
 		return 0, fmt.Errorf("correction contract address %v: %w", contractAddr, err)
 	}

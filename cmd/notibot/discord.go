@@ -26,12 +26,12 @@ type discordSink struct {
 func newDiscordSink(client *disgord.Client, keys discordKeys, log *slog.Logger) *discordSink {
 	return &discordSink{
 		client:        client,
-		notifyChannel: disgord.Snowflake(keys.ChannelId),
+		notifyChannel: disgord.Snowflake(keys.ChannelID),
 		channels: map[rwbot.StatChannel]disgord.Snowflake{
-			rwbot.ChannelMints:      disgord.Snowflake(keys.MintStatsChanId),
-			rwbot.ChannelPrice:      disgord.Snowflake(keys.PriceStatsChanId),
-			rwbot.ChannelLastDate:   disgord.Snowflake(keys.DateStatsChanId),
-			rwbot.ChannelLastReward: disgord.Snowflake(keys.RewardStatsChanId),
+			rwbot.ChannelMints:      disgord.Snowflake(keys.MintStatsChanID),
+			rwbot.ChannelPrice:      disgord.Snowflake(keys.PriceStatsChanID),
+			rwbot.ChannelLastDate:   disgord.Snowflake(keys.DateStatsChanID),
+			rwbot.ChannelLastReward: disgord.Snowflake(keys.RewardStatsChanID),
 		},
 		log:   log,
 		sleep: time.Sleep,

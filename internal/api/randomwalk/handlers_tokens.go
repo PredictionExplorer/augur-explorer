@@ -5,13 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// Token list sequential (API)
+// Token list sequential (API).
 func (a *API) handleTokenListSeq(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -35,7 +34,7 @@ func (a *API) handleTokenListSeq(c *httpx.Context) {
 	})
 }
 
-// Token list by period (API)
+// Token list by period (API).
 func (a *API) handleTokenListPeriod(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -66,7 +65,7 @@ func (a *API) handleTokenListPeriod(c *httpx.Context) {
 	})
 }
 
-// Token info (API)
+// Token info (API).
 func (a *API) handleTokenInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -108,7 +107,7 @@ func (a *API) handleTokenInfo(c *httpx.Context) {
 	})
 }
 
-// Token history (API)
+// Token history (API).
 func (a *API) handleTokenHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -152,7 +151,7 @@ func (a *API) handleTokenHistory(c *httpx.Context) {
 	})
 }
 
-// Token name history (API)
+// Token name history (API).
 func (a *API) handleTokenNameHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -183,7 +182,7 @@ func (a *API) handleTokenNameHistory(c *httpx.Context) {
 	})
 }
 
-// Tokens by user (API)
+// Tokens by user (API).
 func (a *API) handleTokensByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {

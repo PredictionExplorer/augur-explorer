@@ -25,9 +25,9 @@ func (h *Handlers) decodeNftNameChanged(lg *types.Log, elog *store.EthereumEvent
 	}
 
 	evt := &cgmodel.CGTokenNameEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = lg.Topics[1].Big().Int64()
@@ -54,9 +54,9 @@ func (h *Handlers) decodeNftMinted(lg *types.Log, elog *store.EthereumEventLog) 
 	}
 
 	evt := &cgmodel.CGMintEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = lg.Topics[3].Big().Int64()
@@ -89,9 +89,9 @@ func (h *Handlers) decodeMarketingRewardPaid(lg *types.Log, elog *store.Ethereum
 	}
 
 	evt := &cgmodel.CGMarketingRewardPaid{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Marketer = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
@@ -116,9 +116,9 @@ func (h *Handlers) decodeCosmicSignatureTransfer(lg *types.Log, elog *store.Ethe
 		return nil, err
 	}
 	evt := &cgmodel.CGERC721Transfer{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.From = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
@@ -148,9 +148,9 @@ func (h *Handlers) decodeCosmicTokenTransfer(lg *types.Log, elog *store.Ethereum
 	}
 
 	evt := &cgmodel.CGERC20Transfer{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.From = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()

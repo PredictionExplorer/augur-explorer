@@ -66,9 +66,9 @@ func FuzzEventDecodeCG(f *testing.F) {
 			Data:    data,
 		}
 		elog := &store.EthereumEventLog{
-			EvtId:    1,
+			EvtID:    1,
 			BlockNum: 2,
-			TxId:     3,
+			TxID:     3,
 			TxHash:   "0x00000000000000000000000000000000000000000000000000000000000000aa",
 		}
 		// Must never panic; errors are expected for malformed input.

@@ -250,7 +250,7 @@ func mapCurrentSpecialWinners(snapshot contractstate.Snapshot) (CurrentSpecialWi
 	}
 	lastCSTZero := record.LastCstBidderAddress == (ethcommon.Address{}).Hex()
 	if lastCSTZero {
-		if record.HasLastCstBidderLastBidTime || record.HasLastCstBidEventLogId {
+		if record.HasLastCstBidderLastBidTime || record.HasLastCstBidEventLogID {
 			return CurrentSpecialWinners{}, errors.New("zero last-CST bidder has attached values")
 		}
 	} else {
@@ -268,11 +268,11 @@ func mapCurrentSpecialWinners(snapshot contractstate.Snapshot) (CurrentSpecialWi
 				standing.LastBidAt = &lastBidAt
 			}
 		}
-		if record.HasLastCstBidEventLogId {
-			if record.LastCstBidEventLogId < 1 {
+		if record.HasLastCstBidEventLogID {
+			if record.LastCstBidEventLogID < 1 {
 				return CurrentSpecialWinners{}, errors.New("invalid last CST bid event-log ID")
 			}
-			eventLogID := record.LastCstBidEventLogId
+			eventLogID := record.LastCstBidEventLogID
 			standing.EventLogId = &eventLogID
 		}
 		result.LastCstBidder = standing

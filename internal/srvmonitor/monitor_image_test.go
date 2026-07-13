@@ -11,9 +11,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // rwalkAddr is the fake RandomWalk contract address used by image tests.
@@ -96,7 +97,7 @@ func TestImageMonitorAllPresentAndMatching(t *testing.T) {
 		t.Fatalf("unexpected errors: %v", msgs)
 	}
 	d := s.monitor.data
-	if d.DbTokenID != 42 || d.ContractTokenID != 42 || !d.TokensMatch {
+	if d.DBTokenID != 42 || d.ContractTokenID != 42 || !d.TokensMatch {
 		t.Fatalf("data = %+v, want matching token 42", d)
 	}
 	for i, want := range []int64{42, 41, 40} {
@@ -181,7 +182,7 @@ func TestImageMonitorTokenQueryFailures(t *testing.T) {
 			if len(msgs) != 1 || !strings.Contains(msgs[0], "DB Error:") {
 				t.Fatalf("errors = %v", msgs)
 			}
-			if m.data.DbTokenID != -1 {
+			if m.data.DBTokenID != -1 {
 				t.Fatalf("data = %+v", m.data)
 			}
 		})
@@ -233,7 +234,7 @@ func TestImageMonitorDBFailure(t *testing.T) {
 		t.Fatalf("errors = %v", msgs)
 	}
 	d := m.data
-	if d.DbTokenID != -1 || d.ContractTokenID != -1 || d.TokensMatch {
+	if d.DBTokenID != -1 || d.ContractTokenID != -1 || d.TokensMatch {
 		t.Fatalf("data = %+v", d)
 	}
 	for i := range d.LatestTokens {
@@ -295,8 +296,8 @@ func TestImageMonitorEmptyMintTable(t *testing.T) {
 	m.check(context.Background(), newFakeDisplay(), errCh)
 
 	d := m.data
-	if d.DbTokenID != -1 {
-		t.Fatalf("DbTokenID = %d, want -1 for empty table", d.DbTokenID)
+	if d.DBTokenID != -1 {
+		t.Fatalf("DBTokenID = %d, want -1 for empty table", d.DBTokenID)
 	}
 	// nextTokenId 0 => last minted -1, matching the empty DB sentinel.
 	if d.ContractTokenID != -1 || !d.TokensMatch {

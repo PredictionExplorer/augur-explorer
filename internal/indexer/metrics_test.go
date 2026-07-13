@@ -59,7 +59,7 @@ func TestStartMetricsServerServesMetricsAndPprof(t *testing.T) {
 	m := NewMetrics(reg)
 	m.watermark(77)
 
-	srv, addr, err := StartMetricsServer("127.0.0.1:0", reg, slog.New(slog.DiscardHandler))
+	srv, addr, err := StartMetricsServer(t.Context(), "127.0.0.1:0", reg, slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("StartMetricsServer: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestStartMetricsServerServesMetricsAndPprof(t *testing.T) {
 }
 
 func TestStartMetricsServerRejectsBadAddr(t *testing.T) {
-	if _, _, err := StartMetricsServer("256.256.256.256:99999", prometheus.NewRegistry(), slog.New(slog.DiscardHandler)); err == nil {
+	if _, _, err := StartMetricsServer(t.Context(), "256.256.256.256:99999", prometheus.NewRegistry(), slog.New(slog.DiscardHandler)); err == nil {
 		t.Fatal("expected a listen error for an invalid address")
 	}
 }

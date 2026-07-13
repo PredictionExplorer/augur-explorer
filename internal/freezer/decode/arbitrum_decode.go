@@ -9,14 +9,14 @@ import (
 	"github.com/golang/snappy"
 )
 
-// Log represents an Ethereum log entry
+// Log represents an Ethereum log entry.
 type Log struct {
 	Address common.Address
 	Topics  []common.Hash
 	Data    []byte
 }
 
-// DecodeArbitrumLog decodes a single log from raw RLP
+// DecodeArbitrumLog decodes a single log from raw RLP.
 func DecodeArbitrumLog(rawLog []byte) (*Log, error) {
 	var fields []rlp.RawValue
 	if err := rlp.DecodeBytes(rawLog, &fields); err != nil {
@@ -42,7 +42,7 @@ func DecodeArbitrumLog(rawLog []byte) (*Log, error) {
 // smartDecompress handles multiple data formats:
 // 1. Raw RLP (starts with 0xc0+)
 // 2. Snappy compressed
-// 3. Varint header + raw RLP (Arbitrum Nitro uncompressed format)
+// 3. Varint header + raw RLP (Arbitrum Nitro uncompressed format).
 func smartDecompress(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return data, nil
@@ -88,7 +88,7 @@ func smartDecompress(data []byte) ([]byte, error) {
 	return nil, fmt.Errorf("no valid RLP found after header")
 }
 
-// decodeVarintLocal decodes a varint, returns value and bytes consumed
+// decodeVarintLocal decodes a varint, returns value and bytes consumed.
 func decodeVarintLocal(data []byte) (uint64, int) {
 	var value uint64
 	for i := 0; i < len(data) && i < 10; i++ {
@@ -102,7 +102,7 @@ func decodeVarintLocal(data []byte) (uint64, int) {
 }
 
 // DecodeArbitrumReceipts decodes Arbitrum Nitro receipts (snappy or raw)
-// and returns all logs from all receipts in the block
+// and returns all logs from all receipts in the block.
 func DecodeArbitrumReceipts(compressedData []byte) ([]*Log, error) {
 	// Smart decompress - handles snappy, raw RLP, and header formats
 	data, err := smartDecompress(compressedData)

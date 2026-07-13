@@ -360,7 +360,7 @@ func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Respo
 	if r.method != http.MethodGet {
 		body = strings.NewReader(r.form.Encode())
 	}
-	req, err := http.NewRequest(r.method, urlStr, body)
+	req, err := http.NewRequestWithContext(ctx, r.method, urlStr, body)
 	if err != nil {
 		return nil, err
 	}
@@ -415,27 +415,37 @@ func (c *Client) requestCredentials(ctx context.Context, u string, r *request) (
 	p, err := io.ReadAll(resp.Body)
 	_ = resp.Body.Close() // best-effort: body already fully read
 	if err != nil {
-		return nil, nil, RequestCredentialsError{StatusCode: resp.StatusCode, Header: resp.Header,
-			Body: p, msg: err.Error()}
+		return nil, nil, RequestCredentialsError{
+			StatusCode: resp.StatusCode, Header: resp.Header,
+			Body: p, msg: err.Error(),
+		}
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, nil, RequestCredentialsError{StatusCode: resp.StatusCode, Header: resp.Header,
-			Body: p, msg: fmt.Sprintf("OAuth server status %d, %s", resp.StatusCode, string(p))}
+		return nil, nil, RequestCredentialsError{
+			StatusCode: resp.StatusCode, Header: resp.Header,
+			Body: p, msg: fmt.Sprintf("OAuth server status %d, %s", resp.StatusCode, string(p)),
+		}
 	}
 	m, err := url.ParseQuery(string(p))
 	if err != nil {
-		return nil, nil, RequestCredentialsError{StatusCode: resp.StatusCode, Header: resp.Header,
-			Body: p, msg: err.Error()}
+		return nil, nil, RequestCredentialsError{
+			StatusCode: resp.StatusCode, Header: resp.Header,
+			Body: p, msg: err.Error(),
+		}
 	}
 	tokens := m["oauth_token"]
 	if len(tokens) == 0 || tokens[0] == "" {
-		return nil, nil, RequestCredentialsError{StatusCode: resp.StatusCode, Header: resp.Header,
-			Body: p, msg: "oauth: token missing from server result"}
+		return nil, nil, RequestCredentialsError{
+			StatusCode: resp.StatusCode, Header: resp.Header,
+			Body: p, msg: "oauth: token missing from server result",
+		}
 	}
 	secrets := m["oauth_token_secret"]
 	if len(secrets) == 0 { // allow "" as a valid secret.
-		return nil, nil, RequestCredentialsError{StatusCode: resp.StatusCode, Header: resp.Header,
-			Body: p, msg: "oauth: secret missing from server result"}
+		return nil, nil, RequestCredentialsError{
+			StatusCode: resp.StatusCode, Header: resp.Header,
+			Body: p, msg: "oauth: secret missing from server result",
+		}
 	}
 	return &Credentials{Token: tokens[0], Secret: secrets[0]}, m, nil
 }

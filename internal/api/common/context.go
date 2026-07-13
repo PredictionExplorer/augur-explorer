@@ -17,7 +17,7 @@ import (
 // HTML pages are gone, so both branches now emit the same JSON error.
 func IsAddressValid(c *httpx.Context, jsonOutput bool, addr string) (string, bool) {
 	if (len(addr) != 40) && (len(addr) != 42) {
-		var errMsg = fmt.Sprintf("Provided address has invalid length (len=%v)", len(addr))
+		errMsg := fmt.Sprintf("Provided address has invalid length (len=%v)", len(addr))
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 0,
 			"error":  errMsg,

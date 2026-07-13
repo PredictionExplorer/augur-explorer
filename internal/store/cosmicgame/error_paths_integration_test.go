@@ -170,7 +170,7 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			return err
 		},
 		"InsertAdminCorrectionDecimal": func() error {
-			meta := &AdminCorrectionMeta{EvtId: 5001, BlockNum: 1, TxId: 1001, TimeStamp: 1, ContractAid: aidCosmicGame}
+			meta := &AdminCorrectionMeta{EvtID: 5001, BlockNum: 1, TxID: 1001, TimeStamp: 1, ContractAid: aidCosmicGame}
 			return spareRepo.InsertAdminCorrectionDecimal(ctx, "cg_adm_charity_pcent", "percentage", "1", meta, 0)
 		},
 		"DeleteMint": func() error {

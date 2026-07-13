@@ -4,13 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// Trading history (API)
+// Trading history (API).
 func (a *API) handleTradingHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -46,7 +45,7 @@ func (a *API) handleTradingHistory(c *httpx.Context) {
 	})
 }
 
-// Sale history (API)
+// Sale history (API).
 func (a *API) handleSaleHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {
@@ -82,7 +81,7 @@ func (a *API) handleSaleHistory(c *httpx.Context) {
 	})
 }
 
-// Trading history by user (API)
+// Trading history by user (API).
 func (a *API) handleTradingHistoryByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if !a.dbInitialized() {

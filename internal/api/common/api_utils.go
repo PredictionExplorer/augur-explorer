@@ -11,7 +11,7 @@ import (
 func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 	var err error
 	pInitTs := c.Param("init_ts")
-	var initTs int = 0
+	var initTs int
 	if len(pInitTs) > 0 {
 		initTs, err = strconv.Atoi(pInitTs)
 		if err != nil {
@@ -30,7 +30,7 @@ func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 	}
 
 	pFinTs := c.Param("fin_ts")
-	var finTs int = 0
+	var finTs int
 	if len(pFinTs) > 0 {
 		finTs, err = strconv.Atoi(pFinTs)
 		if err != nil {
@@ -52,7 +52,7 @@ func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 	}
 
 	pIntervalSecs := c.Param("interval_secs")
-	var intervalSecs int = finTs - initTs
+	var intervalSecs int
 	if len(pIntervalSecs) > 0 {
 		intervalSecs, err = strconv.Atoi(pIntervalSecs)
 		if err != nil {
@@ -78,7 +78,7 @@ func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 func ParseOffsetLimitParamsJSON(c *httpx.Context) (bool, int, int) {
 	var err error
 	pOffset := c.Param("offset")
-	var offset int = 0
+	var offset int
 	if len(pOffset) > 0 {
 		offset, err = strconv.Atoi(pOffset)
 		if err != nil {
@@ -97,7 +97,7 @@ func ParseOffsetLimitParamsJSON(c *httpx.Context) (bool, int, int) {
 	}
 
 	pLimit := c.Param("limit")
-	var limit int = 0
+	var limit int
 	if len(pLimit) > 0 {
 		limit, err = strconv.Atoi(pLimit)
 		if err != nil {

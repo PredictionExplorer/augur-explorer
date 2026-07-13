@@ -144,11 +144,11 @@ func run(ctx context.Context, twitterOn, discordOn bool) error {
 		client := newDiscordClient(disgord.Config{BotToken: keys.TokenKey})
 		cfg.Discord = newDiscordSink(client, keys, logger)
 		logger.Info("loaded discord keys",
-			"main_channel", keys.MainChannelId,
-			"mint_stats_channel", keys.MintStatsChanId,
-			"price_stats_channel", keys.PriceStatsChanId,
-			"date_stats_channel", keys.DateStatsChanId,
-			"reward_stats_channel", keys.RewardStatsChanId,
+			"main_channel", keys.MainChannelID,
+			"mint_stats_channel", keys.MintStatsChanID,
+			"price_stats_channel", keys.PriceStatsChanID,
+			"date_stats_channel", keys.DateStatsChanID,
+			"reward_stats_channel", keys.RewardStatsChanID,
 		)
 	}
 

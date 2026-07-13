@@ -24,9 +24,9 @@ func (h *Handlers) decodeBidPlacedV1(lg *types.Log, elog *store.EthereumEventLog
 	}
 
 	evt := &cgmodel.CGBidEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -57,9 +57,9 @@ func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *store.EthereumEventLog
 	}
 
 	evt := &cgmodel.CGBidEvent{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.ContractAddr = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
@@ -112,9 +112,9 @@ func (h *Handlers) decodeFirstBidPlacedInRound(lg *types.Log, elog *store.Ethere
 	}
 
 	evt := &cgmodel.CGRoundStarted{}
-	evt.EvtId = elog.EvtId
+	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
+	evt.TxId = elog.TxID
 	evt.Contract = lg.Address.String()
 	evt.RoundNum = lg.Topics[1].Big().Int64()
 	evt.StartTimestamp = ethEvt.BlockTimeStamp.Int64()

@@ -14,9 +14,9 @@ import (
 
 // AdminCorrectionMeta holds evt_log/block metadata for synthetic admin correction inserts.
 type AdminCorrectionMeta struct {
-	EvtId       int64
+	EvtID       int64
 	BlockNum    int64
-	TxId        int64
+	TxID        int64
 	TimeStamp   int64
 	ContractAid int64
 }
@@ -101,9 +101,9 @@ func (r *Repo) InsertAdminCorrectionDecimal(ctx context.Context, table, column, 
 		table, column,
 	)
 	_, err := r.pool().Exec(ctx, query,
-		meta.EvtId,
+		meta.EvtID,
 		meta.BlockNum,
-		meta.TxId,
+		meta.TxID,
 		meta.TimeStamp,
 		contractAid,
 		value,
@@ -121,9 +121,9 @@ func (r *Repo) InsertAdminCorrectionERC20Reward(ctx context.Context, reward stri
 		"evtlog_id, block_num, tx_id, time_stamp, contract_aid, new_reward" +
 		") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
 	_, err := r.pool().Exec(ctx, query,
-		meta.EvtId,
+		meta.EvtID,
 		meta.BlockNum,
-		meta.TxId,
+		meta.TxID,
 		meta.TimeStamp,
 		meta.ContractAid,
 		reward,

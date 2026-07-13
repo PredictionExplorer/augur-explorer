@@ -69,11 +69,11 @@ func stubDiscord(t *testing.T, status int, respBody string) (*discordSink, *[]st
 	})
 	keys := discordKeys{
 		TokenKey:          "test-token",
-		ChannelId:         101,
-		MintStatsChanId:   102,
-		PriceStatsChanId:  103,
-		DateStatsChanId:   104,
-		RewardStatsChanId: 105,
+		ChannelID:         101,
+		MintStatsChanID:   102,
+		PriceStatsChanID:  103,
+		DateStatsChanID:   104,
+		RewardStatsChanID: 105,
 	}
 	sink := newDiscordSink(client, keys, slog.New(slog.DiscardHandler))
 	sink.sleep = func(time.Duration) {}
@@ -171,7 +171,7 @@ func TestDiscordSinkRateLimitedRenameRetries(t *testing.T) {
 		BotToken:   "t",
 		HTTPClient: &http.Client{Transport: rewriteTransport{target: target}},
 	})
-	sink := newDiscordSink(client, discordKeys{PriceStatsChanId: 103}, slog.New(slog.DiscardHandler))
+	sink := newDiscordSink(client, discordKeys{PriceStatsChanID: 103}, slog.New(slog.DiscardHandler))
 	var slept time.Duration
 	sink.sleep = func(d time.Duration) { slept = d }
 

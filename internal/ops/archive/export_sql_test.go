@@ -316,7 +316,8 @@ func prepareStatement(t *testing.T, ops ...scriptOp) *sql.Stmt {
 func eventRow() []driver.Value {
 	return []driver.Value{
 		int64(10), int64(20), int64(30), int64(1),
-		"0xtx", "0xcontract", "deadbeef", []byte{0x01},
+		"0xtx", "0xcontract", "deadbeef",
+		[]byte{0x01},
 	}
 }
 

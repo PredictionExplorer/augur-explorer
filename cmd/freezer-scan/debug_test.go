@@ -201,7 +201,7 @@ func TestDebugFileStart(t *testing.T) {
 	}
 }
 
-// decodeVarint decodes a varint from data, returns value and bytes consumed
+// decodeVarint decodes a varint from data, returns value and bytes consumed.
 func decodeVarint(data []byte) (uint64, int) {
 	var value uint64
 	for i := 0; i < len(data) && i < 10; i++ {

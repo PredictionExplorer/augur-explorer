@@ -31,11 +31,11 @@ const evtLogColumns = `
 // wrapped ErrNotFound.
 func (s *Store) EventLog(ctx context.Context, evtlogID int64) (EthereumEventLog, error) {
 	var evtlog EthereumEventLog
-	evtlog.EvtId = evtlogID
+	evtlog.EvtID = evtlogID
 	err := s.pool.QueryRow(ctx, "SELECT "+evtLogColumns+" WHERE e.id=$1", evtlogID).Scan(
 		&evtlog.BlockNum,
 		&evtlog.TimeStamp,
-		&evtlog.TxId,
+		&evtlog.TxID,
 		&evtlog.TxHash,
 		&evtlog.ContractAid,
 		&evtlog.ContractAddress,
@@ -55,10 +55,10 @@ func (s *Store) EventsBySigAndTx(ctx context.Context, txID int64, sig string) ([
 	return QueryList(ctx, s.pool, fmt.Sprintf("event logs for tx %v sig %v", txID, sig), 8, query,
 		func(rows pgx.Rows, evtlog *EthereumEventLog) error {
 			return rows.Scan(
-				&evtlog.EvtId,
+				&evtlog.EvtID,
 				&evtlog.BlockNum,
 				&evtlog.TimeStamp,
-				&evtlog.TxId,
+				&evtlog.TxID,
 				&evtlog.TxHash,
 				&evtlog.ContractAid,
 				&evtlog.ContractAddress,

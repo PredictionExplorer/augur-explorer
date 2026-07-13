@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ArchivedTransaction holds transaction data from archive
+// ArchivedTransaction holds transaction data from archive.
 type ArchivedTransaction struct {
 	BlockNum    int64
 	TxHash      string

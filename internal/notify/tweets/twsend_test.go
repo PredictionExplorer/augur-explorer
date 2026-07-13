@@ -103,8 +103,8 @@ func TestSendTweet(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &resp); err != nil {
 		t.Fatalf("body %q is not the stubbed JSON: %v", body, err)
 	}
-	if resp.IdStr != "12345" {
-		t.Errorf("IdStr = %q, want 12345", resp.IdStr)
+	if resp.IDStr != "12345" {
+		t.Errorf("IDStr = %q, want 12345", resp.IDStr)
 	}
 
 	req := stub.request(0)

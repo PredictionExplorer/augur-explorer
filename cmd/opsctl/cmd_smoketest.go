@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
 )
 
 type smoketestDeps struct {

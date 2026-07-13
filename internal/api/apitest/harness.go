@@ -152,7 +152,7 @@ func (h *harness) do(t *testing.T, req request) *httptest.ResponseRecorder {
 	if req.method == "" {
 		req.method = "GET"
 	}
-	httpReq := httptest.NewRequest(req.method, req.path, req.body)
+	httpReq := httptest.NewRequestWithContext(context.Background(), req.method, req.path, req.body)
 	n := h.ipCounter.Add(1)
 	httpReq.RemoteAddr = fmt.Sprintf("10.%d.%d.%d:4242", (n>>16)&0xff, (n>>8)&0xff, n&0xff)
 	if req.remoteAddr != "" {

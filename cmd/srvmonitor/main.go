@@ -14,9 +14,10 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/nsf/termbox-go"
+
 	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor/termboxui"
-	"github.com/nsf/termbox-go"
 )
 
 // setupResult carries everything main needs from the testable setup phase.
@@ -39,7 +40,7 @@ func setup(getenv func(string) string) (*setupResult, error) {
 	logFilePath := filepath.Join(tmpDir, "srvmonitor.log")
 	oldLogFilePath := filepath.Join(tmpDir, "srvmonitor-old.log")
 
-	logfile, err := os.OpenFile(filepath.Clean(logFilePath), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	logfile, err := os.OpenFile(filepath.Clean(logFilePath), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("error opening log file: %w", err)
 	}
