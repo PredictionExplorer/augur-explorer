@@ -11,11 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (h *Handlers) decodeEthDonated(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGDonationEvent, error) {
+func (h *Handlers) decodeEthDonated(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonationEvent, error) {
 	if err := requireTopics(lg, 3); err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (h *Handlers) decodeEthDonated(lg *types.Log, elog *primitives.EthereumEven
 		return nil, err
 	}
 
-	evt := &cgp.CGDonationEvent{}
+	evt := &cgmodel.CGDonationEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -36,7 +36,7 @@ func (h *Handlers) decodeEthDonated(lg *types.Log, elog *primitives.EthereumEven
 	return evt, nil
 }
 
-func (h *Handlers) storeEthDonated(ctx context.Context, evt *cgp.CGDonationEvent) error {
+func (h *Handlers) storeEthDonated(ctx context.Context, evt *cgmodel.CGDonationEvent) error {
 	h.log.Info("EthDonated",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "donor", evt.DonorAddr, "amount", evt.Amount)
 
@@ -46,7 +46,7 @@ func (h *Handlers) storeEthDonated(ctx context.Context, evt *cgp.CGDonationEvent
 	return h.repo.InsertEthDonation(ctx, evt)
 }
 
-func (h *Handlers) decodeEthDonatedWithInfo(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGDonationWithInfoEvent, error) {
+func (h *Handlers) decodeEthDonatedWithInfo(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonationWithInfoEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (h *Handlers) decodeEthDonatedWithInfo(lg *types.Log, elog *primitives.Ethe
 		return nil, err
 	}
 
-	evt := &cgp.CGDonationWithInfoEvent{}
+	evt := &cgmodel.CGDonationWithInfoEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -68,7 +68,7 @@ func (h *Handlers) decodeEthDonatedWithInfo(lg *types.Log, elog *primitives.Ethe
 	return evt, nil
 }
 
-func (h *Handlers) storeEthDonatedWithInfo(ctx context.Context, evt *cgp.CGDonationWithInfoEvent) error {
+func (h *Handlers) storeEthDonatedWithInfo(ctx context.Context, evt *cgmodel.CGDonationWithInfoEvent) error {
 	dataJSON, err := h.fetchDonationInfo(ctx, evt.RecordId)
 	if err != nil {
 		return fmt.Errorf("EthDonatedWithInfo (evt id %v): fetching donation info record: %w", evt.EvtId, err)
@@ -87,7 +87,7 @@ func (h *Handlers) storeEthDonatedWithInfo(ctx context.Context, evt *cgp.CGDonat
 	return h.repo.InsertDonationJSON(ctx, evt.RecordId, dataJSON)
 }
 
-func (h *Handlers) decodeDonationReceived(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGDonationReceivedEvent, error) {
+func (h *Handlers) decodeDonationReceived(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonationReceivedEvent, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (h *Handlers) decodeDonationReceived(lg *types.Log, elog *primitives.Ethere
 		return nil, err
 	}
 
-	evt := &cgp.CGDonationReceivedEvent{}
+	evt := &cgmodel.CGDonationReceivedEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -107,7 +107,7 @@ func (h *Handlers) decodeDonationReceived(lg *types.Log, elog *primitives.Ethere
 	return evt, nil
 }
 
-func (h *Handlers) storeDonationReceived(ctx context.Context, evt *cgp.CGDonationReceivedEvent) error {
+func (h *Handlers) storeDonationReceived(ctx context.Context, evt *cgmodel.CGDonationReceivedEvent) error {
 	// The round is resolved from the MainPrizeClaimed event of the same
 	// transaction; a standalone donation reports -1.
 	var err error
@@ -128,7 +128,7 @@ func (h *Handlers) storeDonationReceived(ctx context.Context, evt *cgp.CGDonatio
 // decodeDonationSent handles the CharityWallet's FundsTransferredToCharity
 // (the topic0 is shared with the game/marketing-wallet event of the same
 // name; the registry's source filter separates them).
-func (h *Handlers) decodeDonationSent(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGDonationSentEvent, error) {
+func (h *Handlers) decodeDonationSent(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonationSentEvent, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (h *Handlers) decodeDonationSent(lg *types.Log, elog *primitives.EthereumEv
 		return nil, err
 	}
 
-	evt := &cgp.CGDonationSentEvent{}
+	evt := &cgmodel.CGDonationSentEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -148,7 +148,7 @@ func (h *Handlers) decodeDonationSent(lg *types.Log, elog *primitives.EthereumEv
 	return evt, nil
 }
 
-func (h *Handlers) storeDonationSent(ctx context.Context, evt *cgp.CGDonationSentEvent) error {
+func (h *Handlers) storeDonationSent(ctx context.Context, evt *cgmodel.CGDonationSentEvent) error {
 	h.log.Info("CharityWallet FundsTransferredToCharity",
 		"evt_id", evt.EvtId, "charity", evt.CharityAddr, "amount", evt.Amount)
 
@@ -158,7 +158,7 @@ func (h *Handlers) storeDonationSent(ctx context.Context, evt *cgp.CGDonationSen
 	return h.repo.InsertDonationSent(ctx, evt)
 }
 
-func (h *Handlers) decodeTokenDonated(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGERC20DonationEvent, error) {
+func (h *Handlers) decodeTokenDonated(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGERC20DonationEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (h *Handlers) decodeTokenDonated(lg *types.Log, elog *primitives.EthereumEv
 		return nil, err
 	}
 
-	evt := &cgp.CGERC20DonationEvent{}
+	evt := &cgmodel.CGERC20DonationEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -180,7 +180,7 @@ func (h *Handlers) decodeTokenDonated(lg *types.Log, elog *primitives.EthereumEv
 	return evt, nil
 }
 
-func (h *Handlers) storeTokenDonated(ctx context.Context, evt *cgp.CGERC20DonationEvent) error {
+func (h *Handlers) storeTokenDonated(ctx context.Context, evt *cgmodel.CGERC20DonationEvent) error {
 	// A bidAndDonateToken() call places the bid event directly before this
 	// one; when EvtId-1 is an Approval event instead, the bid is at EvtId-2.
 	var err error
@@ -205,7 +205,7 @@ func (h *Handlers) storeTokenDonated(ctx context.Context, evt *cgp.CGERC20Donati
 	return h.repo.InsertERC20Donation(ctx, evt)
 }
 
-func (h *Handlers) decodeNftDonated(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGNFTDonationEvent, error) {
+func (h *Handlers) decodeNftDonated(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGNFTDonationEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (h *Handlers) decodeNftDonated(lg *types.Log, elog *primitives.EthereumEven
 		return nil, err
 	}
 
-	evt := &cgp.CGNFTDonationEvent{}
+	evt := &cgmodel.CGNFTDonationEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -228,7 +228,7 @@ func (h *Handlers) decodeNftDonated(lg *types.Log, elog *primitives.EthereumEven
 	return evt, nil
 }
 
-func (h *Handlers) storeNftDonated(ctx context.Context, evt *cgp.CGNFTDonationEvent) error {
+func (h *Handlers) storeNftDonated(ctx context.Context, evt *cgmodel.CGNFTDonationEvent) error {
 	// BidRowIDByEvtlogID reports 0 when the previous event carries no bid
 	// (e.g. a pure Donate() call); only real DB failures error.
 	var err error
@@ -252,7 +252,7 @@ func (h *Handlers) storeNftDonated(ctx context.Context, evt *cgp.CGNFTDonationEv
 	return h.repo.InsertNFTDonation(ctx, evt)
 }
 
-func (h *Handlers) decodeDonatedTokenClaimed(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGDonatedTokenClaimed, error) {
+func (h *Handlers) decodeDonatedTokenClaimed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonatedTokenClaimed, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (h *Handlers) decodeDonatedTokenClaimed(lg *types.Log, elog *primitives.Eth
 		return nil, err
 	}
 
-	evt := &cgp.CGDonatedTokenClaimed{}
+	evt := &cgmodel.CGDonatedTokenClaimed{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -274,7 +274,7 @@ func (h *Handlers) decodeDonatedTokenClaimed(lg *types.Log, elog *primitives.Eth
 	return evt, nil
 }
 
-func (h *Handlers) storeDonatedTokenClaimed(ctx context.Context, evt *cgp.CGDonatedTokenClaimed) error {
+func (h *Handlers) storeDonatedTokenClaimed(ctx context.Context, evt *cgmodel.CGDonatedTokenClaimed) error {
 	h.log.Info("DonatedTokenClaimed",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "beneficiary", evt.BeneficiaryAddr,
 		"token", evt.TokenAddr, "amount", evt.Amount)
@@ -285,7 +285,7 @@ func (h *Handlers) storeDonatedTokenClaimed(ctx context.Context, evt *cgp.CGDona
 	return h.repo.InsertDonatedTokenClaim(ctx, evt)
 }
 
-func (h *Handlers) decodeDonatedNftClaimed(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGDonatedNFTClaimed, error) {
+func (h *Handlers) decodeDonatedNftClaimed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonatedNFTClaimed, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (h *Handlers) decodeDonatedNftClaimed(lg *types.Log, elog *primitives.Ether
 		return nil, err
 	}
 
-	evt := &cgp.CGDonatedNFTClaimed{}
+	evt := &cgmodel.CGDonatedNFTClaimed{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -308,7 +308,7 @@ func (h *Handlers) decodeDonatedNftClaimed(lg *types.Log, elog *primitives.Ether
 	return evt, nil
 }
 
-func (h *Handlers) storeDonatedNftClaimed(ctx context.Context, evt *cgp.CGDonatedNFTClaimed) error {
+func (h *Handlers) storeDonatedNftClaimed(ctx context.Context, evt *cgmodel.CGDonatedNFTClaimed) error {
 	h.log.Info("DonatedNftClaimed",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "index", evt.Index,
 		"beneficiary", evt.BeneficiaryAddr, "nft", evt.TokenAddr, "token_id", evt.TokenId)
@@ -322,7 +322,7 @@ func (h *Handlers) storeDonatedNftClaimed(ctx context.Context, evt *cgp.CGDonate
 // decodeFundsToCharity handles the game's FundsTransferredToCharity emitted
 // through the marketing wallet (same topic0 as the CharityWallet event;
 // separated by source).
-func (h *Handlers) decodeFundsToCharity(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGFundsToCharity, error) {
+func (h *Handlers) decodeFundsToCharity(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundsToCharity, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -331,7 +331,7 @@ func (h *Handlers) decodeFundsToCharity(lg *types.Log, elog *primitives.Ethereum
 		return nil, err
 	}
 
-	evt := &cgp.CGFundsToCharity{}
+	evt := &cgmodel.CGFundsToCharity{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -342,7 +342,7 @@ func (h *Handlers) decodeFundsToCharity(lg *types.Log, elog *primitives.Ethereum
 	return evt, nil
 }
 
-func (h *Handlers) storeFundsToCharity(ctx context.Context, evt *cgp.CGFundsToCharity) error {
+func (h *Handlers) storeFundsToCharity(ctx context.Context, evt *cgmodel.CGFundsToCharity) error {
 	h.log.Info("FundsTransferredToCharity",
 		"evt_id", evt.EvtId, "charity", evt.CharityAddr, "amount", evt.Amount)
 

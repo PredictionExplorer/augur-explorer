@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -28,8 +28,8 @@ func TestPaginatedHandlersRejectOversizedRepositoryPages(t *testing.T) {
 				second := validBidRecord()
 				second.RoundNum, second.BidPosition, second.Tx.EvtLogId = 1, 2, 11
 				server.bids = fakeBidReader{
-					page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error) {
-						return []cgprimitives.CGBidRec{first, second}, false, nil
+					page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error) {
+						return []cgmodel.CGBidRec{first, second}, false, nil
 					},
 				}
 			},
@@ -43,8 +43,8 @@ func TestPaginatedHandlersRejectOversizedRepositoryPages(t *testing.T) {
 				second := validRoundRecord()
 				second.RoundNum, second.ClaimPrizeTx.Tx.EvtLogId = 1, 10
 				server.rounds = fakeRoundReader{
-					page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error) {
-						return []cgprimitives.CGRoundRec{first, second}, false, nil
+					page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error) {
+						return []cgmodel.CGRoundRec{first, second}, false, nil
 					},
 				}
 			},
@@ -58,8 +58,8 @@ func TestPaginatedHandlersRejectOversizedRepositoryPages(t *testing.T) {
 				second := validRoundPrizeRecord(1)
 				second.RoundNum, second.WinnerIndex = 1, 0
 				server.prizes = fakeRoundPrizeReader{
-					page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
-						return []cgprimitives.CGPrizeHistory{first, second}, false, nil
+					page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
+						return []cgmodel.CGPrizeHistory{first, second}, false, nil
 					},
 				}
 			},
@@ -88,8 +88,8 @@ func TestPaginatedHandlersRejectOversizedRepositoryPages(t *testing.T) {
 				second := validRaffleNftWinnerRecord(false)
 				second.RoundNum, second.WinnerIndex, second.Tx.EvtLogId = 1, 1, 11
 				server.raffles = fakeRoundRaffleReader{
-					nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
-						return []cgprimitives.CGRaffleNFTWinnerRec{first, second}, false, nil
+					nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
+						return []cgmodel.CGRaffleNFTWinnerRec{first, second}, false, nil
 					},
 				}
 			},
@@ -239,8 +239,8 @@ func TestPaginatedHandlersRejectCursorBoundaryReplay(t *testing.T) {
 				record.RoundNum, record.ClaimPrizeTx.Tx.EvtLogId = 7, 88
 				server := newTestServer(t, fakeBidReader{})
 				server.rounds = fakeRoundReader{
-					page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error) {
-						return []cgprimitives.CGRoundRec{record}, false, nil
+					page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error) {
+						return []cgmodel.CGRoundRec{record}, false, nil
 					},
 				}
 				return server, "/api/v2/cosmicgame/rounds?cursor=" + cursor
@@ -259,8 +259,8 @@ func TestPaginatedHandlersRejectCursorBoundaryReplay(t *testing.T) {
 				record := validBidRecord()
 				record.RoundNum, record.BidPosition, record.Tx.EvtLogId = 1, 2, 88
 				server := newTestServer(t, fakeBidReader{
-					page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error) {
-						return []cgprimitives.CGBidRec{record}, false, nil
+					page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error) {
+						return []cgmodel.CGBidRec{record}, false, nil
 					},
 				})
 				return server, "/api/v2/cosmicgame/rounds/1/bids?cursor=" + cursor
@@ -280,8 +280,8 @@ func TestPaginatedHandlersRejectCursorBoundaryReplay(t *testing.T) {
 				record.RoundNum, record.WinnerIndex = 1, 3
 				server := newTestServer(t, fakeBidReader{})
 				server.prizes = fakeRoundPrizeReader{
-					page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
-						return []cgprimitives.CGPrizeHistory{record}, false, nil
+					page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
+						return []cgmodel.CGPrizeHistory{record}, false, nil
 					},
 				}
 				return server, "/api/v2/cosmicgame/rounds/1/prizes?cursor=" + cursor
@@ -323,8 +323,8 @@ func TestPaginatedHandlersRejectCursorBoundaryReplay(t *testing.T) {
 				record.RoundNum, record.WinnerIndex, record.Tx.EvtLogId = 1, 2, 88
 				server := newTestServer(t, fakeBidReader{})
 				server.raffles = fakeRoundRaffleReader{
-					nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
-						return []cgprimitives.CGRaffleNFTWinnerRec{record}, false, nil
+					nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
+						return []cgmodel.CGRaffleNFTWinnerRec{record}, false, nil
 					},
 				}
 				return server, "/api/v2/cosmicgame/rounds/1/raffle-nft-winners?pool=bidder&cursor=" + cursor

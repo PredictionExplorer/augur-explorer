@@ -9,8 +9,6 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives"
 )
 
 // evtLogColumns is the SELECT list shared by the event-log readers (without
@@ -31,8 +29,8 @@ const evtLogColumns = `
 
 // EventLog retrieves a stored event log by its id; a missing row yields a
 // wrapped ErrNotFound.
-func (s *Store) EventLog(ctx context.Context, evtlogID int64) (p.EthereumEventLog, error) {
-	var evtlog p.EthereumEventLog
+func (s *Store) EventLog(ctx context.Context, evtlogID int64) (EthereumEventLog, error) {
+	var evtlog EthereumEventLog
 	evtlog.EvtId = evtlogID
 	err := s.pool.QueryRow(ctx, "SELECT "+evtLogColumns+" WHERE e.id=$1", evtlogID).Scan(
 		&evtlog.BlockNum,
@@ -41,7 +39,7 @@ func (s *Store) EventLog(ctx context.Context, evtlogID int64) (p.EthereumEventLo
 		&evtlog.TxHash,
 		&evtlog.ContractAid,
 		&evtlog.ContractAddress,
-		&evtlog.Topic0_Sig,
+		&evtlog.Topic0Sig,
 		&evtlog.RlpLog,
 	)
 	if err != nil {
@@ -52,10 +50,10 @@ func (s *Store) EventLog(ctx context.Context, evtlogID int64) (p.EthereumEventLo
 
 // EventsBySigAndTx retrieves the event logs of one transaction carrying the
 // given topic-0 signature, in insertion order.
-func (s *Store) EventsBySigAndTx(ctx context.Context, txID int64, sig string) ([]p.EthereumEventLog, error) {
+func (s *Store) EventsBySigAndTx(ctx context.Context, txID int64, sig string) ([]EthereumEventLog, error) {
 	query := "SELECT e.id," + evtLogColumns + " WHERE e.tx_id=$1 AND e.topic0_sig=$2 ORDER BY e.id"
 	return QueryList(ctx, s.pool, fmt.Sprintf("event logs for tx %v sig %v", txID, sig), 8, query,
-		func(rows pgx.Rows, evtlog *p.EthereumEventLog) error {
+		func(rows pgx.Rows, evtlog *EthereumEventLog) error {
 			return rows.Scan(
 				&evtlog.EvtId,
 				&evtlog.BlockNum,
@@ -64,7 +62,7 @@ func (s *Store) EventsBySigAndTx(ctx context.Context, txID int64, sig string) ([
 				&evtlog.TxHash,
 				&evtlog.ContractAid,
 				&evtlog.ContractAddress,
-				&evtlog.Topic0_Sig,
+				&evtlog.Topic0Sig,
 				&evtlog.RlpLog,
 			)
 		}, txID, sig)

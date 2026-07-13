@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 // itoa keeps golden names short in table-driven cases.
@@ -41,7 +41,7 @@ func TestProcessingStatusRoundTrip(t *testing.T) {
 		}
 	})
 
-	want := p.CosmicGameProcStatus{LastEvtIdProcessed: 5098, LastBlockNum: 142}
+	want := cgmodel.CosmicGameProcStatus{LastEvtIdProcessed: 5098, LastBlockNum: 142}
 	if err := r.UpdateProcessingStatus(ctx, &want); err != nil {
 		t.Fatalf("UpdateProcessingStatus: %v", err)
 	}

@@ -7,10 +7,10 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
-func enrichAdminEventsResolvedValues(events []p.CGAdminEvent) {
+func enrichAdminEventsResolvedValues(events []cgmodel.CGAdminEvent) {
 	if EthClient == nil || len(events) == 0 {
 		return
 	}
@@ -28,7 +28,7 @@ func enrichAdminEventsResolvedValues(events []p.CGAdminEvent) {
 	}
 }
 
-func resolveAdminEventFromContract(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2, rec *p.CGAdminEvent) string {
+func resolveAdminEventFromContract(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2, rec *cgmodel.CGAdminEvent) string {
 	if rec == nil || rec.BlockNum < 0 {
 		return ""
 	}

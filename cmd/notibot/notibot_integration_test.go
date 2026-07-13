@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
@@ -111,7 +111,7 @@ func TestRunTwitterWiringEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MessagingStatus: %v", err)
 	}
-	parked := rwp.MsgStatus{TxId: status.TxId, EvtLogId: 1 << 40, BlockNum: status.BlockNum, TimeStamp: status.TimeStamp}
+	parked := rwmodel.MsgStatus{TxId: status.TxId, EvtLogId: 1 << 40, BlockNum: status.BlockNum, TimeStamp: status.TimeStamp}
 	if err := sharedRepo.UpdateMessagingStatus(context.Background(), &parked); err != nil {
 		t.Fatalf("parking watermark: %v", err)
 	}

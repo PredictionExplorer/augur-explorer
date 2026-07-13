@@ -20,12 +20,16 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	cgindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
-const defaultDBLog = "db.log"
+const (
+	defaultDBLog = "db.log"
+
+	// defaultLogDir is the legacy operational log directory under $HOME.
+	defaultLogDir = "ae_logs"
+)
 
 // openAppendLog opens (creating if needed) one of the ETL's append-only log
 // files.
@@ -78,7 +82,7 @@ func main() {
 // registerer/gatherer pair is injected so tests can use isolated registries
 // (the default registry rejects duplicate registration across runs).
 func run(ctx context.Context, getenv func(string) string, reg prometheus.Registerer, gatherer prometheus.Gatherer) error {
-	logDir := fmt.Sprintf("%v/%v", getenv("HOME"), primitives.DEFAULT_LOG_DIR)
+	logDir := fmt.Sprintf("%v/%v", getenv("HOME"), defaultLogDir)
 	_ = os.MkdirAll(logDir, os.ModePerm) // #nosec G301 G703 -- legacy log dir under $HOME; openAppendLog fails loudly if unusable
 
 	infoFile, err := openAppendLog(fmt.Sprintf("%v/cosmicgame_info.log", logDir))

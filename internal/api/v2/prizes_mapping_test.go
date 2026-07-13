@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestMapRoundPrizeTaxonomy(t *testing.T) {
@@ -110,64 +110,64 @@ func TestMapRoundPrizeRejectsMalformedData(t *testing.T) {
 
 	tests := map[string]struct {
 		recordType int64
-		mutate     func(*cgprimitives.CGPrizeHistory)
+		mutate     func(*cgmodel.CGPrizeHistory)
 	}{
 		"negative round": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.RoundNum = -1 },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.RoundNum = -1 },
 		},
 		"negative winner index": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.WinnerIndex = -1 },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.WinnerIndex = -1 },
 		},
 		"transaction identity": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.Tx.EvtLogId = 0 },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.Tx.EvtLogId = 0 },
 		},
 		"transaction hash": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.Tx.TxHash = "bad" },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.Tx.TxHash = "bad" },
 		},
 		"transaction timestamp": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.Tx.DateTime = "bad" },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.Tx.DateTime = "bad" },
 		},
 		"unknown prize type": {
 			recordType: 16,
 		},
 		"invalid winner": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.WinnerAddr = "bad" },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.WinnerAddr = "bad" },
 		},
 		"staking has winner": {
 			recordType: 15,
-			mutate: func(r *cgprimitives.CGPrizeHistory) {
+			mutate: func(r *cgmodel.CGPrizeHistory) {
 				r.WinnerAddr = "0x2100000000000000000000000000000000000021"
 			},
 		},
 		"ETH amount": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.Amount = "-1" },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.Amount = "-1" },
 		},
 		"ETH token id": {
 			recordType: 0,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.TokenId = 1 },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.TokenId = 1 },
 		},
 		"CST amount": {
 			recordType: 1,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.Amount = "1.2" },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.Amount = "1.2" },
 		},
 		"CST token id": {
 			recordType: 1,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.TokenId = 1 },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.TokenId = 1 },
 		},
 		"NFT token id": {
 			recordType: 2,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.TokenId = -1 },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.TokenId = -1 },
 		},
 		"NFT fungible amount": {
 			recordType: 2,
-			mutate:     func(r *cgprimitives.CGPrizeHistory) { r.Amount = "1" },
+			mutate:     func(r *cgmodel.CGPrizeHistory) { r.Amount = "1" },
 		},
 	}
 	for name, tc := range tests {
@@ -184,9 +184,9 @@ func TestMapRoundPrizeRejectsMalformedData(t *testing.T) {
 	}
 }
 
-func validRoundPrizeRecord(recordType int64) cgprimitives.CGPrizeHistory {
-	record := cgprimitives.CGPrizeHistory{
-		Tx: cgprimitives.Transaction{
+func validRoundPrizeRecord(recordType int64) cgmodel.CGPrizeHistory {
+	record := cgmodel.CGPrizeHistory{
+		Tx: cgmodel.Transaction{
 			EvtLogId: 7001,
 			BlockNum: 123,
 			TxHash:   "0xABCDEF0000000000000000000000000000000000000000000000000000000001",

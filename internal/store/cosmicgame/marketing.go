@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -25,7 +25,7 @@ FROM cg_mkt_reward r
 	LEFT JOIN transaction tx ON tx.id=r.tx_id
 	LEFT JOIN address ma ON r.marketer_aid=ma.address_id`
 
-func scanMarketingReward(rows pgx.Rows, rec *p.CGMarketingRewardRec) error {
+func scanMarketingReward(rows pgx.Rows, rec *cgmodel.CGMarketingRewardRec) error {
 	return rows.Scan(
 		&rec.RecordId,
 		&rec.Tx.EvtLogId,
@@ -43,7 +43,7 @@ func scanMarketingReward(rows pgx.Rows, rec *p.CGMarketingRewardRec) error {
 
 // MarketingRewardHistoryGlobal returns marketing reward events across all
 // marketers, newest first, paginated by offset/limit.
-func (r *Repo) MarketingRewardHistoryGlobal(ctx context.Context, offset, limit int) ([]p.CGMarketingRewardRec, error) {
+func (r *Repo) MarketingRewardHistoryGlobal(ctx context.Context, offset, limit int) ([]cgmodel.CGMarketingRewardRec, error) {
 	query := "SELECT " + marketingRewardColumns + `
 		ORDER BY r.id DESC
 		OFFSET $1 LIMIT $2`
@@ -52,7 +52,7 @@ func (r *Repo) MarketingRewardHistoryGlobal(ctx context.Context, offset, limit i
 
 // MarketingRewardsByUser returns every marketing reward paid to one marketer,
 // newest first.
-func (r *Repo) MarketingRewardsByUser(ctx context.Context, marketerAid int64) ([]p.CGMarketingRewardRec, error) {
+func (r *Repo) MarketingRewardsByUser(ctx context.Context, marketerAid int64) ([]cgmodel.CGMarketingRewardRec, error) {
 	query := "SELECT " + marketingRewardColumns + `
 		WHERE r.marketer_aid=$1
 		ORDER BY r.id DESC`

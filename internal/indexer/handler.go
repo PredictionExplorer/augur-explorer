@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // EventHandler consumes one event type emitted by one (or a fixed set of)
@@ -39,7 +39,7 @@ type EventHandler interface {
 	// Decode turns the raw log into a typed domain event. It must be total:
 	// malformed input yields an error, never a panic (fuzzed per handler
 	// package). No database or RPC access.
-	Decode(lg *types.Log, elog *primitives.EthereumEventLog) (any, error)
+	Decode(lg *types.Log, elog *store.EthereumEventLog) (any, error)
 	// Store persists the decoded event: enrichment queries, contract reads
 	// and the domain writes. event is exactly the value Decode returned.
 	Store(ctx context.Context, event any) error
@@ -50,7 +50,7 @@ type handler[E any] struct {
 	topic   common.Hash
 	name    string
 	sources []common.Address
-	decode  func(*types.Log, *primitives.EthereumEventLog) (E, error)
+	decode  func(*types.Log, *store.EthereumEventLog) (E, error)
 	store   func(context.Context, E) error
 }
 
@@ -62,7 +62,7 @@ func NewHandler[E any](
 	topic common.Hash,
 	name string,
 	sources []common.Address,
-	decode func(*types.Log, *primitives.EthereumEventLog) (E, error),
+	decode func(*types.Log, *store.EthereumEventLog) (E, error),
 	store func(context.Context, E) error,
 ) EventHandler {
 	return handler[E]{topic: topic, name: name, sources: sources, decode: decode, store: store}
@@ -72,7 +72,7 @@ func (h handler[E]) Topic() common.Hash        { return h.topic }
 func (h handler[E]) Name() string              { return h.name }
 func (h handler[E]) Sources() []common.Address { return h.sources }
 
-func (h handler[E]) Decode(lg *types.Log, elog *primitives.EthereumEventLog) (any, error) {
+func (h handler[E]) Decode(lg *types.Log, elog *store.EthereumEventLog) (any, error) {
 	return h.decode(lg, elog)
 }
 
@@ -143,7 +143,7 @@ func (r *Registry) TopicName(topic common.Hash) string { return r.names[topic] }
 // no-ops (FilterLogs fetches whole contracts, so unhandled events are
 // routine). Any decode or store error stops the dispatch and is returned to
 // the polling loop, which leaves the batch unacknowledged for re-processing.
-func (r *Registry) ProcessLog(ctx context.Context, lg *types.Log, elog *primitives.EthereumEventLog) error {
+func (r *Registry) ProcessLog(ctx context.Context, lg *types.Log, elog *store.EthereumEventLog) error {
 	if len(lg.Topics) == 0 {
 		return nil
 	}
@@ -165,7 +165,7 @@ func (r *Registry) ProcessLog(ctx context.Context, lg *types.Log, elog *primitiv
 // EventLogSource loads one stored event-log row by id. *store.Store
 // satisfies it; unit tests substitute fakes.
 type EventLogSource interface {
-	EventLog(ctx context.Context, evtlogID int64) (primitives.EthereumEventLog, error)
+	EventLog(ctx context.Context, evtlogID int64) (store.EthereumEventLog, error)
 }
 
 // LogProcessor builds the engine's ProcessFunc: load the stored evt_log row,

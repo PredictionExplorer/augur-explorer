@@ -10,11 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (h *Handlers) decodeBidPlacedV1(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGBidEvent, error) {
+func (h *Handlers) decodeBidPlacedV1(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGBidEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (h *Handlers) decodeBidPlacedV1(lg *types.Log, elog *primitives.EthereumEve
 		return nil, err
 	}
 
-	evt := &cgp.CGBidEvent{}
+	evt := &cgmodel.CGBidEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -47,7 +47,7 @@ func (h *Handlers) decodeBidPlacedV1(lg *types.Log, elog *primitives.EthereumEve
 	return evt, nil
 }
 
-func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGBidEvent, error) {
+func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGBidEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *primitives.EthereumEve
 		return nil, err
 	}
 
-	evt := &cgp.CGBidEvent{}
+	evt := &cgmodel.CGBidEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -83,9 +83,9 @@ func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *primitives.EthereumEve
 // storeBid persists a decoded v1 or v2 bid: the CST bid reward is resolved
 // from the transaction's ERC20 mint (a store read), then the row is written
 // delete-then-insert.
-func (h *Handlers) storeBid(ctx context.Context, evt *cgp.CGBidEvent) error {
+func (h *Handlers) storeBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 	var err error
-	evt.ERC20_Value, err = h.cstBidReward(ctx, evt.EvtId, evt.TxId, evt.LastBidderAddr)
+	evt.ERC20Value, err = h.cstBidReward(ctx, evt.EvtId, evt.TxId, evt.LastBidderAddr)
 	if err != nil {
 		return fmt.Errorf("bid (evt id %v): %w", evt.EvtId, err)
 	}
@@ -93,7 +93,7 @@ func (h *Handlers) storeBid(ctx context.Context, evt *cgp.CGBidEvent) error {
 	h.log.Info("BidPlaced",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "bidder", evt.LastBidderAddr,
 		"bid_type", evt.BidType, "eth_price", evt.EthPrice, "cst_price", evt.CstPrice,
-		"rwalk_token_id", evt.RandomWalkTokenId, "cst_reward", evt.ERC20_Value,
+		"rwalk_token_id", evt.RandomWalkTokenId, "cst_reward", evt.ERC20Value,
 		"prize_time", evt.PrizeTime, "message", evt.Message)
 
 	if err := h.repo.DeleteBid(ctx, evt.EvtId); err != nil {
@@ -102,7 +102,7 @@ func (h *Handlers) storeBid(ctx context.Context, evt *cgp.CGBidEvent) error {
 	return h.repo.InsertBid(ctx, evt)
 }
 
-func (h *Handlers) decodeFirstBidPlacedInRound(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGRoundStarted, error) {
+func (h *Handlers) decodeFirstBidPlacedInRound(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGRoundStarted, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (h *Handlers) decodeFirstBidPlacedInRound(lg *types.Log, elog *primitives.E
 		return nil, err
 	}
 
-	evt := &cgp.CGRoundStarted{}
+	evt := &cgmodel.CGRoundStarted{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -121,7 +121,7 @@ func (h *Handlers) decodeFirstBidPlacedInRound(lg *types.Log, elog *primitives.E
 	return evt, nil
 }
 
-func (h *Handlers) storeFirstBidPlacedInRound(ctx context.Context, evt *cgp.CGRoundStarted) error {
+func (h *Handlers) storeFirstBidPlacedInRound(ctx context.Context, evt *cgmodel.CGRoundStarted) error {
 	h.log.Info("FirstBidPlacedInRound",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "start_ts", evt.StartTimestamp)
 

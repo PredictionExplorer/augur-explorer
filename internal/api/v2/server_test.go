@@ -15,35 +15,35 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
 type fakeBidReader struct {
-	page func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error)
-	item func(context.Context, int64, int64) (cgprimitives.CGBidRec, error)
+	page func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
+	item func(context.Context, int64, int64) (cgmodel.CGBidRec, error)
 }
 
 type fakeRoundReader struct {
-	page func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error)
-	item func(context.Context, int64) (cgprimitives.CGRoundRec, error)
+	page func(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error)
+	item func(context.Context, int64) (cgmodel.CGRoundRec, error)
 }
 
 type fakeCurrentRoundReader struct {
-	statistics func(context.Context, int64) (cgprimitives.CGRoundStats, error)
+	statistics func(context.Context, int64) (cgmodel.CGRoundStats, error)
 	bidCount   func(context.Context, int64) (int64, error)
 }
 
 type fakeRoundPrizeReader struct {
 	exists func(context.Context, int64) (bool, error)
-	page   func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error)
+	page   func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error)
 }
 
 type fakeRoundRaffleReader struct {
 	exists func(context.Context, int64) (bool, error)
 	eth    func(context.Context, int64, *cgstore.RaffleEthDepositPageCursor, int) ([]cgstore.RaffleEthDepositRecord, bool, error)
-	nft    func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error)
+	nft    func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error)
 }
 
 type fakeRoundDonationReader struct {
@@ -54,7 +54,7 @@ type fakeRoundDonationReader struct {
 
 type fakeStatisticsReader struct {
 	global       func(context.Context) (cgstore.GlobalStatisticsRecord, error)
-	counters     func(context.Context) (cgprimitives.CGRecordCounters, error)
+	counters     func(context.Context) (cgmodel.CGRecordCounters, error)
 	roi          func(context.Context, int, cgstore.ROILeaderboardSort, *cgstore.ROILeaderboardPageCursor, int) ([]cgstore.ROILeaderboardRecord, bool, error)
 	claims       func(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error)
 	exists       func(context.Context, int64) (bool, error)
@@ -65,14 +65,14 @@ type fakeStatisticsReader struct {
 }
 
 type fakeBiddingAnalyticsReader struct {
-	frequency func(context.Context, int, int, int) ([]cgprimitives.CGBidFrequencyBucket, error)
-	ratio     func(context.Context, int, int, int) ([]cgprimitives.CGBidTypeRatioBucket, error)
-	periods   func(context.Context, int, int, int, int, int) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error)
+	frequency func(context.Context, int, int, int) ([]cgmodel.CGBidFrequencyBucket, error)
+	ratio     func(context.Context, int, int, int) ([]cgmodel.CGBidTypeRatioBucket, error)
+	periods   func(context.Context, int, int, int, int, int) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error)
 	bounds    func(context.Context) (int64, int64, error)
 }
 
 type fakeContractAddressReader struct {
-	get func(context.Context) (cgprimitives.CosmicGameContractAddrs, error)
+	get func(context.Context) (cgmodel.CosmicGameContractAddrs, error)
 }
 
 type fakeParticipantReader struct {
@@ -87,44 +87,44 @@ type fakeParticipantReader struct {
 type fakeUserReader struct {
 	addressID func(context.Context, string) (int64, error)
 	profile   func(context.Context, int64) (cgstore.UserProfileRecord, error)
-	bids      func(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error)
+	bids      func(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
 }
 
 type fakeContractState struct {
 	snapshot func() contractstate.Snapshot
 }
 
-func (f fakeRoundReader) PrizeClaimsPage(ctx context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgprimitives.CGRoundRec, bool, error) {
+func (f fakeRoundReader) PrizeClaimsPage(ctx context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgmodel.CGRoundRec, bool, error) {
 	if f.page == nil {
-		return []cgprimitives.CGRoundRec{}, false, nil
+		return []cgmodel.CGRoundRec{}, false, nil
 	}
 	return f.page(ctx, after, limit)
 }
 
-func (f fakeRoundReader) RoundInfo(ctx context.Context, round int64) (cgprimitives.CGRoundRec, error) {
+func (f fakeRoundReader) RoundInfo(ctx context.Context, round int64) (cgmodel.CGRoundRec, error) {
 	if f.item == nil {
-		return cgprimitives.CGRoundRec{}, store.ErrNotFound
+		return cgmodel.CGRoundRec{}, store.ErrNotFound
 	}
 	return f.item(ctx, round)
 }
 
-func (f fakeBidReader) BidsByRoundPage(ctx context.Context, round int64, after cgstore.BidPageCursor, limit int) ([]cgprimitives.CGBidRec, bool, error) {
+func (f fakeBidReader) BidsByRoundPage(ctx context.Context, round int64, after cgstore.BidPageCursor, limit int) ([]cgmodel.CGBidRec, bool, error) {
 	if f.page == nil {
-		return []cgprimitives.CGBidRec{}, false, nil
+		return []cgmodel.CGBidRec{}, false, nil
 	}
 	return f.page(ctx, round, after, limit)
 }
 
-func (f fakeBidReader) BidByRoundAndPosition(ctx context.Context, round, position int64) (cgprimitives.CGBidRec, error) {
+func (f fakeBidReader) BidByRoundAndPosition(ctx context.Context, round, position int64) (cgmodel.CGBidRec, error) {
 	if f.item == nil {
-		return cgprimitives.CGBidRec{}, store.ErrNotFound
+		return cgmodel.CGBidRec{}, store.ErrNotFound
 	}
 	return f.item(ctx, round, position)
 }
 
-func (f fakeCurrentRoundReader) CosmicGameRoundStatistics(ctx context.Context, round int64) (cgprimitives.CGRoundStats, error) {
+func (f fakeCurrentRoundReader) CosmicGameRoundStatistics(ctx context.Context, round int64) (cgmodel.CGRoundStats, error) {
 	if f.statistics == nil {
-		return cgprimitives.CGRoundStats{RoundNum: round}, nil
+		return cgmodel.CGRoundStats{RoundNum: round}, nil
 	}
 	return f.statistics(ctx, round)
 }
@@ -148,9 +148,9 @@ func (f fakeRoundPrizeReader) AllPrizesForRoundPage(
 	round int64,
 	after *cgstore.PrizePageCursor,
 	limit int,
-) ([]cgprimitives.CGPrizeHistory, bool, error) {
+) ([]cgmodel.CGPrizeHistory, bool, error) {
 	if f.page == nil {
-		return []cgprimitives.CGPrizeHistory{}, false, nil
+		return []cgmodel.CGPrizeHistory{}, false, nil
 	}
 	return f.page(ctx, round, after, limit)
 }
@@ -180,9 +180,9 @@ func (f fakeRoundRaffleReader) RaffleNFTWinnersByRoundPage(
 	isStaker bool,
 	after *cgstore.RaffleNFTWinnerPageCursor,
 	limit int,
-) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 	if f.nft == nil {
-		return []cgprimitives.CGRaffleNFTWinnerRec{}, false, nil
+		return []cgmodel.CGRaffleNFTWinnerRec{}, false, nil
 	}
 	return f.nft(ctx, round, isStaker, after, limit)
 }
@@ -230,9 +230,9 @@ func (f fakeStatisticsReader) CosmicGameGlobalStatistics(ctx context.Context) (c
 	return f.global(ctx)
 }
 
-func (f fakeStatisticsReader) RecordCounters(ctx context.Context) (cgprimitives.CGRecordCounters, error) {
+func (f fakeStatisticsReader) RecordCounters(ctx context.Context) (cgmodel.CGRecordCounters, error) {
 	if f.counters == nil {
-		return cgprimitives.CGRecordCounters{}, nil
+		return cgmodel.CGRecordCounters{}, nil
 	}
 	return f.counters(ctx)
 }
@@ -316,9 +316,9 @@ func (f fakeBiddingAnalyticsReader) BidFrequencyByPeriodBounded(
 	from int,
 	to int,
 	interval int,
-) ([]cgprimitives.CGBidFrequencyBucket, error) {
+) ([]cgmodel.CGBidFrequencyBucket, error) {
 	if f.frequency == nil {
-		return []cgprimitives.CGBidFrequencyBucket{}, nil
+		return []cgmodel.CGBidFrequencyBucket{}, nil
 	}
 	return f.frequency(ctx, from, to, interval)
 }
@@ -328,9 +328,9 @@ func (f fakeBiddingAnalyticsReader) BidTypeRatioByPeriodBounded(
 	from int,
 	to int,
 	interval int,
-) ([]cgprimitives.CGBidTypeRatioBucket, error) {
+) ([]cgmodel.CGBidTypeRatioBucket, error) {
 	if f.ratio == nil {
-		return []cgprimitives.CGBidTypeRatioBucket{}, nil
+		return []cgmodel.CGBidTypeRatioBucket{}, nil
 	}
 	return f.ratio(ctx, from, to, interval)
 }
@@ -342,9 +342,9 @@ func (f fakeBiddingAnalyticsReader) TopBidderActivePeriodsBounded(
 	to int,
 	gapHours int,
 	minBids int,
-) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error) {
+) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
 	if f.periods == nil {
-		return []cgprimitives.CGTopBidderInfo{}, []cgprimitives.CGBidderActivePeriod{}, false, nil
+		return []cgmodel.CGTopBidderInfo{}, []cgmodel.CGBidderActivePeriod{}, false, nil
 	}
 	return f.periods(ctx, top, from, to, gapHours, minBids)
 }
@@ -356,9 +356,9 @@ func (f fakeBiddingAnalyticsReader) BidTimeBounds(ctx context.Context) (int64, i
 	return f.bounds(ctx)
 }
 
-func (f fakeContractAddressReader) ContractAddrs(ctx context.Context) (cgprimitives.CosmicGameContractAddrs, error) {
+func (f fakeContractAddressReader) ContractAddrs(ctx context.Context) (cgmodel.CosmicGameContractAddrs, error) {
 	if f.get == nil {
-		return cgprimitives.CosmicGameContractAddrs{}, nil
+		return cgmodel.CosmicGameContractAddrs{}, nil
 	}
 	return f.get(ctx)
 }
@@ -459,9 +459,9 @@ func (f fakeUserReader) BidsByUserPage(
 	userAid int64,
 	after *cgstore.UserBidPageCursor,
 	limit int,
-) ([]cgprimitives.CGBidRec, bool, error) {
+) ([]cgmodel.CGBidRec, bool, error) {
 	if f.bids == nil {
-		return []cgprimitives.CGBidRec{}, false, nil
+		return []cgmodel.CGBidRec{}, false, nil
 	}
 	return f.bids(ctx, userAid, after, limit)
 }
@@ -485,9 +485,9 @@ func TestListRoundBidsPaginatesWithOpaqueCursor(t *testing.T) {
 	second.RoundNum, second.BidPosition, second.Tx.EvtLogId = 9, 2, 101
 
 	server := newTestServer(t, fakeBidReader{
-		page: func(_ context.Context, round int64, after cgstore.BidPageCursor, limit int) ([]cgprimitives.CGBidRec, bool, error) {
+		page: func(_ context.Context, round int64, after cgstore.BidPageCursor, limit int) ([]cgmodel.CGBidRec, bool, error) {
 			gotRound, gotAfter, gotLimit = round, after, limit
-			return []cgprimitives.CGBidRec{first, second}, true, nil
+			return []cgmodel.CGBidRec{first, second}, true, nil
 		},
 	})
 	response := serve(t, server, "/api/v2/cosmicgame/rounds/9/bids?limit=2")
@@ -527,12 +527,12 @@ func TestListRoundBidsDecodesContinuationCursor(t *testing.T) {
 
 	var gotAfter cgstore.BidPageCursor
 	server := newTestServer(t, fakeBidReader{
-		page: func(_ context.Context, _ int64, after cgstore.BidPageCursor, limit int) ([]cgprimitives.CGBidRec, bool, error) {
+		page: func(_ context.Context, _ int64, after cgstore.BidPageCursor, limit int) ([]cgmodel.CGBidRec, bool, error) {
 			gotAfter = after
 			if limit != defaultPageLimit {
 				t.Errorf("default limit = %d, want %d", limit, defaultPageLimit)
 			}
-			return []cgprimitives.CGBidRec{}, false, nil
+			return []cgmodel.CGBidRec{}, false, nil
 		},
 	})
 	response := serve(t, server, "/api/v2/cosmicgame/rounds/3/bids?cursor="+encoded)
@@ -589,7 +589,7 @@ func TestListRoundBidsHidesRepositoryErrors(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(t, fakeBidReader{
-		page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error) {
+		page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error) {
 			return nil, false, errors.New("password=super-secret")
 		},
 	})
@@ -606,8 +606,8 @@ func TestListRoundBidsRejectsInconsistentRepositoryPage(t *testing.T) {
 	t.Run("has more without row", func(t *testing.T) {
 		t.Parallel()
 		server := newTestServer(t, fakeBidReader{
-			page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error) {
-				return []cgprimitives.CGBidRec{}, true, nil
+			page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error) {
+				return []cgmodel.CGBidRec{}, true, nil
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/rounds/1/bids")
@@ -621,8 +621,8 @@ func TestListRoundBidsRejectsInconsistentRepositoryPage(t *testing.T) {
 		second := validBidRecord()
 		second.RoundNum, second.BidPosition, second.Tx.EvtLogId = 1, 1, 10
 		server := newTestServer(t, fakeBidReader{
-			page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error) {
-				return []cgprimitives.CGBidRec{first, second}, false, nil
+			page: func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error) {
+				return []cgmodel.CGBidRec{first, second}, false, nil
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/rounds/1/bids")
@@ -638,7 +638,7 @@ func TestGetRoundBidResponses(t *testing.T) {
 		record := validBidRecord()
 		record.RoundNum, record.BidPosition = 4, 2
 		server := newTestServer(t, fakeBidReader{
-			item: func(_ context.Context, round, position int64) (cgprimitives.CGBidRec, error) {
+			item: func(_ context.Context, round, position int64) (cgmodel.CGBidRec, error) {
 				if round != 4 || position != 2 {
 					t.Fatalf("repository args = (%d,%d)", round, position)
 				}
@@ -671,8 +671,8 @@ func TestGetRoundBidResponses(t *testing.T) {
 	t.Run("repository failure", func(t *testing.T) {
 		t.Parallel()
 		server := newTestServer(t, fakeBidReader{
-			item: func(context.Context, int64, int64) (cgprimitives.CGBidRec, error) {
-				return cgprimitives.CGBidRec{}, errors.New("private database detail")
+			item: func(context.Context, int64, int64) (cgmodel.CGBidRec, error) {
+				return cgmodel.CGBidRec{}, errors.New("private database detail")
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/rounds/4/bids/2")

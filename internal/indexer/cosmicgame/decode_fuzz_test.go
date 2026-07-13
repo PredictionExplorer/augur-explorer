@@ -17,7 +17,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // inertCaller satisfies bind.ContractCaller without any chain behind it
@@ -65,7 +65,7 @@ func FuzzEventDecodeCG(f *testing.F) {
 			Topics:  topics,
 			Data:    data,
 		}
-		elog := &primitives.EthereumEventLog{
+		elog := &store.EthereumEventLog{
 			EvtId:    1,
 			BlockNum: 2,
 			TxId:     3,

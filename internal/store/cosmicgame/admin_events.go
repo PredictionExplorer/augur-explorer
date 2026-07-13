@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -15,7 +15,7 @@ import (
 // "View Events" can show which admin/configuration events apply to each
 // round. When offset is -1 a synthetic "Deployment" row is appended so
 // pre-round-0 state is visible even when there are no bids yet.
-func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]p.CGSystemModeRec, error) {
+func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]cgmodel.CGSystemModeRec, error) {
 	const op = "system mode change event list"
 	if limit == 0 {
 		limit = 1000000
@@ -52,14 +52,14 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]p.CG
 		return nil, store.WrapError(op, err)
 	}
 	defer rows.Close()
-	records := make([]p.CGSystemModeRec, 0, 256)
+	records := make([]cgmodel.CGSystemModeRec, 0, 256)
 	// A prize-claim row (rec_type 1) closes the round opened by the first-bid
 	// row (rec_type 0) seen just before it in evtlog order; only the closed
 	// spans are returned.
 	var evtlogHi int64 = math.MaxInt64
 	var roundNum int64
 	for rows.Next() {
-		var rec p.CGSystemModeRec
+		var rec cgmodel.CGSystemModeRec
 		var recType int64
 		err = rows.Scan(
 			&rec.EvtLogId,
@@ -87,7 +87,7 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]p.CG
 	if addDeploymentEvents {
 		// Always add the "Deployment" row when offset=-1 so pre-round-0
 		// config is visible even with no bids.
-		records = append(records, p.CGSystemModeRec{
+		records = append(records, cgmodel.CGSystemModeRec{
 			EvtLogId:     -1,
 			BlockNum:     -1,
 			RoundNum:     0,
@@ -155,7 +155,7 @@ func (b adminEventBranch) sql() string {
 
 // adminEventBranches is the registry of all admin event tables surfaced by
 // AdminEventsInRange, in record_type order (the numbering is part of the API
-// contract; see p.CGAdminEvent).
+// contract; see cgmodel.CGAdminEvent).
 var adminEventBranches = []adminEventBranch{
 	{recordType: 1, table: "cg_adm_charity_pcent", intValue: "r.percentage"},          // CharityPercentageChanged
 	{recordType: 2, table: "cg_adm_main_prize_pcent", intValue: "r.percentage"},       // PrizePercentageChanged
@@ -241,8 +241,8 @@ func adminEventsQuery() string {
 // AdminEventsInRange returns every admin/configuration event with
 // evtlog_start < evtlog_id < evtlog_end, across all 39 admin event tables,
 // ordered by evtlog_id.
-func (r *Repo) AdminEventsInRange(ctx context.Context, evtlogStart, evtlogEnd int64) ([]p.CGAdminEvent, error) {
-	scan := func(rows pgx.Rows, rec *p.CGAdminEvent) error {
+func (r *Repo) AdminEventsInRange(ctx context.Context, evtlogStart, evtlogEnd int64) ([]cgmodel.CGAdminEvent, error) {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGAdminEvent) error {
 		return rows.Scan(
 			&rec.RecordType,
 			&rec.RecordId,

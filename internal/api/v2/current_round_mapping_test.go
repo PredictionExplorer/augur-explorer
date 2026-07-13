@@ -9,7 +9,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestMapCurrentRound(t *testing.T) {
@@ -147,27 +147,27 @@ func TestMapCurrentRoundRejectsInconsistentData(t *testing.T) {
 	}
 	tests := map[string]struct {
 		mutateLive  func(*currentRoundSnapshot)
-		mutateStats func(*cgprimitives.CGRoundStats)
+		mutateStats func(*cgmodel.CGRoundStats)
 		bidCount    int64
 		unavailable bool
 	}{
 		"round mismatch": {
-			mutateStats: func(s *cgprimitives.CGRoundStats) { s.RoundNum = 2 },
+			mutateStats: func(s *cgmodel.CGRoundStats) { s.RoundNum = 2 },
 			bidCount:    3,
 		},
 		"negative direct bid count": {
 			bidCount: -1,
 		},
 		"negative stored count": {
-			mutateStats: func(s *cgprimitives.CGRoundStats) { s.TotalBids = -1 },
+			mutateStats: func(s *cgmodel.CGRoundStats) { s.TotalBids = -1 },
 			bidCount:    3,
 		},
 		"malformed aggregate amount": {
-			mutateStats: func(s *cgprimitives.CGRoundStats) { s.TotalDonatedAmount = "1.5" },
+			mutateStats: func(s *cgmodel.CGRoundStats) { s.TotalDonatedAmount = "1.5" },
 			bidCount:    3,
 		},
 		"malformed round timestamp": {
-			mutateStats: func(s *cgprimitives.CGRoundStats) { s.RoundStartTime = "yesterday" },
+			mutateStats: func(s *cgmodel.CGRoundStats) { s.RoundStartTime = "yesterday" },
 			bidCount:    3,
 		},
 		"missing bidder after bids": {
@@ -213,8 +213,8 @@ func validCurrentRoundSnapshot() contractstate.Snapshot {
 	}
 }
 
-func validCurrentRoundStats() cgprimitives.CGRoundStats {
-	return cgprimitives.CGRoundStats{
+func validCurrentRoundStats() cgmodel.CGRoundStats {
+	return cgmodel.CGRoundStats{
 		RoundNum:                   3,
 		TotalBids:                  3,
 		TotalDonatedNFTs:           1,

@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -54,7 +54,7 @@ const nftListSelectSQL = `SELECT
 // staker-raffle wins override the main-prize default, endurance and last-CST
 // prizes override those; a stake action without a matching unstake means the
 // token is still staked.
-func scanNFTListRecord(rows pgx.Rows, rec *p.CGCosmicSignatureMintRec) error {
+func scanNFTListRecord(rows pgx.Rows, rec *cgmodel.CGCosmicSignatureMintRec) error {
 	var nullPrizeNum, nullRaffleID sql.NullInt64
 	var nullStaked sql.NullBool
 	var nullEnduTokenID, nullStelTokenID sql.NullInt64
@@ -130,7 +130,7 @@ func scanNFTListRecord(rows pgx.Rows, rec *p.CGCosmicSignatureMintRec) error {
 // CosmicSignatureTokens returns the minted Cosmic Signature NFTs, newest
 // first, with prize provenance and CST staking status attached.
 // limit 0 means no effective limit.
-func (r *Repo) CosmicSignatureTokens(ctx context.Context, offset, limit int) ([]p.CGCosmicSignatureMintRec, error) {
+func (r *Repo) CosmicSignatureTokens(ctx context.Context, offset, limit int) ([]cgmodel.CGCosmicSignatureMintRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -143,7 +143,7 @@ func (r *Repo) CosmicSignatureTokens(ctx context.Context, offset, limit int) ([]
 // CosmicSignatureTokenInfo returns one minted token with prize provenance
 // and its full CST staking state (including the staked-owner address while
 // staked), or store.ErrNotFound for an unknown token id.
-func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (p.CGCosmicSignatureMintRec, error) {
+func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (cgmodel.CGCosmicSignatureMintRec, error) {
 	query := `SELECT
 			m.evtlog_id,
 			m.block_num,
@@ -186,7 +186,7 @@ func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (p.C
 			LEFT JOIN address sta ON st.staker_aid = sta.address_id
 		WHERE m.token_id=$1`
 
-	var rec p.CGCosmicSignatureMintRec
+	var rec cgmodel.CGCosmicSignatureMintRec
 	var nullPrizeNum, nullUnstakeID, nullActionID, nullStakerAid, nullRaffleID sql.NullInt64
 	var nullAuTimestamp, nullSaTimestamp sql.NullInt64
 	var nullStakedOwnerAddr sql.NullString
@@ -222,7 +222,7 @@ func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (p.C
 		&nullRaffleID,
 	)
 	if err != nil {
-		return p.CGCosmicSignatureMintRec{}, store.WrapError("cosmic signature token info", err)
+		return cgmodel.CGCosmicSignatureMintRec{}, store.WrapError("cosmic signature token info", err)
 	}
 
 	rec.RecordType = 3 // main prize
@@ -285,7 +285,7 @@ func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (p.C
 
 // TokenNameHistory returns every rename of one token, newest first, with the
 // address that performed each rename.
-func (r *Repo) TokenNameHistory(ctx context.Context, tokenID int64) ([]p.CGTokenName, error) {
+func (r *Repo) TokenNameHistory(ctx context.Context, tokenID int64) ([]cgmodel.CGTokenName, error) {
 	query := `SELECT
 			n.evtlog_id,
 			n.block_num,
@@ -302,7 +302,7 @@ func (r *Repo) TokenNameHistory(ctx context.Context, tokenID int64) ([]p.CGToken
 			LEFT JOIN address a ON a.address_id=t.from_aid
 		WHERE n.token_id=$1
 		ORDER BY n.id DESC`
-	scan := func(rows pgx.Rows, rec *p.CGTokenName) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGTokenName) error {
 		return rows.Scan(
 			&rec.Tx.EvtLogId,
 			&rec.Tx.BlockNum,
@@ -321,7 +321,7 @@ func (r *Repo) TokenNameHistory(ctx context.Context, tokenID int64) ([]p.CGToken
 
 // TokenOwnershipTransfers returns the ERC-721 transfer history of one token,
 // newest first. limit 0 means no effective limit.
-func (r *Repo) TokenOwnershipTransfers(ctx context.Context, tokenID int64, offset, limit int) ([]p.CGTransfer, error) {
+func (r *Repo) TokenOwnershipTransfers(ctx context.Context, tokenID int64, offset, limit int) ([]cgmodel.CGTransfer, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -346,7 +346,7 @@ func (r *Repo) TokenOwnershipTransfers(ctx context.Context, tokenID int64, offse
 		WHERE t.token_id=$1
 		ORDER BY t.id DESC
 		OFFSET $2 LIMIT $3`
-	scan := func(rows pgx.Rows, rec *p.CGTransfer) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGTransfer) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -368,7 +368,7 @@ func (r *Repo) TokenOwnershipTransfers(ctx context.Context, tokenID int64, offse
 
 // CosmicSignatureTokenDistribution returns how many tokens each current
 // owner holds, largest holder first.
-func (r *Repo) CosmicSignatureTokenDistribution(ctx context.Context) ([]p.CGCSTokenDistributionRec, error) {
+func (r *Repo) CosmicSignatureTokenDistribution(ctx context.Context) ([]cgmodel.CGCSTokenDistributionRec, error) {
 	query := `SELECT
 			m.cur_owner_aid,
 			a.addr,
@@ -377,13 +377,13 @@ func (r *Repo) CosmicSignatureTokenDistribution(ctx context.Context) ([]p.CGCSTo
 			LEFT JOIN address a ON m.cur_owner_aid=a.address_id
 		GROUP BY m.cur_owner_aid, a.addr
 		ORDER BY num_tokens DESC`
-	scan := func(rows pgx.Rows, rec *p.CGCSTokenDistributionRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGCSTokenDistributionRec) error {
 		return rows.Scan(&rec.OwnerAid, &rec.OwnerAddr, &rec.NumTokens)
 	}
 	return queryList(ctx, r, "cosmic signature token distribution", 32, query, scan)
 }
 
-func scanTokenSearchResult(rows pgx.Rows, rec *p.CGTokenSearchResult) error {
+func scanTokenSearchResult(rows pgx.Rows, rec *cgmodel.CGTokenSearchResult) error {
 	return rows.Scan(
 		&rec.MintTimeStamp,
 		store.TimeText(&rec.MintDateTime),
@@ -394,7 +394,7 @@ func scanTokenSearchResult(rows pgx.Rows, rec *p.CGTokenSearchResult) error {
 
 // SearchTokensByName returns the tokens whose name contains name
 // (case-insensitive), ordered by token id.
-func (r *Repo) SearchTokensByName(ctx context.Context, name string) ([]p.CGTokenSearchResult, error) {
+func (r *Repo) SearchTokensByName(ctx context.Context, name string) ([]cgmodel.CGTokenSearchResult, error) {
 	query := `SELECT
 			EXTRACT(EPOCH FROM t.time_stamp)::BIGINT,
 			t.time_stamp,
@@ -408,7 +408,7 @@ func (r *Repo) SearchTokensByName(ctx context.Context, name string) ([]p.CGToken
 
 // NamedTokens returns every token that has been given a name, ordered by
 // name.
-func (r *Repo) NamedTokens(ctx context.Context) ([]p.CGTokenSearchResult, error) {
+func (r *Repo) NamedTokens(ctx context.Context) ([]cgmodel.CGTokenSearchResult, error) {
 	query := `SELECT
 			EXTRACT(EPOCH FROM t.time_stamp)::BIGINT,
 			t.time_stamp,

@@ -12,7 +12,7 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -176,7 +176,7 @@ func (s *Server) GetRoundBid(ctx context.Context, request GetRoundBidRequestObje
 	return GetRoundBid200JSONResponse{BidJSONResponse: BidJSONResponse(bid)}, nil
 }
 
-func mapBid(record cgprimitives.CGBidRec) (Bid, error) {
+func mapBid(record cgmodel.CGBidRec) (Bid, error) {
 	if record.Tx.EvtLogId < 1 || record.Tx.BlockNum < 0 || record.RoundNum < 0 || record.BidPosition < 1 {
 		return Bid{}, errors.New("invalid bid identity fields")
 	}

@@ -6,10 +6,10 @@ import (
 	"html/template"
 	"time"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 )
 
-func BuildJSRandomwalkWithdrawalChart(intervals *[]rwp.API_WithdrawalChartEntry) template.JS {
+func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry) template.JS {
 	var dataStr string = "["
 
 	for i := 0; i < len(*intervals); i++ {
@@ -33,7 +33,7 @@ func BuildJSRandomwalkWithdrawalChart(intervals *[]rwp.API_WithdrawalChartEntry)
 	return template.JS(dataStr)
 }
 
-func BuildJSFloorPriceData(intervals *[]rwp.API_FloorPrice) template.JS {
+func BuildJSFloorPriceData(intervals *[]rwmodel.FloorPrice) template.JS {
 	var dataStr string = "["
 
 	for i := 0; i < len(*intervals); i++ {

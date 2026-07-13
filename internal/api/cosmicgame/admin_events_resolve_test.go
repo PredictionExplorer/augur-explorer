@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 )
 
@@ -27,20 +27,20 @@ func TestResolveAdminEventFromContract(t *testing.T) {
 	v1, v2 := newAdminResolveBindings(t, stub)
 	tests := []struct {
 		name  string
-		event *p.CGAdminEvent
+		event *cgmodel.CGAdminEvent
 		want  string
 	}{
 		{name: "nil"},
-		{name: "negative block", event: &p.CGAdminEvent{BlockNum: -1, RecordType: 20, IntegerValue: 4}},
-		{name: "percent", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 20, IntegerValue: 4}, want: "25.0000%"},
-		{name: "microseconds", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 21, IntegerValue: 1_500_000}, want: "1.500000 sec"},
-		{name: "initial duration", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 22, IntegerValue: 4}, want: "10m (25.0000%)"},
-		{name: "CST direct duration", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 25, IntegerValue: 90}, want: "90 sec"},
-		{name: "CST contract duration", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 25}, want: "30m"},
-		{name: "ETH duration", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 36, IntegerValue: 1}, want: "1h"},
-		{name: "ETH end price", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 37, IntegerValue: 10}, want: "0.10000000 ETH"},
-		{name: "CST duration change", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 39, IntegerValue: 10}, want: "3m change per bid"},
-		{name: "unknown", event: &p.CGAdminEvent{BlockNum: 1, RecordType: 999, IntegerValue: 1}},
+		{name: "negative block", event: &cgmodel.CGAdminEvent{BlockNum: -1, RecordType: 20, IntegerValue: 4}},
+		{name: "percent", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 20, IntegerValue: 4}, want: "25.0000%"},
+		{name: "microseconds", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 21, IntegerValue: 1_500_000}, want: "1.500000 sec"},
+		{name: "initial duration", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 22, IntegerValue: 4}, want: "10m (25.0000%)"},
+		{name: "CST direct duration", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 25, IntegerValue: 90}, want: "90 sec"},
+		{name: "CST contract duration", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 25}, want: "30m"},
+		{name: "ETH duration", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 36, IntegerValue: 1}, want: "1h"},
+		{name: "ETH end price", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 37, IntegerValue: 10}, want: "0.10000000 ETH"},
+		{name: "CST duration change", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 39, IntegerValue: 10}, want: "3m change per bid"},
+		{name: "unknown", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 999, IntegerValue: 1}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -57,7 +57,7 @@ func TestResolveAdminEventEndingPriceFallsBackToNextBid(t *testing.T) {
 	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI).
 		Return("getNextEthBidPrice", big.NewInt(2_000_000_000_000_000_000))
 	v1, v2 := newAdminResolveBindings(t, stub)
-	event := &p.CGAdminEvent{BlockNum: 1, RecordType: 37, IntegerValue: 20}
+	event := &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 37, IntegerValue: 20}
 	if got := resolveAdminEventFromContract(v1, v2, event); got != "0.10000000 ETH (from next bid price)" {
 		t.Fatalf("fallback = %q", got)
 	}
@@ -68,7 +68,7 @@ func TestResolveAdminEventUnavailableContractValues(t *testing.T) {
 	v1, v2 := newAdminResolveBindings(t,
 		testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI))
 	for _, recordType := range []int64{22, 25, 36, 37, 39} {
-		event := &p.CGAdminEvent{BlockNum: 1, RecordType: recordType}
+		event := &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: recordType}
 		if recordType != 25 {
 			event.IntegerValue = 10
 		}

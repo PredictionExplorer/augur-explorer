@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -27,7 +27,7 @@ const initialDurationRawNumerator int64 = 1071
 // derived auction values). Events whose type has no resolver, or whose
 // context rows are missing, keep an empty ResolvedValue — only real database
 // failures return an error.
-func (r *Repo) ResolveAdminEventValues(ctx context.Context, events []p.CGAdminEvent) error {
+func (r *Repo) ResolveAdminEventValues(ctx context.Context, events []cgmodel.CGAdminEvent) error {
 	for i := range events {
 		value, err := r.resolveAdminEventValue(ctx, &events[i])
 		if err != nil {
@@ -38,7 +38,7 @@ func (r *Repo) ResolveAdminEventValues(ctx context.Context, events []p.CGAdminEv
 	return nil
 }
 
-func (r *Repo) resolveAdminEventValue(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
+func (r *Repo) resolveAdminEventValue(ctx context.Context, rec *cgmodel.CGAdminEvent) (string, error) {
 	if rec == nil || rec.IntegerValue == 0 && rec.FloatValue == 0 && rec.StringValue == "" {
 		return "", nil
 	}
@@ -66,7 +66,7 @@ func (r *Repo) resolveAdminEventValue(ctx context.Context, rec *p.CGAdminEvent) 
 	}
 }
 
-func (r *Repo) resolveTimeIncreaseChanged(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
+func (r *Repo) resolveTimeIncreaseChanged(ctx context.Context, rec *cgmodel.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
 		return "", nil
 	}
@@ -81,7 +81,7 @@ func (r *Repo) resolveTimeIncreaseChanged(ctx context.Context, rec *p.CGAdminEve
 	return fmt.Sprintf("%s after next bid (×%.2f)", formatMicrosecondsAsSeconds(afterMicros), float64(rec.IntegerValue)/100.0), nil
 }
 
-func (r *Repo) resolveInitialSecondsUntilPrizeChanged(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
+func (r *Repo) resolveInitialSecondsUntilPrizeChanged(ctx context.Context, rec *cgmodel.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
 		return "", nil
 	}
@@ -98,7 +98,7 @@ func (r *Repo) resolveInitialSecondsUntilPrizeChanged(ctx context.Context, rec *
 	return fmt.Sprintf("%s (%s)", formatDurationSeconds(secs), pct), nil
 }
 
-func (r *Repo) resolveEthDutchAuctionDurationDivisor(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
+func (r *Repo) resolveEthDutchAuctionDurationDivisor(ctx context.Context, rec *cgmodel.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
 		return "", nil
 	}
@@ -113,7 +113,7 @@ func (r *Repo) resolveEthDutchAuctionDurationDivisor(ctx context.Context, rec *p
 	return formatDurationSeconds(secs), nil
 }
 
-func (r *Repo) resolveEthDutchAuctionEndingBidPriceDivisor(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
+func (r *Repo) resolveEthDutchAuctionEndingBidPriceDivisor(ctx context.Context, rec *cgmodel.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
 		return "", nil
 	}
@@ -128,7 +128,7 @@ func (r *Repo) resolveEthDutchAuctionEndingBidPriceDivisor(ctx context.Context, 
 	return formatEthFromWei(endWei), nil
 }
 
-func (r *Repo) resolveCstDutchAuctionDurationChangeDivisor(ctx context.Context, rec *p.CGAdminEvent) (string, error) {
+func (r *Repo) resolveCstDutchAuctionDurationChangeDivisor(ctx context.Context, rec *cgmodel.CGAdminEvent) (string, error) {
 	if rec.IntegerValue <= 0 {
 		return "", nil
 	}

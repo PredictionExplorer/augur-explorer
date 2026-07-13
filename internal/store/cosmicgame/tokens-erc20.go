@@ -6,11 +6,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func scanCosmicTokenHolder(rows pgx.Rows, rec *p.CGCosmicTokenHolderRec) error {
+func scanCosmicTokenHolder(rows pgx.Rows, rec *cgmodel.CGCosmicTokenHolderRec) error {
 	return rows.Scan(
 		&rec.OwnerAid,
 		&rec.OwnerAddr,
@@ -21,7 +21,7 @@ func scanCosmicTokenHolder(rows pgx.Rows, rec *p.CGCosmicTokenHolderRec) error {
 
 // CosmicTokenHolders returns every CST (ERC-20) balance row ordered by
 // balance descending.
-func (r *Repo) CosmicTokenHolders(ctx context.Context) ([]p.CGCosmicTokenHolderRec, error) {
+func (r *Repo) CosmicTokenHolders(ctx context.Context) ([]cgmodel.CGCosmicTokenHolderRec, error) {
 	query := `SELECT
 			o.owner_aid,
 			oa.addr,
@@ -37,9 +37,9 @@ func (r *Repo) CosmicTokenHolders(ctx context.Context) ([]p.CGCosmicTokenHolderR
 // supply, how tokens enter (bidding rewards, marketing, prizes) and leave
 // (CST bids), transfer counts, and the top-10 holders with their share of
 // supply.
-func (r *Repo) CosmicTokenStatistics(ctx context.Context) (p.CGCosmicTokenStats, error) {
+func (r *Repo) CosmicTokenStatistics(ctx context.Context) (cgmodel.CGCosmicTokenStats, error) {
 	const op = "cosmic token statistics"
-	var stats p.CGCosmicTokenStats
+	var stats cgmodel.CGCosmicTokenStats
 
 	err := r.pool().QueryRow(ctx, `SELECT
 			COUNT(*) as holder_count,
@@ -132,9 +132,9 @@ func (r *Repo) CosmicTokenStatistics(ctx context.Context) (p.CGCosmicTokenStats,
 // UserCosmicTokenSummary aggregates one user's CST (ERC-20) position: current
 // balance, earnings by source, amounts consumed in CST bids and transfer
 // activity counts. A user without a balance row reports a zero balance.
-func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (p.CGUserCosmicTokenSummary, error) {
+func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (cgmodel.CGUserCosmicTokenSummary, error) {
 	const op = "user cosmic token summary"
-	var summary p.CGUserCosmicTokenSummary
+	var summary cgmodel.CGUserCosmicTokenSummary
 	summary.UserAid = userAid
 
 	err := r.pool().QueryRow(ctx,
@@ -214,7 +214,7 @@ func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (p.CGU
 // CosmicTokenSupplyHistoryByBid returns one row per bid with the net CST
 // supply change (cst_reward mint minus cst_price burn on CST bids) and
 // running totals computed in SQL.
-func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]p.CGTotalSupplyHistoryRec, error) {
+func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]cgmodel.CGTotalSupplyHistoryRec, error) {
 	query := `SELECT
 		b.evtlog_id, b.bid_type, COALESCE(ba.addr, ''), b.block_num, COALESCE(t.id, 0), COALESCE(t.tx_hash, ''),
 		EXTRACT(EPOCH FROM b.time_stamp)::BIGINT, b.time_stamp,
@@ -232,7 +232,7 @@ func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]p.CGTotalSu
 		LEFT JOIN address ba ON b.bidder_aid = ba.address_id
 		LEFT JOIN transaction t ON t.id = b.tx_id
 		ORDER BY b.id`
-	scan := func(rows pgx.Rows, rec *p.CGTotalSupplyHistoryRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGTotalSupplyHistoryRec) error {
 		err := rows.Scan(
 			&rec.BidInfoId,
 			&rec.BidType,
@@ -263,7 +263,7 @@ func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]p.CGTotalSu
 // CosmicTokenSupplyHistoryByDate returns daily aggregates of CST supply
 // change between fromDate and toDate (inclusive, YYYYMMDD), with running
 // totals over all history up to each day.
-func (r *Repo) CosmicTokenSupplyHistoryByDate(ctx context.Context, fromDate, toDate string) ([]p.CGTotalSupplyHistoryByDateRec, error) {
+func (r *Repo) CosmicTokenSupplyHistoryByDate(ctx context.Context, fromDate, toDate string) ([]cgmodel.CGTotalSupplyHistoryByDateRec, error) {
 	query := `WITH daily AS (
 		SELECT
 		DATE(b.time_stamp) AS bid_date,
@@ -293,7 +293,7 @@ func (r *Repo) CosmicTokenSupplyHistoryByDate(ctx context.Context, fromDate, toD
 		FROM with_totals w
 		WHERE w.bid_date >= TO_DATE($1, 'YYYYMMDD') AND w.bid_date <= TO_DATE($2, 'YYYYMMDD')
 		ORDER BY w.bid_date`
-	scan := func(rows pgx.Rows, rec *p.CGTotalSupplyHistoryByDateRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGTotalSupplyHistoryByDateRec) error {
 		return rows.Scan(
 			&rec.Date,
 			&rec.TimeStamp,

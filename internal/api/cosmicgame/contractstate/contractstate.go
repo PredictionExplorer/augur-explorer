@@ -19,7 +19,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 // Default refresh intervals, matching the legacy
@@ -37,7 +37,7 @@ const (
 // component needs; *cosmicgame.Repo satisfies it.
 type DataSource interface {
 	// CosmicGameStatistics computes the global statistics aggregate.
-	CosmicGameStatistics(ctx context.Context) (cgp.CGStatistics, error)
+	CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, error)
 	// RoundStartTimestamp returns the first-bid timestamp of the round.
 	RoundStartTimestamp(ctx context.Context, roundNum uint64) (int64, error)
 	// LastCstBidEvtlogForBidderAtBlock returns the event log id of the
@@ -152,7 +152,7 @@ type Snapshot struct {
 	SpecialWinnersReady bool
 
 	// Database aggregates, refreshed every DBStatsInterval.
-	Stats               cgp.CGStatistics
+	Stats               cgmodel.CGStatistics
 	RoundStartTimestamp int64
 
 	// MechanicsVersion is the detected contract generation:

@@ -4,7 +4,7 @@ package randomwalk
 // API Response Types
 // =====================================================================
 
-type API_Offer struct {
+type Offer struct {
 	Id           int64
 	EvtLogId     int64
 	BlockNum     int64
@@ -29,7 +29,7 @@ type API_Offer struct {
 	WasCanceled  bool
 }
 
-type API_TokenMint struct {
+type TokenMint struct {
 	TokenId      int64
 	BlockNum     int64
 	TimeStamp    int64
@@ -44,7 +44,7 @@ type API_TokenMint struct {
 	TxHash       string
 }
 
-type API_TokenMint_CSV struct {
+type TokenMintCSV struct {
 	TokenId      int64
 	BlockNum     int64
 	TimeStamp    int64
@@ -64,7 +64,7 @@ type API_TokenMint_CSV struct {
 	LastOwner    string
 }
 
-type API_UserToken struct {
+type UserToken struct {
 	TokenId      int64
 	ContractAid  int64
 	ContractAddr string
@@ -73,7 +73,7 @@ type API_UserToken struct {
 	Price        float64
 }
 
-type API_RWalkStats struct {
+type RWalkStats struct {
 	TradingVol         float64
 	NumTrades          int64
 	TokensMinted       int64
@@ -86,12 +86,12 @@ type API_RWalkStats struct {
 	WithdrawalAmount   float64 // the latest amount
 }
 
-type API_MarketStats struct {
+type MarketStats struct {
 	TradingVol float64
 	NumTrades  int64
 }
 
-type API_HistEntry_Mint struct { // type = 1
+type HistEntryMint struct { // type = 1
 	BlockNum     int64
 	TimeStamp    int64
 	DateTime     string
@@ -105,7 +105,7 @@ type API_HistEntry_Mint struct { // type = 1
 	Price        float64
 }
 
-type API_HistEntry_Offer struct { // type = 2
+type HistEntryOffer struct { // type = 2
 	BlockNum     int64
 	TimeStamp    int64
 	DateTime     string
@@ -122,7 +122,7 @@ type API_HistEntry_Offer struct { // type = 2
 	Price        float64
 }
 
-type API_HistEntry_OfferCanceled struct { // type = 3
+type HistEntryOfferCanceled struct { // type = 3
 	BlockNum        int64
 	TimeStamp       int64
 	DateTime        string
@@ -141,7 +141,7 @@ type API_HistEntry_OfferCanceled struct { // type = 3
 	Address         string
 }
 
-type API_HistEntry_ItemBought struct { // type = 4
+type HistEntryItemBought struct { // type = 4
 	BlockNum     int64
 	TimeStamp    int64
 	DateTime     string
@@ -160,7 +160,7 @@ type API_HistEntry_ItemBought struct { // type = 4
 	Address      string
 }
 
-type API_HistEntry_TokenName struct { // type = 5
+type HistEntryTokenName struct { // type = 5
 	BlockNum     int64
 	TimeStamp    int64
 	DateTime     string
@@ -170,7 +170,7 @@ type API_HistEntry_TokenName struct { // type = 5
 	TokenName    string
 }
 
-type API_HistEntry_Transfer struct { // type = 6
+type HistEntryTransfer struct { // type = 6
 	BlockNum     int64
 	TimeStamp    int64
 	DateTime     string
@@ -184,19 +184,19 @@ type API_HistEntry_Transfer struct { // type = 6
 	TransferId   int64
 }
 
-type API_FullHistoryEntry struct {
-	RecordType int // Mint, or any other event starting with API_HistEntry_*
+type FullHistoryEntry struct {
+	RecordType int // Mint, or any other event starting with HistEntry*
 	Record     interface{}
 }
 
-type API_VolumeHistory struct {
+type VolumeHistory struct {
 	StartTs       int64
 	NumOperations int64
 	Volume        float64
 	VolumeAccum   float64
 }
 
-type API_TokenName struct {
+type TokenNameRec struct {
 	BlockNum     int64
 	TimeStamp    int64
 	DateTime     string
@@ -209,7 +209,7 @@ type API_TokenName struct {
 	OwnerAddr    string
 }
 
-type API_UserInfo struct {
+type UserInfo struct {
 	UserAid               int64
 	UserAddr              string
 	TotalVolume           float64
@@ -219,13 +219,13 @@ type API_UserInfo struct {
 	IsMarketPlaceContract bool // true if the User is not really a user, but is a marketplace contract
 }
 
-type API_Top5Toks struct {
+type TopTradedToken struct {
 	TokenId     int64
 	TotalTrades int64
 	SeedHex     string
 }
 
-type API_TokenInfo struct {
+type TokenInfo struct {
 	TokenId            int64
 	CurOwnerAid        int64
 	CurOwnerAddr       string
@@ -239,20 +239,20 @@ type API_TokenInfo struct {
 	LastNameUpdateDate string
 }
 
-type API_MintInterval struct {
+type MintInterval struct {
 	MintNumber int64 // sequential number of mint (same as token_id)
 	TimeStamp  int64
 	Interval   int64 // Duration from previous mint
 	TokenId    int64
 }
 
-type API_WithdrawalChartEntry struct {
+type WithdrawalChartEntry struct {
 	TimeStamp        int64
 	DateTime         string
 	WithdrawalAmount float64
 }
 
-type API_TradingHistoryLog struct {
+type TradingHistoryLog struct {
 	Id               int64
 	EvtLogId         int64
 	BlockNum         int64
@@ -285,12 +285,12 @@ type API_TradingHistoryLog struct {
 	RealTs           int64
 }
 
-type API_FloorPrice struct {
+type FloorPrice struct {
 	TimeStamp int64
 	Price     float64
 }
 
-type API_MintReportRec struct {
+type MintReportRec struct {
 	Year         int64
 	Month        int64
 	MonthStr     string

@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 var (
@@ -40,7 +40,7 @@ type recordingHandler struct {
 
 func (rec *recordingHandler) handler(topic common.Hash, name string, sources ...common.Address) EventHandler {
 	return NewHandler(topic, name, sources,
-		func(lg *types.Log, elog *primitives.EthereumEventLog) (*testEvent, error) {
+		func(lg *types.Log, elog *store.EthereumEventLog) (*testEvent, error) {
 			rec.decoded = append(rec.decoded, elog.EvtId)
 			return &testEvent{EvtID: elog.EvtId, Body: string(lg.Data)}, nil
 		},
@@ -54,8 +54,8 @@ func logWith(topic common.Hash, addr common.Address, data string) *types.Log {
 	return &types.Log{Address: addr, Topics: []common.Hash{topic}, Data: []byte(data)}
 }
 
-func elogWith(id int64) *primitives.EthereumEventLog {
-	return &primitives.EthereumEventLog{EvtId: id}
+func elogWith(id int64) *store.EthereumEventLog {
+	return &store.EthereumEventLog{EvtId: id}
 }
 
 func TestRegistryDispatchesByTopicAndSource(t *testing.T) {
@@ -134,7 +134,7 @@ func TestRegistryDecodeErrorStopsDispatch(t *testing.T) {
 	var after recordingHandler
 	reg, err := NewRegistry(
 		NewHandler(handlerTopicA, "EventA", nil,
-			func(*types.Log, *primitives.EthereumEventLog) (*testEvent, error) { return nil, decodeErr },
+			func(*types.Log, *store.EthereumEventLog) (*testEvent, error) { return nil, decodeErr },
 			func(context.Context, *testEvent) error { t.Fatal("store called after decode error"); return nil }),
 		after.handler(handlerTopicA, "EventA"),
 	)
@@ -158,7 +158,7 @@ func TestRegistryStoreErrorPropagates(t *testing.T) {
 	storeErr := errors.New("insert failed")
 	reg, err := NewRegistry(
 		NewHandler(handlerTopicA, "EventA", nil,
-			func(_ *types.Log, elog *primitives.EthereumEventLog) (*testEvent, error) {
+			func(_ *types.Log, elog *store.EthereumEventLog) (*testEvent, error) {
 				return &testEvent{EvtID: elog.EvtId}, nil
 			},
 			func(context.Context, *testEvent) error { return storeErr }),
@@ -219,7 +219,7 @@ func TestRegistryTopicName(t *testing.T) {
 
 func TestHandlerStoreRejectsForeignEventType(t *testing.T) {
 	h := NewHandler(handlerTopicA, "EventA", nil,
-		func(*types.Log, *primitives.EthereumEventLog) (*testEvent, error) { return &testEvent{}, nil },
+		func(*types.Log, *store.EthereumEventLog) (*testEvent, error) { return &testEvent{}, nil },
 		func(context.Context, *testEvent) error { return nil })
 	if err := h.Store(context.Background(), "not a testEvent"); err == nil {
 		t.Error("Store accepted a value of the wrong type")
@@ -227,12 +227,12 @@ func TestHandlerStoreRejectsForeignEventType(t *testing.T) {
 }
 
 // fakeEventLogSource serves canned evt_log rows to LogProcessor.
-type fakeEventLogSource map[int64]primitives.EthereumEventLog
+type fakeEventLogSource map[int64]store.EthereumEventLog
 
-func (f fakeEventLogSource) EventLog(_ context.Context, id int64) (primitives.EthereumEventLog, error) {
+func (f fakeEventLogSource) EventLog(_ context.Context, id int64) (store.EthereumEventLog, error) {
 	row, ok := f[id]
 	if !ok {
-		return primitives.EthereumEventLog{}, fmt.Errorf("row %d not found", id)
+		return store.EthereumEventLog{}, fmt.Errorf("row %d not found", id)
 	}
 	return row, nil
 }

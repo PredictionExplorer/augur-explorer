@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 )
 
 func TestBuildJSRandomwalkWithdrawalChart(t *testing.T) {
@@ -14,14 +14,14 @@ func TestBuildJSRandomwalkWithdrawalChart(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		entries []rwp.API_WithdrawalChartEntry
+		entries []rwmodel.WithdrawalChartEntry
 		want    string
 	}{
 		{name: "nil slice", entries: nil, want: "[]"},
-		{name: "empty slice", entries: []rwp.API_WithdrawalChartEntry{}, want: "[]"},
+		{name: "empty slice", entries: []rwmodel.WithdrawalChartEntry{}, want: "[]"},
 		{
 			name: "single entry",
-			entries: []rwp.API_WithdrawalChartEntry{
+			entries: []rwmodel.WithdrawalChartEntry{
 				{TimeStamp: 0, WithdrawalAmount: 1.25},
 			},
 			want: fmt.Sprintf(
@@ -31,7 +31,7 @@ func TestBuildJSRandomwalkWithdrawalChart(t *testing.T) {
 		},
 		{
 			name: "multiple entries preserve order and delimiter",
-			entries: []rwp.API_WithdrawalChartEntry{
+			entries: []rwmodel.WithdrawalChartEntry{
 				{TimeStamp: -1, WithdrawalAmount: -0.5},
 				{TimeStamp: 2, WithdrawalAmount: 1.0 / 3.0},
 			},
@@ -56,14 +56,14 @@ func TestBuildJSRandomwalkWithdrawalChart(t *testing.T) {
 func TestBuildJSFloorPriceData(t *testing.T) {
 	tests := []struct {
 		name    string
-		entries []rwp.API_FloorPrice
+		entries []rwmodel.FloorPrice
 		want    string
 	}{
 		{name: "nil slice", entries: nil, want: "[]"},
-		{name: "empty slice", entries: []rwp.API_FloorPrice{}, want: "[]"},
+		{name: "empty slice", entries: []rwmodel.FloorPrice{}, want: "[]"},
 		{
 			name: "single entry",
-			entries: []rwp.API_FloorPrice{
+			entries: []rwmodel.FloorPrice{
 				{TimeStamp: 0, Price: 2.5},
 			},
 			want: fmt.Sprintf(
@@ -73,7 +73,7 @@ func TestBuildJSFloorPriceData(t *testing.T) {
 		},
 		{
 			name: "multiple entries preserve order and delimiter",
-			entries: []rwp.API_FloorPrice{
+			entries: []rwmodel.FloorPrice{
 				{TimeStamp: -1, Price: -2.5},
 				{TimeStamp: 2, Price: 1.0 / 3.0},
 			},

@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -147,17 +147,17 @@ func TestListCosmicGameUserBidsPaginates(t *testing.T) {
 			gotAid int64,
 			after *cgstore.UserBidPageCursor,
 			limit int,
-		) ([]cgprimitives.CGBidRec, bool, error) {
+		) ([]cgmodel.CGBidRec, bool, error) {
 			if gotAid != userAid || limit != 2 {
 				t.Fatalf("page args = aid %d limit %d", gotAid, limit)
 			}
 			if after == nil {
-				return []cgprimitives.CGBidRec{first, second}, true, nil
+				return []cgmodel.CGBidRec{first, second}, true, nil
 			}
 			if after.EventLogID != second.Tx.EvtLogId {
 				t.Fatalf("after = %+v", after)
 			}
-			return []cgprimitives.CGBidRec{last}, false, nil
+			return []cgmodel.CGBidRec{last}, false, nil
 		},
 	})
 
@@ -242,24 +242,24 @@ func TestListCosmicGameUserBidsRejectsRepositoryViolations(t *testing.T) {
 	malformed := valid
 	malformed.Tx.TxHash = "bad"
 	tests := map[string]struct {
-		records []cgprimitives.CGBidRec
+		records []cgmodel.CGBidRec
 		hasMore bool
 		err     error
 		limit   int
 	}{
 		"repository error": {err: errors.New("private bid detail")},
-		"too many":         {records: []cgprimitives.CGBidRec{valid, valid}},
-		"wrong user ID":    {records: []cgprimitives.CGBidRec{wrongUser}},
-		"wrong address":    {records: []cgprimitives.CGBidRec{wrongAddress}},
+		"too many":         {records: []cgmodel.CGBidRec{valid, valid}},
+		"wrong user ID":    {records: []cgmodel.CGBidRec{wrongUser}},
+		"wrong address":    {records: []cgmodel.CGBidRec{wrongAddress}},
 		"unordered": {
-			records: []cgprimitives.CGBidRec{
+			records: []cgmodel.CGBidRec{
 				userBidRecord(5007),
 				userBidRecord(5008),
 			},
 			limit: 2,
 		},
-		"malformed bid":        {records: []cgprimitives.CGBidRec{malformed}},
-		"empty page with more": {records: []cgprimitives.CGBidRec{}, hasMore: true},
+		"malformed bid":        {records: []cgmodel.CGBidRec{malformed}},
+		"empty page with more": {records: []cgmodel.CGBidRec{}, hasMore: true},
 	}
 	for name, result := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -277,7 +277,7 @@ func TestListCosmicGameUserBidsRejectsRepositoryViolations(t *testing.T) {
 					int64,
 					*cgstore.UserBidPageCursor,
 					int,
-				) ([]cgprimitives.CGBidRec, bool, error) {
+				) ([]cgmodel.CGBidRec, bool, error) {
 					return result.records, result.hasMore, result.err
 				},
 			})
@@ -350,7 +350,7 @@ func newUserTestServer(t *testing.T, users userReader) *Server {
 	return server
 }
 
-func userBidRecord(eventLogID int64) cgprimitives.CGBidRec {
+func userBidRecord(eventLogID int64) cgmodel.CGBidRec {
 	record := validBidRecord()
 	record.BidderAid = 23
 	record.BidderAddr = userTestBidAddress

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -223,8 +223,8 @@ func validRoundNFTDonationRecord() cgstore.RoundNFTDonationRecord {
 	}
 }
 
-func validDonationTransaction() cgprimitives.Transaction {
-	return cgprimitives.Transaction{
+func validDonationTransaction() cgmodel.Transaction {
+	return cgmodel.Transaction{
 		EvtLogId:  100,
 		BlockNum:  200,
 		TxId:      300,

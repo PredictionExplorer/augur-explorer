@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestParseOptionalIntQuery(t *testing.T) {
@@ -151,7 +151,7 @@ func TestBiddingAnalyticsV2TieBreakersAreIsolated(t *testing.T) {
 
 func TestDetectBidSpikes(t *testing.T) {
 	t.Parallel()
-	buckets := make([]p.CGBidFrequencyBucket, 10)
+	buckets := make([]cgmodel.CGBidFrequencyBucket, 10)
 	for i := range buckets {
 		buckets[i].BucketTs = int64(i * 10)
 	}
@@ -172,7 +172,7 @@ func TestDetectBidSpikes(t *testing.T) {
 
 func TestDetectBidSpikesKeepsSeparateRunsOrdered(t *testing.T) {
 	t.Parallel()
-	buckets := make([]p.CGBidFrequencyBucket, 10)
+	buckets := make([]cgmodel.CGBidFrequencyBucket, 10)
 	for i := range buckets {
 		buckets[i].BucketTs = int64(i * 60)
 	}
@@ -190,24 +190,24 @@ func TestDetectBidSpikesKeepsSeparateRunsOrdered(t *testing.T) {
 func TestDetectBidSpikesRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
-		buckets  []p.CGBidFrequencyBucket
+		buckets  []cgmodel.CGBidFrequencyBucket
 		interval int
 	}{
 		"empty":         {interval: 1},
-		"zero interval": {buckets: []p.CGBidFrequencyBucket{{BucketTs: 1, NumBids: 10}}},
+		"zero interval": {buckets: []cgmodel.CGBidFrequencyBucket{{BucketTs: 1, NumBids: 10}}},
 		"negative count": {
-			buckets:  []p.CGBidFrequencyBucket{{BucketTs: 1, NumBids: -1}},
+			buckets:  []cgmodel.CGBidFrequencyBucket{{BucketTs: 1, NumBids: -1}},
 			interval: 1,
 		},
 		"unordered": {
-			buckets: []p.CGBidFrequencyBucket{
+			buckets: []cgmodel.CGBidFrequencyBucket{
 				{BucketTs: 2, NumBids: 10},
 				{BucketTs: 1, NumBids: 10},
 			},
 			interval: 1,
 		},
 		"duplicate timestamp": {
-			buckets: []p.CGBidFrequencyBucket{
+			buckets: []cgmodel.CGBidFrequencyBucket{
 				{BucketTs: 1, NumBids: 10},
 				{BucketTs: 1, NumBids: 10},
 			},
@@ -226,7 +226,7 @@ func TestDetectBidSpikesRejectsInvalidInput(t *testing.T) {
 
 func TestDetectBidSpikesSupportsPreEpochWindows(t *testing.T) {
 	t.Parallel()
-	buckets := make([]p.CGBidFrequencyBucket, 10)
+	buckets := make([]cgmodel.CGBidFrequencyBucket, 10)
 	for i := range buckets {
 		buckets[i].BucketTs = int64(-100 + i*10)
 	}
@@ -239,7 +239,7 @@ func TestDetectBidSpikesSupportsPreEpochWindows(t *testing.T) {
 
 func TestDetectBidSpikesSaturatesOverflow(t *testing.T) {
 	t.Parallel()
-	buckets := make([]p.CGBidFrequencyBucket, 10)
+	buckets := make([]cgmodel.CGBidFrequencyBucket, 10)
 	for i := range buckets {
 		buckets[i].BucketTs = int64(i)
 	}
@@ -261,9 +261,9 @@ func FuzzDetectBidSpikes(f *testing.F) {
 		if len(counts) > 512 {
 			counts = counts[:512]
 		}
-		buckets := make([]p.CGBidFrequencyBucket, len(counts))
+		buckets := make([]cgmodel.CGBidFrequencyBucket, len(counts))
 		for i := range counts {
-			buckets[i] = p.CGBidFrequencyBucket{
+			buckets[i] = cgmodel.CGBidFrequencyBucket{
 				BucketTs: int64(i * 1000),
 				NumBids:  int64(counts[i]),
 			}

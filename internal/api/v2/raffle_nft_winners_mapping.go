@@ -6,11 +6,11 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func mapRoundRaffleNftWinner(
-	record cgprimitives.CGRaffleNFTWinnerRec,
+	record cgmodel.CGRaffleNFTWinnerRec,
 	expectedStaker bool,
 ) (RoundRaffleNftWinner, error) {
 	if record.RoundNum < 0 || record.WinnerIndex < 0 || record.TokenId < 0 {

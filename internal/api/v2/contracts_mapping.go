@@ -8,12 +8,12 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 var errCachedLiveUnavailable = errors.New("cached live resource is unavailable")
 
-func mapContractAddressRegistry(record cgprimitives.CosmicGameContractAddrs) (ContractAddressRegistry, error) {
+func mapContractAddressRegistry(record cgmodel.CosmicGameContractAddrs) (ContractAddressRegistry, error) {
 	values := []struct {
 		name  string
 		value string

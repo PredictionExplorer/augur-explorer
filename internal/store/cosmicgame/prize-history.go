@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -13,7 +13,7 @@ import (
 // every prize type (main, last-CST, endurance, chrono warrior, raffle ETH,
 // raffle NFT) plus the timeout claims where the user was the beneficiary but
 // not the winner. Ordered by round descending, offset/limit paginated.
-func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, limit int) ([]p.CGPrizeHistory, error) {
+func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, limit int) ([]cgmodel.CGPrizeHistory, error) {
 	query := `SELECT
 			p.ptype AS record_type,
 			COALESCE(pc.evtlog_id, lw.evtlog_id, ew.evtlog_id, cw.evtlog_id, rew.evtlog_id, rnw_bidder.evtlog_id, rnw_rwalk.evtlog_id) AS evtlog_id,
@@ -162,7 +162,7 @@ func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, 
 
 		ORDER BY round_num DESC, winner_index, record_type
 		OFFSET $2 LIMIT $3`
-	scan := func(rows pgx.Rows, rec *p.CGPrizeHistory) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 		return rows.Scan(
 			&rec.RecordType,
 			&rec.Tx.EvtLogId,
@@ -188,7 +188,7 @@ func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, 
 // ClaimHistoryGlobal returns the detailed claim history across all users:
 // every prize row (with winner address) plus timeout claims by non-winners.
 // Ordered by round descending, offset/limit paginated.
-func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]p.CGPrizeHistory, error) {
+func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]cgmodel.CGPrizeHistory, error) {
 	query := `SELECT
 			p.ptype AS record_type,
 			COALESCE(pc.evtlog_id, lw.evtlog_id, ew.evtlog_id, cw.evtlog_id, rew.evtlog_id, rnw_bidder.evtlog_id, rnw_rwalk.evtlog_id, ed.evtlog_id) AS evtlog_id,
@@ -350,7 +350,7 @@ func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]p.C
 
 		ORDER BY round_num DESC, winner_index, record_type
 		OFFSET $1 LIMIT $2`
-	scan := func(rows pgx.Rows, rec *p.CGPrizeHistory) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 		return rows.Scan(
 			&rec.RecordType,
 			&rec.Tx.EvtLogId,

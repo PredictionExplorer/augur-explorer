@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestMapBidFrequencyBuckets(t *testing.T) {
 	t.Parallel()
-	records := []cgprimitives.CGBidFrequencyBucket{
+	records := []cgmodel.CGBidFrequencyBucket{
 		{BucketTs: 0, NumBids: 2, UniqueBidders: 1},
 		{BucketTs: 10, NumBids: 0, UniqueBidders: 0},
 		{BucketTs: 20},
@@ -27,7 +27,7 @@ func TestMapBidFrequencyBuckets(t *testing.T) {
 
 func TestMapBidFrequencyBucketsRejectsInvalidRows(t *testing.T) {
 	t.Parallel()
-	tests := map[string][]cgprimitives.CGBidFrequencyBucket{
+	tests := map[string][]cgmodel.CGBidFrequencyBucket{
 		"unordered": {
 			{BucketTs: 10},
 			{BucketTs: 5},
@@ -59,7 +59,7 @@ func TestMapBidFrequencyBucketsRejectsInvalidRows(t *testing.T) {
 
 func TestMapBidSpikesClipsPartialFinalBucket(t *testing.T) {
 	t.Parallel()
-	mapped, err := mapBidSpikes([]cgprimitives.CGBidSpike{{
+	mapped, err := mapBidSpikes([]cgmodel.CGBidSpike{{
 		Index:       0,
 		StartTs:     90,
 		EndTs:       110,
@@ -128,7 +128,7 @@ func TestPercentageString(t *testing.T) {
 
 func TestMapBidTypeRatioBucketsRejectsInconsistentTotal(t *testing.T) {
 	t.Parallel()
-	_, err := mapBidTypeRatioBuckets([]cgprimitives.CGBidTypeRatioBucket{{
+	_, err := mapBidTypeRatioBuckets([]cgmodel.CGBidTypeRatioBucket{{
 		BucketTs:  1,
 		EthBids:   1,
 		RwalkBids: 1,
@@ -145,11 +145,11 @@ func TestMapTopBidderActivePeriodsCanonicalizesAndSorts(t *testing.T) {
 	address1 := "0x00000000000000000000000000000000000000aa"
 	address2 := "0x00000000000000000000000000000000000000bb"
 	bidders, periods, err := mapTopBidderActivePeriods(
-		[]cgprimitives.CGTopBidderInfo{
+		[]cgmodel.CGTopBidderInfo{
 			{BidderAid: 2, BidderAddr: address2, NumBids: 2},
 			{BidderAid: 1, BidderAddr: address1, NumBids: 2},
 		},
-		[]cgprimitives.CGBidderActivePeriod{
+		[]cgmodel.CGBidderActivePeriod{
 			{BidderAid: 2, BidderAddr: address2, PeriodStart: 20, PeriodEnd: 21, NumBids: 2, DurationSecs: 1},
 			{BidderAid: 1, BidderAddr: address1, PeriodStart: 10, PeriodEnd: 12, NumBids: 2, DurationSecs: 2},
 		},

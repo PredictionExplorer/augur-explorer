@@ -7,13 +7,11 @@ import (
 	"log/slog"
 	"os"
 
-	. "github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-const (
-	DEFAULT_DB_LOG_FILE_NAME = "/var/tmp/backend-db.log"
-)
+// defaultLogDir is the legacy operational log directory under $HOME.
+const defaultLogDir = "ae_logs"
 
 type RWCGServer struct {
 	store *store.Store
@@ -21,7 +19,7 @@ type RWCGServer struct {
 
 func create_rwcg_server() *RWCGServer {
 
-	log_dir := fmt.Sprintf("%v/%v", os.Getenv("HOME"), DEFAULT_LOG_DIR)
+	log_dir := fmt.Sprintf("%v/%v", os.Getenv("HOME"), defaultLogDir)
 	os.MkdirAll(log_dir, os.ModePerm)
 	web_db_log_file := fmt.Sprintf("%v/%v", log_dir, "webserver-db.log")
 

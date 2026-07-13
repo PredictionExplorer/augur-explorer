@@ -23,7 +23,7 @@ import (
 
 	rwc "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
@@ -42,14 +42,14 @@ func (c Contracts) All() []ethcommon.Address {
 // BootstrapContracts reads the contract registry (rw_contracts), registers
 // both addresses in the address table (the fresh-database bootstrap) and
 // resolves them.
-func BootstrapContracts(ctx context.Context, repo *rwstore.Repo, st *store.Store) (Contracts, rwp.ContractAddresses, error) {
+func BootstrapContracts(ctx context.Context, repo *rwstore.Repo, st *store.Store) (Contracts, rwmodel.ContractAddresses, error) {
 	rawMarketplace, rawRandomwalk, err := repo.RawContractAddrs(ctx)
 	if err != nil {
-		return Contracts{}, rwp.ContractAddresses{}, fmt.Errorf("reading rw_contracts: %w", err)
+		return Contracts{}, rwmodel.ContractAddresses{}, fmt.Errorf("reading rw_contracts: %w", err)
 	}
 	for _, contractAddr := range []string{rawMarketplace, rawRandomwalk} {
 		if _, err := st.LookupOrCreateAddress(ctx, contractAddr, 0, 0); err != nil {
-			return Contracts{}, rwp.ContractAddresses{}, fmt.Errorf("registering contract address %v: %w", contractAddr, err)
+			return Contracts{}, rwmodel.ContractAddresses{}, fmt.Errorf("registering contract address %v: %w", contractAddr, err)
 		}
 	}
 	addrs, err := repo.ContractAddrs(ctx)

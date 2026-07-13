@@ -8,7 +8,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestMapContractAddressRegistry(t *testing.T) {
@@ -28,19 +28,19 @@ func TestMapContractAddressRegistry(t *testing.T) {
 		t.Fatal("zero implementation address accepted")
 	}
 
-	invalidFields := map[string]func(*cgprimitives.CosmicGameContractAddrs){
-		"CosmicGame":         func(r *cgprimitives.CosmicGameContractAddrs) { r.CosmicGameAddr = "bad" },
-		"CosmicSignature":    func(r *cgprimitives.CosmicGameContractAddrs) { r.CosmicSignatureAddr = "bad" },
-		"CosmicToken":        func(r *cgprimitives.CosmicGameContractAddrs) { r.CosmicTokenAddr = "bad" },
-		"CosmicDAO":          func(r *cgprimitives.CosmicGameContractAddrs) { r.CosmicDaoAddr = "bad" },
-		"charity wallet":     func(r *cgprimitives.CosmicGameContractAddrs) { r.CharityWalletAddr = "bad" },
-		"prizes wallet":      func(r *cgprimitives.CosmicGameContractAddrs) { r.PrizesWalletAddr = "bad" },
-		"RandomWalk":         func(r *cgprimitives.CosmicGameContractAddrs) { r.RandomWalkAddr = "bad" },
-		"CST staking":        func(r *cgprimitives.CosmicGameContractAddrs) { r.StakingWalletCSTAddr = "bad" },
-		"RandomWalk staking": func(r *cgprimitives.CosmicGameContractAddrs) { r.StakingWalletRWalkAddr = "bad" },
-		"marketing":          func(r *cgprimitives.CosmicGameContractAddrs) { r.MarketingWalletAddr = "bad" },
-		"marketplace":        func(r *cgprimitives.CosmicGameContractAddrs) { r.MarketplaceAddr = "bad" },
-		"implementation":     func(r *cgprimitives.CosmicGameContractAddrs) { r.ImplementationAddr = "bad" },
+	invalidFields := map[string]func(*cgmodel.CosmicGameContractAddrs){
+		"CosmicGame":         func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicGameAddr = "bad" },
+		"CosmicSignature":    func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicSignatureAddr = "bad" },
+		"CosmicToken":        func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicTokenAddr = "bad" },
+		"CosmicDAO":          func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicDaoAddr = "bad" },
+		"charity wallet":     func(r *cgmodel.CosmicGameContractAddrs) { r.CharityWalletAddr = "bad" },
+		"prizes wallet":      func(r *cgmodel.CosmicGameContractAddrs) { r.PrizesWalletAddr = "bad" },
+		"RandomWalk":         func(r *cgmodel.CosmicGameContractAddrs) { r.RandomWalkAddr = "bad" },
+		"CST staking":        func(r *cgmodel.CosmicGameContractAddrs) { r.StakingWalletCSTAddr = "bad" },
+		"RandomWalk staking": func(r *cgmodel.CosmicGameContractAddrs) { r.StakingWalletRWalkAddr = "bad" },
+		"marketing":          func(r *cgmodel.CosmicGameContractAddrs) { r.MarketingWalletAddr = "bad" },
+		"marketplace":        func(r *cgmodel.CosmicGameContractAddrs) { r.MarketplaceAddr = "bad" },
+		"implementation":     func(r *cgmodel.CosmicGameContractAddrs) { r.ImplementationAddr = "bad" },
 	}
 	for name, mutate := range invalidFields {
 		t.Run(name, func(t *testing.T) {
@@ -392,8 +392,8 @@ func FuzzMapCachedSpecialWinners(f *testing.F) {
 	})
 }
 
-func validContractAddressRecord() cgprimitives.CosmicGameContractAddrs {
-	return cgprimitives.CosmicGameContractAddrs{
+func validContractAddressRecord() cgmodel.CosmicGameContractAddrs {
+	return cgmodel.CosmicGameContractAddrs{
 		CosmicGameAddr:         "0x2000000000000000000000000000000000000002",
 		CosmicSignatureAddr:    "0x3000000000000000000000000000000000000003",
 		CosmicTokenAddr:        "0x4000000000000000000000000000000000000004",

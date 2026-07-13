@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -99,7 +99,7 @@ func bidSelectQuery(whereClause, orderBy, paging string) (string, error) {
 // scanBidRow scans one bidSelectBase row. The donation columns come from the
 // LATERAL joins and are NULL for bids without donations; NFTDonationTokenId
 // keeps the legacy -1 default in that case.
-func scanBidRow(rows pgx.Rows, rec *p.CGBidRec) error {
+func scanBidRow(rows pgx.Rows, rec *cgmodel.CGBidRec) error {
 	var nullTokenID sql.NullInt64
 	var nullTokAddr, nullTokenURI sql.NullString
 	var nullDonatedERC20Addr, nullDonatedERC20Amount sql.NullString
@@ -166,7 +166,7 @@ func scanBidRow(rows pgx.Rows, rec *p.CGBidRec) error {
 }
 
 // bidList runs a whitelisted bid query and scans the rows.
-func bidList(ctx context.Context, r *Repo, op, whereClause, orderBy, paging string, capHint int, args ...any) ([]p.CGBidRec, error) {
+func bidList(ctx context.Context, r *Repo, op, whereClause, orderBy, paging string, capHint int, args ...any) ([]cgmodel.CGBidRec, error) {
 	query, err := bidSelectQuery(whereClause, orderBy, paging)
 	if err != nil {
 		return nil, store.WrapError(op, err)
@@ -186,7 +186,7 @@ func (r *Repo) BidIDByEvtlog(ctx context.Context, evtlogID int64) (int64, error)
 }
 
 // Bids returns all bids, newest first. limit 0 means no effective limit.
-func (r *Repo) Bids(ctx context.Context, offset, limit int) ([]p.CGBidRec, error) {
+func (r *Repo) Bids(ctx context.Context, offset, limit int) ([]cgmodel.CGBidRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -195,14 +195,14 @@ func (r *Repo) Bids(ctx context.Context, offset, limit int) ([]p.CGBidRec, error
 
 // BidInfo returns the bid of one BidPlaced event log, or store.ErrNotFound
 // when the event has no bid row.
-func (r *Repo) BidInfo(ctx context.Context, evtlogID int64) (p.CGBidRec, error) {
+func (r *Repo) BidInfo(ctx context.Context, evtlogID int64) (cgmodel.CGBidRec, error) {
 	const op = "bid info"
 	recs, err := bidList(ctx, r, op, "b.evtlog_id=$1", "", "", 1, evtlogID)
 	if err != nil {
-		return p.CGBidRec{}, err
+		return cgmodel.CGBidRec{}, err
 	}
 	if len(recs) == 0 {
-		return p.CGBidRec{}, store.WrapError(op, pgx.ErrNoRows)
+		return cgmodel.CGBidRec{}, store.WrapError(op, pgx.ErrNoRows)
 	}
 	return recs[0], nil
 }
@@ -223,7 +223,7 @@ func (r *Repo) EvtlogIDByRoundAndBidPosition(ctx context.Context, roundNum, bidP
 // BidsWithMessageByRound returns the bids of one round that carry a
 // non-empty message, ordered by bid position (descending when sortDesc).
 // limit 0 defaults to 1000.
-func (r *Repo) BidsWithMessageByRound(ctx context.Context, roundNum int64, sortDesc bool, offset, limit int) ([]p.CGBidRec, error) {
+func (r *Repo) BidsWithMessageByRound(ctx context.Context, roundNum int64, sortDesc bool, offset, limit int) ([]cgmodel.CGBidRec, error) {
 	if limit == 0 {
 		limit = 1000
 	}
@@ -238,7 +238,7 @@ func (r *Repo) BidsWithMessageByRound(ctx context.Context, roundNum int64, sortD
 
 // BidsByRound returns one page of a round's bids (ascending insertion order
 // unless sort is 1) together with the round's total bid count.
-func (r *Repo) BidsByRound(ctx context.Context, roundNum int64, sort, offset, limit int) ([]p.CGBidRec, int64, error) {
+func (r *Repo) BidsByRound(ctx context.Context, roundNum int64, sort, offset, limit int) ([]cgmodel.CGBidRec, int64, error) {
 	const op = "bids by round"
 	orderBy := "b.id ASC"
 	if sort == 1 {
@@ -268,7 +268,7 @@ type BidPageCursor struct {
 // BidsByRoundPage returns at most limit bids after the supplied keyset
 // cursor, ordered by bid position and event-log ID. hasMore reports whether
 // another page exists. The zero cursor starts at the beginning.
-func (r *Repo) BidsByRoundPage(ctx context.Context, roundNum int64, after BidPageCursor, limit int) (records []p.CGBidRec, hasMore bool, err error) {
+func (r *Repo) BidsByRoundPage(ctx context.Context, roundNum int64, after BidPageCursor, limit int) (records []cgmodel.CGBidRec, hasMore bool, err error) {
 	const op = "bids by round page"
 	if limit <= 0 {
 		return nil, false, fmt.Errorf("%s: limit must be positive", op)
@@ -300,7 +300,7 @@ func (r *Repo) BidsByUserPage(
 	userAid int64,
 	after *UserBidPageCursor,
 	limit int,
-) (records []p.CGBidRec, hasMore bool, err error) {
+) (records []cgmodel.CGBidRec, hasMore bool, err error) {
 	const op = "bids by user page"
 	if userAid < 1 || limit <= 0 {
 		return nil, false, fmt.Errorf("%s: invalid address id or limit", op)
@@ -331,22 +331,22 @@ func (r *Repo) BidsByUserPage(
 // BidByRoundAndPosition returns the bid at a one-based position in a round.
 // Duplicate positions are treated as data corruption rather than selecting
 // an arbitrary row.
-func (r *Repo) BidByRoundAndPosition(ctx context.Context, roundNum, bidPosition int64) (p.CGBidRec, error) {
+func (r *Repo) BidByRoundAndPosition(ctx context.Context, roundNum, bidPosition int64) (cgmodel.CGBidRec, error) {
 	const op = "bid by round and position"
 	records, err := bidList(ctx, r, op,
 		"b.round_num=$1 AND b.bid_position=$2",
 		"b.bid_position ASC, b.evtlog_id ASC", "LIMIT 2", 2,
 		roundNum, bidPosition)
 	if err != nil {
-		return p.CGBidRec{}, err
+		return cgmodel.CGBidRec{}, err
 	}
 	switch len(records) {
 	case 0:
-		return p.CGBidRec{}, store.WrapError(op, pgx.ErrNoRows)
+		return cgmodel.CGBidRec{}, store.WrapError(op, pgx.ErrNoRows)
 	case 1:
 		return records[0], nil
 	default:
-		return p.CGBidRec{}, fmt.Errorf("%s: duplicate rows: %w", op, store.ErrConflict)
+		return cgmodel.CGBidRec{}, fmt.Errorf("%s: duplicate rows: %w", op, store.ErrConflict)
 	}
 }
 
@@ -420,7 +420,7 @@ func (r *Repo) RoundStartTimestamp(ctx context.Context, roundNum uint64) (int64,
 
 // RandomWalkTokensUsedInBids returns every bid that consumed a RandomWalk
 // NFT for its discount, newest first.
-func (r *Repo) RandomWalkTokensUsedInBids(ctx context.Context) ([]p.CGRWalkUsed, error) {
+func (r *Repo) RandomWalkTokensUsedInBids(ctx context.Context) ([]cgmodel.CGRWalkUsed, error) {
 	query := `SELECT
 			b.id,
 			b.evtlog_id,
@@ -438,7 +438,7 @@ func (r *Repo) RandomWalkTokensUsedInBids(ctx context.Context) ([]p.CGRWalkUsed,
 			LEFT JOIN address ba ON b.bidder_aid=ba.address_id
 		WHERE b.rwalk_nft_id != -1
 		ORDER BY b.id DESC`
-	scan := func(rows pgx.Rows, rec *p.CGRWalkUsed) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRWalkUsed) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,

@@ -1,10 +1,18 @@
-package primitives
+// Package timefmt renders human-readable calendar durations for API
+// responses and notification texts (RandomWalk offer lifetimes, mint-gap
+// tweets). The output quirks — a leading space when the largest unit is
+// below a year, and seconds never rendered — are frozen v1 wire format,
+// pinned by the store goldens and the rwbot format tests.
+package timefmt
 
 import (
 	"fmt"
 	"time"
 )
 
+// TimeDifference decomposes the span between two instants into calendar
+// components (years, months, days, hours, minutes, seconds). Argument order
+// does not matter; components are always non-negative.
 func TimeDifference(a, b time.Time) (year, month, day, hour, min, sec int) {
 	if a.Location() != b.Location() {
 		b = b.In(a.Location())
@@ -50,8 +58,13 @@ func TimeDifference(a, b time.Time) (year, month, day, hour, min, sec int) {
 	}
 	return
 }
-func DurationToString(year, month, day, hour, min, sec int) string {
 
+// DurationToString renders the calendar components produced by
+// TimeDifference as legacy display text ("1 year, 2 months"). Zero
+// components are omitted and seconds are never rendered; when the largest
+// non-zero unit is smaller than a year the result keeps its historical
+// leading space.
+func DurationToString(year, month, day, hour, min, sec int) string {
 	var output string
 	if year > 0 {
 		if year == 1 {

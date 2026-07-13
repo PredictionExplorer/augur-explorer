@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -20,8 +20,8 @@ func TestStatisticsSingletons(t *testing.T) {
 		global: func(context.Context) (cgstore.GlobalStatisticsRecord, error) {
 			return validGlobalStatisticsRecord(), nil
 		},
-		counters: func(context.Context) (cgprimitives.CGRecordCounters, error) {
-			return cgprimitives.CGRecordCounters{
+		counters: func(context.Context) (cgmodel.CGRecordCounters, error) {
+			return cgmodel.CGRecordCounters{
 				TotalBids: 12, TotalPrizes: 3, TotalDonatedNFTs: 2,
 			}, nil
 		},
@@ -53,8 +53,8 @@ func TestStatisticsSingletonsHideErrors(t *testing.T) {
 		global: func(context.Context) (cgstore.GlobalStatisticsRecord, error) {
 			return cgstore.GlobalStatisticsRecord{}, secret
 		},
-		counters: func(context.Context) (cgprimitives.CGRecordCounters, error) {
-			return cgprimitives.CGRecordCounters{}, secret
+		counters: func(context.Context) (cgmodel.CGRecordCounters, error) {
+			return cgmodel.CGRecordCounters{}, secret
 		},
 	})
 	for _, path := range []string{

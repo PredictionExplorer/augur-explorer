@@ -20,7 +20,7 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -443,7 +443,7 @@ type bidWithMessageJSON struct {
 	Tx                         bidMessageTxJSON `json:"tx"`
 }
 
-func bidRecToWithMessageJSON(rec p.CGBidRec) bidWithMessageJSON {
+func bidRecToWithMessageJSON(rec cgmodel.CGBidRec) bidWithMessageJSON {
 	return bidWithMessageJSON{
 		EvtLogId:                   rec.Tx.EvtLogId,
 		GesturePosition:            rec.BidPosition,
@@ -1861,7 +1861,7 @@ func api_cosmic_game_donated_nft_claims_by_user(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
-			"UserInfo": p.CGUserInfo{Address: p_user_addr},
+			"UserInfo": cgmodel.CGUserInfo{Address: p_user_addr},
 		})
 		return
 	}
@@ -1869,7 +1869,7 @@ func api_cosmic_game_donated_nft_claims_by_user(c *httpx.Context) {
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
-			"UserInfo": p.CGUserInfo{Address: p_user_addr},
+			"UserInfo": cgmodel.CGUserInfo{Address: p_user_addr},
 		})
 		return
 	}
@@ -2996,7 +2996,7 @@ func api_cosmic_game_sysmode_changes(c *httpx.Context) {
 
 	// When offset=-1 (events from deployment), ensure at least the pre-round-0 row is shown even if no bids yet.
 	if offset == -1 && len(system_mode_changes) == 0 {
-		system_mode_changes = []p.CGSystemModeRec{{
+		system_mode_changes = []cgmodel.CGSystemModeRec{{
 			EvtLogId:     -1,
 			BlockNum:     -1,
 			RoundNum:     0,

@@ -10,20 +10,20 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (h *Handlers) decodeNewOffer(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.NewOffer, error) {
+func (h *Handlers) decodeNewOffer(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.NewOffer, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
-	var ethEvt rwp.ENewOffer
+	var ethEvt rwmodel.ENewOffer
 	if err := h.marketABI.UnpackIntoInterface(&ethEvt, "NewOffer", lg.Data); err != nil {
 		return nil, err
 	}
 
-	evt := &rwp.NewOffer{}
+	evt := &rwmodel.NewOffer{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -38,7 +38,7 @@ func (h *Handlers) decodeNewOffer(lg *types.Log, elog *primitives.EthereumEventL
 	return evt, nil
 }
 
-func (h *Handlers) storeNewOffer(ctx context.Context, evt *rwp.NewOffer) error {
+func (h *Handlers) storeNewOffer(ctx context.Context, evt *rwmodel.NewOffer) error {
 	h.log.Info("NewOffer",
 		"evt_id", evt.EvtId, "nft", evt.RWalkAddr, "offer_id", evt.OfferId,
 		"token_id", evt.TokenId, "seller", evt.Seller, "buyer", evt.Buyer, "price", evt.Price)
@@ -46,11 +46,11 @@ func (h *Handlers) storeNewOffer(ctx context.Context, evt *rwp.NewOffer) error {
 	return h.repo.InsertNewOffer(ctx, evt)
 }
 
-func (h *Handlers) decodeItemBought(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.ItemBought, error) {
+func (h *Handlers) decodeItemBought(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.ItemBought, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
-	evt := &rwp.ItemBought{}
+	evt := &rwmodel.ItemBought{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -62,18 +62,18 @@ func (h *Handlers) decodeItemBought(lg *types.Log, elog *primitives.EthereumEven
 	return evt, nil
 }
 
-func (h *Handlers) storeItemBought(ctx context.Context, evt *rwp.ItemBought) error {
+func (h *Handlers) storeItemBought(ctx context.Context, evt *rwmodel.ItemBought) error {
 	h.log.Info("ItemBought",
 		"evt_id", evt.EvtId, "offer_id", evt.OfferId, "seller", evt.SellerAddr, "buyer", evt.BuyerAddr)
 
 	return h.repo.InsertItemBought(ctx, evt)
 }
 
-func (h *Handlers) decodeOfferCanceled(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.OfferCanceled, error) {
+func (h *Handlers) decodeOfferCanceled(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.OfferCanceled, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
-	evt := &rwp.OfferCanceled{}
+	evt := &rwmodel.OfferCanceled{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -83,7 +83,7 @@ func (h *Handlers) decodeOfferCanceled(lg *types.Log, elog *primitives.EthereumE
 	return evt, nil
 }
 
-func (h *Handlers) storeOfferCanceled(ctx context.Context, evt *rwp.OfferCanceled) error {
+func (h *Handlers) storeOfferCanceled(ctx context.Context, evt *rwmodel.OfferCanceled) error {
 	// An OfferCanceled for an offer this database never saw (pre-genesis or
 	// foreign deployment) is skipped; a failing existence check aborts the
 	// batch (treating it as "does not exist" silently lost events).
@@ -101,16 +101,16 @@ func (h *Handlers) storeOfferCanceled(ctx context.Context, evt *rwp.OfferCancele
 	return h.repo.InsertOfferCanceled(ctx, evt)
 }
 
-func (h *Handlers) decodeWithdrawal(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.Withdrawal, error) {
+func (h *Handlers) decodeWithdrawal(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.Withdrawal, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
-	var ethEvt rwp.EWithdrawalEvent
+	var ethEvt rwmodel.EWithdrawalEvent
 	if err := h.rwalkABI.UnpackIntoInterface(&ethEvt, "WithdrawalEvent", lg.Data); err != nil {
 		return nil, err
 	}
 
-	evt := &rwp.Withdrawal{}
+	evt := &rwmodel.Withdrawal{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -122,20 +122,20 @@ func (h *Handlers) decodeWithdrawal(lg *types.Log, elog *primitives.EthereumEven
 	return evt, nil
 }
 
-func (h *Handlers) storeWithdrawal(ctx context.Context, evt *rwp.Withdrawal) error {
+func (h *Handlers) storeWithdrawal(ctx context.Context, evt *rwmodel.Withdrawal) error {
 	h.log.Info("WithdrawalEvent",
 		"evt_id", evt.EvtId, "token_id", evt.TokenId, "destination", evt.Destination, "amount", evt.Amount)
 
 	return h.repo.InsertWithdrawal(ctx, evt)
 }
 
-func (h *Handlers) decodeTokenName(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.TokenName, error) {
-	var ethEvt rwp.ETokenNameEvent
+func (h *Handlers) decodeTokenName(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.TokenName, error) {
+	var ethEvt rwmodel.ETokenNameEvent
 	if err := h.rwalkABI.UnpackIntoInterface(&ethEvt, "TokenNameEvent", lg.Data); err != nil {
 		return nil, err
 	}
 
-	evt := &rwp.TokenName{}
+	evt := &rwmodel.TokenName{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -146,7 +146,7 @@ func (h *Handlers) decodeTokenName(lg *types.Log, elog *primitives.EthereumEvent
 	return evt, nil
 }
 
-func (h *Handlers) storeTokenName(ctx context.Context, evt *rwp.TokenName) error {
+func (h *Handlers) storeTokenName(ctx context.Context, evt *rwmodel.TokenName) error {
 	// A name change for a token this database never saw is skipped; a
 	// failing existence check aborts the batch.
 	exists, err := h.repo.TokenExists(ctx, evt.Contract, evt.TokenId)
@@ -163,16 +163,16 @@ func (h *Handlers) storeTokenName(ctx context.Context, evt *rwp.TokenName) error
 	return h.repo.InsertTokenName(ctx, evt)
 }
 
-func (h *Handlers) decodeMintEvent(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.MintEvent, error) {
+func (h *Handlers) decodeMintEvent(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.MintEvent, error) {
 	if err := requireTopics(lg, 3); err != nil {
 		return nil, err
 	}
-	var ethEvt rwp.EMintEvent
+	var ethEvt rwmodel.EMintEvent
 	if err := h.rwalkABI.UnpackIntoInterface(&ethEvt, "MintEvent", lg.Data); err != nil {
 		return nil, err
 	}
 
-	evt := &rwp.MintEvent{}
+	evt := &rwmodel.MintEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -186,7 +186,7 @@ func (h *Handlers) decodeMintEvent(lg *types.Log, elog *primitives.EthereumEvent
 	return evt, nil
 }
 
-func (h *Handlers) storeMintEvent(ctx context.Context, evt *rwp.MintEvent) error {
+func (h *Handlers) storeMintEvent(ctx context.Context, evt *rwmodel.MintEvent) error {
 	h.log.Info("MintEvent",
 		"evt_id", evt.EvtId, "token_id", evt.TokenId, "owner", evt.Owner,
 		"seed", evt.Seed, "price", evt.Price)
@@ -197,11 +197,11 @@ func (h *Handlers) storeMintEvent(ctx context.Context, evt *rwp.MintEvent) error
 // decodeTransfer handles the RandomWalk ERC721 Transfer. Only the canonical
 // RandomWalk deployment is registered as a source; transfers of other
 // instances of the contract are filtered before decode.
-func (h *Handlers) decodeTransfer(lg *types.Log, elog *primitives.EthereumEventLog) (*rwp.Transfer, error) {
+func (h *Handlers) decodeTransfer(lg *types.Log, elog *store.EthereumEventLog) (*rwmodel.Transfer, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
-	evt := &rwp.Transfer{}
+	evt := &rwmodel.Transfer{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -213,7 +213,7 @@ func (h *Handlers) decodeTransfer(lg *types.Log, elog *primitives.EthereumEventL
 	return evt, nil
 }
 
-func (h *Handlers) storeTransfer(ctx context.Context, evt *rwp.Transfer) error {
+func (h *Handlers) storeTransfer(ctx context.Context, evt *rwmodel.Transfer) error {
 	h.log.Info("Transfer",
 		"evt_id", evt.EvtId, "from", evt.From, "to", evt.To, "token_id", evt.TokenId)
 

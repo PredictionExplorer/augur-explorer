@@ -40,10 +40,12 @@ import (
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/rwbot"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
+
+// defaultLogDir is the legacy operational log directory under $HOME.
+const defaultLogDir = "ae_logs"
 
 func main() {
 	flagTwitter := flag.Bool("twitter", false, "Send messages to Twitter")
@@ -66,7 +68,7 @@ func main() {
 // (error; systemd restarts the bot and it resumes from the persisted
 // watermark).
 func run(ctx context.Context, twitterOn, discordOn bool) error {
-	logDir := filepath.Join(os.Getenv("HOME"), primitives.DEFAULT_LOG_DIR)
+	logDir := filepath.Join(os.Getenv("HOME"), defaultLogDir)
 	if err := os.MkdirAll(logDir, 0o750); err != nil { //nolint:gosec // G703: operator-owned $HOME log directory, same as the legacy bot
 		return fmt.Errorf("creating log directory %s: %w", logDir, err)
 	}

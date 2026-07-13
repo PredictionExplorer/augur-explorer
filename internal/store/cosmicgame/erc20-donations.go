@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -36,7 +36,7 @@ const erc20DonationColumns = `
 // scanERC20DonationWithWinner scans erc20DonationColumns; the winner columns
 // come from a join on cg_prize_claim and are NULL until the round is
 // claimed.
-func scanERC20DonationWithWinner(rows pgx.Rows, rec *p.CGERC20Donation) error {
+func scanERC20DonationWithWinner(rows pgx.Rows, rec *cgmodel.CGERC20Donation) error {
 	var nullWinnerAid sql.NullInt64
 	var nullWinnerAddr sql.NullString
 	err := rows.Scan(
@@ -73,7 +73,7 @@ func scanERC20DonationWithWinner(rows pgx.Rows, rec *p.CGERC20Donation) error {
 // claimed round, with the main-prize winner attached. Rounds without a prize
 // claim yield nothing (INNER JOIN); use ERC20DonationsByRoundAll to include
 // donations of unclaimed rounds.
-func (r *Repo) ERC20DonationsByRoundDetailed(ctx context.Context, roundNum int64) ([]p.CGERC20Donation, error) {
+func (r *Repo) ERC20DonationsByRoundDetailed(ctx context.Context, roundNum int64) ([]cgmodel.CGERC20Donation, error) {
 	query := `SELECT ` + erc20DonationColumns + `
 		FROM cg_erc20_donation tok
 			INNER JOIN cg_prize_claim p ON p.round_num=tok.round_num
@@ -89,7 +89,7 @@ func (r *Repo) ERC20DonationsByRoundDetailed(ctx context.Context, roundNum int64
 // ERC20DonationsByRoundAll returns every ERC-20 donation of a round, with
 // the main-prize winner fields populated once the round is claimed (LEFT
 // JOIN) — unlike ERC20DonationsByRoundDetailed, rows appear before the claim.
-func (r *Repo) ERC20DonationsByRoundAll(ctx context.Context, roundNum int64) ([]p.CGERC20Donation, error) {
+func (r *Repo) ERC20DonationsByRoundAll(ctx context.Context, roundNum int64) ([]cgmodel.CGERC20Donation, error) {
 	query := `SELECT DISTINCT ON (tok.id) ` + erc20DonationColumns + `
 		FROM cg_erc20_donation tok
 			LEFT JOIN cg_prize_claim p ON p.round_num=tok.round_num
@@ -105,7 +105,7 @@ func (r *Repo) ERC20DonationsByRoundAll(ctx context.Context, roundNum int64) ([]
 // ERC20DonationsByRoundSummarized aggregates a claimed round's ERC-20
 // donations per token contract: total donated, total claimed so far and the
 // remaining difference, plus the round winner entitled to claim.
-func (r *Repo) ERC20DonationsByRoundSummarized(ctx context.Context, roundNum int64) ([]p.CGSummarizedERC20Donation, error) {
+func (r *Repo) ERC20DonationsByRoundSummarized(ctx context.Context, roundNum int64) ([]cgmodel.CGSummarizedERC20Donation, error) {
 	query := `WITH claim AS (
 			SELECT SUM(amount) total,round_num,token_aid,winner_aid
 			FROM cg_donated_tok_claimed GROUP BY round_num,token_aid,winner_aid
@@ -138,7 +138,7 @@ func (r *Repo) ERC20DonationsByRoundSummarized(ctx context.Context, roundNum int
 			LEFT JOIN address wa ON wa.address_id = p.winner_aid
 		WHERE p.round_num= $1
 		ORDER BY dt20.token_aid DESC`
-	scan := func(rows pgx.Rows, rec *p.CGSummarizedERC20Donation) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGSummarizedERC20Donation) error {
 		var nullWinnerAid sql.NullInt64
 		var nullWinnerAddr sql.NullString
 		err := rows.Scan(
@@ -178,7 +178,7 @@ func (r *Repo) ERC20DonationsByRoundSummarized(ctx context.Context, roundNum int
 
 // ERC20Donations returns the ERC-20 donations of claimed rounds, newest
 // first, with the round winner attached (INNER JOIN on the prize claim).
-func (r *Repo) ERC20Donations(ctx context.Context, offset, limit int) ([]p.CGERC20Donation, error) {
+func (r *Repo) ERC20Donations(ctx context.Context, offset, limit int) ([]cgmodel.CGERC20Donation, error) {
 	query := `SELECT ` + erc20DonationColumns + `
 		FROM cg_erc20_donation tok
 			INNER JOIN cg_prize_claim p ON p.round_num=tok.round_num
@@ -194,7 +194,7 @@ func (r *Repo) ERC20Donations(ctx context.Context, offset, limit int) ([]p.CGERC
 // ERC20DonationInfo returns one ERC-20 donation by record id, or
 // store.ErrNotFound when the id does not exist. The returned record does not
 // carry amounts or winner fields (the legacy query never selected them).
-func (r *Repo) ERC20DonationInfo(ctx context.Context, id int64) (p.CGERC20Donation, error) {
+func (r *Repo) ERC20DonationInfo(ctx context.Context, id int64) (cgmodel.CGERC20Donation, error) {
 	query := `SELECT
 			d.evtlog_id,
 			d.block_num,
@@ -212,7 +212,7 @@ func (r *Repo) ERC20DonationInfo(ctx context.Context, id int64) (p.CGERC20Donati
 			LEFT JOIN address da ON d.donor_aid=da.address_id
 			LEFT JOIN address toka ON d.token_aid=toka.address_id
 		WHERE d.id=$1`
-	var rec p.CGERC20Donation
+	var rec cgmodel.CGERC20Donation
 	rec.RecordId = id
 	err := r.pool().QueryRow(ctx, query, id).Scan(
 		&rec.Tx.EvtLogId,
@@ -228,14 +228,14 @@ func (r *Repo) ERC20DonationInfo(ctx context.Context, id int64) (p.CGERC20Donati
 		&rec.TokenAddr,
 	)
 	if err != nil {
-		return p.CGERC20Donation{RecordId: id}, store.WrapError("erc20 donation info", err)
+		return cgmodel.CGERC20Donation{RecordId: id}, store.WrapError("erc20 donation info", err)
 	}
 	return rec, nil
 }
 
 // ERC20DonationsByUser returns every ERC-20 donation made by one donor,
 // newest first (no winner columns — donations are keyed by donor here).
-func (r *Repo) ERC20DonationsByUser(ctx context.Context, donorAid int64) ([]p.CGERC20Donation, error) {
+func (r *Repo) ERC20DonationsByUser(ctx context.Context, donorAid int64) ([]cgmodel.CGERC20Donation, error) {
 	query := `SELECT
 			tok.id,
 			tok.evtlog_id,
@@ -257,7 +257,7 @@ func (r *Repo) ERC20DonationsByUser(ctx context.Context, donorAid int64) ([]p.CG
 			LEFT JOIN address tokaddr ON tok.token_aid=tokaddr.address_id
 		WHERE tok.donor_aid=$1
 		ORDER BY tok.id DESC`
-	scan := func(rows pgx.Rows, rec *p.CGERC20Donation) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGERC20Donation) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -306,7 +306,7 @@ const erc20ClaimSelectSQL = `SELECT
 			LEFT JOIN cg_erc20_donation d ON (d.round_num=c.round_num AND d.token_aid=c.token_aid)
 			LEFT JOIN address da ON d.donor_aid=da.address_id`
 
-func scanERC20Claim(rows pgx.Rows, rec *p.CGERC20ClaimRec) error {
+func scanERC20Claim(rows pgx.Rows, rec *cgmodel.CGERC20ClaimRec) error {
 	var nullDonorAddr sql.NullString
 	err := rows.Scan(
 		&rec.RecordId,
@@ -337,7 +337,7 @@ func scanERC20Claim(rows pgx.Rows, rec *p.CGERC20ClaimRec) error {
 
 // ERC20DonationClaims returns every claim of donated ERC-20 tokens, newest
 // first.
-func (r *Repo) ERC20DonationClaims(ctx context.Context, offset, limit int) ([]p.CGERC20ClaimRec, error) {
+func (r *Repo) ERC20DonationClaims(ctx context.Context, offset, limit int) ([]cgmodel.CGERC20ClaimRec, error) {
 	query := erc20ClaimSelectSQL + `
 		ORDER BY c.id DESC
 		OFFSET $1 LIMIT $2`
@@ -346,7 +346,7 @@ func (r *Repo) ERC20DonationClaims(ctx context.Context, offset, limit int) ([]p.
 
 // ERC20DonationClaimsByUser returns one winner's claims of donated ERC-20
 // tokens, newest first.
-func (r *Repo) ERC20DonationClaimsByUser(ctx context.Context, winnerAid int64) ([]p.CGERC20ClaimRec, error) {
+func (r *Repo) ERC20DonationClaimsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGERC20ClaimRec, error) {
 	query := erc20ClaimSelectSQL + `
 		WHERE c.winner_aid=$1
 		ORDER BY c.id DESC`
@@ -355,7 +355,7 @@ func (r *Repo) ERC20DonationClaimsByUser(ctx context.Context, winnerAid int64) (
 
 // ERC20DonationClaimsByRound returns the claims of donated ERC-20 tokens in
 // one round, newest first.
-func (r *Repo) ERC20DonationClaimsByRound(ctx context.Context, roundNum int64) ([]p.CGERC20ClaimRec, error) {
+func (r *Repo) ERC20DonationClaimsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGERC20ClaimRec, error) {
 	query := erc20ClaimSelectSQL + `
 		WHERE c.round_num=$1
 		ORDER BY c.id DESC`
@@ -366,7 +366,7 @@ func (r *Repo) ERC20DonationClaimsByRound(ctx context.Context, roundNum int64) (
 // the v2 round donation collection. It intentionally does not join the
 // eventual prize winner or aggregate claims onto an immutable donation event.
 type RoundERC20DonationRecord struct {
-	Tx              p.Transaction
+	Tx              cgmodel.Transaction
 	RoundNum        int64
 	DonorAddr       string
 	TokenAddr       string

@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -32,9 +32,9 @@ func TestListRoundPrizesPaginatesWithOpaqueCursor(t *testing.T) {
 			gotExistsRound = round
 			return true, nil
 		},
-		page: func(_ context.Context, round int64, after *cgstore.PrizePageCursor, limit int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+		page: func(_ context.Context, round int64, after *cgstore.PrizePageCursor, limit int) ([]cgmodel.CGPrizeHistory, bool, error) {
 			gotPageRound, gotAfter, gotLimit = round, after, limit
-			return []cgprimitives.CGPrizeHistory{first, second}, true, nil
+			return []cgmodel.CGPrizeHistory{first, second}, true, nil
 		},
 	})
 
@@ -75,12 +75,12 @@ func TestListRoundPrizesDecodesContinuationCursor(t *testing.T) {
 	}
 	var gotAfter *cgstore.PrizePageCursor
 	server := newPrizeTestServer(t, fakeRoundPrizeReader{
-		page: func(_ context.Context, _ int64, after *cgstore.PrizePageCursor, limit int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+		page: func(_ context.Context, _ int64, after *cgstore.PrizePageCursor, limit int) ([]cgmodel.CGPrizeHistory, bool, error) {
 			gotAfter = after
 			if limit != defaultPageLimit {
 				t.Errorf("default limit = %d, want %d", limit, defaultPageLimit)
 			}
-			return []cgprimitives.CGPrizeHistory{}, false, nil
+			return []cgmodel.CGPrizeHistory{}, false, nil
 		},
 	})
 
@@ -141,7 +141,7 @@ func TestListRoundPrizesReturnsNotFoundForUncompletedRound(t *testing.T) {
 		exists: func(context.Context, int64) (bool, error) {
 			return false, nil
 		},
-		page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+		page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
 			pageCalled = true
 			return nil, false, nil
 		},
@@ -165,16 +165,16 @@ func TestListRoundPrizesHidesInternalFailures(t *testing.T) {
 			},
 		},
 		"page failure": {
-			page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+			page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
 				return nil, false, errors.New("password=page-secret")
 			},
 		},
 		"mapping failure": {
-			page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+			page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
 				record := validRoundPrizeRecord(0)
 				record.RoundNum = 1
 				record.Amount = "password=mapping-secret"
-				return []cgprimitives.CGPrizeHistory{record}, false, nil
+				return []cgmodel.CGPrizeHistory{record}, false, nil
 			},
 		},
 	}
@@ -195,34 +195,34 @@ func TestListRoundPrizesHidesInternalFailures(t *testing.T) {
 func TestListRoundPrizesRejectsInconsistentPage(t *testing.T) {
 	t.Parallel()
 
-	tests := map[string]func() ([]cgprimitives.CGPrizeHistory, bool){
-		"has more without row": func() ([]cgprimitives.CGPrizeHistory, bool) {
-			return []cgprimitives.CGPrizeHistory{}, true
+	tests := map[string]func() ([]cgmodel.CGPrizeHistory, bool){
+		"has more without row": func() ([]cgmodel.CGPrizeHistory, bool) {
+			return []cgmodel.CGPrizeHistory{}, true
 		},
-		"foreign round": func() ([]cgprimitives.CGPrizeHistory, bool) {
+		"foreign round": func() ([]cgmodel.CGPrizeHistory, bool) {
 			record := validRoundPrizeRecord(0)
 			record.RoundNum = 2
-			return []cgprimitives.CGPrizeHistory{record}, false
+			return []cgmodel.CGPrizeHistory{record}, false
 		},
-		"duplicate key": func() ([]cgprimitives.CGPrizeHistory, bool) {
+		"duplicate key": func() ([]cgmodel.CGPrizeHistory, bool) {
 			first := validRoundPrizeRecord(0)
 			first.RoundNum, first.WinnerIndex = 1, 0
 			second := first
-			return []cgprimitives.CGPrizeHistory{first, second}, false
+			return []cgmodel.CGPrizeHistory{first, second}, false
 		},
-		"out of order": func() ([]cgprimitives.CGPrizeHistory, bool) {
+		"out of order": func() ([]cgmodel.CGPrizeHistory, bool) {
 			first := validRoundPrizeRecord(2)
 			first.RoundNum, first.WinnerIndex = 1, 0
 			second := validRoundPrizeRecord(1)
 			second.RoundNum, second.WinnerIndex = 1, 0
-			return []cgprimitives.CGPrizeHistory{first, second}, false
+			return []cgmodel.CGPrizeHistory{first, second}, false
 		},
 	}
 	for name, records := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			server := newPrizeTestServer(t, fakeRoundPrizeReader{
-				page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+				page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
 					data, more := records()
 					return data, more, nil
 				},
@@ -243,7 +243,7 @@ func TestListRoundPrizesHonorsCancelledContext(t *testing.T) {
 			},
 		},
 		"page": {
-			page: func(ctx context.Context, _ int64, _ *cgstore.PrizePageCursor, _ int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+			page: func(ctx context.Context, _ int64, _ *cgstore.PrizePageCursor, _ int) ([]cgmodel.CGPrizeHistory, bool, error) {
 				return nil, false, ctx.Err()
 			},
 		},
@@ -263,10 +263,10 @@ func TestListRoundPrizesResponseIsDeterministic(t *testing.T) {
 	t.Parallel()
 
 	server := newPrizeTestServer(t, fakeRoundPrizeReader{
-		page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error) {
+		page: func(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error) {
 			record := validRoundPrizeRecord(0)
 			record.RoundNum, record.WinnerIndex = 1, 0
-			return []cgprimitives.CGPrizeHistory{record}, false, nil
+			return []cgmodel.CGPrizeHistory{record}, false, nil
 		},
 	})
 	first := serve(t, server, "/api/v2/cosmicgame/rounds/1/prizes")

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 )
 
 // TestErrorPathsConvertedFiles proves the context-first plumbing of the
@@ -28,21 +28,21 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			return err
 		},
 		"UpdateProcessingStatus (randomwalk.go)": func() error {
-			return r.UpdateProcessingStatus(cancelled, &rwp.ProcStatus{})
+			return r.UpdateProcessingStatus(cancelled, &rwmodel.ProcStatus{})
 		},
 		"ContractAddrs (randomwalk.go)": func() error {
 			_, err := r.ContractAddrs(cancelled)
 			return err
 		},
 		"InsertNewOffer (randomwalk.go)": func() error {
-			return r.InsertNewOffer(cancelled, &rwp.NewOffer{
+			return r.InsertNewOffer(cancelled, &rwmodel.NewOffer{
 				EvtId: -1, Contract: "0xEeee00000000000000000000000000000000Eeee",
 				RWalkAddr: addrRandomWalk, Buyer: "0xEeee00000000000000000000000000000000Ffff",
 				Seller: "0xEeee00000000000000000000000000000000Aaaa", Price: "0",
 			})
 		},
 		"InsertMint (randomwalk.go)": func() error {
-			return r.InsertMint(cancelled, &rwp.MintEvent{
+			return r.InsertMint(cancelled, &rwmodel.MintEvent{
 				EvtId: -1, Contract: "0xEeee00000000000000000000000000000000Eeee",
 				Owner: "0xEeee00000000000000000000000000000000Ffff",
 				Seed:  "00", SeedNum: "0", Price: "0",
@@ -159,10 +159,10 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			return err
 		},
 		"UpdateMessagingStatus": func() error {
-			return spareRepo.UpdateMessagingStatus(ctx, &rwp.MsgStatus{})
+			return spareRepo.UpdateMessagingStatus(ctx, &rwmodel.MsgStatus{})
 		},
 		"InsertItemBought": func() error {
-			return spareRepo.InsertItemBought(ctx, &rwp.ItemBought{
+			return spareRepo.InsertItemBought(ctx, &rwmodel.ItemBought{
 				EvtId: -1, Contract: "0xEeee00000000000000000000000000000000Eeee",
 				SellerAddr: "0xEeee00000000000000000000000000000000Ffff",
 				BuyerAddr:  "0xEeee00000000000000000000000000000000Aaaa",

@@ -11,7 +11,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -19,29 +19,29 @@ import (
 const problemTypeBase = "https://api.cosmicsignature.com/problems/"
 
 type bidReader interface {
-	BidsByRoundPage(context.Context, int64, cgstore.BidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error)
-	BidByRoundAndPosition(context.Context, int64, int64) (cgprimitives.CGBidRec, error)
+	BidsByRoundPage(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
+	BidByRoundAndPosition(context.Context, int64, int64) (cgmodel.CGBidRec, error)
 }
 
 type roundReader interface {
-	PrizeClaimsPage(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error)
-	RoundInfo(context.Context, int64) (cgprimitives.CGRoundRec, error)
+	PrizeClaimsPage(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error)
+	RoundInfo(context.Context, int64) (cgmodel.CGRoundRec, error)
 }
 
 type currentRoundReader interface {
-	CosmicGameRoundStatistics(context.Context, int64) (cgprimitives.CGRoundStats, error)
+	CosmicGameRoundStatistics(context.Context, int64) (cgmodel.CGRoundStats, error)
 	BidCountForRound(context.Context, int64) (int64, error)
 }
 
 type roundPrizeReader interface {
 	CompletedRoundExists(context.Context, int64) (bool, error)
-	AllPrizesForRoundPage(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgprimitives.CGPrizeHistory, bool, error)
+	AllPrizesForRoundPage(context.Context, int64, *cgstore.PrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error)
 }
 
 type roundRaffleReader interface {
 	CompletedRoundExists(context.Context, int64) (bool, error)
 	RaffleEthDepositsByRoundPage(context.Context, int64, *cgstore.RaffleEthDepositPageCursor, int) ([]cgstore.RaffleEthDepositRecord, bool, error)
-	RaffleNFTWinnersByRoundPage(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error)
+	RaffleNFTWinnersByRoundPage(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error)
 }
 
 type roundDonationReader interface {
@@ -52,7 +52,7 @@ type roundDonationReader interface {
 
 type statisticsReader interface {
 	CosmicGameGlobalStatistics(context.Context) (cgstore.GlobalStatisticsRecord, error)
-	RecordCounters(context.Context) (cgprimitives.CGRecordCounters, error)
+	RecordCounters(context.Context) (cgmodel.CGRecordCounters, error)
 	ROILeaderboardPage(context.Context, int, cgstore.ROILeaderboardSort, *cgstore.ROILeaderboardPageCursor, int) ([]cgstore.ROILeaderboardRecord, bool, error)
 	ClaimsSummaryPage(context.Context, *cgstore.ClaimSummaryCursor, int) ([]cgstore.ClaimSummaryRecord, bool, error)
 	CompletedRoundExists(context.Context, int64) (bool, error)
@@ -63,14 +63,14 @@ type statisticsReader interface {
 }
 
 type biddingAnalyticsReader interface {
-	BidFrequencyByPeriodBounded(context.Context, int, int, int) ([]cgprimitives.CGBidFrequencyBucket, error)
-	BidTypeRatioByPeriodBounded(context.Context, int, int, int) ([]cgprimitives.CGBidTypeRatioBucket, error)
-	TopBidderActivePeriodsBounded(context.Context, int, int, int, int, int) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error)
+	BidFrequencyByPeriodBounded(context.Context, int, int, int) ([]cgmodel.CGBidFrequencyBucket, error)
+	BidTypeRatioByPeriodBounded(context.Context, int, int, int) ([]cgmodel.CGBidTypeRatioBucket, error)
+	TopBidderActivePeriodsBounded(context.Context, int, int, int, int, int) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error)
 	BidTimeBounds(context.Context) (int64, int64, error)
 }
 
 type contractAddressReader interface {
-	ContractAddrs(context.Context) (cgprimitives.CosmicGameContractAddrs, error)
+	ContractAddrs(context.Context) (cgmodel.CosmicGameContractAddrs, error)
 }
 
 type participantReader interface {
@@ -85,7 +85,7 @@ type participantReader interface {
 type userReader interface {
 	UserAddressID(context.Context, string) (int64, error)
 	UserProfile(context.Context, int64) (cgstore.UserProfileRecord, error)
-	BidsByUserPage(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgprimitives.CGBidRec, bool, error)
+	BidsByUserPage(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
 }
 
 type contractStateReader interface {

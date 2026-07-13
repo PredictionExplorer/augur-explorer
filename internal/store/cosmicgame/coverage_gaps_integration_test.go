@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 // TestInsertMethodsPropagateAddressLookupFailure sweeps every
@@ -147,7 +147,7 @@ func TestUnclaimedERC20Items(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ClaimsByRound: %v", err)
 	}
-	var item *p.CGClaimUnclaimedItem
+	var item *cgmodel.CGClaimUnclaimedItem
 	for i := range summaries {
 		if summaries[i].RoundNum != 0 {
 			continue

@@ -9,12 +9,12 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 const maxSignedInt64 = uint64(1<<63 - 1)
 
-func mapRoundSummary(record cgprimitives.CGRoundRec) (CosmicGameRoundSummary, error) {
+func mapRoundSummary(record cgmodel.CGRoundRec) (CosmicGameRoundSummary, error) {
 	roundNum, err := roundNumber(record.RoundNum)
 	if err != nil {
 		return CosmicGameRoundSummary{}, err
@@ -48,7 +48,7 @@ func mapRoundSummary(record cgprimitives.CGRoundRec) (CosmicGameRoundSummary, er
 	}, nil
 }
 
-func mapRound(record cgprimitives.CGRoundRec) (CosmicGameRound, error) {
+func mapRound(record cgmodel.CGRoundRec) (CosmicGameRound, error) {
 	roundNum, err := roundNumber(record.RoundNum)
 	if err != nil {
 		return CosmicGameRound{}, err
@@ -102,7 +102,7 @@ func mapRound(record cgprimitives.CGRoundRec) (CosmicGameRound, error) {
 	}, nil
 }
 
-func mapClaimTransaction(tx cgprimitives.Transaction) (ClaimTransaction, error) {
+func mapClaimTransaction(tx cgmodel.Transaction) (ClaimTransaction, error) {
 	if tx.EvtLogId < 1 || tx.BlockNum < 0 {
 		return ClaimTransaction{}, errors.New("invalid claim transaction identity")
 	}
@@ -121,7 +121,7 @@ func mapClaimTransaction(tx cgprimitives.Transaction) (ClaimTransaction, error) 
 	}, nil
 }
 
-func mapMainPrize(prize cgprimitives.CGMainPrizeInfo) (MainPrize, error) {
+func mapMainPrize(prize cgmodel.CGMainPrizeInfo) (MainPrize, error) {
 	if !ethcommon.IsHexAddress(prize.WinnerAddr) {
 		return MainPrize{}, errors.New("invalid main-prize winner address")
 	}
@@ -159,7 +159,7 @@ func mapMainPrize(prize cgprimitives.CGMainPrizeInfo) (MainPrize, error) {
 	return result, nil
 }
 
-func mapRoundStatistics(stats cgprimitives.CGRoundStats) (RoundStatistics, error) {
+func mapRoundStatistics(stats cgmodel.CGRoundStats) (RoundStatistics, error) {
 	if err := validateRoundCounts(stats); err != nil {
 		return RoundStatistics{}, err
 	}
@@ -211,7 +211,7 @@ func mapRoundStatistics(stats cgprimitives.CGRoundStats) (RoundStatistics, error
 	return result, nil
 }
 
-func validateRoundCounts(stats cgprimitives.CGRoundStats) error {
+func validateRoundCounts(stats cgmodel.CGRoundStats) error {
 	if stats.TotalBids < 0 ||
 		stats.TotalDonatedNFTs < 0 ||
 		stats.NumERC20Donations < 0 ||
@@ -222,7 +222,7 @@ func validateRoundCounts(stats cgprimitives.CGRoundStats) error {
 	return nil
 }
 
-func mapCharityAllocation(deposit cgprimitives.CGCharityDeposit) (*CharityAllocation, error) {
+func mapCharityAllocation(deposit cgmodel.CGCharityDeposit) (*CharityAllocation, error) {
 	if deposit.CharityAddress == "" && deposit.CharityAmount == "" {
 		return nil, nil
 	}
@@ -246,7 +246,7 @@ func mapCharityAllocation(deposit cgprimitives.CGCharityDeposit) (*CharityAlloca
 	return &CharityAllocation{AmountWei: amount, CharityAddresses: addresses}, nil
 }
 
-func mapStakingAllocation(deposit cgprimitives.CGStakingDeposit) (*StakingAllocation, error) {
+func mapStakingAllocation(deposit cgmodel.CGStakingDeposit) (*StakingAllocation, error) {
 	if deposit.StakingDepositId == -1 {
 		return nil, nil
 	}
@@ -290,7 +290,7 @@ func mapTokenPrize(name, winner string, tokenID int64, amount string) (*TokenPri
 	}, nil
 }
 
-func mapChronoWarrior(prize cgprimitives.CGChronoWarriorPrize) (*ChronoWarriorPrize, error) {
+func mapChronoWarrior(prize cgmodel.CGChronoWarriorPrize) (*ChronoWarriorPrize, error) {
 	if prize.WinnerAddr == "" && prize.EthAmount == "" && prize.CstAmount == "" && prize.NftTokenId == 0 {
 		return nil, nil
 	}

@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 )
 
 // TestProcessingStatusRoundTrip covers ProcessingStatus (which lazily
@@ -26,7 +26,7 @@ func TestProcessingStatusRoundTrip(t *testing.T) {
 		}
 	})
 
-	want := rwp.ProcStatus{LastIdProcessed: 5095, LastBlockNum: 141}
+	want := rwmodel.ProcStatus{LastIdProcessed: 5095, LastBlockNum: 141}
 	if err := r.UpdateProcessingStatus(ctx, &want); err != nil {
 		t.Fatalf("UpdateProcessingStatus: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestMessagingStatusRoundTrip(t *testing.T) {
 		}
 	})
 
-	want := rwp.MsgStatus{TxId: 1036, EvtLogId: 5089, BlockNum: 136, TimeStamp: 1767229200}
+	want := rwmodel.MsgStatus{TxId: 1036, EvtLogId: 5089, BlockNum: 136, TimeStamp: 1767229200}
 	if err := r.UpdateMessagingStatus(ctx, &want); err != nil {
 		t.Fatalf("UpdateMessagingStatus: %v", err)
 	}

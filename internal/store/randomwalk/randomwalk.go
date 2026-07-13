@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -23,9 +23,9 @@ import (
 // ProcessingStatus returns the ETL watermark (last processed event id and
 // block number), lazily creating the singleton rw_proc_status row on a fresh
 // database.
-func (r *Repo) ProcessingStatus(ctx context.Context) (rwp.ProcStatus, error) {
+func (r *Repo) ProcessingStatus(ctx context.Context) (rwmodel.ProcStatus, error) {
 	const op = "randomwalk processing status"
-	var output rwp.ProcStatus
+	var output rwmodel.ProcStatus
 	var lastID, lastBlock *int64
 	err := r.pool().QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock)
 	if err != nil {
@@ -52,7 +52,7 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (rwp.ProcStatus, error) {
 }
 
 // UpdateProcessingStatus persists the ETL watermark.
-func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *rwp.ProcStatus) error {
+func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *rwmodel.ProcStatus) error {
 	_, err := r.pool().Exec(ctx, "UPDATE rw_proc_status SET last_evt_id = $1,last_block=$2",
 		status.LastIdProcessed, status.LastBlockNum)
 	return store.WrapError("update randomwalk processing status", err)
@@ -66,8 +66,8 @@ func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *rwp.ProcStatu
 // with their address ids from the rw_contracts registry (one row). A
 // database without the registry row (or with unregistered addresses) yields
 // store.ErrNotFound.
-func (r *Repo) ContractAddrs(ctx context.Context) (rwp.ContractAddresses, error) {
-	var output rwp.ContractAddresses
+func (r *Repo) ContractAddrs(ctx context.Context) (rwmodel.ContractAddresses, error) {
+	var output rwmodel.ContractAddresses
 	query := `SELECT
 			marketplace_addr,randomwalk_addr,
 			mp_a.address_id,rw_a.address_id
@@ -105,7 +105,7 @@ func (r *Repo) RawContractAddrs(ctx context.Context) (marketplace, randomwalk st
 // InsertNewOffer records a NewOffer marketplace event. Offers whose seller
 // is the zero address are BUY offers (otype 0), everything else SELL
 // (otype 1).
-func (r *Repo) InsertNewOffer(ctx context.Context, evt *rwp.NewOffer) error {
+func (r *Repo) InsertNewOffer(ctx context.Context, evt *rwmodel.NewOffer) error {
 	const op = "insert into rw_new_offer"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -152,7 +152,7 @@ func (r *Repo) InsertNewOffer(ctx context.Context, evt *rwp.NewOffer) error {
 }
 
 // InsertItemBought records an ItemBought marketplace event.
-func (r *Repo) InsertItemBought(ctx context.Context, evt *rwp.ItemBought) error {
+func (r *Repo) InsertItemBought(ctx context.Context, evt *rwmodel.ItemBought) error {
 	const op = "insert into rw_item_bought"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -186,7 +186,7 @@ func (r *Repo) InsertItemBought(ctx context.Context, evt *rwp.ItemBought) error 
 }
 
 // InsertOfferCanceled records an OfferCanceled marketplace event.
-func (r *Repo) InsertOfferCanceled(ctx context.Context, evt *rwp.OfferCanceled) error {
+func (r *Repo) InsertOfferCanceled(ctx context.Context, evt *rwmodel.OfferCanceled) error {
 	const op = "insert into rw_offer_canceled"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -214,7 +214,7 @@ func (r *Repo) InsertOfferCanceled(ctx context.Context, evt *rwp.OfferCanceled) 
 // =============================================================================
 
 // InsertWithdrawal records a WithdrawalEvent of the RandomWalk contract.
-func (r *Repo) InsertWithdrawal(ctx context.Context, evt *rwp.Withdrawal) error {
+func (r *Repo) InsertWithdrawal(ctx context.Context, evt *rwmodel.Withdrawal) error {
 	const op = "insert into rw_withdrawal"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -244,7 +244,7 @@ func (r *Repo) InsertWithdrawal(ctx context.Context, evt *rwp.Withdrawal) error 
 }
 
 // InsertTokenName records a TokenNameEvent (token renamed).
-func (r *Repo) InsertTokenName(ctx context.Context, evt *rwp.TokenName) error {
+func (r *Repo) InsertTokenName(ctx context.Context, evt *rwmodel.TokenName) error {
 	const op = "insert into rw_token_name"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -269,7 +269,7 @@ func (r *Repo) InsertTokenName(ctx context.Context, evt *rwp.TokenName) error {
 }
 
 // InsertMint records a MintEvent of the RandomWalk contract.
-func (r *Repo) InsertMint(ctx context.Context, evt *rwp.MintEvent) error {
+func (r *Repo) InsertMint(ctx context.Context, evt *rwmodel.MintEvent) error {
 	const op = "insert into rw_mint_evt"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -303,7 +303,7 @@ func (r *Repo) InsertMint(ctx context.Context, evt *rwp.MintEvent) error {
 // InsertTransfer records an ERC-721 Transfer of a RandomWalk token. Mints
 // (from the zero address) are otype 1, burns (to the zero address) otype 2,
 // wallet-to-wallet transfers otype 0.
-func (r *Repo) InsertTransfer(ctx context.Context, evt *rwp.Transfer) error {
+func (r *Repo) InsertTransfer(ctx context.Context, evt *rwmodel.Transfer) error {
 	const op = "insert into rw_transfer"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -438,7 +438,7 @@ func (r *Repo) UpdateTopVolumeRank(ctx context.Context, aid int64, rank, volume 
 
 // RankingDataForAllUsers aggregates per-user trade count, profit and volume
 // across contracts (input of the rwctl top-rated rank computation).
-func (r *Repo) RankingDataForAllUsers(ctx context.Context) ([]rwp.RankStats, error) {
+func (r *Repo) RankingDataForAllUsers(ctx context.Context) ([]rwmodel.RankStats, error) {
 	query := `SELECT
 			user_aid,
 			SUM(total_num_trades) AS tot_trades,
@@ -446,14 +446,14 @@ func (r *Repo) RankingDataForAllUsers(ctx context.Context) ([]rwp.RankStats, err
 			SUM(total_vol) AS tot_volume
 		FROM rw_user_stats
 		GROUP BY user_aid`
-	return queryList(ctx, r, "ranking data for all users", 8, query, func(rows pgx.Rows, rec *rwp.RankStats) error {
+	return queryList(ctx, r, "ranking data for all users", 8, query, func(rows pgx.Rows, rec *rwmodel.RankStats) error {
 		return rows.Scan(&rec.Aid, &rec.TotalTrades, &rec.ProfitLoss, &rec.VolumeTraded)
 	})
 }
 
 // TopProfitMakers returns the profit leaderboard (best percentile first,
 // top 100).
-func (r *Repo) TopProfitMakers(ctx context.Context) ([]rwp.ProfitMaker, error) {
+func (r *Repo) TopProfitMakers(ctx context.Context) ([]rwmodel.ProfitMaker, error) {
 	query := `SELECT
 			a.addr,
 			r.top_profit,
@@ -461,13 +461,13 @@ func (r *Repo) TopProfitMakers(ctx context.Context) ([]rwp.ProfitMaker, error) {
 		FROM rw_uranks AS r
 		LEFT JOIN address AS a ON r.aid = a.address_id
 		ORDER BY r.top_profit ASC,r.profit DESC LIMIT 100`
-	return queryList(ctx, r, "top profit makers", 101, query, func(rows pgx.Rows, rec *rwp.ProfitMaker) error {
+	return queryList(ctx, r, "top profit makers", 101, query, func(rows pgx.Rows, rec *rwmodel.ProfitMaker) error {
 		return rows.Scan(&rec.Addr, &rec.Percentage, &rec.ProfitLoss)
 	})
 }
 
 // TopTradeMakers returns the trade-count leaderboard (top 100).
-func (r *Repo) TopTradeMakers(ctx context.Context) ([]rwp.TradeMaker, error) {
+func (r *Repo) TopTradeMakers(ctx context.Context) ([]rwmodel.TradeMaker, error) {
 	query := `SELECT
 			a.addr,
 			r.top_trades,
@@ -475,13 +475,13 @@ func (r *Repo) TopTradeMakers(ctx context.Context) ([]rwp.TradeMaker, error) {
 		FROM rw_uranks AS r
 		LEFT JOIN address AS a ON r.aid = a.address_id
 		ORDER BY r.top_trades ASC,r.total_trades DESC LIMIT 100`
-	return queryList(ctx, r, "top trade makers", 101, query, func(rows pgx.Rows, rec *rwp.TradeMaker) error {
+	return queryList(ctx, r, "top trade makers", 101, query, func(rows pgx.Rows, rec *rwmodel.TradeMaker) error {
 		return rows.Scan(&rec.Addr, &rec.Percentage, &rec.TotalTrades)
 	})
 }
 
 // TopVolumeMakers returns the traded-volume leaderboard (top 100).
-func (r *Repo) TopVolumeMakers(ctx context.Context) ([]rwp.VolumeMaker, error) {
+func (r *Repo) TopVolumeMakers(ctx context.Context) ([]rwmodel.VolumeMaker, error) {
 	query := `SELECT
 			a.addr,
 			r.top_volume,
@@ -489,7 +489,7 @@ func (r *Repo) TopVolumeMakers(ctx context.Context) ([]rwp.VolumeMaker, error) {
 		FROM rw_uranks AS r
 		LEFT JOIN address AS a ON r.aid = a.address_id
 		ORDER BY r.top_volume ASC,r.volume DESC LIMIT 100`
-	return queryList(ctx, r, "top volume makers", 101, query, func(rows pgx.Rows, rec *rwp.VolumeMaker) error {
+	return queryList(ctx, r, "top volume makers", 101, query, func(rows pgx.Rows, rec *rwmodel.VolumeMaker) error {
 		return rows.Scan(&rec.Addr, &rec.Percentage, &rec.Volume)
 	})
 }
@@ -500,7 +500,7 @@ func (r *Repo) TopVolumeMakers(ctx context.Context) ([]rwp.VolumeMaker, error) {
 
 // MintEventsForNotification returns mints after startTs (timestamp, token,
 // price, seed) for notification bots.
-func (r *Repo) MintEventsForNotification(ctx context.Context, rwalkAid, startTs int64) ([]rwp.NotificationEvent, error) {
+func (r *Repo) MintEventsForNotification(ctx context.Context, rwalkAid, startTs int64) ([]rwmodel.NotificationEvent, error) {
 	query := `SELECT
 			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
 			token_id,
@@ -508,7 +508,7 @@ func (r *Repo) MintEventsForNotification(ctx context.Context, rwalkAid, startTs 
 			seed
 		FROM rw_mint_evt m
 		WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))`
-	return queryList(ctx, r, "mint events for notification", 101, query, func(rows pgx.Rows, rec *rwp.NotificationEvent) error {
+	return queryList(ctx, r, "mint events for notification", 101, query, func(rows pgx.Rows, rec *rwmodel.NotificationEvent) error {
 		return rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TokenId,
@@ -520,8 +520,8 @@ func (r *Repo) MintEventsForNotification(ctx context.Context, rwalkAid, startTs 
 
 // MessagingStatus returns the notification watermark; a rowless table (not
 // seeded yet) yields the zero status.
-func (r *Repo) MessagingStatus(ctx context.Context) (rwp.MsgStatus, error) {
-	var output rwp.MsgStatus
+func (r *Repo) MessagingStatus(ctx context.Context) (rwmodel.MsgStatus, error) {
+	var output rwmodel.MsgStatus
 	err := r.pool().QueryRow(ctx,
 		"SELECT last_tx_id,last_evtlog_id,last_block_num,last_timestamp FROM rw_messaging_status").Scan(
 		&output.TxId,
@@ -536,7 +536,7 @@ func (r *Repo) MessagingStatus(ctx context.Context) (rwp.MsgStatus, error) {
 }
 
 // UpdateMessagingStatus persists the notification watermark.
-func (r *Repo) UpdateMessagingStatus(ctx context.Context, status *rwp.MsgStatus) error {
+func (r *Repo) UpdateMessagingStatus(ctx context.Context, status *rwmodel.MsgStatus) error {
 	query := `UPDATE rw_messaging_status SET
 			last_tx_id = $1,
 			last_evtlog_id = $2,
@@ -548,7 +548,7 @@ func (r *Repo) UpdateMessagingStatus(ctx context.Context, status *rwp.MsgStatus)
 
 // AllEventsForNotification returns mints, offers and buys after startTs in
 // timestamp order (evt_type 1 mint, 2 sell offer, 5 buy offer, 3 bought).
-func (r *Repo) AllEventsForNotification(ctx context.Context, rwalkAid, startTs int64) ([]rwp.NotificationEvent, error) {
+func (r *Repo) AllEventsForNotification(ctx context.Context, rwalkAid, startTs int64) ([]rwmodel.NotificationEvent, error) {
 	query := `SELECT
 			ts,
 			token_id,
@@ -594,7 +594,7 @@ func (r *Repo) AllEventsForNotification(ctx context.Context, rwalkAid, startTs i
 	return queryList(ctx, r, "all events for notification", 101, query, scanNotificationEvent, rwalkAid, startTs)
 }
 
-func scanNotificationEvent(rows pgx.Rows, rec *rwp.NotificationEvent) error {
+func scanNotificationEvent(rows pgx.Rows, rec *rwmodel.NotificationEvent) error {
 	return rows.Scan(
 		&rec.TimeStampMinted,
 		&rec.TokenId,
@@ -606,7 +606,7 @@ func scanNotificationEvent(rows pgx.Rows, rec *rwp.NotificationEvent) error {
 // AllEventsForNotificationSinceEvtlog is AllEventsForNotification keyed on
 // the evt_log id watermark instead of a timestamp (notibot's cursor), with
 // tx and evtlog ids included in the result.
-func (r *Repo) AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid, startEvtlogID int64) ([]rwp.NotificationEvent2, error) {
+func (r *Repo) AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid, startEvtlogID int64) ([]rwmodel.NotificationEvent2, error) {
 	query := `SELECT
 			ts,
 			tx_id,
@@ -659,7 +659,7 @@ func (r *Repo) AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid
 		)
 		) data
 		ORDER BY evtlog_id`
-	return queryList(ctx, r, "all events for notification since evtlog", 101, query, func(rows pgx.Rows, rec *rwp.NotificationEvent2) error {
+	return queryList(ctx, r, "all events for notification since evtlog", 101, query, func(rows pgx.Rows, rec *rwmodel.NotificationEvent2) error {
 		return rows.Scan(
 			&rec.TimeStampMinted,
 			&rec.TxId,
@@ -674,7 +674,7 @@ func (r *Repo) AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid
 // AllEventsForNotificationMintsOnly is the mint-only variant of
 // AllEventsForNotification (the offer/buy branches are intentionally
 // disabled; kept for notification dry runs).
-func (r *Repo) AllEventsForNotificationMintsOnly(ctx context.Context, rwalkAid, startTs int64) ([]rwp.NotificationEvent, error) {
+func (r *Repo) AllEventsForNotificationMintsOnly(ctx context.Context, rwalkAid, startTs int64) ([]rwmodel.NotificationEvent, error) {
 	query := `SELECT
 			ts,
 			token_id,
@@ -723,7 +723,7 @@ func (r *Repo) LastMintTimestamp(ctx context.Context) (int64, error) {
 // TokenTransfersByTxHash returns the RandomWalk token transfers contained in
 // one transaction (rwctl verify-erc20-transfers uses it to cross-check
 // chain data).
-func (r *Repo) TokenTransfersByTxHash(ctx context.Context, txHash string) ([]rwp.TransferEntry, error) {
+func (r *Repo) TokenTransfersByTxHash(ctx context.Context, txHash string) ([]rwmodel.TransferEntry, error) {
 	query := `SELECT
 			fa.addr,ta.addr,token_id
 		FROM rw_transfer tr
@@ -731,7 +731,7 @@ func (r *Repo) TokenTransfersByTxHash(ctx context.Context, txHash string) ([]rwp
 			JOIN address ta ON tr.to_aid=ta.address_id
 			JOIN transaction tx ON tx.id=tr.tx_id
 		WHERE tx.tx_hash=$1`
-	return queryList(ctx, r, "token transfers by tx hash", 8, query, func(rows pgx.Rows, rec *rwp.TransferEntry) error {
+	return queryList(ctx, r, "token transfers by tx hash", 8, query, func(rows pgx.Rows, rec *rwmodel.TransferEntry) error {
 		return rows.Scan(&rec.From, &rec.To, &rec.TokenId)
 	}, txHash)
 }

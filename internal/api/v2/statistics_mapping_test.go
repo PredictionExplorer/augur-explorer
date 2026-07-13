@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -54,13 +54,13 @@ func TestMapGlobalStatisticsRejectsInvalidRecords(t *testing.T) {
 
 func TestMapCounters(t *testing.T) {
 	t.Parallel()
-	got, err := mapCounters(cgprimitives.CGRecordCounters{
+	got, err := mapCounters(cgmodel.CGRecordCounters{
 		TotalBids: 4, TotalPrizes: 2, TotalDonatedNFTs: 1,
 	})
 	if err != nil || got.TotalBids != 4 || got.CompletedRounds != 2 || got.DonatedNfts != 1 {
 		t.Fatalf("counters = %+v, err=%v", got, err)
 	}
-	if _, err := mapCounters(cgprimitives.CGRecordCounters{TotalBids: -1}); err == nil {
+	if _, err := mapCounters(cgmodel.CGRecordCounters{TotalBids: -1}); err == nil {
 		t.Fatal("accepted negative counters")
 	}
 }
@@ -252,18 +252,18 @@ func validGlobalStatisticsRecord() cgstore.GlobalStatisticsRecord {
 		CSTBidCount:                        3,
 		MarketingRewardsTotalWei:           "90",
 		MarketingRewardCount:               2,
-		DonatedTokenDistribution: []cgprimitives.CGDonatedTokenDistrRec{{
+		DonatedTokenDistribution: []cgmodel.CGDonatedTokenDistrRec{{
 			ContractAddr:     "0x3333333333333333333333333333333333333333",
 			NumDonatedTokens: 2,
 		}},
-		CSTStaking: cgprimitives.CGStakeStatsCST{
+		CSTStaking: cgmodel.CGStakeStatsCST{
 			TotalTokensStaked: 3,
 			TotalReward:       "40",
 			UnclaimedReward:   "10",
 			NumActiveStakers:  2,
 			NumDeposits:       4,
 		},
-		RandomWalkStaking: cgprimitives.CGStakeStatsRWalk{
+		RandomWalkStaking: cgmodel.CGStakeStatsRWalk{
 			TotalTokensStaked: 2,
 			TotalTokensMinted: 1,
 			NumActiveStakers:  1,

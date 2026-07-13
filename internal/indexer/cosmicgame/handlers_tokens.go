@@ -11,11 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (h *Handlers) decodeNftNameChanged(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGTokenNameEvent, error) {
+func (h *Handlers) decodeNftNameChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGTokenNameEvent, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (h *Handlers) decodeNftNameChanged(lg *types.Log, elog *primitives.Ethereum
 		return nil, err
 	}
 
-	evt := &cgp.CGTokenNameEvent{}
+	evt := &cgmodel.CGTokenNameEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -35,7 +35,7 @@ func (h *Handlers) decodeNftNameChanged(lg *types.Log, elog *primitives.Ethereum
 	return evt, nil
 }
 
-func (h *Handlers) storeNftNameChanged(ctx context.Context, evt *cgp.CGTokenNameEvent) error {
+func (h *Handlers) storeNftNameChanged(ctx context.Context, evt *cgmodel.CGTokenNameEvent) error {
 	h.log.Info("NftNameChanged", "evt_id", evt.EvtId, "token_id", evt.TokenId, "name", evt.TokenName)
 
 	if err := h.repo.DeleteTokenName(ctx, evt.EvtId); err != nil {
@@ -44,7 +44,7 @@ func (h *Handlers) storeNftNameChanged(ctx context.Context, evt *cgp.CGTokenName
 	return h.repo.InsertTokenName(ctx, evt)
 }
 
-func (h *Handlers) decodeNftMinted(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGMintEvent, error) {
+func (h *Handlers) decodeNftMinted(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGMintEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (h *Handlers) decodeNftMinted(lg *types.Log, elog *primitives.EthereumEvent
 		return nil, err
 	}
 
-	evt := &cgp.CGMintEvent{}
+	evt := &cgmodel.CGMintEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -68,7 +68,7 @@ func (h *Handlers) decodeNftMinted(lg *types.Log, elog *primitives.EthereumEvent
 	return evt, nil
 }
 
-func (h *Handlers) storeNftMinted(ctx context.Context, evt *cgp.CGMintEvent) error {
+func (h *Handlers) storeNftMinted(ctx context.Context, evt *cgmodel.CGMintEvent) error {
 	h.log.Info("NftMinted",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "token_id", evt.TokenId,
 		"owner", evt.OwnerAddr, "seed", evt.Seed)
@@ -79,7 +79,7 @@ func (h *Handlers) storeNftMinted(ctx context.Context, evt *cgp.CGMintEvent) err
 	return h.repo.InsertMint(ctx, evt)
 }
 
-func (h *Handlers) decodeMarketingRewardPaid(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGMarketingRewardPaid, error) {
+func (h *Handlers) decodeMarketingRewardPaid(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGMarketingRewardPaid, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (h *Handlers) decodeMarketingRewardPaid(lg *types.Log, elog *primitives.Eth
 		return nil, err
 	}
 
-	evt := &cgp.CGMarketingRewardPaid{}
+	evt := &cgmodel.CGMarketingRewardPaid{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -99,7 +99,7 @@ func (h *Handlers) decodeMarketingRewardPaid(lg *types.Log, elog *primitives.Eth
 	return evt, nil
 }
 
-func (h *Handlers) storeMarketingRewardPaid(ctx context.Context, evt *cgp.CGMarketingRewardPaid) error {
+func (h *Handlers) storeMarketingRewardPaid(ctx context.Context, evt *cgmodel.CGMarketingRewardPaid) error {
 	h.log.Info("Marketing RewardPaid", "evt_id", evt.EvtId, "marketer", evt.Marketer, "amount", evt.Amount)
 
 	if err := h.repo.DeleteMarketingRewardPaid(ctx, evt.EvtId); err != nil {
@@ -111,11 +111,11 @@ func (h *Handlers) storeMarketingRewardPaid(ctx context.Context, evt *cgp.CGMark
 // decodeCosmicSignatureTransfer handles the ERC721 Transfer of the
 // CosmicSignature NFT (the Transfer topic0 is shared with the ERC20
 // CosmicToken; the registry's source filter separates them).
-func (h *Handlers) decodeCosmicSignatureTransfer(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGERC721Transfer, error) {
+func (h *Handlers) decodeCosmicSignatureTransfer(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGERC721Transfer, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
-	evt := &cgp.CGERC721Transfer{}
+	evt := &cgmodel.CGERC721Transfer{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -127,7 +127,7 @@ func (h *Handlers) decodeCosmicSignatureTransfer(lg *types.Log, elog *primitives
 	return evt, nil
 }
 
-func (h *Handlers) storeCosmicSignatureTransfer(ctx context.Context, evt *cgp.CGERC721Transfer) error {
+func (h *Handlers) storeCosmicSignatureTransfer(ctx context.Context, evt *cgmodel.CGERC721Transfer) error {
 	h.log.Info("CosmicSignature Transfer",
 		"evt_id", evt.EvtId, "from", evt.From, "to", evt.To, "token_id", evt.TokenId)
 
@@ -138,7 +138,7 @@ func (h *Handlers) storeCosmicSignatureTransfer(ctx context.Context, evt *cgp.CG
 }
 
 // decodeCosmicTokenTransfer handles the ERC20 Transfer of the CosmicToken.
-func (h *Handlers) decodeCosmicTokenTransfer(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGERC20Transfer, error) {
+func (h *Handlers) decodeCosmicTokenTransfer(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGERC20Transfer, error) {
 	if err := requireTopics(lg, 3); err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (h *Handlers) decodeCosmicTokenTransfer(lg *types.Log, elog *primitives.Eth
 		return nil, err
 	}
 
-	evt := &cgp.CGERC20Transfer{}
+	evt := &cgmodel.CGERC20Transfer{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -159,7 +159,7 @@ func (h *Handlers) decodeCosmicTokenTransfer(lg *types.Log, elog *primitives.Eth
 	return evt, nil
 }
 
-func (h *Handlers) storeCosmicTokenTransfer(ctx context.Context, evt *cgp.CGERC20Transfer) error {
+func (h *Handlers) storeCosmicTokenTransfer(ctx context.Context, evt *cgmodel.CGERC20Transfer) error {
 	h.log.Info("CosmicToken Transfer",
 		"evt_id", evt.EvtId, "from", evt.From, "to", evt.To, "value", evt.Value)
 

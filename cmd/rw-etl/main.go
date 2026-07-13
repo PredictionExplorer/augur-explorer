@@ -19,12 +19,16 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	rwindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/randomwalk"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
-const defaultDBLog = "db.log"
+const (
+	defaultDBLog = "db.log"
+
+	// defaultLogDir is the legacy operational log directory under $HOME.
+	defaultLogDir = "ae_logs"
+)
 
 // openAppendLog opens (creating if needed) one of the ETL's append-only log
 // files.
@@ -77,7 +81,7 @@ func main() {
 // registerer/gatherer pair is injected so tests can use isolated registries
 // (the default registry rejects duplicate registration across runs).
 func run(ctx context.Context, getenv func(string) string, reg prometheus.Registerer, gatherer prometheus.Gatherer) error {
-	logDir := fmt.Sprintf("%v/%v", getenv("HOME"), primitives.DEFAULT_LOG_DIR)
+	logDir := fmt.Sprintf("%v/%v", getenv("HOME"), defaultLogDir)
 	_ = os.MkdirAll(logDir, os.ModePerm) // #nosec G301 G703 -- legacy log dir under $HOME; openAppendLog fails loudly if unusable
 
 	infoFile, err := openAppendLog(fmt.Sprintf("%v/randomwalk_info.log", logDir))

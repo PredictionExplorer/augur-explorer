@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
+	"github.com/PredictionExplorer/augur-explorer/internal/timefmt"
 )
 
 // Notification event types, matching the values produced by the store's
@@ -94,7 +94,7 @@ func MintsChannelName(numMints int64) string {
 // LastMintChannelName formats the Discord "last mint ago" statistics channel
 // name for a mint at lastMint observed at now.
 func LastMintChannelName(lastMint, now time.Time) string {
-	duration := primitives.DurationToString(primitives.TimeDifference(lastMint, now))
+	duration := timefmt.DurationToString(timefmt.TimeDifference(lastMint, now))
 	return fmt.Sprintf("Last mint: %v ago", duration)
 }
 

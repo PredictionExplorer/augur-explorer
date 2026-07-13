@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -30,7 +30,7 @@ const charityDonationsSelectSQL = `SELECT
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address da ON d.donor_aid=da.address_id`
 
-func scanCharityDonation(rows pgx.Rows, rec *p.CGCharityDonation) error {
+func scanCharityDonation(rows pgx.Rows, rec *cgmodel.CGCharityDonation) error {
 	return rows.Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
@@ -49,10 +49,10 @@ func scanCharityDonation(rows pgx.Rows, rec *p.CGCharityDonation) error {
 // CharityDonations returns every donation received by the charity wallet,
 // newest first, marking donations that did not come from the game contract
 // (cosmicGameAid) as voluntary.
-func (r *Repo) CharityDonations(ctx context.Context, cosmicGameAid int64) ([]p.CGCharityDonation, error) {
+func (r *Repo) CharityDonations(ctx context.Context, cosmicGameAid int64) ([]cgmodel.CGCharityDonation, error) {
 	query := charityDonationsSelectSQL + `
 		ORDER BY d.id DESC`
-	scan := func(rows pgx.Rows, rec *p.CGCharityDonation) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGCharityDonation) error {
 		if err := scanCharityDonation(rows, rec); err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func (r *Repo) CharityDonations(ctx context.Context, cosmicGameAid int64) ([]p.C
 
 // CharityDonationsFromCosmicGame returns the charity-wallet donations sent
 // by the game contract itself (the per-round charity cut), newest first.
-func (r *Repo) CharityDonationsFromCosmicGame(ctx context.Context, cosmicGameAid int64) ([]p.CGCharityDonation, error) {
+func (r *Repo) CharityDonationsFromCosmicGame(ctx context.Context, cosmicGameAid int64) ([]cgmodel.CGCharityDonation, error) {
 	query := charityDonationsSelectSQL + `
 		WHERE donor_aid = $1
 		ORDER BY d.id DESC`
@@ -73,11 +73,11 @@ func (r *Repo) CharityDonationsFromCosmicGame(ctx context.Context, cosmicGameAid
 
 // CharityDonationsVoluntary returns the charity-wallet donations that did
 // not come from the game contract, newest first.
-func (r *Repo) CharityDonationsVoluntary(ctx context.Context, cosmicGameAid int64) ([]p.CGCharityDonation, error) {
+func (r *Repo) CharityDonationsVoluntary(ctx context.Context, cosmicGameAid int64) ([]cgmodel.CGCharityDonation, error) {
 	query := charityDonationsSelectSQL + `
 		WHERE donor_aid != $1
 		ORDER BY d.id DESC`
-	scan := func(rows pgx.Rows, rec *p.CGCharityDonation) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGCharityDonation) error {
 		if err := scanCharityDonation(rows, rec); err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func (r *Repo) CharityDonationsVoluntary(ctx context.Context, cosmicGameAid int6
 
 // CharityWalletWithdrawals returns every outbound transfer of the charity
 // wallet, newest first.
-func (r *Repo) CharityWalletWithdrawals(ctx context.Context) ([]p.CGCharityWithdrawal, error) {
+func (r *Repo) CharityWalletWithdrawals(ctx context.Context) ([]cgmodel.CGCharityWithdrawal, error) {
 	query := `SELECT
 			w.id,
 			w.evtlog_id,
@@ -105,7 +105,7 @@ func (r *Repo) CharityWalletWithdrawals(ctx context.Context) ([]p.CGCharityWithd
 			LEFT JOIN transaction tx ON tx.id=w.tx_id
 			LEFT JOIN address ca ON w.charity_aid=ca.address_id
 		ORDER BY w.id DESC`
-	scan := func(rows pgx.Rows, rec *p.CGCharityWithdrawal) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGCharityWithdrawal) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -140,7 +140,7 @@ const simpleEthDonationsSelectSQL = `SELECT
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address da ON d.donor_aid=da.address_id`
 
-func scanSimpleEthDonation(rows pgx.Rows, rec *p.CGCosmicGameDonationSimple) error {
+func scanSimpleEthDonation(rows pgx.Rows, rec *cgmodel.CGCosmicGameDonationSimple) error {
 	return rows.Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
@@ -158,7 +158,7 @@ func scanSimpleEthDonation(rows pgx.Rows, rec *p.CGCosmicGameDonationSimple) err
 
 // SimpleEthDonations returns the plain (no-info) ETH donations to the game,
 // newest first.
-func (r *Repo) SimpleEthDonations(ctx context.Context, offset, limit int) ([]p.CGCosmicGameDonationSimple, error) {
+func (r *Repo) SimpleEthDonations(ctx context.Context, offset, limit int) ([]cgmodel.CGCosmicGameDonationSimple, error) {
 	query := simpleEthDonationsSelectSQL + `
 		ORDER BY d.id DESC
 		OFFSET $1 LIMIT $2`
@@ -167,7 +167,7 @@ func (r *Repo) SimpleEthDonations(ctx context.Context, offset, limit int) ([]p.C
 
 // SimpleEthDonationsByRound returns the plain ETH donations of one round,
 // newest first.
-func (r *Repo) SimpleEthDonationsByRound(ctx context.Context, roundNum int64) ([]p.CGCosmicGameDonationSimple, error) {
+func (r *Repo) SimpleEthDonationsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGCosmicGameDonationSimple, error) {
 	query := simpleEthDonationsSelectSQL + `
 		WHERE d.round_num = $1
 		ORDER BY d.id DESC`
@@ -196,7 +196,7 @@ const ethDonationsWithInfoSelectSQL = `SELECT
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address da ON d.donor_aid=da.address_id`
 
-func scanEthDonationWithInfo(rows pgx.Rows, rec *p.CGCosmicGameDonationWithInfo) error {
+func scanEthDonationWithInfo(rows pgx.Rows, rec *cgmodel.CGCosmicGameDonationWithInfo) error {
 	return rows.Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
@@ -216,7 +216,7 @@ func scanEthDonationWithInfo(rows pgx.Rows, rec *p.CGCosmicGameDonationWithInfo)
 
 // EthDonationsWithInfo returns the ETH donations that carry a JSON info
 // payload, newest first.
-func (r *Repo) EthDonationsWithInfo(ctx context.Context, offset, limit int) ([]p.CGCosmicGameDonationWithInfo, error) {
+func (r *Repo) EthDonationsWithInfo(ctx context.Context, offset, limit int) ([]cgmodel.CGCosmicGameDonationWithInfo, error) {
 	query := ethDonationsWithInfoSelectSQL + `
 		ORDER BY d.id DESC
 		OFFSET $1 LIMIT $2`
@@ -225,7 +225,7 @@ func (r *Repo) EthDonationsWithInfo(ctx context.Context, offset, limit int) ([]p
 
 // EthDonationsWithInfoByRound returns one round's ETH donations that carry a
 // JSON info payload, newest first.
-func (r *Repo) EthDonationsWithInfoByRound(ctx context.Context, roundNum int64) ([]p.CGCosmicGameDonationWithInfo, error) {
+func (r *Repo) EthDonationsWithInfoByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGCosmicGameDonationWithInfo, error) {
 	query := ethDonationsWithInfoSelectSQL + `
 		WHERE d.round_num=$1
 		ORDER BY d.id DESC`
@@ -236,10 +236,10 @@ func (r *Repo) EthDonationsWithInfoByRound(ctx context.Context, roundNum int64) 
 // contract-side record id, or store.ErrNotFound. The legacy layer served
 // the zero-value record for unknown ids; callers that need that shape
 // translate ErrNotFound back into it.
-func (r *Repo) EthDonationWithInfoRecord(ctx context.Context, recordID int64) (p.CGCosmicGameDonationWithInfo, error) {
+func (r *Repo) EthDonationWithInfoRecord(ctx context.Context, recordID int64) (cgmodel.CGCosmicGameDonationWithInfo, error) {
 	query := ethDonationsWithInfoSelectSQL + `
 		WHERE d.record_id=$1`
-	var rec p.CGCosmicGameDonationWithInfo
+	var rec cgmodel.CGCosmicGameDonationWithInfo
 	err := r.pool().QueryRow(ctx, query, recordID).Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
@@ -256,7 +256,7 @@ func (r *Repo) EthDonationWithInfoRecord(ctx context.Context, recordID int64) (p
 		&rec.DataJson,
 	)
 	if err != nil {
-		return p.CGCosmicGameDonationWithInfo{}, store.WrapError("eth donation with info record", err)
+		return cgmodel.CGCosmicGameDonationWithInfo{}, store.WrapError("eth donation with info record", err)
 	}
 	return rec, nil
 }
@@ -351,7 +351,7 @@ func combinedEthDonationsSQL(filter string) string {
 		ORDER BY evtlog_id DESC`
 }
 
-func scanCombinedEthDonation(rows pgx.Rows, rec *p.CGDonationCombinedRec) error {
+func scanCombinedEthDonation(rows pgx.Rows, rec *cgmodel.CGDonationCombinedRec) error {
 	return rows.Scan(
 		&rec.RecordType,
 		&rec.Tx.EvtLogId,
@@ -372,21 +372,21 @@ func scanCombinedEthDonation(rows pgx.Rows, rec *p.CGDonationCombinedRec) error 
 
 // EthDonationsByUser returns both donation kinds (plain and with-info) made
 // by one donor, newest first.
-func (r *Repo) EthDonationsByUser(ctx context.Context, userAid int64) ([]p.CGDonationCombinedRec, error) {
+func (r *Repo) EthDonationsByUser(ctx context.Context, userAid int64) ([]cgmodel.CGDonationCombinedRec, error) {
 	query := combinedEthDonationsSQL("WHERE d.donor_aid = $1")
 	return queryList(ctx, r, "eth donations by user", 32, query, scanCombinedEthDonation, userAid)
 }
 
 // EthDonationsByRound returns both donation kinds (plain and with-info) of
 // one round, newest first.
-func (r *Repo) EthDonationsByRound(ctx context.Context, roundNum int64) ([]p.CGDonationCombinedRec, error) {
+func (r *Repo) EthDonationsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGDonationCombinedRec, error) {
 	query := combinedEthDonationsSQL("WHERE d.round_num = $1")
 	return queryList(ctx, r, "eth donations by round", 32, query, scanCombinedEthDonation, roundNum)
 }
 
 // EthDonations returns both donation kinds (plain and with-info) over all
 // rounds, newest first.
-func (r *Repo) EthDonations(ctx context.Context) ([]p.CGDonationCombinedRec, error) {
+func (r *Repo) EthDonations(ctx context.Context) ([]cgmodel.CGDonationCombinedRec, error) {
 	query := combinedEthDonationsSQL("")
 	return queryList(ctx, r, "eth donations", 32, query, scanCombinedEthDonation)
 }
@@ -404,7 +404,7 @@ const (
 // round donation collection. The legacy records retain float amounts and
 // sentinel fields for frozen v1 responses.
 type RoundEthDonationRecord struct {
-	Tx               p.Transaction
+	Tx               cgmodel.Transaction
 	RoundNum         int64
 	DonorAddr        string
 	EthAmountWei     string

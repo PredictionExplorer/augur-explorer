@@ -13,7 +13,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestGetCurrentRoundUsesOneSnapshotAndAuthoritativeBidCount(t *testing.T) {
@@ -28,7 +28,7 @@ func TestGetCurrentRoundUsesOneSnapshotAndAuthoritativeBidCount(t *testing.T) {
 			return validCurrentRoundSnapshot()
 		}},
 		fakeCurrentRoundReader{
-			statistics: func(_ context.Context, round int64) (cgprimitives.CGRoundStats, error) {
+			statistics: func(_ context.Context, round int64) (cgmodel.CGRoundStats, error) {
 				statisticsCalls++
 				if round != 3 {
 					t.Fatalf("statistics round = %d, want 3", round)
@@ -80,9 +80,9 @@ func TestGetCurrentRoundReturnsServiceUnavailableForCacheSentinel(t *testing.T) 
 			server := newCurrentRoundTestServer(t,
 				fakeContractState{snapshot: func() contractstate.Snapshot { return snapshot }},
 				fakeCurrentRoundReader{
-					statistics: func(context.Context, int64) (cgprimitives.CGRoundStats, error) {
+					statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
 						repositoryCalled = true
-						return cgprimitives.CGRoundStats{}, nil
+						return cgmodel.CGRoundStats{}, nil
 					},
 					bidCount: func(context.Context, int64) (int64, error) {
 						repositoryCalled = true
@@ -115,7 +115,7 @@ func TestGetCurrentRoundTreatsUninitializedLastBidderAsUnavailable(t *testing.T)
 	server := newCurrentRoundTestServer(t,
 		fakeContractState{snapshot: func() contractstate.Snapshot { return snapshot }},
 		fakeCurrentRoundReader{
-			statistics: func(context.Context, int64) (cgprimitives.CGRoundStats, error) {
+			statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
 				return validCurrentRoundStats(), nil
 			},
 			bidCount: func(context.Context, int64) (int64, error) {
@@ -136,7 +136,7 @@ func TestGetCurrentRoundHidesInternalFailures(t *testing.T) {
 
 	tests := map[string]struct {
 		snapshot   func() contractstate.Snapshot
-		statistics func(context.Context, int64) (cgprimitives.CGRoundStats, error)
+		statistics func(context.Context, int64) (cgmodel.CGRoundStats, error)
 		bidCount   func(context.Context, int64) (int64, error)
 	}{
 		"malformed snapshot": {
@@ -147,8 +147,8 @@ func TestGetCurrentRoundHidesInternalFailures(t *testing.T) {
 			},
 		},
 		"statistics failure": {
-			statistics: func(context.Context, int64) (cgprimitives.CGRoundStats, error) {
-				return cgprimitives.CGRoundStats{}, errors.New("password=database-secret")
+			statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
+				return cgmodel.CGRoundStats{}, errors.New("password=database-secret")
 			},
 		},
 		"bid count failure": {
@@ -157,7 +157,7 @@ func TestGetCurrentRoundHidesInternalFailures(t *testing.T) {
 			},
 		},
 		"statistics identity mismatch": {
-			statistics: func(context.Context, int64) (cgprimitives.CGRoundStats, error) {
+			statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
 				stats := validCurrentRoundStats()
 				stats.RoundNum = 2
 				return stats, nil
@@ -194,12 +194,12 @@ func TestGetCurrentRoundHonorsCancelledContext(t *testing.T) {
 
 	tests := map[string]fakeCurrentRoundReader{
 		"statistics": {
-			statistics: func(ctx context.Context, _ int64) (cgprimitives.CGRoundStats, error) {
-				return cgprimitives.CGRoundStats{}, ctx.Err()
+			statistics: func(ctx context.Context, _ int64) (cgmodel.CGRoundStats, error) {
+				return cgmodel.CGRoundStats{}, ctx.Err()
 			},
 		},
 		"bid count": {
-			statistics: func(context.Context, int64) (cgprimitives.CGRoundStats, error) {
+			statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
 				return validCurrentRoundStats(), nil
 			},
 			bidCount: func(ctx context.Context, _ int64) (int64, error) {
@@ -229,7 +229,7 @@ func TestGetCurrentRoundResponseIsDeterministic(t *testing.T) {
 	server := newCurrentRoundTestServer(t,
 		fakeContractState{snapshot: func() contractstate.Snapshot { return validCurrentRoundSnapshot() }},
 		fakeCurrentRoundReader{
-			statistics: func(context.Context, int64) (cgprimitives.CGRoundStats, error) {
+			statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
 				return validCurrentRoundStats(), nil
 			},
 			bidCount: func(context.Context, int64) (int64, error) {

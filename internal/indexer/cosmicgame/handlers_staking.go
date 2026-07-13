@@ -11,11 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (h *Handlers) decodeNftStakedCST(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGNftStakedCst, error) {
+func (h *Handlers) decodeNftStakedCST(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGNftStakedCst, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (h *Handlers) decodeNftStakedCST(lg *types.Log, elog *primitives.EthereumEv
 		return nil, err
 	}
 
-	evt := &cgp.CGNftStakedCst{}
+	evt := &cgmodel.CGNftStakedCst{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -38,7 +38,7 @@ func (h *Handlers) decodeNftStakedCST(lg *types.Log, elog *primitives.EthereumEv
 	return evt, nil
 }
 
-func (h *Handlers) storeNftStakedCST(ctx context.Context, evt *cgp.CGNftStakedCst) error {
+func (h *Handlers) storeNftStakedCST(ctx context.Context, evt *cgmodel.CGNftStakedCst) error {
 	h.log.Info("CST NftStaked",
 		"evt_id", evt.EvtId, "action_id", evt.ActionId, "nft_id", evt.NftId,
 		"staker", evt.StakerAddress, "num_staked", evt.NumStakedNfts,
@@ -50,7 +50,7 @@ func (h *Handlers) storeNftStakedCST(ctx context.Context, evt *cgp.CGNftStakedCs
 	return h.repo.InsertNftStakedCST(ctx, evt)
 }
 
-func (h *Handlers) decodeNftStakedRWalk(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGNftStakedRWalk, error) {
+func (h *Handlers) decodeNftStakedRWalk(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGNftStakedRWalk, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (h *Handlers) decodeNftStakedRWalk(lg *types.Log, elog *primitives.Ethereum
 		return nil, err
 	}
 
-	evt := &cgp.CGNftStakedRWalk{}
+	evt := &cgmodel.CGNftStakedRWalk{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -72,7 +72,7 @@ func (h *Handlers) decodeNftStakedRWalk(lg *types.Log, elog *primitives.Ethereum
 	return evt, nil
 }
 
-func (h *Handlers) storeNftStakedRWalk(ctx context.Context, evt *cgp.CGNftStakedRWalk) error {
+func (h *Handlers) storeNftStakedRWalk(ctx context.Context, evt *cgmodel.CGNftStakedRWalk) error {
 	h.log.Info("RWalk NftStaked",
 		"evt_id", evt.EvtId, "action_id", evt.ActionId, "nft_id", evt.NftId,
 		"staker", evt.StakerAddress, "num_staked", evt.NumStakedNfts)
@@ -83,7 +83,7 @@ func (h *Handlers) storeNftStakedRWalk(ctx context.Context, evt *cgp.CGNftStaked
 	return h.repo.InsertNftStakedRWalk(ctx, evt)
 }
 
-func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGEthDeposit, error) {
+func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGEthDeposit, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *primitives.Ether
 		return nil, err
 	}
 
-	evt := &cgp.CGEthDeposit{}
+	evt := &cgmodel.CGEthDeposit{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -112,7 +112,7 @@ func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *primitives.Ether
 	return evt, nil
 }
 
-func (h *Handlers) storeStakingEthDeposit(ctx context.Context, evt *cgp.CGEthDeposit) error {
+func (h *Handlers) storeStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDeposit) error {
 	h.log.Info("EthDepositReceived",
 		"evt_id", evt.EvtId, "deposit_id", evt.DepositId, "round", evt.RoundNum,
 		"num_staked", evt.NumStakedNfts, "amount", evt.Amount,
@@ -124,7 +124,7 @@ func (h *Handlers) storeStakingEthDeposit(ctx context.Context, evt *cgp.CGEthDep
 	return h.repo.InsertStakingEthDeposit(ctx, evt)
 }
 
-func (h *Handlers) decodeNftUnstakedRWalk(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGNftUnstakedRWalk, error) {
+func (h *Handlers) decodeNftUnstakedRWalk(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGNftUnstakedRWalk, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (h *Handlers) decodeNftUnstakedRWalk(lg *types.Log, elog *primitives.Ethere
 		return nil, err
 	}
 
-	evt := &cgp.CGNftUnstakedRWalk{}
+	evt := &cgmodel.CGNftUnstakedRWalk{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -146,7 +146,7 @@ func (h *Handlers) decodeNftUnstakedRWalk(lg *types.Log, elog *primitives.Ethere
 	return evt, nil
 }
 
-func (h *Handlers) storeNftUnstakedRWalk(ctx context.Context, evt *cgp.CGNftUnstakedRWalk) error {
+func (h *Handlers) storeNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUnstakedRWalk) error {
 	h.log.Info("RWalk NftUnstaked",
 		"evt_id", evt.EvtId, "action_id", evt.ActionId, "nft_id", evt.NftId,
 		"staker", evt.StakerAddress, "num_staked", evt.NumStakedNfts)
@@ -157,7 +157,7 @@ func (h *Handlers) storeNftUnstakedRWalk(ctx context.Context, evt *cgp.CGNftUnst
 	return h.repo.InsertNftUnstakedRWalk(ctx, evt)
 }
 
-func (h *Handlers) decodeNftUnstakedCST(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGNftUnstakedCst, error) {
+func (h *Handlers) decodeNftUnstakedCST(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGNftUnstakedCst, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (h *Handlers) decodeNftUnstakedCST(lg *types.Log, elog *primitives.Ethereum
 		return nil, err
 	}
 
-	evt := &cgp.CGNftUnstakedCst{}
+	evt := &cgmodel.CGNftUnstakedCst{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -182,7 +182,7 @@ func (h *Handlers) decodeNftUnstakedCST(lg *types.Log, elog *primitives.Ethereum
 	return evt, nil
 }
 
-func (h *Handlers) storeNftUnstakedCST(ctx context.Context, evt *cgp.CGNftUnstakedCst) error {
+func (h *Handlers) storeNftUnstakedCST(ctx context.Context, evt *cgmodel.CGNftUnstakedCst) error {
 	h.log.Info("CST NftUnstaked",
 		"evt_id", evt.EvtId, "action_id", evt.ActionId, "nft_id", evt.NftId,
 		"staker", evt.StakerAddress, "num_staked", evt.NumStakedNfts,

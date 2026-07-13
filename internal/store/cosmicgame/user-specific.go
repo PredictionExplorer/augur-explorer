@@ -7,14 +7,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // UserInfo returns the aggregate profile of one address (bids, prizes,
 // raffle winnings, donations, transfer counts, RandomWalk staking totals),
 // or store.ErrNotFound when the address id does not exist.
-func (r *Repo) UserInfo(ctx context.Context, userAid int64) (p.CGUserInfo, error) {
+func (r *Repo) UserInfo(ctx context.Context, userAid int64) (cgmodel.CGUserInfo, error) {
 	const op = "user info"
 	query := "SELECT " +
 		"a.address_id," +
@@ -42,7 +42,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid int64) (p.CGUserInfo, error
 		"LEFT JOIN cg_transfer_stats trs ON trs.user_aid=a.address_id " +
 		"WHERE a.address_id=$1"
 
-	var rec p.CGUserInfo
+	var rec cgmodel.CGUserInfo
 	var nullNumBids, nullPrizesCount sql.NullInt64
 	var nullMaxBid, nullMaxWin sql.NullFloat64
 	var nullRaffleSumWinnings, nullRaffleSumWithdrawal sql.NullFloat64
@@ -71,7 +71,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid int64) (p.CGUserInfo, error
 		&nullTotalEthDonated,
 	)
 	if err != nil {
-		return p.CGUserInfo{}, store.WrapError(op, err)
+		return cgmodel.CGUserInfo{}, store.WrapError(op, err)
 	}
 	if nullNumBids.Valid {
 		rec.NumBids = nullNumBids.Int64
@@ -134,7 +134,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid int64) (p.CGUserInfo, error
 		&nullNumTokensMinted,
 	)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGUserInfo{}, store.WrapError(op+": rwalk staking totals", err)
+		return cgmodel.CGUserInfo{}, store.WrapError(op+": rwalk staking totals", err)
 	}
 	if nullTotalTokensStaked.Valid {
 		rec.StakingStatisticsRWalk.TotalTokensStaked = nullTotalTokensStaked.Int64
@@ -153,7 +153,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid int64) (p.CGUserInfo, error
 
 // PrizeClaimsByUser returns the main prizes claimed by one winner, newest
 // first, each with its round statistics and charity deposit summary.
-func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]p.CGRoundRec, error) {
+func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGRoundRec, error) {
 	query := "SELECT " +
 		"p.evtlog_id," +
 		"p.block_num," +
@@ -190,7 +190,7 @@ func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]p.CGRo
 		") d ON p.round_num = d.round_num " +
 		"WHERE winner_aid=$1 " +
 		"ORDER BY p.id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGRoundRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 		var nullSeed sql.NullString
 		err := rows.Scan(
 			&rec.ClaimPrizeTx.Tx.EvtLogId,
@@ -229,13 +229,13 @@ func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]p.CGRo
 }
 
 // BidsByUser returns every bid of one bidder, newest first.
-func (r *Repo) BidsByUser(ctx context.Context, bidderAid int64) ([]p.CGBidRec, error) {
+func (r *Repo) BidsByUser(ctx context.Context, bidderAid int64) ([]cgmodel.CGBidRec, error) {
 	return bidList(ctx, r, "bids by user", "b.bidder_aid=$1", "b.id DESC", "", 32, bidderAid)
 }
 
 // UnclaimedDonatedNFTsByUser returns the donated NFTs a main-prize winner
 // has not claimed yet, newest first.
-func (r *Repo) UnclaimedDonatedNFTsByUser(ctx context.Context, winnerAid int64) ([]p.CGNFTDonation, error) {
+func (r *Repo) UnclaimedDonatedNFTsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGNFTDonation, error) {
 	query := "SELECT " +
 		"d.id," +
 		"d.evtlog_id," +
@@ -260,7 +260,7 @@ func (r *Repo) UnclaimedDonatedNFTsByUser(ctx context.Context, winnerAid int64) 
 		"LEFT JOIN address nft ON d.token_aid=nft.address_id " +
 		"WHERE p.winner_aid=$1 AND p.round_num IS NOT NULL  AND c.idx IS NULL " +
 		"ORDER BY d.evtlog_id DESC "
-	scan := func(rows pgx.Rows, rec *p.CGNFTDonation) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGNFTDonation) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -284,7 +284,7 @@ func (r *Repo) UnclaimedDonatedNFTsByUser(ctx context.Context, winnerAid int64) 
 
 // RaffleNFTWinningsByUser returns the raffle NFT prizes won by one address,
 // newest first.
-func (r *Repo) RaffleNFTWinningsByUser(ctx context.Context, winnerAid int64) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) RaffleNFTWinningsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	query := "SELECT " +
 		"p.evtlog_id," +
 		"p.block_num," +
@@ -304,7 +304,7 @@ func (r *Repo) RaffleNFTWinningsByUser(ctx context.Context, winnerAid int64) ([]
 		"LEFT JOIN address wa ON p.winner_aid=wa.address_id " +
 		"WHERE p.winner_aid=$1 " +
 		"ORDER BY p.evtlog_id DESC "
-	scan := func(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 		return rows.Scan(
 			&rec.Tx.EvtLogId,
 			&rec.Tx.BlockNum,
@@ -326,7 +326,7 @@ func (r *Repo) RaffleNFTWinningsByUser(ctx context.Context, winnerAid int64) ([]
 
 // PrizeDepositsChronoWarriorByUser returns one winner's chrono warrior
 // prizes (record type 2), newest first.
-func (r *Repo) PrizeDepositsChronoWarriorByUser(ctx context.Context, winnerAid int64) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) PrizeDepositsChronoWarriorByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := "SELECT " +
 		"p.id," +
 		"p.evtlog_id," +
@@ -344,7 +344,7 @@ func (r *Repo) PrizeDepositsChronoWarriorByUser(ctx context.Context, winnerAid i
 		"LEFT JOIN address wa ON p.winner_aid=wa.address_id " +
 		"WHERE p.winner_aid = $1 " +
 		"ORDER BY p.id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGPrizeDepositRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGPrizeDepositRec) error {
 		err := rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -369,7 +369,7 @@ func (r *Repo) PrizeDepositsChronoWarriorByUser(ctx context.Context, winnerAid i
 
 // PrizeDepositsRaffleEthByUser returns one winner's raffle ETH prizes
 // (record type 1), newest first.
-func (r *Repo) PrizeDepositsRaffleEthByUser(ctx context.Context, winnerAid int64) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) PrizeDepositsRaffleEthByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := "SELECT " +
 		"p.id," +
 		"p.evtlog_id," +
@@ -387,7 +387,7 @@ func (r *Repo) PrizeDepositsRaffleEthByUser(ctx context.Context, winnerAid int64
 		"LEFT JOIN address wa ON p.winner_aid=wa.address_id " +
 		"WHERE p.winner_aid = $1 " +
 		"ORDER BY p.id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGPrizeDepositRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGPrizeDepositRec) error {
 		err := rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -412,7 +412,7 @@ func (r *Repo) PrizeDepositsRaffleEthByUser(ctx context.Context, winnerAid int64
 
 // DonatedNFTClaimsByUser returns the donated NFTs one winner has claimed,
 // newest first.
-func (r *Repo) DonatedNFTClaimsByUser(ctx context.Context, winnerAid int64) ([]p.CGDonatedNFTClaimRec, error) {
+func (r *Repo) DonatedNFTClaimsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGDonatedNFTClaimRec, error) {
 	query := "SELECT " +
 		"c.id," +
 		"c.block_num," +
@@ -436,7 +436,7 @@ func (r *Repo) DonatedNFTClaimsByUser(ctx context.Context, winnerAid int64) ([]p
 		"LEFT JOIN address da ON d.donor_aid=da.address_id " +
 		"WHERE c.winner_aid=$1 " +
 		"ORDER BY c.id DESC "
-	scan := func(rows pgx.Rows, rec *p.CGDonatedNFTClaimRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGDonatedNFTClaimRec) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.BlockNum,
@@ -459,7 +459,7 @@ func (r *Repo) DonatedNFTClaimsByUser(ctx context.Context, winnerAid int64) ([]p
 
 // CosmicSignatureTokensByUser returns the Cosmic Signature NFTs currently
 // owned by one address, newest first. limit 0 means no effective limit.
-func (r *Repo) CosmicSignatureTokensByUser(ctx context.Context, userAid int64, offset, limit int) ([]p.CGCosmicSignatureMintRec, error) {
+func (r *Repo) CosmicSignatureTokensByUser(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGCosmicSignatureMintRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -472,7 +472,7 @@ func (r *Repo) CosmicSignatureTokensByUser(ctx context.Context, userAid int64, o
 
 // CosmicTokenTransfersByUser returns the ERC-20 Cosmic Token transfers one
 // address sent or received, newest first. limit 0 means no effective limit.
-func (r *Repo) CosmicTokenTransfersByUser(ctx context.Context, userAid int64, offset, limit int) ([]p.CGERC20TransferRec, error) {
+func (r *Repo) CosmicTokenTransfersByUser(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGERC20TransferRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -498,7 +498,7 @@ func (r *Repo) CosmicTokenTransfersByUser(ctx context.Context, userAid int64, of
 		"WHERE (t.from_aid=$1) OR (t.to_aid=$1) " +
 		"ORDER BY t.id DESC " +
 		"OFFSET $2 LIMIT $3"
-	scan := func(rows pgx.Rows, rec *p.CGERC20TransferRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGERC20TransferRec) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -522,7 +522,7 @@ func (r *Repo) CosmicTokenTransfersByUser(ctx context.Context, userAid int64, of
 // CosmicSignatureTransfersByUser returns the ERC-721 Cosmic Signature
 // transfers one address sent or received, newest first. limit 0 means no
 // effective limit.
-func (r *Repo) CosmicSignatureTransfersByUser(ctx context.Context, userAid int64, offset, limit int) ([]p.CGTransfer, error) {
+func (r *Repo) CosmicSignatureTransfersByUser(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGTransfer, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -547,7 +547,7 @@ func (r *Repo) CosmicSignatureTransfersByUser(ctx context.Context, userAid int64
 		"WHERE (t.from_aid=$1) OR (t.to_aid=$1) " +
 		"ORDER BY t.id DESC " +
 		"OFFSET $2 LIMIT $3"
-	scan := func(rows pgx.Rows, rec *p.CGTransfer) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGTransfer) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -569,7 +569,7 @@ func (r *Repo) CosmicSignatureTransfersByUser(ctx context.Context, userAid int64
 
 // MarketingRewardHistoryByUser returns one page of a marketer's reward
 // history, newest first.
-func (r *Repo) MarketingRewardHistoryByUser(ctx context.Context, userAid int64, offset, limit int) ([]p.CGMarketingRewardRec, error) {
+func (r *Repo) MarketingRewardHistoryByUser(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGMarketingRewardRec, error) {
 	query := "SELECT " + marketingRewardColumns + `
 		WHERE r.marketer_aid = $1
 		ORDER BY r.id DESC
@@ -579,7 +579,7 @@ func (r *Repo) MarketingRewardHistoryByUser(ctx context.Context, userAid int64, 
 
 // StakedTokensCstByUser returns the Cosmic Signature tokens one address
 // currently has staked, with mint provenance.
-func (r *Repo) StakedTokensCstByUser(ctx context.Context, userAid int64) ([]p.CGStakedTokenCSTRec, error) {
+func (r *Repo) StakedTokensCstByUser(ctx context.Context, userAid int64) ([]cgmodel.CGStakedTokenCSTRec, error) {
 	query := "SELECT " +
 		"m.id," +
 		"m.evtlog_id," +
@@ -609,7 +609,7 @@ func (r *Repo) StakedTokensCstByUser(ctx context.Context, userAid int64) ([]p.CG
 		"LEFT JOIN cg_nft_staked_cst a ON a.action_id=st.stake_action_id " +
 		"WHERE st.staker_aid=$1 " +
 		"ORDER BY m.token_id"
-	scan := func(rows pgx.Rows, rec *p.CGStakedTokenCSTRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakedTokenCSTRec) error {
 		var nullPrizeNum sql.NullInt64
 		err := rows.Scan(
 			&rec.TokenInfo.RecordId,
@@ -647,7 +647,7 @@ func (r *Repo) StakedTokensCstByUser(ctx context.Context, userAid int64) ([]p.CG
 
 // StakedTokensRwalkByUser returns the RandomWalk tokens one address
 // currently has staked.
-func (r *Repo) StakedTokensRwalkByUser(ctx context.Context, userAid int64) ([]p.CGStakedTokenRWalkRec, error) {
+func (r *Repo) StakedTokensRwalkByUser(ctx context.Context, userAid int64) ([]cgmodel.CGStakedTokenRWalkRec, error) {
 	query := "SELECT " +
 		"a.action_id," +
 		"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT," +
@@ -663,7 +663,7 @@ func (r *Repo) StakedTokensRwalkByUser(ctx context.Context, userAid int64) ([]p.
 		"LEFT JOIN cg_nft_staked_rwalk a ON a.action_id=st.stake_action_id " +
 		"WHERE st.staker_aid=$1 " +
 		"ORDER BY m.token_id"
-	scan := func(rows pgx.Rows, rec *p.CGStakedTokenRWalkRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakedTokenRWalkRec) error {
 		// The stake action id is scanned twice (a.action_id and
 		// st.stake_action_id name the same action), mirroring the legacy
 		// column list.
@@ -680,7 +680,7 @@ func (r *Repo) StakedTokensRwalkByUser(ctx context.Context, userAid int64) ([]p.
 
 // StakingRwalkMintsByUser returns the Cosmic Signature tokens minted to one
 // RandomWalk-staker raffle winner, newest first.
-func (r *Repo) StakingRwalkMintsByUser(ctx context.Context, userAid int64) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) StakingRwalkMintsByUser(ctx context.Context, userAid int64) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	query := "SELECT " +
 		"w.id," +
 		"w.evtlog_id," +
@@ -699,7 +699,7 @@ func (r *Repo) StakingRwalkMintsByUser(ctx context.Context, userAid int64) ([]p.
 		"LEFT JOIN address wa ON w.winner_aid=wa.address_id " +
 		"WHERE is_rwalk=TRUE AND is_staker=TRUE AND w.winner_aid=$1 " +
 		"ORDER BY w.evtlog_id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 		if err := scanUserStakingMint(rows, rec); err != nil {
 			return err
 		}
@@ -712,7 +712,7 @@ func (r *Repo) StakingRwalkMintsByUser(ctx context.Context, userAid int64) ([]p.
 
 // StakingCstMintsByUser returns the Cosmic Signature tokens minted to one
 // CST-staker raffle winner, newest first.
-func (r *Repo) StakingCstMintsByUser(ctx context.Context, userAid int64) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) StakingCstMintsByUser(ctx context.Context, userAid int64) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	query := "SELECT " +
 		"w.id," +
 		"w.evtlog_id," +
@@ -731,7 +731,7 @@ func (r *Repo) StakingCstMintsByUser(ctx context.Context, userAid int64) ([]p.CG
 		"LEFT JOIN address wa ON w.winner_aid=wa.address_id " +
 		"WHERE is_rwalk=FALSE AND is_staker=TRUE AND w.winner_aid=$1 " +
 		"ORDER BY w.evtlog_id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 		if err := scanUserStakingMint(rows, rec); err != nil {
 			return err
 		}
@@ -744,7 +744,7 @@ func (r *Repo) StakingCstMintsByUser(ctx context.Context, userAid int64) ([]p.CG
 
 // scanUserStakingMint scans the by-user staking-mint column list (which,
 // unlike the global variant, has no cst_amount columns).
-func scanUserStakingMint(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+func scanUserStakingMint(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 	return rows.Scan(
 		&rec.RecordId,
 		&rec.Tx.EvtLogId,
@@ -764,7 +764,7 @@ func scanUserStakingMint(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
 // StakingActionsCstByUser returns one page of a user's CST stake/unstake
 // actions (newest first); NumStakedNFTs carries the user's running staked
 // count recomputed over the returned page.
-func (r *Repo) StakingActionsCstByUser(ctx context.Context, userAid int64, offset, limit int) ([]p.CGStakeActionCSTRec, error) {
+func (r *Repo) StakingActionsCstByUser(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGStakeActionCSTRec, error) {
 	query := "(" +
 		"SELECT " +
 		"0 AS action_type," +
@@ -807,7 +807,7 @@ func (r *Repo) StakingActionsCstByUser(ctx context.Context, userAid int64, offse
 		"WHERE (u.staker_aid=$1) " +
 		"OFFSET $2 LIMIT $3 " +
 		") ORDER BY evtlog_id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGStakeActionCSTRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakeActionCSTRec) error {
 		return rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
@@ -843,7 +843,7 @@ func (r *Repo) StakingActionsCstByUser(ctx context.Context, userAid int64, offse
 
 // StakingActionsRwalkByUser is StakingActionsCstByUser for RandomWalk stake
 // actions (which carry no claimed flag).
-func (r *Repo) StakingActionsRwalkByUser(ctx context.Context, userAid int64, offset, limit int) ([]p.CGStakeActionRWalkRec, error) {
+func (r *Repo) StakingActionsRwalkByUser(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGStakeActionRWalkRec, error) {
 	query := "(" +
 		"SELECT " +
 		"0 AS action_type," +
@@ -884,7 +884,7 @@ func (r *Repo) StakingActionsRwalkByUser(ctx context.Context, userAid int64, off
 		"WHERE (u.staker_aid=$1) " +
 		"OFFSET $2 LIMIT $3 " +
 		") ORDER BY evtlog_id DESC"
-	scan := func(rows pgx.Rows, rec *p.CGStakeActionRWalkRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakeActionRWalkRec) error {
 		return rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
@@ -922,9 +922,9 @@ func (r *Repo) StakingActionsRwalkByUser(ctx context.Context, userAid int64, off
 // unclaimed CST staking rewards and per-round donated ERC-20 balances.
 // A user with no CST staking row keeps a nil DonatedERC20Tokens list,
 // matching the legacy early return.
-func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.CGClaimInfo, error) {
+func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgmodel.CGClaimInfo, error) {
 	const op = "user notif red box rewards"
-	var output p.CGClaimInfo
+	var output cgmodel.CGClaimInfo
 
 	var nullRaffleWei sql.NullString
 	var nullRaffleEth sql.NullFloat64
@@ -932,7 +932,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 		"WHERE winner_aid = $1 AND winner_index < 4 AND claimed = false"
 	err := r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullRaffleWei, &nullRaffleEth)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGClaimInfo{}, store.WrapError(op+": raffle eth", err)
+		return cgmodel.CGClaimInfo{}, store.WrapError(op+": raffle eth", err)
 	}
 	if nullRaffleEth.Valid {
 		output.ETHRaffleToClaim = nullRaffleEth.Float64
@@ -945,7 +945,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 	query = "SELECT unclaimed_nfts FROM cg_winner WHERE winner_aid = $1"
 	err = r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullNfts)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGClaimInfo{}, store.WrapError(op+": unclaimed nfts", err)
+		return cgmodel.CGClaimInfo{}, store.WrapError(op+": unclaimed nfts", err)
 	}
 	if nullNfts.Valid {
 		output.NumDonatedNFTToClaim = nullNfts.Int64
@@ -957,7 +957,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 		"WHERE winner_aid = $1 AND winner_index = 4 AND claimed = false"
 	err = r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullChronoWei, &nullChronoEth)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGClaimInfo{}, store.WrapError(op+": chrono warrior eth", err)
+		return cgmodel.CGClaimInfo{}, store.WrapError(op+": chrono warrior eth", err)
 	}
 	if nullChronoEth.Valid {
 		output.ETHChronoWarriorToClaim = nullChronoEth.Float64
@@ -973,7 +973,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 		if errors.Is(err, pgx.ErrNoRows) {
 			return output, nil
 		}
-		return p.CGClaimInfo{}, store.WrapError(op+": staking rewards", err)
+		return cgmodel.CGClaimInfo{}, store.WrapError(op+": staking rewards", err)
 	}
 	if nullStakingRewards.Valid {
 		output.UnclaimedStakingReward = nullStakingRewards.Float64
@@ -989,7 +989,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 		"JOIN cg_erc20_donation_stats d ON d.round_num=p.round_num AND claimed='F' " +
 		"LEFT JOIN address ta ON d.token_aid=ta.address_id " +
 		"WHERE p.winner_aid=$1 "
-	scan := func(rows pgx.Rows, rec *p.ERC20DonatedTokensInfo) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.ERC20DonatedTokensInfo) error {
 		return rows.Scan(
 			&rec.RoundNum,
 			&rec.TokenAid,
@@ -1000,7 +1000,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 	}
 	tokens, err := queryList(ctx, r, op+": donated erc20", 16, query, scan, winnerAid)
 	if err != nil {
-		return p.CGClaimInfo{}, err
+		return cgmodel.CGClaimInfo{}, err
 	}
 	output.DonatedERC20Tokens = tokens
 	return output, nil
@@ -1008,7 +1008,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (p.C
 
 // ERC20DonatedPrizesByWinner returns, per round won by userAid and per
 // donated ERC-20 token, the donated vs claimed amounts.
-func (r *Repo) ERC20DonatedPrizesByWinner(ctx context.Context, userAid int64) ([]p.CGSummarizedERC20Donation, error) {
+func (r *Repo) ERC20DonatedPrizesByWinner(ctx context.Context, userAid int64) ([]cgmodel.CGSummarizedERC20Donation, error) {
 	query := "WITH claim AS (" +
 		"SELECT SUM(amount) total,round_num,token_aid,winner_aid " +
 		"FROM cg_donated_tok_claimed GROUP BY round_num,token_aid,winner_aid " +
@@ -1041,7 +1041,7 @@ func (r *Repo) ERC20DonatedPrizesByWinner(ctx context.Context, userAid int64) ([
 		"LEFT JOIN address wa ON wa.address_id = claim.winner_aid " +
 		"WHERE p.winner_aid = $1 " +
 		"ORDER BY dt20.token_aid"
-	scan := func(rows pgx.Rows, rec *p.CGSummarizedERC20Donation) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGSummarizedERC20Donation) error {
 		var nullWinnerAddr sql.NullString
 		var nullWinnerAid sql.NullInt64
 		err := rows.Scan(

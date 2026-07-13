@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -24,9 +24,9 @@ func TestListRoundsPaginatesWithOpaqueCursor(t *testing.T) {
 	second.RoundNum, second.ClaimPrizeTx.Tx.EvtLogId = 1, 20
 
 	server := newRoundTestServer(t, fakeRoundReader{
-		page: func(_ context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgprimitives.CGRoundRec, bool, error) {
+		page: func(_ context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgmodel.CGRoundRec, bool, error) {
 			gotAfter, gotLimit = after, limit
-			return []cgprimitives.CGRoundRec{first, second}, true, nil
+			return []cgmodel.CGRoundRec{first, second}, true, nil
 		},
 	})
 	response := serve(t, server, "/api/v2/cosmicgame/rounds?limit=2")
@@ -65,12 +65,12 @@ func TestListRoundsDecodesContinuationCursor(t *testing.T) {
 
 	var gotAfter *cgstore.RoundPageCursor
 	server := newRoundTestServer(t, fakeRoundReader{
-		page: func(_ context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgprimitives.CGRoundRec, bool, error) {
+		page: func(_ context.Context, after *cgstore.RoundPageCursor, limit int) ([]cgmodel.CGRoundRec, bool, error) {
 			gotAfter = after
 			if limit != defaultPageLimit {
 				t.Errorf("default limit = %d, want %d", limit, defaultPageLimit)
 			}
-			return []cgprimitives.CGRoundRec{}, false, nil
+			return []cgmodel.CGRoundRec{}, false, nil
 		},
 	})
 	response := serve(t, server, "/api/v2/cosmicgame/rounds?cursor="+encoded)
@@ -109,7 +109,7 @@ func TestListRoundsHidesRepositoryErrors(t *testing.T) {
 	t.Parallel()
 
 	server := newRoundTestServer(t, fakeRoundReader{
-		page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error) {
+		page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error) {
 			return nil, false, errors.New("password=super-secret")
 		},
 	})
@@ -126,8 +126,8 @@ func TestListRoundsRejectsInconsistentRepositoryPage(t *testing.T) {
 	t.Run("has more without row", func(t *testing.T) {
 		t.Parallel()
 		server := newRoundTestServer(t, fakeRoundReader{
-			page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error) {
-				return []cgprimitives.CGRoundRec{}, true, nil
+			page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error) {
+				return []cgmodel.CGRoundRec{}, true, nil
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/rounds")
@@ -141,8 +141,8 @@ func TestListRoundsRejectsInconsistentRepositoryPage(t *testing.T) {
 		second := validRoundRecord()
 		second.RoundNum, second.ClaimPrizeTx.Tx.EvtLogId = 2, 20
 		server := newRoundTestServer(t, fakeRoundReader{
-			page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgprimitives.CGRoundRec, bool, error) {
-				return []cgprimitives.CGRoundRec{first, second}, false, nil
+			page: func(context.Context, *cgstore.RoundPageCursor, int) ([]cgmodel.CGRoundRec, bool, error) {
+				return []cgmodel.CGRoundRec{first, second}, false, nil
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/rounds")
@@ -158,7 +158,7 @@ func TestGetRoundResponses(t *testing.T) {
 		record := validRoundRecord()
 		record.RoundNum = 4
 		server := newRoundTestServer(t, fakeRoundReader{
-			item: func(_ context.Context, round int64) (cgprimitives.CGRoundRec, error) {
+			item: func(_ context.Context, round int64) (cgmodel.CGRoundRec, error) {
 				if round != 4 {
 					t.Fatalf("repository round = %d", round)
 				}
@@ -197,8 +197,8 @@ func TestGetRoundResponses(t *testing.T) {
 	t.Run("repository failure", func(t *testing.T) {
 		t.Parallel()
 		server := newRoundTestServer(t, fakeRoundReader{
-			item: func(context.Context, int64) (cgprimitives.CGRoundRec, error) {
-				return cgprimitives.CGRoundRec{}, errors.New("private database detail")
+			item: func(context.Context, int64) (cgmodel.CGRoundRec, error) {
+				return cgmodel.CGRoundRec{}, errors.New("private database detail")
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/rounds/4")
@@ -213,7 +213,7 @@ func TestGetRoundResponses(t *testing.T) {
 		record := validRoundRecord()
 		record.RoundNum = 5
 		server := newRoundTestServer(t, fakeRoundReader{
-			item: func(context.Context, int64) (cgprimitives.CGRoundRec, error) {
+			item: func(context.Context, int64) (cgmodel.CGRoundRec, error) {
 				return record, nil
 			},
 		})

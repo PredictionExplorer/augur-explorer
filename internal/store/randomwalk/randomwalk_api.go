@@ -13,20 +13,20 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/timefmt"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func profitFromNull(nf sql.NullFloat64) rwp.JSONNullFloat64 {
+func profitFromNull(nf sql.NullFloat64) rwmodel.JSONNullFloat64 {
 	if !nf.Valid {
-		return rwp.JSONNullFloat64{}
+		return rwmodel.JSONNullFloat64{}
 	}
 	p := nf.Float64
 	if math.IsNaN(p) || math.IsInf(p, 0) {
-		return rwp.JSONNullFloat64{}
+		return rwmodel.JSONNullFloat64{}
 	}
-	return rwp.JSONNullFloat64{Valid: true, Value: p}
+	return rwmodel.JSONNullFloat64{Valid: true, Value: p}
 }
 
 // =============================================================================
@@ -49,7 +49,7 @@ func activeOffersOrderClause(orderBy int) string {
 
 // ActiveOffers returns all open marketplace offers for the RandomWalk
 // contract, ordered per the whitelisted orderBy selector.
-func (r *Repo) ActiveOffers(ctx context.Context, rwalkAid, marketAid int64, orderBy int) ([]rwp.API_Offer, error) {
+func (r *Repo) ActiveOffers(ctx context.Context, rwalkAid, marketAid int64, orderBy int) ([]rwmodel.Offer, error) {
 	query := `SELECT
 			o.id,
 			o.evtlog_id,
@@ -74,7 +74,7 @@ func (r *Repo) ActiveOffers(ctx context.Context, rwalkAid, marketAid int64, orde
 			JOIN address ba ON o.buyer_aid=ba.address_id
 		WHERE (active = 't') AND (o.rwalk_aid=$1) AND (o.contract_aid=$2)` +
 		activeOffersOrderClause(orderBy)
-	return queryList(ctx, r, "active offers", 16, query, func(rows pgx.Rows, rec *rwp.API_Offer) error {
+	return queryList(ctx, r, "active offers", 16, query, func(rows pgx.Rows, rec *rwmodel.Offer) error {
 		return rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
@@ -119,7 +119,7 @@ const mintedTokensSelect = `SELECT
 			LEFT JOIN address oa ON t.owner_aid=oa.address_id
 			LEFT JOIN transaction tx ON t.tx_id=tx.id `
 
-func scanMintedToken(rows pgx.Rows, rec *rwp.API_TokenMint) error {
+func scanMintedToken(rows pgx.Rows, rec *rwmodel.TokenMint) error {
 	return rows.Scan(
 		&rec.BlockNum,
 		&rec.TimeStamp,
@@ -137,14 +137,14 @@ func scanMintedToken(rows pgx.Rows, rec *rwp.API_TokenMint) error {
 }
 
 // MintedTokensByPeriod returns mints inside [iniTs, finTs).
-func (r *Repo) MintedTokensByPeriod(ctx context.Context, rwalkAid int64, iniTs, finTs int) ([]rwp.API_TokenMint, error) {
+func (r *Repo) MintedTokensByPeriod(ctx context.Context, rwalkAid int64, iniTs, finTs int) ([]rwmodel.TokenMint, error) {
 	query := mintedTokensSelect +
 		`WHERE (t.time_stamp >= TO_TIMESTAMP($1)) AND (t.time_stamp<TO_TIMESTAMP($2)) AND t.contract_aid=$3`
 	return queryList(ctx, r, "minted tokens by period", 32, query, scanMintedToken, iniTs, finTs, rwalkAid)
 }
 
 // MintedTokensSequentially returns mints newest first, paginated.
-func (r *Repo) MintedTokensSequentially(ctx context.Context, rwalkAid int64, offset, limit int) ([]rwp.API_TokenMint, error) {
+func (r *Repo) MintedTokensSequentially(ctx context.Context, rwalkAid int64, offset, limit int) ([]rwmodel.TokenMint, error) {
 	query := mintedTokensSelect +
 		`WHERE contract_aid=$1 ORDER by t.id DESC OFFSET $2 LIMIT $3`
 	return queryList(ctx, r, "minted tokens sequentially", 32, query, scanMintedToken, rwalkAid, offset, limit)
@@ -156,7 +156,7 @@ func (r *Repo) MintedTokensSequentially(ctx context.Context, rwalkAid int64, off
 
 // TradingHistory returns the merged offer/sale/cancel timeline of the
 // marketplace, ordered by the real (most specific) event timestamp.
-func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, limit int) ([]rwp.API_TradingHistoryLog, error) {
+func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, limit int) ([]rwmodel.TradingHistoryLog, error) {
 	query := "SELECT " +
 		"record_id," + "evtlog_id," + "block_num," + "tx_id, " + "offer_ts," + "offer_date," +
 		"offer_id," + "otype," + "seller_aid," + "seller_addr," + "buyer_aid," + "buyer_addr," +
@@ -231,7 +231,7 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 		"ORDER BY real_ts " +
 		"OFFSET $1 LIMIT $2"
 
-	return queryList(ctx, r, "trading history", 16, query, func(rows pgx.Rows, rec *rwp.API_TradingHistoryLog) error {
+	return queryList(ctx, r, "trading history", 16, query, func(rows pgx.Rows, rec *rwmodel.TradingHistoryLog) error {
 		var nullProfit sql.NullFloat64
 		var nullCanID sql.NullInt64
 		var nullBoughtTs, nullCancelTs sql.NullInt64
@@ -274,14 +274,14 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 			rec.CanceledTs = nullCancelTs.Int64
 			timeCanceled := time.Unix(rec.CanceledTs, 0)
 			timeOffered := time.Unix(rec.TimeStamp, 0)
-			rec.CanceledDuration = primitives.DurationToString(primitives.TimeDifference(timeOffered, timeCanceled))
+			rec.CanceledDuration = timefmt.DurationToString(timefmt.TimeDifference(timeOffered, timeCanceled))
 		}
 		if nullBoughtTs.Valid {
 			rec.WasBought = true
 			rec.ItemBoughtTs = nullBoughtTs.Int64
 			timeBought := time.Unix(rec.ItemBoughtTs, 0)
 			timeOffered := time.Unix(rec.TimeStamp, 0)
-			rec.BoughtDuration = primitives.DurationToString(primitives.TimeDifference(timeOffered, timeBought))
+			rec.BoughtDuration = timefmt.DurationToString(timefmt.TimeDifference(timeOffered, timeBought))
 		}
 		return nil
 	}, offset, limit, contractAid)
@@ -294,9 +294,9 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 // RandomWalkStats returns contract-level statistics (volume, trades, mints,
 // withdrawals, unique users, last mint price). Missing statistic rows leave
 // the corresponding fields at zero, matching the legacy soft path.
-func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwp.API_RWalkStats, error) {
+func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwmodel.RWalkStats, error) {
 	const op = "random walk stats"
-	var output rwp.API_RWalkStats
+	var output rwmodel.RWalkStats
 	err := r.pool().QueryRow(ctx, `SELECT
 			total_vol/1e+18,
 			total_num_trades,
@@ -344,8 +344,8 @@ func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwp.API_RWa
 
 // MarketStats returns marketplace-level volume and trade counts; a missing
 // stats row yields zeros.
-func (r *Repo) MarketStats(ctx context.Context, marketAid int64) (rwp.API_MarketStats, error) {
-	var output rwp.API_MarketStats
+func (r *Repo) MarketStats(ctx context.Context, marketAid int64) (rwmodel.MarketStats, error) {
+	var output rwmodel.MarketStats
 	err := r.pool().QueryRow(ctx, `SELECT
 			total_vol/1e+18,
 			total_num_trades
@@ -363,7 +363,7 @@ func (r *Repo) MarketStats(ctx context.Context, marketAid int64) (rwp.API_Market
 // TokenFullHistory returns every event touching one token (mint, offers,
 // cancellations, buys, name changes, wallet transfers) in chronological
 // order.
-func (r *Repo) TokenFullHistory(ctx context.Context, rwalkAid, tokenID int64, offset, limit int) ([]rwp.API_FullHistoryEntry, error) {
+func (r *Repo) TokenFullHistory(ctx context.Context, rwalkAid, tokenID int64, offset, limit int) ([]rwmodel.FullHistoryEntry, error) {
 	query := "SELECT " +
 		"block_num," +
 		"EXTRACT(EPOCH FROM time_stamp)::BIGINT as ts," +
@@ -657,7 +657,7 @@ func (r *Repo) TokenFullHistory(ctx context.Context, rwalkAid, tokenID int64, of
 // scanFullHistoryEntry reads one row of the TokenFullHistory UNION and
 // converts it into the typed record variant selected by the non-NULL
 // discriminator columns.
-func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
+func scanFullHistoryEntry(rows pgx.Rows, rec *rwmodel.FullHistoryEntry) error {
 	var (
 		blockNum        sql.NullInt64
 		timestamp       sql.NullInt64
@@ -709,7 +709,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 		return err
 	}
 	if seed.Valid {
-		rec.Record = rwp.API_HistEntry_Mint{
+		rec.Record = rwmodel.HistEntryMint{
 			BlockNum:     blockNum.Int64,
 			TimeStamp:    timestamp.Int64,
 			DateTime:     datetime.String,
@@ -725,7 +725,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 		rec.RecordType = 1
 	}
 	if otype.Valid {
-		rec.Record = rwp.API_HistEntry_Offer{
+		rec.Record = rwmodel.HistEntryOffer{
 			BlockNum:     blockNum.Int64,
 			TimeStamp:    timestamp.Int64,
 			DateTime:     datetime.String,
@@ -744,7 +744,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 		rec.RecordType = 2
 	}
 	if offerCanceledID.Valid {
-		iface := rwp.API_HistEntry_OfferCanceled{
+		iface := rwmodel.HistEntryOfferCanceled{
 			BlockNum:        blockNum.Int64,
 			TimeStamp:       timestamp.Int64,
 			DateTime:        datetime.String,
@@ -771,7 +771,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 		rec.RecordType = 3
 	}
 	if itemBoughtID.Valid {
-		iface := rwp.API_HistEntry_ItemBought{
+		iface := rwmodel.HistEntryItemBought{
 			BlockNum:     blockNum.Int64,
 			TimeStamp:    timestamp.Int64,
 			DateTime:     datetime.String,
@@ -798,7 +798,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 		rec.RecordType = 4
 	}
 	if tokenName.Valid {
-		rec.Record = rwp.API_HistEntry_TokenName{
+		rec.Record = rwmodel.HistEntryTokenName{
 			BlockNum:     blockNum.Int64,
 			TimeStamp:    timestamp.Int64,
 			DateTime:     datetime.String,
@@ -810,7 +810,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 		rec.RecordType = 5
 	}
 	if transferID.Valid {
-		rec.Record = rwp.API_HistEntry_Transfer{
+		rec.Record = rwmodel.HistEntryTransfer{
 			BlockNum:     blockNum.Int64,
 			TimeStamp:    timestamp.Int64,
 			DateTime:     datetime.String,
@@ -831,7 +831,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwp.API_FullHistoryEntry) error {
 // MarketTradingVolumeByPeriod buckets marketplace sales into interval-second
 // periods between initTs and finTs, carrying an accumulated volume that
 // includes sales before the window.
-func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int64, initTs, finTs, interval int) ([]rwp.API_VolumeHistory, error) {
+func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int64, initTs, finTs, interval int) ([]rwmodel.VolumeHistory, error) {
 	const op = "market trading volume by period"
 	var initialVolume sql.NullFloat64
 	err := r.pool().QueryRow(ctx, `SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b
@@ -875,7 +875,7 @@ func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int6
 	if initialVolume.Valid {
 		accumVol = initialVolume.Float64
 	}
-	return queryList(ctx, r, op, 8, query, func(rows pgx.Rows, rec *rwp.API_VolumeHistory) error {
+	return queryList(ctx, r, op, 8, query, func(rows pgx.Rows, rec *rwmodel.VolumeHistory) error {
 		var sumVolume sql.NullFloat64
 		var numRows int
 		if err := rows.Scan(&numRows, &rec.StartTs, &sumVolume); err != nil {
@@ -892,7 +892,7 @@ func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int6
 }
 
 // TokenNameChanges returns the naming history of one token, newest first.
-func (r *Repo) TokenNameChanges(ctx context.Context, tokenID int64) ([]rwp.API_TokenName, error) {
+func (r *Repo) TokenNameChanges(ctx context.Context, tokenID int64) ([]rwmodel.TokenNameRec, error) {
 	query := `SELECT
 			t.block_num,
 			EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,
@@ -909,7 +909,7 @@ func (r *Repo) TokenNameChanges(ctx context.Context, tokenID int64) ([]rwp.API_T
 			LEFT JOIN address oa ON tx.from_aid=oa.address_id
 		WHERE token_id = $1
 		ORDER by t.id DESC`
-	return queryList(ctx, r, "token name changes", 32, query, func(rows pgx.Rows, rec *rwp.API_TokenName) error {
+	return queryList(ctx, r, "token name changes", 32, query, func(rows pgx.Rows, rec *rwmodel.TokenNameRec) error {
 		if err := rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -929,7 +929,7 @@ func (r *Repo) TokenNameChanges(ctx context.Context, tokenID int64) ([]rwp.API_T
 }
 
 // TokensByUser returns the tokens currently owned by one user.
-func (r *Repo) TokensByUser(ctx context.Context, userAid int64) ([]rwp.API_UserToken, error) {
+func (r *Repo) TokensByUser(ctx context.Context, userAid int64) ([]rwmodel.UserToken, error) {
 	query := `SELECT
 			t.token_id,
 			seed_hex,
@@ -938,7 +938,7 @@ func (r *Repo) TokensByUser(ctx context.Context, userAid int64) ([]rwp.API_UserT
 		FROM rw_token t
 		WHERE cur_owner_aid=$1
 		ORDER BY token_id`
-	return queryList(ctx, r, "tokens by user", 32, query, func(rows pgx.Rows, rec *rwp.API_UserToken) error {
+	return queryList(ctx, r, "tokens by user", 32, query, func(rows pgx.Rows, rec *rwmodel.UserToken) error {
 		return rows.Scan(
 			&rec.TokenId,
 			&rec.Seed,
@@ -977,7 +977,7 @@ func (r *Repo) FloorPrice(ctx context.Context, rwalkAid, marketAid int64) (noOff
 
 // TradingHistoryByUser returns closed offers where the user was buyer or
 // seller.
-func (r *Repo) TradingHistoryByUser(ctx context.Context, userAid int64) ([]rwp.API_Offer, error) {
+func (r *Repo) TradingHistoryByUser(ctx context.Context, userAid int64) ([]rwmodel.Offer, error) {
 	query := `SELECT
 			o.id,
 			o.evtlog_id,
@@ -1015,7 +1015,7 @@ func (r *Repo) TradingHistoryByUser(ctx context.Context, userAid int64) ([]rwp.A
 
 // scanClosedOffer reads the shared closed-offer row shape used by
 // TradingHistoryByUser and SaleHistory.
-func scanClosedOffer(rows pgx.Rows, rec *rwp.API_Offer) error {
+func scanClosedOffer(rows pgx.Rows, rec *rwmodel.Offer) error {
 	var nullProfit sql.NullFloat64
 	var nullCanID sql.NullInt64
 	if err := rows.Scan(
@@ -1054,9 +1054,9 @@ func scanClosedOffer(rows pgx.Rows, rec *rwp.API_Offer) error {
 // UserInfo returns per-user trading statistics. A user without stats rows
 // yields store.ErrNotFound with the partially-populated record (user aid and
 // the marketplace-contract flag), matching the legacy soft-miss shape.
-func (r *Repo) UserInfo(ctx context.Context, userAid, rwalkAid int64) (rwp.API_UserInfo, error) {
+func (r *Repo) UserInfo(ctx context.Context, userAid, rwalkAid int64) (rwmodel.UserInfo, error) {
 	const op = "rwalk user info"
-	var output rwp.API_UserInfo
+	var output rwmodel.UserInfo
 	var nullAid sql.NullInt64
 	err := r.pool().QueryRow(ctx,
 		"SELECT contract_aid FROM rw_new_offer WHERE contract_aid=$1 LIMIT 1", userAid).Scan(&nullAid)
@@ -1085,7 +1085,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid, rwalkAid int64) (rwp.API_U
 }
 
 // Top5TradedTokens returns the five most traded tokens.
-func (r *Repo) Top5TradedTokens(ctx context.Context) ([]rwp.API_Top5Toks, error) {
+func (r *Repo) Top5TradedTokens(ctx context.Context) ([]rwmodel.TopTradedToken, error) {
 	query := `SELECT
 			token_id,
 			num_trades,
@@ -1093,7 +1093,7 @@ func (r *Repo) Top5TradedTokens(ctx context.Context) ([]rwp.API_Top5Toks, error)
 		FROM rw_token t
 		ORDER BY num_trades DESC
 		LIMIT 5`
-	return queryList(ctx, r, "top 5 traded tokens", 16, query, func(rows pgx.Rows, rec *rwp.API_Top5Toks) error {
+	return queryList(ctx, r, "top 5 traded tokens", 16, query, func(rows pgx.Rows, rec *rwmodel.TopTradedToken) error {
 		return rows.Scan(
 			&rec.TokenId,
 			&rec.TotalTrades,
@@ -1104,9 +1104,9 @@ func (r *Repo) Top5TradedTokens(ctx context.Context) ([]rwp.API_Top5Toks, error)
 
 // TokenInfo returns current ownership, naming and trading state of one
 // token; a token without a rw_token row yields store.ErrNotFound.
-func (r *Repo) TokenInfo(ctx context.Context, rwalkAid, tokenID int64) (rwp.API_TokenInfo, error) {
+func (r *Repo) TokenInfo(ctx context.Context, rwalkAid, tokenID int64) (rwmodel.TokenInfo, error) {
 	const op = "rwalk token info"
-	var output rwp.API_TokenInfo
+	var output rwmodel.TokenInfo
 	output.TokenId = tokenID
 	err := r.pool().QueryRow(ctx, `SELECT
 			t.cur_owner_aid,
@@ -1162,14 +1162,14 @@ func (r *Repo) TokenMinted(ctx context.Context, tokenID int64) (bool, error) {
 
 // MintIntervals returns mint number and time elapsed between consecutive
 // mints (for a scatter plot).
-func (r *Repo) MintIntervals(ctx context.Context, rwalkAid int64) ([]rwp.API_MintInterval, error) {
+func (r *Repo) MintIntervals(ctx context.Context, rwalkAid int64) ([]rwmodel.MintInterval, error) {
 	query := `SELECT
 			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
 			token_id
 		FROM rw_mint_evt m
 		WHERE contract_aid = $1
 		ORDER BY token_id`
-	records, err := queryList(ctx, r, "mint intervals", 256, query, func(rows pgx.Rows, rec *rwp.API_MintInterval) error {
+	records, err := queryList(ctx, r, "mint intervals", 256, query, func(rows pgx.Rows, rec *rwmodel.MintInterval) error {
 		if err := rows.Scan(&rec.TimeStamp, &rec.TokenId); err != nil {
 			return err
 		}
@@ -1192,7 +1192,7 @@ func (r *Repo) MintIntervals(ctx context.Context, rwalkAid int64) ([]rwp.API_Min
 
 // WithdrawalChart returns the cumulative withdrawable amount over time
 // (half of every mint price accumulates).
-func (r *Repo) WithdrawalChart(ctx context.Context, rwalkAid int64) ([]rwp.API_WithdrawalChartEntry, error) {
+func (r *Repo) WithdrawalChart(ctx context.Context, rwalkAid int64) ([]rwmodel.WithdrawalChartEntry, error) {
 	query := `SELECT
 			EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,
 			time_stamp,
@@ -1200,7 +1200,7 @@ func (r *Repo) WithdrawalChart(ctx context.Context, rwalkAid int64) ([]rwp.API_W
 		FROM rw_mint_evt m
 		WHERE contract_aid=$1`
 	var withdrawalAmount float64
-	return queryList(ctx, r, "withdrawal chart", 256, query, func(rows pgx.Rows, rec *rwp.API_WithdrawalChartEntry) error {
+	return queryList(ctx, r, "withdrawal chart", 256, query, func(rows pgx.Rows, rec *rwmodel.WithdrawalChartEntry) error {
 		if err := rows.Scan(
 			&rec.TimeStamp,
 			store.TimeText(&rec.DateTime),
@@ -1217,7 +1217,7 @@ func (r *Repo) WithdrawalChart(ctx context.Context, rwalkAid int64) ([]rwp.API_W
 // SaleHistory returns completed sales ordered by purchase time (the
 // rw_item_bought timestamp, so "latest sale" matches the most recent
 // on-chain buy; the tx hash is the purchase transaction).
-func (r *Repo) SaleHistory(ctx context.Context, contractAid int64, offset, limit int) ([]rwp.API_Offer, error) {
+func (r *Repo) SaleHistory(ctx context.Context, contractAid int64, offset, limit int) ([]rwmodel.Offer, error) {
 	query := `SELECT
 			o.id,
 			o.evtlog_id,
@@ -1257,7 +1257,7 @@ func (r *Repo) SaleHistory(ctx context.Context, contractAid int64, offset, limit
 
 // FloorPriceByPeriod returns the minimum open sell-offer price per
 // interval-second bucket; buckets without offers are omitted.
-func (r *Repo) FloorPriceByPeriod(ctx context.Context, rwalkAid, marketAid int64, initTs, finTs, interval int) ([]rwp.API_FloorPrice, error) {
+func (r *Repo) FloorPriceByPeriod(ctx context.Context, rwalkAid, marketAid int64, initTs, finTs, interval int) ([]rwmodel.FloorPrice, error) {
 	const op = "floor price by period"
 	query := "WITH periods AS (" +
 		"SELECT * FROM (" +
@@ -1293,9 +1293,9 @@ func (r *Repo) FloorPriceByPeriod(ctx context.Context, rwalkAid, marketAid int64
 		return nil, store.WrapError(op, err)
 	}
 	defer rows.Close()
-	records := make([]rwp.API_FloorPrice, 0, 8)
+	records := make([]rwmodel.FloorPrice, 0, 8)
 	for rows.Next() {
-		var rec rwp.API_FloorPrice
+		var rec rwmodel.FloorPrice
 		var nullFloat sql.NullFloat64
 		if err := rows.Scan(&rec.TimeStamp, &nullFloat); err != nil {
 			return nil, store.WrapError(op, err)
@@ -1314,7 +1314,7 @@ func (r *Repo) FloorPriceByPeriod(ctx context.Context, rwalkAid, marketAid int64
 
 // MintedTokensCSV returns every mint of the contract joined with current
 // token state, in token order (feeds the CSV export).
-func (r *Repo) MintedTokensCSV(ctx context.Context, rwalkAid int64) ([]rwp.API_TokenMint_CSV, error) {
+func (r *Repo) MintedTokensCSV(ctx context.Context, rwalkAid int64) ([]rwmodel.TokenMintCSV, error) {
 	query := `SELECT
 			t.block_num,
 			EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,
@@ -1341,7 +1341,7 @@ func (r *Repo) MintedTokensCSV(ctx context.Context, rwalkAid int64) ([]rwp.API_T
 			LEFT JOIN address loa ON (tk.cur_owner_aid=loa.address_id)
 		WHERE contract_aid=$1
 		ORDER by t.token_id`
-	return queryList(ctx, r, "minted tokens csv", 32, query, func(rows pgx.Rows, rec *rwp.API_TokenMint_CSV) error {
+	return queryList(ctx, r, "minted tokens csv", 32, query, func(rows pgx.Rows, rec *rwmodel.TokenMintCSV) error {
 		var nNumTrades sql.NullInt64
 		var nLastOwnerAddr, nLastName sql.NullString
 		var nTotalVol, nLastPrice sql.NullFloat64
@@ -1418,7 +1418,7 @@ func monthName(code int64) string {
 
 // MintReport aggregates mints per calendar month with the cumulative
 // redeemable amount (half of everything deposited).
-func (r *Repo) MintReport(ctx context.Context) ([]rwp.API_MintReportRec, error) {
+func (r *Repo) MintReport(ctx context.Context) ([]rwmodel.MintReportRec, error) {
 	query := `WITH periods AS (
 			SELECT
 				s.m_start,
@@ -1437,7 +1437,7 @@ func (r *Repo) MintReport(ctx context.Context) ([]rwp.API_MintReportRec, error) 
 		GROUP BY p.yearmonth
 		ORDER BY p.yearmonth`
 	var sumDeposited float64
-	return queryList(ctx, r, "mint report", 32, query, func(rows pgx.Rows, rec *rwp.API_MintReportRec) error {
+	return queryList(ctx, r, "mint report", 32, query, func(rows pgx.Rows, rec *rwmodel.MintReportRec) error {
 		var nTotalMinted sql.NullInt64
 		var nTotalWei sql.NullString
 		var nTotalEth sql.NullFloat64

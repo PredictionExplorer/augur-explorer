@@ -18,7 +18,7 @@ import (
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -63,7 +63,7 @@ func (c Contracts) All() []ethcommon.Address {
 // every address in the address table (the fresh-database bootstrap) and
 // resolves the ids the handlers need. Registration order is fixed: on an
 // empty database it determines the assigned address ids.
-func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store) (Contracts, cgp.CosmicGameContractAddrs, error) {
+func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store) (Contracts, cgmodel.CosmicGameContractAddrs, error) {
 	addrs, err := repo.ContractAddrs(ctx)
 	if err != nil {
 		return Contracts{}, addrs, fmt.Errorf("reading contract addresses: %w", err)

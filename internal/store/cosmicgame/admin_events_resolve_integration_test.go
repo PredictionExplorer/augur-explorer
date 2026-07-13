@@ -8,7 +8,7 @@ import (
 	"math"
 	"testing"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 // TestResolveAdminEventValuesFixture resolves the admin events actually
@@ -35,10 +35,10 @@ func TestResolveAdminEventValuesFixture(t *testing.T) {
 func TestResolveAdminEventValuesSQLPaths(t *testing.T) {
 	r := repo(t)
 
-	mk := func(recordType, intValue int64) p.CGAdminEvent {
-		return p.CGAdminEvent{RecordType: recordType, EvtLogId: 6000, IntegerValue: intValue}
+	mk := func(recordType, intValue int64) cgmodel.CGAdminEvent {
+		return cgmodel.CGAdminEvent{RecordType: recordType, EvtLogId: 6000, IntegerValue: intValue}
 	}
-	events := []p.CGAdminEvent{
+	events := []cgmodel.CGAdminEvent{
 		mk(7, 90),                                // DelayDuration: plain seconds
 		mk(18, 10100),                            // TimeIncrease: fallback (no microsec base) => x1.01 per bid
 		mk(19, 3600),                             // TimeoutClaimPrize: 1h
@@ -62,7 +62,7 @@ func TestResolveAdminEventValuesSQLPaths(t *testing.T) {
 		resolved[i] = events[i].ResolvedValue
 	}
 	golden(t, "resolved_admin_events_sql_paths", func() any {
-		again := make([]p.CGAdminEvent, len(events))
+		again := make([]cgmodel.CGAdminEvent, len(events))
 		copy(again, events)
 		for i := range again {
 			again[i].ResolvedValue = ""
@@ -120,7 +120,7 @@ func TestResolveAdminEventValuesWithHistoricalParameters(t *testing.T) {
 		}
 	})
 
-	events := []p.CGAdminEvent{
+	events := []cgmodel.CGAdminEvent{
 		{RecordType: 18, EvtLogId: 6000, IntegerValue: 200},
 		{RecordType: 22, EvtLogId: 6000, IntegerValue: 2},
 		{RecordType: 39, EvtLogId: 6000, IntegerValue: 10},
@@ -150,7 +150,7 @@ func TestAdminEventResolversPropagateCancellation(t *testing.T) {
 	r := repo(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	events := []p.CGAdminEvent{
+	events := []cgmodel.CGAdminEvent{
 		{RecordType: 18, EvtLogId: 6000, IntegerValue: 200},
 		{RecordType: 22, EvtLogId: 6000, IntegerValue: 2},
 		{RecordType: 36, EvtLogId: 6000, IntegerValue: 2},
@@ -158,7 +158,7 @@ func TestAdminEventResolversPropagateCancellation(t *testing.T) {
 		{RecordType: 39, EvtLogId: 6000, IntegerValue: 2},
 	}
 	for _, event := range events {
-		if err := r.ResolveAdminEventValues(ctx, []p.CGAdminEvent{event}); !errors.Is(err, context.Canceled) {
+		if err := r.ResolveAdminEventValues(ctx, []cgmodel.CGAdminEvent{event}); !errors.Is(err, context.Canceled) {
 			t.Errorf("record type %d cancellation = %v", event.RecordType, err)
 		}
 	}

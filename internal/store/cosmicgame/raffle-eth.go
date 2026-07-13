@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -29,7 +29,7 @@ const prizeDepositColumns = `
 			p.amount/1e18 amount_eth,
 			p.claimed, `
 
-func scanPrizeDeposit(rows pgx.Rows, rec *p.CGPrizeDepositRec) error {
+func scanPrizeDeposit(rows pgx.Rows, rec *cgmodel.CGPrizeDepositRec) error {
 	return rows.Scan(
 		&rec.RecordId,
 		&rec.Tx.EvtLogId,
@@ -51,7 +51,7 @@ func scanPrizeDeposit(rows pgx.Rows, rec *p.CGPrizeDepositRec) error {
 // UnclaimedPrizeEthDeposits returns winnerAid's ETH deposits in the prizes
 // wallet that have not been withdrawn yet, newest first. Chrono warrior
 // deposits are tagged record_type 7, plain raffle deposits 10.
-func (r *Repo) UnclaimedPrizeEthDeposits(ctx context.Context, winnerAid int64, offset, limit int) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) UnclaimedPrizeEthDeposits(ctx context.Context, winnerAid int64, offset, limit int) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := `SELECT
 			rd.id,
 			rd.evtlog_id,
@@ -77,7 +77,7 @@ func (r *Repo) UnclaimedPrizeEthDeposits(ctx context.Context, winnerAid int64, o
 		WHERE rd.winner_aid=$1 AND rd.claimed='F'
 		ORDER BY rd.id DESC
 		OFFSET $2 LIMIT $3`
-	scan := func(rows pgx.Rows, rec *p.CGPrizeDepositRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGPrizeDepositRec) error {
 		var claimTs sql.NullInt64
 		err := rows.Scan(
 			&rec.RecordId,
@@ -111,7 +111,7 @@ func (r *Repo) UnclaimedPrizeEthDeposits(ctx context.Context, winnerAid int64, o
 // PrizeEthDeposits returns every ETH deposit made into the prizes wallet,
 // newest first (chrono warrior deposits tagged record_type 7, raffle 10).
 // limit 0 means no effective limit.
-func (r *Repo) PrizeEthDeposits(ctx context.Context, offset, limit int) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) PrizeEthDeposits(ctx context.Context, offset, limit int) ([]cgmodel.CGPrizeDepositRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -128,7 +128,7 @@ func (r *Repo) PrizeEthDeposits(ctx context.Context, offset, limit int) ([]p.CGP
 
 // RaffleEthDeposits returns the plain raffle ETH deposits (excluding chrono
 // warrior deposits), newest first. limit 0 means no effective limit.
-func (r *Repo) RaffleEthDeposits(ctx context.Context, offset, limit int) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) RaffleEthDeposits(ctx context.Context, offset, limit int) ([]cgmodel.CGPrizeDepositRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -146,7 +146,7 @@ func (r *Repo) RaffleEthDeposits(ctx context.Context, offset, limit int) ([]p.CG
 
 // ChronoWarriorEthDeposits returns the chrono warrior ETH deposits, newest
 // first. limit 0 means no effective limit.
-func (r *Repo) ChronoWarriorEthDeposits(ctx context.Context, offset, limit int) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) ChronoWarriorEthDeposits(ctx context.Context, offset, limit int) ([]cgmodel.CGPrizeDepositRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -163,7 +163,7 @@ func (r *Repo) ChronoWarriorEthDeposits(ctx context.Context, offset, limit int) 
 
 // EthDepositsByUser returns every prize-wallet ETH deposit of one winner,
 // newest first (chrono warrior tagged record_type 7, raffle 10).
-func (r *Repo) EthDepositsByUser(ctx context.Context, winnerAid int64) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) EthDepositsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := `SELECT ` + prizeDepositColumns + `
 			CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type
 		FROM cg_prize_deposit p
@@ -177,7 +177,7 @@ func (r *Repo) EthDepositsByUser(ctx context.Context, winnerAid int64) ([]p.CGPr
 
 // RaffleEthDepositsByUser returns one winner's plain raffle ETH deposits
 // (excluding chrono warrior deposits), newest first.
-func (r *Repo) RaffleEthDepositsByUser(ctx context.Context, winnerAid int64) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) RaffleEthDepositsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := `SELECT ` + prizeDepositColumns + `
 			10 AS record_type
 		FROM cg_prize_deposit p
@@ -191,7 +191,7 @@ func (r *Repo) RaffleEthDepositsByUser(ctx context.Context, winnerAid int64) ([]
 
 // ChronoWarriorEthDepositsByUser returns one winner's chrono warrior ETH
 // deposits, newest first.
-func (r *Repo) ChronoWarriorEthDepositsByUser(ctx context.Context, winnerAid int64) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) ChronoWarriorEthDepositsByUser(ctx context.Context, winnerAid int64) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := `SELECT ` + prizeDepositColumns + `
 			7 AS record_type
 		FROM cg_prize_deposit p
@@ -206,7 +206,7 @@ func (r *Repo) ChronoWarriorEthDepositsByUser(ctx context.Context, winnerAid int
 // PrizeDepositsByRound returns the bidder-raffle ETH deposits of one round,
 // ordered by winner index. The cg_prize ptype=10 join deliberately excludes
 // chrono-warrior wallet deposits. Repo.PrizeInfo composes it.
-func (r *Repo) PrizeDepositsByRound(ctx context.Context, roundNum int64) ([]p.CGPrizeDepositRec, error) {
+func (r *Repo) PrizeDepositsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGPrizeDepositRec, error) {
 	query := `SELECT
 			p.id,
 			p.evtlog_id,
@@ -236,7 +236,7 @@ func (r *Repo) PrizeDepositsByRound(ctx context.Context, roundNum int64) ([]p.CG
 // round raffle-deposit resource. The legacy CGPrizeDepositRec retains its
 // float amount for frozen v1 responses.
 type RaffleEthDepositRecord struct {
-	Tx           p.Transaction
+	Tx           cgmodel.Transaction
 	RoundNum     int64
 	WinnerIndex  int64
 	WinnerAddr   string

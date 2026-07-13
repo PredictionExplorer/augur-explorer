@@ -10,7 +10,7 @@ import (
 	"slices"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestRaffleNFTWinnersByRound(t *testing.T) {
@@ -53,7 +53,7 @@ func TestRaffleNFTWinnersByRoundPage(t *testing.T) {
 		}
 		var (
 			after *RaffleNFTWinnerPageCursor
-			paged = make([]cgprimitives.CGRaffleNFTWinnerRec, 0)
+			paged = make([]cgmodel.CGRaffleNFTWinnerRec, 0)
 		)
 		for {
 			page, hasMore, err := r.RaffleNFTWinnersByRoundPage(ctx, tc.round, tc.isStaker, after, 1)
@@ -73,8 +73,8 @@ func TestRaffleNFTWinnersByRoundPage(t *testing.T) {
 				EventLogID:  last.Tx.EvtLogId,
 			}
 		}
-		sortWinners := func(records []cgprimitives.CGRaffleNFTWinnerRec) {
-			slices.SortFunc(records, func(a, b cgprimitives.CGRaffleNFTWinnerRec) int {
+		sortWinners := func(records []cgmodel.CGRaffleNFTWinnerRec) {
+			slices.SortFunc(records, func(a, b cgmodel.CGRaffleNFTWinnerRec) int {
 				if byIndex := cmp.Compare(a.WinnerIndex, b.WinnerIndex); byIndex != 0 {
 					return byIndex
 				}

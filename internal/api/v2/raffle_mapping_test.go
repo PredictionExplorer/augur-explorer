@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -112,17 +112,17 @@ func TestMapRoundRaffleEthDepositRejectsMalformedData(t *testing.T) {
 func TestMapRoundRaffleNftWinnerRejectsMalformedData(t *testing.T) {
 	t.Parallel()
 
-	tests := map[string]func(*cgprimitives.CGRaffleNFTWinnerRec){
-		"negative round":  func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.RoundNum = -1 },
-		"negative winner": func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.WinnerIndex = -1 },
-		"negative token":  func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.TokenId = -1 },
-		"wrong pool":      func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.IsStaker = true },
-		"event identity":  func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.Tx.EvtLogId = 0 },
-		"hash":            func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.Tx.TxHash = "bad" },
-		"timestamp":       func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.Tx.DateTime = "bad" },
-		"address":         func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.WinnerAddr = "bad" },
-		"empty amount":    func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.CstAmount = "" },
-		"fractional":      func(r *cgprimitives.CGRaffleNFTWinnerRec) { r.CstAmount = "1.5" },
+	tests := map[string]func(*cgmodel.CGRaffleNFTWinnerRec){
+		"negative round":  func(r *cgmodel.CGRaffleNFTWinnerRec) { r.RoundNum = -1 },
+		"negative winner": func(r *cgmodel.CGRaffleNFTWinnerRec) { r.WinnerIndex = -1 },
+		"negative token":  func(r *cgmodel.CGRaffleNFTWinnerRec) { r.TokenId = -1 },
+		"wrong pool":      func(r *cgmodel.CGRaffleNFTWinnerRec) { r.IsStaker = true },
+		"event identity":  func(r *cgmodel.CGRaffleNFTWinnerRec) { r.Tx.EvtLogId = 0 },
+		"hash":            func(r *cgmodel.CGRaffleNFTWinnerRec) { r.Tx.TxHash = "bad" },
+		"timestamp":       func(r *cgmodel.CGRaffleNFTWinnerRec) { r.Tx.DateTime = "bad" },
+		"address":         func(r *cgmodel.CGRaffleNFTWinnerRec) { r.WinnerAddr = "bad" },
+		"empty amount":    func(r *cgmodel.CGRaffleNFTWinnerRec) { r.CstAmount = "" },
+		"fractional":      func(r *cgmodel.CGRaffleNFTWinnerRec) { r.CstAmount = "1.5" },
 	}
 	for name, mutate := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestMapRoundRaffleNftWinnerRejectsMalformedData(t *testing.T) {
 
 func validRaffleEthDepositRecord() cgstore.RaffleEthDepositRecord {
 	return cgstore.RaffleEthDepositRecord{
-		Tx: cgprimitives.Transaction{
+		Tx: cgmodel.Transaction{
 			EvtLogId: 7001,
 			BlockNum: 123,
 			TxHash:   "0xabcdef0000000000000000000000000000000000000000000000000000000001",
@@ -151,9 +151,9 @@ func validRaffleEthDepositRecord() cgstore.RaffleEthDepositRecord {
 	}
 }
 
-func validRaffleNftWinnerRecord(staker bool) cgprimitives.CGRaffleNFTWinnerRec {
-	return cgprimitives.CGRaffleNFTWinnerRec{
-		Tx: cgprimitives.Transaction{
+func validRaffleNftWinnerRecord(staker bool) cgmodel.CGRaffleNFTWinnerRec {
+	return cgmodel.CGRaffleNFTWinnerRec{
+		Tx: cgmodel.Transaction{
 			EvtLogId: 7002,
 			BlockNum: 123,
 			TxHash:   "0xabcdef0000000000000000000000000000000000000000000000000000000002",

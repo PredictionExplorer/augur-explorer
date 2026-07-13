@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -142,7 +142,7 @@ func bidFrequencyBoundedSQL(intervalSecs int) (query string, epochAligned bool) 
 // round opens are excluded (see excludeFirstHourAfterRoundStartSQL). A
 // non-positive interval means one bucket spanning the whole range (falling
 // back to an hour if the range itself is empty).
-func (r *Repo) BidFrequencyByPeriod(ctx context.Context, initTs, finTs, intervalSecs int) ([]p.CGBidFrequencyBucket, error) {
+func (r *Repo) BidFrequencyByPeriod(ctx context.Context, initTs, finTs, intervalSecs int) ([]cgmodel.CGBidFrequencyBucket, error) {
 	if intervalSecs <= 0 {
 		intervalSecs = finTs - initTs
 		if intervalSecs <= 0 {
@@ -155,7 +155,7 @@ func (r *Repo) BidFrequencyByPeriod(ctx context.Context, initTs, finTs, interval
 	if !epochAligned {
 		args = append(args, strconv.Itoa(intervalSecs))
 	}
-	scan := func(rows pgx.Rows, rec *p.CGBidFrequencyBucket) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGBidFrequencyBucket) error {
 		return rows.Scan(&rec.BucketTs, &rec.NumBids, &rec.UniqueBidders)
 	}
 	return queryList(ctx, r, "bid frequency by period", 256, query, scan, args...)
@@ -165,7 +165,7 @@ func (r *Repo) BidFrequencyByPeriod(ctx context.Context, initTs, finTs, interval
 // BidFrequencyByPeriod's bucket alignment and round-open exclusion while
 // guaranteeing that bids at or after finTs cannot enter a partial final
 // bucket.
-func (r *Repo) BidFrequencyByPeriodBounded(ctx context.Context, initTs, finTs, intervalSecs int) ([]p.CGBidFrequencyBucket, error) {
+func (r *Repo) BidFrequencyByPeriodBounded(ctx context.Context, initTs, finTs, intervalSecs int) ([]cgmodel.CGBidFrequencyBucket, error) {
 	if intervalSecs <= 0 {
 		intervalSecs = finTs - initTs
 		if intervalSecs <= 0 {
@@ -177,7 +177,7 @@ func (r *Repo) BidFrequencyByPeriodBounded(ctx context.Context, initTs, finTs, i
 	if !epochAligned {
 		args = append(args, strconv.Itoa(intervalSecs))
 	}
-	scan := func(rows pgx.Rows, rec *p.CGBidFrequencyBucket) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGBidFrequencyBucket) error {
 		return rows.Scan(&rec.BucketTs, &rec.NumBids, &rec.UniqueBidders)
 	}
 	return queryList(ctx, r, "bounded bid frequency by period", 256, query, scan, args...)
@@ -189,7 +189,7 @@ func (r *Repo) BidFrequencyByPeriodBounded(ctx context.Context, initTs, finTs, i
 // cumulative). Windows with no bids report 0 counts and 0% for every type,
 // so the caller can render a continuous, gap-free series.
 // bid_type: 0=ETH, 1=RandomWalk, 2=CST.
-func (r *Repo) BidTypeRatioByPeriod(ctx context.Context, initTs, finTs, intervalSecs int) ([]p.CGBidTypeRatioBucket, error) {
+func (r *Repo) BidTypeRatioByPeriod(ctx context.Context, initTs, finTs, intervalSecs int) ([]cgmodel.CGBidTypeRatioBucket, error) {
 	if intervalSecs <= 0 {
 		intervalSecs = finTs - initTs
 		if intervalSecs <= 0 {
@@ -225,7 +225,7 @@ func (r *Repo) BidTypeRatioByPeriod(ctx context.Context, initTs, finTs, interval
 // BidTypeRatioByPeriodBounded is the v2 bid-type projection. It assigns each
 // filtered bid to one bucket before zero-filling the series and strictly
 // excludes bids at or after finTs from the partial final bucket.
-func (r *Repo) BidTypeRatioByPeriodBounded(ctx context.Context, initTs, finTs, intervalSecs int) ([]p.CGBidTypeRatioBucket, error) {
+func (r *Repo) BidTypeRatioByPeriodBounded(ctx context.Context, initTs, finTs, intervalSecs int) ([]cgmodel.CGBidTypeRatioBucket, error) {
 	if intervalSecs <= 0 {
 		intervalSecs = finTs - initTs
 		if intervalSecs <= 0 {
@@ -265,7 +265,7 @@ func (r *Repo) BidTypeRatioByPeriodBounded(ctx context.Context, initTs, finTs, i
 	)
 }
 
-func scanBidTypeRatioBucket(rows pgx.Rows, rec *p.CGBidTypeRatioBucket) error {
+func scanBidTypeRatioBucket(rows pgx.Rows, rec *cgmodel.CGBidTypeRatioBucket) error {
 	if err := rows.Scan(&rec.BucketTs, &rec.EthBids, &rec.RwalkBids, &rec.CstBids, &rec.TotalBids); err != nil {
 		return err
 	}
@@ -280,11 +280,11 @@ func scanBidTypeRatioBucket(rows pgx.Rows, rec *p.CGBidTypeRatioBucket) error {
 
 // TopBidders returns the most active bidders by lifetime bid count,
 // descending. A non-positive limit defaults to 20.
-func (r *Repo) TopBidders(ctx context.Context, limit int) ([]p.CGTopBidderInfo, error) {
+func (r *Repo) TopBidders(ctx context.Context, limit int) ([]cgmodel.CGTopBidderInfo, error) {
 	return r.topBidders(ctx, limit, false)
 }
 
-func (r *Repo) topBidders(ctx context.Context, limit int, stableTies bool) ([]p.CGTopBidderInfo, error) {
+func (r *Repo) topBidders(ctx context.Context, limit int, stableTies bool) ([]cgmodel.CGTopBidderInfo, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -294,7 +294,7 @@ func (r *Repo) topBidders(ctx context.Context, limit int, stableTies bool) ([]p.
 		"WHERE b.num_bids > 0 " +
 		topBiddersOrderBy(stableTies) +
 		"LIMIT $1"
-	scan := func(rows pgx.Rows, rec *p.CGTopBidderInfo) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGTopBidderInfo) error {
 		return rows.Scan(&rec.BidderAid, &rec.BidderAddr, &rec.NumBids)
 	}
 	return queryList(ctx, r, "top bidders", limit, query, scan, limit)
@@ -312,7 +312,7 @@ func topBiddersOrderBy(stableTies bool) string {
 // a new session, and sessions with fewer than minBids bids are dropped.
 // Non-positive knobs default to topN=20, gapHours=6, minBids=2. When there
 // are no bidders at all the period list is nil.
-func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, gapHours, minBids int) ([]p.CGTopBidderInfo, []p.CGBidderActivePeriod, error) {
+func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, gapHours, minBids int) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, error) {
 	bidders, periods, _, err := r.topBidderActivePeriods(
 		ctx, topN, initTs, finTs, gapHours, minBids, false, 0,
 	)
@@ -325,7 +325,7 @@ func (r *Repo) TopBidderActivePeriods(ctx context.Context, topN, initTs, finTs, 
 // keys. At most MaxBiddingActivePeriods rows are returned; hasMore asks the
 // caller to reject an over-broad request instead of serializing an unbounded
 // response. Internal IDs remain repository-only.
-func (r *Repo) TopBidderActivePeriodsBounded(ctx context.Context, topN, initTs, finTs, gapHours, minBids int) ([]p.CGTopBidderInfo, []p.CGBidderActivePeriod, bool, error) {
+func (r *Repo) TopBidderActivePeriodsBounded(ctx context.Context, topN, initTs, finTs, gapHours, minBids int) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
 	return r.topBidderActivePeriods(
 		ctx,
 		topN,
@@ -343,7 +343,7 @@ func (r *Repo) topBidderActivePeriods(
 	topN, initTs, finTs, gapHours, minBids int,
 	stableTies bool,
 	periodLimit int,
-) ([]p.CGTopBidderInfo, []p.CGBidderActivePeriod, bool, error) {
+) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
 	if topN <= 0 {
 		topN = 20
 	}
@@ -397,7 +397,7 @@ func (r *Repo) topBidderActivePeriods(
 		args = append(args, periodLimit+1)
 	}
 
-	scan := func(rows pgx.Rows, rec *p.CGBidderActivePeriod) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGBidderActivePeriod) error {
 		var sessionID int64
 		if err := rows.Scan(
 			&rec.BidderAid,
@@ -451,7 +451,7 @@ func (r *Repo) BidTimeBounds(ctx context.Context) (minTs, maxTs int64, err error
 
 // DetectBidSpikes finds merged runs of ordered buckets whose non-negative bid
 // count exceeds a dynamic threshold. Invalid input returns no spikes.
-func DetectBidSpikes(buckets []p.CGBidFrequencyBucket, intervalSecs int) []p.CGBidSpike {
+func DetectBidSpikes(buckets []cgmodel.CGBidFrequencyBucket, intervalSecs int) []cgmodel.CGBidSpike {
 	if len(buckets) == 0 || intervalSecs <= 0 {
 		return nil
 	}
@@ -512,9 +512,9 @@ func DetectBidSpikes(buckets []p.CGBidFrequencyBucket, intervalSecs int) []p.CGB
 		runs = append(runs, spikeRun{startIdx: runStart, endIdx: len(counts) - 1})
 	}
 
-	spikes := make([]p.CGBidSpike, 0, len(runs))
+	spikes := make([]cgmodel.CGBidSpike, 0, len(runs))
 	for idx, run := range runs {
-		spike := p.CGBidSpike{Index: idx}
+		spike := cgmodel.CGBidSpike{Index: idx}
 		spike.StartTs = buckets[run.startIdx].BucketTs
 		lastBucket := buckets[run.endIdx]
 		interval := int64(intervalSecs)

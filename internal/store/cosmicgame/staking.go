@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -98,11 +98,11 @@ func stakeActionQueryRWalk(stakeTable, unstakeTable string) string {
 // StakeActionCstInfo returns the combined stake/unstake record of one CST
 // stake action (unstake fields zero-valued while the token is still staked),
 // or store.ErrNotFound for an unknown action id.
-func (r *Repo) StakeActionCstInfo(ctx context.Context, actionID int64) (p.CGStakeUnstakeCombined, error) {
+func (r *Repo) StakeActionCstInfo(ctx context.Context, actionID int64) (cgmodel.CGStakeUnstakeCombined, error) {
 	const op = "stake action cst info"
 	query := stakeActionQueryCST("cg_nft_staked_cst", "cg_nft_unstaked_cst")
 
-	var rec p.CGStakeUnstakeCombined
+	var rec cgmodel.CGStakeUnstakeCombined
 	var nullRecordID, nullEvtlogID, nullTxID, nullUnstakeTs, nullActionID sql.NullInt64
 	var nullBlockNum, nullTokenID, nullRoundNum, nullNumStakedNFTs, nullStakerAid sql.NullInt64
 	var nullTxHash, nullStakerAddr, nullReward, nullRewardPerTok sql.NullString
@@ -118,7 +118,7 @@ func (r *Repo) StakeActionCstInfo(ctx context.Context, actionID int64) (p.CGStak
 		&nullRewardPerTok, &nullRewardPerTokEth, &nullStakerAid, &nullStakerAddr,
 	)
 	if err != nil {
-		return p.CGStakeUnstakeCombined{}, store.WrapError(op, err)
+		return cgmodel.CGStakeUnstakeCombined{}, store.WrapError(op, err)
 	}
 
 	if nullRecordID.Valid {
@@ -174,11 +174,11 @@ func (r *Repo) StakeActionCstInfo(ctx context.Context, actionID int64) (p.CGStak
 
 // StakeActionRwalkInfo is StakeActionCstInfo for RandomWalk stake actions
 // (whose unstake rows carry no rewards), or store.ErrNotFound.
-func (r *Repo) StakeActionRwalkInfo(ctx context.Context, actionID int64) (p.CGStakeUnstakeCombined, error) {
+func (r *Repo) StakeActionRwalkInfo(ctx context.Context, actionID int64) (cgmodel.CGStakeUnstakeCombined, error) {
 	const op = "stake action rwalk info"
 	query := stakeActionQueryRWalk("cg_nft_staked_rwalk", "cg_nft_unstaked_rwalk")
 
-	var rec p.CGStakeUnstakeCombined
+	var rec cgmodel.CGStakeUnstakeCombined
 	var nullRecordID, nullEvtlogID, nullTxID, nullUnstakeTs, nullActionID sql.NullInt64
 	var nullBlockNum, nullTokenID, nullRoundNum, nullNumStakedNFTs, nullStakerAid sql.NullInt64
 	var nullTxHash, nullStakerAddr sql.NullString
@@ -192,7 +192,7 @@ func (r *Repo) StakeActionRwalkInfo(ctx context.Context, actionID int64) (p.CGSt
 		&nullRoundNum, &nullNumStakedNFTs, &nullStakerAid, &nullStakerAddr,
 	)
 	if err != nil {
-		return p.CGStakeUnstakeCombined{}, store.WrapError(op, err)
+		return cgmodel.CGStakeUnstakeCombined{}, store.WrapError(op, err)
 	}
 	if nullRecordID.Valid {
 		rec.Unstake.RecordId = nullRecordID.Int64
@@ -236,7 +236,7 @@ func (r *Repo) StakeActionRwalkInfo(ctx context.Context, actionID int64) (p.CGSt
 
 // StakingRewardsToBeClaimed returns, per staking deposit, the reward amounts
 // userAid can still collect, newest deposit first.
-func (r *Repo) StakingRewardsToBeClaimed(ctx context.Context, userAid int64) ([]p.CGRewardToClaim, error) {
+func (r *Repo) StakingRewardsToBeClaimed(ctx context.Context, userAid int64) ([]cgmodel.CGRewardToClaim, error) {
 	query := "WITH rwd AS (" +
 		"SELECT " +
 		"COUNT(token_id) AS num_toks_to_collect," +
@@ -277,7 +277,7 @@ func (r *Repo) StakingRewardsToBeClaimed(ctx context.Context, userAid int64) ([]
 		"INNER JOIN rwd ON rwd.deposit_id=sd.deposit_id " +
 		"WHERE (sd.staker_aid = $1) " +
 		"ORDER BY d.id DESC "
-	scan := func(rows pgx.Rows, rec *p.CGRewardToClaim) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRewardToClaim) error {
 		var nullPendingReward sql.NullString
 		var nullPendingRewardEth sql.NullFloat64
 		var nullPendingNumToks sql.NullInt64
@@ -325,7 +325,7 @@ func (r *Repo) StakingRewardsToBeClaimed(ctx context.Context, userAid int64) ([]
 
 // StakingRewardsCollected returns, per staking deposit, the rewards userAid
 // already collected, newest deposit first.
-func (r *Repo) StakingRewardsCollected(ctx context.Context, userAid int64, offset, limit int) ([]p.CGCollectedReward, error) {
+func (r *Repo) StakingRewardsCollected(ctx context.Context, userAid int64, offset, limit int) ([]cgmodel.CGCollectedReward, error) {
 	query := "WITH rwd AS (" +
 		"SELECT " +
 		"COUNT(token_id) AS num_toks_collected," +
@@ -368,7 +368,7 @@ func (r *Repo) StakingRewardsCollected(ctx context.Context, userAid int64, offse
 		"WHERE sd.staker_aid=$1 " +
 		"ORDER BY d.id DESC " +
 		"OFFSET $2 LIMIT $3"
-	scan := func(rows pgx.Rows, rec *p.CGCollectedReward) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGCollectedReward) error {
 		err := rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -408,7 +408,7 @@ func (r *Repo) StakingRewardsCollected(ctx context.Context, userAid int64, offse
 
 // StakedTokensCstGlobal returns every currently staked Cosmic Signature
 // token with its mint provenance and the stake action that locked it.
-func (r *Repo) StakedTokensCstGlobal(ctx context.Context) ([]p.CGStakedTokenCSTRec, error) {
+func (r *Repo) StakedTokensCstGlobal(ctx context.Context) ([]cgmodel.CGStakedTokenCSTRec, error) {
 	query := "SELECT " +
 		"m.id," +
 		"m.evtlog_id," +
@@ -442,7 +442,7 @@ func (r *Repo) StakedTokensCstGlobal(ctx context.Context) ([]p.CGStakedTokenCSTR
 		"LEFT JOIN cg_nft_staked_cst a ON a.action_id=st.stake_action_id " +
 		"LEFT JOIN address sa ON a.staker_aid = sa.address_id " +
 		"ORDER BY m.token_id"
-	scan := func(rows pgx.Rows, rec *p.CGStakedTokenCSTRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakedTokenCSTRec) error {
 		var nullPrizeNum sql.NullInt64
 		err := rows.Scan(
 			&rec.TokenInfo.RecordId,
@@ -484,7 +484,7 @@ func (r *Repo) StakedTokensCstGlobal(ctx context.Context) ([]p.CGStakedTokenCSTR
 
 // StakedTokensRwalkGlobal returns every currently staked RandomWalk token
 // with its stake action.
-func (r *Repo) StakedTokensRwalkGlobal(ctx context.Context) ([]p.CGStakedTokenRWalkRec, error) {
+func (r *Repo) StakedTokensRwalkGlobal(ctx context.Context) ([]cgmodel.CGStakedTokenRWalkRec, error) {
 	query := "SELECT " +
 		"a.evtlog_id," +
 		"a.block_num," +
@@ -503,7 +503,7 @@ func (r *Repo) StakedTokensRwalkGlobal(ctx context.Context) ([]p.CGStakedTokenRW
 		"LEFT JOIN cg_nft_staked_rwalk a ON a.action_id=st.stake_action_id " +
 		"LEFT JOIN address sa ON a.staker_aid = sa.address_id " +
 		"ORDER BY m.token_id"
-	scan := func(rows pgx.Rows, rec *p.CGStakedTokenRWalkRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakedTokenRWalkRec) error {
 		return rows.Scan(
 			&rec.StakeEvtLogId,
 			&rec.StakeBlockNum,
@@ -520,7 +520,7 @@ func (r *Repo) StakedTokensRwalkGlobal(ctx context.Context) ([]p.CGStakedTokenRW
 
 // ActionIDsForDepositWithClaimInfo returns the stake actions of userAid that
 // participate in one staking deposit, with per-action claim status.
-func (r *Repo) ActionIDsForDepositWithClaimInfo(ctx context.Context, depositID, userAid int64) ([]p.CGActionIdsForDepositWithClaimInfo, error) {
+func (r *Repo) ActionIDsForDepositWithClaimInfo(ctx context.Context, depositID, userAid int64) ([]cgmodel.CGActionIdsForDepositWithClaimInfo, error) {
 	query := "SELECT " +
 		"d.id," +
 		"a.action_id, " +
@@ -552,7 +552,7 @@ func (r *Repo) ActionIDsForDepositWithClaimInfo(ctx context.Context, depositID, 
 		")" +
 		") " +
 		"ORDER BY d.evtlog_id DESC "
-	scan := func(rows pgx.Rows, rec *p.CGActionIdsForDepositWithClaimInfo) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGActionIdsForDepositWithClaimInfo) error {
 		var nullDepositID sql.NullInt64
 		var nullRwdBlockNum, nullRwdTimestamp, nullRwdTxID sql.NullInt64
 		var nullRwdTxHash, nullReward sql.NullString
@@ -601,7 +601,7 @@ func (r *Repo) ActionIDsForDepositWithClaimInfo(ctx context.Context, depositID, 
 
 // GlobalStakingRewards returns every staking ETH deposit with collected vs
 // pending totals across all stakers, newest first.
-func (r *Repo) GlobalStakingRewards(ctx context.Context) ([]p.CGStakingRewardGlobal, error) {
+func (r *Repo) GlobalStakingRewards(ctx context.Context) ([]cgmodel.CGStakingRewardGlobal, error) {
 	query := "WITH rwd AS (" +
 		"SELECT " +
 		"SUM(CASE WHEN collected='T' THEN reward ELSE 0 END) AS collected_reward," +
@@ -636,7 +636,7 @@ func (r *Repo) GlobalStakingRewards(ctx context.Context) ([]p.CGStakingRewardGlo
 		"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 		"LEFT JOIN rwd ON (rwd.round_num=d.round_num) " +
 		"ORDER BY d.id DESC "
-	scan := func(rows pgx.Rows, rec *p.CGStakingRewardGlobal) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakingRewardGlobal) error {
 		var countTotal, countNotCollected int64
 		err := rows.Scan(
 			&rec.RecordId,
@@ -670,7 +670,7 @@ func (r *Repo) GlobalStakingRewards(ctx context.Context) ([]p.CGStakingRewardGlo
 
 // StakingCstRewardsByRound returns each staker's share of the staking ETH
 // deposit made in one round.
-func (r *Repo) StakingCstRewardsByRound(ctx context.Context, roundNum int64) ([]p.CGEthDepositAsReward, error) {
+func (r *Repo) StakingCstRewardsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGEthDepositAsReward, error) {
 	query := "SELECT " +
 		"d.id," +
 		"d.evtlog_id," +
@@ -700,7 +700,7 @@ func (r *Repo) StakingCstRewardsByRound(ctx context.Context, roundNum int64) ([]
 		"LEFT JOIN address sa ON sd.staker_aid = sa.address_id " +
 		"LEFT JOIN transaction t ON t.id=d.tx_id " +
 		"WHERE d.round_num=$1 "
-	scan := func(rows pgx.Rows, rec *p.CGEthDepositAsReward) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGEthDepositAsReward) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.EvtLogId,
@@ -732,7 +732,7 @@ func (r *Repo) StakingCstRewardsByRound(ctx context.Context, roundNum int64) ([]
 
 // GlobalStakingCstHistory returns the interleaved CST stake/unstake event
 // history (newest first) with a running staked-NFT accumulator.
-func (r *Repo) GlobalStakingCstHistory(ctx context.Context, offset, limit int) ([]p.CGStakingCSTHistoryRec, error) {
+func (r *Repo) GlobalStakingCstHistory(ctx context.Context, offset, limit int) ([]cgmodel.CGStakingCSTHistoryRec, error) {
 	query := "(" +
 		"SELECT " +
 		"0 AS action_type," +
@@ -778,7 +778,7 @@ func (r *Repo) GlobalStakingCstHistory(ctx context.Context, offset, limit int) (
 		") ORDER BY evtlog_id DESC " +
 		"OFFSET $1 LIMIT $2 "
 	var accumStakedNFTs int64
-	scan := func(rows pgx.Rows, rec *p.CGStakingCSTHistoryRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakingCSTHistoryRec) error {
 		err := rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
@@ -810,7 +810,7 @@ func (r *Repo) GlobalStakingCstHistory(ctx context.Context, offset, limit int) (
 // GlobalStakingRwalkHistory returns the interleaved RandomWalk stake/unstake
 // event history (newest first) with a running staked-NFT accumulator and the
 // last indexed block timestamp attached to each row.
-func (r *Repo) GlobalStakingRwalkHistory(ctx context.Context, offset, limit int) ([]p.CGStakingRWalkHistoryRec, error) {
+func (r *Repo) GlobalStakingRwalkHistory(ctx context.Context, offset, limit int) ([]cgmodel.CGStakingRWalkHistoryRec, error) {
 	lastTs, err := r.lastBlockTimestamp(ctx)
 	if err != nil {
 		return nil, err
@@ -864,7 +864,7 @@ func (r *Repo) GlobalStakingRwalkHistory(ctx context.Context, offset, limit int)
 		"OFFSET $1 LIMIT $2 " +
 		") order by evtlog_id DESC"
 	var accumStakedNFTs int64
-	scan := func(rows pgx.Rows, rec *p.CGStakingRWalkHistoryRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakingRWalkHistoryRec) error {
 		err := rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
@@ -913,9 +913,9 @@ func (r *Repo) lastBlockTimestamp(ctx context.Context) (int64, error) {
 
 // StakingRwalkMintsGlobal returns the Cosmic Signature tokens minted to
 // RandomWalk-staker raffle winners, newest first.
-func (r *Repo) StakingRwalkMintsGlobal(ctx context.Context, offset, limit int) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) StakingRwalkMintsGlobal(ctx context.Context, offset, limit int) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	query := stakingMintsQuery("(is_rwalk=TRUE) AND (is_staker=TRUE)")
-	scan := func(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 		if err := scanStakingMint(rows, rec); err != nil {
 			return err
 		}
@@ -928,9 +928,9 @@ func (r *Repo) StakingRwalkMintsGlobal(ctx context.Context, offset, limit int) (
 
 // StakingCstMintsGlobal returns the Cosmic Signature tokens minted to
 // CST-staker raffle winners, newest first.
-func (r *Repo) StakingCstMintsGlobal(ctx context.Context, offset, limit int) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) StakingCstMintsGlobal(ctx context.Context, offset, limit int) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	query := stakingMintsQuery("(is_rwalk=FALSE) AND (is_staker=TRUE)")
-	scan := func(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 		if err := scanStakingMint(rows, rec); err != nil {
 			return err
 		}
@@ -967,7 +967,7 @@ func stakingMintsQuery(whereClause string) string {
 		"OFFSET $1 LIMIT $2"
 }
 
-func scanStakingMint(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+func scanStakingMint(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 	return rows.Scan(
 		&rec.RecordId,
 		&rec.Tx.EvtLogId,
@@ -989,7 +989,7 @@ func scanStakingMint(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
 // StakingCstUserDepositRewards returns userAid's CST staking rewards grouped
 // per deposit, each with the stake/unstake actions that earned them and
 // claimable/claimed accumulators.
-func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) ([]p.CGCombinedDepositRewardRec, error) {
+func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) ([]cgmodel.CGCombinedDepositRewardRec, error) {
 	const op = "staking cst user deposit rewards"
 	// Sorted ASC because the per-deposit accumulators are computed in Go
 	// between consecutive rows.
@@ -1026,13 +1026,13 @@ func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) 
 	}
 	defer rows.Close()
 
-	var rec p.CGCombinedDepositRewardRec
+	var rec cgmodel.CGCombinedDepositRewardRec
 	curDepositID := int64(-1)
 	var yourTokensStaked, numTokensCollected int64
 	var yourClaimableAmount, yourClaimedAmount float64
 	fullyClaimed := true
-	records := make([]p.CGCombinedDepositRewardRec, 0, 16)
-	actions := make([]p.CGNftStakeUnstakeCombined, 0, 16)
+	records := make([]cgmodel.CGCombinedDepositRewardRec, 0, 16)
+	actions := make([]cgmodel.CGNftStakeUnstakeCombined, 0, 16)
 
 	flush := func() {
 		rec.Actions = actions
@@ -1045,7 +1045,7 @@ func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) 
 	}
 
 	for rows.Next() {
-		var recRow p.CGNftStakeUnstakeCombined
+		var recRow cgmodel.CGNftStakeUnstakeCombined
 		var nullRecordID, nullActionID, nullEvtlogID, nullBlockNum, nullTxID, nullTokenID, nullNumStakedNFTs, nullTimeStamp sql.NullInt64
 		var nullTxHash, nullReward sql.NullString
 		var nullRewardEth sql.NullFloat64
@@ -1107,7 +1107,7 @@ func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) 
 				yourClaimableAmount = 0
 				yourClaimedAmount = 0
 				numTokensCollected = 0
-				actions = make([]p.CGNftStakeUnstakeCombined, 0, 16)
+				actions = make([]cgmodel.CGNftStakeUnstakeCombined, 0, 16)
 			}
 			rec.RecordId = recordID
 			rec.Tx.EvtLogId = evtlogID
@@ -1145,7 +1145,7 @@ func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) 
 
 // StakingCstUserTokenRewards returns userAid's collected vs pending CST
 // staking rewards summed per token.
-func (r *Repo) StakingCstUserTokenRewards(ctx context.Context, userAid int64) ([]p.CGStakingCstRewardPerTokenRec, error) {
+func (r *Repo) StakingCstUserTokenRewards(ctx context.Context, userAid int64) ([]cgmodel.CGStakingCstRewardPerTokenRec, error) {
 	query := "WITH rwd AS (" +
 		"SELECT " +
 		"token_id, " +
@@ -1171,7 +1171,7 @@ func (r *Repo) StakingCstUserTokenRewards(ctx context.Context, userAid int64) ([
 		"rwd.reward_to_collect " +
 		"FROM rwd " +
 		"ORDER BY token_id "
-	scan := func(rows pgx.Rows, rec *p.CGStakingCstRewardPerTokenRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGStakingCstRewardPerTokenRec) error {
 		err := rows.Scan(
 			&rec.TokenId,
 			&rec.RewardCollectedEth,
@@ -1188,7 +1188,7 @@ func (r *Repo) StakingCstUserTokenRewards(ctx context.Context, userAid int64) ([
 
 // StakingCstUserTokenRewardDetails returns the per-deposit reward rows of
 // one token staked by userAid, with the stake/unstake actions attached.
-func (r *Repo) StakingCstUserTokenRewardDetails(ctx context.Context, userAid, tokenID int64) ([]p.CGNftStakeUnstakeCombined, error) {
+func (r *Repo) StakingCstUserTokenRewardDetails(ctx context.Context, userAid, tokenID int64) ([]cgmodel.CGNftStakeUnstakeCombined, error) {
 	query := "SELECT " +
 		"rwd.reward," +
 		"rwd.reward/1e18, " +
@@ -1217,7 +1217,7 @@ func (r *Repo) StakingCstUserTokenRewardDetails(ctx context.Context, userAid, to
 		") a ON a.sa_action_id=rwd.action_id " +
 		"WHERE rwd.staker_aid=$1 AND rwd.token_id=$2 " +
 		"ORDER BY rwd.deposit_id"
-	scan := func(rows pgx.Rows, rec *p.CGNftStakeUnstakeCombined) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGNftStakeUnstakeCombined) error {
 		var nullRecID, nullEvtlogID, nullBlockNum, nullTxID, nullTimestamp, nullActionID, nullStakedNFTs sql.NullInt64
 		var nullTxHash, nullReward sql.NullString
 		var nullRewardEth sql.NullFloat64

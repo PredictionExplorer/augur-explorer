@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -52,9 +52,9 @@ type GlobalStatisticsRecord struct {
 	CSTBidCount                        int64
 	MarketingRewardsTotalWei           string
 	MarketingRewardCount               int64
-	DonatedTokenDistribution           []p.CGDonatedTokenDistrRec
-	CSTStaking                         p.CGStakeStatsCST
-	RandomWalkStaking                  p.CGStakeStatsRWalk
+	DonatedTokenDistribution           []cgmodel.CGDonatedTokenDistrRec
+	CSTStaking                         cgmodel.CGStakeStatsCST
+	RandomWalkStaking                  cgmodel.CGStakeStatsRWalk
 }
 
 // CosmicGameGlobalStatistics returns exact global statistics for API v2.

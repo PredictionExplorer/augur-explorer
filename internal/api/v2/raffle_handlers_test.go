@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -72,12 +72,12 @@ func TestListRoundRaffleNftWinnersSelectsPoolAndPaginates(t *testing.T) {
 			second.RoundNum, second.WinnerIndex, second.Tx.EvtLogId = 9, 1, 101
 			var gotStaker bool
 			server := newRaffleTestServer(t, fakeRoundRaffleReader{
-				nft: func(_ context.Context, _ int64, isStaker bool, _ *cgstore.RaffleNFTWinnerPageCursor, limit int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+				nft: func(_ context.Context, _ int64, isStaker bool, _ *cgstore.RaffleNFTWinnerPageCursor, limit int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 					gotStaker = isStaker
 					if limit != 2 {
 						t.Errorf("limit = %d, want 2", limit)
 					}
-					return []cgprimitives.CGRaffleNFTWinnerRec{first, second}, true, nil
+					return []cgmodel.CGRaffleNFTWinnerRec{first, second}, true, nil
 				},
 			})
 			path := "/api/v2/cosmicgame/rounds/9/raffle-nft-winners?pool=" + string(tc.pool) + "&limit=2"
@@ -148,9 +148,9 @@ func TestRoundRaffleHandlersDecodeContinuationCursors(t *testing.T) {
 	}
 	var gotNftAfter *cgstore.RaffleNFTWinnerPageCursor
 	nftServer := newRaffleTestServer(t, fakeRoundRaffleReader{
-		nft: func(_ context.Context, _ int64, _ bool, after *cgstore.RaffleNFTWinnerPageCursor, _ int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+		nft: func(_ context.Context, _ int64, _ bool, after *cgstore.RaffleNFTWinnerPageCursor, _ int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 			gotNftAfter = after
-			return []cgprimitives.CGRaffleNFTWinnerRec{}, false, nil
+			return []cgmodel.CGRaffleNFTWinnerRec{}, false, nil
 		},
 	})
 	nftResponse := serve(t, nftServer,
@@ -216,7 +216,7 @@ func TestRoundRaffleHandlersReturnNotFoundBeforePage(t *testing.T) {
 			pageCalled = true
 			return nil, false, nil
 		},
-		nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+		nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 			pageCalled = true
 			return nil, false, nil
 		},
@@ -255,7 +255,7 @@ func TestRoundRaffleHandlersHideInternalFailures(t *testing.T) {
 		},
 		"NFT page": {
 			path: "/api/v2/cosmicgame/rounds/1/raffle-nft-winners?pool=bidder",
-			reader: fakeRoundRaffleReader{nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+			reader: fakeRoundRaffleReader{nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 				return nil, false, errors.New("password=nft-secret")
 			}},
 		},
@@ -311,28 +311,28 @@ func TestRoundRaffleHandlersRejectInconsistentPages(t *testing.T) {
 		})
 	}
 
-	nftCases := map[string]func() ([]cgprimitives.CGRaffleNFTWinnerRec, bool){
-		"has more without row": func() ([]cgprimitives.CGRaffleNFTWinnerRec, bool) {
-			return []cgprimitives.CGRaffleNFTWinnerRec{}, true
+	nftCases := map[string]func() ([]cgmodel.CGRaffleNFTWinnerRec, bool){
+		"has more without row": func() ([]cgmodel.CGRaffleNFTWinnerRec, bool) {
+			return []cgmodel.CGRaffleNFTWinnerRec{}, true
 		},
-		"wrong pool": func() ([]cgprimitives.CGRaffleNFTWinnerRec, bool) {
+		"wrong pool": func() ([]cgmodel.CGRaffleNFTWinnerRec, bool) {
 			record := validRaffleNftWinnerRecord(true)
 			record.RoundNum = 1
-			return []cgprimitives.CGRaffleNFTWinnerRec{record}, false
+			return []cgmodel.CGRaffleNFTWinnerRec{record}, false
 		},
-		"out of order": func() ([]cgprimitives.CGRaffleNFTWinnerRec, bool) {
+		"out of order": func() ([]cgmodel.CGRaffleNFTWinnerRec, bool) {
 			first := validRaffleNftWinnerRecord(false)
 			first.RoundNum, first.WinnerIndex, first.Tx.EvtLogId = 1, 1, 2
 			second := validRaffleNftWinnerRecord(false)
 			second.RoundNum, second.WinnerIndex, second.Tx.EvtLogId = 1, 0, 1
-			return []cgprimitives.CGRaffleNFTWinnerRec{first, second}, false
+			return []cgmodel.CGRaffleNFTWinnerRec{first, second}, false
 		},
 	}
 	for name, records := range nftCases {
 		t.Run("nft/"+name, func(t *testing.T) {
 			t.Parallel()
 			server := newRaffleTestServer(t, fakeRoundRaffleReader{
-				nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+				nft: func(context.Context, int64, bool, *cgstore.RaffleNFTWinnerPageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 					data, more := records()
 					return data, more, nil
 				},
@@ -358,7 +358,7 @@ func TestRoundRaffleHandlersHonorCancellation(t *testing.T) {
 		},
 		"NFT page": {
 			path: "/api/v2/cosmicgame/rounds/1/raffle-nft-winners?pool=bidder",
-			reader: fakeRoundRaffleReader{nft: func(ctx context.Context, _ int64, _ bool, _ *cgstore.RaffleNFTWinnerPageCursor, _ int) ([]cgprimitives.CGRaffleNFTWinnerRec, bool, error) {
+			reader: fakeRoundRaffleReader{nft: func(ctx context.Context, _ int64, _ bool, _ *cgstore.RaffleNFTWinnerPageCursor, _ int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error) {
 				return nil, false, ctx.Err()
 			}},
 		},

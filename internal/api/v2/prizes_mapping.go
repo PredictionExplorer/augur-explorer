@@ -6,7 +6,7 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 type roundPrizeAsset uint8
@@ -17,7 +17,7 @@ const (
 	roundPrizeAssetNft
 )
 
-func mapRoundPrize(record cgprimitives.CGPrizeHistory) (RoundPrize, error) {
+func mapRoundPrize(record cgmodel.CGPrizeHistory) (RoundPrize, error) {
 	if record.RoundNum < 0 || record.WinnerIndex < 0 {
 		return RoundPrize{}, errors.New("invalid round-prize identity")
 	}

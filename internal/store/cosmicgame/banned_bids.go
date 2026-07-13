@@ -6,14 +6,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // BannedBids returns all rows from cg_banned_bids ordered by id.
-func (r *Repo) BannedBids(ctx context.Context) ([]p.CGBannedBidRec, error) {
+func (r *Repo) BannedBids(ctx context.Context) ([]cgmodel.CGBannedBidRec, error) {
 	query := "SELECT id, bid_id, user_addr, created_at FROM cg_banned_bids ORDER BY id"
-	scan := func(rows pgx.Rows, rec *p.CGBannedBidRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGBannedBidRec) error {
 		return rows.Scan(&rec.Id, &rec.BidId, &rec.UserAddr, &rec.CreatedAt)
 	}
 	return queryList(ctx, r, "banned bids", 8, query, scan)

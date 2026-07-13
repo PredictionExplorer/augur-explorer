@@ -9,7 +9,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
@@ -61,11 +61,11 @@ func respondStoreError(c *httpx.Context, err error) {
 // rwContractAddrs resolves marketplace + RandomWalk addresses and AIDs from
 // rw_contracts (same source as the ETL), answering the request with an
 // internal error when the registry is unreadable.
-func rwContractAddrs(c *httpx.Context) (rwp.ContractAddresses, bool) {
+func rwContractAddrs(c *httpx.Context) (rwmodel.ContractAddresses, bool) {
 	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
 	if err != nil {
 		respondStoreError(c, err)
-		return rwp.ContractAddresses{}, false
+		return rwmodel.ContractAddresses{}, false
 	}
 	return addrs, true
 }

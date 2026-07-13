@@ -6,14 +6,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // scanNFTDonationDonorFirst matches the SELECT order of the global and
 // per-user donation lists (donor columns before round_num, idx after the
 // token contract address id).
-func scanNFTDonationDonorFirst(rows pgx.Rows, rec *p.CGNFTDonation) error {
+func scanNFTDonationDonorFirst(rows pgx.Rows, rec *cgmodel.CGNFTDonation) error {
 	return rows.Scan(
 		&rec.RecordId,
 		&rec.Tx.EvtLogId,
@@ -36,7 +36,7 @@ func scanNFTDonationDonorFirst(rows pgx.Rows, rec *p.CGNFTDonation) error {
 // scanNFTDonationRoundFirst matches the SELECT order of the per-round and
 // per-token donation lists (round_num first, idx before the token contract
 // address id).
-func scanNFTDonationRoundFirst(rows pgx.Rows, rec *p.CGNFTDonation) error {
+func scanNFTDonationRoundFirst(rows pgx.Rows, rec *cgmodel.CGNFTDonation) error {
 	return rows.Scan(
 		&rec.RecordId,
 		&rec.Tx.EvtLogId,
@@ -58,7 +58,7 @@ func scanNFTDonationRoundFirst(rows pgx.Rows, rec *p.CGNFTDonation) error {
 
 // NFTDonations returns every NFT donated to the game, newest first.
 // limit 0 means no effective limit.
-func (r *Repo) NFTDonations(ctx context.Context, offset, limit int) ([]p.CGNFTDonation, error) {
+func (r *Repo) NFTDonations(ctx context.Context, offset, limit int) ([]cgmodel.CGNFTDonation, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -90,7 +90,7 @@ func (r *Repo) NFTDonations(ctx context.Context, offset, limit int) ([]p.CGNFTDo
 // NFTDonationInfo returns one NFT donation by record id, or
 // store.ErrNotFound when the id does not exist. The returned record does not
 // carry round_num or idx (the legacy query never selected them).
-func (r *Repo) NFTDonationInfo(ctx context.Context, id int64) (p.CGNFTDonation, error) {
+func (r *Repo) NFTDonationInfo(ctx context.Context, id int64) (cgmodel.CGNFTDonation, error) {
 	query := `SELECT
 			d.evtlog_id,
 			d.block_num,
@@ -109,7 +109,7 @@ func (r *Repo) NFTDonationInfo(ctx context.Context, id int64) (p.CGNFTDonation, 
 			LEFT JOIN address da ON d.donor_aid=da.address_id
 			LEFT JOIN address nft ON d.token_aid=nft.address_id
 		WHERE d.id=$1`
-	var rec p.CGNFTDonation
+	var rec cgmodel.CGNFTDonation
 	rec.RecordId = id
 	err := r.pool().QueryRow(ctx, query, id).Scan(
 		&rec.Tx.EvtLogId,
@@ -126,14 +126,14 @@ func (r *Repo) NFTDonationInfo(ctx context.Context, id int64) (p.CGNFTDonation, 
 		&rec.NFTTokenURI,
 	)
 	if err != nil {
-		return p.CGNFTDonation{RecordId: id}, store.WrapError("nft donation info", err)
+		return cgmodel.CGNFTDonation{RecordId: id}, store.WrapError("nft donation info", err)
 	}
 	return rec, nil
 }
 
 // DonatedNFTClaims returns the claim events of donated NFTs, newest first.
 // limit 0 means no effective limit.
-func (r *Repo) DonatedNFTClaims(ctx context.Context, offset, limit int) ([]p.CGDonatedNFTClaimRec, error) {
+func (r *Repo) DonatedNFTClaims(ctx context.Context, offset, limit int) ([]cgmodel.CGDonatedNFTClaimRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -160,7 +160,7 @@ func (r *Repo) DonatedNFTClaims(ctx context.Context, offset, limit int) ([]p.CGD
 			LEFT JOIN address da ON d.donor_aid=da.address_id
 		ORDER BY c.id DESC
 		OFFSET $1 LIMIT $2`
-	scan := func(rows pgx.Rows, rec *p.CGDonatedNFTClaimRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGDonatedNFTClaimRec) error {
 		return rows.Scan(
 			&rec.RecordId,
 			&rec.Tx.BlockNum,
@@ -206,7 +206,7 @@ const nftDonationsRoundFirstSQL = `SELECT
 
 // NFTDonationsByRound returns the NFTs donated during one round, newest
 // first.
-func (r *Repo) NFTDonationsByRound(ctx context.Context, roundNum int64) ([]p.CGNFTDonation, error) {
+func (r *Repo) NFTDonationsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGNFTDonation, error) {
 	query := nftDonationsRoundFirstSQL + `
 		WHERE d.round_num= $1
 		ORDER BY d.id DESC`
@@ -215,7 +215,7 @@ func (r *Repo) NFTDonationsByRound(ctx context.Context, roundNum int64) ([]p.CGN
 
 // NFTDonationsByToken returns every donation of one NFT contract (by its
 // address id), newest round first.
-func (r *Repo) NFTDonationsByToken(ctx context.Context, tokenAid int64) ([]p.CGNFTDonation, error) {
+func (r *Repo) NFTDonationsByToken(ctx context.Context, tokenAid int64) ([]cgmodel.CGNFTDonation, error) {
 	query := nftDonationsRoundFirstSQL + `
 		WHERE d.token_aid=$1
 		ORDER BY d.round_num DESC, d.id DESC`
@@ -224,7 +224,7 @@ func (r *Repo) NFTDonationsByToken(ctx context.Context, tokenAid int64) ([]p.CGN
 
 // UnclaimedDonatedNFTsByRound returns the donated NFTs of one round that
 // have not been claimed yet, newest first.
-func (r *Repo) UnclaimedDonatedNFTsByRound(ctx context.Context, roundNum int64) ([]p.CGNFTDonation, error) {
+func (r *Repo) UnclaimedDonatedNFTsByRound(ctx context.Context, roundNum int64) ([]cgmodel.CGNFTDonation, error) {
 	query := nftDonationsRoundFirstSQL + `
 			LEFT JOIN cg_donated_nft_claimed dc ON d.idx = dc.idx
 		WHERE d.round_num= $1 AND dc.idx IS NULL
@@ -234,21 +234,21 @@ func (r *Repo) UnclaimedDonatedNFTsByRound(ctx context.Context, roundNum int64) 
 
 // DonatedTokenDistribution returns how many NFTs each contract donated,
 // most active contract first.
-func (r *Repo) DonatedTokenDistribution(ctx context.Context) ([]p.CGDonatedTokenDistrRec, error) {
+func (r *Repo) DonatedTokenDistribution(ctx context.Context) ([]cgmodel.CGDonatedTokenDistrRec, error) {
 	query := `SELECT
 			ca.addr,
 			ns.num_donated
 		FROM cg_nft_stats ns
 			LEFT JOIN address ca ON ns.contract_aid=ca.address_id
 		ORDER BY ns.num_donated DESC`
-	scan := func(rows pgx.Rows, rec *p.CGDonatedTokenDistrRec) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGDonatedTokenDistrRec) error {
 		return rows.Scan(&rec.ContractAddr, &rec.NumDonatedTokens)
 	}
 	return queryList(ctx, r, "donated token distribution", 16, query, scan)
 }
 
 // NFTDonationsByUser returns every NFT donated by one donor, newest first.
-func (r *Repo) NFTDonationsByUser(ctx context.Context, donorAid int64) ([]p.CGNFTDonation, error) {
+func (r *Repo) NFTDonationsByUser(ctx context.Context, donorAid int64) ([]cgmodel.CGNFTDonation, error) {
 	query := `SELECT
 			d.id,
 			d.evtlog_id,
@@ -278,7 +278,7 @@ func (r *Repo) NFTDonationsByUser(ctx context.Context, donorAid int64) ([]p.CGNF
 // round donation collection. DonationIndex is the PrizesWallet contract
 // index, not the internal database row id.
 type RoundNFTDonationRecord struct {
-	Tx            p.Transaction
+	Tx            cgmodel.Transaction
 	RoundNum      int64
 	DonorAddr     string
 	TokenAddr     string

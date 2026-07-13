@@ -81,7 +81,8 @@ flowchart LR
 | `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
 | `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry plus reusable adaptive `logscan` ranges |
 | `internal/ops` | Context-aware engines behind `opsctl`: archive, assets, CST scan, DB verification, API smoke testing and transaction backups |
-| `internal/primitives` | Domain types and API response structs |
+| `internal/model` | Domain types and API response structs (`cosmicgame`, `randomwalk`) |
+| `internal/timefmt` | Human-readable calendar-duration rendering (frozen v1 formats) |
 | `internal/freezer` | Geth freezer/ancient store readers |
 | `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients, the unified RandomWalk bot (`rwbot`) and the URL watchdog (`urlalarm`) |
 | `internal/srvmonitor` | Terminal server-monitoring engine (monitors, alarm tracker, layout; termbox UI in `termboxui`) |

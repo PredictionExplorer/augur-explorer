@@ -1,4 +1,4 @@
-package primitives
+package timefmt
 
 import (
 	"testing"
@@ -35,6 +35,18 @@ func TestTimeDifference(t *testing.T) {
 	}
 }
 
+func TestTimeDifferenceMixedLocations(t *testing.T) {
+	// The second instant is converted into the first one's location before
+	// decomposing, so the same absolute span yields the same components.
+	est := time.FixedZone("EST", -5*3600)
+	a := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	b := time.Date(2024, 1, 1, 1, 0, 0, 0, est) // 06:00 UTC
+	y, mo, d, h, mi, s := TimeDifference(a, b)
+	if y != 0 || mo != 0 || d != 0 || h != 6 || mi != 0 || s != 0 {
+		t.Errorf("TimeDifference across locations = (%d,%d,%d,%d,%d,%d), want (0,0,0,6,0,0)", y, mo, d, h, mi, s)
+	}
+}
+
 func TestDurationToString(t *testing.T) {
 	cases := []struct {
 		name                             string
@@ -59,4 +71,34 @@ func TestDurationToString(t *testing.T) {
 			t.Errorf("%s: DurationToString = %q, want %q", tc.name, got, tc.want)
 		}
 	}
+}
+
+func FuzzDateUtils(f *testing.F) {
+	f.Add(int64(0), int64(0))
+	f.Add(int64(0), int64(1))
+	f.Add(int64(0), int64(86400))
+	f.Add(int64(1580428800), int64(1583020800)) // 2020-01-31 → 2020-03-01
+	f.Add(int64(-62135596800), int64(253402300799))
+	f.Fuzz(func(t *testing.T, aSec, bSec int64) {
+		a := time.Unix(aSec, 0).UTC()
+		b := time.Unix(bSec, 0).UTC()
+		y, mo, d, h, mi, s := TimeDifference(a, b)
+		// All components normalized and non-negative.
+		if y < 0 || mo < 0 || d < 0 || h < 0 || mi < 0 || s < 0 {
+			t.Fatalf("TimeDifference(%v, %v) = (%d,%d,%d,%d,%d,%d): negative component", a, b, y, mo, d, h, mi, s)
+		}
+		if mo > 11 || d > 30 || h > 23 || mi > 59 || s > 59 {
+			t.Fatalf("TimeDifference(%v, %v) = (%d,%d,%d,%d,%d,%d): component out of range", a, b, y, mo, d, h, mi, s)
+		}
+		// Symmetric in argument order.
+		y2, mo2, d2, h2, mi2, s2 := TimeDifference(b, a)
+		if y != y2 || mo != mo2 || d != d2 || h != h2 || mi != mi2 || s != s2 {
+			t.Fatalf("TimeDifference not symmetric for (%v, %v)", a, b)
+		}
+		if aSec == bSec && (y|mo|d|h|mi|s) != 0 {
+			t.Fatalf("TimeDifference of equal times = (%d,%d,%d,%d,%d,%d), want all zero", y, mo, d, h, mi, s)
+		}
+		// DurationToString must never panic on TimeDifference output.
+		_ = DurationToString(y, mo, d, h, mi, s)
+	})
 }

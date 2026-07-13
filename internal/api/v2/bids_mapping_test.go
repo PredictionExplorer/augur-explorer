@@ -3,7 +3,7 @@ package v2
 import (
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestMapBid(t *testing.T) {
@@ -87,19 +87,19 @@ func TestMapBidOmitsAbsentOptionalFields(t *testing.T) {
 func TestMapBidRejectsInvalidStoreData(t *testing.T) {
 	t.Parallel()
 
-	tests := map[string]func(*cgprimitives.CGBidRec){
-		"identity":           func(r *cgprimitives.CGBidRec) { r.BidPosition = 0 },
-		"occurred timestamp": func(r *cgprimitives.CGBidRec) { r.Tx.DateTime = "not-a-time" },
-		"prize timestamp":    func(r *cgprimitives.CGBidRec) { r.PrizeTimeDate = "not-a-time" },
-		"bidder address":     func(r *cgprimitives.CGBidRec) { r.BidderAddr = "bad" },
-		"transaction hash":   func(r *cgprimitives.CGBidRec) { r.Tx.TxHash = "0x01" },
-		"cst reward":         func(r *cgprimitives.CGBidRec) { r.CSTReward = "-1" },
-		"eth price":          func(r *cgprimitives.CGBidRec) { r.EthPrice = "1.2" },
-		"cst price":          func(r *cgprimitives.CGBidRec) { r.CstPrice = "" },
-		"bid reward":         func(r *cgprimitives.CGBidRec) { r.BidCstRewardAmount = "-2" },
-		"nft address":        func(r *cgprimitives.CGBidRec) { r.NFTDonationTokenAddr = "bad" },
-		"erc20 address":      func(r *cgprimitives.CGBidRec) { r.DonatedERC20TokenAddr = "bad" },
-		"erc20 amount":       func(r *cgprimitives.CGBidRec) { r.DonatedERC20TokenAmount = "wat" },
+	tests := map[string]func(*cgmodel.CGBidRec){
+		"identity":           func(r *cgmodel.CGBidRec) { r.BidPosition = 0 },
+		"occurred timestamp": func(r *cgmodel.CGBidRec) { r.Tx.DateTime = "not-a-time" },
+		"prize timestamp":    func(r *cgmodel.CGBidRec) { r.PrizeTimeDate = "not-a-time" },
+		"bidder address":     func(r *cgmodel.CGBidRec) { r.BidderAddr = "bad" },
+		"transaction hash":   func(r *cgmodel.CGBidRec) { r.Tx.TxHash = "0x01" },
+		"cst reward":         func(r *cgmodel.CGBidRec) { r.CSTReward = "-1" },
+		"eth price":          func(r *cgmodel.CGBidRec) { r.EthPrice = "1.2" },
+		"cst price":          func(r *cgmodel.CGBidRec) { r.CstPrice = "" },
+		"bid reward":         func(r *cgmodel.CGBidRec) { r.BidCstRewardAmount = "-2" },
+		"nft address":        func(r *cgmodel.CGBidRec) { r.NFTDonationTokenAddr = "bad" },
+		"erc20 address":      func(r *cgmodel.CGBidRec) { r.DonatedERC20TokenAddr = "bad" },
+		"erc20 amount":       func(r *cgmodel.CGBidRec) { r.DonatedERC20TokenAmount = "wat" },
 	}
 	for name, mutate := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -124,10 +124,10 @@ func TestMapBidType(t *testing.T) {
 	}
 }
 
-func validBidRecord() cgprimitives.CGBidRec {
+func validBidRecord() cgmodel.CGBidRec {
 	// #nosec G101 -- deterministic chain amounts and addresses, not credentials.
-	return cgprimitives.CGBidRec{
-		Tx: cgprimitives.Transaction{
+	return cgmodel.CGBidRec{
+		Tx: cgmodel.Transaction{
 			EvtLogId: 5008,
 			BlockNum: 103,
 			TxHash:   "0xf000000000000000000000000000000000000000000000000000000000001004",

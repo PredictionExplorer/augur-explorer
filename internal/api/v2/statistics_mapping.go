@@ -9,7 +9,7 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
@@ -189,7 +189,7 @@ func statisticsCount(value uint64, name string) (int64, error) {
 	return int64(value), nil
 }
 
-func mapCounters(record cgprimitives.CGRecordCounters) (CosmicGameCounters, error) {
+func mapCounters(record cgmodel.CGRecordCounters) (CosmicGameCounters, error) {
 	if record.TotalBids < 0 || record.TotalPrizes < 0 || record.TotalDonatedNFTs < 0 {
 		return CosmicGameCounters{}, errors.New("negative record counter")
 	}

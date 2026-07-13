@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -30,7 +30,7 @@ FROM cg_raffle_nft_prize p
 	LEFT JOIN transaction t ON t.id=p.tx_id
 	LEFT JOIN address wa ON p.winner_aid=wa.address_id`
 
-func scanRaffleNFTWinner(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
+func scanRaffleNFTWinner(rows pgx.Rows, rec *cgmodel.CGRaffleNFTWinnerRec) error {
 	return rows.Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
@@ -54,7 +54,7 @@ func scanRaffleNFTWinner(rows pgx.Rows, rec *p.CGRaffleNFTWinnerRec) error {
 // isStaker selects the staker raffle (true) or the bidder raffle (false);
 // the legacy version baked the flag into the SQL text, it is a bound
 // parameter now.
-func (r *Repo) RaffleNFTWinnersByRound(ctx context.Context, roundNum int64, isStaker bool) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) RaffleNFTWinnersByRound(ctx context.Context, roundNum int64, isStaker bool) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	query := "SELECT " + raffleNFTWinnerColumns + `
 		WHERE p.round_num=$1 AND p.is_staker=$2
 		ORDER BY p.id DESC`
@@ -77,7 +77,7 @@ func (r *Repo) RaffleNFTWinnersByRoundPage(
 	isStaker bool,
 	after *RaffleNFTWinnerPageCursor,
 	limit int,
-) (records []p.CGRaffleNFTWinnerRec, hasMore bool, err error) {
+) (records []cgmodel.CGRaffleNFTWinnerRec, hasMore bool, err error) {
 	const op = "raffle nft winners by round page"
 	if roundNum < 0 {
 		return nil, false, fmt.Errorf("%s: round must be non-negative", op)
@@ -117,7 +117,7 @@ func (r *Repo) RaffleNFTWinnersByRoundPage(
 
 // RaffleNFTWinners returns raffle NFT winners across all rounds, newest
 // first, offset/limit paginated (limit 0 means unbounded).
-func (r *Repo) RaffleNFTWinners(ctx context.Context, offset, limit int) ([]p.CGRaffleNFTWinnerRec, error) {
+func (r *Repo) RaffleNFTWinners(ctx context.Context, offset, limit int) ([]cgmodel.CGRaffleNFTWinnerRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}

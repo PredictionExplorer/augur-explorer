@@ -11,11 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/primitives"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func (h *Handlers) decodeMainPrizeClaimed(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGPrizeClaimEvent, error) {
+func (h *Handlers) decodeMainPrizeClaimed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGPrizeClaimEvent, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (h *Handlers) decodeMainPrizeClaimed(lg *types.Log, elog *primitives.Ethere
 		return nil, err
 	}
 
-	evt := &cgp.CGPrizeClaimEvent{}
+	evt := &cgmodel.CGPrizeClaimEvent{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -39,7 +39,7 @@ func (h *Handlers) decodeMainPrizeClaimed(lg *types.Log, elog *primitives.Ethere
 	return evt, nil
 }
 
-func (h *Handlers) storeMainPrizeClaimed(ctx context.Context, evt *cgp.CGPrizeClaimEvent) error {
+func (h *Handlers) storeMainPrizeClaimed(ctx context.Context, evt *cgmodel.CGPrizeClaimEvent) error {
 	h.log.Info("MainPrizeClaimed",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "winner", evt.WinnerAddr,
 		"amount", evt.Amount, "cst_amount", evt.CstAmount, "token_id", evt.TokenId,
@@ -51,7 +51,7 @@ func (h *Handlers) storeMainPrizeClaimed(ctx context.Context, evt *cgp.CGPrizeCl
 	return h.repo.InsertPrizeClaim(ctx, evt)
 }
 
-func (h *Handlers) decodePrizesEthReceived(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGPrizesEthDeposit, error) {
+func (h *Handlers) decodePrizesEthReceived(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGPrizesEthDeposit, error) {
 	if err := requireTopics(lg, 3); err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (h *Handlers) decodePrizesEthReceived(lg *types.Log, elog *primitives.Ether
 		return nil, err
 	}
 
-	evt := &cgp.CGPrizesEthDeposit{}
+	evt := &cgmodel.CGPrizesEthDeposit{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -73,7 +73,7 @@ func (h *Handlers) decodePrizesEthReceived(lg *types.Log, elog *primitives.Ether
 	return evt, nil
 }
 
-func (h *Handlers) storePrizesEthReceived(ctx context.Context, evt *cgp.CGPrizesEthDeposit) error {
+func (h *Handlers) storePrizesEthReceived(ctx context.Context, evt *cgmodel.CGPrizesEthDeposit) error {
 	h.log.Info("Prizes EthReceived",
 		"evt_id", evt.EvtId, "round", evt.Round, "winner", evt.WinnerAddr,
 		"winner_index", evt.WinnerIndex, "amount", evt.Amount)
@@ -84,7 +84,7 @@ func (h *Handlers) storePrizesEthReceived(ctx context.Context, evt *cgp.CGPrizes
 	return h.repo.InsertPrizeDeposit(ctx, evt)
 }
 
-func (h *Handlers) decodePrizesEthWithdrawn(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGPrizesEthWithdrawal, error) {
+func (h *Handlers) decodePrizesEthWithdrawn(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGPrizesEthWithdrawal, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (h *Handlers) decodePrizesEthWithdrawn(lg *types.Log, elog *primitives.Ethe
 		return nil, err
 	}
 
-	evt := &cgp.CGPrizesEthWithdrawal{}
+	evt := &cgmodel.CGPrizesEthWithdrawal{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -106,7 +106,7 @@ func (h *Handlers) decodePrizesEthWithdrawn(lg *types.Log, elog *primitives.Ethe
 	return evt, nil
 }
 
-func (h *Handlers) storePrizesEthWithdrawn(ctx context.Context, evt *cgp.CGPrizesEthWithdrawal) error {
+func (h *Handlers) storePrizesEthWithdrawn(ctx context.Context, evt *cgmodel.CGPrizesEthWithdrawal) error {
 	h.log.Info("Prizes EthWithdrawn",
 		"evt_id", evt.EvtId, "round", evt.Round, "winner", evt.WinnerAddr,
 		"beneficiary", evt.BeneficiaryAddr, "amount", evt.Amount)
@@ -117,7 +117,7 @@ func (h *Handlers) storePrizesEthWithdrawn(ctx context.Context, evt *cgp.CGPrize
 	return h.repo.InsertPrizeWithdrawal(ctx, evt)
 }
 
-func (h *Handlers) decodeRaffleWinnerPrizePaid(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGRaffleNFTWinner, error) {
+func (h *Handlers) decodeRaffleWinnerPrizePaid(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGRaffleNFTWinner, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (h *Handlers) decodeRaffleWinnerPrizePaid(lg *types.Log, elog *primitives.E
 		return nil, err
 	}
 
-	evt := &cgp.CGRaffleNFTWinner{}
+	evt := &cgmodel.CGRaffleNFTWinner{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -142,7 +142,7 @@ func (h *Handlers) decodeRaffleWinnerPrizePaid(lg *types.Log, elog *primitives.E
 	return evt, nil
 }
 
-func (h *Handlers) storeRaffleWinnerPrizePaid(ctx context.Context, evt *cgp.CGRaffleNFTWinner) error {
+func (h *Handlers) storeRaffleWinnerPrizePaid(ctx context.Context, evt *cgmodel.CGRaffleNFTWinner) error {
 	h.log.Info("RaffleWinnerPrizePaid",
 		"evt_id", evt.EvtId, "round", evt.Round, "winner", evt.WinnerAddr,
 		"token_id", evt.TokenId, "winner_index", evt.WinnerIndex,
@@ -154,7 +154,7 @@ func (h *Handlers) storeRaffleWinnerPrizePaid(ctx context.Context, evt *cgp.CGRa
 	return h.repo.InsertRaffleNFTWinner(ctx, evt)
 }
 
-func (h *Handlers) decodeRaffleEthAllocated(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGRaffleETHWinner, error) {
+func (h *Handlers) decodeRaffleEthAllocated(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGRaffleETHWinner, error) {
 	if err := requireTopics(lg, 3); err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (h *Handlers) decodeRaffleEthAllocated(lg *types.Log, elog *primitives.Ethe
 		return nil, err
 	}
 
-	evt := &cgp.CGRaffleETHWinner{}
+	evt := &cgmodel.CGRaffleETHWinner{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -176,7 +176,7 @@ func (h *Handlers) decodeRaffleEthAllocated(lg *types.Log, elog *primitives.Ethe
 	return evt, nil
 }
 
-func (h *Handlers) storeRaffleEthAllocated(ctx context.Context, evt *cgp.CGRaffleETHWinner) error {
+func (h *Handlers) storeRaffleEthAllocated(ctx context.Context, evt *cgmodel.CGRaffleETHWinner) error {
 	h.log.Info("RaffleWinnerBidderEthPrizeAllocated",
 		"evt_id", evt.EvtId, "round", evt.Round, "winner", evt.WinnerAddr,
 		"winner_index", evt.WinnerIndex, "amount", evt.Amount)
@@ -187,7 +187,7 @@ func (h *Handlers) storeRaffleEthAllocated(ctx context.Context, evt *cgp.CGRaffl
 	return h.repo.InsertRaffleETHWinner(ctx, evt)
 }
 
-func (h *Handlers) decodeEnduranceChampionPrizePaid(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGEnduranceWinner, error) {
+func (h *Handlers) decodeEnduranceChampionPrizePaid(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGEnduranceWinner, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (h *Handlers) decodeEnduranceChampionPrizePaid(lg *types.Log, elog *primiti
 		return nil, err
 	}
 
-	evt := &cgp.CGEnduranceWinner{}
+	evt := &cgmodel.CGEnduranceWinner{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -209,7 +209,7 @@ func (h *Handlers) decodeEnduranceChampionPrizePaid(lg *types.Log, elog *primiti
 	return evt, nil
 }
 
-func (h *Handlers) storeEnduranceChampionPrizePaid(ctx context.Context, evt *cgp.CGEnduranceWinner) error {
+func (h *Handlers) storeEnduranceChampionPrizePaid(ctx context.Context, evt *cgmodel.CGEnduranceWinner) error {
 	h.log.Info("EnduranceChampionPrizePaid",
 		"evt_id", evt.EvtId, "round", evt.Round, "champion", evt.WinnerAddr,
 		"erc721_token_id", evt.Erc721TokenId, "erc20_amount", evt.Erc20Amount)
@@ -220,7 +220,7 @@ func (h *Handlers) storeEnduranceChampionPrizePaid(ctx context.Context, evt *cgp
 	return h.repo.InsertEnduranceWinner(ctx, evt)
 }
 
-func (h *Handlers) decodeLastCstBidderPrizePaid(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGLastBidderWinner, error) {
+func (h *Handlers) decodeLastCstBidderPrizePaid(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGLastBidderWinner, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (h *Handlers) decodeLastCstBidderPrizePaid(lg *types.Log, elog *primitives.
 		return nil, err
 	}
 
-	evt := &cgp.CGLastBidderWinner{}
+	evt := &cgmodel.CGLastBidderWinner{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -242,7 +242,7 @@ func (h *Handlers) decodeLastCstBidderPrizePaid(lg *types.Log, elog *primitives.
 	return evt, nil
 }
 
-func (h *Handlers) storeLastCstBidderPrizePaid(ctx context.Context, evt *cgp.CGLastBidderWinner) error {
+func (h *Handlers) storeLastCstBidderPrizePaid(ctx context.Context, evt *cgmodel.CGLastBidderWinner) error {
 	h.log.Info("LastCstBidderPrizePaid",
 		"evt_id", evt.EvtId, "round", evt.Round, "winner", evt.WinnerAddr,
 		"erc721_token_id", evt.Erc721TokenId, "erc20_amount", evt.Erc20Amount)
@@ -253,7 +253,7 @@ func (h *Handlers) storeLastCstBidderPrizePaid(ctx context.Context, evt *cgp.CGL
 	return h.repo.InsertLastCstBidderWinner(ctx, evt)
 }
 
-func (h *Handlers) decodeChronoWarriorPrizePaid(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGChronoWarrior, error) {
+func (h *Handlers) decodeChronoWarriorPrizePaid(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGChronoWarrior, error) {
 	if err := requireTopics(lg, 4); err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (h *Handlers) decodeChronoWarriorPrizePaid(lg *types.Log, elog *primitives.
 		return nil, err
 	}
 
-	evt := &cgp.CGChronoWarrior{}
+	evt := &cgmodel.CGChronoWarrior{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -277,7 +277,7 @@ func (h *Handlers) decodeChronoWarriorPrizePaid(lg *types.Log, elog *primitives.
 	return evt, nil
 }
 
-func (h *Handlers) storeChronoWarriorPrizePaid(ctx context.Context, evt *cgp.CGChronoWarrior) error {
+func (h *Handlers) storeChronoWarriorPrizePaid(ctx context.Context, evt *cgmodel.CGChronoWarrior) error {
 	h.log.Info("ChronoWarriorPrizePaid",
 		"evt_id", evt.EvtId, "round", evt.Round, "winner", evt.WinnerAddr,
 		"winner_index", evt.WinnerIndex, "eth_amount", evt.EthAmount,
@@ -289,7 +289,7 @@ func (h *Handlers) storeChronoWarriorPrizePaid(ctx context.Context, evt *cgp.CGC
 	return h.repo.InsertChronoWarrior(ctx, evt)
 }
 
-func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGFundTransferFailed, error) {
+func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundTransferFailed, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *primitives.Ethe
 		return nil, err
 	}
 
-	evt := &cgp.CGFundTransferFailed{}
+	evt := &cgmodel.CGFundTransferFailed{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -309,7 +309,7 @@ func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *primitives.Ethe
 	return evt, nil
 }
 
-func (h *Handlers) storeFundTransferFailed(ctx context.Context, evt *cgp.CGFundTransferFailed) error {
+func (h *Handlers) storeFundTransferFailed(ctx context.Context, evt *cgmodel.CGFundTransferFailed) error {
 	h.log.Info("FundTransferFailed", "evt_id", evt.EvtId, "destination", evt.Destination, "amount", evt.Amount)
 
 	if err := h.repo.DeleteFundTransferFailed(ctx, evt.EvtId); err != nil {
@@ -323,7 +323,7 @@ func (h *Handlers) storeFundTransferFailed(ctx context.Context, evt *cgp.CGFundT
 // amount), emitted by the game when a CST transfer cannot complete. The
 // event is absent from every generated ABI, so the amount is decoded from
 // the raw data words (see erc20TransferFailedAmount).
-func (h *Handlers) decodeERC20TransferFailed(lg *types.Log, elog *primitives.EthereumEventLog) (*cgp.CGErc20TransferFailed, error) {
+func (h *Handlers) decodeERC20TransferFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGErc20TransferFailed, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
@@ -332,7 +332,7 @@ func (h *Handlers) decodeERC20TransferFailed(lg *types.Log, elog *primitives.Eth
 		return nil, err
 	}
 
-	evt := &cgp.CGErc20TransferFailed{}
+	evt := &cgmodel.CGErc20TransferFailed{}
 	evt.EvtId = elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -343,7 +343,7 @@ func (h *Handlers) decodeERC20TransferFailed(lg *types.Log, elog *primitives.Eth
 	return evt, nil
 }
 
-func (h *Handlers) storeERC20TransferFailed(ctx context.Context, evt *cgp.CGErc20TransferFailed) error {
+func (h *Handlers) storeERC20TransferFailed(ctx context.Context, evt *cgmodel.CGErc20TransferFailed) error {
 	h.log.Info("ERC20TransferFailed", "evt_id", evt.EvtId, "destination", evt.Destination, "amount", evt.Amount)
 
 	if err := h.repo.DeleteERC20TransferFailed(ctx, evt.EvtId); err != nil {

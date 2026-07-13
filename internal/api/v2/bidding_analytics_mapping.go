@@ -7,15 +7,15 @@ import (
 	"sort"
 	"time"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func mapBidFrequencyBuckets(
-	records []cgprimitives.CGBidFrequencyBucket,
+	records []cgmodel.CGBidFrequencyBucket,
 	to int64,
-) ([]BidFrequencyBucket, []cgprimitives.CGBidFrequencyBucket, error) {
+) ([]BidFrequencyBucket, []cgmodel.CGBidFrequencyBucket, error) {
 	mapped := make([]BidFrequencyBucket, 0, len(records))
-	normalized := make([]cgprimitives.CGBidFrequencyBucket, 0, len(records))
+	normalized := make([]cgmodel.CGBidFrequencyBucket, 0, len(records))
 	var previous int64
 	havePrevious := false
 	terminalSeen := false
@@ -49,7 +49,7 @@ func mapBidFrequencyBuckets(
 	return mapped, normalized, nil
 }
 
-func mapBidSpikes(records []cgprimitives.CGBidSpike, to int64) ([]BidSpike, error) {
+func mapBidSpikes(records []cgmodel.CGBidSpike, to int64) ([]BidSpike, error) {
 	mapped := make([]BidSpike, 0, len(records))
 	var previousStart int64
 	for i := range records {
@@ -101,7 +101,7 @@ func recentBidSpikeIndex(spikes []BidSpike, now time.Time) *int {
 }
 
 func mapBidTypeRatioBuckets(
-	records []cgprimitives.CGBidTypeRatioBucket,
+	records []cgmodel.CGBidTypeRatioBucket,
 	to int64,
 ) ([]BidTypeRatioBucket, error) {
 	mapped := make([]BidTypeRatioBucket, 0, len(records))
@@ -154,7 +154,7 @@ func mapBidTypeRatioBuckets(
 	return mapped, nil
 }
 
-func validBidTypeCounts(record cgprimitives.CGBidTypeRatioBucket) bool {
+func validBidTypeCounts(record cgmodel.CGBidTypeRatioBucket) bool {
 	if record.EthBids < 0 || record.RwalkBids < 0 || record.CstBids < 0 || record.TotalBids < 0 {
 		return false
 	}
@@ -184,8 +184,8 @@ func percentageString(part, total int64) (string, error) {
 }
 
 func mapTopBidderActivePeriods(
-	bidderRecords []cgprimitives.CGTopBidderInfo,
-	periodRecords []cgprimitives.CGBidderActivePeriod,
+	bidderRecords []cgmodel.CGTopBidderInfo,
+	periodRecords []cgmodel.CGBidderActivePeriod,
 	from int64,
 	to int64,
 	top int,
@@ -194,7 +194,7 @@ func mapTopBidderActivePeriods(
 	if len(bidderRecords) > top {
 		return nil, nil, errors.New("repository returned more top bidders than requested")
 	}
-	sortedBidders := append([]cgprimitives.CGTopBidderInfo(nil), bidderRecords...)
+	sortedBidders := append([]cgmodel.CGTopBidderInfo(nil), bidderRecords...)
 	sort.Slice(sortedBidders, func(i, j int) bool {
 		if sortedBidders[i].NumBids != sortedBidders[j].NumBids {
 			return sortedBidders[i].NumBids > sortedBidders[j].NumBids
@@ -222,7 +222,7 @@ func mapTopBidderActivePeriods(
 		})
 	}
 
-	sortedPeriods := append([]cgprimitives.CGBidderActivePeriod(nil), periodRecords...)
+	sortedPeriods := append([]cgmodel.CGBidderActivePeriod(nil), periodRecords...)
 	sort.Slice(sortedPeriods, func(i, j int) bool {
 		if sortedPeriods[i].PeriodStart != sortedPeriods[j].PeriodStart {
 			return sortedPeriods[i].PeriodStart < sortedPeriods[j].PeriodStart

@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	rwprim "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
@@ -18,7 +18,7 @@ func rankValue(position, total int) float64 {
 }
 
 // updateProfitRanks writes the profit leaderboard ranks for all users.
-func updateProfitRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.RankStats) error {
+func updateProfitRanks(ctx context.Context, repo *rwstore.Repo, records []rwmodel.RankStats) error {
 	for i := range records {
 		record := &records[i]
 		if err := repo.UpdateTopProfitRank(ctx, record.Aid, rankValue(i, len(records)), record.ProfitLoss); err != nil {
@@ -29,7 +29,7 @@ func updateProfitRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim
 }
 
 // updateTradeRanks writes the total-trades leaderboard ranks for all users.
-func updateTradeRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.RankStats) error {
+func updateTradeRanks(ctx context.Context, repo *rwstore.Repo, records []rwmodel.RankStats) error {
 	for i := range records {
 		record := &records[i]
 		if err := repo.UpdateTopTotalTradesRank(ctx, record.Aid, rankValue(i, len(records)), record.TotalTrades); err != nil {
@@ -40,7 +40,7 @@ func updateTradeRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.
 }
 
 // updateVolumeRanks writes the traded-volume leaderboard ranks for all users.
-func updateVolumeRanks(ctx context.Context, repo *rwstore.Repo, records []rwprim.RankStats) error {
+func updateVolumeRanks(ctx context.Context, repo *rwstore.Repo, records []rwmodel.RankStats) error {
 	for i := range records {
 		record := &records[i]
 		if err := repo.UpdateTopVolumeRank(ctx, record.Aid, rankValue(i, len(records)), record.VolumeTraded); err != nil {

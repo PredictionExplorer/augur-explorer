@@ -22,7 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -59,9 +59,9 @@ const (
 // DataSource is the store surface the engine reads and writes. It is
 // satisfied by *randomwalk.Repo.
 type DataSource interface {
-	MessagingStatus(ctx context.Context) (rwp.MsgStatus, error)
-	UpdateMessagingStatus(ctx context.Context, status *rwp.MsgStatus) error
-	AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid, startEvtlogID int64) ([]rwp.NotificationEvent2, error)
+	MessagingStatus(ctx context.Context) (rwmodel.MsgStatus, error)
+	UpdateMessagingStatus(ctx context.Context, status *rwmodel.MsgStatus) error
+	AllEventsForNotificationSinceEvtlog(ctx context.Context, rwalkAid, startEvtlogID int64) ([]rwmodel.NotificationEvent2, error)
 	FloorPrice(ctx context.Context, rwalkAid, marketAid int64) (noOffers bool, floorPrice float64, offerID, tokenID int64, err error)
 	LastMintTimestamp(ctx context.Context) (int64, error)
 }
@@ -161,7 +161,7 @@ type Engine struct {
 	cfg Config
 	log *slog.Logger
 
-	watermark     rwp.MsgStatus
+	watermark     rwmodel.MsgStatus
 	curFloorPrice float64
 	lastMintTS    atomic.Int64
 }
@@ -310,7 +310,7 @@ func (e *Engine) runErr(ctx context.Context, err error) error {
 // processEvent handles one notification record. retry=true asks the caller
 // to stop the batch and poll again later (transient media/RPC trouble); a
 // non-nil error is fatal (watermark persistence failed).
-func (e *Engine) processEvent(ctx context.Context, rec *rwp.NotificationEvent2) (retry bool, err error) {
+func (e *Engine) processEvent(ctx context.Context, rec *rwmodel.NotificationEvent2) (retry bool, err error) {
 	e.log.Info("processing event",
 		"evt_type", rec.EvtType, "token_id", rec.TokenId, "price", rec.Price, "evtlog_id", rec.EvtLogId)
 
@@ -380,7 +380,7 @@ func (e *Engine) processEvent(ctx context.Context, rec *rwp.NotificationEvent2) 
 // get an image tweet plus a threaded video reply, everything else a single
 // image tweet. Failures are logged, never retried (legacy semantics: the
 // watermark advances regardless).
-func (e *Engine) notifyTwitter(ctx context.Context, rec *rwp.NotificationEvent2, withdrawalEth float64, image, video []byte) {
+func (e *Engine) notifyTwitter(ctx context.Context, rec *rwmodel.NotificationEvent2, withdrawalEth float64, image, video []byte) {
 	if e.cfg.Twitter == nil {
 		return
 	}
@@ -416,7 +416,7 @@ func (e *Engine) notifyDiscord(ctx context.Context, evtType, tokenID int64, pric
 // advanceWatermark records rec as processed, both in memory and in
 // rw_messaging_status. A persistence failure is fatal so the process
 // restarts rather than silently re-notifying history.
-func (e *Engine) advanceWatermark(ctx context.Context, rec *rwp.NotificationEvent2) error {
+func (e *Engine) advanceWatermark(ctx context.Context, rec *rwmodel.NotificationEvent2) error {
 	e.watermark.EvtLogId = rec.EvtLogId
 	e.watermark.TimeStamp = rec.TimeStampMinted
 	if err := e.cfg.Data.UpdateMessagingStatus(ctx, &e.watermark); err != nil {

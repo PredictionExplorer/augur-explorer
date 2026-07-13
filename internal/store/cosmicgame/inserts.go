@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -29,7 +29,7 @@ func (r *Repo) insertAdminValue(ctx context.Context, table, column string, evtID
 // Game events.
 
 // InsertPrizeClaim records a MainPrizeClaimed event.
-func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *p.CGPrizeClaimEvent) error {
+func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *cgmodel.CGPrizeClaimEvent) error {
 	const op = "insert into cg_prize_claim"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -64,7 +64,7 @@ func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *p.CGPrizeClaimEvent) e
 // The bid position is derived from the bids already stored for the round;
 // the CST bidding reward falls back to cg_glob_stats.cst_reward_for_bidding
 // (populated by admin events or the ETL startup chain sync) for V1 events.
-func (r *Repo) InsertBid(ctx context.Context, evt *p.CGBidEvent) error {
+func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 	const op = "insert into cg_bid"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -132,7 +132,7 @@ func (r *Repo) InsertBid(ctx context.Context, evt *p.CGBidEvent) error {
 }
 
 // InsertRoundStarted records a FirstBidPlacedInRound event.
-func (r *Repo) InsertRoundStarted(ctx context.Context, evt *p.CGRoundStarted) error {
+func (r *Repo) InsertRoundStarted(ctx context.Context, evt *cgmodel.CGRoundStarted) error {
 	const op = "insert into cg_first_bid"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -157,7 +157,7 @@ func (r *Repo) InsertRoundStarted(ctx context.Context, evt *p.CGRoundStarted) er
 // Donations.
 
 // InsertEthDonation records an EthDonated event.
-func (r *Repo) InsertEthDonation(ctx context.Context, evt *p.CGDonationEvent) error {
+func (r *Repo) InsertEthDonation(ctx context.Context, evt *cgmodel.CGDonationEvent) error {
 	const op = "insert into cg_eth_donated"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -186,7 +186,7 @@ func (r *Repo) InsertEthDonation(ctx context.Context, evt *p.CGDonationEvent) er
 
 // InsertEthDonationWithInfo records an EthDonatedWithInfo event; the JSON
 // payload read from the contract follows via InsertDonationJSON.
-func (r *Repo) InsertEthDonationWithInfo(ctx context.Context, evt *p.CGDonationWithInfoEvent) error {
+func (r *Repo) InsertEthDonationWithInfo(ctx context.Context, evt *cgmodel.CGDonationWithInfoEvent) error {
 	const op = "insert into cg_eth_donated_wi"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -224,7 +224,7 @@ func (r *Repo) InsertDonationJSON(ctx context.Context, recordID int64, data stri
 }
 
 // InsertDonationReceived records a CharityWallet DonationReceived event.
-func (r *Repo) InsertDonationReceived(ctx context.Context, evt *p.CGDonationReceivedEvent) error {
+func (r *Repo) InsertDonationReceived(ctx context.Context, evt *cgmodel.CGDonationReceivedEvent) error {
 	const op = "insert into cg_donation_received"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -252,7 +252,7 @@ func (r *Repo) InsertDonationReceived(ctx context.Context, evt *p.CGDonationRece
 }
 
 // InsertDonationSent records a CharityWallet FundsTransferredToCharity event.
-func (r *Repo) InsertDonationSent(ctx context.Context, evt *p.CGDonationSentEvent) error {
+func (r *Repo) InsertDonationSent(ctx context.Context, evt *cgmodel.CGDonationSentEvent) error {
 	const op = "insert into cg_donation_sent"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -279,7 +279,7 @@ func (r *Repo) InsertDonationSent(ctx context.Context, evt *p.CGDonationSentEven
 }
 
 // InsertERC20Donation records a PrizesWallet TokenDonated event.
-func (r *Repo) InsertERC20Donation(ctx context.Context, evt *p.CGERC20DonationEvent) error {
+func (r *Repo) InsertERC20Donation(ctx context.Context, evt *cgmodel.CGERC20DonationEvent) error {
 	const op = "insert into cg_erc20_donation"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -313,7 +313,7 @@ func (r *Repo) InsertERC20Donation(ctx context.Context, evt *p.CGERC20DonationEv
 }
 
 // InsertNFTDonation records a PrizesWallet NftDonated event.
-func (r *Repo) InsertNFTDonation(ctx context.Context, evt *p.CGNFTDonationEvent) error {
+func (r *Repo) InsertNFTDonation(ctx context.Context, evt *cgmodel.CGNFTDonationEvent) error {
 	const op = "insert into cg_nft_donation"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -349,7 +349,7 @@ func (r *Repo) InsertNFTDonation(ctx context.Context, evt *p.CGNFTDonationEvent)
 }
 
 // InsertDonatedTokenClaim records a PrizesWallet DonatedTokenClaimed event.
-func (r *Repo) InsertDonatedTokenClaim(ctx context.Context, evt *p.CGDonatedTokenClaimed) error {
+func (r *Repo) InsertDonatedTokenClaim(ctx context.Context, evt *cgmodel.CGDonatedTokenClaimed) error {
 	const op = "insert into cg_donated_tok_claimed"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -383,7 +383,7 @@ func (r *Repo) InsertDonatedTokenClaim(ctx context.Context, evt *p.CGDonatedToke
 }
 
 // InsertDonatedNFTClaim records a PrizesWallet DonatedNftClaimed event.
-func (r *Repo) InsertDonatedNFTClaim(ctx context.Context, evt *p.CGDonatedNFTClaimed) error {
+func (r *Repo) InsertDonatedNFTClaim(ctx context.Context, evt *cgmodel.CGDonatedNFTClaimed) error {
 	const op = "insert into cg_donated_nft_claimed"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -417,7 +417,7 @@ func (r *Repo) InsertDonatedNFTClaim(ctx context.Context, evt *p.CGDonatedNFTCla
 }
 
 // InsertFundsToCharity records a game FundsTransferredToCharity event.
-func (r *Repo) InsertFundsToCharity(ctx context.Context, evt *p.CGFundsToCharity) error {
+func (r *Repo) InsertFundsToCharity(ctx context.Context, evt *cgmodel.CGFundsToCharity) error {
 	const op = "insert into cg_funds_to_charity"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -446,7 +446,7 @@ func (r *Repo) InsertFundsToCharity(ctx context.Context, evt *p.CGFundsToCharity
 // Tokens.
 
 // InsertTokenName records an NftNameChanged event.
-func (r *Repo) InsertTokenName(ctx context.Context, evt *p.CGTokenNameEvent) error {
+func (r *Repo) InsertTokenName(ctx context.Context, evt *cgmodel.CGTokenNameEvent) error {
 	const op = "insert into cg_token_name"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -470,7 +470,7 @@ func (r *Repo) InsertTokenName(ctx context.Context, evt *p.CGTokenNameEvent) err
 
 // InsertMint records an NftMinted event; the owner starts as the current
 // owner (cur_owner_aid tracks later transfers).
-func (r *Repo) InsertMint(ctx context.Context, evt *p.CGMintEvent) error {
+func (r *Repo) InsertMint(ctx context.Context, evt *cgmodel.CGMintEvent) error {
 	const op = "insert into cg_mint_event"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -501,7 +501,7 @@ func (r *Repo) InsertMint(ctx context.Context, evt *p.CGMintEvent) error {
 
 // InsertCosmicSignatureTransfer records an ERC721 Transfer of a
 // CosmicSignature NFT (otype: 1 = mint, 2 = burn, 0 = regular transfer).
-func (r *Repo) InsertCosmicSignatureTransfer(ctx context.Context, evt *p.CGERC721Transfer) error {
+func (r *Repo) InsertCosmicSignatureTransfer(ctx context.Context, evt *cgmodel.CGERC721Transfer) error {
 	const op = "insert into cg_erc721_transfer"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -536,7 +536,7 @@ func (r *Repo) InsertCosmicSignatureTransfer(ctx context.Context, evt *p.CGERC72
 
 // InsertCosmicTokenTransfer records an ERC20 Transfer of CosmicToken
 // (otype: 1 = mint, 2 = burn, 0 = regular transfer).
-func (r *Repo) InsertCosmicTokenTransfer(ctx context.Context, evt *p.CGERC20Transfer) error {
+func (r *Repo) InsertCosmicTokenTransfer(ctx context.Context, evt *cgmodel.CGERC20Transfer) error {
 	const op = "insert into cg_erc20_transfer"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -587,7 +587,7 @@ func transferOType(from, to string) int {
 // Prizes.
 
 // InsertPrizeDeposit records a PrizesWallet EthReceived event.
-func (r *Repo) InsertPrizeDeposit(ctx context.Context, evt *p.CGPrizesEthDeposit) error {
+func (r *Repo) InsertPrizeDeposit(ctx context.Context, evt *cgmodel.CGPrizesEthDeposit) error {
 	const op = "insert into cg_prize_deposit"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -616,7 +616,7 @@ func (r *Repo) InsertPrizeDeposit(ctx context.Context, evt *p.CGPrizesEthDeposit
 }
 
 // InsertPrizeWithdrawal records a PrizesWallet EthWithdrawn event.
-func (r *Repo) InsertPrizeWithdrawal(ctx context.Context, evt *p.CGPrizesEthWithdrawal) error {
+func (r *Repo) InsertPrizeWithdrawal(ctx context.Context, evt *cgmodel.CGPrizesEthWithdrawal) error {
 	const op = "insert into cg_prize_withdrawal"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -649,7 +649,7 @@ func (r *Repo) InsertPrizeWithdrawal(ctx context.Context, evt *p.CGPrizesEthWith
 }
 
 // InsertRaffleNFTWinner records a RaffleWinnerPrizePaid event.
-func (r *Repo) InsertRaffleNFTWinner(ctx context.Context, evt *p.CGRaffleNFTWinner) error {
+func (r *Repo) InsertRaffleNFTWinner(ctx context.Context, evt *cgmodel.CGRaffleNFTWinner) error {
 	const op = "insert into cg_raffle_nft_prize"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -681,7 +681,7 @@ func (r *Repo) InsertRaffleNFTWinner(ctx context.Context, evt *p.CGRaffleNFTWinn
 }
 
 // InsertRaffleETHWinner records a RaffleWinnerBidderEthPrizeAllocated event.
-func (r *Repo) InsertRaffleETHWinner(ctx context.Context, evt *p.CGRaffleETHWinner) error {
+func (r *Repo) InsertRaffleETHWinner(ctx context.Context, evt *cgmodel.CGRaffleETHWinner) error {
 	const op = "insert into cg_raffle_eth_prize"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -712,7 +712,7 @@ func (r *Repo) InsertRaffleETHWinner(ctx context.Context, evt *p.CGRaffleETHWinn
 // InsertEnduranceWinner records an EnduranceChampionPrizePaid event. The
 // Solidity event emits no winner index — there is exactly one endurance
 // champion per round.
-func (r *Repo) InsertEnduranceWinner(ctx context.Context, evt *p.CGEnduranceWinner) error {
+func (r *Repo) InsertEnduranceWinner(ctx context.Context, evt *cgmodel.CGEnduranceWinner) error {
 	const op = "insert into cg_endurance_prize"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -742,7 +742,7 @@ func (r *Repo) InsertEnduranceWinner(ctx context.Context, evt *p.CGEnduranceWinn
 
 // InsertLastCstBidderWinner records a LastCstBidderPrizePaid event (one per
 // round, no winner index in the Solidity event).
-func (r *Repo) InsertLastCstBidderWinner(ctx context.Context, evt *p.CGLastBidderWinner) error {
+func (r *Repo) InsertLastCstBidderWinner(ctx context.Context, evt *cgmodel.CGLastBidderWinner) error {
 	const op = "insert into cg_lastcst_prize"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -771,7 +771,7 @@ func (r *Repo) InsertLastCstBidderWinner(ctx context.Context, evt *p.CGLastBidde
 }
 
 // InsertChronoWarrior records a ChronoWarriorPrizePaid event.
-func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *p.CGChronoWarrior) error {
+func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *cgmodel.CGChronoWarrior) error {
 	const op = "insert into cg_chrono_warrior_prize"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -802,7 +802,7 @@ func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *p.CGChronoWarrior) 
 }
 
 // InsertFundTransferFailed records a FundTransferFailed event.
-func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *p.CGFundTransferFailed) error {
+func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFundTransferFailed) error {
 	const op = "insert into cg_fund_transf_err"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -829,7 +829,7 @@ func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *p.CGFundTransf
 }
 
 // InsertERC20TransferFailed records an ERC20TransferFailed event.
-func (r *Repo) InsertERC20TransferFailed(ctx context.Context, evt *p.CGErc20TransferFailed) error {
+func (r *Repo) InsertERC20TransferFailed(ctx context.Context, evt *cgmodel.CGErc20TransferFailed) error {
 	const op = "insert into cg_erc20_transf_err"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -858,7 +858,7 @@ func (r *Repo) InsertERC20TransferFailed(ctx context.Context, evt *p.CGErc20Tran
 // Staking.
 
 // InsertNftStakedCST records a CST-wallet NftStaked event.
-func (r *Repo) InsertNftStakedCST(ctx context.Context, evt *p.CGNftStakedCst) error {
+func (r *Repo) InsertNftStakedCST(ctx context.Context, evt *cgmodel.CGNftStakedCst) error {
 	const op = "insert into cg_nft_staked_cst"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -888,7 +888,7 @@ func (r *Repo) InsertNftStakedCST(ctx context.Context, evt *p.CGNftStakedCst) er
 }
 
 // InsertNftStakedRWalk records a RandomWalk-wallet NftStaked event.
-func (r *Repo) InsertNftStakedRWalk(ctx context.Context, evt *p.CGNftStakedRWalk) error {
+func (r *Repo) InsertNftStakedRWalk(ctx context.Context, evt *cgmodel.CGNftStakedRWalk) error {
 	const op = "insert into cg_nft_staked_rwalk"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -918,7 +918,7 @@ func (r *Repo) InsertNftStakedRWalk(ctx context.Context, evt *p.CGNftStakedRWalk
 
 // InsertNftUnstakedCST records a CST-wallet NftUnstaked event (carries the
 // staker's reward accounting).
-func (r *Repo) InsertNftUnstakedCST(ctx context.Context, evt *p.CGNftUnstakedCst) error {
+func (r *Repo) InsertNftUnstakedCST(ctx context.Context, evt *cgmodel.CGNftUnstakedCst) error {
 	const op = "insert into cg_nft_unstaked_cst"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -950,7 +950,7 @@ func (r *Repo) InsertNftUnstakedCST(ctx context.Context, evt *p.CGNftUnstakedCst
 }
 
 // InsertNftUnstakedRWalk records a RandomWalk-wallet NftUnstaked event.
-func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *p.CGNftUnstakedRWalk) error {
+func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUnstakedRWalk) error {
 	const op = "insert into cg_nft_unstaked_rwalk"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -979,7 +979,7 @@ func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *p.CGNftUnstakedR
 }
 
 // InsertStakingEthDeposit records a staking-wallet EthDepositReceived event.
-func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *p.CGEthDeposit) error {
+func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDeposit) error {
 	const op = "insert into cg_staking_eth_deposit"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1010,7 +1010,7 @@ func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *p.CGEthDeposit)
 // Marketing.
 
 // InsertMarketingRewardPaid records a MarketingWallet RewardPaid event.
-func (r *Repo) InsertMarketingRewardPaid(ctx context.Context, evt *p.CGMarketingRewardPaid) error {
+func (r *Repo) InsertMarketingRewardPaid(ctx context.Context, evt *cgmodel.CGMarketingRewardPaid) error {
 	const op = "insert into cg_mkt_reward"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1039,7 +1039,7 @@ func (r *Repo) InsertMarketingRewardPaid(ctx context.Context, evt *p.CGMarketing
 // Admin: percentages and counts.
 
 // InsertCharityPercentageChange records a CharityEthDonationAmountPercentageChanged event.
-func (r *Repo) InsertCharityPercentageChange(ctx context.Context, evt *p.CGCharityPercentageChanged) error {
+func (r *Repo) InsertCharityPercentageChange(ctx context.Context, evt *cgmodel.CGCharityPercentageChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_charity_pcent", err)
@@ -1049,7 +1049,7 @@ func (r *Repo) InsertCharityPercentageChange(ctx context.Context, evt *p.CGChari
 }
 
 // InsertPrizePercentageChange records a MainEthPrizeAmountPercentageChanged event.
-func (r *Repo) InsertPrizePercentageChange(ctx context.Context, evt *p.CGPrizePercentageChanged) error {
+func (r *Repo) InsertPrizePercentageChange(ctx context.Context, evt *cgmodel.CGPrizePercentageChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_main_prize_pcent", err)
@@ -1059,7 +1059,7 @@ func (r *Repo) InsertPrizePercentageChange(ctx context.Context, evt *p.CGPrizePe
 }
 
 // InsertRafflePercentageChange records a RaffleTotalEthPrizeAmountForBiddersPercentageChanged event.
-func (r *Repo) InsertRafflePercentageChange(ctx context.Context, evt *p.CGRafflePercentageChanged) error {
+func (r *Repo) InsertRafflePercentageChange(ctx context.Context, evt *cgmodel.CGRafflePercentageChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_raffle_pcent", err)
@@ -1069,7 +1069,7 @@ func (r *Repo) InsertRafflePercentageChange(ctx context.Context, evt *p.CGRaffle
 }
 
 // InsertStakingPercentageChange records a CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged event.
-func (r *Repo) InsertStakingPercentageChange(ctx context.Context, evt *p.CGStakingPercentageChanged) error {
+func (r *Repo) InsertStakingPercentageChange(ctx context.Context, evt *cgmodel.CGStakingPercentageChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_stake_pcent", err)
@@ -1079,7 +1079,7 @@ func (r *Repo) InsertStakingPercentageChange(ctx context.Context, evt *p.CGStaki
 }
 
 // InsertChronoPercentageChange records a ChronoWarriorEthPrizeAmountPercentageChanged event.
-func (r *Repo) InsertChronoPercentageChange(ctx context.Context, evt *p.CGChronoPercentageChanged) error {
+func (r *Repo) InsertChronoPercentageChange(ctx context.Context, evt *cgmodel.CGChronoPercentageChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_chrono_pcent", err)
@@ -1089,7 +1089,7 @@ func (r *Repo) InsertChronoPercentageChange(ctx context.Context, evt *p.CGChrono
 }
 
 // InsertNumRaffleETHWinnersBiddingChange records a NumRaffleEthPrizesForBiddersChanged event.
-func (r *Repo) InsertNumRaffleETHWinnersBiddingChange(ctx context.Context, evt *p.CGNumRaffleETHWinnersBiddingChanged) error {
+func (r *Repo) InsertNumRaffleETHWinnersBiddingChange(ctx context.Context, evt *cgmodel.CGNumRaffleETHWinnersBiddingChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_raf_eth_bidding", err)
@@ -1099,7 +1099,7 @@ func (r *Repo) InsertNumRaffleETHWinnersBiddingChange(ctx context.Context, evt *
 }
 
 // InsertNumRaffleNFTWinnersBiddingChange records a NumRaffleCosmicSignatureNftsForBiddersChanged event.
-func (r *Repo) InsertNumRaffleNFTWinnersBiddingChange(ctx context.Context, evt *p.CGNumRaffleNFTWinnersBiddingChanged) error {
+func (r *Repo) InsertNumRaffleNFTWinnersBiddingChange(ctx context.Context, evt *cgmodel.CGNumRaffleNFTWinnersBiddingChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_raf_nft_bidding", err)
@@ -1110,7 +1110,7 @@ func (r *Repo) InsertNumRaffleNFTWinnersBiddingChange(ctx context.Context, evt *
 
 // InsertNumRaffleNFTWinnersStakingRWalkChange records a
 // NumRaffleCosmicSignatureNftsForRandomWalkNftStakersChanged event.
-func (r *Repo) InsertNumRaffleNFTWinnersStakingRWalkChange(ctx context.Context, evt *p.CGNumRaffleNFTWinnersStakingRWalkChanged) error {
+func (r *Repo) InsertNumRaffleNFTWinnersStakingRWalkChange(ctx context.Context, evt *cgmodel.CGNumRaffleNFTWinnersStakingRWalkChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_raf_nft_staking_rwalk", err)
@@ -1123,7 +1123,7 @@ func (r *Repo) InsertNumRaffleNFTWinnersStakingRWalkChange(ctx context.Context, 
 
 // InsertCharityReceiverChange records a CharityWallet CharityAddressChanged
 // event (who receives the charity funds).
-func (r *Repo) InsertCharityReceiverChange(ctx context.Context, evt *p.CGCharityUpdatedEvent) error {
+func (r *Repo) InsertCharityReceiverChange(ctx context.Context, evt *cgmodel.CGCharityUpdatedEvent) error {
 	const op = "insert into cg_charity_receiver_changed"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
@@ -1150,7 +1150,7 @@ func (r *Repo) InsertCharityReceiverChange(ctx context.Context, evt *p.CGCharity
 
 // InsertCharityWalletAddressChange records a game CharityAddressChanged
 // event (which CharityWallet contract the game uses).
-func (r *Repo) InsertCharityWalletAddressChange(ctx context.Context, evt *p.CGCharityAddressChanged) error {
+func (r *Repo) InsertCharityWalletAddressChange(ctx context.Context, evt *cgmodel.CGCharityAddressChanged) error {
 	const op = "insert into cg_adm_charity_wallet"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1165,7 +1165,7 @@ func (r *Repo) InsertCharityWalletAddressChange(ctx context.Context, evt *p.CGCh
 }
 
 // InsertRandomWalkAddressChange records a RandomWalkNftAddressChanged event.
-func (r *Repo) InsertRandomWalkAddressChange(ctx context.Context, evt *p.CGRandomWalkAddressChanged) error {
+func (r *Repo) InsertRandomWalkAddressChange(ctx context.Context, evt *cgmodel.CGRandomWalkAddressChanged) error {
 	const op = "insert into cg_adm_rwalk_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1180,7 +1180,7 @@ func (r *Repo) InsertRandomWalkAddressChange(ctx context.Context, evt *p.CGRando
 }
 
 // InsertPrizesWalletAddressChange records a PrizesWalletAddressChanged event.
-func (r *Repo) InsertPrizesWalletAddressChange(ctx context.Context, evt *p.CGPrizeWalletAddressChanged) error {
+func (r *Repo) InsertPrizesWalletAddressChange(ctx context.Context, evt *cgmodel.CGPrizeWalletAddressChanged) error {
 	const op = "insert into cg_adm_prizes_wallet_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1195,7 +1195,7 @@ func (r *Repo) InsertPrizesWalletAddressChange(ctx context.Context, evt *p.CGPri
 }
 
 // InsertStakingWalletCSTAddressChange records a StakingWalletCosmicSignatureNftAddressChanged event.
-func (r *Repo) InsertStakingWalletCSTAddressChange(ctx context.Context, evt *p.CGStakingWalletCSTAddressChanged) error {
+func (r *Repo) InsertStakingWalletCSTAddressChange(ctx context.Context, evt *cgmodel.CGStakingWalletCSTAddressChanged) error {
 	const op = "insert into cg_adm_staking_cst_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1210,7 +1210,7 @@ func (r *Repo) InsertStakingWalletCSTAddressChange(ctx context.Context, evt *p.C
 }
 
 // InsertStakingWalletRWalkAddressChange records a StakingWalletRandomWalkNftAddressChanged event.
-func (r *Repo) InsertStakingWalletRWalkAddressChange(ctx context.Context, evt *p.CGStakingWalletRWalkAddressChanged) error {
+func (r *Repo) InsertStakingWalletRWalkAddressChange(ctx context.Context, evt *cgmodel.CGStakingWalletRWalkAddressChanged) error {
 	const op = "insert into cg_adm_staking_rwalk_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1225,7 +1225,7 @@ func (r *Repo) InsertStakingWalletRWalkAddressChange(ctx context.Context, evt *p
 }
 
 // InsertMarketingWalletAddressChange records a MarketingWalletAddressChanged event.
-func (r *Repo) InsertMarketingWalletAddressChange(ctx context.Context, evt *p.CGMarketingWalletAddressChanged) error {
+func (r *Repo) InsertMarketingWalletAddressChange(ctx context.Context, evt *cgmodel.CGMarketingWalletAddressChanged) error {
 	const op = "insert into cg_adm_marketing_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1240,7 +1240,7 @@ func (r *Repo) InsertMarketingWalletAddressChange(ctx context.Context, evt *p.CG
 }
 
 // InsertTreasurerAddressChange records a TreasurerAddressChanged event.
-func (r *Repo) InsertTreasurerAddressChange(ctx context.Context, evt *p.CGTreasurerAddressChanged) error {
+func (r *Repo) InsertTreasurerAddressChange(ctx context.Context, evt *cgmodel.CGTreasurerAddressChanged) error {
 	const op = "insert into cg_adm_treasurer_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1255,7 +1255,7 @@ func (r *Repo) InsertTreasurerAddressChange(ctx context.Context, evt *p.CGTreasu
 }
 
 // InsertCosmicTokenAddressChange records a CosmicSignatureTokenAddressChanged event.
-func (r *Repo) InsertCosmicTokenAddressChange(ctx context.Context, evt *p.CGCosmicTokenAddressChanged) error {
+func (r *Repo) InsertCosmicTokenAddressChange(ctx context.Context, evt *cgmodel.CGCosmicTokenAddressChanged) error {
 	const op = "insert into cg_adm_costok_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1270,7 +1270,7 @@ func (r *Repo) InsertCosmicTokenAddressChange(ctx context.Context, evt *p.CGCosm
 }
 
 // InsertCosmicSignatureAddressChange records a CosmicSignatureNftAddressChanged event.
-func (r *Repo) InsertCosmicSignatureAddressChange(ctx context.Context, evt *p.CGCosmicSignatureAddressChanged) error {
+func (r *Repo) InsertCosmicSignatureAddressChange(ctx context.Context, evt *cgmodel.CGCosmicSignatureAddressChanged) error {
 	const op = "insert into cg_adm_cossig_addr"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1287,7 +1287,7 @@ func (r *Repo) InsertCosmicSignatureAddressChange(ctx context.Context, evt *p.CG
 // Admin: proxy and lifecycle.
 
 // InsertUpgraded records an ERC-1967 Upgraded event.
-func (r *Repo) InsertUpgraded(ctx context.Context, evt *p.CGUpgraded) error {
+func (r *Repo) InsertUpgraded(ctx context.Context, evt *cgmodel.CGUpgraded) error {
 	const op = "insert into cg_adm_upgraded"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1302,7 +1302,7 @@ func (r *Repo) InsertUpgraded(ctx context.Context, evt *p.CGUpgraded) error {
 }
 
 // InsertAdminChanged records an ERC-1967 AdminChanged event.
-func (r *Repo) InsertAdminChanged(ctx context.Context, evt *p.CGAdminChanged) error {
+func (r *Repo) InsertAdminChanged(ctx context.Context, evt *cgmodel.CGAdminChanged) error {
 	const op = "insert into cg_adm_admin_changed"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1334,7 +1334,7 @@ func (r *Repo) InsertAdminChanged(ctx context.Context, evt *p.CGAdminChanged) er
 
 // InsertOwnershipTransfer records an OwnershipTransferred event
 // (contract_code identifies which platform contract changed owner).
-func (r *Repo) InsertOwnershipTransfer(ctx context.Context, evt *p.CGOwnershipTransferred) error {
+func (r *Repo) InsertOwnershipTransfer(ctx context.Context, evt *cgmodel.CGOwnershipTransferred) error {
 	const op = "insert into cg_adm_ownership"
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
@@ -1366,7 +1366,7 @@ func (r *Repo) InsertOwnershipTransfer(ctx context.Context, evt *p.CGOwnershipTr
 }
 
 // InsertInitialized records an Initializable Initialized event.
-func (r *Repo) InsertInitialized(ctx context.Context, evt *p.CGInitialized) error {
+func (r *Repo) InsertInitialized(ctx context.Context, evt *cgmodel.CGInitialized) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_initialized", err)
@@ -1378,7 +1378,7 @@ func (r *Repo) InsertInitialized(ctx context.Context, evt *p.CGInitialized) erro
 // Admin: timing and pricing parameters.
 
 // InsertTimeIncreaseChange records a legacy TimeIncreaseChanged event.
-func (r *Repo) InsertTimeIncreaseChange(ctx context.Context, evt *p.CGTimeIncreaseChanged) error {
+func (r *Repo) InsertTimeIncreaseChange(ctx context.Context, evt *cgmodel.CGTimeIncreaseChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_time_inc", err)
@@ -1388,7 +1388,7 @@ func (r *Repo) InsertTimeIncreaseChange(ctx context.Context, evt *p.CGTimeIncrea
 }
 
 // InsertTimeoutClaimPrizeChange records a TimeoutDurationToClaimMainPrizeChanged event.
-func (r *Repo) InsertTimeoutClaimPrizeChange(ctx context.Context, evt *p.CGTimeoutClaimPrizeChanged) error {
+func (r *Repo) InsertTimeoutClaimPrizeChange(ctx context.Context, evt *cgmodel.CGTimeoutClaimPrizeChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_timeout_claimprize", err)
@@ -1398,7 +1398,7 @@ func (r *Repo) InsertTimeoutClaimPrizeChange(ctx context.Context, evt *p.CGTimeo
 }
 
 // InsertTimeoutToWithdrawPrizesChange records a TimeoutDurationToWithdrawPrizesChanged event.
-func (r *Repo) InsertTimeoutToWithdrawPrizesChange(ctx context.Context, evt *p.CGTimeoutToWithdrawPrizeChanged) error {
+func (r *Repo) InsertTimeoutToWithdrawPrizesChange(ctx context.Context, evt *cgmodel.CGTimeoutToWithdrawPrizeChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_timeout_withdraw", err)
@@ -1408,7 +1408,7 @@ func (r *Repo) InsertTimeoutToWithdrawPrizesChange(ctx context.Context, evt *p.C
 }
 
 // InsertPriceIncreaseChange records an EthBidPriceIncreaseDivisorChanged event.
-func (r *Repo) InsertPriceIncreaseChange(ctx context.Context, evt *p.CGPriceIncreaseChanged) error {
+func (r *Repo) InsertPriceIncreaseChange(ctx context.Context, evt *cgmodel.CGPriceIncreaseChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_price_inc", err)
@@ -1418,7 +1418,7 @@ func (r *Repo) InsertPriceIncreaseChange(ctx context.Context, evt *p.CGPriceIncr
 }
 
 // InsertMainPrizeMicrosecondsChange records a MainPrizeTimeIncrementInMicroSecondsChanged event.
-func (r *Repo) InsertMainPrizeMicrosecondsChange(ctx context.Context, evt *p.CGMainPrizeMicroSecondsIncreaseChanged) error {
+func (r *Repo) InsertMainPrizeMicrosecondsChange(ctx context.Context, evt *cgmodel.CGMainPrizeMicroSecondsIncreaseChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_prize_microsec", err)
@@ -1428,7 +1428,7 @@ func (r *Repo) InsertMainPrizeMicrosecondsChange(ctx context.Context, evt *p.CGM
 }
 
 // InsertInitialSecondsUntilPrizeChange records an InitialDurationUntilMainPrizeDivisorChanged event.
-func (r *Repo) InsertInitialSecondsUntilPrizeChange(ctx context.Context, evt *p.CGInitialSecondsUntilPrizeChanged) error {
+func (r *Repo) InsertInitialSecondsUntilPrizeChange(ctx context.Context, evt *cgmodel.CGInitialSecondsUntilPrizeChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_inisecprize", err)
@@ -1438,7 +1438,7 @@ func (r *Repo) InsertInitialSecondsUntilPrizeChange(ctx context.Context, evt *p.
 }
 
 // InsertActivationTimeChange records a RoundActivationTimeChanged event.
-func (r *Repo) InsertActivationTimeChange(ctx context.Context, evt *p.CGActivationTimeChanged) error {
+func (r *Repo) InsertActivationTimeChange(ctx context.Context, evt *cgmodel.CGActivationTimeChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_acttime", err)
@@ -1450,7 +1450,7 @@ func (r *Repo) InsertActivationTimeChange(ctx context.Context, evt *p.CGActivati
 // InsertCstAuctionLengthChange records a CST dutch-auction duration change
 // (CstDutchAuctionDurationDivisorChanged and the V2 duration event share the
 // table).
-func (r *Repo) InsertCstAuctionLengthChange(ctx context.Context, evt *p.CGCstDutchAuctionDurationDivisorChanged) error {
+func (r *Repo) InsertCstAuctionLengthChange(ctx context.Context, evt *cgmodel.CGCstDutchAuctionDurationDivisorChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_cst_auclen", err)
@@ -1460,7 +1460,7 @@ func (r *Repo) InsertCstAuctionLengthChange(ctx context.Context, evt *p.CGCstDut
 }
 
 // InsertCstAuctionDurationChangeDivisorChange records a CstDutchAuctionDurationChangeDivisorChanged event.
-func (r *Repo) InsertCstAuctionDurationChangeDivisorChange(ctx context.Context, evt *p.CGCstDutchAuctionDurationChangeDivisorChanged) error {
+func (r *Repo) InsertCstAuctionDurationChangeDivisorChange(ctx context.Context, evt *cgmodel.CGCstDutchAuctionDurationChangeDivisorChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_cst_auclen_chg_div", err)
@@ -1470,7 +1470,7 @@ func (r *Repo) InsertCstAuctionDurationChangeDivisorChange(ctx context.Context, 
 }
 
 // InsertEthAuctionDurationDivisorChange records an EthDutchAuctionDurationDivisorChanged event.
-func (r *Repo) InsertEthAuctionDurationDivisorChange(ctx context.Context, evt *p.CGEthDutchAuctionDurationDivisorChanged) error {
+func (r *Repo) InsertEthAuctionDurationDivisorChange(ctx context.Context, evt *cgmodel.CGEthDutchAuctionDurationDivisorChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_eth_auclen", err)
@@ -1480,7 +1480,7 @@ func (r *Repo) InsertEthAuctionDurationDivisorChange(ctx context.Context, evt *p
 }
 
 // InsertEthAuctionEndingBidPriceDivisorChange records an EthDutchAuctionEndingBidPriceDivisorChanged event.
-func (r *Repo) InsertEthAuctionEndingBidPriceDivisorChange(ctx context.Context, evt *p.CGEthDutchAuctionEndingBidPriceDivisorChanged) error {
+func (r *Repo) InsertEthAuctionEndingBidPriceDivisorChange(ctx context.Context, evt *cgmodel.CGEthDutchAuctionEndingBidPriceDivisorChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_eth_auc_endprice", err)
@@ -1492,7 +1492,7 @@ func (r *Repo) InsertEthAuctionEndingBidPriceDivisorChange(ctx context.Context, 
 // Admin: rewards and limits.
 
 // InsertStaticCstRewardChange records a CstPrizeAmountChanged event.
-func (r *Repo) InsertStaticCstRewardChange(ctx context.Context, evt *p.CGStaticCstReward) error {
+func (r *Repo) InsertStaticCstRewardChange(ctx context.Context, evt *cgmodel.CGStaticCstReward) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_erc_rwd_mul", err)
@@ -1502,7 +1502,7 @@ func (r *Repo) InsertStaticCstRewardChange(ctx context.Context, evt *p.CGStaticC
 }
 
 // InsertMarketingRewardChange records a MarketingWalletCstContributionAmountChanged event.
-func (r *Repo) InsertMarketingRewardChange(ctx context.Context, evt *p.CGMarketingRewardChanged) error {
+func (r *Repo) InsertMarketingRewardChange(ctx context.Context, evt *cgmodel.CGMarketingRewardChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_mkt_reward", err)
@@ -1514,7 +1514,7 @@ func (r *Repo) InsertMarketingRewardChange(ctx context.Context, evt *p.CGMarketi
 // InsertCstRewardForBiddingChange records a CST-bid-reward change
 // (CstRewardAmountForBiddingChanged and its V2 variants share the table; the
 // insert trigger updates cg_glob_stats.cst_reward_for_bidding).
-func (r *Repo) InsertCstRewardForBiddingChange(ctx context.Context, evt *p.CGCstRewardForBiddingChanged) error {
+func (r *Repo) InsertCstRewardForBiddingChange(ctx context.Context, evt *cgmodel.CGCstRewardForBiddingChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_erc20_reward", err)
@@ -1524,7 +1524,7 @@ func (r *Repo) InsertCstRewardForBiddingChange(ctx context.Context, evt *p.CGCst
 }
 
 // InsertMaxMessageLengthChange records a BidMessageLengthMaxLimitChanged event.
-func (r *Repo) InsertMaxMessageLengthChange(ctx context.Context, evt *p.CGMaxMessageLengthChanged) error {
+func (r *Repo) InsertMaxMessageLengthChange(ctx context.Context, evt *cgmodel.CGMaxMessageLengthChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_msg_len", err)
@@ -1534,7 +1534,7 @@ func (r *Repo) InsertMaxMessageLengthChange(ctx context.Context, evt *p.CGMaxMes
 }
 
 // InsertCstMinLimit records a CstDutchAuctionBeginningBidPriceMinLimitChanged event.
-func (r *Repo) InsertCstMinLimit(ctx context.Context, evt *p.CGCstMinLimit) error {
+func (r *Repo) InsertCstMinLimit(ctx context.Context, evt *cgmodel.CGCstMinLimit) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_cst_min_limit", err)
@@ -1544,7 +1544,7 @@ func (r *Repo) InsertCstMinLimit(ctx context.Context, evt *p.CGCstMinLimit) erro
 }
 
 // InsertNextRoundDelayDurationChange records a DelayDurationBeforeRoundActivationChanged event.
-func (r *Repo) InsertNextRoundDelayDurationChange(ctx context.Context, evt *p.CGNextRoundDelayDuration) error {
+func (r *Repo) InsertNextRoundDelayDurationChange(ctx context.Context, evt *cgmodel.CGNextRoundDelayDuration) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_delay_duration", err)
@@ -1556,7 +1556,7 @@ func (r *Repo) InsertNextRoundDelayDurationChange(ctx context.Context, evt *p.CG
 // Admin: NFT metadata.
 
 // InsertTokenGenerationScriptURL records an NftGenerationScriptUriChanged event.
-func (r *Repo) InsertTokenGenerationScriptURL(ctx context.Context, evt *p.CGTokenGenerationScriptURL) error {
+func (r *Repo) InsertTokenGenerationScriptURL(ctx context.Context, evt *cgmodel.CGTokenGenerationScriptURL) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_script_url", err)
@@ -1566,7 +1566,7 @@ func (r *Repo) InsertTokenGenerationScriptURL(ctx context.Context, evt *p.CGToke
 }
 
 // InsertBaseURI records an NftBaseUriChanged event.
-func (r *Repo) InsertBaseURI(ctx context.Context, evt *p.CGBaseURIEvent) error {
+func (r *Repo) InsertBaseURI(ctx context.Context, evt *cgmodel.CGBaseURIEvent) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
 		return store.WrapError("insert into cg_adm_base_uri_cs", err)

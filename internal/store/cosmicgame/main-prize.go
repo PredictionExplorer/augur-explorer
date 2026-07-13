@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -73,7 +73,7 @@ const prizeClaimsSelect = `SELECT
 			) d ON p.round_num = d.round_num
 	`
 
-func scanPrizeClaimRow(rows pgx.Rows, rec *p.CGRoundRec) error {
+func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 	var nullSeed sql.NullString
 	var nullDepAmount, nullDepAmountPerTok sql.NullString
 	var nullDepAmountEth, nullDepAmountPerTokenEth sql.NullFloat64
@@ -194,7 +194,7 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *p.CGRoundRec) error {
 // PrizeClaims returns the main prize claims of all rounds (newest first,
 // offset/limit paginated; limit 0 means unbounded) with the per-round stats,
 // charity, staking, endurance and chrono warrior columns the round list needs.
-func (r *Repo) PrizeClaims(ctx context.Context, offset, limit int) ([]p.CGRoundRec, error) {
+func (r *Repo) PrizeClaims(ctx context.Context, offset, limit int) ([]cgmodel.CGRoundRec, error) {
 	if limit == 0 {
 		limit = 1000000
 	}
@@ -211,7 +211,7 @@ type RoundPageCursor struct {
 
 // PrizeClaimsPage returns at most limit completed rounds after the supplied
 // descending keyset cursor. A nil cursor starts at the newest round.
-func (r *Repo) PrizeClaimsPage(ctx context.Context, after *RoundPageCursor, limit int) (records []p.CGRoundRec, hasMore bool, err error) {
+func (r *Repo) PrizeClaimsPage(ctx context.Context, after *RoundPageCursor, limit int) (records []cgmodel.CGRoundRec, hasMore bool, err error) {
 	const op = "prize claims page"
 	if limit <= 0 {
 		return nil, false, fmt.Errorf("%s: limit must be positive", op)
@@ -242,7 +242,7 @@ func (r *Repo) PrizeClaimsPage(ctx context.Context, after *RoundPageCursor, limi
 
 // applyStakingDeposit copies the nullable staking-deposit columns into the
 // record, defaulting the deposit id to -1 when the round has no deposit.
-func applyStakingDeposit(dst *p.CGStakingDeposit, amount sql.NullString, amountEth sql.NullFloat64, perTok sql.NullString, perTokEth sql.NullFloat64, depositNum, numStaked sql.NullInt64) {
+func applyStakingDeposit(dst *cgmodel.CGStakingDeposit, amount sql.NullString, amountEth sql.NullFloat64, perTok sql.NullString, perTokEth sql.NullFloat64, depositNum, numStaked sql.NullInt64) {
 	if amount.Valid {
 		dst.StakingDepositAmount = amount.String
 	}
@@ -268,9 +268,9 @@ func applyStakingDeposit(dst *p.CGStakingDeposit, amount sql.NullString, amountE
 // RoundInfo returns the lean detail of one completed round without loading
 // the legacy nested prize collections. A round with no prize claim yet yields
 // store.ErrNotFound.
-func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, error) {
+func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRec, error) {
 	const op = "prize info"
-	var rec p.CGRoundRec
+	var rec cgmodel.CGRoundRec
 	query := `SELECT
 			p.evtlog_id,
 			p.block_num,
@@ -503,7 +503,7 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, err
 
 // PrizeInfo preserves the v1 round detail by composing RoundInfo with the
 // nested raffle, staking, deposit and prize collections.
-func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (p.CGRoundRec, error) {
+func (r *Repo) PrizeInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRec, error) {
 	const op = "prize info"
 	rec, err := r.RoundInfo(ctx, roundNum)
 	if err != nil {
@@ -599,7 +599,7 @@ const allPrizesSelect = `SELECT
 			LEFT JOIN cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15)
 			LEFT JOIN transaction ted ON ted.id = ed.tx_id`
 
-func scanPrizeHistoryRow(rows pgx.Rows, rec *p.CGPrizeHistory) error {
+func scanPrizeHistoryRow(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 	return rows.Scan(
 		&rec.RecordType,
 		&rec.Tx.EvtLogId,
@@ -624,7 +624,7 @@ func scanPrizeHistoryRow(rows pgx.Rows, rec *p.CGPrizeHistory) error {
 // AllPrizesForRound returns every prize row of one round from the cg_prize
 // registry with the type-specific amount/token columns resolved, ordered by
 // prize type then winner index.
-func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]p.CGPrizeHistory, error) {
+func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]cgmodel.CGPrizeHistory, error) {
 	query := allPrizesSelect + `
 		WHERE p.round_num = $1
 		ORDER BY p.ptype, p.winner_index`
@@ -646,7 +646,7 @@ func (r *Repo) AllPrizesForRoundPage(
 	roundNum int64,
 	after *PrizePageCursor,
 	limit int,
-) (records []p.CGPrizeHistory, hasMore bool, err error) {
+) (records []cgmodel.CGPrizeHistory, hasMore bool, err error) {
 	const op = "all prizes for round page"
 	if roundNum < 0 {
 		return nil, false, fmt.Errorf("%s: round must be non-negative", op)

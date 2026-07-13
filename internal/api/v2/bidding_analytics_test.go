@@ -11,18 +11,18 @@ import (
 	"testing"
 	"time"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 func TestBiddingActivityReturnsBoundedSpikes(t *testing.T) {
 	t.Parallel()
-	records := make([]cgprimitives.CGBidFrequencyBucket, 0, 11)
+	records := make([]cgmodel.CGBidFrequencyBucket, 0, 11)
 	for i := 0; i < 10; i++ {
 		count := int64(0)
 		if i == 5 {
 			count = 20
 		}
-		records = append(records, cgprimitives.CGBidFrequencyBucket{
+		records = append(records, cgmodel.CGBidFrequencyBucket{
 			BucketTs:      1000 + int64(i*10),
 			NumBids:       count,
 			UniqueBidders: count / 2,
@@ -30,9 +30,9 @@ func TestBiddingActivityReturnsBoundedSpikes(t *testing.T) {
 	}
 	// The legacy generate_series query includes a bucket at an exactly
 	// divisible exclusive boundary. V2 deliberately omits it.
-	records = append(records, cgprimitives.CGBidFrequencyBucket{BucketTs: 1100})
+	records = append(records, cgmodel.CGBidFrequencyBucket{BucketTs: 1100})
 	server := newBiddingAnalyticsTestServer(t, fakeBiddingAnalyticsReader{
-		frequency: func(_ context.Context, from, to, interval int) ([]cgprimitives.CGBidFrequencyBucket, error) {
+		frequency: func(_ context.Context, from, to, interval int) ([]cgmodel.CGBidFrequencyBucket, error) {
 			if from != 1000 || to != 1100 || interval != 10 {
 				t.Fatalf("repository args = %d,%d,%d", from, to, interval)
 			}
@@ -64,7 +64,7 @@ func TestBiddingActivityReturnsBoundedSpikes(t *testing.T) {
 func TestBiddingFrequencyUsesDocumentedDefault(t *testing.T) {
 	t.Parallel()
 	server := newBiddingAnalyticsTestServer(t, fakeBiddingAnalyticsReader{
-		frequency: func(ctx context.Context, from, to, interval int) ([]cgprimitives.CGBidFrequencyBucket, error) {
+		frequency: func(ctx context.Context, from, to, interval int) ([]cgmodel.CGBidFrequencyBucket, error) {
 			if from != 1000 || to != 2000 || interval != int(analyticsDefaultIntervalSeconds) {
 				t.Fatalf("repository args = %d,%d,%d", from, to, interval)
 			}
@@ -91,11 +91,11 @@ func TestBiddingFrequencyUsesDocumentedDefault(t *testing.T) {
 func TestBiddingTypeRatioUsesDecimalPercentages(t *testing.T) {
 	t.Parallel()
 	server := newBiddingAnalyticsTestServer(t, fakeBiddingAnalyticsReader{
-		ratio: func(_ context.Context, from, to, interval int) ([]cgprimitives.CGBidTypeRatioBucket, error) {
+		ratio: func(_ context.Context, from, to, interval int) ([]cgmodel.CGBidTypeRatioBucket, error) {
 			if from != 1000 || to != 1100 || interval != 100 {
 				t.Fatalf("repository args = %d,%d,%d", from, to, interval)
 			}
-			return []cgprimitives.CGBidTypeRatioBucket{
+			return []cgmodel.CGBidTypeRatioBucket{
 				{BucketTs: 1000, EthBids: 1, RwalkBids: 1, CstBids: 1, TotalBids: 3},
 				{BucketTs: 1100},
 			}, nil
@@ -124,14 +124,14 @@ func TestBiddingTopActivePeriodsMapsAndSorts(t *testing.T) {
 		periods: func(
 			_ context.Context,
 			top, from, to, gapHours, minBids int,
-		) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error) {
+		) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
 			if top != 2 || from != 1000 || to != 2000 || gapHours != 4 || minBids != 2 {
 				t.Fatalf("repository args = %d,%d,%d,%d,%d", top, from, to, gapHours, minBids)
 			}
-			return []cgprimitives.CGTopBidderInfo{
+			return []cgmodel.CGTopBidderInfo{
 					{BidderAid: 2, BidderAddr: address2, NumBids: 3},
 					{BidderAid: 1, BidderAddr: address1, NumBids: 5},
-				}, []cgprimitives.CGBidderActivePeriod{
+				}, []cgmodel.CGBidderActivePeriod{
 					{BidderAid: 2, BidderAddr: address2, PeriodStart: 1200, PeriodEnd: 1220, NumBids: 2, DurationSecs: 20},
 					{BidderAid: 1, BidderAddr: address1, PeriodStart: 1100, PeriodEnd: 1130, NumBids: 3, DurationSecs: 30},
 				}, false, nil
@@ -160,7 +160,7 @@ func TestBiddingTopActivePeriodsRejectsOversizedResult(t *testing.T) {
 			int,
 			int,
 			int,
-		) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error) {
+		) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
 			return nil, nil, true, nil
 		},
 	})
@@ -219,13 +219,13 @@ func TestBiddingAnalyticsHidesRepositoryErrors(t *testing.T) {
 	t.Parallel()
 	secret := errors.New("password=private")
 	server := newBiddingAnalyticsTestServer(t, fakeBiddingAnalyticsReader{
-		frequency: func(context.Context, int, int, int) ([]cgprimitives.CGBidFrequencyBucket, error) {
+		frequency: func(context.Context, int, int, int) ([]cgmodel.CGBidFrequencyBucket, error) {
 			return nil, secret
 		},
-		ratio: func(context.Context, int, int, int) ([]cgprimitives.CGBidTypeRatioBucket, error) {
+		ratio: func(context.Context, int, int, int) ([]cgmodel.CGBidTypeRatioBucket, error) {
 			return nil, secret
 		},
-		periods: func(context.Context, int, int, int, int, int) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error) {
+		periods: func(context.Context, int, int, int, int, int) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
 			return nil, nil, false, secret
 		},
 		bounds: func(context.Context) (int64, int64, error) { return 0, 0, secret },
@@ -253,21 +253,21 @@ func TestBiddingAnalyticsRejectsInconsistentRepositoryOutput(t *testing.T) {
 		path   string
 	}{
 		"frequency counts": {
-			reader: fakeBiddingAnalyticsReader{frequency: func(context.Context, int, int, int) ([]cgprimitives.CGBidFrequencyBucket, error) {
-				return []cgprimitives.CGBidFrequencyBucket{{BucketTs: 0, NumBids: 1, UniqueBidders: 2}}, nil
+			reader: fakeBiddingAnalyticsReader{frequency: func(context.Context, int, int, int) ([]cgmodel.CGBidFrequencyBucket, error) {
+				return []cgmodel.CGBidFrequencyBucket{{BucketTs: 0, NumBids: 1, UniqueBidders: 2}}, nil
 			}},
 			path: "/api/v2/cosmicgame/statistics/bidding/frequency?from=0&to=2&intervalSeconds=1",
 		},
 		"type ratio sum": {
-			reader: fakeBiddingAnalyticsReader{ratio: func(context.Context, int, int, int) ([]cgprimitives.CGBidTypeRatioBucket, error) {
-				return []cgprimitives.CGBidTypeRatioBucket{{BucketTs: 0, EthBids: 1, TotalBids: 2}}, nil
+			reader: fakeBiddingAnalyticsReader{ratio: func(context.Context, int, int, int) ([]cgmodel.CGBidTypeRatioBucket, error) {
+				return []cgmodel.CGBidTypeRatioBucket{{BucketTs: 0, EthBids: 1, TotalBids: 2}}, nil
 			}},
 			path: "/api/v2/cosmicgame/statistics/bidding/type-ratio?from=0&to=2&intervalSeconds=1",
 		},
 		"period outsider": {
-			reader: fakeBiddingAnalyticsReader{periods: func(context.Context, int, int, int, int, int) ([]cgprimitives.CGTopBidderInfo, []cgprimitives.CGBidderActivePeriod, bool, error) {
-				return []cgprimitives.CGTopBidderInfo{{BidderAid: 1, BidderAddr: address, NumBids: 1}},
-					[]cgprimitives.CGBidderActivePeriod{{BidderAid: 2, BidderAddr: address, PeriodStart: 0, PeriodEnd: 1, NumBids: 2, DurationSecs: 1}}, false, nil
+			reader: fakeBiddingAnalyticsReader{periods: func(context.Context, int, int, int, int, int) ([]cgmodel.CGTopBidderInfo, []cgmodel.CGBidderActivePeriod, bool, error) {
+				return []cgmodel.CGTopBidderInfo{{BidderAid: 1, BidderAddr: address, NumBids: 1}},
+					[]cgmodel.CGBidderActivePeriod{{BidderAid: 2, BidderAddr: address, PeriodStart: 0, PeriodEnd: 1, NumBids: 2, DurationSecs: 1}}, false, nil
 			}},
 			path: "/api/v2/cosmicgame/statistics/bidding/top-active-periods?from=0&to=2",
 		},

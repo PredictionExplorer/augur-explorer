@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -165,7 +165,7 @@ func TestAllPrizesForRoundPage(t *testing.T) {
 	}
 	var (
 		after *PrizePageCursor
-		got   []cgprimitives.CGPrizeHistory
+		got   []cgmodel.CGPrizeHistory
 	)
 	for {
 		page, hasMore, err := r.AllPrizesForRoundPage(ctx, 0, after, 4)

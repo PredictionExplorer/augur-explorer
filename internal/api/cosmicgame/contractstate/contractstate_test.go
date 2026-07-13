@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	cg "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
-	cgp "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 )
@@ -32,7 +32,7 @@ var (
 // fakeDB is an in-memory DataSource with settable results and errors.
 type fakeDB struct {
 	mu              sync.Mutex
-	stats           cgp.CGStatistics
+	stats           cgmodel.CGStatistics
 	statsErr        error
 	roundStart      int64
 	roundStartErr   error
@@ -43,9 +43,9 @@ type fakeDB struct {
 
 type blockingDB struct{}
 
-func (blockingDB) CosmicGameStatistics(ctx context.Context) (cgp.CGStatistics, error) {
+func (blockingDB) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, error) {
 	<-ctx.Done()
-	return cgp.CGStatistics{}, ctx.Err()
+	return cgmodel.CGStatistics{}, ctx.Err()
 }
 
 func (blockingDB) RoundStartTimestamp(ctx context.Context, _ uint64) (int64, error) {
@@ -63,7 +63,7 @@ func (blockingDB) LastCstBidEvtlogForBidderAtBlock(
 	return 0, ctx.Err()
 }
 
-func (f *fakeDB) CosmicGameStatistics(context.Context) (cgp.CGStatistics, error) {
+func (f *fakeDB) CosmicGameStatistics(context.Context) (cgmodel.CGStatistics, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.stats, f.statsErr
@@ -194,7 +194,7 @@ func mustBig(s string) *big.Int {
 
 func defaultFakeDB() *fakeDB {
 	return &fakeDB{
-		stats:      cgp.CGStatistics{TotalPrizes: 3, TotalBids: 12},
+		stats:      cgmodel.CGStatistics{TotalPrizes: 3, TotalBids: 12},
 		roundStart: 1767225700,
 		lastCst:    5099,
 	}
@@ -592,7 +592,7 @@ func TestDBStatsFailureKeepsPreviousValues(t *testing.T) {
 	// statistics stand (legacy behavior).
 	db.mu.Lock()
 	db.statsErr = nil
-	db.stats = cgp.CGStatistics{TotalPrizes: 4}
+	db.stats = cgmodel.CGStatistics{TotalPrizes: 4}
 	db.roundStartErr = errors.New("db down")
 	db.mu.Unlock()
 	s.refreshDBStats(context.Background())

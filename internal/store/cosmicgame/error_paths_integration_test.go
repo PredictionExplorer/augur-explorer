@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 // TestErrorPathsConvertedFiles extends TestErrorPaths to the files converted
@@ -79,7 +79,7 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			return err
 		},
 		"ResolveAdminEventValues (admin_events_resolve.go)": func() error {
-			events := []p.CGAdminEvent{{RecordType: 18, EvtLogId: 6000, IntegerValue: 10100}}
+			events := []cgmodel.CGAdminEvent{{RecordType: 18, EvtLogId: 6000, IntegerValue: 10100}}
 			return r.ResolveAdminEventValues(cancelled, events)
 		},
 		"StakeActionCstInfo (staking.go)": func() error {
@@ -113,13 +113,13 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			return r.DeletePrizeClaim(cancelled, -1)
 		},
 		"InsertEthDonation (inserts.go)": func() error {
-			return r.InsertEthDonation(cancelled, &p.CGDonationEvent{
+			return r.InsertEthDonation(cancelled, &cgmodel.CGDonationEvent{
 				EvtId: -1, ContractAddr: "0xEeee00000000000000000000000000000000Eeee",
 				DonorAddr: "0xEeee00000000000000000000000000000000Ffff",
 			})
 		},
 		"InsertBid (inserts.go)": func() error {
-			return r.InsertBid(cancelled, &p.CGBidEvent{
+			return r.InsertBid(cancelled, &cgmodel.CGBidEvent{
 				EvtId: -1, ContractAddr: "0xEeee00000000000000000000000000000000Eeee",
 				LastBidderAddr:     "0xEeee00000000000000000000000000000000Ffff",
 				BidCstRewardAmount: "-1", CstDutchAuctionDuration: "-1",
@@ -177,7 +177,7 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			return spareRepo.DeleteMint(ctx, -1)
 		},
 		"InsertTokenName": func() error {
-			return spareRepo.InsertTokenName(ctx, &p.CGTokenNameEvent{
+			return spareRepo.InsertTokenName(ctx, &cgmodel.CGTokenNameEvent{
 				EvtId: -1, ContractAddr: "0xEeee00000000000000000000000000000000Eeee",
 			})
 		},

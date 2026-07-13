@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	p "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -16,9 +16,9 @@ import (
 // cg_glob_stats row plus unique-participant counts, prize/donation sums,
 // donated-token distribution and both staking summaries. Sub-aggregates
 // whose tables are empty keep their zero values.
-func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error) {
+func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, error) {
 	const op = "cosmic game statistics"
-	var stats p.CGStatistics
+	var stats cgmodel.CGStatistics
 
 	query := "SELECT " +
 		"num_vol_donations, " +
@@ -73,7 +73,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		&stats.NumMktRewards,
 	)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": glob stats", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": glob stats", err)
 	}
 
 	var nullBidders sql.NullInt64
@@ -81,7 +81,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		"SELECT COUNT(*) AS total FROM cg_bidder WHERE num_bids > 0",
 	).Scan(&nullBidders)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": unique bidders", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": unique bidders", err)
 	}
 	if nullBidders.Valid {
 		stats.NumUniqueBidders = uint64(nullBidders.Int64)
@@ -106,7 +106,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		&nullTotalPrizeAwards,
 	)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": unique winners", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": unique winners", err)
 	}
 	if nullWinners.Valid {
 		stats.NumUniqueWinners = uint64(nullWinners.Int64)
@@ -135,7 +135,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		&nullSumEth,
 	)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": unique donors", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": unique donors", err)
 	}
 	if nullDonors.Valid {
 		stats.NumUniqueDonors = nullDonors.Int64
@@ -152,7 +152,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		"SELECT COUNT(*) AS total FROM cg_staker_cst WHERE num_stake_actions > 0",
 	).Scan(&nullStakers)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": unique stakers cst", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": unique stakers cst", err)
 	}
 	if nullStakers.Valid {
 		stats.NumUniqueStakersCST = uint64(nullStakers.Int64)
@@ -161,7 +161,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		"SELECT COUNT(*) AS total FROM cg_staker_rwalk WHERE num_stake_actions > 0",
 	).Scan(&nullStakers)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": unique stakers rwalk", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": unique stakers rwalk", err)
 	}
 	if nullStakers.Valid {
 		stats.NumUniqueStakersRWalk = uint64(nullStakers.Int64)
@@ -176,7 +176,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 			"(COALESCE(c.total_tokens_staked,0) >0) AND (COALESCE(r.total_tokens_staked,0) > 0) ",
 	).Scan(&nullStakers)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": unique stakers both", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": unique stakers both", err)
 	}
 	if nullStakers.Valid {
 		stats.NumUniqueStakersBoth = uint64(nullStakers.Int64)
@@ -187,7 +187,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		"SELECT SUM(num_donated) as total FROM cg_nft_stats",
 	).Scan(&nullDonatedNfts)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": donated nfts", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": donated nfts", err)
 	}
 	stats.NumDonatedNFTs = uint64(nullDonatedNfts.Int64)
 
@@ -196,7 +196,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		"SELECT count(*) AS total FROM cg_mint_event WHERE LENGTH(token_name) > 0 ",
 	).Scan(&namedTokens)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": named tokens", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": named tokens", err)
 	}
 	stats.TotalNamedTokens = namedTokens
 
@@ -205,14 +205,14 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 		"SELECT count(winner_aid) AS total FROM cg_raffle_winner_stats WHERE amount_sum > 0 ",
 	).Scan(&numUsersMissingWithdrawal)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": pending raffle withdrawals", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": pending raffle withdrawals", err)
 	}
 	stats.NumWinnersWithPendingRaffleWithdrawal = numUsersMissingWithdrawal
 
 	var nullCgPrizeRows sql.NullInt64
 	err = r.pool().QueryRow(ctx, "SELECT COUNT(*) AS total FROM cg_prize").Scan(&nullCgPrizeRows)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGStatistics{}, store.WrapError(op+": cg_prize rows", err)
+		return cgmodel.CGStatistics{}, store.WrapError(op+": cg_prize rows", err)
 	}
 	if nullCgPrizeRows.Valid {
 		stats.CgPrizeRowCount = uint64(nullCgPrizeRows.Int64)
@@ -220,22 +220,22 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (p.CGStatistics, error)
 
 	stats.DonatedTokenDistribution, err = r.DonatedTokenDistribution(ctx)
 	if err != nil {
-		return p.CGStatistics{}, err
+		return cgmodel.CGStatistics{}, err
 	}
 	stats.StakeStatisticsCST, err = r.StakeStatisticsCst(ctx)
 	if err != nil {
-		return p.CGStatistics{}, err
+		return cgmodel.CGStatistics{}, err
 	}
 	stats.StakeStatisticsRWalk, err = r.StakeStatisticsRwalk(ctx)
 	if err != nil {
-		return p.CGStatistics{}, err
+		return cgmodel.CGStatistics{}, err
 	}
 	return stats, nil
 }
 
 // StakeStatisticsCst returns the global CST staking summary row.
-func (r *Repo) StakeStatisticsCst(ctx context.Context) (p.CGStakeStatsCST, error) {
-	var stats p.CGStakeStatsCST
+func (r *Repo) StakeStatisticsCst(ctx context.Context) (cgmodel.CGStakeStatsCST, error) {
+	var stats cgmodel.CGStakeStatsCST
 	query := "SELECT " +
 		"total_tokens_staked, " +
 		"total_reward_amount," +
@@ -255,14 +255,14 @@ func (r *Repo) StakeStatisticsCst(ctx context.Context) (p.CGStakeStatsCST, error
 		&stats.NumDeposits,
 	)
 	if err != nil {
-		return p.CGStakeStatsCST{}, store.WrapError("stake statistics cst", err)
+		return cgmodel.CGStakeStatsCST{}, store.WrapError("stake statistics cst", err)
 	}
 	return stats, nil
 }
 
 // StakeStatisticsRwalk returns the global RandomWalk staking summary row.
-func (r *Repo) StakeStatisticsRwalk(ctx context.Context) (p.CGStakeStatsRWalk, error) {
-	var stats p.CGStakeStatsRWalk
+func (r *Repo) StakeStatisticsRwalk(ctx context.Context) (cgmodel.CGStakeStatsRWalk, error) {
+	var stats cgmodel.CGStakeStatsRWalk
 	query := "SELECT " +
 		"total_tokens_staked, " +
 		"total_num_stakers, " +
@@ -274,7 +274,7 @@ func (r *Repo) StakeStatisticsRwalk(ctx context.Context) (p.CGStakeStatsRWalk, e
 		&stats.TotalTokensMinted,
 	)
 	if err != nil {
-		return p.CGStakeStatsRWalk{}, store.WrapError("stake statistics rwalk", err)
+		return cgmodel.CGStakeStatsRWalk{}, store.WrapError("stake statistics rwalk", err)
 	}
 	return stats, nil
 }
@@ -282,9 +282,9 @@ func (r *Repo) StakeStatisticsRwalk(ctx context.Context) (p.CGStakeStatsRWalk, e
 // CosmicGameRoundStatistics returns the per-round aggregate row. A round
 // without a stats row yet (the open round) comes back with only RoundNum and
 // the activation time derived from admin events.
-func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (p.CGRoundStats, error) {
+func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (cgmodel.CGRoundStats, error) {
 	const op = "cosmic game round statistics"
-	var stats p.CGRoundStats
+	var stats cgmodel.CGRoundStats
 	query := "SELECT " +
 		"round_num, " +
 		"total_bids," +
@@ -332,11 +332,11 @@ func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (p
 			stats.RoundNum = roundNum
 			stats.ActivationTime, err = r.activationTimeFromEvents(ctx, roundNum)
 			if err != nil {
-				return p.CGRoundStats{}, err
+				return cgmodel.CGRoundStats{}, err
 			}
 			return stats, nil
 		}
-		return p.CGRoundStats{}, store.WrapError(op, err)
+		return cgmodel.CGRoundStats{}, store.WrapError(op, err)
 	}
 	if nullParamWindowStart.Valid {
 		stats.ParamWindowStartTime = nullParamWindowStart.String
@@ -346,7 +346,7 @@ func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (p
 	} else {
 		stats.ActivationTime, err = r.activationTimeFromEvents(ctx, roundNum)
 		if err != nil {
-			return p.CGRoundStats{}, err
+			return cgmodel.CGRoundStats{}, err
 		}
 	}
 	if nullParamWindowDuration.Valid {
@@ -385,7 +385,7 @@ func (r *Repo) activationTimeFromEvents(ctx context.Context, roundNum int64) (in
 
 // UniqueBidders returns every address that ever bid, with bid counts and
 // maximum bid, most active first.
-func (r *Repo) UniqueBidders(ctx context.Context) ([]p.CGUniqueBidder, error) {
+func (r *Repo) UniqueBidders(ctx context.Context) ([]cgmodel.CGUniqueBidder, error) {
 	query := "SELECT " +
 		"b.bidder_aid," +
 		"a.addr," +
@@ -395,7 +395,7 @@ func (r *Repo) UniqueBidders(ctx context.Context) ([]p.CGUniqueBidder, error) {
 		"FROM cg_bidder b " +
 		"LEFT JOIN address a ON b.bidder_aid=a.address_id " +
 		"ORDER BY num_bids DESC "
-	scan := func(rows pgx.Rows, rec *p.CGUniqueBidder) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGUniqueBidder) error {
 		return rows.Scan(
 			&rec.BidderAid,
 			&rec.BidderAddr,
@@ -409,7 +409,7 @@ func (r *Repo) UniqueBidders(ctx context.Context) ([]p.CGUniqueBidder, error) {
 
 // UniqueWinners returns every address that won any prize, with per-winner
 // aggregate statistics, most prizes first.
-func (r *Repo) UniqueWinners(ctx context.Context) ([]p.CGUniqueWinner, error) {
+func (r *Repo) UniqueWinners(ctx context.Context) ([]cgmodel.CGUniqueWinner, error) {
 	query := "WITH prize_winners AS (" +
 		"SELECT " +
 		"p.round_num," +
@@ -461,7 +461,7 @@ func (r *Repo) UniqueWinners(ctx context.Context) ([]p.CGUniqueWinner, error) {
 		"WHERE pw.winner_aid IS NOT NULL " +
 		"GROUP BY pw.winner_aid, pw.winner_addr, w.max_win_amount, w.prizes_count, w.prizes_sum, w.tokens_count, w.erc20_count, w.erc721_count, w.unclaimed_nfts, bs.total_spent " +
 		"ORDER BY prizes_count DESC"
-	scan := func(rows pgx.Rows, rec *p.CGUniqueWinner) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGUniqueWinner) error {
 		return rows.Scan(
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
@@ -510,7 +510,7 @@ func roiLeaderboardOrderClause(sortBy string) string {
 // plus on-demand rounds-participated / rounds-won (for win rate). sortBy is
 // whitelisted; minBids filters out one-lucky-bid noise; offset/limit
 // paginate.
-func (r *Repo) RoiLeaderboard(ctx context.Context, minBids int, sortBy string, offset, limit int) ([]p.CGRoiLeaderboardEntry, error) {
+func (r *Repo) RoiLeaderboard(ctx context.Context, minBids int, sortBy string, offset, limit int) ([]cgmodel.CGRoiLeaderboardEntry, error) {
 	order := roiLeaderboardOrderClause(sortBy)
 	query := "WITH rounds_part AS (" +
 		"SELECT bidder_aid, COUNT(DISTINCT round_num) AS rounds_participated " +
@@ -553,7 +553,7 @@ func (r *Repo) RoiLeaderboard(ctx context.Context, minBids int, sortBy string, o
 		"WHERE b.num_bids >= $1 " +
 		"ORDER BY " + order + " " +
 		"OFFSET $2 LIMIT $3"
-	scan := func(rows pgx.Rows, rec *p.CGRoiLeaderboardEntry) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRoiLeaderboardEntry) error {
 		return rows.Scan(
 			&rec.BidderAid,
 			&rec.BidderAddr,
@@ -583,7 +583,7 @@ func (r *Repo) RoiLeaderboard(ctx context.Context, minBids int, sortBy string, o
 // expiry, the average time recipients took to claim, and the list of
 // still-unclaimed items for a drill-down. Directly-paid assets (main-prize
 // ETH, minted CST/NFT) are not claimable and are intentionally excluded.
-func (r *Repo) ClaimsByRound(ctx context.Context) ([]p.CGRoundClaimSummary, error) {
+func (r *Repo) ClaimsByRound(ctx context.Context) ([]cgmodel.CGRoundClaimSummary, error) {
 	const op = "claims by round"
 	summaryQ := "SELECT " +
 		"pc.round_num," +
@@ -615,7 +615,7 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]p.CGRoundClaimSummary, erro
 		"ORDER BY pc.round_num DESC"
 
 	now := time.Now().Unix()
-	scan := func(rows pgx.Rows, rec *p.CGRoundClaimSummary) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGRoundClaimSummary) error {
 		err := rows.Scan(
 			&rec.RoundNum,
 			&rec.ClaimWindowTimeout,
@@ -631,18 +631,18 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]p.CGRoundClaimSummary, erro
 		rec.TotalAwarded = rec.EthAwarded + rec.NftAwarded + rec.Erc20Awarded
 		rec.TotalUnclaimed = rec.EthUnclaimed + rec.NftUnclaimed + rec.Erc20Unclaimed
 		rec.Expired = now >= rec.ClaimWindowTimeout
-		rec.UnclaimedItems = make([]p.CGClaimUnclaimedItem, 0)
+		rec.UnclaimedItems = make([]cgmodel.CGClaimUnclaimedItem, 0)
 		return nil
 	}
 	records, err := queryList(ctx, r, op, 32, summaryQ, scan)
 	if err != nil {
 		return nil, err
 	}
-	byRound := make(map[int64]*p.CGRoundClaimSummary, len(records))
+	byRound := make(map[int64]*cgmodel.CGRoundClaimSummary, len(records))
 	for i := range records {
 		byRound[records[i].RoundNum] = &records[i]
 	}
-	appendItem := func(round int64, item p.CGClaimUnclaimedItem) {
+	appendItem := func(round int64, item cgmodel.CGClaimUnclaimedItem) {
 		if s, ok := byRound[round]; ok {
 			s.UnclaimedItems = append(s.UnclaimedItems, item)
 		}
@@ -681,7 +681,7 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]p.CGRoundClaimSummary, erro
 	return records, nil
 }
 
-func (r *Repo) scanUnclaimedItems(ctx context.Context, query, assetType string, appendItem func(int64, p.CGClaimUnclaimedItem)) error {
+func (r *Repo) scanUnclaimedItems(ctx context.Context, query, assetType string, appendItem func(int64, cgmodel.CGClaimUnclaimedItem)) error {
 	const op = "claims by round: unclaimed items"
 	rows, err := r.pool().Query(ctx, query)
 	if err != nil {
@@ -695,12 +695,12 @@ func (r *Repo) scanUnclaimedItems(ctx context.Context, query, assetType string, 
 		if err := rows.Scan(&round, &addr, &amount); err != nil {
 			return store.WrapError(op, err)
 		}
-		appendItem(round, p.CGClaimUnclaimedItem{AssetType: assetType, RecipientAddr: addr, AmountEth: amount, TokenId: -1})
+		appendItem(round, cgmodel.CGClaimUnclaimedItem{AssetType: assetType, RecipientAddr: addr, AmountEth: amount, TokenId: -1})
 	}
 	return store.WrapError(op, rows.Err())
 }
 
-func (r *Repo) scanUnclaimedNFTItems(ctx context.Context, query string, appendItem func(int64, p.CGClaimUnclaimedItem)) error {
+func (r *Repo) scanUnclaimedNFTItems(ctx context.Context, query string, appendItem func(int64, cgmodel.CGClaimUnclaimedItem)) error {
 	const op = "claims by round: unclaimed nft items"
 	rows, err := r.pool().Query(ctx, query)
 	if err != nil {
@@ -714,12 +714,12 @@ func (r *Repo) scanUnclaimedNFTItems(ctx context.Context, query string, appendIt
 		if err := rows.Scan(&round, &recipient, &tokenAddr, &tokenID); err != nil {
 			return store.WrapError(op, err)
 		}
-		appendItem(round, p.CGClaimUnclaimedItem{AssetType: "ERC721", RecipientAddr: recipient.String, TokenAddr: tokenAddr.String, TokenId: tokenID})
+		appendItem(round, cgmodel.CGClaimUnclaimedItem{AssetType: "ERC721", RecipientAddr: recipient.String, TokenAddr: tokenAddr.String, TokenId: tokenID})
 	}
 	return store.WrapError(op, rows.Err())
 }
 
-func (r *Repo) scanUnclaimedERC20Items(ctx context.Context, query string, appendItem func(int64, p.CGClaimUnclaimedItem)) error {
+func (r *Repo) scanUnclaimedERC20Items(ctx context.Context, query string, appendItem func(int64, cgmodel.CGClaimUnclaimedItem)) error {
 	const op = "claims by round: unclaimed erc20 items"
 	rows, err := r.pool().Query(ctx, query)
 	if err != nil {
@@ -733,7 +733,7 @@ func (r *Repo) scanUnclaimedERC20Items(ctx context.Context, query string, append
 		if err := rows.Scan(&round, &recipient, &tokenAddr, &amount); err != nil {
 			return store.WrapError(op, err)
 		}
-		appendItem(round, p.CGClaimUnclaimedItem{AssetType: "ERC20", RecipientAddr: recipient.String, TokenAddr: tokenAddr.String, AmountEth: amount, TokenId: -1})
+		appendItem(round, cgmodel.CGClaimUnclaimedItem{AssetType: "ERC20", RecipientAddr: recipient.String, TokenAddr: tokenAddr.String, AmountEth: amount, TokenId: -1})
 	}
 	return store.WrapError(op, rows.Err())
 }
@@ -742,11 +742,11 @@ func (r *Repo) scanUnclaimedERC20Items(ctx context.Context, query string, append
 // (each recipient's withdrawal of a claimable asset, with the time it took
 // after the cycle finalized and the tx hash) and the tokens attached during
 // that cycle.
-func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundClaimDetail, error) {
-	detail := p.CGRoundClaimDetail{
+func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (cgmodel.CGRoundClaimDetail, error) {
+	detail := cgmodel.CGRoundClaimDetail{
 		RoundNum:          round,
-		ClaimTransactions: make([]p.CGClaimTxn, 0),
-		AttachedTokens:    make([]p.CGAttachedToken, 0),
+		ClaimTransactions: make([]cgmodel.CGClaimTxn, 0),
+		AttachedTokens:    make([]cgmodel.CGAttachedToken, 0),
 	}
 
 	// ---- Claim transactions: secondary ETH allocations ----
@@ -759,7 +759,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 		"JOIN address win ON win.address_id=w.winner_aid " +
 		"LEFT JOIN transaction t ON t.id=w.tx_id " +
 		"WHERE w.round_num=$1"
-	ethScan := func(rows pgx.Rows, c *p.CGClaimTxn) error {
+	ethScan := func(rows pgx.Rows, c *cgmodel.CGClaimTxn) error {
 		var txh sql.NullString
 		c.AssetType = "ETH"
 		c.TokenId = -1
@@ -771,7 +771,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 	}
 	ethClaims, err := queryList(ctx, r, "claim detail: eth claims", 8, ethQ, ethScan, round)
 	if err != nil {
-		return p.CGRoundClaimDetail{}, err
+		return cgmodel.CGRoundClaimDetail{}, err
 	}
 	detail.ClaimTransactions = append(detail.ClaimTransactions, ethClaims...)
 
@@ -785,7 +785,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 		"JOIN address ta ON ta.address_id=dc.token_aid " +
 		"LEFT JOIN transaction t ON t.id=dc.tx_id " +
 		"WHERE dc.round_num=$1"
-	nftScan := func(rows pgx.Rows, c *p.CGClaimTxn) error {
+	nftScan := func(rows pgx.Rows, c *cgmodel.CGClaimTxn) error {
 		var txh sql.NullString
 		c.AssetType = "ERC721"
 		if err := rows.Scan(&c.RecipientAddr, &c.TokenAddr, &c.TokenId, &c.ClaimedAfterSecs, &c.ClaimTs, &txh); err != nil {
@@ -797,7 +797,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 	}
 	nftClaims, err := queryList(ctx, r, "claim detail: nft claims", 8, nftQ, nftScan, round)
 	if err != nil {
-		return p.CGRoundClaimDetail{}, err
+		return cgmodel.CGRoundClaimDetail{}, err
 	}
 	detail.ClaimTransactions = append(detail.ClaimTransactions, nftClaims...)
 
@@ -811,7 +811,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 		"JOIN address ta ON ta.address_id=dc.token_aid " +
 		"LEFT JOIN transaction t ON t.id=dc.tx_id " +
 		"WHERE dc.round_num=$1"
-	ercScan := func(rows pgx.Rows, c *p.CGClaimTxn) error {
+	ercScan := func(rows pgx.Rows, c *cgmodel.CGClaimTxn) error {
 		var txh sql.NullString
 		c.AssetType = "ERC20"
 		c.TokenId = -1
@@ -824,7 +824,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 	}
 	ercClaims, err := queryList(ctx, r, "claim detail: erc20 claims", 8, ercQ, ercScan, round)
 	if err != nil {
-		return p.CGRoundClaimDetail{}, err
+		return cgmodel.CGRoundClaimDetail{}, err
 	}
 	detail.ClaimTransactions = append(detail.ClaimTransactions, ercClaims...)
 
@@ -835,7 +835,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 		"JOIN address ta ON ta.address_id=dn.token_aid " +
 		"LEFT JOIN transaction t ON t.id=dn.tx_id " +
 		"WHERE dn.round_num=$1 ORDER BY dn.idx"
-	anScan := func(rows pgx.Rows, a *p.CGAttachedToken) error {
+	anScan := func(rows pgx.Rows, a *cgmodel.CGAttachedToken) error {
 		var txh sql.NullString
 		a.AssetType = "ERC721"
 		if err := rows.Scan(&a.ContributorAddr, &a.TokenAddr, &a.TokenId, &a.Ts, &txh); err != nil {
@@ -846,7 +846,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 	}
 	attachedNFTs, err := queryList(ctx, r, "claim detail: attached nfts", 8, anQ, anScan, round)
 	if err != nil {
-		return p.CGRoundClaimDetail{}, err
+		return cgmodel.CGRoundClaimDetail{}, err
 	}
 	detail.AttachedTokens = append(detail.AttachedTokens, attachedNFTs...)
 
@@ -857,7 +857,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 		"JOIN address ta ON ta.address_id=e.token_aid " +
 		"LEFT JOIN transaction t ON t.id=e.tx_id " +
 		"WHERE e.round_num=$1"
-	aeScan := func(rows pgx.Rows, a *p.CGAttachedToken) error {
+	aeScan := func(rows pgx.Rows, a *cgmodel.CGAttachedToken) error {
 		var txh sql.NullString
 		a.AssetType = "ERC20"
 		a.TokenId = -1
@@ -869,7 +869,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 	}
 	attachedERC20s, err := queryList(ctx, r, "claim detail: attached erc20s", 8, aeQ, aeScan, round)
 	if err != nil {
-		return p.CGRoundClaimDetail{}, err
+		return cgmodel.CGRoundClaimDetail{}, err
 	}
 	detail.AttachedTokens = append(detail.AttachedTokens, attachedERC20s...)
 
@@ -878,7 +878,7 @@ func (r *Repo) ClaimDetailByRound(ctx context.Context, round int64) (p.CGRoundCl
 
 // UniqueStakersCst returns every address that ever staked a Cosmic
 // Signature token, with reward totals, highest reward first.
-func (r *Repo) UniqueStakersCst(ctx context.Context) ([]p.CGUniqueStakerCST, error) {
+func (r *Repo) UniqueStakersCst(ctx context.Context) ([]cgmodel.CGUniqueStakerCST, error) {
 	query := "SELECT " +
 		"s.staker_aid," +
 		"a.addr," +
@@ -893,7 +893,7 @@ func (r *Repo) UniqueStakersCst(ctx context.Context) ([]p.CGUniqueStakerCST, err
 		"LEFT JOIN address a ON s.staker_aid=a.address_id " +
 		"WHERE num_stake_actions> 0 " +
 		"ORDER BY total_reward DESC "
-	scan := func(rows pgx.Rows, rec *p.CGUniqueStakerCST) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGUniqueStakerCST) error {
 		return rows.Scan(
 			&rec.StakerAid,
 			&rec.StakerAddr,
@@ -911,7 +911,7 @@ func (r *Repo) UniqueStakersCst(ctx context.Context) ([]p.CGUniqueStakerCST, err
 
 // UniqueStakersRwalk returns every address that ever staked a RandomWalk
 // token, most tokens staked first.
-func (r *Repo) UniqueStakersRwalk(ctx context.Context) ([]p.CGUniqueStakerRWalk, error) {
+func (r *Repo) UniqueStakersRwalk(ctx context.Context) ([]cgmodel.CGUniqueStakerRWalk, error) {
 	query := "SELECT " +
 		"s.staker_aid," +
 		"a.addr," +
@@ -923,7 +923,7 @@ func (r *Repo) UniqueStakersRwalk(ctx context.Context) ([]p.CGUniqueStakerRWalk,
 		"LEFT JOIN address a ON s.staker_aid=a.address_id " +
 		"WHERE num_stake_actions > 0 " +
 		"ORDER BY total_tokens_staked DESC "
-	scan := func(rows pgx.Rows, rec *p.CGUniqueStakerRWalk) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGUniqueStakerRWalk) error {
 		return rows.Scan(
 			&rec.StakerAid,
 			&rec.StakerAddr,
@@ -938,7 +938,7 @@ func (r *Repo) UniqueStakersRwalk(ctx context.Context) ([]p.CGUniqueStakerRWalk,
 
 // UniqueStakersBoth returns the addresses that currently hold stakes in
 // both token families, with per-family statistics.
-func (r *Repo) UniqueStakersBoth(ctx context.Context) ([]p.CGUniqueStakersBoth, error) {
+func (r *Repo) UniqueStakersBoth(ctx context.Context) ([]cgmodel.CGUniqueStakersBoth, error) {
 	query := "SELECT " +
 		"a.address_id," +
 		"a.addr," +
@@ -963,7 +963,7 @@ func (r *Repo) UniqueStakersBoth(ctx context.Context) ([]p.CGUniqueStakersBoth, 
 		"LEFT JOIN cg_staker_rwalk r ON a.address_id = r.staker_aid " +
 		"WHERE " +
 		"(COALESCE(c.total_tokens_staked,0)>0) AND (COALESCE(r.total_tokens_staked,0) > 0) "
-	scan := func(rows pgx.Rows, rec *p.CGUniqueStakersBoth) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGUniqueStakersBoth) error {
 		return rows.Scan(
 			&rec.StakerAid,
 			&rec.StakerAddr,
@@ -985,7 +985,7 @@ func (r *Repo) UniqueStakersBoth(ctx context.Context) ([]p.CGUniqueStakersBoth, 
 }
 
 // UniqueDonors returns every address that donated ETH, largest total first.
-func (r *Repo) UniqueDonors(ctx context.Context) ([]p.CGUniqueDonor, error) {
+func (r *Repo) UniqueDonors(ctx context.Context) ([]cgmodel.CGUniqueDonor, error) {
 	query := "SELECT " +
 		"d.donor_aid," +
 		"a.addr," +
@@ -996,7 +996,7 @@ func (r *Repo) UniqueDonors(ctx context.Context) ([]p.CGUniqueDonor, error) {
 		"LEFT JOIN address a ON d.donor_aid=a.address_id " +
 		"WHERE d.count_donations > 0 " +
 		"ORDER BY total_eth_donated DESC "
-	scan := func(rows pgx.Rows, rec *p.CGUniqueDonor) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGUniqueDonor) error {
 		return rows.Scan(
 			&rec.DonorAid,
 			&rec.DonorAddr,
@@ -1009,14 +1009,14 @@ func (r *Repo) UniqueDonors(ctx context.Context) ([]p.CGUniqueDonor, error) {
 }
 
 // NFTDonationStats returns per-contract donated-NFT counts.
-func (r *Repo) NFTDonationStats(ctx context.Context) ([]p.CGNFTDonationStats, error) {
+func (r *Repo) NFTDonationStats(ctx context.Context) ([]cgmodel.CGNFTDonationStats, error) {
 	query := "SELECT " +
 		"s.contract_aid," +
 		"a.addr," +
 		"s.num_donated " +
 		"FROM cg_nft_stats s " +
 		"LEFT JOIN address a ON s.contract_aid=a.address_id "
-	scan := func(rows pgx.Rows, rec *p.CGNFTDonationStats) error {
+	scan := func(rows pgx.Rows, rec *cgmodel.CGNFTDonationStats) error {
 		return rows.Scan(
 			&rec.TokenAddressId,
 			&rec.TokenAddress,
@@ -1028,20 +1028,20 @@ func (r *Repo) NFTDonationStats(ctx context.Context) ([]p.CGNFTDonationStats, er
 
 // RecordCounters returns the raw row counts of the bid, prize-claim and
 // NFT-donation tables.
-func (r *Repo) RecordCounters(ctx context.Context) (p.CGRecordCounters, error) {
+func (r *Repo) RecordCounters(ctx context.Context) (cgmodel.CGRecordCounters, error) {
 	const op = "record counters"
-	var output p.CGRecordCounters
+	var output cgmodel.CGRecordCounters
 	err := r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM cg_bid").Scan(&output.TotalBids)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGRecordCounters{}, store.WrapError(op+": bids", err)
+		return cgmodel.CGRecordCounters{}, store.WrapError(op+": bids", err)
 	}
 	err = r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM cg_prize_claim").Scan(&output.TotalPrizes)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGRecordCounters{}, store.WrapError(op+": prizes", err)
+		return cgmodel.CGRecordCounters{}, store.WrapError(op+": prizes", err)
 	}
 	err = r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM cg_nft_donation").Scan(&output.TotalDonatedNFTs)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return p.CGRecordCounters{}, store.WrapError(op+": nft donations", err)
+		return cgmodel.CGRecordCounters{}, store.WrapError(op+": nft donations", err)
 	}
 	return output, nil
 }

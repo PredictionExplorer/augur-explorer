@@ -1,4 +1,5 @@
-// Package randomwalk contains types specific to the RandomWalk NFT project
+// Package randomwalk defines the RandomWalk NFT data model: the event and
+// row types shared by the ETL, storage, API and notification layers.
 package randomwalk
 
 import (

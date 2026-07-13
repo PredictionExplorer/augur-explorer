@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	rwp "github.com/PredictionExplorer/augur-explorer/internal/primitives/randomwalk"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
@@ -23,12 +23,12 @@ import (
 
 type fakeData struct {
 	mu          sync.Mutex
-	status      rwp.MsgStatus
+	status      rwmodel.MsgStatus
 	statusErr   error
-	events      []rwp.NotificationEvent2
+	events      []rwmodel.NotificationEvent2
 	eventsErr   error
 	updateErr   error
-	updates     []rwp.MsgStatus
+	updates     []rwmodel.MsgStatus
 	noOffers    bool
 	floor       float64
 	floorTok    int64
@@ -37,13 +37,13 @@ type fakeData struct {
 	lastMintErr error
 }
 
-func (d *fakeData) MessagingStatus(context.Context) (rwp.MsgStatus, error) {
+func (d *fakeData) MessagingStatus(context.Context) (rwmodel.MsgStatus, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.status, d.statusErr
 }
 
-func (d *fakeData) UpdateMessagingStatus(_ context.Context, status *rwp.MsgStatus) error {
+func (d *fakeData) UpdateMessagingStatus(_ context.Context, status *rwmodel.MsgStatus) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.updateErr != nil {
@@ -54,13 +54,13 @@ func (d *fakeData) UpdateMessagingStatus(_ context.Context, status *rwp.MsgStatu
 	return nil
 }
 
-func (d *fakeData) AllEventsForNotificationSinceEvtlog(_ context.Context, _, since int64) ([]rwp.NotificationEvent2, error) {
+func (d *fakeData) AllEventsForNotificationSinceEvtlog(_ context.Context, _, since int64) ([]rwmodel.NotificationEvent2, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.eventsErr != nil {
 		return nil, d.eventsErr
 	}
-	var out []rwp.NotificationEvent2
+	var out []rwmodel.NotificationEvent2
 	for _, e := range d.events {
 		if e.EvtLogId > since {
 			out = append(out, e)
@@ -87,10 +87,10 @@ func (d *fakeData) setFloor(price float64, tokenID int64) {
 	d.floor, d.floorTok = price, tokenID
 }
 
-func (d *fakeData) watermarks() []rwp.MsgStatus {
+func (d *fakeData) watermarks() []rwmodel.MsgStatus {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return append([]rwp.MsgStatus(nil), d.updates...)
+	return append([]rwmodel.MsgStatus(nil), d.updates...)
 }
 
 type sentTweet struct {
@@ -357,8 +357,8 @@ func waitSignals(t *testing.T, ch chan struct{}, n int) {
 	}
 }
 
-func mintEvent(evtlogID, tokenID int64, price float64) rwp.NotificationEvent2 {
-	return rwp.NotificationEvent2{
+func mintEvent(evtlogID, tokenID int64, price float64) rwmodel.NotificationEvent2 {
+	return rwmodel.NotificationEvent2{
 		TokenId: tokenID, EvtLogId: evtlogID, TimeStampMinted: 1700000000 + evtlogID,
 		Price: price, EvtType: EventMint,
 	}
@@ -422,7 +422,7 @@ func TestNewAppliesDefaults(t *testing.T) {
 
 func TestMintEventNotifiesAllSinksAndPersistsWatermark(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{mintEvent(100, 42, 0.5)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(100, 42, 0.5)}
 	b.withdrawal.amounts = []float64{3.5}
 	b.media.script(ImageURL("https://img", 42), mediaResp{status: 200, body: []byte("img42")})
 	b.media.script(VideoURL("https://vid", 42), mediaResp{status: 200, body: []byte("vid42")})
@@ -478,7 +478,7 @@ func TestMintEventNotifiesAllSinksAndPersistsWatermark(t *testing.T) {
 
 func TestNonMintEventsSendSingleTweetWithoutVideo(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{
+	b.data.events = []rwmodel.NotificationEvent2{
 		{TokenId: 7, EvtLogId: 10, TimeStampMinted: 1, Price: 2.5, EvtType: EventSellOffer},
 		{TokenId: 8, EvtLogId: 11, TimeStampMinted: 2, Price: 1.5, EvtType: EventBought},
 		{TokenId: 9, EvtLogId: 12, TimeStampMinted: 3, Price: 0.25, EvtType: EventBuyOffer},
@@ -519,7 +519,7 @@ func TestNonMintEventsSendSingleTweetWithoutVideo(t *testing.T) {
 
 func TestImage403SkipsEventAndAdvancesWatermark(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{
+	b.data.events = []rwmodel.NotificationEvent2{
 		{TokenId: 100, EvtLogId: 20, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer},
 		{TokenId: 101, EvtLogId: 21, TimeStampMinted: 2, Price: 2, EvtType: EventSellOffer},
 	}
@@ -544,7 +544,7 @@ func TestImage403SkipsEventAndAdvancesWatermark(t *testing.T) {
 
 func TestImage404WaitsUntilGenerated(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 5, EvtLogId: 30, TimeStampMinted: 1, Price: 1, EvtType: EventBought}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 5, EvtLogId: 30, TimeStampMinted: 1, Price: 1, EvtType: EventBought}}
 	b.media.script(ImageURL("https://img", 5),
 		mediaResp{status: 404}, mediaResp{status: 404}, mediaResp{status: 200, body: []byte("late")})
 
@@ -562,7 +562,7 @@ func TestImage404WaitsUntilGenerated(t *testing.T) {
 func TestImage404BeyondMaxAttemptsRetriesEventLater(t *testing.T) {
 	b := newBot()
 	b.cfg.MaxAttempts = 1
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 6, EvtLogId: 31, TimeStampMinted: 1, Price: 1, EvtType: EventBought}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 6, EvtLogId: 31, TimeStampMinted: 1, Price: 1, EvtType: EventBought}}
 	// Two 404 rounds exhaust MaxAttempts=1, then the event is retried on the
 	// next poll and succeeds.
 	b.media.script(ImageURL("https://img", 6),
@@ -581,7 +581,7 @@ func TestImage404BeyondMaxAttemptsRetriesEventLater(t *testing.T) {
 
 func TestMediaTransportErrorRetriesWithoutAdvancing(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 3, EvtLogId: 40, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 3, EvtLogId: 40, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 3),
 		mediaResp{err: errors.New("connection refused")},
 		mediaResp{status: 200, body: []byte("recovered")})
@@ -603,7 +603,7 @@ func TestMediaTransportErrorRetriesWithoutAdvancing(t *testing.T) {
 
 func TestUnexpectedMediaStatusRetries(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 4, EvtLogId: 41, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 4, EvtLogId: 41, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 4),
 		mediaResp{status: 500},
 		mediaResp{status: 200, body: []byte("after 500")})
@@ -620,7 +620,7 @@ func TestUnexpectedMediaStatusRetries(t *testing.T) {
 
 func TestVideo403FallsBackToImageOnlyTweet(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{mintEvent(50, 9, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(50, 9, 1.0)}
 	b.media.script(ImageURL("https://img", 9), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 9), mediaResp{status: 403})
 
@@ -648,7 +648,7 @@ func TestResampleFailureRetriesEvent(t *testing.T) {
 		}
 		return video, nil
 	}
-	b.data.events = []rwp.NotificationEvent2{mintEvent(60, 12, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(60, 12, 1.0)}
 	b.media.script(ImageURL("https://img", 12), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 12), mediaResp{status: 200, body: []byte("vid")})
 
@@ -670,7 +670,7 @@ func TestSendVideosDisabledSkipsVideoFetch(t *testing.T) {
 	b := newBot()
 	b.cfg.SendVideos = false
 	b.cfg.Resample = nil
-	b.data.events = []rwp.NotificationEvent2{mintEvent(70, 15, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(70, 15, 1.0)}
 	b.media.script(ImageURL("https://img", 15), mediaResp{status: 200, body: []byte("img")})
 	// No video URL scripted: a fetch attempt would fail the fakeMedia.
 
@@ -689,7 +689,7 @@ func TestWithdrawalRetriesThenSucceeds(t *testing.T) {
 	b := newBot()
 	b.withdrawal.errs = []error{errors.New("rpc blip"), errors.New("rpc blip"), nil}
 	b.withdrawal.amounts = []float64{7.25}
-	b.data.events = []rwp.NotificationEvent2{mintEvent(80, 2, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(80, 2, 1.0)}
 	b.media.script(ImageURL("https://img", 2), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 2), mediaResp{status: 200, body: []byte("vid")})
 
@@ -706,7 +706,7 @@ func TestWithdrawalRetriesThenSucceeds(t *testing.T) {
 
 func TestTwitterFailureStillAdvancesWatermark(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 90, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 90, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.twitter.imageErr = []error{errors.New("twitter down")}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 
@@ -727,7 +727,7 @@ func TestTwitterFailureStillAdvancesWatermark(t *testing.T) {
 
 func TestVideoReplyFailureIsLoggedNotRetried(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{mintEvent(95, 4, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(95, 4, 1.0)}
 	b.twitter.videoErr = []error{errors.New("upload failed")}
 	b.media.script(ImageURL("https://img", 4), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 4), mediaResp{status: 200, body: []byte("vid")})
@@ -748,7 +748,7 @@ func TestFloorPriceChangeAnnouncedOnceWithDedup(t *testing.T) {
 	b := newBot()
 	// A sentinel event marks the moment startup seeding (floor price 1.0) is
 	// over; only then is the floor changed.
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(ImageURL("https://img", 33), mediaResp{status: 200, body: []byte("floorimg")})
 
@@ -793,7 +793,7 @@ func TestFloorPriceReadErrorIsNonFatal(t *testing.T) {
 	b := newBot()
 	// The sentinel event marks the end of startup (whose floor read IS
 	// fatal); only in-loop floor reads are tolerant.
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 
 	stop := b.run(t)
@@ -835,7 +835,7 @@ func TestEventsFetchErrorIsFatal(t *testing.T) {
 
 func TestWatermarkPersistErrorIsFatal(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.data.updateErr = errors.New("write failed")
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 	engine, err := New(b.cfg)
@@ -893,7 +893,7 @@ func TestCancelledContextStopsCleanly(t *testing.T) {
 func TestCancelDuringMediaWaitStopsCleanly(t *testing.T) {
 	b := newBot()
 	b.cfg.NotReadyDelay = time.Hour // cancellation must interrupt the 404 wait
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 404})
 
 	stop := b.run(t)
@@ -963,7 +963,7 @@ func TestStartupRenamesRewardChannel(t *testing.T) {
 func TestTwitterOnlyBotSkipsDiscordWork(t *testing.T) {
 	b := newBot()
 	b.cfg.Discord = nil
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 
 	stop := b.run(t)
@@ -983,7 +983,7 @@ func TestTwitterOnlyBotSkipsDiscordWork(t *testing.T) {
 
 func TestMidBatchCancellationStopsBeforeNextEvent(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{
+	b.data.events = []rwmodel.NotificationEvent2{
 		{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer},
 		{TokenId: 2, EvtLogId: 6, TimeStampMinted: 2, Price: 1, EvtType: EventSellOffer},
 	}
@@ -1013,7 +1013,7 @@ func TestWithdrawalExhaustionRetriesEventLater(t *testing.T) {
 	// attempts); the retried event's read fails once more, then succeeds.
 	b.withdrawal.errs = []error{errors.New("rpc"), errors.New("rpc"), errors.New("rpc"), nil}
 	b.withdrawal.amounts = []float64{4.5}
-	b.data.events = []rwp.NotificationEvent2{mintEvent(80, 2, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(80, 2, 1.0)}
 	b.media.script(ImageURL("https://img", 2), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 2), mediaResp{status: 200, body: []byte("vid")})
 
@@ -1031,7 +1031,7 @@ func TestWithdrawalExhaustionRetriesEventLater(t *testing.T) {
 func TestWithdrawalCancellationStopsCleanly(t *testing.T) {
 	b := newBot()
 	b.cfg.Discord = nil // the first withdrawal read must happen inside the event
-	b.data.events = []rwp.NotificationEvent2{mintEvent(81, 3, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(81, 3, 1.0)}
 
 	engine, err := New(b.cfg)
 	if err != nil {
@@ -1047,7 +1047,7 @@ func TestWithdrawalCancellationStopsCleanly(t *testing.T) {
 
 func TestVideoTransportErrorRetriesEvent(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{mintEvent(82, 5, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(82, 5, 1.0)}
 	b.media.script(ImageURL("https://img", 5), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 5),
 		mediaResp{err: errors.New("conn reset")},
@@ -1066,7 +1066,7 @@ func TestVideoTransportErrorRetriesEvent(t *testing.T) {
 
 func TestVideoFetchCancellationStopsCleanly(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{mintEvent(85, 8, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(85, 8, 1.0)}
 	b.media.script(ImageURL("https://img", 8), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 8), mediaResp{err: errors.New("interrupted")})
 
@@ -1109,7 +1109,7 @@ func TestResampleCancellationStopsCleanly(t *testing.T) {
 		})
 		return e
 	}
-	b.data.events = []rwp.NotificationEvent2{mintEvent(83, 6, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(83, 6, 1.0)}
 	b.media.script(ImageURL("https://img", 6), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 6), mediaResp{status: 200, body: []byte("vid")})
 	engine()
@@ -1121,7 +1121,7 @@ func TestDiscordOnlyBotSkipsTwitter(t *testing.T) {
 	b.cfg.Twitter = nil
 	b.cfg.SendVideos = false
 	b.cfg.Resample = nil
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 
 	stop := b.run(t)
@@ -1139,7 +1139,7 @@ func TestDiscordOnlyBotSkipsTwitter(t *testing.T) {
 
 func TestFloorPriceImageFailureSkipsAnnouncement(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(ImageURL("https://img", 44), mediaResp{status: 403})
 
@@ -1159,7 +1159,7 @@ func TestFloorPriceImageFailureSkipsAnnouncement(t *testing.T) {
 
 func TestFloorPriceTweetFailureIsLogged(t *testing.T) {
 	b := newBot()
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(ImageURL("https://img", 45), mediaResp{status: 200, body: []byte("floor")})
 
@@ -1179,7 +1179,7 @@ func TestFloorPriceTweetFailureIsLogged(t *testing.T) {
 func TestDiscordRenameFailureIsNonFatal(t *testing.T) {
 	b := newBot()
 	b.discord.renameErr = errors.New("rate limited forever")
-	b.data.events = []rwp.NotificationEvent2{mintEvent(84, 7, 1.0)}
+	b.data.events = []rwmodel.NotificationEvent2{mintEvent(84, 7, 1.0)}
 	b.media.script(ImageURL("https://img", 7), mediaResp{status: 200, body: []byte("img")})
 	b.media.script(VideoURL("https://vid", 7), mediaResp{status: 200, body: []byte("vid")})
 
@@ -1237,7 +1237,7 @@ func TestSleepCtxNonPositiveDuration(t *testing.T) {
 func TestDiscordSendFailureIsNonFatal(t *testing.T) {
 	b := newBot()
 	b.discord.sendErr = errors.New("discord api down")
-	b.data.events = []rwp.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
+	b.data.events = []rwmodel.NotificationEvent2{{TokenId: 1, EvtLogId: 5, TimeStampMinted: 1, Price: 1, EvtType: EventSellOffer}}
 	b.media.script(ImageURL("https://img", 1), mediaResp{status: 200, body: []byte("img")})
 
 	stop := b.run(t)

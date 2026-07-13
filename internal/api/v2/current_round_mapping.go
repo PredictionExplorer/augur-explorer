@@ -7,7 +7,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
-	cgprimitives "github.com/PredictionExplorer/augur-explorer/internal/primitives/cosmicgame"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 var errCurrentRoundUnavailable = errors.New("current round live state is unavailable")
@@ -77,7 +77,7 @@ func normalizeLiveDecimal(name, value string) (string, error) {
 
 func mapCurrentRound(
 	live currentRoundSnapshot,
-	stats cgprimitives.CGRoundStats,
+	stats cgmodel.CGRoundStats,
 	bidCount int64,
 ) (CosmicGameCurrentRound, error) {
 	if stats.RoundNum != live.round {
