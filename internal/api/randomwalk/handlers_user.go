@@ -11,23 +11,23 @@ import (
 )
 
 // User info (API)
-func apiRwalkUserInfo(c *httpx.Context) {
+func (a *API) handleUserInfo(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs, ok := rwContractAddrs(c)
+	addrs, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}
-	rwalk_aid := addrs.RandomWalkAid
-	p_rwalk_addr := addrs.RandomWalk
-	p_user_aid := c.Param("user_aid")
-	var user_aid int64
-	if len(p_user_aid) > 0 {
+	rwalkAid := addrs.RandomWalkAid
+	pRwalkAddr := addrs.RandomWalk
+	pUserAid := c.Param("user_aid")
+	var userAid int64
+	if len(pUserAid) > 0 {
 		var success bool
-		user_aid, success = common.ParseIntFromRemoteOrError(c, JSON, &p_user_aid)
+		userAid, success = common.ParseIntFromRemoteOrError(c, JSON, &pUserAid)
 		if !success {
 			return
 		}
@@ -35,34 +35,34 @@ func apiRwalkUserInfo(c *httpx.Context) {
 		common.RespondErrorJSON(c, "'user_aid' parameter is not set")
 		return
 	}
-	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
+	userAddr, err := a.store.AddressByID(c.Request.Context(), userAid)
 	if err != nil {
 		if !errors.Is(err, store.ErrNotFound) {
-			respondStoreError(c, err)
+			a.respondStoreError(c, err)
 			return
 		}
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}
-	user_info, dberr := rwRepo.UserInfo(c.Request.Context(), user_aid, rwalk_aid)
-	var dberr_str string
+	userInfo, dberr := a.repo.UserInfo(c.Request.Context(), userAid, rwalkAid)
+	var dberrStr string
 	if dberr != nil {
 		// A user without stats rows keeps the HTTP 200 + DBError wire shape
 		// (byte-identical legacy text); real failures answer 500.
 		if !errors.Is(dberr, store.ErrNotFound) {
-			respondStoreError(c, dberr)
+			a.respondStoreError(c, dberr)
 			return
 		}
-		dberr_str = legacyNoRowsText
+		dberrStr = legacyNoRowsText
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":    1,
 		"error":     "",
-		"UserInfo":  user_info,
-		"UserAid":   user_aid,
-		"UserAddr":  user_addr,
-		"RWalkAddr": p_rwalk_addr,
-		"RWalkAid":  rwalk_aid,
-		"DBError":   dberr_str,
+		"UserInfo":  userInfo,
+		"UserAid":   userAid,
+		"UserAddr":  userAddr,
+		"RWalkAddr": pRwalkAddr,
+		"RWalkAid":  rwalkAid,
+		"DBError":   dberrStr,
 	})
 }

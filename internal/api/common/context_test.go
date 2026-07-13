@@ -1,8 +1,6 @@
 package common
 
 import (
-	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,25 +10,6 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
-
-func TestInitContext(t *testing.T) {
-	previous := Ctx
-	t.Cleanup(func() { Ctx = previous })
-
-	info := log.New(io.Discard, "info: ", 0)
-	errorLog := log.New(io.Discard, "error: ", 0)
-	InitContext(nil, nil, info, errorLog)
-
-	if Ctx == nil {
-		t.Fatal("InitContext left Ctx nil")
-	}
-	if Ctx.Store != nil || Ctx.EthClient != nil {
-		t.Errorf("nil dependencies were not preserved: %+v", Ctx)
-	}
-	if Ctx.Info != info || Ctx.Error != errorLog {
-		t.Error("InitContext did not preserve logger pointers")
-	}
-}
 
 // validateAddr runs IsAddressValid against a throwaway request context and
 // also returns the response body written on rejection.

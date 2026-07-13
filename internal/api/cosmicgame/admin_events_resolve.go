@@ -6,17 +6,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	cg "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
-func enrichAdminEventsResolvedValues(events []cgmodel.CGAdminEvent) {
-	if EthClient == nil || len(events) == 0 {
+func (a *API) enrichAdminEventsResolvedValues(events []cgmodel.CGAdminEvent) {
+	if a.ethClient == nil || len(events) == 0 {
 		return
 	}
-	gameAddr := contractState.Snapshot().Addrs.CosmicGame
-	v1, _ := NewCosmicSignatureGame(gameAddr, EthClient)
-	v2, _ := NewCosmicSignatureGameV2(gameAddr, EthClient)
+	gameAddr := a.state.Snapshot().Addrs.CosmicGame
+	v1, _ := cg.NewCosmicSignatureGame(gameAddr, a.ethClient)
+	v2, _ := cg.NewCosmicSignatureGameV2(gameAddr, a.ethClient)
 	if v1 == nil {
 		return
 	}
@@ -28,7 +28,7 @@ func enrichAdminEventsResolvedValues(events []cgmodel.CGAdminEvent) {
 	}
 }
 
-func resolveAdminEventFromContract(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2, rec *cgmodel.CGAdminEvent) string {
+func resolveAdminEventFromContract(v1 *cg.CosmicSignatureGame, v2 *cg.CosmicSignatureGameV2, rec *cgmodel.CGAdminEvent) string {
 	if rec == nil || rec.BlockNum < 0 {
 		return ""
 	}

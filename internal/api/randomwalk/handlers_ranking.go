@@ -48,31 +48,31 @@ type signedBeautyVoteDependencies struct {
 	consumeRankingVoteNonce func(context.Context, pgx.Tx, string) (bool, error)
 }
 
-func productionRankingMatchDependencies() rankingMatchDependencies {
+func (a *API) productionRankingMatchDependencies() rankingMatchDependencies {
 	return rankingMatchDependencies{
 		countRankingMatches: func(ctx context.Context) (int64, error) {
-			return rwRepo.CountRankingMatches(ctx)
+			return a.repo.CountRankingMatches(ctx)
 		},
 		ratingPair: func(ctx context.Context, nft1, nft2 int64) (float64, float64, error) {
-			return rwRepo.RatingPair(ctx, nft1, nft2)
+			return a.repo.RatingPair(ctx, nft1, nft2)
 		},
-		withTransaction:   withRankingTransaction,
+		withTransaction:   a.withRankingTransaction,
 		applyRankingMatch: rwdb.ApplyRankingMatch,
 	}
 }
 
-func productionSignedBeautyVoteDependencies() signedBeautyVoteDependencies {
+func (a *API) productionSignedBeautyVoteDependencies() signedBeautyVoteDependencies {
 	return signedBeautyVoteDependencies{
-		rankingMatchDependencies: productionRankingMatchDependencies(),
+		rankingMatchDependencies: a.productionRankingMatchDependencies(),
 		lookupOrCreateAddress: func(ctx context.Context, addr string, blockNum, txID int64) (int64, error) {
-			return rwStore.LookupOrCreateAddress(ctx, addr, blockNum, txID)
+			return a.store.LookupOrCreateAddress(ctx, addr, blockNum, txID)
 		},
 		consumeRankingVoteNonce: rwdb.ConsumeRankingVoteNonce,
 	}
 }
 
-func withRankingTransaction(ctx context.Context, fn func(pgx.Tx) error) error {
-	tx, err := rwStore.Pool().Begin(ctx)
+func (a *API) withRankingTransaction(ctx context.Context, fn func(pgx.Tx) error) error {
+	tx, err := a.store.Pool().Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -84,8 +84,8 @@ func withRankingTransaction(ctx context.Context, fn func(pgx.Tx) error) error {
 	return tx.Commit(ctx)
 }
 
-func performRankingMatch(ctx context.Context, nft1, nft2 int64, nft1Won bool) (raNew, rbNew float64, err error) {
-	return performRankingMatchWithDependencies(ctx, nft1, nft2, nft1Won, productionRankingMatchDependencies())
+func (a *API) performRankingMatch(ctx context.Context, nft1, nft2 int64, nft1Won bool) (raNew, rbNew float64, err error) {
+	return performRankingMatchWithDependencies(ctx, nft1, nft2, nft1Won, a.productionRankingMatchDependencies())
 }
 
 func performRankingMatchWithDependencies(
@@ -140,30 +140,30 @@ func exploreRandomLimit(raw string) int {
 	return limit
 }
 
-func fetchExploreRandomTokenIDs(ctx context.Context, limit int) ([]int64, error) {
+func (a *API) fetchExploreRandomTokenIDs(ctx context.Context, limit int) ([]int64, error) {
 	maxID := exploreRandomMaxTokenID()
-	addrs, err := rwRepo.ContractAddrs(ctx)
+	addrs, err := a.repo.ContractAddrs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ids, err := rwRepo.ExploreRandomTokenIDs(ctx, addrs.RandomWalkAid, maxID, limit)
+	ids, err := a.repo.ExploreRandomTokenIDs(ctx, addrs.RandomWalkAid, maxID, limit)
 	if err != nil {
-		ids, err = rwRepo.FallbackRandomTokenIDs(ctx, addrs.RandomWalkAid, maxID, limit)
+		ids, err = a.repo.FallbackRandomTokenIDs(ctx, addrs.RandomWalkAid, maxID, limit)
 	}
 	return ids, err
 }
 
 // GET /api/randomwalk/explore/random and GET /api/randomwalk/random — default 2 token IDs unless ?limit=.
 // Optional query: limit=1..100 (homepage / legacy random_token uses a higher limit).
-func apiRandomwalkExploreRandom(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleExploreRandom(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	limit := exploreRandomLimit(c.Query("limit"))
-	ids, err := fetchExploreRandomTokenIDs(c.Request.Context(), limit)
+	ids, err := a.fetchExploreRandomTokenIDs(c.Request.Context(), limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, ids)
@@ -172,8 +172,8 @@ func apiRandomwalkExploreRandom(c *httpx.Context) {
 // GET /api/randomwalk/ranking/beauty-pair-ids — two token ids for the beauty contest.
 // Optional query voter=0x… re-rolls up to 50 times to avoid pairs this wallet already voted on.
 // skip_pair_filter=1 ignores that (one random pair; vote may still 409 if already voted).
-func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleRankingBeautyPairIDs(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -182,7 +182,7 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 	if !skipPairFilter {
 		v := strings.TrimSpace(c.Query("voter"))
 		if v != "" && ethcommon.IsHexAddress(v) {
-			aid, err := rwStore.LookupAddressID(c.Request.Context(), ethcommon.HexToAddress(v).Hex())
+			aid, err := a.store.LookupAddressID(c.Request.Context(), ethcommon.HexToAddress(v).Hex())
 			if err == nil && aid > 0 {
 				voterAid = aid
 			}
@@ -197,17 +197,17 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 	if voterAid > 0 {
 		found := false
 		for attempt := 0; attempt < maxAttempts; attempt++ {
-			ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
+			ids, err = a.fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 			if err != nil {
-				respondStoreError(c, err)
+				a.respondStoreError(c, err)
 				return
 			}
 			if len(ids) < 2 {
 				break
 			}
-			voted, err := rwRepo.HasRankingVoteForVoterPair(c.Request.Context(), voterAid, ids[0], ids[1])
+			voted, err := a.repo.HasRankingVoteForVoterPair(c.Request.Context(), voterAid, ids[0], ids[1])
 			if err != nil {
-				respondStoreError(c, err)
+				a.respondStoreError(c, err)
 				return
 			}
 			if !voted {
@@ -219,9 +219,9 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 			pairExhausted = true
 		}
 	} else {
-		ids, err = fetchExploreRandomTokenIDs(c.Request.Context(), 2)
+		ids, err = a.fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 		if err != nil {
-			respondStoreError(c, err)
+			a.respondStoreError(c, err)
 			return
 		}
 	}
@@ -234,33 +234,33 @@ func apiRandomwalkRankingBeautyPairIDs(c *httpx.Context) {
 
 // GET /api/randomwalk/vote_count — total pairwise beauty votes (rw_ranking_match count).
 // total pairwise comparisons (Python GameModel count == rows in rw_ranking_match).
-func apiRandomwalkVoteCount(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleVoteCount(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	n, err := rwRepo.CountRankingMatches(c.Request.Context())
+	n, err := a.repo.CountRankingMatches(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"total_count": n})
 }
 
 // GET /api/randomwalk/token-ranking/order and GET /api/randomwalk/rating_order — token ids by Elo ascending.
-func apiRandomwalkTokenRankingOrder(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleTokenRankingOrder(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs, err := rwRepo.ContractAddrs(c.Request.Context())
+	addrs, err := a.repo.ContractAddrs(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	ids, err := rwRepo.RatingOrder(c.Request.Context(), addrs.RandomWalkAid)
+	ids, err := a.repo.RatingOrder(c.Request.Context(), addrs.RandomWalkAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, ids)
@@ -275,8 +275,8 @@ type rankingMatchBody struct {
 // POST /api/randomwalk/token-ranking/match — records pairwise result and updates Elo.
 // Authentication is enforced by the RequireAdminKey middleware at registration
 // (X-Ranking-Admin-Key, fails closed when no key is configured).
-func apiRandomwalkTokenRankingMatch(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleTokenRankingMatch(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -285,13 +285,13 @@ func apiRandomwalkTokenRankingMatch(c *httpx.Context) {
 		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 		return
 	}
-	raNew, rbNew, err := performRankingMatch(c.Request.Context(), body.Nft1, body.Nft2, body.Nft1Won)
+	raNew, rbNew, err := a.performRankingMatch(c.Request.Context(), body.Nft1, body.Nft2, body.Nft1Won)
 	if err != nil {
 		if errors.Is(err, errRankingBadPair) {
 			c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 			return
 		}
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"nft1": body.Nft1, "nft2": body.Nft2, "rating_nft1": raNew, "rating_nft2": rbNew})
@@ -357,7 +357,7 @@ func rankingVoteChainAllowed(chainID int64) bool {
 	return false
 }
 
-func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool, chainID int64, signNonce, signature string) error {
+func (a *API) performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool, chainID int64, signNonce, signature string) error {
 	return performSignedBeautyVoteWithDependencies(
 		ctx,
 		nft1,
@@ -366,7 +366,7 @@ func performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool
 		chainID,
 		signNonce,
 		signature,
-		productionSignedBeautyVoteDependencies(),
+		a.productionSignedBeautyVoteDependencies(),
 	)
 }
 
@@ -441,7 +441,7 @@ func classifyRankingMatchApplyError(err error) error {
 	return err
 }
 
-func respondRankingVoteError(c *httpx.Context, err error) {
+func (a *API) respondRankingVoteError(c *httpx.Context, err error) {
 	switch {
 	case errors.Is(err, errRankingBadPair):
 		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
@@ -453,7 +453,7 @@ func respondRankingVoteError(c *httpx.Context, err error) {
 		errors.Is(err, errRankingVoteInvalidNonce):
 		c.JSON(http.StatusBadRequest, httpx.H{"error": err.Error()})
 	default:
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 	}
 }
 
@@ -466,8 +466,8 @@ func generateRankingVoteNonce(r io.Reader) (string, error) {
 }
 
 // GET /api/randomwalk/ranking/sign-challenge — issue one-time nonce for wallet-signed /api/randomwalk/add_game.
-func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleRankingSignChallenge(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -476,8 +476,8 @@ func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
 		common.RespondInternalErrorJSON(c)
 		return
 	}
-	if err := rwRepo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
-		respondStoreError(c, err)
+	if err := a.repo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"nonce": nonce})
@@ -485,8 +485,8 @@ func apiRandomwalkRankingSignChallenge(c *httpx.Context) {
 
 // POST /api/randomwalk/add_game — beauty contest with EIP-191 wallet signature; stores voter_aid and enforces one vote per pair per wallet.
 // Response shape matches actionResponseSchema: {"result":"success"}.
-func apiRandomwalkAddGameLegacy(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleAddGameLegacy(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -501,9 +501,9 @@ func apiRandomwalkAddGameLegacy(c *httpx.Context) {
 	}
 	nft1Won := body.Nft1Win != 0
 
-	err := performSignedBeautyVote(c.Request.Context(), body.Nft1, body.Nft2, nft1Won, body.ChainID, body.SignNonce, body.Signature)
+	err := a.performSignedBeautyVote(c.Request.Context(), body.Nft1, body.Nft2, nft1Won, body.ChainID, body.SignNonce, body.Signature)
 	if err != nil {
-		respondRankingVoteError(c, err)
+		a.respondRankingVoteError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"result": "success"})

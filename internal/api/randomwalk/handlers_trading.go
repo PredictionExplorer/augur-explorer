@@ -11,89 +11,89 @@ import (
 )
 
 // Trading history (API)
-func apiRwalkTradingHistory(c *httpx.Context) {
+func (a *API) handleTradingHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs, ok := rwContractAddrs(c)
+	addrs, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}
-	p_market_addr := addrs.MarketPlace
-	var market_aid int64
-	if p_market_addr == "0x0000000000000000000000000000000000000000" {
-		market_aid = 0
+	pMarketAddr := addrs.MarketPlace
+	var marketAid int64
+	if pMarketAddr == "0x0000000000000000000000000000000000000000" {
+		marketAid = 0
 	} else {
-		market_aid = addrs.MarketPlaceAid
+		marketAid = addrs.MarketPlaceAid
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
-	sales, err := rwRepo.TradingHistory(c.Request.Context(), market_aid, offset, limit)
+	sales, err := a.repo.TradingHistory(c.Request.Context(), marketAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":     1,
 		"error":      "",
 		"Sales":      sales,
-		"MarketAid":  market_aid,
-		"MarketAddr": p_market_addr,
+		"MarketAid":  marketAid,
+		"MarketAddr": pMarketAddr,
 	})
 }
 
 // Sale history (API)
-func apiRwalkSaleHistory(c *httpx.Context) {
+func (a *API) handleSaleHistory(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs, ok := rwContractAddrs(c)
+	addrs, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}
-	p_market_addr := addrs.MarketPlace
-	var market_aid int64
-	if p_market_addr == "0x0000000000000000000000000000000000000000" {
-		market_aid = 0
+	pMarketAddr := addrs.MarketPlace
+	var marketAid int64
+	if pMarketAddr == "0x0000000000000000000000000000000000000000" {
+		marketAid = 0
 	} else {
-		market_aid = addrs.MarketPlaceAid
+		marketAid = addrs.MarketPlaceAid
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
-	sales, err := rwRepo.SaleHistory(c.Request.Context(), market_aid, offset, limit)
+	sales, err := a.repo.SaleHistory(c.Request.Context(), marketAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":          1,
 		"error":           "",
 		"Trading":         sales,
-		"MarketPlaceAddr": p_market_addr,
-		"MarketPlaceAid":  market_aid,
+		"MarketPlaceAddr": pMarketAddr,
+		"MarketPlaceAid":  marketAid,
 	})
 }
 
 // Trading history by user (API)
-func apiRwalkTradingHistoryByUser(c *httpx.Context) {
+func (a *API) handleTradingHistoryByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_aid := c.Param("user_aid")
-	var user_aid int64
-	if len(p_user_aid) > 0 {
+	pUserAid := c.Param("user_aid")
+	var userAid int64
+	if len(pUserAid) > 0 {
 		var success bool
-		user_aid, success = common.ParseIntFromRemoteOrError(c, HTTP, &p_user_aid)
+		userAid, success = common.ParseIntFromRemoteOrError(c, HTTP, &pUserAid)
 		if !success {
 			return
 		}
@@ -101,25 +101,25 @@ func apiRwalkTradingHistoryByUser(c *httpx.Context) {
 		common.RespondErrorJSON(c, "'user_aid' parameter is not set")
 		return
 	}
-	user_addr, err := rwStore.AddressByID(c.Request.Context(), user_aid)
+	userAddr, err := a.store.AddressByID(c.Request.Context(), userAid)
 	if err != nil {
 		if !errors.Is(err, store.ErrNotFound) {
-			respondStoreError(c, err)
+			a.respondStoreError(c, err)
 			return
 		}
 		common.RespondErrorJSON(c, "Address lookup on user_aid failed")
 		return
 	}
-	user_trading, err := rwRepo.TradingHistoryByUser(c.Request.Context(), user_aid)
+	userTrading, err := a.repo.TradingHistoryByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":      1,
 		"error":       "",
-		"UserTrading": user_trading,
-		"UserAid":     user_aid,
-		"UserAddr":    user_addr,
+		"UserTrading": userTrading,
+		"UserAid":     userAid,
+		"UserAddr":    userAddr,
 	})
 }

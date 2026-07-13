@@ -47,7 +47,7 @@ type CGBidEvent struct {
 	LastBidderAddr          string
 	EthPrice                string // PaidEthPrice (or -1 for CST bids)
 	CstPrice                string // PaidCstPrice (or -1 for ETH bids)
-	ERC20Value             string // reward of CST tokens earned for bidding
+	ERC20Value              string // reward of CST tokens earned for bidding
 	Message                 string
 	BidCstRewardAmount      string // IBiddingV2 BidPlaced; "-1" if V1 event
 	CstDutchAuctionDuration string // IBiddingV2 BidPlaced; "-1" if V1 event

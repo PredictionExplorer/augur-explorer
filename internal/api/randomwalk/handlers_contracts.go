@@ -9,13 +9,13 @@ import (
 )
 
 // GET /api/randomwalk/contracts — marketplace + RandomWalk NFT contract addresses from rw_contracts (same source as ETL).
-func apiRwalkContracts(c *httpx.Context) {
+func (a *API) handleContracts(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addrs, ok := rwContractAddrs(c)
+	addrs, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}

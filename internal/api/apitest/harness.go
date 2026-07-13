@@ -10,7 +10,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -19,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
@@ -42,6 +40,12 @@ type harness struct {
 	db            *sql.DB
 	store         *store.Store
 	state         *contractstate.State
+	cg            *cosmicgame.API
+	rw            *randomwalk.API
+	ethClient     *ethclient.Client
+	rpcClient     *ethrpc.Client
+	chain         *testchain.Chain
+	faqStubURL    string
 	gameStub      *testchain.ContractStub
 	tokenStub     *testchain.ContractStub
 	marketingStub *testchain.ContractStub
@@ -54,21 +58,17 @@ func seedDatabase(ctx context.Context, db *sql.DB) error {
 	return testfixtures.Apply(ctx, db)
 }
 
-// newHarness initializes the API modules exactly like cmd/apiserver/main.go
-// (common context, cosmicgame, randomwalk, faq) against the test database and
-// fake chain, then assembles the production middleware chain and route table
-// through the shared constructor (internal/api/routes). It must be called
-// exactly once per process: the API packages hold their dependencies in
-// package-level state until Phase 2 makes them injectable.
+// newHarness constructs the API modules exactly like cmd/apiserver/main.go
+// (cosmicgame, randomwalk, faq) against the test database and fake chain,
+// then assembles the production middleware chain and route table through the
+// shared constructor (internal/api/routes). Modules are injected values, so
+// harnesses and tests can build as many independent routers as they need.
 func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	discard := log.New(io.Discard, "", 0)
 
 	chain, _ := testchain.Start() // lives for the whole test process
 	stubs := registerChainState(chain)
 	faqSrv := newFAQStub()
-	if err := os.Setenv("AI_BOT_BACKEND_URL", faqSrv.URL); err != nil {
-		return nil, err
-	}
 
 	rpcClient, err := ethrpc.DialContext(ctx, chain.URL())
 	if err != nil {
@@ -80,21 +80,25 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	// cmd/apiserver.
 	st := store.NewFromPool(db.Pool)
 
-	common.InitContext(st, ethClient, discard, discard)
-
 	// StartBackgroundRefresh is deliberately not called: the refresh loops
 	// would mutate the contract-state snapshot on a timer and make golden
-	// snapshots drift. Init's synchronous loads pin the state once.
-	cgState, err := cosmicgame.Init(ctx, ethClient, rpcClient, discard, discard, true)
+	// snapshots drift. New's synchronous loads pin the state once.
+	cgAPI, err := cosmicgame.New(ctx, cosmicgame.Config{
+		Store:     st,
+		EthClient: ethClient,
+		RPCClient: rpcClient,
+		Info:      discard,
+		Error:     discard,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("initializing cosmicgame module: %w", err)
 	}
-	randomwalk.Init(true)
-	faq.Init(discard, discard, true)
+	rwAPI := randomwalk.New(st, discard, discard)
+	faqProxy := faq.New(faq.Options{UpstreamURL: faqSrv.URL, Info: discard, Error: discard})
 
 	v2Server, err := v2.NewServer(
 		st,
-		cgState,
+		cgAPI.ContractState(),
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		// Pin relative-time fields so HTTP goldens do not age.
 		v2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
@@ -103,16 +107,27 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 		return nil, fmt.Errorf("initializing api v2: %w", err)
 	}
 
-	// The zero Options build the production chain minus the stdout access
-	// log (it would drown test output), metrics and static assets — the
-	// same CORS, recovery and rate-limit middleware in the same order.
-	r := routes.New(st, routes.Options{V2: v2Server})
+	// The Options build the production chain minus the stdout access log
+	// (it would drown test output), metrics and static assets — the same
+	// CORS, recovery and rate-limit middleware in the same order.
+	r := routes.New(st, routes.Options{
+		CosmicGame: cgAPI,
+		RandomWalk: rwAPI,
+		FAQ:        faqProxy,
+		V2:         v2Server,
+	})
 
 	return &harness{
 		router:        r,
 		db:            db.SQL,
 		store:         st,
-		state:         cgState,
+		state:         cgAPI.ContractState(),
+		cg:            cgAPI,
+		rw:            rwAPI,
+		ethClient:     ethClient,
+		rpcClient:     rpcClient,
+		chain:         chain,
+		faqStubURL:    faqSrv.URL,
 		gameStub:      stubs.game,
 		tokenStub:     stubs.token,
 		marketingStub: stubs.marketing,

@@ -8,25 +8,25 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 )
 
-func api_cosmic_game_user_unique_stakers_both(c *httpx.Context) {
+func (a *API) handleUserUniqueStakersBoth(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	unique_stakers, err := arbRepo.UniqueStakersBoth(c.Request.Context())
+	uniqueStakers, err := a.repo.UniqueStakersBoth(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
-		"UniqueStakersBoth": unique_stakers,
+		"status":            reqStatus,
+		"error":             errStr,
+		"UniqueStakersBoth": uniqueStakers,
 	})
 }

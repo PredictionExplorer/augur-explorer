@@ -1,3 +1,8 @@
+// The RWCG API server: serves the frozen v1 JSON API, the generated v2 API,
+// health probes, metrics and env-gated static assets. main wires the
+// process-wide dependencies (log files, RPC client, store, the injected API
+// modules) through the shared router constructor (internal/api/routes) and
+// runs tracked HTTP listeners with coordinated graceful shutdown.
 package main
 
 import (
@@ -22,33 +27,21 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
-	"github.com/PredictionExplorer/augur-explorer/internal/api/v2"
+	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 )
 
 // shutdownTimeout bounds how long in-flight requests may take to finish once
 // SIGTERM/SIGINT arrives before the listeners are closed forcefully.
 const shutdownTimeout = 15 * time.Second
 
-var (
-	RPC_URL   = os.Getenv("RPC_URL")
-	eclient   *ethclient.Client
-	rpcclient *ethrpc.Client
-
-	rwcg_srv *RWCGServer
-
-	Error *log.Logger
-	Info  *log.Logger
-)
-
 // envBoolDefaultTrue returns true if the variable is unset or empty (default on).
 // Returns false for "false", "0", "no", "off" (case-insensitive). Any other non-empty value is true.
-func envBoolDefaultTrue(key string) bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+func envBoolDefaultTrue(getenv func(string) string, key string) bool {
+	v := strings.ToLower(strings.TrimSpace(getenv(key)))
 	if v == "" {
 		return true
 	}
@@ -58,100 +51,129 @@ func envBoolDefaultTrue(key string) bool {
 	return true
 }
 
-func initialize(ctx context.Context) *contractstate.State {
-	// Initialize the common context
-	common.InitContext(rwcg_srv.store, eclient, Info, Error)
+// buildModules constructs the enabled v1 API modules over the shared
+// dependencies. A disabled module stays nil: its routes are not registered
+// and the shared /metadata dispatch answers the legacy unavailable envelope.
+func buildModules(ctx context.Context, getenv func(string) string, deps *serverDeps, ethClient *ethclient.Client, rpcClient *ethrpc.Client) (*cosmicgame.API, *randomwalk.API, *faq.Proxy, error) {
+	enableRWRoutes := envBoolDefaultTrue(getenv, "ENABLE_ROUTES_RANDOMWALK")
+	enableCGRoutes := envBoolDefaultTrue(getenv, "ENABLE_ROUTES_COSMICGAME")
+	enableFAQRoutes := envBoolDefaultTrue(getenv, "ENABLE_ROUTES_FAQ")
 
-	enableRWRoutes := envBoolDefaultTrue("ENABLE_ROUTES_RANDOMWALK")
-	enableCGRoutes := envBoolDefaultTrue("ENABLE_ROUTES_COSMICGAME")
-	enableFAQRoutes := envBoolDefaultTrue("ENABLE_ROUTES_FAQ")
-
-	cgState, err := cosmicgame.Init(ctx, eclient, rpcclient, Info, Error, enableCGRoutes)
-	if err != nil {
-		// Startup cannot proceed without the CosmicGame contract registry.
-		err_str := fmt.Sprintf("CosmicGame module init failed: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		fmt.Printf("\nFATAL: %s\n", err_str)
-		fmt.Printf("HINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env\n\n")
-		os.Exit(1)
-	}
+	var cgAPI *cosmicgame.API
 	if enableCGRoutes {
-		Info.Printf("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
+		var err error
+		cgAPI, err = cosmicgame.New(ctx, cosmicgame.Config{
+			Store:     deps.store,
+			EthClient: ethClient,
+			RPCClient: rpcClient,
+			Info:      deps.info,
+			Error:     deps.errlog,
+		})
+		if err != nil {
+			// Startup cannot proceed without the CosmicGame contract registry.
+			errStr := fmt.Sprintf("CosmicGame module init failed: %v", err)
+			deps.errlog.Print(errStr)
+			deps.info.Print(errStr)
+			return nil, nil, nil, fmt.Errorf("FATAL: %s\nHINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env", errStr)
+		}
+		deps.info.Printf("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
 	} else {
-		Info.Printf("CosmicGame HTTP routes: disabled (ENABLE_ROUTES_COSMICGAME=false)")
+		deps.info.Printf("CosmicGame HTTP routes: disabled (ENABLE_ROUTES_COSMICGAME=false)")
 		fmt.Printf("INFO: CosmicGame API routes are not registered (ENABLE_ROUTES_COSMICGAME=false).\n")
 	}
 
-	randomwalk.Init(enableRWRoutes)
+	var rwAPI *randomwalk.API
 	if enableRWRoutes {
-		Info.Printf("RandomWalk HTTP routes: enabled (ENABLE_ROUTES_RANDOMWALK unset or true)")
+		rwAPI = randomwalk.New(deps.store, deps.info, deps.errlog)
+		deps.info.Printf("RandomWalk HTTP routes: enabled (ENABLE_ROUTES_RANDOMWALK unset or true)")
 	} else {
-		Info.Printf("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
+		deps.info.Printf("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
 		fmt.Printf("INFO: RandomWalk API routes are not registered (ENABLE_ROUTES_RANDOMWALK=false).\n")
 	}
 
-	faq.Init(Info, Error, enableFAQRoutes)
-	if !enableFAQRoutes {
+	var faqProxy *faq.Proxy
+	if enableFAQRoutes {
+		faqProxy = faq.New(faq.Options{Info: deps.info, Error: deps.errlog})
+	} else {
+		deps.info.Printf("FAQ proxy disabled (ENABLE_ROUTES_FAQ=false)")
 		fmt.Printf("INFO: FAQ bot proxy routes are not registered (ENABLE_ROUTES_FAQ=false).\n")
 	}
-	return cgState
+
+	return cgAPI, rwAPI, faqProxy, nil
 }
 
 func main() {
-	if len(RPC_URL) == 0 {
-		fmt.Printf("Configuration error: RPC URL of Ethereum node is not set." +
-			"Calls to contracts are disabled. " +
-			" Please set RPC_URL environment variable\n")
-		os.Exit(1)
-	}
-
 	// Root context: cancelled on SIGINT/SIGTERM, which starts the drain.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	var err error
-	rpcclient, err = ethrpc.DialContext(ctx, RPC_URL)
-	if err != nil {
-		fmt.Printf("Can't establish connection to RPC service: %v\n", err)
+	if err := run(ctx, os.Getenv); err != nil {
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-	eclient = ethclient.NewClient(rpcclient)
-	rwcg_srv = create_rwcg_server()
+}
 
-	cgState := initialize(ctx)
-	cosmicgame.StartBackgroundRefresh(ctx)
+// run wires every dependency and serves until ctx is cancelled (returning
+// nil after the graceful drain) or a startup error occurs. Environment
+// access goes through getenv so tests can inject configuration.
+func run(ctx context.Context, getenv func(string) string) error {
+	rpcURL := getenv("RPC_URL")
+	if len(rpcURL) == 0 {
+		return errors.New("configuration error: RPC URL of Ethereum node is not set; " +
+			"calls to contracts are disabled — please set the RPC_URL environment variable")
+	}
 
-	port_plain := os.Getenv("HTTP_PORT")
-	host_secure := os.Getenv("HTTPS_HOSTNAME")
-	httpsExtra := strings.TrimSpace(os.Getenv("HTTPS_EXTRA_LISTEN_ADDR"))
+	rpcClient, err := ethrpc.DialContext(ctx, rpcURL)
+	if err != nil {
+		return fmt.Errorf("can't establish connection to RPC service: %w", err)
+	}
+	ethClient := ethclient.NewClient(rpcClient)
+	deps, err := newServerDeps(ctx, getenv)
+	if err != nil {
+		return err
+	}
+	defer deps.store.Close()
+
+	cgAPI, rwAPI, faqProxy, err := buildModules(ctx, getenv, deps, ethClient, rpcClient)
+	if err != nil {
+		return err
+	}
+	if cgAPI != nil {
+		cgAPI.StartBackgroundRefresh(ctx)
+	}
+
+	portPlain := getenv("HTTP_PORT")
+	hostSecure := getenv("HTTPS_HOSTNAME")
+	httpsExtra := strings.TrimSpace(getenv("HTTPS_EXTRA_LISTEN_ADDR"))
 
 	// The shared constructor (internal/api/routes) builds the middleware
 	// chain — CORS, panic recovery, access log, per-IP rate limiting,
-	// Prometheus metrics — and registers the frozen v1 table, generated v2
-	// server, health probes, static assets (env-gated, see static_assets.go),
-	// and host-dispatched bare /metadata route. The integration suites build
-	// through the same constructor.
+	// Prometheus metrics — and registers the injected v1 modules, generated
+	// v2 server, health probes, static assets (env-gated, see
+	// static_assets.go), and host-dispatched bare /metadata route. The
+	// integration suites build through the same constructor.
 	accessLogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	errorLogger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	var v2Server *v2.Server
-	if cgState != nil {
-		v2Server, err = v2.NewServer(rwcg_srv.store, cgState, errorLogger)
+	if cgAPI != nil {
+		v2Server, err = v2.NewServer(deps.store, cgAPI.ContractState(), errorLogger)
 		if err != nil {
-			fmt.Printf("API v2 initialization failed: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("API v2 initialization failed: %w", err)
 		}
 	}
-	r := routes.New(rwcg_srv.store, routes.Options{
+	r := routes.New(deps.store, routes.Options{
 		AccessLog:     accessLogger,
 		PanicLog:      errorLogger,
+		CosmicGame:    cgAPI,
+		RandomWalk:    rwAPI,
+		FAQ:           faqProxy,
 		V2:            v2Server,
 		Extra:         []httpx.Middleware{metricsMiddleware()},
 		RegisterExtra: registerStaticAssetRoutes,
 	})
 
 	// Internal metrics/pprof listener (METRICS_ADDR).
-	internalSrv := startInternalServer()
+	internalSrv := startInternalServer(getenv, deps.info, deps.errlog)
 
 	// Public listeners. Each runs in its own goroutine and is tracked for
 	// the coordinated Shutdown below.
@@ -170,7 +192,7 @@ func main() {
 				err = srv.Serve(ln)
 			}
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				Error.Printf("HTTP server %s: %v", ln.Addr(), err)
+				deps.errlog.Printf("HTTP server %s: %v", ln.Addr(), err)
 				log.Printf("HTTP server %s: %v", ln.Addr(), err)
 			}
 		}()
@@ -178,8 +200,8 @@ func main() {
 
 	// TLS: HTTPS_HOSTNAME is the primary bind address (e.g. :443 or 0.0.0.0:443).
 	// Optional HTTPS_EXTRA_LISTEN_ADDR starts a second TLS listener (e.g. :1443) with the same routes and certs.
-	if len(host_secure) > 0 {
-		certs := loadHTTPSCertificates()
+	if len(hostSecure) > 0 {
+		certs := loadHTTPSCertificates(getenv)
 		if len(certs) == 0 {
 			log.Println("TLS: no certificates loaded; HTTPS listeners not started")
 		} else {
@@ -193,30 +215,28 @@ func main() {
 				log.Printf("HTTPS bound and listening on %s", ln.Addr().String())
 				serve(&http.Server{Handler: r, TLSConfig: tlsConfig, ReadHeaderTimeout: 10 * time.Second}, ln, true)
 			}
-			startTLS(host_secure)
+			startTLS(hostSecure)
 			if httpsExtra != "" {
 				startTLS(httpsExtra)
 			}
 		}
 	}
-	if len(port_plain) > 0 {
-		ln, err := net.Listen("tcp", ":"+port_plain)
+	if len(portPlain) > 0 {
+		ln, err := net.Listen("tcp", ":"+portPlain)
 		if err != nil {
-			fmt.Printf("HTTP bind failed on port %s: %v\n", port_plain, err)
-			os.Exit(1)
+			return fmt.Errorf("HTTP bind failed on port %s: %w", portPlain, err)
 		}
-		log.Printf("Listening on port %s", port_plain)
+		log.Printf("Listening on port %s", portPlain)
 		serve(&http.Server{Handler: r, ReadHeaderTimeout: 10 * time.Second}, ln, false)
 	}
 	if len(servers) == 0 {
-		fmt.Printf("Configuration error: no listeners configured. Set HTTP_PORT and/or HTTPS_HOSTNAME.\n")
-		os.Exit(1)
+		return errors.New("configuration error: no listeners configured — set HTTP_PORT and/or HTTPS_HOSTNAME")
 	}
 
 	// Block until SIGINT/SIGTERM, then drain: readiness flips false so load
 	// balancers stop sending traffic, in-flight requests get shutdownTimeout
 	// to finish, background refresh loops stop via ctx, and the store pool
-	// closes last.
+	// closes last (deferred).
 	<-ctx.Done()
 	log.Printf("shutdown: signal received, draining (timeout %s)", shutdownTimeout)
 	common.SetDraining()
@@ -225,18 +245,18 @@ func main() {
 	defer cancel()
 	for _, srv := range servers {
 		if err := srv.Shutdown(shutdownCtx); err != nil {
-			Error.Printf("shutdown: %v", err)
+			deps.errlog.Printf("shutdown: %v", err)
 			log.Printf("shutdown: %v", err)
 		}
 	}
 	wg.Wait()
 	if internalSrv != nil {
 		if err := internalSrv.Shutdown(shutdownCtx); err != nil {
-			Error.Printf("shutdown internal server: %v", err)
+			deps.errlog.Printf("shutdown internal server: %v", err)
 		}
 	}
-	rwcg_srv.store.Close()
 	log.Printf("shutdown: complete")
+	return nil
 }
 
 // loadHTTPSCertificates returns TLS cert/key pairs for one listener. Go picks the right leaf cert per TLS SNI
@@ -244,10 +264,10 @@ func main() {
 //
 // Primary pair: TLS_CERT_FILE + TLS_KEY_FILE, or $HOME/configs/server.crt + server.key.
 // Optional second pair (another domain): TLS_CERT_FILE_2 + TLS_KEY_FILE_2.
-func loadHTTPSCertificates() []tls.Certificate {
-	home := os.Getenv("HOME")
-	cert1 := strings.TrimSpace(os.Getenv("TLS_CERT_FILE"))
-	key1 := strings.TrimSpace(os.Getenv("TLS_KEY_FILE"))
+func loadHTTPSCertificates(getenv func(string) string) []tls.Certificate {
+	home := getenv("HOME")
+	cert1 := strings.TrimSpace(getenv("TLS_CERT_FILE"))
+	key1 := strings.TrimSpace(getenv("TLS_KEY_FILE"))
 	if cert1 == "" {
 		cert1 = filepath.Join(home, "configs", "server.crt")
 	}
@@ -261,8 +281,8 @@ func loadHTTPSCertificates() []tls.Certificate {
 	} else {
 		log.Printf("TLS: primary cert load failed (%q + %q): %v", cert1, key1, err)
 	}
-	cert2 := strings.TrimSpace(os.Getenv("TLS_CERT_FILE_2"))
-	key2 := strings.TrimSpace(os.Getenv("TLS_KEY_FILE_2"))
+	cert2 := strings.TrimSpace(getenv("TLS_CERT_FILE_2"))
+	key2 := strings.TrimSpace(getenv("TLS_KEY_FILE_2"))
 	if cert2 != "" && key2 != "" {
 		if cer, err := tls.LoadX509KeyPair(cert2, key2); err == nil {
 			out = append(out, cer)

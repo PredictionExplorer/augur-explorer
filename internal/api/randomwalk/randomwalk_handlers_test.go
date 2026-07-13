@@ -9,26 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
-	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
-
-func preserveRandomwalkTestState(t *testing.T) {
-	t.Helper()
-
-	oldRepo := rwRepo
-	oldStore := rwStore
-	oldRoutesEnabled := routesEnabled
-	oldCommonContext := common.Ctx
-	t.Cleanup(func() {
-		rwRepo = oldRepo
-		rwStore = oldStore
-		routesEnabled = oldRoutesEnabled
-		common.Ctx = oldCommonContext
-	})
-}
 
 func invokeRandomwalkHandler(method, target, body string, handler httpx.HandlerFunc) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(method, target, strings.NewReader(body))
@@ -48,44 +31,42 @@ func decodeResponseObject(t *testing.T, recorder *httptest.ResponseRecorder) map
 }
 
 func TestRandomwalkHandlersRejectUnconfiguredDatabase(t *testing.T) {
-	preserveRandomwalkTestState(t)
-	rwRepo = nil
-	rwStore = nil
+	a := NewBare()
 
 	handlers := []struct {
 		name    string
 		method  string
 		handler httpx.HandlerFunc
 	}{
-		{name: "current offers", method: http.MethodGet, handler: apiRwalkCurrentOffers},
-		{name: "floor price", method: http.MethodGet, handler: apiRwalkFloorPrice},
-		{name: "token list sequential", method: http.MethodGet, handler: apiRwalkTokenListSeq},
-		{name: "token list period", method: http.MethodGet, handler: apiRwalkTokenListPeriod},
-		{name: "token info", method: http.MethodGet, handler: apiRwalkTokenInfo},
-		{name: "token history", method: http.MethodGet, handler: apiRwalkTokenHistory},
-		{name: "token name history", method: http.MethodGet, handler: apiRwalkTokenNameHistory},
-		{name: "tokens by user", method: http.MethodGet, handler: apiRwalkTokensByUser},
-		{name: "trading history", method: http.MethodGet, handler: apiRwalkTradingHistory},
-		{name: "sale history", method: http.MethodGet, handler: apiRwalkSaleHistory},
-		{name: "trading by user", method: http.MethodGet, handler: apiRwalkTradingHistoryByUser},
-		{name: "token stats", method: http.MethodGet, handler: apiRwalkTokenStats},
-		{name: "market stats", method: http.MethodGet, handler: apiRwalkMarketStats},
-		{name: "trading volume", method: http.MethodGet, handler: apiRwalkTradingVolumeByPeriod},
-		{name: "mint intervals", method: http.MethodGet, handler: apiRwalkMintIntervals},
-		{name: "withdrawal chart", method: http.MethodGet, handler: apiRwalkWithdrawalChart},
-		{name: "floor price over time", method: http.MethodGet, handler: apiRwalkFloorPriceOverTime},
-		{name: "top tokens", method: http.MethodGet, handler: apiRwalkTop5TradedTokens},
-		{name: "mint report", method: http.MethodGet, handler: apiRwalkMintReport},
-		{name: "user info", method: http.MethodGet, handler: apiRwalkUserInfo},
-		{name: "contracts", method: http.MethodGet, handler: apiRwalkContracts},
-		{name: "explore random", method: http.MethodGet, handler: apiRandomwalkExploreRandom},
-		{name: "beauty pair", method: http.MethodGet, handler: apiRandomwalkRankingBeautyPairIDs},
-		{name: "vote count", method: http.MethodGet, handler: apiRandomwalkVoteCount},
-		{name: "ranking order", method: http.MethodGet, handler: apiRandomwalkTokenRankingOrder},
-		{name: "ranking match", method: http.MethodPost, handler: apiRandomwalkTokenRankingMatch},
-		{name: "ranking sign challenge", method: http.MethodGet, handler: apiRandomwalkRankingSignChallenge},
-		{name: "add game", method: http.MethodPost, handler: apiRandomwalkAddGameLegacy},
-		{name: "metadata exported handler", method: http.MethodGet, handler: TokenMetadataHandler},
+		{name: "current offers", method: http.MethodGet, handler: a.handleCurrentOffers},
+		{name: "floor price", method: http.MethodGet, handler: a.handleFloorPrice},
+		{name: "token list sequential", method: http.MethodGet, handler: a.handleTokenListSeq},
+		{name: "token list period", method: http.MethodGet, handler: a.handleTokenListPeriod},
+		{name: "token info", method: http.MethodGet, handler: a.handleTokenInfo},
+		{name: "token history", method: http.MethodGet, handler: a.handleTokenHistory},
+		{name: "token name history", method: http.MethodGet, handler: a.handleTokenNameHistory},
+		{name: "tokens by user", method: http.MethodGet, handler: a.handleTokensByUser},
+		{name: "trading history", method: http.MethodGet, handler: a.handleTradingHistory},
+		{name: "sale history", method: http.MethodGet, handler: a.handleSaleHistory},
+		{name: "trading by user", method: http.MethodGet, handler: a.handleTradingHistoryByUser},
+		{name: "token stats", method: http.MethodGet, handler: a.handleTokenStats},
+		{name: "market stats", method: http.MethodGet, handler: a.handleMarketStats},
+		{name: "trading volume", method: http.MethodGet, handler: a.handleTradingVolumeByPeriod},
+		{name: "mint intervals", method: http.MethodGet, handler: a.handleMintIntervals},
+		{name: "withdrawal chart", method: http.MethodGet, handler: a.handleWithdrawalChart},
+		{name: "floor price over time", method: http.MethodGet, handler: a.handleFloorPriceOverTime},
+		{name: "top tokens", method: http.MethodGet, handler: a.handleTop5TradedTokens},
+		{name: "mint report", method: http.MethodGet, handler: a.handleMintReport},
+		{name: "user info", method: http.MethodGet, handler: a.handleUserInfo},
+		{name: "contracts", method: http.MethodGet, handler: a.handleContracts},
+		{name: "explore random", method: http.MethodGet, handler: a.handleExploreRandom},
+		{name: "beauty pair", method: http.MethodGet, handler: a.handleRankingBeautyPairIDs},
+		{name: "vote count", method: http.MethodGet, handler: a.handleVoteCount},
+		{name: "ranking order", method: http.MethodGet, handler: a.handleTokenRankingOrder},
+		{name: "ranking match", method: http.MethodPost, handler: a.handleTokenRankingMatch},
+		{name: "ranking sign challenge", method: http.MethodGet, handler: a.handleRankingSignChallenge},
+		{name: "add game", method: http.MethodPost, handler: a.handleAddGameLegacy},
+		{name: "metadata exported handler", method: http.MethodGet, handler: a.TokenMetadata},
 	}
 
 	const wantBody = `{"error":"Database link wasn't configured","status":0}`
@@ -106,9 +87,7 @@ func TestRandomwalkHandlersRejectUnconfiguredDatabase(t *testing.T) {
 }
 
 func TestRankingHandlersValidateBeforeStoreAccess(t *testing.T) {
-	preserveRandomwalkTestState(t)
-	rwRepo = new(rwdb.Repo)
-	rwStore = new(store.Store)
+	a := New(new(store.Store), nil, nil)
 	t.Setenv("RANKING_VOTE_CHAIN_IDS", "1")
 
 	tests := []struct {
@@ -119,48 +98,48 @@ func TestRankingHandlersValidateBeforeStoreAccess(t *testing.T) {
 		errorContains string
 	}{
 		{
-			name: "admin match malformed JSON", handler: apiRandomwalkTokenRankingMatch,
+			name: "admin match malformed JSON", handler: a.handleTokenRankingMatch,
 			body: `{`, errorContains: "unexpected EOF",
 		},
 		{
-			name: "admin match wrong JSON type", handler: apiRandomwalkTokenRankingMatch,
+			name: "admin match wrong JSON type", handler: a.handleTokenRankingMatch,
 			body: `{"nft1":"seven","nft2":9}`, errorContains: "cannot unmarshal string",
 		},
 		{
-			name: "admin match negative token", handler: apiRandomwalkTokenRankingMatch,
+			name: "admin match negative token", handler: a.handleTokenRankingMatch,
 			body: `{"nft1":-1,"nft2":9,"nft1_won":true}`, wantError: errRankingBadPair.Error(),
 		},
 		{
-			name: "admin match repeated token", handler: apiRandomwalkTokenRankingMatch,
+			name: "admin match repeated token", handler: a.handleTokenRankingMatch,
 			body: `{"nft1":9,"nft2":9,"nft1_won":false}`, wantError: errRankingBadPair.Error(),
 		},
 		{
-			name: "beauty vote malformed JSON", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote malformed JSON", handler: a.handleAddGameLegacy,
 			body: `not-json`, errorContains: "invalid character",
 		},
 		{
-			name: "beauty vote winner below range", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote winner below range", handler: a.handleAddGameLegacy,
 			body: `{"nft1":1,"nft2":2,"nft1_win":-1}`, wantError: "nft1_win must be 0 or 1",
 		},
 		{
-			name: "beauty vote winner above range", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote winner above range", handler: a.handleAddGameLegacy,
 			body: `{"nft1":1,"nft2":2,"nft1_win":2}`, wantError: "nft1_win must be 0 or 1",
 		},
 		{
-			name: "beauty vote bad pair precedes credentials", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote bad pair precedes credentials", handler: a.handleAddGameLegacy,
 			body: `{"nft1":2,"nft2":2,"nft1_win":1}`, wantError: errRankingBadPair.Error(),
 		},
 		{
-			name: "beauty vote credentials required", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote credentials required", handler: a.handleAddGameLegacy,
 			body: `{"nft1":1,"nft2":2,"nft1_win":1,"chain_id":1}`, wantError: errRankingVoteCredentialsRequired.Error(),
 		},
 		{
-			name: "beauty vote chain rejected", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote chain rejected", handler: a.handleAddGameLegacy,
 			body:      `{"nft1":1,"nft2":2,"nft1_win":1,"chain_id":42161,"sign_nonce":"n","signature":"00"}`,
 			wantError: errRankingVoteChainNotAllowed.Error(),
 		},
 		{
-			name: "beauty vote signature rejected", handler: apiRandomwalkAddGameLegacy,
+			name: "beauty vote signature rejected", handler: a.handleAddGameLegacy,
 			body:          `{"nft1":1,"nft2":2,"nft1_win":1,"chain_id":1,"sign_nonce":"n","signature":"zz"}`,
 			errorContains: errRankingVoteInvalidSignature.Error(),
 		},
@@ -191,8 +170,7 @@ func TestRankingHandlersValidateBeforeStoreAccess(t *testing.T) {
 }
 
 func TestRespondRankingVoteErrorClassificationAndSecrecy(t *testing.T) {
-	preserveRandomwalkTestState(t)
-	common.Ctx = nil
+	a := NewBare()
 
 	invalidSignature := fmt.Errorf("%w: bad recovery id", errRankingVoteInvalidSignature)
 	const secret = "database signature column failed; sign_nonce=top-secret"
@@ -238,7 +216,7 @@ func TestRespondRankingVoteErrorClassificationAndSecrecy(t *testing.T) {
 				http.MethodPost,
 				"/api/randomwalk/add_game",
 				"",
-				func(c *httpx.Context) { respondRankingVoteError(c, tt.err) },
+				func(c *httpx.Context) { a.respondRankingVoteError(c, tt.err) },
 			)
 			if recorder.Code != tt.wantCode {
 				t.Fatalf("status = %d, want %d", recorder.Code, tt.wantCode)
@@ -261,19 +239,9 @@ func TestRespondRankingVoteErrorClassificationAndSecrecy(t *testing.T) {
 	}
 }
 
-func TestRegisterAPIRoutesHonorsToggleAndKeepsRankingAliases(t *testing.T) {
-	preserveRandomwalkTestState(t)
-
-	routesEnabled = false
-	disabledRouter := httpx.NewRouter()
-	RegisterAPIRoutes(disabledRouter)
-	if got := len(disabledRouter.Routes()); got != 0 {
-		t.Fatalf("disabled route count = %d, want 0", got)
-	}
-
-	routesEnabled = true
+func TestRegisterRoutesKeepsRankingAliases(t *testing.T) {
 	router := httpx.NewRouter()
-	RegisterAPIRoutes(router)
+	NewBare().RegisterRoutes(router)
 	routes := router.Routes()
 	if got, want := len(routes), 32; got != want {
 		t.Fatalf("route count = %d, want %d", got, want)

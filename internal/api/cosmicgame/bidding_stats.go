@@ -12,9 +12,9 @@ import (
 
 const recentSpikeWindowSecs = 30 * 24 * 3600
 
-func api_cosmic_game_bidding_activity(c *httpx.Context) {
+func (a *API) handleBiddingActivity(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -27,9 +27,9 @@ func api_cosmic_game_bidding_activity(c *httpx.Context) {
 		intervalSecs = 3600
 	}
 
-	buckets, err := arbRepo.BidFrequencyByPeriod(c.Request.Context(), initTs, finTs, intervalSecs)
+	buckets, err := a.repo.BidFrequencyByPeriod(c.Request.Context(), initTs, finTs, intervalSecs)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	spikes := cgdb.DetectBidSpikes(buckets, intervalSecs)
@@ -55,9 +55,9 @@ func api_cosmic_game_bidding_activity(c *httpx.Context) {
 	})
 }
 
-func api_cosmic_game_bidding_frequency(c *httpx.Context) {
+func (a *API) handleBiddingFrequency(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -70,9 +70,9 @@ func api_cosmic_game_bidding_frequency(c *httpx.Context) {
 		intervalSecs = 86400
 	}
 
-	buckets, err := arbRepo.BidFrequencyByPeriod(c.Request.Context(), initTs, finTs, intervalSecs)
+	buckets, err := a.repo.BidFrequencyByPeriod(c.Request.Context(), initTs, finTs, intervalSecs)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
@@ -85,9 +85,9 @@ func api_cosmic_game_bidding_frequency(c *httpx.Context) {
 	})
 }
 
-func api_cosmic_game_bidding_top_active_periods(c *httpx.Context) {
+func (a *API) handleBiddingTopActivePeriods(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -101,9 +101,9 @@ func api_cosmic_game_bidding_top_active_periods(c *httpx.Context) {
 	gapHours := cgdb.ParseOptionalIntQuery(c.Query("gap_hours"), 6)
 	minBids := cgdb.ParseOptionalIntQuery(c.Query("min_bids"), 2)
 
-	topBidders, periods, err := arbRepo.TopBidderActivePeriods(c.Request.Context(), topN, initTs, finTs, gapHours, minBids)
+	topBidders, periods, err := a.repo.TopBidderActivePeriods(c.Request.Context(), topN, initTs, finTs, gapHours, minBids)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
@@ -119,15 +119,15 @@ func api_cosmic_game_bidding_top_active_periods(c *httpx.Context) {
 	})
 }
 
-// api_cosmic_game_bid_type_ratio serves the per-interval bid-type composition
+// handleBidTypeRatio serves the per-interval bid-type composition
 // used by the 100% stacked area chart. Params are read from the query string:
 //
 //	from_ts       unix seconds, start of range (default 0)
 //	to_ts         unix seconds, end of range   (default now / 2147483647)
-//	interval_secs sampling window size         (default 86400 = 1 day)
-func api_cosmic_game_bid_type_ratio(c *httpx.Context) {
+//	intervalSecs sampling window size         (default 86400 = 1 day)
+func (a *API) handleBidTypeRatio(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -139,9 +139,9 @@ func api_cosmic_game_bid_type_ratio(c *httpx.Context) {
 		intervalSecs = 86400
 	}
 
-	buckets, err := arbRepo.BidTypeRatioByPeriod(c.Request.Context(), fromTs, toTs, intervalSecs)
+	buckets, err := a.repo.BidTypeRatioByPeriod(c.Request.Context(), fromTs, toTs, intervalSecs)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
@@ -154,16 +154,16 @@ func api_cosmic_game_bid_type_ratio(c *httpx.Context) {
 	})
 }
 
-func api_cosmic_game_bidding_time_bounds(c *httpx.Context) {
+func (a *API) handleBiddingTimeBounds(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	minTs, maxTs, err := arbRepo.BidTimeBounds(c.Request.Context())
+	minTs, maxTs, err := a.repo.BidTimeBounds(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{

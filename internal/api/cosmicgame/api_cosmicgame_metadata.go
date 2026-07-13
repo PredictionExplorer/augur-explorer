@@ -12,18 +12,19 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// TokenMetadataHandler is the exported entry point for the bare ERC-721
-// tokenURI route (GET /metadata/:token_id), dispatched by host in the main
-// router. On the Cosmic Signature host it serves Cosmic Signature metadata.
-func TokenMetadataHandler(c *httpx.Context) {
-	api_cosmic_game_cst_metadata(c)
+// TokenMetadata is the exported entry point for the bare ERC-721 tokenURI
+// route (GET /metadata/{tokenID}), dispatched by host in the shared router
+// constructor. On the Cosmic Signature host it serves Cosmic Signature
+// metadata.
+func (a *API) TokenMetadata(c *httpx.Context) {
+	a.handleCstMetadata(c)
 }
 
-// GET /api/cosmicgame/cst/metadata/:token_id — OpenSea-compatible metadata JSON (image hosted under /images/...).
+// GET /api/cosmicgame/cst/metadata/:tokenID — OpenSea-compatible metadata JSON (image hosted under /images/...).
 // Uses the same token row as /cst/info. Image base defaults to this API's origin + /images; optional NFT_ASSETS_PUBLIC_BASE overrides.
-func api_cosmic_game_cst_metadata(c *httpx.Context) {
+func (a *API) handleCstMetadata(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !Enabled || !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "CosmicGame module or database not available")
 		return
 	}
@@ -40,13 +41,13 @@ func api_cosmic_game_cst_metadata(c *httpx.Context) {
 		common.RespondErrorJSON(c, "invalid token_id")
 		return
 	}
-	tokenInfo, err := arbRepo.CosmicSignatureTokenInfo(c.Request.Context(), tokenID)
+	tokenInfo, err := a.repo.CosmicSignatureTokenInfo(c.Request.Context(), tokenID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			c.JSON(http.StatusNotFound, httpx.H{"error": "record not found"})
 			return
 		}
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	seedHex := strings.TrimSpace(tokenInfo.Seed)

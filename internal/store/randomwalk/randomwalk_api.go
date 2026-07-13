@@ -13,9 +13,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/timefmt"
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/timefmt"
 )
 
 func profitFromNull(nf sql.NullFloat64) rwmodel.JSONNullFloat64 {

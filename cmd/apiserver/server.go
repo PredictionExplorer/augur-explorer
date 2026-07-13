@@ -13,48 +13,56 @@ import (
 // defaultLogDir is the legacy operational log directory under $HOME.
 const defaultLogDir = "ae_logs"
 
-type RWCGServer struct {
-	store *store.Store
+// serverDeps bundles the process-wide dependencies run assembles at boot:
+// the shared store pool and the legacy info/error file loggers.
+type serverDeps struct {
+	store  *store.Store
+	info   *log.Logger
+	errlog *log.Logger
 }
 
-func create_rwcg_server() *RWCGServer {
+// newServerDeps opens the legacy log files under $HOME/ae_logs, connects the
+// shared store pool (database log routed through the pgx slog tracer into
+// webserver-db.log) and returns the bundle. Errors are fatal to the caller:
+// the API server cannot run without its logs or database.
+func newServerDeps(ctx context.Context, getenv func(string) string) (*serverDeps, error) {
+	logDir := fmt.Sprintf("%v/%v", getenv("HOME"), defaultLogDir)
+	_ = os.MkdirAll(logDir, os.ModePerm) // #nosec G301 G703 -- legacy log dir under $HOME; openAppendLog fails loudly if unusable
 
-	log_dir := fmt.Sprintf("%v/%v", os.Getenv("HOME"), defaultLogDir)
-	os.MkdirAll(log_dir, os.ModePerm)
-	web_db_log_file := fmt.Sprintf("%v/%v", log_dir, "webserver-db.log")
-
-	fname := fmt.Sprintf("%v/webserver_info.log", log_dir)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666) // #nosec G302 -- operational log, world-readable by design
+	infoFile, err := openAppendLog(fmt.Sprintf("%v/webserver_info.log", logDir))
 	if err != nil {
-		fmt.Printf("Can't start: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
-	Info = log.New(logfile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	info := log.New(infoFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	fname = fmt.Sprintf("%v/webserver_error.log", log_dir)
-	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666) // #nosec G302 -- operational log, world-readable by design
+	errFile, err := openAppendLog(fmt.Sprintf("%v/webserver_error.log", logDir))
 	if err != nil {
-		fmt.Printf("Can't start: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
-	Error = log.New(logfile, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	errlog := log.New(errFile, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// Database log output (failed and slow queries) goes through the pgx
 	// slog tracer into the file the legacy Init_log wrote to.
-	dbLogHandle, err := os.OpenFile(web_db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666) // #nosec G302 -- operational log, world-readable by design
+	dbLogHandle, err := openAppendLog(fmt.Sprintf("%v/webserver-db.log", logDir))
 	if err != nil {
-		fmt.Printf("Can't start: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 	cfg := store.ConfigFromEnv()
 	cfg.Logger = slog.New(slog.NewTextHandler(dbLogHandle, nil))
-	st, err := store.New(context.Background(), cfg)
+	st, err := store.New(ctx, cfg)
 	if err != nil {
-		fmt.Printf("Can't connect to PostgreSQL database.\nConnection error: %v\n%s", err, store.ConnectHint(err))
-		os.Exit(1)
+		return nil, fmt.Errorf("can't connect to PostgreSQL database: %w\n%s", err, store.ConnectHint(err))
 	}
-	srv := new(RWCGServer)
-	srv.store = st
 
-	return srv
+	return &serverDeps{store: st, info: info, errlog: errlog}, nil
+}
+
+// openAppendLog opens (creating if needed) one of the server's append-only
+// log files.
+func openAppendLog(path string) (*os.File, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666) // #nosec G302 G304 -- operational log under $HOME/ae_logs, world-readable by design
+	if err != nil {
+		return nil, fmt.Errorf("can't open log file: %w", err)
+	}
+	return f, nil
 }

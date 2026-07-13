@@ -1,247 +1,318 @@
-// Package cosmicgame provides HTTP handlers for CosmicGame functionality
+// Package cosmicgame serves the frozen v1 CosmicGame JSON API. The module
+// is an injected API value (no package-level state); construction loads the
+// contract registry and the synchronous contract-state snapshot, and route
+// registration is a method the shared router constructor calls.
 package cosmicgame
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io"
 	"log"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
-	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
-var (
-	// EthClient for blockchain calls
+// API carries the injected dependencies of the v1 CosmicGame module: the
+// context-first repository and base store, the contract-state cache the
+// handlers snapshot per request, the Ethereum clients for the few live
+// reads, and the legacy file loggers.
+type API struct {
+	repo      *cgdb.Repo
+	store     *store.Store
+	state     *contractstate.State
+	ethClient *ethclient.Client
+	rpc       *ethrpc.Client
+	info      *log.Logger
+	errlog    *log.Logger
+}
+
+// Config carries the dependencies for New. Store must be non-nil; the
+// clients may be nil in tests that never exercise live contract reads.
+type Config struct {
+	Store     *store.Store
 	EthClient *ethclient.Client
+	RPCClient *ethrpc.Client
+	Info      *log.Logger
+	Error     *log.Logger
+}
 
-	// RpcClient for direct RPC calls
-	rpcclient *ethrpc.Client
-
-	// Loggers
-	Info  *log.Logger
-	Error *log.Logger
-
-	// Enabled is set from websrv env ENABLE_ROUTES_COSMICGAME (default true). When false, API routes are not registered.
-	Enabled bool
-)
-
-// Init initializes the cosmicgame package with required dependencies and
-// performs the synchronous contract-state loads. If enabled is false,
-// RegisterAPIRoutes is a no-op and Init returns without loading contract
-// state. A non-nil error means the module cannot serve (missing database
-// link or unreadable contract registry); the caller decides whether that is
-// fatal. Init does not start the periodic refresh loops — call
+// New builds the module and performs the synchronous contract-state loads
+// the legacy Init did: it reads the contract registry from the database,
+// constructs the contractstate cache and pins the initial snapshot. A
+// non-nil error means the module cannot serve (missing database link or
+// unreadable contract registry); the caller decides whether that is fatal.
+// New does not start the periodic refresh loops — call
 // StartBackgroundRefresh for that.
-// The returned state is the same component used by v1 handlers and can be
-// injected into v2 without another cache or refresh loop.
-func Init(ctx context.Context, ethClient *ethclient.Client, rpcClient *ethrpc.Client, info, errorLog *log.Logger, enabled bool) (*contractstate.State, error) {
-	Enabled = enabled
-	if !enabled {
-		info.Printf("CosmicGame module init skipped (ENABLE_ROUTES_COSMICGAME=false)")
-		return nil, nil
+func New(ctx context.Context, cfg Config) (*API, error) {
+	a := &API{
+		store:     cfg.Store,
+		ethClient: cfg.EthClient,
+		rpc:       cfg.RPCClient,
+		info:      orDiscardLogger(cfg.Info),
+		errlog:    orDiscardLogger(cfg.Error),
 	}
+	if cfg.Store == nil {
+		return nil, errors.New("cosmicgame: database link wasn't configured")
+	}
+	a.repo = cgdb.NewRepo(cfg.Store)
 
-	EthClient = ethClient
-	rpcclient = rpcClient
-	Info = info
-	Error = errorLog
-
-	return initContractState(ctx)
+	caddrs, err := a.repo.ContractAddrs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cosmicgame: reading contract addresses: %w", err)
+	}
+	st, err := contractstate.New(contractstate.Config{
+		EthClient: a.ethClient,
+		DB:        a.repo,
+		Addrs: contractstate.Addresses{
+			CosmicGame:      ethcommon.HexToAddress(caddrs.CosmicGameAddr),
+			CosmicSignature: ethcommon.HexToAddress(caddrs.CosmicSignatureAddr),
+			CosmicToken:     ethcommon.HexToAddress(caddrs.CosmicTokenAddr),
+			CharityWallet:   ethcommon.HexToAddress(caddrs.CharityWalletAddr),
+			MarketingWallet: ethcommon.HexToAddress(caddrs.MarketingWalletAddr),
+		},
+		Info:  a.info,
+		Error: a.errlog,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("cosmicgame: building contract state: %w", err)
+	}
+	a.state = st
+	a.state.LoadInitial(ctx)
+	return a, nil
 }
 
-// Helper to check if database is initialized
-func dbInitialized() bool {
-	return common.Ctx != nil && common.Ctx.Store != nil
+// NewBare returns an unloaded module: handlers answer the legacy
+// "Database link wasn't configured" / "module not available" envelopes and
+// no contract state exists. The route-drift test uses it to enumerate the
+// route table without a database, and the guard tests use it to pin the
+// pre-initialization failure shapes.
+func NewBare() *API {
+	discard := log.New(io.Discard, "", 0)
+	return &API{info: discard, errlog: discard}
 }
 
-// RegisterAPIRoutes registers all CosmicGame JSON API routes.
-// If ENABLE_ROUTES_COSMICGAME is false, this function returns without registering any routes.
-func RegisterAPIRoutes(r *httpx.Router) {
-	if !Enabled {
+// orDiscardLogger keeps the module loggers non-nil so handlers can log
+// unconditionally.
+func orDiscardLogger(l *log.Logger) *log.Logger {
+	if l == nil {
+		return log.New(io.Discard, "", 0)
+	}
+	return l
+}
+
+// ContractState exposes the module's contract-state cache so cmd/apiserver
+// can share it with the v2 server (one cache, one set of refresh loops).
+func (a *API) ContractState() *contractstate.State {
+	return a.state
+}
+
+// StartBackgroundRefresh launches the periodic contract/database state
+// refresh loops and returns immediately; cancelling ctx stops them. Call it
+// after a successful New. The API parity test harness deliberately never
+// calls it, keeping snapshots deterministic.
+func (a *API) StartBackgroundRefresh(ctx context.Context) {
+	if a.state == nil {
 		return
 	}
+	go a.state.Run(ctx)
+}
+
+// dbInitialized reports whether the module was constructed with a database
+// link (NewBare and nil-store modules answer the legacy guard envelopes).
+func (a *API) dbInitialized() bool {
+	return a.repo != nil && a.store != nil
+}
+
+// RegisterRoutes registers all CosmicGame JSON API routes.
+func (a *API) RegisterRoutes(r *httpx.Router) {
 	// Statistics
-	r.GET("/api/cosmicgame/statistics/dashboard", api_cosmic_game_dashboard)
-	r.GET("/api/cosmicgame/statistics/counters", api_cosmic_game_record_counters)
-	r.GET("/api/cosmicgame/statistics/unique/bidders", api_cosmic_game_user_unique_bidders)
-	r.GET("/api/cosmicgame/statistics/unique/winners", api_cosmic_game_user_unique_winners)
-	r.GET("/api/cosmicgame/statistics/leaderboard/roi", api_cosmic_game_roi_leaderboard)
-	r.GET("/api/cosmicgame/statistics/claims/by_round", api_cosmic_game_claims_by_round)
-	r.GET("/api/cosmicgame/statistics/claims/detail/{round_num}", api_cosmic_game_claim_detail_by_round)
-	r.GET("/api/cosmicgame/statistics/unique/donors", api_cosmic_game_user_unique_donors)
-	r.GET("/api/cosmicgame/statistics/unique/stakers/cst", api_cosmic_game_user_unique_stakers_cst)
-	r.GET("/api/cosmicgame/statistics/unique/stakers/randomwalk", api_cosmic_game_user_unique_stakers_rwalk)
-	r.GET("/api/cosmicgame/statistics/unique/stakers/rwalk", api_cosmic_game_user_unique_stakers_rwalk) // legacy alias
-	r.GET("/api/cosmicgame/statistics/unique/stakers/both", api_cosmic_game_user_unique_stakers_both)
-	r.GET("/api/cosmicgame/statistics/bidding/activity/{init_ts}/{fin_ts}/{interval_secs}", api_cosmic_game_bidding_activity)
-	r.GET("/api/cosmicgame/statistics/bidding/frequency/{init_ts}/{fin_ts}/{interval_secs}", api_cosmic_game_bidding_frequency)
-	r.GET("/api/cosmicgame/statistics/bidding/top_active_periods/{n}/{init_ts}/{fin_ts}", api_cosmic_game_bidding_top_active_periods)
-	r.GET("/api/cosmicgame/statistics/bidding/time_bounds", api_cosmic_game_bidding_time_bounds)
+	r.GET("/api/cosmicgame/statistics/dashboard", a.handleDashboard)
+	r.GET("/api/cosmicgame/statistics/counters", a.handleRecordCounters)
+	r.GET("/api/cosmicgame/statistics/unique/bidders", a.handleUserUniqueBidders)
+	r.GET("/api/cosmicgame/statistics/unique/winners", a.handleUserUniqueWinners)
+	r.GET("/api/cosmicgame/statistics/leaderboard/roi", a.handleRoiLeaderboard)
+	r.GET("/api/cosmicgame/statistics/claims/by_round", a.handleClaimsByRound)
+	r.GET("/api/cosmicgame/statistics/claims/detail/{round_num}", a.handleClaimDetailByRound)
+	r.GET("/api/cosmicgame/statistics/unique/donors", a.handleUserUniqueDonors)
+	r.GET("/api/cosmicgame/statistics/unique/stakers/cst", a.handleUserUniqueStakersCst)
+	r.GET("/api/cosmicgame/statistics/unique/stakers/randomwalk", a.handleUserUniqueStakersRwalk)
+	r.GET("/api/cosmicgame/statistics/unique/stakers/rwalk", a.handleUserUniqueStakersRwalk) // legacy alias
+	r.GET("/api/cosmicgame/statistics/unique/stakers/both", a.handleUserUniqueStakersBoth)
+	r.GET("/api/cosmicgame/statistics/bidding/activity/{init_ts}/{fin_ts}/{interval_secs}", a.handleBiddingActivity)
+	r.GET("/api/cosmicgame/statistics/bidding/frequency/{init_ts}/{fin_ts}/{interval_secs}", a.handleBiddingFrequency)
+	r.GET("/api/cosmicgame/statistics/bidding/top_active_periods/{n}/{init_ts}/{fin_ts}", a.handleBiddingTopActivePeriods)
+	r.GET("/api/cosmicgame/statistics/bidding/time_bounds", a.handleBiddingTimeBounds)
 
 	// Rounds
-	r.GET("/api/cosmicgame/rounds/list/{offset}/{limit}", api_cosmic_game_prize_list)
-	r.GET("/api/cosmicgame/rounds/info/{prize_num}", api_cosmic_game_round_info)
-	r.GET("/api/cosmicgame/rounds/current/time", api_cosmic_game_prize_cur_round_time)
+	r.GET("/api/cosmicgame/rounds/list/{offset}/{limit}", a.handlePrizeList)
+	r.GET("/api/cosmicgame/rounds/info/{prize_num}", a.handleRoundInfo)
+	r.GET("/api/cosmicgame/rounds/current/time", a.handlePrizeCurRoundTime)
 
 	// Prizes
-	r.GET("/api/cosmicgame/prizes/history/global/{offset}/{limit}", api_cosmic_game_global_claim_history_detail)
-	r.GET("/api/cosmicgame/prizes/history/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_prize_history_detail_by_user)
-	r.GET("/api/cosmicgame/prizes/eth/all/global", api_cosmic_game_all_eth_deposits_list)
-	r.GET("/api/cosmicgame/prizes/eth/all/global/{offset}/{limit}", api_cosmic_game_all_eth_deposits_list)
-	r.GET("/api/cosmicgame/prizes/eth/raffle/global", api_cosmic_game_raffle_eth_deposits_list)
-	r.GET("/api/cosmicgame/prizes/eth/raffle/global/{offset}/{limit}", api_cosmic_game_raffle_eth_deposits_list)
-	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/global", api_cosmic_game_chronowarrior_eth_deposits_list)
-	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/global/{offset}/{limit}", api_cosmic_game_chronowarrior_eth_deposits_list)
-	r.GET("/api/cosmicgame/prizes/eth/all/by_user/{user_addr}", api_cosmic_game_unified_eth_all_by_user)
-	r.GET("/api/cosmicgame/prizes/eth/raffle/by_user/{user_addr}", api_cosmic_game_unified_eth_raffle_by_user)
-	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/by_user/{user_addr}", api_cosmic_game_unified_eth_chronowarrior_by_user)
-	r.GET("/api/cosmicgame/prizes/eth/unclaimed/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_unclaimed_prize_deposits_by_user)
-	r.GET("/api/cosmicgame/prizes/deposits/raffle/by_user/{user_addr}", api_cosmic_game_prize_deposits_raffle_eth_by_user)
-	r.GET("/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/{user_addr}", api_cosmic_game_prize_deposits_chrono_warrior_by_user)
-	r.GET("/api/cosmicgame/prizes/deposits/unclaimed/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_unclaimed_prize_deposits_by_user)
+	r.GET("/api/cosmicgame/prizes/history/global/{offset}/{limit}", a.handleGlobalClaimHistoryDetail)
+	r.GET("/api/cosmicgame/prizes/history/by_user/{user_addr}/{offset}/{limit}", a.handlePrizeHistoryDetailByUser)
+	r.GET("/api/cosmicgame/prizes/eth/all/global", a.handleAllEthDepositsList)
+	r.GET("/api/cosmicgame/prizes/eth/all/global/{offset}/{limit}", a.handleAllEthDepositsList)
+	r.GET("/api/cosmicgame/prizes/eth/raffle/global", a.handleRaffleEthDepositsList)
+	r.GET("/api/cosmicgame/prizes/eth/raffle/global/{offset}/{limit}", a.handleRaffleEthDepositsList)
+	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/global", a.handleChronowarriorEthDepositsList)
+	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/global/{offset}/{limit}", a.handleChronowarriorEthDepositsList)
+	r.GET("/api/cosmicgame/prizes/eth/all/by_user/{user_addr}", a.handleUnifiedEthAllByUser)
+	r.GET("/api/cosmicgame/prizes/eth/raffle/by_user/{user_addr}", a.handleUnifiedEthRaffleByUser)
+	r.GET("/api/cosmicgame/prizes/eth/chronowarrior/by_user/{user_addr}", a.handleUnifiedEthChronowarriorByUser)
+	r.GET("/api/cosmicgame/prizes/eth/unclaimed/by_user/{user_addr}/{offset}/{limit}", a.handleUnclaimedPrizeDepositsByUser)
+	r.GET("/api/cosmicgame/prizes/deposits/raffle/by_user/{user_addr}", a.handlePrizeDepositsRaffleEthByUser)
+	r.GET("/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/{user_addr}", a.handlePrizeDepositsChronoWarriorByUser)
+	r.GET("/api/cosmicgame/prizes/deposits/unclaimed/by_user/{user_addr}/{offset}/{limit}", a.handleUnclaimedPrizeDepositsByUser)
 
 	// Bids
-	r.GET("/api/cosmicgame/bid/list/all/{offset}/{limit}", api_cosmic_game_bid_list)
-	r.GET("/api/cosmicgame/bid/info/{evtlog_id}", api_cosmic_game_bid_info)
-	r.GET("/api/cosmicgame/bid/info_by_pos/{round_num}/{bid_position}", api_cosmic_game_bid_info_by_pos)
-	r.GET("/api/cosmicgame/bid/with_message/by_round/{round}", api_cosmic_game_bid_with_message_by_round)
-	r.GET("/api/cosmicgame/bid/list/by_round/{round_num}/{sort}/{offset}/{limit}", api_cosmic_game_bid_list_by_round)
-	r.GET("/api/cosmicgame/bid/bid_type_ratio", api_cosmic_game_bid_type_ratio)
-	r.GET("/api/cosmicgame/bid/used_randomwalk_nfts", api_cosmic_game_used_rwalk_nfts)
-	r.GET("/api/cosmicgame/bid/used_rwalk_nfts", api_cosmic_game_used_rwalk_nfts) // legacy path (same handler)
-	r.GET("/api/cosmicgame/bid/cst_price", api_cosmic_game_get_cst_price)
-	r.GET("/api/cosmicgame/bid/eth_price", api_cosmic_game_get_eth_price)
-	r.GET("/api/cosmicgame/bid/current_special_winners", api_cosmic_game_bid_special_winners)
-	r.GET("/api/cosmicgame/get_banned_bids", api_cosmic_game_get_banned_bids)
+	r.GET("/api/cosmicgame/bid/list/all/{offset}/{limit}", a.handleBidList)
+	r.GET("/api/cosmicgame/bid/info/{evtlog_id}", a.handleBidInfo)
+	r.GET("/api/cosmicgame/bid/info_by_pos/{round_num}/{bid_position}", a.handleBidInfoByPos)
+	r.GET("/api/cosmicgame/bid/with_message/by_round/{round}", a.handleBidWithMessageByRound)
+	r.GET("/api/cosmicgame/bid/list/by_round/{round_num}/{sort}/{offset}/{limit}", a.handleBidListByRound)
+	r.GET("/api/cosmicgame/bid/bid_type_ratio", a.handleBidTypeRatio)
+	r.GET("/api/cosmicgame/bid/used_randomwalk_nfts", a.handleUsedRwalkNfts)
+	r.GET("/api/cosmicgame/bid/used_rwalk_nfts", a.handleUsedRwalkNfts) // legacy path (same handler)
+	r.GET("/api/cosmicgame/bid/cst_price", a.handleGetCstPrice)
+	r.GET("/api/cosmicgame/bid/eth_price", a.handleGetEthPrice)
+	r.GET("/api/cosmicgame/bid/current_special_winners", a.handleBidSpecialWinners)
+	r.GET("/api/cosmicgame/get_banned_bids", a.handleGetBannedBids)
 	// Bid moderation is admin-only: requires X-Admin-Key matching ADMIN_API_KEY
 	// (503 when unset — fails closed) and is strictly rate limited.
 	adminGuard := common.RequireAdminKey("X-Admin-Key", "ADMIN_API_KEY")
 	adminRate := common.RateLimit(2, 5)
-	r.POST("/api/cosmicgame/ban_bid", api_cosmic_game_ban_bid, adminRate, adminGuard)
-	r.POST("/api/cosmicgame/unban_bid", api_cosmic_game_unban_bid, adminRate, adminGuard)
+	r.POST("/api/cosmicgame/ban_bid", a.handleBanBid, adminRate, adminGuard)
+	r.POST("/api/cosmicgame/unban_bid", a.handleUnbanBid, adminRate, adminGuard)
 
 	// CST Tokens
-	r.GET("/api/cosmicgame/cst/list/all/{offset}/{limit}", api_cosmic_game_cosmic_signature_token_list)
-	r.GET("/api/cosmicgame/cst/list/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_cosmic_signature_token_list_by_user)
-	r.GET("/api/cosmicgame/cst/info/{token_id}", api_cosmic_game_cosmic_signature_token_info)
-	r.GET("/api/cosmicgame/cst/metadata/{token_id}", api_cosmic_game_cst_metadata)
-	r.GET("/cg/metadata/{token_id}", api_cosmic_game_cst_metadata) // legacy Python path
-	r.GET("/api/cosmicgame/cst/names/history/{token_id}", api_cosmic_game_token_name_history)
-	r.GET("/api/cosmicgame/cst/names/search/{name}", api_cosmic_game_token_name_search)
-	r.GET("/api/cosmicgame/cst/names/named_only", api_cosmic_game_named_tokens_only)
-	r.GET("/api/cosmicgame/cst/transfers/all/{token_id}/{offset}/{limit}", api_cosmic_game_token_ownership_transfers)
-	r.GET("/api/cosmicgame/cst/transfers/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_cosmic_signature_transfers_by_user)
-	r.GET("/api/cosmicgame/cst/distribution", api_cosmic_game_cs_token_distribution)
+	r.GET("/api/cosmicgame/cst/list/all/{offset}/{limit}", a.handleCosmicSignatureTokenList)
+	r.GET("/api/cosmicgame/cst/list/by_user/{user_addr}/{offset}/{limit}", a.handleCosmicSignatureTokenListByUser)
+	r.GET("/api/cosmicgame/cst/info/{token_id}", a.handleCosmicSignatureTokenInfo)
+	r.GET("/api/cosmicgame/cst/metadata/{token_id}", a.handleCstMetadata)
+	r.GET("/cg/metadata/{token_id}", a.handleCstMetadata) // legacy Python path
+	r.GET("/api/cosmicgame/cst/names/history/{token_id}", a.handleTokenNameHistory)
+	r.GET("/api/cosmicgame/cst/names/search/{name}", a.handleTokenNameSearch)
+	r.GET("/api/cosmicgame/cst/names/named_only", a.handleNamedTokensOnly)
+	r.GET("/api/cosmicgame/cst/transfers/all/{token_id}/{offset}/{limit}", a.handleTokenOwnershipTransfers)
+	r.GET("/api/cosmicgame/cst/transfers/by_user/{user_addr}/{offset}/{limit}", a.handleCosmicSignatureTransfersByUser)
+	r.GET("/api/cosmicgame/cst/distribution", a.handleCsTokenDistribution)
 
 	// Cosmic Token (CT)
-	r.GET("/api/cosmicgame/ct/balances", api_cosmic_game_cosmic_token_balances)
-	r.GET("/api/cosmicgame/ct/statistics", api_cosmic_game_cosmic_token_statistics)
-	r.GET("/api/cosmicgame/ct/summary/by_user/{user_addr}", api_cosmic_game_cosmic_token_summary_by_user)
-	r.GET("/api/cosmicgame/ct/transfers/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_cosmic_token_transfers_by_user)
-	r.GET("/api/cosmicgame/ct/total_supply_history_by_bid", api_cosmic_game_cosmic_token_total_supply_history_by_bid)
-	r.GET("/api/cosmicgame/ct/total_supply_history_by_date/{from_date}/{to_date}", api_cosmic_game_cosmic_token_total_supply_history_by_date)
+	r.GET("/api/cosmicgame/ct/balances", a.handleCosmicTokenBalances)
+	r.GET("/api/cosmicgame/ct/statistics", a.handleCosmicTokenStatistics)
+	r.GET("/api/cosmicgame/ct/summary/by_user/{user_addr}", a.handleCosmicTokenSummaryByUser)
+	r.GET("/api/cosmicgame/ct/transfers/by_user/{user_addr}/{offset}/{limit}", a.handleCosmicTokenTransfersByUser)
+	r.GET("/api/cosmicgame/ct/total_supply_history_by_bid", a.handleCosmicTokenTotalSupplyHistoryByBid)
+	r.GET("/api/cosmicgame/ct/total_supply_history_by_date/{from_date}/{to_date}", a.handleCosmicTokenTotalSupplyHistoryByDate)
 
 	// User
-	r.GET("/api/cosmicgame/user/info/{user_addr}", api_cosmic_game_user_info)
-	r.GET("/api/cosmicgame/user/notif_red_box/{user_addr}", api_cosmic_game_user_global_winnings)
-	r.GET("/api/cosmicgame/user/balances/{user_addr}", api_cosmic_game_user_balances)
+	r.GET("/api/cosmicgame/user/info/{user_addr}", a.handleUserInfo)
+	r.GET("/api/cosmicgame/user/notif_red_box/{user_addr}", a.handleUserGlobalWinnings)
+	r.GET("/api/cosmicgame/user/balances/{user_addr}", a.handleUserBalances)
 
 	// Donations
-	r.GET("/api/cosmicgame/donations/eth/simple/list/{offset}/{limit}", api_cosmic_game_donations_cg_simple_list)
-	r.GET("/api/cosmicgame/donations/eth/simple/by_round/{round_num}", api_cosmic_game_donations_cg_simple_by_round)
-	r.GET("/api/cosmicgame/donations/eth/with_info/list/{offset}/{limit}", api_cosmic_game_donations_cg_with_info_list)
-	r.GET("/api/cosmicgame/donations/eth/with_info/by_round/{round_num}", api_cosmic_game_donations_cg_with_info_by_round)
-	r.GET("/api/cosmicgame/donations/eth/with_info/info/{record_id}", api_cosmic_game_donations_cg_with_info_record_info)
-	r.GET("/api/cosmicgame/donations/eth/by_user/{user_addr}", api_cosmic_game_donations_by_user)
-	r.GET("/api/cosmicgame/donations/eth/both/by_round/{round_num}", api_cosmic_game_donations_cg_both_by_round)
-	r.GET("/api/cosmicgame/donations/eth/both/all", api_cosmic_game_donations_cg_both_all)
-	r.GET("/api/cosmicgame/donations/charity/deposits", api_cosmic_game_charity_donations_deposits)
-	r.GET("/api/cosmicgame/donations/charity/cg_deposits", api_cosmic_game_charity_cosmicgame_deposits)
-	r.GET("/api/cosmicgame/donations/charity/voluntary", api_cosmic_game_charity_voluntary_deposits)
-	r.GET("/api/cosmicgame/donations/charity/withdrawals", api_cosmic_game_charity_donations_withdrawals)
-	r.GET("/api/cosmicgame/donations/nft/list/{offset}/{limit}", api_cosmic_game_donations_nft_list)
-	r.GET("/api/cosmicgame/donations/nft/info/{record_id}", api_cosmic_game_donated_nft_info)
-	r.GET("/api/cosmicgame/donations/nft/by_user/{user_addr}", api_cosmic_game_nft_donations_by_user)
-	r.GET("/api/cosmicgame/donations/nft/claims", api_cosmic_game_donated_nft_claims_all)
-	r.GET("/api/cosmicgame/donations/nft/claims/{offset}/{limit}", api_cosmic_game_donated_nft_claims_all)
-	r.GET("/api/cosmicgame/donations/nft/claims/by_user/{user_addr}", api_cosmic_game_donated_nft_claims_by_user)
-	r.GET("/api/cosmicgame/donations/nft/statistics", api_cosmic_game_nft_donation_stats)
-	r.GET("/api/cosmicgame/donations/nft/by_round/{prize_num}", api_cosmic_game_nft_donations_by_prize)
-	r.GET("/api/cosmicgame/donations/nft/by_token/{token_addr}", api_cosmic_game_nft_donations_by_token)
-	r.GET("/api/cosmicgame/donations/nft/unclaimed/by_round/{prize_num}", api_cosmic_game_unclaimed_donated_nfts_by_prize)
-	r.GET("/api/cosmicgame/donations/nft/unclaimed/by_user/{user_addr}", api_cosmic_game_unclaimed_donated_nfts_by_user)
-	r.GET("/api/cosmicgame/donations/erc20/by_round/detailed/{round_num}", api_cosmic_game_donations_erc20_by_round_detailed)
-	r.GET("/api/cosmicgame/donations/erc20/by_round/all/{round_num}", api_cosmic_game_donations_erc20_by_round_all)
-	r.GET("/api/cosmicgame/donations/erc20/by_round/summarized/{round_num}", api_cosmic_game_donations_erc20_by_round_summarized)
-	r.GET("/api/cosmicgame/donations/erc20/donated/by_user/{user_addr}", api_cosmic_game_donations_erc20_donated_by_user)
-	r.GET("/api/cosmicgame/donations/erc20/by_user/{user_addr}", api_cosmic_game_donations_erc20_by_user)
-	r.GET("/api/cosmicgame/donations/erc20/global/{offset}/{limit}", api_cosmic_game_donations_erc20_global)
-	r.GET("/api/cosmicgame/donations/erc20/info/{record_id}", api_cosmic_game_donated_erc20_info)
-	r.GET("/api/cosmicgame/donations/erc20/claims", api_cosmic_game_erc20_claims_global)
-	r.GET("/api/cosmicgame/donations/erc20/claims/{offset}/{limit}", api_cosmic_game_erc20_claims_global)
-	r.GET("/api/cosmicgame/donations/erc20/claims/by_user/{user_addr}", api_cosmic_game_erc20_claims_by_user)
-	r.GET("/api/cosmicgame/donations/erc20/claims/by_round/{round_num}", api_cosmic_game_erc20_claims_by_round)
+	r.GET("/api/cosmicgame/donations/eth/simple/list/{offset}/{limit}", a.handleDonationsCgSimpleList)
+	r.GET("/api/cosmicgame/donations/eth/simple/by_round/{round_num}", a.handleDonationsCgSimpleByRound)
+	r.GET("/api/cosmicgame/donations/eth/with_info/list/{offset}/{limit}", a.handleDonationsCgWithInfoList)
+	r.GET("/api/cosmicgame/donations/eth/with_info/by_round/{round_num}", a.handleDonationsCgWithInfoByRound)
+	r.GET("/api/cosmicgame/donations/eth/with_info/info/{record_id}", a.handleDonationsCgWithInfoRecordInfo)
+	r.GET("/api/cosmicgame/donations/eth/by_user/{user_addr}", a.handleDonationsByUser)
+	r.GET("/api/cosmicgame/donations/eth/both/by_round/{round_num}", a.handleDonationsCgBothByRound)
+	r.GET("/api/cosmicgame/donations/eth/both/all", a.handleDonationsCgBothAll)
+	r.GET("/api/cosmicgame/donations/charity/deposits", a.handleCharityDonationsDeposits)
+	r.GET("/api/cosmicgame/donations/charity/cg_deposits", a.handleCharityCosmicgameDeposits)
+	r.GET("/api/cosmicgame/donations/charity/voluntary", a.handleCharityVoluntaryDeposits)
+	r.GET("/api/cosmicgame/donations/charity/withdrawals", a.handleCharityDonationsWithdrawals)
+	r.GET("/api/cosmicgame/donations/nft/list/{offset}/{limit}", a.handleDonationsNftList)
+	r.GET("/api/cosmicgame/donations/nft/info/{record_id}", a.handleDonatedNftInfo)
+	r.GET("/api/cosmicgame/donations/nft/by_user/{user_addr}", a.handleNftDonationsByUser)
+	r.GET("/api/cosmicgame/donations/nft/claims", a.handleDonatedNftClaimsAll)
+	r.GET("/api/cosmicgame/donations/nft/claims/{offset}/{limit}", a.handleDonatedNftClaimsAll)
+	r.GET("/api/cosmicgame/donations/nft/claims/by_user/{user_addr}", a.handleDonatedNftClaimsByUser)
+	r.GET("/api/cosmicgame/donations/nft/statistics", a.handleNftDonationStats)
+	r.GET("/api/cosmicgame/donations/nft/by_round/{prize_num}", a.handleNftDonationsByPrize)
+	r.GET("/api/cosmicgame/donations/nft/by_token/{token_addr}", a.handleNftDonationsByToken)
+	r.GET("/api/cosmicgame/donations/nft/unclaimed/by_round/{prize_num}", a.handleUnclaimedDonatedNftsByPrize)
+	r.GET("/api/cosmicgame/donations/nft/unclaimed/by_user/{user_addr}", a.handleUnclaimedDonatedNftsByUser)
+	r.GET("/api/cosmicgame/donations/erc20/by_round/detailed/{round_num}", a.handleDonationsErc20ByRoundDetailed)
+	r.GET("/api/cosmicgame/donations/erc20/by_round/all/{round_num}", a.handleDonationsErc20ByRoundAll)
+	r.GET("/api/cosmicgame/donations/erc20/by_round/summarized/{round_num}", a.handleDonationsErc20ByRoundSummarized)
+	r.GET("/api/cosmicgame/donations/erc20/donated/by_user/{user_addr}", a.handleDonationsErc20DonatedByUser)
+	r.GET("/api/cosmicgame/donations/erc20/by_user/{user_addr}", a.handleDonationsErc20ByUser)
+	r.GET("/api/cosmicgame/donations/erc20/global/{offset}/{limit}", a.handleDonationsErc20Global)
+	r.GET("/api/cosmicgame/donations/erc20/info/{record_id}", a.handleDonatedErc20Info)
+	r.GET("/api/cosmicgame/donations/erc20/claims", a.handleErc20ClaimsGlobal)
+	r.GET("/api/cosmicgame/donations/erc20/claims/{offset}/{limit}", a.handleErc20ClaimsGlobal)
+	r.GET("/api/cosmicgame/donations/erc20/claims/by_user/{user_addr}", a.handleErc20ClaimsByUser)
+	r.GET("/api/cosmicgame/donations/erc20/claims/by_round/{round_num}", a.handleErc20ClaimsByRound)
 
 	// Raffle
-	r.GET("/api/cosmicgame/raffle/deposits/list", api_cosmic_game_prize_deposits_list)
-	r.GET("/api/cosmicgame/raffle/deposits/list/{offset}/{limit}", api_cosmic_game_prize_deposits_list)
-	r.GET("/api/cosmicgame/raffle/deposits/by_round/{round_num}", api_cosmic_game_prize_deposits_by_round)
-	r.GET("/api/cosmicgame/eth_deposits/all/list/{offset}/{limit}", api_cosmic_game_all_eth_deposits_list)
-	r.GET("/api/cosmicgame/eth_deposits/raffle_eth/list/{offset}/{limit}", api_cosmic_game_raffle_eth_deposits_list)
-	r.GET("/api/cosmicgame/eth_deposits/chronowarrior_eth/list/{offset}/{limit}", api_cosmic_game_chronowarrior_eth_deposits_list)
-	r.GET("/api/cosmicgame/raffle/nft/all/list", api_cosmic_game_raffle_nft_winners_list)
-	r.GET("/api/cosmicgame/raffle/nft/all/list/{offset}/{limit}", api_cosmic_game_raffle_nft_winners_list)
-	r.GET("/api/cosmicgame/raffle/nft/by_round/{round_num}", api_cosmic_game_raffle_nft_winners_by_round)
-	r.GET("/api/cosmicgame/raffle/nft/by_user/{user_addr}", api_cosmic_game_user_raffle_nft_winnings)
+	r.GET("/api/cosmicgame/raffle/deposits/list", a.handlePrizeDepositsList)
+	r.GET("/api/cosmicgame/raffle/deposits/list/{offset}/{limit}", a.handlePrizeDepositsList)
+	r.GET("/api/cosmicgame/raffle/deposits/by_round/{round_num}", a.handlePrizeDepositsByRound)
+	r.GET("/api/cosmicgame/eth_deposits/all/list/{offset}/{limit}", a.handleAllEthDepositsList)
+	r.GET("/api/cosmicgame/eth_deposits/raffle_eth/list/{offset}/{limit}", a.handleRaffleEthDepositsList)
+	r.GET("/api/cosmicgame/eth_deposits/chronowarrior_eth/list/{offset}/{limit}", a.handleChronowarriorEthDepositsList)
+	r.GET("/api/cosmicgame/raffle/nft/all/list", a.handleRaffleNftWinnersList)
+	r.GET("/api/cosmicgame/raffle/nft/all/list/{offset}/{limit}", a.handleRaffleNftWinnersList)
+	r.GET("/api/cosmicgame/raffle/nft/by_round/{round_num}", a.handleRaffleNftWinnersByRound)
+	r.GET("/api/cosmicgame/raffle/nft/by_user/{user_addr}", a.handleUserRaffleNftWinnings)
 
 	// Staking CST
-	r.GET("/api/cosmicgame/staking/cst/staked_tokens/all", api_cosmic_game_staked_tokens_cst_global)
-	r.GET("/api/cosmicgame/staking/cst/staked_tokens/by_user/{user_addr}", api_cosmic_game_staked_tokens_cst_by_user)
-	r.GET("/api/cosmicgame/staking/cst/actions/global/{offset}/{limit}", api_cosmic_game_staking_actions_cst_global)
-	r.GET("/api/cosmicgame/staking/cst/actions/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_staking_cst_actions_by_user)
-	r.GET("/api/cosmicgame/staking/cst/actions/info/{action_id}", api_cosmic_game_staking_action_cst_info)
-	r.GET("/api/cosmicgame/staking/cst/rewards/global", api_cosmic_game_staking_cst_rewards_global)
-	r.GET("/api/cosmicgame/staking/cst/rewards/to_claim/by_user/{user_addr}", api_cosmic_game_staking_cst_rewards_to_claim_by_user)
-	r.GET("/api/cosmicgame/staking/cst/rewards/collected/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_staking_cst_rewards_collected_by_user)
-	r.GET("/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{user_addr}/{deposit_id}", api_cosmic_game_staking_cst_rewards_action_ids_by_deposit)
-	r.GET("/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/{user_addr}", api_cosmic_game_staking_cst_by_user_by_token_rewards)
-	r.GET("/api/cosmicgame/staking/cst/rewards/by_user/by_token/details/{user_addr}/{token_id}", api_cosmic_game_staking_cst_by_user_by_token_rewards_details)
-	r.GET("/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{user_addr}", api_cosmic_game_staking_cst_by_user_by_deposit_rewards)
-	r.GET("/api/cosmicgame/staking/cst/rewards/by_round/{round_num}", api_cosmic_game_staking_cst_rewards_by_round)
-	r.GET("/api/cosmicgame/staking/cst/mints/global/{offset}/{limit}", api_cosmic_game_staking_cst_mints_global)
-	r.GET("/api/cosmicgame/staking/cst/mints/by_user/{user_addr}", api_cosmic_game_staking_cst_mints_by_user)
+	r.GET("/api/cosmicgame/staking/cst/staked_tokens/all", a.handleStakedTokensCstGlobal)
+	r.GET("/api/cosmicgame/staking/cst/staked_tokens/by_user/{user_addr}", a.handleStakedTokensCstByUser)
+	r.GET("/api/cosmicgame/staking/cst/actions/global/{offset}/{limit}", a.handleStakingActionsCstGlobal)
+	r.GET("/api/cosmicgame/staking/cst/actions/by_user/{user_addr}/{offset}/{limit}", a.handleStakingCstActionsByUser)
+	r.GET("/api/cosmicgame/staking/cst/actions/info/{action_id}", a.handleStakingActionCstInfo)
+	r.GET("/api/cosmicgame/staking/cst/rewards/global", a.handleStakingCstRewardsGlobal)
+	r.GET("/api/cosmicgame/staking/cst/rewards/to_claim/by_user/{user_addr}", a.handleStakingCstRewardsToClaimByUser)
+	r.GET("/api/cosmicgame/staking/cst/rewards/collected/by_user/{user_addr}/{offset}/{limit}", a.handleStakingCstRewardsCollectedByUser)
+	r.GET("/api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{user_addr}/{deposit_id}", a.handleStakingCstRewardsActionIDsByDeposit)
+	r.GET("/api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/{user_addr}", a.handleStakingCstByUserByTokenRewards)
+	r.GET("/api/cosmicgame/staking/cst/rewards/by_user/by_token/details/{user_addr}/{token_id}", a.handleStakingCstByUserByTokenRewardsDetails)
+	r.GET("/api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{user_addr}", a.handleStakingCstByUserByDepositRewards)
+	r.GET("/api/cosmicgame/staking/cst/rewards/by_round/{round_num}", a.handleStakingCstRewardsByRound)
+	r.GET("/api/cosmicgame/staking/cst/mints/global/{offset}/{limit}", a.handleStakingCstMintsGlobal)
+	r.GET("/api/cosmicgame/staking/cst/mints/by_user/{user_addr}", a.handleStakingCstMintsByUser)
 
 	// Staking RWalk (canonical: .../randomwalk/...; legacy: .../rwalk/... — same handlers)
-	r.GET("/api/cosmicgame/staking/randomwalk/actions/info/{action_id}", api_cosmic_game_staking_action_rwalk_info)
-	r.GET("/api/cosmicgame/staking/randomwalk/actions/global/{offset}/{limit}", api_cosmic_game_staking_actions_rwalk_global)
-	r.GET("/api/cosmicgame/staking/randomwalk/actions/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_staking_actions_rwalk_by_user)
-	r.GET("/api/cosmicgame/staking/randomwalk/mints/global/{offset}/{limit}", api_cosmic_game_staking_rwalk_mints_global)
-	r.GET("/api/cosmicgame/staking/randomwalk/mints/by_user/{user_addr}", api_cosmic_game_staking_rwalk_mints_by_user)
-	r.GET("/api/cosmicgame/staking/randomwalk/staked_tokens/all", api_cosmic_game_staked_tokens_rwalk_global)
-	r.GET("/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/{user_addr}", api_cosmic_game_staked_tokens_rwalk_by_user)
-	r.GET("/api/cosmicgame/staking/rwalk/actions/info/{action_id}", api_cosmic_game_staking_action_rwalk_info)
-	r.GET("/api/cosmicgame/staking/rwalk/actions/global/{offset}/{limit}", api_cosmic_game_staking_actions_rwalk_global)
-	r.GET("/api/cosmicgame/staking/rwalk/actions/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_staking_actions_rwalk_by_user)
-	r.GET("/api/cosmicgame/staking/rwalk/mints/global/{offset}/{limit}", api_cosmic_game_staking_rwalk_mints_global)
-	r.GET("/api/cosmicgame/staking/rwalk/mints/by_user/{user_addr}", api_cosmic_game_staking_rwalk_mints_by_user)
-	r.GET("/api/cosmicgame/staking/rwalk/staked_tokens/all", api_cosmic_game_staked_tokens_rwalk_global)
-	r.GET("/api/cosmicgame/staking/rwalk/staked_tokens/by_user/{user_addr}", api_cosmic_game_staked_tokens_rwalk_by_user)
+	r.GET("/api/cosmicgame/staking/randomwalk/actions/info/{action_id}", a.handleStakingActionRwalkInfo)
+	r.GET("/api/cosmicgame/staking/randomwalk/actions/global/{offset}/{limit}", a.handleStakingActionsRwalkGlobal)
+	r.GET("/api/cosmicgame/staking/randomwalk/actions/by_user/{user_addr}/{offset}/{limit}", a.handleStakingActionsRwalkByUser)
+	r.GET("/api/cosmicgame/staking/randomwalk/mints/global/{offset}/{limit}", a.handleStakingRwalkMintsGlobal)
+	r.GET("/api/cosmicgame/staking/randomwalk/mints/by_user/{user_addr}", a.handleStakingRwalkMintsByUser)
+	r.GET("/api/cosmicgame/staking/randomwalk/staked_tokens/all", a.handleStakedTokensRwalkGlobal)
+	r.GET("/api/cosmicgame/staking/randomwalk/staked_tokens/by_user/{user_addr}", a.handleStakedTokensRwalkByUser)
+	r.GET("/api/cosmicgame/staking/rwalk/actions/info/{action_id}", a.handleStakingActionRwalkInfo)
+	r.GET("/api/cosmicgame/staking/rwalk/actions/global/{offset}/{limit}", a.handleStakingActionsRwalkGlobal)
+	r.GET("/api/cosmicgame/staking/rwalk/actions/by_user/{user_addr}/{offset}/{limit}", a.handleStakingActionsRwalkByUser)
+	r.GET("/api/cosmicgame/staking/rwalk/mints/global/{offset}/{limit}", a.handleStakingRwalkMintsGlobal)
+	r.GET("/api/cosmicgame/staking/rwalk/mints/by_user/{user_addr}", a.handleStakingRwalkMintsByUser)
+	r.GET("/api/cosmicgame/staking/rwalk/staked_tokens/all", a.handleStakedTokensRwalkGlobal)
+	r.GET("/api/cosmicgame/staking/rwalk/staked_tokens/by_user/{user_addr}", a.handleStakedTokensRwalkByUser)
 
 	// Marketing
-	r.GET("/api/cosmicgame/marketing/rewards/global/{offset}/{limit}", api_cosmic_game_marketing_rewards_global)
-	r.GET("/api/cosmicgame/marketing/rewards/by_user/{user_addr}/{offset}/{limit}", api_cosmic_game_marketing_rewards_by_user)
-	r.GET("/api/cosmicgame/marketing/config/current", api_cosmic_game_marketing_config_current)
+	r.GET("/api/cosmicgame/marketing/rewards/global/{offset}/{limit}", a.handleMarketingRewardsGlobal)
+	r.GET("/api/cosmicgame/marketing/rewards/by_user/{user_addr}/{offset}/{limit}", a.handleMarketingRewardsByUser)
+	r.GET("/api/cosmicgame/marketing/config/current", a.handleMarketingConfigCurrent)
 
 	// Time
-	r.GET("/api/cosmicgame/time/current", api_cosmic_game_time_current)
-	r.GET("/api/cosmicgame/time/until_prize", api_cosmic_game_time_until_prize)
+	r.GET("/api/cosmicgame/time/current", a.handleTimeCurrent)
+	r.GET("/api/cosmicgame/time/until_prize", a.handleTimeUntilPrize)
 
 	// System
-	r.GET("/api/cosmicgame/system/modelist", api_cosmic_game_sysmode_changes)
-	r.GET("/api/cosmicgame/system/modelist/{offset}/{limit}", api_cosmic_game_sysmode_changes)
-	r.GET("/api/cosmicgame/system/admin_events/{evtlog_start}/{evtlog_end}", api_cosmic_game_admin_events_in_range)
+	r.GET("/api/cosmicgame/system/modelist", a.handleSysmodeChanges)
+	r.GET("/api/cosmicgame/system/modelist/{offset}/{limit}", a.handleSysmodeChanges)
+	r.GET("/api/cosmicgame/system/admin_events/{evtlog_start}/{evtlog_end}", a.handleAdminEventsInRange)
 }

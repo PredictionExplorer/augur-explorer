@@ -10,43 +10,43 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-func api_cosmic_game_staking_action_rwalk_info(c *httpx.Context) {
+func (a *API) handleStakingActionRwalkInfo(c *httpx.Context) {
 
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondError(c, "Database link wasn't configured")
 		return
 	}
 
-	p_action_id := c.Param("action_id")
-	var action_id int64
-	if len(p_action_id) > 0 {
+	pActionID := c.Param("action_id")
+	var actionID int64
+	if len(pActionID) > 0 {
 		var success bool
-		action_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_action_id)
+		actionID, success = common.ParseIntFromRemoteOrError(c, JSON, &pActionID)
 		if !success {
 			return
 		}
 	}
-	action_info, err := arbRepo.StakeActionRwalkInfo(c.Request.Context(), action_id)
+	actionInfo, err := a.repo.StakeActionRwalkInfo(c.Request.Context(), actionID)
 	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "record not found")
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                         req_status,
-		"error":                          err_str,
-		"CombinedRWalkStakingRecordInfo": action_info,
+		"status":                         reqStatus,
+		"error":                          errStr,
+		"CombinedRWalkStakingRecordInfo": actionInfo,
 	})
 }
-func api_cosmic_game_staking_actions_rwalk_global(c *httpx.Context) {
+func (a *API) handleStakingActionsRwalkGlobal(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -54,85 +54,85 @@ func api_cosmic_game_staking_actions_rwalk_global(c *httpx.Context) {
 	if !success {
 		return
 	}
-	actions, err := arbRepo.GlobalStakingRwalkHistory(c.Request.Context(), offset, limit)
+	actions, err := a.repo.GlobalStakingRwalkHistory(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                    req_status,
-		"error":                     err_str,
+		"status":                    reqStatus,
+		"error":                     errStr,
 		"Offset":                    offset,
 		"Limit":                     limit,
 		"GlobalStakingActionsRWalk": actions,
 	})
 }
-func api_cosmic_game_staking_actions_rwalk_by_user(c *httpx.Context) {
+func (a *API) handleStakingActionsRwalkByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
+	pUserAddr := c.Param("user_addr")
 
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": p_user_addr,
+			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": pUserAddr,
 			"Offset": offset, "Limit": limit, "UserStakingActionsRWalk": []interface{}{},
 		})
 		return
 	}
-	actions, err := arbRepo.StakingActionsRwalkByUser(c.Request.Context(), user_aid, offset, limit)
+	actions, err := a.repo.StakingActionsRwalkByUser(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                  req_status,
-		"error":                   err_str,
-		"UserAid":                 user_aid,
-		"UserAddr":                p_user_addr,
+		"status":                  reqStatus,
+		"error":                   errStr,
+		"UserAid":                 userAid,
+		"UserAddr":                pUserAddr,
 		"Offset":                  offset,
 		"Limit":                   limit,
 		"UserStakingActionsRWalk": actions,
 	})
 }
-func api_cosmic_game_user_unique_stakers_rwalk(c *httpx.Context) {
+func (a *API) handleUserUniqueStakersRwalk(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	unique_stakers, err := arbRepo.UniqueStakersRwalk(c.Request.Context())
+	uniqueStakers, err := a.repo.UniqueStakersRwalk(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":             req_status,
-		"error":              err_str,
-		"UniqueStakersRWalk": unique_stakers,
+		"status":             reqStatus,
+		"error":              errStr,
+		"UniqueStakersRWalk": uniqueStakers,
 	})
 }
-func api_cosmic_game_staking_rwalk_mints_global(c *httpx.Context) {
+func (a *API) handleStakingRwalkMintsGlobal(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -141,30 +141,30 @@ func api_cosmic_game_staking_rwalk_mints_global(c *httpx.Context) {
 	if !success {
 		return
 	}
-	mints, err := arbRepo.StakingRwalkMintsGlobal(c.Request.Context(), offset, limit)
+	mints, err := a.repo.StakingRwalkMintsGlobal(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                   req_status,
-		"error":                    err_str,
+		"status":                   reqStatus,
+		"error":                    errStr,
 		"StakingRWalkRewardsMints": mints,
 	})
 }
-func api_cosmic_game_staking_rwalk_mints_by_user(c *httpx.Context) {
+func (a *API) handleStakingRwalkMintsByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_user_addr := c.Param("user_addr")
+	pUserAddr := c.Param("user_addr")
 
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, httpx.H{
@@ -173,65 +173,65 @@ func api_cosmic_game_staking_rwalk_mints_by_user(c *httpx.Context) {
 		return
 	}
 
-	mints, err := arbRepo.StakingRwalkMintsByUser(c.Request.Context(), user_aid)
+	mints, err := a.repo.StakingRwalkMintsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                  req_status,
-		"error":                   err_str,
+		"status":                  reqStatus,
+		"error":                   errStr,
 		"RWalkStakingRewardMints": mints,
 	})
 }
-func api_cosmic_game_staked_tokens_rwalk_by_user(c *httpx.Context) {
+func (a *API) handleStakedTokensRwalkByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0), "StakedTokensRWalk": []interface{}{},
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "StakedTokensRWalk": []interface{}{},
 		})
 		return
 	}
-	tokens, err := arbRepo.StakedTokensRwalkByUser(c.Request.Context(), user_aid)
+	tokens, err := a.repo.StakedTokensRwalkByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
-		"UserAddr":          p_user_addr,
-		"UserAid":           user_aid,
+		"status":            reqStatus,
+		"error":             errStr,
+		"UserAddr":          pUserAddr,
+		"UserAid":           userAid,
 		"StakedTokensRWalk": tokens,
 	})
 }
-func api_cosmic_game_staked_tokens_rwalk_global(c *httpx.Context) {
+func (a *API) handleStakedTokensRwalkGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	tokens, err := arbRepo.StakedTokensRwalkGlobal(c.Request.Context())
+	tokens, err := a.repo.StakedTokensRwalkGlobal(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
+		"status":            reqStatus,
+		"error":             errStr,
 		"StakedTokensRWalk": tokens,
 	})
 }

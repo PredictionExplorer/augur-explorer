@@ -18,7 +18,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 
-	. "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	cg "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -60,11 +60,11 @@ func respondUserAddrNotIndexedUserInfoJSON(c *httpx.Context, userAddr string) {
 // A cancelled request context (client went away) is not worth logging.
 // These paths previously killed the whole process via os.Exit(1) inside the
 // store methods, so any response at all is an improvement.
-func respondStoreError(c *httpx.Context, err error) {
+func (a *API) respondStoreError(c *httpx.Context, err error) {
 	if !errors.Is(err, context.Canceled) {
-		err_str := fmt.Sprintf("%s: %v", c.FullPath(), err)
-		Error.Print(err_str)
-		Info.Print(err_str)
+		errStr := fmt.Sprintf("%s: %v", c.FullPath(), err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
 	}
 	common.RespondInternalErrorJSON(c)
 }
@@ -181,16 +181,16 @@ func sanitizeFloatsForJSON(v interface{}) {
 // DASHBOARD & STATISTICS API
 // =============================================================================
 
-func api_cosmic_game_dashboard(c *httpx.Context) {
+func (a *API) handleDashboard(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	snap := contractState.Snapshot()
+	snap := a.state.Snapshot()
 
 	// Use live contract price when cache is empty or failed (avoids frontend showing 0 before first refresh or after RPC errors)
 	responseBidPrice, responseBidPriceEth := snap.BidPrice, snap.BidPriceEth
-	if (responseBidPrice == "" || responseBidPrice == "error" || responseBidPriceEth == 0) && EthClient != nil {
-		if contract, err := NewCosmicSignatureGame(snap.Addrs.CosmicGame, EthClient); err == nil {
+	if (responseBidPrice == "" || responseBidPrice == "error" || responseBidPriceEth == 0) && a.ethClient != nil {
+		if contract, err := cg.NewCosmicSignatureGame(snap.Addrs.CosmicGame, a.ethClient); err == nil {
 			var copts bind.CallOpts
 			if tmpVal, err := contract.GetNextEthBidPrice(&copts); err == nil {
 				responseBidPrice = tmpVal.String()
@@ -198,55 +198,55 @@ func api_cosmic_game_dashboard(c *httpx.Context) {
 				fBidPrice := big.NewFloat(0.0).SetInt(tmpVal)
 				fQuo := big.NewFloat(0.0).Quo(fBidPrice, fDivisor)
 				responseBidPriceEth, _ = fQuo.Float64()
-				contractState.SetBidPrice(responseBidPrice, responseBidPriceEth)
+				a.state.SetBidPrice(responseBidPrice, responseBidPriceEth)
 			}
 		}
 	}
 
-	caddrs, err := arbRepo.ContractAddrs(c.Request.Context())
+	caddrs, err := a.repo.ContractAddrs(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	cur_round_stats, err := arbRepo.CosmicGameRoundStatistics(c.Request.Context(), snap.RoundNum)
+	curRoundStats, err := a.repo.CosmicGameRoundStatistics(c.Request.Context(), snap.RoundNum)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	// Live contract: delay before round activation (always); activation time when DB has none
-	if EthClient != nil {
-		if contract, err := NewCosmicSignatureGame(snap.Addrs.CosmicGame, EthClient); err == nil {
+	if a.ethClient != nil {
+		if contract, err := cg.NewCosmicSignatureGame(snap.Addrs.CosmicGame, a.ethClient); err == nil {
 			var copts bind.CallOpts
 			if d, err := contract.DelayDurationBeforeRoundActivation(&copts); err == nil {
-				cur_round_stats.DelayDurationBeforeRoundActivation = d.Int64()
+				curRoundStats.DelayDurationBeforeRoundActivation = d.Int64()
 			}
-			if cur_round_stats.ActivationTime == 0 && snap.RoundNum >= 0 {
+			if curRoundStats.ActivationTime == 0 && snap.RoundNum >= 0 {
 				if actTime, err := contract.RoundActivationTime(&copts); err == nil {
-					cur_round_stats.ActivationTime = actTime.Int64()
+					curRoundStats.ActivationTime = actTime.Int64()
 				}
 			}
 		}
 	}
-	cg_balance := contractState.CosmicGameBalanceEth(c.Request.Context())
+	cgBalance := a.state.CosmicGameBalanceEth(c.Request.Context())
 	curNumBids := int64(0)
 	if snap.RoundNum >= 0 {
-		curNumBids, err = arbRepo.BidCountForRound(c.Request.Context(), snap.RoundNum)
+		curNumBids, err = a.repo.BidCountForRound(c.Request.Context(), snap.RoundNum)
 		if err != nil {
-			respondStoreError(c, err)
+			a.respondStoreError(c, err)
 			return
 		}
 	}
 	// Sanitize floats so JSON encoding never sees NaN/Inf (avoids "json: unsupported value: NaN" panic)
-	sanitizeFloatsForJSON(&cur_round_stats)
-	bw_stats_copy := snap.Stats
-	sanitizeFloatsForJSON(&bw_stats_copy)
-	var req_status int = 1
-	var err_str string = ""
+	sanitizeFloatsForJSON(&curRoundStats)
+	bwStatsCopy := snap.Stats
+	sanitizeFloatsForJSON(&bwStatsCopy)
+	var reqStatus int = 1
+	var errStr string = ""
 	payload := httpx.H{
-		"status":                               req_status,
-		"error":                                err_str,
+		"status":                               reqStatus,
+		"error":                                errStr,
 		"CosmicGameAddr":                       snap.Addrs.CosmicGame,
-		"CosmicGameBalanceEth":                 safeFloat64(cg_balance),
+		"CosmicGameBalanceEth":                 safeFloat64(cgBalance),
 		"CosmicSignatureAddr":                  snap.Addrs.CosmicSignature,
 		"CosmicSignatureTokenAddr":             snap.Addrs.CosmicToken,
 		"CharityWalletAddr":                    snap.Addrs.CharityWallet,
@@ -262,16 +262,16 @@ func api_cosmic_game_dashboard(c *httpx.Context) {
 		"RaffleAmountEth":                      safeFloat64(snap.RaffleAmountEth),
 		"StakingAmount":                        snap.StakingAmount,
 		"StakingAmountEth":                     safeFloat64(snap.StakingAmountEth),
-		"TotalPrizes":                          bw_stats_copy.TotalPrizes,
-		"TotalPrizeAwards":                     bw_stats_copy.TotalPrizeAwards,
-		"CgPrizeRowCount":                      bw_stats_copy.CgPrizeRowCount,
-		"TotalPrizesPaidAmountEth":             bw_stats_copy.TotalPrizesPaidAmountEth,
-		"TotalEthDonatedAmount":                bw_stats_copy.TotalEthDonatedAmount,
-		"TotalEthDonatedAmountEth":             bw_stats_copy.TotalEthDonatedAmountEth,
+		"TotalPrizes":                          bwStatsCopy.TotalPrizes,
+		"TotalPrizeAwards":                     bwStatsCopy.TotalPrizeAwards,
+		"CgPrizeRowCount":                      bwStatsCopy.CgPrizeRowCount,
+		"TotalPrizesPaidAmountEth":             bwStatsCopy.TotalPrizesPaidAmountEth,
+		"TotalEthDonatedAmount":                bwStatsCopy.TotalEthDonatedAmount,
+		"TotalEthDonatedAmountEth":             bwStatsCopy.TotalEthDonatedAmountEth,
 		"LastBidderAddr":                       snap.LastBidder.String(),
-		"NumVoluntaryDonations":                bw_stats_copy.NumVoluntaryDonations,
-		"SumVoluntaryDonationsEth":             bw_stats_copy.SumVoluntaryDonationsEth,
-		"NumRwalkTokensUsed":                   bw_stats_copy.NumRwalkTokensUsed,
+		"NumVoluntaryDonations":                bwStatsCopy.NumVoluntaryDonations,
+		"SumVoluntaryDonationsEth":             bwStatsCopy.SumVoluntaryDonationsEth,
+		"NumRwalkTokensUsed":                   bwStatsCopy.NumRwalkTokensUsed,
 		"PriceIncrease":                        snap.PriceIncrease,
 		"TimeIncrease":                         snap.TimeIncrease,
 		"MainPrizeTimeIncrementInMicroSeconds": snap.MainPrizeTimeIncrement,
@@ -292,15 +292,15 @@ func api_cosmic_game_dashboard(c *httpx.Context) {
 		"NumRaffleEthWinnersBidding":           snap.RaffleEthWinnersBidding,
 		"NumRaffleNFTWinnersBidding":           snap.RaffleNFTWinnersBidding,
 		"NumRaffleNFTWinnersStakingRWalk":      snap.RaffleNFTWinnersStakingRWalk,
-		"NumUniqueBidders":                     bw_stats_copy.NumUniqueBidders,
-		"NumUniqueWinners":                     bw_stats_copy.NumUniqueWinners,
-		"NumUniqueDonors":                      bw_stats_copy.NumUniqueDonors,
-		"NumUniqueStakersCST":                  bw_stats_copy.NumUniqueStakersCST,
-		"NumUniqueStakersRWalk":                bw_stats_copy.NumUniqueStakersRWalk,
-		"NumUniqueStakersBoth":                 bw_stats_copy.NumUniqueStakersBoth,
-		"NumDonatedNFTs":                       bw_stats_copy.NumDonatedNFTs,
-		"MainStats":                            bw_stats_copy,
-		"CurRoundStats":                        cur_round_stats,
+		"NumUniqueBidders":                     bwStatsCopy.NumUniqueBidders,
+		"NumUniqueWinners":                     bwStatsCopy.NumUniqueWinners,
+		"NumUniqueDonors":                      bwStatsCopy.NumUniqueDonors,
+		"NumUniqueStakersCST":                  bwStatsCopy.NumUniqueStakersCST,
+		"NumUniqueStakersRWalk":                bwStatsCopy.NumUniqueStakersRWalk,
+		"NumUniqueStakersBoth":                 bwStatsCopy.NumUniqueStakersBoth,
+		"NumDonatedNFTs":                       bwStatsCopy.NumDonatedNFTs,
+		"MainStats":                            bwStatsCopy,
+		"CurRoundStats":                        curRoundStats,
 		"TsRoundStart":                         snap.RoundStartTimestamp,
 		"ContractAddrs":                        caddrs,
 	}
@@ -312,10 +312,10 @@ func api_cosmic_game_dashboard(c *httpx.Context) {
 // ROUNDS & PRIZES API
 // =============================================================================
 
-func api_cosmic_game_prize_list(c *httpx.Context) {
+func (a *API) handlePrizeList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -323,17 +323,17 @@ func api_cosmic_game_prize_list(c *httpx.Context) {
 	if !success {
 		return
 	}
-	prizes, err := arbRepo.PrizeClaims(c.Request.Context(), offset, limit)
+	prizes, err := a.repo.PrizeClaims(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status": req_status,
-		"error":  err_str,
+		"status": reqStatus,
+		"error":  errStr,
 		"Rounds": prizes,
 	})
 }
@@ -342,10 +342,10 @@ func api_cosmic_game_prize_list(c *httpx.Context) {
 // BIDS API
 // =============================================================================
 
-func api_cosmic_game_bid_list(c *httpx.Context) {
+func (a *API) handleBidList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -353,44 +353,44 @@ func api_cosmic_game_bid_list(c *httpx.Context) {
 	if !success {
 		return
 	}
-	bids, err := arbRepo.Bids(c.Request.Context(), offset, limit)
+	bids, err := a.repo.Bids(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status": req_status,
-		"error":  err_str,
+		"status": reqStatus,
+		"error":  errStr,
 		"Bids":   bids,
 		"Offset": offset,
 		"Limit":  limit,
 	})
 }
-func api_cosmic_game_bid_list_by_round(c *httpx.Context) {
+func (a *API) handleBidListByRound(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_round_num := c.Param("round_num")
-	var round_num int64
-	if len(p_round_num) > 0 {
+	pRoundNum := c.Param("round_num")
+	var roundNum int64
+	if len(pRoundNum) > 0 {
 		var success bool
-		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round_num)
+		roundNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pRoundNum)
 		if !success {
 			return
 		}
 	}
-	p_sort := c.Param("sort")
+	pSort := c.Param("sort")
 	var sort int64
-	if len(p_sort) > 0 {
+	if len(pSort) > 0 {
 		var success bool
-		sort, success = common.ParseIntFromRemoteOrError(c, JSON, &p_sort)
+		sort, success = common.ParseIntFromRemoteOrError(c, JSON, &pSort)
 		if !success {
 			return
 		}
@@ -400,22 +400,22 @@ func api_cosmic_game_bid_list_by_round(c *httpx.Context) {
 		return
 	}
 
-	bids, total_rows, err := arbRepo.BidsByRound(c.Request.Context(), round_num, int(sort), offset, limit)
+	bids, totalRows, err := a.repo.BidsByRound(c.Request.Context(), roundNum, int(sort), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":      req_status,
-		"error":       err_str,
-		"RoundNum":    round_num,
+		"status":      reqStatus,
+		"error":       errStr,
+		"RoundNum":    roundNum,
 		"Offset":      offset,
 		"Limit":       limit,
 		"Sort":        sort,
 		"BidsByRound": bids,
-		"TotalRows":   total_rows,
+		"TotalRows":   totalRows,
 	})
 }
 
@@ -467,96 +467,96 @@ func bidRecToWithMessageJSON(rec cgmodel.CGBidRec) bidWithMessageJSON {
 	}
 }
 
-func respondBidInfoJSON(c *httpx.Context, evtlog_id int64) {
-	bid_info, err := arbRepo.BidInfo(c.Request.Context(), evtlog_id)
+func (a *API) respondBidInfoJSON(c *httpx.Context, evtlogID int64) {
+	bidInfo, err := a.repo.BidInfo(c.Request.Context(), evtlogID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			common.RespondErrorJSON(c, "record not found")
 			return
 		}
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":  1,
 		"error":   "",
-		"BidInfo": bid_info,
+		"BidInfo": bidInfo,
 	})
 }
 
-func api_cosmic_game_bid_info(c *httpx.Context) {
+func (a *API) handleBidInfo(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_evtlog_id := c.Param("evtlog_id")
-	var evtlog_id int64
-	if len(p_evtlog_id) > 0 {
+	pEvtlogID := c.Param("evtlog_id")
+	var evtlogID int64
+	if len(pEvtlogID) > 0 {
 		var success bool
-		evtlog_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_evtlog_id)
+		evtlogID, success = common.ParseIntFromRemoteOrError(c, JSON, &pEvtlogID)
 		if !success {
 			return
 		}
 	}
-	respondBidInfoJSON(c, evtlog_id)
+	a.respondBidInfoJSON(c, evtlogID)
 }
 
-func api_cosmic_game_bid_info_by_pos(c *httpx.Context) {
+func (a *API) handleBidInfoByPos(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_round_num := c.Param("round_num")
-	var round_num int64
-	if len(p_round_num) > 0 {
+	pRoundNum := c.Param("round_num")
+	var roundNum int64
+	if len(pRoundNum) > 0 {
 		var success bool
-		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round_num)
+		roundNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pRoundNum)
 		if !success {
 			return
 		}
 	}
 
-	p_bid_position := c.Param("bid_position")
-	var bid_position int64
-	if len(p_bid_position) > 0 {
+	pBidPosition := c.Param("bid_position")
+	var bidPosition int64
+	if len(pBidPosition) > 0 {
 		var success bool
-		bid_position, success = common.ParseIntFromRemoteOrError(c, JSON, &p_bid_position)
+		bidPosition, success = common.ParseIntFromRemoteOrError(c, JSON, &pBidPosition)
 		if !success {
 			return
 		}
 	}
 
-	evtlog_id, err := arbRepo.EvtlogIDByRoundAndBidPosition(c.Request.Context(), round_num, bid_position)
+	evtlogID, err := a.repo.EvtlogIDByRoundAndBidPosition(c.Request.Context(), roundNum, bidPosition)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			common.RespondErrorJSON(c, "record not found")
 			return
 		}
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	respondBidInfoJSON(c, evtlog_id)
+	a.respondBidInfoJSON(c, evtlogID)
 }
 
-func api_cosmic_game_bid_with_message_by_round(c *httpx.Context) {
+func (a *API) handleBidWithMessageByRound(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_round := c.Param("round")
-	var round_num int64
-	if len(p_round) > 0 {
+	pRound := c.Param("round")
+	var roundNum int64
+	if len(pRound) > 0 {
 		var success bool
-		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round)
+		roundNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pRound)
 		if !success {
 			return
 		}
@@ -569,9 +569,9 @@ func api_cosmic_game_bid_with_message_by_round(c *httpx.Context) {
 		limit = 1000
 	}
 
-	bids, err := arbRepo.BidsWithMessageByRound(c.Request.Context(), round_num, sortDesc, offset, limit)
+	bids, err := a.repo.BidsWithMessageByRound(c.Request.Context(), roundNum, sortDesc, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	messages := make([]bidWithMessageJSON, 0, len(bids))
@@ -588,201 +588,201 @@ func api_cosmic_game_bid_with_message_by_round(c *httpx.Context) {
 		"limit":    limit,
 	})
 }
-func api_cosmic_game_round_info(c *httpx.Context) {
+func (a *API) handleRoundInfo(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_prize_num := c.Param("prize_num")
-	var prize_num int64
-	if len(p_prize_num) > 0 {
+	pPrizeNum := c.Param("prize_num")
+	var prizeNum int64
+	if len(pPrizeNum) > 0 {
 		var success bool
-		prize_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_prize_num)
+		prizeNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pPrizeNum)
 		if !success {
 			return
 		}
 	}
-	prize_info, err := arbRepo.PrizeInfo(c.Request.Context(), prize_num)
+	prizeInfo, err := a.repo.PrizeInfo(c.Request.Context(), prizeNum)
 	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "record not found")
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":    req_status,
-		"error":     err_str,
-		"RoundInfo": prize_info,
+		"status":    reqStatus,
+		"error":     errStr,
+		"RoundInfo": prizeInfo,
 	})
 }
-func api_cosmic_game_user_info(c *httpx.Context) {
+func (a *API) handleUserInfo(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
-		respondUserAddrNotIndexedUserInfoJSON(c, p_user_addr)
+		respondUserAddrNotIndexedUserInfoJSON(c, pUserAddr)
 		return
 	}
 
-	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	userInfo, err := a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
-		respondUserAddrNotIndexedUserInfoJSON(c, p_user_addr)
+		respondUserAddrNotIndexedUserInfoJSON(c, pUserAddr)
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	bids, err := arbRepo.BidsByUser(c.Request.Context(), user_aid)
+	bids, err := a.repo.BidsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	main_prize_claims, err := arbRepo.PrizeClaimsByUser(c.Request.Context(), user_aid)
+	mainPrizeClaims, err := a.repo.PrizeClaimsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	prize_history, err := arbRepo.PrizeHistoryByUser(c.Request.Context(), user_aid, 0, 1000)
+	prizeHistory, err := a.repo.PrizeHistoryByUser(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get donations made by user
-	nft_donations, err := arbRepo.NFTDonationsByUser(c.Request.Context(), user_aid)
+	nftDonations, err := a.repo.NFTDonationsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	erc20_donations, err := arbRepo.ERC20DonationsByUser(c.Request.Context(), user_aid)
+	erc20Donations, err := a.repo.ERC20DonationsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	eth_donations, err := arbRepo.EthDonationsByUser(c.Request.Context(), user_aid)
+	ethDonations, err := a.repo.EthDonationsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get marketing rewards awarded to user
-	marketing_rewards, err := arbRepo.MarketingRewardsByUser(c.Request.Context(), user_aid)
+	marketingRewards, err := a.repo.MarketingRewardsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get unclaimed assets from PrizesWallet
-	unclaimed_eth, err := arbRepo.UnclaimedPrizeEthDeposits(c.Request.Context(), user_aid, 0, 1000)
+	unclaimedEth, err := a.repo.UnclaimedPrizeEthDeposits(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	unclaimed_nfts, err := arbRepo.UnclaimedDonatedNFTsByUser(c.Request.Context(), user_aid)
+	unclaimedNfts, err := a.repo.UnclaimedDonatedNFTsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get claimed donated assets
-	claimed_nfts, err := arbRepo.DonatedNFTClaimsByUser(c.Request.Context(), user_aid)
+	claimedNfts, err := a.repo.DonatedNFTClaimsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	claimed_tokens, err := arbRepo.ERC20DonatedPrizesByWinner(c.Request.Context(), user_aid)
+	claimedTokens, err := a.repo.ERC20DonatedPrizesByWinner(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get staking data
-	staked_cst, err := arbRepo.StakedTokensCstByUser(c.Request.Context(), user_aid)
+	stakedCst, err := a.repo.StakedTokensCstByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	staked_rwalk, err := arbRepo.StakedTokensRwalkByUser(c.Request.Context(), user_aid)
+	stakedRwalk, err := a.repo.StakedTokensRwalkByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	stake_actions_cst, err := arbRepo.StakingActionsCstByUser(c.Request.Context(), user_aid, 0, 1000)
+	stakeActionsCst, err := a.repo.StakingActionsCstByUser(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	stake_actions_rwalk, err := arbRepo.StakingActionsRwalkByUser(c.Request.Context(), user_aid, 0, 1000)
+	stakeActionsRwalk, err := a.repo.StakingActionsRwalkByUser(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get token transfer history
-	erc20_transfers, err := arbRepo.CosmicTokenTransfersByUser(c.Request.Context(), user_aid, 0, 1000)
+	erc20Transfers, err := a.repo.CosmicTokenTransfersByUser(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	erc721_transfers, err := arbRepo.CosmicSignatureTransfersByUser(c.Request.Context(), user_aid, 0, 1000)
+	erc721Transfers, err := a.repo.CosmicSignatureTransfersByUser(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// Get owned Cosmic Signature NFTs (where user is current owner)
-	owned_cst_nfts, err := arbRepo.CosmicSignatureTokensByUser(c.Request.Context(), user_aid, 0, 1000)
+	ownedCstNfts, err := a.repo.CosmicSignatureTokensByUser(c.Request.Context(), userAid, 0, 1000)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":          req_status,
-		"error":           err_str,
-		"UserInfo":        user_info,
+		"status":          reqStatus,
+		"error":           errStr,
+		"UserInfo":        userInfo,
 		"Bids":            bids,
-		"MainPrizeClaims": main_prize_claims,
-		"PrizeHistory":    prize_history,
+		"MainPrizeClaims": mainPrizeClaims,
+		"PrizeHistory":    prizeHistory,
 		"TokenDonationsMade": httpx.H{
-			"NFTDonations":   nft_donations,
-			"ERC20Donations": erc20_donations,
+			"NFTDonations":   nftDonations,
+			"ERC20Donations": erc20Donations,
 		},
-		"ETHDonationsMade":        eth_donations,
-		"MarketingRewardsAwarded": marketing_rewards,
-		"DonatedNFTsClaimed":      claimed_nfts,
-		"DonatedTokensClaimed":    claimed_tokens,
+		"ETHDonationsMade":        ethDonations,
+		"MarketingRewardsAwarded": marketingRewards,
+		"DonatedNFTsClaimed":      claimedNfts,
+		"DonatedTokensClaimed":    claimedTokens,
 		"UnclaimedAssets": httpx.H{
-			"ETHPrizes":   unclaimed_eth,
-			"DonatedNFTs": unclaimed_nfts,
+			"ETHPrizes":   unclaimedEth,
+			"DonatedNFTs": unclaimedNfts,
 		},
 		"CurrentlyStakedTokens": httpx.H{
-			"CST":   staked_cst,
-			"RWalk": staked_rwalk,
+			"CST":   stakedCst,
+			"RWalk": stakedRwalk,
 		},
 		"StakingActions": httpx.H{
-			"CST":   stake_actions_cst,
-			"RWalk": stake_actions_rwalk,
+			"CST":   stakeActionsCst,
+			"RWalk": stakeActionsRwalk,
 		},
-		"ERC20Transfers":             erc20_transfers,
-		"ERC721Transfers":            erc721_transfers,
-		"CosmicSignatureTokensOwned": owned_cst_nfts,
+		"ERC20Transfers":             erc20Transfers,
+		"ERC721Transfers":            erc721Transfers,
+		"CosmicSignatureTokensOwned": ownedCstNfts,
 	})
 }
 
@@ -790,108 +790,108 @@ func api_cosmic_game_user_info(c *httpx.Context) {
 // CHARITY DONATIONS API
 // =============================================================================
 
-func api_cosmic_game_charity_cosmicgame_deposits(c *httpx.Context) {
+func (a *API) handleCharityCosmicgameDeposits(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), contractState.Snapshot().Addrs.CosmicGame.String())
+	cosmicgameAid, err := a.store.LookupAddressID(c.Request.Context(), a.state.Snapshot().Addrs.CosmicGame.String())
 	if err != nil {
 		// Previously this path killed the whole API server (os.Exit); a
 		// missing registry row or DB blip now answers HTTP 500 instead.
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	donations, err := arbRepo.CharityDonationsFromCosmicGame(c.Request.Context(), cosmicgame_aid)
+	donations, err := a.repo.CharityDonationsFromCosmicGame(c.Request.Context(), cosmicgameAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"CharityDonations": donations,
 	})
 }
-func api_cosmic_game_charity_voluntary_deposits(c *httpx.Context) {
+func (a *API) handleCharityVoluntaryDeposits(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), contractState.Snapshot().Addrs.CosmicGame.String())
+	cosmicgameAid, err := a.store.LookupAddressID(c.Request.Context(), a.state.Snapshot().Addrs.CosmicGame.String())
 	if err != nil {
 		// Previously this path killed the whole API server (os.Exit); a
 		// missing registry row or DB blip now answers HTTP 500 instead.
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	donations, err := arbRepo.CharityDonationsVoluntary(c.Request.Context(), cosmicgame_aid)
+	donations, err := a.repo.CharityDonationsVoluntary(c.Request.Context(), cosmicgameAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"CharityDonations": donations,
 	})
 }
-func api_cosmic_game_charity_donations_deposits(c *httpx.Context) {
+func (a *API) handleCharityDonationsDeposits(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	cosmicgame_aid, err := arbStore.LookupAddressID(c.Request.Context(), contractState.Snapshot().Addrs.CosmicGame.String())
+	cosmicgameAid, err := a.store.LookupAddressID(c.Request.Context(), a.state.Snapshot().Addrs.CosmicGame.String())
 	if err != nil {
 		// Previously this path killed the whole API server (os.Exit); a
 		// missing registry row or DB blip now answers HTTP 500 instead.
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	donations, err := arbRepo.CharityDonations(c.Request.Context(), cosmicgame_aid)
+	donations, err := a.repo.CharityDonations(c.Request.Context(), cosmicgameAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"CharityDonations": donations,
 	})
 }
-func api_cosmic_game_charity_donations_withdrawals(c *httpx.Context) {
+func (a *API) handleCharityDonationsWithdrawals(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	withdrawals, err := arbRepo.CharityWalletWithdrawals(c.Request.Context())
+	withdrawals, err := a.repo.CharityWalletWithdrawals(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":             req_status,
-		"error":              err_str,
+		"status":             reqStatus,
+		"error":              errStr,
 		"CharityWithdrawals": withdrawals,
 	})
 }
@@ -900,63 +900,63 @@ func api_cosmic_game_charity_donations_withdrawals(c *httpx.Context) {
 // UNIQUE PARTICIPANTS API
 // =============================================================================
 
-func api_cosmic_game_user_unique_bidders(c *httpx.Context) {
+func (a *API) handleUserUniqueBidders(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	unique_bidders, err := arbRepo.UniqueBidders(c.Request.Context())
+	uniqueBidders, err := a.repo.UniqueBidders(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":        req_status,
-		"error":         err_str,
-		"UniqueBidders": unique_bidders,
+		"status":        reqStatus,
+		"error":         errStr,
+		"UniqueBidders": uniqueBidders,
 	})
 }
-func api_cosmic_game_user_unique_winners(c *httpx.Context) {
+func (a *API) handleUserUniqueWinners(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	unique_winners, err := arbRepo.UniqueWinners(c.Request.Context())
+	uniqueWinners, err := a.repo.UniqueWinners(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":        req_status,
-		"error":         err_str,
-		"UniqueWinners": unique_winners,
+		"status":        reqStatus,
+		"error":         errStr,
+		"UniqueWinners": uniqueWinners,
 	})
 }
-func api_cosmic_game_roi_leaderboard(c *httpx.Context) {
+func (a *API) handleRoiLeaderboard(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	min_bids := cgdb.ParseOptionalIntQuery(c.Query("min_bids"), 5)
-	if min_bids < 0 {
-		min_bids = 0
+	minBids := cgdb.ParseOptionalIntQuery(c.Query("min_bids"), 5)
+	if minBids < 0 {
+		minBids = 0
 	}
-	sort_by := c.Query("sort") // one of: net_pl(default), roi, winrate, spent, nfts, bids
+	sortBy := c.Query("sort") // one of: net_pl(default), roi, winrate, spent, nfts, bids
 	offset := cgdb.ParseOptionalIntQuery(c.Query("offset"), 0)
 	if offset < 0 {
 		offset = 0
@@ -966,33 +966,33 @@ func api_cosmic_game_roi_leaderboard(c *httpx.Context) {
 		limit = 100
 	}
 
-	leaderboard, err := arbRepo.RoiLeaderboard(c.Request.Context(), min_bids, sort_by, offset, limit)
+	leaderboard, err := a.repo.RoiLeaderboard(c.Request.Context(), minBids, sortBy, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, httpx.H{
 		"status":         1,
 		"error":          "",
-		"MinBids":        min_bids,
-		"Sort":           sort_by,
+		"MinBids":        minBids,
+		"Sort":           sortBy,
 		"Offset":         offset,
 		"Limit":          limit,
 		"RoiLeaderboard": leaderboard,
 	})
 }
-func api_cosmic_game_claims_by_round(c *httpx.Context) {
+func (a *API) handleClaimsByRound(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	claims, err := arbRepo.ClaimsByRound(c.Request.Context())
+	claims, err := a.repo.ClaimsByRound(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
@@ -1002,10 +1002,10 @@ func api_cosmic_game_claims_by_round(c *httpx.Context) {
 		"ClaimsByRound": claims,
 	})
 }
-func api_cosmic_game_claim_detail_by_round(c *httpx.Context) {
+func (a *API) handleClaimDetailByRound(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -1016,9 +1016,9 @@ func api_cosmic_game_claim_detail_by_round(c *httpx.Context) {
 		return
 	}
 
-	detail, err := arbRepo.ClaimDetailByRound(c.Request.Context(), int64(round))
+	detail, err := a.repo.ClaimDetailByRound(c.Request.Context(), int64(round))
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
@@ -1030,26 +1030,26 @@ func api_cosmic_game_claim_detail_by_round(c *httpx.Context) {
 		"AttachedTokens":    detail.AttachedTokens,
 	})
 }
-func api_cosmic_game_user_unique_donors(c *httpx.Context) {
+func (a *API) handleUserUniqueDonors(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	unique_donors, err := arbRepo.UniqueDonors(c.Request.Context())
+	uniqueDonors, err := a.repo.UniqueDonors(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":       req_status,
-		"error":        err_str,
-		"UniqueDonors": unique_donors,
+		"status":       reqStatus,
+		"error":        errStr,
+		"UniqueDonors": uniqueDonors,
 	})
 }
 
@@ -1057,10 +1057,10 @@ func api_cosmic_game_user_unique_donors(c *httpx.Context) {
 // NFT DONATIONS API
 // =============================================================================
 
-func api_cosmic_game_donations_nft_list(c *httpx.Context) {
+func (a *API) handleDonationsNftList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -1069,123 +1069,123 @@ func api_cosmic_game_donations_nft_list(c *httpx.Context) {
 	if !success {
 		return
 	}
-	nft_donations, err := arbRepo.NFTDonations(c.Request.Context(), offset, limit)
+	nftDonations, err := a.repo.NFTDonations(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":       req_status,
-		"error":        err_str,
-		"NFTDonations": nft_donations,
+		"status":       reqStatus,
+		"error":        errStr,
+		"NFTDonations": nftDonations,
 		"Offset":       offset,
 		"Limit":        limit,
 	})
 }
-func api_cosmic_game_nft_donation_stats(c *httpx.Context) {
+func (a *API) handleNftDonationStats(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	nft_donation_stats, err := arbRepo.NFTDonationStats(c.Request.Context())
+	nftDonationStats, err := a.repo.NFTDonationStats(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
-		"NFTDonationStats": nft_donation_stats,
+		"status":           reqStatus,
+		"error":            errStr,
+		"NFTDonationStats": nftDonationStats,
 	})
 }
-func api_cosmic_game_nft_donations_by_user(c *httpx.Context) {
+func (a *API) handleNftDonationsByUser(c *httpx.Context) {
 	// DONOR PERSPECTIVE: Returns NFTs this user DONATED
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "NFTDonationsByDonor": []interface{}{},
-			"UserAddr": p_user_addr, "UserAid": int64(0),
+			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
 	}
 
-	donations, err := arbRepo.NFTDonationsByUser(c.Request.Context(), user_aid)
+	donations, err := a.repo.NFTDonationsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":              req_status,
-		"error":               err_str,
+		"status":              reqStatus,
+		"error":               errStr,
 		"NFTDonationsByDonor": donations,
-		"UserAddr":            p_user_addr,
-		"UserAid":             user_aid,
+		"UserAddr":            pUserAddr,
+		"UserAid":             userAid,
 	})
 }
-func api_cosmic_game_record_counters(c *httpx.Context) {
+func (a *API) handleRecordCounters(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	record_counters, err := arbRepo.RecordCounters(c.Request.Context())
+	recordCounters, err := a.repo.RecordCounters(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
-		"RecordCounters": record_counters,
+		"status":         reqStatus,
+		"error":          errStr,
+		"RecordCounters": recordCounters,
 	})
 }
-func api_cosmic_game_donated_nft_info(c *httpx.Context) {
+func (a *API) handleDonatedNftInfo(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_record_id := c.Param("record_id")
-	var record_id int64
-	if len(p_record_id) > 0 {
+	pRecordID := c.Param("record_id")
+	var recordID int64
+	if len(pRecordID) > 0 {
 		var success bool
-		record_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_record_id)
+		recordID, success = common.ParseIntFromRemoteOrError(c, JSON, &pRecordID)
 		if !success {
 			return
 		}
 	}
-	nftdonation, err := arbRepo.NFTDonationInfo(c.Request.Context(), record_id)
+	nftdonation, err := a.repo.NFTDonationInfo(c.Request.Context(), recordID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			common.RespondErrorJSON(c, "Record not found")
 			return
 		}
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
@@ -1199,19 +1199,19 @@ func api_cosmic_game_donated_nft_info(c *httpx.Context) {
 // PRIZE & RAFFLE DEPOSITS API
 // =============================================================================
 
-func api_cosmic_game_prize_deposits_list(c *httpx.Context) {
+func (a *API) handlePrizeDepositsList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -1222,35 +1222,35 @@ func api_cosmic_game_prize_deposits_list(c *httpx.Context) {
 		}
 	}
 
-	deposits, err := arbRepo.PrizeEthDeposits(c.Request.Context(), offset, limit)
+	deposits, err := a.repo.PrizeEthDeposits(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
+		"status":         reqStatus,
+		"error":          errStr,
 		"RaffleDeposits": deposits,
 		"Offset":         offset,
 		"Limit":          limit,
 	})
 }
-func api_cosmic_game_all_eth_deposits_list(c *httpx.Context) {
+func (a *API) handleAllEthDepositsList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -1261,35 +1261,35 @@ func api_cosmic_game_all_eth_deposits_list(c *httpx.Context) {
 		}
 	}
 
-	deposits, err := arbRepo.PrizeEthDeposits(c.Request.Context(), offset, limit)
+	deposits, err := a.repo.PrizeEthDeposits(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":      req_status,
-		"error":       err_str,
+		"status":      reqStatus,
+		"error":       errStr,
 		"AllDeposits": deposits,
 		"Offset":      offset,
 		"Limit":       limit,
 	})
 }
-func api_cosmic_game_raffle_eth_deposits_list(c *httpx.Context) {
+func (a *API) handleRaffleEthDepositsList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -1300,35 +1300,35 @@ func api_cosmic_game_raffle_eth_deposits_list(c *httpx.Context) {
 		}
 	}
 
-	deposits, err := arbRepo.RaffleEthDeposits(c.Request.Context(), offset, limit)
+	deposits, err := a.repo.RaffleEthDeposits(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
+		"status":         reqStatus,
+		"error":          errStr,
 		"RaffleDeposits": deposits,
 		"Offset":         offset,
 		"Limit":          limit,
 	})
 }
-func api_cosmic_game_chronowarrior_eth_deposits_list(c *httpx.Context) {
+func (a *API) handleChronowarriorEthDepositsList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -1339,17 +1339,17 @@ func api_cosmic_game_chronowarrior_eth_deposits_list(c *httpx.Context) {
 		}
 	}
 
-	deposits, err := arbRepo.ChronoWarriorEthDeposits(c.Request.Context(), offset, limit)
+	deposits, err := a.repo.ChronoWarriorEthDeposits(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                req_status,
-		"error":                 err_str,
+		"status":                reqStatus,
+		"error":                 errStr,
 		"ChronoWarriorDeposits": deposits,
 		"Offset":                offset,
 		"Limit":                 limit,
@@ -1357,142 +1357,142 @@ func api_cosmic_game_chronowarrior_eth_deposits_list(c *httpx.Context) {
 }
 
 // Unified URI scheme handlers - per-user
-func api_cosmic_game_unified_eth_all_by_user(c *httpx.Context) {
+func (a *API) handleUnifiedEthAllByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 
-	deposits, err := arbRepo.EthDepositsByUser(c.Request.Context(), user_aid)
+	deposits, err := a.repo.EthDepositsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":      req_status,
-		"error":       err_str,
-		"UserAddr":    p_user_addr,
-		"UserAid":     user_aid,
+		"status":      reqStatus,
+		"error":       errStr,
+		"UserAddr":    pUserAddr,
+		"UserAid":     userAid,
 		"AllDeposits": deposits,
 	})
 }
-func api_cosmic_game_unified_eth_raffle_by_user(c *httpx.Context) {
+func (a *API) handleUnifiedEthRaffleByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 
-	deposits, err := arbRepo.RaffleEthDepositsByUser(c.Request.Context(), user_aid)
+	deposits, err := a.repo.RaffleEthDepositsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
-		"UserAddr":       p_user_addr,
-		"UserAid":        user_aid,
+		"status":         reqStatus,
+		"error":          errStr,
+		"UserAddr":       pUserAddr,
+		"UserAid":        userAid,
 		"RaffleDeposits": deposits,
 	})
 }
-func api_cosmic_game_unified_eth_chronowarrior_by_user(c *httpx.Context) {
+func (a *API) handleUnifiedEthChronowarriorByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 
-	deposits, err := arbRepo.ChronoWarriorEthDepositsByUser(c.Request.Context(), user_aid)
+	deposits, err := a.repo.ChronoWarriorEthDepositsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                req_status,
-		"error":                 err_str,
-		"UserAddr":              p_user_addr,
-		"UserAid":               user_aid,
+		"status":                reqStatus,
+		"error":                 errStr,
+		"UserAddr":              pUserAddr,
+		"UserAid":               userAid,
 		"ChronoWarriorDeposits": deposits,
 	})
 }
-func api_cosmic_game_prize_deposits_by_round(c *httpx.Context) {
+func (a *API) handlePrizeDepositsByRound(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_round_num := c.Param("round_num")
-	var round_num int64
-	if len(p_round_num) > 0 {
+	pRoundNum := c.Param("round_num")
+	var roundNum int64
+	if len(pRoundNum) > 0 {
 		var success bool
-		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round_num)
+		roundNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pRoundNum)
 		if !success {
 			return
 		}
 	}
 
-	deposits, err := arbRepo.PrizeDepositsByRound(c.Request.Context(), round_num)
+	deposits, err := a.repo.PrizeDepositsByRound(c.Request.Context(), roundNum)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
+		"status":         reqStatus,
+		"error":          errStr,
 		"RaffleDeposits": deposits,
-		"RoundNum":       round_num,
+		"RoundNum":       roundNum,
 	})
 }
-func api_cosmic_game_raffle_nft_winners_list(c *httpx.Context) {
+func (a *API) handleRaffleNftWinnersList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -1503,236 +1503,236 @@ func api_cosmic_game_raffle_nft_winners_list(c *httpx.Context) {
 		}
 	}
 
-	winners, err := arbRepo.RaffleNFTWinners(c.Request.Context(), offset, limit)
+	winners, err := a.repo.RaffleNFTWinners(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"RaffleNFTWinners": winners,
 		"Offset":           offset,
 		"Limit":            limit,
 	})
 }
-func api_cosmic_game_raffle_nft_winners_by_round(c *httpx.Context) {
+func (a *API) handleRaffleNftWinnersByRound(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_round_num := c.Param("round_num")
-	var round_num int64
-	if len(p_round_num) > 0 {
+	pRoundNum := c.Param("round_num")
+	var roundNum int64
+	if len(pRoundNum) > 0 {
 		var success bool
-		round_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_round_num)
+		roundNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pRoundNum)
 		if !success {
 			return
 		}
 	}
 
-	winners_raffle, err := arbRepo.RaffleNFTWinnersByRound(c.Request.Context(), round_num, false)
+	winnersRaffle, err := a.repo.RaffleNFTWinnersByRound(c.Request.Context(), roundNum, false)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	winners_staking, err := arbRepo.RaffleNFTWinnersByRound(c.Request.Context(), round_num, true)
+	winnersStaking, err := a.repo.RaffleNFTWinnersByRound(c.Request.Context(), roundNum, true)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
-		"RaffleNFTWinners":  winners_raffle,
-		"StakingNFTWinners": winners_staking,
-		"RoundNum":          round_num,
+		"status":            reqStatus,
+		"error":             errStr,
+		"RaffleNFTWinners":  winnersRaffle,
+		"StakingNFTWinners": winnersStaking,
+		"RoundNum":          roundNum,
 	})
 }
-func api_cosmic_game_user_raffle_nft_winnings(c *httpx.Context) {
+func (a *API) handleUserRaffleNftWinnings(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 
-	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	userInfo, err := a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	winnings, err := arbRepo.RaffleNFTWinningsByUser(c.Request.Context(), user_aid)
+	winnings, err := a.repo.RaffleNFTWinningsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                req_status,
-		"error":                 err_str,
+		"status":                reqStatus,
+		"error":                 errStr,
 		"UserRaffleNFTWinnings": winnings,
-		"UserInfo":              user_info,
+		"UserInfo":              userInfo,
 	})
 }
-func api_cosmic_game_prize_deposits_raffle_eth_by_user(c *httpx.Context) {
+func (a *API) handlePrizeDepositsRaffleEthByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
-	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	userInfo, err := a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	deposits, err := arbRepo.PrizeDepositsRaffleEthByUser(c.Request.Context(), user_aid)
+	deposits, err := a.repo.PrizeDepositsRaffleEthByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":             req_status,
-		"error":              err_str,
+		"status":             reqStatus,
+		"error":              errStr,
 		"UserRaffleDeposits": deposits,
-		"UserInfo":           user_info,
+		"UserInfo":           userInfo,
 	})
 }
-func api_cosmic_game_prize_deposits_chrono_warrior_by_user(c *httpx.Context) {
+func (a *API) handlePrizeDepositsChronoWarriorByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
-	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	userInfo, err := a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	deposits, err := arbRepo.PrizeDepositsChronoWarriorByUser(c.Request.Context(), user_aid)
+	deposits, err := a.repo.PrizeDepositsChronoWarriorByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                    req_status,
-		"error":                     err_str,
+		"status":                    reqStatus,
+		"error":                     errStr,
 		"UserChronoWarriorDeposits": deposits,
-		"UserInfo":                  user_info,
+		"UserInfo":                  userInfo,
 	})
 }
-func api_cosmic_game_nft_donations_by_prize(c *httpx.Context) {
+func (a *API) handleNftDonationsByPrize(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_prize_num := c.Param("prize_num")
-	var prize_num int64
-	if len(p_prize_num) > 0 {
+	pPrizeNum := c.Param("prize_num")
+	var prizeNum int64
+	if len(pPrizeNum) > 0 {
 		var success bool
-		prize_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_prize_num)
+		prizeNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pPrizeNum)
 		if !success {
 			return
 		}
 	}
-	nft_donations, err := arbRepo.NFTDonationsByRound(c.Request.Context(), prize_num)
+	nftDonations, err := a.repo.NFTDonationsByRound(c.Request.Context(), prizeNum)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":       req_status,
-		"error":        err_str,
-		"NFTDonations": nft_donations,
-		"RoundNum":     prize_num,
+		"status":       reqStatus,
+		"error":        errStr,
+		"NFTDonations": nftDonations,
+		"RoundNum":     prizeNum,
 	})
 }
-func api_cosmic_game_nft_donations_by_token(c *httpx.Context) {
+func (a *API) handleNftDonationsByToken(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_token_addr := c.Param("token_addr")
-	token_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_token_addr)
+	pTokenAddr := c.Param("token_addr")
+	tokenAid, err := a.store.LookupAddressID(c.Request.Context(), pTokenAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Token address not found")
 		return
 	}
-	nft_donations, err := arbRepo.NFTDonationsByToken(c.Request.Context(), token_aid)
+	nftDonations, err := a.repo.NFTDonationsByToken(c.Request.Context(), tokenAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":       1,
 		"error":        "",
-		"NFTDonations": nft_donations,
-		"TokenAddr":    p_token_addr,
+		"NFTDonations": nftDonations,
+		"TokenAddr":    pTokenAddr,
 	})
 }
-func api_cosmic_game_cosmic_signature_token_list(c *httpx.Context) {
+func (a *API) handleCosmicSignatureTokenList(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -1741,89 +1741,89 @@ func api_cosmic_game_cosmic_signature_token_list(c *httpx.Context) {
 	if !success {
 		return
 	}
-	tokens, err := arbRepo.CosmicSignatureTokens(c.Request.Context(), offset, limit)
+	tokens, err := a.repo.CosmicSignatureTokens(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                   req_status,
-		"error":                    err_str,
+		"status":                   reqStatus,
+		"error":                    errStr,
 		"CosmicSignatureTokenList": tokens,
 		"Offset":                   offset,
 		"Limit":                    limit,
 	})
 }
-func api_cosmic_game_cosmic_signature_token_info(c *httpx.Context) {
+func (a *API) handleCosmicSignatureTokenInfo(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_token_id := c.Param("token_id")
-	var token_id int64
-	if len(p_token_id) > 0 {
+	pTokenID := c.Param("token_id")
+	var tokenID int64
+	if len(pTokenID) > 0 {
 		var success bool
-		token_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_token_id)
+		tokenID, success = common.ParseIntFromRemoteOrError(c, JSON, &pTokenID)
 		if !success {
 			return
 		}
 	}
 
-	token_info, err := arbRepo.CosmicSignatureTokenInfo(c.Request.Context(), token_id)
+	tokenInfo, err := a.repo.CosmicSignatureTokenInfo(c.Request.Context(), tokenID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			common.RespondErrorJSON(c, "record not found")
 			return
 		}
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
-	if token_info.RecordType == 3 {
+	if tokenInfo.RecordType == 3 {
 		// The legacy code ignored the found/not-found flag and rendered the
 		// zero-value record when the round has no prize claim; ErrNotFound
 		// keeps that exact behavior.
-		prize_info, err := arbRepo.PrizeInfo(c.Request.Context(), token_info.RoundNum)
+		prizeInfo, err := a.repo.PrizeInfo(c.Request.Context(), tokenInfo.RoundNum)
 		if err != nil && !errors.Is(err, store.ErrNotFound) {
-			respondStoreError(c, err)
+			a.respondStoreError(c, err)
 			return
 		}
 		c.JSON(http.StatusOK, httpx.H{
-			"status":    req_status,
-			"error":     err_str,
-			"TokenInfo": token_info,
-			"PrizeInfo": prize_info,
+			"status":    reqStatus,
+			"error":     errStr,
+			"TokenInfo": tokenInfo,
+			"PrizeInfo": prizeInfo,
 		})
 	} else {
 		c.JSON(http.StatusOK, httpx.H{
-			"status":    req_status,
-			"error":     err_str,
-			"TokenInfo": token_info,
+			"status":    reqStatus,
+			"error":     errStr,
+			"TokenInfo": tokenInfo,
 		})
 	}
 }
-func api_cosmic_game_donated_nft_claims_all(c *httpx.Context) {
+func (a *API) handleDonatedNftClaimsAll(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -1834,72 +1834,72 @@ func api_cosmic_game_donated_nft_claims_all(c *httpx.Context) {
 		}
 	}
 
-	claims, err := arbRepo.DonatedNFTClaims(c.Request.Context(), offset, limit)
+	claims, err := a.repo.DonatedNFTClaims(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"DonatedNFTClaims": claims,
 		"Offset":           offset,
 		"Limit":            limit,
 	})
 }
-func api_cosmic_game_donated_nft_claims_by_user(c *httpx.Context) {
+func (a *API) handleDonatedNftClaimsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
-			"UserInfo": cgmodel.CGUserInfo{Address: p_user_addr},
+			"UserInfo": cgmodel.CGUserInfo{Address: pUserAddr},
 		})
 		return
 	}
-	user_info, err := arbRepo.UserInfo(c.Request.Context(), user_aid)
+	userInfo, err := a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
-			"UserInfo": cgmodel.CGUserInfo{Address: p_user_addr},
+			"UserInfo": cgmodel.CGUserInfo{Address: pUserAddr},
 		})
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	claims, err := arbRepo.DonatedNFTClaimsByUser(c.Request.Context(), user_aid)
+	claims, err := a.repo.DonatedNFTClaimsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"DonatedNFTClaims": claims,
-		"UserInfo":         user_info,
+		"UserInfo":         userInfo,
 	})
 }
-func api_cosmic_game_time_current(c *httpx.Context) {
+func (a *API) handleTimeCurrent(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	var raw json.RawMessage
-	err := rpcclient.CallContext(context.Background(), &raw, "eth_getBlockByNumber", "pending", true)
+	err := a.rpc.CallContext(context.Background(), &raw, "eth_getBlockByNumber", "pending", true)
 	if err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("%v", err))
 		return
@@ -1912,182 +1912,173 @@ func api_cosmic_game_time_current(c *httpx.Context) {
 		return
 	}
 
-	ts_hex := rpcobj["timestamp"].(string)
-	ts, err := hexutil.DecodeUint64(ts_hex)
+	tsHex := rpcobj["timestamp"].(string)
+	ts, err := hexutil.DecodeUint64(tsHex)
 	if err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Error decoding timestamp from hex: %v", err))
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"CurrentTimeStamp": ts,
 	})
 }
-func api_cosmic_game_time_until_prize(c *httpx.Context) {
+func (a *API) handleTimeUntilPrize(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 	// Function: getDurationUntilMainPrize() - returns time until prize can be claimed
-	const time_until_prize_sig string = "0x36750d2c"
+	const timeUntilPrizeSig string = "0x36750d2c"
 	var raw json.RawMessage
 	args := map[string]interface{}{
-		"to":   contractState.Snapshot().Addrs.CosmicGame.String(),
-		"data": time_until_prize_sig,
+		"to":   a.state.Snapshot().Addrs.CosmicGame.String(),
+		"data": timeUntilPrizeSig,
 	}
-	err := rpcclient.CallContext(context.Background(), &raw, "eth_call", args, "pending")
+	err := a.rpc.CallContext(context.Background(), &raw, "eth_call", args, "pending")
 	if err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("%v", err))
 		return
 	}
-	var ts_hex string
-	err = json.Unmarshal(raw, &ts_hex)
+	var tsHex string
+	err = json.Unmarshal(raw, &tsHex)
 	if err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Error decoding JSON: %v", err))
 		return
 	}
-	ts_big := ethcommon.HexToHash(ts_hex).Big()
-	var req_status int = 1
-	var err_str string = ""
+	tsBig := ethcommon.HexToHash(tsHex).Big()
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
-		"TimeUntilPrize": ts_big.Int64(),
+		"status":         reqStatus,
+		"error":          errStr,
+		"TimeUntilPrize": tsBig.Int64(),
 	})
 }
-func api_cosmic_game_prize_cur_round_time(c *httpx.Context) {
+func (a *API) handlePrizeCurRoundTime(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	// Return 200 with status/error in body when contract is unavailable, so frontend gets consistent response shape
-	var req_status int = 1
-	var err_str string
-	var prize_time *big.Int
+	var reqStatus int = 1
+	var errStr string
+	var prizeTime *big.Int
 
-	if EthClient == nil {
-		req_status = 0
-		err_str = "Ethereum client not configured"
-		prize_time = big.NewInt(0)
+	// abigen constructors only fail parsing their embedded ABI constant, so
+	// the error is statically impossible; a constructed module always has an
+	// Ethereum client (contractstate requires one).
+	var copts bind.CallOpts
+	bwcontract, _ := cg.NewCosmicSignatureGame(a.state.Snapshot().Addrs.CosmicGame, a.ethClient)
+	pt, err := bwcontract.MainPrizeTime(&copts)
+	if err != nil {
+		reqStatus = 0
+		errStr = fmt.Sprintf("MainPrizeTime call failed: %v", err)
+		prizeTime = big.NewInt(0)
 	} else {
-		var copts bind.CallOpts
-		bwcontract, err := NewCosmicSignatureGame(contractState.Snapshot().Addrs.CosmicGame, EthClient)
-		if err != nil {
-			req_status = 0
-			err_str = fmt.Sprintf("Can't instantiate CG contract: %v", err)
-			prize_time = big.NewInt(0)
-		} else {
-			pt, err := bwcontract.MainPrizeTime(&copts)
-			if err != nil {
-				req_status = 0
-				err_str = fmt.Sprintf("MainPrizeTime call failed: %v", err)
-				prize_time = big.NewInt(0)
-			} else {
-				prize_time = pt
-			}
-		}
+		prizeTime = pt
 	}
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
-		"CurRoundPrizeTime": prize_time,
+		"status":            reqStatus,
+		"error":             errStr,
+		"CurRoundPrizeTime": prizeTime,
 	})
 }
-func api_cosmic_game_user_global_winnings(c *httpx.Context) {
+func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty winnings so UI works
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "Winnings": []interface{}{}, "UserAddr": p_user_addr, "UserAid": int64(0),
+			"status": 1, "error": "", "Winnings": []interface{}{}, "UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
 	}
 
-	claim_info, err := arbRepo.UserNotifRedBoxRewards(c.Request.Context(), user_aid)
+	claimInfo, err := a.repo.UserNotifRedBoxRewards(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":   req_status,
-		"error":    err_str,
-		"Winnings": claim_info,
-		"UserAddr": p_user_addr,
-		"UserAid":  user_aid,
+		"status":   reqStatus,
+		"error":    errStr,
+		"Winnings": claimInfo,
+		"UserAddr": pUserAddr,
+		"UserAid":  userAid,
 	})
 }
-func api_cosmic_game_prize_history_detail_by_user(c *httpx.Context) {
+func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
+	pUserAddr := c.Param("user_addr")
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
 			"UserPrizeHistory": []interface{}{},
 		})
 		return
 	}
-	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	_, err = a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": userAid,
 			"UserPrizeHistory": []interface{}{},
 		})
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	claim_history, err := arbRepo.PrizeHistoryByUser(c.Request.Context(), user_aid, offset, limit)
+	claimHistory, err := a.repo.PrizeHistoryByUser(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
-		"UserAddr":         p_user_addr,
-		"UserAid":          user_aid,
-		"UserPrizeHistory": claim_history,
+		"status":           reqStatus,
+		"error":            errStr,
+		"UserAddr":         pUserAddr,
+		"UserAid":          userAid,
+		"UserPrizeHistory": claimHistory,
 	})
 }
-func api_cosmic_game_global_claim_history_detail(c *httpx.Context) {
+func (a *API) handleGlobalClaimHistoryDetail(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -2097,154 +2088,154 @@ func api_cosmic_game_global_claim_history_detail(c *httpx.Context) {
 		return
 	}
 
-	claim_history, err := arbRepo.ClaimHistoryGlobal(c.Request.Context(), offset, limit)
+	claimHistory, err := a.repo.ClaimHistoryGlobal(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":             req_status,
-		"error":              err_str,
-		"GlobalPrizeHistory": claim_history,
+		"status":             reqStatus,
+		"error":              errStr,
+		"GlobalPrizeHistory": claimHistory,
 	})
 }
-func api_cosmic_game_unclaimed_donated_nfts_by_user(c *httpx.Context) {
+func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
-			"UserAddr": p_user_addr, "UserAid": int64(0),
+			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
 	}
-	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	_, err = a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
-			"UserAddr": p_user_addr, "UserAid": user_aid,
+			"UserAddr": pUserAddr, "UserAid": userAid,
 		})
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	nfts, err := arbRepo.UnclaimedDonatedNFTsByUser(c.Request.Context(), user_aid)
+	nfts, err := a.repo.UnclaimedDonatedNFTsByUser(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":               req_status,
-		"error":                err_str,
+		"status":               reqStatus,
+		"error":                errStr,
 		"UnclaimedDonatedNFTs": nfts,
-		"UserAddr":             p_user_addr,
-		"UserAid":              user_aid,
+		"UserAddr":             pUserAddr,
+		"UserAid":              userAid,
 	})
 }
-func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *httpx.Context) {
+func (a *API) handleUnclaimedDonatedNftsByPrize(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_prize_num := c.Param("prize_num")
-	var prize_num int64
-	if len(p_prize_num) > 0 {
+	pPrizeNum := c.Param("prize_num")
+	var prizeNum int64
+	if len(pPrizeNum) > 0 {
 		var success bool
-		prize_num, success = common.ParseIntFromRemoteOrError(c, JSON, &p_prize_num)
+		prizeNum, success = common.ParseIntFromRemoteOrError(c, JSON, &pPrizeNum)
 		if !success {
 			return
 		}
 	}
 
-	nft_donations, err := arbRepo.UnclaimedDonatedNFTsByRound(c.Request.Context(), prize_num)
+	nftDonations, err := a.repo.UnclaimedDonatedNFTsByRound(c.Request.Context(), prizeNum)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":       req_status,
-		"error":        err_str,
-		"NFTDonations": nft_donations,
-		"RoundNum":     prize_num,
+		"status":       reqStatus,
+		"error":        errStr,
+		"NFTDonations": nftDonations,
+		"RoundNum":     prizeNum,
 	})
 }
-func api_cosmic_game_unclaimed_prize_deposits_by_user(c *httpx.Context) {
+func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
+	pUserAddr := c.Param("user_addr")
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 	if !success {
 		return
 	}
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
 			"UnclaimedDeposits": []interface{}{},
 		})
 		return
 	}
-	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	_, err = a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": userAid,
 			"UnclaimedDeposits": []interface{}{},
 		})
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	deposits, err := arbRepo.UnclaimedPrizeEthDeposits(c.Request.Context(), user_aid, offset, limit)
+	deposits, err := a.repo.UnclaimedPrizeEthDeposits(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
-		"UserAddr":          p_user_addr,
-		"UserAid":           user_aid,
+		"status":            reqStatus,
+		"error":             errStr,
+		"UserAddr":          pUserAddr,
+		"UserAid":           userAid,
 		"UnclaimedDeposits": deposits,
 	})
 }
-func api_cosmic_game_cosmic_signature_token_list_by_user(c *httpx.Context) {
+func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
@@ -2252,25 +2243,25 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *httpx.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": int64(0),
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
 			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
 		})
 		return
 	}
-	_, err = arbRepo.UserInfo(c.Request.Context(), user_aid)
+	_, err = a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
 		if !success {
 			return
 		}
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": p_user_addr, "UserAid": user_aid,
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": userAid,
 			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
 		})
 		return
 	}
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
@@ -2278,115 +2269,115 @@ func api_cosmic_game_cosmic_signature_token_list_by_user(c *httpx.Context) {
 		return
 	}
 
-	user_tokens, err := arbRepo.CosmicSignatureTokensByUser(c.Request.Context(), user_aid, offset, limit)
+	userTokens, err := a.repo.CosmicSignatureTokensByUser(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":     req_status,
-		"error":      err_str,
-		"UserAddr":   p_user_addr,
-		"UserAid":    user_aid,
-		"UserTokens": user_tokens,
+		"status":     reqStatus,
+		"error":      errStr,
+		"UserAddr":   pUserAddr,
+		"UserAid":    userAid,
+		"UserTokens": userTokens,
 	})
 }
-func api_cosmic_game_token_name_history(c *httpx.Context) {
+func (a *API) handleTokenNameHistory(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_token_id := c.Param("token_id")
-	var token_id int64
-	if len(p_token_id) > 0 {
+	pTokenID := c.Param("token_id")
+	var tokenID int64
+	if len(pTokenID) > 0 {
 		var success bool
-		token_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_token_id)
+		tokenID, success = common.ParseIntFromRemoteOrError(c, JSON, &pTokenID)
 		if !success {
 			return
 		}
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
-	tokname_history, err := arbRepo.TokenNameHistory(c.Request.Context(), token_id)
+	toknameHistory, err := a.repo.TokenNameHistory(c.Request.Context(), tokenID)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
-		"TokenId":          token_id,
-		"TokenNameHistory": tokname_history,
+		"status":           reqStatus,
+		"error":            errStr,
+		"TokenId":          tokenID,
+		"TokenNameHistory": toknameHistory,
 	})
 }
-func api_cosmic_game_token_name_search(c *httpx.Context) {
+func (a *API) handleTokenNameSearch(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_name := c.Param("name")
+	pName := c.Param("name")
 
-	results, err := arbRepo.SearchTokensByName(c.Request.Context(), p_name)
+	results, err := a.repo.SearchTokensByName(c.Request.Context(), pName)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                 req_status,
-		"error":                  err_str,
-		"SearchText":             p_name,
+		"status":                 reqStatus,
+		"error":                  errStr,
+		"SearchText":             pName,
 		"TokenNameSearchResults": results,
 	})
 }
-func api_cosmic_game_named_tokens_only(c *httpx.Context) {
+func (a *API) handleNamedTokensOnly(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
-	results, err := arbRepo.NamedTokens(c.Request.Context())
+	results, err := a.repo.NamedTokens(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
-		"status":      req_status,
-		"error":       err_str,
+		"status":      reqStatus,
+		"error":       errStr,
 		"NamedTokens": results,
 	})
 }
-func api_cosmic_game_token_ownership_transfers(c *httpx.Context) {
+func (a *API) handleTokenOwnershipTransfers(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_token_id := c.Param("token_id")
-	var token_id int64
-	if len(p_token_id) > 0 {
+	pTokenID := c.Param("token_id")
+	var tokenID int64
+	if len(pTokenID) > 0 {
 		var success bool
-		token_id, success = common.ParseIntFromRemoteOrError(c, JSON, &p_token_id)
+		tokenID, success = common.ParseIntFromRemoteOrError(c, JSON, &pTokenID)
 		if !success {
 			return
 		}
@@ -2396,216 +2387,207 @@ func api_cosmic_game_token_ownership_transfers(c *httpx.Context) {
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
-	transfers, err := arbRepo.TokenOwnershipTransfers(c.Request.Context(), token_id, offset, limit)
+	transfers, err := a.repo.TokenOwnershipTransfers(c.Request.Context(), tokenID, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
-		"status":         req_status,
-		"error":          err_str,
+		"status":         reqStatus,
+		"error":          errStr,
 		"Offset":         offset,
 		"Limit":          limit,
-		"TokenId":        token_id,
+		"TokenId":        tokenID,
 		"TokenTransfers": transfers,
 	})
 }
-func api_cosmic_game_cs_token_distribution(c *httpx.Context) {
+func (a *API) handleCsTokenDistribution(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	distribution, err := arbRepo.CosmicSignatureTokenDistribution(c.Request.Context())
+	distribution, err := a.repo.CosmicSignatureTokenDistribution(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                           req_status,
-		"error":                            err_str,
+		"status":                           reqStatus,
+		"error":                            errStr,
 		"CosmicSignatureTokenDistribution": distribution,
 	})
 }
-func api_cosmic_game_user_balances(c *httpx.Context) {
+func (a *API) handleUserBalances(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_user_addr := c.Param("user_addr")
-	user_aid, addrLookupErr := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, addrLookupErr := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if addrLookupErr != nil {
-		user_aid = 0 // address not in DB yet; still return 200 with on-chain balances below
+		userAid = 0 // address not in DB yet; still return 200 with on-chain balances below
 	}
 
-	addr := ethcommon.HexToAddress(p_user_addr)
-	user_eth_bal, err := EthClient.BalanceAt(context.Background(), addr, nil)
+	addr := ethcommon.HexToAddress(pUserAddr)
+	userEthBal, err := a.ethClient.BalanceAt(context.Background(), addr, nil)
 	if err != nil {
-		err_str := fmt.Sprintf("Error at BalanceAt() call for addr: %v\n", err)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error at BalanceAt() call for addr: %v\n", err)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
-	ct_contract, err := NewERC20(contractState.Snapshot().Addrs.CosmicToken, EthClient)
-	if err != nil {
-		err_str := fmt.Sprintf("Error at instantiation of ERC20 contract: %v\n", err)
-		common.RespondErrorJSON(c, err_str)
-		return
-	}
+	// The abigen constructor only fails parsing its embedded ABI constant —
+	// statically impossible.
+	ctContract, _ := cg.NewERC20(a.state.Snapshot().Addrs.CosmicToken, a.ethClient)
 	var copts bind.CallOpts
-	ct_balance, err := ct_contract.BalanceOf(&copts, addr)
+	ctBalance, err := ctContract.BalanceOf(&copts, addr)
 	if err != nil {
-		err_str := fmt.Sprintf("Error at BalanceOf() call: %v\n", err)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error at BalanceOf() call: %v\n", err)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":             req_status,
-		"error":              err_str,
-		"UserAddr":           p_user_addr,
-		"UserAid":            user_aid,
-		"ETH_Balance":        user_eth_bal.String(),
-		"CosmicTokenBalance": ct_balance.String(),
+		"status":             reqStatus,
+		"error":              errStr,
+		"UserAddr":           pUserAddr,
+		"UserAid":            userAid,
+		"ETH_Balance":        userEthBal.String(),
+		"CosmicTokenBalance": ctBalance.String(),
 	})
 }
-func api_cosmic_game_cosmic_token_balances(c *httpx.Context) {
+func (a *API) handleCosmicTokenBalances(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	balances, err := arbRepo.CosmicTokenHolders(c.Request.Context())
+	balances, err := a.repo.CosmicTokenHolders(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":              req_status,
-		"error":               err_str,
+		"status":              reqStatus,
+		"error":               errStr,
 		"CosmicTokenBalances": balances,
 	})
 }
-func api_cosmic_game_cosmic_token_statistics(c *httpx.Context) {
+func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	stats, err := arbRepo.CosmicTokenStatistics(c.Request.Context())
+	stats, err := a.repo.CosmicTokenStatistics(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
-	cosmicTokenAddr := contractState.Snapshot().Addrs.CosmicToken
+	cosmicTokenAddr := a.state.Snapshot().Addrs.CosmicToken
 
-	// Read contract info from blockchain
+	// Read contract info from blockchain. The abigen constructor only fails
+	// parsing its embedded ABI constant — statically impossible.
 	var copts bind.CallOpts
-	contract, err := NewCosmicSignatureToken(cosmicTokenAddr, EthClient)
+	contract, _ := cg.NewCosmicSignatureToken(cosmicTokenAddr, a.ethClient)
+
+	tokenName, err := contract.Name(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate CosmicSignatureToken contract: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading token name: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
-	token_name, err := contract.Name(&copts)
+	tokenSymbol, err := contract.Symbol(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Error reading token name: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
-		return
-	}
-
-	token_symbol, err := contract.Symbol(&copts)
-	if err != nil {
-		err_str := fmt.Sprintf("Error reading token symbol: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading token symbol: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
 	decimals, err := contract.Decimals(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Error reading decimals: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading decimals: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
-	game_addr, err := contract.Game(&copts)
+	gameAddr, err := contract.Game(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Error reading game address: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading game address: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
-		"TokenName":        token_name,
-		"TokenSymbol":      token_symbol,
+		"status":           reqStatus,
+		"error":            errStr,
+		"TokenName":        tokenName,
+		"TokenSymbol":      tokenSymbol,
 		"TokenDecimals":    decimals,
-		"GameContractAddr": game_addr.String(),
+		"GameContractAddr": gameAddr.String(),
 		"CosmicTokenAddr":  cosmicTokenAddr.String(),
 		"Statistics":       stats,
 	})
 }
-func api_cosmic_game_cosmic_token_summary_by_user(c *httpx.Context) {
+func (a *API) handleCosmicTokenSummaryByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
 	}
 
-	summary, err := arbRepo.UserCosmicTokenSummary(c.Request.Context(), user_aid)
+	summary, err := a.repo.UserCosmicTokenSummary(c.Request.Context(), userAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	summary.UserAddr = p_user_addr
+	summary.UserAddr = pUserAddr
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":  req_status,
-		"error":   err_str,
+		"status":  reqStatus,
+		"error":   errStr,
 		"Summary": summary,
 	})
 }
@@ -2622,17 +2604,17 @@ func parseCosmicTokenHistoryDateParam(c *httpx.Context, paramName string) (strin
 	return val, true
 }
 
-func api_cosmic_game_cosmic_token_total_supply_history_by_bid(c *httpx.Context) {
+func (a *API) handleCosmicTokenTotalSupplyHistoryByBid(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	history, err := arbRepo.CosmicTokenSupplyHistoryByBid(c.Request.Context())
+	history, err := a.repo.CosmicTokenSupplyHistoryByBid(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
@@ -2641,10 +2623,10 @@ func api_cosmic_game_cosmic_token_total_supply_history_by_bid(c *httpx.Context) 
 		"TotalSupplyHistory": history,
 	})
 }
-func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *httpx.Context) {
+func (a *API) handleCosmicTokenTotalSupplyHistoryByDate(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -2662,9 +2644,9 @@ func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *httpx.Context)
 		return
 	}
 
-	history, err := arbRepo.CosmicTokenSupplyHistoryByDate(c.Request.Context(), fromDate, toDate)
+	history, err := a.repo.CosmicTokenSupplyHistoryByDate(c.Request.Context(), fromDate, toDate)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
@@ -2675,15 +2657,15 @@ func api_cosmic_game_cosmic_token_total_supply_history_by_date(c *httpx.Context)
 		"TotalSupplyHistory": history,
 	})
 }
-func api_cosmic_game_cosmic_token_transfers_by_user(c *httpx.Context) {
+func (a *API) handleCosmicTokenTransfersByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
@@ -2692,33 +2674,33 @@ func api_cosmic_game_cosmic_token_transfers_by_user(c *httpx.Context) {
 	if !success {
 		return
 	}
-	transfers, err := arbRepo.CosmicTokenTransfersByUser(c.Request.Context(), user_aid, offset, limit)
+	transfers, err := a.repo.CosmicTokenTransfersByUser(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":               req_status,
-		"error":                err_str,
-		"UserAddr":             p_user_addr,
-		"UserAid":              user_aid,
+		"status":               reqStatus,
+		"error":                errStr,
+		"UserAddr":             pUserAddr,
+		"UserAid":              userAid,
 		"Offset":               offset,
 		"Limit":                limit,
 		"CosmicTokenTransfers": transfers,
 	})
 }
-func api_cosmic_game_cosmic_signature_transfers_by_user(c *httpx.Context) {
+func (a *API) handleCosmicSignatureTransfersByUser(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		common.RespondErrorJSON(c, "Provided address wasn't found")
 		return
@@ -2727,49 +2709,49 @@ func api_cosmic_game_cosmic_signature_transfers_by_user(c *httpx.Context) {
 	if !success {
 		return
 	}
-	transfers, err := arbRepo.CosmicSignatureTransfersByUser(c.Request.Context(), user_aid, offset, limit)
+	transfers, err := a.repo.CosmicSignatureTransfersByUser(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":                   req_status,
-		"error":                    err_str,
-		"UserAddr":                 p_user_addr,
-		"UserAid":                  user_aid,
+		"status":                   reqStatus,
+		"error":                    errStr,
+		"UserAddr":                 pUserAddr,
+		"UserAid":                  userAid,
 		"Offset":                   offset,
 		"Limit":                    limit,
 		"CosmicSignatureTransfers": transfers,
 	})
 }
-func api_cosmic_game_used_rwalk_nfts(c *httpx.Context) {
+func (a *API) handleUsedRwalkNfts(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	used_nfts, err := arbRepo.RandomWalkTokensUsedInBids(c.Request.Context())
+	usedNfts, err := a.repo.RandomWalkTokensUsedInBids(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 
 	c.JSON(http.StatusOK, httpx.H{
-		"status":        req_status,
-		"error":         err_str,
-		"UsedRwalkNFTs": used_nfts,
+		"status":        reqStatus,
+		"error":         errStr,
+		"UsedRwalkNFTs": usedNfts,
 	})
 }
-func api_cosmic_game_marketing_rewards_global(c *httpx.Context) {
+func (a *API) handleMarketingRewardsGlobal(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -2777,29 +2759,29 @@ func api_cosmic_game_marketing_rewards_global(c *httpx.Context) {
 	if !success {
 		return
 	}
-	rewards, err := arbRepo.MarketingRewardHistoryGlobal(c.Request.Context(), offset, limit)
+	rewards, err := a.repo.MarketingRewardHistoryGlobal(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":           req_status,
-		"error":            err_str,
+		"status":           reqStatus,
+		"error":            errStr,
 		"Offset":           offset,
 		"Limit":            limit,
 		"MarketingRewards": rewards,
 	})
 }
-func api_cosmic_game_marketing_rewards_by_user(c *httpx.Context) {
+func (a *API) handleMarketingRewardsByUser(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	p_user_addr := c.Param("user_addr")
-	user_aid, err := arbStore.LookupAddressID(c.Request.Context(), p_user_addr)
+	pUserAddr := c.Param("user_addr")
+	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		success, offset, limit := common.ParseOffsetLimitParamsJSON(c)
@@ -2808,7 +2790,7 @@ func api_cosmic_game_marketing_rewards_by_user(c *httpx.Context) {
 		}
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
-			"UserAddr": p_user_addr, "UserAid": int64(0), "UserMarketingRewards": []interface{}{},
+			"UserAddr": pUserAddr, "UserAid": int64(0), "UserMarketingRewards": []interface{}{},
 		})
 		return
 	}
@@ -2816,168 +2798,153 @@ func api_cosmic_game_marketing_rewards_by_user(c *httpx.Context) {
 	if !success {
 		return
 	}
-	rewards, err := arbRepo.MarketingRewardHistoryByUser(c.Request.Context(), user_aid, offset, limit)
+	rewards, err := a.repo.MarketingRewardHistoryByUser(c.Request.Context(), userAid, offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":               req_status,
-		"error":                err_str,
+		"status":               reqStatus,
+		"error":                errStr,
 		"Offset":               offset,
 		"Limit":                limit,
-		"UserAddr":             p_user_addr,
-		"UserAid":              user_aid,
+		"UserAddr":             pUserAddr,
+		"UserAid":              userAid,
 		"UserMarketingRewards": rewards,
 	})
 }
-func api_cosmic_game_marketing_config_current(c *httpx.Context) {
+func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	marketingWalletAddr := contractState.Snapshot().Addrs.MarketingWallet
+	marketingWalletAddr := a.state.Snapshot().Addrs.MarketingWallet
 
+	// The abigen constructor only fails parsing its embedded ABI constant —
+	// statically impossible.
 	var copts bind.CallOpts
-	contract, err := NewMarketingWallet(marketingWalletAddr, EthClient)
-	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate MarketingWallet contract: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
-		return
-	}
+	contract, _ := cg.NewMarketingWallet(marketingWalletAddr, a.ethClient)
 
 	// Read current treasurer address
-	treasurer_addr, err := contract.TreasurerAddress(&copts)
+	treasurerAddr, err := contract.TreasurerAddress(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Error reading TreasurerAddress: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading TreasurerAddress: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
 	// Read token contract address
-	token_addr, err := contract.Token(&copts)
+	tokenAddr, err := contract.Token(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Error reading Token address: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading Token address: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
 	// Read owner address
-	owner_addr, err := contract.Owner(&copts)
+	ownerAddr, err := contract.Owner(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Error reading Owner address: %v", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
+		errStr := fmt.Sprintf("Error reading Owner address: %v", err)
+		a.errlog.Print(errStr)
+		a.info.Print(errStr)
+		common.RespondErrorJSON(c, errStr)
 		return
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":              req_status,
-		"error":               err_str,
+		"status":              reqStatus,
+		"error":               errStr,
 		"MarketingWalletAddr": marketingWalletAddr.String(),
-		"TreasurerAddr":       treasurer_addr.String(),
-		"TokenAddr":           token_addr.String(),
-		"OwnerAddr":           owner_addr.String(),
+		"TreasurerAddr":       treasurerAddr.String(),
+		"TokenAddr":           tokenAddr.String(),
+		"OwnerAddr":           ownerAddr.String(),
 	})
 }
-func api_cosmic_game_get_cst_price(c *httpx.Context) {
+func (a *API) handleGetCstPrice(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	// The abigen constructor only fails parsing its embedded ABI constant —
+	// statically impossible.
 	var copts bind.CallOpts
-	contract, err := NewCosmicSignatureGame(contractState.Snapshot().Addrs.CosmicGame, EthClient)
+	contract, _ := cg.NewCosmicSignatureGame(a.state.Snapshot().Addrs.CosmicGame, a.ethClient)
+	cstPrice, err := contract.GetNextCstBidPrice(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
-	} else {
-		cst_price, err := contract.GetNextCstBidPrice(&copts)
-		if err != nil {
-			Error.Print(err.Error())
-			Info.Print(err.Error())
-			common.RespondError(c, err.Error())
-		} else {
-			auction_duration, seconds_elapsed, err := contract.GetCstDutchAuctionDurations(&copts)
-			if err != nil {
-				Error.Print(err.Error())
-				Info.Print(err.Error())
-				common.RespondError(c, err.Error())
-			} else {
-				var req_status int = 1
-				var err_str string = ""
-				c.JSON(http.StatusOK, httpx.H{
-					"status":          req_status,
-					"error":           err_str,
-					"CSTPrice":        cst_price.String(),
-					"SecondsElapsed":  seconds_elapsed.String(),
-					"AuctionDuration": auction_duration.String(),
-				})
-			}
-		}
+		a.errlog.Print(err.Error())
+		a.info.Print(err.Error())
+		common.RespondError(c, err.Error())
+		return
 	}
+	auctionDuration, secondsElapsed, err := contract.GetCstDutchAuctionDurations(&copts)
+	if err != nil {
+		a.errlog.Print(err.Error())
+		a.info.Print(err.Error())
+		common.RespondError(c, err.Error())
+		return
+	}
+	var reqStatus int = 1
+	var errStr string = ""
+	c.JSON(http.StatusOK, httpx.H{
+		"status":          reqStatus,
+		"error":           errStr,
+		"CSTPrice":        cstPrice.String(),
+		"SecondsElapsed":  secondsElapsed.String(),
+		"AuctionDuration": auctionDuration.String(),
+	})
 }
-func api_cosmic_game_get_eth_price(c *httpx.Context) {
+func (a *API) handleGetEthPrice(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	// The abigen constructor only fails parsing its embedded ABI constant —
+	// statically impossible.
 	var copts bind.CallOpts
-	contract, err := NewCosmicSignatureGame(contractState.Snapshot().Addrs.CosmicGame, EthClient)
+	contract, _ := cg.NewCosmicSignatureGame(a.state.Snapshot().Addrs.CosmicGame, a.ethClient)
+	ethPrice, err := contract.GetNextEthBidPrice(&copts)
 	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n", err)
-		Error.Print(err_str)
-		Info.Print(err_str)
-		common.RespondErrorJSON(c, err_str)
-	} else {
-		eth_price, err := contract.GetNextEthBidPrice(&copts)
-		if err != nil {
-			Error.Print(err.Error())
-			Info.Print(err.Error())
-			common.RespondError(c, err.Error())
-		} else {
-			auction_duration, seconds_elapsed, err := contract.GetEthDutchAuctionDurations(&copts)
-			if err != nil {
-				Error.Print(err.Error())
-				Info.Print(err.Error())
-				common.RespondError(c, err.Error())
-			} else {
-				var req_status int = 1
-				var err_str string = ""
-				c.JSON(http.StatusOK, httpx.H{
-					"status":          req_status,
-					"error":           err_str,
-					"ETHPrice":        eth_price.String(),
-					"SecondsElapsed":  seconds_elapsed.String(),
-					"AuctionDuration": auction_duration.String(),
-				})
-			}
-		}
+		a.errlog.Print(err.Error())
+		a.info.Print(err.Error())
+		common.RespondError(c, err.Error())
+		return
 	}
+	auctionDuration, secondsElapsed, err := contract.GetEthDutchAuctionDurations(&copts)
+	if err != nil {
+		a.errlog.Print(err.Error())
+		a.info.Print(err.Error())
+		common.RespondError(c, err.Error())
+		return
+	}
+	var reqStatus int = 1
+	var errStr string = ""
+	c.JSON(http.StatusOK, httpx.H{
+		"status":          reqStatus,
+		"error":           errStr,
+		"ETHPrice":        ethPrice.String(),
+		"SecondsElapsed":  secondsElapsed.String(),
+		"AuctionDuration": auctionDuration.String(),
+	})
 }
-func api_cosmic_game_sysmode_changes(c *httpx.Context) {
+func (a *API) handleSysmodeChanges(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
 	var offset, limit int
-	p_offset := c.Param("offset")
-	p_limit := c.Param("limit")
+	pOffset := c.Param("offset")
+	pLimit := c.Param("limit")
 
-	if len(p_offset) == 0 || len(p_limit) == 0 {
+	if len(pOffset) == 0 || len(pLimit) == 0 {
 		offset = 0
 		limit = 10000
 	} else {
@@ -2988,15 +2955,15 @@ func api_cosmic_game_sysmode_changes(c *httpx.Context) {
 		}
 	}
 
-	system_mode_changes, err := arbRepo.SystemModeChanges(c.Request.Context(), offset, limit)
+	systemModeChanges, err := a.repo.SystemModeChanges(c.Request.Context(), offset, limit)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 
 	// When offset=-1 (events from deployment), ensure at least the pre-round-0 row is shown even if no bids yet.
-	if offset == -1 && len(system_mode_changes) == 0 {
-		system_mode_changes = []cgmodel.CGSystemModeRec{{
+	if offset == -1 && len(systemModeChanges) == 0 {
+		systemModeChanges = []cgmodel.CGSystemModeRec{{
 			EvtLogId:     -1,
 			BlockNum:     -1,
 			RoundNum:     0,
@@ -3004,76 +2971,72 @@ func api_cosmic_game_sysmode_changes(c *httpx.Context) {
 		}}
 	}
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":            req_status,
-		"error":             err_str,
+		"status":            reqStatus,
+		"error":             errStr,
 		"Offset":            offset,
 		"Limit":             limit,
-		"SystemModeChanges": system_mode_changes,
+		"SystemModeChanges": systemModeChanges,
 	})
 }
-func api_cosmic_game_admin_events_in_range(c *httpx.Context) {
+func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
 
-	p_evtlog_start := c.Param("evtlog_start")
-	var evtlog_start int64
-	if len(p_evtlog_start) > 0 {
+	pEvtlogStart := c.Param("evtlog_start")
+	var evtlogStart int64
+	if len(pEvtlogStart) > 0 {
 		var success bool
-		evtlog_start, success = common.ParseIntFromRemoteOrError(c, JSON, &p_evtlog_start)
+		evtlogStart, success = common.ParseIntFromRemoteOrError(c, JSON, &pEvtlogStart)
 		if !success {
 			return
 		}
 	}
-	p_evtlog_end := c.Param("evtlog_end")
-	var evtlog_end int64
-	if len(p_evtlog_end) > 0 {
+	pEvtlogEnd := c.Param("evtlog_end")
+	var evtlogEnd int64
+	if len(pEvtlogEnd) > 0 {
 		var success bool
-		evtlog_end, success = common.ParseIntFromRemoteOrError(c, JSON, &p_evtlog_end)
+		evtlogEnd, success = common.ParseIntFromRemoteOrError(c, JSON, &pEvtlogEnd)
 		if !success {
 			return
 		}
 	}
-	event_list, err := arbRepo.AdminEventsInRange(c.Request.Context(), evtlog_start, evtlog_end)
+	eventList, err := a.repo.AdminEventsInRange(c.Request.Context(), evtlogStart, evtlogEnd)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
-	if err := arbRepo.ResolveAdminEventValues(c.Request.Context(), event_list); err != nil {
-		respondStoreError(c, err)
+	if err := a.repo.ResolveAdminEventValues(c.Request.Context(), eventList); err != nil {
+		a.respondStoreError(c, err)
 		return
 	}
-	enrichAdminEventsResolvedValues(event_list)
+	a.enrichAdminEventsResolvedValues(eventList)
 
-	var req_status int = 1
-	var err_str string = ""
+	var reqStatus int = 1
+	var errStr string = ""
 	c.JSON(http.StatusOK, httpx.H{
-		"status":        req_status,
-		"error":         err_str,
-		"AdminEvents":   event_list,
-		"EvtLogIdStart": evtlog_start,
-		"EvtLogIdEnd":   evtlog_end,
+		"status":        reqStatus,
+		"error":         errStr,
+		"AdminEvents":   eventList,
+		"EvtLogIdStart": evtlogStart,
+		"EvtLogIdEnd":   evtlogEnd,
 	})
 }
-func api_cosmic_game_bid_special_winners(c *httpx.Context) {
+func (a *API) handleBidSpecialWinners(c *httpx.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	if EthClient == nil {
-		common.RespondErrorJSON(c, "Ethereum client is not configured")
-		return
-	}
 
-	state := contractState.FetchLiveSpecialWinners(c.Request.Context())
+	state := a.state.FetchLiveSpecialWinners(c.Request.Context())
 	if state.Err != nil {
 		common.RespondErrorJSON(c, state.Err.Error())
 		return
@@ -3109,15 +3072,15 @@ func api_cosmic_game_bid_special_winners(c *httpx.Context) {
 // BANNED BIDS API (mirrors FastAPI get_banned_bids / ban_bid / unban_bid)
 // =============================================================================
 
-func api_cosmic_game_get_banned_bids(c *httpx.Context) {
+func (a *API) handleGetBannedBids(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	list, err := arbRepo.BannedBids(c.Request.Context())
+	list, err := a.repo.BannedBids(c.Request.Context())
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	// Return raw JSON array like FastAPI so frontend gets same shape
@@ -3129,9 +3092,9 @@ type banBidPayload struct {
 	UserAddr string `json:"user_addr"`
 }
 
-func api_cosmic_game_ban_bid(c *httpx.Context) {
+func (a *API) handleBanBid(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -3141,7 +3104,7 @@ func api_cosmic_game_ban_bid(c *httpx.Context) {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id and user_addr required")
 		return
 	}
-	if err := arbRepo.InsertBannedBid(c.Request.Context(), payload.BidId, payload.UserAddr); err != nil {
+	if err := a.repo.InsertBannedBid(c.Request.Context(), payload.BidId, payload.UserAddr); err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to insert banned bid: %v", err))
 		return
 	}
@@ -3152,9 +3115,9 @@ type unbanBidPayload struct {
 	BidId int64 `json:"bid_id"`
 }
 
-func api_cosmic_game_unban_bid(c *httpx.Context) {
+func (a *API) handleUnbanBid(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -3164,7 +3127,7 @@ func api_cosmic_game_unban_bid(c *httpx.Context) {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id required")
 		return
 	}
-	if err := arbRepo.DeleteBannedBid(c.Request.Context(), payload.BidId); err != nil {
+	if err := a.repo.DeleteBannedBid(c.Request.Context(), payload.BidId); err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to unban bid: %v", err))
 		return
 	}

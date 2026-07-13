@@ -7,10 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
-	"os"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -18,6 +17,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 )
 
@@ -286,11 +286,27 @@ func TestBanUnbanStoreFailures(t *testing.T) {
 
 // TestFAQProxy covers the POST proxy routes end to end (body and Accept
 // forwarding, upstream content-type passthrough), the upstream-down 502 and
-// the Init environment fallbacks that only fire outside the harness default.
+// the constructor environment fallbacks that only fire outside the harness
+// default. Standalone routers over fresh Proxy values replace the legacy
+// package-state swaps — modules are injected now.
 func TestFAQProxy(t *testing.T) {
 	h := server(t)
-	discard := log.New(io.Discard, "", 0)
-	stubURL := os.Getenv("AI_BOT_BACKEND_URL")
+	stubURL := h.faqStubURL
+
+	// proxyRouter builds an isolated router around one Proxy so a scenario
+	// can point at a different upstream without touching the shared harness.
+	proxyRouter := func(p *faq.Proxy) *httpx.Router {
+		r := httpx.NewRouter()
+		p.RegisterRoutes(r)
+		return r
+	}
+	doProxy := func(r *httpx.Router, method, path string, body io.Reader) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, body)
+		req.RemoteAddr = "10.99.99.99:4242"
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w
+	}
 
 	t.Run("query forwards body and accept", func(t *testing.T) {
 		w := h.do(t, request{
@@ -329,14 +345,8 @@ func TestFAQProxy(t *testing.T) {
 	})
 
 	t.Run("upstream down answers 502", func(t *testing.T) {
-		t.Setenv("AI_BOT_BACKEND_URL", "http://127.0.0.1:1")
-		faq.Init(discard, discard, true)
-		t.Cleanup(func() {
-			_ = os.Setenv("AI_BOT_BACKEND_URL", stubURL)
-			faq.Init(discard, discard, true)
-		})
-
-		w := h.do(t, request{method: http.MethodPost, path: "/api/cosmicgame/faq/query", body: strings.NewReader(`{}`)})
+		r := proxyRouter(faq.New(faq.Options{UpstreamURL: "http://127.0.0.1:1"}))
+		w := doProxy(r, http.MethodPost, "/api/cosmicgame/faq/query", strings.NewReader(`{}`))
 		if w.Code != http.StatusBadGateway {
 			t.Fatalf("status = %d, want 502\n%s", w.Code, w.Body.String())
 		}
@@ -345,31 +355,31 @@ func TestFAQProxy(t *testing.T) {
 		}
 	})
 
+	t.Run("env fallback selects the upstream", func(t *testing.T) {
+		t.Setenv("AI_BOT_BACKEND_URL", stubURL)
+		r := proxyRouter(faq.New(faq.Options{}))
+		w := doProxy(r, http.MethodGet, "/api/cosmicgame/faq/health", nil)
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "faq-bot-stub") {
+			t.Fatalf("health through env fallback = %d\n%s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("legacy env alias selects the upstream", func(t *testing.T) {
 		t.Setenv("AI_BOT_BACKEND_URL", "")
 		t.Setenv("FAQ_BOT_UPSTREAM_URL", stubURL)
-		faq.Init(discard, discard, true)
-		t.Cleanup(func() {
-			_ = os.Setenv("AI_BOT_BACKEND_URL", stubURL)
-			faq.Init(discard, discard, true)
-		})
-
-		w := h.get(t, "/api/cosmicgame/faq/health")
+		r := proxyRouter(faq.New(faq.Options{}))
+		w := doProxy(r, http.MethodGet, "/api/cosmicgame/faq/health", nil)
 		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "faq-bot-stub") {
 			t.Fatalf("health through legacy alias = %d\n%s", w.Code, w.Body.String())
 		}
 	})
 
-	t.Run("disabled module registers nothing", func(t *testing.T) {
-		faq.Init(discard, discard, false)
-		t.Cleanup(func() { faq.Init(discard, discard, true) })
-		if faq.Enabled {
-			t.Fatal("Init(false) left the module enabled")
-		}
-		r := httpx.NewRouter()
-		faq.RegisterAPIRoutes(r)
-		if n := len(r.Routes()); n != 0 {
-			t.Fatalf("disabled module registered %d routes", n)
+	t.Run("nil module registers nothing", func(t *testing.T) {
+		r := routes.New(nil, routes.Options{})
+		for _, route := range r.Routes() {
+			if strings.HasPrefix(route.Pattern, "/api/cosmicgame/faq/") {
+				t.Fatalf("faq route %q registered without a module", route.Pattern)
+			}
 		}
 	})
 }

@@ -13,22 +13,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
 func TestRegisteredDatabaseHandlersFailCleanlyBeforeInitialization(t *testing.T) {
-	previousContext := common.Ctx
-	previousEnabled := Enabled
-	common.Ctx = nil
-	Enabled = true
-	t.Cleanup(func() {
-		common.Ctx = previousContext
-		Enabled = previousEnabled
-	})
-
 	router := httpx.NewRouter()
-	RegisterAPIRoutes(router)
+	NewBare().RegisterRoutes(router)
 
 	contractOnly := map[string]bool{
 		"/api/cosmicgame/statistics/dashboard": true,
@@ -158,20 +148,17 @@ func TestFloatSanitizersRemoveNonFiniteValuesRecursively(t *testing.T) {
 }
 
 func TestRespondStoreErrorKeepsDetailsOutOfResponse(t *testing.T) {
-	previousInfo, previousError := Info, Error
 	var infoLog, errorLog bytes.Buffer
-	Info = log.New(&infoLog, "", 0)
-	Error = log.New(&errorLog, "", 0)
-	t.Cleanup(func() {
-		Info = previousInfo
-		Error = previousError
-	})
+	a := &API{
+		info:   log.New(&infoLog, "", 0),
+		errlog: log.New(&errorLog, "", 0),
+	}
 
 	t.Run("server error is logged", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/api/cosmicgame/test", nil)
 		request.Pattern = "GET /api/cosmicgame/test"
-		respondStoreError(httpx.NewContext(response, request), errors.New("database password secret"))
+		a.respondStoreError(httpx.NewContext(response, request), errors.New("database password secret"))
 
 		if response.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d", response.Code)
@@ -190,7 +177,7 @@ func TestRespondStoreErrorKeepsDetailsOutOfResponse(t *testing.T) {
 		errorLog.Reset()
 		response := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/api/cosmicgame/test", nil)
-		respondStoreError(httpx.NewContext(response, request), context.Canceled)
+		a.respondStoreError(httpx.NewContext(response, request), context.Canceled)
 		if response.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d", response.Code)
 		}

@@ -1,43 +1,16 @@
-// Package common provides shared utilities and context for the RWCG web server
+// Package common provides shared middleware, response envelopes and request
+// helpers for the RWCG web server.
 package common
 
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-
-	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
-
-// ServerContext holds shared dependencies for all handlers
-type ServerContext struct {
-	// Store owns the process-wide connection pool; all query code runs on it.
-	Store     *store.Store
-	EthClient *ethclient.Client
-	Info      *log.Logger
-	Error     *log.Logger
-}
-
-var (
-	// Ctx is the global server context, initialized by InitContext
-	Ctx *ServerContext
-)
-
-// InitContext initializes the global server context.
-func InitContext(st *store.Store, ethClient *ethclient.Client, info, errorLog *log.Logger) {
-	Ctx = &ServerContext{
-		Store:     st,
-		EthClient: ethClient,
-		Info:      info,
-		Error:     errorLog,
-	}
-}
 
 // IsAddressValid validates an Ethereum address and returns the checksummed version.
 // The jsonOutput flag used to select between JSON and HTML error rendering;

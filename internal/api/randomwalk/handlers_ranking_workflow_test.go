@@ -180,6 +180,7 @@ func TestGenerateRankingVoteNonce(t *testing.T) {
 }
 
 func TestPerformRankingMatchRejectsBadPairsBeforeDependencies(t *testing.T) {
+	a := NewBare()
 	tests := []struct {
 		name       string
 		nft1, nft2 int64
@@ -193,7 +194,7 @@ func TestPerformRankingMatchRejectsBadPairsBeforeDependencies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ra, rb, err := performRankingMatch(context.Background(), tt.nft1, tt.nft2, true)
+			ra, rb, err := a.performRankingMatch(context.Background(), tt.nft1, tt.nft2, true)
 			if !errors.Is(err, errRankingBadPair) {
 				t.Fatalf("error = %v, want errRankingBadPair", err)
 			}
@@ -311,6 +312,7 @@ func TestPerformRankingMatchWithDependencies(t *testing.T) {
 }
 
 func TestPerformSignedBeautyVoteValidatesBeforeDatabase(t *testing.T) {
+	a := NewBare()
 	t.Setenv("RANKING_VOTE_CHAIN_IDS", "1")
 
 	tests := []struct {
@@ -360,7 +362,7 @@ func TestPerformSignedBeautyVoteValidatesBeforeDatabase(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := performSignedBeautyVote(
+			err := a.performSignedBeautyVote(
 				context.Background(),
 				tt.nft1,
 				tt.nft2,

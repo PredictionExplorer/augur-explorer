@@ -9,23 +9,23 @@ import (
 )
 
 // Current offers (API)
-func apiRwalkCurrentOffers(c *httpx.Context) {
+func (a *API) handleCurrentOffers(c *httpx.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if !dbInitialized() {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addr, ok := rwContractAddrs(c)
+	addr, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}
-	rwalk_aid := addr.RandomWalkAid
-	market_aid := addr.MarketPlaceAid
-	p_order_by := c.Param("order_by")
-	var order_by int64
-	if len(p_order_by) > 0 {
+	rwalkAid := addr.RandomWalkAid
+	marketAid := addr.MarketPlaceAid
+	pOrderBy := c.Param("order_by")
+	var orderBy int64
+	if len(pOrderBy) > 0 {
 		var success bool
-		order_by, success = common.ParseIntFromRemoteOrError(c, JSON, &p_order_by)
+		orderBy, success = common.ParseIntFromRemoteOrError(c, JSON, &pOrderBy)
 		if !success {
 			return
 		}
@@ -33,53 +33,53 @@ func apiRwalkCurrentOffers(c *httpx.Context) {
 		common.RespondErrorJSON(c, "'order_by' parameter is not set")
 		return
 	}
-	offers, err := rwRepo.ActiveOffers(c.Request.Context(), rwalk_aid, market_aid, int(order_by))
+	offers, err := a.repo.ActiveOffers(c.Request.Context(), rwalkAid, marketAid, int(orderBy))
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":    1,
 		"error":     "",
 		"Offers":    offers,
-		"RWalkAid":  rwalk_aid,
-		"MarketAid": market_aid,
+		"RWalkAid":  rwalkAid,
+		"MarketAid": marketAid,
 	})
 }
 
 // Floor price (API)
-func apiRwalkFloorPrice(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleFloorPrice(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	addr, ok := rwContractAddrs(c)
+	addr, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}
-	rwalk_aid := addr.RandomWalkAid
-	market_aid := addr.MarketPlaceAid
-	p_rwalk_addr := addr.RandomWalk
-	p_market_addr := addr.MarketPlace
-	no_offers, floor_price, _, _, err := rwRepo.FloorPrice(c.Request.Context(), rwalk_aid, market_aid)
+	rwalkAid := addr.RandomWalkAid
+	marketAid := addr.MarketPlaceAid
+	pRwalkAddr := addr.RandomWalk
+	pMarketAddr := addr.MarketPlace
+	noOffers, floorPrice, _, _, err := a.repo.FloorPrice(c.Request.Context(), rwalkAid, marketAid)
 	if err != nil {
-		respondStoreError(c, err)
+		a.respondStoreError(c, err)
 		return
 	}
 	// The legacy layer surfaced the driver's no-rows error text in DBError
 	// when the order book was empty; clients may key off it.
-	var db_err string
-	if no_offers {
-		db_err = legacyNoRowsText
+	var dbErr string
+	if noOffers {
+		dbErr = legacyNoRowsText
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status":     1,
 		"error":      "",
-		"FloorPrice": floor_price,
-		"DBError":    db_err,
-		"MarketAddr": p_market_addr,
-		"RWalkAddr":  p_rwalk_addr,
-		"RWalkAid":   rwalk_aid,
-		"MarketAid":  market_aid,
+		"FloorPrice": floorPrice,
+		"DBError":    dbErr,
+		"MarketAddr": pMarketAddr,
+		"RWalkAddr":  pRwalkAddr,
+		"RWalkAid":   rwalkAid,
+		"MarketAid":  marketAid,
 	})
 }

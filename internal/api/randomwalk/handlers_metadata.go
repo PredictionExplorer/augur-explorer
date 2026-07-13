@@ -12,18 +12,18 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// TokenMetadataHandler is the exported entry point for the bare ERC-721
-// tokenURI route (GET /metadata/:token_id), dispatched by host in the main
-// router. On RandomWalk hosts it serves RandomWalk metadata.
-func TokenMetadataHandler(c *httpx.Context) {
-	apiRandomwalkTokenMetadata(c)
+// TokenMetadata is the exported entry point for the bare ERC-721 tokenURI
+// route (GET /metadata/{tokenID}), dispatched by host in the shared router
+// constructor. On RandomWalk hosts it serves RandomWalk metadata.
+func (a *API) TokenMetadata(c *httpx.Context) {
+	a.handleTokenMetadata(c)
 }
 
-// GET /api/randomwalk/metadata/:token_id and GET /metadata/:token_id — ERC-721 metadata JSON.
+// GET /api/randomwalk/metadata/:tokenID and GET /metadata/:tokenID — ERC-721 metadata JSON.
 // On-chain baseURI is often https://<api-host>/metadata/ (e.g. legacy randomwalknft-api.com or api1.randomwalknft.com).
 // image/animation_url use MetadataRandomWalkImagePublicBase (default API /images/...; override with NFT_ASSETS_PUBLIC_BASE).
-func apiRandomwalkTokenMetadata(c *httpx.Context) {
-	if !dbInitialized() {
+func (a *API) handleTokenMetadata(c *httpx.Context) {
+	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
@@ -41,11 +41,11 @@ func apiRandomwalkTokenMetadata(c *httpx.Context) {
 		common.RespondErrorJSON(c, "invalid token_id")
 		return
 	}
-	addrs, ok := rwContractAddrs(c)
+	addrs, ok := a.rwContractAddrs(c)
 	if !ok {
 		return
 	}
-	info, err := rwRepo.TokenInfo(c.Request.Context(), addrs.RandomWalkAid, tokenID)
+	info, err := a.repo.TokenInfo(c.Request.Context(), addrs.RandomWalkAid, tokenID)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusNotFound, httpx.H{"error": "token not found"})
 		return

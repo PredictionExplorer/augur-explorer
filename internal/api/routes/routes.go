@@ -12,19 +12,29 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
-	"github.com/PredictionExplorer/augur-explorer/internal/api/v2"
+	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// Options carries optional API modules and production-only extras. The zero
-// value builds the frozen v1 router with its standard middleware, but no v2,
-// access log, metrics, or static assets.
+// Options carries the injected API modules and production-only extras. The
+// zero value builds a router with the standard middleware and health probes
+// but no module routes; a module is registered exactly when it is non-nil
+// (replacing the legacy package-level enable flags).
 type Options struct {
 	// AccessLog enables the per-request structured log line (production).
 	AccessLog *slog.Logger
 
 	// PanicLog receives recovered handler panics; nil uses slog.Default().
 	PanicLog *slog.Logger
+
+	// CosmicGame registers the frozen v1 CosmicGame surface.
+	CosmicGame *cosmicgame.API
+
+	// RandomWalk registers the frozen v1 RandomWalk surface.
+	RandomWalk *randomwalk.API
+
+	// FAQ registers the FAQ bot proxy routes.
+	FAQ *faq.Proxy
 
 	// V2 registers the generated /api/v2 surface. Nil builds v1 only, which
 	// is useful for the frozen v1 route-drift test.
@@ -40,9 +50,8 @@ type Options struct {
 }
 
 // New builds the standard middleware chain — CORS, panic recovery, optional
-// access log, per-IP rate limiting, extras — and registers every v1 route,
-// the injected v2 surface, health probes, and host-dispatched metadata.
-// Legacy module routes honor their enable flags (module Init).
+// access log, per-IP rate limiting, extras — and registers every injected
+// module, the v2 surface, health probes, and host-dispatched metadata.
 // st may be nil (bare route-table construction for drift tests).
 func New(st *store.Store, opts Options) *httpx.Router {
 	r := httpx.NewRouter()
@@ -66,9 +75,15 @@ func New(st *store.Store, opts Options) *httpx.Router {
 		opts.RegisterExtra(r)
 	}
 
-	randomwalk.RegisterAPIRoutes(r)
-	cosmicgame.RegisterAPIRoutes(r)
-	faq.RegisterAPIRoutes(r)
+	if opts.RandomWalk != nil {
+		opts.RandomWalk.RegisterRoutes(r)
+	}
+	if opts.CosmicGame != nil {
+		opts.CosmicGame.RegisterRoutes(r)
+	}
+	if opts.FAQ != nil {
+		opts.FAQ.RegisterRoutes(r)
+	}
 	if opts.V2 != nil {
 		opts.V2.RegisterRoutes(r)
 	}
@@ -77,13 +92,22 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	// https://<host>/metadata/, and this single webserv serves both the
 	// RandomWalk and Cosmic Signature hosts, so dispatch by request Host:
 	// a Cosmic Signature host serves Cosmic Signature metadata, anything
-	// else (RandomWalk hosts) serves RandomWalk metadata.
+	// else (RandomWalk hosts) serves RandomWalk metadata. A disabled module
+	// answers its legacy "module not available" envelope.
 	r.GET("/metadata/{token_id}", func(c *httpx.Context) {
 		if common.MetadataHostServesCosmicSignature(c.Request.Host, c.Request.Header.Get("X-Forwarded-Host")) {
-			cosmicgame.TokenMetadataHandler(c)
+			if opts.CosmicGame != nil {
+				opts.CosmicGame.TokenMetadata(c)
+				return
+			}
+			common.RespondErrorJSON(c, "CosmicGame module or database not available")
 			return
 		}
-		randomwalk.TokenMetadataHandler(c)
+		if opts.RandomWalk != nil {
+			opts.RandomWalk.TokenMetadata(c)
+			return
+		}
+		common.RespondErrorJSON(c, "Database link wasn't configured")
 	})
 
 	return r

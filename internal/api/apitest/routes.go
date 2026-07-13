@@ -18,15 +18,13 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 )
 
-// buildBareRouter registers every route without initializing module state or
-// touching a database. Handlers on the returned router must not be invoked;
-// it exists so tests can enumerate the served route table.
+// buildBareRouter registers every route without touching a database.
+// Handlers on the returned router must not be invoked; it exists so tests
+// can enumerate the served route table.
 func buildBareRouter() *httpx.Router {
-	// Route registration is gated behind each module's enable flag; force
-	// them on without running the DB/RPC-dependent Init functions.
-	cosmicgame.Enabled = true
-	randomwalk.Init(true)
-	faq.Enabled = true
-
-	return routes.New(nil, routes.Options{})
+	return routes.New(nil, routes.Options{
+		CosmicGame: cosmicgame.NewBare(),
+		RandomWalk: randomwalk.NewBare(),
+		FAQ:        faq.New(faq.Options{UpstreamURL: "http://127.0.0.1:8000"}),
+	})
 }
