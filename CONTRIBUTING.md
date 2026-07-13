@@ -71,11 +71,10 @@ every PR — all must pass.
   same tested `covergate` implementation. Current policy enforces legacy and
   handwritten-internal ratchets, a truthful all-production ratchet, and at
   least 95% coverage of changed executable Go statements. Floors only move up.
-- Run `make hooks-install` once per clone. Commit enforcement is intentionally
-  deferred while handwritten internal coverage climbs to 90%; CI still
-  enforces every current ratchet and 95% changed-code coverage. Once the
-  modernization checklist activates `commitGateEnabled`, the hook becomes
-  fail-closed, requires Docker, caches successful profiles under
+- Run `make hooks-install` once per clone. Commit enforcement is active and
+  fail-closed now that handwritten internal coverage is above 90%; both the
+  hook and CI enforce every current ratchet plus 95% changed-code coverage.
+  The hook requires Docker, caches successful profiles under
   `.git/coverage-gate/`, and refuses ambiguous partially staged Go changes.
   Local hooks can be bypassed by Git, so the GitHub **Coverage Gate** check
   must remain required by branch protection.

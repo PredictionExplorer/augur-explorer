@@ -19,17 +19,13 @@
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
-
-// subcommands is populated by register calls in the per-command files.
-var subcommands []*cobra.Command
-
-// register adds a subcommand to the root command. Each subcommand file calls
-// it from an init function so commands stay self-contained.
-func register(c *cobra.Command) { subcommands = append(subcommands, c) }
 
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
@@ -38,12 +34,21 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}
-	root.AddCommand(subcommands...)
+	root.AddCommand(
+		newArchiveCmd(),
+		newAssetsCmd(),
+		newDBCmd(),
+		newScanCmd(),
+		newSmoketestCmd(),
+		newTxCollectorCmd(),
+	)
 	return root
 }
 
 func main() {
-	if err := newRootCmd().Execute(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := newRootCmd().ExecuteContext(ctx); err != nil {
 		os.Exit(1)
 	}
 }

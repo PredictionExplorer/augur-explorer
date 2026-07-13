@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -11,38 +12,53 @@ import (
 	"strings"
 	"time"
 
+	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
 )
 
-// thumbSpec describes one thumbnail output size.
-type thumbSpec struct {
-	name    string // output file (without dir), e.g. "thumb_card.webp"
-	edge    int    // long-edge box (preserves aspect ratio)
-	quality int
-	unsharp string
+type clockFunc func() time.Time
+
+func (f clockFunc) Now() time.Time { return f() }
+
+type assetsThumbnailsDeps struct {
+	getenv        func(string) string
+	postgresConn  func() (string, error)
+	resolveMagick func(string) (string, error)
+	openDB        func(string, string) (*sql.DB, error)
+	ping          func(context.Context, *sql.DB) error
+	newSource     func(*sql.DB) opsassets.TokenSource
+	runner        opsassets.CommandRunner
+	clock         opsassets.Clock
+	generate      func(context.Context, opsassets.ThumbnailOptions) (opsassets.ThumbnailSummary, error)
 }
 
-// thumbSpecs are the two WebP thumbnails the frontend uses to keep pages
-// light: a 640px gallery card and a 160px table/list micro thumb.
-var thumbSpecs = []thumbSpec{
-	{name: "thumb_card.webp", edge: 640, quality: 82, unsharp: "0x0.8+0.8+0.005"},
-	{name: "thumb_micro.webp", edge: 160, quality: 80, unsharp: "0x0.6+0.7+0.003"},
-}
-
-// thumbCounters accumulates per-run results.
-type thumbCounters struct {
-	generated  int
-	skipped    int // up to date
-	srcMissing int // no image.png yet (not generated/uploaded)
-	tooFresh   int // image.png still being written
-	failed     int
+func defaultAssetsThumbnailsDeps() assetsThumbnailsDeps {
+	return assetsThumbnailsDeps{
+		getenv:        os.Getenv,
+		postgresConn:  toolutil.PostgresConnStringFromEnv,
+		resolveMagick: resolveMagick,
+		openDB:        sql.Open,
+		ping: func(ctx context.Context, db *sql.DB) error {
+			return db.PingContext(ctx)
+		},
+		newSource: func(db *sql.DB) opsassets.TokenSource {
+			return opsassets.SQLTokenSource{DB: db}
+		},
+		runner:   opsassets.ExecCommandRunner{},
+		clock:    clockFunc(time.Now),
+		generate: opsassets.GenerateThumbnails,
+	}
 }
 
 // newAssetsGenThumbnailsCmd builds `opsctl assets gen-thumbnails`, the
 // replacement for the standalone gen_thumbnails tool.
 func newAssetsGenThumbnailsCmd() *cobra.Command {
+	return newAssetsGenThumbnailsCmdWithDeps(defaultAssetsThumbnailsDeps())
+}
+
+func newAssetsGenThumbnailsCmdWithDeps(deps assetsThumbnailsDeps) *cobra.Command {
 	var (
 		dbConn    string
 		baseDir   string
@@ -78,7 +94,7 @@ Cron (every minute) — wrap in flock so runs never overlap:
 	  opsctl assets gen-thumbnails >> ~/ae_logs/thumbnails.log 2>&1'`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runGenThumbnails(dbConn, baseDir, schema, force, magickBin, minAge)
+			return runGenThumbnailsWithDeps(cmd, dbConn, baseDir, schema, force, magickBin, minAge, deps)
 		},
 	}
 	cmd.Flags().StringVar(&dbConn, "db", "",
@@ -92,100 +108,78 @@ Cron (every minute) — wrap in flock so runs never overlap:
 	return cmd
 }
 
-func init() { assetsCmd.AddCommand(newAssetsGenThumbnailsCmd()) }
+func runGenThumbnails(cmd *cobra.Command, dbConn, baseDir, schema string, force bool, magickBin string, minAge int) error {
+	return runGenThumbnailsWithDeps(
+		cmd,
+		dbConn,
+		baseDir,
+		schema,
+		force,
+		magickBin,
+		minAge,
+		defaultAssetsThumbnailsDeps(),
+	)
+}
 
-func runGenThumbnails(dbConn, baseDir, schema string, force bool, magickBin string, minAge int) error {
+func runGenThumbnailsWithDeps(
+	cmd *cobra.Command,
+	dbConn, baseDir, schema string,
+	force bool,
+	magickBin string,
+	minAge int,
+	deps assetsThumbnailsDeps,
+) error {
+	if minAge < 0 {
+		return errors.New("--min-age must be non-negative")
+	}
 	base := baseDir
 	if base == "" {
-		root := strings.TrimSpace(os.Getenv("NFT_ASSETS_ROOT"))
+		root := strings.TrimSpace(deps.getenv("NFT_ASSETS_ROOT"))
 		if root == "" {
 			return errors.New("variable NFT_ASSETS_ROOT isn't set")
 		}
 		base = filepath.Join(root, "new", "cosmicsignature")
 	}
-	absBase, err := filepath.Abs(base)
-	if err != nil {
-		return fmt.Errorf("resolve base dir %q: %w", base, err)
-	}
-	if st, err := os.Stat(absBase); err != nil || !st.IsDir() {
-		return fmt.Errorf("base dir %q is not a directory: %v", absBase, err)
+	if err := opsassets.ValidateSchema(schema); err != nil {
+		return err
 	}
 
-	magickPath, err := resolveMagick(magickBin)
+	magickPath, err := deps.resolveMagick(magickBin)
 	if err != nil {
 		return err
 	}
 
 	conn := dbConn
 	if conn == "" {
-		conn, err = toolutil.PostgresConnStringFromEnv()
+		conn, err = deps.postgresConn()
 		if err != nil {
 			return fmt.Errorf("no --db flag and %w", err)
 		}
 	}
 
-	db, err := sql.Open("postgres", conn)
+	db, err := deps.openDB("postgres", conn)
 	if err != nil {
 		return fmt.Errorf("connect: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	db.SetMaxOpenConns(2)
-	if err := db.Ping(); err != nil {
+	if err := deps.ping(cmd.Context(), db); err != nil {
 		return fmt.Errorf("ping database: %w", err)
 	}
 
-	tokens, err := fetchTokenSeeds(db, schema)
-	if err != nil {
-		return fmt.Errorf("fetch token seeds: %w", err)
-	}
-
-	log.Printf("thumbnails: base=%s seeds=%d force=%v magick=%s", absBase, len(tokens), force, magickPath)
-
-	var c thumbCounters
-	freshCutoff := time.Now().Add(-time.Duration(minAge) * time.Second)
-
-	for _, tk := range tokens {
-		dir, ok := seedDir(absBase, tk.seed)
-		if !ok {
-			c.srcMissing++
-			continue
-		}
-		src := filepath.Join(dir, "image.png")
-
-		srcInfo, err := os.Stat(src)
-		if err != nil {
-			c.srcMissing++
-			continue
-		}
-		if srcInfo.ModTime().After(freshCutoff) {
-			// image.png may still be uploading; try again next run.
-			c.tooFresh++
-			continue
-		}
-
-		for _, spec := range thumbSpecs {
-			dst := filepath.Join(dir, spec.name)
-			if !force && upToDate(dst, srcInfo.ModTime()) {
-				c.skipped++
-				continue
-			}
-			if err := generateThumbnail(magickPath, src, dst, spec); err != nil {
-				c.failed++
-				log.Printf("FAIL %s: %v", dst, err)
-				continue
-			}
-			c.generated++
-			log.Printf("OK   %s", dst)
-		}
-	}
-
-	log.Printf("done: generated=%d skipped=%d src-missing=%d too-fresh=%d failed=%d",
-		c.generated, c.skipped, c.srcMissing, c.tooFresh, c.failed)
-
-	if c.failed > 0 {
-		return fmt.Errorf("%d thumbnail(s) failed to generate", c.failed)
-	}
-	return nil
+	logger := log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
+	_, err = deps.generate(cmd.Context(), opsassets.ThumbnailOptions{
+		Source:     deps.newSource(db),
+		BaseDir:    base,
+		Schema:     schema,
+		Force:      force,
+		MagickPath: magickPath,
+		MinAge:     time.Duration(minAge) * time.Second,
+		Runner:     deps.runner,
+		Logger:     logger,
+		Clock:      deps.clock,
+	})
+	return err
 }
 
 // resolveMagick returns the ImageMagick binary path. If explicit is empty it
@@ -205,54 +199,4 @@ func resolveMagick(explicit string) (string, error) {
 		}
 	}
 	return "", errors.New("neither 'magick' (ImageMagick 7) nor 'convert' (ImageMagick 6) found on PATH")
-}
-
-// generateThumbnail runs ImageMagick to produce one thumbnail, writing
-// atomically via a temp file.
-func generateThumbnail(magickPath, src, dst string, spec thumbSpec) error {
-	tmp := dst + ".tmp"
-	args := []string{
-		src,
-		"-strip",
-		"-colorspace", "RGB", // linear light: keeps bright-on-black lines from darkening
-		"-filter", "Lanczos",
-		"-resize", fmt.Sprintf("%dx%d", spec.edge, spec.edge), // fits within box, preserves aspect
-		"-colorspace", "sRGB",
-		"-modulate", "100,112,100", // +12% saturation so colors stay vivid when small
-		"-unsharp", spec.unsharp,
-		"-quality", fmt.Sprintf("%d", spec.quality),
-		"-define", "webp:method=6",
-		tmp,
-	}
-	out, err := exec.Command(magickPath, args...).CombinedOutput()
-	if err != nil {
-		_ = os.Remove(tmp)
-		msg := strings.TrimSpace(string(out))
-		if msg == "" {
-			return err
-		}
-		return fmt.Errorf("%v: %s", err, msg)
-	}
-	return os.Rename(tmp, dst)
-}
-
-// upToDate reports whether dst exists and is at least as new as the source.
-func upToDate(dst string, srcMod time.Time) bool {
-	st, err := os.Stat(dst)
-	if err != nil {
-		return false
-	}
-	return !st.ModTime().Before(srcMod)
-}
-
-// seedDir returns the per-seed package directory that holds image.png, trying
-// the raw DB seed name and the zero-padded 64-char variant.
-func seedDir(base, seed string) (string, bool) {
-	for _, c := range seedNameCandidates(seed) {
-		d := filepath.Join(base, c.name)
-		if isRegularFile(filepath.Join(d, "image.png")) {
-			return d, true
-		}
-	}
-	return "", false
 }

@@ -1,30 +1,41 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"database/sql"
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"log"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
-	"github.com/lib/pq"
+	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
+	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 )
 
-// evtlogRecord is one evt_log row loaded for the diff, keyed by log_rlp.
-type evtlogRecord struct {
-	blockNum     int64
-	txHash       string
-	contractAddr string
-	topic0Sig    string
-	logRLP       []byte
+type dbEvtlogDiffDeps struct {
+	openDB    func(string, string) (*sql.DB, error)
+	loadIDs   func(context.Context, *sql.DB) ([]int64, error)
+	newLoader func(*sql.DB) dbverify.Loader
+	diff      func(context.Context, dbverify.Loader, dbverify.Loader, []int64, int, int) (dbverify.EventLogDiffReport, error)
+}
+
+func defaultDBEvtlogDiffDeps() dbEvtlogDiffDeps {
+	return dbEvtlogDiffDeps{
+		openDB:  sql.Open,
+		loadIDs: dbverify.LoadRandomWalkContractAddressIDs,
+		newLoader: func(db *sql.DB) dbverify.Loader {
+			return &dbverify.SQLLoader{DB: db}
+		},
+		diff: dbverify.DiffEventLogs,
+	}
 }
 
 // newDBEvtlogDiffCmd builds `opsctl db evtlog-diff`, the replacement for the
 // standalone evtlog_diff tool.
 func newDBEvtlogDiffCmd() *cobra.Command {
+	return newDBEvtlogDiffCmdWithDeps(defaultDBEvtlogDiffDeps())
+}
+
+func newDBEvtlogDiffCmdWithDeps(deps dbEvtlogDiffDeps) *cobra.Command {
 	var (
 		primaryConn   string
 		secondaryConn string
@@ -38,7 +49,8 @@ by log_rlp content, and reports records missing from or extra in the
 secondary plus any field mismatches on matching records.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runEvtlogDiff(primaryConn, secondaryConn, limit)
+			logger := log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
+			return runEvtlogDiffWithDeps(cmd.Context(), logger, primaryConn, secondaryConn, limit, deps)
 		},
 	}
 	cmd.Flags().StringVar(&primaryConn, "primary", "", "Primary DB connection string (gold standard)")
@@ -49,191 +61,50 @@ secondary plus any field mismatches on matching records.`,
 	return cmd
 }
 
-func init() { dbCmd.AddCommand(newDBEvtlogDiffCmd()) }
+func runEvtlogDiff(ctx context.Context, logger *log.Logger, primaryConn, secondaryConn string, limit int) error {
+	return runEvtlogDiffWithDeps(ctx, logger, primaryConn, secondaryConn, limit, defaultDBEvtlogDiffDeps())
+}
 
-func runEvtlogDiff(primaryConn, secondaryConn string, limit int) error {
-	primaryDB, err := sql.Open("postgres", primaryConn)
+func runEvtlogDiffWithDeps(
+	ctx context.Context,
+	logger *log.Logger,
+	primaryConn, secondaryConn string,
+	limit int,
+	deps dbEvtlogDiffDeps,
+) error {
+	primaryDB, err := deps.openDB("postgres", primaryConn)
 	if err != nil {
 		return fmt.Errorf("connect to primary: %w", err)
 	}
-	defer primaryDB.Close()
-	log.Println("Connected to primary database")
+	defer func() { _ = primaryDB.Close() }()
+	logger.Println("Connected to primary database")
 
-	secondaryDB, err := sql.Open("postgres", secondaryConn)
+	secondaryDB, err := deps.openDB("postgres", secondaryConn)
 	if err != nil {
 		return fmt.Errorf("connect to secondary: %w", err)
 	}
-	defer secondaryDB.Close()
-	log.Println("Connected to secondary database")
+	defer func() { _ = secondaryDB.Close() }()
+	logger.Println("Connected to secondary database")
 
-	contractAids, err := toolutil.GetContractAddressIds(primaryDB, toolutil.ProjectRandomWalk)
+	contractAddressIDs, err := deps.loadIDs(ctx, primaryDB)
 	if err != nil {
-		return fmt.Errorf("contract aids: %w", err)
+		return err
 	}
-	if len(contractAids) == 0 {
-		return errors.New("no contract addresses found in rw_contracts")
-	}
-	log.Printf("Found %d contract address IDs: %v", len(contractAids), contractAids)
+	logger.Printf("Found %d contract address IDs: %v", len(contractAddressIDs), contractAddressIDs)
 
-	var primaryCount, secondaryCount int64
-	_ = primaryDB.QueryRow("SELECT COUNT(*) FROM evt_log WHERE contract_aid = ANY($1)", pq.Array(contractAids)).Scan(&primaryCount)
-	_ = secondaryDB.QueryRow("SELECT COUNT(*) FROM evt_log").Scan(&secondaryCount)
-	log.Printf("Primary has %d records for our contracts, Secondary has %d records total", primaryCount, secondaryCount)
-
-	log.Println("\n=== Loading events from primary (filtered by contract) ===")
-	primaryEvents, err := loadEvtlogRecords(primaryDB, contractAids, limit)
+	report, err := deps.diff(
+		ctx,
+		deps.newLoader(primaryDB),
+		deps.newLoader(secondaryDB),
+		contractAddressIDs,
+		limit,
+		dbverify.DefaultDiffReportLimit,
+	)
 	if err != nil {
-		return fmt.Errorf("query primary events: %w", err)
+		return err
 	}
-	log.Printf("Loaded %d events from primary", len(primaryEvents))
-
-	log.Println("\n=== Loading events from secondary ===")
-	secondaryEvents, err := loadEvtlogRecords(secondaryDB, nil, limit)
-	if err != nil {
-		return fmt.Errorf("query secondary events: %w", err)
-	}
-	log.Printf("Loaded %d events from secondary", len(secondaryEvents))
-
-	log.Println("\n=== Comparing events ===")
-
-	primaryByRLP := indexByLogRLP(primaryEvents)
-	secondaryByRLP := indexByLogRLP(secondaryEvents)
-
-	// Report the first 20 records missing from the secondary.
-	missingCount := 0
-	for key, evt := range primaryByRLP {
-		if _, found := secondaryByRLP[key]; !found {
-			log.Printf("ERROR: Secondary missing event: block=%d tx=%s topic0=%s",
-				evt.blockNum, evt.txHash, evt.topic0Sig)
-			missingCount++
-			if missingCount >= 20 {
-				log.Printf("... (showing first 20 missing)")
-				break
-			}
-		}
-	}
-
-	// Report the first 20 extra records in the secondary.
-	extraCount := 0
-	for key, evt := range secondaryByRLP {
-		if _, found := primaryByRLP[key]; !found {
-			log.Printf("ERROR: Secondary has extra event: block=%d tx=%s topic0=%s",
-				evt.blockNum, evt.txHash, evt.topic0Sig)
-			extraCount++
-			if extraCount >= 20 {
-				log.Printf("... (showing first 20 extra)")
-				break
-			}
-		}
-	}
-
-	// Count the actual totals.
-	actualMissing := 0
-	for key := range primaryByRLP {
-		if _, found := secondaryByRLP[key]; !found {
-			actualMissing++
-		}
-	}
-	actualExtra := 0
-	for key := range secondaryByRLP {
-		if _, found := primaryByRLP[key]; !found {
-			actualExtra++
-		}
-	}
-
-	// Field mismatches on matching events.
-	mismatchCount := 0
-	for key, pri := range primaryByRLP {
-		sec, found := secondaryByRLP[key]
-		if !found {
-			continue
-		}
-
-		var mismatches []string
-		if pri.blockNum != sec.blockNum {
-			mismatches = append(mismatches, fmt.Sprintf("block_num: %d vs %d", pri.blockNum, sec.blockNum))
-		}
-		if pri.txHash != sec.txHash {
-			mismatches = append(mismatches, fmt.Sprintf("tx_hash: %s vs %s", pri.txHash, sec.txHash))
-		}
-		if pri.topic0Sig != sec.topic0Sig {
-			mismatches = append(mismatches, fmt.Sprintf("topic0_sig: %s vs %s", pri.topic0Sig, sec.topic0Sig))
-		}
-		if !bytes.Equal(pri.logRLP, sec.logRLP) {
-			mismatches = append(mismatches, fmt.Sprintf("log_rlp: len %d vs %d", len(pri.logRLP), len(sec.logRLP)))
-		}
-
-		if len(mismatches) > 0 {
-			log.Printf("ERROR: Mismatch: block=%d tx=%s: %v", pri.blockNum, pri.txHash, mismatches)
-			mismatchCount++
-		}
-	}
-
-	log.Println("\n=== SUMMARY ===")
-	log.Printf("Primary events (for our contracts): %d", len(primaryEvents))
-	log.Printf("Secondary events: %d", len(secondaryEvents))
-	log.Printf("Missing in secondary: %d records", actualMissing)
-	log.Printf("Extra in secondary: %d records", actualExtra)
-	log.Printf("Field mismatches: %d records", mismatchCount)
-
-	if actualMissing == 0 && actualExtra == 0 && mismatchCount == 0 {
-		log.Println("✓ Databases match perfectly!")
-	} else {
-		log.Println("✗ Databases have differences!")
+	for _, line := range dbverify.FormatEventLogDiffReport(report) {
+		logger.Print(line)
 	}
 	return nil
-}
-
-// loadEvtlogRecords loads evt_log rows joined with transaction and address.
-// A nil contractAids loads every row (secondary DB); otherwise rows are
-// filtered by contract (primary DB). limit > 0 caps the result.
-func loadEvtlogRecords(db *sql.DB, contractAids []int64, limit int) ([]evtlogRecord, error) {
-	limitClause := ""
-	if limit > 0 {
-		limitClause = fmt.Sprintf(" LIMIT %d", limit)
-	}
-
-	var rows *sql.Rows
-	var err error
-	if contractAids != nil {
-		rows, err = db.Query(fmt.Sprintf(`
-			SELECT e.block_num, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
-			FROM evt_log e
-			JOIN transaction t ON e.tx_id = t.id
-			JOIN address a ON e.contract_aid = a.address_id
-			WHERE e.contract_aid = ANY($1)
-			ORDER BY e.block_num, e.id%s
-		`, limitClause), pq.Array(contractAids))
-	} else {
-		rows, err = db.Query(fmt.Sprintf(`
-			SELECT e.block_num, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
-			FROM evt_log e
-			JOIN transaction t ON e.tx_id = t.id
-			JOIN address a ON e.contract_aid = a.address_id
-			ORDER BY e.block_num, e.id%s
-		`, limitClause))
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var events []evtlogRecord
-	for rows.Next() {
-		var evt evtlogRecord
-		if err := rows.Scan(&evt.blockNum, &evt.txHash, &evt.contractAddr, &evt.topic0Sig, &evt.logRLP); err != nil {
-			return nil, fmt.Errorf("scan event: %w", err)
-		}
-		events = append(events, evt)
-	}
-	return events, rows.Err()
-}
-
-// indexByLogRLP builds a content-based lookup keyed by hex-encoded log_rlp.
-func indexByLogRLP(events []evtlogRecord) map[string]evtlogRecord {
-	byRLP := make(map[string]evtlogRecord, len(events))
-	for _, evt := range events {
-		byRLP[hex.EncodeToString(evt.logRLP)] = evt
-	}
-	return byRLP
 }

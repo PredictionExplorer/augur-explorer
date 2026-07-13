@@ -14,6 +14,12 @@ Every subcommand supports `--help`. Flags use the standard cobra `--flag`
 syntax (the old single-file tools used Go `flag` single-dash syntax; names and
 defaults are unchanged).
 
+`cmd/opsctl` contains only Cobra, environment and connection wiring. The
+context-aware archive, assets, CST scan, DB verification, smoke-test and
+transaction-collector engines live under `internal/ops`; all three node log
+scanners share the adaptive range/retry implementation in
+`internal/indexer/logscan`.
+
 ## Command overview
 
 | Command | Replaces | Purpose |
@@ -92,6 +98,10 @@ opsctl archive verify --project both --db 'postgres://user:pass@host:5432/dbname
 Backfills `arch_evtlog` / `arch_tx` / `arch_block` from an Ethereum node via
 `FilterLogs`, inserting only rows missing from `arch_evtlog`. Requires
 `RPC_URL` and `arch_evtlog` keyed by `(tx_hash, log_index)`.
+Retries also repair partial dependencies and reconcile stale project rows
+against canonical blocks, including reorg replacements with no matching logs.
+The command completes best-effort scanning but exits non-zero if any row-level
+RPC or database error remains unresolved.
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -151,7 +161,12 @@ config — see `tx-collector.example.json`:
 ```
 
 Blobs are stored as `<output_dir>/<block_num>/<tx_hash>_tx.rlp` and
-`..._receipt.rlp`.
+`..._receipt.rlp`. New directories use mode `0750` and blobs use `0640`;
+writes use a unique same-directory temporary file followed by atomic rename,
+with file and directory `fsync`, so interrupted or concurrent runs never
+expose or acknowledge a partial blob. Existing blobs are decoded and their
+transaction identity checked before they are skipped; unrepaired
+encoding/filesystem failures make the command exit non-zero.
 
 ### tx-collector run
 
@@ -224,7 +239,8 @@ Cron (every minute), wrapped in `flock` so runs never overlap:
 Fetches every minted RandomWalk token image from the public image server
 (`https://api.randomwalknft.com:1443/images/randomwalk`) and reports tokens
 answered with HTTP 403 (a known RandomWalk webserver bug for early token ids).
-No flags; the DB connection comes from the `PGSQL_*` environment variables.
+It checks HTTP status without writing temporary image files. No flags; the DB
+connection comes from the `PGSQL_*` environment variables.
 
 ## smoketest
 

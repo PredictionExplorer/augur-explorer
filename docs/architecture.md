@@ -76,10 +76,11 @@ flowchart LR
 | `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill (scan pipeline in `internal/freezer/scan`) |
 | `cmd/imggen-monitor` | Verifies/regenerates NFT image+video artifacts |
 | `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons |
-| `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Operator CLIs (contract interaction, social tools, data ops) |
+| `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Thin operator CLI wiring (contract interaction, social tools, data ops) |
 | `internal/api` | HTTP stack: frozen v1 handlers, generated/injected `v2`, `httpx` router, `faq` proxy, shared middleware |
 | `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
-| `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry with the `cosmicgame` and `randomwalk` handler sets as subpackages |
+| `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry plus reusable adaptive `logscan` ranges |
+| `internal/ops` | Context-aware engines behind `opsctl`: archive, assets, CST scan, DB verification, API smoke testing and transaction backups |
 | `internal/primitives` | Domain types and API response structs |
 | `internal/freezer` | Geth freezer/ancient store readers |
 | `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients |
