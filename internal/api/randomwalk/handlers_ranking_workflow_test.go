@@ -44,29 +44,28 @@ func signBeautyVoteForTest(
 	return hex.EncodeToString(sig), crypto.PubkeyToAddress(key.PublicKey).Hex()
 }
 
-func TestExploreRandomMaxTokenID(t *testing.T) {
+// TestExploreMaxTokenIDOption pins the module-side defaulting: malformed
+// values are rejected at startup by the typed configuration (config tests),
+// so the module only needs to guard the zero value.
+func TestExploreMaxTokenIDOption(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
-		env  string
+		opt  int64
 		want int64
 	}{
-		{name: "empty uses legacy default", env: "", want: 3766},
-		{name: "whitespace uses legacy default", env: " \t\n", want: 3766},
-		{name: "positive value", env: "42", want: 42},
-		{name: "trimmed positive value", env: " 9001 ", want: 9001},
-		{name: "maximum int64", env: "9223372036854775807", want: 9223372036854775807},
-		{name: "zero rejected", env: "0", want: 3766},
-		{name: "negative rejected", env: "-1", want: 3766},
-		{name: "non decimal rejected", env: "0x10", want: 3766},
-		{name: "trailing junk rejected", env: "12tokens", want: 3766},
-		{name: "overflow rejected", env: "9223372036854775808", want: 3766},
+		{name: "zero uses legacy default", opt: 0, want: 3766},
+		{name: "negative uses legacy default", opt: -1, want: 3766},
+		{name: "positive value", opt: 42, want: 42},
+		{name: "maximum int64", opt: math.MaxInt64, want: math.MaxInt64},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("RANDOMWALK_EXPLORE_MAX_TOKEN_ID", tt.env)
-			if got := exploreRandomMaxTokenID(); got != tt.want {
-				t.Fatalf("exploreRandomMaxTokenID() = %d, want %d for %q", got, tt.want, tt.env)
+			t.Parallel()
+			a := New(nil, Options{ExploreMaxTokenID: tt.opt})
+			if a.exploreMaxTokenID != tt.want {
+				t.Fatalf("exploreMaxTokenID = %d, want %d for option %d", a.exploreMaxTokenID, tt.want, tt.opt)
 			}
 		})
 	}
@@ -100,34 +99,36 @@ func TestExploreRandomLimit(t *testing.T) {
 	}
 }
 
+// TestRankingVoteChainAllowed pins the allowlist semantics over the typed
+// configuration values (RANKING_VOTE_CHAIN_IDS parsing — trimming, blank
+// entries, malformed-entry rejection — is the config loader's job now and
+// is tested there).
 func TestRankingVoteChainAllowed(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
-		env     string
+		allowed []int64
 		chainID int64
 		want    bool
 	}{
-		{name: "positive allowed when unset", env: "", chainID: 1, want: true},
-		{name: "positive allowed when whitespace", env: " \t", chainID: 42161, want: true},
-		{name: "zero always rejected", env: "", chainID: 0, want: false},
-		{name: "negative always rejected", env: "", chainID: -1, want: false},
-		{name: "first allowlist entry", env: "1,42161,8453", chainID: 1, want: true},
-		{name: "trimmed allowlist entry", env: "1, 42161 ,8453", chainID: 42161, want: true},
-		{name: "last allowlist entry", env: "1,42161,8453", chainID: 8453, want: true},
-		{name: "not in allowlist", env: "1,42161,8453", chainID: 10, want: false},
-		{name: "exact match not substring", env: "11,421610", chainID: 1, want: false},
-		{name: "blank entries ignored", env: ", ,42161,,", chainID: 42161, want: true},
-		{name: "only blank entries deny", env: ", ,", chainID: 1, want: false},
-		{name: "invalid entries ignored", env: "garbage,42161,9223372036854775808", chainID: 42161, want: true},
-		{name: "invalid list denies unmatched", env: "garbage,9223372036854775808", chainID: 1, want: false},
-		{name: "maximum int64", env: "9223372036854775807", chainID: 9223372036854775807, want: true},
+		{name: "positive allowed when unset", allowed: nil, chainID: 1, want: true},
+		{name: "positive allowed when empty", allowed: []int64{}, chainID: 42161, want: true},
+		{name: "zero always rejected", allowed: nil, chainID: 0, want: false},
+		{name: "negative always rejected", allowed: nil, chainID: -1, want: false},
+		{name: "first allowlist entry", allowed: []int64{1, 42161, 8453}, chainID: 1, want: true},
+		{name: "middle allowlist entry", allowed: []int64{1, 42161, 8453}, chainID: 42161, want: true},
+		{name: "last allowlist entry", allowed: []int64{1, 42161, 8453}, chainID: 8453, want: true},
+		{name: "not in allowlist", allowed: []int64{1, 42161, 8453}, chainID: 10, want: false},
+		{name: "exact match not substring", allowed: []int64{11, 421610}, chainID: 1, want: false},
+		{name: "maximum int64", allowed: []int64{math.MaxInt64}, chainID: math.MaxInt64, want: true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("RANKING_VOTE_CHAIN_IDS", tt.env)
-			if got := rankingVoteChainAllowed(tt.chainID); got != tt.want {
-				t.Fatalf("rankingVoteChainAllowed(%d) = %v, want %v for %q", tt.chainID, got, tt.want, tt.env)
+			t.Parallel()
+			a := New(nil, Options{VoteChainIDs: tt.allowed})
+			if got := a.rankingVoteChainAllowed(tt.chainID); got != tt.want {
+				t.Fatalf("rankingVoteChainAllowed(%d) = %v, want %v for %v", tt.chainID, got, tt.want, tt.allowed)
 			}
 		})
 	}
@@ -312,8 +313,8 @@ func TestPerformRankingMatchWithDependencies(t *testing.T) {
 }
 
 func TestPerformSignedBeautyVoteValidatesBeforeDatabase(t *testing.T) {
-	a := NewBare()
-	t.Setenv("RANKING_VOTE_CHAIN_IDS", "1")
+	t.Parallel()
+	a := New(nil, Options{VoteChainIDs: []int64{1}})
 
 	tests := []struct {
 		name                  string
@@ -382,7 +383,7 @@ func TestPerformSignedBeautyVoteValidatesBeforeDatabase(t *testing.T) {
 }
 
 func TestPerformSignedBeautyVoteWithDependencies(t *testing.T) {
-	t.Setenv("RANKING_VOTE_CHAIN_IDS", "1")
+	t.Parallel()
 
 	const (
 		nft1     = int64(7)
@@ -507,6 +508,7 @@ func TestPerformSignedBeautyVoteWithDependencies(t *testing.T) {
 					}
 					return !tt.nonceMissing, tt.consumeErr
 				},
+				chainAllowed: func(id int64) bool { return id == chainID },
 			}
 
 			err := performSignedBeautyVoteWithDependencies(

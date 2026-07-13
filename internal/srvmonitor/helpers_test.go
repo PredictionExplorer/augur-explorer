@@ -3,7 +3,7 @@ package srvmonitor
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"sync"
 	"testing"
@@ -141,9 +141,9 @@ func (l *captureLogger) String() string {
 	return l.buf.String()
 }
 
-func newTestLogger() (*log.Logger, *captureLogger) {
+func newTestLogger() (*slog.Logger, *captureLogger) {
 	sink := &captureLogger{}
-	return log.New(sink, "", 0), sink
+	return slog.New(slog.NewTextHandler(sink, nil)), sink
 }
 
 // scriptedRow is one QueryRow result: values assigned in order, or an error.

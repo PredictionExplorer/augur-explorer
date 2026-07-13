@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -148,11 +148,8 @@ func TestFloatSanitizersRemoveNonFiniteValuesRecursively(t *testing.T) {
 }
 
 func TestRespondStoreErrorKeepsDetailsOutOfResponse(t *testing.T) {
-	var infoLog, errorLog bytes.Buffer
-	a := &API{
-		info:   log.New(&infoLog, "", 0),
-		errlog: log.New(&errorLog, "", 0),
-	}
+	var logBuf bytes.Buffer
+	a := &API{logger: slog.New(slog.NewTextHandler(&logBuf, nil))}
 
 	t.Run("server error is logged", func(t *testing.T) {
 		response := httptest.NewRecorder()
@@ -166,23 +163,22 @@ func TestRespondStoreErrorKeepsDetailsOutOfResponse(t *testing.T) {
 		if strings.Contains(response.Body.String(), "database password secret") {
 			t.Fatalf("response leaked internal error: %s", response.Body.String())
 		}
-		if !strings.Contains(infoLog.String(), "database password secret") ||
-			!strings.Contains(errorLog.String(), "database password secret") {
-			t.Fatalf("underlying error was not logged: info=%q error=%q", infoLog.String(), errorLog.String())
+		if !strings.Contains(logBuf.String(), "database password secret") ||
+			!strings.Contains(logBuf.String(), "level=ERROR") {
+			t.Fatalf("underlying error was not logged at error level: %q", logBuf.String())
 		}
 	})
 
 	t.Run("client cancellation is not logged", func(t *testing.T) {
-		infoLog.Reset()
-		errorLog.Reset()
+		logBuf.Reset()
 		response := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/api/cosmicgame/test", nil)
 		a.respondStoreError(httpx.NewContext(response, request), context.Canceled)
 		if response.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d", response.Code)
 		}
-		if infoLog.Len() != 0 || errorLog.Len() != 0 {
-			t.Fatalf("cancellation was logged: info=%q error=%q", infoLog.String(), errorLog.String())
+		if logBuf.Len() != 0 {
+			t.Fatalf("cancellation was logged: %q", logBuf.String())
 		}
 	})
 }

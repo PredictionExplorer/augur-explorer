@@ -13,6 +13,9 @@ docker compose up db migrate
 # Environment
 cp .env.example .env   # fill in RPC_URL at minimum
 export $(grep -v '^#' .env | xargs)
+# The database can be one DATABASE_URL instead of the PGSQL_* variables.
+# Services log structured records to stdout: text by default (dev), JSON
+# with LOG_FORMAT=json (production); LOG_LEVEL selects the minimum level.
 
 # Build everything into ./bin
 make build
@@ -76,9 +79,11 @@ All subsequent migrations are applied normally with `goose up`.
 Unit files live in `deploy/systemd/`. Layout on the host:
 
 - Binaries in `/opt/rwcg/bin` (`make build`, then copy `bin/*`).
-- Config in `/etc/rwcg/*.env` (see `.env.example` for every variable).
-- Logs in `/var/log/rwcg` (plus the legacy `$HOME/ae_logs` file logs until
-  the slog migration completes).
+- Config in `/etc/rwcg/*.env` (verified against the code by
+  `internal/config`'s `.env.example` test; set `LOG_FORMAT=json` here).
+- Logs go to stdout and journald owns persistence — the legacy
+  `$HOME/ae_logs` file logs (`webserver_*.log`, `*_info/_error/_db.log`) are
+  gone since the §8.3 slog migration.
 
 ```bash
 sudo cp deploy/systemd/*.service deploy/systemd/*.timer /etc/systemd/system/
@@ -90,6 +95,19 @@ sudo systemctl enable --now rwcg-notibot rwcg-imggen-monitor.timer
 
 These replace the legacy `run-loop-*.sh` nohup scripts (still present next to
 each command for the transition; delete them once systemd is live).
+
+### Reading logs
+
+```bash
+journalctl -u rwcg-apiserver@cosmic -f          # follow the API server
+journalctl -u rwcg-etl@cg --since "1 hour ago"  # ETL records
+journalctl -u rwcg-apiserver@cosmic -o cat | jq 'select(.msg=="request")'
+```
+
+Every service emits one JSON record per line (`LOG_FORMAT=json`): access
+lines are `msg="request"` with `route`, `status`, `duration_ms` and `ip`
+fields; database traces carry `component=db`; startup prints an
+`effective configuration` record with secrets redacted.
 
 ## Security posture
 
@@ -106,8 +124,17 @@ each command for the transition; delete them once systemd is live).
 - `srvmonitor` — terminal dashboard checking RPC nodes, DB, web APIs, disk,
   image server; optional WhatsApp/Android alerts (see `cmd/srvmonitor/README.md`).
 - `loganomaly` — scans the API access log for 5xx/panics, feeding srvmonitor.
-  It understands both the current slog text format (`msg=request ... status=`)
-  and the legacy `[GIN]` lines still present in older log files.
+  It understands slog JSON records (production), slog text lines and the
+  legacy `[GIN]` lines still present in older capture files. Under systemd,
+  export the journal for it on the production host, e.g. a cron entry:
+
+  ```bash
+  journalctl -u rwcg-apiserver@cosmic --since -2d -o cat \
+    > ~/ae_logs/webserver_cosmic_journal.log \
+    && loganomaly -in ~/ae_logs/webserver_cosmic_journal.log
+  ```
+
+  The anomalies file and the srvmonitor scp pipeline are unchanged.
 - Prometheus can scrape `METRICS_ADDR/metrics`; alert on
   `rwcg_http_requests_total{status="5xx"}` and request-duration percentiles.
   Since the stdlib-router migration the `route` label uses ServeMux syntax

@@ -106,33 +106,6 @@ func (b *safeBuffer) String() string {
 	return b.buf.String()
 }
 
-func TestNewClientFromEnv(t *testing.T) {
-	t.Parallel()
-	full := map[string]string{
-		"IM_REQUEST_URL": "http://gen/generate",
-		"IM_IMAGE_URL":   "http://img/",
-		"IM_VIDEO_URL":   "http://vid/",
-	}
-	c, err := NewClientFromEnv(func(k string) string { return full[k] }, http.DefaultClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.RequestURL != "http://gen/generate" || c.ImageURL != "http://img/" || c.VideoURL != "http://vid/" {
-		t.Fatalf("client = %+v", c)
-	}
-
-	for _, missing := range []string{"IM_REQUEST_URL", "IM_IMAGE_URL", "IM_VIDEO_URL"} {
-		env := map[string]string{}
-		for k, v := range full {
-			env[k] = v
-		}
-		delete(env, missing)
-		if _, err := NewClientFromEnv(func(k string) string { return env[k] }, http.DefaultClient); err == nil {
-			t.Fatalf("missing %s must error", missing)
-		}
-	}
-}
-
 func TestClientExists(t *testing.T) {
 	t.Parallel()
 	s := newArtifactServer(t)

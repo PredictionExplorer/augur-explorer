@@ -87,8 +87,8 @@ func TestRandomwalkHandlersRejectUnconfiguredDatabase(t *testing.T) {
 }
 
 func TestRankingHandlersValidateBeforeStoreAccess(t *testing.T) {
-	a := New(new(store.Store), nil, nil)
-	t.Setenv("RANKING_VOTE_CHAIN_IDS", "1")
+	t.Parallel()
+	a := New(new(store.Store), Options{VoteChainIDs: []int64{1}})
 
 	tests := []struct {
 		name          string

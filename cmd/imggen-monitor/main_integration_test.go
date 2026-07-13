@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -44,7 +45,7 @@ func TestRunScanModeIntegration(t *testing.T) {
 	}
 
 	var out, errOut strings.Builder
-	if err := run(ctx, nil, envFunc(env), &out, &errOut); err != nil {
+	if err := run(ctx, nil, envFunc(env), &out, &errOut, io.Discard); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,7 +66,7 @@ func TestRunScanModeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	out.Reset()
-	if err := run(ctx, nil, envFunc(env), &out, &errOut); err == nil ||
+	if err := run(ctx, nil, envFunc(env), &out, &errOut, io.Discard); err == nil ||
 		!strings.Contains(err.Error(), "failed to list tokens") {
 		t.Fatalf("err = %v", err)
 	}
@@ -84,7 +85,7 @@ func TestRunScanModeIntegrationDBFailure(t *testing.T) {
 	}
 
 	var out, errOut strings.Builder
-	err := run(context.Background(), nil, envFunc(env), &out, &errOut)
+	err := run(context.Background(), nil, envFunc(env), &out, &errOut, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "failed to connect to storage") {
 		t.Fatalf("err = %v", err)
 	}

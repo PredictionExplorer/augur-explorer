@@ -23,11 +23,11 @@ Required environment variables:
 | Variable | Purpose |
 |---|---|
 | `RPC_URL` | Ethereum JSON-RPC endpoint |
-| `PGSQL_HOST`, `PGSQL_USERNAME`, `PGSQL_PASSWORD`, `PGSQL_DATABASE` | PostgreSQL connection |
+| `DATABASE_URL` (or `PGSQL_HOST`, `PGSQL_USERNAME`, `PGSQL_PASSWORD`, `PGSQL_DATABASE`) | PostgreSQL connection |
 | `METRICS_ADDR` (optional) | private Prometheus `/metrics` + pprof listener |
+| `LOG_FORMAT`, `LOG_LEVEL` (optional) | stdout log format (`text`/`json`) and level |
 
-Log files are written to `$HOME/ae_logs/`:
-`cosmicgame_info.log`, `cosmicgame_error.log`, `cosmicgame_db.log`.
+Structured logs go to stdout; journald owns persistence under systemd.
 
 Shutdown: SIGINT/SIGTERM finishes the in-flight batch, persists the
 watermark and exits 0. See [docs/operations.md](../../docs/operations.md)

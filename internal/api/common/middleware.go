@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -118,27 +117,39 @@ func AccessLog(logger *slog.Logger) httpx.Middleware {
 	}
 }
 
+// AdminKey is one configured admin secret: Name is the environment variable
+// the deployment sets it through (named in the fail-closed disabled message
+// so operators know what to configure) and Value is the loaded secret, which
+// may be empty.
+type AdminKey struct {
+	Name  string
+	Value string
+}
+
 // RequireAdminKey guards a mutating endpoint with a shared-secret header.
 //
-// The expected secret is taken from the first non-empty environment variable
-// in envVars. The endpoint FAILS CLOSED: if none of the variables is set the
-// route responds 503 instead of allowing anonymous access, so a missing
-// deployment variable can never silently expose an admin operation.
-func RequireAdminKey(header string, envVars ...string) httpx.Middleware {
+// The expected secret is the first key with a non-empty Value (values are
+// injected from the typed service configuration at construction). The
+// endpoint FAILS CLOSED: if every key is empty the route responds 503
+// instead of allowing anonymous access, so a missing deployment variable can
+// never silently expose an admin operation.
+func RequireAdminKey(header string, keys ...AdminKey) httpx.Middleware {
+	var secret string
+	names := make([]string, 0, len(keys))
+	for _, k := range keys {
+		names = append(names, k.Name)
+		if secret == "" {
+			secret = strings.TrimSpace(k.Value)
+		}
+	}
+	disabledMsg := "endpoint disabled: no admin key configured (" + strings.Join(names, " or ") + ")"
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var secret string
-			for _, name := range envVars {
-				if v := strings.TrimSpace(os.Getenv(name)); v != "" {
-					secret = v
-					break
-				}
-			}
 			c := httpx.NewContext(w, r)
 			if secret == "" {
 				c.JSON(http.StatusServiceUnavailable, httpx.H{
 					"status": 0,
-					"error":  "endpoint disabled: no admin key configured (" + strings.Join(envVars, " or ") + ")",
+					"error":  disabledMsg,
 				})
 				return
 			}

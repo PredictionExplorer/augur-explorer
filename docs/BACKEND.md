@@ -492,7 +492,8 @@ make apiserver
 ```
 
 Required environment variables:
-- `PGSQL_USERNAME`, `PGSQL_PASSWORD`, `PGSQL_DATABASE`, `PGSQL_HOST`
+- `DATABASE_URL` (or the individual `PGSQL_USERNAME`, `PGSQL_PASSWORD`,
+  `PGSQL_DATABASE`, `PGSQL_HOST`)
 - `RPC_URL` (for live blockchain queries)
 - `ENABLE_ROUTES_COSMICGAME` / `ENABLE_ROUTES_RANDOMWALK` (optional, default true)
 
@@ -533,14 +534,20 @@ See [architecture.md](architecture.md) for the full repository layout.
 
 ### Environment Variables
 
+Every service loads a typed, validated configuration struct from the
+environment at startup (`internal/config`); a misconfigured deployment fails
+fast with every problem listed at once, and the effective configuration is
+logged with secrets redacted. The complete reference is
+[.env.example](../.env.example), which a test verifies against the code.
+The essentials:
+
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `PGSQL_USERNAME` | PostgreSQL username | Yes |
-| `PGSQL_PASSWORD` | PostgreSQL password | Yes |
-| `PGSQL_DATABASE` | PostgreSQL database name | Yes |
-| `PGSQL_HOST` | PostgreSQL host | Yes |
+| `DATABASE_URL` | PostgreSQL connection URL (wins over `PGSQL_*`) | One of URL / `PGSQL_*` |
+| `PGSQL_USERNAME` / `PGSQL_PASSWORD` / `PGSQL_DATABASE` / `PGSQL_HOST` | Individual PostgreSQL settings | One of URL / `PGSQL_*` |
 | `RPC_URL` | Ethereum RPC endpoint | Yes |
 | `ENABLE_ROUTES_COSMICGAME` | Enable CosmicGame API | No (default: true) |
+| `LOG_FORMAT` / `LOG_LEVEL` | stdout log format (`text`/`json`) and level | No (default: `text`/`info`) |
 
 ### Database Initialization
 

@@ -26,7 +26,7 @@ func (a *API) handleTokenMetadata(c *httpx.Context) {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	base := common.MetadataRandomWalkImagePublicBase()
+	base := common.MetadataRandomWalkImagePublicBase(a.assetsPublicBase)
 	if base == "" {
 		c.JSON(http.StatusInternalServerError, httpx.H{
 			"error": "cannot derive public /images base URL (set NFT_ASSETS_PUBLIC_BASE)",
@@ -59,7 +59,7 @@ func (a *API) handleTokenMetadata(c *httpx.Context) {
 		name = fmt.Sprintf("Random Walk #%s", pad)
 	}
 	var imageURL, animationURL string
-	if common.NFTAssetsFlatPaths() {
+	if a.assetsFlatPaths {
 		imageURL = fmt.Sprintf("%s/%s_black.png", base, pad)
 		animationURL = fmt.Sprintf("%s/%s_black_single.mp4", base, pad)
 	} else {

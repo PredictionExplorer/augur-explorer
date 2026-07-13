@@ -15,17 +15,17 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
-func adminProtectedRouter() *httpx.Router {
+func adminProtectedRouter(secret string) *httpx.Router {
 	r := httpx.NewRouter()
 	r.POST("/admin", func(c *httpx.Context) {
 		c.JSON(http.StatusOK, httpx.H{"ok": true})
-	}, RequireAdminKey("X-Admin-Key", "TEST_ADMIN_KEY"))
+	}, RequireAdminKey("X-Admin-Key", AdminKey{Name: "TEST_ADMIN_KEY", Value: secret}))
 	return r
 }
 
 func TestRequireAdminKeyFailsClosedWhenUnset(t *testing.T) {
-	t.Setenv("TEST_ADMIN_KEY", "")
-	r := adminProtectedRouter()
+	t.Parallel()
+	r := adminProtectedRouter("")
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/admin", nil)
@@ -37,11 +37,29 @@ func TestRequireAdminKeyFailsClosedWhenUnset(t *testing.T) {
 	if !strings.Contains(w.Body.String(), `"status":0`) {
 		t.Fatalf("expected the legacy error envelope, got %q", w.Body.String())
 	}
+	// The disabled message names the variables the operator must set.
+	if !strings.Contains(w.Body.String(), "no admin key configured (TEST_ADMIN_KEY)") {
+		t.Fatalf("disabled message must name the env var, got %q", w.Body.String())
+	}
+}
+
+func TestRequireAdminKeyTreatsWhitespaceValueAsUnset(t *testing.T) {
+	t.Parallel()
+	r := adminProtectedRouter("   ")
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin", nil)
+	req.Header.Set("X-Admin-Key", "   ")
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503 for a whitespace-only configured key, got %d", w.Code)
+	}
 }
 
 func TestRequireAdminKeyRejectsWrongKey(t *testing.T) {
-	t.Setenv("TEST_ADMIN_KEY", "correct-key")
-	r := adminProtectedRouter()
+	t.Parallel()
+	r := adminProtectedRouter("correct-key")
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/admin", nil)
@@ -54,8 +72,8 @@ func TestRequireAdminKeyRejectsWrongKey(t *testing.T) {
 }
 
 func TestRequireAdminKeyAcceptsCorrectKey(t *testing.T) {
-	t.Setenv("TEST_ADMIN_KEY", "correct-key")
-	r := adminProtectedRouter()
+	t.Parallel()
+	r := adminProtectedRouter("correct-key")
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/admin", nil)
@@ -67,14 +85,14 @@ func TestRequireAdminKeyAcceptsCorrectKey(t *testing.T) {
 	}
 }
 
-func TestRequireAdminKeyUsesFallbackEnvVar(t *testing.T) {
-	t.Setenv("TEST_PRIMARY_KEY", "")
-	t.Setenv("TEST_FALLBACK_KEY", "fallback-secret")
-
+func TestRequireAdminKeyUsesFallbackKey(t *testing.T) {
+	t.Parallel()
 	r := httpx.NewRouter()
 	r.POST("/admin", func(c *httpx.Context) {
 		c.JSON(http.StatusOK, httpx.H{"ok": true})
-	}, RequireAdminKey("X-Admin-Key", "TEST_PRIMARY_KEY", "TEST_FALLBACK_KEY"))
+	}, RequireAdminKey("X-Admin-Key",
+		AdminKey{Name: "TEST_PRIMARY_KEY", Value: ""},
+		AdminKey{Name: "TEST_FALLBACK_KEY", Value: "fallback-secret"}))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/admin", nil)
@@ -82,7 +100,28 @@ func TestRequireAdminKeyUsesFallbackEnvVar(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200 via fallback env var, got %d", w.Code)
+		t.Fatalf("expected 200 via fallback key, got %d", w.Code)
+	}
+}
+
+func TestRequireAdminKeyDisabledMessageNamesAllVars(t *testing.T) {
+	t.Parallel()
+	r := httpx.NewRouter()
+	r.POST("/admin", func(c *httpx.Context) {
+		c.JSON(http.StatusOK, httpx.H{"ok": true})
+	}, RequireAdminKey("X-Admin-Key",
+		AdminKey{Name: "RANKING_ADMIN_KEY"},
+		AdminKey{Name: "ADMIN_API_KEY"}))
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin", nil)
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "(RANKING_ADMIN_KEY or ADMIN_API_KEY)") {
+		t.Fatalf("disabled message must join the variable names, got %q", w.Body.String())
 	}
 }
 

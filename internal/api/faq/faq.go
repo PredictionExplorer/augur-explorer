@@ -5,10 +5,10 @@ package faq
 
 import (
 	"bytes"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -19,49 +19,38 @@ import (
 type Proxy struct {
 	upstreamURL string
 	client      *http.Client
-	info        *log.Logger
-	errlog      *log.Logger
+	logger      *slog.Logger
 }
 
-// Options configures New. An empty UpstreamURL falls back to
-// AI_BOT_BACKEND_URL, then the legacy FAQ_BOT_UPSTREAM_URL alias, then
-// http://127.0.0.1:8000. Client defaults to a 180s-timeout HTTP client.
+// Options configures New. UpstreamURL is the configured backend
+// (AI_BOT_BACKEND_URL / the legacy FAQ_BOT_UPSTREAM_URL alias, resolved by
+// the typed service configuration); empty applies the http://127.0.0.1:8000
+// default. Client defaults to a 180s-timeout HTTP client; a nil Logger
+// discards.
 type Options struct {
 	UpstreamURL string
 	Client      *http.Client
-	Info        *log.Logger
-	Error       *log.Logger
+	Logger      *slog.Logger
 }
 
 // New builds the FAQ proxy and logs the effective upstream.
 func New(opts Options) *Proxy {
-	discard := log.New(io.Discard, "", 0)
-	if opts.Info == nil {
-		opts.Info = discard
-	}
-	if opts.Error == nil {
-		opts.Error = discard
+	if opts.Logger == nil {
+		opts.Logger = slog.New(slog.DiscardHandler)
 	}
 	if opts.Client == nil {
 		opts.Client = &http.Client{Timeout: 180 * time.Second}
 	}
 	upstream := strings.TrimRight(strings.TrimSpace(opts.UpstreamURL), "/")
 	if upstream == "" {
-		upstream = strings.TrimRight(strings.TrimSpace(os.Getenv("AI_BOT_BACKEND_URL")), "/")
-	}
-	if upstream == "" {
-		upstream = strings.TrimRight(strings.TrimSpace(os.Getenv("FAQ_BOT_UPSTREAM_URL")), "/")
-	}
-	if upstream == "" {
 		upstream = "http://127.0.0.1:8000"
 	}
 	p := &Proxy{
 		upstreamURL: upstream,
 		client:      opts.Client,
-		info:        opts.Info,
-		errlog:      opts.Error,
+		logger:      opts.Logger,
 	}
-	p.info.Printf("FAQ proxy enabled; upstream=%s", p.upstreamURL)
+	p.logger.Info("FAQ proxy enabled", "upstream", p.upstreamURL)
 	return p
 }
 
@@ -76,7 +65,7 @@ func (p *Proxy) proxyFAQ(c *httpx.Context) {
 	target := p.upstreamURL + mapFAQPath(c.Request.URL.Path)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		p.errlog.Printf("faq proxy read body: %v", err)
+		p.logger.Error(fmt.Sprintf("faq proxy read body: %v", err))
 		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq proxy read failed"})
 		return
 	}
@@ -93,7 +82,7 @@ func (p *Proxy) proxyFAQ(c *httpx.Context) {
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		p.errlog.Printf("faq proxy upstream %s: %v", target, err)
+		p.logger.Error(fmt.Sprintf("faq proxy upstream %s: %v", target, err))
 		c.JSON(http.StatusBadGateway, httpx.H{
 			"status":    0,
 			"error":     "FAQ service unavailable. Is the Python faq-bot backend running?",

@@ -1,51 +1,81 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 )
 
+// staticAssets carries the static-file serving configuration and the process
+// logger (previously scattered os.Getenv reads).
+type staticAssets struct {
+	// nftAssetsRoot enables GET /images/* when non-empty (NFT_ASSETS_ROOT).
+	nftAssetsRoot string
+	// flatPaths selects the flat /images/<file> layout (NFT_ASSETS_FLAT_PATHS).
+	flatPaths bool
+	// abiDir enables GET /static/* when non-empty (STATIC_ABI_DIR).
+	abiDir string
+	// noCache serves /images with Cache-Control: no-store (WEBSRV_IMAGE_NO_CACHE).
+	noCache bool
+	// logRequests logs successful image requests too (WEBSRV_LOG_IMAGE_REQUESTS).
+	logRequests bool
+	logger      *slog.Logger
+}
+
+// staticAssetsConfig maps the loaded service configuration onto the static
+// asset options.
+func staticAssetsConfig(cfg *config.APIServer, logger *slog.Logger) staticAssets {
+	return staticAssets{
+		nftAssetsRoot: strings.TrimSpace(cfg.NFTAssetsRoot),
+		flatPaths:     cfg.NFTAssetsFlatPaths,
+		abiDir:        strings.TrimSpace(cfg.StaticABIDir),
+		noCache:       cfg.ImageNoCache,
+		logRequests:   cfg.LogImageRequests,
+		logger:        logger,
+	}
+}
+
 // warnNFTAssetsLayout logs when we cannot find RandomWalk thumbs in the expected places.
-func warnNFTAssetsLayout(abs string, mount string) {
+func (sa staticAssets) warnNFTAssetsLayout(abs string, mount string) {
 	rwNested := filepath.Join(abs, "randomwalk")
 	thumbsNested, _ := filepath.Glob(filepath.Join(rwNested, "*_black_thumb.jpg"))
 	thumbsRoot, _ := filepath.Glob(filepath.Join(abs, "*_black_thumb.jpg"))
 	if len(thumbsNested) > 0 || len(thumbsRoot) > 0 {
 		return
 	}
-	log.Printf("NFT_ASSETS_ROOT: no *_black_thumb.jpg under %q or %q (detail page images will 404 until assets exist).", rwNested, abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
-	log.Printf("Current mount: %s -> filesystem root %q", mount, abs)                                                                   // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
+	sa.logger.Warn(fmt.Sprintf("NFT_ASSETS_ROOT: no *_black_thumb.jpg under %q or %q (detail page images will 404 until assets exist).", rwNested, abs))
+	sa.logger.Warn(fmt.Sprintf("Current mount: %s -> filesystem root %q", mount, abs))
 }
 
 // resolveNFTStaticMount chooses how GET /images/... maps to disk.
 // Nested (default): /images/randomwalk/<file> — Cosmic CDN and legacy URLs.
-// Flat (NFT_ASSETS_FLAT_PATHS=1): /images/<file> — nfts.randomwalknft.com layout; fs root is the randomwalk folder.
-func resolveNFTStaticMount(abs string) (mount string, fsRoot string) {
-	flat := common.NFTAssetsFlatPaths()
+// Flat (NFT_ASSETS_FLAT_PATHS): /images/<file> — nfts.randomwalknft.com layout; fs root is the randomwalk folder.
+func (sa staticAssets) resolveNFTStaticMount(abs string) (mount string, fsRoot string) {
+	flat := sa.flatPaths
 
 	rwNested := filepath.Join(abs, "randomwalk")
 	thumbsNested, _ := filepath.Glob(filepath.Join(rwNested, "*_black_thumb.jpg"))
 	if len(thumbsNested) > 0 {
 		if flat {
-			log.Printf("NFT assets: found RandomWalk thumbs under %s (flat layout -> URL /images/<file>)", rwNested) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
+			sa.logger.Info(fmt.Sprintf("NFT assets: found RandomWalk thumbs under %s (flat layout -> URL /images/<file>)", rwNested))
 			return "/images", rwNested
 		}
-		log.Printf("NFT assets: found RandomWalk thumbs under %s (standard layout)", rwNested) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
+		sa.logger.Info(fmt.Sprintf("NFT assets: found RandomWalk thumbs under %s (standard layout)", rwNested))
 		return "/images", abs
 	}
 	thumbsRoot, _ := filepath.Glob(filepath.Join(abs, "*_black_thumb.jpg"))
 	if len(thumbsRoot) > 0 {
 		if flat {
-			log.Printf("NFT assets: found RandomWalk thumbs in %s (flat layout -> URL /images/<file>)", abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
+			sa.logger.Info(fmt.Sprintf("NFT assets: found RandomWalk thumbs in %s (flat layout -> URL /images/<file>)", abs))
 			return "/images", abs
 		}
-		log.Printf("NFT assets: found RandomWalk thumbs in %s (compact layout -> URL /images/randomwalk/)", abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
+		sa.logger.Info(fmt.Sprintf("NFT assets: found RandomWalk thumbs in %s (compact layout -> URL /images/randomwalk/)", abs))
 		return "/images/randomwalk", abs
 	}
 	if st, err := os.Stat(rwNested); err == nil && st.IsDir() {
@@ -186,15 +216,15 @@ func isHex(s string) bool {
 // imageCacheAndLogMiddleware sets Cache-Control on /images/ responses and
 // logs failed (or, when enabled, all) image requests. It self-filters on the
 // path prefix, so it is registered globally like the legacy version was.
-func imageCacheAndLogMiddleware() httpx.Middleware {
+func (sa staticAssets) imageCacheAndLogMiddleware() httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path := r.URL.Path
 			isImg := strings.HasPrefix(path, "/images/")
 			if isImg {
 				// Browsers cache aggressively on max-age; reload often skips the network → no line in websrv.
-				// Set WEBSRV_IMAGE_NO_CACHE=1 in dev to force revalidation / no-store so each reload hits the API.
-				if strings.TrimSpace(os.Getenv("WEBSRV_IMAGE_NO_CACHE")) == "1" {
+				// Set WEBSRV_IMAGE_NO_CACHE in dev to force revalidation / no-store so each reload hits the API.
+				if sa.noCache {
 					w.Header().Set("Cache-Control", "no-store")
 				} else {
 					w.Header().Set("Cache-Control", "public, max-age=3600, must-revalidate")
@@ -205,77 +235,82 @@ func imageCacheAndLogMiddleware() httpx.Middleware {
 			if !isImg || r.Method != http.MethodGet && r.Method != http.MethodHead {
 				return
 			}
-			if st := rw.Status(); strings.TrimSpace(os.Getenv("WEBSRV_LOG_IMAGE_REQUESTS")) == "1" || st >= 400 {
-				log.Printf("[images] %d %q", st, path) // #nosec G706 -- request path is %q-quoted
+			if st := rw.Status(); sa.logRequests || st >= 400 {
+				sa.logger.Info(fmt.Sprintf("[images] %d %q", st, path))
 			}
 		})
 	}
 }
 
-// registerStaticAssetRoutes serves nft-assets mirror at GET /images/*.
-// NFT_ASSETS_ROOT: parent dir containing randomwalk/, or the randomwalk dir itself (see resolveNFTStaticMount).
+// registerStaticAssetRoutes returns the route registration hook serving the
+// nft-assets mirror at GET /images/* and, when configured, /static/*.
 //
-// STATIC_ABI_DIR: if set, directory whose files are served from /static/ (place abi/RandomWalkNFT.json etc. here).
-func registerStaticAssetRoutes(r *httpx.Router) {
-	if root := strings.TrimSpace(os.Getenv("NFT_ASSETS_ROOT")); root != "" {
-		abs, err := filepath.Abs(root)
-		if err != nil {
-			log.Printf("NFT_ASSETS_ROOT invalid: %v", err)
-			return
-		}
-		r.Use(imageCacheAndLogMiddleware())
-
-		mount, fsRoot := resolveNFTStaticMount(abs)
-		warnNFTAssetsLayout(abs, mount)
-
-		handler := func(c *httpx.Context) {
-			rel := strings.TrimPrefix(c.Param("filepath"), "/")
-			if rel == "" {
-				c.Status(http.StatusNotFound)
+// NFT_ASSETS_ROOT: parent dir containing randomwalk/, or the randomwalk dir
+// itself (see resolveNFTStaticMount). STATIC_ABI_DIR: if set, directory whose
+// files are served from /static/ (place abi/RandomWalkNFT.json etc. here).
+func registerStaticAssetRoutes(sa staticAssets) func(*httpx.Router) {
+	return func(r *httpx.Router) {
+		if sa.nftAssetsRoot != "" {
+			abs, err := filepath.Abs(sa.nftAssetsRoot)
+			if err != nil {
+				sa.logger.Error(fmt.Sprintf("NFT_ASSETS_ROOT invalid: %v", err))
 				return
 			}
-			full, ok := resolveAssetFile(fsRoot, rel)
-			if !ok {
-				c.Status(http.StatusNotFound)
+			r.Use(sa.imageCacheAndLogMiddleware())
+
+			mount, fsRoot := sa.resolveNFTStaticMount(abs)
+			sa.warnNFTAssetsLayout(abs, mount)
+
+			handler := func(c *httpx.Context) {
+				rel := strings.TrimPrefix(c.Param("filepath"), "/")
+				if rel == "" {
+					c.Status(http.StatusNotFound)
+					return
+				}
+				full, ok := resolveAssetFile(fsRoot, rel)
+				if !ok {
+					c.Status(http.StatusNotFound)
+					return
+				}
+				c.File(full)
+			}
+			r.GET(mount+"/{filepath...}", handler)
+			r.HEAD(mount+"/{filepath...}", handler)
+
+			switch {
+			case mount == "/images/randomwalk":
+				sa.logger.Info(fmt.Sprintf("Serving RandomWalk NFT files from %q at %s/ (token assets live directly in NFT_ASSETS_ROOT)", fsRoot, mount))
+				sa.logger.Info("Note: /images/new/... needs NFT_ASSETS_ROOT set to the parent of randomwalk/ if you use Cosmic assets too.")
+			case fsRoot != abs:
+				sa.logger.Info(fmt.Sprintf("Serving RandomWalk NFT files from %q at %s/ (flat URL layout, files under randomwalk/)", fsRoot, mount))
+			default:
+				sa.logger.Info(fmt.Sprintf("Serving NFT assets from %q at %s/ (expect randomwalk/ and optional new/ under that root)", fsRoot, mount))
+			}
+			if sa.noCache {
+				sa.logger.Info("WEBSRV_IMAGE_NO_CACHE: /images responses use Cache-Control: no-store (each reload should hit websrv).")
+			} else {
+				sa.logger.Info("Image GETs may not appear on reload: browsers cache /images for max-age=3600 (no TCP = no log). Use DevTools \"Disable cache\", or WEBSRV_IMAGE_NO_CACHE=1, or WEBSRV_LOG_IMAGE_REQUESTS=1 for [images] lines when requests do occur.")
+			}
+		}
+
+		if sa.abiDir != "" {
+			abs, err := filepath.Abs(sa.abiDir)
+			if err != nil {
+				sa.logger.Error(fmt.Sprintf("STATIC_ABI_DIR invalid: %v", err))
 				return
 			}
-			c.File(full)
-		}
-		r.GET(mount+"/{filepath...}", handler)
-		r.HEAD(mount+"/{filepath...}", handler)
-
-		if mount == "/images/randomwalk" {
-			log.Printf("Serving RandomWalk NFT files from %q at %s/ (token assets live directly in NFT_ASSETS_ROOT)", fsRoot, mount) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
-			log.Printf("Note: /images/new/... needs NFT_ASSETS_ROOT set to the parent of randomwalk/ if you use Cosmic assets too.")
-		} else if fsRoot != abs {
-			log.Printf("Serving RandomWalk NFT files from %q at %s/ (flat URL layout, files under randomwalk/)", fsRoot, mount) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
-		} else {
-			log.Printf("Serving NFT assets from %q at %s/ (expect randomwalk/ and optional new/ under that root)", fsRoot, mount) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
-		}
-		if strings.TrimSpace(os.Getenv("WEBSRV_IMAGE_NO_CACHE")) == "1" {
-			log.Printf("WEBSRV_IMAGE_NO_CACHE=1: /images responses use Cache-Control: no-store (each reload should hit websrv).")
-		} else {
-			log.Printf("Image GETs may not appear on reload: browsers cache /images for max-age=3600 (no TCP = no log). Use DevTools \"Disable cache\", or WEBSRV_IMAGE_NO_CACHE=1, or WEBSRV_LOG_IMAGE_REQUESTS=1 for [images] lines when requests do occur.")
-		}
-	}
-
-	if abiRoot := strings.TrimSpace(os.Getenv("STATIC_ABI_DIR")); abiRoot != "" {
-		abs, err := filepath.Abs(abiRoot)
-		if err != nil {
-			log.Printf("STATIC_ABI_DIR invalid: %v", err)
-			return
-		}
-		// Files only: directory requests 404 (no listings on a public API).
-		staticHandler := func(c *httpx.Context) {
-			full, ok := safeFileUnderRoot(abs, c.Param("filepath"))
-			if !ok {
-				c.Status(http.StatusNotFound)
-				return
+			// Files only: directory requests 404 (no listings on a public API).
+			staticHandler := func(c *httpx.Context) {
+				full, ok := safeFileUnderRoot(abs, c.Param("filepath"))
+				if !ok {
+					c.Status(http.StatusNotFound)
+					return
+				}
+				c.File(full)
 			}
-			c.File(full)
+			r.GET("/static/{filepath...}", staticHandler)
+			r.HEAD("/static/{filepath...}", staticHandler)
+			sa.logger.Info("serving /static", "dir", abs)
 		}
-		r.GET("/static/{filepath...}", staticHandler)
-		r.HEAD("/static/{filepath...}", staticHandler)
-		log.Printf("Serving /static from %s", abs) // #nosec G706 -- operator-provided filesystem path from env, logged once at startup
 	}
 }

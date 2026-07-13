@@ -27,10 +27,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/andersfylling/disgord"
@@ -38,14 +38,11 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
-	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/rwbot"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
-
-// defaultLogDir is the legacy operational log directory under $HOME.
-const defaultLogDir = "ae_logs"
 
 func main() {
 	flagTwitter := flag.Bool("twitter", false, "Send messages to Twitter")
@@ -57,7 +54,7 @@ func main() {
 	}
 	ctx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()
-	if err := run(ctx, *flagTwitter, *flagDiscord); err != nil {
+	if err := run(ctx, os.Getenv, os.Stdout, *flagTwitter, *flagDiscord); err != nil {
 		fmt.Fprintf(os.Stderr, "notibot: %v\n", err)
 		os.Exit(1)
 	}
@@ -66,38 +63,26 @@ func main() {
 // run wires the notification engine and blocks until ctx is cancelled
 // (SIGINT/SIGTERM in production; clean nil) or a fatal database failure
 // (error; systemd restarts the bot and it resumes from the persisted
-// watermark).
-func run(ctx context.Context, twitterOn, discordOn bool) error {
-	logDir := filepath.Join(os.Getenv("HOME"), defaultLogDir)
-	if err := os.MkdirAll(logDir, 0o750); err != nil { //nolint:gosec // G703: operator-owned $HOME log directory, same as the legacy bot
-		return fmt.Errorf("creating log directory %s: %w", logDir, err)
-	}
-	infoLog, err := openLogFile(filepath.Join(logDir, "notibot_info.log"))
+// watermark). Environment access goes through getenv and structured logs go
+// to logOut so tests can inject configuration and inspect records.
+func run(ctx context.Context, getenv func(string) string, logOut io.Writer, twitterOn, discordOn bool) error {
+	cfg, err := config.LoadNotibot(getenv)
 	if err != nil {
 		return err
 	}
-	defer infoLog.Close() //nolint:errcheck // append-only log handle at exit
-	errorLog, err := openLogFile(filepath.Join(logDir, "notibot_error.log"))
-	if err != nil {
-		return err
-	}
-	defer errorLog.Close() //nolint:errcheck // append-only log handle at exit
-	dbLog, err := openLogFile(filepath.Join(logDir, "notibot_db.log"))
-	if err != nil {
-		return err
-	}
-	defer dbLog.Close() //nolint:errcheck // append-only log handle at exit
-	logger := slog.New(indexer.NewDualLogHandler(infoLog, errorLog))
+	// One structured logger on stdout; journald owns persistence (§8.3 —
+	// the legacy $HOME/ae_logs dual-file layout is gone).
+	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
-	rpcURL := os.Getenv("RPC_URL")
-	eclient, err := ethclient.DialContext(ctx, rpcURL)
+	eclient, err := ethclient.DialContext(ctx, cfg.RPCURL)
 	if err != nil {
-		return fmt.Errorf("connecting to ETH node at %q: %w", rpcURL, err)
+		return fmt.Errorf("connecting to ETH node: %w", err)
 	}
-	logger.Info("connected to ETH node", "rpc_url", rpcURL)
+	logger.Info("connected to ETH node", "rpc_url", config.RedactURL(cfg.RPCURL))
 
-	storeCfg := store.ConfigFromEnv()
-	storeCfg.Logger = slog.New(slog.NewTextHandler(dbLog, nil))
+	storeCfg := cfg.DB.StoreConfig()
+	storeCfg.Logger = logger.With("component", "db")
 	st, err := store.New(ctx, storeCfg)
 	if err != nil {
 		return fmt.Errorf("connecting to storage: %w\n%s", err, store.ConnectHint(err))
@@ -117,7 +102,7 @@ func run(ctx context.Context, twitterOn, discordOn bool) error {
 		return fmt.Errorf("instantiating RandomWalk contract %s: %w", rwalkAddr.String(), err)
 	}
 
-	cfg := rwbot.Config{
+	botCfg := rwbot.Config{
 		Data:       repo,
 		RWalkAid:   addrs.RandomWalkAid,
 		MarketAid:  addrs.MarketPlaceAid,
@@ -129,20 +114,20 @@ func run(ctx context.Context, twitterOn, discordOn bool) error {
 	}
 
 	if twitterOn {
-		keys, err := readTwitterKeys()
+		keys, err := readTwitterKeys(getenv("HOME"), cfg.TwitterKeysFile)
 		if err != nil {
 			return err
 		}
-		cfg.Twitter = rwbot.NewTwitterNotifier(keys)
+		botCfg.Twitter = rwbot.NewTwitterNotifier(keys)
 		logger.Info("loaded twitter keys")
 	}
 	if discordOn {
-		keys, err := readDiscordKeys()
+		keys, err := readDiscordKeys(getenv("HOME"), cfg.DiscordKeysFile)
 		if err != nil {
 			return err
 		}
 		client := newDiscordClient(disgord.Config{BotToken: keys.TokenKey})
-		cfg.Discord = newDiscordSink(client, keys, logger)
+		botCfg.Discord = newDiscordSink(client, keys, logger)
 		logger.Info("loaded discord keys",
 			"main_channel", keys.MainChannelID,
 			"mint_stats_channel", keys.MintStatsChanID,
@@ -152,7 +137,7 @@ func run(ctx context.Context, twitterOn, discordOn bool) error {
 		)
 	}
 
-	engine, err := rwbot.New(cfg)
+	engine, err := rwbot.New(botCfg)
 	if err != nil {
 		return err
 	}
@@ -169,13 +154,4 @@ func run(ctx context.Context, twitterOn, discordOn bool) error {
 // probes the bot identity at construction).
 var newDiscordClient = func(cfg disgord.Config) *disgord.Client {
 	return disgord.New(cfg)
-}
-
-// openLogFile opens an append-only log file, creating it if needed.
-func openLogFile(path string) (*os.File, error) {
-	f, err := os.OpenFile(filepath.Clean(path), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666) //nolint:gosec // operator log path under $HOME, world-readable like the legacy logs
-	if err != nil {
-		return nil, fmt.Errorf("opening log file %s: %w", path, err)
-	}
-	return f, nil
 }

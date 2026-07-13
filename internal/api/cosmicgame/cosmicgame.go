@@ -8,8 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"log"
+	"log/slog"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -25,15 +24,16 @@ import (
 // API carries the injected dependencies of the v1 CosmicGame module: the
 // context-first repository and base store, the contract-state cache the
 // handlers snapshot per request, the Ethereum clients for the few live
-// reads, and the legacy file loggers.
+// reads, the process logger and the module configuration values.
 type API struct {
-	repo      *cgdb.Repo
-	store     *store.Store
-	state     *contractstate.State
-	ethClient *ethclient.Client
-	rpc       *ethrpc.Client
-	info      *log.Logger
-	errlog    *log.Logger
+	repo             *cgdb.Repo
+	store            *store.Store
+	state            *contractstate.State
+	ethClient        *ethclient.Client
+	rpc              *ethrpc.Client
+	logger           *slog.Logger
+	adminAPIKey      string
+	assetsPublicBase string
 }
 
 // Config carries the dependencies for New. Store must be non-nil; the
@@ -42,8 +42,14 @@ type Config struct {
 	Store     *store.Store
 	EthClient *ethclient.Client
 	RPCClient *ethrpc.Client
-	Info      *log.Logger
-	Error     *log.Logger
+	// Logger receives module diagnostics; nil discards.
+	Logger *slog.Logger
+	// AdminAPIKey guards the bid-moderation endpoints (ADMIN_API_KEY).
+	// Empty fails closed: the guarded routes answer 503.
+	AdminAPIKey string
+	// AssetsPublicBase overrides the public /images URL base used in token
+	// metadata (NFT_ASSETS_PUBLIC_BASE); empty derives it per request.
+	AssetsPublicBase string
 }
 
 // New builds the module and performs the synchronous contract-state loads
@@ -55,11 +61,12 @@ type Config struct {
 // StartBackgroundRefresh for that.
 func New(ctx context.Context, cfg Config) (*API, error) {
 	a := &API{
-		store:     cfg.Store,
-		ethClient: cfg.EthClient,
-		rpc:       cfg.RPCClient,
-		info:      orDiscardLogger(cfg.Info),
-		errlog:    orDiscardLogger(cfg.Error),
+		store:            cfg.Store,
+		ethClient:        cfg.EthClient,
+		rpc:              cfg.RPCClient,
+		logger:           orDiscardLogger(cfg.Logger),
+		adminAPIKey:      cfg.AdminAPIKey,
+		assetsPublicBase: cfg.AssetsPublicBase,
 	}
 	if cfg.Store == nil {
 		return nil, errors.New("cosmicgame: database link wasn't configured")
@@ -80,8 +87,7 @@ func New(ctx context.Context, cfg Config) (*API, error) {
 			CharityWallet:   ethcommon.HexToAddress(caddrs.CharityWalletAddr),
 			MarketingWallet: ethcommon.HexToAddress(caddrs.MarketingWalletAddr),
 		},
-		Info:  a.info,
-		Error: a.errlog,
+		Logger: a.logger,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cosmicgame: building contract state: %w", err)
@@ -97,15 +103,14 @@ func New(ctx context.Context, cfg Config) (*API, error) {
 // route table without a database, and the guard tests use it to pin the
 // pre-initialization failure shapes.
 func NewBare() *API {
-	discard := log.New(io.Discard, "", 0)
-	return &API{info: discard, errlog: discard}
+	return &API{logger: orDiscardLogger(nil)}
 }
 
-// orDiscardLogger keeps the module loggers non-nil so handlers can log
+// orDiscardLogger keeps the module logger non-nil so handlers can log
 // unconditionally.
-func orDiscardLogger(l *log.Logger) *log.Logger {
+func orDiscardLogger(l *slog.Logger) *slog.Logger {
 	if l == nil {
-		return log.New(io.Discard, "", 0)
+		return slog.New(slog.DiscardHandler)
 	}
 	return l
 }
@@ -188,9 +193,11 @@ func (a *API) RegisterRoutes(r *httpx.Router) {
 	r.GET("/api/cosmicgame/bid/eth_price", a.handleGetEthPrice)
 	r.GET("/api/cosmicgame/bid/current_special_winners", a.handleBidSpecialWinners)
 	r.GET("/api/cosmicgame/get_banned_bids", a.handleGetBannedBids)
-	// Bid moderation is admin-only: requires X-Admin-Key matching ADMIN_API_KEY
-	// (503 when unset — fails closed) and is strictly rate limited.
-	adminGuard := common.RequireAdminKey("X-Admin-Key", "ADMIN_API_KEY")
+	// Bid moderation is admin-only: requires X-Admin-Key matching the
+	// configured ADMIN_API_KEY (503 when unset — fails closed) and is
+	// strictly rate limited.
+	adminGuard := common.RequireAdminKey("X-Admin-Key",
+		common.AdminKey{Name: "ADMIN_API_KEY", Value: a.adminAPIKey})
 	adminRate := common.RateLimit(2, 5)
 	r.POST("/api/cosmicgame/ban_bid", a.handleBanBid, adminRate, adminGuard)
 	r.POST("/api/cosmicgame/unban_bid", a.handleUnbanBid, adminRate, adminGuard)

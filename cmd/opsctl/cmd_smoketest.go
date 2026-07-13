@@ -110,20 +110,23 @@ func connectSmoketestDB(ctx context.Context) (*sql.DB, error) {
 }
 
 func connectSmoketestDBWithDeps(ctx context.Context, deps smoketestDeps) (*sql.DB, error) {
-	host := deps.getenv("PGSQL_HOST")
-	user := deps.getenv("PGSQL_USERNAME")
-	dbName := deps.getenv("PGSQL_DATABASE")
-	pass := deps.getenv("PGSQL_PASSWORD")
-	if host == "" || user == "" || dbName == "" {
-		return nil, errors.New("PGSQL_HOST / PGSQL_USERNAME / PGSQL_DATABASE are required")
+	dsn := strings.TrimSpace(deps.getenv("DATABASE_URL"))
+	if dsn == "" {
+		host := deps.getenv("PGSQL_HOST")
+		user := deps.getenv("PGSQL_USERNAME")
+		dbName := deps.getenv("PGSQL_DATABASE")
+		pass := deps.getenv("PGSQL_PASSWORD")
+		if host == "" || user == "" || dbName == "" {
+			return nil, errors.New("DATABASE_URL or PGSQL_HOST / PGSQL_USERNAME / PGSQL_DATABASE are required")
+		}
+		dsn = (&url.URL{
+			Scheme:   "postgres",
+			User:     url.UserPassword(user, pass),
+			Host:     host,
+			Path:     "/" + dbName,
+			RawQuery: "sslmode=disable",
+		}).String()
 	}
-	dsn := (&url.URL{
-		Scheme:   "postgres",
-		User:     url.UserPassword(user, pass),
-		Host:     host,
-		Path:     "/" + dbName,
-		RawQuery: "sslmode=disable",
-	}).String()
 	db, err := deps.openDB("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("DB open failed: %w", err)

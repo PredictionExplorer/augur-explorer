@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http/httptest"
 	"strings"
@@ -30,6 +29,11 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 )
+
+// adminKey is the shared secret configured for admin-guarded routes in the
+// harness modules (the success branches of the auth matrices use it; the
+// fail-closed 503 branch builds a keyless router).
+const adminKey = "apitest-admin-key"
 
 // harness is the fully wired API server under test: the real router with
 // the real middleware stack, backed by the seeded test database and the
@@ -64,8 +68,6 @@ func seedDatabase(ctx context.Context, db *sql.DB) error {
 // shared constructor (internal/api/routes). Modules are injected values, so
 // harnesses and tests can build as many independent routers as they need.
 func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
-	discard := log.New(io.Discard, "", 0)
-
 	chain, _ := testchain.Start() // lives for the whole test process
 	stubs := registerChainState(chain)
 	faqSrv := newFAQStub()
@@ -82,19 +84,23 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 
 	// StartBackgroundRefresh is deliberately not called: the refresh loops
 	// would mutate the contract-state snapshot on a timer and make golden
-	// snapshots drift. New's synchronous loads pin the state once.
+	// snapshots drift. New's synchronous loads pin the state once. The
+	// admin keys mirror a production deployment; the fail-closed matrices
+	// build a keyless router next to this one.
 	cgAPI, err := cosmicgame.New(ctx, cosmicgame.Config{
-		Store:     st,
-		EthClient: ethClient,
-		RPCClient: rpcClient,
-		Info:      discard,
-		Error:     discard,
+		Store:       st,
+		EthClient:   ethClient,
+		RPCClient:   rpcClient,
+		AdminAPIKey: adminKey,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("initializing cosmicgame module: %w", err)
 	}
-	rwAPI := randomwalk.New(st, discard, discard)
-	faqProxy := faq.New(faq.Options{UpstreamURL: faqSrv.URL, Info: discard, Error: discard})
+	rwAPI := randomwalk.New(st, randomwalk.Options{
+		AdminAPIKey:     adminKey,
+		RankingAdminKey: adminKey,
+	})
+	faqProxy := faq.New(faq.Options{UpstreamURL: faqSrv.URL})
 
 	v2Server, err := v2.NewServer(
 		st,

@@ -11,7 +11,7 @@ package urlalarm
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -53,13 +53,13 @@ type Engine struct {
 	cfg      Config
 	notifier Notifier
 	client   *http.Client
-	logger   *log.Logger
+	logger   *slog.Logger
 	numFails map[string]int
 }
 
 // New creates an Engine. httpClient may be nil, selecting a client with the
 // default probe timeout.
-func New(cfg Config, notifier Notifier, httpClient *http.Client, logger *log.Logger) *Engine {
+func New(cfg Config, notifier Notifier, httpClient *http.Client, logger *slog.Logger) *Engine {
 	if cfg.FailureThreshold <= 0 {
 		cfg.FailureThreshold = DefaultFailureThreshold
 	}
@@ -120,13 +120,13 @@ func (e *Engine) checkURL(ctx context.Context, url, msgHeader string) {
 	numFails := e.numFails[url] + 1
 	e.numFails[url] = numFails
 	if numFails >= e.cfg.FailureThreshold {
-		e.logger.Printf("Notifying failure of url %v", url)
+		e.logger.Warn("notifying URL failure", "url", url)
 		e.notifyFailure(errStr)
 		e.numFails[url] = 0
 		return
 	}
-	e.logger.Printf("Url %v failed: %v, num_fails=%v (%v < %v)",
-		url, errStr, numFails, numFails, e.cfg.FailureThreshold)
+	e.logger.Info("URL check failed",
+		"url", url, "err", errStr, "num_fails", numFails, "threshold", e.cfg.FailureThreshold)
 }
 
 // probe issues one GET; ok reports whether the URL is healthy, otherwise
@@ -152,13 +152,13 @@ func (e *Engine) notifyFailure(notifMsg string) {
 	for person, phone := range e.cfg.People {
 		res, err := e.notifier.SendText(phone, notifMsg)
 		if err != nil {
-			e.logger.Printf(
+			e.logger.Error(fmt.Sprintf(
 				"Error sending whatsapp request to %v: %v (res=%+v,  phone=%v, msg=%v)",
 				person, err, res, phone, notifMsg,
-			)
+			))
 			continue
 		}
-		e.logger.Printf("Notified failure to %v (%v): %v", person, phone, notifMsg)
+		e.logger.Info("notified failure", "person", person, "phone", phone, "msg", notifMsg)
 	}
 }
 

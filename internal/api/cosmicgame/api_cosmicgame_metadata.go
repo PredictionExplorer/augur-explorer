@@ -27,7 +27,7 @@ func (a *API) handleCstMetadata(c *httpx.Context) {
 		common.RespondErrorJSON(c, "CosmicGame module or database not available")
 		return
 	}
-	base := common.NFTImagePublicBase(c)
+	base := common.NFTImagePublicBase(c, a.assetsPublicBase)
 	if base == "" {
 		c.JSON(http.StatusInternalServerError, httpx.H{
 			"error": "cannot derive public /images base URL (set Host or NFT_ASSETS_PUBLIC_BASE)",

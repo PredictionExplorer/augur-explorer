@@ -1,6 +1,9 @@
 package srvmonitor
 
-import "log"
+import (
+	"fmt"
+	"log/slog"
+)
 
 // Layout holds the computed screen positions of every display section. The
 // left column stacks RPC (Y=0), SQL DB (Y=11), disk usage (Y=17), Postgres
@@ -85,13 +88,13 @@ func ComputeLayout(cfg *Config) Layout {
 //
 // anomalyDir is where the fetched anomaly file is stored (empty selects the
 // system temp directory).
-func BuildManager(cfg *Config, disp Display, logger *log.Logger, anomalyDir string) (*Manager, Layout) {
+func BuildManager(cfg *Config, disp Display, logger *slog.Logger, anomalyDir string) (*Manager, Layout) {
 	layout := ComputeLayout(cfg)
 	iv := cfg.Intervals
 
 	alarmTracker := NewAlarmTracker(cfg.MobileNotif, logger)
 	if cfg.MobileNotif {
-		logger.Printf("Mobile notifications enabled")
+		logger.Info("Mobile notifications enabled")
 	}
 	mgr := NewManager(disp, logger, alarmTracker, layout.ErrorX, layout.ErrorY)
 
@@ -139,7 +142,7 @@ func BuildManager(cfg *Config, disp Display, logger *log.Logger, anomalyDir stri
 	}
 
 	for _, name := range mgr.MonitorNames() {
-		logger.Printf("Registered: %s", name)
+		logger.Info(fmt.Sprintf("Registered: %s", name))
 	}
 
 	return mgr, layout

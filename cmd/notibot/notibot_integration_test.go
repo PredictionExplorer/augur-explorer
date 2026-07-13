@@ -8,9 +8,11 @@ package main
 // context cancels.
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -86,7 +89,9 @@ func runMain(m *testing.M) int {
 	return m.Run()
 }
 
-// integrationEnv skips without Docker and wires HOME, PGSQL_* and RPC_URL.
+// integrationEnv skips without Docker and wires HOME, PGSQL_* and RPC_URL
+// (clearing the other configuration variables so ambient environment cannot
+// leak in).
 func integrationEnv(t *testing.T) string {
 	t.Helper()
 	if errSetupSkip != nil {
@@ -97,10 +102,32 @@ func integrationEnv(t *testing.T) string {
 	}
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("LOG_FORMAT", "")
+	t.Setenv("LOG_LEVEL", "")
 	chain := testchain.New(t)
 	chain.EnsureBlock(1)
 	t.Setenv("RPC_URL", chain.URL())
 	return home
+}
+
+// syncBuffer is a mutex-guarded log sink: the engine goroutines log
+// concurrently with the test's readers.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
 
 func TestRunTwitterWiringEndToEnd(t *testing.T) {
@@ -125,20 +152,21 @@ func TestRunTwitterWiringEndToEnd(t *testing.T) {
 	}
 	t.Setenv("TWITTER_KEYS_FILE", "tw.json")
 
+	var logBuf syncBuffer
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if err := run(ctx, true, false); err != nil {
+	if err := run(ctx, os.Getenv, &logBuf, true, false); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 
-	// The engine logged its startup through the dual-file handler.
-	infoLog, err := os.ReadFile(filepath.Join(home, "ae_logs", "notibot_info.log")) //nolint:gosec // test path under t.TempDir
-	if err != nil {
-		t.Fatalf("reading info log: %v", err)
+	// §8.3: the engine logs structured records on the stream (no ae_logs).
+	if _, err := os.Stat(filepath.Join(home, "ae_logs")); !os.IsNotExist(err) {
+		t.Errorf("legacy ae_logs directory was created (stat err=%v)", err)
 	}
-	for _, want := range []string{"connected to ETH node", "resolved contracts", "loaded twitter keys", "rwbot starting"} {
-		if !strings.Contains(string(infoLog), want) {
-			t.Errorf("info log missing %q\nlog:\n%s", want, infoLog)
+	logs := logBuf.String()
+	for _, want := range []string{"effective configuration", "connected to ETH node", "resolved contracts", "loaded twitter keys", "rwbot starting"} {
+		if !strings.Contains(logs, want) {
+			t.Errorf("log stream missing %q\nlog:\n%s", want, logs)
 		}
 	}
 }
@@ -149,7 +177,7 @@ func TestRunMissingTwitterKeysFails(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := run(ctx, true, false)
+	err := run(ctx, os.Getenv, io.Discard, true, false)
 	if err == nil || !strings.Contains(err.Error(), "twitter keys") {
 		t.Errorf("run = %v, want twitter keys failure", err)
 	}
@@ -224,19 +252,17 @@ func TestRunDiscordWiringEndToEnd(t *testing.T) {
 	}
 	t.Setenv("DISCORD_KEYS_FILE", "dc.json")
 
+	var logBuf syncBuffer
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if err := run(ctx, false, true); err != nil {
+	if err := run(ctx, os.Getenv, &logBuf, false, true); err != nil {
 		t.Fatalf("run --discord: %v", err)
 	}
 
-	infoLog, err := os.ReadFile(filepath.Join(home, "ae_logs", "notibot_info.log")) //nolint:gosec // test path under t.TempDir
-	if err != nil {
-		t.Fatalf("reading info log: %v", err)
-	}
+	logs := logBuf.String()
 	for _, want := range []string{"loaded discord keys", "rwbot starting", "renamed discord channel"} {
-		if !strings.Contains(string(infoLog), want) {
-			t.Errorf("info log missing %q\nlog:\n%s", want, infoLog)
+		if !strings.Contains(logs, want) {
+			t.Errorf("log stream missing %q\nlog:\n%s", want, logs)
 		}
 	}
 }
@@ -260,7 +286,7 @@ func TestRunFailsOnEmptyDatabase(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := run(ctx, true, false)
+	err := run(ctx, os.Getenv, io.Discard, true, false)
 	if err == nil || !strings.Contains(err.Error(), "contract addresses") {
 		t.Errorf("run against an empty database = %v, want contract-address failure", err)
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 )
 
@@ -355,24 +356,27 @@ func TestFAQProxy(t *testing.T) {
 		}
 	})
 
-	t.Run("env fallback selects the upstream", func(t *testing.T) {
-		t.Setenv("AI_BOT_BACKEND_URL", stubURL)
-		r := proxyRouter(faq.New(faq.Options{}))
-		w := doProxy(r, http.MethodGet, "/api/cosmicgame/faq/health", nil)
-		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "faq-bot-stub") {
-			t.Fatalf("health through env fallback = %d\n%s", w.Code, w.Body.String())
-		}
-	})
-
-	t.Run("legacy env alias selects the upstream", func(t *testing.T) {
-		t.Setenv("AI_BOT_BACKEND_URL", "")
-		t.Setenv("FAQ_BOT_UPSTREAM_URL", stubURL)
-		r := proxyRouter(faq.New(faq.Options{}))
-		w := doProxy(r, http.MethodGet, "/api/cosmicgame/faq/health", nil)
-		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "faq-bot-stub") {
-			t.Fatalf("health through legacy alias = %d\n%s", w.Code, w.Body.String())
-		}
-	})
+	// The AI_BOT_BACKEND_URL / FAQ_BOT_UPSTREAM_URL alias precedence lives in
+	// the typed configuration now; these cases prove the config→module seam
+	// selects the stub end to end for both spellings.
+	for _, envVar := range []string{"AI_BOT_BACKEND_URL", "FAQ_BOT_UPSTREAM_URL"} {
+		t.Run(envVar+" selects the upstream", func(t *testing.T) {
+			env := map[string]string{
+				"RPC_URL":   "http://rpc.example",
+				"HTTP_PORT": "0",
+				envVar:      stubURL,
+			}
+			cfg, err := config.LoadAPIServer(func(k string) string { return env[k] })
+			if err != nil {
+				t.Fatalf("LoadAPIServer: %v", err)
+			}
+			r := proxyRouter(faq.New(faq.Options{UpstreamURL: cfg.FAQUpstream()}))
+			w := doProxy(r, http.MethodGet, "/api/cosmicgame/faq/health", nil)
+			if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "faq-bot-stub") {
+				t.Fatalf("health through %s = %d\n%s", envVar, w.Code, w.Body.String())
+			}
+		})
+	}
 
 	t.Run("nil module registers nothing", func(t *testing.T) {
 		r := routes.New(nil, routes.Options{})

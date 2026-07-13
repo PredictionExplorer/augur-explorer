@@ -1,8 +1,9 @@
 // The RWCG API server: serves the frozen v1 JSON API, the generated v2 API,
 // health probes, metrics and env-gated static assets. main wires the
-// process-wide dependencies (log files, RPC client, store, the injected API
-// modules) through the shared router constructor (internal/api/routes) and
-// runs tracked HTTP listeners with coordinated graceful shutdown.
+// process-wide dependencies (typed configuration, process logger, RPC
+// client, store, the injected API modules) through the shared router
+// constructor (internal/api/routes) and runs tracked HTTP listeners with
+// coordinated graceful shutdown.
 package main
 
 import (
@@ -10,14 +11,13 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -32,71 +32,66 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 )
 
 // shutdownTimeout bounds how long in-flight requests may take to finish once
 // SIGTERM/SIGINT arrives before the listeners are closed forcefully.
 const shutdownTimeout = 15 * time.Second
 
-// envBoolDefaultTrue returns true if the variable is unset or empty (default on).
-// Returns false for "false", "0", "no", "off" (case-insensitive). Any other non-empty value is true.
-func envBoolDefaultTrue(getenv func(string) string, key string) bool {
-	v := strings.ToLower(strings.TrimSpace(getenv(key)))
-	if v == "" {
-		return true
-	}
-	if v == "false" || v == "0" || v == "no" || v == "off" {
-		return false
-	}
-	return true
-}
-
 // buildModules constructs the enabled v1 API modules over the shared
 // dependencies. A disabled module stays nil: its routes are not registered
 // and the shared /metadata dispatch answers the legacy unavailable envelope.
-func buildModules(ctx context.Context, getenv func(string) string, deps *serverDeps, ethClient *ethclient.Client, rpcClient *ethrpc.Client) (*cosmicgame.API, *randomwalk.API, *faq.Proxy, error) {
-	enableRWRoutes := envBoolDefaultTrue(getenv, "ENABLE_ROUTES_RANDOMWALK")
-	enableCGRoutes := envBoolDefaultTrue(getenv, "ENABLE_ROUTES_COSMICGAME")
-	enableFAQRoutes := envBoolDefaultTrue(getenv, "ENABLE_ROUTES_FAQ")
-
+func buildModules(
+	ctx context.Context,
+	cfg *config.APIServer,
+	deps *serverDeps,
+	ethClient *ethclient.Client,
+	rpcClient *ethrpc.Client,
+) (*cosmicgame.API, *randomwalk.API, *faq.Proxy, error) {
 	var cgAPI *cosmicgame.API
-	if enableCGRoutes {
+	if cfg.EnableCosmicGame {
 		var err error
 		cgAPI, err = cosmicgame.New(ctx, cosmicgame.Config{
-			Store:     deps.store,
-			EthClient: ethClient,
-			RPCClient: rpcClient,
-			Info:      deps.info,
-			Error:     deps.errlog,
+			Store:            deps.store,
+			EthClient:        ethClient,
+			RPCClient:        rpcClient,
+			Logger:           deps.logger,
+			AdminAPIKey:      cfg.AdminAPIKey,
+			AssetsPublicBase: cfg.NFTAssetsPublicBase,
 		})
 		if err != nil {
 			// Startup cannot proceed without the CosmicGame contract registry.
 			errStr := fmt.Sprintf("CosmicGame module init failed: %v", err)
-			deps.errlog.Print(errStr)
-			deps.info.Print(errStr)
+			deps.logger.Error(errStr)
 			return nil, nil, nil, fmt.Errorf("FATAL: %s\nHINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env", errStr)
 		}
-		deps.info.Printf("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
+		deps.logger.Info("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
 	} else {
-		deps.info.Printf("CosmicGame HTTP routes: disabled (ENABLE_ROUTES_COSMICGAME=false)")
-		fmt.Printf("INFO: CosmicGame API routes are not registered (ENABLE_ROUTES_COSMICGAME=false).\n")
+		deps.logger.Info("CosmicGame HTTP routes: disabled (ENABLE_ROUTES_COSMICGAME=false)")
 	}
 
 	var rwAPI *randomwalk.API
-	if enableRWRoutes {
-		rwAPI = randomwalk.New(deps.store, deps.info, deps.errlog)
-		deps.info.Printf("RandomWalk HTTP routes: enabled (ENABLE_ROUTES_RANDOMWALK unset or true)")
+	if cfg.EnableRandomWalk {
+		rwAPI = randomwalk.New(deps.store, randomwalk.Options{
+			Logger:            deps.logger,
+			AdminAPIKey:       cfg.AdminAPIKey,
+			RankingAdminKey:   cfg.RankingAdminKey,
+			VoteChainIDs:      cfg.RankingVoteChainIDs,
+			ExploreMaxTokenID: cfg.ExploreMaxTokenID,
+			AssetsPublicBase:  cfg.NFTAssetsPublicBase,
+			AssetsFlatPaths:   cfg.NFTAssetsFlatPaths,
+		})
+		deps.logger.Info("RandomWalk HTTP routes: enabled (ENABLE_ROUTES_RANDOMWALK unset or true)")
 	} else {
-		deps.info.Printf("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
-		fmt.Printf("INFO: RandomWalk API routes are not registered (ENABLE_ROUTES_RANDOMWALK=false).\n")
+		deps.logger.Info("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
 	}
 
 	var faqProxy *faq.Proxy
-	if enableFAQRoutes {
-		faqProxy = faq.New(faq.Options{Info: deps.info, Error: deps.errlog})
+	if cfg.EnableFAQ {
+		faqProxy = faq.New(faq.Options{UpstreamURL: cfg.FAQUpstream(), Logger: deps.logger})
 	} else {
-		deps.info.Printf("FAQ proxy disabled (ENABLE_ROUTES_FAQ=false)")
-		fmt.Printf("INFO: FAQ bot proxy routes are not registered (ENABLE_ROUTES_FAQ=false).\n")
+		deps.logger.Info("FAQ proxy disabled (ENABLE_ROUTES_FAQ=false)")
 	}
 
 	return cgAPI, rwAPI, faqProxy, nil
@@ -107,34 +102,36 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if err := run(ctx, os.Getenv); err != nil {
-		fmt.Printf("%v\n", err)
+	if err := run(ctx, os.Getenv, os.Stdout); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 }
 
 // run wires every dependency and serves until ctx is cancelled (returning
 // nil after the graceful drain) or a startup error occurs. Environment
-// access goes through getenv so tests can inject configuration.
-func run(ctx context.Context, getenv func(string) string) error {
-	rpcURL := getenv("RPC_URL")
-	if len(rpcURL) == 0 {
-		return errors.New("configuration error: RPC URL of Ethereum node is not set; " +
-			"calls to contracts are disabled — please set the RPC_URL environment variable")
+// access goes through getenv and structured logs go to logOut so tests can
+// inject configuration and inspect records.
+func run(ctx context.Context, getenv func(string) string, logOut io.Writer) error {
+	cfg, err := config.LoadAPIServer(getenv)
+	if err != nil {
+		return err
 	}
+	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
-	rpcClient, err := ethrpc.DialContext(ctx, rpcURL)
+	rpcClient, err := ethrpc.DialContext(ctx, cfg.RPCURL)
 	if err != nil {
 		return fmt.Errorf("can't establish connection to RPC service: %w", err)
 	}
 	ethClient := ethclient.NewClient(rpcClient)
-	deps, err := newServerDeps(ctx, getenv)
+	deps, err := newServerDeps(ctx, cfg, logger)
 	if err != nil {
 		return err
 	}
 	defer deps.store.Close()
 
-	cgAPI, rwAPI, faqProxy, err := buildModules(ctx, getenv, deps, ethClient, rpcClient)
+	cgAPI, rwAPI, faqProxy, err := buildModules(ctx, cfg, deps, ethClient, rpcClient)
 	if err != nil {
 		return err
 	}
@@ -142,38 +139,32 @@ func run(ctx context.Context, getenv func(string) string) error {
 		cgAPI.StartBackgroundRefresh(ctx)
 	}
 
-	portPlain := getenv("HTTP_PORT")
-	hostSecure := getenv("HTTPS_HOSTNAME")
-	httpsExtra := strings.TrimSpace(getenv("HTTPS_EXTRA_LISTEN_ADDR"))
-
 	// The shared constructor (internal/api/routes) builds the middleware
 	// chain — CORS, panic recovery, access log, per-IP rate limiting,
 	// Prometheus metrics — and registers the injected v1 modules, generated
-	// v2 server, health probes, static assets (env-gated, see
+	// v2 server, health probes, static assets (config-gated, see
 	// static_assets.go), and host-dispatched bare /metadata route. The
 	// integration suites build through the same constructor.
-	accessLogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	errorLogger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	var v2Server *v2.Server
 	if cgAPI != nil {
-		v2Server, err = v2.NewServer(deps.store, cgAPI.ContractState(), errorLogger)
+		v2Server, err = v2.NewServer(deps.store, cgAPI.ContractState(), logger)
 		if err != nil {
 			return fmt.Errorf("API v2 initialization failed: %w", err)
 		}
 	}
 	r := routes.New(deps.store, routes.Options{
-		AccessLog:     accessLogger,
-		PanicLog:      errorLogger,
+		AccessLog:     logger,
+		PanicLog:      logger,
 		CosmicGame:    cgAPI,
 		RandomWalk:    rwAPI,
 		FAQ:           faqProxy,
 		V2:            v2Server,
 		Extra:         []httpx.Middleware{metricsMiddleware()},
-		RegisterExtra: registerStaticAssetRoutes,
+		RegisterExtra: registerStaticAssetRoutes(staticAssetsConfig(cfg, logger)),
 	})
 
 	// Internal metrics/pprof listener (METRICS_ADDR).
-	internalSrv := startInternalServer(getenv, deps.info, deps.errlog)
+	internalSrv := startInternalServer(cfg.MetricsAddr, logger)
 
 	// Public listeners. Each runs in its own goroutine and is tracked for
 	// the coordinated Shutdown below.
@@ -192,45 +183,48 @@ func run(ctx context.Context, getenv func(string) string) error {
 				err = srv.Serve(ln)
 			}
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				deps.errlog.Printf("HTTP server %s: %v", ln.Addr(), err)
-				log.Printf("HTTP server %s: %v", ln.Addr(), err)
+				logger.Error(fmt.Sprintf("HTTP server %s: %v", ln.Addr(), err))
 			}
 		}()
 	}
 
 	// TLS: HTTPS_HOSTNAME is the primary bind address (e.g. :443 or 0.0.0.0:443).
 	// Optional HTTPS_EXTRA_LISTEN_ADDR starts a second TLS listener (e.g. :1443) with the same routes and certs.
-	if len(hostSecure) > 0 {
-		certs := loadHTTPSCertificates(getenv)
+	if len(cfg.HTTPSHostname) > 0 {
+		certs := loadHTTPSCertificates(cfg, getenv("HOME"), logger)
 		if len(certs) == 0 {
-			log.Println("TLS: no certificates loaded; HTTPS listeners not started")
+			logger.Warn("TLS: no certificates loaded; HTTPS listeners not started")
 		} else {
 			tlsConfig := &tls.Config{Certificates: certs}
 			startTLS := func(addr string) {
 				ln, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
 				if err != nil {
-					log.Printf("HTTPS bind failed on %q: %v", addr, err)
+					logger.Error(fmt.Sprintf("HTTPS bind failed on %q: %v", addr, err))
 					return
 				}
-				log.Printf("HTTPS bound and listening on %s", ln.Addr().String())
-				serve(&http.Server{Handler: r, TLSConfig: tlsConfig, ReadHeaderTimeout: 10 * time.Second}, ln, true)
+				logger.Info("HTTPS bound and listening", "addr", ln.Addr().String())
+				// Each server gets its own tls.Config clone: ServeTLS
+				// mutates the config (HTTP/2 NextProtos), so the primary
+				// and extra listeners racing on a shared pointer was a
+				// data race.
+				serve(&http.Server{Handler: r, TLSConfig: tlsConfig.Clone(), ReadHeaderTimeout: 10 * time.Second}, ln, true)
 			}
-			startTLS(hostSecure)
-			if httpsExtra != "" {
-				startTLS(httpsExtra)
+			startTLS(cfg.HTTPSHostname)
+			if cfg.HTTPSExtraListenAddr != "" {
+				startTLS(cfg.HTTPSExtraListenAddr)
 			}
 		}
 	}
-	if len(portPlain) > 0 {
-		ln, err := new(net.ListenConfig).Listen(ctx, "tcp", ":"+portPlain)
+	if len(cfg.HTTPPort) > 0 {
+		ln, err := new(net.ListenConfig).Listen(ctx, "tcp", ":"+cfg.HTTPPort)
 		if err != nil {
-			return fmt.Errorf("HTTP bind failed on port %s: %w", portPlain, err)
+			return fmt.Errorf("HTTP bind failed on port %s: %w", cfg.HTTPPort, err)
 		}
-		log.Printf("Listening on port %s", portPlain)
+		logger.Info("listening", "port", cfg.HTTPPort)
 		serve(&http.Server{Handler: r, ReadHeaderTimeout: 10 * time.Second}, ln, false)
 	}
 	if len(servers) == 0 {
-		return errors.New("configuration error: no listeners configured — set HTTP_PORT and/or HTTPS_HOSTNAME")
+		return errors.New("configuration error: no listeners started — check the TLS certificate paths")
 	}
 
 	// Block until SIGINT/SIGTERM, then drain: readiness flips false so load
@@ -238,24 +232,23 @@ func run(ctx context.Context, getenv func(string) string) error {
 	// to finish, background refresh loops stop via ctx, and the store pool
 	// closes last (deferred).
 	<-ctx.Done()
-	log.Printf("shutdown: signal received, draining (timeout %s)", shutdownTimeout)
+	logger.Info("shutdown: signal received, draining", "timeout", shutdownTimeout.String())
 	common.SetDraining()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	for _, srv := range servers {
 		if err := srv.Shutdown(shutdownCtx); err != nil {
-			deps.errlog.Printf("shutdown: %v", err)
-			log.Printf("shutdown: %v", err)
+			logger.Error(fmt.Sprintf("shutdown: %v", err))
 		}
 	}
 	wg.Wait()
 	if internalSrv != nil {
 		if err := internalSrv.Shutdown(shutdownCtx); err != nil {
-			deps.errlog.Printf("shutdown internal server: %v", err)
+			logger.Error(fmt.Sprintf("shutdown internal server: %v", err))
 		}
 	}
-	log.Printf("shutdown: complete")
+	logger.Info("shutdown: complete")
 	return nil
 }
 
@@ -264,10 +257,9 @@ func run(ctx context.Context, getenv func(string) string) error {
 //
 // Primary pair: TLS_CERT_FILE + TLS_KEY_FILE, or $HOME/configs/server.crt + server.key.
 // Optional second pair (another domain): TLS_CERT_FILE_2 + TLS_KEY_FILE_2.
-func loadHTTPSCertificates(getenv func(string) string) []tls.Certificate {
-	home := getenv("HOME")
-	cert1 := strings.TrimSpace(getenv("TLS_CERT_FILE"))
-	key1 := strings.TrimSpace(getenv("TLS_KEY_FILE"))
+func loadHTTPSCertificates(cfg *config.APIServer, home string, logger *slog.Logger) []tls.Certificate {
+	cert1 := cfg.TLSCertFile
+	key1 := cfg.TLSKeyFile
 	if cert1 == "" {
 		cert1 = filepath.Join(home, "configs", "server.crt")
 	}
@@ -277,18 +269,17 @@ func loadHTTPSCertificates(getenv func(string) string) []tls.Certificate {
 	var out []tls.Certificate
 	if cer, err := tls.LoadX509KeyPair(cert1, key1); err == nil {
 		out = append(out, cer)
-		log.Printf("TLS: loaded certificate %q", cert1)
+		logger.Info("TLS: loaded certificate", "cert", cert1)
 	} else {
-		log.Printf("TLS: primary cert load failed (%q + %q): %v", cert1, key1, err)
+		logger.Error(fmt.Sprintf("TLS: primary cert load failed (%q + %q): %v", cert1, key1, err))
 	}
-	cert2 := strings.TrimSpace(getenv("TLS_CERT_FILE_2"))
-	key2 := strings.TrimSpace(getenv("TLS_KEY_FILE_2"))
-	if cert2 != "" && key2 != "" {
-		if cer, err := tls.LoadX509KeyPair(cert2, key2); err == nil {
+	if cfg.TLSCertFile2 != "" && cfg.TLSKeyFile2 != "" {
+		if cer, err := tls.LoadX509KeyPair(cfg.TLSCertFile2, cfg.TLSKeyFile2); err == nil {
 			out = append(out, cer)
-			log.Printf("TLS: loaded additional certificate %q (SNI will choose between %d certs)", cert2, len(out))
+			logger.Info("TLS: loaded additional certificate (SNI selects per hostname)",
+				"cert", cfg.TLSCertFile2, "total", len(out))
 		} else {
-			log.Printf("TLS: TLS_CERT_FILE_2 load failed: %v", err)
+			logger.Error(fmt.Sprintf("TLS: TLS_CERT_FILE_2 load failed: %v", err))
 		}
 	}
 	return out

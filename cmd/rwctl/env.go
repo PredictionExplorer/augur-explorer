@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"math/big"
 	"os"
@@ -56,19 +55,19 @@ func pkeyHexFromEnv() (string, error) {
 }
 
 // newInfoLogger returns the stdout logger passed to database helpers by the
-// scan/verify and ranking subcommands.
-func newInfoLogger() *log.Logger {
-	return log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+// scan/verify and ranking subcommands (connect-retry and query traces).
+func newInfoLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(os.Stdout, nil))
 }
 
-// connectRWStorage connects to PostgreSQL using the PGSQL_* environment
-// variables and returns the RandomWalk repository plus the base Store for
-// address lookups. The pool lives for the remainder of the process (rwctl
-// runs one command and exits). The logger receives connect-retry and query
-// traces.
-func connectRWStorage(info *log.Logger) (*rwstore.Repo, *store.Store, error) {
+// connectRWStorage connects to PostgreSQL using the DATABASE_URL / PGSQL_*
+// environment variables and returns the RandomWalk repository plus the base
+// Store for address lookups. The pool lives for the remainder of the process
+// (rwctl runs one command and exits). The logger receives connect-retry and
+// query traces.
+func connectRWStorage(logger *slog.Logger) (*rwstore.Repo, *store.Store, error) {
 	cfg := store.ConfigFromEnv()
-	cfg.Logger = slog.New(slog.NewTextHandler(info.Writer(), nil))
+	cfg.Logger = logger
 	st, err := store.New(context.Background(), cfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to storage: %w", err)

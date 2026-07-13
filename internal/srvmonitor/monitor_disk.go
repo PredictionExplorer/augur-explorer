@@ -2,7 +2,8 @@ package srvmonitor
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -20,13 +21,13 @@ type DiskStatus struct {
 type DiskMonitor struct {
 	statuses []*DiskStatus
 	position Position
-	logger   *log.Logger
+	logger   *slog.Logger
 	interval time.Duration
 	run      CommandRunner
 }
 
 // NewDiskMonitor creates a new disk monitor.
-func NewDiskMonitor(disks []DiskConfig, logger *log.Logger, iv Intervals) *DiskMonitor {
+func NewDiskMonitor(disks []DiskConfig, logger *slog.Logger, iv Intervals) *DiskMonitor {
 	m := &DiskMonitor{
 		statuses: make([]*DiskStatus, len(disks)),
 		position: Position{X: 1, Y: 17},
@@ -69,7 +70,7 @@ func (m *DiskMonitor) Start(ctx context.Context, disp Display, errorChan chan<- 
 
 // check performs a check cycle.
 func (m *DiskMonitor) check(ctx context.Context, disp Display, errorChan chan<- string) {
-	m.logger.Printf("Disk monitor: Starting check cycle for %d disk(s)", len(m.statuses))
+	m.logger.Info(fmt.Sprintf("Disk monitor: Starting check cycle for %d disk(s)", len(m.statuses)))
 
 	var wg sync.WaitGroup
 	wg.Add(len(m.statuses))
@@ -83,7 +84,7 @@ func (m *DiskMonitor) check(ctx context.Context, disp Display, errorChan chan<- 
 
 	wg.Wait()
 
-	m.logger.Printf("Disk monitor: Check cycle complete, updating display")
+	m.logger.Info("Disk monitor: Check cycle complete, updating display")
 
 	m.display(disp)
 }

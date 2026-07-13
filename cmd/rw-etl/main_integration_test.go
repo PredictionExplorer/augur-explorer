@@ -3,10 +3,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,7 +22,8 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
 )
 
-// setEnv wires HOME, RPC_URL and PGSQL_* for one run.
+// setEnv wires RPC_URL and PGSQL_* for one run and clears everything else
+// the typed configuration reads.
 func setEnv(t *testing.T, connString, rpcURL string) {
 	t.Helper()
 	u, err := url.Parse(connString)
@@ -30,15 +34,37 @@ func setEnv(t *testing.T, connString, rpcURL string) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("RPC_URL", rpcURL)
 	t.Setenv("METRICS_ADDR", "")
+	t.Setenv("LOG_FORMAT", "")
+	t.Setenv("LOG_LEVEL", "")
+	t.Setenv("DATABASE_URL", "")
 	t.Setenv("PGSQL_USERNAME", u.User.Username())
 	t.Setenv("PGSQL_PASSWORD", password)
 	t.Setenv("PGSQL_DATABASE", strings.TrimPrefix(u.Path, "/"))
 	t.Setenv("PGSQL_HOST", u.Host)
 }
 
-// TestRunBootAndGracefulShutdown drives the full production wiring: log
-// files, RPC dial, store, contract bootstrap, handler set, engine catch-up
-// and context-cancelled shutdown.
+// syncBuffer is a mutex-guarded log sink: the engine goroutines log
+// concurrently with the test's readers.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
+// TestRunBootAndGracefulShutdown drives the full production wiring: typed
+// configuration, structured logging, RPC dial, store, contract bootstrap,
+// handler set, engine catch-up and context-cancelled shutdown.
 func TestRunBootAndGracefulShutdown(t *testing.T) {
 	db := testdb.New(t)
 	ctx := context.Background()
@@ -51,9 +77,10 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 	setEnv(t, db.ConnString, chain.URL())
 	t.Setenv("METRICS_ADDR", "127.0.0.1:0")
 
+	var logBuf syncBuffer
 	runCtx, cancel := context.WithCancel(ctx)
 	done := make(chan error, 1)
-	go func() { done <- run(runCtx, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry()) }()
+	go func() { done <- run(runCtx, os.Getenv, &logBuf, prometheus.NewRegistry(), prometheus.NewRegistry()) }()
 
 	// The engine has fully booted once the watermark reaches the chain tip.
 	deadline := time.Now().Add(60 * time.Second)
@@ -66,8 +93,7 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 		if time.Now().After(deadline) {
 			cancel()
 			runErr := awaitRun(done)
-			info, _ := os.ReadFile(os.Getenv("HOME") + "/ae_logs/randomwalk_info.log") //nolint:gosec // test path under t.TempDir
-			t.Fatalf("watermark never reached the chain tip (last=%d, run=%v)\ninfo log:\n%s", lastBlock, runErr, info)
+			t.Fatalf("watermark never reached the chain tip (last=%d, run=%v)\nlog stream:\n%s", lastBlock, runErr, logBuf.String())
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
@@ -77,10 +103,15 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 		t.Fatalf("run returned %v, want nil on graceful shutdown", err)
 	}
 
-	home := os.Getenv("HOME")
-	for _, name := range []string{"randomwalk_info.log", "randomwalk_error.log", "randomwalk_db.log"} {
-		if _, err := os.Stat(home + "/ae_logs/" + name); err != nil { //nolint:gosec // test path under t.TempDir
-			t.Fatalf("log file %s missing: %v", name, err)
+	// §8.3: structured records on the log stream replace the legacy
+	// $HOME/ae_logs two-file layout.
+	if _, err := os.Stat(os.Getenv("HOME") + "/ae_logs"); !os.IsNotExist(err) { //nolint:gosec // test path under t.TempDir
+		t.Errorf("legacy ae_logs directory was created (stat err=%v)", err)
+	}
+	logs := logBuf.String()
+	for _, want := range []string{"effective configuration", "Connected to ETH node", "PGSQL_PASSWORD=[set]"} {
+		if !strings.Contains(logs, want) {
+			t.Errorf("log stream missing %q:\n%s", want, logs)
 		}
 	}
 }
@@ -127,9 +158,17 @@ func TestRunFailures(t *testing.T) {
 	db := testdb.New(t)
 	ctx := context.Background()
 
+	t.Run("missing RPC_URL fails at config load", func(t *testing.T) {
+		setEnv(t, db.ConnString, "")
+		err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
+		if err == nil || !strings.Contains(err.Error(), "RPC_URL: required but not set") {
+			t.Fatalf("err = %v", err)
+		}
+	})
+
 	t.Run("bad rpc url", func(t *testing.T) {
 		setEnv(t, db.ConnString, "://not-a-url")
-		err := run(ctx, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry())
+		err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
 		if err == nil || !strings.Contains(err.Error(), "dialing RPC node") {
 			t.Fatalf("err = %v", err)
 		}
@@ -141,36 +180,9 @@ func TestRunFailures(t *testing.T) {
 		chain := testchain.New(t)
 		chain.EnsureBlock(1)
 		setEnv(t, db.ConnString, chain.URL())
-		err := run(ctx, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry())
+		err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
 		if err == nil || !strings.Contains(err.Error(), "contract address bootstrap failed") {
 			t.Fatalf("err = %v", err)
-		}
-	})
-
-	t.Run("unusable log dir", func(t *testing.T) {
-		chain := testchain.New(t)
-		setEnv(t, db.ConnString, chain.URL())
-		t.Setenv("HOME", "/dev/null")
-		err := run(ctx, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry())
-		if err == nil || !strings.Contains(err.Error(), "can't open log file") {
-			t.Fatalf("err = %v", err)
-		}
-	})
-
-	t.Run("individual log files unopenable", func(t *testing.T) {
-		// A directory squatting on a log file name makes only that
-		// specific open fail, covering each openAppendLog error return.
-		chain := testchain.New(t)
-		for _, name := range []string{"randomwalk_error.log", "randomwalk_db.log"} {
-			setEnv(t, db.ConnString, chain.URL())
-			home := os.Getenv("HOME")
-			if err := os.MkdirAll(home+"/ae_logs/"+name, 0o750); err != nil { //nolint:gosec // test path under t.TempDir
-				t.Fatal(err)
-			}
-			err := run(ctx, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry())
-			if err == nil || !strings.Contains(err.Error(), "can't open log file") {
-				t.Fatalf("%s: err = %v", name, err)
-			}
 		}
 	})
 
@@ -181,7 +193,7 @@ func TestRunFailures(t *testing.T) {
 		setEnv(t, db.ConnString, chain.URL())
 		cancelled, cancel := context.WithCancel(ctx)
 		cancel()
-		err := run(cancelled, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry())
+		err := run(cancelled, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
 		if err == nil || !strings.Contains(err.Error(), "can't connect to PostgreSQL database") {
 			t.Fatalf("err = %v", err)
 		}
@@ -195,7 +207,7 @@ func TestRunFailures(t *testing.T) {
 		chain.EnsureBlock(150)
 		setEnv(t, db.ConnString, chain.URL())
 		t.Setenv("METRICS_ADDR", "256.256.256.256:1")
-		err := run(ctx, os.Getenv, prometheus.NewRegistry(), prometheus.NewRegistry())
+		err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
 		if err == nil || !strings.Contains(err.Error(), "can't start metrics server") {
 			t.Fatalf("err = %v", err)
 		}

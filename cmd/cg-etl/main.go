@@ -1,13 +1,14 @@
 // The CosmicGame ETL: indexes every CosmicGame-family contract event into
-// PostgreSQL. main wires the process-wide dependencies (loggers, RPC client,
-// store, the handler set of internal/indexer/cosmicgame), runs the startup
-// contract-parameter sync and hands control to the shared indexing engine
-// (internal/indexer).
+// PostgreSQL. main wires the process-wide dependencies (typed configuration,
+// process logger, RPC client, store, the handler set of
+// internal/indexer/cosmicgame), runs the startup contract-parameter sync and
+// hands control to the shared indexing engine (internal/indexer).
 package main
 
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -18,28 +19,12 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	cgindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
-
-const (
-	defaultDBLog = "db.log"
-
-	// defaultLogDir is the legacy operational log directory under $HOME.
-	defaultLogDir = "ae_logs"
-)
-
-// openAppendLog opens (creating if needed) one of the ETL's append-only log
-// files.
-func openAppendLog(path string) (*os.File, error) {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666) // #nosec G302 G304 G703 -- operational log under $HOME/ae_logs, world-readable by design
-	if err != nil {
-		return nil, fmt.Errorf("can't open log file: %w", err)
-	}
-	return f, nil
-}
 
 // cgProgress adapts the cg_proc_status row to the engine's watermark
 // interface, preserving last_evt_id across writes.
@@ -71,32 +56,26 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
 
-	if err := run(ctx, os.Getenv, prometheus.DefaultRegisterer, prometheus.DefaultGatherer); err != nil {
+	if err := run(ctx, os.Getenv, os.Stdout, prometheus.DefaultRegisterer, prometheus.DefaultGatherer); err != nil {
 		fmt.Fprintf(os.Stderr, "cg-etl: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 // run wires every dependency and drives the indexing engine until ctx is
-// cancelled (returning nil) or a fatal error occurs. The Prometheus
+// cancelled (returning nil) or a fatal error occurs. Environment access goes
+// through getenv and structured logs go to logOut; the Prometheus
 // registerer/gatherer pair is injected so tests can use isolated registries
 // (the default registry rejects duplicate registration across runs).
-func run(ctx context.Context, getenv func(string) string, reg prometheus.Registerer, gatherer prometheus.Gatherer) error {
-	logDir := fmt.Sprintf("%v/%v", getenv("HOME"), defaultLogDir)
-	_ = os.MkdirAll(logDir, os.ModePerm) // #nosec G301 G703 -- legacy log dir under $HOME; openAppendLog fails loudly if unusable
-
-	infoFile, err := openAppendLog(fmt.Sprintf("%v/cosmicgame_info.log", logDir))
+func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg prometheus.Registerer, gatherer prometheus.Gatherer) error {
+	cfg, err := config.LoadETL(getenv)
 	if err != nil {
 		return err
 	}
-	errFile, err := openAppendLog(fmt.Sprintf("%v/cosmicgame_error.log", logDir))
-	if err != nil {
-		return err
-	}
-	// The engine, the handlers and the startup sync log structured records
-	// into the legacy two-file layout: everything to the info log, errors
-	// duplicated to the error log.
-	logger := slog.New(indexer.NewDualLogHandler(infoFile, errFile))
+	// One structured logger on stdout; journald owns persistence (§8.3 —
+	// the legacy $HOME/ae_logs dual-file layout is gone).
+	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
 	go func() {
 		<-ctx.Done()
@@ -104,23 +83,18 @@ func run(ctx context.Context, getenv func(string) string, reg prometheus.Registe
 			" To interrupt abruptly send SIGKILL (9) to the kernel.")
 	}()
 
-	rpcURL := getenv("RPC_URL")
-	rpcclient, err := rpc.DialContext(ctx, rpcURL)
+	rpcclient, err := rpc.DialContext(ctx, cfg.RPCURL)
 	if err != nil {
 		return fmt.Errorf("dialing RPC node: %w", err)
 	}
-	logger.Info("Connected to ETH node", "rpc_url", rpcURL)
+	logger.Info("Connected to ETH node", "rpc_url", config.RedactURL(cfg.RPCURL))
 	eclient := ethclient.NewClient(rpcclient)
 
 	// Database log output (failed and slow queries) goes through the pgx
-	// slog tracer into the file the legacy Init_log wrote to.
-	dbLogHandle, err := openAppendLog(fmt.Sprintf("%v/cosmicgame_%v", logDir, defaultDBLog))
-	if err != nil {
-		return err
-	}
-	cfg := store.ConfigFromEnv()
-	cfg.Logger = slog.New(slog.NewTextHandler(dbLogHandle, nil))
-	dbStore, err := store.New(ctx, cfg)
+	// slog tracer onto the same stream, tagged component=db.
+	storeCfg := cfg.DB.StoreConfig()
+	storeCfg.Logger = logger.With("component", "db")
+	dbStore, err := store.New(ctx, storeCfg)
 	if err != nil {
 		return fmt.Errorf("can't connect to PostgreSQL database: %w\n%s", err, store.ConnectHint(err))
 	}
@@ -154,7 +128,7 @@ func run(ctx context.Context, getenv func(string) string, reg prometheus.Registe
 	// Private metrics/pprof listener, enabled by METRICS_ADDR (never expose
 	// it publicly; use a different port per process on shared hosts).
 	metrics := indexer.NewMetrics(reg)
-	if addr := strings.TrimSpace(getenv("METRICS_ADDR")); addr != "" {
+	if addr := strings.TrimSpace(cfg.MetricsAddr); addr != "" {
 		srv, _, err := indexer.StartMetricsServer(ctx, addr, gatherer, logger)
 		if err != nil {
 			return fmt.Errorf("can't start metrics server on %v: %w", addr, err)

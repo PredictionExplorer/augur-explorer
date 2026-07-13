@@ -7,8 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"log"
+	"log/slog"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
@@ -29,28 +28,74 @@ const (
 // byte-identical.
 const legacyNoRowsText = "sql: no rows in result set"
 
+// defaultExploreMaxTokenID bounds explore/random token ids when the
+// configuration does not override it (RANDOMWALK_EXPLORE_MAX_TOKEN_ID).
+const defaultExploreMaxTokenID = 3766
+
 // API carries the injected dependencies of the v1 RandomWalk module: the
-// context-first repository, the base store for address lookups, and the
-// legacy file loggers.
+// context-first repository, the base store for address lookups, the process
+// logger and the module configuration values.
 type API struct {
-	repo   *rwdb.Repo
-	store  *store.Store
-	info   *log.Logger
-	errlog *log.Logger
+	repo              *rwdb.Repo
+	store             *store.Store
+	logger            *slog.Logger
+	adminAPIKey       string
+	rankingAdminKey   string
+	voteChainIDs      []int64
+	exploreMaxTokenID int64
+	assetsPublicBase  string
+	assetsFlatPaths   bool
 }
 
-// New builds the module over the shared store. info and errlog may be nil
-// (discard). A nil store yields a bare module whose handlers answer the
-// legacy "Database link wasn't configured" envelope.
-func New(st *store.Store, info, errlog *log.Logger) *API {
-	discard := log.New(io.Discard, "", 0)
-	if info == nil {
-		info = discard
+// Options carries the module configuration (typed config values that were
+// scattered os.Getenv reads before §8.3). The zero value is a working
+// default: fail-closed admin routes, any vote chain id, the standard
+// explore range and request-derived asset URLs.
+type Options struct {
+	// Logger receives module diagnostics; nil discards.
+	Logger *slog.Logger
+	// RankingAdminKey guards the direct Elo-match route
+	// (RANKING_ADMIN_KEY); AdminAPIKey (ADMIN_API_KEY) is its fallback.
+	// Both empty fails closed: the route answers 503.
+	RankingAdminKey string
+	AdminAPIKey     string
+	// VoteChainIDs allowlists the wallet-signed beauty-vote chain ids
+	// (RANKING_VOTE_CHAIN_IDS); empty allows any chain id.
+	VoteChainIDs []int64
+	// ExploreMaxTokenID bounds explore/random token ids
+	// (RANDOMWALK_EXPLORE_MAX_TOKEN_ID); zero applies the 3766 default.
+	ExploreMaxTokenID int64
+	// AssetsPublicBase overrides the public /images URL base
+	// (NFT_ASSETS_PUBLIC_BASE); empty derives it per request or applies
+	// the documented production default for metadata.
+	AssetsPublicBase string
+	// AssetsFlatPaths selects the flat /images/<file> URL layout
+	// (NFT_ASSETS_FLAT_PATHS).
+	AssetsFlatPaths bool
+}
+
+// New builds the module over the shared store. A nil store yields a bare
+// module whose handlers answer the legacy "Database link wasn't configured"
+// envelope.
+func New(st *store.Store, opts Options) *API {
+	logger := opts.Logger
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
 	}
-	if errlog == nil {
-		errlog = discard
+	maxTokenID := opts.ExploreMaxTokenID
+	if maxTokenID <= 0 {
+		maxTokenID = defaultExploreMaxTokenID
 	}
-	a := &API{store: st, info: info, errlog: errlog}
+	a := &API{
+		store:             st,
+		logger:            logger,
+		adminAPIKey:       opts.AdminAPIKey,
+		rankingAdminKey:   opts.RankingAdminKey,
+		voteChainIDs:      opts.VoteChainIDs,
+		exploreMaxTokenID: maxTokenID,
+		assetsPublicBase:  opts.AssetsPublicBase,
+		assetsFlatPaths:   opts.AssetsFlatPaths,
+	}
 	if st != nil {
 		a.repo = rwdb.NewRepo(st)
 	}
@@ -61,7 +106,7 @@ func New(st *store.Store, info, errlog *log.Logger) *API {
 // envelopes. The route-drift test uses it to enumerate the route table
 // without a database, and the guard tests pin the failure shapes.
 func NewBare() *API {
-	return New(nil, nil, nil)
+	return New(nil, Options{})
 }
 
 // respondStoreError logs a database failure (unless the client canceled the
@@ -70,9 +115,7 @@ func NewBare() *API {
 // whole process from inside the store layer, so no golden constrains them.
 func (a *API) respondStoreError(c *httpx.Context, err error) {
 	if !errors.Is(err, context.Canceled) {
-		errStr := fmt.Sprintf("%s: %v", c.FullPath(), err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(fmt.Sprintf("%s: %v", c.FullPath(), err))
 	}
 	common.RespondInternalErrorJSON(c)
 }
@@ -128,7 +171,9 @@ func (a *API) RegisterRoutes(r *httpx.Router) {
 	// and rate limited instead.
 	r.POST("/api/randomwalk/token-ranking/match", a.handleTokenRankingMatch,
 		common.RateLimit(2, 5),
-		common.RequireAdminKey("X-Ranking-Admin-Key", "RANKING_ADMIN_KEY", "ADMIN_API_KEY"))
+		common.RequireAdminKey("X-Ranking-Admin-Key",
+			common.AdminKey{Name: "RANKING_ADMIN_KEY", Value: a.rankingAdminKey},
+			common.AdminKey{Name: "ADMIN_API_KEY", Value: a.adminAPIKey}))
 	r.POST("/api/randomwalk/add_game", a.handleAddGameLegacy, common.RateLimit(1, 10))
 	r.GET("/api/randomwalk/metadata/{token_id}", a.handleTokenMetadata)
 

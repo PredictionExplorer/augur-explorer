@@ -332,7 +332,7 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 				out.LastCstBidEventLogID = evtlogID
 				out.HasLastCstBidEventLogID = true
 			case !errors.Is(err, store.ErrNotFound):
-				s.errlog.Printf("state refresh: last CST bid lookup: %v", err)
+				s.logger.Error(fmt.Sprintf("state refresh: last CST bid lookup: %v", err))
 			}
 		}
 	}

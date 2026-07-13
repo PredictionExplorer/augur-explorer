@@ -2,7 +2,8 @@ package srvmonitor
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"os/exec"
 	"sync"
 	"time"
@@ -40,7 +41,7 @@ type AlarmTracker struct {
 	occurrences      map[string][]time.Time // Maps alarm message to timestamps
 	lastNotification map[string]time.Time   // Last notification time for each alarm
 	mutex            sync.Mutex
-	logger           *log.Logger
+	logger           *slog.Logger
 
 	now             func() time.Time // nil means the wall clock; tests inject
 	run             CommandRunner
@@ -49,7 +50,7 @@ type AlarmTracker struct {
 
 // NewAlarmTracker creates a new alarm tracker. When enabled is false every
 // operation is a no-op apart from logging.
-func NewAlarmTracker(enabled bool, logger *log.Logger) *AlarmTracker {
+func NewAlarmTracker(enabled bool, logger *slog.Logger) *AlarmTracker {
 	return &AlarmTracker{
 		enabled:          enabled,
 		occurrences:      make(map[string][]time.Time),
@@ -89,7 +90,7 @@ func (a *AlarmTracker) RecordAlarm(ctx context.Context, message string) {
 	// Check if we should send notification
 	occCount := len(a.occurrences[message])
 
-	a.logger.Printf("Alarm recorded: '%s' (count in last 30min: %d)", message, occCount)
+	a.logger.Info(fmt.Sprintf("Alarm recorded: '%s' (count in last 30min: %d)", message, occCount))
 
 	// Only send notification if:
 	// 1. We've reached the threshold (5 occurrences)
@@ -101,8 +102,8 @@ func (a *AlarmTracker) RecordAlarm(ctx context.Context, message string) {
 			a.sendNotification(ctx, message, occCount)
 			a.lastNotification[message] = now
 		} else {
-			a.logger.Printf("Notification suppressed (cooldown): %v remaining",
-				NotificationCooldown-now.Sub(lastNotif))
+			a.logger.Info(fmt.Sprintf("Notification suppressed (cooldown): %v remaining",
+				NotificationCooldown-now.Sub(lastNotif)))
 		}
 	}
 }
@@ -127,7 +128,7 @@ func (a *AlarmTracker) cleanOldOccurrences(message string, now time.Time) {
 // SendTestNotification sends a test notification (bypasses threshold checks).
 func (a *AlarmTracker) SendTestNotification(ctx context.Context, message string) {
 	if !a.enabled {
-		a.logger.Printf("Cannot send test notification: mobile notifications disabled")
+		a.logger.Info("Cannot send test notification: mobile notifications disabled")
 		return
 	}
 	a.sendNotification(ctx, message, 0)
@@ -135,7 +136,7 @@ func (a *AlarmTracker) SendTestNotification(ctx context.Context, message string)
 
 // sendNotification sends an Android notification or alert.
 func (a *AlarmTracker) sendNotification(ctx context.Context, message string, count int) {
-	a.logger.Printf("Sending notification: '%s' (triggered %d times)", message, count)
+	a.logger.Info(fmt.Sprintf("Sending notification: '%s' (triggered %d times)", message, count))
 
 	// Try termux-notification first (F-Droid version)
 	_, err := a.run(ctx, "termux-notification",
@@ -144,20 +145,20 @@ func (a *AlarmTracker) sendNotification(ctx context.Context, message string, cou
 		"--priority", "high",
 		"--sound")
 	if err == nil {
-		a.logger.Printf("Notification sent successfully")
+		a.logger.Info("Notification sent successfully")
 		return
 	}
 
 	// If termux-notification fails, try termux-vibrate (works on Google Play if installed)
-	a.logger.Printf("termux-notification failed: %v, trying termux-vibrate fallback", err)
+	a.logger.Info(fmt.Sprintf("termux-notification failed: %v, trying termux-vibrate fallback", err))
 
 	if _, vibrateErr := a.run(ctx, "termux-vibrate", "-d", "1000"); vibrateErr != nil {
-		a.logger.Printf("termux-vibrate also failed: %v", vibrateErr)
+		a.logger.Info(fmt.Sprintf("termux-vibrate also failed: %v", vibrateErr))
 		// Last resort: terminal beep (BEL character)
-		a.logger.Printf("\a\a\a ALERT (no notification sent): %s", message)
+		a.logger.Info(fmt.Sprintf("\a\a\a ALERT (no notification sent): %s", message))
 		return
 	}
-	a.logger.Printf("Vibration alert sent successfully")
+	a.logger.Info("Vibration alert sent successfully")
 }
 
 // RunCleanup prunes stale alarm state every cleanup interval until ctx is

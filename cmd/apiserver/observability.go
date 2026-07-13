@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"strings"
@@ -65,8 +66,8 @@ func statusClass(code int) string {
 // These must never be exposed publicly, so they live on their own port,
 // controlled by METRICS_ADDR (e.g. "127.0.0.1:9090"). Unset means disabled.
 // The returned server (nil when disabled) participates in graceful shutdown.
-func startInternalServer(getenv func(string) string, info, errlog *log.Logger) *http.Server {
-	addr := strings.TrimSpace(getenv("METRICS_ADDR"))
+func startInternalServer(metricsAddr string, logger *slog.Logger) *http.Server {
+	addr := strings.TrimSpace(metricsAddr)
 	if addr == "" {
 		return nil
 	}
@@ -84,9 +85,9 @@ func startInternalServer(getenv func(string) string, info, errlog *log.Logger) *
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
-		info.Printf("internal metrics/pprof server listening on %s", addr)
+		logger.Info("internal metrics/pprof server listening", "addr", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			errlog.Printf("internal metrics server: %v", err)
+			logger.Error(fmt.Sprintf("internal metrics server: %v", err))
 		}
 	}()
 	return srv

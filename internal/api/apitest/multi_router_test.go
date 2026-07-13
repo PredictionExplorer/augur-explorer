@@ -4,7 +4,6 @@ package apitest
 
 import (
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -26,7 +25,6 @@ import (
 // module Init could run only once per process (the old §4.1 caveat).
 func TestTwoIndependentRoutersInOneProcess(t *testing.T) {
 	h := server(t)
-	discard := log.New(io.Discard, "", 0)
 
 	// Second, independently constructed module set over the same store and
 	// fake chain. A separate FAQ upstream proves per-instance configuration.
@@ -37,11 +35,10 @@ func TestTwoIndependentRoutersInOneProcess(t *testing.T) {
 	t.Cleanup(secondFAQ.Close)
 
 	cgAPI, err := cosmicgame.New(t.Context(), cosmicgame.Config{
-		Store:     h.store,
-		EthClient: h.ethClient,
-		RPCClient: h.rpcClient,
-		Info:      discard,
-		Error:     discard,
+		Store:       h.store,
+		EthClient:   h.ethClient,
+		RPCClient:   h.rpcClient,
+		AdminAPIKey: adminKey,
 	})
 	if err != nil {
 		t.Fatalf("second cosmicgame module: %v", err)
@@ -57,7 +54,7 @@ func TestTwoIndependentRoutersInOneProcess(t *testing.T) {
 	}
 	second := routes.New(h.store, routes.Options{
 		CosmicGame: cgAPI,
-		RandomWalk: randomwalk.New(h.store, discard, discard),
+		RandomWalk: randomwalk.New(h.store, randomwalk.Options{AdminAPIKey: adminKey}),
 		FAQ:        faq.New(faq.Options{UpstreamURL: secondFAQ.URL}),
 		V2:         v2Server,
 	})

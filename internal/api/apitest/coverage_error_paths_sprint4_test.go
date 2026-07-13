@@ -5,8 +5,6 @@ package apitest
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"log"
 	"net/http"
 	"strings"
 	"testing"
@@ -153,7 +151,6 @@ func TestUserBalancesEthBalanceFailure(t *testing.T) {
 // refresh-loop lifecycle of the injected module (Phase 4 DI).
 func TestCosmicGameModuleConstruction(t *testing.T) {
 	h := server(t)
-	discard := log.New(io.Discard, "", 0)
 
 	t.Run("nil store is the legacy database-link error", func(t *testing.T) {
 		_, err := cosmicgame.New(context.Background(), cosmicgame.Config{})
@@ -168,8 +165,6 @@ func TestCosmicGameModuleConstruction(t *testing.T) {
 		_, err := cosmicgame.New(cancelled, cosmicgame.Config{
 			Store:     h.store,
 			EthClient: h.ethClient,
-			Info:      discard,
-			Error:     discard,
 		})
 		if err == nil || !strings.Contains(err.Error(), "reading contract addresses") {
 			t.Fatalf("err = %v", err)
@@ -188,8 +183,6 @@ func TestCosmicGameModuleConstruction(t *testing.T) {
 			Store:     h.store,
 			EthClient: h.ethClient,
 			RPCClient: h.rpcClient,
-			Info:      discard,
-			Error:     discard,
 		})
 		if err != nil {
 			t.Fatal(err)

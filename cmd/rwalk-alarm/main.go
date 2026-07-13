@@ -19,12 +19,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/urlalarm"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/wanotif"
 )
@@ -39,13 +40,19 @@ func main() {
 	}
 }
 
-// run parses configuration and drives the engine until ctx is cancelled.
+// run loads the typed configuration and drives the engine until ctx is
+// cancelled.
 func run(ctx context.Context, args []string, getenv func(string) string, out io.Writer) error {
 	if len(args) != 1 {
 		return fmt.Errorf("usage: rwalk-alarm [url_list_file]")
 	}
 
-	logger := log.New(out, "INFO: ", log.Ldate|log.Ltime)
+	cfg, err := config.LoadRwalkAlarm(getenv)
+	if err != nil {
+		return err
+	}
+	logger := cfg.Log.NewLogger(out)
+	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
 	data, err := os.ReadFile(filepath.Clean(args[0]))
 	if err != nil {
@@ -55,31 +62,22 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	if err != nil {
 		return fmt.Errorf("parsing url list: %w", err)
 	}
-	logger.Printf("Loaded %v URLs", len(urls))
+	logger.Info("loaded URLs", "count", len(urls))
 
-	people, err := urlalarm.ParsePhoneList(getenv("PHONE_LIST"))
+	people, err := urlalarm.ParsePhoneList(cfg.PhoneList)
 	if err != nil {
 		return fmt.Errorf("parsing PHONE_LIST: %w", err)
 	}
-	logger.Printf("Loaded %v phones for notification", len(people))
-
-	token := getenv("WHATSAPP_TOKEN")
-	if token == "" {
-		return fmt.Errorf("WHATSAPP_TOKEN environment variable is empty")
-	}
-	phoneID := getenv("WHATSAPP_PHONE_ID")
-	if phoneID == "" {
-		return fmt.Errorf("WHATSAPP_PHONE_ID environment variable is empty")
-	}
+	logger.Info("loaded phones for notification", "count", len(people))
 
 	engine := urlalarm.New(urlalarm.Config{
 		URLs:   urls,
 		People: people,
-	}, wanotif.NewWhatsapp(token, phoneID), nil, logger)
+	}, wanotif.NewWhatsapp(cfg.WhatsAppToken, cfg.WhatsAppPhoneID), nil, logger)
 
 	if err := engine.Run(ctx); !errors.Is(err, context.Canceled) {
 		return err
 	}
-	logger.Print("Exiting upon user request")
+	logger.Info("exiting upon user request")
 	return nil
 }

@@ -47,6 +47,6 @@ update the statistics channels: Manage Channel, Connect. Recommended
 permissions for other users so they stay out of the statistical channels:
 View Channel yes, Manage Channel no, Connect no.
 
-Logs go to `$HOME/ae_logs/notibot_{info,error,db}.log`. The bot resumes from
-the `rw_messaging_status` watermark persisted after every processed event, so
-restarts never re-announce history.
+Structured logs go to stdout (`LOG_FORMAT=json` in production; journald owns
+persistence). The bot resumes from the `rw_messaging_status` watermark
+persisted after every processed event, so restarts never re-announce history.

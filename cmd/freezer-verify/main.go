@@ -15,7 +15,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -62,10 +62,10 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error
 		return false, fmt.Errorf("invalid table name %q: must be a plain SQL identifier", *tableName)
 	}
 
-	logger := log.New(errOut, "", log.LstdFlags)
+	logger := slog.New(slog.NewTextHandler(errOut, nil))
 
 	// Load events from the JSONL file.
-	logger.Printf("Loading events from %s...", *inputFile)
+	logger.Info(fmt.Sprintf("Loading events from %s...", *inputFile))
 	file, err := os.Open(filepath.Clean(*inputFile))
 	if err != nil {
 		return false, fmt.Errorf("opening input: %w", err)
@@ -76,14 +76,14 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error
 	if err != nil {
 		return false, fmt.Errorf("failed to load events: %w", err)
 	}
-	logger.Printf("Loaded %d distinct (block, topic0, contract) combinations from file", len(freezerEvents))
-	logger.Printf("Contracts found: %v", contracts)
+	logger.Info(fmt.Sprintf("Loaded %d distinct (block, topic0, contract) combinations from file", len(freezerEvents)))
+	logger.Info(fmt.Sprintf("Contracts found: %v", contracts))
 
 	minBlock, maxBlock, ok := verify.BlockRange(freezerEvents)
 	if !ok {
 		return false, fmt.Errorf("no events found in input file")
 	}
-	logger.Printf("Block range in file: %d - %d", minBlock, maxBlock)
+	logger.Info(fmt.Sprintf("Block range in file: %d - %d", minBlock, maxBlock))
 
 	// Connect to the database.
 	conn, err := pgx.Connect(ctx, *dbConnStr)
@@ -91,7 +91,7 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error
 		return false, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer func() { _ = conn.Close(ctx) }() // best-effort close on process exit
-	logger.Printf("Connected to database")
+	logger.Info("Connected to database")
 
 	// Resolve contract address ids.
 	contractAddrs := make([]string, 0, len(contracts))
@@ -105,15 +105,15 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error
 	if len(contractAids) == 0 {
 		return false, fmt.Errorf("none of the contracts found in database address table: %v", contractAddrs)
 	}
-	logger.Printf("Found %d contract address IDs in database", len(contractAids))
+	logger.Info(fmt.Sprintf("Found %d contract address IDs in database", len(contractAids)))
 
 	// Query database events and compare.
-	logger.Printf("Querying database for events in block range %d - %d...", minBlock, maxBlock)
+	logger.Info(fmt.Sprintf("Querying database for events in block range %d - %d...", minBlock, maxBlock))
 	dbEvents, err := verify.DBEvents(ctx, conn, *tableName, minBlock, maxBlock, contractAids)
 	if err != nil {
 		return false, fmt.Errorf("failed to query events: %w", err)
 	}
-	logger.Printf("Found %d distinct (block, topic0, contract) combinations in database", len(dbEvents))
+	logger.Info(fmt.Sprintf("Found %d distinct (block, topic0, contract) combinations in database", len(dbEvents)))
 
 	report := verify.Compare(freezerEvents, dbEvents, *maxMissing, *maxExtra)
 	report.Write(out, *verbose)

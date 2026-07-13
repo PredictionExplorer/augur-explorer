@@ -27,6 +27,13 @@ const DefaultMaxConns = 16
 // Config holds PostgreSQL connection settings for New. Construct it with
 // ConfigFromEnv or fill the fields explicitly (tests, tools with -db flags).
 type Config struct {
+	// URL is a complete postgres:// connection URL (or libpq DSN). When
+	// set it wins over the field-based settings below (12-factor
+	// DATABASE_URL support). The store still pins timezone=UTC and
+	// search_path=public and applies its keepalive dialer and default
+	// connect timeout on top.
+	URL string
+
 	// User, Password and Database are the libpq user/password/dbname values.
 	User     string
 	Password string
@@ -45,11 +52,12 @@ type Config struct {
 	Logger *slog.Logger
 }
 
-// ConfigFromEnv reads the connection settings from the legacy PGSQL_*
-// environment variables (PGSQL_USERNAME, PGSQL_PASSWORD, PGSQL_DATABASE,
-// PGSQL_HOST).
+// ConfigFromEnv reads the connection settings from the environment:
+// DATABASE_URL when set (wins), otherwise the legacy PGSQL_* variables
+// (PGSQL_USERNAME, PGSQL_PASSWORD, PGSQL_DATABASE, PGSQL_HOST).
 func ConfigFromEnv() Config {
 	return Config{
+		URL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		User:     os.Getenv("PGSQL_USERNAME"),
 		Password: os.Getenv("PGSQL_PASSWORD"),
 		Database: os.Getenv("PGSQL_DATABASE"),
@@ -98,6 +106,44 @@ func (cfg Config) connString() string {
 	return connStr
 }
 
+// poolConfig parses the connection settings — the URL when present,
+// otherwise the rendered PGSQL_* keyword string — and applies the store's
+// invariants on top: keepalive dialer, UTC timezone, public search_path,
+// bounded pool size and (unless the URL sets its own) the default connect
+// timeout.
+func (cfg Config) poolConfig() (*pgxpool.Config, error) {
+	connStr := cfg.URL
+	if connStr == "" {
+		connStr = cfg.connString()
+	}
+	poolCfg, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		// Never echo the failing string: a URL embeds the password.
+		return nil, fmt.Errorf("parse db config: %w", err)
+	}
+	if cfg.URL != "" && !strings.Contains(cfg.URL, "connect_timeout") {
+		poolCfg.ConnConfig.ConnectTimeout = dbConnectTimeout
+	}
+	poolCfg.ConnConfig.DialFunc = newKeepaliveDialer().DialContext
+	// Every connection works in UTC. The legacy connector ran
+	// "SET timezone TO 0" on a single connection of the pool; a runtime
+	// parameter applies it uniformly. Queries and scan helpers depend on
+	// it, so a URL-provided timezone is deliberately overridden.
+	poolCfg.ConnConfig.RuntimeParams["timezone"] = "UTC"
+	// The schema is always public (§5.1): pinning search_path makes the
+	// converted queries' bare table names resolve exactly like the
+	// "public."-qualified names the legacy SQL used.
+	poolCfg.ConnConfig.RuntimeParams["search_path"] = "public"
+	poolCfg.MaxConns = DefaultMaxConns
+	if cfg.MaxConns > 0 {
+		poolCfg.MaxConns = cfg.MaxConns
+	}
+	if cfg.Logger != nil {
+		poolCfg.ConnConfig.Tracer = newQueryTracer(cfg.Logger)
+	}
+	return poolCfg, nil
+}
+
 // Store is the process-wide database handle: it owns a pgx connection pool
 // plus the bounded address-id cache, and every query method (directly on
 // Store or through the domain repos) runs on it. Create one per process with
@@ -112,25 +158,9 @@ type Store struct {
 // startup does not kill the service; after dbConnectMaxAttempts failures the
 // last error is returned.
 func New(ctx context.Context, cfg Config) (*Store, error) {
-	poolCfg, err := pgxpool.ParseConfig(cfg.connString())
+	poolCfg, err := cfg.poolConfig()
 	if err != nil {
-		return nil, fmt.Errorf("parse db config: %w", err)
-	}
-	poolCfg.ConnConfig.DialFunc = newKeepaliveDialer().DialContext
-	// Every connection works in UTC. The legacy connector ran
-	// "SET timezone TO 0" on a single connection of the pool; a runtime
-	// parameter applies it uniformly.
-	poolCfg.ConnConfig.RuntimeParams["timezone"] = "UTC"
-	// The schema is always public (§5.1): pinning search_path makes the
-	// converted queries' bare table names resolve exactly like the
-	// "public."-qualified names the legacy SQL used.
-	poolCfg.ConnConfig.RuntimeParams["search_path"] = "public"
-	poolCfg.MaxConns = DefaultMaxConns
-	if cfg.MaxConns > 0 {
-		poolCfg.MaxConns = cfg.MaxConns
-	}
-	if cfg.Logger != nil {
-		poolCfg.ConnConfig.Tracer = newQueryTracer(cfg.Logger)
+		return nil, err
 	}
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

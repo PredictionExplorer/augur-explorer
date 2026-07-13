@@ -1,8 +1,8 @@
 package main
 
 // Credential-file loading. Both files live under $HOME/configs and their
-// names come from the TWITTER_KEYS_FILE / DISCORD_KEYS_FILE environment
-// variables, exactly like the legacy bot.
+// names come from the TWITTER_KEYS_FILE / DISCORD_KEYS_FILE configuration
+// values, exactly like the legacy bot.
 
 import (
 	"encoding/json"
@@ -25,15 +25,15 @@ type discordKeys struct {
 	RewardStatsChanID uint64 `json:"RewardStatsChanId"`
 }
 
-// keysPath resolves the credential file named by envVar under $HOME/configs.
-func keysPath(envVar string) string {
-	return filepath.Join(os.Getenv("HOME"), "configs", os.Getenv(envVar))
+// keysPath resolves the credential file name under home/configs.
+func keysPath(home, name string) string {
+	return filepath.Join(home, "configs", name)
 }
 
 // readTwitterKeys loads the Twitter API credentials.
-func readTwitterKeys() (tweets.TwitterKeys, error) {
+func readTwitterKeys(home, name string) (tweets.TwitterKeys, error) {
 	var keys tweets.TwitterKeys
-	path := keysPath("TWITTER_KEYS_FILE")
+	path := keysPath(home, name)
 	b, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return keys, fmt.Errorf("can't read twitter keys file %s: %w", path, err)
@@ -45,9 +45,9 @@ func readTwitterKeys() (tweets.TwitterKeys, error) {
 }
 
 // readDiscordKeys loads the Discord bot token and channel ids.
-func readDiscordKeys() (discordKeys, error) {
+func readDiscordKeys(home, name string) (discordKeys, error) {
 	var keys discordKeys
-	path := keysPath("DISCORD_KEYS_FILE")
+	path := keysPath(home, name)
 	b, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return keys, fmt.Errorf("can't read discord keys file %s: %w", path, err)

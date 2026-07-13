@@ -30,6 +30,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/imggen"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
@@ -42,7 +43,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr); err != nil {
+	if err := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr, os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "imggen-monitor: %v\n", err)
 		os.Exit(1)
 	}
@@ -65,8 +66,9 @@ func (s repoTokenSource) Tokens(ctx context.Context) ([]imggen.Token, error) {
 	return tokens, nil
 }
 
-// run parses flags and executes the selected mode.
-func run(ctx context.Context, args []string, getenv func(string) string, out, errOut io.Writer) error {
+// run parses flags, loads the typed configuration and executes the selected
+// mode. Structured diagnostics go to logOut; report output stays on out.
+func run(ctx context.Context, args []string, getenv func(string) string, out, errOut, logOut io.Writer) error {
 	flags := flag.NewFlagSet("imggen-monitor", flag.ContinueOnError)
 	flags.SetOutput(errOut)
 	regenerate := flags.Bool("regenerate", false, "regenerate missing artifacts while scanning")
@@ -76,9 +78,17 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 		return err
 	}
 
-	client, err := imggen.NewClientFromEnv(getenv, &http.Client{Timeout: httpRequestTimeout})
+	cfg, err := config.LoadImggenMonitor(getenv)
 	if err != nil {
 		return err
+	}
+	logger := cfg.Log.NewLogger(logOut)
+
+	client := &imggen.Client{
+		RequestURL: cfg.RequestURL,
+		ImageURL:   cfg.ImageURL,
+		VideoURL:   cfg.VideoURL,
+		HTTPClient: &http.Client{Timeout: httpRequestTimeout},
 	}
 
 	// One-shot mode: request generation for a single token.
@@ -90,7 +100,9 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 	}
 
 	// Scan mode: iterate every minted token from the database.
-	st, err := store.New(ctx, store.ConfigFromEnv())
+	storeCfg := cfg.DB.StoreConfig()
+	storeCfg.Logger = logger.With("component", "db")
+	st, err := store.New(ctx, storeCfg)
 	if err != nil {
 		return fmt.Errorf("failed to connect to storage: %w", err)
 	}

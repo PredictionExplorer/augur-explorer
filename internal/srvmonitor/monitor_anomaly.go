@@ -3,7 +3,7 @@ package srvmonitor
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +24,7 @@ type AnomalyMonitor struct {
 	config    AnomalyConfig
 	position  Position
 	localFile string
-	logger    *log.Logger
+	logger    *slog.Logger
 	lines     []string
 	errStr    string
 	interval  time.Duration
@@ -34,7 +34,7 @@ type AnomalyMonitor struct {
 // NewAnomalyMonitor creates a new anomaly monitor rooted at baseY. The
 // fetched file is stored under localDir (empty selects the system temp
 // directory).
-func NewAnomalyMonitor(cfg AnomalyConfig, baseY int, logger *log.Logger, localDir string, iv Intervals) *AnomalyMonitor {
+func NewAnomalyMonitor(cfg AnomalyConfig, baseY int, logger *slog.Logger, localDir string, iv Intervals) *AnomalyMonitor {
 	if localDir == "" {
 		localDir = os.TempDir()
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
@@ -25,7 +26,16 @@ func TestRPCMonitorAdvancingAndLag(t *testing.T) {
 	}
 	shared := NewSharedRPCState()
 	m := NewRPCMonitor(nodes, map[string]string{"mainnet": "official-main"}, shared, testIntervals())
+	// Both nodes are checked concurrently and share this hook. The barrier
+	// makes sure every node finished its first read before either chain
+	// advances — otherwise one goroutine could advance the official chain
+	// before the other's first read, which then observes a zero block
+	// difference (a real flake this test had under full-suite load).
+	var firstReadsDone sync.WaitGroup
+	firstReadsDone.Add(len(nodes))
 	m.blockWait = func(context.Context) {
+		firstReadsDone.Done()
+		firstReadsDone.Wait()
 		official.EnsureBlock(110)
 		follower.EnsureBlock(97)
 	}

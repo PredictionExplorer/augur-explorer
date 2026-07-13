@@ -9,7 +9,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +44,7 @@ type signedBeautyVoteDependencies struct {
 	rankingMatchDependencies
 	lookupOrCreateAddress   func(context.Context, string, int64, int64) (int64, error)
 	consumeRankingVoteNonce func(context.Context, pgx.Tx, string) (bool, error)
+	chainAllowed            func(int64) bool
 }
 
 func (a *API) productionRankingMatchDependencies() rankingMatchDependencies {
@@ -67,6 +67,7 @@ func (a *API) productionSignedBeautyVoteDependencies() signedBeautyVoteDependenc
 			return a.store.LookupOrCreateAddress(ctx, addr, blockNum, txID)
 		},
 		consumeRankingVoteNonce: rwdb.ConsumeRankingVoteNonce,
+		chainAllowed:            a.rankingVoteChainAllowed,
 	}
 }
 
@@ -119,16 +120,6 @@ func performRankingMatchWithDependencies(
 	return raNew, rbNew, nil
 }
 
-func exploreRandomMaxTokenID() int64 {
-	maxID := int64(3766)
-	if s := strings.TrimSpace(os.Getenv("RANDOMWALK_EXPLORE_MAX_TOKEN_ID")); s != "" {
-		if v, err := strconv.ParseInt(s, 10, 64); err == nil && v > 0 {
-			maxID = v
-		}
-	}
-	return maxID
-}
-
 func exploreRandomLimit(raw string) int {
 	limit := 2
 	if s := strings.TrimSpace(raw); s != "" {
@@ -140,7 +131,7 @@ func exploreRandomLimit(raw string) int {
 }
 
 func (a *API) fetchExploreRandomTokenIDs(ctx context.Context, limit int) ([]int64, error) {
-	maxID := exploreRandomMaxTokenID()
+	maxID := a.exploreMaxTokenID
 	addrs, err := a.repo.ContractAddrs(ctx)
 	if err != nil {
 		return nil, err
@@ -335,21 +326,17 @@ func recoverPersonalSignSigner(message string, sigHex string) (ethcommon.Address
 	return crypto.PubkeyToAddress(*pub), nil
 }
 
-func rankingVoteChainAllowed(chainID int64) bool {
+// rankingVoteChainAllowed reports whether the wallet-signed vote's chain id
+// passes the configured allowlist (empty allows any positive chain id).
+func (a *API) rankingVoteChainAllowed(chainID int64) bool {
 	if chainID <= 0 {
 		return false
 	}
-	env := strings.TrimSpace(os.Getenv("RANKING_VOTE_CHAIN_IDS"))
-	if env == "" {
+	if len(a.voteChainIDs) == 0 {
 		return true
 	}
-	for _, p := range strings.Split(env, ",") {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		v, err := strconv.ParseInt(p, 10, 64)
-		if err == nil && v == chainID {
+	for _, allowed := range a.voteChainIDs {
+		if allowed == chainID {
 			return true
 		}
 	}
@@ -383,7 +370,7 @@ func performSignedBeautyVoteWithDependencies(
 	if strings.TrimSpace(signNonce) == "" || strings.TrimSpace(signature) == "" {
 		return errRankingVoteCredentialsRequired
 	}
-	if !rankingVoteChainAllowed(chainID) {
+	if !deps.chainAllowed(chainID) {
 		return errRankingVoteChainNotAllowed
 	}
 	winner := nft2

@@ -6,7 +6,22 @@ import (
 	"testing"
 )
 
+func TestPostgresConnStringPrefersDatabaseURL(t *testing.T) {
+	t.Setenv("DATABASE_URL", " postgres://u:p@url.example.com/urldb ")
+	t.Setenv("PGSQL_HOST", "ignored.example.com")
+	t.Setenv("PGSQL_USERNAME", "ignored")
+	t.Setenv("PGSQL_DATABASE", "ignored")
+	connection, err := PostgresConnStringFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if connection != "postgres://u:p@url.example.com/urldb" {
+		t.Fatalf("connection = %q, want the trimmed DATABASE_URL", connection)
+	}
+}
+
 func TestPostgresConnStringFromEnv(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
 	t.Setenv("PGSQL_HOST", "db.example.com:5433")
 	t.Setenv("PGSQL_USERNAME", "alice@example.com")
 	t.Setenv("PGSQL_DATABASE", "game db")
@@ -40,6 +55,7 @@ func TestPostgresConnStringFromEnv(t *testing.T) {
 func TestPostgresConnStringRequiresCoreFields(t *testing.T) {
 	for _, missing := range []string{"PGSQL_HOST", "PGSQL_USERNAME", "PGSQL_DATABASE"} {
 		t.Run(missing, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "")
 			t.Setenv("PGSQL_HOST", "host")
 			t.Setenv("PGSQL_USERNAME", "user")
 			t.Setenv("PGSQL_DATABASE", "db")

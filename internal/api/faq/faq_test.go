@@ -3,7 +3,7 @@ package faq
 import (
 	"bytes"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,44 +23,60 @@ func serveProxy(p *Proxy, method, path string, body io.Reader) *httptest.Respons
 }
 
 func TestNewUpstreamResolution(t *testing.T) {
+	t.Parallel()
 	t.Run("explicit option wins and is normalized", func(t *testing.T) {
+		t.Parallel()
 		p := New(Options{UpstreamURL: " http://upstream.example/ "})
 		if p.upstreamURL != "http://upstream.example" {
 			t.Fatalf("upstreamURL = %q", p.upstreamURL)
 		}
 	})
 
-	t.Run("primary env fallback", func(t *testing.T) {
-		t.Setenv("AI_BOT_BACKEND_URL", "http://primary.example/")
-		t.Setenv("FAQ_BOT_UPSTREAM_URL", "http://legacy.example")
-		if p := New(Options{}); p.upstreamURL != "http://primary.example" {
-			t.Fatalf("upstreamURL = %q", p.upstreamURL)
-		}
-	})
-
-	t.Run("legacy alias fallback", func(t *testing.T) {
-		t.Setenv("AI_BOT_BACKEND_URL", "")
-		t.Setenv("FAQ_BOT_UPSTREAM_URL", "http://legacy.example")
-		if p := New(Options{}); p.upstreamURL != "http://legacy.example" {
-			t.Fatalf("upstreamURL = %q", p.upstreamURL)
-		}
-	})
-
+	// The AI_BOT_BACKEND_URL / FAQ_BOT_UPSTREAM_URL alias precedence lives
+	// in the typed service configuration now (config.APIServer.FAQUpstream,
+	// tested there); the module only applies the final default.
 	t.Run("default upstream", func(t *testing.T) {
-		t.Setenv("AI_BOT_BACKEND_URL", "")
-		t.Setenv("FAQ_BOT_UPSTREAM_URL", "")
+		t.Parallel()
 		if p := New(Options{}); p.upstreamURL != "http://127.0.0.1:8000" {
 			t.Fatalf("upstreamURL = %q", p.upstreamURL)
 		}
 	})
 
 	t.Run("construction logs the effective upstream", func(t *testing.T) {
+		t.Parallel()
 		var buf bytes.Buffer
-		New(Options{UpstreamURL: "http://logged.example", Info: log.New(&buf, "", 0)})
+		New(Options{
+			UpstreamURL: "http://logged.example",
+			Logger:      slog.New(slog.NewTextHandler(&buf, nil)),
+		})
 		if !strings.Contains(buf.String(), "upstream=http://logged.example") {
 			t.Fatalf("log = %q", buf.String())
 		}
 	})
+}
+
+// errReader fails the request-body read, driving the proxy's first error arm.
+type errReader struct{}
+
+func (errReader) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
+
+func TestProxyBodyReadFailureAnswers502(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := New(Options{
+		UpstreamURL: "http://unused.example",
+		Logger:      slog.New(slog.NewTextHandler(&buf, nil)),
+	})
+	w := serveProxy(p, http.MethodPost, "/api/cosmicgame/faq/query", errReader{})
+	if w.Code != http.StatusBadGateway {
+		t.Fatalf("status = %d\n%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "faq proxy read failed") {
+		t.Fatalf("body = %s", w.Body.String())
+	}
+	if !strings.Contains(buf.String(), "faq proxy read body") {
+		t.Fatalf("read failure was not logged: %q", buf.String())
+	}
 }
 
 func TestProxyRequestBuildFailureAnswers502(t *testing.T) {

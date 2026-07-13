@@ -63,21 +63,21 @@ func TestRunConfigErrors(t *testing.T) {
 			env: map[string]string{
 				"WHATSAPP_TOKEN": "t", "WHATSAPP_PHONE_ID": "1",
 			},
-			wantErr: "parsing PHONE_LIST",
+			wantErr: "PHONE_LIST: required but not set",
 		},
 		"missing token": {
 			args: []string{urlFile},
 			env: map[string]string{
 				"PHONE_LIST": "alice:+1555", "WHATSAPP_PHONE_ID": "1",
 			},
-			wantErr: "WHATSAPP_TOKEN",
+			wantErr: "WHATSAPP_TOKEN: required but not set",
 		},
 		"missing phone id": {
 			args: []string{urlFile},
 			env: map[string]string{
 				"PHONE_LIST": "alice:+1555", "WHATSAPP_TOKEN": "t",
 			},
-			wantErr: "WHATSAPP_PHONE_ID",
+			wantErr: "WHATSAPP_PHONE_ID: required but not set",
 		},
 	}
 
@@ -132,10 +132,14 @@ func TestRunLoopsUntilCancelled(t *testing.T) {
 	}
 
 	log := out.String()
-	if !strings.Contains(log, "Loaded 1 URLs") ||
-		!strings.Contains(log, "Loaded 1 phones for notification") ||
-		!strings.Contains(log, "Exiting upon user request") {
+	if !strings.Contains(log, "msg=\"loaded URLs\" count=1") ||
+		!strings.Contains(log, "msg=\"loaded phones for notification\" count=1") ||
+		!strings.Contains(log, "exiting upon user request") {
 		t.Fatalf("log = %q", log)
+	}
+	// The startup record redacts the WhatsApp token.
+	if !strings.Contains(log, "WHATSAPP_TOKEN=[set]") || strings.Contains(log, "token") {
+		t.Fatalf("effective configuration leaked or missing: %q", log)
 	}
 }
 

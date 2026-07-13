@@ -3,20 +3,23 @@
 package apitest
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/crypto"
-)
 
-// adminKey is the shared secret configured for admin-guarded routes in the
-// success branches of the auth matrices.
-const adminKey = "apitest-admin-key"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
+)
 
 // voterPrivKeyHex is a fixed test wallet so the add_game flow (and its
 // cleanup) is deterministic. Address: derived below, never used on any chain.
@@ -56,21 +59,98 @@ func requireField(t *testing.T, body map[string]any, field string, want any) {
 	}
 }
 
+// keylessRouter builds a second fully wired router whose modules carry no
+// admin keys, over the harness's store and fake chain. The v1 modules are
+// injected values, so the fail-closed matrix runs against the production
+// route wiring rather than a synthetic middleware test.
+func keylessRouter(t *testing.T, h *harness) *httpx.Router {
+	t.Helper()
+	cgAPI, err := cosmicgame.New(context.Background(), cosmicgame.Config{
+		Store:     h.store,
+		EthClient: h.ethClient,
+		RPCClient: h.rpcClient,
+	})
+	if err != nil {
+		t.Fatalf("building keyless cosmicgame module: %v", err)
+	}
+	return routes.New(h.store, routes.Options{
+		CosmicGame: cgAPI,
+		RandomWalk: randomwalk.New(h.store, randomwalk.Options{}),
+	})
+}
+
+// postJSONRouter marshals body and POSTs it directly through r.
+func postJSONRouter(t *testing.T, r *httpx.Router, path string, body any, headers map[string]string) (int, map[string]any) {
+	t.Helper()
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatalf("marshaling request body: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(string(raw)))
+	req.Header.Set("Content-Type", "application/json")
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	var decoded map[string]any
+	if len(w.Body.Bytes()) > 0 {
+		if err := json.Unmarshal(w.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("POST %s: response is not a JSON object: %v (body %q)", path, err, w.Body.String())
+		}
+	}
+	return w.Code, decoded
+}
+
+// TestRandomWalkMetadataFlatAssetPaths pins the NFT_ASSETS_FLAT_PATHS
+// configuration through the module seam: a flat-layout deployment emits
+// /images/<file> metadata URLs instead of /images/randomwalk/<file>.
+func TestRandomWalkMetadataFlatAssetPaths(t *testing.T) {
+	h := server(t)
+	r := routes.New(h.store, routes.Options{
+		RandomWalk: randomwalk.New(h.store, randomwalk.Options{AssetsFlatPaths: true}),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/randomwalk/metadata/10", nil)
+	req.RemoteAddr = "10.88.88.88:4242"
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("metadata = %d\n%s", w.Code, w.Body.String())
+	}
+	var meta struct {
+		Image        string `json:"image"`
+		AnimationURL string `json:"animation_url"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &meta); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(meta.Image, "/images/000010_black.png") ||
+		!strings.HasSuffix(meta.AnimationURL, "/images/000010_black_single.mp4") {
+		t.Fatalf("flat layout URLs = %q, %q", meta.Image, meta.AnimationURL)
+	}
+	if strings.Contains(meta.Image, "/randomwalk/") {
+		t.Fatalf("flat layout kept the nested segment: %q", meta.Image)
+	}
+}
+
 // adminAuthMatrix drives the fail-closed admin-key middleware through its
-// three outcomes for one route. The success request is issued by the caller.
+// failure outcomes for one route: a keyless deployment answers 503, a wrong
+// key 401. The success request is issued by the caller against the harness
+// router (whose modules carry the test admin keys).
 func adminAuthMatrix(t *testing.T, h *harness, path, header, envVar string, payload any) {
 	t.Run("no_key_configured_503", func(t *testing.T) {
-		t.Setenv(envVar, "")
-		t.Setenv("ADMIN_API_KEY", "")
-		code, body := postJSON(t, h, path, payload, nil)
+		code, body := postJSONRouter(t, keylessRouter(t, h), path, payload, map[string]string{header: adminKey})
 		if code != http.StatusServiceUnavailable {
 			t.Fatalf("expected 503 when no admin key is configured, got %d (%v)", code, body)
 		}
 		requireField(t, body, "status", 0)
+		if errMsg, _ := body["error"].(string); !strings.Contains(errMsg, envVar) {
+			t.Fatalf("disabled message should name %s, got %q", envVar, errMsg)
+		}
 	})
 
 	t.Run("wrong_key_401", func(t *testing.T) {
-		t.Setenv(envVar, adminKey)
 		code, body := postJSON(t, h, path, payload, map[string]string{header: "not-the-key"})
 		if code != http.StatusUnauthorized {
 			t.Fatalf("expected 401 for a wrong admin key, got %d (%v)", code, body)
@@ -89,7 +169,6 @@ func TestBanUnbanBid(t *testing.T) {
 	adminAuthMatrix(t, h, "/api/cosmicgame/ban_bid", "X-Admin-Key", "ADMIN_API_KEY", banPayload)
 
 	t.Run("ban_then_unban", func(t *testing.T) {
-		t.Setenv("ADMIN_API_KEY", adminKey)
 		auth := map[string]string{"X-Admin-Key": adminKey}
 
 		code, body := postJSON(t, h, "/api/cosmicgame/ban_bid", banPayload, auth)
@@ -114,7 +193,6 @@ func TestBanUnbanBid(t *testing.T) {
 	})
 
 	t.Run("invalid_payload_error_envelope", func(t *testing.T) {
-		t.Setenv("ADMIN_API_KEY", adminKey)
 		code, body := postJSON(t, h, "/api/cosmicgame/ban_bid",
 			map[string]any{"bid_id": "not-a-number"},
 			map[string]string{"X-Admin-Key": adminKey})
@@ -156,7 +234,6 @@ func TestRankingMatchAdmin(t *testing.T) {
 	adminAuthMatrix(t, h, "/api/randomwalk/token-ranking/match", "X-Ranking-Admin-Key", "RANKING_ADMIN_KEY", payload)
 
 	t.Run("records_match_and_moves_elo", func(t *testing.T) {
-		t.Setenv("RANKING_ADMIN_KEY", adminKey)
 		defer restoreRankingFixture(t, h)
 
 		code, body := postJSON(t, h, "/api/randomwalk/token-ranking/match", payload,
@@ -182,7 +259,6 @@ func TestRankingMatchAdmin(t *testing.T) {
 	})
 
 	t.Run("rejects_identical_pair", func(t *testing.T) {
-		t.Setenv("RANKING_ADMIN_KEY", adminKey)
 		code, body := postJSON(t, h, "/api/randomwalk/token-ranking/match",
 			map[string]any{"nft1": 12, "nft2": 12, "nft1_won": true},
 			map[string]string{"X-Ranking-Admin-Key": adminKey})

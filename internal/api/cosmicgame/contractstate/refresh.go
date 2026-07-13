@@ -3,6 +3,7 @@ package contractstate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 
@@ -499,13 +500,13 @@ func (s *State) refreshDBStats(ctx context.Context) {
 
 	stats, err := s.db.CosmicGameStatistics(ctx)
 	if err != nil {
-		s.errlog.Printf("state refresh: cosmic game statistics: %v", err)
+		s.logger.Error(fmt.Sprintf("state refresh: cosmic game statistics: %v", err))
 		return
 	}
 	roundStartTimestamp := s.Snapshot().RoundStartTimestamp
 	ts, err := s.db.RoundStartTimestamp(ctx, stats.TotalPrizes)
 	if err != nil {
-		s.errlog.Printf("state refresh: round start timestamp: %v", err)
+		s.logger.Error(fmt.Sprintf("state refresh: round start timestamp: %v", err))
 	} else {
 		roundStartTimestamp = ts
 	}

@@ -1,7 +1,8 @@
 // Command loganomaly scans the websrv access log and writes a compact list
-// of the most recent anomalies to an output file. It understands both the
-// current slog text format (msg=request access lines, msg="panic recovered")
-// and the legacy [GIN] format still present in older log files.
+// of the most recent anomalies to an output file. It understands the current
+// slog formats — JSON records (production LOG_FORMAT=json under journald)
+// and text records (msg=request access lines, msg="panic recovered") — plus
+// the legacy [GIN] format still present in older log files.
 //
 // An "anomaly" is a genuine server-side problem, not routine bot noise:
 //   - any request logged with an HTTP status >= 500 (configurable), and
@@ -10,8 +11,10 @@
 // Ordinary 4xx responses (404 probes for /.env, /wp-admin, etc.) are ignored.
 //
 // It is meant to run periodically on the production host (e.g. cosmic1) via
-// cron or a run-loop, writing to $HOME/ae_logs/webserver_anomalies.log, which
-// srvmonitor then fetches via scp and displays.
+// cron, scanning a journald export (journalctl -u rwcg-apiserver@cosmic
+// -o cat > file, see docs/operations.md) or a legacy capture file, writing
+// to $HOME/ae_logs/webserver_anomalies.log, which srvmonitor then fetches
+// via scp and displays.
 //
 // Usage:
 //
@@ -20,6 +23,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -85,6 +89,11 @@ func scan(path string, minStatus, keep int) ([]string, error) {
 // parseAnomaly returns a compact one-line record when the log line represents
 // an anomaly, and false otherwise.
 func parseAnomaly(line string, minStatus int) (string, bool) {
+	// Structured JSON records are inspected first: their stack fields may
+	// contain "panic:" without the record being an anomaly by itself.
+	if strings.HasPrefix(line, "{") {
+		return parseJSONAnomaly(line, minStatus)
+	}
 	// Fatal panics are always anomalies, regardless of format.
 	if strings.Contains(line, "panic:") {
 		return "PANIC | " + strings.TrimSpace(line), true
@@ -96,6 +105,38 @@ func parseAnomaly(line string, minStatus int) (string, bool) {
 		return parseSlogAnomaly(line, minStatus)
 	}
 	return "", false
+}
+
+// parseJSONAnomaly handles the slog JSON format production services emit
+// (LOG_FORMAT=json; one record per line):
+//
+//	{"time":"2026-07-13T02:42:09.121-05:00","level":"INFO","msg":"request","method":"GET","path":"/api/x?y=1","status":500,"duration_ms":1.2,...}
+//	{"time":"...","level":"ERROR","msg":"panic recovered","method":"GET","path":"/api/x","panic":"...","stack":"..."}
+func parseJSONAnomaly(line string, minStatus int) (string, bool) {
+	var rec map[string]any
+	if err := json.Unmarshal([]byte(line), &rec); err != nil {
+		return "", false
+	}
+	msg, _ := rec["msg"].(string)
+	switch msg {
+	case "panic recovered":
+		return "PANIC | " + strings.TrimSpace(line), true
+	case "request":
+		status, ok := rec["status"].(float64)
+		if !ok || int(status) < minStatus {
+			return "", false
+		}
+		var latency string
+		if d, ok := rec["duration_ms"].(float64); ok {
+			latency = strconv.FormatFloat(d, 'f', -1, 64) + "ms"
+		}
+		timeStr, _ := rec["time"].(string)
+		method, _ := rec["method"].(string)
+		path, _ := rec["path"].(string)
+		return fmt.Sprintf("%s | %d | %s %s | %s", timeStr, int(status), method, path, latency), true
+	default:
+		return "", false
+	}
 }
 
 // parseGinAnomaly handles the legacy framework access-log format:

@@ -2,7 +2,8 @@ package srvmonitor
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 )
 
 // Monitor represents a monitoring component.
@@ -23,14 +24,14 @@ type Manager struct {
 	display       Display
 	errorChan     chan string
 	globalErrs    [2]string
-	logger        *log.Logger
+	logger        *slog.Logger
 	alarmTracker  *AlarmTracker
 	errorDisplayX int
 	errorDisplayY int
 }
 
 // NewManager creates a new monitor manager.
-func NewManager(display Display, logger *log.Logger, alarmTracker *AlarmTracker, errorDisplayX, errorDisplayY int) *Manager {
+func NewManager(display Display, logger *slog.Logger, alarmTracker *AlarmTracker, errorDisplayX, errorDisplayY int) *Manager {
 	return &Manager{
 		monitors:      make([]Monitor, 0),
 		display:       display,
@@ -64,7 +65,7 @@ func (m *Manager) Start(ctx context.Context) {
 	go m.alarmTracker.RunCleanup(ctx)
 
 	for _, monitor := range m.monitors {
-		m.logger.Printf("Starting monitor: %s", monitor.Name())
+		m.logger.Info(fmt.Sprintf("Starting monitor: %s", monitor.Name()))
 		go monitor.Start(ctx, m.display, m.errorChan)
 	}
 }
@@ -80,7 +81,7 @@ func (m *Manager) handleErrors(ctx context.Context) {
 				continue
 			}
 
-			m.logger.Printf("Monitor error: %v", err)
+			m.logger.Info(fmt.Sprintf("Monitor error: %v", err))
 
 			// Record alarm for mobile notification tracking
 			m.alarmTracker.RecordAlarm(ctx, err)
@@ -102,6 +103,6 @@ func (m *Manager) handleErrors(ctx context.Context) {
 // SendTestNotification sends a test notification (for the SIGUSR1 signal
 // handler).
 func (m *Manager) SendTestNotification(ctx context.Context) {
-	m.logger.Printf("SIGUSR1 received: Sending test notification")
+	m.logger.Info("SIGUSR1 received: Sending test notification")
 	m.alarmTracker.SendTestNotification(ctx, "TEST: Server Monitor notification test (triggered by SIGUSR1)")
 }

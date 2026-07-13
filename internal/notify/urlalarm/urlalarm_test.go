@@ -3,7 +3,7 @@ package urlalarm
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -57,9 +57,9 @@ func (s *flakyServer) handler(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("body"))
 }
 
-func newTestEngine(urls map[string]string, notifier Notifier) (*Engine, *strings.Builder) {
-	var buf strings.Builder
-	logger := log.New(&buf, "", 0)
+func newTestEngine(urls map[string]string, notifier Notifier) (*Engine, *syncBuffer) {
+	var buf syncBuffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
 	cfg := Config{
 		URLs:             urls,
 		People:           map[string]string{"alice": "+1555", "bob": "+1666"},
@@ -67,6 +67,25 @@ func newTestEngine(urls map[string]string, notifier Notifier) (*Engine, *strings
 		PollInterval:     time.Millisecond,
 	}
 	return New(cfg, notifier, nil, logger), &buf
+}
+
+// syncBuffer guards the log sink: Run executes in a separate goroutine in
+// the loop tests.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf strings.Builder
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
 
 func TestEngineHealthyURLNeverNotifies(t *testing.T) {
@@ -130,7 +149,7 @@ func TestEngineNotifiesAfterThresholdAndResets(t *testing.T) {
 	if want := "API down. HTTP status: 500"; text != want {
 		t.Fatalf("text = %q, want %q", text, want)
 	}
-	if !strings.Contains(logBuf.String(), "Notifying failure of url") {
+	if !strings.Contains(logBuf.String(), "notifying URL failure") {
 		t.Fatalf("log = %q", logBuf.String())
 	}
 }
@@ -267,8 +286,8 @@ func TestEngineCancellationIsNotAFailure(t *testing.T) {
 
 func TestEngineDefaults(t *testing.T) {
 	t.Parallel()
-	var buf strings.Builder
-	e := New(Config{}, &fakeNotifier{}, nil, log.New(&buf, "", 0))
+	var buf syncBuffer
+	e := New(Config{}, &fakeNotifier{}, nil, slog.New(slog.NewTextHandler(&buf, nil)))
 	if e.cfg.FailureThreshold != DefaultFailureThreshold {
 		t.Fatalf("threshold = %d", e.cfg.FailureThreshold)
 	}

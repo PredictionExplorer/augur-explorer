@@ -53,21 +53,6 @@ type Client struct {
 	WaitTimeout time.Duration
 }
 
-// NewClientFromEnv builds a Client from the IM_REQUEST_URL, IM_IMAGE_URL and
-// IM_VIDEO_URL environment variables.
-func NewClientFromEnv(getenv func(string) string, httpClient HTTPClient) (*Client, error) {
-	c := &Client{
-		RequestURL: getenv("IM_REQUEST_URL"),
-		ImageURL:   getenv("IM_IMAGE_URL"),
-		VideoURL:   getenv("IM_VIDEO_URL"),
-		HTTPClient: httpClient,
-	}
-	if c.RequestURL == "" || c.ImageURL == "" || c.VideoURL == "" {
-		return nil, fmt.Errorf("IM_REQUEST_URL, IM_IMAGE_URL and IM_VIDEO_URL must all be set")
-	}
-	return c, nil
-}
-
 // Generate asks the generator service to create image/video artifacts for a
 // token.
 func (c *Client) Generate(ctx context.Context, tokenID int64, seed string) error {

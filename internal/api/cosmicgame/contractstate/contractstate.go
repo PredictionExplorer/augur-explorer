@@ -12,7 +12,9 @@ package contractstate
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
+	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -68,10 +70,8 @@ type Config struct {
 	DB DataSource
 	// Addrs are the contract addresses from the registry table.
 	Addrs Addresses
-	// Info and Error receive the refresh diagnostics the legacy loggers
-	// carried; nil loggers discard.
-	Info  *log.Logger
-	Error *log.Logger
+	// Logger receives the refresh diagnostics; nil discards.
+	Logger *slog.Logger
 
 	// Refresh intervals for Run; zero values pick the defaults above.
 	ConstantsInterval      time.Duration
@@ -167,8 +167,7 @@ type State struct {
 	client *ethclient.Client
 	db     DataSource
 	addrs  Addresses
-	info   *log.Logger
-	errlog *log.Logger
+	logger *slog.Logger
 
 	constantsInterval      time.Duration
 	variablesInterval      time.Duration
@@ -193,11 +192,8 @@ func New(cfg Config) (*State, error) {
 	if cfg.DB == nil {
 		return nil, errors.New("contractstate: Config.DB is required")
 	}
-	if cfg.Info == nil {
-		cfg.Info = discardLogger()
-	}
-	if cfg.Error == nil {
-		cfg.Error = discardLogger()
+	if cfg.Logger == nil {
+		cfg.Logger = slog.New(slog.DiscardHandler)
 	}
 	if cfg.ConstantsInterval <= 0 {
 		cfg.ConstantsInterval = DefaultConstantsInterval
@@ -221,8 +217,7 @@ func New(cfg Config) (*State, error) {
 		client:                 cfg.EthClient,
 		db:                     cfg.DB,
 		addrs:                  cfg.Addrs,
-		info:                   cfg.Info,
-		errlog:                 cfg.Error,
+		logger:                 cfg.Logger,
 		constantsInterval:      cfg.ConstantsInterval,
 		variablesInterval:      cfg.VariablesInterval,
 		dbStatsInterval:        cfg.DBStatsInterval,
@@ -231,14 +226,6 @@ func New(cfg Config) (*State, error) {
 		dbReadTimeout:          cfg.DBReadTimeout,
 	}, nil
 }
-
-func discardLogger() *log.Logger {
-	return log.New(discardWriter{}, "", 0)
-}
-
-type discardWriter struct{}
-
-func (discardWriter) Write(p []byte) (int, error) { return len(p), nil }
 
 // LoadInitial performs the synchronous startup loads in the legacy order
 // (contract variables, database aggregates, contract constants). Failures
@@ -306,9 +293,9 @@ func (s *State) SetBidPrice(price string, priceEth float64) {
 	s.mu.Unlock()
 }
 
-// logf records a refresh diagnostic on both legacy log streams, matching the
-// Error.Print + Info.Print pairs the previous implementation emitted.
+// logf records a refresh diagnostic as one error-level record (the legacy
+// implementation duplicated these lines onto both file loggers). The
+// trailing newlines of the legacy format strings are trimmed.
 func (s *State) logf(format string, args ...any) {
-	s.errlog.Printf(format, args...)
-	s.info.Printf(format, args...)
+	s.logger.Error(strings.TrimSuffix(fmt.Sprintf(format, args...), "\n"))
 }

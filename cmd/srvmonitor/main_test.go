@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -102,7 +102,7 @@ func TestRunEventLoopExitKeys(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			s := &sink{}
-			logger := log.New(s, "", 0)
+			logger := slog.New(slog.NewTextHandler(s, nil))
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			events := make(chan termbox.Event, 1)
@@ -127,10 +127,55 @@ func TestRunEventLoopExitKeys(t *testing.T) {
 	}
 }
 
+// TestRunDashboard drives the whole post-terminal phase — manager build,
+// signal wiring, monitor start and the event loop — over a fake display and
+// scripted event channel until an exit key stops it.
+func TestRunDashboard(t *testing.T) {
+	t.Parallel()
+	s := &sink{}
+	logger := slog.New(slog.NewTextHandler(s, nil))
+	setupRes := &setupResult{
+		logger: logger,
+		cfg:    &srvmonitor.Config{},
+		tmpDir: t.TempDir(),
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	events := make(chan termbox.Event, 1)
+	events <- termbox.Event{Type: termbox.EventKey, Ch: 'q'}
+	sigChan := make(chan os.Signal)
+
+	done := make(chan struct{})
+	go func() {
+		runDashboard(ctx, cancel, setupRes, &recordingDisplay{}, events, sigChan)
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("dashboard did not exit on the exit key")
+	}
+	if ctx.Err() == nil {
+		t.Fatal("context not cancelled on exit")
+	}
+	log := s.String()
+	for _, want := range []string{
+		"Display initialized",
+		"Layout positions",
+		"Starting all monitors",
+		"Application fully started, entering event loop",
+	} {
+		if !strings.Contains(log, want) {
+			t.Errorf("log missing %q:\n%s", want, log)
+		}
+	}
+}
+
 func TestRunEventLoopResizeRepaints(t *testing.T) {
 	t.Parallel()
 	s := &sink{}
-	logger := log.New(s, "", 0)
+	logger := slog.New(slog.NewTextHandler(s, nil))
 	disp := &recordingDisplay{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -166,7 +211,7 @@ func TestRunEventLoopResizeRepaints(t *testing.T) {
 func TestRunEventLoopNonExitKeyIgnored(t *testing.T) {
 	t.Parallel()
 	s := &sink{}
-	logger := log.New(s, "", 0)
+	logger := slog.New(slog.NewTextHandler(s, nil))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	events := make(chan termbox.Event)
@@ -191,7 +236,7 @@ func TestRunEventLoopNonExitKeyIgnored(t *testing.T) {
 func TestHandleSignals(t *testing.T) {
 	t.Parallel()
 	s := &sink{}
-	logger := log.New(s, "", 0)
+	logger := slog.New(slog.NewTextHandler(s, nil))
 	mgr := &fakeNotifier{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -302,7 +347,7 @@ func TestSetup(t *testing.T) {
 func TestRunEventLoopResizeClampsOnTinyScreen(t *testing.T) {
 	t.Parallel()
 	s := &sink{}
-	logger := log.New(s, "", 0)
+	logger := slog.New(slog.NewTextHandler(s, nil))
 	disp := &tinyDisplay{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -347,7 +392,7 @@ func (d *tinyDisplay) Size() (int, int) { return 1, -1 }
 func TestLogConfigSummary(t *testing.T) {
 	t.Parallel()
 	s := &sink{}
-	logger := log.New(s, "", 0)
+	logger := slog.New(slog.NewTextHandler(s, nil))
 
 	cfg := &srvmonitor.Config{
 		RPCNodes:  []srvmonitor.RPCConfig{{Name: "n"}},
@@ -362,7 +407,7 @@ func TestLogConfigSummary(t *testing.T) {
 
 	// Disabled anomaly renders the hint.
 	s2 := &sink{}
-	logConfigSummary(log.New(s2, "", 0), &srvmonitor.Config{})
+	logConfigSummary(slog.New(slog.NewTextHandler(s2, nil)), &srvmonitor.Config{})
 	if !strings.Contains(s2.String(), "Anomaly monitor: DISABLED") {
 		t.Fatalf("log = %q", s2.String())
 	}

@@ -7,10 +7,12 @@ import (
 )
 
 // ConnectHint returns operator guidance for a failed New call: how to fix a
-// password mismatch and the status of the PGSQL_* environment variables. The
-// binaries print it (to stderr or their log) next to the connect error so a
-// misconfigured host is diagnosable without reading source. Returns "" when
-// err is nil.
+// password mismatch and the status of the DATABASE_URL / PGSQL_* environment
+// variables. The binaries print it (to stderr or their log) next to the
+// connect error so a misconfigured host is diagnosable without reading
+// source. Returns "" when err is nil. Secrets never appear: the password
+// reports only its length and DATABASE_URL (which embeds the password) only
+// whether it is set.
 func ConnectHint(err error) string {
 	if err == nil {
 		return ""
@@ -26,6 +28,11 @@ func ConnectHint(err error) string {
 		b.WriteString("    unset PGSQL_HOST\n")
 	}
 	b.WriteString("Environment variable status:\n")
+	if v := os.Getenv("DATABASE_URL"); v == "" {
+		b.WriteString("  DATABASE_URL: not set (or empty)\n")
+	} else {
+		b.WriteString("  DATABASE_URL: set (wins over PGSQL_*; never echoed — it embeds the password)\n")
+	}
 	for _, name := range []string{"PGSQL_USERNAME", "PGSQL_PASSWORD", "PGSQL_DATABASE", "PGSQL_HOST"} {
 		v := os.Getenv(name)
 		switch {

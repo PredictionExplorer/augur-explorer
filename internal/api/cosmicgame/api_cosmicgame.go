@@ -62,8 +62,7 @@ func respondUserAddrNotIndexedUserInfoJSON(c *httpx.Context, userAddr string) {
 func (a *API) respondStoreError(c *httpx.Context, err error) {
 	if !errors.Is(err, context.Canceled) {
 		errStr := fmt.Sprintf("%s: %v", c.FullPath(), err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 	}
 	common.RespondInternalErrorJSON(c)
 }
@@ -2507,8 +2506,7 @@ func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 	tokenName, err := contract.Name(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading token name: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2516,8 +2514,7 @@ func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 	tokenSymbol, err := contract.Symbol(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading token symbol: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2525,8 +2522,7 @@ func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 	decimals, err := contract.Decimals(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading decimals: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2534,8 +2530,7 @@ func (a *API) handleCosmicTokenStatistics(c *httpx.Context) {
 	gameAddr, err := contract.Game(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading game address: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2827,8 +2822,7 @@ func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 	treasurerAddr, err := contract.TreasurerAddress(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading TreasurerAddress: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2837,8 +2831,7 @@ func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 	tokenAddr, err := contract.Token(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading Token address: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2847,8 +2840,7 @@ func (a *API) handleMarketingConfigCurrent(c *httpx.Context) {
 	ownerAddr, err := contract.Owner(&copts)
 	if err != nil {
 		errStr := fmt.Sprintf("Error reading Owner address: %v", err)
-		a.errlog.Print(errStr)
-		a.info.Print(errStr)
+		a.logger.Error(errStr)
 		common.RespondErrorJSON(c, errStr)
 		return
 	}
@@ -2873,15 +2865,13 @@ func (a *API) handleGetCstPrice(c *httpx.Context) {
 	contract, _ := cg.NewCosmicSignatureGame(a.state.Snapshot().Addrs.CosmicGame, a.ethClient)
 	cstPrice, err := contract.GetNextCstBidPrice(&copts)
 	if err != nil {
-		a.errlog.Print(err.Error())
-		a.info.Print(err.Error())
+		a.logger.Error(err.Error())
 		common.RespondError(c, err.Error())
 		return
 	}
 	auctionDuration, secondsElapsed, err := contract.GetCstDutchAuctionDurations(&copts)
 	if err != nil {
-		a.errlog.Print(err.Error())
-		a.info.Print(err.Error())
+		a.logger.Error(err.Error())
 		common.RespondError(c, err.Error())
 		return
 	}
@@ -2904,15 +2894,13 @@ func (a *API) handleGetEthPrice(c *httpx.Context) {
 	contract, _ := cg.NewCosmicSignatureGame(a.state.Snapshot().Addrs.CosmicGame, a.ethClient)
 	ethPrice, err := contract.GetNextEthBidPrice(&copts)
 	if err != nil {
-		a.errlog.Print(err.Error())
-		a.info.Print(err.Error())
+		a.logger.Error(err.Error())
 		common.RespondError(c, err.Error())
 		return
 	}
 	auctionDuration, secondsElapsed, err := contract.GetEthDutchAuctionDurations(&copts)
 	if err != nil {
-		a.errlog.Print(err.Error())
-		a.info.Print(err.Error())
+		a.logger.Error(err.Error())
 		common.RespondError(c, err.Error())
 		return
 	}

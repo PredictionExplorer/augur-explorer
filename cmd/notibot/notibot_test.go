@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,23 +12,22 @@ import (
 	"time"
 )
 
-func writeKeysFile(t *testing.T, name, contents string) {
+func writeKeysFile(t *testing.T, name, contents string) string {
 	t.Helper()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
 	if err := os.MkdirAll(filepath.Join(home, "configs"), 0o750); err != nil {
 		t.Fatalf("mkdir configs: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(home, "configs", name), []byte(contents), 0o600); err != nil {
 		t.Fatalf("write keys file: %v", err)
 	}
+	return home
 }
 
 func TestReadTwitterKeys(t *testing.T) {
-	writeKeysFile(t, "tw.json", `{"ApiKey":"a","ApiSecret":"b","TokenKey":"c","TokenSecret":"d"}`)
-	t.Setenv("TWITTER_KEYS_FILE", "tw.json")
+	home := writeKeysFile(t, "tw.json", `{"ApiKey":"a","ApiSecret":"b","TokenKey":"c","TokenSecret":"d"}`)
 
-	keys, err := readTwitterKeys()
+	keys, err := readTwitterKeys(home, "tw.json")
 	if err != nil {
 		t.Fatalf("readTwitterKeys: %v", err)
 	}
@@ -37,26 +37,22 @@ func TestReadTwitterKeys(t *testing.T) {
 }
 
 func TestReadTwitterKeysErrors(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("TWITTER_KEYS_FILE", "missing.json")
-	if _, err := readTwitterKeys(); err == nil || !strings.Contains(err.Error(), "can't read") {
+	if _, err := readTwitterKeys(t.TempDir(), "missing.json"); err == nil || !strings.Contains(err.Error(), "can't read") {
 		t.Errorf("missing file error = %v", err)
 	}
 
-	writeKeysFile(t, "bad.json", "{not json")
-	t.Setenv("TWITTER_KEYS_FILE", "bad.json")
-	if _, err := readTwitterKeys(); err == nil || !strings.Contains(err.Error(), "can't parse") {
+	home := writeKeysFile(t, "bad.json", "{not json")
+	if _, err := readTwitterKeys(home, "bad.json"); err == nil || !strings.Contains(err.Error(), "can't parse") {
 		t.Errorf("bad json error = %v", err)
 	}
 }
 
 func TestReadDiscordKeys(t *testing.T) {
-	writeKeysFile(t, "dc.json", `{
+	home := writeKeysFile(t, "dc.json", `{
 		"TokenKey":"tok","ChannelId":1,"MainChannelId":2,
 		"MintStatsChanId":3,"PriceStatsChanId":4,"DateStatsChanId":5,"RewardStatsChanId":6}`)
-	t.Setenv("DISCORD_KEYS_FILE", "dc.json")
 
-	keys, err := readDiscordKeys()
+	keys, err := readDiscordKeys(home, "dc.json")
 	if err != nil {
 		t.Fatalf("readDiscordKeys: %v", err)
 	}
@@ -67,15 +63,12 @@ func TestReadDiscordKeys(t *testing.T) {
 }
 
 func TestReadDiscordKeysErrors(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("DISCORD_KEYS_FILE", "missing.json")
-	if _, err := readDiscordKeys(); err == nil || !strings.Contains(err.Error(), "can't read") {
+	if _, err := readDiscordKeys(t.TempDir(), "missing.json"); err == nil || !strings.Contains(err.Error(), "can't read") {
 		t.Errorf("missing file error = %v", err)
 	}
 
-	writeKeysFile(t, "bad.json", "[")
-	t.Setenv("DISCORD_KEYS_FILE", "bad.json")
-	if _, err := readDiscordKeys(); err == nil || !strings.Contains(err.Error(), "can't parse") {
+	home := writeKeysFile(t, "bad.json", "[")
+	if _, err := readDiscordKeys(home, "bad.json"); err == nil || !strings.Contains(err.Error(), "can't parse") {
 		t.Errorf("bad json error = %v", err)
 	}
 }
@@ -124,78 +117,18 @@ func TestRenameWithRetry(t *testing.T) {
 	})
 }
 
-func TestOpenLogFileCreatesAndAppends(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "x.log")
-	f, err := openLogFile(path)
-	if err != nil {
-		t.Fatalf("openLogFile: %v", err)
-	}
-	if _, err := f.WriteString("one\n"); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-	_ = f.Close()
-	f, err = openLogFile(path)
-	if err != nil {
-		t.Fatalf("openLogFile again: %v", err)
-	}
-	if _, err := f.WriteString("two\n"); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-	_ = f.Close()
-	data, err := os.ReadFile(path) //nolint:gosec // test path under t.TempDir
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	if string(data) != "one\ntwo\n" {
-		t.Errorf("log contents = %q, want appended lines", data)
-	}
-}
-
-func TestOpenLogFileError(t *testing.T) {
-	if _, err := openLogFile(filepath.Join(t.TempDir(), "no", "such", "dir", "x.log")); err == nil {
-		t.Error("openLogFile into missing directory succeeded")
-	}
-}
-
-func TestRunFailsWhenLogDirUnwritable(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	// A file occupies the log-directory path, so MkdirAll must fail.
-	if err := os.WriteFile(filepath.Join(home, "ae_logs"), []byte("x"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	err := run(context.Background(), true, false)
-	if err == nil || !strings.Contains(err.Error(), "creating log directory") {
-		t.Errorf("run = %v, want log-directory failure", err)
+func TestRunFailsWithoutRPCURL(t *testing.T) {
+	err := run(context.Background(), func(string) string { return "" }, io.Discard, true, false)
+	if err == nil || !strings.Contains(err.Error(), "RPC_URL: required but not set") {
+		t.Errorf("run = %v, want the aggregated configuration failure", err)
 	}
 }
 
 func TestRunFailsOnUnreachableRPC(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RPC_URL", "")
-	err := run(context.Background(), true, false)
+	env := map[string]string{"RPC_URL": "://not-a-url"}
+	err := run(context.Background(), func(k string) string { return env[k] }, io.Discard, true, false)
 	if err == nil || !strings.Contains(err.Error(), "connecting to ETH node") {
 		t.Errorf("run = %v, want RPC connection failure", err)
-	}
-}
-
-func TestRunFailsWhenLogFileIsADirectory(t *testing.T) {
-	// A directory squatting on a log-file path makes that openLogFile call
-	// fail; each case exercises one of the three open sites.
-	for _, name := range []string{"notibot_error.log", "notibot_db.log"} {
-		t.Run(name, func(t *testing.T) {
-			home := t.TempDir()
-			t.Setenv("HOME", home)
-			logDir := filepath.Join(home, "ae_logs")
-			if err := os.MkdirAll(filepath.Join(logDir, name), 0o750); err != nil {
-				t.Fatal(err)
-			}
-			err := run(context.Background(), true, false)
-			if err == nil || !strings.Contains(err.Error(), name) {
-				t.Errorf("run = %v, want failure opening %s", err, name)
-			}
-		})
 	}
 }
 
