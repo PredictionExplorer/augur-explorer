@@ -151,8 +151,7 @@ func TestLoadSkipsUnexportedAndUntaggedFields(t *testing.T) {
 	var cfg struct {
 		Tagged   string `env:"TAGGED"`
 		Untagged string
-		//nolint:unused // proves the loader skips unexported fields
-		hidden string
+		hidden   string // proves the loader skips unexported fields
 	}
 	if err := Load(&cfg, mapEnv(map[string]string{"TAGGED": "v", "Untagged": "x"})); err != nil {
 		t.Fatalf("Load: %v", err)

@@ -15,7 +15,7 @@ func TestPostgresConnStringPrefersDatabaseURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if connection != "postgres://u:p@url.example.com/urldb" {
+	if connection != "postgres://u:p@url.example.com/urldb" { //nolint:gosec // G101: fake test credentials
 		t.Fatalf("connection = %q, want the trimmed DATABASE_URL", connection)
 	}
 }
