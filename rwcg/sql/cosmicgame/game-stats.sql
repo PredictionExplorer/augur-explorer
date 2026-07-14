@@ -27,7 +27,12 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	param_window_duration_seconds BIGINT,				-- Duration of parameter setting window
 	round_start_time			TIMESTAMPTZ,			-- When FirstBidPlacedInRound fires (actual round start)
 	round_end_time				TIMESTAMPTZ,			-- When prize is claimed (round ends)
-	round_duration_seconds		BIGINT					-- Duration of active round (end - start)
+	round_duration_seconds		BIGINT,					-- Duration of active round (end - start)
+	-- V3 champion durations (championDurations[roundNum], saved on-chain at claimMainPrize; no event).
+	-- Fetched by the ETL via eth_call: at V3 MainPrizeClaimed processing, and backfilled at ETL startup
+	-- for any claimed round where both are still 0. Stay 0 for pre-V3 rounds (mapping empty on-chain).
+	endurance_champion_duration	BIGINT DEFAULT 0,		-- seconds the endurance champion held the last-bidder position
+	chrono_warrior_duration		BIGINT DEFAULT 0		-- seconds the chrono-warrior held the endurance-champion title
 );
 CREATE TABLE cg_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,

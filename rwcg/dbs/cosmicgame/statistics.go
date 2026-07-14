@@ -9,6 +9,50 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/rwcg/primitives/cosmicgame"
 )
+// Get_rounds_missing_champion_durations returns claimed rounds (present in cg_prize_claim) whose
+// cg_round_stats champion durations are still unset (both 0). Used by the ETL startup backfill:
+// the V3 contract saves championDurations[roundNum] at claimMainPrize with no event, so the values
+// are fetched via eth_call. Pre-V3 rounds legitimately return 0 on-chain and stay 0 here.
+func (sw *SQLStorageWrapper) Get_rounds_missing_champion_durations() []int64 {
+
+	var query string
+	query = "SELECT pc.round_num FROM "+sw.S.SchemaName()+".cg_prize_claim pc "+
+			"LEFT JOIN "+sw.S.SchemaName()+".cg_round_stats rs ON rs.round_num = pc.round_num "+
+			"WHERE COALESCE(rs.endurance_champion_duration,0) = 0 AND COALESCE(rs.chrono_warrior_duration,0) = 0 "+
+			"ORDER BY pc.round_num"
+
+	rows,err := sw.S.Db().Query(query)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	rounds := make([]int64,0,16)
+	for rows.Next() {
+		var round_num int64
+		if err := rows.Scan(&round_num); err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rounds = append(rounds,round_num)
+	}
+	return rounds
+}
+// Update_round_champion_durations stores the on-chain championDurations[round_num] snapshot.
+func (sw *SQLStorageWrapper) Update_round_champion_durations(round_num,endurance_duration,chrono_duration int64) {
+
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".cg_round_stats(round_num,endurance_champion_duration,chrono_warrior_duration) "+
+			"VALUES($1,$2,$3) "+
+			"ON CONFLICT (round_num) DO UPDATE SET "+
+				"endurance_champion_duration = EXCLUDED.endurance_champion_duration,"+
+				"chrono_warrior_duration = EXCLUDED.chrono_warrior_duration"
+	_,err := sw.S.Db().Exec(query,round_num,endurance_duration,chrono_duration)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't update champion durations in cg_round_stats: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 
 	var stats p.CGStatistics

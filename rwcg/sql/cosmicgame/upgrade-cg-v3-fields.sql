@@ -5,6 +5,11 @@
 -- 1. Multi-NFT main prize (V3 mints num_cs_nfts Cosmic Signature NFTs to the winner; V2 = 1).
 ALTER TABLE cg_prize_claim ADD COLUMN IF NOT EXISTS num_cs_nfts BIGINT NOT NULL DEFAULT 1;
 
+-- 1b. V3 champion durations (championDurations[roundNum]); fetched by the ETL via eth_call
+-- (at V3 claim processing and via startup backfill). 0 = not yet fetched / pre-V3 round.
+ALTER TABLE cg_round_stats ADD COLUMN IF NOT EXISTS endurance_champion_duration BIGINT DEFAULT 0;
+ALTER TABLE cg_round_stats ADD COLUMN IF NOT EXISTS chrono_warrior_duration BIGINT DEFAULT 0;
+
 -- 2. Bid CST reward 90/10 split table (Comment-202607161).
 CREATE TABLE IF NOT EXISTS cg_bid_reward (
 	id				BIGSERIAL PRIMARY KEY,

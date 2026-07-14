@@ -420,6 +420,11 @@ func proc_prize_claim_event_v3(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_prize_claim_event(evt.EvtId)
 	storagew.Insert_prize_claim_event(&evt)
+
+	// Champion durations are saved on-chain by this same claimMainPrize transaction (no event),
+	// so fetch them now via eth_call. Deliberately non-fatal: if the RPC server is down, the
+	// claim stays registered without durations and an ETL restart backfills them.
+	store_champion_durations_for_round(evt.RoundNum)
 }
 func find_cosmic_token_transfer(bid_evtlog_id,tx_id int64,bidder_addr string) string {
 	// Returns the CST bid reward (the amount minted to the bidder) for this bid transaction.

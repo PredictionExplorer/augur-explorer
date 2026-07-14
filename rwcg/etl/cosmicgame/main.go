@@ -508,6 +508,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// V3 champion durations: saved on-chain at claimMainPrize without an event, so they are
+	// fetched via eth_call. The startup backfill also recovers rounds whose claim-time fetch
+	// failed (RPC outage). Non-fatal in every failure mode.
+	init_champion_durations_caller()
+	backfill_champion_durations()
+
 	c := make(chan os.Signal, 1)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
