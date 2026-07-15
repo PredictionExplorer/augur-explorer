@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "amountWei": "5000000000000000000",
+        "blockNumber": 113,
+        "direction": "out",
+        "eventLogId": 5050,
+        "fromAddress": "0x2300000000000000000000000000000000000023",
+        "occurredAt": "2026-01-01T00:21:40Z",
+        "toAddress": "0x0000000000000000000000000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001014",
+        "transferType": "burn"
+      },
+      {
+        "amountWei": "100000000000000000000",
+        "blockNumber": 103,
+        "direction": "in",
+        "eventLogId": 5009,
+        "fromAddress": "0x0000000000000000000000000000000000000000",
+        "occurredAt": "2026-01-01T00:05:00Z",
+        "toAddress": "0x2300000000000000000000000000000000000023",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001004",
+        "transferType": "mint"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

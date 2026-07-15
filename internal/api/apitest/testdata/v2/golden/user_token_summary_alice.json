@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "address": "0x2100000000000000000000000000000000000021",
+    "balanceWei": "290000000000000000000",
+    "consumedInBidsWei": "0",
+    "earned": {
+      "biddingRewardsWei": "500000000000000000000",
+      "chronoWarriorPrizesWei": "35000000000000000000",
+      "enduranceChampionPrizesWei": "0",
+      "lastCstBidderPrizesWei": "0",
+      "mainPrizesWei": "100000000000000000000",
+      "marketingRewardsWei": "0",
+      "rafflePrizesWei": "0",
+      "totalWei": "635000000000000000000"
+    },
+    "netWei": "635000000000000000000",
+    "transfers": {
+      "burnCount": 0,
+      "mintCount": 3,
+      "totalCount": 4
+    }
+  }
+}

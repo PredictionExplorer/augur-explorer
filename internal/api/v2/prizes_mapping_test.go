@@ -42,6 +42,7 @@ func TestMapRoundPrizeTaxonomy(t *testing.T) {
 				t.Fatalf("mapRoundPrize(type %d): %v", tc.recordType, err)
 			}
 			if got.Type != tc.wantType ||
+				!got.Type.Valid() ||
 				got.Round != 3 ||
 				got.WinnerIndex != 2 ||
 				got.EventLogId != 7001 ||
@@ -81,6 +82,10 @@ func TestMapRoundPrizeTaxonomy(t *testing.T) {
 				}
 			}
 		})
+	}
+
+	if RoundPrizeType("participationTrophy").Valid() {
+		t.Error("unknown prize type reported valid")
 	}
 }
 

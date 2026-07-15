@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.13.0
+  version: 0.14.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -525,6 +525,148 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/CosmicGameUserDonatedErc20Page"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/cosmic-signature-tokens:
+    get:
+      operationId: listCosmicGameUserCosmicSignatureTokens
+      summary: List Cosmic Signature NFTs one wallet owns right now
+      description: |
+        Returns the Cosmic Signature NFTs the indexed ERC-721 transfer
+        ledger currently attributes to the wallet, in ascending token
+        order with each token's mint provenance (round, prize source,
+        original winner, seed), its current name and whether it sits in
+        the staking wallet right now. The collection is live membership:
+        rows move between wallets on transfers, so a continuation cursor
+        may skip tokens transferred while paging; poll again without a
+        cursor for a fresh view. A valid wallet owning nothing returns an
+        empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserCosmicSignatureTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/cosmic-signature-transfers:
+    get:
+      operationId: listCosmicGameUserCosmicSignatureTransfers
+      summary: List Cosmic Signature NFT transfers of one wallet
+      description: |
+        Returns every Cosmic Signature ERC-721 transfer the wallet sent
+        or received — mints and burns included — newest first by
+        immutable event-log ID, with both counterparties and the
+        wallet-relative direction on each item. A valid wallet with no
+        indexed transfers returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserCosmicSignatureTransferPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/cosmic-token-summary:
+    get:
+      operationId: getCosmicGameUserCosmicTokenSummary
+      summary: Get one wallet's Cosmic Token position
+      description: |
+        Returns the wallet's exact Cosmic Token (ERC-20) position from
+        one consistent database snapshot: the indexed balance, earnings
+        by source, the amount consumed in CST bids, the resulting signed
+        net game flow and the wallet's transfer activity counters. All
+        amounts are exact base-unit strings. A valid wallet without
+        indexed activity returns the all-zero shape.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserCosmicTokenSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/cosmic-token-transfers:
+    get:
+      operationId: listCosmicGameUserCosmicTokenTransfers
+      summary: List Cosmic Token transfers of one wallet
+      description: |
+        Returns every Cosmic Token ERC-20 transfer the wallet sent or
+        received — mints and burns included — newest first by immutable
+        event-log ID, with exact base-unit amounts, both counterparties
+        and the wallet-relative direction on each item. A valid wallet
+        with no indexed transfers returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserCosmicTokenTransferPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/marketing-rewards:
+    get:
+      operationId: listCosmicGameUserMarketingRewards
+      summary: List marketing rewards paid to one wallet
+      description: |
+        Returns every MarketingWallet reward paid to the wallet, newest
+        first by immutable event-log ID, with exact Cosmic Token
+        base-unit amounts. A valid wallet that never earned marketing
+        rewards returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserMarketingRewardPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/pending-winnings:
+    get:
+      operationId: getCosmicGameUserPendingWinnings
+      summary: Get one wallet's unclaimed winnings summary
+      description: |
+        Returns the wallet's claimable balances in one bounded summary:
+        unclaimed raffle and chrono-warrior ETH still in the
+        PrizesWallet, the donated-NFT count pending claim, the unclaimed
+        Cosmic Signature staking reward and the number of donated ERC-20
+        entitlements with a remaining balance in rounds the wallet won.
+        Amounts are exact wei strings. Itemized views live on the
+        raffle-eth-deposits, donated-nfts, donated-erc20 and
+        staking/cst/deposits resources. A valid wallet with nothing to
+        claim returns the all-zero shape.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserPendingWinnings"
         "400":
           $ref: "#/components/responses/BadRequest"
         "500":
@@ -4129,6 +4271,383 @@ components:
             $ref: "#/components/schemas/UserDonatedErc20"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureMintType:
+      description: The prize source that minted a Cosmic Signature NFT.
+      type: string
+      enum:
+        - mainPrize
+        - bidderRaffle
+        - randomWalkStakerRaffle
+        - cosmicSignatureStakerRaffle
+        - enduranceChampion
+        - lastCstBidder
+        - chronoWarrior
+    UserCosmicSignatureToken:
+      description: |
+        One Cosmic Signature NFT the wallet currently owns, with its
+        mint transaction, provenance and live staking-wallet membership.
+        `tokenName` is present when the token has been named.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - mintedAt
+        - nftTokenId
+        - seed
+        - mintRound
+        - mintType
+        - winnerAddress
+        - staked
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        mintedAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        seed:
+          type: string
+          minLength: 1
+        mintRound:
+          type: integer
+          format: int64
+          minimum: 0
+        mintType:
+          $ref: "#/components/schemas/CosmicSignatureMintType"
+        winnerAddress:
+          description: The wallet the token was originally minted to.
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        staked:
+          description: Whether the token sits in the staking wallet right now.
+          type: boolean
+        tokenName:
+          type: string
+          minLength: 1
+    CosmicGameUserCosmicSignatureTokenPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserCosmicSignatureToken"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    TokenTransferType:
+      type: string
+      enum:
+        - transfer
+        - mint
+        - burn
+    TokenTransferDirection:
+      description: |
+        The transfer's relation to the requested wallet: incoming,
+        outgoing, or a self-transfer where both sides are the wallet.
+      type: string
+      enum:
+        - in
+        - out
+        - self
+    UserCosmicSignatureTransfer:
+      description: One Cosmic Signature ERC-721 transfer of one wallet.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - nftTokenId
+        - fromAddress
+        - toAddress
+        - transferType
+        - direction
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        fromAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        toAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        transferType:
+          $ref: "#/components/schemas/TokenTransferType"
+        direction:
+          $ref: "#/components/schemas/TokenTransferDirection"
+    CosmicGameUserCosmicSignatureTransferPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserCosmicSignatureTransfer"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    UserCosmicTokenTransfer:
+      description: |
+        One Cosmic Token ERC-20 transfer of one wallet with the exact
+        base-unit amount.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - amountWei
+        - fromAddress
+        - toAddress
+        - transferType
+        - direction
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        fromAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        toAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        transferType:
+          $ref: "#/components/schemas/TokenTransferType"
+        direction:
+          $ref: "#/components/schemas/TokenTransferDirection"
+    CosmicGameUserCosmicTokenTransferPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserCosmicTokenTransfer"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    UserCosmicTokenEarnings:
+      description: |
+        Exact Cosmic Token base units one wallet earned per source.
+        `totalWei` is the sum of the six source fields.
+      type: object
+      additionalProperties: false
+      required:
+        - biddingRewardsWei
+        - mainPrizesWei
+        - rafflePrizesWei
+        - chronoWarriorPrizesWei
+        - enduranceChampionPrizesWei
+        - lastCstBidderPrizesWei
+        - marketingRewardsWei
+        - totalWei
+      properties:
+        biddingRewardsWei:
+          type: string
+          pattern: "^[0-9]+$"
+        mainPrizesWei:
+          type: string
+          pattern: "^[0-9]+$"
+        rafflePrizesWei:
+          type: string
+          pattern: "^[0-9]+$"
+        chronoWarriorPrizesWei:
+          type: string
+          pattern: "^[0-9]+$"
+        enduranceChampionPrizesWei:
+          type: string
+          pattern: "^[0-9]+$"
+        lastCstBidderPrizesWei:
+          type: string
+          pattern: "^[0-9]+$"
+        marketingRewardsWei:
+          type: string
+          pattern: "^[0-9]+$"
+        totalWei:
+          type: string
+          pattern: "^[0-9]+$"
+    UserCosmicTokenTransferCounts:
+      description: The wallet's indexed ERC-20 transfer activity counters.
+      type: object
+      additionalProperties: false
+      required:
+        - totalCount
+        - mintCount
+        - burnCount
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          minimum: 0
+        mintCount:
+          type: integer
+          format: int64
+          minimum: 0
+        burnCount:
+          type: integer
+          format: int64
+          minimum: 0
+    CosmicGameUserCosmicTokenSummary:
+      description: |
+        One wallet's exact Cosmic Token position from one consistent
+        database snapshot. `netWei` is earnings minus the amount
+        consumed in CST bids and may be negative; the indexed balance
+        additionally reflects wallet-to-wallet transfers.
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - balanceWei
+        - earned
+        - consumedInBidsWei
+        - netWei
+        - transfers
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        balanceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        earned:
+          $ref: "#/components/schemas/UserCosmicTokenEarnings"
+        consumedInBidsWei:
+          type: string
+          pattern: "^[0-9]+$"
+        netWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+        transfers:
+          $ref: "#/components/schemas/UserCosmicTokenTransferCounts"
+    UserMarketingReward:
+      description: One MarketingWallet reward paid to the wallet.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - amountWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CosmicGameUserMarketingRewardPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserMarketingReward"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicGameUserPendingWinnings:
+      description: |
+        One wallet's claimable balances. Amounts are exact wei;
+        `donatedErc20TokenCount` counts (round, token) entitlements with
+        a remaining balance in rounds the wallet won.
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - raffleEthWei
+        - chronoWarriorEthWei
+        - donatedNftCount
+        - stakingRewardWei
+        - donatedErc20TokenCount
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        raffleEthWei:
+          type: string
+          pattern: "^[0-9]+$"
+        chronoWarriorEthWei:
+          type: string
+          pattern: "^[0-9]+$"
+        donatedNftCount:
+          type: integer
+          format: int64
+          minimum: 0
+        stakingRewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+        donatedErc20TokenCount:
+          type: integer
+          format: int64
+          minimum: 0
     StakingActionType:
       type: string
       enum:
@@ -4760,6 +5279,42 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CosmicGameUserDonatedErc20Page"
+    CosmicGameUserCosmicSignatureTokenPage:
+      description: One page of Cosmic Signature NFTs one wallet owns.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserCosmicSignatureTokenPage"
+    CosmicGameUserCosmicSignatureTransferPage:
+      description: One page of one wallet's Cosmic Signature transfers.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserCosmicSignatureTransferPage"
+    CosmicGameUserCosmicTokenSummary:
+      description: One wallet's exact Cosmic Token position.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserCosmicTokenSummary"
+    CosmicGameUserCosmicTokenTransferPage:
+      description: One page of one wallet's Cosmic Token transfers.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserCosmicTokenTransferPage"
+    CosmicGameUserMarketingRewardPage:
+      description: One page of marketing rewards paid to one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserMarketingRewardPage"
+    CosmicGameUserPendingWinnings:
+      description: One wallet's unclaimed winnings summary.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserPendingWinnings"
     CosmicGameUserCstStakingActionPage:
       description: One stable page of Cosmic Signature staking actions.
       content:

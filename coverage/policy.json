@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "legacyInternalFloor": 91.8,
-  "internalFloor": 94.4,
-  "productionFloor": 93.7,
+  "legacyInternalFloor": 91.9,
+  "internalFloor": 94.5,
+  "productionFloor": 93.8,
   "patchFloor": 95.0,
   "internalTarget": 95.0,
   "productionTarget": 95.0,

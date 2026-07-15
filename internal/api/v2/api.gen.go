@@ -176,6 +176,39 @@ func (e ContractMechanicsVersion) Valid() bool {
 	}
 }
 
+// Defines values for CosmicSignatureMintType.
+const (
+	CosmicSignatureMintTypeBidderRaffle                CosmicSignatureMintType = "bidderRaffle"
+	CosmicSignatureMintTypeChronoWarrior               CosmicSignatureMintType = "chronoWarrior"
+	CosmicSignatureMintTypeCosmicSignatureStakerRaffle CosmicSignatureMintType = "cosmicSignatureStakerRaffle"
+	CosmicSignatureMintTypeEnduranceChampion           CosmicSignatureMintType = "enduranceChampion"
+	CosmicSignatureMintTypeLastCstBidder               CosmicSignatureMintType = "lastCstBidder"
+	CosmicSignatureMintTypeMainPrize                   CosmicSignatureMintType = "mainPrize"
+	CosmicSignatureMintTypeRandomWalkStakerRaffle      CosmicSignatureMintType = "randomWalkStakerRaffle"
+)
+
+// Valid indicates whether the value is a known member of the CosmicSignatureMintType enum.
+func (e CosmicSignatureMintType) Valid() bool {
+	switch e {
+	case CosmicSignatureMintTypeBidderRaffle:
+		return true
+	case CosmicSignatureMintTypeChronoWarrior:
+		return true
+	case CosmicSignatureMintTypeCosmicSignatureStakerRaffle:
+		return true
+	case CosmicSignatureMintTypeEnduranceChampion:
+		return true
+	case CosmicSignatureMintTypeLastCstBidder:
+		return true
+	case CosmicSignatureMintTypeMainPrize:
+		return true
+	case CosmicSignatureMintTypeRandomWalkStakerRaffle:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CstBidRewardMode.
 const (
 	CstBidRewardDynamic CstBidRewardMode = "dynamic"
@@ -232,16 +265,16 @@ func (e DonatedNftStatus) Valid() bool {
 
 // Defines values for EthDepositSource.
 const (
-	ChronoWarrior EthDepositSource = "chronoWarrior"
-	Raffle        EthDepositSource = "raffle"
+	EthDepositSourceChronoWarrior EthDepositSource = "chronoWarrior"
+	EthDepositSourceRaffle        EthDepositSource = "raffle"
 )
 
 // Valid indicates whether the value is a known member of the EthDepositSource enum.
 func (e EthDepositSource) Valid() bool {
 	switch e {
-	case ChronoWarrior:
+	case EthDepositSourceChronoWarrior:
 		return true
-	case Raffle:
+	case EthDepositSourceRaffle:
 		return true
 	default:
 		return false
@@ -404,6 +437,48 @@ func (e StakingActionType) Valid() bool {
 	case Stake:
 		return true
 	case Unstake:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TokenTransferDirection.
+const (
+	In   TokenTransferDirection = "in"
+	Out  TokenTransferDirection = "out"
+	Self TokenTransferDirection = "self"
+)
+
+// Valid indicates whether the value is a known member of the TokenTransferDirection enum.
+func (e TokenTransferDirection) Valid() bool {
+	switch e {
+	case In:
+		return true
+	case Out:
+		return true
+	case Self:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TokenTransferType.
+const (
+	Burn     TokenTransferType = "burn"
+	Mint     TokenTransferType = "mint"
+	Transfer TokenTransferType = "transfer"
+)
+
+// Valid indicates whether the value is a known member of the TokenTransferType enum.
+func (e TokenTransferType) Valid() bool {
+	switch e {
+	case Burn:
+		return true
+	case Mint:
+		return true
+	case Transfer:
 		return true
 	default:
 		return false
@@ -828,6 +903,42 @@ type CosmicGameUserBidPage struct {
 	Meta PageMeta `json:"meta"`
 }
 
+// CosmicGameUserCosmicSignatureTokenPage defines model for CosmicGameUserCosmicSignatureTokenPage.
+type CosmicGameUserCosmicSignatureTokenPage struct {
+	Data []UserCosmicSignatureToken `json:"data"`
+	Meta PageMeta                   `json:"meta"`
+}
+
+// CosmicGameUserCosmicSignatureTransferPage defines model for CosmicGameUserCosmicSignatureTransferPage.
+type CosmicGameUserCosmicSignatureTransferPage struct {
+	Data []UserCosmicSignatureTransfer `json:"data"`
+	Meta PageMeta                      `json:"meta"`
+}
+
+// CosmicGameUserCosmicTokenSummary One wallet's exact Cosmic Token position from one consistent
+// database snapshot. `netWei` is earnings minus the amount
+// consumed in CST bids and may be negative; the indexed balance
+// additionally reflects wallet-to-wallet transfers.
+type CosmicGameUserCosmicTokenSummary struct {
+	Address           string `json:"address"`
+	BalanceWei        string `json:"balanceWei"`
+	ConsumedInBidsWei string `json:"consumedInBidsWei"`
+
+	// Earned Exact Cosmic Token base units one wallet earned per source.
+	// `totalWei` is the sum of the six source fields.
+	Earned UserCosmicTokenEarnings `json:"earned"`
+	NetWei string                  `json:"netWei"`
+
+	// Transfers The wallet's indexed ERC-20 transfer activity counters.
+	Transfers UserCosmicTokenTransferCounts `json:"transfers"`
+}
+
+// CosmicGameUserCosmicTokenTransferPage defines model for CosmicGameUserCosmicTokenTransferPage.
+type CosmicGameUserCosmicTokenTransferPage struct {
+	Data []UserCosmicTokenTransfer `json:"data"`
+	Meta PageMeta                  `json:"meta"`
+}
+
 // CosmicGameUserCstStakingActionPage defines model for CosmicGameUserCstStakingActionPage.
 type CosmicGameUserCstStakingActionPage struct {
 	Data []UserCstStakingAction `json:"data"`
@@ -858,10 +969,28 @@ type CosmicGameUserEthDonationPage struct {
 	Meta PageMeta           `json:"meta"`
 }
 
+// CosmicGameUserMarketingRewardPage defines model for CosmicGameUserMarketingRewardPage.
+type CosmicGameUserMarketingRewardPage struct {
+	Data []UserMarketingReward `json:"data"`
+	Meta PageMeta              `json:"meta"`
+}
+
 // CosmicGameUserNftDonationPage defines model for CosmicGameUserNftDonationPage.
 type CosmicGameUserNftDonationPage struct {
 	Data []RoundNftDonation `json:"data"`
 	Meta PageMeta           `json:"meta"`
+}
+
+// CosmicGameUserPendingWinnings One wallet's claimable balances. Amounts are exact wei;
+// `donatedErc20TokenCount` counts (round, token) entitlements with
+// a remaining balance in rounds the wallet won.
+type CosmicGameUserPendingWinnings struct {
+	Address                string `json:"address"`
+	ChronoWarriorEthWei    string `json:"chronoWarriorEthWei"`
+	DonatedErc20TokenCount int64  `json:"donatedErc20TokenCount"`
+	DonatedNftCount        int64  `json:"donatedNftCount"`
+	RaffleEthWei           string `json:"raffleEthWei"`
+	StakingRewardWei       string `json:"stakingRewardWei"`
 }
 
 // CosmicGameUserPrizePage defines model for CosmicGameUserPrizePage.
@@ -935,6 +1064,9 @@ type CosmicGameUserStakingTokenRewardPage struct {
 	Data []UserStakingTokenReward `json:"data"`
 	Meta PageMeta                 `json:"meta"`
 }
+
+// CosmicSignatureMintType The prize source that minted a Cosmic Signature NFT.
+type CosmicSignatureMintType string
 
 // CstBidRewardMode Fixed on v1 mechanics and dynamic on v2 mechanics.
 type CstBidRewardMode string
@@ -1349,6 +1481,13 @@ type TokenPrize struct {
 	WinnerAddress string `json:"winnerAddress"`
 }
 
+// TokenTransferDirection The transfer's relation to the requested wallet: incoming,
+// outgoing, or a self-transfer where both sides are the wallet.
+type TokenTransferDirection string
+
+// TokenTransferType defines model for TokenTransferType.
+type TokenTransferType string
+
 // TopBidder defines model for TopBidder.
 type TopBidder struct {
 	BidderAddress    string `json:"bidderAddress"`
@@ -1379,6 +1518,82 @@ type UserBiddingStats struct {
 	MaxEthBidWei     *string `json:"maxEthBidWei,omitempty"`
 	TotalCstSpentWei string  `json:"totalCstSpentWei"`
 	TotalEthSpentWei string  `json:"totalEthSpentWei"`
+}
+
+// UserCosmicSignatureToken One Cosmic Signature NFT the wallet currently owns, with its
+// mint transaction, provenance and live staking-wallet membership.
+// `tokenName` is present when the token has been named.
+type UserCosmicSignatureToken struct {
+	BlockNumber int64 `json:"blockNumber"`
+	EventLogId  int64 `json:"eventLogId"`
+	MintRound   int64 `json:"mintRound"`
+
+	// MintType The prize source that minted a Cosmic Signature NFT.
+	MintType   CosmicSignatureMintType `json:"mintType"`
+	MintedAt   time.Time               `json:"mintedAt"`
+	NftTokenId int64                   `json:"nftTokenId"`
+	Seed       string                  `json:"seed"`
+
+	// Staked Whether the token sits in the staking wallet right now.
+	Staked          bool    `json:"staked"`
+	TokenName       *string `json:"tokenName,omitempty"`
+	TransactionHash string  `json:"transactionHash"`
+
+	// WinnerAddress The wallet the token was originally minted to.
+	WinnerAddress string `json:"winnerAddress"`
+}
+
+// UserCosmicSignatureTransfer One Cosmic Signature ERC-721 transfer of one wallet.
+type UserCosmicSignatureTransfer struct {
+	BlockNumber int64 `json:"blockNumber"`
+
+	// Direction The transfer's relation to the requested wallet: incoming,
+	// outgoing, or a self-transfer where both sides are the wallet.
+	Direction       TokenTransferDirection `json:"direction"`
+	EventLogId      int64                  `json:"eventLogId"`
+	FromAddress     string                 `json:"fromAddress"`
+	NftTokenId      int64                  `json:"nftTokenId"`
+	OccurredAt      time.Time              `json:"occurredAt"`
+	ToAddress       string                 `json:"toAddress"`
+	TransactionHash string                 `json:"transactionHash"`
+	TransferType    TokenTransferType      `json:"transferType"`
+}
+
+// UserCosmicTokenEarnings Exact Cosmic Token base units one wallet earned per source.
+// `totalWei` is the sum of the six source fields.
+type UserCosmicTokenEarnings struct {
+	BiddingRewardsWei          string `json:"biddingRewardsWei"`
+	ChronoWarriorPrizesWei     string `json:"chronoWarriorPrizesWei"`
+	EnduranceChampionPrizesWei string `json:"enduranceChampionPrizesWei"`
+	LastCstBidderPrizesWei     string `json:"lastCstBidderPrizesWei"`
+	MainPrizesWei              string `json:"mainPrizesWei"`
+	MarketingRewardsWei        string `json:"marketingRewardsWei"`
+	RafflePrizesWei            string `json:"rafflePrizesWei"`
+	TotalWei                   string `json:"totalWei"`
+}
+
+// UserCosmicTokenTransfer One Cosmic Token ERC-20 transfer of one wallet with the exact
+// base-unit amount.
+type UserCosmicTokenTransfer struct {
+	AmountWei   string `json:"amountWei"`
+	BlockNumber int64  `json:"blockNumber"`
+
+	// Direction The transfer's relation to the requested wallet: incoming,
+	// outgoing, or a self-transfer where both sides are the wallet.
+	Direction       TokenTransferDirection `json:"direction"`
+	EventLogId      int64                  `json:"eventLogId"`
+	FromAddress     string                 `json:"fromAddress"`
+	OccurredAt      time.Time              `json:"occurredAt"`
+	ToAddress       string                 `json:"toAddress"`
+	TransactionHash string                 `json:"transactionHash"`
+	TransferType    TokenTransferType      `json:"transferType"`
+}
+
+// UserCosmicTokenTransferCounts The wallet's indexed ERC-20 transfer activity counters.
+type UserCosmicTokenTransferCounts struct {
+	BurnCount  int64 `json:"burnCount"`
+	MintCount  int64 `json:"mintCount"`
+	TotalCount int64 `json:"totalCount"`
 }
 
 // UserCstStakingAction One Cosmic Signature NFT stake or unstake event of one wallet.
@@ -1462,6 +1677,15 @@ type UserDonatedNftClaim struct {
 type UserEthDonationStats struct {
 	DonationCount   int64  `json:"donationCount"`
 	TotalDonatedWei string `json:"totalDonatedWei"`
+}
+
+// UserMarketingReward One MarketingWallet reward paid to the wallet.
+type UserMarketingReward struct {
+	AmountWei       string    `json:"amountWei"`
+	BlockNumber     int64     `json:"blockNumber"`
+	EventLogId      int64     `json:"eventLogId"`
+	OccurredAt      time.Time `json:"occurredAt"`
+	TransactionHash string    `json:"transactionHash"`
 }
 
 // UserPrizeStats defines model for UserPrizeStats.
@@ -2041,6 +2265,42 @@ type ListCosmicGameUserBidsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListCosmicGameUserCosmicSignatureTokensParams defines parameters for ListCosmicGameUserCosmicSignatureTokens.
+type ListCosmicGameUserCosmicSignatureTokensParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListCosmicGameUserCosmicSignatureTransfersParams defines parameters for ListCosmicGameUserCosmicSignatureTransfers.
+type ListCosmicGameUserCosmicSignatureTransfersParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListCosmicGameUserCosmicTokenTransfersParams defines parameters for ListCosmicGameUserCosmicTokenTransfers.
+type ListCosmicGameUserCosmicTokenTransfersParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListCosmicGameUserDonatedErc20Params defines parameters for ListCosmicGameUserDonatedErc20.
 type ListCosmicGameUserDonatedErc20Params struct {
 	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
@@ -2083,6 +2343,18 @@ type ListCosmicGameUserErc20DonationsParams struct {
 
 // ListCosmicGameUserEthDonationsParams defines parameters for ListCosmicGameUserEthDonations.
 type ListCosmicGameUserEthDonationsParams struct {
+	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
+	// stable positions, not live subscriptions: while paging an open
+	// collection, newly indexed events ahead of the cursor are visible by
+	// polling again without a cursor.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of resources to return.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListCosmicGameUserMarketingRewardsParams defines parameters for ListCosmicGameUserMarketingRewards.
+type ListCosmicGameUserMarketingRewardsParams struct {
 	// Cursor Opaque continuation cursor returned by the previous page. Cursors are
 	// stable positions, not live subscriptions: while paging an open
 	// collection, newly indexed events ahead of the cursor are visible by
@@ -2678,6 +2950,18 @@ type ServerInterface interface {
 	// List bids made by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/bids)
 	ListCosmicGameUserBids(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserBidsParams)
+	// List Cosmic Signature NFTs one wallet owns right now
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-signature-tokens)
+	ListCosmicGameUserCosmicSignatureTokens(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserCosmicSignatureTokensParams)
+	// List Cosmic Signature NFT transfers of one wallet
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-signature-transfers)
+	ListCosmicGameUserCosmicSignatureTransfers(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserCosmicSignatureTransfersParams)
+	// Get one wallet's Cosmic Token position
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-token-summary)
+	GetCosmicGameUserCosmicTokenSummary(w http.ResponseWriter, r *http.Request, address Address)
+	// List Cosmic Token transfers of one wallet
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-token-transfers)
+	ListCosmicGameUserCosmicTokenTransfers(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserCosmicTokenTransfersParams)
 	// List donated ERC-20 entitlements one wallet won or claimed
 	// (GET /api/v2/cosmicgame/users/{address}/donated-erc20)
 	ListCosmicGameUserDonatedErc20(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserDonatedErc20Params)
@@ -2690,9 +2974,15 @@ type ServerInterface interface {
 	// List direct ETH donations made by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/eth-donations)
 	ListCosmicGameUserEthDonations(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserEthDonationsParams)
+	// List marketing rewards paid to one wallet
+	// (GET /api/v2/cosmicgame/users/{address}/marketing-rewards)
+	ListCosmicGameUserMarketingRewards(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserMarketingRewardsParams)
 	// List NFT donations made by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/nft-donations)
 	ListCosmicGameUserNftDonations(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserNftDonationsParams)
+	// Get one wallet's unclaimed winnings summary
+	// (GET /api/v2/cosmicgame/users/{address}/pending-winnings)
+	GetCosmicGameUserPendingWinnings(w http.ResponseWriter, r *http.Request, address Address)
 	// List prizes won by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/prizes)
 	ListCosmicGameUserPrizes(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserPrizesParams)
@@ -4186,6 +4476,197 @@ func (siw *ServerInterfaceWrapper) ListCosmicGameUserBids(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListCosmicGameUserCosmicSignatureTokens operation middleware
+func (siw *ServerInterfaceWrapper) ListCosmicGameUserCosmicSignatureTokens(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "address" -------------
+	var address Address
+
+	err = runtime.BindStyledParameterWithOptions("simple", "address", r.PathValue("address"), &address, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "address", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCosmicGameUserCosmicSignatureTokensParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCosmicGameUserCosmicSignatureTokens(w, r, address, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCosmicGameUserCosmicSignatureTransfers operation middleware
+func (siw *ServerInterfaceWrapper) ListCosmicGameUserCosmicSignatureTransfers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "address" -------------
+	var address Address
+
+	err = runtime.BindStyledParameterWithOptions("simple", "address", r.PathValue("address"), &address, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "address", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCosmicGameUserCosmicSignatureTransfersParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCosmicGameUserCosmicSignatureTransfers(w, r, address, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameUserCosmicTokenSummary operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameUserCosmicTokenSummary(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "address" -------------
+	var address Address
+
+	err = runtime.BindStyledParameterWithOptions("simple", "address", r.PathValue("address"), &address, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "address", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameUserCosmicTokenSummary(w, r, address)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCosmicGameUserCosmicTokenTransfers operation middleware
+func (siw *ServerInterfaceWrapper) ListCosmicGameUserCosmicTokenTransfers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "address" -------------
+	var address Address
+
+	err = runtime.BindStyledParameterWithOptions("simple", "address", r.PathValue("address"), &address, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "address", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCosmicGameUserCosmicTokenTransfersParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCosmicGameUserCosmicTokenTransfers(w, r, address, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListCosmicGameUserDonatedErc20 operation middleware
 func (siw *ServerInterfaceWrapper) ListCosmicGameUserDonatedErc20(w http.ResponseWriter, r *http.Request) {
 
@@ -4419,6 +4900,61 @@ func (siw *ServerInterfaceWrapper) ListCosmicGameUserEthDonations(w http.Respons
 	handler.ServeHTTP(w, r)
 }
 
+// ListCosmicGameUserMarketingRewards operation middleware
+func (siw *ServerInterfaceWrapper) ListCosmicGameUserMarketingRewards(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "address" -------------
+	var address Address
+
+	err = runtime.BindStyledParameterWithOptions("simple", "address", r.PathValue("address"), &address, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "address", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCosmicGameUserMarketingRewardsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCosmicGameUserMarketingRewards(w, r, address, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListCosmicGameUserNftDonations operation middleware
 func (siw *ServerInterfaceWrapper) ListCosmicGameUserNftDonations(w http.ResponseWriter, r *http.Request) {
 
@@ -4465,6 +5001,32 @@ func (siw *ServerInterfaceWrapper) ListCosmicGameUserNftDonations(w http.Respons
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListCosmicGameUserNftDonations(w, r, address, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCosmicGameUserPendingWinnings operation middleware
+func (siw *ServerInterfaceWrapper) GetCosmicGameUserPendingWinnings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "address" -------------
+	var address Address
+
+	err = runtime.BindStyledParameterWithOptions("simple", "address", r.PathValue("address"), &address, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "address", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCosmicGameUserPendingWinnings(w, r, address)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5277,11 +5839,17 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/statistics/participants/winners", wrapper.ListCosmicGameWinners)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}", wrapper.GetCosmicGameUser)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/bids", wrapper.ListCosmicGameUserBids)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/cosmic-signature-tokens", wrapper.ListCosmicGameUserCosmicSignatureTokens)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/cosmic-signature-transfers", wrapper.ListCosmicGameUserCosmicSignatureTransfers)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/cosmic-token-summary", wrapper.GetCosmicGameUserCosmicTokenSummary)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/cosmic-token-transfers", wrapper.ListCosmicGameUserCosmicTokenTransfers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/donated-erc20", wrapper.ListCosmicGameUserDonatedErc20)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/donated-nfts", wrapper.ListCosmicGameUserDonatedNfts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/erc20-donations", wrapper.ListCosmicGameUserErc20Donations)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/eth-donations", wrapper.ListCosmicGameUserEthDonations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/marketing-rewards", wrapper.ListCosmicGameUserMarketingRewards)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/nft-donations", wrapper.ListCosmicGameUserNftDonations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/pending-winnings", wrapper.GetCosmicGameUserPendingWinnings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/prizes", wrapper.ListCosmicGameUserPrizes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/raffle-eth-deposits", wrapper.ListCosmicGameUserRaffleEthDeposits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v2/cosmicgame/users/{address}/raffle-nft-wins", wrapper.ListCosmicGameUserRaffleNftWins)
@@ -5343,6 +5911,14 @@ type CosmicGameRoundJSONResponse CosmicGameRound
 
 type CosmicGameUserBidPageJSONResponse CosmicGameUserBidPage
 
+type CosmicGameUserCosmicSignatureTokenPageJSONResponse CosmicGameUserCosmicSignatureTokenPage
+
+type CosmicGameUserCosmicSignatureTransferPageJSONResponse CosmicGameUserCosmicSignatureTransferPage
+
+type CosmicGameUserCosmicTokenSummaryJSONResponse CosmicGameUserCosmicTokenSummary
+
+type CosmicGameUserCosmicTokenTransferPageJSONResponse CosmicGameUserCosmicTokenTransferPage
+
 type CosmicGameUserCstStakingActionPageJSONResponse CosmicGameUserCstStakingActionPage
 
 type CosmicGameUserDonatedErc20PageJSONResponse CosmicGameUserDonatedErc20Page
@@ -5353,7 +5929,11 @@ type CosmicGameUserErc20DonationPageJSONResponse CosmicGameUserErc20DonationPage
 
 type CosmicGameUserEthDonationPageJSONResponse CosmicGameUserEthDonationPage
 
+type CosmicGameUserMarketingRewardPageJSONResponse CosmicGameUserMarketingRewardPage
+
 type CosmicGameUserNftDonationPageJSONResponse CosmicGameUserNftDonationPage
+
+type CosmicGameUserPendingWinningsJSONResponse CosmicGameUserPendingWinnings
 
 type CosmicGameUserPrizePageJSONResponse CosmicGameUserPrizePage
 
@@ -7344,6 +7924,233 @@ func (response ListCosmicGameUserBids500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ListCosmicGameUserCosmicSignatureTokensRequestObject struct {
+	Address Address `json:"address"`
+	Params  ListCosmicGameUserCosmicSignatureTokensParams
+}
+
+type ListCosmicGameUserCosmicSignatureTokensResponseObject interface {
+	VisitListCosmicGameUserCosmicSignatureTokensResponse(w http.ResponseWriter) error
+}
+
+type ListCosmicGameUserCosmicSignatureTokens200JSONResponse struct {
+	CosmicGameUserCosmicSignatureTokenPageJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicSignatureTokens200JSONResponse) VisitListCosmicGameUserCosmicSignatureTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicSignatureTokens400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicSignatureTokens400ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserCosmicSignatureTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicSignatureTokens500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicSignatureTokens500ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserCosmicSignatureTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicSignatureTransfersRequestObject struct {
+	Address Address `json:"address"`
+	Params  ListCosmicGameUserCosmicSignatureTransfersParams
+}
+
+type ListCosmicGameUserCosmicSignatureTransfersResponseObject interface {
+	VisitListCosmicGameUserCosmicSignatureTransfersResponse(w http.ResponseWriter) error
+}
+
+type ListCosmicGameUserCosmicSignatureTransfers200JSONResponse struct {
+	CosmicGameUserCosmicSignatureTransferPageJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicSignatureTransfers200JSONResponse) VisitListCosmicGameUserCosmicSignatureTransfersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicSignatureTransfers400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicSignatureTransfers400ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserCosmicSignatureTransfersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicSignatureTransfers500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicSignatureTransfers500ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserCosmicSignatureTransfersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameUserCosmicTokenSummaryRequestObject struct {
+	Address Address `json:"address"`
+}
+
+type GetCosmicGameUserCosmicTokenSummaryResponseObject interface {
+	VisitGetCosmicGameUserCosmicTokenSummaryResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameUserCosmicTokenSummary200JSONResponse struct {
+	CosmicGameUserCosmicTokenSummaryJSONResponse
+}
+
+func (response GetCosmicGameUserCosmicTokenSummary200JSONResponse) VisitGetCosmicGameUserCosmicTokenSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameUserCosmicTokenSummary400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameUserCosmicTokenSummary400ApplicationProblemPlusJSONResponse) VisitGetCosmicGameUserCosmicTokenSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameUserCosmicTokenSummary500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameUserCosmicTokenSummary500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameUserCosmicTokenSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicTokenTransfersRequestObject struct {
+	Address Address `json:"address"`
+	Params  ListCosmicGameUserCosmicTokenTransfersParams
+}
+
+type ListCosmicGameUserCosmicTokenTransfersResponseObject interface {
+	VisitListCosmicGameUserCosmicTokenTransfersResponse(w http.ResponseWriter) error
+}
+
+type ListCosmicGameUserCosmicTokenTransfers200JSONResponse struct {
+	CosmicGameUserCosmicTokenTransferPageJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicTokenTransfers200JSONResponse) VisitListCosmicGameUserCosmicTokenTransfersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicTokenTransfers400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicTokenTransfers400ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserCosmicTokenTransfersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserCosmicTokenTransfers500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserCosmicTokenTransfers500ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserCosmicTokenTransfersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListCosmicGameUserDonatedErc20RequestObject struct {
 	Address Address `json:"address"`
 	Params  ListCosmicGameUserDonatedErc20Params
@@ -7572,6 +8379,63 @@ func (response ListCosmicGameUserEthDonations500ApplicationProblemPlusJSONRespon
 	return err
 }
 
+type ListCosmicGameUserMarketingRewardsRequestObject struct {
+	Address Address `json:"address"`
+	Params  ListCosmicGameUserMarketingRewardsParams
+}
+
+type ListCosmicGameUserMarketingRewardsResponseObject interface {
+	VisitListCosmicGameUserMarketingRewardsResponse(w http.ResponseWriter) error
+}
+
+type ListCosmicGameUserMarketingRewards200JSONResponse struct {
+	CosmicGameUserMarketingRewardPageJSONResponse
+}
+
+func (response ListCosmicGameUserMarketingRewards200JSONResponse) VisitListCosmicGameUserMarketingRewardsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserMarketingRewards400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserMarketingRewards400ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserMarketingRewardsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCosmicGameUserMarketingRewards500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListCosmicGameUserMarketingRewards500ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserMarketingRewardsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListCosmicGameUserNftDonationsRequestObject struct {
 	Address Address `json:"address"`
 	Params  ListCosmicGameUserNftDonationsParams
@@ -7618,6 +8482,62 @@ type ListCosmicGameUserNftDonations500ApplicationProblemPlusJSONResponse struct 
 }
 
 func (response ListCosmicGameUserNftDonations500ApplicationProblemPlusJSONResponse) VisitListCosmicGameUserNftDonationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameUserPendingWinningsRequestObject struct {
+	Address Address `json:"address"`
+}
+
+type GetCosmicGameUserPendingWinningsResponseObject interface {
+	VisitGetCosmicGameUserPendingWinningsResponse(w http.ResponseWriter) error
+}
+
+type GetCosmicGameUserPendingWinnings200JSONResponse struct {
+	CosmicGameUserPendingWinningsJSONResponse
+}
+
+func (response GetCosmicGameUserPendingWinnings200JSONResponse) VisitGetCosmicGameUserPendingWinningsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameUserPendingWinnings400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameUserPendingWinnings400ApplicationProblemPlusJSONResponse) VisitGetCosmicGameUserPendingWinningsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCosmicGameUserPendingWinnings500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetCosmicGameUserPendingWinnings500ApplicationProblemPlusJSONResponse) VisitGetCosmicGameUserPendingWinningsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -8394,6 +9314,18 @@ type StrictServerInterface interface {
 	// List bids made by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/bids)
 	ListCosmicGameUserBids(ctx context.Context, request ListCosmicGameUserBidsRequestObject) (ListCosmicGameUserBidsResponseObject, error)
+	// List Cosmic Signature NFTs one wallet owns right now
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-signature-tokens)
+	ListCosmicGameUserCosmicSignatureTokens(ctx context.Context, request ListCosmicGameUserCosmicSignatureTokensRequestObject) (ListCosmicGameUserCosmicSignatureTokensResponseObject, error)
+	// List Cosmic Signature NFT transfers of one wallet
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-signature-transfers)
+	ListCosmicGameUserCosmicSignatureTransfers(ctx context.Context, request ListCosmicGameUserCosmicSignatureTransfersRequestObject) (ListCosmicGameUserCosmicSignatureTransfersResponseObject, error)
+	// Get one wallet's Cosmic Token position
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-token-summary)
+	GetCosmicGameUserCosmicTokenSummary(ctx context.Context, request GetCosmicGameUserCosmicTokenSummaryRequestObject) (GetCosmicGameUserCosmicTokenSummaryResponseObject, error)
+	// List Cosmic Token transfers of one wallet
+	// (GET /api/v2/cosmicgame/users/{address}/cosmic-token-transfers)
+	ListCosmicGameUserCosmicTokenTransfers(ctx context.Context, request ListCosmicGameUserCosmicTokenTransfersRequestObject) (ListCosmicGameUserCosmicTokenTransfersResponseObject, error)
 	// List donated ERC-20 entitlements one wallet won or claimed
 	// (GET /api/v2/cosmicgame/users/{address}/donated-erc20)
 	ListCosmicGameUserDonatedErc20(ctx context.Context, request ListCosmicGameUserDonatedErc20RequestObject) (ListCosmicGameUserDonatedErc20ResponseObject, error)
@@ -8406,9 +9338,15 @@ type StrictServerInterface interface {
 	// List direct ETH donations made by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/eth-donations)
 	ListCosmicGameUserEthDonations(ctx context.Context, request ListCosmicGameUserEthDonationsRequestObject) (ListCosmicGameUserEthDonationsResponseObject, error)
+	// List marketing rewards paid to one wallet
+	// (GET /api/v2/cosmicgame/users/{address}/marketing-rewards)
+	ListCosmicGameUserMarketingRewards(ctx context.Context, request ListCosmicGameUserMarketingRewardsRequestObject) (ListCosmicGameUserMarketingRewardsResponseObject, error)
 	// List NFT donations made by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/nft-donations)
 	ListCosmicGameUserNftDonations(ctx context.Context, request ListCosmicGameUserNftDonationsRequestObject) (ListCosmicGameUserNftDonationsResponseObject, error)
+	// Get one wallet's unclaimed winnings summary
+	// (GET /api/v2/cosmicgame/users/{address}/pending-winnings)
+	GetCosmicGameUserPendingWinnings(ctx context.Context, request GetCosmicGameUserPendingWinningsRequestObject) (GetCosmicGameUserPendingWinningsResponseObject, error)
 	// List prizes won by one wallet
 	// (GET /api/v2/cosmicgame/users/{address}/prizes)
 	ListCosmicGameUserPrizes(ctx context.Context, request ListCosmicGameUserPrizesRequestObject) (ListCosmicGameUserPrizesResponseObject, error)
@@ -9349,6 +10287,113 @@ func (sh *strictHandler) ListCosmicGameUserBids(w http.ResponseWriter, r *http.R
 	}
 }
 
+// ListCosmicGameUserCosmicSignatureTokens operation middleware
+func (sh *strictHandler) ListCosmicGameUserCosmicSignatureTokens(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserCosmicSignatureTokensParams) {
+	var request ListCosmicGameUserCosmicSignatureTokensRequestObject
+
+	request.Address = address
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCosmicGameUserCosmicSignatureTokens(ctx, request.(ListCosmicGameUserCosmicSignatureTokensRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCosmicGameUserCosmicSignatureTokens")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCosmicGameUserCosmicSignatureTokensResponseObject); ok {
+		if err := validResponse.VisitListCosmicGameUserCosmicSignatureTokensResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCosmicGameUserCosmicSignatureTransfers operation middleware
+func (sh *strictHandler) ListCosmicGameUserCosmicSignatureTransfers(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserCosmicSignatureTransfersParams) {
+	var request ListCosmicGameUserCosmicSignatureTransfersRequestObject
+
+	request.Address = address
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCosmicGameUserCosmicSignatureTransfers(ctx, request.(ListCosmicGameUserCosmicSignatureTransfersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCosmicGameUserCosmicSignatureTransfers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCosmicGameUserCosmicSignatureTransfersResponseObject); ok {
+		if err := validResponse.VisitListCosmicGameUserCosmicSignatureTransfersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameUserCosmicTokenSummary operation middleware
+func (sh *strictHandler) GetCosmicGameUserCosmicTokenSummary(w http.ResponseWriter, r *http.Request, address Address) {
+	var request GetCosmicGameUserCosmicTokenSummaryRequestObject
+
+	request.Address = address
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameUserCosmicTokenSummary(ctx, request.(GetCosmicGameUserCosmicTokenSummaryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameUserCosmicTokenSummary")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameUserCosmicTokenSummaryResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameUserCosmicTokenSummaryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCosmicGameUserCosmicTokenTransfers operation middleware
+func (sh *strictHandler) ListCosmicGameUserCosmicTokenTransfers(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserCosmicTokenTransfersParams) {
+	var request ListCosmicGameUserCosmicTokenTransfersRequestObject
+
+	request.Address = address
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCosmicGameUserCosmicTokenTransfers(ctx, request.(ListCosmicGameUserCosmicTokenTransfersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCosmicGameUserCosmicTokenTransfers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCosmicGameUserCosmicTokenTransfersResponseObject); ok {
+		if err := validResponse.VisitListCosmicGameUserCosmicTokenTransfersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListCosmicGameUserDonatedErc20 operation middleware
 func (sh *strictHandler) ListCosmicGameUserDonatedErc20(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserDonatedErc20Params) {
 	var request ListCosmicGameUserDonatedErc20RequestObject
@@ -9457,6 +10502,33 @@ func (sh *strictHandler) ListCosmicGameUserEthDonations(w http.ResponseWriter, r
 	}
 }
 
+// ListCosmicGameUserMarketingRewards operation middleware
+func (sh *strictHandler) ListCosmicGameUserMarketingRewards(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserMarketingRewardsParams) {
+	var request ListCosmicGameUserMarketingRewardsRequestObject
+
+	request.Address = address
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCosmicGameUserMarketingRewards(ctx, request.(ListCosmicGameUserMarketingRewardsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCosmicGameUserMarketingRewards")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCosmicGameUserMarketingRewardsResponseObject); ok {
+		if err := validResponse.VisitListCosmicGameUserMarketingRewardsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListCosmicGameUserNftDonations operation middleware
 func (sh *strictHandler) ListCosmicGameUserNftDonations(w http.ResponseWriter, r *http.Request, address Address, params ListCosmicGameUserNftDonationsParams) {
 	var request ListCosmicGameUserNftDonationsRequestObject
@@ -9477,6 +10549,32 @@ func (sh *strictHandler) ListCosmicGameUserNftDonations(w http.ResponseWriter, r
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListCosmicGameUserNftDonationsResponseObject); ok {
 		if err := validResponse.VisitListCosmicGameUserNftDonationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCosmicGameUserPendingWinnings operation middleware
+func (sh *strictHandler) GetCosmicGameUserPendingWinnings(w http.ResponseWriter, r *http.Request, address Address) {
+	var request GetCosmicGameUserPendingWinningsRequestObject
+
+	request.Address = address
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCosmicGameUserPendingWinnings(ctx, request.(GetCosmicGameUserPendingWinningsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCosmicGameUserPendingWinnings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCosmicGameUserPendingWinningsResponseObject); ok {
+		if err := validResponse.VisitGetCosmicGameUserPendingWinningsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -9788,243 +10886,275 @@ func (sh *strictHandler) ListCosmicGameUserStakedRandomWalkTokens(w http.Respons
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"z79+/n8BAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

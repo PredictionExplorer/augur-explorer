@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 125,
+        "eventLogId": 5100,
+        "mintRound": 2,
+        "mintType": "cosmicSignatureStakerRaffle",
+        "mintedAt": "2026-01-01T00:41:40Z",
+        "nftTokenId": 9,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000009",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+        "winnerAddress": "0x2200000000000000000000000000000000000022"
+      }
+    ],
+    "meta": {
+      "limit": 2
+    }
+  }
+}

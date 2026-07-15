@@ -32,12 +32,12 @@ func mapUserRaffleEthDeposit(record cgstore.UserRaffleEthDepositRecord) (UserRaf
 		EventLogId:      transaction.EventLogId,
 		OccurredAt:      transaction.OccurredAt,
 		Round:           record.RoundNum,
-		Source:          Raffle,
+		Source:          EthDepositSourceRaffle,
 		TransactionHash: transaction.TransactionHash,
 		WinnerIndex:     record.WinnerIndex,
 	}
 	if record.IsChronoWarrior {
-		result.Source = ChronoWarrior
+		result.Source = EthDepositSourceChronoWarrior
 	}
 
 	if record.Withdrawal != nil {

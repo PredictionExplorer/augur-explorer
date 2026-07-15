@@ -30,6 +30,7 @@ func newUserStakingTestServer(t *testing.T, staking userStakingReader) *Server {
 		fakeUserReader{},
 		fakeUserHistoryReader{},
 		staking,
+		fakeUserActivityReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

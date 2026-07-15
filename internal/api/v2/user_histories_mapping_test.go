@@ -38,7 +38,7 @@ func TestMapUserRaffleEthDeposit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("mapUserRaffleEthDeposit: %v", err)
 		}
-		if got.Source != Raffle || got.Claimed || got.Withdrawal != nil ||
+		if got.Source != EthDepositSourceRaffle || got.Claimed || got.Withdrawal != nil ||
 			got.EthAmountWei != "50000000000000000" || got.Round != 4 ||
 			got.WinnerIndex != 2 || got.EventLogId != 100 ||
 			got.TransactionHash != "0x"+strings.Repeat("ab", 32) ||
@@ -58,7 +58,7 @@ func TestMapUserRaffleEthDeposit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("mapUserRaffleEthDeposit: %v", err)
 		}
-		if got.Source != ChronoWarrior || !got.Claimed || got.Withdrawal == nil {
+		if got.Source != EthDepositSourceChronoWarrior || !got.Claimed || got.Withdrawal == nil {
 			t.Fatalf("deposit = %+v", got)
 		}
 		if got.Withdrawal.EventLogId != 160 ||

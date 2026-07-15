@@ -1,0 +1,36 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "eventLogId": 5019,
+        "mintRound": 0,
+        "mintType": "mainPrize",
+        "mintedAt": "2026-01-01T00:16:40Z",
+        "nftTokenId": 1,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000001",
+        "staked": false,
+        "tokenName": "Genesis",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerAddress": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "blockNumber": 110,
+        "eventLogId": 5038,
+        "mintRound": 0,
+        "mintType": "chronoWarrior",
+        "mintedAt": "2026-01-01T00:16:40Z",
+        "nftTokenId": 6,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000006",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerAddress": "0x2100000000000000000000000000000000000021"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

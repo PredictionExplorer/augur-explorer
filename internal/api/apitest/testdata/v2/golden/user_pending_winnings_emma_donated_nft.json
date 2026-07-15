@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "address": "0x2500000000000000000000000000000000000025",
+    "chronoWarriorEthWei": "0",
+    "donatedErc20TokenCount": 0,
+    "donatedNftCount": 1,
+    "raffleEthWei": "0",
+    "stakingRewardWei": "0"
+  }
+}

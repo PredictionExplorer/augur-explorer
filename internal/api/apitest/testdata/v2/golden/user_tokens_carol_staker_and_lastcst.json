@@ -1,0 +1,35 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "eventLogId": 5029,
+        "mintRound": 0,
+        "mintType": "randomWalkStakerRaffle",
+        "mintedAt": "2026-01-01T00:16:40Z",
+        "nftTokenId": 3,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000003",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerAddress": "0x2300000000000000000000000000000000000023"
+      },
+      {
+        "blockNumber": 110,
+        "eventLogId": 5032,
+        "mintRound": 0,
+        "mintType": "lastCstBidder",
+        "mintedAt": "2026-01-01T00:16:40Z",
+        "nftTokenId": 4,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000004",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerAddress": "0x2300000000000000000000000000000000000023"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

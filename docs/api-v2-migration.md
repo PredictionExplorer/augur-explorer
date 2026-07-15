@@ -66,9 +66,9 @@ The profile fields map as follows:
 A valid wallet absent from the index returns a zero-valued `200` profile and
 an empty bid page, so clients do not need a special not-found state. The v1
 mega-response's staking-action arrays are replaced by the user staking
-resources below; its transfer and owned-NFT arrays remain on v1 until
-bounded user sub-resources land. Live `user/balances`, CosmicToken summary,
-marketing history and red-box claim status are also intentionally deferred.
+resources below; its transfer, owned-NFT and marketing arrays by the user
+activity resources below. With the activity group the `user/info`
+mega-response is fully decomposed.
 
 ## CosmicGame user winnings
 
@@ -214,6 +214,63 @@ client-side on `isStaker` and `isRandomWalk`. The global `staking/*/mints`
 and reward views, `staking/cst/rewards/global` and per-round staking
 statistics remain v1-only until a statistics slice replaces them.
 
+## CosmicGame user activity
+
+The activity group replaces six v1 paths — and retires a seventh from v2
+scope — with four cursor-paginated resources and two bounded summaries
+under `/api/v2/cosmicgame/users/{address}/…`. Every amount is an exact
+base-unit string and every resource answers a valid unindexed wallet with
+an empty `200` page or the all-zero summary shape.
+
+Token directory and transfer ledgers:
+
+- `cst/list/by_user/{user_addr}/{offset}/{limit}` becomes
+  `GET …/cosmic-signature-tokens`: the wallet's current Cosmic Signature
+  NFTs in ascending token order with mint provenance (`mintRound`, `seed`,
+  original `winnerAddress`, optional `tokenName`), a typed `mintType`
+  (`mainPrize`, `bidderRaffle`, `randomWalkStakerRaffle`,
+  `cosmicSignatureStakerRaffle`, `enduranceChampion`, `lastCstBidder`,
+  `chronoWarrior`) and live `staked` membership. **Deliberate
+  corrections:** v1 derived the staked flag by pairing stake/unstake event
+  joins, which duplicated rows after repeated stake cycles — v2 reads the
+  live membership table; v1 also had no chrono-warrior badge and showed
+  those NFTs as main prizes.
+- `cst/transfers/by_user/{user_addr}/{offset}/{limit}` becomes
+  `GET …/cosmic-signature-transfers`: mints, burns and transfers newest
+  first by immutable event-log ID with a typed `transferType`, both
+  counterparties and the wallet-relative `direction` (`in`/`out`/`self`).
+  V1 ordered by a surrogate row ID and paged with `OFFSET/LIMIT`.
+- `ct/transfers/by_user/{user_addr}/{offset}/{limit}` becomes
+  `GET …/cosmic-token-transfers` — the same ledger shape with exact
+  `amountWei` (the v1 float mirror is removed).
+- `marketing/rewards/by_user/{user_addr}/{offset}/{limit}` becomes
+  `GET …/marketing-rewards` with exact `amountWei`.
+
+Bounded summaries:
+
+- `ct/summary/by_user/{user_addr}` becomes `GET …/cosmic-token-summary`:
+  the indexed `balanceWei`, earnings by source, `consumedInBidsWei` and a
+  signed `netWei`, all computed in one query so every field reflects the
+  same database snapshot (v1 issued eight sequential queries and returned
+  floats). **Deliberate correction:** v1's earnings breakdown omitted the
+  endurance-champion and last-CST-bidder CST prizes; v2 adds
+  `enduranceChampionPrizesWei` and `lastCstBidderPrizesWei` and includes
+  them in `totalWei`.
+- `user/notif_red_box/{user_addr}` becomes `GET …/pending-winnings`:
+  unclaimed raffle and chrono-warrior ETH (split by the chrono-warrior
+  registration join rather than v1's hardcoded winner-index threshold),
+  the pending donated-NFT count, the exact unclaimed staking `rewardWei`
+  (v1 exposed float ETH) and the count of donated ERC-20 entitlements with
+  a remaining balance. The v1 inline donated-ERC-20 array is unbounded and
+  is not retained — itemized views live on `raffle-eth-deposits`,
+  `donated-nfts`, `donated-erc20` and `staking/cst/deposits`.
+
+Live balances are retired from v2 scope (decision D10): v2 handlers never
+perform request-time RPC, so `user/balances/{user_addr}` has no v2
+replacement. The indexed Cosmic Token balance is `cosmic-token-summary`'s
+`balanceWei`; wallets read live ETH balances from the chain directly. The
+v1 route keeps serving until the v1 sunset.
+
 ## Contract field mapping
 
 The dashboard's `ContractAddrs` object maps one-for-one to
@@ -261,8 +318,10 @@ last-bid timestamp sentinel is omitted.
 
 ## Remaining endpoint groups
 
-Remaining user-scoped transfer, token, marketing and live-balance histories,
-global staking statistics, RandomWalk resources, CosmicToken statistics and
-marketing-wallet configuration stay on v1 until their dedicated v2 sprints
-land. Their presence does not require continued use of the v1 dashboard, the
-v1 user mega-response, or the v1 winnings, donations and staking routes.
+The user-scoped surface is fully mapped. The global token directories
+(`cst/list/all`, `cst/info`, name views, distribution, per-token
+transfers), CosmicToken statistics and holder views, supply histories,
+global marketing history, marketing-wallet configuration, global staking
+statistics and the RandomWalk resources stay on v1 until their dedicated
+v2 sprints land. Their presence does not require continued use of any
+v1 user-scoped route.

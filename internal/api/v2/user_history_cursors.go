@@ -18,6 +18,9 @@ const (
 	userEventResourceDonatedNfts       userEventResource = "donatedNfts"
 	userEventResourceCstStakingActions userEventResource = "cstStakingActions"
 	userEventResourceRwStakingActions  userEventResource = "randomWalkStakingActions"
+	userEventResourceCsTransfers       userEventResource = "cosmicSignatureTransfers"
+	userEventResourceCtTransfers       userEventResource = "cosmicTokenTransfers"
+	userEventResourceMarketingRewards  userEventResource = "marketingRewards"
 )
 
 const userEventCursorVersion = 1
@@ -79,7 +82,10 @@ func validUserEventResource(resource userEventResource) bool {
 		userEventResourceNftDonations,
 		userEventResourceDonatedNfts,
 		userEventResourceCstStakingActions,
-		userEventResourceRwStakingActions:
+		userEventResourceRwStakingActions,
+		userEventResourceCsTransfers,
+		userEventResourceCtTransfers,
+		userEventResourceMarketingRewards:
 		return true
 	default:
 		return false

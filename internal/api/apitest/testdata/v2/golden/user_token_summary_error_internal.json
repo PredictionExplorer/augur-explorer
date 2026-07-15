@@ -1,0 +1,11 @@
+{
+  "status": 500,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The request could not be completed.",
+    "instance": "/api/v2/cosmicgame/users/0x2100000000000000000000000000000000000021/cosmic-token-summary",
+    "status": 500,
+    "title": "Internal server error",
+    "type": "https://api.cosmicsignature.com/problems/internal"
+  }
+}

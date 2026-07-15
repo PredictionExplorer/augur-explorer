@@ -114,6 +114,16 @@ type userStakingReader interface {
 	UserStakingTokenRewardDepositsPage(context.Context, int64, int64, *cgstore.UserStakingTokenDepositPageCursor, int) ([]cgstore.UserStakingTokenRewardDepositRecord, bool, error)
 }
 
+type userActivityReader interface {
+	UserAddressID(context.Context, string) (int64, error)
+	UserCosmicSignatureTokensPage(context.Context, int64, *cgstore.UserTokenPageCursor, int) ([]cgstore.UserOwnedTokenRecord, bool, error)
+	UserCosmicSignatureTransfersPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserCosmicSignatureTransferRecord, bool, error)
+	UserCosmicTokenTransfersPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserCosmicTokenTransferRecord, bool, error)
+	UserMarketingRewardsPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserMarketingRewardRecord, bool, error)
+	UserCosmicTokenSummaryV2(context.Context, int64) (cgstore.UserCosmicTokenSummaryRecord, error)
+	UserPendingWinnings(context.Context, int64) (cgstore.UserPendingWinningsRecord, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -136,6 +146,7 @@ type Server struct {
 	users             userReader
 	userHistories     userHistoryReader
 	userStaking       userStakingReader
+	userActivity      userActivityReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -169,7 +180,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -200,6 +211,7 @@ func newServer(
 	users userReader,
 	userHistories userHistoryReader,
 	userStaking userStakingReader,
+	userActivity userActivityReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -242,6 +254,9 @@ func newServer(
 	if userStaking == nil {
 		return nil, errors.New("api v2: user-staking repository is required")
 	}
+	if userActivity == nil {
+		return nil, errors.New("api v2: user-activity repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -263,6 +278,7 @@ func newServer(
 		users:             users,
 		userHistories:     userHistories,
 		userStaking:       userStaking,
+		userActivity:      userActivity,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

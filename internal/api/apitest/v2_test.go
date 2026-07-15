@@ -74,6 +74,13 @@ const (
 	v2ListUserTokDeps    = "/api/v2/cosmicgame/users/{address}/staking/cst/token-rewards/{nftTokenId}/deposits"
 	v2ListUserRwActions  = "/api/v2/cosmicgame/users/{address}/staking/random-walk/actions"
 	v2ListUserRwStaked   = "/api/v2/cosmicgame/users/{address}/staking/random-walk/staked-tokens"
+	// #nosec G101 -- route templates, not credentials.
+	v2ListUserCsTokens   = "/api/v2/cosmicgame/users/{address}/cosmic-signature-tokens"
+	v2ListUserCsXfers    = "/api/v2/cosmicgame/users/{address}/cosmic-signature-transfers"
+	v2GetUserCtSummary   = "/api/v2/cosmicgame/users/{address}/cosmic-token-summary"
+	v2ListUserCtXfers    = "/api/v2/cosmicgame/users/{address}/cosmic-token-transfers"
+	v2ListUserMktRewards = "/api/v2/cosmicgame/users/{address}/marketing-rewards"
+	v2GetUserPendingWins = "/api/v2/cosmicgame/users/{address}/pending-winnings"
 )
 
 type v2GoldenCase struct {
@@ -1000,6 +1007,346 @@ func TestAPIV2UserStaking(t *testing.T) {
 			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards/1/deposits",
 			template:   v2ListUserTokDeps,
 			pathParams: map[string]string{"address": addrAlice, "nftTokenId": "1"},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2UserActivity(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	const (
+		indexedZeroAddress = "0x2800000000000000000000000000000000000028"
+		unindexedAddress   = "0x9900000000000000000000000000000000000099"
+	)
+	eventCursor := func(address, resource string, eventLogID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) + `,"k":` + strconv.Quote(resource) +
+				`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`,
+		))
+	}
+	ownedTokenCursor := func(address string, tokenID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) +
+				`,"t":` + strconv.FormatInt(tokenID, 10) + `}`,
+		))
+	}
+
+	// Bob owns three tokens (2, 5, 9); a two-item page crosses a real
+	// continuation cursor.
+	tokensPath := "/api/v2/cosmicgame/users/" + addrBob + "/cosmic-signature-tokens?limit=2"
+	firstTokens := h.get(t, tokensPath)
+	if firstTokens.Code != http.StatusOK {
+		t.Fatalf("first token page: status=%d body=%s", firstTokens.Code, firstTokens.Body.String())
+	}
+	var tokenPage apiv2.CosmicGameUserCosmicSignatureTokenPage
+	if err := json.Unmarshal(firstTokens.Body.Bytes(), &tokenPage); err != nil {
+		t.Fatalf("decoding first token page: %v", err)
+	}
+	if tokenPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first token page did not return a continuation cursor")
+	}
+
+	// Alice's Cosmic Token ledger is four events; a two-item page crosses
+	// a real continuation cursor.
+	ctTransfersPath := "/api/v2/cosmicgame/users/" + addrAlice + "/cosmic-token-transfers?limit=2"
+	firstCtTransfers := h.get(t, ctTransfersPath)
+	if firstCtTransfers.Code != http.StatusOK {
+		t.Fatalf("first ct-transfer page: status=%d body=%s",
+			firstCtTransfers.Code, firstCtTransfers.Body.String())
+	}
+	var ctTransferPage apiv2.CosmicGameUserCosmicTokenTransferPage
+	if err := json.Unmarshal(firstCtTransfers.Body.Bytes(), &ctTransferPage); err != nil {
+		t.Fatalf("decoding first ct-transfer page: %v", err)
+	}
+	if ctTransferPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first ct-transfer page did not return a continuation cursor")
+	}
+
+	// Dave's NFT ledger is three events (mint in, transfer out, mint in).
+	csTransfersPath := "/api/v2/cosmicgame/users/" + addrDave + "/cosmic-signature-transfers?limit=1"
+	firstCsTransfers := h.get(t, csTransfersPath)
+	if firstCsTransfers.Code != http.StatusOK {
+		t.Fatalf("first cs-transfer page: status=%d body=%s",
+			firstCsTransfers.Code, firstCsTransfers.Body.String())
+	}
+	var csTransferPage apiv2.CosmicGameUserCosmicSignatureTransferPage
+	if err := json.Unmarshal(firstCsTransfers.Body.Bytes(), &csTransferPage); err != nil {
+		t.Fatalf("decoding first cs-transfer page: %v", err)
+	}
+	if csTransferPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first cs-transfer page did not return a continuation cursor")
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "user_tokens_bob_first_page",
+			target:     tokensPath,
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_tokens_bob_next_page",
+			target:     tokensPath + "&cursor=" + *tokenPage.Meta.NextCursor,
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_tokens_bob_exhausted",
+			target:     tokensPath + "&cursor=" + ownedTokenCursor(addrBob, 9),
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_tokens_alice_named_and_chrono",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/cosmic-signature-tokens",
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_tokens_carol_staker_and_lastcst",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/cosmic-signature-tokens",
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_tokens_empty_unindexed",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/cosmic-signature-tokens",
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_tokens_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address/cosmic-signature-tokens",
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_tokens_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/cosmic-signature-tokens?limit=201",
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_tokens_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/cosmic-signature-tokens?cursor=bad",
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_tokens_error_cross_user_cursor",
+			target:     tokensPath + "&cursor=" + ownedTokenCursor(addrAlice, 1),
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name: "user_tokens_error_cross_resource_cursor",
+			target: tokensPath + "&cursor=" +
+				base64.RawURLEncoding.EncodeToString([]byte(
+					`{"v":1,"a":`+strconv.Quote(addrBob)+`,"k":"cstStakedTokens","t":5}`)),
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_tokens_error_internal",
+			target:     tokensPath,
+			template:   v2ListUserCsTokens,
+			pathParams: map[string]string{"address": addrBob},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_cs_transfers_dave_first_page",
+			target:     csTransfersPath,
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_cs_transfers_dave_next_page",
+			target:     csTransfersPath + "&cursor=" + *csTransferPage.Meta.NextCursor,
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_cs_transfers_bob_incoming",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/cosmic-signature-transfers",
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name: "user_cs_transfers_exhausted",
+			target: "/api/v2/cosmicgame/users/" + addrDave +
+				"/cosmic-signature-transfers?cursor=" +
+				eventCursor(addrDave, "cosmicSignatureTransfers", 5027),
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_cs_transfers_empty_unindexed",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/cosmic-signature-transfers",
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name: "user_cs_transfers_error_cross_resource_cursor",
+			target: csTransfersPath + "&cursor=" +
+				eventCursor(addrDave, "cosmicTokenTransfers", 5027),
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_cs_transfers_error_internal",
+			target:     csTransfersPath,
+			template:   v2ListUserCsXfers,
+			pathParams: map[string]string{"address": addrDave},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_ct_transfers_alice_first_page",
+			target:     ctTransfersPath,
+			template:   v2ListUserCtXfers,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_ct_transfers_alice_next_page",
+			target:     ctTransfersPath + "&cursor=" + *ctTransferPage.Meta.NextCursor,
+			template:   v2ListUserCtXfers,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_ct_transfers_carol_burn",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/cosmic-token-transfers",
+			template:   v2ListUserCtXfers,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name: "user_ct_transfers_exhausted",
+			target: "/api/v2/cosmicgame/users/" + addrAlice +
+				"/cosmic-token-transfers?cursor=" +
+				eventCursor(addrAlice, "cosmicTokenTransfers", 5005),
+			template:   v2ListUserCtXfers,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name: "user_ct_transfers_error_cross_user_cursor",
+			target: ctTransfersPath + "&cursor=" +
+				eventCursor(addrBob, "cosmicTokenTransfers", 5049),
+			template:   v2ListUserCtXfers,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name: "user_ct_transfers_error_cross_resource_cursor",
+			target: ctTransfersPath + "&cursor=" +
+				eventCursor(addrAlice, "marketingRewards", 5049),
+			template:   v2ListUserCtXfers,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_marketing_rewards_emma",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/marketing-rewards",
+			template:   v2ListUserMktRewards,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name: "user_marketing_rewards_exhausted",
+			target: "/api/v2/cosmicgame/users/" + addrEmma +
+				"/marketing-rewards?cursor=" + eventCursor(addrEmma, "marketingRewards", 5017),
+			template:   v2ListUserMktRewards,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_marketing_rewards_alice_none",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/marketing-rewards",
+			template:   v2ListUserMktRewards,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_marketing_rewards_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/marketing-rewards?limit=0",
+			template:   v2ListUserMktRewards,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_token_summary_alice",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/cosmic-token-summary",
+			template:   v2GetUserCtSummary,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_token_summary_carol_negative_net",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/cosmic-token-summary",
+			template:   v2GetUserCtSummary,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_token_summary_indexed_zero",
+			target:     "/api/v2/cosmicgame/users/" + indexedZeroAddress + "/cosmic-token-summary",
+			template:   v2GetUserCtSummary,
+			pathParams: map[string]string{"address": indexedZeroAddress},
+		},
+		{
+			name:       "user_token_summary_unindexed_zero",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/cosmic-token-summary",
+			template:   v2GetUserCtSummary,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_token_summary_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address/cosmic-token-summary",
+			template:   v2GetUserCtSummary,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_token_summary_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/cosmic-token-summary",
+			template:   v2GetUserCtSummary,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_pending_winnings_alice_deposits",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/pending-winnings",
+			template:   v2GetUserPendingWins,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_pending_winnings_bob_staking_reward",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/pending-winnings",
+			template:   v2GetUserPendingWins,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_pending_winnings_emma_donated_nft",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/pending-winnings",
+			template:   v2GetUserPendingWins,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_pending_winnings_unindexed_zero",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/pending-winnings",
+			template:   v2GetUserPendingWins,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_pending_winnings_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address/pending-winnings",
+			template:   v2GetUserPendingWins,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_pending_winnings_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/pending-winnings",
+			template:   v2GetUserPendingWins,
+			pathParams: map[string]string{"address": addrAlice},
 			ctx:        cancelledCtx,
 		},
 	}
