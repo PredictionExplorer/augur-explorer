@@ -16,6 +16,8 @@ func TestUserEventCursorRoundTrip(t *testing.T) {
 		userEventResourceErc20Donations,
 		userEventResourceNftDonations,
 		userEventResourceDonatedNfts,
+		userEventResourceCstStakingActions,
+		userEventResourceRwStakingActions,
 	} {
 		want := userEventCursor{
 			Version:    userEventCursorVersion,

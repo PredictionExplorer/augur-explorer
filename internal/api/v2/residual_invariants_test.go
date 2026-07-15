@@ -188,6 +188,96 @@ func TestPaginatedHandlersRejectOversizedRepositoryPages(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "user staking actions",
+			path: "/api/v2/cosmicgame/users/" + userCursorAlice + "/staking/cst/actions?limit=1",
+			configure: func(server *Server) {
+				first := userStakingActionAt(cgstore.UserStakingActionUnstake, 300)
+				second := userStakingActionAt(cgstore.UserStakingActionStake, 290)
+				server.userStaking = fakeUserStakingReader{
+					cstActions: func(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserStakingActionRecord, bool, error) {
+						return []cgstore.UserStakingActionRecord{first, second}, false, nil
+					},
+				}
+			},
+		},
+		{
+			name: "user staked tokens",
+			path: "/api/v2/cosmicgame/users/" + userCursorAlice + "/staking/cst/staked-tokens?limit=1",
+			configure: func(server *Server) {
+				server.userStaking = fakeUserStakingReader{
+					cstStaked: func(context.Context, int64, *cgstore.UserStakingTokenPageCursor, int) ([]cgstore.UserStakedCstTokenRecord, bool, error) {
+						return []cgstore.UserStakedCstTokenRecord{
+							userStakedCstTokenAt(5),
+							userStakedCstTokenAt(9),
+						}, false, nil
+					},
+				}
+			},
+		},
+		{
+			name: "user staking deposits",
+			path: "/api/v2/cosmicgame/users/" + userCursorAlice + "/staking/cst/deposits?limit=1",
+			configure: func(server *Server) {
+				server.userStaking = fakeUserStakingReader{
+					deposits: func(context.Context, int64, *bool, *cgstore.UserStakingDepositPageCursor, int) ([]cgstore.UserStakingDepositRecord, bool, error) {
+						return []cgstore.UserStakingDepositRecord{
+							userStakingDepositAt(502),
+							userStakingDepositAt(501),
+						}, false, nil
+					},
+				}
+			},
+		},
+		{
+			name: "user staking deposit rewards",
+			path: "/api/v2/cosmicgame/users/" + userCursorAlice + "/staking/cst/deposits/501/rewards?limit=1",
+			configure: func(server *Server) {
+				reward := cgstore.UserStakingDepositRewardRecord{
+					StakerAid: 1, ActionID: 2, TokenID: 5, RewardWei: "1",
+				}
+				second := reward
+				second.ActionID = 7
+				server.userStaking = fakeUserStakingReader{
+					depositReward: func(context.Context, int64, int64, *cgstore.UserStakingRewardPageCursor, int) ([]cgstore.UserStakingDepositRewardRecord, bool, error) {
+						return []cgstore.UserStakingDepositRewardRecord{reward, second}, false, nil
+					},
+				}
+			},
+		},
+		{
+			name: "user staking token rewards",
+			path: "/api/v2/cosmicgame/users/" + userCursorAlice + "/staking/cst/token-rewards?limit=1",
+			configure: func(server *Server) {
+				reward := cgstore.UserStakingTokenRewardRecord{
+					TokenID: 1, TotalWei: "2", CollectedWei: "1", PendingWei: "1",
+				}
+				second := reward
+				second.TokenID = 5
+				server.userStaking = fakeUserStakingReader{
+					tokenRewards: func(context.Context, int64, *cgstore.UserStakingTokenPageCursor, int) ([]cgstore.UserStakingTokenRewardRecord, bool, error) {
+						return []cgstore.UserStakingTokenRewardRecord{reward, second}, false, nil
+					},
+				}
+			},
+		},
+		{
+			name: "user staking token reward deposits",
+			path: "/api/v2/cosmicgame/users/" + userCursorAlice + "/staking/cst/token-rewards/5/deposits?limit=1",
+			configure: func(server *Server) {
+				deposit := cgstore.UserStakingTokenRewardDepositRecord{
+					Tx:        validDonationTransaction(),
+					StakerAid: 1, DepositID: 501, RoundNum: 0, RewardWei: "1",
+				}
+				second := deposit
+				second.DepositID = 502
+				server.userStaking = fakeUserStakingReader{
+					tokenDeposits: func(context.Context, int64, int64, *cgstore.UserStakingTokenDepositPageCursor, int) ([]cgstore.UserStakingTokenRewardDepositRecord, bool, error) {
+						return []cgstore.UserStakingTokenRewardDepositRecord{deposit, second}, false, nil
+					},
+				}
+			},
+		},
 	}
 
 	for _, test := range tests {

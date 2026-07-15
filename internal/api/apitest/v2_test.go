@@ -66,6 +66,14 @@ const (
 	v2ListUserNftDons    = "/api/v2/cosmicgame/users/{address}/nft-donations"
 	v2ListUserDonatedNft = "/api/v2/cosmicgame/users/{address}/donated-nfts"
 	v2ListUserDonated20  = "/api/v2/cosmicgame/users/{address}/donated-erc20"
+	v2ListUserCstActions = "/api/v2/cosmicgame/users/{address}/staking/cst/actions"
+	v2ListUserCstStaked  = "/api/v2/cosmicgame/users/{address}/staking/cst/staked-tokens"
+	v2ListUserDeposits2  = "/api/v2/cosmicgame/users/{address}/staking/cst/deposits"
+	v2ListUserDepRewards = "/api/v2/cosmicgame/users/{address}/staking/cst/deposits/{depositId}/rewards"
+	v2ListUserTokRewards = "/api/v2/cosmicgame/users/{address}/staking/cst/token-rewards"
+	v2ListUserTokDeps    = "/api/v2/cosmicgame/users/{address}/staking/cst/token-rewards/{nftTokenId}/deposits"
+	v2ListUserRwActions  = "/api/v2/cosmicgame/users/{address}/staking/random-walk/actions"
+	v2ListUserRwStaked   = "/api/v2/cosmicgame/users/{address}/staking/random-walk/staked-tokens"
 )
 
 type v2GoldenCase struct {
@@ -632,6 +640,366 @@ func TestAPIV2UserHistories(t *testing.T) {
 			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/donated-erc20",
 			template:   v2ListUserDonated20,
 			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2UserStaking(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	const unindexedAddress = "0x9900000000000000000000000000000000000099"
+	actionCursor := func(address, resource string, eventLogID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) + `,"k":` + strconv.Quote(resource) +
+				`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`,
+		))
+	}
+	tokenCursor := func(address, resource string, tokenID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) + `,"k":` + strconv.Quote(resource) +
+				`,"t":` + strconv.FormatInt(tokenID, 10) + `}`,
+		))
+	}
+	depositCursor := func(address string, depositID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) +
+				`,"d":` + strconv.FormatInt(depositID, 10) + `}`,
+		))
+	}
+	depositRewardCursor := func(address string, depositID, actionID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) +
+				`,"d":` + strconv.FormatInt(depositID, 10) +
+				`,"s":` + strconv.FormatInt(actionID, 10) + `}`,
+		))
+	}
+	tokenDepositCursor := func(address string, tokenID, depositID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) +
+				`,"t":` + strconv.FormatInt(tokenID, 10) +
+				`,"d":` + strconv.FormatInt(depositID, 10) + `}`,
+		))
+	}
+
+	// Alice's CST history is two events (stake 5051, unstake 5056); a
+	// one-item page walk crosses a real continuation cursor.
+	actionsPath := "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/actions?limit=1"
+	firstActions := h.get(t, actionsPath)
+	if firstActions.Code != http.StatusOK {
+		t.Fatalf("first action page: status=%d body=%s", firstActions.Code, firstActions.Body.String())
+	}
+	var actionPage apiv2.CosmicGameUserCstStakingActionPage
+	if err := json.Unmarshal(firstActions.Body.Bytes(), &actionPage); err != nil {
+		t.Fatalf("decoding first action page: %v", err)
+	}
+	if actionPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first action page did not return a continuation cursor")
+	}
+
+	rwalkActionsPath := "/api/v2/cosmicgame/users/" + addrCarol + "/staking/random-walk/actions?limit=1"
+	firstRwalkActions := h.get(t, rwalkActionsPath)
+	if firstRwalkActions.Code != http.StatusOK {
+		t.Fatalf("first rwalk action page: status=%d body=%s",
+			firstRwalkActions.Code, firstRwalkActions.Body.String())
+	}
+	var rwalkActionPage apiv2.CosmicGameUserRandomWalkStakingActionPage
+	if err := json.Unmarshal(firstRwalkActions.Body.Bytes(), &rwalkActionPage); err != nil {
+		t.Fatalf("decoding first rwalk action page: %v", err)
+	}
+	if rwalkActionPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first rwalk action page did not return a continuation cursor")
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "user_staking_cst_actions_first_page",
+			target:     actionsPath,
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_cst_actions_next_page",
+			target:     actionsPath + "&cursor=" + *actionPage.Meta.NextCursor,
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_cst_actions_exhausted",
+			target:     actionsPath + "&cursor=" + actionCursor(addrAlice, "cstStakingActions", 5051),
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_cst_actions_bob_stake_only",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/actions",
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_cst_actions_empty_unindexed",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/staking/cst/actions",
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_staking_cst_actions_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address/staking/cst/actions",
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_staking_cst_actions_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/actions?limit=201",
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_cst_actions_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/actions?cursor=bad",
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_cst_actions_error_cross_user_cursor",
+			target:     actionsPath + "&cursor=" + actionCursor(addrBob, "cstStakingActions", 5052),
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name: "user_staking_cst_actions_error_cross_resource_cursor",
+			target: actionsPath + "&cursor=" +
+				actionCursor(addrAlice, "randomWalkStakingActions", 5056),
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_cst_actions_error_internal",
+			target:     actionsPath,
+			template:   v2ListUserCstActions,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_staking_rwalk_actions_first_page",
+			target:     rwalkActionsPath,
+			template:   v2ListUserRwActions,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_staking_rwalk_actions_next_page",
+			target:     rwalkActionsPath + "&cursor=" + *rwalkActionPage.Meta.NextCursor,
+			template:   v2ListUserRwActions,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_staking_rwalk_actions_bob_dual_staker",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/random-walk/actions",
+			template:   v2ListUserRwActions,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_rwalk_actions_error_cross_resource_cursor",
+			target:     rwalkActionsPath + "&cursor=" + actionCursor(addrCarol, "cstStakingActions", 5057),
+			template:   v2ListUserRwActions,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_staking_cst_staked_tokens_bob",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/staked-tokens",
+			template:   v2ListUserCstStaked,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_cst_staked_tokens_alice_after_unstake",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/staked-tokens",
+			template:   v2ListUserCstStaked,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name: "user_staking_cst_staked_tokens_exhausted",
+			target: "/api/v2/cosmicgame/users/" + addrBob +
+				"/staking/cst/staked-tokens?cursor=" + tokenCursor(addrBob, "cstStakedTokens", 5),
+			template:   v2ListUserCstStaked,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name: "user_staking_cst_staked_tokens_error_cross_resource_cursor",
+			target: "/api/v2/cosmicgame/users/" + addrBob +
+				"/staking/cst/staked-tokens?cursor=" + tokenCursor(addrBob, "cstTokenRewards", 5),
+			template:   v2ListUserCstStaked,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_rwalk_staked_tokens_dave",
+			target:     "/api/v2/cosmicgame/users/" + addrDave + "/staking/random-walk/staked-tokens",
+			template:   v2ListUserRwStaked,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_staking_rwalk_staked_tokens_carol_after_unstake",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/staking/random-walk/staked-tokens",
+			template:   v2ListUserRwStaked,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_staking_deposits_alice_fully_claimed",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/deposits",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_deposits_bob_pending",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/deposits",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_deposits_alice_claimed_filter",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/deposits?claimed=true",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_deposits_bob_claimed_filter_empty",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/deposits?claimed=true",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_deposits_bob_pending_filter",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/deposits?claimed=false",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name: "user_staking_deposits_exhausted",
+			target: "/api/v2/cosmicgame/users/" + addrBob +
+				"/staking/cst/deposits?cursor=" + depositCursor(addrBob, 501),
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_deposits_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/deposits?cursor=bad",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_staking_deposits_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/deposits",
+			template:   v2ListUserDeposits2,
+			pathParams: map[string]string{"address": addrBob},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_staking_deposit_rewards_alice_claimed",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/deposits/501/rewards",
+			template:   v2ListUserDepRewards,
+			pathParams: map[string]string{"address": addrAlice, "depositId": "501"},
+		},
+		{
+			name:       "user_staking_deposit_rewards_bob_pending",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/deposits/501/rewards",
+			template:   v2ListUserDepRewards,
+			pathParams: map[string]string{"address": addrBob, "depositId": "501"},
+		},
+		{
+			name:       "user_staking_deposit_rewards_carol_uninvolved",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/staking/cst/deposits/501/rewards",
+			template:   v2ListUserDepRewards,
+			pathParams: map[string]string{"address": addrCarol, "depositId": "501"},
+		},
+		{
+			name:       "user_staking_deposit_rewards_error_missing_deposit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/deposits/999/rewards",
+			template:   v2ListUserDepRewards,
+			pathParams: map[string]string{"address": addrAlice, "depositId": "999"},
+		},
+		{
+			name:       "user_staking_deposit_rewards_error_negative_deposit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/deposits/-1/rewards",
+			template:   v2ListUserDepRewards,
+			pathParams: map[string]string{"address": addrAlice, "depositId": "-1"},
+		},
+		{
+			name: "user_staking_deposit_rewards_error_cross_deposit_cursor",
+			target: "/api/v2/cosmicgame/users/" + addrAlice +
+				"/staking/cst/deposits/999/rewards?cursor=" + depositRewardCursor(addrAlice, 501, 1),
+			template:   v2ListUserDepRewards,
+			pathParams: map[string]string{"address": addrAlice, "depositId": "999"},
+		},
+		{
+			name:       "user_staking_token_rewards_alice_collected",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards",
+			template:   v2ListUserTokRewards,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_token_rewards_bob_pending",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/token-rewards",
+			template:   v2ListUserTokRewards,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name: "user_staking_token_rewards_exhausted",
+			target: "/api/v2/cosmicgame/users/" + addrAlice +
+				"/staking/cst/token-rewards?cursor=" + tokenCursor(addrAlice, "cstTokenRewards", 1),
+			template:   v2ListUserTokRewards,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_token_rewards_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards?cursor=bad",
+			template:   v2ListUserTokRewards,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_staking_token_deposits_alice_token_1",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards/1/deposits",
+			template:   v2ListUserTokDeps,
+			pathParams: map[string]string{"address": addrAlice, "nftTokenId": "1"},
+		},
+		{
+			name:       "user_staking_token_deposits_bob_token_5",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/staking/cst/token-rewards/5/deposits",
+			template:   v2ListUserTokDeps,
+			pathParams: map[string]string{"address": addrBob, "nftTokenId": "5"},
+		},
+		{
+			name:       "user_staking_token_deposits_alice_no_rewards_on_token_5",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards/5/deposits",
+			template:   v2ListUserTokDeps,
+			pathParams: map[string]string{"address": addrAlice, "nftTokenId": "5"},
+		},
+		{
+			name:       "user_staking_token_deposits_error_unminted_token",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards/999/deposits",
+			template:   v2ListUserTokDeps,
+			pathParams: map[string]string{"address": addrAlice, "nftTokenId": "999"},
+		},
+		{
+			name: "user_staking_token_deposits_error_cross_token_cursor",
+			target: "/api/v2/cosmicgame/users/" + addrAlice +
+				"/staking/cst/token-rewards/1/deposits?cursor=" + tokenDepositCursor(addrAlice, 5, 501),
+			template:   v2ListUserTokDeps,
+			pathParams: map[string]string{"address": addrAlice, "nftTokenId": "1"},
+		},
+		{
+			name:       "user_staking_token_deposits_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/staking/cst/token-rewards/1/deposits",
+			template:   v2ListUserTokDeps,
+			pathParams: map[string]string{"address": addrAlice, "nftTokenId": "1"},
 			ctx:        cancelledCtx,
 		},
 	}

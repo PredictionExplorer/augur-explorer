@@ -100,6 +100,20 @@ type userHistoryReader interface {
 	UserDonatedErc20Page(context.Context, int64, *cgstore.UserDonatedErc20PageCursor, int) ([]cgstore.UserDonatedErc20Record, bool, error)
 }
 
+type userStakingReader interface {
+	UserAddressID(context.Context, string) (int64, error)
+	UserCstStakingActionsPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserStakingActionRecord, bool, error)
+	UserRwalkStakingActionsPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserStakingActionRecord, bool, error)
+	UserStakedCstTokensPage(context.Context, int64, *cgstore.UserStakingTokenPageCursor, int) ([]cgstore.UserStakedCstTokenRecord, bool, error)
+	UserStakedRwalkTokensPage(context.Context, int64, *cgstore.UserStakingTokenPageCursor, int) ([]cgstore.UserStakedRwalkTokenRecord, bool, error)
+	UserStakingDepositsPage(context.Context, int64, *bool, *cgstore.UserStakingDepositPageCursor, int) ([]cgstore.UserStakingDepositRecord, bool, error)
+	StakingDepositExists(context.Context, int64) (bool, error)
+	UserStakingDepositRewardsPage(context.Context, int64, int64, *cgstore.UserStakingRewardPageCursor, int) ([]cgstore.UserStakingDepositRewardRecord, bool, error)
+	UserStakingTokenRewardsPage(context.Context, int64, *cgstore.UserStakingTokenPageCursor, int) ([]cgstore.UserStakingTokenRewardRecord, bool, error)
+	CosmicSignatureTokenExists(context.Context, int64) (bool, error)
+	UserStakingTokenRewardDepositsPage(context.Context, int64, int64, *cgstore.UserStakingTokenDepositPageCursor, int) ([]cgstore.UserStakingTokenRewardDepositRecord, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -121,6 +135,7 @@ type Server struct {
 	participants      participantReader
 	users             userReader
 	userHistories     userHistoryReader
+	userStaking       userStakingReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -154,7 +169,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +199,7 @@ func newServer(
 	participants participantReader,
 	users userReader,
 	userHistories userHistoryReader,
+	userStaking userStakingReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -223,6 +239,9 @@ func newServer(
 	if userHistories == nil {
 		return nil, errors.New("api v2: user-history repository is required")
 	}
+	if userStaking == nil {
+		return nil, errors.New("api v2: user-staking repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -243,6 +262,7 @@ func newServer(
 		participants:      participants,
 		users:             users,
 		userHistories:     userHistories,
+		userStaking:       userStaking,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

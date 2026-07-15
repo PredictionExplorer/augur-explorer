@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Address must be a 20-byte 0x-prefixed hexadecimal Ethereum address.",
+    "instance": "/api/v2/cosmicgame/users/not-an-address/staking/cst/actions",
+    "status": 400,
+    "title": "Invalid parameter",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

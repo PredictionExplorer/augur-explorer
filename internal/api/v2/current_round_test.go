@@ -266,6 +266,7 @@ func newCurrentRoundTestServer(
 		fakeParticipantReader{},
 		fakeUserReader{},
 		fakeUserHistoryReader{},
+		fakeUserStakingReader{},
 		state,
 		logger,
 	)

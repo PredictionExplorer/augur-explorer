@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The cursor is malformed, unsupported, or belongs to another wallet or deposit.",
+    "instance": "/api/v2/cosmicgame/users/0x2100000000000000000000000000000000000021/staking/cst/deposits/999/rewards",
+    "status": 400,
+    "title": "Invalid cursor",
+    "type": "https://api.cosmicsignature.com/problems/invalid-cursor"
+  }
+}

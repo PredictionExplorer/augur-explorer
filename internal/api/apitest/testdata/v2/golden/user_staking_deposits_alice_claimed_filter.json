@@ -1,0 +1,29 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "amountPerTokenWei": "1000000000000000000",
+        "blockNumber": 115,
+        "claimedNftCount": 1,
+        "claimedWei": "1000000000000000000",
+        "depositId": 501,
+        "eventLogId": 5055,
+        "fullyClaimed": true,
+        "occurredAt": "2026-01-01T00:25:00Z",
+        "pendingNftCount": 0,
+        "pendingWei": "0",
+        "rewardWei": "1000000000000000000",
+        "round": 0,
+        "stakedNftCount": 1,
+        "totalDepositWei": "2000000000000000000",
+        "totalStakedNfts": 2,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001016"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "collectedWei": "0",
+        "nftTokenId": 5,
+        "pendingWei": "1000000000000000000",
+        "totalWei": "1000000000000000000"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

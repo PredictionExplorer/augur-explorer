@@ -65,10 +65,10 @@ The profile fields map as follows:
 
 A valid wallet absent from the index returns a zero-valued `200` profile and
 an empty bid page, so clients do not need a special not-found state. The v1
-mega-response's staking-action, transfer and owned-NFT arrays remain on v1
-until bounded user sub-resources land. Live `user/balances`, CosmicToken
-summary, marketing history and red-box claim status are also intentionally
-deferred.
+mega-response's staking-action arrays are replaced by the user staking
+resources below; its transfer and owned-NFT arrays remain on v1 until
+bounded user sub-resources land. Live `user/balances`, CosmicToken summary,
+marketing history and red-box claim status are also intentionally deferred.
 
 ## CosmicGame user winnings
 
@@ -145,6 +145,75 @@ Winner-and-claimer entitlements are two dedicated resources:
   difference); v2 reconstructs the true donated total, and
   `donated = claimed + remaining` always holds.
 
+## CosmicGame user staking
+
+The staking group replaces twelve v1 paths (fifteen registered routes: the
+three `staking/randomwalk/*` handlers are also mounted under the legacy
+`staking/rwalk/*` aliases) with eight cursor-paginated user resources under
+`/api/v2/cosmicgame/users/{address}/staking/…`. Every wei amount is an exact
+decimal string — the v1 float-ETH fields are removed — and every resource
+answers a valid unindexed wallet with an empty `200` page.
+
+Event histories:
+
+- `staking/cst/actions/by_user/{user_addr}/{offset}/{limit}` becomes
+  `GET …/staking/cst/actions`: one interleaved stake/unstake ledger, newest
+  first by immutable event-log ID with an `actionType` discriminator.
+  Unstake items carry the exact `rewardWei` that unstake transaction
+  collected; stake items never do. **Deliberate correction:** v1 applied
+  `OFFSET/LIMIT` inside each branch of its stake/unstake `UNION`, so pages
+  beyond the first skipped and duplicated events; the v2 cursor pages the
+  merged ledger.
+- `staking/randomwalk/actions/by_user/{user_addr}/{offset}/{limit}` (and its
+  `rwalk` alias) becomes `GET …/staking/random-walk/actions` — the same item
+  shape without reward fields, because RandomWalk staking earns no ETH.
+
+Live staked-token membership:
+
+- `staking/cst/staked_tokens/by_user/{user_addr}` becomes
+  `GET …/staking/cst/staked-tokens`: ascending token order with the locking
+  stake action and the token's mint provenance (`mintRound`, `seed`,
+  optional `tokenName`). The v1 inline mint-record envelope with
+  winner/current-owner fields is not retained — token ownership belongs to
+  the token resources.
+- `staking/randomwalk/staked_tokens/by_user/{user_addr}` (and its `rwalk`
+  alias) becomes `GET …/staking/random-walk/staked-tokens`.
+
+Reward accounting (CST staking wallet only, as in v1):
+
+- `staking/cst/rewards/to_claim/by_user/{user_addr}`,
+  `staking/cst/rewards/collected/by_user/{user_addr}/{offset}/{limit}` and
+  `staking/cst/rewards/by_user/by_deposit/{user_addr}` collapse into one
+  `GET …/staking/cst/deposits` ledger: one row per staking ETH deposit the
+  wallet had staked tokens in, newest deposit first, with the pool-wide
+  deposit (`totalDepositWei`, `totalStakedNfts`, `amountPerTokenWei`) and
+  the wallet's share (`rewardWei = claimedWei + pendingWei`, token counts,
+  `fullyClaimed`). `?claimed=true|false` keeps fully claimed or still
+  pending deposits — v1's `to_claim` view maps to `?claimed=false`.
+- `staking/cst/rewards/action_ids_by_deposit/{user_addr}/{deposit_id}`
+  becomes `GET …/staking/cst/deposits/{depositId}/rewards`: the smallest
+  reward units (stake action, token, exact `rewardWei`, `claimed`) in
+  ascending action order. An unknown deposit answers `404`. The v1 response
+  decorated each row with the *deposit's* transaction mislabeled as claim
+  data; rewards are collected by the token's unstake transaction, which
+  lives on the actions ledger.
+- `staking/cst/rewards/by_user/by_token/summary/{user_addr}` becomes
+  `GET …/staking/cst/token-rewards`: per-token exact
+  `totalWei = collectedWei + pendingWei` (v1 exposed only float ETH).
+- `staking/cst/rewards/by_user/by_token/details/{user_addr}/{token_id}`
+  becomes `GET …/staking/cst/token-rewards/{nftTokenId}/deposits`: the
+  per-deposit rewards one staked token earned, ascending by deposit, with
+  the deposit event identity. An unminted token answers `404`; a minted
+  token the wallet never earned rewards with answers an empty page.
+
+Staker raffle NFT mints need no new endpoints:
+`staking/cst/mints/by_user/{user_addr}` and
+`staking/randomwalk/mints/by_user/{user_addr}` (plus alias) map to the
+existing `GET /api/v2/cosmicgame/users/{address}/raffle-nft-wins` — filter
+client-side on `isStaker` and `isRandomWalk`. The global `staking/*/mints`
+and reward views, `staking/cst/rewards/global` and per-round staking
+statistics remain v1-only until a statistics slice replaces them.
+
 ## Contract field mapping
 
 The dashboard's `ContractAddrs` object maps one-for-one to
@@ -192,8 +261,8 @@ last-bid timestamp sentinel is omitted.
 
 ## Remaining endpoint groups
 
-Remaining user-scoped staking, transfer, token, marketing and live-balance
-histories, RandomWalk resources, CosmicToken statistics and marketing-wallet
-configuration stay on v1 until their dedicated v2 sprints land. Their
-presence does not require continued use of the v1 dashboard, the v1 user
-mega-response, or the v1 winnings and donations routes.
+Remaining user-scoped transfer, token, marketing and live-balance histories,
+global staking statistics, RandomWalk resources, CosmicToken statistics and
+marketing-wallet configuration stay on v1 until their dedicated v2 sprints
+land. Their presence does not require continued use of the v1 dashboard, the
+v1 user mega-response, or the v1 winnings, donations and staking routes.

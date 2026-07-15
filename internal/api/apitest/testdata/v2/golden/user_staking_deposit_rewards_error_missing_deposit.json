@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "No staking deposit exists with that ID.",
+    "instance": "/api/v2/cosmicgame/users/0x2100000000000000000000000000000000000021/staking/cst/deposits/999/rewards",
+    "status": 404,
+    "title": "Staking deposit not found",
+    "type": "https://api.cosmicsignature.com/problems/staking-deposit-not-found"
+  }
+}

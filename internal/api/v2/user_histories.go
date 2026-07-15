@@ -167,6 +167,7 @@ func (s *Server) ListCosmicGameUserRaffleEthDeposits(
 		request.Params.Cursor,
 		request.Params.Limit,
 		userEventResourceRaffleEthDeposits,
+		s.userHistories.UserAddressID,
 		func(ctx context.Context, userAid int64, after *cgstore.UserEventPageCursor, limit int) ([]cgstore.UserRaffleEthDepositRecord, bool, error) {
 			return s.userHistories.UserRaffleEthDepositsPage(ctx, userAid, claimed, after, limit)
 		},
@@ -210,6 +211,7 @@ func (s *Server) ListCosmicGameUserRaffleNftWins(
 		request.Params.Cursor,
 		request.Params.Limit,
 		userEventResourceRaffleNftWins,
+		s.userHistories.UserAddressID,
 		s.userHistories.UserRaffleNftWinsPage,
 		func(record cgstore.UserRaffleNftWinRecord, userAid int64, address string) (bool, int64) {
 			inScope := record.WinnerAid == userAid &&
@@ -250,6 +252,7 @@ func (s *Server) ListCosmicGameUserEthDonations(
 		request.Params.Cursor,
 		request.Params.Limit,
 		userEventResourceEthDonations,
+		s.userHistories.UserAddressID,
 		s.userHistories.EthDonationsByUserPage,
 		func(record cgstore.RoundEthDonationRecord, _ int64, address string) (bool, int64) {
 			return strings.EqualFold(record.DonorAddr, address), record.Tx.EvtLogId
@@ -288,6 +291,7 @@ func (s *Server) ListCosmicGameUserErc20Donations(
 		request.Params.Cursor,
 		request.Params.Limit,
 		userEventResourceErc20Donations,
+		s.userHistories.UserAddressID,
 		s.userHistories.ERC20DonationsByUserPage,
 		func(record cgstore.RoundERC20DonationRecord, _ int64, address string) (bool, int64) {
 			return strings.EqualFold(record.DonorAddr, address), record.Tx.EvtLogId
@@ -326,6 +330,7 @@ func (s *Server) ListCosmicGameUserNftDonations(
 		request.Params.Cursor,
 		request.Params.Limit,
 		userEventResourceNftDonations,
+		s.userHistories.UserAddressID,
 		s.userHistories.NFTDonationsByUserPage,
 		func(record cgstore.RoundNFTDonationRecord, _ int64, address string) (bool, int64) {
 			return strings.EqualFold(record.DonorAddr, address), record.Tx.EvtLogId
@@ -382,6 +387,7 @@ func (s *Server) ListCosmicGameUserDonatedNfts(
 		request.Params.Cursor,
 		request.Params.Limit,
 		userEventResourceDonatedNfts,
+		s.userHistories.UserAddressID,
 		func(ctx context.Context, userAid int64, after *cgstore.UserEventPageCursor, limit int) ([]cgstore.UserDonatedNftRecord, bool, error) {
 			return s.userHistories.UserDonatedNftsPage(ctx, userAid, claimed, after, limit)
 		},
@@ -549,7 +555,8 @@ type userEventPageFetch[T any] func(
 // listUserEventPage centralizes the event-keyed user history flow: address
 // and limit validation, wallet-and-resource scoped cursor decoding, the
 // unindexed-wallet empty page, repository cardinality/scope/order
-// enforcement and continuation-cursor encoding.
+// enforcement and continuation-cursor encoding. resolveAddressID belongs to
+// the reader that backs fetch.
 func listUserEventPage[StoreRecord, APIRecord any](
 	ctx context.Context,
 	s *Server,
@@ -558,6 +565,7 @@ func listUserEventPage[StoreRecord, APIRecord any](
 	cursor *Cursor,
 	requestedLimit *Limit,
 	resource userEventResource,
+	resolveAddressID func(context.Context, string) (int64, error),
 	fetch userEventPageFetch[StoreRecord],
 	identity func(record StoreRecord, userAid int64, address string) (inScope bool, eventLogID int64),
 	mapRecord func(StoreRecord) (APIRecord, error),
@@ -596,7 +604,7 @@ func listUserEventPage[StoreRecord, APIRecord any](
 		after = &cgstore.UserEventPageCursor{EventLogID: decoded.EventLogID}
 	}
 
-	userAid, err := s.userHistories.UserAddressID(ctx, address)
+	userAid, err := resolveAddressID(ctx, address)
 	if errors.Is(err, store.ErrNotFound) {
 		return []APIRecord{}, PageMeta{Limit: limit}, nil
 	}

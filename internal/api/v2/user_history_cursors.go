@@ -16,6 +16,8 @@ const (
 	userEventResourceErc20Donations    userEventResource = "erc20Donations"
 	userEventResourceNftDonations      userEventResource = "nftDonations"
 	userEventResourceDonatedNfts       userEventResource = "donatedNfts"
+	userEventResourceCstStakingActions userEventResource = "cstStakingActions"
+	userEventResourceRwStakingActions  userEventResource = "randomWalkStakingActions"
 )
 
 const userEventCursorVersion = 1
@@ -75,7 +77,9 @@ func validUserEventResource(resource userEventResource) bool {
 		userEventResourceEthDonations,
 		userEventResourceErc20Donations,
 		userEventResourceNftDonations,
-		userEventResourceDonatedNfts:
+		userEventResourceDonatedNfts,
+		userEventResourceCstStakingActions,
+		userEventResourceRwStakingActions:
 		return true
 	default:
 		return false

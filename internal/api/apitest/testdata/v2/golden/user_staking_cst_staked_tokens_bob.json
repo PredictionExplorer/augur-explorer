@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "actionId": 2,
+        "blockNumber": 114,
+        "eventLogId": 5052,
+        "mintRound": 0,
+        "nftTokenId": 5,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000005",
+        "stakedAt": "2026-01-01T00:23:20Z",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001015"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

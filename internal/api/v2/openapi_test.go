@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/getkin/kin-openapi/openapi3"
+
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
@@ -55,6 +57,105 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 	for _, route := range router.Routes() {
 		if route.Method != http.MethodGet {
 			t.Errorf("unexpected method in initial v2 slice: %+v", route)
+		}
+	}
+}
+
+// TestEveryOperationAnswersStableBindingProblems drives every documented
+// operation's generated parameter-binding arms: duplicated and (for typed
+// parameters) malformed query values must always produce the shared RFC 9457
+// problem shape naming the parameter and must never echo the client's value.
+// This pins that no operation can be registered without the custom binding
+// error handler.
+func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
+	t.Parallel()
+
+	spec, err := GetSpec()
+	if err != nil {
+		t.Fatalf("GetSpec: %v", err)
+	}
+	pathValues := map[string]string{
+		"address":    userCursorAlice,
+		"round":      "1",
+		"position":   "1",
+		"depositId":  "501",
+		"nftTokenId": "5",
+	}
+
+	for specPath, item := range spec.Paths.Map() {
+		operation := item.Get
+		if operation == nil {
+			continue
+		}
+		target := specPath
+		for name, value := range pathValues {
+			target = strings.ReplaceAll(target, "{"+name+"}", value)
+		}
+		if strings.Contains(target, "{") {
+			t.Fatalf("unmapped path parameter in %s; extend pathValues", specPath)
+		}
+
+		// Required sibling parameters must bind cleanly so the arm under
+		// test is the one that fires.
+		requiredDefaults := map[string]string{
+			"pool": "bidder",
+			"from": "1767225600",
+			"to":   "1767226600",
+		}
+		requiredQuery := func(except string) string {
+			parts := make([]string, 0, 1)
+			for _, parameterRef := range operation.Parameters {
+				parameter := parameterRef.Value
+				if parameter == nil || parameter.In != openapi3.ParameterInQuery ||
+					!parameter.Required || parameter.Name == except {
+					continue
+				}
+				value, known := requiredDefaults[parameter.Name]
+				if !known {
+					t.Fatalf("no default for required parameter %q of %s; extend requiredDefaults",
+						parameter.Name, specPath)
+				}
+				parts = append(parts, parameter.Name+"="+value)
+			}
+			return strings.Join(parts, "&")
+		}
+
+		for _, parameterRef := range operation.Parameters {
+			parameter := parameterRef.Value
+			if parameter == nil || parameter.In != openapi3.ParameterInQuery {
+				continue
+			}
+			queries := map[string]string{
+				"duplicated": parameter.Name + "=password-super-secret&" + parameter.Name + "=b",
+			}
+			if schema := parameter.Schema; schema != nil && schema.Value != nil &&
+				!schema.Value.Type.Is(openapi3.TypeString) {
+				queries["malformed"] = parameter.Name + "=password-super-secret"
+			}
+			siblings := requiredQuery(parameter.Name)
+			for kind, query := range queries {
+				if siblings != "" {
+					query += "&" + siblings
+				}
+				name := kind + " " + parameter.Name + " on " + specPath
+				t.Run(name, func(t *testing.T) {
+					t.Parallel()
+					server := newTestServer(t, fakeBidReader{})
+					response := serve(t, server, target+"?"+query)
+					assertProblem(t, response, http.StatusBadRequest)
+
+					var problem Problem
+					decodeResponse(t, response, &problem)
+					if problem.Type != problemTypeBase+"invalid-request" ||
+						problem.Detail == nil ||
+						!strings.Contains(*problem.Detail, `"`+parameter.Name+`"`) {
+						t.Fatalf("problem = %+v", problem)
+					}
+					if strings.Contains(response.Body.String(), "password-super-secret") {
+						t.Fatalf("parameter value leaked: %s", response.Body.String())
+					}
+				})
+			}
 		}
 	}
 }

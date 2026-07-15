@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "actionId": 1,
+        "actionType": "unstake",
+        "blockNumber": 116,
+        "eventLogId": 5056,
+        "nftTokenId": 1,
+        "occurredAt": "2026-01-01T00:26:40Z",
+        "rewardWei": "1000000000000000000",
+        "totalStakedNfts": 1,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001017"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJhIjoiMHgyMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDIxIiwiayI6ImNzdFN0YWtpbmdBY3Rpb25zIiwiZSI6NTA1Nn0"
+    }
+  }
+}
