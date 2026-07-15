@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Parameter \"limit\" has an invalid value.",
+    "instance": "/api/v2/cosmicgame/users/0x2200000000000000000000000000000000000022/nft-donations",
+    "status": 400,
+    "title": "Invalid request",
+    "type": "https://api.cosmicsignature.com/problems/invalid-request"
+  }
+}

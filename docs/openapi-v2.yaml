@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.11.0
+  version: 0.12.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -331,6 +331,200 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/CosmicGameUserBidPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/prizes:
+    get:
+      operationId: listCosmicGameUserPrizes
+      summary: List prizes won by one wallet
+      description: |
+        Returns every typed prize the wallet has won across all completed
+        rounds, newest round first with a stable type/winner-index order
+        inside each round. The round-wide `cosmicSignatureStakingEth`
+        allocation never appears because it has no single winner. Raffle
+        ETH claim state lives on the raffle-eth-deposits resource. A valid
+        wallet with no indexed prizes returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserPrizePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/raffle-eth-deposits:
+    get:
+      operationId: listCosmicGameUserRaffleEthDeposits
+      summary: List prize-wallet ETH deposits credited to one wallet
+      description: |
+        Returns the PrizesWallet ETH ledger of one wallet newest first by
+        immutable event-log ID: bidder-raffle and chrono-warrior credits
+        with exact amounts, claim state and the claiming withdrawal when
+        one exists. With the `claimed` filter the collection membership
+        changes as the wallet claims deposits, so a continuation cursor may
+        skip rows claimed while paging; poll again without a cursor for a
+        fresh view. A valid wallet with no indexed deposits returns an
+        empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/DepositClaimedFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserRaffleEthDepositPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/raffle-nft-wins:
+    get:
+      operationId: listCosmicGameUserRaffleNftWins
+      summary: List raffle Cosmic Signature NFTs won by one wallet
+      description: |
+        Returns every raffle NFT win of one wallet newest first by
+        immutable event-log ID, including the accompanying exact CST
+        amount. `isStaker` false is a bidder-raffle win; `isStaker` true
+        with `isRandomWalk` true is a RandomWalk-staker raffle win; and
+        `isStaker` true with `isRandomWalk` false is a Cosmic Signature
+        staker raffle win. A valid wallet with no indexed wins returns an
+        empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserRaffleNftWinPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/eth-donations:
+    get:
+      operationId: listCosmicGameUserEthDonations
+      summary: List direct ETH donations made by one wallet
+      description: |
+        Returns plain and info-carrying direct donations by one donor in
+        newest-first event order across all rounds. A valid wallet with no
+        indexed donations returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserEthDonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/erc20-donations:
+    get:
+      operationId: listCosmicGameUserErc20Donations
+      summary: List ERC-20 donations made by one wallet
+      description: |
+        Returns donation events by one donor in newest-first event order
+        across all rounds. Token amounts are exact base-unit integers
+        because arbitrary ERC-20 tokens need not use 18 decimals. A valid
+        wallet with no indexed donations returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserErc20DonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/nft-donations:
+    get:
+      operationId: listCosmicGameUserNftDonations
+      summary: List NFT donations made by one wallet
+      description: |
+        Returns donation events by one donor in newest-first event order
+        across all rounds. Claim state is deliberately absent here: it
+        belongs to the round winner and lives on the donated-nfts
+        resource, which any wallet can be queried for. A valid wallet with
+        no indexed donations returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserNftDonationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/donated-nfts:
+    get:
+      operationId: listCosmicGameUserDonatedNfts
+      summary: List donated NFTs one wallet won or claimed
+      description: |
+        Returns each donated NFT from a round the wallet won plus each
+        donated NFT the wallet claimed elsewhere (a timeout claim), newest
+        donation first by immutable event-log ID, with per-item claim
+        state and the claiming wallet when claimed. With the `status`
+        filter the collection membership changes as NFTs are claimed, so a
+        continuation cursor may skip rows claimed while paging; poll again
+        without a cursor for a fresh view. A valid wallet with no matching
+        donated NFTs returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/DonatedNftStatusFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserDonatedNftPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/users/{address}/donated-erc20:
+    get:
+      operationId: listCosmicGameUserDonatedErc20
+      summary: List donated ERC-20 entitlements one wallet won or claimed
+      description: |
+        Returns one summary per round and token where the wallet won the
+        round or claimed donated tokens (a timeout claim): exact donated,
+        claimed and remaining base-unit totals plus the latest claim event
+        when one exists. Claimed totals aggregate every claimer of that
+        round and token. Ordered by round newest first with a stable token
+        order inside each round. A valid wallet with no matching
+        entitlements returns an empty page.
+      tags:
+        - CosmicGame users
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameUserDonatedErc20Page"
         "400":
           $ref: "#/components/responses/BadRequest"
         "500":
@@ -708,6 +902,24 @@ components:
       description: Select bidder winners or RandomWalk-staker winners.
       schema:
         $ref: "#/components/schemas/RaffleNftPool"
+    DepositClaimedFilter:
+      name: claimed
+      in: query
+      required: false
+      description: |
+        Keep only claimed (true) or unclaimed (false) deposits. Omit the
+        parameter for the full ledger.
+      schema:
+        type: boolean
+    DonatedNftStatusFilter:
+      name: status
+      in: query
+      required: false
+      description: |
+        Keep only claimed or unclaimed donated NFTs. Omit the parameter
+        for both.
+      schema:
+        $ref: "#/components/schemas/DonatedNftStatus"
     RoiSortParam:
       name: sort
       in: query
@@ -3326,6 +3538,372 @@ components:
             $ref: "#/components/schemas/Bid"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    CosmicGameUserPrizePage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundPrize"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    EthDepositSource:
+      type: string
+      enum:
+        - raffle
+        - chronoWarrior
+    UserDepositWithdrawal:
+      description: The PrizesWallet withdrawal that claimed a deposit.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - transactionHash
+        - occurredAt
+        - beneficiaryAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        beneficiaryAddress:
+          description: |
+            Wallet the funds were paid to. After the claim timeout this can
+            be another wallet than the prize winner.
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    UserRaffleEthDeposit:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - winnerIndex
+        - source
+        - ethAmountWei
+        - claimed
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        winnerIndex:
+          type: integer
+          format: int64
+          minimum: 0
+        source:
+          $ref: "#/components/schemas/EthDepositSource"
+        ethAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        claimed:
+          type: boolean
+        withdrawal:
+          $ref: "#/components/schemas/UserDepositWithdrawal"
+    CosmicGameUserRaffleEthDepositPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRaffleEthDeposit"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    UserRaffleNftWin:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - winnerIndex
+        - nftTokenId
+        - cstAmountWei
+        - isRandomWalk
+        - isStaker
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        winnerIndex:
+          type: integer
+          format: int64
+          minimum: 0
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        cstAmountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        isRandomWalk:
+          type: boolean
+        isStaker:
+          type: boolean
+    CosmicGameUserRaffleNftWinPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRaffleNftWin"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicGameUserEthDonationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundEthDonation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicGameUserErc20DonationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundErc20Donation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicGameUserNftDonationPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundNftDonation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    DonatedNftStatus:
+      type: string
+      enum:
+        - claimed
+        - unclaimed
+    UserDonatedNftClaim:
+      description: The claim event that took a donated NFT out of the prize wallet.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - transactionHash
+        - occurredAt
+        - claimerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        claimerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    UserDonatedNft:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - round
+        - donorAddress
+        - tokenAddress
+        - tokenId
+        - donationIndex
+        - tokenUri
+        - claimed
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        donorAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        donationIndex:
+          type: integer
+          format: int64
+          minimum: 0
+        tokenUri:
+          type: string
+        claimed:
+          type: boolean
+        claim:
+          $ref: "#/components/schemas/UserDonatedNftClaim"
+    CosmicGameUserDonatedNftPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserDonatedNft"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    UserDonatedErc20Claim:
+      description: The most recent claim event of one round-token entitlement.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - transactionHash
+        - occurredAt
+        - claimerAddress
+        - amountBaseUnits
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        claimerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        amountBaseUnits:
+          type: string
+          pattern: "^[0-9]+$"
+    UserDonatedErc20:
+      type: object
+      additionalProperties: false
+      required:
+        - round
+        - tokenAddress
+        - donatedBaseUnits
+        - claimedBaseUnits
+        - remainingBaseUnits
+      properties:
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        tokenAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        donatedBaseUnits:
+          type: string
+          pattern: "^[0-9]+$"
+        claimedBaseUnits:
+          description: Exact total claimed by every wallet for this round and token.
+          type: string
+          pattern: "^[0-9]+$"
+        remainingBaseUnits:
+          type: string
+          pattern: "^[0-9]+$"
+        lastClaim:
+          $ref: "#/components/schemas/UserDonatedErc20Claim"
+    CosmicGameUserDonatedErc20Page:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserDonatedErc20"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
   responses:
     CosmicGameContractAddresses:
       description: Complete deployed CosmicGame contract registry.
@@ -3435,6 +4013,54 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CosmicGameUserBidPage"
+    CosmicGameUserPrizePage:
+      description: One stable page of prizes won by one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserPrizePage"
+    CosmicGameUserRaffleEthDepositPage:
+      description: One page of prize-wallet ETH deposits credited to one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserRaffleEthDepositPage"
+    CosmicGameUserRaffleNftWinPage:
+      description: One stable page of raffle NFTs won by one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserRaffleNftWinPage"
+    CosmicGameUserEthDonationPage:
+      description: One stable page of direct ETH donations made by one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserEthDonationPage"
+    CosmicGameUserErc20DonationPage:
+      description: One stable page of ERC-20 donations made by one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserErc20DonationPage"
+    CosmicGameUserNftDonationPage:
+      description: One stable page of NFT donations made by one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserNftDonationPage"
+    CosmicGameUserDonatedNftPage:
+      description: One page of donated NFTs one wallet won or claimed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserDonatedNftPage"
+    CosmicGameUserDonatedErc20Page:
+      description: One page of donated ERC-20 entitlements for one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameUserDonatedErc20Page"
     CosmicGameGlobalStatistics:
       description: Exact database-backed global CosmicGame statistics.
       content:

@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "claimed": false,
+        "ethAmountWei": "80000000000000000",
+        "eventLogId": 5040,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "source": "chronoWarrior",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerIndex": 2
+      }
+    ],
+    "meta": {
+      "limit": 1
+    }
+  }
+}

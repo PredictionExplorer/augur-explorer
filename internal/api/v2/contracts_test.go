@@ -210,6 +210,7 @@ func newContractTestServer(
 		addresses,
 		fakeParticipantReader{},
 		fakeUserReader{},
+		fakeUserHistoryReader{},
 		state,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

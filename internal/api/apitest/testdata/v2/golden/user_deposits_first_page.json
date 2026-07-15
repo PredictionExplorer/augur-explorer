@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 120,
+        "claimed": false,
+        "ethAmountWei": "60000000000000000",
+        "eventLogId": 5066,
+        "occurredAt": "2026-01-01T00:33:20Z",
+        "round": 1,
+        "source": "raffle",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJhIjoiMHgyMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDIxIiwiayI6InJhZmZsZUV0aERlcG9zaXRzIiwiZSI6NTA2Nn0"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Status must be claimed or unclaimed.",
+    "instance": "/api/v2/cosmicgame/users/0x2100000000000000000000000000000000000021/donated-nfts",
+    "status": 400,
+    "title": "Invalid parameter",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

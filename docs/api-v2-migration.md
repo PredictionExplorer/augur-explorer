@@ -65,10 +65,85 @@ The profile fields map as follows:
 
 A valid wallet absent from the index returns a zero-valued `200` profile and
 an empty bid page, so clients do not need a special not-found state. The v1
-mega-response's prize, donation, claim, staking-action, transfer and owned-NFT
-arrays remain on v1 until bounded user sub-resources land. Live
-`user/balances`, CosmicToken summary, marketing history and red-box claim
-status are also intentionally deferred.
+mega-response's staking-action, transfer and owned-NFT arrays remain on v1
+until bounded user sub-resources land. Live `user/balances`, CosmicToken
+summary, marketing history and red-box claim status are also intentionally
+deferred.
+
+## CosmicGame user winnings
+
+The winnings group replaces nine v1 routes with three cursor-paginated user
+resources. Every resource answers a valid unindexed wallet with an empty
+`200` page.
+
+`GET /api/v2/cosmicgame/users/{address}/prizes` lists every typed prize the
+wallet won, newest round first with the stable round-prize type and
+winner-index order inside each round, reusing the round-prize item shape
+plus the winning wallet:
+
+- `prizes/history/by_user/{user_addr}/{offset}/{limit}` maps to it directly.
+  The union's non-prize rows are deliberately split off: third-party
+  withdrawal records (legacy `RecordType` 18) surface as `withdrawal`
+  beneficiaries on raffle-eth-deposits, and donated NFT/ERC-20 timeout
+  claims (16/17) live on the donated-asset resources below.
+- `prizes/deposits/raffle/by_user/{user_addr}` rows are the
+  `bidderRaffleEth` prize items; `prizes/deposits/chrono_warrior/by_user`
+  rows are the `chronoWarriorEth` items. Legacy `RecordType` tags (1/2) and
+  float ETH amounts are removed.
+- The round-wide `cosmicSignatureStakingEth` allocation has no single
+  winner and never appears; per-wallet staking rewards remain a future
+  staking-history resource.
+
+`GET /api/v2/cosmicgame/users/{address}/raffle-eth-deposits` is the
+PrizesWallet ETH ledger with exact `ethAmountWei`, a `source` discriminator
+(`raffle`/`chronoWarrior`), per-deposit `claimed` state and the claiming
+`withdrawal` (event, transaction, UTC time, beneficiary) when one exists:
+
+- `prizes/eth/all/by_user/{user_addr}` maps to the unfiltered ledger; the
+  legacy `RecordType` 7/10 tags become the `source` field.
+- `prizes/eth/raffle/by_user` and `prizes/eth/chronowarrior/by_user` become
+  client-side `source` filtering — deliberately not separate endpoints.
+- `prizes/eth/unclaimed/by_user/{user_addr}/{offset}/{limit}` and its
+  `prizes/deposits/unclaimed/by_user` alias map to `?claimed=false`; the
+  claimed filter documents its weak membership semantics under live claims.
+
+`GET /api/v2/cosmicgame/users/{address}/raffle-nft-wins` replaces
+`raffle/nft/by_user/{user_addr}`: newest-first raffle NFT wins across all
+three pools with exact `cstAmountWei` and both pool flags (`isStaker`,
+`isRandomWalk`). The v1 envelope's inline `UserInfo` aggregate is not
+retained — the user profile resource owns those numbers.
+
+## CosmicGame user donations
+
+The donations group replaces seven v1 routes with five user resources.
+Donor-side histories mirror the round donation collections (same item
+shapes, donor scope instead of round scope):
+
+- `donations/eth/by_user/{user_addr}` becomes
+  `GET /api/v2/cosmicgame/users/{address}/eth-donations` (plain/withInfo
+  discriminator, exact wei; the legacy 0/1 `RecordType` and `-1`/empty
+  sentinels are gone).
+- `donations/erc20/donated/by_user/{user_addr}` becomes
+  `GET /api/v2/cosmicgame/users/{address}/erc20-donations` with exact
+  `amountBaseUnits` (arbitrary tokens need not use 18 decimals).
+- `donations/nft/by_user/{user_addr}` becomes
+  `GET /api/v2/cosmicgame/users/{address}/nft-donations`.
+
+Winner-and-claimer entitlements are two dedicated resources:
+
+- `GET /api/v2/cosmicgame/users/{address}/donated-nfts` replaces
+  `donations/nft/claims/by_user` and `donations/nft/unclaimed/by_user`: one
+  row per donated NFT from a round the wallet won plus each NFT the wallet
+  timeout-claimed elsewhere, with per-item claim state, the claiming wallet
+  and an optional `status=claimed|unclaimed` filter.
+- `GET /api/v2/cosmicgame/users/{address}/donated-erc20` replaces
+  `donations/erc20/by_user` and `donations/erc20/claims/by_user`: one
+  summary per round and token with exact donated/claimed/remaining
+  base-unit totals and the latest claim event. **Deliberate correction:**
+  the v1 winner view reported the trigger-decremented remainder as the
+  donated total (zero after a full claim, with a negative donate-claim
+  difference); v2 reconstructs the true donated total, and
+  `donated = claimed + remaining` always holds.
 
 ## Contract field mapping
 
@@ -117,7 +192,8 @@ last-bid timestamp sentinel is omitted.
 
 ## Remaining endpoint groups
 
-Remaining user-scoped histories, RandomWalk resources, CosmicToken statistics
-and marketing-wallet configuration stay on v1 until their dedicated v2
-sprints land. Their presence does not require continued use of either the v1
-dashboard or the v1 user mega-response for profile and bid data.
+Remaining user-scoped staking, transfer, token, marketing and live-balance
+histories, RandomWalk resources, CosmicToken statistics and marketing-wallet
+configuration stay on v1 until their dedicated v2 sprints land. Their
+presence does not require continued use of the v1 dashboard, the v1 user
+mega-response, or the v1 winnings and donations routes.

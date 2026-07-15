@@ -293,6 +293,7 @@ func newPrizeTestServer(t *testing.T, prizes roundPrizeReader) *Server {
 		fakeContractAddressReader{},
 		fakeParticipantReader{},
 		fakeUserReader{},
+		fakeUserHistoryReader{},
 		fakeContractState{},
 		logger,
 	)

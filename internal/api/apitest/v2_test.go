@@ -58,6 +58,14 @@ const (
 	v2RoundClaims        = "/api/v2/cosmicgame/rounds/{round}/claims"
 	v2GetUser            = "/api/v2/cosmicgame/users/{address}"
 	v2ListUserBids       = "/api/v2/cosmicgame/users/{address}/bids"
+	v2ListUserPrizes     = "/api/v2/cosmicgame/users/{address}/prizes"
+	v2ListUserDeposits   = "/api/v2/cosmicgame/users/{address}/raffle-eth-deposits"
+	v2ListUserNftWins    = "/api/v2/cosmicgame/users/{address}/raffle-nft-wins"
+	v2ListUserEthDons    = "/api/v2/cosmicgame/users/{address}/eth-donations"
+	v2ListUserErc20Dons  = "/api/v2/cosmicgame/users/{address}/erc20-donations"
+	v2ListUserNftDons    = "/api/v2/cosmicgame/users/{address}/nft-donations"
+	v2ListUserDonatedNft = "/api/v2/cosmicgame/users/{address}/donated-nfts"
+	v2ListUserDonated20  = "/api/v2/cosmicgame/users/{address}/donated-erc20"
 )
 
 type v2GoldenCase struct {
@@ -259,6 +267,370 @@ func TestAPIV2UserResources(t *testing.T) {
 			name:       "user_bids_error_internal",
 			target:     firstPath,
 			template:   v2ListUserBids,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2UserHistories(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	const unindexedAddress = "0x9900000000000000000000000000000000000099"
+	userEventCursor := func(address, resource string, eventLogID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) + `,"k":` + strconv.Quote(resource) +
+				`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`,
+		))
+	}
+	prizeCursor := func(address string, round, prizeType, winnerIndex int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"a":` + strconv.Quote(address) +
+				`,"r":` + strconv.FormatInt(round, 10) +
+				`,"t":` + strconv.FormatInt(prizeType, 10) +
+				`,"w":` + strconv.FormatInt(winnerIndex, 10) + `}`,
+		))
+	}
+
+	prizesPath := "/api/v2/cosmicgame/users/" + addrAlice + "/prizes?limit=3"
+	firstPrizes := h.get(t, prizesPath)
+	if firstPrizes.Code != http.StatusOK {
+		t.Fatalf("first prize page: status=%d body=%s", firstPrizes.Code, firstPrizes.Body.String())
+	}
+	var prizePage apiv2.CosmicGameUserPrizePage
+	if err := json.Unmarshal(firstPrizes.Body.Bytes(), &prizePage); err != nil {
+		t.Fatalf("decoding first prize page: %v", err)
+	}
+	if prizePage.Meta.NextCursor == nil {
+		t.Fatal("fixture first prize page did not return a continuation cursor")
+	}
+
+	depositsPath := "/api/v2/cosmicgame/users/" + addrAlice + "/raffle-eth-deposits?limit=1"
+	firstDeposits := h.get(t, depositsPath)
+	if firstDeposits.Code != http.StatusOK {
+		t.Fatalf("first deposit page: status=%d body=%s", firstDeposits.Code, firstDeposits.Body.String())
+	}
+	var depositPage apiv2.CosmicGameUserRaffleEthDepositPage
+	if err := json.Unmarshal(firstDeposits.Body.Bytes(), &depositPage); err != nil {
+		t.Fatalf("decoding first deposit page: %v", err)
+	}
+	if depositPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first deposit page did not return a continuation cursor")
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "user_prizes_first_page",
+			target:     prizesPath,
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_next_page",
+			target:     prizesPath + "&cursor=" + *prizePage.Meta.NextCursor,
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_exhausted",
+			target:     prizesPath + "&cursor=" + prizeCursor(addrAlice, 0, 9, 2),
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_empty_unindexed",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/prizes",
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_prizes_error_invalid_address",
+			target:     "/api/v2/cosmicgame/users/not-an-address/prizes",
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": "not-an-address"},
+		},
+		{
+			name:       "user_prizes_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/prizes?limit=201",
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/prizes?limit=wat",
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_error_malformed_cursor",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/prizes?cursor=bad",
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_error_cross_user_cursor",
+			target:     prizesPath + "&cursor=" + prizeCursor(addrBob, 0, 0, 0),
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_prizes_error_internal",
+			target:     prizesPath,
+			template:   v2ListUserPrizes,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_deposits_first_page",
+			target:     depositsPath,
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_deposits_next_page",
+			target:     depositsPath + "&cursor=" + *depositPage.Meta.NextCursor,
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_deposits_claimed_with_withdrawal",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/raffle-eth-deposits?claimed=true",
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_deposits_unclaimed_filter_empty",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/raffle-eth-deposits?claimed=false",
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_deposits_empty_unindexed",
+			target:     "/api/v2/cosmicgame/users/" + unindexedAddress + "/raffle-eth-deposits",
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": unindexedAddress},
+		},
+		{
+			name:       "user_deposits_error_bind_claimed",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/raffle-eth-deposits?claimed=wat",
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name: "user_deposits_error_cross_resource_cursor",
+			target: depositsPath + "&cursor=" +
+				userEventCursor(addrAlice, "nftDonations", 5040),
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_deposits_error_internal",
+			target:     depositsPath,
+			template:   v2ListUserDeposits,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_nft_wins_carol_randomwalk_pool",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/raffle-nft-wins",
+			template:   v2ListUserNftWins,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_nft_wins_bob_staker_pool",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/raffle-nft-wins",
+			template:   v2ListUserNftWins,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_nft_wins_dave_bidder_pool",
+			target:     "/api/v2/cosmicgame/users/" + addrDave + "/raffle-nft-wins",
+			template:   v2ListUserNftWins,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_nft_wins_empty_indexed",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/raffle-nft-wins",
+			template:   v2ListUserNftWins,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_nft_wins_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/raffle-nft-wins",
+			template:   v2ListUserNftWins,
+			pathParams: map[string]string{"address": addrCarol},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_nft_wins_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/raffle-nft-wins?limit=wat",
+			template:   v2ListUserNftWins,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name:       "user_eth_donations_dave_plain",
+			target:     "/api/v2/cosmicgame/users/" + addrDave + "/eth-donations",
+			template:   v2ListUserEthDons,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_eth_donations_emma_with_info",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/eth-donations",
+			template:   v2ListUserEthDons,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_eth_donations_empty_indexed",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/eth-donations",
+			template:   v2ListUserEthDons,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name: "user_eth_donations_error_malformed_cursor",
+			target: "/api/v2/cosmicgame/users/" + addrDave +
+				"/eth-donations?cursor=bad",
+			template:   v2ListUserEthDons,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_eth_donations_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrDave + "/eth-donations?limit=wat",
+			template:   v2ListUserEthDons,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_erc20_donations_alice",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/erc20-donations",
+			template:   v2ListUserErc20Dons,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_erc20_donations_empty_indexed",
+			target:     "/api/v2/cosmicgame/users/" + addrDave + "/erc20-donations",
+			template:   v2ListUserErc20Dons,
+			pathParams: map[string]string{"address": addrDave},
+		},
+		{
+			name:       "user_erc20_donations_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/erc20-donations",
+			template:   v2ListUserErc20Dons,
+			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "user_erc20_donations_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/erc20-donations?limit=wat",
+			template:   v2ListUserErc20Dons,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_nft_donations_bob",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/nft-donations",
+			template:   v2ListUserNftDons,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_nft_donations_emma",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/nft-donations",
+			template:   v2ListUserNftDons,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_nft_donations_error_invalid_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/nft-donations?limit=0",
+			template:   v2ListUserNftDons,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_nft_donations_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrBob + "/nft-donations?limit=wat",
+			template:   v2ListUserNftDons,
+			pathParams: map[string]string{"address": addrBob},
+		},
+		{
+			name:       "user_donated_nfts_alice_claimed",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/donated-nfts",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_donated_nfts_emma_unclaimed",
+			target:     "/api/v2/cosmicgame/users/" + addrEmma + "/donated-nfts",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name: "user_donated_nfts_emma_unclaimed_filter",
+			target: "/api/v2/cosmicgame/users/" + addrEmma +
+				"/donated-nfts?status=unclaimed",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name: "user_donated_nfts_emma_claimed_filter_empty",
+			target: "/api/v2/cosmicgame/users/" + addrEmma +
+				"/donated-nfts?status=claimed",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrEmma},
+		},
+		{
+			name:       "user_donated_nfts_empty_indexed",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/donated-nfts",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name: "user_donated_nfts_error_invalid_status",
+			target: "/api/v2/cosmicgame/users/" + addrAlice +
+				"/donated-nfts?status=wat",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_donated_nfts_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/donated-nfts?limit=wat",
+			template:   v2ListUserDonatedNft,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_donated_erc20_alice_fully_claimed",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/donated-erc20",
+			template:   v2ListUserDonated20,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_donated_erc20_empty_indexed",
+			target:     "/api/v2/cosmicgame/users/" + addrCarol + "/donated-erc20",
+			template:   v2ListUserDonated20,
+			pathParams: map[string]string{"address": addrCarol},
+		},
+		{
+			name: "user_donated_erc20_error_malformed_cursor",
+			target: "/api/v2/cosmicgame/users/" + addrAlice +
+				"/donated-erc20?cursor=bad",
+			template:   v2ListUserDonated20,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_donated_erc20_error_bind_limit",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/donated-erc20?limit=wat",
+			template:   v2ListUserDonated20,
+			pathParams: map[string]string{"address": addrAlice},
+		},
+		{
+			name:       "user_donated_erc20_error_internal",
+			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/donated-erc20",
+			template:   v2ListUserDonated20,
 			pathParams: map[string]string{"address": addrAlice},
 			ctx:        cancelledCtx,
 		},

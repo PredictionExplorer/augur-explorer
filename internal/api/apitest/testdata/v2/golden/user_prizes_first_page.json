@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 120,
+        "ethAmountWei": "60000000000000000",
+        "eventLogId": 5065,
+        "occurredAt": "2026-01-01T00:33:20Z",
+        "round": 1,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+        "type": "bidderRaffleEth",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "ethAmountWei": "500000000000000000",
+        "eventLogId": 5018,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "mainPrizeEth",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 0
+      },
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "100000000000000000000",
+        "eventLogId": 5018,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "type": "mainPrizeCst",
+        "winnerAddress": "0x2100000000000000000000000000000000000021",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 3,
+      "nextCursor": "eyJ2IjoxLCJhIjoiMHgyMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDIxIiwiciI6MCwidCI6MSwidyI6MH0"
+    }
+  }
+}

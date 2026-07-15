@@ -88,6 +88,18 @@ type userReader interface {
 	BidsByUserPage(context.Context, int64, *cgstore.UserBidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
 }
 
+type userHistoryReader interface {
+	UserAddressID(context.Context, string) (int64, error)
+	UserPrizesPage(context.Context, int64, *cgstore.UserPrizePageCursor, int) ([]cgmodel.CGPrizeHistory, bool, error)
+	UserRaffleEthDepositsPage(context.Context, int64, *bool, *cgstore.UserEventPageCursor, int) ([]cgstore.UserRaffleEthDepositRecord, bool, error)
+	UserRaffleNftWinsPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.UserRaffleNftWinRecord, bool, error)
+	EthDonationsByUserPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.RoundEthDonationRecord, bool, error)
+	ERC20DonationsByUserPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.RoundERC20DonationRecord, bool, error)
+	NFTDonationsByUserPage(context.Context, int64, *cgstore.UserEventPageCursor, int) ([]cgstore.RoundNFTDonationRecord, bool, error)
+	UserDonatedNftsPage(context.Context, int64, *bool, *cgstore.UserEventPageCursor, int) ([]cgstore.UserDonatedNftRecord, bool, error)
+	UserDonatedErc20Page(context.Context, int64, *cgstore.UserDonatedErc20PageCursor, int) ([]cgstore.UserDonatedErc20Record, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -108,6 +120,7 @@ type Server struct {
 	contractAddresses contractAddressReader
 	participants      participantReader
 	users             userReader
+	userHistories     userHistoryReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -141,7 +154,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -170,6 +183,7 @@ func newServer(
 	contractAddresses contractAddressReader,
 	participants participantReader,
 	users userReader,
+	userHistories userHistoryReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -206,6 +220,9 @@ func newServer(
 	if users == nil {
 		return nil, errors.New("api v2: user repository is required")
 	}
+	if userHistories == nil {
+		return nil, errors.New("api v2: user-history repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -225,6 +242,7 @@ func newServer(
 		contractAddresses: contractAddresses,
 		participants:      participants,
 		users:             users,
+		userHistories:     userHistories,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

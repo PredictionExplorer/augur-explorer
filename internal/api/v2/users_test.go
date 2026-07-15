@@ -341,6 +341,7 @@ func newUserTestServer(t *testing.T, users userReader) *Server {
 		fakeContractAddressReader{},
 		fakeParticipantReader{},
 		users,
+		fakeUserHistoryReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

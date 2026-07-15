@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 110,
+        "cstAmountWei": "30000000000000000000",
+        "eventLogId": 5028,
+        "isRandomWalk": true,
+        "isStaker": true,
+        "nftTokenId": 3,
+        "occurredAt": "2026-01-01T00:16:40Z",
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerIndex": 0
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

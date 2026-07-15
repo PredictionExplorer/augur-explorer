@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 108,
+        "claim": {
+          "claimerAddress": "0x2100000000000000000000000000000000000021",
+          "eventLogId": 5045,
+          "occurredAt": "2026-01-01T00:20:00Z",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001013"
+        },
+        "claimed": true,
+        "donationIndex": 0,
+        "donorAddress": "0x2200000000000000000000000000000000000022",
+        "eventLogId": 5016,
+        "occurredAt": "2026-01-01T00:13:20Z",
+        "round": 0,
+        "tokenAddress": "0x2700000000000000000000000000000000000027",
+        "tokenId": 777,
+        "tokenUri": "https://nft.example/777",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001009"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}
