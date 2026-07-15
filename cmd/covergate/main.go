@@ -7,9 +7,14 @@ import (
 	"os"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/covergate"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 func main() {
+	// Before the flag set parses: --version must win over flag validation.
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
 

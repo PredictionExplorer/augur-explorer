@@ -32,6 +32,7 @@ import (
 
 	freezerscanner "github.com/PredictionExplorer/augur-explorer/internal/freezer"
 	"github.com/PredictionExplorer/augur-explorer/internal/freezer/scan"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 var (
@@ -53,6 +54,10 @@ var (
 )
 
 func main() {
+	// Before flag.Parse: --version must win over flag validation.
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	flag.Parse()
 	// SIGINT/SIGTERM cancel the scan; completed chunks still merge.
 	ctx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

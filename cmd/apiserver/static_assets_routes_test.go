@@ -7,6 +7,9 @@ package main
 // static_assets_test.go.
 
 import (
+	"bytes"
+	"compress/gzip"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 )
 
 // testStaticAssets fills the logger for a static asset configuration under
@@ -154,6 +158,101 @@ func TestStaticRoutesSkippedWithoutConfig(t *testing.T) {
 	if n := len(r.Routes()); n != 0 {
 		t.Fatalf("expected no static routes without config, got %d", n)
 	}
+}
+
+// TestStaticAssetsThroughProductionChain composes the full production
+// middleware chain (routes.New + RegisterExtra) and proves the response-edge
+// middleware leaves file serving alone: images are never compressed and keep
+// their cache policy, and ABI JSON files compress while http.ServeFile's
+// Last-Modified validation — not a weak ETag — owns their revalidation.
+func TestStaticAssetsThroughProductionChain(t *testing.T) {
+	root := t.TempDir()
+	// A "large" image (fake JPEG bytes) that would cross the compression
+	// threshold if the content-type gate failed.
+	imgPath := filepath.Join(root, "randomwalk", "000010_black_thumb.jpg")
+	writeFile(t, imgPath)
+	if err := os.WriteFile(imgPath, bytes.Repeat([]byte{0xff, 0xd8, 0x00, 0x01}, 1024), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	abiDir := t.TempDir()
+	abiBody := `{"abi":[` + strings.Repeat(`{"name":"Transfer","type":"event"},`, 100) + `{}]}`
+	if err := os.WriteFile(filepath.Join(abiDir, "RandomWalkNFT.json"), []byte(abiBody), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	r := routes.New(nil, routes.Options{
+		RegisterExtra: registerStaticAssetRoutes(testStaticAssets(staticAssets{
+			nftAssetsRoot: root,
+			abiDir:        abiDir,
+		})),
+	})
+	get := func(path string, headers map[string]string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.RemoteAddr = "10.9.9.9:4242"
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w
+	}
+
+	t.Run("images stay identity with their cache policy", func(t *testing.T) {
+		w := get("/images/randomwalk/000010_black_thumb.jpg", map[string]string{"Accept-Encoding": "gzip"})
+		if w.Code != http.StatusOK {
+			t.Fatalf("status = %d", w.Code)
+		}
+		if w.Header().Get("Content-Encoding") != "" {
+			t.Fatal("image response was compressed")
+		}
+		if cc := w.Header().Get("Cache-Control"); cc != "public, max-age=3600, must-revalidate" {
+			t.Fatalf("Cache-Control = %q; the image policy must win over the API default", cc)
+		}
+		if w.Header().Get("ETag") != "" {
+			t.Fatal("file responses must not gain a weak ETag (ServeFile owns validation)")
+		}
+	})
+
+	t.Run("abi json compresses and keeps ServeFile validation", func(t *testing.T) {
+		w := get("/static/RandomWalkNFT.json", map[string]string{"Accept-Encoding": "gzip"})
+		if w.Code != http.StatusOK {
+			t.Fatalf("status = %d", w.Code)
+		}
+		if got := w.Header().Get("Content-Encoding"); got != "gzip" {
+			t.Fatalf("Content-Encoding = %q, want gzip for a large JSON file", got)
+		}
+		lastModified := w.Header().Get("Last-Modified")
+		if lastModified == "" {
+			t.Fatal("ServeFile response lost Last-Modified")
+		}
+		if w.Header().Get("ETag") != "" {
+			t.Fatal("file responses must not gain a weak ETag")
+		}
+		zr, err := gzip.NewReader(bytes.NewReader(w.Body.Bytes()))
+		if err != nil {
+			t.Fatalf("gzip reader: %v", err)
+		}
+		defer func() { _ = zr.Close() }() // checksum already verified by ReadAll
+		decompressed, err := io.ReadAll(zr)
+		if err != nil {
+			t.Fatalf("decompress: %v", err)
+		}
+		if string(decompressed) != abiBody {
+			t.Fatal("compressed ABI file does not round-trip")
+		}
+
+		// ServeFile's native conditional handling still answers 304.
+		notModified := get("/static/RandomWalkNFT.json", map[string]string{
+			"Accept-Encoding":   "gzip",
+			"If-Modified-Since": lastModified,
+		})
+		if notModified.Code != http.StatusNotModified {
+			t.Fatalf("If-Modified-Since revalidation = %d, want 304", notModified.Code)
+		}
+		if notModified.Header().Get("Content-Encoding") != "" {
+			t.Fatal("304 must not claim an encoding")
+		}
+	})
 }
 
 // TestResolveNFTStaticMountLayouts drives every on-disk layout the mount

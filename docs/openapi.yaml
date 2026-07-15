@@ -1916,6 +1916,25 @@ paths:
                   status: { type: string, const: unready }
                   reason: { type: string }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+  /version:
+    get:
+      tags: [system]
+      summary: Build identity of the running binary
+      description: Version/tag, VCS commit, build timestamp and Go toolchain, stamped at build time (falling back to the toolchain's embedded VCS metadata). Values are informational and deployment-dependent.
+      responses:
+        '200':
+          description: Build identity.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, commit, buildDate, goVersion]
+                properties:
+                  version: { type: string }
+                  commit: { type: string }
+                  buildDate: { type: string }
+                  goVersion: { type: string }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
   /metadata/{token_id}:
     get:
       tags: [metadata]

@@ -19,6 +19,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor"
 	"github.com/PredictionExplorer/augur-explorer/internal/srvmonitor/termboxui"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 // setupResult carries everything main needs from the testable setup phase.
@@ -50,6 +51,7 @@ func setup(getenv func(string) string) (*setupResult, error) {
 	logger := slog.New(slog.NewTextHandler(logfile, nil))
 
 	logger.Info("=== Server Monitor Starting ===")
+	logger.LogAttrs(context.Background(), slog.LevelInfo, "build info", version.LogAttrs()...)
 
 	// Load configuration from environment variables
 	cfg, err := srvmonitor.LoadFromEnv(getenv)
@@ -70,6 +72,9 @@ func setup(getenv func(string) string) (*setupResult, error) {
 }
 
 func main() {
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	// Setup panic recovery
 	defer func() {
 		if r := recover(); r != nil {

@@ -82,6 +82,22 @@ func TestRequiredFlagsFailBeforeExternalSetup(t *testing.T) {
 	}
 }
 
+func TestRootVersionFlag(t *testing.T) {
+	t.Parallel()
+	root := newRootCmd()
+	var output bytes.Buffer
+	root.SetOut(&output)
+	root.SetErr(&output)
+	root.SetArgs([]string{"--version"})
+	if err := root.Execute(); err != nil {
+		t.Fatalf("Execute(--version) error = %v", err)
+	}
+	got := output.String()
+	if !strings.HasPrefix(got, "opsctl version ") || !strings.Contains(got, "commit") {
+		t.Fatalf("--version output = %q, want the build identity line", got)
+	}
+}
+
 func childCommand(t *testing.T, parent *cobra.Command, name string) *cobra.Command {
 	t.Helper()
 	for _, command := range parent.Commands() {

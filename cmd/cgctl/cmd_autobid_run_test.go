@@ -162,4 +162,12 @@ func TestRootCommandRegistersSubcommands(t *testing.T) {
 	if !strings.Contains(out, "Operator CLI for the CosmicGame contracts") {
 		t.Errorf("help output missing description:\n%s", out)
 	}
+
+	out, err = executeCmd(t, newRootCmd(), "--version")
+	if err != nil {
+		t.Fatalf("--version: %v", err)
+	}
+	if !strings.HasPrefix(out, "cgctl version ") || !strings.Contains(out, "commit") {
+		t.Errorf("--version output = %q, want the build identity line", out)
+	}
 }

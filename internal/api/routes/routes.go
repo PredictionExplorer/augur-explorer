@@ -6,6 +6,7 @@ package routes
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
@@ -14,6 +15,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 // Options carries the injected API modules and production-only extras. The
@@ -50,8 +52,9 @@ type Options struct {
 }
 
 // New builds the standard middleware chain — CORS, panic recovery, optional
-// access log, per-IP rate limiting, extras — and registers every injected
-// module, the v2 surface, health probes, and host-dispatched metadata.
+// access log, gzip compression, per-IP rate limiting, extras, conditional
+// requests — and registers every injected module, the v2 surface, health
+// probes, the version endpoint, and host-dispatched metadata.
 // st may be nil (bare route-table construction for drift tests).
 func New(st *store.Store, opts Options) *httpx.Router {
 	r := httpx.NewRouter()
@@ -60,14 +63,24 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	if opts.AccessLog != nil {
 		r.Use(common.AccessLog(opts.AccessLog))
 	}
+	// Compression sits inside the access log (so logged bytes are wire
+	// bytes) and outside everything that produces bodies.
+	r.Use(common.Compress())
 	// Baseline abuse protection: per-IP token bucket across the whole API.
 	// Generous enough for legitimate frontends; mutating endpoints add their
 	// own stricter limits at registration.
 	r.Use(common.RateLimit(50, 100))
 	r.Use(opts.Extra...)
+	// Innermost global: hashes identity bodies before compression, answers
+	// If-None-Match revalidations with 304 and applies the default
+	// Cache-Control policy where no layer chose one.
+	r.Use(common.ConditionalETag())
 
-	// Liveness/readiness probes.
+	// Liveness/readiness probes and build identity.
 	common.RegisterHealthRoutes(r, st)
+	r.GET("/version", func(c *httpx.Context) {
+		c.JSON(http.StatusOK, version.Get())
+	})
 
 	// Production extras (static assets) register before the API modules so
 	// their subtree middleware lands in the documented chain position.

@@ -40,7 +40,13 @@ services:
     build:
       context: .
       dockerfile: deploy/docker/Dockerfile
-      args: { CMD: apiserver }
+      # VERSION/COMMIT/BUILD_DATE stamp /version; export them before
+      # `docker compose build` for a labeled image (default: unknown).
+      args:
+        CMD: apiserver
+        VERSION: ${VERSION:-unknown}
+        COMMIT: ${COMMIT:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -59,7 +65,11 @@ services:
     build:
       context: .
       dockerfile: deploy/docker/Dockerfile
-      args: { CMD: cg-etl }
+      args:
+        CMD: cg-etl
+        VERSION: ${VERSION:-unknown}
+        COMMIT: ${COMMIT:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -75,7 +85,11 @@ services:
     build:
       context: .
       dockerfile: deploy/docker/Dockerfile
-      args: { CMD: rw-etl }
+      args:
+        CMD: rw-etl
+        VERSION: ${VERSION:-unknown}
+        COMMIT: ${COMMIT:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
     depends_on:
       migrate:
         condition: service_completed_successfully

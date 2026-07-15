@@ -135,10 +135,23 @@ func TestRunBootServeAndGracefulShutdown(t *testing.T) {
 		t.Errorf("legacy ae_logs directory was created (stat err=%v)", err)
 	}
 	assertJSONLogRecords(t, logBuf.String(),
+		"build info",              // version/commit/build-date startup record
 		"effective configuration", // startup config record (secrets redacted)
 		"request",                 // access log through the shared middleware
 		"shutdown: complete",
 	)
+	// The build-info record carries the resolved identity attributes.
+	for line := range strings.Lines(logBuf.String()) {
+		var rec map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(line)), &rec) != nil || rec["msg"] != "build info" {
+			continue
+		}
+		for _, key := range []string{"version", "commit", "build_date", "go_version"} {
+			if v, ok := rec[key].(string); !ok || v == "" {
+				t.Errorf("build info record missing %q: %v", key, rec)
+			}
+		}
+	}
 	// The startup record must redact the database password.
 	for line := range strings.Lines(logBuf.String()) {
 		var rec map[string]any

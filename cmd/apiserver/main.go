@@ -33,6 +33,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/config"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 // shutdownTimeout bounds how long in-flight requests may take to finish once
@@ -98,6 +99,9 @@ func buildModules(
 }
 
 func main() {
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	// Root context: cancelled on SIGINT/SIGTERM, which starts the drain.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -118,6 +122,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		return err
 	}
 	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
 	rpcClient, err := ethrpc.DialContext(ctx, cfg.RPCURL)

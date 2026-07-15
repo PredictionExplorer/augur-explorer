@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -34,12 +35,16 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/imggen"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 // httpRequestTimeout bounds each artifact-server or generator request.
 const httpRequestTimeout = 30 * time.Second
 
 func main() {
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -83,6 +88,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 		return err
 	}
 	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 
 	client := &imggen.Client{
 		RequestURL: cfg.RequestURL,

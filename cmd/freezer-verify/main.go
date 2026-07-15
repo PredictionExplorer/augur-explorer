@@ -24,9 +24,14 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/freezer/verify"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 func main() {
+	// Before the flag set parses: --version must win over flag validation.
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

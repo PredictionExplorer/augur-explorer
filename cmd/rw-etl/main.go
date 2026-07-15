@@ -24,6 +24,7 @@ import (
 	rwindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 // rwProgress adapts the rw_proc_status row to the engine's watermark
@@ -50,6 +51,9 @@ func (p rwProgress) SetLastBlock(ctx context.Context, block int64) error {
 }
 
 func main() {
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	// Graceful shutdown: on SIGINT/SIGTERM/SIGHUP finish the current event
 	// batch, write status, and exit 0 cleanly. The engine checks ctx between
 	// batches and during waits.
@@ -75,6 +79,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 	// One structured logger on stdout; journald owns persistence (§8.3 —
 	// the legacy $HOME/ae_logs dual-file layout is gone).
 	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
 	go func() {

@@ -30,9 +30,15 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 func main() {
+	// Before flag.Parse: --version must win over flag validation.
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	home, _ := os.UserHomeDir()
 	defaultIn := filepath.Join(home, "ae_logs", "webserver_cosmic_nohup.log")
 	defaultOut := filepath.Join(home, "ae_logs", "webserver_anomalies.log")

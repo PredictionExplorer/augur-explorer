@@ -108,7 +108,7 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 		t.Errorf("legacy ae_logs directory was created (stat err=%v)", err)
 	}
 	logs := logBuf.String()
-	for _, want := range []string{"effective configuration", "Connected to ETH node", "PGSQL_PASSWORD=[set]"} {
+	for _, want := range []string{"build info", "effective configuration", "Connected to ETH node", "PGSQL_PASSWORD=[set]"} {
 		if !strings.Contains(logs, want) {
 			t.Errorf("log stream missing %q:\n%s", want, logs)
 		}

@@ -331,6 +331,14 @@ func TestRootCommandRegistersAllSubcommands(t *testing.T) {
 			t.Errorf("subcommand %q not registered", name)
 		}
 	}
+
+	out, err := executeCmd(t, newRootCmd(), "--version")
+	if err != nil {
+		t.Fatalf("--version: %v", err)
+	}
+	if !strings.HasPrefix(out, "rwctl version ") || !strings.Contains(out, "commit") {
+		t.Errorf("--version output = %q, want the build identity line", out)
+	}
 }
 
 func TestScanTransfersCommand(t *testing.T) {

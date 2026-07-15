@@ -25,12 +25,15 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "opsctl",
 		Short:         "Data-operations utilities for the RWCG backend",
+		Version:       version.String(),
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}

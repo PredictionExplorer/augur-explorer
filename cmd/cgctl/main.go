@@ -19,6 +19,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 // subcommands is populated by register calls in the per-command files.
@@ -32,6 +34,7 @@ func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "cgctl",
 		Short:         "Operator CLI for the CosmicGame contracts",
+		Version:       version.String(),
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}

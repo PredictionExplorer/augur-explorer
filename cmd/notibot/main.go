@@ -42,9 +42,14 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/rwbot"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 func main() {
+	// Before flag.Parse: --version must win over flag validation.
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	flagTwitter := flag.Bool("twitter", false, "Send messages to Twitter")
 	flagDiscord := flag.Bool("discord", false, "Send messages to Discord")
 	flag.Parse()
@@ -73,6 +78,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, twit
 	// One structured logger on stdout; journald owns persistence (§8.3 —
 	// the legacy $HOME/ae_logs dual-file layout is gone).
 	logger := cfg.Log.NewLogger(logOut)
+	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
 	eclient, err := ethclient.DialContext(ctx, cfg.RPCURL)

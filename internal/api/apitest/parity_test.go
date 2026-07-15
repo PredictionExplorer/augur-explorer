@@ -461,8 +461,11 @@ func TestAPIParity(t *testing.T) {
 	registeredGET := make(map[string]bool)
 	for _, r := range routes {
 		// V2 has a separate OpenAPI contract and golden suite. This table
-		// remains the byte-for-byte freeze for v1 only.
-		if r.Method == http.MethodGet && !strings.HasPrefix(r.Pattern, "/api/v2/") {
+		// remains the byte-for-byte freeze for v1 only. /version reports
+		// build-dependent values, so it gets a shape test
+		// (TestVersionEndpoint) instead of a golden.
+		if r.Method == http.MethodGet && !strings.HasPrefix(r.Pattern, "/api/v2/") &&
+			r.Pattern != "/version" {
 			registeredGET[r.Pattern] = true
 		}
 	}

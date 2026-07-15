@@ -106,8 +106,49 @@ journalctl -u rwcg-apiserver@cosmic -o cat | jq 'select(.msg=="request")'
 
 Every service emits one JSON record per line (`LOG_FORMAT=json`): access
 lines are `msg="request"` with `route`, `status`, `duration_ms` and `ip`
-fields; database traces carry `component=db`; startup prints an
+fields (`bytes` counts wire bytes — compressed size when the client
+negotiated gzip); database traces carry `component=db`; startup prints a
+`build info` record (version, commit, build date) followed by an
 `effective configuration` record with secrets redacted.
+
+## HTTP edge behavior (compression, caching, build identity)
+
+The API server terminates TLS itself — there is no reverse proxy — so the
+response-edge policy lives in the shared middleware chain
+([ADR-0007](adr/0007-http-edge.md)):
+
+- **Compression**: JSON/text responses ≥ 1 KiB are gzip-encoded for clients
+  sending `Accept-Encoding: gzip`. Images and video are never re-compressed.
+  Every response carries `Vary: Accept-Encoding`.
+- **Conditional requests**: successful JSON/text GETs carry a weak `ETag`
+  and default `Cache-Control: no-cache` (store, but revalidate); clients
+  re-sending the tag via `If-None-Match` get an empty `304 Not Modified`.
+  `/images` responses keep their `max-age=3600` policy
+  (`WEBSRV_IMAGE_NO_CACHE=1` switches to `no-store` for development), and
+  files keep `http.ServeFile`'s `Last-Modified` handling. There are no new
+  environment switches: the policy is fixed.
+- Expect `3xx` samples in `rwcg_http_requests_total` for API routes now —
+  they are revalidations, not redirects.
+
+Verify from a shell:
+
+```bash
+curl -sI --compressed https://api.example/api/cosmicgame/rounds/list/0/10 \
+  | grep -iE 'content-encoding|etag|cache-control|vary'
+curl -sI -H 'If-None-Match: W/"<tag from the previous call>"' \
+  https://api.example/api/cosmicgame/rounds/list/0/10   # HTTP/2 304
+```
+
+Every binary reports its build identity: `GET /version` on the API server,
+`--version` on every command, and the `build info` startup log record.
+Identity is stamped by `make build` and the Dockerfile (`git describe`,
+commit, build date); ad-hoc `go build` binaries fall back to the
+toolchain's embedded VCS metadata.
+
+```bash
+curl -s https://api.example/version | jq   # {"version":…,"commit":…,…}
+/opt/rwcg/bin/apiserver --version          # same identity on the host
+```
 
 ## Security posture
 

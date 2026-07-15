@@ -13,6 +13,7 @@ introduces it.
 go test ./internal/indexer/cosmicgame/ -bench BenchmarkEventDecode -benchmem -count=6 -run '^$' | tee old.txt
 go test ./internal/freezer/decode/ -bench BenchmarkReceiptsDecode -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench BenchmarkRateLimiter    -benchmem -count=6 -run '^$'
+go test ./internal/api/common/   -bench 'BenchmarkCompress|BenchmarkConditionalETag' -benchmem -count=6 -run '^$'
 
 # DB benchmarks (Docker required; runs against the seeded test container)
 go test -tags=integration ./internal/store/cosmicgame/ -bench BenchmarkStatisticsQueries -benchmem -count=6 -run '^$' -timeout 15m
@@ -37,6 +38,10 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkReceiptsDecode/snappy` (freezer) | 26,800 | 39,822 | 288 | same payload, snappy-compressed |
 | `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,144 | 5,373 | 15 | parallel, per-IP limiter map path (stdlib router) |
 | `BenchmarkRateLimiter/shared_ip` (api/common) | 1,298 | 5,374 | 15 | parallel, single-bucket contention (stdlib router) |
+| `BenchmarkCompress/gzip_32KiB` (api/common) | 114,300 | 59,500 | 30 | full middleware exchange, pooled gzip level 6, ~286 MB/s |
+| `BenchmarkCompress/identity_32KiB` (api/common) | 4,410 | 47,184 | 21 | negotiation + passthrough for a non-gzip client |
+| `BenchmarkConditionalETag/tag_32KiB` (api/common) | 16,800 | 88,252 | 24 | buffer + SHA-256 weak validator + release, ~1.95 GB/s |
+| `BenchmarkConditionalETag/revalidate_304_32KiB` (api/common) | 13,700 | 47,627 | 26 | matching If-None-Match short-circuits to an empty 304 |
 | `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,530,000 | 14,390 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/claims_by_round` | 936,000 | 9,625 | 82 | per-round claim summary CTE (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/roi_leaderboard` | 315,000 | 23,870 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
@@ -108,3 +113,12 @@ History:
   the collection-free profile and first 50 newest user bids. Canonical prize
   reconstruction keeps the profile at 499 µs; the full bid projection is
   280 µs on migration 00017's `(bidder_aid, evtlog_id DESC)` index.
+- **2026-07-13 (HTTP edge sprint)** — added the compression and
+  conditional-request middleware baselines (32 KiB rows in the table; the
+  1 KiB and 512 KiB size points recorded in the same run scale linearly:
+  gzip 22.5 µs/1.75 ms, validator 1.8 µs/227 µs). Compression costs ~110 µs
+  per 32 KiB response — well under the 170 µs+ database time of the
+  cheapest indexed query it would ride on — and reduces JSON bodies ~10×.
+  The rate-limiter benchmark re-ran clean against its baselines
+  (`distinct_ips` 1,140 ns/op median vs 1,144, `shared_ip` 1,270 vs 1,298,
+  B/op and allocs identical).

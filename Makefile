@@ -10,6 +10,16 @@ COMMANDS := apiserver cg-etl rw-etl notibot freezer-scan freezer-verify \
             srvmonitor loganomaly imggen-monitor rwalk-alarm \
             cgctl rwctl opsctl covergate
 
+# Build identity, stamped into internal/version (see /version and --version).
+# Overridable for reproducible builds: make build VERSION=v1.2.3 ...
+VERSION    ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo unknown)
+COMMIT     ?= $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
+BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+VERSION_PKG := github.com/PredictionExplorer/augur-explorer/internal/version
+LDFLAGS := -X $(VERSION_PKG).version=$(VERSION) \
+           -X $(VERSION_PKG).commit=$(COMMIT) \
+           -X $(VERSION_PKG).buildDate=$(BUILD_DATE)
+
 .PHONY: all build $(COMMANDS) generate generate-check test test-integration coverage-check hooks-install fuzz-smoke lint migrate-up fmt vet vuln clean help
 
 all: build
@@ -17,12 +27,12 @@ all: build
 ## build: compile every command into ./bin
 build:
 	@mkdir -p $(BIN)
-	go build -o $(BIN)/ ./cmd/...
+	go build -ldflags "$(LDFLAGS)" -o $(BIN)/ ./cmd/...
 
 # Convenience per-command targets, e.g. `make apiserver`.
 $(COMMANDS):
 	@mkdir -p $(BIN)
-	go build -o $(BIN)/$@ ./cmd/$@
+	go build -ldflags "$(LDFLAGS)" -o $(BIN)/$@ ./cmd/$@
 
 ## generate: regenerate committed OpenAPI v2 server/models
 generate:

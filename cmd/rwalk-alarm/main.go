@@ -28,9 +28,13 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/urlalarm"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/wanotif"
+	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
 func main() {
+	if version.HandleFlag(os.Args[1:], os.Stdout) {
+		return
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -52,6 +56,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 		return err
 	}
 	logger := cfg.Log.NewLogger(out)
+	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
 	data, err := os.ReadFile(filepath.Clean(args[0]))
