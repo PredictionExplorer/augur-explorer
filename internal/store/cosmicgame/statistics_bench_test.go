@@ -236,4 +236,54 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("global_staking_actions_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.GlobalCstStakingActionsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("global staking actions page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("global_staked_tokens_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.GlobalStakedCstTokensPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("global staked tokens page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("global_staking_deposits_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.GlobalStakingDepositsPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("global staking deposits page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("round_staking_rewards_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.RoundStakingRewardsPage(ctx, 0, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("round staking rewards page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("global_staker_raffle_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.GlobalStakerRaffleNftWinsPage(ctx, false, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("global staker raffle page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
 }

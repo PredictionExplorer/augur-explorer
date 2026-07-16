@@ -265,6 +265,7 @@ func newParticipantTestServer(t *testing.T, participants participantReader) *Ser
 		fakeUserStakingReader{},
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
+		fakeGlobalStakingReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

@@ -95,6 +95,15 @@ const (
 	v2ListSupplyByBid    = "/api/v2/cosmicgame/cosmic-token/supply-history/by-bid"
 	v2ListSupplyDaily    = "/api/v2/cosmicgame/cosmic-token/supply-history/daily"
 	v2ListGlobalMkt      = "/api/v2/cosmicgame/marketing-rewards"
+	v2GlobalCstActions   = "/api/v2/cosmicgame/staking/cst/actions"
+	v2GlobalCstAction    = "/api/v2/cosmicgame/staking/cst/actions/{actionId}"
+	v2GlobalCstStaked    = "/api/v2/cosmicgame/staking/cst/staked-tokens"
+	v2GlobalStakingDeps  = "/api/v2/cosmicgame/staking/cst/deposits"
+	v2GlobalRwActions    = "/api/v2/cosmicgame/staking/random-walk/actions"
+	v2GlobalRwAction     = "/api/v2/cosmicgame/staking/random-walk/actions/{actionId}"
+	v2GlobalRwStaked     = "/api/v2/cosmicgame/staking/random-walk/staked-tokens"
+	v2RoundStakingReward = "/api/v2/cosmicgame/rounds/{round}/staking-rewards"
+	v2GlobalStakerRaffle = "/api/v2/cosmicgame/staking/raffle-nft-wins"
 )
 
 type v2GoldenCase struct {
@@ -1751,6 +1760,314 @@ func TestAPIV2GlobalDirectories(t *testing.T) {
 			name:       "global_marketing_error_internal",
 			target:     marketingPath,
 			template:   v2ListGlobalMkt,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2GlobalStakingResources(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	cstActionsPath := v2GlobalCstActions + "?limit=2"
+	var cstActions apiv2.CosmicGameGlobalCstStakingActionPage
+	decodeV2JSON(t, h.get(t, cstActionsPath), &cstActions)
+	if cstActions.Meta.NextCursor == nil {
+		t.Fatal("fixture CST action page has no continuation")
+	}
+	rwalkActionsPath := v2GlobalRwActions + "?limit=2"
+	var rwalkActions apiv2.CosmicGameGlobalRandomWalkStakingActionPage
+	decodeV2JSON(t, h.get(t, rwalkActionsPath), &rwalkActions)
+	if rwalkActions.Meta.NextCursor == nil {
+		t.Fatal("fixture RandomWalk action page has no continuation")
+	}
+	rwalkStakedPath := v2GlobalRwStaked + "?limit=1"
+	var rwalkStaked apiv2.CosmicGameGlobalStakedRandomWalkTokenPage
+	decodeV2JSON(t, h.get(t, rwalkStakedPath), &rwalkStaked)
+	if rwalkStaked.Meta.NextCursor == nil {
+		t.Fatal("fixture RandomWalk staked-token page has no continuation")
+	}
+	roundRewardsPath := "/api/v2/cosmicgame/rounds/0/staking-rewards?limit=1"
+	var roundRewards apiv2.CosmicGameRoundStakingRewardPage
+	decodeV2JSON(t, h.get(t, roundRewardsPath), &roundRewards)
+	if roundRewards.Meta.NextCursor == nil {
+		t.Fatal("fixture round staking reward page has no continuation")
+	}
+
+	eventCursor := func(resource string, eventLogID int64) string {
+		body := `{"v":1,"k":` + strconv.Quote(resource) +
+			`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`
+		return base64.RawURLEncoding.EncodeToString([]byte(body))
+	}
+	tokenCursor := func(resource string, tokenID int64) string {
+		body := `{"v":1,"k":` + strconv.Quote(resource) +
+			`,"t":` + strconv.FormatInt(tokenID, 10) + `}`
+		return base64.RawURLEncoding.EncodeToString([]byte(body))
+	}
+	depositCursor := func(depositID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"d":` + strconv.FormatInt(depositID, 10) + `}`,
+		))
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "global_staking_cst_actions_first_page",
+			target:     cstActionsPath,
+			template:   v2GlobalCstActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_cst_actions_next_page",
+			target:     cstActionsPath + "&cursor=" + *cstActions.Meta.NextCursor,
+			template:   v2GlobalCstActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staking_cst_actions_exhausted",
+			target: v2GlobalCstActions + "?cursor=" +
+				eventCursor("cstActions", 5051),
+			template:   v2GlobalCstActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_cst_actions_error_malformed_cursor",
+			target:     v2GlobalCstActions + "?cursor=bad",
+			template:   v2GlobalCstActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staking_cst_actions_error_cross_resource_cursor",
+			target: v2GlobalCstActions + "?cursor=" +
+				eventCursor("randomWalkActions", 5053),
+			template:   v2GlobalCstActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_cst_actions_error_internal",
+			target:     cstActionsPath,
+			template:   v2GlobalCstActions,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_staking_cst_action_closed",
+			target:     v2GlobalCstActions + "/1",
+			template:   v2GlobalCstAction,
+			pathParams: map[string]string{"actionId": "1"},
+		},
+		{
+			name:       "global_staking_cst_action_open",
+			target:     v2GlobalCstActions + "/2",
+			template:   v2GlobalCstAction,
+			pathParams: map[string]string{"actionId": "2"},
+		},
+		{
+			name:       "global_staking_cst_action_error_not_found",
+			target:     v2GlobalCstActions + "/999",
+			template:   v2GlobalCstAction,
+			pathParams: map[string]string{"actionId": "999"},
+		},
+		{
+			name:       "global_staking_cst_action_error_negative",
+			target:     v2GlobalCstActions + "/-1",
+			template:   v2GlobalCstAction,
+			pathParams: map[string]string{"actionId": "-1"},
+		},
+		{
+			name:       "global_staking_cst_action_error_internal",
+			target:     v2GlobalCstActions + "/1",
+			template:   v2GlobalCstAction,
+			pathParams: map[string]string{"actionId": "1"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_staking_randomwalk_actions_first_page",
+			target:     rwalkActionsPath,
+			template:   v2GlobalRwActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_randomwalk_actions_next_page",
+			target:     rwalkActionsPath + "&cursor=" + *rwalkActions.Meta.NextCursor,
+			template:   v2GlobalRwActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staking_randomwalk_actions_exhausted",
+			target: v2GlobalRwActions + "?cursor=" +
+				eventCursor("randomWalkActions", 5053),
+			template:   v2GlobalRwActions,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_randomwalk_actions_error_internal",
+			target:     rwalkActionsPath,
+			template:   v2GlobalRwActions,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_staking_randomwalk_action_closed",
+			target:     v2GlobalRwActions + "/101",
+			template:   v2GlobalRwAction,
+			pathParams: map[string]string{"actionId": "101"},
+		},
+		{
+			name:       "global_staking_randomwalk_action_open",
+			target:     v2GlobalRwActions + "/102",
+			template:   v2GlobalRwAction,
+			pathParams: map[string]string{"actionId": "102"},
+		},
+		{
+			name:       "global_staking_randomwalk_action_error_not_found",
+			target:     v2GlobalRwActions + "/999",
+			template:   v2GlobalRwAction,
+			pathParams: map[string]string{"actionId": "999"},
+		},
+		{
+			name:       "global_staking_cst_staked_tokens",
+			target:     v2GlobalCstStaked,
+			template:   v2GlobalCstStaked,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staking_cst_staked_tokens_exhausted",
+			target: v2GlobalCstStaked + "?cursor=" +
+				tokenCursor("cst", 5),
+			template:   v2GlobalCstStaked,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_cst_staked_tokens_error_internal",
+			target:     v2GlobalCstStaked,
+			template:   v2GlobalCstStaked,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_staking_randomwalk_staked_tokens_first_page",
+			target:     rwalkStakedPath,
+			template:   v2GlobalRwStaked,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_randomwalk_staked_tokens_next_page",
+			target:     rwalkStakedPath + "&cursor=" + *rwalkStaked.Meta.NextCursor,
+			template:   v2GlobalRwStaked,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staking_randomwalk_staked_tokens_error_cross_resource_cursor",
+			target: v2GlobalRwStaked + "?cursor=" +
+				tokenCursor("cst", 5),
+			template:   v2GlobalRwStaked,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_deposits",
+			target:     v2GlobalStakingDeps,
+			template:   v2GlobalStakingDeps,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staking_deposits_exhausted",
+			target: v2GlobalStakingDeps + "?cursor=" +
+				depositCursor(501),
+			template:   v2GlobalStakingDeps,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staking_deposits_error_internal",
+			target:     v2GlobalStakingDeps,
+			template:   v2GlobalStakingDeps,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "round_staking_rewards_first_page",
+			target:     roundRewardsPath,
+			template:   v2RoundStakingReward,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "round_staking_rewards_next_page",
+			target:     roundRewardsPath + "&cursor=" + *roundRewards.Meta.NextCursor,
+			template:   v2RoundStakingReward,
+			pathParams: map[string]string{"round": "0"},
+		},
+		{
+			name:       "round_staking_rewards_error_not_found",
+			target:     "/api/v2/cosmicgame/rounds/999/staking-rewards",
+			template:   v2RoundStakingReward,
+			pathParams: map[string]string{"round": "999"},
+		},
+		{
+			name:       "round_staking_rewards_error_open_round",
+			target:     "/api/v2/cosmicgame/rounds/3/staking-rewards",
+			template:   v2RoundStakingReward,
+			pathParams: map[string]string{"round": "3"},
+		},
+		{
+			name: "round_staking_rewards_error_cross_round_cursor",
+			target: "/api/v2/cosmicgame/rounds/1/staking-rewards?cursor=" +
+				*roundRewards.Meta.NextCursor,
+			template:   v2RoundStakingReward,
+			pathParams: map[string]string{"round": "1"},
+		},
+		{
+			name:       "round_staking_rewards_error_internal",
+			target:     roundRewardsPath,
+			template:   v2RoundStakingReward,
+			pathParams: map[string]string{"round": "0"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_staker_raffle_cst",
+			target:     v2GlobalStakerRaffle + "?pool=cst",
+			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staker_raffle_randomwalk",
+			target:     v2GlobalStakerRaffle + "?pool=randomWalk",
+			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staker_raffle_cst_exhausted",
+			target: v2GlobalStakerRaffle + "?pool=cst&cursor=" +
+				eventCursor("cstRaffle", 5099),
+			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_staker_raffle_error_cross_pool_cursor",
+			target: v2GlobalStakerRaffle + "?pool=randomWalk&cursor=" +
+				eventCursor("cstRaffle", 5099),
+			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staker_raffle_error_invalid_pool",
+			target:     v2GlobalStakerRaffle + "?pool=unknown",
+			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_staker_raffle_error_internal",
+			target:     v2GlobalStakerRaffle + "?pool=cst",
+			template:   v2GlobalStakerRaffle,
 			pathParams: map[string]string{},
 			ctx:        cancelledCtx,
 		},

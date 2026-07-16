@@ -61,6 +61,11 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkStatisticsQueries/global_token_page` | 360,000 | 20,303 | 124 | first 50 global tokens with scalar-subquery mint provenance |
 | `BenchmarkStatisticsQueries/cosmic_token_statistics` | 433,000 | 2,648 | 33 | one-snapshot ERC-20 aggregate with jsonb top-holder list |
 | `BenchmarkStatisticsQueries/supply_by_bid_page` | 322,000 | 17,893 | 142 | first 50 supply-ledger rows with streamed running totals |
+| `BenchmarkStatisticsQueries/global_staking_actions_page` | 207,000 | 14,283 | 55 | bounded two-branch global CST stake/unstake event merge |
+| `BenchmarkStatisticsQueries/global_staked_tokens_page` | 196,000 | 10,273 | 18 | live globally staked CST membership with mint provenance |
+| `BenchmarkStatisticsQueries/global_staking_deposits_page` | 433,000 | 12,397 | 19 | page-first exact reward-deposit aggregates and claim progress |
+| `BenchmarkStatisticsQueries/round_staking_rewards_page` | 181,000 | 7,192 | 19 | one round's per-staker exact reward allocations |
+| `BenchmarkStatisticsQueries/global_staker_raffle_page` | 186,000 | 10,576 | 35 | one filtered global staker-raffle NFT page |
 
 History:
 
@@ -139,3 +144,12 @@ History:
   allocs — three sprints of extension seeds have grown the joined tables
   since that baseline, so this is data volume, not a plan change;
   re-baseline when the fixture set stabilizes.
+- **2026-07-16 (API-v2 global-staking sprint)** — added five global
+  staking query baselines (table rows above). The bounded action union,
+  live membership, exact deposit aggregation, round allocation and
+  pool-filtered raffle queries run in 181–207 µs against the seeded
+  container; the page-first reward-deposit aggregate is 433 µs and bounds
+  its reward scan to the selected deposits. The eight concurrent indexes
+  in migration 00023 support action detail, deposit aggregation,
+  round-allocation and global raffle keysets; no cache or denormalized read
+  model was justified.

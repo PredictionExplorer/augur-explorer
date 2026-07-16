@@ -33,6 +33,7 @@ func newUserHistoryTestServer(t *testing.T, histories userHistoryReader) *Server
 		fakeUserStakingReader{},
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
+		fakeGlobalStakingReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

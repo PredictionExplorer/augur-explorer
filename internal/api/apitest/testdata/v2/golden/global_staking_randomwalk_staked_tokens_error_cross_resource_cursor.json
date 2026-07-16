@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The cursor is malformed, unsupported, or belongs to another staking resource.",
+    "instance": "/api/v2/cosmicgame/staking/random-walk/staked-tokens",
+    "status": 400,
+    "title": "Invalid cursor",
+    "type": "https://api.cosmicsignature.com/problems/invalid-cursor"
+  }
+}

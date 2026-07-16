@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "stake": {
+      "actionId": 102,
+      "actionType": "stake",
+      "blockNumber": 114,
+      "eventLogId": 5054,
+      "nftTokenId": 11,
+      "occurredAt": "2026-01-01T00:23:20Z",
+      "round": 1,
+      "stakerAddress": "0x2400000000000000000000000000000000000024",
+      "totalStakedNfts": 2,
+      "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001015"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The pool must be cst or randomWalk.",
+    "instance": "/api/v2/cosmicgame/staking/raffle-nft-wins",
+    "status": 400,
+    "title": "Invalid parameter",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

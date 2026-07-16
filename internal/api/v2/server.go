@@ -138,6 +138,19 @@ type globalDirectoryReader interface {
 	MarketingRewardsGlobalPage(context.Context, *cgstore.UserEventPageCursor, int) ([]cgstore.MarketingRewardRecord, bool, error)
 }
 
+type globalStakingReader interface {
+	GlobalCstStakingActionsPage(context.Context, *cgstore.GlobalStakingActionPageCursor, int) ([]cgstore.GlobalStakingActionRecord, bool, error)
+	GlobalRwalkStakingActionsPage(context.Context, *cgstore.GlobalStakingActionPageCursor, int) ([]cgstore.GlobalStakingActionRecord, bool, error)
+	StakeActionCstInfo(context.Context, int64) (cgmodel.CGStakeUnstakeCombined, error)
+	StakeActionRwalkInfo(context.Context, int64) (cgmodel.CGStakeUnstakeCombined, error)
+	GlobalStakedCstTokensPage(context.Context, *cgstore.GlobalStakedTokenPageCursor, int) ([]cgstore.GlobalStakedCstTokenRecord, bool, error)
+	GlobalStakedRwalkTokensPage(context.Context, *cgstore.GlobalStakedTokenPageCursor, int) ([]cgstore.GlobalStakedRwalkTokenRecord, bool, error)
+	GlobalStakingDepositsPage(context.Context, *cgstore.GlobalStakingDepositPageCursor, int) ([]cgstore.GlobalStakingDepositRecord, bool, error)
+	CompletedRoundExists(context.Context, int64) (bool, error)
+	RoundStakingRewardsPage(context.Context, int64, *cgstore.RoundStakingRewardPageCursor, int) ([]cgstore.RoundStakingRewardRecord, bool, error)
+	GlobalStakerRaffleNftWinsPage(context.Context, bool, *cgstore.GlobalStakerRafflePageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -162,6 +175,7 @@ type Server struct {
 	userStaking       userStakingReader
 	userActivity      userActivityReader
 	globalDirectories globalDirectoryReader
+	globalStaking     globalStakingReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -195,7 +209,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +242,7 @@ func newServer(
 	userStaking userStakingReader,
 	userActivity userActivityReader,
 	globalDirectories globalDirectoryReader,
+	globalStaking globalStakingReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -276,6 +291,9 @@ func newServer(
 	if globalDirectories == nil {
 		return nil, errors.New("api v2: global-directory repository is required")
 	}
+	if globalStaking == nil {
+		return nil, errors.New("api v2: global-staking repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -299,6 +317,7 @@ func newServer(
 		userStaking:       userStaking,
 		userActivity:      userActivity,
 		globalDirectories: globalDirectories,
+		globalStaking:     globalStaking,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

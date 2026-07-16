@@ -40,6 +40,10 @@ func TestGeneratedEnumDomainsMatchSpec(t *testing.T) {
 			valid:   StakingActionType("stake").Valid() && StakingActionType("unstake").Valid(),
 			invalid: StakingActionType("restake").Valid(),
 		},
+		"StakerRafflePool": {
+			valid:   StakerRafflePool("cst").Valid() && StakerRafflePool("randomWalk").Valid(),
+			invalid: StakerRafflePool("bidder").Valid(),
+		},
 		"ContractConfiguration0CstBidRewardMode": {
 			valid:   ContractConfiguration0CstBidRewardMode("fixed").Valid(),
 			invalid: ContractConfiguration0CstBidRewardMode("dynamic").Valid(),

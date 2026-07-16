@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "actionId": 102,
+        "blockNumber": 114,
+        "eventLogId": 5054,
+        "nftTokenId": 11,
+        "stakedAt": "2026-01-01T00:23:20Z",
+        "stakerAddress": "0x2400000000000000000000000000000000000024",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001015"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJrIjoicmFuZG9tV2FsayIsInQiOjExfQ"
+    }
+  }
+}

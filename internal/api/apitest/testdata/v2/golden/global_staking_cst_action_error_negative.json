@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Action ID must be a non-negative integer.",
+    "instance": "/api/v2/cosmicgame/staking/cst/actions/-1",
+    "status": 400,
+    "title": "Invalid parameter",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

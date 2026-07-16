@@ -79,6 +79,7 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 		"round":      "1",
 		"position":   "1",
 		"depositId":  "501",
+		"actionId":   "1",
 		"nftTokenId": "5",
 	}
 
@@ -119,6 +120,10 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 					key = parameter.Name + ":date"
 				}
 				value, known := requiredDefaults[key]
+				if parameter.Name == "pool" &&
+					strings.Contains(specPath, "/staking/raffle-nft-wins") {
+					value, known = "cst", true
+				}
 				if !known {
 					t.Fatalf("no default for required parameter %q of %s; extend requiredDefaults",
 						parameter.Name, specPath)

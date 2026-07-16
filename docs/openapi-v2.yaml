@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.15.0
+  version: 0.16.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -292,6 +292,31 @@ paths:
           $ref: "#/components/responses/RoundNftDonationPage"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/staking-rewards:
+    get:
+      operationId: listCosmicGameRoundStakingRewards
+      summary: List Cosmic Signature staking rewards allocated in one round
+      description: |
+        Returns one exact reward allocation per staker and staking deposit,
+        newest deposit first with a stable wallet tie-break. Collected and
+        pending wei always add up to the staker's reward. A missing or open
+        round returns 404 because staking rewards are deposited only when a
+        round completes.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameRoundStakingRewardPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
   /api/v2/cosmicgame/users/{address}:
@@ -865,6 +890,171 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/CosmicGameUserStakedRandomWalkTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/cst/actions:
+    get:
+      operationId: listCosmicGameGlobalCstStakingActions
+      summary: List every Cosmic Signature staking action
+      description: |
+        Returns the global interleaved Cosmic Signature NFT stake and
+        unstake ledger newest first by immutable event-log ID. Unstake rows
+        carry exact reward totals and per-token reward wei; stake rows never
+        do. The ledger is append-only, so pages are stable.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalCstStakingActionPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/cst/actions/{actionId}:
+    get:
+      operationId: getCosmicGameGlobalCstStakingAction
+      summary: Get one Cosmic Signature staking lifecycle
+      description: |
+        Returns the stake event and, when the token has subsequently
+        unstaked, the matching unstake event with exact reward amounts.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/StakingActionId"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalCstStakingAction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/cst/staked-tokens:
+    get:
+      operationId: listCosmicGameGlobalStakedCstTokens
+      summary: List every Cosmic Signature NFT currently staked
+      description: |
+        Returns live staking-wallet membership in ascending token order,
+        including the staker, locking action and mint provenance. Rows
+        disappear on unstake, so clients needing a fresh snapshot should
+        restart from the first page.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalStakedCstTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/cst/deposits:
+    get:
+      operationId: listCosmicGameGlobalStakingDeposits
+      summary: List global Cosmic Signature staking reward deposits
+      description: |
+        Returns every staking-wallet ETH deposit newest first with exact
+        distributed, collected, pending and integer-division remainder wei.
+        The response proves totalDepositWei equals collectedWei plus
+        pendingWei plus remainderWei.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalStakingDepositPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/random-walk/actions:
+    get:
+      operationId: listCosmicGameGlobalRandomWalkStakingActions
+      summary: List every RandomWalk staking action
+      description: |
+        Returns the global interleaved RandomWalk NFT stake and unstake
+        ledger newest first by immutable event-log ID. RandomWalk staking
+        earns no ETH rewards. The ledger is append-only, so pages are stable.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalRandomWalkStakingActionPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/random-walk/actions/{actionId}:
+    get:
+      operationId: getCosmicGameGlobalRandomWalkStakingAction
+      summary: Get one RandomWalk staking lifecycle
+      description: |
+        Returns the stake event and, when the token has subsequently
+        unstaked, the matching unstake event.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/StakingActionId"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalRandomWalkStakingAction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/random-walk/staked-tokens:
+    get:
+      operationId: listCosmicGameGlobalStakedRandomWalkTokens
+      summary: List every RandomWalk NFT currently staked
+      description: |
+        Returns live staking-wallet membership in ascending token order,
+        including the staker and locking action. Rows disappear on unstake,
+        so clients needing a fresh snapshot should restart from the first page.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalStakedRandomWalkTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/staking/raffle-nft-wins:
+    get:
+      operationId: listCosmicGameGlobalStakerRaffleNftWins
+      summary: List Cosmic Signature NFTs won by staking raffles
+      description: |
+        Returns global staker-raffle NFT wins newest first by immutable
+        event-log ID. `pool=cst` selects Cosmic Signature NFT stakers and
+        `pool=randomWalk` selects RandomWalk NFT stakers. Cursors are bound
+        to the selected pool and cannot cross between them.
+      tags:
+        - CosmicGame staking
+      parameters:
+        - $ref: "#/components/parameters/StakerRafflePoolParam"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameGlobalStakerRaffleNftWinPage"
         "400":
           $ref: "#/components/responses/BadRequest"
         "500":
@@ -1507,6 +1697,22 @@ components:
         type: integer
         format: int64
         minimum: 0
+    StakingActionId:
+      name: actionId
+      in: path
+      required: true
+      description: Contract-assigned staking action identifier.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    StakerRafflePoolParam:
+      name: pool
+      in: query
+      required: true
+      description: Select Cosmic Signature NFT stakers or RandomWalk NFT stakers.
+      schema:
+        $ref: "#/components/schemas/StakerRafflePool"
     StakedNftTokenId:
       name: nftTokenId
       in: path
@@ -5448,6 +5654,14 @@ components:
       enum:
         - stake
         - unstake
+    StakerRafflePool:
+      type: string
+      enum:
+        - cst
+        - randomWalk
+      x-enum-varnames:
+        - StakerRafflePoolCst
+        - StakerRafflePoolRandomWalk
     UserCstStakingAction:
       description: |
         One Cosmic Signature NFT stake or unstake event of one wallet.
@@ -5917,6 +6131,423 @@ components:
             $ref: "#/components/schemas/UserStakingTokenRewardDeposit"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    GlobalCstStakingAction:
+      description: |
+        One global Cosmic Signature NFT stake or unstake event.
+        rewardWei and rewardPerTokenWei are present exactly on unstake rows.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - actionType
+        - actionId
+        - nftTokenId
+        - round
+        - totalStakedNfts
+        - stakerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        actionType:
+          $ref: "#/components/schemas/StakingActionType"
+        actionId:
+          type: integer
+          format: int64
+          minimum: 0
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        totalStakedNfts:
+          type: integer
+          format: int64
+          minimum: 0
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        rewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+        rewardPerTokenWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CosmicGameGlobalCstStakingActionPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalCstStakingAction"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    GlobalCstStakingActionDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - stake
+      properties:
+        stake:
+          $ref: "#/components/schemas/GlobalCstStakingAction"
+        unstake:
+          $ref: "#/components/schemas/GlobalCstStakingAction"
+    GlobalRandomWalkStakingAction:
+      description: One global RandomWalk NFT stake or unstake event.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - actionType
+        - actionId
+        - nftTokenId
+        - round
+        - totalStakedNfts
+        - stakerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        actionType:
+          $ref: "#/components/schemas/StakingActionType"
+        actionId:
+          type: integer
+          format: int64
+          minimum: 0
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        totalStakedNfts:
+          type: integer
+          format: int64
+          minimum: 0
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    CosmicGameGlobalRandomWalkStakingActionPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalRandomWalkStakingAction"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    GlobalRandomWalkStakingActionDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - stake
+      properties:
+        stake:
+          $ref: "#/components/schemas/GlobalRandomWalkStakingAction"
+        unstake:
+          $ref: "#/components/schemas/GlobalRandomWalkStakingAction"
+    GlobalStakedCstToken:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - stakedAt
+        - actionId
+        - nftTokenId
+        - stakerAddress
+        - mintRound
+        - seed
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        stakedAt:
+          type: string
+          format: date-time
+        actionId:
+          type: integer
+          format: int64
+          minimum: 0
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        mintRound:
+          type: integer
+          format: int64
+          minimum: 0
+        seed:
+          type: string
+          minLength: 1
+        tokenName:
+          type: string
+          minLength: 1
+    CosmicGameGlobalStakedCstTokenPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalStakedCstToken"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    GlobalStakedRandomWalkToken:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - stakedAt
+        - actionId
+        - nftTokenId
+        - stakerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        stakedAt:
+          type: string
+          format: date-time
+        actionId:
+          type: integer
+          format: int64
+          minimum: 0
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    CosmicGameGlobalStakedRandomWalkTokenPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalStakedRandomWalkToken"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    GlobalStakingDeposit:
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - depositId
+        - round
+        - totalDepositWei
+        - totalStakedNfts
+        - amountPerTokenWei
+        - collectedWei
+        - pendingWei
+        - remainderWei
+        - rewardCount
+        - pendingRewardCount
+        - fullyClaimed
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        depositId:
+          type: integer
+          format: int64
+          minimum: 0
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        totalDepositWei:
+          type: string
+          pattern: "^[0-9]+$"
+        totalStakedNfts:
+          type: integer
+          format: int64
+          minimum: 1
+        amountPerTokenWei:
+          type: string
+          pattern: "^[0-9]+$"
+        collectedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        pendingWei:
+          type: string
+          pattern: "^[0-9]+$"
+        remainderWei:
+          type: string
+          pattern: "^[0-9]+$"
+        rewardCount:
+          type: integer
+          format: int64
+          minimum: 0
+        pendingRewardCount:
+          type: integer
+          format: int64
+          minimum: 0
+        fullyClaimed:
+          type: boolean
+    CosmicGameGlobalStakingDepositPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalStakingDeposit"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RoundStakingReward:
+      type: object
+      additionalProperties: false
+      required:
+        - depositId
+        - round
+        - stakerAddress
+        - stakedNftCount
+        - rewardWei
+        - collectedWei
+        - pendingWei
+        - fullyClaimed
+      properties:
+        depositId:
+          type: integer
+          format: int64
+          minimum: 0
+        round:
+          type: integer
+          format: int64
+          minimum: 0
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        stakedNftCount:
+          type: integer
+          format: int64
+          minimum: 1
+        rewardWei:
+          type: string
+          pattern: "^[0-9]+$"
+        collectedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        pendingWei:
+          type: string
+          pattern: "^[0-9]+$"
+        fullyClaimed:
+          type: boolean
+    CosmicGameRoundStakingRewardPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundStakingReward"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicGameGlobalStakerRaffleNftWinPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundRaffleNftWinner"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
   responses:
     CosmicGameContractAddresses:
       description: Complete deployed CosmicGame contract registry.
@@ -6218,6 +6849,60 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CosmicGameUserStakingTokenRewardDepositPage"
+    CosmicGameGlobalCstStakingActionPage:
+      description: One stable page of global Cosmic Signature staking actions.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameGlobalCstStakingActionPage"
+    CosmicGameGlobalCstStakingAction:
+      description: One Cosmic Signature staking lifecycle.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GlobalCstStakingActionDetail"
+    CosmicGameGlobalRandomWalkStakingActionPage:
+      description: One stable page of global RandomWalk staking actions.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameGlobalRandomWalkStakingActionPage"
+    CosmicGameGlobalRandomWalkStakingAction:
+      description: One RandomWalk staking lifecycle.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GlobalRandomWalkStakingActionDetail"
+    CosmicGameGlobalStakedCstTokenPage:
+      description: One page of globally staked Cosmic Signature NFTs.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameGlobalStakedCstTokenPage"
+    CosmicGameGlobalStakedRandomWalkTokenPage:
+      description: One page of globally staked RandomWalk NFTs.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameGlobalStakedRandomWalkTokenPage"
+    CosmicGameGlobalStakingDepositPage:
+      description: One stable page of global staking reward deposits.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameGlobalStakingDepositPage"
+    CosmicGameRoundStakingRewardPage:
+      description: One stable page of staker reward allocations in a round.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameRoundStakingRewardPage"
+    CosmicGameGlobalStakerRaffleNftWinPage:
+      description: One stable page of staking-raffle NFT wins.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameGlobalStakerRaffleNftWinPage"
     CosmicGameGlobalStatistics:
       description: Exact database-backed global CosmicGame statistics.
       content:

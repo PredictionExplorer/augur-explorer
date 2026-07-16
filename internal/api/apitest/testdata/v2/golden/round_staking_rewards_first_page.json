@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "collectedWei": "1000000000000000000",
+        "depositId": 501,
+        "fullyClaimed": true,
+        "pendingWei": "0",
+        "rewardWei": "1000000000000000000",
+        "round": 0,
+        "stakedNftCount": 1,
+        "stakerAddress": "0x2100000000000000000000000000000000000021"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJyIjowLCJkIjo1MDEsImEiOjIxfQ"
+    }
+  }
+}

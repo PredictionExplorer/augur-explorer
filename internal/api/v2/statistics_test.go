@@ -510,6 +510,7 @@ func newStatisticsTestServer(t *testing.T, statistics statisticsReader) *Server 
 		fakeUserStakingReader{},
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
+		fakeGlobalStakingReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

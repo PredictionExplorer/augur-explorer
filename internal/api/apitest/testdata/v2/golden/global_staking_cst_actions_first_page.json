@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "actionId": 1,
+        "actionType": "unstake",
+        "blockNumber": 116,
+        "eventLogId": 5056,
+        "nftTokenId": 1,
+        "occurredAt": "2026-01-01T00:26:40Z",
+        "rewardPerTokenWei": "1000000000000000000",
+        "rewardWei": "1000000000000000000",
+        "round": 1,
+        "stakerAddress": "0x2100000000000000000000000000000000000021",
+        "totalStakedNfts": 1,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001017"
+      },
+      {
+        "actionId": 2,
+        "actionType": "stake",
+        "blockNumber": 114,
+        "eventLogId": 5052,
+        "nftTokenId": 5,
+        "occurredAt": "2026-01-01T00:23:20Z",
+        "round": 1,
+        "stakerAddress": "0x2200000000000000000000000000000000000022",
+        "totalStakedNfts": 2,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001015"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJrIjoiY3N0QWN0aW9ucyIsImUiOjUwNTJ9"
+    }
+  }
+}

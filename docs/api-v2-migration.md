@@ -210,9 +210,8 @@ Staker raffle NFT mints need no new endpoints:
 `staking/cst/mints/by_user/{user_addr}` and
 `staking/randomwalk/mints/by_user/{user_addr}` (plus alias) map to the
 existing `GET /api/v2/cosmicgame/users/{address}/raffle-nft-wins` — filter
-client-side on `isStaker` and `isRandomWalk`. The global `staking/*/mints`
-and reward views, `staking/cst/rewards/global` and per-round staking
-statistics remain v1-only until a statistics slice replaces them.
+client-side on `isStaker` and `isRandomWalk`. Their global counterparts are
+mapped by the global staking resources below.
 
 ## CosmicGame user activity
 
@@ -363,6 +362,65 @@ Marketing:
   governance data, not game state, and is retired from v2 scope; the v1
   route keeps serving until the v1 sunset.
 
+## CosmicGame global staking
+
+The global-staking group replaces ten v1 behaviors (fourteen registered
+paths because all four RandomWalk handlers also have `staking/rwalk/*`
+aliases) with nine cursor-paginated v2 operations. Every amount is an exact
+wei string; every collection replaces `OFFSET/LIMIT` or an unbounded array
+with an endpoint-scoped keyset cursor.
+
+Global action ledgers and lifecycle details:
+
+- `staking/cst/actions/global/{offset}/{limit}` becomes
+  `GET /api/v2/cosmicgame/staking/cst/actions`: the interleaved global
+  stake/unstake ledger newest first by immutable event-log ID, carrying
+  the staker and round. Unstake rows add exact `rewardWei` and
+  `rewardPerTokenWei`; stake rows omit both.
+- `staking/randomwalk/actions/global/{offset}/{limit}` and its `rwalk`
+  alias become `GET …/staking/random-walk/actions`, with the same event
+  shape but no reward fields because RandomWalk staking earns no ETH.
+- The two `staking/*/actions/info/{action_id}` handlers (plus the
+  RandomWalk alias) become `GET …/staking/{cst|random-walk}/actions/{actionId}`:
+  one lifecycle resource containing the required stake event and an
+  optional matching unstake event. Unknown actions answer `404`; mapper
+  checks ensure the two events agree on action, token and staker.
+
+Live global membership:
+
+- `staking/cst/staked_tokens/all` becomes
+  `GET /api/v2/cosmicgame/staking/cst/staked-tokens`: ascending live token
+  membership with the staker, locking action and Cosmic Signature mint
+  provenance (`mintRound`, `seed`, optional `tokenName`).
+- `staking/randomwalk/staked_tokens/all` and its alias become
+  `GET …/staking/random-walk/staked-tokens`. Both resources document that
+  live unstakes can move rows while a client traverses pages.
+
+Reward accounting:
+
+- `staking/cst/rewards/global` becomes
+  `GET /api/v2/cosmicgame/staking/cst/deposits`: one row per staking-wallet
+  ETH deposit, newest first, with exact total, per-token, collected,
+  pending and integer-division remainder wei plus reward counts.
+  **Deliberate correction:** v1 calculated pending as
+  `deposit - collected`, silently folding the non-claimable division
+  remainder into pending. V2 exposes `remainderWei` separately and proves
+  `totalDepositWei = collectedWei + pendingWei + remainderWei`.
+- `staking/cst/rewards/by_round/{round_num}` becomes
+  `GET /api/v2/cosmicgame/rounds/{round}/staking-rewards`: bounded
+  per-staker allocations ordered by deposit and wallet, with
+  `rewardWei = collectedWei + pendingWei`. Missing and open rounds answer
+  `404`.
+
+Staker-raffle mints:
+
+- `staking/cst/mints/global/{offset}/{limit}` and
+  `staking/randomwalk/mints/global/{offset}/{limit}` (plus alias) become one
+  `GET /api/v2/cosmicgame/staking/raffle-nft-wins?pool=cst|randomWalk`
+  collection. The selected pool is embedded in the cursor, preventing
+  cross-pool continuation; rows reuse the exact typed raffle NFT winner
+  shape.
+
 ## Contract field mapping
 
 The dashboard's `ContractAddrs` object maps one-for-one to
@@ -412,10 +470,7 @@ last-bid timestamp sentinel is omitted.
 
 ## Remaining endpoint groups
 
-The user-scoped surface and the global token, CosmicToken and marketing
-directories are fully mapped. The global staking statistics
-(`staking/*/staked_tokens/all`, `staking/*/actions/global`,
-`staking/*/actions/info`, `staking/cst/rewards/global`,
-`staking/cst/rewards/by_round` and `staking/*/mints/global`) and the
-RandomWalk resources stay on v1 until their dedicated v2 sprints land.
-Their presence does not require continued use of any mapped v1 route.
+The CosmicGame surface is fully mapped. RandomWalk explorer, trading,
+statistics and ranking resources stay on v1 until their dedicated v2
+sprints land; their presence does not require continued use of any mapped
+CosmicGame v1 route.
