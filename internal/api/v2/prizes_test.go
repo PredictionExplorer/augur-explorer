@@ -299,9 +299,9 @@ func newPrizeTestServer(t *testing.T, prizes roundPrizeReader) *Server {
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		fakeContractState{},
-		logger,
-	)
+		logger)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

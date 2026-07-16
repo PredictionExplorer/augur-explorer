@@ -1,0 +1,15 @@
+{
+  "status": 201,
+  "contentType": "application/json",
+  "body": {
+    "firstToken": {
+      "rating": 1077.9593969381644,
+      "tokenId": 10
+    },
+    "secondToken": {
+      "rating": 1322.0406030618356,
+      "tokenId": 11
+    },
+    "winnerTokenId": 11
+  }
+}

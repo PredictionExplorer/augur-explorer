@@ -1,12 +1,10 @@
 package randomwalk
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"strings"
 	"testing"
@@ -15,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/beautyrank"
 )
 
 const rankingTestPrivateKey = "0000000000000000000000000000000000000000000000000000000000000001"
@@ -36,7 +36,7 @@ func signBeautyVoteForTest(
 	if nft1Won {
 		winner = nft1
 	}
-	message := beautyVoteSignMessage(chainID, nonce, nft1, nft2, winner)
+	message := beautyrank.VoteMessage(chainID, nonce, nft1, nft2, winner)
 	sig, err := crypto.Sign(accounts.TextHash([]byte(message)), key)
 	if err != nil {
 		t.Fatalf("sign beauty vote: %v", err)
@@ -134,52 +134,6 @@ func TestRankingVoteChainAllowed(t *testing.T) {
 	}
 }
 
-type rankingErrorReader struct {
-	err error
-}
-
-func (r rankingErrorReader) Read([]byte) (int, error) {
-	return 0, r.err
-}
-
-func TestGenerateRankingVoteNonce(t *testing.T) {
-	input := make([]byte, 32)
-	for i := range input {
-		input[i] = byte(i)
-	}
-	got, err := generateRankingVoteNonce(bytes.NewReader(input))
-	if err != nil {
-		t.Fatalf("generateRankingVoteNonce: %v", err)
-	}
-	if want := hex.EncodeToString(input); got != want {
-		t.Fatalf("generateRankingVoteNonce = %q, want %q", got, want)
-	}
-	if len(got) != 64 {
-		t.Fatalf("nonce length = %d, want 64 hex characters", len(got))
-	}
-
-	t.Run("short entropy source", func(t *testing.T) {
-		nonce, err := generateRankingVoteNonce(bytes.NewReader(input[:31]))
-		if !errors.Is(err, io.ErrUnexpectedEOF) {
-			t.Fatalf("error = %v, want io.ErrUnexpectedEOF", err)
-		}
-		if nonce != "" {
-			t.Fatalf("nonce = %q on entropy failure, want empty", nonce)
-		}
-	})
-
-	t.Run("reader failure", func(t *testing.T) {
-		wantErr := errors.New("entropy unavailable")
-		nonce, err := generateRankingVoteNonce(rankingErrorReader{err: wantErr})
-		if !errors.Is(err, wantErr) {
-			t.Fatalf("error = %v, want %v", err, wantErr)
-		}
-		if nonce != "" {
-			t.Fatalf("nonce = %q on entropy failure, want empty", nonce)
-		}
-	})
-}
-
 func TestPerformRankingMatchRejectsBadPairsBeforeDependencies(t *testing.T) {
 	a := NewBare()
 	tests := []struct {
@@ -273,7 +227,7 @@ func TestPerformRankingMatchWithDependencies(t *testing.T) {
 					if voterAid != nil {
 						t.Errorf("admin ranking match voterAid = %v, want nil", *voterAid)
 					}
-					wantRA, wantRB := computeEloUpdate(1300, 1100, map[bool]float64{false: 0, true: 1}[tt.nft1Won], 17)
+					wantRA, wantRB := beautyrank.EloUpdate(1300, 1100, map[bool]float64{false: 0, true: 1}[tt.nft1Won], 17)
 					if raNew != wantRA || rbNew != wantRB {
 						t.Errorf("applied ratings = (%v, %v), want (%v, %v)", raNew, rbNew, wantRA, wantRB)
 					}
@@ -297,7 +251,7 @@ func TestPerformRankingMatchWithDependencies(t *testing.T) {
 				if tt.nft1Won {
 					score = 1
 				}
-				wantRA, wantRB := computeEloUpdate(1300, 1100, score, 17)
+				wantRA, wantRB := beautyrank.EloUpdate(1300, 1100, score, 17)
 				if ra != wantRA || rb != wantRB {
 					t.Fatalf("ratings = (%v, %v), want (%v, %v)", ra, rb, wantRA, wantRB)
 				}

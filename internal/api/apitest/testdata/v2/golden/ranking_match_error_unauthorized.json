@@ -1,0 +1,11 @@
+{
+  "status": 401,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The X-Ranking-Admin-Key header is missing or wrong.",
+    "instance": "/api/v2/randomwalk/ranking/matches",
+    "status": 401,
+    "title": "Unauthorized",
+    "type": "https://api.cosmicsignature.com/problems/unauthorized"
+  }
+}

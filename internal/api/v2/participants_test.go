@@ -267,9 +267,9 @@ func newParticipantTestServer(t *testing.T, participants participantReader) *Ser
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
-	)
+		slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

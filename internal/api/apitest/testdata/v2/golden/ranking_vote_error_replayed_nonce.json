@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The challenge nonce is unknown, expired or already used.",
+    "instance": "/api/v2/randomwalk/ranking/votes",
+    "status": 400,
+    "title": "Invalid nonce",
+    "type": "https://api.cosmicsignature.com/problems/invalid-nonce"
+  }
+}

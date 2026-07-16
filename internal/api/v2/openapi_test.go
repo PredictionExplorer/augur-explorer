@@ -54,10 +54,26 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 	if !reflect.DeepEqual(registered, specRoutes) {
 		t.Fatalf("generated route drift\nregistered: %v\nspec:       %v", registered, specRoutes)
 	}
+	// The write surface is deliberately small (ADR-0008): exactly the three
+	// ranking mutations. Any other non-GET registration is drift.
+	writeOperations := map[string]bool{
+		"POST /api/v2/randomwalk/ranking/challenges": true,
+		"POST /api/v2/randomwalk/ranking/votes":      true,
+		"POST /api/v2/randomwalk/ranking/matches":    true,
+	}
+	seenWrites := 0
 	for _, route := range router.Routes() {
-		if route.Method != http.MethodGet {
-			t.Errorf("unexpected method in initial v2 slice: %+v", route)
+		if route.Method == http.MethodGet {
+			continue
 		}
+		if !writeOperations[route.Method+" "+route.Pattern] {
+			t.Errorf("unexpected non-GET v2 route: %+v", route)
+			continue
+		}
+		seenWrites++
+	}
+	if seenWrites != len(writeOperations) {
+		t.Errorf("registered %d of the %d documented write operations", seenWrites, len(writeOperations))
 	}
 }
 

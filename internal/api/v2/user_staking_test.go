@@ -34,9 +34,9 @@ func newUserStakingTestServer(t *testing.T, staking userStakingReader) *Server {
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
-	)
+		slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

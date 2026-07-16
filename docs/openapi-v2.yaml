@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.17.0
+  version: 0.18.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -1966,6 +1966,173 @@ paths:
           $ref: "#/components/responses/RandomWalkContractAddresses"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/random-tokens:
+    get:
+      operationId: getRandomWalkRankingRandomTokens
+      summary: Get beauty-contest exploration tokens
+      description: |
+        Returns up to `sampleSize` token ids for the beauty-contest
+        explorer, preferring tokens with the fewest recorded matches and
+        then the lowest rating so coverage stays even. The selection is
+        intentionally not stable between calls.
+      tags:
+        - RandomWalk ranking
+      parameters:
+        - $ref: "#/components/parameters/RankingSampleSize"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkRankingRandomTokens"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/pair:
+    get:
+      operationId: getRandomWalkRankingPair
+      summary: Get one beauty-contest pair to vote on
+      description: |
+        Returns two distinct token ids for a beauty vote. With `voter`,
+        the selection re-rolls (up to fifty attempts) to find a pair the
+        wallet has not voted on; `pairExhausted` reports that every
+        attempt was already voted, in which case the last pair is
+        returned anyway and a vote on it will answer 409. Without
+        `voter` the pair is unfiltered. A collection with fewer than two
+        tokens answers 404.
+      tags:
+        - RandomWalk ranking
+      parameters:
+        - $ref: "#/components/parameters/RankingVoter"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkRankingPair"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/ratings:
+    get:
+      operationId: listRandomWalkRankingRatings
+      summary: List beauty-contest ratings for every token
+      description: |
+        Returns the full collection ordered by Elo rating ascending (the
+        least beautiful first, matching the legacy rating order), then
+        by token id. Tokens that never appeared in a match carry the
+        default rating 1200 and a zero match count. Ratings move as
+        votes arrive, so clients needing a fresh ranking restart from
+        the first page; continuation cursors resume strictly after the
+        cursor position.
+      tags:
+        - RandomWalk ranking
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkRankingRatingPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/statistics:
+    get:
+      operationId: getRandomWalkRankingStatistics
+      summary: Get beauty-contest vote statistics
+      description: |
+        Returns one consistent snapshot of the beauty contest: total
+        recorded matches, how many were wallet-signed votes, the number
+        of distinct voting wallets and the number of tokens holding a
+        recorded rating.
+      tags:
+        - RandomWalk ranking
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkRankingStatistics"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/challenges:
+    post:
+      operationId: createRandomWalkRankingChallenge
+      summary: Create a one-time challenge for a wallet-signed vote
+      description: |
+        Issues the one-time nonce a wallet must embed in its signed vote
+        message. The nonce expires at `expiresAt` (fifteen minutes) and
+        is consumed by the first vote that presents it. The operation
+        has no request body.
+      tags:
+        - RandomWalk ranking
+      responses:
+        "201":
+          $ref: "#/components/responses/RandomWalkRankingChallengeCreated"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/votes:
+    post:
+      operationId: createRandomWalkRankingVote
+      summary: Record a wallet-signed beauty vote
+      description: |
+        Records one beauty vote and applies the Elo update. The wallet
+        signs the canonical message (EIP-191 personal_sign) binding the
+        chain id, the challenge nonce, both token ids and the winner;
+        the recovered signer becomes the voter of record. Each wallet
+        may vote once per unordered pair; a repeat answers 409. Invalid
+        pairs, disallowed chains, malformed signatures and unknown or
+        expired nonces answer 400 problems with specific types.
+      tags:
+        - RandomWalk ranking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RankingVoteRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/RandomWalkRankingVoteRecorded"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/ranking/matches:
+    post:
+      operationId: recordRandomWalkRankingMatch
+      summary: Record a beauty-contest match result (admin)
+      description: |
+        Records one pairwise result without a voter of record and
+        applies the Elo update. Requires the X-Ranking-Admin-Key header
+        (RANKING_ADMIN_KEY, falling back to ADMIN_API_KEY); when no key
+        is configured the operation fails closed with 503. Public
+        voting must use the wallet-signed votes operation instead.
+      tags:
+        - RandomWalk ranking
+      security:
+        - RankingAdminKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RankingMatchRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/RandomWalkRankingMatchRecorded"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/AdminDisabled"
 components:
   parameters:
     Round:
@@ -2275,6 +2442,38 @@ components:
       schema:
         $ref: "#/components/schemas/RandomWalkOfferSort"
         default: newest
+    RankingSampleSize:
+      name: sampleSize
+      in: query
+      required: false
+      description: Number of exploration token ids to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 2
+    RankingVoter:
+      name: voter
+      in: query
+      required: false
+      description: |
+        Wallet whose already-voted pairs the selection avoids. A valid
+        wallet the indexer has never seen behaves like an omitted
+        parameter.
+      schema:
+        type: string
+        minLength: 42
+        maxLength: 42
+        pattern: "^0x[0-9a-fA-F]{40}$"
+  securitySchemes:
+    RankingAdminKey:
+      type: apiKey
+      in: header
+      name: X-Ranking-Admin-Key
+      description: |
+        Shared-secret admin key compared in constant time against
+        RANKING_ADMIN_KEY (falling back to ADMIN_API_KEY). When neither
+        variable is set the guarded operations fail closed with 503.
   schemas:
     Problem:
       type: object
@@ -8040,6 +8239,239 @@ components:
         marketplaceAddress:
           type: string
           pattern: "^0x[0-9a-fA-F]{40}$"
+    RankingRandomTokens:
+      type: object
+      additionalProperties: false
+      required:
+        - tokenIds
+      properties:
+        tokenIds:
+          description: |
+            Exploration token ids, fewest recorded matches first. May be
+            shorter than the requested sample when the collection is
+            smaller.
+          type: array
+          maxItems: 100
+          items:
+            type: integer
+            format: int64
+            minimum: 0
+    RankingPair:
+      type: object
+      additionalProperties: false
+      required:
+        - firstTokenId
+        - secondTokenId
+        - pairExhausted
+      properties:
+        firstTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        secondTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        pairExhausted:
+          description: |
+            True when every re-roll attempt found a pair the voter had
+            already voted on; the returned pair is the last attempt.
+          type: boolean
+    RankingRating:
+      type: object
+      additionalProperties: false
+      required:
+        - tokenId
+        - rating
+        - matchCount
+      properties:
+        tokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        rating:
+          description: Elo rating; 1200 for tokens never voted on.
+          type: number
+          format: double
+        matchCount:
+          description: Recorded matches this token appeared in.
+          type: integer
+          format: int64
+          minimum: 0
+    RankingRatingPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/RankingRating"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RankingStatistics:
+      type: object
+      additionalProperties: false
+      required:
+        - totalVotes
+        - walletVotes
+        - distinctVoters
+        - ratedTokens
+      properties:
+        totalVotes:
+          description: All recorded matches, wallet-signed and admin.
+          type: integer
+          format: int64
+          minimum: 0
+        walletVotes:
+          description: Matches recorded with a wallet voter of record.
+          type: integer
+          format: int64
+          minimum: 0
+        distinctVoters:
+          description: Distinct wallets that have voted.
+          type: integer
+          format: int64
+          minimum: 0
+        ratedTokens:
+          description: Tokens holding a recorded rating.
+          type: integer
+          format: int64
+          minimum: 0
+    RankingChallenge:
+      type: object
+      additionalProperties: false
+      required:
+        - nonce
+        - expiresAt
+      properties:
+        nonce:
+          description: One-time value the signed vote message embeds.
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        expiresAt:
+          description: UTC instant after which the nonce is rejected.
+          type: string
+          format: date-time
+    RankingVoteRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - firstTokenId
+        - secondTokenId
+        - winnerTokenId
+        - chainId
+        - nonce
+        - signature
+      properties:
+        firstTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        secondTokenId:
+          description: Must differ from firstTokenId.
+          type: integer
+          format: int64
+          minimum: 0
+        winnerTokenId:
+          description: Must equal firstTokenId or secondTokenId.
+          type: integer
+          format: int64
+          minimum: 0
+        chainId:
+          description: EIP-155 chain id the wallet signed on.
+          type: integer
+          format: int64
+          minimum: 1
+        nonce:
+          description: Unconsumed nonce from the challenges operation.
+          type: string
+          minLength: 1
+          maxLength: 128
+        signature:
+          description: |
+            EIP-191 personal_sign signature (65 bytes, hex, optional 0x
+            prefix) over the canonical vote message.
+          type: string
+          minLength: 1
+          maxLength: 256
+    RankingMatchRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - firstTokenId
+        - secondTokenId
+        - winnerTokenId
+      properties:
+        firstTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        secondTokenId:
+          description: Must differ from firstTokenId.
+          type: integer
+          format: int64
+          minimum: 0
+        winnerTokenId:
+          description: Must equal firstTokenId or secondTokenId.
+          type: integer
+          format: int64
+          minimum: 0
+    RankingRatingChange:
+      type: object
+      additionalProperties: false
+      required:
+        - tokenId
+        - rating
+      properties:
+        tokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        rating:
+          description: Elo rating after this result was applied.
+          type: number
+          format: double
+    RankingVoteResult:
+      type: object
+      additionalProperties: false
+      required:
+        - firstToken
+        - secondToken
+        - winnerTokenId
+        - voterAddress
+      properties:
+        firstToken:
+          $ref: "#/components/schemas/RankingRatingChange"
+        secondToken:
+          $ref: "#/components/schemas/RankingRatingChange"
+        winnerTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        voterAddress:
+          description: Recovered signer recorded as the voter.
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    RankingMatchResult:
+      type: object
+      additionalProperties: false
+      required:
+        - firstToken
+        - secondToken
+        - winnerTokenId
+      properties:
+        firstToken:
+          $ref: "#/components/schemas/RankingRatingChange"
+        secondToken:
+          $ref: "#/components/schemas/RankingRatingChange"
+        winnerTokenId:
+          type: integer
+          format: int64
+          minimum: 0
   responses:
     CosmicGameContractAddresses:
       description: Complete deployed CosmicGame contract registry.
@@ -8587,6 +9019,48 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RandomWalkContractAddresses"
+    RandomWalkRankingRandomTokens:
+      description: Exploration token ids for the beauty contest.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingRandomTokens"
+    RandomWalkRankingPair:
+      description: One pair of token ids to vote on.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingPair"
+    RandomWalkRankingRatingPage:
+      description: One page of the ascending Elo rating directory.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingRatingPage"
+    RandomWalkRankingStatistics:
+      description: One consistent snapshot of beauty-contest counters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingStatistics"
+    RandomWalkRankingChallengeCreated:
+      description: The issued one-time vote challenge.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingChallenge"
+    RandomWalkRankingVoteRecorded:
+      description: The recorded vote with both updated ratings.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingVoteResult"
+    RandomWalkRankingMatchRecorded:
+      description: The recorded match with both updated ratings.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RankingMatchResult"
     BadRequest:
       description: A path or query parameter is invalid.
       content:
@@ -8614,6 +9088,37 @@ components:
           schema:
             type: integer
             minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: The admin key header is missing or wrong.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: The request conflicts with an existing record.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RateLimited:
+      description: The per-operation rate limit was exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    AdminDisabled:
+      description: Admin authentication is not configured; the operation fails closed.
       content:
         application/problem+json:
           schema:

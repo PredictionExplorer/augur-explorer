@@ -414,9 +414,9 @@ func newRaffleTestServer(t *testing.T, raffles roundRaffleReader) *Server {
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		fakeContractState{},
-		logger,
-	)
+		logger)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

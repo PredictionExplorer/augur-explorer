@@ -3,6 +3,7 @@ package v2
 import (
 	"encoding/base64"
 	"errors"
+	"math"
 	"strings"
 	"testing"
 )
@@ -525,6 +526,36 @@ func FuzzDecodeRandomWalkUserTokenCursor(f *testing.F) {
 		cursor, err := decodeRandomWalkUserTokenCursor(value, address)
 		if err == nil && !validRandomWalkUserTokenCursor(cursor, address) {
 			t.Fatalf("accepted invalid cursor: %+v", cursor)
+		}
+	})
+}
+
+func FuzzDecodeRandomWalkRankingRatingCursor(f *testing.F) {
+	valid, _ := encodeRandomWalkRankingRatingCursor(randomWalkRankingRatingCursor{
+		Version:  randomWalkCursorVersion,
+		Resource: randomWalkResourceRankingRatings,
+		Rating:   1189.5,
+		TokenID:  11,
+	})
+	f.Add(valid)
+	f.Add("")
+	// Cross-resource payloads must fail closed.
+	foreign, _ := encodeRandomWalkLedgerCursor(randomWalkLedgerCursor{
+		Version:    randomWalkCursorVersion,
+		Resource:   randomWalkResourceTrades,
+		EventLogID: 4,
+	})
+	f.Add(foreign)
+	f.Fuzz(func(t *testing.T, value string) {
+		cursor, err := decodeRandomWalkRankingRatingCursor(value)
+		if err != nil {
+			return
+		}
+		if !validRandomWalkRankingRatingCursor(cursor) {
+			t.Fatalf("accepted invalid cursor: %+v", cursor)
+		}
+		if math.IsNaN(cursor.Rating) || math.IsInf(cursor.Rating, 0) {
+			t.Fatalf("accepted non-finite rating: %+v", cursor)
 		}
 	})
 }

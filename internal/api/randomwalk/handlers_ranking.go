@@ -3,24 +3,19 @@ package randomwalk
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/beautyrank"
 	rwdb "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
@@ -109,7 +104,7 @@ func performRankingMatchWithDependencies(
 	if nft1Won {
 		score = 1.0
 	}
-	raNew, rbNew = computeEloUpdate(ra, rb, score, n)
+	raNew, rbNew = beautyrank.EloUpdate(ra, rb, score, n)
 
 	err = deps.withTransaction(ctx, func(tx pgx.Tx) error {
 		return deps.applyRankingMatch(ctx, tx, nft1, nft2, nft1Won, raNew, rbNew, nil)
@@ -298,34 +293,6 @@ type addGameLegacyBody struct {
 	ChainID   int64  `json:"chain_id"`
 }
 
-func beautyVoteSignMessage(chainID int64, nonce string, nft1, nft2, winner int64) string {
-	return fmt.Sprintf(
-		"RandomWalk beauty vote\nVersion: 1\nchainId: %d\nnonce: %s\nnft1: %d\nnft2: %d\nwinner: %d",
-		chainID, nonce, nft1, nft2, winner,
-	)
-}
-
-func recoverPersonalSignSigner(message string, sigHex string) (ethcommon.Address, error) {
-	raw := strings.TrimSpace(sigHex)
-	raw = strings.TrimPrefix(raw, "0x")
-	sig, err := hex.DecodeString(raw)
-	if err != nil {
-		return ethcommon.Address{}, fmt.Errorf("decode signature: %w", err)
-	}
-	if len(sig) != 65 {
-		return ethcommon.Address{}, errors.New("signature must be 65 bytes")
-	}
-	if sig[64] == 27 || sig[64] == 28 {
-		sig[64] -= 27
-	}
-	h := accounts.TextHash([]byte(message))
-	pub, err := crypto.SigToPub(h, sig)
-	if err != nil {
-		return ethcommon.Address{}, err
-	}
-	return crypto.PubkeyToAddress(*pub), nil
-}
-
 // rankingVoteChainAllowed reports whether the wallet-signed vote's chain id
 // passes the configured allowlist (empty allows any positive chain id).
 func (a *API) rankingVoteChainAllowed(chainID int64) bool {
@@ -377,8 +344,8 @@ func performSignedBeautyVoteWithDependencies(
 	if nft1Won {
 		winner = nft1
 	}
-	msg := beautyVoteSignMessage(chainID, signNonce, nft1, nft2, winner)
-	signer, err := recoverPersonalSignSigner(msg, signature)
+	msg := beautyrank.VoteMessage(chainID, signNonce, nft1, nft2, winner)
+	signer, err := beautyrank.RecoverSigner(msg, signature)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errRankingVoteInvalidSignature, err)
 	}
@@ -395,7 +362,7 @@ func performSignedBeautyVoteWithDependencies(
 	if nft1Won {
 		score = 1.0
 	}
-	raNew, rbNew := computeEloUpdate(ra, rb, score, n)
+	raNew, rbNew := beautyrank.EloUpdate(ra, rb, score, n)
 
 	voterAid, err := deps.lookupOrCreateAddress(ctx, signer.Hex(), 0, 0)
 	if err != nil {
@@ -443,26 +410,18 @@ func (a *API) respondRankingVoteError(c *httpx.Context, err error) {
 	}
 }
 
-func generateRankingVoteNonce(r io.Reader) (string, error) {
-	var b [32]byte
-	if _, err := io.ReadFull(r, b[:]); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b[:]), nil
-}
-
 // GET /api/randomwalk/ranking/sign-challenge — issue one-time nonce for wallet-signed /api/randomwalk/add_game.
 func (a *API) handleRankingSignChallenge(c *httpx.Context) {
 	if !a.dbInitialized() {
 		common.RespondErrorJSON(c, "Database link wasn't configured")
 		return
 	}
-	nonce, err := generateRankingVoteNonce(rand.Reader)
+	nonce, err := beautyrank.NewNonce(rand.Reader)
 	if err != nil {
 		common.RespondInternalErrorJSON(c)
 		return
 	}
-	if err := a.repo.InsertRankingVoteNonce(c.Request.Context(), nonce, 15*time.Minute); err != nil {
+	if err := a.repo.InsertRankingVoteNonce(c.Request.Context(), nonce, beautyrank.ChallengeTTL); err != nil {
 		a.respondStoreError(c, err)
 		return
 	}
@@ -493,15 +452,4 @@ func (a *API) handleAddGameLegacy(c *httpx.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, httpx.H{"result": "success"})
-}
-
-func computeEloUpdate(ra, rb, score float64, totalMatches int64) (raNew, rbNew float64) {
-	k := 250.0 - float64(totalMatches)*0.00525
-	if k < 1 {
-		k = 1
-	}
-	es := 1.0 / (1.0 + math.Pow(10, (rb-ra)/400))
-	raNew = ra + k*(score-es)
-	rbNew = rb - k*(score-es)
-	return raNew, rbNew
 }

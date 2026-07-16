@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The signature does not verify against the canonical vote message.",
+    "instance": "/api/v2/randomwalk/ranking/votes",
+    "status": 400,
+    "title": "Invalid signature",
+    "type": "https://api.cosmicsignature.com/problems/invalid-signature"
+  }
+}

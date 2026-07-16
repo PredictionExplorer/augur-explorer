@@ -271,9 +271,9 @@ func newCurrentRoundTestServer(
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		state,
-		logger,
-	)
+		logger)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

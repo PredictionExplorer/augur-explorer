@@ -152,7 +152,15 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	// integration suites build through the same constructor.
 	var v2Server *v2.Server
 	if cgAPI != nil {
-		v2Server, err = v2.NewServer(deps.store, cgAPI.ContractState(), logger)
+		v2Server, err = v2.NewServer(deps.store, cgAPI.ContractState(), logger,
+			v2.WithRanking(v2.RankingConfig{
+				AdminKeys: []common.AdminKey{
+					{Name: "RANKING_ADMIN_KEY", Value: cfg.RankingAdminKey},
+					{Name: "ADMIN_API_KEY", Value: cfg.AdminAPIKey},
+				},
+				VoteChainIDs:      cfg.RankingVoteChainIDs,
+				ExploreMaxTokenID: cfg.ExploreMaxTokenID,
+			}))
 		if err != nil {
 			return fmt.Errorf("API v2 initialization failed: %w", err)
 		}

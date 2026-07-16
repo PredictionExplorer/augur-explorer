@@ -12,15 +12,16 @@ import (
 type randomWalkResource string
 
 const (
-	randomWalkResourceTokens       randomWalkResource = "rwalkTokens"
-	randomWalkResourceNameHistory  randomWalkResource = "rwalkNameHistory"
-	randomWalkResourceTokenEvents  randomWalkResource = "rwalkTokenEvents"
-	randomWalkResourceOfferBook    randomWalkResource = "rwalkOffers"
-	randomWalkResourceOfferHistory randomWalkResource = "rwalkOfferHistory"
-	randomWalkResourceTrades       randomWalkResource = "rwalkTrades"
-	randomWalkResourceWithdrawals  randomWalkResource = "rwalkWithdrawals"
-	randomWalkResourceUserOffers   randomWalkResource = "rwalkUserOffers"
-	randomWalkResourceUserTokens   randomWalkResource = "rwalkUserTokens"
+	randomWalkResourceTokens         randomWalkResource = "rwalkTokens"
+	randomWalkResourceNameHistory    randomWalkResource = "rwalkNameHistory"
+	randomWalkResourceTokenEvents    randomWalkResource = "rwalkTokenEvents"
+	randomWalkResourceOfferBook      randomWalkResource = "rwalkOffers"
+	randomWalkResourceOfferHistory   randomWalkResource = "rwalkOfferHistory"
+	randomWalkResourceTrades         randomWalkResource = "rwalkTrades"
+	randomWalkResourceWithdrawals    randomWalkResource = "rwalkWithdrawals"
+	randomWalkResourceUserOffers     randomWalkResource = "rwalkUserOffers"
+	randomWalkResourceUserTokens     randomWalkResource = "rwalkUserTokens"
+	randomWalkResourceRankingRatings randomWalkResource = "rwalkRankingRatings"
 )
 
 const randomWalkCursorVersion = 1
@@ -296,6 +297,45 @@ func validRandomWalkLedgerCursor(
 	return cursorOK && expectedOK &&
 		cursor.Address == cursorScope &&
 		cursorScope == expectedScope
+}
+
+// randomWalkRankingRatingCursor identifies the last row returned by the
+// ascending (rating, tokenId) beauty-contest rating directory. Rating is a
+// float64 like the stored Elo value; Go's JSON encoding round-trips it
+// exactly, so the store resumes from the precise keyset position.
+type randomWalkRankingRatingCursor struct {
+	Version  int                `json:"v"`
+	Resource randomWalkResource `json:"k"`
+	Rating   float64            `json:"r"`
+	TokenID  int64              `json:"t"`
+}
+
+func encodeRandomWalkRankingRatingCursor(cursor randomWalkRankingRatingCursor) (string, error) {
+	if !validRandomWalkRankingRatingCursor(cursor) {
+		return "", fmt.Errorf("%w: invalid fields", errInvalidRandomWalkCursor)
+	}
+	return encodeOpaqueCursor(cursor, errInvalidRandomWalkCursor, "random walk ranking rating cursor")
+}
+
+func decodeRandomWalkRankingRatingCursor(encoded string) (randomWalkRankingRatingCursor, error) {
+	cursor, err := decodeOpaqueCursor[randomWalkRankingRatingCursor](encoded, errInvalidRandomWalkCursor)
+	if err != nil {
+		return randomWalkRankingRatingCursor{}, err
+	}
+	if !validRandomWalkRankingRatingCursor(cursor) {
+		return randomWalkRankingRatingCursor{}, fmt.Errorf("%w: invalid fields", errInvalidRandomWalkCursor)
+	}
+	return cursor, nil
+}
+
+// validRandomWalkRankingRatingCursor accepts any finite rating (Elo can
+// legitimately go negative) at a non-negative token position. Non-finite
+// ratings cannot appear: encoding/json refuses NaN and infinities on both
+// the encode and decode sides.
+func validRandomWalkRankingRatingCursor(cursor randomWalkRankingRatingCursor) bool {
+	return cursor.Version == randomWalkCursorVersion &&
+		cursor.Resource == randomWalkResourceRankingRatings &&
+		cursor.TokenID >= 0
 }
 
 // randomWalkUserTokenCursor identifies the last token returned by the

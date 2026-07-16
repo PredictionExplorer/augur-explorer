@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
@@ -108,6 +109,18 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		// Pin relative-time fields so HTTP goldens do not age.
 		v2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
+		// Production ranking wiring: the same admin key as the v1 module,
+		// a configured chain allowlist (so the chain-rejection problem is
+		// reachable) and the default write rate limits (each harness
+		// request uses a fresh client IP, so per-IP buckets only trip when
+		// a test pins remoteAddr on purpose).
+		v2.WithRanking(v2.RankingConfig{
+			AdminKeys: []common.AdminKey{
+				{Name: "RANKING_ADMIN_KEY", Value: adminKey},
+				{Name: "ADMIN_API_KEY", Value: adminKey},
+			},
+			VoteChainIDs: []int64{1, 42161},
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("initializing api v2: %w", err)

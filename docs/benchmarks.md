@@ -71,6 +71,8 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkRandomWalkV2Queries/offer_history` | 410,000 | 20,444 | 176 | offer-creation ledger with purchase/cancel outcome joins |
 | `BenchmarkRandomWalkV2Queries/offers_price_asc` | 345,000 | 10,110 | 37 | live order book on the partial (price, evtlog) index |
 | `BenchmarkRandomWalkV2Queries/statistics` | 399,000 | 4,888 | 90 | one-snapshot collection/marketplace/withdrawal aggregate |
+| `BenchmarkRankingQueries/ratings_page` | 180,000 | 2,645 | 17 | full rating directory page with per-token match counts |
+| `BenchmarkRankingQueries/statistics` | 166,000 | 580 | 6 | one-snapshot beauty-contest vote/voter/rated counters |
 
 History:
 
@@ -168,3 +170,11 @@ History:
   statistics aggregate in 399 µs. All sit inside the established
   170–550 µs container-round-trip band, so no denormalized read model or
   cache was added.
+- **2026-07-16 (API-v2 ranking-write sprint)** — added the two
+  beauty-contest read baselines (`BenchmarkRankingQueries`, table rows
+  above). Both queries scan tables bounded by the frozen ~4k-token
+  collection (`rw_token`, `rw_token_ranking`, `rw_ranking_match`), landing
+  at the floor of the container-round-trip band — which is why the sprint
+  deliberately added **no migration**: a keyset index over
+  `COALESCE(rating, 1200)` would optimize a sub-200 µs sequential scan of
+  a size-capped table.

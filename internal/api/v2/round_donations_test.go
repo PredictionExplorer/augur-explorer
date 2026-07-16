@@ -307,9 +307,9 @@ func newDonationTestServer(t *testing.T, donations roundDonationReader) *Server 
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		fakeContractState{},
-		logger,
-	)
+		logger)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

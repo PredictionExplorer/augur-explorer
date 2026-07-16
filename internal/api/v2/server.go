@@ -2,11 +2,14 @@ package v2
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
@@ -175,6 +178,21 @@ type randomWalkReader interface {
 	ContractAddrs(context.Context) (rwmodel.ContractAddresses, error)
 }
 
+type rankingRepository interface {
+	ContractAddrs(context.Context) (rwmodel.ContractAddresses, error)
+	ExploreRandomTokenIDs(context.Context, int64, int64, int) ([]int64, error)
+	UserAddressID(context.Context, string) (int64, error)
+	HasRankingVoteForVoterPair(context.Context, int64, int64, int64) (bool, error)
+	RankingRatingsPage(context.Context, int64, *rwstore.RankingRatingPageCursor, int) ([]rwstore.RankingRatingRecord, bool, error)
+	RankingStatistics(context.Context) (rwstore.RankingStatisticsRecord, error)
+	CountRankingMatches(context.Context) (int64, error)
+	RatingPair(context.Context, int64, int64) (float64, float64, error)
+	EnsureVoterAddress(context.Context, string) (int64, error)
+	CreateRankingVoteNonce(context.Context, string, time.Duration) (time.Time, error)
+	RecordRankingMatch(context.Context, int64, int64, bool, float64, float64) error
+	RecordSignedRankingVote(context.Context, string, int64, int64, bool, float64, float64, int64) error
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -201,9 +219,12 @@ type Server struct {
 	globalDirectories globalDirectoryReader
 	globalStaking     globalStakingReader
 	randomWalk        randomWalkReader
+	ranking           rankingRepository
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
+	entropy           io.Reader
+	rankingConfig     RankingConfig
 }
 
 // ServerOption customizes a Server at construction.
@@ -214,6 +235,24 @@ type ServerOption func(*Server)
 func WithClock(now func() time.Time) ServerOption {
 	return func(server *Server) {
 		server.now = now
+	}
+}
+
+// WithEntropy replaces the randomness source behind challenge nonces. It is
+// primarily useful for deterministic tests and entropy-failure tests.
+func WithEntropy(entropy io.Reader) ServerOption {
+	return func(server *Server) {
+		server.entropy = entropy
+	}
+}
+
+// WithRanking installs the ranking slice's deployment configuration (admin
+// keys, the vote chain allowlist, the exploration bound and optional write
+// rate-limit overrides). Servers built without it fail closed on the admin
+// operation and allow any positive vote chain id.
+func WithRanking(config RankingConfig) ServerOption {
+	return func(server *Server) {
+		server.rankingConfig = config
 	}
 }
 
@@ -235,7 +274,7 @@ func NewServer(
 	}
 	repo := cgstore.NewRepo(st)
 	rwRepo := rwstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, rwRepo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, rwRepo, rwRepo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -247,6 +286,9 @@ func NewServer(
 	}
 	if server.now == nil {
 		return nil, errors.New("api v2: clock is required")
+	}
+	if server.entropy == nil {
+		return nil, errors.New("api v2: entropy source is required")
 	}
 	return server, nil
 }
@@ -270,6 +312,7 @@ func newServer(
 	globalDirectories globalDirectoryReader,
 	globalStaking globalStakingReader,
 	randomWalk randomWalkReader,
+	ranking rankingRepository,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -324,6 +367,9 @@ func newServer(
 	if randomWalk == nil {
 		return nil, errors.New("api v2: random-walk repository is required")
 	}
+	if ranking == nil {
+		return nil, errors.New("api v2: ranking repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -349,17 +395,25 @@ func newServer(
 		globalDirectories: globalDirectories,
 		globalStaking:     globalStaking,
 		randomWalk:        randomWalk,
+		ranking:           ranking,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,
+		entropy:           rand.Reader,
 	}, nil
 }
 
 // RegisterRoutes installs every generated v2 operation on the shared router.
 // Custom error hooks ensure generated parameter-binding and response failures
-// use the same RFC 9457 representation as handler-level errors.
+// use the same RFC 9457 representation as handler-level errors; the strict
+// middleware chain enforces the per-operation write rate limits and the
+// spec-declared admin authentication before any handler runs.
 func (s *Server) RegisterRoutes(r *httpx.Router) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
+	middlewares := []StrictMiddlewareFunc{
+		s.rankingWriteRateLimitMiddleware(),
+		s.adminKeyMiddleware(),
+	}
+	strict := NewStrictHandlerWithOptions(s, middlewares, StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, req *http.Request, err error) {
 			s.writeRequestError(w, req, err)
 		},
@@ -391,6 +445,10 @@ func (s *Server) writeRequestError(w http.ResponseWriter, req *http.Request, err
 		detail = fmt.Sprintf("Parameter %q is required.", required.ParamName)
 	case errors.As(err, &tooMany):
 		detail = fmt.Sprintf("Parameter %q must be provided once.", tooMany.ParamName)
+	case strings.Contains(err.Error(), "decode JSON body"):
+		// The generated strict wrapper wraps request-body decode failures
+		// with this text; the client's malformed payload is never echoed.
+		detail = "The request body is not valid JSON matching the documented schema."
 	}
 	s.writeProblem(w, newProblem(
 		http.StatusBadRequest,

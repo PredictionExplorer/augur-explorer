@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "winnerTokenId must equal firstTokenId or secondTokenId.",
+    "instance": "/api/v2/randomwalk/ranking/matches",
+    "status": 400,
+    "title": "Invalid pair",
+    "type": "https://api.cosmicsignature.com/problems/invalid-pair"
+  }
+}

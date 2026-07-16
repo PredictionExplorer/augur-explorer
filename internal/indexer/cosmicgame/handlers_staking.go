@@ -5,6 +5,7 @@ package cosmicgame
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -90,6 +91,15 @@ func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *store.EthereumEv
 	var ethEvt cgc.IStakingWalletCosmicSignatureNftEthDepositReceived
 	if err := h.stakingCSTABI.UnpackIntoInterface(&ethEvt, "EthDepositReceived", lg.Data); err != nil {
 		return nil, err
+	}
+
+	// The contract only deposits into a non-empty pool, but the decoder
+	// must not trust log data: a zero divisor would panic the whole
+	// process inside math/big (found by FuzzEventDecodeCG; the minimized
+	// input is a committed regression seed). Malformed logs fail the
+	// batch instead.
+	if ethEvt.NumStakedNfts.Sign() <= 0 {
+		return nil, fmt.Errorf("EthDepositReceived: non-positive numStakedNfts %v", ethEvt.NumStakedNfts)
 	}
 
 	evt := &cgmodel.CGEthDeposit{}

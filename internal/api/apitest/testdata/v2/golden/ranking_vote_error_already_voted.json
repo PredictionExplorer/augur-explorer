@@ -1,0 +1,11 @@
+{
+  "status": 409,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "This wallet already voted on this pair.",
+    "instance": "/api/v2/randomwalk/ranking/votes",
+    "status": 409,
+    "title": "Already voted",
+    "type": "https://api.cosmicsignature.com/problems/already-voted"
+  }
+}

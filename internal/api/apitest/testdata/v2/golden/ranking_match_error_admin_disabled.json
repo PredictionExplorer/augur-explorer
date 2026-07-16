@@ -1,0 +1,11 @@
+{
+  "status": 503,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Admin authentication is not configured (RANKING_ADMIN_KEY or ADMIN_API_KEY).",
+    "instance": "/api/v2/randomwalk/ranking/matches",
+    "status": 503,
+    "title": "Admin operation disabled",
+    "type": "https://api.cosmicsignature.com/problems/admin-disabled"
+  }
+}

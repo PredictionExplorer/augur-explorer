@@ -586,19 +586,70 @@ Statistics and ledgers:
 
 Staying on v1 (decision D12):
 
-- The beauty-contest ranking group — `explore/random`, `random`,
-  `token-ranking/order`, `rating_order`, `vote_count`,
-  `ranking/sign-challenge`, `ranking/beauty-pair-ids`, and the two POST
-  routes `token-ranking/match` and `add_game` — is an interactive mini-app
-  with wallet-signed writes, not explorer data. It keeps serving on its v1
-  paths until a dedicated v2 slice introduces the v2 write conventions.
 - `metadata/{token_id}` (and the host-dispatched `/metadata/{token_id}`)
   is the ERC-721 `tokenURI` target hardcoded in the deployed contract; the
   path can never move and stays permanently outside `/api/v2`.
 
+## RandomWalk beauty-contest ranking
+
+The ranking mini-app is the first v2 write surface (decision D13,
+[ADR-0008](adr/0008-api-v2-writes.md)). Seven operations under
+`/api/v2/randomwalk/ranking/` replace ten registered v1 paths. Because the
+challenge issuance moves from a side-effecting GET to a POST and the vote
+request names the winner by token id, migrating this group is a small
+deliberate frontend rewrite rather than a URL swap — the wallet signature
+itself is unchanged.
+
+Reads:
+
+- `explore/random` and `random` become
+  `GET /api/v2/randomwalk/ranking/random-tokens?sampleSize=` (1–100,
+  default 2). Same fewest-matches-then-lowest-rating selection; the reply
+  is a typed `{"tokenIds": [...]}` object instead of a bare array. The v1
+  `ORDER BY RANDOM()` fallback for half-migrated databases is not retained:
+  a failing ranked query is an opaque 500.
+- `ranking/beauty-pair-ids` becomes
+  `GET /api/v2/randomwalk/ranking/pair?voter=`. The reply names
+  `firstTokenId`/`secondTokenId` and keeps `pairExhausted`. v1's
+  `skip_pair_filter=1` is expressed by omitting `voter`; a collection
+  without two tokens answers a 404 problem instead of a short array.
+- `token-ranking/order` and `rating_order` become the cursor-paginated
+  `GET /api/v2/randomwalk/ranking/ratings` — ascending `(rating, tokenId)`
+  like v1's order, but each row carries the rating value and the match
+  count, and the unbounded all-token id array is retired.
+- `vote_count` becomes `GET /api/v2/randomwalk/ranking/statistics`:
+  `total_count` maps to `totalVotes`, alongside the new `walletVotes`,
+  `distinctVoters` and `ratedTokens` counters.
+
+Writes (both flows keep v1's per-IP rate limits; over-limit requests
+answer a spec-declared 429 problem with `Retry-After`):
+
+- `GET ranking/sign-challenge` becomes
+  `POST /api/v2/randomwalk/ranking/challenges` → `201 {nonce, expiresAt}`.
+  The nonce contract is unchanged (one-time, 15 minutes); `expiresAt` is
+  new and comes from the database clock that also judges expiry.
+- `POST add_game` becomes `POST /api/v2/randomwalk/ranking/votes`. The
+  request renames `nft1`/`nft2` to `firstTokenId`/`secondTokenId`,
+  replaces the 0/1 `nft1_win` integer with `winnerTokenId`, and renames
+  `sign_nonce` to `nonce`. The signed message is **byte-identical** to
+  v1 (`RandomWalk beauty vote\nVersion: 1\n…`), so existing wallet
+  prompts port as-is. Success is `201` with both new ratings and the
+  recovered `voterAddress` instead of `{"result":"success"}`; the
+  duplicate-pair rejection stays `409`, and invalid pairs, disallowed
+  chains, bad signatures and unknown/expired nonces answer `400`
+  problems with specific types (`invalid-pair`, `chain-not-allowed`,
+  `invalid-signature`, `invalid-nonce`).
+- `POST token-ranking/match` becomes
+  `POST /api/v2/randomwalk/ranking/matches` with the same
+  `X-Ranking-Admin-Key` header contract (fail-closed 503 when
+  unconfigured, 401 on a wrong key — now as RFC 9457 problems). The body
+  uses the same `firstTokenId`/`secondTokenId`/`winnerTokenId` shape as
+  votes instead of v1's `nft1_won` boolean; success is `201` with both
+  new ratings.
+
 ## Remaining endpoint groups
 
-Every v1 read surface is now mapped: the CosmicGame groups above and the
-RandomWalk explorer/marketplace/statistics group. The only v1 routes
-without v2 replacements are the RandomWalk ranking mini-app and the
-contract-pinned metadata route (both documented under D12 above).
+Every v1 surface is now mapped: the CosmicGame groups above, the
+RandomWalk explorer/marketplace/statistics group, and the ranking
+mini-app (reads and writes). The only v1 route without a v2 replacement
+is the contract-pinned metadata route (documented under D12 above).

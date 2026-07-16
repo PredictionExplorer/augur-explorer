@@ -234,3 +234,22 @@ func RateLimit(rps float64, burst int) httpx.Middleware {
 		})
 	}
 }
+
+// IPRateLimiter exposes the per-IP token bucket RateLimit uses for layers
+// that answer their own over-limit responses (the generated v2 write
+// operations answer RFC 9457 problems instead of the legacy envelope).
+type IPRateLimiter struct {
+	l *ipLimiter
+}
+
+// NewIPRateLimiter returns a per-IP token bucket refilling at rps with the
+// given burst capacity. Idle client entries are evicted after ten minutes.
+func NewIPRateLimiter(rps float64, burst int) *IPRateLimiter {
+	return &IPRateLimiter{l: newIPLimiter(rps, burst)}
+}
+
+// Allow reports whether the client identified by ip may proceed, consuming
+// one token when it can.
+func (l *IPRateLimiter) Allow(ip string) bool {
+	return l.l.allow(ip)
+}

@@ -216,9 +216,9 @@ func newContractTestServer(
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
 		fakeRandomWalkReader{},
+		fakeRankingRepository{},
 		state,
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
-	)
+		slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "matchCount": 1,
+        "rating": 1189.5,
+        "tokenId": 11
+      },
+      {
+        "matchCount": 1,
+        "rating": 1195,
+        "tokenId": 12
+      },
+      {
+        "matchCount": 1,
+        "rating": 1205,
+        "tokenId": 13
+      },
+      {
+        "matchCount": 1,
+        "rating": 1210.5,
+        "tokenId": 10
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The two token ids must differ.",
+    "instance": "/api/v2/randomwalk/ranking/votes",
+    "status": 400,
+    "title": "Invalid pair",
+    "type": "https://api.cosmicsignature.com/problems/invalid-pair"
+  }
+}

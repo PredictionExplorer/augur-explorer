@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Votes signed on this chain id are not accepted.",
+    "instance": "/api/v2/randomwalk/ranking/votes",
+    "status": 400,
+    "title": "Chain not allowed",
+    "type": "https://api.cosmicsignature.com/problems/chain-not-allowed"
+  }
+}

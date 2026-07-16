@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "distinctVoters": 1,
+    "ratedTokens": 4,
+    "totalVotes": 2,
+    "walletVotes": 1
+  }
+}

@@ -170,12 +170,8 @@ func (r *Repo) InsertRankingVoteNonce(ctx context.Context, nonce string, ttl tim
 	if ttl <= 0 {
 		ttl = 15 * time.Minute
 	}
-	expires := time.Now().UTC().Add(ttl)
-	if _, err := r.pool().Exec(ctx, `DELETE FROM rw_ranking_vote_nonce WHERE expires_at < NOW()`); err != nil {
-		return store.WrapError("purge expired ranking vote nonces", err)
-	}
-	_, err := r.pool().Exec(ctx, `INSERT INTO rw_ranking_vote_nonce (nonce, expires_at) VALUES ($1, $2)`, nonce, expires)
-	return store.WrapError("insert ranking vote nonce", err)
+	_, err := r.CreateRankingVoteNonce(ctx, nonce, ttl)
+	return err
 }
 
 // ConsumeRankingVoteNonce removes nonce inside tx if present and unexpired
