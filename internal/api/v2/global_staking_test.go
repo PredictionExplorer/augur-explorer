@@ -34,6 +34,7 @@ func newGlobalStakingTestServer(t *testing.T, staking globalStakingReader) *Serv
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
 		staking,
+		fakeRandomWalkReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

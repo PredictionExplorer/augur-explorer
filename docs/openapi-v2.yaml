@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.16.0
+  version: 0.17.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -1588,6 +1588,384 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/tokens:
+    get:
+      operationId: listRandomWalkTokens
+      summary: List every minted RandomWalk NFT
+      description: |
+        Returns the RandomWalk mint directory with each token's mint
+        provenance and live owner, name and trading state. The default
+        `tokenId` sort ascends the immutable mint order, so pages are
+        stable; `mostTraded` ranks by live trade count and ranks can move
+        while a client traverses pages. `named=true` keeps only tokens
+        that currently hold a name; `name=` keeps tokens whose current
+        name contains the term case-insensitively — the two filters are
+        mutually exclusive. `mintedFrom`/`mintedUntil` bound the mint
+        timestamp as a half-open Unix-second window. Continuation cursors
+        are bound to the requested filters and sort.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/NamedTokensFilter"
+        - $ref: "#/components/parameters/TokenNameSearch"
+        - $ref: "#/components/parameters/MintedFrom"
+        - $ref: "#/components/parameters/MintedUntil"
+        - $ref: "#/components/parameters/RandomWalkTokenSortParam"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/tokens/{tokenId}:
+    get:
+      operationId: getRandomWalkToken
+      summary: Get one RandomWalk NFT
+      description: |
+        Returns the token's mint provenance plus its live owner, name and
+        exact trading state. Unknown tokens answer 404.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/RandomWalkTokenId"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkTokenDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/tokens/{tokenId}/name-history:
+    get:
+      operationId: listRandomWalkTokenNameHistory
+      summary: List one RandomWalk NFT's renames
+      description: |
+        Returns the token's naming events newest first by immutable
+        event-log ID. An empty `newName` records a cleared name. Unknown
+        tokens answer 404; a minted token that was never named returns an
+        empty page.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/RandomWalkTokenId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkTokenNameChangePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/tokens/{tokenId}/events:
+    get:
+      operationId: listRandomWalkTokenEvents
+      summary: List one RandomWalk NFT's provenance events
+      description: |
+        Returns the token's interleaved history newest first by immutable
+        event-log ID: mint, ownership transfers, renames, marketplace
+        listings, listing cancellations and purchases. Transfers that
+        merely mirror the mint or a purchase in the same transaction are
+        represented once, by the mint or purchase event. Each row carries
+        exactly the optional fields its `eventType` implies. Unknown
+        tokens answer 404.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/RandomWalkTokenId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkTokenEventPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/marketplace/offers:
+    get:
+      operationId: listRandomWalkMarketplaceOffers
+      summary: List the live RandomWalk marketplace order book
+      description: |
+        Returns currently active sell and buy offers. Offers leave the
+        book when bought or canceled, so rows can disappear while a
+        client traverses pages; clients needing a fresh snapshot restart
+        from the first page. Continuation cursors are bound to the
+        requested sort.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/RandomWalkOfferSortParam"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkMarketplaceOfferPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/marketplace/offer-history:
+    get:
+      operationId: listRandomWalkMarketplaceOfferHistory
+      summary: List every RandomWalk marketplace offer ever created
+      description: |
+        Returns the immutable offer-creation ledger newest first by
+        event-log ID. Each row carries the offer's current outcome: an
+        active offer, the purchase that filled it, or its cancellation.
+        `sellerProfitWei` is present when the marketplace tracked the
+        seller's position for a filled sell offer.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkOfferHistoryPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/marketplace/trades:
+    get:
+      operationId: listRandomWalkMarketplaceTrades
+      summary: List completed RandomWalk marketplace purchases
+      description: |
+        Returns the purchase ledger newest first by the purchase event's
+        immutable event-log ID, with the filled offer, exact price and
+        both trading parties.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkTradePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/marketplace/floor-price:
+    get:
+      operationId: getRandomWalkMarketplaceFloorPrice
+      summary: Get the cheapest active RandomWalk sell offer
+      description: |
+        Returns the current sell-side floor. `floor` is present exactly
+        when at least one sell offer is active; an empty book is a valid
+        200 with a zero count.
+      tags:
+        - RandomWalk
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkFloorPrice"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/users/{address}:
+    get:
+      operationId: getRandomWalkUser
+      summary: Get one wallet's RandomWalk activity profile
+      description: |
+        Returns exact minting, trading and withdrawal statistics plus the
+        wallet's live owned-token count. A valid wallet the indexer has
+        never seen returns the same shape with zero values.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/Address"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkUserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/users/{address}/tokens:
+    get:
+      operationId: listRandomWalkUserTokens
+      summary: List RandomWalk NFTs one wallet currently owns
+      description: |
+        Returns live ownership in ascending token order with each token's
+        mint provenance, current name and exact trading state. Rows move
+        between wallets on transfer, so clients needing a fresh snapshot
+        restart from the first page. Unindexed wallets return empty pages.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkOwnedTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/users/{address}/offers:
+    get:
+      operationId: listRandomWalkUserOffers
+      summary: List marketplace offers involving one wallet
+      description: |
+        Returns the offer-history ledger scoped to offers the wallet made
+        or filled, newest first by immutable event-log ID. A wallet
+        appears on the taker side only after a purchase records it.
+        Unindexed wallets return empty pages; cursors are bound to the
+        wallet.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/Address"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkOfferHistoryPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/statistics:
+    get:
+      operationId: getRandomWalkStatistics
+      summary: Get exact global RandomWalk statistics
+      description: |
+        Returns one consistent snapshot of collection, marketplace and
+        withdrawal aggregates with exact wei amounts. The optional last
+        mint and latest withdrawal are present once the corresponding
+        event exists.
+      tags:
+        - RandomWalk
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkStatistics"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/statistics/trading-volume:
+    get:
+      operationId: getRandomWalkTradingVolume
+      summary: Get bounded RandomWalk trading-volume buckets
+      description: |
+        Buckets completed purchases into a zero-filled series anchored at
+        `from`. `baseVolumeWei` is the exact volume traded before the
+        window, and every bucket carries the exact running total, so a
+        chart can continue the all-time curve. The window may produce at
+        most 2,000 buckets.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsFrom"
+        - $ref: "#/components/parameters/AnalyticsTo"
+        - name: intervalSeconds
+          in: query
+          required: false
+          description: Positive bucket width in seconds; defaults to one day.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 158112000
+            default: 86400
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkTradingVolume"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/statistics/listing-floor-history:
+    get:
+      operationId: getRandomWalkListingFloorHistory
+      summary: Get the cheapest new sell listing per time bucket
+      description: |
+        Returns the minimum price among sell offers created inside each
+        bucket of the `from`-anchored window — listing pressure over
+        time, not a reconstruction of the historical order book. Buckets
+        without new sell listings are omitted. The window may span at
+        most 2,000 buckets.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsFrom"
+        - $ref: "#/components/parameters/AnalyticsTo"
+        - name: intervalSeconds
+          in: query
+          required: false
+          description: Positive bucket width in seconds; defaults to one day.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 158112000
+            default: 86400
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkListingFloorHistory"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/statistics/mint-report:
+    get:
+      operationId: getRandomWalkMintReport
+      summary: Get monthly RandomWalk mint aggregates
+      description: |
+        Returns one row per calendar month that recorded at least one
+        mint, oldest first, with exact minted wei and the exact running
+        total. Minting has concluded, so the report is bounded and
+        stable.
+      tags:
+        - RandomWalk
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkMintReport"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/withdrawals:
+    get:
+      operationId: listRandomWalkWithdrawals
+      summary: List RandomWalk mint-pool withdrawals
+      description: |
+        Returns the immutable withdrawal ledger newest first by event-log
+        ID. Each row is one exact withdrawal by the wallet that held the
+        last minted token at that time.
+      tags:
+        - RandomWalk
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkWithdrawalPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/randomwalk/contracts/addresses:
+    get:
+      operationId: getRandomWalkContractAddresses
+      summary: Get the deployed RandomWalk contract registry
+      description: |
+        Returns the RandomWalk NFT and marketplace addresses from the
+        database-backed registry the indexer uses. Addresses are
+        canonical and the response performs no contract RPC.
+      tags:
+        - RandomWalk
+      responses:
+        "200":
+          $ref: "#/components/responses/RandomWalkContractAddresses"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   parameters:
     Round:
@@ -1852,6 +2230,51 @@ components:
         type: string
         minLength: 1
         maxLength: 512
+    RandomWalkTokenId:
+      name: tokenId
+      in: path
+      required: true
+      description: RandomWalk NFT token identifier.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    MintedFrom:
+      name: mintedFrom
+      in: query
+      required: false
+      description: Inclusive lower bound on the mint timestamp as Unix seconds.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        maximum: 253402300799
+    MintedUntil:
+      name: mintedUntil
+      in: query
+      required: false
+      description: Exclusive upper bound on the mint timestamp as Unix seconds.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 253402300799
+    RandomWalkTokenSortParam:
+      name: sort
+      in: query
+      required: false
+      description: Order of the RandomWalk token directory.
+      schema:
+        $ref: "#/components/schemas/RandomWalkTokenSort"
+        default: tokenId
+    RandomWalkOfferSortParam:
+      name: sort
+      in: query
+      required: false
+      description: Order of the live order book.
+      schema:
+        $ref: "#/components/schemas/RandomWalkOfferSort"
+        default: newest
   schemas:
     Problem:
       type: object
@@ -6548,6 +6971,1075 @@ components:
             $ref: "#/components/schemas/RoundRaffleNftWinner"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    RandomWalkTokenSort:
+      description: |
+        tokenId ascends the immutable mint order; mostTraded ranks by
+        live trade count, largest first with an ascending token ID
+        tie-break.
+      type: string
+      enum:
+        - tokenId
+        - mostTraded
+    RandomWalkToken:
+      description: |
+        One minted RandomWalk NFT with its mint transaction, seed
+        provenance, current owner and exact live trading state.
+        `tokenName` is present when the token currently holds a name.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - mintedAt
+        - nftTokenId
+        - minterAddress
+        - seed
+        - seedNumber
+        - mintPriceWei
+        - currentOwnerAddress
+        - lastPriceWei
+        - tradeCount
+        - tradingVolumeWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        mintedAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        minterAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        seed:
+          type: string
+          minLength: 1
+        seedNumber:
+          description: The seed as an exact decimal integer string.
+          type: string
+          pattern: "^[0-9]+$"
+        mintPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        currentOwnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        lastPriceWei:
+          description: The mint price until a marketplace trade updates it.
+          type: string
+          pattern: "^[0-9]+$"
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradingVolumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        tokenName:
+          type: string
+          minLength: 1
+    RandomWalkTokenPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkToken"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkTokenDetail:
+      description: |
+        One minted RandomWalk NFT with mint provenance, current owner,
+        naming state and exact live trading state. `tokenName` and
+        `nameChangedAt` are present when the token currently holds a
+        name and when it has ever been renamed, respectively.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - mintedAt
+        - nftTokenId
+        - minterAddress
+        - seed
+        - seedNumber
+        - mintPriceWei
+        - currentOwnerAddress
+        - lastPriceWei
+        - tradeCount
+        - tradingVolumeWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        mintedAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        minterAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        seed:
+          type: string
+          minLength: 1
+        seedNumber:
+          description: The seed as an exact decimal integer string.
+          type: string
+          pattern: "^[0-9]+$"
+        mintPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        currentOwnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        lastPriceWei:
+          description: The mint price until a marketplace trade updates it.
+          type: string
+          pattern: "^[0-9]+$"
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradingVolumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        tokenName:
+          type: string
+          minLength: 1
+        nameChangedAt:
+          description: When the most recent rename happened.
+          type: string
+          format: date-time
+    RandomWalkTokenNameChange:
+      description: |
+        One naming event of a RandomWalk NFT. An empty newName records a
+        cleared name.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - nftTokenId
+        - newName
+        - ownerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        newName:
+          type: string
+        ownerAddress:
+          description: The wallet that sent the rename transaction.
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    RandomWalkTokenNameChangePage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkTokenNameChange"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkTokenEventType:
+      description: |
+        mint, transfer and nameChange describe the NFT contract;
+        listed, offerCanceled and purchase describe the marketplace.
+      type: string
+      enum:
+        - mint
+        - transfer
+        - nameChange
+        - listed
+        - offerCanceled
+        - purchase
+    RandomWalkOfferSide:
+      description: The order-book side the maker created.
+      type: string
+      enum:
+        - sell
+        - buy
+    RandomWalkTokenEvent:
+      description: |
+        One provenance event of a RandomWalk NFT. Field presence follows
+        eventType: mint carries minterAddress, seed, seedNumber and
+        priceWei; transfer carries fromAddress and toAddress; nameChange
+        carries newName; listed carries offerId, offerSide, priceWei and
+        makerAddress; offerCanceled carries the same listing fields;
+        purchase carries offerId, offerSide, priceWei, sellerAddress and
+        buyerAddress.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - eventType
+        - nftTokenId
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        eventType:
+          $ref: "#/components/schemas/RandomWalkTokenEventType"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        minterAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        seed:
+          type: string
+          minLength: 1
+        seedNumber:
+          description: The seed as an exact decimal integer string.
+          type: string
+          pattern: "^[0-9]+$"
+        priceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        fromAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        toAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        newName:
+          type: string
+        offerId:
+          type: integer
+          format: int64
+          minimum: 0
+        offerSide:
+          $ref: "#/components/schemas/RandomWalkOfferSide"
+        makerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        sellerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        buyerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    RandomWalkTokenEventPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkTokenEvent"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkOfferSort:
+      description: |
+        newest and oldest walk the immutable listing order; priceAsc and
+        priceDesc walk the live price ranking with an immutable
+        event-log tie-break.
+      type: string
+      enum:
+        - newest
+        - oldest
+        - priceAsc
+        - priceDesc
+    RandomWalkMarketplaceOffer:
+      description: One currently active marketplace offer.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - listedAt
+        - offerId
+        - side
+        - nftTokenId
+        - priceWei
+        - makerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        listedAt:
+          type: string
+          format: date-time
+        offerId:
+          type: integer
+          format: int64
+          minimum: 0
+        side:
+          $ref: "#/components/schemas/RandomWalkOfferSide"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        priceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        makerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    RandomWalkMarketplaceOfferPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkMarketplaceOffer"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkOfferStatus:
+      type: string
+      enum:
+        - active
+        - bought
+        - canceled
+    RandomWalkOfferPurchase:
+      description: The purchase event that filled an offer.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - buyerAddress
+        - sellerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        buyerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        sellerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    RandomWalkOfferCancellation:
+      description: The cancellation event that closed an offer.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+    RandomWalkOfferHistoryEntry:
+      description: |
+        One marketplace offer with its creation transaction and current
+        outcome. `purchase` is present exactly when status is bought and
+        `cancellation` exactly when status is canceled.
+        `sellerProfitWei` is present when the marketplace tracked the
+        seller's position for a filled sell offer.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - listedAt
+        - offerId
+        - side
+        - nftTokenId
+        - priceWei
+        - makerAddress
+        - status
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        listedAt:
+          type: string
+          format: date-time
+        offerId:
+          type: integer
+          format: int64
+          minimum: 0
+        side:
+          $ref: "#/components/schemas/RandomWalkOfferSide"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        priceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        makerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        status:
+          $ref: "#/components/schemas/RandomWalkOfferStatus"
+        purchase:
+          $ref: "#/components/schemas/RandomWalkOfferPurchase"
+        cancellation:
+          $ref: "#/components/schemas/RandomWalkOfferCancellation"
+        sellerProfitWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+    RandomWalkOfferHistoryPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkOfferHistoryEntry"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkTrade:
+      description: |
+        One completed marketplace purchase. `sellerProfitWei` is present
+        when the marketplace tracked the seller's position.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - offerId
+        - side
+        - nftTokenId
+        - priceWei
+        - buyerAddress
+        - sellerAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        offerId:
+          type: integer
+          format: int64
+          minimum: 0
+        side:
+          $ref: "#/components/schemas/RandomWalkOfferSide"
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        priceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        buyerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        sellerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        sellerProfitWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+    RandomWalkTradePage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkTrade"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkFloorListing:
+      description: The cheapest currently active sell offer.
+      type: object
+      additionalProperties: false
+      required:
+        - offerId
+        - nftTokenId
+        - priceWei
+        - listedAt
+      properties:
+        offerId:
+          type: integer
+          format: int64
+          minimum: 0
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        priceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        listedAt:
+          type: string
+          format: date-time
+    RandomWalkFloorPrice:
+      description: |
+        The live sell-side floor. `floor` is present exactly when at
+        least one sell offer is active.
+      type: object
+      additionalProperties: false
+      required:
+        - activeSellOfferCount
+      properties:
+        activeSellOfferCount:
+          type: integer
+          format: int64
+          minimum: 0
+        floor:
+          $ref: "#/components/schemas/RandomWalkFloorListing"
+    RandomWalkUserProfile:
+      description: |
+        One wallet's exact RandomWalk activity aggregates. profitWei is
+        the signed marketplace trading profit for positions the
+        marketplace tracked.
+      type: object
+      additionalProperties: false
+      required:
+        - address
+        - mintedTokenCount
+        - ownedTokenCount
+        - tradeCount
+        - tradingVolumeWei
+        - profitWei
+        - withdrawalCount
+      properties:
+        address:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        mintedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+        ownedTokenCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradingVolumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        profitWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+        withdrawalCount:
+          type: integer
+          format: int64
+          minimum: 0
+    RandomWalkOwnedToken:
+      description: |
+        One RandomWalk NFT a wallet currently owns, with mint provenance
+        and exact live trading state. Mint fields are absent for a token
+        whose mint event predates the indexed history.
+      type: object
+      additionalProperties: false
+      required:
+        - nftTokenId
+        - lastPriceWei
+        - tradeCount
+        - tradingVolumeWei
+      properties:
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        lastPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradingVolumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        seed:
+          type: string
+          minLength: 1
+        seedNumber:
+          description: The seed as an exact decimal integer string.
+          type: string
+          pattern: "^[0-9]+$"
+        tokenName:
+          type: string
+          minLength: 1
+        mintedAt:
+          type: string
+          format: date-time
+        mintPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+    RandomWalkOwnedTokenPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkOwnedToken"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkLastMint:
+      description: The most recent mint of the collection.
+      type: object
+      additionalProperties: false
+      required:
+        - nftTokenId
+        - priceWei
+        - mintedAt
+        - minterAddress
+      properties:
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        priceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        mintedAt:
+          type: string
+          format: date-time
+        minterAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    RandomWalkTokenStatistics:
+      description: Exact collection-level aggregates.
+      type: object
+      additionalProperties: false
+      required:
+        - mintedCount
+        - uniqueOwnerCount
+        - tradeCount
+        - tradingVolumeWei
+        - mintFundsWei
+      properties:
+        mintedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        uniqueOwnerCount:
+          description: Wallets currently owning at least one token.
+          type: integer
+          format: int64
+          minimum: 0
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradingVolumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        mintFundsWei:
+          description: Exact sum of every mint price ever paid.
+          type: string
+          pattern: "^[0-9]+$"
+        lastMint:
+          $ref: "#/components/schemas/RandomWalkLastMint"
+    RandomWalkMarketplaceStatistics:
+      description: Exact marketplace-level aggregates and live book counts.
+      type: object
+      additionalProperties: false
+      required:
+        - tradeCount
+        - tradingVolumeWei
+        - activeSellOfferCount
+        - activeBuyOfferCount
+      properties:
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        tradingVolumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        activeSellOfferCount:
+          type: integer
+          format: int64
+          minimum: 0
+        activeBuyOfferCount:
+          type: integer
+          format: int64
+          minimum: 0
+    RandomWalkLatestWithdrawal:
+      description: The most recent mint-pool withdrawal.
+      type: object
+      additionalProperties: false
+      required:
+        - amountWei
+        - occurredAt
+        - withdrawerAddress
+        - nftTokenId
+      properties:
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+        occurredAt:
+          type: string
+          format: date-time
+        withdrawerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        nftTokenId:
+          description: The last minted token at withdrawal time.
+          type: integer
+          format: int64
+          minimum: 0
+    RandomWalkWithdrawalStatistics:
+      description: Exact mint-pool withdrawal aggregates.
+      type: object
+      additionalProperties: false
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+          minimum: 0
+        latest:
+          $ref: "#/components/schemas/RandomWalkLatestWithdrawal"
+    RandomWalkStatistics:
+      type: object
+      additionalProperties: false
+      required:
+        - tokens
+        - marketplace
+        - withdrawals
+      properties:
+        tokens:
+          $ref: "#/components/schemas/RandomWalkTokenStatistics"
+        marketplace:
+          $ref: "#/components/schemas/RandomWalkMarketplaceStatistics"
+        withdrawals:
+          $ref: "#/components/schemas/RandomWalkWithdrawalStatistics"
+    RandomWalkVolumeBucket:
+      description: One time bucket of completed purchases.
+      type: object
+      additionalProperties: false
+      required:
+        - bucketStart
+        - tradeCount
+        - volumeWei
+        - cumulativeVolumeWei
+      properties:
+        bucketStart:
+          description: Inclusive bucket start as Unix seconds.
+          type: integer
+          format: int64
+          minimum: 0
+        tradeCount:
+          type: integer
+          format: int64
+          minimum: 0
+        volumeWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cumulativeVolumeWei:
+          description: Exact all-time volume through the end of this bucket.
+          type: string
+          pattern: "^[0-9]+$"
+    RandomWalkTradingVolume:
+      type: object
+      additionalProperties: false
+      required:
+        - from
+        - to
+        - intervalSeconds
+        - baseVolumeWei
+        - buckets
+      properties:
+        from:
+          type: integer
+          format: int64
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          minimum: 1
+        intervalSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+        baseVolumeWei:
+          description: Exact volume traded before the window.
+          type: string
+          pattern: "^[0-9]+$"
+        buckets:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/RandomWalkVolumeBucket"
+    RandomWalkListingFloorPoint:
+      description: The cheapest sell listing created inside one bucket.
+      type: object
+      additionalProperties: false
+      required:
+        - bucketStart
+        - floorPriceWei
+      properties:
+        bucketStart:
+          description: Inclusive bucket start as Unix seconds.
+          type: integer
+          format: int64
+          minimum: 0
+        floorPriceWei:
+          type: string
+          pattern: "^[0-9]+$"
+    RandomWalkListingFloorHistory:
+      type: object
+      additionalProperties: false
+      required:
+        - from
+        - to
+        - intervalSeconds
+        - points
+      properties:
+        from:
+          type: integer
+          format: int64
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          minimum: 1
+        intervalSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+        points:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/RandomWalkListingFloorPoint"
+    RandomWalkMonthlyMints:
+      description: One calendar month's exact mint aggregates.
+      type: object
+      additionalProperties: false
+      required:
+        - year
+        - month
+        - mintCount
+        - mintedWei
+        - cumulativeMintedWei
+      properties:
+        year:
+          type: integer
+          format: int64
+          minimum: 2021
+        month:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 12
+        mintCount:
+          type: integer
+          format: int64
+          minimum: 1
+        mintedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        cumulativeMintedWei:
+          description: Exact running total through the end of this month.
+          type: string
+          pattern: "^[0-9]+$"
+    RandomWalkMintReport:
+      type: object
+      additionalProperties: false
+      required:
+        - months
+      properties:
+        months:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/RandomWalkMonthlyMints"
+    RandomWalkWithdrawal:
+      description: One exact mint-pool withdrawal.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - withdrawerAddress
+        - nftTokenId
+        - amountWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        withdrawerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        nftTokenId:
+          description: The last minted token at withdrawal time.
+          type: integer
+          format: int64
+          minimum: 0
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+    RandomWalkWithdrawalPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RandomWalkWithdrawal"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    RandomWalkContractAddresses:
+      type: object
+      additionalProperties: false
+      required:
+        - nftAddress
+        - marketplaceAddress
+      properties:
+        nftAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        marketplaceAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
   responses:
     CosmicGameContractAddresses:
       description: Complete deployed CosmicGame contract registry.
@@ -6999,6 +8491,102 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoundClaimsDetail"
+    RandomWalkTokenPage:
+      description: One page of the RandomWalk mint directory.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkTokenPage"
+    RandomWalkTokenDetail:
+      description: The requested RandomWalk NFT.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkTokenDetail"
+    RandomWalkTokenNameChangePage:
+      description: One stable page of the token's renames.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkTokenNameChangePage"
+    RandomWalkTokenEventPage:
+      description: One stable page of the token's provenance events.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkTokenEventPage"
+    RandomWalkMarketplaceOfferPage:
+      description: One page of the live marketplace order book.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkMarketplaceOfferPage"
+    RandomWalkOfferHistoryPage:
+      description: One stable page of the marketplace offer ledger.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkOfferHistoryPage"
+    RandomWalkTradePage:
+      description: One stable page of completed marketplace purchases.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkTradePage"
+    RandomWalkFloorPrice:
+      description: The live sell-side floor of the marketplace.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkFloorPrice"
+    RandomWalkUserProfile:
+      description: Exact RandomWalk activity profile for one wallet.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkUserProfile"
+    RandomWalkOwnedTokenPage:
+      description: One page of RandomWalk NFTs one wallet currently owns.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkOwnedTokenPage"
+    RandomWalkStatistics:
+      description: Exact database-backed global RandomWalk statistics.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkStatistics"
+    RandomWalkTradingVolume:
+      description: Bounded trading-volume buckets with exact running totals.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkTradingVolume"
+    RandomWalkListingFloorHistory:
+      description: Bounded cheapest-new-listing points.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkListingFloorHistory"
+    RandomWalkMintReport:
+      description: Monthly RandomWalk mint aggregates.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkMintReport"
+    RandomWalkWithdrawalPage:
+      description: One stable page of the withdrawal ledger.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkWithdrawalPage"
+    RandomWalkContractAddresses:
+      description: The deployed RandomWalk contract registry.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RandomWalkContractAddresses"
     BadRequest:
       description: A path or query parameter is invalid.
       content:

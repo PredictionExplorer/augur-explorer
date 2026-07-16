@@ -413,6 +413,7 @@ func newRaffleTestServer(t *testing.T, raffles roundRaffleReader) *Server {
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
+		fakeRandomWalkReader{},
 		fakeContractState{},
 		logger,
 	)

@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "lastPriceWei": "55000000000000000",
+        "mintPriceWei": "55000000000000000",
+        "mintedAt": "2026-01-01T00:51:40Z",
+        "nftTokenId": 11,
+        "seed": "aa00000000000000000000000000000000000000000000000000000000000011",
+        "seedNumber": "17",
+        "tradeCount": 0,
+        "tradingVolumeWei": "0"
+      }
+    ],
+    "meta": {
+      "limit": 1
+    }
+  }
+}

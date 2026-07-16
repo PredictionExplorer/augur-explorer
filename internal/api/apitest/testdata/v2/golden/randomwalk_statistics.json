@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "marketplace": {
+      "activeBuyOfferCount": 0,
+      "activeSellOfferCount": 2,
+      "tradeCount": 1,
+      "tradingVolumeWei": "1000000000000000000"
+    },
+    "tokens": {
+      "lastMint": {
+        "mintedAt": "2026-01-01T00:55:00Z",
+        "minterAddress": "0x2200000000000000000000000000000000000022",
+        "nftTokenId": 13,
+        "priceWei": "65000000000000000"
+      },
+      "mintFundsWei": "230000000000000000",
+      "mintedCount": 4,
+      "tradeCount": 1,
+      "tradingVolumeWei": "1000000000000000000",
+      "uniqueOwnerCount": 3
+    },
+    "withdrawals": {
+      "count": 1,
+      "latest": {
+        "amountWei": "30000000000000000",
+        "nftTokenId": 10,
+        "occurredAt": "2026-01-01T01:08:20Z",
+        "withdrawerAddress": "0x2300000000000000000000000000000000000023"
+      }
+    }
+  }
+}

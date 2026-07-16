@@ -12,8 +12,10 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
+	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
+	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
 const problemTypeBase = "https://api.cosmicsignature.com/problems/"
@@ -151,6 +153,28 @@ type globalStakingReader interface {
 	GlobalStakerRaffleNftWinsPage(context.Context, bool, *cgstore.GlobalStakerRafflePageCursor, int) ([]cgmodel.CGRaffleNFTWinnerRec, bool, error)
 }
 
+type randomWalkReader interface {
+	TokensPage(context.Context, rwstore.TokenFilter, rwstore.TokenSort, *rwstore.TokenPageCursor, int) ([]rwstore.TokenRecord, bool, error)
+	TokenDetailV2(context.Context, int64) (rwstore.TokenDetailRecord, error)
+	CollectionTokenExists(context.Context, int64) (bool, error)
+	TokenNameChangesPageV2(context.Context, int64, *rwstore.EventPageCursor, int) ([]rwstore.TokenNameChangeRecord, bool, error)
+	TokenEventsPage(context.Context, int64, *rwstore.EventPageCursor, int) ([]rwstore.TokenEventRecord, bool, error)
+	ActiveOffersPage(context.Context, rwstore.OfferSort, *rwstore.OfferPageCursor, int) ([]rwstore.OfferRecord, bool, error)
+	OfferHistoryPage(context.Context, *rwstore.EventPageCursor, int) ([]rwstore.OfferHistoryRecord, bool, error)
+	UserOffersPage(context.Context, int64, *rwstore.EventPageCursor, int) ([]rwstore.OfferHistoryRecord, bool, error)
+	TradesPage(context.Context, *rwstore.EventPageCursor, int) ([]rwstore.TradeRecord, bool, error)
+	FloorPriceV2(context.Context) (rwstore.FloorPriceRecord, error)
+	UserAddressID(context.Context, string) (int64, error)
+	UserProfileV2(context.Context, int64) (rwstore.UserProfileRecord, error)
+	UserTokensPage(context.Context, int64, *rwstore.TokenPageCursor, int) ([]rwstore.OwnedTokenRecord, bool, error)
+	StatisticsV2(context.Context) (rwstore.StatisticsRecord, error)
+	TradingVolumeSeries(context.Context, int, int, int) (string, []rwstore.VolumeBucketRecord, error)
+	ListingFloorSeries(context.Context, int, int, int) ([]rwstore.FloorPointRecord, error)
+	MintReportV2(context.Context) ([]rwstore.MonthlyMintRecord, error)
+	WithdrawalsPage(context.Context, *rwstore.EventPageCursor, int) ([]rwstore.WithdrawalRecord, bool, error)
+	ContractAddrs(context.Context) (rwmodel.ContractAddresses, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -176,6 +200,7 @@ type Server struct {
 	userActivity      userActivityReader
 	globalDirectories globalDirectoryReader
 	globalStaking     globalStakingReader
+	randomWalk        randomWalkReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -209,7 +234,8 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	rwRepo := rwstore.NewRepo(st)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, rwRepo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -243,6 +269,7 @@ func newServer(
 	userActivity userActivityReader,
 	globalDirectories globalDirectoryReader,
 	globalStaking globalStakingReader,
+	randomWalk randomWalkReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -294,6 +321,9 @@ func newServer(
 	if globalStaking == nil {
 		return nil, errors.New("api v2: global-staking repository is required")
 	}
+	if randomWalk == nil {
+		return nil, errors.New("api v2: random-walk repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -318,6 +348,7 @@ func newServer(
 		userActivity:      userActivity,
 		globalDirectories: globalDirectories,
 		globalStaking:     globalStaking,
+		randomWalk:        randomWalk,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

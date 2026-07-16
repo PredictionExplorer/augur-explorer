@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 130,
+        "currentOwnerAddress": "0x2400000000000000000000000000000000000024",
+        "eventLogId": 5080,
+        "lastPriceWei": "1000000000000000000",
+        "mintPriceWei": "50000000000000000",
+        "mintedAt": "2026-01-01T00:50:00Z",
+        "minterAddress": "0x2300000000000000000000000000000000000023",
+        "nftTokenId": 10,
+        "seed": "aa00000000000000000000000000000000000000000000000000000000000010",
+        "seedNumber": "16",
+        "tokenName": "Wanderer",
+        "tradeCount": 1,
+        "tradingVolumeWei": "1000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001030"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

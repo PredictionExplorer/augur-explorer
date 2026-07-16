@@ -468,9 +468,137 @@ last-bid timestamp sentinel is omitted.
 - Empty collections are `[]`; optional values are omitted instead of using
   magic sentinels.
 
+## RandomWalk explorer, marketplace and statistics
+
+Seventeen `/api/v2/randomwalk/*` operations replace twenty-one v1 read
+behaviors (twenty-three registered paths counting the
+`cosmicgame/randomwalk/tokens/info` and `rwalk` conveniences). Every amount
+is an exact wei string, wallets are addressed by checksummed address rather
+than v1's internal `user_aid`, and every collection replaces `OFFSET/LIMIT`
+segments or unbounded arrays with an endpoint-scoped keyset cursor.
+
+Token directory and per-token histories:
+
+- `tokens/list/sequential` — which fetched every mint with a hardcoded
+  ten-billion row limit — becomes `GET /api/v2/randomwalk/tokens`: the
+  cursor-paginated mint directory in immutable ascending token order with
+  mint provenance (minter, seed, exact `mintPriceWei`) plus the live owner,
+  name and exact trading state. `tokens/list/by_period/{init_ts}/{fin_ts}`
+  becomes the `mintedFrom`/`mintedUntil` half-open window filter;
+  `named`/`name` filters match current names with ILIKE wildcards escaped.
+- `top5tokens` becomes `GET …/tokens?sort=mostTraded&limit=5`: the
+  most-traded ranking is a directory sort whose cursor carries the live
+  trade-count rank.
+- `tokens/info/{token_id}` (and its `/api/cosmicgame/randomwalk/…` alias)
+  becomes `GET …/tokens/{tokenId}`, adding the rename recency as
+  `nameChangedAt`. Unknown tokens answer `404` instead of v1's HTTP 200
+  envelope carrying `"sql: no rows in result set"`.
+- `tokens/name_changes/{token_id}` becomes `GET …/tokens/{tokenId}/name-history`,
+  newest first by immutable event-log ID with a `404` gate.
+- `tokens/history/{token_id}/{offset}/{limit}` becomes
+  `GET …/tokens/{tokenId}/events`: one newest-first provenance ledger over
+  six event sources with a typed `eventType` (`mint`, `transfer`,
+  `nameChange`, `listed`, `offerCanceled`, `purchase`). Transfers that
+  merely mirror the mint or a purchase in the same transaction are
+  represented once, by the mint or purchase event; burns surface as
+  transfers to the zero address.
+
+Marketplace order book and ledgers:
+
+- `current_offers/{order_by}` becomes
+  `GET /api/v2/randomwalk/marketplace/offers`: the live book under a named
+  `sort` (`newest`, `oldest`, `priceAsc`, `priceDesc` — replacing v1's
+  numeric selector, whose unknown values silently fell back to insertion
+  order). Price ranks page on an exact `(price, eventLogId)` keyset bound
+  to the sort.
+- `trading/history/{offset}/{limit}` becomes `GET …/marketplace/offer-history`:
+  the immutable offer-creation ledger, each row carrying its outcome
+  (`active`, `bought` with the purchase event and parties, or `canceled`
+  with the cancellation event) and the signed exact `sellerProfitWei` when
+  the marketplace tracked the seller's position.
+- `trading/sales/{offset}/{limit}` becomes `GET …/marketplace/trades`: the
+  purchase ledger newest first by the purchase event.
+- `trading/by_user/{user_aid}/{offset}/{limit}` becomes
+  `GET …/users/{address}/offers`. **Deliberate correction:** v1 parsed the
+  offset/limit segments and then ignored them, returning the wallet's
+  entire closed-offer history; v2 pages on a wallet-scoped cursor and also
+  includes the wallet's still-active offers.
+- `floor_price` becomes `GET …/marketplace/floor-price` with the active
+  sell-offer count and the cheapest listing; an empty book omits `floor`
+  instead of reproducing v1's `DBError: "sql: no rows in result set"`
+  sentinel.
+
+Users:
+
+- `user/info/{user_aid}` becomes `GET /api/v2/randomwalk/users/{address}`.
+  Exact `tradingVolumeWei` and signed `profitWei` replace float ETH, and a
+  live `ownedTokenCount` is added. **Deliberate corrections:** the mint
+  count is computed from mint events because the legacy accumulator
+  silently dropped mints made before a wallet's first trade, and the
+  withdrawal count comes from the withdrawal ledger because the legacy
+  `total_withdrawals` accumulators were never written by anything. The
+  `IsMarketPlaceContract` flag is not retained — the marketplace address
+  is served by the contract registry. Valid unindexed wallets return the
+  zero-activity `200` shape.
+- `tokens/by_user/{user_aid}` becomes `GET …/users/{address}/tokens`:
+  ascending live ownership with mint provenance and exact trading state,
+  paged on a wallet-scoped cursor.
+
+Statistics and ledgers:
+
+- `statistics/by_token` and `statistics/by_market` become one
+  `GET /api/v2/randomwalk/statistics` snapshot: exact collection aggregates
+  (mint count, live unique-owner count, trading volume, `mintFundsWei`,
+  the last mint), exact marketplace aggregates with live active-offer
+  counts, and the withdrawal count with the latest withdrawal.
+  **Deliberate corrections:** v1's `MaximumTradedPrice`, `CurOwnerAid` and
+  `CurOwnerAddr` fields were never populated by the query and are not
+  retained; v1's `WithdrawalAmount` (half the mint-price sum — an
+  approximation that ignores prior withdrawals) is retired, since the live
+  withdrawable prize is a chain read; the unique-user count is the live
+  distinct-owner count instead of the row count of the cron-maintained
+  `rw_uranks` table.
+- `statistics/trading_volume/{init_ts}/{fin_ts}/{interval_secs}` becomes
+  `GET …/statistics/trading-volume?from=&to=&intervalSeconds=`: zero-filled
+  buckets bounded to 2,000, exact per-bucket `volumeWei` and an exact
+  `cumulativeVolumeWei` continued from the exact `baseVolumeWei` before the
+  window (v1 accumulated float ETH).
+- `statistics/floor_price/{init_ts}/{fin_ts}/{interval_secs}` becomes
+  `GET …/statistics/listing-floor-history`, named for what the query has
+  always measured: the minimum price among sell offers *created* in each
+  bucket — listing pressure, not an order-book reconstruction. Buckets
+  without new sell listings are omitted, as in v1.
+- `mint_report` becomes `GET …/statistics/mint-report`. **Deliberate
+  correction:** v1 hardcoded the November 2021 – December 2022 window; v2
+  aggregates every month with at least one mint and carries exact monthly
+  and cumulative wei. The float `RedeemAmount` column (the same half-sum
+  approximation as above) is not retained.
+- `statistics/withdrawal_chart` is replaced by the exact withdrawal ledger
+  `GET /api/v2/randomwalk/withdrawals` plus `statistics.tokens.mintFundsWei`;
+  the chart's cumulative half-mint-price curve is the same approximation
+  retired above and clients that want it can derive it from `/tokens` pages.
+- `statistics/mint_intervals` is retired from v2 scope (decision D12): the
+  mint set is frozen and inter-mint intervals are derivable from the
+  `mintedAt` column while paging `/tokens`.
+- `contracts` becomes `GET /api/v2/randomwalk/contracts/addresses` with
+  checksummed `nftAddress` and `marketplaceAddress`; the internal address
+  IDs are not exposed.
+
+Staying on v1 (decision D12):
+
+- The beauty-contest ranking group — `explore/random`, `random`,
+  `token-ranking/order`, `rating_order`, `vote_count`,
+  `ranking/sign-challenge`, `ranking/beauty-pair-ids`, and the two POST
+  routes `token-ranking/match` and `add_game` — is an interactive mini-app
+  with wallet-signed writes, not explorer data. It keeps serving on its v1
+  paths until a dedicated v2 slice introduces the v2 write conventions.
+- `metadata/{token_id}` (and the host-dispatched `/metadata/{token_id}`)
+  is the ERC-721 `tokenURI` target hardcoded in the deployed contract; the
+  path can never move and stays permanently outside `/api/v2`.
+
 ## Remaining endpoint groups
 
-The CosmicGame surface is fully mapped. RandomWalk explorer, trading,
-statistics and ranking resources stay on v1 until their dedicated v2
-sprints land; their presence does not require continued use of any mapped
-CosmicGame v1 route.
+Every v1 read surface is now mapped: the CosmicGame groups above and the
+RandomWalk explorer/marketplace/statistics group. The only v1 routes
+without v2 replacements are the RandomWalk ranking mini-app and the
+contract-pinned metadata route (both documented under D12 above).

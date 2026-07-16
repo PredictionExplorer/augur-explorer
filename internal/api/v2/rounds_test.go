@@ -243,6 +243,7 @@ func newRoundTestServer(t *testing.T, rounds roundReader) *Server {
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
+		fakeRandomWalkReader{},
 		fakeContractState{},
 		logger,
 	)

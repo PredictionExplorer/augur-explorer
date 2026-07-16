@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "marketplaceAddress": "0x1200000000000000000000000000000000000012",
+    "nftAddress": "0x8000000000000000000000000000000000000008"
+  }
+}

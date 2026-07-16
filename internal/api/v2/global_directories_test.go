@@ -34,6 +34,7 @@ func newGlobalDirectoryTestServer(t *testing.T, directories globalDirectoryReade
 		fakeUserActivityReader{},
 		directories,
 		fakeGlobalStakingReader{},
+		fakeRandomWalkReader{},
 		fakeContractState{},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

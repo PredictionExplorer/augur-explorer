@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 138,
+        "eventLogId": 5092,
+        "listedAt": "2026-01-01T01:03:20Z",
+        "makerAddress": "0x2200000000000000000000000000000000000022",
+        "nftTokenId": 13,
+        "offerId": 3,
+        "priceWei": "2500000000000000000",
+        "side": "sell",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001038"
+      }
+    ],
+    "meta": {
+      "limit": 1
+    }
+  }
+}

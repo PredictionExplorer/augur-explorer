@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 137,
+        "eventLogId": 5091,
+        "listedAt": "2026-01-01T01:01:40Z",
+        "makerAddress": "0x2400000000000000000000000000000000000024",
+        "nftTokenId": 11,
+        "offerId": 2,
+        "priceWei": "2000000000000000000",
+        "side": "sell",
+        "status": "active",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001037"
+      },
+      {
+        "blockNumber": 135,
+        "eventLogId": 5088,
+        "listedAt": "2026-01-01T00:58:20Z",
+        "makerAddress": "0x2300000000000000000000000000000000000023",
+        "nftTokenId": 10,
+        "offerId": 1,
+        "priceWei": "1000000000000000000",
+        "purchase": {
+          "blockNumber": 136,
+          "buyerAddress": "0x2400000000000000000000000000000000000024",
+          "eventLogId": 5089,
+          "occurredAt": "2026-01-01T01:00:00Z",
+          "sellerAddress": "0x2300000000000000000000000000000000000023",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001036"
+        },
+        "sellerProfitWei": "950000000000000000",
+        "side": "sell",
+        "status": "bought",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001035"
+      }
+    ],
+    "meta": {
+      "limit": 2
+    }
+  }
+}

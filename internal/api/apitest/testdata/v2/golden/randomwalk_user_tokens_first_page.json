@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "lastPriceWei": "1000000000000000000",
+        "mintPriceWei": "50000000000000000",
+        "mintedAt": "2026-01-01T00:50:00Z",
+        "nftTokenId": 10,
+        "seed": "aa00000000000000000000000000000000000000000000000000000000000010",
+        "seedNumber": "16",
+        "tokenName": "Wanderer",
+        "tradeCount": 1,
+        "tradingVolumeWei": "1000000000000000000"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJrIjoicndhbGtVc2VyVG9rZW5zIiwiYSI6IjB4MjQwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAyNCIsInQiOjEwfQ"
+    }
+  }
+}

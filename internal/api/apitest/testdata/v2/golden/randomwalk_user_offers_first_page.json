@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 139,
+        "cancellation": {
+          "blockNumber": 140,
+          "eventLogId": 5094,
+          "occurredAt": "2026-01-01T01:06:40Z",
+          "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001040"
+        },
+        "eventLogId": 5093,
+        "listedAt": "2026-01-01T01:05:00Z",
+        "makerAddress": "0x2400000000000000000000000000000000000024",
+        "nftTokenId": 10,
+        "offerId": 4,
+        "priceWei": "3000000000000000000",
+        "side": "sell",
+        "status": "canceled",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001039"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJrIjoicndhbGtVc2VyT2ZmZXJzIiwiYSI6IjB4MjQwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAyNCIsImUiOjUwOTN9"
+    }
+  }
+}

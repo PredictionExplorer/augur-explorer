@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "blockNumber": 133,
+    "currentOwnerAddress": "0x2200000000000000000000000000000000000022",
+    "eventLogId": 5086,
+    "lastPriceWei": "65000000000000000",
+    "mintPriceWei": "65000000000000000",
+    "mintedAt": "2026-01-01T00:55:00Z",
+    "minterAddress": "0x2200000000000000000000000000000000000022",
+    "nftTokenId": 13,
+    "seed": "aa00000000000000000000000000000000000000000000000000000000000013",
+    "seedNumber": "19",
+    "tradeCount": 0,
+    "tradingVolumeWei": "0",
+    "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001033"
+  }
+}

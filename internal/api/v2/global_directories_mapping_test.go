@@ -207,7 +207,7 @@ func validTokenTransferRecord() cgstore.TokenTransferRecord {
 func TestMapTokenTransfer(t *testing.T) {
 	t.Parallel()
 
-	want := map[int64]TokenTransferType{0: Transfer, 1: Mint, 2: Burn}
+	want := map[int64]TokenTransferType{0: TokenTransferTypeTransfer, 1: TokenTransferTypeMint, 2: TokenTransferTypeBurn}
 	for otype, transferType := range want {
 		record := validTokenTransferRecord()
 		record.TransferType = otype

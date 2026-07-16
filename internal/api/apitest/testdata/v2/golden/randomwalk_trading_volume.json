@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "baseVolumeWei": "0",
+    "buckets": [
+      {
+        "bucketStart": 1767229100,
+        "cumulativeVolumeWei": "0",
+        "tradeCount": 0,
+        "volumeWei": "0"
+      },
+      {
+        "bucketStart": 1767229200,
+        "cumulativeVolumeWei": "1000000000000000000",
+        "tradeCount": 1,
+        "volumeWei": "1000000000000000000"
+      },
+      {
+        "bucketStart": 1767229300,
+        "cumulativeVolumeWei": "1000000000000000000",
+        "tradeCount": 0,
+        "volumeWei": "0"
+      }
+    ],
+    "from": 1767229100,
+    "intervalSeconds": 100,
+    "to": 1767229400
+  }
+}

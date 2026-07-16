@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "months": [
+      {
+        "cumulativeMintedWei": "230000000000000000",
+        "mintCount": 4,
+        "mintedWei": "230000000000000000",
+        "month": 1,
+        "year": 2026
+      }
+    ]
+  }
+}

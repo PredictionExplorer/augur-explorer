@@ -1,0 +1,49 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 140,
+        "eventLogId": 5094,
+        "eventType": "offerCanceled",
+        "makerAddress": "0x2400000000000000000000000000000000000024",
+        "nftTokenId": 0,
+        "occurredAt": "2026-01-01T01:06:40Z",
+        "offerId": 4,
+        "offerSide": "sell",
+        "priceWei": "3000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001040"
+      },
+      {
+        "blockNumber": 139,
+        "eventLogId": 5093,
+        "eventType": "listed",
+        "makerAddress": "0x2400000000000000000000000000000000000024",
+        "nftTokenId": 0,
+        "occurredAt": "2026-01-01T01:05:00Z",
+        "offerId": 4,
+        "offerSide": "sell",
+        "priceWei": "3000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001039"
+      },
+      {
+        "blockNumber": 136,
+        "buyerAddress": "0x2400000000000000000000000000000000000024",
+        "eventLogId": 5089,
+        "eventType": "purchase",
+        "nftTokenId": 0,
+        "occurredAt": "2026-01-01T01:00:00Z",
+        "offerId": 1,
+        "offerSide": "sell",
+        "priceWei": "1000000000000000000",
+        "sellerAddress": "0x2300000000000000000000000000000000000023",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001036"
+      }
+    ],
+    "meta": {
+      "limit": 3,
+      "nextCursor": "eyJ2IjoxLCJrIjoicndhbGtUb2tlbkV2ZW50cyIsInQiOjEwLCJlIjo1MDg5fQ"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 134,
+        "eventLogId": 5087,
+        "newName": "Wanderer",
+        "nftTokenId": 10,
+        "occurredAt": "2026-01-01T00:56:40Z",
+        "ownerAddress": "0x2300000000000000000000000000000000000023",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001034"
+      }
+    ],
+    "meta": {
+      "limit": 50
+    }
+  }
+}

@@ -17,6 +17,7 @@ go test ./internal/api/common/   -bench 'BenchmarkCompress|BenchmarkConditionalE
 
 # DB benchmarks (Docker required; runs against the seeded test container)
 go test -tags=integration ./internal/store/cosmicgame/ -bench BenchmarkStatisticsQueries -benchmem -count=6 -run '^$' -timeout 15m
+go test -tags=integration ./internal/store/randomwalk/ -bench BenchmarkRandomWalkV2Queries -benchmem -count=6 -run '^$' -timeout 15m
 
 # Compare against a previous run
 go install golang.org/x/perf/cmd/benchstat@latest
@@ -66,6 +67,10 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkStatisticsQueries/global_staking_deposits_page` | 433,000 | 12,397 | 19 | page-first exact reward-deposit aggregates and claim progress |
 | `BenchmarkStatisticsQueries/round_staking_rewards_page` | 181,000 | 7,192 | 19 | one round's per-staker exact reward allocations |
 | `BenchmarkStatisticsQueries/global_staker_raffle_page` | 186,000 | 10,576 | 35 | one filtered global staker-raffle NFT page |
+| `BenchmarkRandomWalkV2Queries/token_events` | 546,000 | 43,640 | 224 | six-branch bounded per-token provenance merge |
+| `BenchmarkRandomWalkV2Queries/offer_history` | 410,000 | 20,444 | 176 | offer-creation ledger with purchase/cancel outcome joins |
+| `BenchmarkRandomWalkV2Queries/offers_price_asc` | 345,000 | 10,110 | 37 | live order book on the partial (price, evtlog) index |
+| `BenchmarkRandomWalkV2Queries/statistics` | 399,000 | 4,888 | 90 | one-snapshot collection/marketplace/withdrawal aggregate |
 
 History:
 
@@ -153,3 +158,13 @@ History:
   in migration 00023 support action detail, deposit aggregation,
   round-allocation and global raffle keysets; no cache or denormalized read
   model was justified.
+- **2026-07-16 (API-v2 RandomWalk sprint)** — added the RandomWalk query
+  class in its own `BenchmarkRandomWalkV2Queries` suite (table rows above).
+  The structurally heaviest read — the six-branch bounded per-token event
+  merge, where every branch applies its own keyset filter and limit before
+  the outer merge — runs in 546 µs; the outcome-joined offer ledger in
+  410 µs, the price-ranked live book in 345 µs on migration 00024's
+  partial `(contract, price, evtlog)` index, and the one-snapshot
+  statistics aggregate in 399 µs. All sit inside the established
+  170–550 µs container-round-trip band, so no denormalized read model or
+  cache was added.

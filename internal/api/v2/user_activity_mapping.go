@@ -71,11 +71,11 @@ func mapUserOwnedToken(record cgstore.UserOwnedTokenRecord) (UserCosmicSignature
 func mapTokenTransferType(otype int64) (TokenTransferType, error) {
 	switch otype {
 	case 0:
-		return Transfer, nil
+		return TokenTransferTypeTransfer, nil
 	case 1:
-		return Mint, nil
+		return TokenTransferTypeMint, nil
 	case 2:
-		return Burn, nil
+		return TokenTransferTypeBurn, nil
 	default:
 		return "", fmt.Errorf("unknown transfer type %d", otype)
 	}

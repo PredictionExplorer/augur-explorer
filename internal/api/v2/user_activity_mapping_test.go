@@ -118,7 +118,7 @@ func TestMapUserCosmicSignatureTransfer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("mapUserCosmicSignatureTransfer: %v", err)
 		}
-		if got.NftTokenId != 5 || got.TransferType != Transfer || got.Direction != Out ||
+		if got.NftTokenId != 5 || got.TransferType != TokenTransferTypeTransfer || got.Direction != Out ||
 			!strings.EqualFold(got.FromAddress, userCursorAlice) ||
 			!strings.EqualFold(got.ToAddress, userCursorBob) ||
 			got.EventLogId != 100 {
@@ -128,7 +128,7 @@ func TestMapUserCosmicSignatureTransfer(t *testing.T) {
 
 	t.Run("types and directions map", func(t *testing.T) {
 		t.Parallel()
-		types := map[int64]TokenTransferType{0: Transfer, 1: Mint, 2: Burn}
+		types := map[int64]TokenTransferType{0: TokenTransferTypeTransfer, 1: TokenTransferTypeMint, 2: TokenTransferTypeBurn}
 		directions := map[cgstore.UserTransferDirection]TokenTransferDirection{
 			cgstore.UserTransferIn:   In,
 			cgstore.UserTransferOut:  Out,
@@ -191,7 +191,7 @@ func TestMapUserCosmicTokenTransfer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("mapUserCosmicTokenTransfer: %v", err)
 	}
-	if got.AmountWei != "10000000000000000000" || got.TransferType != Transfer ||
+	if got.AmountWei != "10000000000000000000" || got.TransferType != TokenTransferTypeTransfer ||
 		got.Direction != Out || got.EventLogId != 100 {
 		t.Fatalf("transfer = %+v", got)
 	}

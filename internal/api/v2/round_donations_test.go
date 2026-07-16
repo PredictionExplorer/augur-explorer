@@ -306,6 +306,7 @@ func newDonationTestServer(t *testing.T, donations roundDonationReader) *Server 
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
+		fakeRandomWalkReader{},
 		fakeContractState{},
 		logger,
 	)

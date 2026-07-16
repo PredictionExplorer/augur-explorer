@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "address": "0x2100000000000000000000000000000000000021",
+    "mintedTokenCount": 1,
+    "ownedTokenCount": 1,
+    "profitWei": "0",
+    "tradeCount": 0,
+    "tradingVolumeWei": "0",
+    "withdrawalCount": 0
+  }
+}

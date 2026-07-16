@@ -104,6 +104,28 @@ const (
 	v2GlobalRwStaked     = "/api/v2/cosmicgame/staking/random-walk/staked-tokens"
 	v2RoundStakingReward = "/api/v2/cosmicgame/rounds/{round}/staking-rewards"
 	v2GlobalStakerRaffle = "/api/v2/cosmicgame/staking/raffle-nft-wins"
+	// #nosec G101 -- route templates, not credentials.
+	v2RwTokens = "/api/v2/randomwalk/tokens"
+	// #nosec G101 -- route template, not credentials.
+	v2RwToken = "/api/v2/randomwalk/tokens/{tokenId}"
+	// #nosec G101 -- route template, not credentials.
+	v2RwTokenNames = "/api/v2/randomwalk/tokens/{tokenId}/name-history"
+	// #nosec G101 -- route template, not credentials.
+	v2RwTokenEvents  = "/api/v2/randomwalk/tokens/{tokenId}/events"
+	v2RwOffers       = "/api/v2/randomwalk/marketplace/offers"
+	v2RwOfferHistory = "/api/v2/randomwalk/marketplace/offer-history"
+	v2RwTrades       = "/api/v2/randomwalk/marketplace/trades"
+	v2RwFloor        = "/api/v2/randomwalk/marketplace/floor-price"
+	v2RwUser         = "/api/v2/randomwalk/users/{address}"
+	// #nosec G101 -- route template, not credentials.
+	v2RwUserTokens   = "/api/v2/randomwalk/users/{address}/tokens"
+	v2RwUserOffers   = "/api/v2/randomwalk/users/{address}/offers"
+	v2RwStatistics   = "/api/v2/randomwalk/statistics"
+	v2RwVolume       = "/api/v2/randomwalk/statistics/trading-volume"
+	v2RwListingFloor = "/api/v2/randomwalk/statistics/listing-floor-history"
+	v2RwMintReport   = "/api/v2/randomwalk/statistics/mint-report"
+	v2RwWithdrawals  = "/api/v2/randomwalk/withdrawals"
+	v2RwContracts    = "/api/v2/randomwalk/contracts/addresses"
 )
 
 type v2GoldenCase struct {
@@ -2068,6 +2090,524 @@ func TestAPIV2GlobalStakingResources(t *testing.T) {
 			name:       "global_staker_raffle_error_internal",
 			target:     v2GlobalStakerRaffle + "?pool=cst",
 			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2RandomWalk(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	const (
+		rwAlice = "0x2100000000000000000000000000000000000021"
+		rwCarol = "0x2300000000000000000000000000000000000023"
+		rwDave  = "0x2400000000000000000000000000000000000024"
+		rwEmma  = "0x2500000000000000000000000000000000000025"
+		rwGhost = "0x9900000000000000000000000000000000000099"
+	)
+	encode := func(body string) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(body))
+	}
+	tokenCursor := func(sort string, tokenID int64) string {
+		return encode(`{"v":1,"k":"rwalkTokens","f":{},"s":` + strconv.Quote(sort) +
+			`,"t":` + strconv.FormatInt(tokenID, 10) + `}`)
+	}
+	tokenEventCursor := func(resource string, tokenID, eventLogID int64) string {
+		return encode(`{"v":1,"k":` + strconv.Quote(resource) +
+			`,"t":` + strconv.FormatInt(tokenID, 10) +
+			`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`)
+	}
+	ledgerCursor := func(resource string, eventLogID int64) string {
+		return encode(`{"v":1,"k":` + strconv.Quote(resource) +
+			`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`)
+	}
+
+	tokensPath := v2RwTokens + "?limit=3"
+	var tokens apiv2.RandomWalkTokenPage
+	decodeV2JSON(t, h.get(t, tokensPath), &tokens)
+	if tokens.Meta.NextCursor == nil {
+		t.Fatal("fixture token page has no continuation")
+	}
+	tokenEventsPath := "/api/v2/randomwalk/tokens/10/events?limit=3" // #nosec G101 -- route, not credentials.
+	var tokenEvents apiv2.RandomWalkTokenEventPage
+	decodeV2JSON(t, h.get(t, tokenEventsPath), &tokenEvents)
+	if tokenEvents.Meta.NextCursor == nil {
+		t.Fatal("fixture token event page has no continuation")
+	}
+	offersAscPath := v2RwOffers + "?sort=priceAsc&limit=1"
+	var offersAsc apiv2.RandomWalkMarketplaceOfferPage
+	decodeV2JSON(t, h.get(t, offersAscPath), &offersAsc)
+	if offersAsc.Meta.NextCursor == nil {
+		t.Fatal("fixture offer book has no continuation")
+	}
+	offerHistoryPath := v2RwOfferHistory + "?limit=2"
+	var offerHistory apiv2.RandomWalkOfferHistoryPage
+	decodeV2JSON(t, h.get(t, offerHistoryPath), &offerHistory)
+	if offerHistory.Meta.NextCursor == nil {
+		t.Fatal("fixture offer history has no continuation")
+	}
+	userTokensPath := "/api/v2/randomwalk/users/" + rwDave + "/tokens?limit=1"
+	var userTokens apiv2.RandomWalkOwnedTokenPage
+	decodeV2JSON(t, h.get(t, userTokensPath), &userTokens)
+	if userTokens.Meta.NextCursor == nil {
+		t.Fatal("fixture owned-token page has no continuation")
+	}
+	userOffersPath := "/api/v2/randomwalk/users/" + rwDave + "/offers?limit=1"
+	var userOffers apiv2.RandomWalkOfferHistoryPage
+	decodeV2JSON(t, h.get(t, userOffersPath), &userOffers)
+	if userOffers.Meta.NextCursor == nil {
+		t.Fatal("fixture user-offer page has no continuation")
+	}
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "randomwalk_tokens_first_page",
+			target:     tokensPath,
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_next_page",
+			target:     tokensPath + "&cursor=" + *tokens.Meta.NextCursor,
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_exhausted",
+			target:     v2RwTokens + "?cursor=" + tokenCursor("tokenId", 13),
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_named",
+			target:     v2RwTokens + "?named=true",
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_name_search",
+			target:     v2RwTokens + "?name=wand",
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_minted_window",
+			target:     v2RwTokens + "?mintedFrom=1767228700&mintedUntil=1767228900",
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_most_traded",
+			target:     v2RwTokens + "?sort=mostTraded&limit=2",
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_error_conflicting_filters",
+			target:     v2RwTokens + "?named=true&name=wand",
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_error_malformed_cursor",
+			target:     v2RwTokens + "?cursor=bogus",
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_error_cross_sort_cursor",
+			target:     v2RwTokens + "?sort=mostTraded&cursor=" + tokenCursor("tokenId", 11),
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_tokens_error_internal",
+			target:     tokensPath,
+			template:   v2RwTokens,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_token_named",
+			target:     "/api/v2/randomwalk/tokens/10",
+			template:   v2RwToken,
+			pathParams: map[string]string{"tokenId": "10"},
+		},
+		{
+			name:       "randomwalk_token_plain",
+			target:     "/api/v2/randomwalk/tokens/13",
+			template:   v2RwToken,
+			pathParams: map[string]string{"tokenId": "13"},
+		},
+		{
+			name:       "randomwalk_token_error_not_found",
+			target:     "/api/v2/randomwalk/tokens/999",
+			template:   v2RwToken,
+			pathParams: map[string]string{"tokenId": "999"},
+		},
+		{
+			name:       "randomwalk_token_error_internal",
+			target:     "/api/v2/randomwalk/tokens/10",
+			template:   v2RwToken,
+			pathParams: map[string]string{"tokenId": "10"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_token_name_history",
+			target:     "/api/v2/randomwalk/tokens/10/name-history",
+			template:   v2RwTokenNames,
+			pathParams: map[string]string{"tokenId": "10"},
+		},
+		{
+			name:       "randomwalk_token_name_history_empty",
+			target:     "/api/v2/randomwalk/tokens/11/name-history",
+			template:   v2RwTokenNames,
+			pathParams: map[string]string{"tokenId": "11"},
+		},
+		{
+			name:       "randomwalk_token_name_history_error_not_found",
+			target:     "/api/v2/randomwalk/tokens/999/name-history",
+			template:   v2RwTokenNames,
+			pathParams: map[string]string{"tokenId": "999"},
+		},
+		{
+			name:       "randomwalk_token_events_first_page",
+			target:     tokenEventsPath,
+			template:   v2RwTokenEvents,
+			pathParams: map[string]string{"tokenId": "10"},
+		},
+		{
+			name:       "randomwalk_token_events_next_page",
+			target:     tokenEventsPath + "&cursor=" + *tokenEvents.Meta.NextCursor,
+			template:   v2RwTokenEvents,
+			pathParams: map[string]string{"tokenId": "10"},
+		},
+		{
+			name: "randomwalk_token_events_exhausted",
+			target: "/api/v2/randomwalk/tokens/10/events?cursor=" +
+				tokenEventCursor("rwalkTokenEvents", 10, 5080),
+			template:   v2RwTokenEvents,
+			pathParams: map[string]string{"tokenId": "10"},
+		},
+		{
+			name: "randomwalk_token_events_error_cross_token_cursor",
+			target: "/api/v2/randomwalk/tokens/11/events?cursor=" +
+				tokenEventCursor("rwalkTokenEvents", 10, 5080),
+			template:   v2RwTokenEvents,
+			pathParams: map[string]string{"tokenId": "11"},
+		},
+		{
+			name:       "randomwalk_token_events_error_internal",
+			target:     tokenEventsPath,
+			template:   v2RwTokenEvents,
+			pathParams: map[string]string{"tokenId": "10"},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_offers_newest",
+			target:     v2RwOffers,
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offers_oldest",
+			target:     v2RwOffers + "?sort=oldest",
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offers_price_asc",
+			target:     offersAscPath,
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offers_price_asc_next_page",
+			target:     offersAscPath + "&cursor=" + *offersAsc.Meta.NextCursor,
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offers_price_desc",
+			target:     v2RwOffers + "?sort=priceDesc",
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "randomwalk_offers_error_cross_sort_cursor",
+			target: v2RwOffers + "?sort=priceDesc&cursor=" +
+				*offersAsc.Meta.NextCursor,
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offers_error_internal",
+			target:     v2RwOffers,
+			template:   v2RwOffers,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_offer_history_first_page",
+			target:     offerHistoryPath,
+			template:   v2RwOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offer_history_next_page",
+			target:     offerHistoryPath + "&cursor=" + *offerHistory.Meta.NextCursor,
+			template:   v2RwOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "randomwalk_offer_history_exhausted",
+			target: v2RwOfferHistory + "?cursor=" +
+				ledgerCursor("rwalkOfferHistory", 5088),
+			template:   v2RwOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_offer_history_error_internal",
+			target:     offerHistoryPath,
+			template:   v2RwOfferHistory,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_trades",
+			target:     v2RwTrades,
+			template:   v2RwTrades,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_trades_exhausted",
+			target:     v2RwTrades + "?cursor=" + ledgerCursor("rwalkTrades", 5089),
+			template:   v2RwTrades,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "randomwalk_trades_error_cross_resource_cursor",
+			target: v2RwTrades + "?cursor=" +
+				ledgerCursor("rwalkOfferHistory", 5089),
+			template:   v2RwTrades,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_trades_error_internal",
+			target:     v2RwTrades,
+			template:   v2RwTrades,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_floor_price",
+			target:     v2RwFloor,
+			template:   v2RwFloor,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_floor_price_error_internal",
+			target:     v2RwFloor,
+			template:   v2RwFloor,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_user_trader",
+			target:     "/api/v2/randomwalk/users/" + rwCarol,
+			template:   v2RwUser,
+			pathParams: map[string]string{"address": rwCarol},
+		},
+		{
+			name:       "randomwalk_user_minter_only",
+			target:     "/api/v2/randomwalk/users/" + rwAlice,
+			template:   v2RwUser,
+			pathParams: map[string]string{"address": rwAlice},
+		},
+		{
+			name:       "randomwalk_user_zero_activity",
+			target:     "/api/v2/randomwalk/users/" + rwEmma,
+			template:   v2RwUser,
+			pathParams: map[string]string{"address": rwEmma},
+		},
+		{
+			name:       "randomwalk_user_unindexed",
+			target:     "/api/v2/randomwalk/users/" + rwGhost,
+			template:   v2RwUser,
+			pathParams: map[string]string{"address": rwGhost},
+		},
+		{
+			name:       "randomwalk_user_error_invalid_address",
+			target:     "/api/v2/randomwalk/users/0x123",
+			template:   v2RwUser,
+			pathParams: map[string]string{"address": "0x123"},
+		},
+		{
+			name:       "randomwalk_user_error_internal",
+			target:     "/api/v2/randomwalk/users/" + rwCarol,
+			template:   v2RwUser,
+			pathParams: map[string]string{"address": rwCarol},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_user_tokens_first_page",
+			target:     userTokensPath,
+			template:   v2RwUserTokens,
+			pathParams: map[string]string{"address": rwDave},
+		},
+		{
+			name:       "randomwalk_user_tokens_next_page",
+			target:     userTokensPath + "&cursor=" + *userTokens.Meta.NextCursor,
+			template:   v2RwUserTokens,
+			pathParams: map[string]string{"address": rwDave},
+		},
+		{
+			name:       "randomwalk_user_tokens_unindexed",
+			target:     "/api/v2/randomwalk/users/" + rwGhost + "/tokens",
+			template:   v2RwUserTokens,
+			pathParams: map[string]string{"address": rwGhost},
+		},
+		{
+			name: "randomwalk_user_tokens_error_cross_wallet_cursor",
+			target: "/api/v2/randomwalk/users/" + rwCarol + "/tokens?cursor=" +
+				*userTokens.Meta.NextCursor,
+			template:   v2RwUserTokens,
+			pathParams: map[string]string{"address": rwCarol},
+		},
+		{
+			name:       "randomwalk_user_offers_first_page",
+			target:     userOffersPath,
+			template:   v2RwUserOffers,
+			pathParams: map[string]string{"address": rwDave},
+		},
+		{
+			name:       "randomwalk_user_offers_next_page",
+			target:     userOffersPath + "&cursor=" + *userOffers.Meta.NextCursor,
+			template:   v2RwUserOffers,
+			pathParams: map[string]string{"address": rwDave},
+		},
+		{
+			name: "randomwalk_user_offers_error_cross_wallet_cursor",
+			target: "/api/v2/randomwalk/users/" + rwCarol + "/offers?cursor=" +
+				*userOffers.Meta.NextCursor,
+			template:   v2RwUserOffers,
+			pathParams: map[string]string{"address": rwCarol},
+		},
+		{
+			name:       "randomwalk_user_offers_error_internal",
+			target:     userOffersPath,
+			template:   v2RwUserOffers,
+			pathParams: map[string]string{"address": rwDave},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_statistics",
+			target:     v2RwStatistics,
+			template:   v2RwStatistics,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_statistics_error_internal",
+			target:     v2RwStatistics,
+			template:   v2RwStatistics,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name: "randomwalk_trading_volume",
+			target: v2RwVolume +
+				"?from=1767229100&to=1767229400&intervalSeconds=100",
+			template:   v2RwVolume,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "randomwalk_trading_volume_with_base",
+			target: v2RwVolume +
+				"?from=1767229300&to=1767229400&intervalSeconds=100",
+			template:   v2RwVolume,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_trading_volume_error_window",
+			target:     v2RwVolume + "?from=200&to=100",
+			template:   v2RwVolume,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_trading_volume_error_internal",
+			target:     v2RwVolume + "?from=1767229100&to=1767229400",
+			template:   v2RwVolume,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name: "randomwalk_listing_floor_history",
+			target: v2RwListingFloor +
+				"?from=1767229100&to=1767229700&intervalSeconds=200",
+			template:   v2RwListingFloor,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "randomwalk_listing_floor_error_too_many_buckets",
+			target: v2RwListingFloor +
+				"?from=0&to=100000000&intervalSeconds=1",
+			template:   v2RwListingFloor,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_mint_report",
+			target:     v2RwMintReport,
+			template:   v2RwMintReport,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_mint_report_error_internal",
+			target:     v2RwMintReport,
+			template:   v2RwMintReport,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_withdrawals",
+			target:     v2RwWithdrawals,
+			template:   v2RwWithdrawals,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "randomwalk_withdrawals_exhausted",
+			target: v2RwWithdrawals + "?cursor=" +
+				ledgerCursor("rwalkWithdrawals", 5095),
+			template:   v2RwWithdrawals,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_withdrawals_error_internal",
+			target:     v2RwWithdrawals,
+			template:   v2RwWithdrawals,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "randomwalk_contracts_addresses",
+			target:     v2RwContracts,
+			template:   v2RwContracts,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "randomwalk_contracts_addresses_error_internal",
+			target:     v2RwContracts,
+			template:   v2RwContracts,
 			pathParams: map[string]string{},
 			ctx:        cancelledCtx,
 		},

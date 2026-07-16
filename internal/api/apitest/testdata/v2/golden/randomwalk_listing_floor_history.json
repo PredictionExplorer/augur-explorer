@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "from": 1767229100,
+    "intervalSeconds": 200,
+    "points": [
+      {
+        "bucketStart": 1767229100,
+        "floorPriceWei": "1000000000000000000"
+      },
+      {
+        "bucketStart": 1767229300,
+        "floorPriceWei": "2000000000000000000"
+      },
+      {
+        "bucketStart": 1767229500,
+        "floorPriceWei": "3000000000000000000"
+      }
+    ],
+    "to": 1767229700
+  }
+}

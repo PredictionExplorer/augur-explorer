@@ -81,6 +81,7 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 		"depositId":  "501",
 		"actionId":   "1",
 		"nftTokenId": "5",
+		"tokenId":    "10",
 	}
 
 	for specPath, item := range spec.Paths.Map() {
@@ -145,10 +146,16 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 				!schema.Value.Type.Is(openapi3.TypeString) {
 				queries["malformed"] = parameter.Name + "=password-super-secret"
 			}
+			if parameter.Required {
+				queries["missing"] = ""
+			}
 			siblings := requiredQuery(parameter.Name)
 			for kind, query := range queries {
 				if siblings != "" {
-					query += "&" + siblings
+					if query != "" {
+						query += "&"
+					}
+					query += siblings
 				}
 				name := kind + " " + parameter.Name + " on " + specPath
 				t.Run(name, func(t *testing.T) {

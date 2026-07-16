@@ -215,6 +215,7 @@ func newContractTestServer(
 		fakeUserActivityReader{},
 		fakeGlobalDirectoryReader{},
 		fakeGlobalStakingReader{},
+		fakeRandomWalkReader{},
 		state,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

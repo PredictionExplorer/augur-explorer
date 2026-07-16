@@ -44,6 +44,28 @@ func TestGeneratedEnumDomainsMatchSpec(t *testing.T) {
 			valid:   StakerRafflePool("cst").Valid() && StakerRafflePool("randomWalk").Valid(),
 			invalid: StakerRafflePool("bidder").Valid(),
 		},
+		"RandomWalkTokenSort": {
+			valid:   RandomWalkTokenSort("tokenId").Valid() && RandomWalkTokenSort("mostTraded").Valid(),
+			invalid: RandomWalkTokenSort("priceAsc").Valid(),
+		},
+		"RandomWalkOfferSort": {
+			valid:   RandomWalkOfferSort("newest").Valid() && RandomWalkOfferSort("oldest").Valid() && RandomWalkOfferSort("priceAsc").Valid() && RandomWalkOfferSort("priceDesc").Valid(),
+			invalid: RandomWalkOfferSort("tokenId").Valid(),
+		},
+		"RandomWalkOfferSide": {
+			valid:   RandomWalkOfferSide("sell").Valid() && RandomWalkOfferSide("buy").Valid(),
+			invalid: RandomWalkOfferSide("bid").Valid(),
+		},
+		"RandomWalkOfferStatus": {
+			valid:   RandomWalkOfferStatus("active").Valid() && RandomWalkOfferStatus("bought").Valid() && RandomWalkOfferStatus("canceled").Valid(),
+			invalid: RandomWalkOfferStatus("expired").Valid(),
+		},
+		"RandomWalkTokenEventType": {
+			valid: RandomWalkTokenEventType("mint").Valid() && RandomWalkTokenEventType("transfer").Valid() &&
+				RandomWalkTokenEventType("nameChange").Valid() && RandomWalkTokenEventType("listed").Valid() &&
+				RandomWalkTokenEventType("offerCanceled").Valid() && RandomWalkTokenEventType("purchase").Valid(),
+			invalid: RandomWalkTokenEventType("burn").Valid(),
+		},
 		"ContractConfiguration0CstBidRewardMode": {
 			valid:   ContractConfiguration0CstBidRewardMode("fixed").Valid(),
 			invalid: ContractConfiguration0CstBidRewardMode("dynamic").Valid(),
