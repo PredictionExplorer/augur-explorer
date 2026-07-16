@@ -107,9 +107,13 @@ type Snapshot struct {
 	RaffleNFTWinnersBidding         int64
 	RaffleNFTWinnersStakingRWalk    int64
 	CSTAuctionDurationChangeDivisor int64
-	ConstantsReady                  bool
-	ConfigurationReady              bool
-	ConstantsMechanicsVersion       int64
+	// TreasurerAddr is the MarketingWallet's owner-tunable treasurer,
+	// refreshed with the constants group; a failed read keeps the
+	// previous address (zero until the first success).
+	TreasurerAddr             ethcommon.Address
+	ConstantsReady            bool
+	ConfigurationReady        bool
+	ConstantsMechanicsVersion int64
 
 	// Contract variables: per-round live state, refreshed every
 	// VariablesInterval.

@@ -158,6 +158,24 @@ func scanUserOwnedToken(rows pgx.Rows, rec *UserOwnedTokenRecord) error {
 		return err
 	}
 
+	source, err := deriveMintSource(
+		rec.TokenID, isMainPrize, raffleIsRWalk, raffleStaker, isEndurance, isLastCst, isChrono)
+	if err != nil {
+		return err
+	}
+	rec.MintSource = source
+	return nil
+}
+
+// deriveMintSource resolves the per-prize-family join flags into the one
+// prize source that minted the token, rejecting tokens that match zero or
+// several sources.
+func deriveMintSource(
+	tokenID int64,
+	isMainPrize bool,
+	raffleIsRWalk, raffleStaker sql.NullBool,
+	isEndurance, isLastCst, isChrono bool,
+) (CosmicSignatureMintSource, error) {
 	var sources []CosmicSignatureMintSource
 	if isMainPrize {
 		sources = append(sources, MintSourceMainPrize)
@@ -182,10 +200,9 @@ func scanUserOwnedToken(rows pgx.Rows, rec *UserOwnedTokenRecord) error {
 		sources = append(sources, MintSourceChronoWarriorPrize)
 	}
 	if len(sources) != 1 {
-		return fmt.Errorf("token %d matches %d mint sources", rec.TokenID, len(sources))
+		return "", fmt.Errorf("token %d matches %d mint sources", tokenID, len(sources))
 	}
-	rec.MintSource = sources[0]
-	return nil
+	return sources[0], nil
 }
 
 // UserTransferDirection relates one transfer to the requested wallet.

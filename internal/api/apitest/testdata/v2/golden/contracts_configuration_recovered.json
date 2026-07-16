@@ -19,6 +19,7 @@
     "raffleNftRandomWalkStakerWinnerCount": 4,
     "rafflePercentage": 5,
     "stakingPercentage": 10,
-    "timeoutMainPrizeClaimSeconds": 86400
+    "timeoutMainPrizeClaimSeconds": 86400,
+    "treasurerAddress": "0x2500000000000000000000000000000000000025"
   }
 }

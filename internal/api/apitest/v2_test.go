@@ -81,6 +81,20 @@ const (
 	v2ListUserCtXfers    = "/api/v2/cosmicgame/users/{address}/cosmic-token-transfers"
 	v2ListUserMktRewards = "/api/v2/cosmicgame/users/{address}/marketing-rewards"
 	v2GetUserPendingWins = "/api/v2/cosmicgame/users/{address}/pending-winnings"
+	// #nosec G101 -- route templates, not credentials.
+	v2ListGlobalTokens = "/api/v2/cosmicgame/cosmic-signature-tokens"
+	v2ListCsHolders    = "/api/v2/cosmicgame/cosmic-signature-tokens/holders"
+	// #nosec G101 -- route template, not credentials.
+	v2GetGlobalToken = "/api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}"
+	// #nosec G101 -- route template, not credentials.
+	v2ListTokenNames = "/api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}/name-history"
+	// #nosec G101 -- route template, not credentials.
+	v2ListTokenTransfers = "/api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}/transfers"
+	v2ListCtHolders      = "/api/v2/cosmicgame/cosmic-token/holders"
+	v2GetCtStatistics    = "/api/v2/cosmicgame/cosmic-token/statistics"
+	v2ListSupplyByBid    = "/api/v2/cosmicgame/cosmic-token/supply-history/by-bid"
+	v2ListSupplyDaily    = "/api/v2/cosmicgame/cosmic-token/supply-history/daily"
+	v2ListGlobalMkt      = "/api/v2/cosmicgame/marketing-rewards"
 )
 
 type v2GoldenCase struct {
@@ -1347,6 +1361,397 @@ func TestAPIV2UserActivity(t *testing.T) {
 			target:     "/api/v2/cosmicgame/users/" + addrAlice + "/pending-winnings",
 			template:   v2GetUserPendingWins,
 			pathParams: map[string]string{"address": addrAlice},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2GlobalDirectories(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	globalTokenCursor := func(named bool, name string, tokenID int64) string {
+		filter := "{}"
+		switch {
+		case named:
+			filter = `{"n":true}`
+		case name != "":
+			filter = `{"q":` + strconv.Quote(name) + `}`
+		}
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"f":` + filter + `,"t":` + strconv.FormatInt(tokenID, 10) + `}`,
+		))
+	}
+	tokenEventCursor := func(resource string, tokenID, eventLogID int64) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(
+			`{"v":1,"k":` + strconv.Quote(resource) +
+				`,"t":` + strconv.FormatInt(tokenID, 10) +
+				`,"e":` + strconv.FormatInt(eventLogID, 10) + `}`,
+		))
+	}
+
+	// Nine fixture mints: a four-item page crosses a real continuation
+	// cursor twice.
+	tokensPath := v2ListGlobalTokens + "?limit=4"
+	var tokenPage apiv2.CosmicGameCosmicSignatureTokenPage
+	decodeV2JSON(t, h.get(t, tokensPath), &tokenPage)
+	if tokenPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first token page did not return a continuation cursor")
+	}
+
+	// Token 2 carries a mint plus a transfer; a one-item page crosses a
+	// real continuation cursor.
+	transfersPath := "/api/v2/cosmicgame/cosmic-signature-tokens/2/transfers?limit=1"
+	var transferPage apiv2.CosmicGameCosmicSignatureTokenTransferPage
+	decodeV2JSON(t, h.get(t, transfersPath), &transferPage)
+	if transferPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first transfer page did not return a continuation cursor")
+	}
+
+	// Walk the two ranked holder directories for their real cursors.
+	holdersPath := v2ListCsHolders + "?limit=2"
+	var csHolderPage apiv2.CosmicGameCosmicSignatureHolderPage
+	decodeV2JSON(t, h.get(t, holdersPath), &csHolderPage)
+	if csHolderPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first holder page did not return a continuation cursor")
+	}
+	ctHoldersPath := v2ListCtHolders + "?limit=2"
+	var ctHolderPage apiv2.CosmicGameCosmicTokenHolderPage
+	decodeV2JSON(t, h.get(t, ctHoldersPath), &ctHolderPage)
+	if ctHolderPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first balance page did not return a continuation cursor")
+	}
+
+	// The supply ledger and the marketing ledger provide their real
+	// continuation and terminal cursors.
+	supplyPath := v2ListSupplyByBid + "?limit=5"
+	var supplyPage apiv2.CosmicGameCosmicTokenSupplyByBidPage
+	decodeV2JSON(t, h.get(t, supplyPath), &supplyPage)
+	if supplyPage.Meta.NextCursor == nil {
+		t.Fatal("fixture first supply page did not return a continuation cursor")
+	}
+	lastSupplyEvent := int64(0)
+	cursor := ""
+	for {
+		target := v2ListSupplyByBid + "?limit=200"
+		if cursor != "" {
+			target += "&cursor=" + cursor
+		}
+		var page apiv2.CosmicGameCosmicTokenSupplyByBidPage
+		decodeV2JSON(t, h.get(t, target), &page)
+		if len(page.Data) > 0 {
+			lastSupplyEvent = page.Data[len(page.Data)-1].EventLogId
+		}
+		if page.Meta.NextCursor == nil {
+			break
+		}
+		cursor = *page.Meta.NextCursor
+	}
+	if lastSupplyEvent == 0 {
+		t.Fatal("fixture supply ledger is empty")
+	}
+	terminalSupplyCursor := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"v":1,"s":` + strconv.FormatInt(lastSupplyEvent, 10) + `}`))
+
+	// The fixture pays exactly one marketing reward (event 5017), so the
+	// ledger's terminal cursor is synthesized from it.
+	marketingPath := v2ListGlobalMkt + "?limit=1"
+	var marketingPage apiv2.CosmicGameMarketingRewardPage
+	decodeV2JSON(t, h.get(t, marketingPath), &marketingPage)
+	if len(marketingPage.Data) != 1 || marketingPage.Meta.NextCursor != nil {
+		t.Fatalf("fixture marketing ledger changed: %+v", marketingPage)
+	}
+	terminalMarketingCursor := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"v":1,"m":` + strconv.FormatInt(marketingPage.Data[0].EventLogId, 10) + `}`))
+
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "global_tokens_first_page",
+			target:     tokensPath,
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_next_page",
+			target:     tokensPath + "&cursor=" + *tokenPage.Meta.NextCursor,
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_exhausted",
+			target:     tokensPath + "&cursor=" + globalTokenCursor(false, "", 0),
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_named_only",
+			target:     v2ListGlobalTokens + "?named=true",
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_name_search",
+			target:     v2ListGlobalTokens + "?name=gene",
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			// A literal % matches nothing: ILIKE wildcards are escaped.
+			name:       "global_tokens_name_search_escaped_wildcard",
+			target:     v2ListGlobalTokens + "?name=%25",
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_error_contradictory_filters",
+			target:     v2ListGlobalTokens + "?named=true&name=x",
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_error_invalid_limit",
+			target:     v2ListGlobalTokens + "?limit=201",
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_error_malformed_cursor",
+			target:     v2ListGlobalTokens + "?cursor=bad",
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_error_cross_filter_cursor",
+			target:     v2ListGlobalTokens + "?cursor=" + globalTokenCursor(true, "", 5),
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_tokens_error_internal",
+			target:     tokensPath,
+			template:   v2ListGlobalTokens,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_token_detail_staked",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/5",
+			template:   v2GetGlobalToken,
+			pathParams: map[string]string{"nftTokenId": "5"},
+		},
+		{
+			name:       "global_token_detail_named_unstaked",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/1",
+			template:   v2GetGlobalToken,
+			pathParams: map[string]string{"nftTokenId": "1"},
+		},
+		{
+			name:       "global_token_detail_error_not_found",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/424242",
+			template:   v2GetGlobalToken,
+			pathParams: map[string]string{"nftTokenId": "424242"},
+		},
+		{
+			name:       "global_token_detail_error_negative",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/-1",
+			template:   v2GetGlobalToken,
+			pathParams: map[string]string{"nftTokenId": "-1"},
+		},
+		{
+			name:       "token_name_history_genesis",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/1/name-history",
+			template:   v2ListTokenNames,
+			pathParams: map[string]string{"nftTokenId": "1"},
+		},
+		{
+			name: "token_name_history_exhausted",
+			target: "/api/v2/cosmicgame/cosmic-signature-tokens/1/name-history?cursor=" +
+				tokenEventCursor("nameHistory", 1, 5047),
+			template:   v2ListTokenNames,
+			pathParams: map[string]string{"nftTokenId": "1"},
+		},
+		{
+			name:       "token_name_history_empty_unnamed",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/2/name-history",
+			template:   v2ListTokenNames,
+			pathParams: map[string]string{"nftTokenId": "2"},
+		},
+		{
+			name:       "token_name_history_error_not_found",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/424242/name-history",
+			template:   v2ListTokenNames,
+			pathParams: map[string]string{"nftTokenId": "424242"},
+		},
+		{
+			name:       "token_transfers_first_page",
+			target:     transfersPath,
+			template:   v2ListTokenTransfers,
+			pathParams: map[string]string{"nftTokenId": "2"},
+		},
+		{
+			name:       "token_transfers_next_page",
+			target:     transfersPath + "&cursor=" + *transferPage.Meta.NextCursor,
+			template:   v2ListTokenTransfers,
+			pathParams: map[string]string{"nftTokenId": "2"},
+		},
+		{
+			name: "token_transfers_error_cross_resource_cursor",
+			target: transfersPath + "&cursor=" +
+				tokenEventCursor("nameHistory", 2, 5047),
+			template:   v2ListTokenTransfers,
+			pathParams: map[string]string{"nftTokenId": "2"},
+		},
+		{
+			name:       "token_transfers_error_not_found",
+			target:     "/api/v2/cosmicgame/cosmic-signature-tokens/424242/transfers",
+			template:   v2ListTokenTransfers,
+			pathParams: map[string]string{"nftTokenId": "424242"},
+		},
+		{
+			name:       "cs_holders_first_page",
+			target:     holdersPath,
+			template:   v2ListCsHolders,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cs_holders_next_page",
+			target:     holdersPath + "&cursor=" + *csHolderPage.Meta.NextCursor,
+			template:   v2ListCsHolders,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cs_holders_error_cross_directory_cursor",
+			target:     v2ListCsHolders + "?cursor=" + *ctHolderPage.Meta.NextCursor,
+			template:   v2ListCsHolders,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "ct_holders_first_page",
+			target:     ctHoldersPath,
+			template:   v2ListCtHolders,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "ct_holders_next_page",
+			target:     ctHoldersPath + "&cursor=" + *ctHolderPage.Meta.NextCursor,
+			template:   v2ListCtHolders,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "ct_holders_error_internal",
+			target:     ctHoldersPath,
+			template:   v2ListCtHolders,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "ct_statistics",
+			target:     v2GetCtStatistics,
+			template:   v2GetCtStatistics,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "ct_statistics_error_internal",
+			target:     v2GetCtStatistics,
+			template:   v2GetCtStatistics,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "supply_by_bid_first_page",
+			target:     supplyPath,
+			template:   v2ListSupplyByBid,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_by_bid_next_page",
+			target:     supplyPath + "&cursor=" + *supplyPage.Meta.NextCursor,
+			template:   v2ListSupplyByBid,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_by_bid_exhausted",
+			target:     v2ListSupplyByBid + "?cursor=" + terminalSupplyCursor,
+			template:   v2ListSupplyByBid,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_by_bid_error_malformed_cursor",
+			target:     v2ListSupplyByBid + "?cursor=bad",
+			template:   v2ListSupplyByBid,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_by_bid_error_internal",
+			target:     supplyPath,
+			template:   v2ListSupplyByBid,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "supply_daily_fixture_era",
+			target:     v2ListSupplyDaily + "?from=2026-01-01&to=2026-01-03",
+			template:   v2ListSupplyDaily,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_daily_empty_era",
+			target:     v2ListSupplyDaily + "?from=2001-01-01&to=2001-01-03",
+			template:   v2ListSupplyDaily,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_daily_error_reversed_window",
+			target:     v2ListSupplyDaily + "?from=2026-01-03&to=2026-01-01",
+			template:   v2ListSupplyDaily,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_daily_error_oversized_window",
+			target:     v2ListSupplyDaily + "?from=2020-01-01&to=2026-01-01",
+			template:   v2ListSupplyDaily,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "supply_daily_error_internal",
+			target:     v2ListSupplyDaily + "?from=2026-01-01&to=2026-01-03",
+			template:   v2ListSupplyDaily,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "global_marketing_ledger",
+			target:     marketingPath,
+			template:   v2ListGlobalMkt,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_marketing_exhausted",
+			target:     v2ListGlobalMkt + "?cursor=" + terminalMarketingCursor,
+			template:   v2ListGlobalMkt,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "global_marketing_error_cross_resource_cursor",
+			target: v2ListGlobalMkt + "?cursor=" + base64.RawURLEncoding.EncodeToString(
+				[]byte(`{"v":1,"s":5017}`)),
+			template:   v2ListGlobalMkt,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "global_marketing_error_internal",
+			target:     marketingPath,
+			template:   v2ListGlobalMkt,
+			pathParams: map[string]string{},
 			ctx:        cancelledCtx,
 		},
 	}

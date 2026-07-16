@@ -63,6 +63,10 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 	if err != nil {
 		return ContractConfiguration{}, err
 	}
+	treasurer, err := canonicalSnapshotAddress("treasurer", snapshot.TreasurerAddr)
+	if err != nil {
+		return ContractConfiguration{}, err
+	}
 	priceIncrease, err := requiredAmount(snapshot.PriceIncrease)
 	if err != nil {
 		return ContractConfiguration{}, fmt.Errorf("ETH bid-price divisor: %w", err)
@@ -99,6 +103,7 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 		RafflePercentage:                      snapshot.RafflePercentage,
 		StakingPercentage:                     snapshot.StakingPercentage,
 		TimeoutMainPrizeClaimSeconds:          snapshot.TimeoutClaimPrize,
+		TreasurerAddress:                      treasurer,
 	}
 	switch snapshot.MechanicsVersion {
 	case 1:

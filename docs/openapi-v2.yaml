@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.14.0
+  version: 0.15.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
     incrementally while the frozen v1 contract remains available.
@@ -869,6 +869,235 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-signature-tokens:
+    get:
+      operationId: listCosmicGameCosmicSignatureTokens
+      summary: List every minted Cosmic Signature NFT
+      description: |
+        Returns the global Cosmic Signature token directory, newest mint
+        first by immutable token ID, with each token's mint provenance
+        (round, prize source, original winner, seed), current owner,
+        current name and live staking-wallet membership. `named=true`
+        keeps only tokens that currently hold a name; `name=` keeps only
+        tokens whose current name contains the term case-insensitively.
+        The two filters are mutually exclusive and each continuation
+        cursor is bound to its filter. Mints are append-only, so pages
+        are stable; the owner, name and staking columns are live and may
+        change between pages.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/NamedTokensFilter"
+        - $ref: "#/components/parameters/TokenNameSearch"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicSignatureTokenPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-signature-tokens/holders:
+    get:
+      operationId: listCosmicGameCosmicSignatureHolders
+      summary: List wallets by Cosmic Signature NFTs currently held
+      description: |
+        Returns the ownership distribution of the Cosmic Signature
+        collection: one row per wallet that currently holds at least one
+        token, largest holding first with an internal stable tie-break.
+        Holdings change on every transfer, so ranks can move while a
+        client traverses pages; clients should de-duplicate addresses
+        and restart from the first page when they need a fresh ranking.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicSignatureHolderPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}:
+    get:
+      operationId: getCosmicGameCosmicSignatureToken
+      summary: Get one Cosmic Signature NFT
+      description: |
+        Returns one minted token's provenance, current owner, current
+        name and live staking state. While the token sits in the staking
+        wallet the response carries the locking stake action and the
+        staker; round-level prize data lives on the round resources.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/StakedNftTokenId"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicSignatureTokenDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}/name-history:
+    get:
+      operationId: listCosmicGameCosmicSignatureTokenNameHistory
+      summary: List every rename of one Cosmic Signature NFT
+      description: |
+        Returns the token's name changes, newest first by immutable
+        event-log ID, each with the wallet that performed the rename. An
+        empty `tokenName` means the name was cleared. A minted token that
+        was never renamed returns an empty page; an unknown token is 404.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/StakedNftTokenId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameTokenNameChangePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}/transfers:
+    get:
+      operationId: listCosmicGameCosmicSignatureTokenTransfers
+      summary: List the ownership history of one Cosmic Signature NFT
+      description: |
+        Returns every ERC-721 transfer of one token — the mint included —
+        newest first by immutable event-log ID. The ledger is append-only,
+        so pages are stable. An unknown token is 404.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/StakedNftTokenId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicSignatureTokenTransferPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-token/holders:
+    get:
+      operationId: listCosmicGameCosmicTokenHolders
+      summary: List wallets by Cosmic Token balance
+      description: |
+        Returns every wallet with a positive indexed Cosmic Token (ERC-20)
+        balance, largest balance first with an internal stable tie-break,
+        as exact base-unit strings. Balances change on every transfer, so
+        ranks can move while a client traverses pages; clients should
+        de-duplicate addresses and restart from the first page when they
+        need a fresh ranking.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/ParticipantCursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicTokenHolderPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-token/statistics:
+    get:
+      operationId: getCosmicGameCosmicTokenStatistics
+      summary: Get the global Cosmic Token position
+      description: |
+        Returns the game-wide exact Cosmic Token (ERC-20) position from
+        one consistent database snapshot: the indexed total supply and
+        holder count, game-wide earnings by source, the amount consumed
+        in CST bids, the resulting signed net issuance, transfer activity
+        counters and the ten largest holders with their share of supply
+        as a decimal-string percentage. All amounts are exact base-unit
+        strings; the response performs no contract RPC. The token's
+        name, symbol and decimals are immutable public chain data and are
+        deliberately not served here.
+      tags:
+        - CosmicGame tokens
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicTokenStatistics"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-token/supply-history/by-bid:
+    get:
+      operationId: listCosmicGameCosmicTokenSupplyByBid
+      summary: List the per-bid Cosmic Token supply ledger
+      description: |
+        Returns one row per bid, oldest first by immutable event-log ID,
+        with the exact base units the bid minted (its CST reward), burned
+        (the CST price of a CST bid) and the running total supply after
+        the bid. The ledger is append-only, so pages are stable.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicTokenSupplyByBidPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/cosmic-token/supply-history/daily:
+    get:
+      operationId: listCosmicGameCosmicTokenSupplyDaily
+      summary: List daily Cosmic Token supply aggregates
+      description: |
+        Returns one row per UTC calendar day with at least one bid inside
+        `[from,to)`: the day's bid count, exact minted, burned and net
+        base units, and the running total supply at the end of the day
+        computed over all history. The window covers at most 2,000 days;
+        broader requests return 400 so clients can narrow the range.
+      tags:
+        - CosmicGame tokens
+      parameters:
+        - $ref: "#/components/parameters/SupplyDailyFrom"
+        - $ref: "#/components/parameters/SupplyDailyTo"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameCosmicTokenSupplyDaily"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/marketing-rewards:
+    get:
+      operationId: listCosmicGameMarketingRewards
+      summary: List every marketing reward the MarketingWallet paid
+      description: |
+        Returns the global MarketingWallet reward ledger, newest first by
+        immutable event-log ID, with exact Cosmic Token base-unit amounts
+        and the rewarded wallet on each item. The per-wallet view lives
+        on the user marketing-rewards resource.
+      tags:
+        - CosmicGame statistics
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameMarketingRewardPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/v2/cosmicgame/statistics:
     get:
       operationId: getCosmicGameStatistics
@@ -1287,6 +1516,42 @@ components:
         type: integer
         format: int64
         minimum: 0
+    NamedTokensFilter:
+      name: named
+      in: query
+      required: false
+      description: |
+        When true, keep only tokens that currently hold a non-empty name.
+        Mutually exclusive with `name`.
+      schema:
+        type: boolean
+    TokenNameSearch:
+      name: name
+      in: query
+      required: false
+      description: |
+        Keep only tokens whose current name contains this term
+        case-insensitively. Mutually exclusive with `named`.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+    SupplyDailyFrom:
+      name: from
+      in: query
+      required: true
+      description: Inclusive first UTC calendar day of the window.
+      schema:
+        type: string
+        format: date
+    SupplyDailyTo:
+      name: to
+      in: query
+      required: true
+      description: Exclusive UTC calendar day ending the window.
+      schema:
+        type: string
+        format: date
     RoiSortParam:
       name: sort
       in: query
@@ -1536,6 +1801,7 @@ components:
         - timeoutMainPrizeClaimSeconds
         - cstRoundStartAuctionMode
         - cstRoundStartAuctionValue
+        - treasurerAddress
       properties:
         mechanicsVersion:
           $ref: "#/components/schemas/ContractMechanicsVersion"
@@ -1543,6 +1809,10 @@ components:
           type: string
           pattern: "^[0-9]+$"
         charityAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        treasurerAddress:
+          description: The MarketingWallet's owner-tunable treasurer.
           type: string
           pattern: "^0x[0-9a-fA-F]{40}$"
         charityDonationPercentage:
@@ -4648,6 +4918,531 @@ components:
           type: integer
           format: int64
           minimum: 0
+    CosmicSignatureToken:
+      description: |
+        One minted Cosmic Signature NFT in the global directory, with its
+        mint transaction, provenance, current owner and live
+        staking-wallet membership. `tokenName` is present when the token
+        currently holds a name.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - mintedAt
+        - nftTokenId
+        - seed
+        - mintRound
+        - mintType
+        - winnerAddress
+        - currentOwnerAddress
+        - staked
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        mintedAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        seed:
+          type: string
+          minLength: 1
+        mintRound:
+          type: integer
+          format: int64
+          minimum: 0
+        mintType:
+          $ref: "#/components/schemas/CosmicSignatureMintType"
+        winnerAddress:
+          description: The wallet the token was originally minted to.
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        currentOwnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        staked:
+          description: Whether the token sits in the staking wallet right now.
+          type: boolean
+        tokenName:
+          type: string
+          minLength: 1
+    CosmicGameCosmicSignatureTokenPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicSignatureToken"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureTokenStake:
+      description: The stake currently locking the token.
+      type: object
+      additionalProperties: false
+      required:
+        - stakeActionId
+        - stakerAddress
+        - stakedAt
+      properties:
+        stakeActionId:
+          type: integer
+          format: int64
+          minimum: 0
+        stakerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        stakedAt:
+          type: string
+          format: date-time
+    CosmicGameCosmicSignatureTokenDetail:
+      description: |
+        One minted Cosmic Signature NFT with provenance, current owner
+        and live staking state. `currentStake` is present exactly while
+        the token sits in the staking wallet.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - mintedAt
+        - nftTokenId
+        - seed
+        - mintRound
+        - mintType
+        - winnerAddress
+        - currentOwnerAddress
+        - staked
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        mintedAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        seed:
+          type: string
+          minLength: 1
+        mintRound:
+          type: integer
+          format: int64
+          minimum: 0
+        mintType:
+          $ref: "#/components/schemas/CosmicSignatureMintType"
+        winnerAddress:
+          description: The wallet the token was originally minted to.
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        currentOwnerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        staked:
+          description: Whether the token sits in the staking wallet right now.
+          type: boolean
+        currentStake:
+          $ref: "#/components/schemas/CosmicSignatureTokenStake"
+        tokenName:
+          type: string
+          minLength: 1
+    TokenNameChange:
+      description: |
+        One rename of one Cosmic Signature NFT. An empty `tokenName`
+        cleared the name.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - nftTokenId
+        - tokenName
+        - changedByAddress
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        tokenName:
+          type: string
+        changedByAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+    CosmicGameTokenNameChangePage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenNameChange"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureTokenTransfer:
+      description: One ERC-721 transfer of one Cosmic Signature NFT.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - nftTokenId
+        - fromAddress
+        - toAddress
+        - transferType
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        nftTokenId:
+          type: integer
+          format: int64
+          minimum: 0
+        fromAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        toAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        transferType:
+          $ref: "#/components/schemas/TokenTransferType"
+    CosmicGameCosmicSignatureTokenTransferPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicSignatureTokenTransfer"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureHolder:
+      description: One wallet's current Cosmic Signature NFT holdings.
+      type: object
+      additionalProperties: false
+      required:
+        - ownerAddress
+        - tokenCount
+      properties:
+        ownerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        tokenCount:
+          type: integer
+          format: int64
+          minimum: 1
+    CosmicGameCosmicSignatureHolderPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicSignatureHolder"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicTokenHolder:
+      description: One wallet's current exact Cosmic Token balance.
+      type: object
+      additionalProperties: false
+      required:
+        - ownerAddress
+        - balanceWei
+      properties:
+        ownerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        balanceWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CosmicGameCosmicTokenHolderPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicTokenHolder"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicTokenTopHolder:
+      description: |
+        One of the largest Cosmic Token holders with its share of the
+        indexed total supply.
+      type: object
+      additionalProperties: false
+      required:
+        - ownerAddress
+        - balanceWei
+        - shareOfSupply
+      properties:
+        ownerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        balanceWei:
+          type: string
+          pattern: "^[0-9]+$"
+        shareOfSupply:
+          $ref: "#/components/schemas/DecimalPercentage"
+    CosmicGameCosmicTokenStatistics:
+      description: |
+        The game-wide exact Cosmic Token position from one consistent
+        database snapshot. `netWei` is game-wide earnings minus the
+        amount consumed in CST bids; `totalSupplyWei` additionally
+        reflects burns and mints outside bid bookkeeping.
+      type: object
+      additionalProperties: false
+      required:
+        - totalSupplyWei
+        - holderCount
+        - earned
+        - consumedInBidsWei
+        - netWei
+        - transfers
+        - topHolders
+      properties:
+        totalSupplyWei:
+          type: string
+          pattern: "^[0-9]+$"
+        holderCount:
+          type: integer
+          format: int64
+          minimum: 0
+        earned:
+          $ref: "#/components/schemas/UserCosmicTokenEarnings"
+        consumedInBidsWei:
+          type: string
+          pattern: "^[0-9]+$"
+        netWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+        transfers:
+          $ref: "#/components/schemas/UserCosmicTokenTransferCounts"
+        topHolders:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/CosmicTokenTopHolder"
+    CosmicTokenSupplyChange:
+      description: |
+        One bid's exact effect on the Cosmic Token supply: the CST
+        reward it minted, the CST price a CST bid burned, and the
+        running total supply after the bid.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - bidderAddress
+        - bidType
+        - mintedWei
+        - burnedWei
+        - netWei
+        - totalSupplyWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        bidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        bidType:
+          $ref: "#/components/schemas/BidType"
+        mintedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        burnedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        netWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+        totalSupplyWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CosmicGameCosmicTokenSupplyByBidPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicTokenSupplyChange"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicTokenDailySupply:
+      description: |
+        One UTC calendar day's exact Cosmic Token supply movement and
+        the running total supply at the end of the day.
+      type: object
+      additionalProperties: false
+      required:
+        - date
+        - bidCount
+        - mintedWei
+        - burnedWei
+        - netWei
+        - totalSupplyWei
+      properties:
+        date:
+          type: string
+          format: date
+        bidCount:
+          type: integer
+          format: int64
+          minimum: 1
+        mintedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        burnedWei:
+          type: string
+          pattern: "^[0-9]+$"
+        netWei:
+          type: string
+          pattern: "^-?[0-9]+$"
+        totalSupplyWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CosmicGameCosmicTokenSupplyDailyList:
+      description: Daily supply aggregates for the requested window.
+      type: object
+      additionalProperties: false
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: "#/components/schemas/CosmicTokenDailySupply"
+    MarketingReward:
+      description: One MarketingWallet reward with the rewarded wallet.
+      type: object
+      additionalProperties: false
+      required:
+        - eventLogId
+        - blockNumber
+        - transactionHash
+        - occurredAt
+        - marketerAddress
+        - amountWei
+      properties:
+        eventLogId:
+          type: integer
+          format: int64
+          minimum: 1
+        blockNumber:
+          type: integer
+          format: int64
+          minimum: 0
+        transactionHash:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{64}$"
+        occurredAt:
+          type: string
+          format: date-time
+        marketerAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        amountWei:
+          type: string
+          pattern: "^[0-9]+$"
+    CosmicGameMarketingRewardPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketingReward"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
     StakingActionType:
       type: string
       enum:
@@ -5315,6 +6110,66 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CosmicGameUserPendingWinnings"
+    CosmicGameCosmicSignatureTokenPage:
+      description: One stable page of the global Cosmic Signature directory.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicSignatureTokenPage"
+    CosmicGameCosmicSignatureTokenDetail:
+      description: The requested Cosmic Signature NFT.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicSignatureTokenDetail"
+    CosmicGameTokenNameChangePage:
+      description: One stable page of the token's renames.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameTokenNameChangePage"
+    CosmicGameCosmicSignatureTokenTransferPage:
+      description: One stable page of the token's ownership history.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicSignatureTokenTransferPage"
+    CosmicGameCosmicSignatureHolderPage:
+      description: One page of the ranked Cosmic Signature ownership distribution.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicSignatureHolderPage"
+    CosmicGameCosmicTokenHolderPage:
+      description: One page of the ranked Cosmic Token balance directory.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicTokenHolderPage"
+    CosmicGameCosmicTokenStatistics:
+      description: The game-wide exact Cosmic Token position.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicTokenStatistics"
+    CosmicGameCosmicTokenSupplyByBidPage:
+      description: One stable page of the per-bid supply ledger.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicTokenSupplyByBidPage"
+    CosmicGameCosmicTokenSupplyDaily:
+      description: Daily supply aggregates for the requested window.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameCosmicTokenSupplyDailyList"
+    CosmicGameMarketingRewardPage:
+      description: One stable page of the global marketing reward ledger.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicGameMarketingRewardPage"
     CosmicGameUserCstStakingActionPage:
       description: One stable page of Cosmic Signature staking actions.
       content:

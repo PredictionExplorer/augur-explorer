@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "blockNumber": 110,
+    "currentOwnerAddress": "0x2100000000000000000000000000000000000021",
+    "eventLogId": 5019,
+    "mintRound": 0,
+    "mintType": "mainPrize",
+    "mintedAt": "2026-01-01T00:16:40Z",
+    "nftTokenId": 1,
+    "seed": "seed0000000000000000000000000000000000000000000000000000000001",
+    "staked": false,
+    "tokenName": "Genesis",
+    "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+    "winnerAddress": "0x2100000000000000000000000000000000000021"
+  }
+}

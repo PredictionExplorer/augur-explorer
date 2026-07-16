@@ -12,12 +12,14 @@ import (
 type ParticipantKind string
 
 const (
-	ParticipantBidders           ParticipantKind = "bidders"
-	ParticipantWinners           ParticipantKind = "winners"
-	ParticipantDonors            ParticipantKind = "donors"
-	ParticipantCSTStakers        ParticipantKind = "cstStakers"
-	ParticipantRandomWalkStakers ParticipantKind = "randomWalkStakers"
-	ParticipantDualStakers       ParticipantKind = "dualStakers"
+	ParticipantBidders            ParticipantKind = "bidders"
+	ParticipantWinners            ParticipantKind = "winners"
+	ParticipantDonors             ParticipantKind = "donors"
+	ParticipantCSTStakers         ParticipantKind = "cstStakers"
+	ParticipantRandomWalkStakers  ParticipantKind = "randomWalkStakers"
+	ParticipantDualStakers        ParticipantKind = "dualStakers"
+	ParticipantCsTokenHolders     ParticipantKind = "cosmicSignatureHolders"
+	ParticipantCosmicTokenHolders ParticipantKind = "cosmicTokenHolders"
 )
 
 // ParticipantPageCursor identifies the final row of a participant page.
@@ -120,9 +122,11 @@ func validParticipantSortValue(kind ParticipantKind, value string) bool {
 	}
 	switch kind {
 	case ParticipantBidders, ParticipantWinners,
-		ParticipantRandomWalkStakers, ParticipantDualStakers:
+		ParticipantRandomWalkStakers, ParticipantDualStakers,
+		ParticipantCsTokenHolders:
 		return parsed.IsInt64()
-	case ParticipantDonors, ParticipantCSTStakers:
+	case ParticipantDonors, ParticipantCSTStakers,
+		ParticipantCosmicTokenHolders:
 		return true
 	default:
 		return false

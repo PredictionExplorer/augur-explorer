@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "blockNumber": 110,
+    "currentOwnerAddress": "0x2200000000000000000000000000000000000022",
+    "currentStake": {
+      "stakeActionId": 2,
+      "stakedAt": "2026-01-01T00:23:20Z",
+      "stakerAddress": "0x2200000000000000000000000000000000000022"
+    },
+    "eventLogId": 5035,
+    "mintRound": 0,
+    "mintType": "enduranceChampion",
+    "mintedAt": "2026-01-01T00:16:40Z",
+    "nftTokenId": 5,
+    "seed": "seed0000000000000000000000000000000000000000000000000000000005",
+    "staked": true,
+    "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+    "winnerAddress": "0x2200000000000000000000000000000000000022"
+  }
+}

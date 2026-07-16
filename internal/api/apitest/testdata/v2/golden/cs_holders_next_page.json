@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "ownerAddress": "0x2300000000000000000000000000000000000023",
+        "tokenCount": 2
+      },
+      {
+        "ownerAddress": "0x2400000000000000000000000000000000000024",
+        "tokenCount": 1
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJrIjoiY29zbWljU2lnbmF0dXJlSG9sZGVycyIsInMiOiIxIiwiYSI6MjR9"
+    }
+  }
+}

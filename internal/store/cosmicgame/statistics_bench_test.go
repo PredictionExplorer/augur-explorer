@@ -206,4 +206,34 @@ func BenchmarkStatisticsQueries(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("global_token_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.CosmicSignatureTokensGlobalPage(ctx, GlobalTokenFilter{}, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("global token page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
+
+	b.Run("cosmic_token_statistics", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			record, err := r.CosmicTokenStatisticsV2(ctx)
+			if err != nil || record.HolderCount == 0 {
+				b.Fatalf("cosmic token statistics: holders=%d err=%v", record.HolderCount, err)
+			}
+		}
+	})
+
+	b.Run("supply_by_bid_page", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			rows, _, err := r.CosmicTokenSupplyByBidPage(ctx, nil, 50)
+			if err != nil || len(rows) == 0 {
+				b.Fatalf("supply-by-bid page: rows=%d err=%v", len(rows), err)
+			}
+		}
+	})
 }

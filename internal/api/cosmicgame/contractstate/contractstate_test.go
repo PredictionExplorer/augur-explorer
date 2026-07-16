@@ -22,11 +22,13 @@ import (
 
 // Test fixture addresses and values served by the V1 game stub.
 var (
-	gameAddr    = ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
-	tokenAddr   = ethcommon.HexToAddress("0x4000000000000000000000000000000000000004")
-	charityAddr = ethcommon.HexToAddress("0xcccc000000000000000000000000000000000ccc")
-	bidderAddr  = ethcommon.HexToAddress("0xaaaa000000000000000000000000000000000aaa")
-	cstBidder   = ethcommon.HexToAddress("0xbbbb000000000000000000000000000000000bbb")
+	gameAddr      = ethcommon.HexToAddress("0x2000000000000000000000000000000000000002")
+	tokenAddr     = ethcommon.HexToAddress("0x4000000000000000000000000000000000000004")
+	charityAddr   = ethcommon.HexToAddress("0xcccc000000000000000000000000000000000ccc")
+	bidderAddr    = ethcommon.HexToAddress("0xaaaa000000000000000000000000000000000aaa")
+	cstBidder     = ethcommon.HexToAddress("0xbbbb000000000000000000000000000000000bbb")
+	marketingAddr = ethcommon.HexToAddress("0x1100000000000000000000000000000000000011")
+	treasurerAddr = ethcommon.HexToAddress("0xeeee000000000000000000000000000000000eee")
 )
 
 // fakeDB is an in-memory DataSource with settable results and errors.
@@ -192,6 +194,14 @@ func mustBig(s string) *big.Int {
 	return v
 }
 
+// newMarketingWalletStub serves the MarketingWallet treasurer read the
+// constants refresh performs.
+func newMarketingWalletStub() *testchain.ContractStub {
+	stub := testchain.MustContractStub(cg.MarketingWalletMetaData.ABI)
+	stub.Return("treasurerAddress", treasurerAddr)
+	return stub
+}
+
 func defaultFakeDB() *fakeDB {
 	return &fakeDB{
 		stats:      cgmodel.CGStatistics{TotalPrizes: 3, TotalBids: 12},
@@ -200,10 +210,14 @@ func defaultFakeDB() *fakeDB {
 	}
 }
 
-// newTestState dials the chain and builds a State around it.
+// newTestState dials the chain and builds a State around it. Every chain
+// gets the MarketingWallet stub so the constants group's treasurer read
+// answers; game-read failure tests stay meaningful because their game
+// stubs still fail independently.
 func newTestState(t *testing.T, chain *testchain.Chain, db DataSource) *State {
 	t.Helper()
 	chain.EnsureBlock(0)
+	chain.RegisterCall(marketingAddr, newMarketingWalletStub().Handler())
 	client, err := ethclient.Dial(chain.URL())
 	if err != nil {
 		t.Fatalf("dialing test chain: %v", err)
@@ -222,7 +236,7 @@ func newStateForClient(t *testing.T, client *ethclient.Client, db DataSource) *S
 			CosmicSignature: ethcommon.HexToAddress("0x3000000000000000000000000000000000000003"),
 			CosmicToken:     tokenAddr,
 			CharityWallet:   ethcommon.HexToAddress("0x6000000000000000000000000000000000000006"),
-			MarketingWallet: ethcommon.HexToAddress("0x1100000000000000000000000000000000000011"),
+			MarketingWallet: marketingAddr,
 		},
 	})
 	if err != nil {
@@ -284,6 +298,9 @@ func TestLoadInitialHappyPath(t *testing.T) {
 	}
 	if snap.RaffleEthWinnersBidding != 3 || snap.RaffleNFTWinnersBidding != 5 || snap.RaffleNFTWinnersStakingRWalk != 4 {
 		t.Errorf("raffle winner counts = %d/%d/%d", snap.RaffleEthWinnersBidding, snap.RaffleNFTWinnersBidding, snap.RaffleNFTWinnersStakingRWalk)
+	}
+	if snap.TreasurerAddr != treasurerAddr {
+		t.Errorf("TreasurerAddr = %v, want %v", snap.TreasurerAddr, treasurerAddr)
 	}
 
 	// Variables.
@@ -519,6 +536,44 @@ func TestConstantsFailureKeepsValueButMarksConfigurationUnavailable(t *testing.T
 	if snap.ConstantsReady || snap.ConfigurationReady {
 		t.Fatalf("failed constant refresh stayed ready: constants:%v configuration:%v",
 			snap.ConstantsReady, snap.ConfigurationReady)
+	}
+}
+
+func TestTreasurerFailureKeepsValueButMarksConfigurationUnavailable(t *testing.T) {
+	chain := testchain.New(t)
+	chain.RegisterCall(gameAddr, newV1GameStub().Handler())
+	marketing := newMarketingWalletStub()
+	chain.EnsureBlock(0)
+	chain.RegisterCall(marketingAddr, marketing.Handler())
+	client, err := ethclient.Dial(chain.URL())
+	if err != nil {
+		t.Fatalf("dialing test chain: %v", err)
+	}
+	defer client.Close()
+	s := newStateForClient(t, client, defaultFakeDB())
+	s.LoadInitial(context.Background())
+	if got := s.Snapshot().TreasurerAddr; got != treasurerAddr {
+		t.Fatalf("initial treasurer = %v, want %v", got, treasurerAddr)
+	}
+
+	marketing.Handle("treasurerAddress", func([]any) ([]any, error) {
+		return nil, errors.New("treasurer read failed")
+	})
+	s.refreshConstants(context.Background())
+	snap := s.Snapshot()
+	if snap.TreasurerAddr != treasurerAddr {
+		t.Fatalf("treasurer changed on failed refresh: %v", snap.TreasurerAddr)
+	}
+	if snap.ConstantsReady || snap.ConfigurationReady {
+		t.Fatalf("failed treasurer refresh stayed ready: constants:%v configuration:%v",
+			snap.ConstantsReady, snap.ConfigurationReady)
+	}
+
+	marketing.Return("treasurerAddress", treasurerAddr)
+	s.refreshConstants(context.Background())
+	if recovered := s.Snapshot(); !recovered.ConstantsReady || !recovered.ConfigurationReady {
+		t.Fatalf("recovered treasurer refresh not ready: constants:%v configuration:%v",
+			recovered.ConstantsReady, recovered.ConfigurationReady)
 	}
 }
 
@@ -952,6 +1007,7 @@ func TestReadinessRejectsIncoherentSnapshots(t *testing.T) {
 		return Snapshot{
 			PriceIncrease:                   "1",
 			CharityAddr:                     charityAddr,
+			TreasurerAddr:                   treasurerAddr,
 			CharityPercentage:               10,
 			FixedCSTBidReward:               "2",
 			PrizePercentage:                 25,

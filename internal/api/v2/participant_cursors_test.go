@@ -18,9 +18,12 @@ func TestParticipantCursorRoundTrip(t *testing.T) {
 		cgstore.ParticipantCSTStakers,
 		cgstore.ParticipantRandomWalkStakers,
 		cgstore.ParticipantDualStakers,
+		cgstore.ParticipantCsTokenHolders,
+		cgstore.ParticipantCosmicTokenHolders,
 	} {
 		sortValue := "9"
-		if kind == cgstore.ParticipantDonors || kind == cgstore.ParticipantCSTStakers {
+		if kind == cgstore.ParticipantDonors || kind == cgstore.ParticipantCSTStakers ||
+			kind == cgstore.ParticipantCosmicTokenHolders {
 			sortValue = "999999999999999999999999"
 		}
 		want := participantCursor{
@@ -70,6 +73,24 @@ func TestParticipantCursorRejectsInvalidInput(t *testing.T) {
 	}
 	if _, err := decodeParticipantCursor(crossKind, cgstore.ParticipantWinners); !errors.Is(err, errInvalidParticipantCursor) {
 		t.Errorf("cross-kind error = %v", err)
+	}
+	// The holder directories are participant kinds too; their cursors must
+	// stay confined to their own directory.
+	holders, err := encodeParticipantCursor(participantCursor{
+		Version: 1, Kind: cgstore.ParticipantCsTokenHolders, SortValue: "3", AddressID: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := decodeParticipantCursor(holders, cgstore.ParticipantCosmicTokenHolders); !errors.Is(err, errInvalidParticipantCursor) {
+		t.Errorf("cross-holder-directory error = %v", err)
+	}
+	// Cosmic Signature holdings are bounded counts: a beyond-int64 sort
+	// value is invalid there while the balance directory accepts it.
+	if _, err := decodeParticipantCursor(encoded(
+		`{"v":1,"k":"cosmicSignatureHolders","s":"999999999999999999999999","a":1}`,
+	), cgstore.ParticipantCsTokenHolders); !errors.Is(err, errInvalidParticipantCursor) {
+		t.Errorf("oversized holder count error = %v", err)
 	}
 }
 

@@ -124,6 +124,20 @@ type userActivityReader interface {
 	UserPendingWinnings(context.Context, int64) (cgstore.UserPendingWinningsRecord, error)
 }
 
+type globalDirectoryReader interface {
+	CosmicSignatureTokensGlobalPage(context.Context, cgstore.GlobalTokenFilter, *cgstore.GlobalTokenPageCursor, int) ([]cgstore.GlobalTokenRecord, bool, error)
+	CosmicSignatureTokenDetailV2(context.Context, int64) (cgstore.GlobalTokenDetailRecord, error)
+	CosmicSignatureTokenExists(context.Context, int64) (bool, error)
+	TokenNameHistoryPage(context.Context, int64, *cgstore.TokenEventPageCursor, int) ([]cgstore.TokenNameChangeRecord, bool, error)
+	TokenTransfersPage(context.Context, int64, *cgstore.TokenEventPageCursor, int) ([]cgstore.TokenTransferRecord, bool, error)
+	CosmicSignatureHoldersPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.CosmicSignatureHolderRecord, bool, error)
+	CosmicTokenHoldersPage(context.Context, *cgstore.ParticipantPageCursor, int) ([]cgstore.CosmicTokenHolderRecord, bool, error)
+	CosmicTokenStatisticsV2(context.Context) (cgstore.CosmicTokenStatisticsRecord, error)
+	CosmicTokenSupplyByBidPage(context.Context, *cgstore.SupplyChangePageCursor, int) ([]cgstore.SupplyChangeRecord, bool, error)
+	CosmicTokenSupplyDaily(context.Context, time.Time, time.Time) ([]cgstore.DailySupplyRecord, error)
+	MarketingRewardsGlobalPage(context.Context, *cgstore.UserEventPageCursor, int) ([]cgstore.MarketingRewardRecord, bool, error)
+}
+
 type contractStateReader interface {
 	Snapshot() contractstate.Snapshot
 }
@@ -147,6 +161,7 @@ type Server struct {
 	userHistories     userHistoryReader
 	userStaking       userStakingReader
 	userActivity      userActivityReader
+	globalDirectories globalDirectoryReader
 	contractState     contractStateReader
 	logger            *slog.Logger
 	now               func() time.Time
@@ -180,7 +195,7 @@ func NewServer(
 		return nil, errors.New("api v2: contract state is required")
 	}
 	repo := cgstore.NewRepo(st)
-	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
+	server, err := newServer(st, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, repo, state, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -212,6 +227,7 @@ func newServer(
 	userHistories userHistoryReader,
 	userStaking userStakingReader,
 	userActivity userActivityReader,
+	globalDirectories globalDirectoryReader,
 	state contractStateReader,
 	logger *slog.Logger,
 ) (*Server, error) {
@@ -257,6 +273,9 @@ func newServer(
 	if userActivity == nil {
 		return nil, errors.New("api v2: user-activity repository is required")
 	}
+	if globalDirectories == nil {
+		return nil, errors.New("api v2: global-directory repository is required")
+	}
 	if state == nil {
 		return nil, errors.New("api v2: contract state is required")
 	}
@@ -279,6 +298,7 @@ func newServer(
 		userHistories:     userHistories,
 		userStaking:       userStaking,
 		userActivity:      userActivity,
+		globalDirectories: globalDirectories,
 		contractState:     state,
 		logger:            logger,
 		now:               time.Now,

@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "balanceWei": "290000000000000000000",
+        "ownerAddress": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "balanceWei": "110000000000000000000",
+        "ownerAddress": "0x2200000000000000000000000000000000000022"
+      }
+    ],
+    "meta": {
+      "limit": 2,
+      "nextCursor": "eyJ2IjoxLCJrIjoiY29zbWljVG9rZW5Ib2xkZXJzIiwicyI6IjExMDAwMDAwMDAwMDAwMDAwMDAwMCIsImEiOjIyfQ"
+    }
+  }
+}

@@ -55,7 +55,8 @@ func validParticipantCursor(cursor participantCursor, expectedKind cgstore.Parti
 	case cgstore.ParticipantBidders,
 		cgstore.ParticipantWinners,
 		cgstore.ParticipantRandomWalkStakers,
-		cgstore.ParticipantDualStakers:
+		cgstore.ParticipantDualStakers,
+		cgstore.ParticipantCsTokenHolders:
 		number, ok := new(big.Int).SetString(value, 10)
 		return ok && number.IsInt64()
 	default:
@@ -70,7 +71,9 @@ func validParticipantKind(kind cgstore.ParticipantKind) bool {
 		cgstore.ParticipantDonors,
 		cgstore.ParticipantCSTStakers,
 		cgstore.ParticipantRandomWalkStakers,
-		cgstore.ParticipantDualStakers:
+		cgstore.ParticipantDualStakers,
+		cgstore.ParticipantCsTokenHolders,
+		cgstore.ParticipantCosmicTokenHolders:
 		return true
 	default:
 		return false

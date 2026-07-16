@@ -9,6 +9,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+
+	cg "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 )
 
 var weiPerEth = new(big.Float).SetInt(big.NewInt(1e18))
@@ -269,6 +271,16 @@ func (s *State) refreshConstants(ctx context.Context) {
 		s.logf("Error reading CST auction duration-change divisor\n")
 		ready = false
 	}
+	// The treasurer is a MarketingWallet constant; it refreshes with this
+	// group and keeps the previous address on failure like the charity
+	// address does.
+	marketing, _ := cg.NewMarketingWallet(s.addrs.MarketingWallet, s.client)
+	if addr, err := marketing.TreasurerAddress(&copts); err != nil {
+		s.logf("Error at TreasurerAddress() call: %v\n", err)
+		ready = false
+	} else {
+		cur.TreasurerAddr = addr
+	}
 	cur.MechanicsVersion = s.mechanicsVersion()
 
 	s.mu.Lock()
@@ -288,6 +300,7 @@ func (s *State) refreshConstants(ctx context.Context) {
 	s.snap.RaffleNFTWinnersBidding = cur.RaffleNFTWinnersBidding
 	s.snap.RaffleNFTWinnersStakingRWalk = cur.RaffleNFTWinnersStakingRWalk
 	s.snap.CSTAuctionDurationChangeDivisor = cur.CSTAuctionDurationChangeDivisor
+	s.snap.TreasurerAddr = cur.TreasurerAddr
 	s.snap.MechanicsVersion = cur.MechanicsVersion
 	s.snap.ConstantsMechanicsVersion = cur.MechanicsVersion
 	s.snap.ConstantsReady = ready
@@ -588,6 +601,7 @@ func configurationReady(snapshot Snapshot) bool {
 	if !cachedDecimalReady(snapshot.PriceIncrease) ||
 		!cachedDecimalReady(snapshot.TimeIncrease) ||
 		snapshot.CharityAddr == (ethcommon.Address{}) ||
+		snapshot.TreasurerAddr == (ethcommon.Address{}) ||
 		!percentageReady(snapshot.CharityPercentage) ||
 		!percentageReady(snapshot.PrizePercentage) ||
 		!percentageReady(snapshot.RafflePercentage) ||

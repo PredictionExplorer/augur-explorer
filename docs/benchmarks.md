@@ -58,6 +58,9 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkStatisticsQueries/participant_dual_stakers` | 194,000 | 7,316 | 11 | first 50 dual stakers; computed cross-table token-count order |
 | `BenchmarkStatisticsQueries/user_profile` | 499,000 | 3,453 | 18 | exact bounded profile with canonical prize reconstruction |
 | `BenchmarkStatisticsQueries/user_bids_page` | 280,000 | 41,961 | 488 | first 50 full bid resources on the indexed user/event keyset |
+| `BenchmarkStatisticsQueries/global_token_page` | 360,000 | 20,303 | 124 | first 50 global tokens with scalar-subquery mint provenance |
+| `BenchmarkStatisticsQueries/cosmic_token_statistics` | 433,000 | 2,648 | 33 | one-snapshot ERC-20 aggregate with jsonb top-holder list |
+| `BenchmarkStatisticsQueries/supply_by_bid_page` | 322,000 | 17,893 | 142 | first 50 supply-ledger rows with streamed running totals |
 
 History:
 
@@ -122,3 +125,17 @@ History:
   The rate-limiter benchmark re-ran clean against its baselines
   (`distinct_ips` 1,140 ns/op median vs 1,144, `shared_ip` 1,270 vs 1,298,
   B/op and allocs identical).
+- **2026-07-15 (API-v2 global-directories sprint)** — added the directory
+  query class: the global token page, the one-snapshot Cosmic Token
+  statistics and the supply-by-bid page (table rows above). The token page
+  originally reused the v1 ten-relation join shape and benchmarked at
+  7.25 ms; EXPLAIN showed PostgreSQL spending 7.5 ms *planning* a query
+  that executes in 0.2 ms, so the five prize-family joins became scalar
+  subqueries — 360 µs steady-state, a 20× improvement, with the added
+  property that a duplicated prize row now fails loudly instead of
+  duplicating directory rows. Statistics/claims/ROI re-ran within their
+  envelopes with byte-identical allocation counts. `user_profile` medians
+  moved to ~780 µs against the 499 µs baseline with identical B/op and
+  allocs — three sprints of extension seeds have grown the joined tables
+  since that baseline, so this is data volume, not a plan change;
+  re-baseline when the fixture set stabilizes.

@@ -1,0 +1,72 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 101,
+        "burnedWei": "0",
+        "eventLogId": 5004,
+        "mintedWei": "100000000000000000000",
+        "netWei": "100000000000000000000",
+        "occurredAt": "2026-01-01T00:01:40Z",
+        "totalSupplyWei": "100000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001002"
+      },
+      {
+        "bidType": "randomWalk",
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "blockNumber": 102,
+        "burnedWei": "0",
+        "eventLogId": 5006,
+        "mintedWei": "100000000000000000000",
+        "netWei": "100000000000000000000",
+        "occurredAt": "2026-01-01T00:03:20Z",
+        "totalSupplyWei": "200000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001003"
+      },
+      {
+        "bidType": "cst",
+        "bidderAddress": "0x2300000000000000000000000000000000000023",
+        "blockNumber": 103,
+        "burnedWei": "200000000000000000000",
+        "eventLogId": 5008,
+        "mintedWei": "100000000000000000000",
+        "netWei": "-100000000000000000000",
+        "occurredAt": "2026-01-01T00:05:00Z",
+        "totalSupplyWei": "100000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001004"
+      },
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "blockNumber": 104,
+        "burnedWei": "0",
+        "eventLogId": 5010,
+        "mintedWei": "100000000000000000000",
+        "netWei": "100000000000000000000",
+        "occurredAt": "2026-01-01T00:06:40Z",
+        "totalSupplyWei": "200000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001005"
+      },
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "blockNumber": 118,
+        "burnedWei": "0",
+        "eventLogId": 5060,
+        "mintedWei": "100000000000000000000",
+        "netWei": "100000000000000000000",
+        "occurredAt": "2026-01-01T00:30:00Z",
+        "totalSupplyWei": "300000000000000000000",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001019"
+      }
+    ],
+    "meta": {
+      "limit": 5,
+      "nextCursor": "eyJ2IjoxLCJzIjo1MDYwfQ"
+    }
+  }
+}

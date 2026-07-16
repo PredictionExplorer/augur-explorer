@@ -271,6 +271,98 @@ replacement. The indexed Cosmic Token balance is `cosmic-token-summary`'s
 `balanceWei`; wallets read live ETH balances from the chain directly. The
 v1 route keeps serving until the v1 sunset.
 
+## CosmicGame global token and marketing directories
+
+The global-directories group replaces thirteen v1 paths with ten v2
+operations. Every amount is an exact base-unit string; cursor-paginated
+collections use the standard `limit`/`cursor` parameters.
+
+Cosmic Signature token directory:
+
+- `cst/list/all/{offset}/{limit}` becomes
+  `GET /api/v2/cosmicgame/cosmic-signature-tokens`: every minted token,
+  newest mint first by immutable token ID, with mint provenance (typed
+  `mintType`, `mintRound`, `seed`, original `winnerAddress`), the live
+  `currentOwnerAddress`, optional `tokenName` and live `staked`
+  membership. **Deliberate corrections:** the v1 list's stake-event joins
+  duplicated rows after repeated stake cycles, mislabeled chrono-warrior
+  NFTs as main prizes, and had no chrono-warrior record type — v2 reads
+  the live membership table and derives one of seven `mintType` values
+  with exactly-one-source enforcement.
+- `cst/names/named_only` becomes the `?named=true` filter on the same
+  collection; `cst/names/search/{name}` becomes the `?name=` filter.
+  Both page on the immutable token keyset instead of returning unbounded
+  arrays, and the search term is matched literally — ILIKE wildcards in
+  the term are escaped, unlike v1. The v1 name-based sort of
+  `named_only` is not retained; clients sort the bounded pages they
+  need.
+- `cst/info/{token_id}` becomes
+  `GET /api/v2/cosmicgame/cosmic-signature-tokens/{nftTokenId}`: the
+  lean detail with provenance, current owner, name and live staking
+  state (`currentStake` carries the locking action, staker and
+  timestamp while staked). The v1 response embedded the full round
+  mega-record for main-prize tokens; round data lives on
+  `/rounds/{round}` in v2.
+- `cst/names/history/{token_id}` becomes
+  `GET …/cosmic-signature-tokens/{nftTokenId}/name-history`: the
+  token's renames newest first by immutable event-log ID with the
+  renaming wallet; an empty `tokenName` cleared the name. An unknown
+  token answers `404`.
+- `cst/transfers/all/{token_id}/{offset}/{limit}` becomes
+  `GET …/cosmic-signature-tokens/{nftTokenId}/transfers`: the token's
+  full ownership history — mint included — newest first by immutable
+  event-log ID with a typed `transferType`. V1 ordered by a surrogate
+  row ID and paged with `OFFSET/LIMIT`.
+- `cst/distribution` becomes
+  `GET …/cosmic-signature-tokens/holders`: one row per current holder,
+  largest holding first with a stable internal tie-break and cursor
+  pagination instead of v1's unbounded array. Like the participant
+  directories, ranks are weakly consistent while holdings change.
+
+Cosmic Token (ERC-20) views:
+
+- `ct/balances` becomes `GET /api/v2/cosmicgame/cosmic-token/holders`:
+  wallets with a positive indexed balance, largest first with a stable
+  tie-break, exact `balanceWei` and cursor pagination (v1 returned every
+  row unbounded with float mirrors).
+- `ct/statistics` becomes `GET /api/v2/cosmicgame/cosmic-token/statistics`:
+  the game-wide position from one consistent snapshot query — supply,
+  holder count, earnings by source, `consumedInBidsWei`, a signed
+  `netWei`, transfer counters and the top-10 holders with deterministic
+  decimal-string `shareOfSupply`. **Deliberate corrections:** v1 issued
+  eight sequential queries (torn reads), returned float mirrors and
+  omitted the endurance-champion and last-CST-bidder CST prize sources;
+  v2 adds both and proves the sources sum to `earned.totalWei`.
+  V1's live token name/symbol/decimals reads are retired with the
+  request-time RPC (decision D11): they are immutable public chain data
+  clients read once from the chain; the token address is
+  `/contracts/addresses.cosmicTokenAddress`.
+- `ct/total_supply_history_by_bid` becomes
+  `GET /api/v2/cosmicgame/cosmic-token/supply-history/by-bid`: one row
+  per bid, oldest first by immutable event-log ID, with exact minted,
+  burned, net and running-total base units — cursor-paginated instead of
+  v1's unbounded full-table response.
+- `ct/total_supply_history_by_date/{from}/{to}` becomes
+  `GET /api/v2/cosmicgame/cosmic-token/supply-history/daily?from=&to=`:
+  daily aggregates over a half-open `[from,to)` window of RFC 3339
+  dates (v1 used inclusive `YYYYMMDD` path segments), capped at 2,000
+  days.
+
+Marketing:
+
+- `marketing/rewards/global/{offset}/{limit}` becomes
+  `GET /api/v2/cosmicgame/marketing-rewards`: the global reward ledger,
+  newest first by immutable event-log ID, with `marketerAddress` and
+  exact `amountWei` on each row.
+- `marketing/config/current` is decomposed (decision D11): the
+  owner-tunable `treasurerAddress` joins `GET
+  /api/v2/cosmicgame/contracts/configuration` (refreshed with the
+  five-minute constants group — v2 still performs no request-time RPC),
+  and the wallet and token addresses were already in
+  `/contracts/addresses`. The MarketingWallet's `owner()` is chain
+  governance data, not game state, and is retired from v2 scope; the v1
+  route keeps serving until the v1 sunset.
+
 ## Contract field mapping
 
 The dashboard's `ContractAddrs` object maps one-for-one to
@@ -287,6 +379,8 @@ The following dashboard fields move to `/contracts/configuration`:
 - V1 exposes `fixedCstBidRewardWei` and a CST auction divisor.
 - V2 exposes `cstBidRewardMultiplier`, a CST auction duration and its
   duration-change divisor.
+- The MarketingWallet's owner-tunable treasurer is `treasurerAddress`
+  (from `marketing/config/current`, decision D11).
 
 `BidPrice` moves to `/rounds/current/bid-prices` as
 `nextEthBidPriceWei`. The v1 `bid/eth_price` and `bid/cst_price` routes map to
@@ -318,10 +412,10 @@ last-bid timestamp sentinel is omitted.
 
 ## Remaining endpoint groups
 
-The user-scoped surface is fully mapped. The global token directories
-(`cst/list/all`, `cst/info`, name views, distribution, per-token
-transfers), CosmicToken statistics and holder views, supply histories,
-global marketing history, marketing-wallet configuration, global staking
-statistics and the RandomWalk resources stay on v1 until their dedicated
-v2 sprints land. Their presence does not require continued use of any
-v1 user-scoped route.
+The user-scoped surface and the global token, CosmicToken and marketing
+directories are fully mapped. The global staking statistics
+(`staking/*/staked_tokens/all`, `staking/*/actions/global`,
+`staking/*/actions/info`, `staking/cst/rewards/global`,
+`staking/cst/rewards/by_round` and `staking/*/mints/global`) and the
+RandomWalk resources stay on v1 until their dedicated v2 sprints land.
+Their presence does not require continued use of any mapped v1 route.

@@ -1,0 +1,64 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 125,
+        "currentOwnerAddress": "0x2200000000000000000000000000000000000022",
+        "eventLogId": 5100,
+        "mintRound": 2,
+        "mintType": "cosmicSignatureStakerRaffle",
+        "mintedAt": "2026-01-01T00:41:40Z",
+        "nftTokenId": 9,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000009",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+        "winnerAddress": "0x2200000000000000000000000000000000000022"
+      },
+      {
+        "blockNumber": 125,
+        "currentOwnerAddress": "0x2500000000000000000000000000000000000025",
+        "eventLogId": 5073,
+        "mintRound": 2,
+        "mintType": "mainPrize",
+        "mintedAt": "2026-01-01T00:41:40Z",
+        "nftTokenId": 8,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000008",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001026",
+        "winnerAddress": "0x2500000000000000000000000000000000000025"
+      },
+      {
+        "blockNumber": 120,
+        "currentOwnerAddress": "0x2400000000000000000000000000000000000024",
+        "eventLogId": 5063,
+        "mintRound": 1,
+        "mintType": "mainPrize",
+        "mintedAt": "2026-01-01T00:33:20Z",
+        "nftTokenId": 7,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000007",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001021",
+        "winnerAddress": "0x2400000000000000000000000000000000000024"
+      },
+      {
+        "blockNumber": 110,
+        "currentOwnerAddress": "0x2100000000000000000000000000000000000021",
+        "eventLogId": 5038,
+        "mintRound": 0,
+        "mintType": "chronoWarrior",
+        "mintedAt": "2026-01-01T00:16:40Z",
+        "nftTokenId": 6,
+        "seed": "seed0000000000000000000000000000000000000000000000000000000006",
+        "staked": false,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001011",
+        "winnerAddress": "0x2100000000000000000000000000000000000021"
+      }
+    ],
+    "meta": {
+      "limit": 4,
+      "nextCursor": "eyJ2IjoxLCJmIjp7fSwidCI6Nn0"
+    }
+  }
+}

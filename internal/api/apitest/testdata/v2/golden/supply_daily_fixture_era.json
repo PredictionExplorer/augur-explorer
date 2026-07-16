@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidCount": 12,
+        "burnedWei": "410000000000000000000",
+        "date": "2026-01-01",
+        "mintedWei": "1200000000000000000000",
+        "netWei": "790000000000000000000",
+        "totalSupplyWei": "790000000000000000000"
+      }
+    ]
+  }
+}

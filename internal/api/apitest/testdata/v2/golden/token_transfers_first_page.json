@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 113,
+        "eventLogId": 5048,
+        "fromAddress": "0x2400000000000000000000000000000000000024",
+        "nftTokenId": 2,
+        "occurredAt": "2026-01-01T00:21:40Z",
+        "toAddress": "0x2200000000000000000000000000000000000022",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001014",
+        "transferType": "transfer"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJrIjoidHJhbnNmZXJzIiwidCI6MiwiZSI6NTA0OH0"
+    }
+  }
+}

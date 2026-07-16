@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "balanceWei": "95000000000000000000",
+        "ownerAddress": "0x2300000000000000000000000000000000000023"
+      }
+    ],
+    "meta": {
+      "limit": 2
+    }
+  }
+}

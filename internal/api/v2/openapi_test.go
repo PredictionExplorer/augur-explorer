@@ -96,11 +96,14 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 		}
 
 		// Required sibling parameters must bind cleanly so the arm under
-		// test is the one that fires.
+		// test is the one that fires. Date-formatted windows need date
+		// values where the analytics windows use Unix seconds.
 		requiredDefaults := map[string]string{
-			"pool": "bidder",
-			"from": "1767225600",
-			"to":   "1767226600",
+			"pool":      "bidder",
+			"from":      "1767225600",
+			"to":        "1767226600",
+			"from:date": "2026-01-01",
+			"to:date":   "2026-01-10",
 		}
 		requiredQuery := func(except string) string {
 			parts := make([]string, 0, 1)
@@ -110,7 +113,12 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 					!parameter.Required || parameter.Name == except {
 					continue
 				}
-				value, known := requiredDefaults[parameter.Name]
+				key := parameter.Name
+				if schema := parameter.Schema; schema != nil && schema.Value != nil &&
+					schema.Value.Format == "date" {
+					key = parameter.Name + ":date"
+				}
+				value, known := requiredDefaults[key]
 				if !known {
 					t.Fatalf("no default for required parameter %q of %s; extend requiredDefaults",
 						parameter.Name, specPath)

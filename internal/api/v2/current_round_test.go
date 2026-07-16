@@ -268,6 +268,7 @@ func newCurrentRoundTestServer(
 		fakeUserHistoryReader{},
 		fakeUserStakingReader{},
 		fakeUserActivityReader{},
+		fakeGlobalDirectoryReader{},
 		state,
 		logger,
 	)

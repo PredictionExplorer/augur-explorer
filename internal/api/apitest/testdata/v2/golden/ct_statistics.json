@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "consumedInBidsWei": "410000000000000000000",
+    "earned": {
+      "biddingRewardsWei": "1200000000000000000000",
+      "chronoWarriorPrizesWei": "35000000000000000000",
+      "enduranceChampionPrizesWei": "45000000000000000000",
+      "lastCstBidderPrizesWei": "40000000000000000000",
+      "mainPrizesWei": "330000000000000000000",
+      "marketingRewardsWei": "50000000000000000000",
+      "rafflePrizesWei": "92000000000000000000",
+      "totalWei": "1792000000000000000000"
+    },
+    "holderCount": 3,
+    "netWei": "1382000000000000000000",
+    "topHolders": [
+      {
+        "balanceWei": "290000000000000000000",
+        "ownerAddress": "0x2100000000000000000000000000000000000021",
+        "shareOfSupply": "58.59"
+      },
+      {
+        "balanceWei": "110000000000000000000",
+        "ownerAddress": "0x2200000000000000000000000000000000000022",
+        "shareOfSupply": "22.22"
+      },
+      {
+        "balanceWei": "95000000000000000000",
+        "ownerAddress": "0x2300000000000000000000000000000000000023",
+        "shareOfSupply": "19.19"
+      }
+    ],
+    "totalSupplyWei": "495000000000000000000",
+    "transfers": {
+      "burnCount": 1,
+      "mintCount": 5,
+      "totalCount": 7
+    }
+  }
+}

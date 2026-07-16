@@ -162,6 +162,14 @@ func TestCachedContractMappersReturnExactInvariantErrors(t *testing.T) {
 			want:   `time-increment divisor: invalid non-negative decimal "bad"`,
 		},
 		{
+			name:   "zero treasurer",
+			mapper: mapConfiguration,
+			mutate: func(snapshot *contractstate.Snapshot) {
+				snapshot.TreasurerAddr = ethcommon.Address{}
+			},
+			want: "treasurer address is zero",
+		},
+		{
 			name:   "v1 fixed reward",
 			mapper: mapConfiguration,
 			mutate: func(snapshot *contractstate.Snapshot) { snapshot.FixedCSTBidReward = "" },
@@ -426,6 +434,7 @@ func validContractSnapshot() contractstate.Snapshot {
 		RaffleNFTWinnersBidding:         5,
 		RaffleNFTWinnersStakingRWalk:    4,
 		CSTAuctionDurationChangeDivisor: -1,
+		TreasurerAddr:                   ethcommon.HexToAddress("0x1400000000000000000000000000000000000014"),
 		ConstantsReady:                  true,
 		ConfigurationReady:              true,
 		ConstantsMechanicsVersion:       1,

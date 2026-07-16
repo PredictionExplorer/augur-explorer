@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "amountWei": "50000000000000000000",
+        "blockNumber": 109,
+        "eventLogId": 5017,
+        "marketerAddress": "0x2500000000000000000000000000000000000025",
+        "occurredAt": "2026-01-01T00:15:00Z",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001010"
+      }
+    ],
+    "meta": {
+      "limit": 1
+    }
+  }
+}
