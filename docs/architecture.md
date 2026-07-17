@@ -125,6 +125,8 @@ Recorded as ADRs in [docs/adr/](adr/):
 - **ADR-0008** — v2 write conventions: POSTs with typed 201 bodies,
   RFC 9457 problem details, spec-declared auth headers and per-operation
   rate limits.
+- **ADR-0009** — v2 bid moderation: bounded active-ban resources, canonical
+  bidder resolution, database-enforced uniqueness and DELETE for removal.
 
 ## Databases and schemas
 

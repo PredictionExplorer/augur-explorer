@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "No indexed bid exists with id 999999.",
+    "instance": "/api/v2/cosmicgame/moderation/banned-bids",
+    "status": 404,
+    "title": "Bid not found",
+    "type": "https://api.cosmicsignature.com/problems/bid-not-found"
+  }
+}

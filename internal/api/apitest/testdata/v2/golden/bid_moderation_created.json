@@ -1,0 +1,9 @@
+{
+  "status": 201,
+  "contentType": "application/json",
+  "body": {
+    "bannedAt": "2026-01-01T01:13:20Z",
+    "bidId": 2011,
+    "bidderAddress": "0x2200000000000000000000000000000000000022"
+  }
+}

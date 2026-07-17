@@ -183,6 +183,11 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	var v2Server *v2.Server
 	if cgAPI != nil {
 		v2Server, err = v2.NewServer(deps.store, cgAPI.ContractState(), logger,
+			v2.WithAdmin(v2.AdminConfig{
+				AdminKeys: []common.AdminKey{
+					{Name: "ADMIN_API_KEY", Value: cfg.AdminAPIKey},
+				},
+			}),
 			v2.WithRanking(v2.RankingConfig{
 				AdminKeys: []common.AdminKey{
 					{Name: "RANKING_ADMIN_KEY", Value: cfg.RankingAdminKey},

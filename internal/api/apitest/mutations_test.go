@@ -178,6 +178,22 @@ func TestBanUnbanBid(t *testing.T) {
 		}
 		requireField(t, body, "result", "success")
 
+		// V1 historically answered success when an admin submitted the same
+		// ban again. Migration 00025 enforces one active row per bid, so the
+		// compatibility handler treats the constraint conflict as idempotent.
+		code, body = postJSON(t, h, "/api/cosmicgame/ban_bid", banPayload, auth)
+		if code != http.StatusCreated {
+			t.Fatalf("duplicate ban_bid: expected 201, got %d (%v)", code, body)
+		}
+		requireField(t, body, "result", "success")
+		var activeRows int
+		if err := h.db.QueryRow(`SELECT COUNT(*) FROM cg_banned_bids WHERE bid_id=2011`).Scan(&activeRows); err != nil {
+			t.Fatalf("counting active bid bans: %v", err)
+		}
+		if activeRows != 1 {
+			t.Fatalf("active bid-ban rows = %d, want 1", activeRows)
+		}
+
 		if ids := bannedBidIDs(t, h); !ids[2002] || !ids[2011] || len(ids) != 2 {
 			t.Fatalf("after ban: expected banned bids {2002, 2011}, got %v", ids)
 		}

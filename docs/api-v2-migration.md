@@ -427,6 +427,30 @@ Staker-raffle mints:
   cross-pool continuation; rows reuse the exact typed raffle NFT winner
   shape.
 
+## CosmicGame bid moderation
+
+The final backend-owned CosmicGame group moves from three operation-shaped
+v1 routes to one active-ban resource (decision D14,
+[ADR-0009](adr/0009-api-v2-bid-moderation.md)):
+
+- `GET /api/cosmicgame/get_banned_bids` becomes
+  `GET /api/v2/cosmicgame/moderation/banned-bids?limit=&cursor=`. The
+  unbounded bare array becomes a newest-first typed page. Internal row IDs are
+  omitted; `bid_id`, `user_addr`, and Unix `created_at` become `bidId`,
+  checksummed `bidderAddress`, and RFC 3339 `bannedAt`.
+- `POST /api/cosmicgame/ban_bid` becomes
+  `POST /api/v2/cosmicgame/moderation/banned-bids`. The request contains only
+  `{bidId}`; the server resolves the canonical bidder address from the
+  indexed bid. Success is `201` with the active ban, a missing bid is `404`,
+  and an already-active ban is `409`.
+- `POST /api/cosmicgame/unban_bid` becomes
+  `DELETE /api/v2/cosmicgame/moderation/banned-bids/{bidId}`. Success is
+  bodyless `204`; a bid without an active ban is `404`.
+
+Both writes keep the `X-Admin-Key` / `ADMIN_API_KEY` deployment contract,
+fail closed with `503` when it is unset, and retain independent 2 rps /
+burst-5 limits with spec-declared `429` problems.
+
 ## Contract field mapping
 
 The dashboard's `ContractAddrs` object maps one-for-one to
@@ -655,7 +679,8 @@ answer a spec-declared 429 problem with `Retry-After`):
 
 ## Remaining endpoint groups
 
-Every v1 surface is now mapped: the CosmicGame groups above, the
+Every movable backend-owned v1 behavior is now mapped: the CosmicGame groups above, the
 RandomWalk explorer/marketplace/statistics group, and the ranking
-mini-app (reads and writes). The only v1 route without a v2 replacement
-is the contract-pinned metadata route (documented under D12 above).
+mini-app (reads and writes). The contract-pinned metadata route remains
+permanently outside v2 (D12), and the FAQ routes remain an exempt upstream
+proxy rather than part of the backend resource API.

@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Bid id must be one or greater.",
+    "instance": "/api/v2/cosmicgame/moderation/banned-bids",
+    "status": 400,
+    "title": "Invalid bid",
+    "type": "https://api.cosmicsignature.com/problems/invalid-bid"
+  }
+}

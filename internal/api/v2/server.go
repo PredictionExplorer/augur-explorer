@@ -26,6 +26,10 @@ const problemTypeBase = "https://api.cosmicsignature.com/problems/"
 type bidReader interface {
 	BidsByRoundPage(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
 	BidByRoundAndPosition(context.Context, int64, int64) (cgmodel.CGBidRec, error)
+	BannedBidsPage(context.Context, *cgstore.BannedBidPageCursor, int) ([]cgmodel.CGBannedBidRec, bool, error)
+	BidderAddressForBid(context.Context, int64) (string, error)
+	CreateBannedBid(context.Context, int64, string, time.Time) (cgmodel.CGBannedBidRec, error)
+	RemoveBannedBid(context.Context, int64) (bool, error)
 }
 
 type roundReader interface {
@@ -224,6 +228,7 @@ type Server struct {
 	logger            *slog.Logger
 	now               func() time.Time
 	entropy           io.Reader
+	adminConfig       AdminConfig
 	rankingConfig     RankingConfig
 }
 
@@ -243,6 +248,14 @@ func WithClock(now func() time.Time) ServerOption {
 func WithEntropy(entropy io.Reader) ServerOption {
 	return func(server *Server) {
 		server.entropy = entropy
+	}
+}
+
+// WithAdmin installs the CosmicGame admin configuration used by bid
+// moderation. Servers built without it fail closed on moderation writes.
+func WithAdmin(config AdminConfig) ServerOption {
+	return func(server *Server) {
+		server.adminConfig = config
 	}
 }
 
@@ -410,7 +423,7 @@ func newServer(
 // spec-declared admin authentication before any handler runs.
 func (s *Server) RegisterRoutes(r *httpx.Router) {
 	middlewares := []StrictMiddlewareFunc{
-		s.rankingWriteRateLimitMiddleware(),
+		s.writeRateLimitMiddleware(),
 		s.adminKeyMiddleware(),
 	}
 	strict := NewStrictHandlerWithOptions(s, middlewares, StrictHTTPServerOptions{

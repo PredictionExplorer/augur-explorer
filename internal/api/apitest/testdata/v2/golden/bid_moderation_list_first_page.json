@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bannedAt": "2026-01-01T01:16:40Z",
+        "bidId": 2011,
+        "bidderAddress": "0x2200000000000000000000000000000000000022"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJpIjo5MDAwMDJ9"
+    }
+  }
+}

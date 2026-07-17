@@ -109,6 +109,11 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		// Pin relative-time fields so HTTP goldens do not age.
 		v2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
+		v2.WithAdmin(v2.AdminConfig{
+			AdminKeys: []common.AdminKey{
+				{Name: "ADMIN_API_KEY", Value: adminKey},
+			},
+		}),
 		// Production ranking wiring: the same admin key as the v1 module,
 		// a configured chain allowlist (so the chain-rejection problem is
 		// reachable) and the default write rate limits (each harness

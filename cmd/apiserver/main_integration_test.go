@@ -54,6 +54,8 @@ func setEnv(t *testing.T, connString, rpcURL string) {
 	t.Setenv("ENABLE_ROUTES_FAQ", "")
 	t.Setenv("LOG_FORMAT", "")
 	t.Setenv("LOG_LEVEL", "")
+	t.Setenv("ADMIN_API_KEY", "")
+	t.Setenv("RANKING_ADMIN_KEY", "")
 	t.Setenv("DATABASE_URL", "")
 	t.Setenv("PGSQL_USERNAME", u.User.Username())
 	t.Setenv("PGSQL_PASSWORD", password)
@@ -91,6 +93,7 @@ func TestRunBootServeAndGracefulShutdown(t *testing.T) {
 	t.Setenv("HTTP_PORT", port)
 	t.Setenv("METRICS_ADDR", "127.0.0.1:0")
 	t.Setenv("LOG_FORMAT", "json")
+	t.Setenv("ADMIN_API_KEY", "boot-admin-key")
 
 	var logBuf syncBuffer
 	runCtx, cancel := context.WithCancel(ctx)
@@ -102,11 +105,12 @@ func TestRunBootServeAndGracefulShutdown(t *testing.T) {
 
 	// The full route table answers through the real listeners.
 	for path, wantStatus := range map[string]int{
-		"/healthz":                            http.StatusOK,
-		"/readyz":                             http.StatusOK,
-		"/api/cosmicgame/statistics/counters": http.StatusOK,
-		"/api/randomwalk/floor_price":         http.StatusOK,
-		"/api/v2/cosmicgame/rounds/1":         http.StatusOK,
+		"/healthz":                                  http.StatusOK,
+		"/readyz":                                   http.StatusOK,
+		"/api/cosmicgame/statistics/counters":       http.StatusOK,
+		"/api/randomwalk/floor_price":               http.StatusOK,
+		"/api/v2/cosmicgame/moderation/banned-bids": http.StatusOK,
+		"/api/v2/cosmicgame/rounds/1":               http.StatusOK,
 	} {
 		resp, err := http.Get(base + path)
 		if err != nil {
@@ -117,6 +121,29 @@ func TestRunBootServeAndGracefulShutdown(t *testing.T) {
 		if resp.StatusCode != wantStatus {
 			t.Fatalf("GET %s = %d, want %d\n%s", path, resp.StatusCode, wantStatus, body)
 		}
+	}
+
+	// The production v2 wiring passes ADMIN_API_KEY into the generated
+	// moderation security scheme. The fixture bid is already banned, so a
+	// correctly authenticated request reaches the handler and returns 409
+	// without mutating shared state (503 would mean fail-closed config was not
+	// wired; 401 would mean the header contract drifted).
+	banRequest, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		base+"/api/v2/cosmicgame/moderation/banned-bids",
+		strings.NewReader(`{"bidId":2002}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	banRequest.Header.Set("Content-Type", "application/json")
+	banRequest.Header.Set("X-Admin-Key", "boot-admin-key")
+	banResponse, err := http.DefaultClient.Do(banRequest)
+	if err != nil {
+		t.Fatalf("POST bid ban: %v", err)
+	}
+	banBody, _ := io.ReadAll(banResponse.Body)
+	_ = banResponse.Body.Close()
+	if banResponse.StatusCode != http.StatusConflict {
+		t.Fatalf("POST bid ban = %d, want 409\n%s", banResponse.StatusCode, banBody)
 	}
 
 	cancel()

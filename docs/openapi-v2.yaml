@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.18.0
+  version: 0.19.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. This is the
     canonical specification: the v2 endpoint inventory is complete, every
@@ -11,6 +11,90 @@ info:
 servers:
   - url: /
 paths:
+  /api/v2/cosmicgame/moderation/banned-bids:
+    get:
+      operationId: listCosmicGameBannedBids
+      summary: List active CosmicGame bid bans
+      description: |
+        Returns active bid bans newest first. The cursor is a stable
+        boundary: bans created after the first page remain ahead of an
+        existing traversal.
+      tags:
+        - CosmicGame moderation
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicGameBannedBidPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: createCosmicGameBidBan
+      summary: Ban one CosmicGame bid (admin)
+      description: |
+        Creates one active ban for an indexed bid. The bidder address is
+        resolved from the canonical bid instead of accepted from the client.
+        Requires X-Admin-Key; when ADMIN_API_KEY is unset the operation fails
+        closed with 503. A bid that is already banned answers 409.
+      tags:
+        - CosmicGame moderation
+      security:
+        - AdminKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBidBanRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/CosmicGameBannedBidCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/AdminDisabled"
+  /api/v2/cosmicgame/moderation/banned-bids/{bidId}:
+    delete:
+      operationId: deleteCosmicGameBidBan
+      summary: Remove one CosmicGame bid ban (admin)
+      description: |
+        Removes the active ban identified by its bid id. Requires
+        X-Admin-Key; when ADMIN_API_KEY is unset the operation fails closed
+        with 503. A bid without an active ban answers 404.
+      tags:
+        - CosmicGame moderation
+      security:
+        - AdminKey: []
+      parameters:
+        - $ref: "#/components/parameters/BidId"
+      responses:
+        "204":
+          description: The bid ban was removed.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/AdminDisabled"
   /api/v2/cosmicgame/contracts/addresses:
     get:
       operationId: getCosmicGameContractAddresses
@@ -2147,6 +2231,15 @@ components:
         type: integer
         format: int64
         minimum: 0
+    BidId:
+      name: bidId
+      in: path
+      required: true
+      description: Database identifier of a CosmicGame bid.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
     BidPosition:
       name: position
       in: path
@@ -2469,6 +2562,14 @@ components:
         maxLength: 42
         pattern: "^0x[0-9a-fA-F]{40}$"
   securitySchemes:
+    AdminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+      description: |
+        Shared-secret admin key compared in constant time against
+        ADMIN_API_KEY. When the variable is unset guarded operations fail
+        closed with 503.
     RankingAdminKey:
       type: apiKey
       in: header
@@ -8475,7 +8576,60 @@ components:
           type: integer
           format: int64
           minimum: 0
+    BannedBid:
+      type: object
+      additionalProperties: false
+      required:
+        - bidId
+        - bidderAddress
+        - bannedAt
+      properties:
+        bidId:
+          type: integer
+          format: int64
+          minimum: 1
+        bidderAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+        bannedAt:
+          type: string
+          format: date-time
+    BannedBidPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BannedBid"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CreateBidBanRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - bidId
+      properties:
+        bidId:
+          type: integer
+          format: int64
+          minimum: 1
   responses:
+    CosmicGameBannedBidPage:
+      description: One stable newest-first page of active bid bans.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BannedBidPage"
+    CosmicGameBannedBidCreated:
+      description: The newly active bid ban.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BannedBid"
     CosmicGameContractAddresses:
       description: Complete deployed CosmicGame contract registry.
       content:

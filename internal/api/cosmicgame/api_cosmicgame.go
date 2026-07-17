@@ -3093,7 +3093,8 @@ func (a *API) handleBanBid(c *httpx.Context) {
 		common.RespondErrorJSON(c, "Invalid JSON: bid_id and user_addr required")
 		return
 	}
-	if err := a.repo.InsertBannedBid(c.Request.Context(), payload.BidID, payload.UserAddr); err != nil {
+	if err := a.repo.InsertBannedBid(c.Request.Context(), payload.BidID, payload.UserAddr); err != nil &&
+		!errors.Is(err, store.ErrConflict) {
 		common.RespondErrorJSON(c, fmt.Sprintf("Failed to insert banned bid: %v", err))
 		return
 	}

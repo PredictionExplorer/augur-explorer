@@ -42,6 +42,9 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 		}
 	}
 	sort.Strings(specRoutes)
+	if len(specRoutes) != 102 {
+		t.Fatalf("OpenAPI v2 operation count = %d, want 102", len(specRoutes))
+	}
 
 	router := httpx.NewRouter()
 	newTestServer(t, fakeBidReader{}).RegisterRoutes(router)
@@ -54,12 +57,15 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 	if !reflect.DeepEqual(registered, specRoutes) {
 		t.Fatalf("generated route drift\nregistered: %v\nspec:       %v", registered, specRoutes)
 	}
-	// The write surface is deliberately small (ADR-0008): exactly the three
-	// ranking mutations. Any other non-GET registration is drift.
+	// The write surface is deliberately small (ADR-0008/0009): the three
+	// ranking mutations plus bid-ban creation and deletion. Any other non-GET
+	// registration is drift.
 	writeOperations := map[string]bool{
-		"POST /api/v2/randomwalk/ranking/challenges": true,
-		"POST /api/v2/randomwalk/ranking/votes":      true,
-		"POST /api/v2/randomwalk/ranking/matches":    true,
+		"POST /api/v2/cosmicgame/moderation/banned-bids":           true,
+		"DELETE /api/v2/cosmicgame/moderation/banned-bids/{bidId}": true,
+		"POST /api/v2/randomwalk/ranking/challenges":               true,
+		"POST /api/v2/randomwalk/ranking/votes":                    true,
+		"POST /api/v2/randomwalk/ranking/matches":                  true,
 	}
 	seenWrites := 0
 	for _, route := range router.Routes() {
@@ -96,6 +102,7 @@ func TestEveryOperationAnswersStableBindingProblems(t *testing.T) {
 		"position":   "1",
 		"depositId":  "501",
 		"actionId":   "1",
+		"bidId":      "2001",
 		"nftTokenId": "5",
 		"tokenId":    "10",
 	}

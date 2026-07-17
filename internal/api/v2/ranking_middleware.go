@@ -1,4 +1,4 @@
-// Strict-middleware enforcement for the v2 write conventions (ADR-0008):
+// Strict-middleware enforcement for the v2 write conventions (ADR-0008/0009):
 // per-operation write rate limits answering RFC 9457 429 problems, and the
 // spec-declared apiKey admin authentication with v1's fail-closed contract.
 
@@ -6,6 +6,7 @@ package v2
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/subtle"
 	"net/http"
 	"strings"
@@ -13,6 +14,24 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
+
+// AdminConfig carries CosmicGame admin authentication and bid-moderation
+// write limits. The zero value fails closed and applies production limits.
+type AdminConfig struct {
+	// AdminKeys guard the bid-ban create and delete operations. The first
+	// non-empty value is the expected secret.
+	AdminKeys []common.AdminKey
+
+	// WriteLimits overrides the two moderation write buckets. Nil applies
+	// the production defaults.
+	WriteLimits *AdminWriteLimits
+}
+
+// AdminWriteLimits are the per-IP token buckets for bid-ban mutations.
+type AdminWriteLimits struct {
+	CreateBidBan RateLimitSpec
+	DeleteBidBan RateLimitSpec
+}
 
 // RankingConfig carries the ranking slice's deployment configuration. The
 // zero value is a working fail-closed default: the admin operation answers
@@ -67,6 +86,13 @@ func defaultRankingWriteLimits() RankingWriteLimits {
 	}
 }
 
+func defaultAdminWriteLimits() AdminWriteLimits {
+	return AdminWriteLimits{
+		CreateBidBan: RateLimitSpec{PerSecond: 2, Burst: 5},
+		DeleteBidBan: RateLimitSpec{PerSecond: 2, Burst: 5},
+	}
+}
+
 // defaultExploreMaxTokenID bounds exploration token ids when the
 // configuration does not override it: the frozen RandomWalk collection's
 // final token id (same default as v1 and RANDOMWALK_EXPLORE_MAX_TOKEN_ID).
@@ -77,6 +103,13 @@ func (c RankingConfig) writeLimits() RankingWriteLimits {
 		return *c.WriteLimits
 	}
 	return defaultRankingWriteLimits()
+}
+
+func (c AdminConfig) writeLimits() AdminWriteLimits {
+	if c.WriteLimits != nil {
+		return *c.WriteLimits
+	}
+	return defaultAdminWriteLimits()
 }
 
 func (c RankingConfig) exploreMaxTokenID() int64 {
@@ -103,17 +136,18 @@ func (c RankingConfig) voteChainAllowed(chainID int64) bool {
 	return false
 }
 
-// rankingWriteRateLimitMiddleware enforces the per-IP write buckets. The
-// limiters are keyed by generated operation id, so the policy lives next
-// to the operations it protects; unlisted operations pass through
-// untouched. Over-limit requests answer the spec-declared 429 problem with
-// Retry-After.
-func (s *Server) rankingWriteRateLimitMiddleware() StrictMiddlewareFunc {
-	limits := s.rankingConfig.writeLimits()
+// writeRateLimitMiddleware enforces all per-operation v2 write buckets.
+// Unlisted operations pass through untouched. Over-limit requests answer the
+// spec-declared 429 problem with Retry-After.
+func (s *Server) writeRateLimitMiddleware() StrictMiddlewareFunc {
+	rankingLimits := s.rankingConfig.writeLimits()
+	adminLimits := s.adminConfig.writeLimits()
 	limiters := map[string]*common.IPRateLimiter{
-		"CreateRandomWalkRankingChallenge": common.NewIPRateLimiter(limits.Challenges.PerSecond, limits.Challenges.Burst),
-		"CreateRandomWalkRankingVote":      common.NewIPRateLimiter(limits.Votes.PerSecond, limits.Votes.Burst),
-		"RecordRandomWalkRankingMatch":     common.NewIPRateLimiter(limits.Matches.PerSecond, limits.Matches.Burst),
+		"CreateCosmicGameBidBan":           common.NewIPRateLimiter(adminLimits.CreateBidBan.PerSecond, adminLimits.CreateBidBan.Burst),
+		"DeleteCosmicGameBidBan":           common.NewIPRateLimiter(adminLimits.DeleteBidBan.PerSecond, adminLimits.DeleteBidBan.Burst),
+		"CreateRandomWalkRankingChallenge": common.NewIPRateLimiter(rankingLimits.Challenges.PerSecond, rankingLimits.Challenges.Burst),
+		"CreateRandomWalkRankingVote":      common.NewIPRateLimiter(rankingLimits.Votes.PerSecond, rankingLimits.Votes.Burst),
+		"RecordRandomWalkRankingMatch":     common.NewIPRateLimiter(rankingLimits.Matches.PerSecond, rankingLimits.Matches.Burst),
 	}
 	return func(f StrictHandlerFunc, operationID string) StrictHandlerFunc {
 		limiter, limited := limiters[operationID]
@@ -131,54 +165,84 @@ func (s *Server) rankingWriteRateLimitMiddleware() StrictMiddlewareFunc {
 	}
 }
 
-// adminKeyMiddleware enforces the RankingAdminKey security scheme on every
-// operation the spec declares it for (the generated wrapper marks those
-// requests through the scopes context key, so a future secured operation
-// is enforced automatically). Enforcement fails closed: with no configured
-// key the operation answers 503, and a wrong or missing header answers 401
-// after a constant-time compare.
+type adminKeyPolicy struct {
+	active     func(context.Context) bool
+	headerName string
+	keys       []common.AdminKey
+}
+
+// adminKeyMiddleware enforces both generated admin security schemes. The
+// generated wrapper marks secured requests through scheme-specific context
+// keys, so future operations using either scheme inherit fail-closed
+// enforcement automatically.
 func (s *Server) adminKeyMiddleware() StrictMiddlewareFunc {
+	policies := []adminKeyPolicy{
+		{
+			active: func(ctx context.Context) bool {
+				return ctx.Value(AdminKeyScopes) != nil
+			},
+			headerName: "X-Admin-Key",
+			keys:       s.adminConfig.AdminKeys,
+		},
+		{
+			active: func(ctx context.Context) bool {
+				return ctx.Value(RankingAdminKeyScopes) != nil
+			},
+			headerName: "X-Ranking-Admin-Key",
+			keys:       s.rankingConfig.AdminKeys,
+		},
+	}
+	return func(f StrictHandlerFunc, _ string) StrictHandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+			for _, policy := range policies {
+				if !policy.active(ctx) {
+					continue
+				}
+				secret, names := configuredAdminSecret(policy.keys)
+				if secret == "" {
+					detail := "Admin authentication is not configured."
+					if len(names) > 0 {
+						detail = "Admin authentication is not configured (" + strings.Join(names, " or ") + ")."
+					}
+					s.writeProblem(w, newProblem(
+						http.StatusServiceUnavailable,
+						"admin-disabled",
+						"Admin operation disabled",
+						detail,
+						r.URL.Path,
+					))
+					return nil, nil
+				}
+
+				expectedHash := sha256.Sum256([]byte(secret))
+				providedHash := sha256.Sum256([]byte(r.Header.Get(policy.headerName)))
+				if subtle.ConstantTimeCompare(providedHash[:], expectedHash[:]) != 1 {
+					s.writeProblem(w, newProblem(
+						http.StatusUnauthorized,
+						"unauthorized",
+						"Unauthorized",
+						"The "+policy.headerName+" header is missing or wrong.",
+						r.URL.Path,
+					))
+					return nil, nil
+				}
+				return f(ctx, w, r, request)
+			}
+			return f(ctx, w, r, request)
+		}
+	}
+}
+
+func configuredAdminSecret(keys []common.AdminKey) (string, []string) {
 	var secret string
-	names := make([]string, 0, len(s.rankingConfig.AdminKeys))
-	for _, key := range s.rankingConfig.AdminKeys {
+	names := make([]string, 0, len(keys))
+	for _, key := range keys {
 		names = append(names, key.Name)
 		if secret == "" {
 			secret = strings.TrimSpace(key.Value)
 		}
 	}
-	disabledDetail := "Admin authentication is not configured (" + strings.Join(names, " or ") + ")."
-	if len(names) == 0 {
-		disabledDetail = "Admin authentication is not configured."
-	}
-	return func(f StrictHandlerFunc, _ string) StrictHandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-			if ctx.Value(RankingAdminKeyScopes) == nil {
-				return f(ctx, w, r, request)
-			}
-			if secret == "" {
-				s.writeProblem(w, newProblem(
-					http.StatusServiceUnavailable,
-					"admin-disabled",
-					"Admin operation disabled",
-					disabledDetail,
-					r.URL.Path,
-				))
-				return nil, nil
-			}
-			provided := r.Header.Get("X-Ranking-Admin-Key")
-			if subtle.ConstantTimeCompare([]byte(provided), []byte(secret)) != 1 {
-				s.writeProblem(w, newProblem(
-					http.StatusUnauthorized,
-					"unauthorized",
-					"Unauthorized",
-					"The X-Ranking-Admin-Key header is missing or wrong.",
-					r.URL.Path,
-				))
-				return nil, nil
-			}
-			return f(ctx, w, r, request)
-		}
-	}
+	return secret, names
 }
 
 func rateLimitedProblem(instance string) Problem {

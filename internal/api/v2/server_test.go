@@ -23,8 +23,12 @@ import (
 )
 
 type fakeBidReader struct {
-	page func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
-	item func(context.Context, int64, int64) (cgmodel.CGBidRec, error)
+	page          func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
+	item          func(context.Context, int64, int64) (cgmodel.CGBidRec, error)
+	bannedPage    func(context.Context, *cgstore.BannedBidPageCursor, int) ([]cgmodel.CGBannedBidRec, bool, error)
+	bidderAddress func(context.Context, int64) (string, error)
+	createBan     func(context.Context, int64, string, time.Time) (cgmodel.CGBannedBidRec, error)
+	removeBan     func(context.Context, int64) (bool, error)
 }
 
 type fakeRoundReader struct {
@@ -657,6 +661,43 @@ func (f fakeBidReader) BidByRoundAndPosition(ctx context.Context, round, positio
 		return cgmodel.CGBidRec{}, store.ErrNotFound
 	}
 	return f.item(ctx, round, position)
+}
+
+func (f fakeBidReader) BannedBidsPage(
+	ctx context.Context,
+	after *cgstore.BannedBidPageCursor,
+	limit int,
+) ([]cgmodel.CGBannedBidRec, bool, error) {
+	if f.bannedPage == nil {
+		return []cgmodel.CGBannedBidRec{}, false, nil
+	}
+	return f.bannedPage(ctx, after, limit)
+}
+
+func (f fakeBidReader) BidderAddressForBid(ctx context.Context, bidID int64) (string, error) {
+	if f.bidderAddress == nil {
+		return "", store.ErrNotFound
+	}
+	return f.bidderAddress(ctx, bidID)
+}
+
+func (f fakeBidReader) CreateBannedBid(
+	ctx context.Context,
+	bidID int64,
+	address string,
+	bannedAt time.Time,
+) (cgmodel.CGBannedBidRec, error) {
+	if f.createBan == nil {
+		return cgmodel.CGBannedBidRec{}, errors.New("unexpected bid-ban creation")
+	}
+	return f.createBan(ctx, bidID, address, bannedAt)
+}
+
+func (f fakeBidReader) RemoveBannedBid(ctx context.Context, bidID int64) (bool, error) {
+	if f.removeBan == nil {
+		return false, nil
+	}
+	return f.removeBan(ctx, bidID)
 }
 
 func (f fakeCurrentRoundReader) CosmicGameRoundStatistics(ctx context.Context, round int64) (cgmodel.CGRoundStats, error) {

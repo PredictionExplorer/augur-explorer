@@ -1,0 +1,11 @@
+{
+  "status": 429,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Too many requests for this operation; retry after the indicated delay.",
+    "instance": "/api/v2/cosmicgame/moderation/banned-bids",
+    "status": 429,
+    "title": "Rate limit exceeded",
+    "type": "https://api.cosmicsignature.com/problems/rate-limited"
+  }
+}

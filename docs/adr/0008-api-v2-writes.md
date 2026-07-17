@@ -22,10 +22,10 @@ are ad-hoc `{"error": ...}` objects with inconsistent statuses.
 
 ## Decision
 
-### Mutations are POSTs that create records
+### Record-creating mutations are POSTs
 
-- Every v2 mutation is a `POST` with a required `application/json` body
-  and a typed request schema. No side-effecting GETs: the v1
+- Every record-creating v2 mutation in this slice is a `POST` with a typed
+  request contract. No side-effecting GETs: the v1
   `ranking/sign-challenge` GET becomes `POST .../ranking/challenges`.
 - Success is `201 Created` with a typed body describing the resulting
   state (the created challenge, the recorded vote with both new ratings).
@@ -36,6 +36,9 @@ are ad-hoc `{"error": ...}` objects with inconsistent statuses.
   touches GET/HEAD), and mutation responses are marked
   `Cache-Control: no-store` by the handler layer's absence of caching —
   no additional middleware work is needed.
+- ADR-0009 later clarifies the resource-lifecycle case: an individually
+  addressable active bid ban is removed with `DELETE` + `204`; POST + typed
+  `201` remains the record-creation convention.
 
 ### Errors are RFC 9457 problems, like every v2 read
 
@@ -104,9 +107,10 @@ remaining v1 read/write behaviors (ten registered paths):
 
 - The v2 endpoint inventory (§6.2.1) is complete; D6's sunset gates can
   start counting for the ranking group once the frontend migrates.
-- Future v2 mutations (if any) have a settled pattern: POST + 201 typed
-  body, problem-shaped 4xx/5xx, apiKey or wallet-signature auth, strict
-  middleware for per-operation limits.
+- Future v2 record creation has a settled pattern: POST + 201 typed body,
+  problem-shaped 4xx/5xx, apiKey or wallet-signature auth, and strict
+  middleware for per-operation limits. Addressable resource removal follows
+  ADR-0009.
 - The vote and challenge flows change shape (POST challenge, renamed
   fields), so the frontend migration for this group is a deliberate
   rewrite of a small mini-app, not a URL swap — documented in

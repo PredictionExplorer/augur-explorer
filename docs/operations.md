@@ -217,9 +217,12 @@ series simply lack it.
 ## Security posture
 
 - Read API is public by design; every route is rate limited per client IP.
-- Mutating routes (`ban_bid`, `unban_bid`, ranking `match`) require
+- Mutating routes (v1 `ban_bid`/`unban_bid`, v2
+  `/cosmicgame/moderation/banned-bids`, and ranking `match`) require
   `X-Admin-Key` / `X-Ranking-Admin-Key` and fail closed when the key env var
-  is missing. Generate keys with `openssl rand -hex 32`.
+  is missing. V2 compares fixed-width key hashes in constant time and applies
+  independent per-operation write buckets. Generate keys with
+  `openssl rand -hex 32`.
 - `/metrics` and `/debug/pprof` bind only to `METRICS_ADDR` — keep it on
   localhost or a private interface.
 - Secrets come exclusively from environment files; nothing is committed.

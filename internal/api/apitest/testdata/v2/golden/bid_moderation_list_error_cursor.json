@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "The cursor is malformed or uses an unsupported version.",
+    "instance": "/api/v2/cosmicgame/moderation/banned-bids",
+    "status": 400,
+    "title": "Invalid cursor",
+    "type": "https://api.cosmicsignature.com/problems/invalid-cursor"
+  }
+}

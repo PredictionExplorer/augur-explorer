@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "No active ban exists for this bid.",
+    "instance": "/api/v2/cosmicgame/moderation/banned-bids/2011",
+    "status": 404,
+    "title": "Bid ban not found",
+    "type": "https://api.cosmicsignature.com/problems/bid-ban-not-found"
+  }
+}
