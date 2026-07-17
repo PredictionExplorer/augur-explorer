@@ -349,7 +349,7 @@ func (w *fakeNodeFillWriter) EventLogExists(context.Context, string, int) (bool,
 	return w.eventExists, w.eventExistsErr
 }
 
-func (w *fakeNodeFillWriter) InsertEventLog(context.Context, archive.ArchiveEventLog) (bool, error) {
+func (w *fakeNodeFillWriter) InsertEventLog(context.Context, archive.EventLog) (bool, error) {
 	w.insertedEvents++
 	return w.eventInserted, w.eventInsertErr
 }
@@ -358,7 +358,7 @@ func (w *fakeNodeFillWriter) TransactionExists(context.Context, string) (bool, e
 	return true, nil
 }
 
-func (w *fakeNodeFillWriter) InsertTransaction(context.Context, archive.ArchiveTransaction) (bool, error) {
+func (w *fakeNodeFillWriter) InsertTransaction(context.Context, archive.Transaction) (bool, error) {
 	return true, nil
 }
 
@@ -368,7 +368,7 @@ func (w *fakeNodeFillWriter) BlockExists(context.Context, int64, string) (bool, 
 
 func (w *fakeNodeFillWriter) InsertBlock(
 	context.Context,
-	archive.ArchiveBlock,
+	archive.Block,
 	[]string,
 	bool,
 ) (bool, error) {

@@ -9,7 +9,7 @@ import (
 	"github.com/golang/snappy"
 )
 
-// Synthetic fixtures for DecodeArbitrumReceipts, complementing the
+// Synthetic fixtures for ArbitrumReceipts, complementing the
 // mainnet-data integration tests in arbitrum_decode_test.go (which skip when
 // the freezer directory is absent). These pin every structural branch:
 // standard vs 7-field extended receipts, typed prefixes, the fallback
@@ -33,14 +33,14 @@ func encodeArbReceipt(t *testing.T, totalFields, logsIdx int, logs []Log) []byte
 	return mustEncode(t, fields)
 }
 
-func TestDecodeArbitrumReceiptsStandardFormat(t *testing.T) {
+func TestArbitrumReceiptsStandardFormat(t *testing.T) {
 	// Standard: [status, gas, bloom, logs] — logs at index 3.
 	receipt := encodeArbReceipt(t, 4, 3, []Log{arbLog})
 	blob := mustEncode(t, []rlp.RawValue{receipt})
 
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts: %v", err)
+		t.Fatalf("ArbitrumReceipts: %v", err)
 	}
 	if len(logs) != 1 || logs[0].Address != arbLog.Address {
 		t.Fatalf("logs = %+v, want the fixture log", logs)
@@ -50,21 +50,21 @@ func TestDecodeArbitrumReceiptsStandardFormat(t *testing.T) {
 	}
 }
 
-func TestDecodeArbitrumReceiptsExtendedFormat(t *testing.T) {
+func TestArbitrumReceiptsExtendedFormat(t *testing.T) {
 	// Arbitrum extended: 7 fields with the logs list at index 6.
 	receipt := encodeArbReceipt(t, 7, 6, []Log{arbLog})
 	blob := mustEncode(t, []rlp.RawValue{receipt})
 
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts: %v", err)
+		t.Fatalf("ArbitrumReceipts: %v", err)
 	}
 	if len(logs) != 1 || logs[0].Address != arbLog.Address {
 		t.Fatalf("extended-format logs = %+v", logs)
 	}
 }
 
-func TestDecodeArbitrumReceiptsTypedPrefix(t *testing.T) {
+func TestArbitrumReceiptsTypedPrefix(t *testing.T) {
 	// A tx-type byte spliced before a receipt parses as its own single-byte
 	// list element (RLP: bytes < 0x80 encode as themselves). The decoder must
 	// take the type-strip branch on it, fail to decode the empty remainder,
@@ -73,48 +73,48 @@ func TestDecodeArbitrumReceiptsTypedPrefix(t *testing.T) {
 	typed := append([]byte{0x68}, receipt...) // Arbitrum tx type byte < 0x80
 	blob := mustEncode(t, []rlp.RawValue{typed})
 
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts: %v", err)
+		t.Fatalf("ArbitrumReceipts: %v", err)
 	}
 	if len(logs) != 1 {
 		t.Fatalf("typed receipt yielded %d logs, want 1", len(logs))
 	}
 }
 
-func TestDecodeArbitrumReceiptsFallbackFieldScan(t *testing.T) {
+func TestArbitrumReceiptsFallbackFieldScan(t *testing.T) {
 	// Five fields with the logs list at index 4: index 3 is a scalar, so the
 	// primary position fails and the fallback scan must locate the logs.
 	receipt := encodeArbReceipt(t, 5, 4, []Log{arbLog})
 	blob := mustEncode(t, []rlp.RawValue{receipt})
 
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts: %v", err)
+		t.Fatalf("ArbitrumReceipts: %v", err)
 	}
 	if len(logs) != 1 {
 		t.Fatalf("fallback scan yielded %d logs, want 1", len(logs))
 	}
 }
 
-func TestDecodeArbitrumReceiptsSkipsBadEntries(t *testing.T) {
+func TestArbitrumReceiptsSkipsBadEntries(t *testing.T) {
 	good := encodeArbReceipt(t, 4, 3, []Log{arbLog})
 	notAList := mustEncode(t, []byte{0xaa})              // receipt payload is a string
 	tooFewFields := encodeArbReceipt(t, 3, 2, []Log{})   // no field 3 at all
 	noLogsAnywhere := encodeArbReceipt(t, 5, 4, []Log{}) // empty logs everywhere
 	blob := mustEncode(t, []rlp.RawValue{notAList, tooFewFields, noLogsAnywhere, good})
 
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts: %v", err)
+		t.Fatalf("ArbitrumReceipts: %v", err)
 	}
 	if len(logs) != 1 || logs[0].Address != arbLog.Address {
 		t.Fatalf("bad receipts must be skipped, good one kept; got %+v", logs)
 	}
 }
 
-func TestDecodeArbitrumReceiptsMalformedLogSkipped(t *testing.T) {
-	// A log with fewer than 3 fields fails DecodeArbitrumLog and is dropped.
+func TestArbitrumReceiptsMalformedLogSkipped(t *testing.T) {
+	// A log with fewer than 3 fields fails ArbitrumLog and is dropped.
 	badLog := mustEncode(t, []interface{}{[]byte{0x01}})
 	goodLog := mustEncode(t, arbLog)
 	logsList := mustEncode(t, []rlp.RawValue{badLog, goodLog})
@@ -123,37 +123,37 @@ func TestDecodeArbitrumReceiptsMalformedLogSkipped(t *testing.T) {
 	receipt := mustEncode(t, fields)
 	blob := mustEncode(t, []rlp.RawValue{receipt})
 
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts: %v", err)
+		t.Fatalf("ArbitrumReceipts: %v", err)
 	}
 	if len(logs) != 1 {
 		t.Fatalf("malformed log must be dropped; got %d logs", len(logs))
 	}
 }
 
-func TestDecodeArbitrumReceiptsSnappy(t *testing.T) {
+func TestArbitrumReceiptsSnappy(t *testing.T) {
 	receipt := encodeArbReceipt(t, 4, 3, []Log{arbLog})
 	blob := mustEncode(t, []rlp.RawValue{receipt})
 
-	logs, err := DecodeArbitrumReceipts(snappy.Encode(nil, blob))
+	logs, err := ArbitrumReceipts(snappy.Encode(nil, blob))
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts(snappy): %v", err)
+		t.Fatalf("ArbitrumReceipts(snappy): %v", err)
 	}
 	if len(logs) != 1 {
 		t.Fatalf("snappy round trip yielded %d logs, want 1", len(logs))
 	}
 }
 
-func TestDecodeArbitrumReceiptsNitroHeader(t *testing.T) {
+func TestArbitrumReceiptsNitroHeader(t *testing.T) {
 	receipt := encodeArbReceipt(t, 4, 3, []Log{arbLog})
 	payload := mustEncode(t, []rlp.RawValue{receipt})
 
 	// varint(size) + junk header + raw RLP.
 	blob := append([]byte{byte(len(payload)), 0x00, 0x01}, payload...)
-	logs, err := DecodeArbitrumReceipts(blob)
+	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeArbitrumReceipts(nitro header): %v", err)
+		t.Fatalf("ArbitrumReceipts(nitro header): %v", err)
 	}
 	if len(logs) != 1 {
 		t.Fatalf("nitro header format yielded %d logs, want 1", len(logs))
@@ -161,7 +161,7 @@ func TestDecodeArbitrumReceiptsNitroHeader(t *testing.T) {
 
 	// Oversized declared length: the tail from the RLP prefix is used.
 	blob = append([]byte{0x7f, 0x00, 0x01}, payload...)
-	if _, err := DecodeArbitrumReceipts(blob); err != nil {
+	if _, err := ArbitrumReceipts(blob); err != nil {
 		t.Fatalf("oversized varint should still decode the tail: %v", err)
 	}
 }
@@ -180,7 +180,7 @@ func TestSmartDecompressErrors(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := DecodeArbitrumReceipts(tc.in)
+			_, err := ArbitrumReceipts(tc.in)
 			if err == nil {
 				t.Fatal("expected error")
 			}
@@ -191,26 +191,26 @@ func TestSmartDecompressErrors(t *testing.T) {
 	}
 }
 
-func TestDecodeArbitrumLogErrors(t *testing.T) {
-	if _, err := DecodeArbitrumLog([]byte{0xaa}); err == nil {
+func TestArbitrumLogErrors(t *testing.T) {
+	if _, err := ArbitrumLog([]byte{0xaa}); err == nil {
 		t.Error("non-list log must fail")
 	}
 	short := mustEncode(t, []interface{}{[]byte{1}, []byte{2}})
-	if _, err := DecodeArbitrumLog(short); err == nil || !strings.Contains(err.Error(), "expected 3 fields") {
+	if _, err := ArbitrumLog(short); err == nil || !strings.Contains(err.Error(), "expected 3 fields") {
 		t.Errorf("two-field log: %v", err)
 	}
 	// Field decoders: address must be 20 bytes, topics a list of hashes,
 	// data a byte string.
 	badAddr := mustEncode(t, []interface{}{[]byte{1, 2, 3}, []common.Hash{}, []byte{}})
-	if _, err := DecodeArbitrumLog(badAddr); err == nil || !strings.Contains(err.Error(), "decode address") {
+	if _, err := ArbitrumLog(badAddr); err == nil || !strings.Contains(err.Error(), "decode address") {
 		t.Errorf("bad address: %v", err)
 	}
 	badTopics := mustEncode(t, []interface{}{arbLog.Address, []byte{0x01}, []byte{}})
-	if _, err := DecodeArbitrumLog(badTopics); err == nil || !strings.Contains(err.Error(), "decode topics") {
+	if _, err := ArbitrumLog(badTopics); err == nil || !strings.Contains(err.Error(), "decode topics") {
 		t.Errorf("bad topics: %v", err)
 	}
 	badData := mustEncode(t, []interface{}{arbLog.Address, []common.Hash{}, []common.Hash{{}}})
-	if _, err := DecodeArbitrumLog(badData); err == nil || !strings.Contains(err.Error(), "decode data") {
+	if _, err := ArbitrumLog(badData); err == nil || !strings.Contains(err.Error(), "decode data") {
 		t.Errorf("bad data: %v", err)
 	}
 }

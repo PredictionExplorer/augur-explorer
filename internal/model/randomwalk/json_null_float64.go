@@ -12,6 +12,7 @@ type JSONNullFloat64 struct {
 	Value float64
 }
 
+// MarshalJSON encodes the value, or JSON null when unset or non-finite.
 func (j JSONNullFloat64) MarshalJSON() ([]byte, error) {
 	if !j.Valid {
 		return []byte("null"), nil

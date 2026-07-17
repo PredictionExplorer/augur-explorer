@@ -1,11 +1,12 @@
-// Topic-hash constants for every RandomWalk event the ETL dispatches.
-
 package randomwalk
 
 import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
+// Topic-hash constants for every RandomWalk event the ETL dispatches;
+// TestRegistryConstantsMatchABIEventIDs pins each constant to its
+// ABI-derived event ID.
 const (
 	TopicNewOffer      = "55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a"
 	TopicItemBought    = "caacc56f18ca259dc5175dae29eb0ca81407703a4819958c6885acbb7d4f3af3"

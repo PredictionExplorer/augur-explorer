@@ -131,6 +131,36 @@ func TestParseUnifiedDiffRejectsMalformedInput(t *testing.T) {
 	}
 }
 
+// TestParseUnifiedDiffSkipsOutOfScopeFiles proves Go files outside cmd/
+// and internal/ — generated contract bindings and the contracts build
+// tooling (whose contracts/internal/ prefix must not be misread as the
+// repository's internal/ tree) — parse cleanly but contribute no changed
+// lines, while in-scope files in the same diff still count.
+func TestParseUnifiedDiffSkipsOutOfScopeFiles(t *testing.T) {
+	t.Parallel()
+	diff := `+++ b/contracts/cosmicgame/bindings.gen.go
+@@ -1 +1,2 @@
++// Code generated - DO NOT EDIT.
++package cosmicgame
++++ b/contracts/internal/buildjson/buildjson.go
+@@ -1 +1 @@
++package buildjson
++++ b/internal/core/core.go
+@@ -1 +1 @@
++package core
+`
+	changed, err := ParseUnifiedDiff(strings.NewReader(diff))
+	if err != nil {
+		t.Fatalf("ParseUnifiedDiff: %v", err)
+	}
+	if len(changed) != 1 {
+		t.Fatalf("changed files = %#v, want only internal/core/core.go", changed)
+	}
+	if len(changed["internal/core/core.go"]) != 1 {
+		t.Fatalf("in-scope file lost its changed lines: %#v", changed)
+	}
+}
+
 func TestAnalyzePatchIgnoresPathsOutsidePolicyScope(t *testing.T) {
 	t.Parallel()
 	profile, err := ParseProfile(strings.NewReader(testProfile))

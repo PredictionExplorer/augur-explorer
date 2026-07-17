@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 )
 
 // minimalAPIServerEnv is the smallest environment LoadAPIServer accepts.
@@ -42,6 +43,7 @@ func TestLoadAPIServerFull(t *testing.T) {
 	env["DATABASE_URL"] = "postgres://u:p@h/d"
 	env["LOG_FORMAT"] = "json"
 	env["AI_BOT_BACKEND_URL"] = "http://faq:8000"
+	env["V1_SUNSET_AT"] = "2027-01-01T00:00:00Z"
 	cfg, err := LoadAPIServer(mapEnv(env))
 	if err != nil {
 		t.Fatalf("LoadAPIServer: %v", err)
@@ -60,6 +62,9 @@ func TestLoadAPIServerFull(t *testing.T) {
 	}
 	if cfg.FAQUpstream() != "http://faq:8000" {
 		t.Errorf("FAQUpstream = %q", cfg.FAQUpstream())
+	}
+	if want := time.Date(2027, time.January, 1, 0, 0, 0, 0, time.UTC); !cfg.V1SunsetAt.Equal(want) {
+		t.Errorf("V1SunsetAt = %v, want %v", cfg.V1SunsetAt, want)
 	}
 }
 

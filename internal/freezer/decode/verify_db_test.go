@@ -135,7 +135,7 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 			continue
 		}
 
-		logs, err := DecodeArbitrumReceipts(data)
+		logs, err := ArbitrumReceipts(data)
 		if err != nil {
 			continue
 		}

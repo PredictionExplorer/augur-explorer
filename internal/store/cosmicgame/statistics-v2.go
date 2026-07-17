@@ -139,6 +139,7 @@ func decimalOrZero(value string) string {
 // ROILeaderboardSort is the public v2 ROI ordering.
 type ROILeaderboardSort string
 
+// The six ROI leaderboard orderings.
 const (
 	ROILeaderboardNetProfit ROILeaderboardSort = "netProfit"
 	ROILeaderboardROI       ROILeaderboardSort = "roi"
@@ -530,6 +531,7 @@ func (r *Repo) ClaimSummaryByRound(ctx context.Context, roundNum int64) (ClaimSu
 // ClaimAssetType is the stable v2 claim asset taxonomy.
 type ClaimAssetType string
 
+// The claimable asset kinds tracked by PrizesWallet.
 const (
 	ClaimAssetETH    ClaimAssetType = "eth"
 	ClaimAssetERC721 ClaimAssetType = "erc721"

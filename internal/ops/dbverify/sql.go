@@ -63,6 +63,8 @@ func LoadRandomWalkContractAddressIDs(ctx context.Context, db *sql.DB) ([]int64,
 	return ids, nil
 }
 
+// LoadEventRecords keys every event log (optionally scoped to the given
+// contracts) by its identity hash for comparison.
 func (l *SQLLoader) LoadEventRecords(
 	ctx context.Context,
 	contractAddressIDs []int64,
@@ -106,6 +108,8 @@ func (l *SQLLoader) LoadEventRecords(
 	return records, rows.Err()
 }
 
+// TransactionHashesFromEvents lists the distinct transaction hashes
+// referenced by the scoped event logs.
 func (l *SQLLoader) TransactionHashesFromEvents(
 	ctx context.Context,
 	contractAddressIDs []int64,
@@ -137,6 +141,8 @@ func (l *SQLLoader) TransactionHashesFromEvents(
 	return hashes, rows.Err()
 }
 
+// LoadTransactions keys transaction rows by hash, optionally restricted to
+// the given hash set.
 func (l *SQLLoader) LoadTransactions(
 	ctx context.Context,
 	txHashes []string,
@@ -176,6 +182,8 @@ func (l *SQLLoader) LoadTransactions(
 	return records, rows.Err()
 }
 
+// BlockNumbersFromEvents lists the distinct block numbers referenced by the
+// scoped event logs.
 func (l *SQLLoader) BlockNumbersFromEvents(
 	ctx context.Context,
 	contractAddressIDs []int64,
@@ -207,6 +215,8 @@ func (l *SQLLoader) BlockNumbersFromEvents(
 	return numbers, rows.Err()
 }
 
+// LoadBlocks keys block rows by number, optionally restricted to the given
+// number set.
 func (l *SQLLoader) LoadBlocks(
 	ctx context.Context,
 	blockNumbers []int64,
@@ -246,6 +256,8 @@ func (l *SQLLoader) LoadBlocks(
 	return records, rows.Err()
 }
 
+// CountEventLogs counts the event logs in scope (all rows when
+// contractAddressIDs is nil).
 func (l *SQLLoader) CountEventLogs(
 	ctx context.Context,
 	contractAddressIDs []int64,
@@ -270,6 +282,8 @@ func (l *SQLLoader) CountEventLogs(
 	return count, nil
 }
 
+// LoadDetailedEventLogs loads the full event-log projections used by the
+// row-level diff report.
 func (l *SQLLoader) LoadDetailedEventLogs(
 	ctx context.Context,
 	contractAddressIDs []int64,

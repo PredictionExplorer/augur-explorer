@@ -10,20 +10,23 @@ import (
 func TestAttrsRendersEffectiveValuesAndRedactsSecrets(t *testing.T) {
 	t.Parallel()
 	cfg := struct {
-		Plain  string        `env:"PLAIN"`
-		Secret string        `env:"SECRET" secret:"true"`
-		Unset  string        `env:"UNSET_SECRET" secret:"true"`
-		RPC    string        `env:"RPC" secret:"url"`
-		B      bool          `env:"B" default:"true"`
-		N      int64         `env:"N" default:"42"`
-		F      float64       `env:"F" default:"2.5"`
-		D      time.Duration `env:"D" default:"90s"`
-		L      []int64       `env:"L"`
+		Plain     string        `env:"PLAIN"`
+		Secret    string        `env:"SECRET" secret:"true"`
+		Unset     string        `env:"UNSET_SECRET" secret:"true"`
+		RPC       string        `env:"RPC" secret:"url"`
+		B         bool          `env:"B" default:"true"`
+		N         int64         `env:"N" default:"42"`
+		F         float64       `env:"F" default:"2.5"`
+		D         time.Duration `env:"D" default:"90s"`
+		T         time.Time     `env:"T"`
+		UnsetTime time.Time     `env:"UNSET_TIME"`
+		L         []int64       `env:"L"`
 	}{}
 	err := Load(&cfg, mapEnv(map[string]string{
 		"PLAIN":  "hello",
 		"SECRET": "hunter2",
 		"RPC":    "https://arb.example.com/v2/APIKEY123",
+		"T":      "2027-01-01T00:00:00Z",
 		"L":      "5,6",
 	}))
 	if err != nil {
@@ -43,6 +46,8 @@ func TestAttrsRendersEffectiveValuesAndRedactsSecrets(t *testing.T) {
 		"N":            "42",
 		"F":            "2.5",
 		"D":            "1m30s",
+		"T":            "2027-01-01T00:00:00Z",
+		"UNSET_TIME":   "[unset]",
 		"L":            "5,6",
 	}
 	for k, w := range want {

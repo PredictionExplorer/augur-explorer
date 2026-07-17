@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// Default caps on how many mismatched rows the verify and diff reports list.
 const (
 	DefaultVerifyReportLimit = 10
 	DefaultDiffReportLimit   = 20

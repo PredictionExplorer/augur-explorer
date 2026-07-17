@@ -49,15 +49,15 @@ func (r *coverageRepository) PrepareWriter(context.Context) (NodeFillWriter, err
 
 type coverageWriter struct {
 	eventExistsFn       func(context.Context, string, int) (bool, error)
-	insertEventFn       func(context.Context, ArchiveEventLog) (bool, error)
+	insertEventFn       func(context.Context, EventLog) (bool, error)
 	transactionExistsFn func(context.Context, string) (bool, error)
-	insertTransactionFn func(context.Context, ArchiveTransaction) (bool, error)
+	insertTransactionFn func(context.Context, Transaction) (bool, error)
 	blockExistsFn       func(context.Context, int64) (bool, error)
-	insertBlockFn       func(context.Context, ArchiveBlock) (bool, error)
+	insertBlockFn       func(context.Context, Block) (bool, error)
 	closeErr            error
 	closeCalls          int
-	insertedTransaction ArchiveTransaction
-	insertedBlock       ArchiveBlock
+	insertedTransaction Transaction
+	insertedBlock       Block
 	forceBlockCleanup   bool
 }
 
@@ -68,7 +68,7 @@ func (w *coverageWriter) EventLogExists(ctx context.Context, hash string, index 
 	return false, nil
 }
 
-func (w *coverageWriter) InsertEventLog(ctx context.Context, event ArchiveEventLog) (bool, error) {
+func (w *coverageWriter) InsertEventLog(ctx context.Context, event EventLog) (bool, error) {
 	if w.insertEventFn != nil {
 		return w.insertEventFn(ctx, event)
 	}
@@ -82,7 +82,7 @@ func (w *coverageWriter) TransactionExists(ctx context.Context, hash string) (bo
 	return true, nil
 }
 
-func (w *coverageWriter) InsertTransaction(ctx context.Context, tx ArchiveTransaction) (bool, error) {
+func (w *coverageWriter) InsertTransaction(ctx context.Context, tx Transaction) (bool, error) {
 	w.insertedTransaction = tx
 	if w.insertTransactionFn != nil {
 		return w.insertTransactionFn(ctx, tx)
@@ -99,7 +99,7 @@ func (w *coverageWriter) BlockExists(ctx context.Context, number int64, _ string
 
 func (w *coverageWriter) InsertBlock(
 	ctx context.Context,
-	block ArchiveBlock,
+	block Block,
 	_ []string,
 	forceCleanup bool,
 ) (bool, error) {
@@ -395,7 +395,7 @@ func TestNodeFillerPerRowBranches(t *testing.T) {
 		},
 		{
 			name: "insert error",
-			writer: &coverageWriter{insertEventFn: func(context.Context, ArchiveEventLog) (bool, error) {
+			writer: &coverageWriter{insertEventFn: func(context.Context, EventLog) (bool, error) {
 				return false, sentinel
 			}},
 			client:      &coverageClient{},
@@ -404,7 +404,7 @@ func TestNodeFillerPerRowBranches(t *testing.T) {
 		},
 		{
 			name: "insert context error",
-			writer: &coverageWriter{insertEventFn: func(context.Context, ArchiveEventLog) (bool, error) {
+			writer: &coverageWriter{insertEventFn: func(context.Context, EventLog) (bool, error) {
 				return false, context.DeadlineExceeded
 			}},
 			client:  &coverageClient{},
@@ -413,7 +413,7 @@ func TestNodeFillerPerRowBranches(t *testing.T) {
 		{
 			name: "conflict repairs dependencies",
 			writer: &coverageWriter{
-				insertEventFn: func(context.Context, ArchiveEventLog) (bool, error) { return false, nil },
+				insertEventFn: func(context.Context, EventLog) (bool, error) { return false, nil },
 			},
 			client:      &coverageClient{},
 			wantLogSkip: 1,
@@ -738,7 +738,7 @@ func TestEnsureTransactionBranches(t *testing.T) {
 			name: "insert error",
 			writer: &coverageWriter{
 				transactionExistsFn: func(context.Context, string) (bool, error) { return false, nil },
-				insertTransactionFn: func(context.Context, ArchiveTransaction) (bool, error) {
+				insertTransactionFn: func(context.Context, Transaction) (bool, error) {
 					return false, sentinel
 				},
 			},
@@ -751,7 +751,7 @@ func TestEnsureTransactionBranches(t *testing.T) {
 			name: "insert conflict",
 			writer: &coverageWriter{
 				transactionExistsFn: func(context.Context, string) (bool, error) { return false, nil },
-				insertTransactionFn: func(context.Context, ArchiveTransaction) (bool, error) {
+				insertTransactionFn: func(context.Context, Transaction) (bool, error) {
 					return false, nil
 				},
 			},
@@ -900,7 +900,7 @@ func TestEnsureBlockBranches(t *testing.T) {
 			name: "insert error",
 			writer: &coverageWriter{
 				blockExistsFn: func(context.Context, int64) (bool, error) { return false, nil },
-				insertBlockFn: func(context.Context, ArchiveBlock) (bool, error) { return false, sentinel },
+				insertBlockFn: func(context.Context, Block) (bool, error) { return false, sentinel },
 			},
 			client:   &coverageClient{block: block},
 			wantKind: dbError,
@@ -910,7 +910,7 @@ func TestEnsureBlockBranches(t *testing.T) {
 			name: "insert conflict",
 			writer: &coverageWriter{
 				blockExistsFn: func(context.Context, int64) (bool, error) { return false, nil },
-				insertBlockFn: func(context.Context, ArchiveBlock) (bool, error) { return false, nil },
+				insertBlockFn: func(context.Context, Block) (bool, error) { return false, nil },
 			},
 			client:   &coverageClient{block: block},
 			wantSkip: 1,

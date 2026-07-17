@@ -11,12 +11,12 @@ import (
 
 func TestDecodeEmptyReceipts(t *testing.T) {
 	// Empty data should return empty receipts
-	result, err := DecodeReceipts(nil)
+	result, err := Receipts(nil)
 	if err != nil {
-		t.Errorf("DecodeReceipts(nil) error: %v", err)
+		t.Errorf("Receipts(nil) error: %v", err)
 	}
 	if result == nil {
-		t.Fatal("DecodeReceipts(nil) returned nil")
+		t.Fatal("Receipts(nil) returned nil")
 	}
 	if len(result.Receipts) != 0 {
 		t.Errorf("Expected 0 receipts, got %d", len(result.Receipts))
@@ -31,12 +31,12 @@ func TestSnappyDecompression(t *testing.T) {
 	compressed := snappy.Encode(nil, emptyList)
 
 	// Should be able to decode the compressed data
-	result, err := DecodeReceipts(compressed)
+	result, err := Receipts(compressed)
 	if err != nil {
-		t.Errorf("DecodeReceipts(snappy) error: %v", err)
+		t.Errorf("Receipts(snappy) error: %v", err)
 	}
 	if result == nil {
-		t.Fatal("DecodeReceipts(snappy) returned nil")
+		t.Fatal("Receipts(snappy) returned nil")
 	}
 }
 
@@ -68,9 +68,9 @@ func TestDecodeRLPReceipts(t *testing.T) {
 	}
 
 	// Decode
-	result, err := DecodeReceipts(encoded)
+	result, err := Receipts(encoded)
 	if err != nil {
-		t.Fatalf("DecodeReceipts error: %v", err)
+		t.Fatalf("Receipts error: %v", err)
 	}
 
 	if len(result.Receipts) != 1 {
@@ -206,9 +206,9 @@ func TestSnappyBlobWithRLPLikeFirstByte(t *testing.T) {
 		t.Fatal("could not construct a snappy blob with an RLP-like first byte")
 	}
 
-	result, err := DecodeReceipts(compressed)
+	result, err := Receipts(compressed)
 	if err != nil {
-		t.Fatalf("DecodeReceipts misdetected snappy as raw RLP: %v", err)
+		t.Fatalf("Receipts misdetected snappy as raw RLP: %v", err)
 	}
 	if len(result.Receipts) != len(receipts) {
 		t.Fatalf("got %d receipts, want %d", len(result.Receipts), len(receipts))

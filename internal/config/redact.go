@@ -42,6 +42,13 @@ func renderField(f reflect.StructField, fv reflect.Value) string {
 	if fv.Type() == reflect.TypeOf(time.Duration(0)) {
 		return time.Duration(fv.Int()).String()
 	}
+	if fv.Type() == reflect.TypeOf(time.Time{}) {
+		t, _ := fv.Interface().(time.Time)
+		if t.IsZero() {
+			return "[unset]"
+		}
+		return t.Format(time.RFC3339)
+	}
 	switch fv.Kind() {
 	case reflect.String:
 		return fv.String()

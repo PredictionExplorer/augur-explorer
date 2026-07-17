@@ -172,6 +172,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		RandomWalk:    rwAPI,
 		FAQ:           faqProxy,
 		V2:            v2Server,
+		V1SunsetAt:    cfg.V1SunsetAt,
 		Extra:         []httpx.Middleware{metricsMiddleware()},
 		RegisterExtra: registerStaticAssetRoutes(staticAssetsConfig(cfg, logger)),
 	})

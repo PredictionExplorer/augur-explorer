@@ -24,6 +24,9 @@ import (
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
+// Legacy output-mode flags passed to the common.ParseIntFromRemoteOrError
+// helpers. Only the JSON branch survives (the HTML explorer is gone), but
+// the parameter — and both named values — are frozen with the v1 surface.
 const (
 	JSON = true
 	HTTP = false

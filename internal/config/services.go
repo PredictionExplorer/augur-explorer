@@ -2,6 +2,7 @@ package config
 
 import (
 	"strings"
+	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
@@ -91,6 +92,12 @@ type APIServer struct {
 	// the faq package's http://127.0.0.1:8000 default.
 	FAQUpstreamURL       string `env:"AI_BOT_BACKEND_URL"`
 	FAQUpstreamURLLegacy string `env:"FAQ_BOT_UPSTREAM_URL"`
+
+	// V1SunsetAt announces the earliest moment the deprecated v1 API may
+	// be removed (RFC 8594 Sunset header), RFC 3339. Leave unset until the
+	// ADR-0005 D6 sunset gates are met; v1 responses carry the Deprecation
+	// header and migration Link regardless.
+	V1SunsetAt time.Time `env:"V1_SUNSET_AT"`
 
 	DB  DB
 	Log Log

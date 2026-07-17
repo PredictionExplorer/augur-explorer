@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 )
 
+// Project selector values accepted by the archive commands.
 const (
 	ProjectCosmicGame = "cosmicgame"
 	ProjectRandomWalk = "randomwalk"

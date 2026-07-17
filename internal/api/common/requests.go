@@ -18,6 +18,8 @@ func RespondError(c *httpx.Context, errorText string) {
 	})
 }
 
+// RespondErrorJSON reports a request error in the frozen v1 envelope
+// ({"status":0,"error":...}) with HTTP 400.
 func RespondErrorJSON(c *httpx.Context, errorText string) {
 	c.JSON(http.StatusBadRequest, httpx.H{
 		"status": 0,

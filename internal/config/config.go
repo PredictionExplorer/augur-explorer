@@ -41,8 +41,8 @@ func (e *LoadError) Error() string {
 // structs are recursed into. All problems are aggregated into one *LoadError.
 //
 // Field kinds: string, bool (true/false, 1/0, yes/no, on/off), integers,
-// float64, time.Duration and []int64 (comma-separated). Anything else is a
-// programmer error and panics.
+// float64, time.Duration, time.Time (RFC 3339) and []int64
+// (comma-separated). Anything else is a programmer error and panics.
 func Load(dst any, getenv func(string) string) error {
 	rv := reflect.ValueOf(dst)
 	if rv.Kind() != reflect.Pointer || rv.IsNil() || rv.Elem().Kind() != reflect.Struct {
@@ -134,6 +134,14 @@ func setField(v reflect.Value, raw string) error {
 			return fmt.Errorf("cannot parse %q as a duration (examples: 30s, 5m)", raw)
 		}
 		v.SetInt(int64(d))
+		return nil
+	}
+	if v.Type() == reflect.TypeOf(time.Time{}) {
+		t, err := time.Parse(time.RFC3339, raw)
+		if err != nil {
+			return fmt.Errorf("cannot parse %q as an RFC 3339 timestamp (example: 2027-01-01T00:00:00Z)", raw)
+		}
+		v.Set(reflect.ValueOf(t))
 		return nil
 	}
 	switch v.Kind() {

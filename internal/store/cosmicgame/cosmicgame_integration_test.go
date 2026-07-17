@@ -41,7 +41,7 @@ func TestProcessingStatusRoundTrip(t *testing.T) {
 		}
 	})
 
-	want := cgmodel.CosmicGameProcStatus{LastEvtIdProcessed: 5098, LastBlockNum: 142}
+	want := cgmodel.ProcStatus{LastEvtIdProcessed: 5098, LastBlockNum: 142}
 	if err := r.UpdateProcessingStatus(ctx, &want); err != nil {
 		t.Fatalf("UpdateProcessingStatus: %v", err)
 	}

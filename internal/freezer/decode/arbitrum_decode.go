@@ -16,8 +16,8 @@ type Log struct {
 	Data    []byte
 }
 
-// DecodeArbitrumLog decodes a single log from raw RLP.
-func DecodeArbitrumLog(rawLog []byte) (*Log, error) {
+// ArbitrumLog decodes a single log from raw RLP.
+func ArbitrumLog(rawLog []byte) (*Log, error) {
 	var fields []rlp.RawValue
 	if err := rlp.DecodeBytes(rawLog, &fields); err != nil {
 		return nil, err
@@ -101,9 +101,9 @@ func decodeVarintLocal(data []byte) (uint64, int) {
 	return value, 0
 }
 
-// DecodeArbitrumReceipts decodes Arbitrum Nitro receipts (snappy or raw)
+// ArbitrumReceipts decodes Arbitrum Nitro receipts (snappy or raw)
 // and returns all logs from all receipts in the block.
-func DecodeArbitrumReceipts(compressedData []byte) ([]*Log, error) {
+func ArbitrumReceipts(compressedData []byte) ([]*Log, error) {
 	// Smart decompress - handles snappy, raw RLP, and header formats
 	data, err := smartDecompress(compressedData)
 	if err != nil {
@@ -155,7 +155,7 @@ func DecodeArbitrumReceipts(compressedData []byte) ([]*Log, error) {
 		}
 
 		for _, rawLog := range rawLogs {
-			log, err := DecodeArbitrumLog(rawLog)
+			log, err := ArbitrumLog(rawLog)
 			if err == nil {
 				allLogs = append(allLogs, log)
 			}

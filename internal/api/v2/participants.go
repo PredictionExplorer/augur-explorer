@@ -10,6 +10,8 @@ import (
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
 
+// ListCosmicGameBidders implements
+// GET /api/v2/cosmicgame/statistics/participants/bidders.
 func (s *Server) ListCosmicGameBidders(
 	ctx context.Context,
 	request ListCosmicGameBiddersRequestObject,
@@ -55,6 +57,8 @@ func (s *Server) ListCosmicGameBidders(
 	}, nil
 }
 
+// ListCosmicGameWinners implements
+// GET /api/v2/cosmicgame/statistics/participants/winners.
 func (s *Server) ListCosmicGameWinners(
 	ctx context.Context,
 	request ListCosmicGameWinnersRequestObject,
@@ -100,6 +104,8 @@ func (s *Server) ListCosmicGameWinners(
 	}, nil
 }
 
+// ListCosmicGameDonors implements
+// GET /api/v2/cosmicgame/statistics/participants/eth-donors.
 func (s *Server) ListCosmicGameDonors(
 	ctx context.Context,
 	request ListCosmicGameDonorsRequestObject,
@@ -145,6 +151,8 @@ func (s *Server) ListCosmicGameDonors(
 	}, nil
 }
 
+// ListCosmicGameCstStakers implements
+// GET /api/v2/cosmicgame/statistics/participants/cst-stakers.
 func (s *Server) ListCosmicGameCstStakers(
 	ctx context.Context,
 	request ListCosmicGameCstStakersRequestObject,
@@ -190,6 +198,8 @@ func (s *Server) ListCosmicGameCstStakers(
 	}, nil
 }
 
+// ListCosmicGameRandomWalkStakers implements
+// GET /api/v2/cosmicgame/statistics/participants/random-walk-stakers.
 func (s *Server) ListCosmicGameRandomWalkStakers(
 	ctx context.Context,
 	request ListCosmicGameRandomWalkStakersRequestObject,
@@ -235,6 +245,8 @@ func (s *Server) ListCosmicGameRandomWalkStakers(
 	}, nil
 }
 
+// ListCosmicGameDualStakers implements
+// GET /api/v2/cosmicgame/statistics/participants/dual-stakers.
 func (s *Server) ListCosmicGameDualStakers(
 	ctx context.Context,
 	request ListCosmicGameDualStakersRequestObject,

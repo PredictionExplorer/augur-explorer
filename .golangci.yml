@@ -18,6 +18,7 @@ linters:
     - misspell       # commonly misspelled English words
     - noctx          # HTTP requests must carry a context
     - nolintlint     # nolint directives must be specific and justified
+    - revive         # doc-comment enforcement only; see settings below
     - rowserrcheck   # sql.Rows.Err must be checked
     - sqlclosecheck  # sql.Rows/Stmt must be closed
     - unconvert      # redundant type conversions
@@ -42,6 +43,13 @@ linters:
     gosec:
       excludes:
         - G115 # integer overflow conversions — pervasive in chain math; revisit per-case
+    revive:
+      # Only the documentation rules run (an empty rule list would enable
+      # revive's whole default set): every exported symbol and every package
+      # carries a doc comment (MODERNIZATION.md §8.5).
+      rules:
+        - name: exported
+        - name: package-comments
     staticcheck:
       checks:
         - all
@@ -56,8 +64,9 @@ linters:
     generated: lax
     warn-unused: false
     rules:
-      # Generated contract bindings are vendored as-is.
-      - path: ^contracts/
+      # Generated contract bindings are vendored as-is (the handwritten
+      # contracts/internal/buildjson tooling is fully linted).
+      - path: ^contracts/(cosmicgame|randomwalk)/
         linters:
           - errcheck
           - gosec
@@ -65,6 +74,7 @@ linters:
           - unused
           - unconvert
           - unparam
+          - revive
       # The v1 wire model serializes by field name (no JSON tags), so the
       # legacy Id/Ts field spellings are frozen by the parity goldens and
       # cannot follow the initialism convention until v1 is retired with
@@ -90,4 +100,4 @@ formatters:
         - localmodule
   exclusions:
     paths:
-      - ^contracts/
+      - ^contracts/(cosmicgame|randomwalk)/

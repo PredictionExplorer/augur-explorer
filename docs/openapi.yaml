@@ -3,6 +3,17 @@ info:
   title: RWCG Backend API
   version: 1.0.0
   description: |
+    **DEPRECATED (2026-07-16):** the v1 API is frozen and deprecated. Every
+    `/api/cosmicgame/*` and `/api/randomwalk/*` operation is marked
+    `deprecated: true` and answers with an RFC 9745 `Deprecation` header plus
+    a `Link` to the migration guide (`docs/api-v2-migration.md`), which maps
+    every v1 path to its `/api/v2` replacement in `docs/openapi-v2.yaml` —
+    the canonical specification for new integrations. v1 keeps answering
+    byte-identically until the sunset gates of ADR-0005 are met (announced
+    via the `Sunset` header); the exceptions that are *not* deprecated are
+    the operational endpoints (`/healthz`, `/readyz`, `/version`), the
+    contract-pinned metadata routes and the FAQ proxy.
+
     JSON API served by cmd/apiserver (net/http) for two related on-chain projects:
 
     * **CosmicGame / Cosmic Signature** - a bidding game on Arbitrum. Endpoints under
@@ -1990,6 +2001,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/metadata/{token_id}:
     get:
+      deprecated: true
       tags: [metadata]
       summary: Cosmic Signature token metadata
       description: OpenSea-compatible metadata JSON for a Cosmic Signature token; image and animation_url point at the /images asset mirror.
@@ -2015,6 +2027,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/metadata/{token_id}:
     get:
+      deprecated: true
       tags: [metadata]
       summary: RandomWalk token metadata
       parameters:
@@ -2131,6 +2144,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/dashboard:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Dashboard snapshot (current round, prices, global statistics)
       description: Aggregated live view combining cached contract state, live contract reads and database statistics. Always returns HTTP 200.
@@ -2212,6 +2226,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/counters:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Global record counters
       responses:
@@ -2229,6 +2244,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/bidders:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique bidders
       responses:
@@ -2248,6 +2264,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/winners:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique winners
       responses:
@@ -2267,6 +2284,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/leaderboard/roi:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: ROI leaderboard
       parameters:
@@ -2312,6 +2330,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/claims/by_round:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Prize claim summary per round
       responses:
@@ -2331,6 +2350,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/claims/detail/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Prize claim drill-down for one round
       parameters:
@@ -2356,6 +2376,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/donors:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique donors
       responses:
@@ -2375,6 +2396,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/stakers/cst:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique CST stakers
       responses:
@@ -2394,6 +2416,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/stakers/randomwalk:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique RandomWalk stakers
       responses:
@@ -2413,6 +2436,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/stakers/rwalk:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique RandomWalk stakers (legacy alias)
       description: Legacy alias of /api/cosmicgame/statistics/unique/stakers/randomwalk.
@@ -2433,6 +2457,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/unique/stakers/both:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Unique stakers of both token types
       responses:
@@ -2452,6 +2477,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/bidding/activity/{init_ts}/{fin_ts}/{interval_secs}:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Bid activity buckets with spike detection
       description: Interval defaults to 3600 seconds when a non-positive value is supplied.
@@ -2487,6 +2513,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/bidding/frequency/{init_ts}/{fin_ts}/{interval_secs}:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Bid frequency buckets
       description: Interval defaults to 86400 seconds when a non-positive value is supplied.
@@ -2514,6 +2541,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/bidding/top_active_periods/{n}/{init_ts}/{fin_ts}:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Active bidding periods of the top bidders
       parameters:
@@ -2559,6 +2587,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/statistics/bidding/time_bounds:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: First and last bid timestamps
       responses:
@@ -2577,6 +2606,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/user/info/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-statistics]
       summary: Full user profile (bids, prizes, donations, staking, transfers)
       description: Returns HTTP 200 with an empty-shaped payload when the wallet is not indexed yet.
@@ -2663,6 +2693,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/rounds/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-rounds]
       summary: List rounds (prize claims)
       parameters:
@@ -2685,6 +2716,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/rounds/info/{prize_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-rounds]
       summary: Round details
       parameters:
@@ -2704,6 +2736,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/rounds/current/time:
     get:
+      deprecated: true
       tags: [cosmicgame-rounds]
       summary: Current round main prize time (live contract read)
       description: Always returns HTTP 200; when the contract is unavailable the body carries status=0 with an error message and CurRoundPrizeTime=0.
@@ -2722,6 +2755,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/history/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Global prize history (detailed)
       parameters:
@@ -2744,6 +2778,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/history/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Prize history for one user
       description: Returns HTTP 200 with an empty UserPrizeHistory when the wallet is not indexed.
@@ -2770,6 +2805,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/all/global:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: All ETH prize deposits (default pagination)
       description: Same handler as the paginated variant; without path parameters offset=0 and limit=10000.
@@ -2792,6 +2828,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/all/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: All ETH prize deposits (paginated)
       parameters:
@@ -2816,6 +2853,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/raffle/global:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle ETH deposits (default pagination)
       responses:
@@ -2837,6 +2875,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/raffle/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle ETH deposits (paginated)
       parameters:
@@ -2861,6 +2900,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/chronowarrior/global:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Chrono Warrior ETH deposits (default pagination)
       responses:
@@ -2882,6 +2922,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/chronowarrior/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Chrono Warrior ETH deposits (paginated)
       parameters:
@@ -2906,6 +2947,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/all/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: All ETH prize deposits for one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -2930,6 +2972,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/raffle/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle ETH deposits for one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -2954,6 +2997,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/chronowarrior/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Chrono Warrior ETH deposits for one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -2978,6 +3022,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/eth/unclaimed/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Unclaimed ETH prize deposits for one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -3004,6 +3049,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/deposits/raffle/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle ETH deposits for one user (with user info)
       description: Responds 400 when the address is unknown to the indexer.
@@ -3027,6 +3073,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/deposits/chrono_warrior/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Chrono Warrior ETH deposits for one user (with user info)
       description: Responds 400 when the address is unknown to the indexer.
@@ -3050,6 +3097,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/prizes/deposits/unclaimed/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Unclaimed ETH prize deposits for one user (alias)
       description: Same handler as /api/cosmicgame/prizes/eth/unclaimed/by_user/....
@@ -3076,6 +3124,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/deposits/list:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: ETH prize deposit list (default pagination)
       description: Without path parameters offset=0 and limit=10000.
@@ -3098,6 +3147,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/deposits/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: ETH prize deposit list (paginated)
       parameters:
@@ -3122,6 +3172,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/deposits/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Prize ETH deposits for one round
       parameters:
@@ -3144,6 +3195,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/eth_deposits/all/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: All ETH deposits (legacy path)
       description: Legacy alias of /api/cosmicgame/prizes/eth/all/global/....
@@ -3169,6 +3221,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/eth_deposits/raffle_eth/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle ETH deposits (legacy path)
       parameters:
@@ -3193,6 +3246,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/eth_deposits/chronowarrior_eth/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Chrono Warrior ETH deposits (legacy path)
       parameters:
@@ -3217,6 +3271,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/nft/all/list:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle NFT winners (default pagination)
       description: Without path parameters offset=0 and limit=10000.
@@ -3239,6 +3294,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/nft/all/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle NFT winners (paginated)
       parameters:
@@ -3263,6 +3319,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/nft/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle and staking NFT winners for one round
       parameters:
@@ -3288,6 +3345,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/raffle/nft/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Raffle NFT winnings for one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -3311,6 +3369,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/user/notif_red_box/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-prizes]
       summary: Pending winnings summary (red-box notification)
       description: Returns HTTP 200 with an empty Winnings array when the wallet is not indexed; otherwise Winnings is a claim-info object.
@@ -3338,6 +3397,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/list/all/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: List all bids (paginated)
       parameters:
@@ -3362,6 +3422,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/info/{evtlog_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Bid details by event log id
       parameters:
@@ -3385,6 +3446,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/info_by_pos/{round_num}/{bid_position}:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Bid details by round and position
       parameters:
@@ -3409,6 +3471,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/with_message/by_round/{round}:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Bids with non-empty messages for one round
       parameters:
@@ -3453,6 +3516,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/list/by_round/{round_num}/{sort}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Bids of one round (sorted, paginated)
       parameters:
@@ -3486,6 +3550,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/bid_type_ratio:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Bid-type composition per interval
       parameters:
@@ -3522,6 +3587,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/used_randomwalk_nfts:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: RandomWalk tokens already used in bids
       responses:
@@ -3541,6 +3607,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/used_rwalk_nfts:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: RandomWalk tokens already used in bids (legacy alias)
       description: Legacy alias of /api/cosmicgame/bid/used_randomwalk_nfts.
@@ -3561,6 +3628,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/cst_price:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Current CST bid price (live contract read)
       responses:
@@ -3582,6 +3650,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/eth_price:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Current ETH bid price (live contract read)
       responses:
@@ -3603,6 +3672,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/bid/current_special_winners:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Live special-winner state (endurance champion, Chrono Warrior, last bidders)
       description: All values are read from the contract at one block. LastCstBidderLastBidTime and LastCstBidEventLogId are present only when a last CST bidder exists.
@@ -3635,6 +3705,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/get_banned_bids:
     get:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: List banned (moderated) bids
       description: Returns a bare JSON array (no envelope) for parity with the legacy FastAPI backend.
@@ -3650,6 +3721,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ban_bid:
     post:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Ban a bid (admin)
       description: Admin-only bid moderation. Requires the X-Admin-Key header matching ADMIN_API_KEY; additionally rate limited to 2 rps (burst 5) per IP.
@@ -3672,6 +3744,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/unban_bid:
     post:
+      deprecated: true
       tags: [cosmicgame-bids]
       summary: Unban a bid (admin)
       description: Admin-only bid moderation. Requires the X-Admin-Key header matching ADMIN_API_KEY; additionally rate limited to 2 rps (burst 5) per IP.
@@ -3694,6 +3767,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/list/all/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: List Cosmic Signature tokens
       parameters:
@@ -3718,6 +3792,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/list/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Cosmic Signature tokens owned by one user
       description: Returns HTTP 200 with an empty UserTokens list (and Offset/Limit echo) when the wallet is not indexed.
@@ -3750,6 +3825,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/info/{token_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Cosmic Signature token details
       description: PrizeInfo is included only for main-prize tokens (RecordType 3).
@@ -3771,6 +3847,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/names/history/{token_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Name history of one token
       parameters:
@@ -3793,6 +3870,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/names/search/{name}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Search tokens by name
       parameters:
@@ -3819,6 +3897,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/names/named_only:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: List all named tokens
       responses:
@@ -3838,6 +3917,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/transfers/all/{token_id}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Ownership transfers of one token
       parameters:
@@ -3864,6 +3944,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/transfers/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Cosmic Signature transfers of one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -3892,6 +3973,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/distribution:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Cosmic Signature token ownership distribution
       responses:
@@ -3911,6 +3993,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ct/balances:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: CosmicToken (ERC-20) holder balances
       responses:
@@ -3930,6 +4013,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ct/statistics:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: CosmicToken statistics (database plus live contract info)
       responses:
@@ -3952,6 +4036,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ct/summary/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: CosmicToken summary for one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -3972,6 +4057,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ct/transfers/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: CosmicToken transfers of one user
       description: Responds 400 when the address is unknown to the indexer.
@@ -4000,6 +4086,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ct/total_supply_history_by_bid:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: CST total-supply history per bid
       responses:
@@ -4019,6 +4106,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/ct/total_supply_history_by_date/{from_date}/{to_date}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: CST total-supply history per calendar day
       parameters:
@@ -4051,6 +4139,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/user/balances/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-tokens]
       summary: Live ETH and CosmicToken balances of an address
       description: Balances are read from the blockchain; UserAid is 0 when the address is not indexed yet.
@@ -4078,6 +4167,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/simple/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Simple ETH donations to the game (paginated)
       parameters:
@@ -4102,6 +4192,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/simple/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Simple ETH donations for one round
       parameters:
@@ -4123,6 +4214,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/with_info/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ETH donations with JSON info (paginated)
       parameters:
@@ -4147,6 +4239,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/with_info/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ETH donations with JSON info for one round
       parameters:
@@ -4169,6 +4262,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/with_info/info/{record_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Single ETH donation with JSON info
       parameters:
@@ -4189,6 +4283,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ETH donations made by one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4213,6 +4308,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/both/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: All ETH donations (both kinds) for one round
       parameters:
@@ -4235,6 +4331,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/eth/both/all:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: All ETH donations (both kinds)
       responses:
@@ -4254,6 +4351,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/charity/deposits:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: All charity wallet deposits
       responses:
@@ -4273,6 +4371,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/charity/cg_deposits:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Charity deposits sent by the CosmicGame contract
       responses:
@@ -4292,6 +4391,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/charity/voluntary:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Voluntary charity deposits
       responses:
@@ -4311,6 +4411,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/charity/withdrawals:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Charity wallet withdrawals
       responses:
@@ -4330,6 +4431,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/list/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated NFTs (paginated)
       parameters:
@@ -4354,6 +4456,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/info/{record_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated NFT details
       parameters:
@@ -4373,6 +4476,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: NFTs donated by one user (donor perspective)
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4397,6 +4501,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/claims:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated NFT claims (default pagination)
       description: Without path parameters offset=0 and limit=10000.
@@ -4419,6 +4524,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/claims/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated NFT claims (paginated)
       parameters:
@@ -4443,6 +4549,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/claims/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated NFT claims by one user
       description: Returns HTTP 200 with an empty list (UserInfo carries just the address) when the wallet is not indexed.
@@ -4466,6 +4573,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/statistics:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: NFT donation statistics per contract
       responses:
@@ -4485,6 +4593,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/by_round/{prize_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: NFTs donated during one round
       parameters:
@@ -4507,6 +4616,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/by_token/{token_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: NFT donations of one token contract
       parameters:
@@ -4533,6 +4643,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/unclaimed/by_round/{prize_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Unclaimed donated NFTs for one round
       parameters:
@@ -4555,6 +4666,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/nft/unclaimed/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Unclaimed donated NFTs of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4579,6 +4691,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/by_round/detailed/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ERC-20 donations for one round (detailed)
       parameters:
@@ -4601,6 +4714,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/by_round/all/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: All ERC-20 donations for one round
       parameters:
@@ -4623,6 +4737,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/by_round/summarized/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ERC-20 donations for one round (summarized per token)
       parameters:
@@ -4645,6 +4760,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/donated/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ERC-20 tokens donated by one user (donor perspective)
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4669,6 +4785,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ERC-20 donation prizes won by one user (winner perspective)
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4693,6 +4810,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: All ERC-20 donations (paginated)
       parameters:
@@ -4717,6 +4835,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/info/{record_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: ERC-20 donation details
       parameters:
@@ -4736,6 +4855,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/claims:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated ERC-20 claims (default pagination)
       description: Without path parameters offset=0 and limit=10000.
@@ -4758,6 +4878,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/claims/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated ERC-20 claims (paginated)
       parameters:
@@ -4782,6 +4903,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/claims/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated ERC-20 claims by one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4806,6 +4928,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/donations/erc20/claims/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-donations]
       summary: Donated ERC-20 claims for one round
       parameters:
@@ -4828,6 +4951,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/staked_tokens/all:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: All currently staked CST tokens
       responses:
@@ -4847,6 +4971,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/staked_tokens/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Staked CST tokens of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4871,6 +4996,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/actions/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Global CST staking action history
       parameters:
@@ -4895,6 +5021,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/actions/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: CST staking actions of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4923,6 +5050,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/actions/info/{action_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: CST staking action details (stake plus matching unstake)
       parameters:
@@ -4942,6 +5070,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/global:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Global CST staking reward deposits
       responses:
@@ -4961,6 +5090,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/to_claim/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Staking rewards pending claim for one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -4985,6 +5115,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/collected/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Collected staking rewards of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5013,6 +5144,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{user_addr}/{deposit_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Stake action ids eligible for one reward deposit
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5043,6 +5175,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/by_user/by_token/summary/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Per-token staking reward summary for one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5067,6 +5200,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/by_user/by_token/details/{user_addr}/{token_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Per-token staking reward details for one user and token
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5093,6 +5227,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/by_user/by_deposit/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Per-deposit staking rewards for one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5117,6 +5252,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/rewards/by_round/{round_num}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: CST staking rewards distributed in one round
       parameters:
@@ -5139,6 +5275,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/mints/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Reward NFT mints for CST stakers (global)
       parameters:
@@ -5163,6 +5300,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/cst/mints/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Reward NFT mints for one CST staker
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5185,6 +5323,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/actions/info/{action_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: RandomWalk staking action details
       parameters:
@@ -5204,6 +5343,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/actions/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Global RandomWalk staking action history
       parameters:
@@ -5228,6 +5368,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/actions/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: RandomWalk staking actions of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5256,6 +5397,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/mints/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Reward NFT mints for RandomWalk stakers (global)
       parameters:
@@ -5278,6 +5420,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/mints/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Reward NFT mints for one RandomWalk staker
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5300,6 +5443,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/staked_tokens/all:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: All currently staked RandomWalk tokens
       responses:
@@ -5319,6 +5463,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/randomwalk/staked_tokens/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Staked RandomWalk tokens of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5343,6 +5488,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/actions/info/{action_id}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: RandomWalk staking action details (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/actions/info/....
@@ -5363,6 +5509,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/actions/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Global RandomWalk staking actions (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/actions/global/....
@@ -5388,6 +5535,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/actions/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: RandomWalk staking actions of one user (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/actions/by_user/....
@@ -5416,6 +5564,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/mints/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Reward NFT mints for RandomWalk stakers (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/mints/global/....
@@ -5439,6 +5588,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/mints/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Reward NFT mints for one RandomWalk staker (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/mints/by_user/....
@@ -5461,6 +5611,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/staked_tokens/all:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: All currently staked RandomWalk tokens (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/staked_tokens/all.
@@ -5481,6 +5632,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/staking/rwalk/staked_tokens/by_user/{user_addr}:
     get:
+      deprecated: true
       tags: [cosmicgame-staking]
       summary: Staked RandomWalk tokens of one user (legacy alias)
       description: Legacy alias of /api/cosmicgame/staking/randomwalk/staked_tokens/by_user/....
@@ -5505,6 +5657,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/marketing/rewards/global/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: Marketing reward history (global)
       parameters:
@@ -5529,6 +5682,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/marketing/rewards/by_user/{user_addr}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: Marketing rewards of one user
       description: Returns HTTP 200 with an empty list when the wallet is not indexed.
@@ -5557,6 +5711,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/marketing/config/current:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: Current marketing wallet configuration (live contract read)
       responses:
@@ -5577,6 +5732,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/time/current:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: Current blockchain time (pending block timestamp)
       responses:
@@ -5597,6 +5753,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/time/until_prize:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: Seconds until the main prize can be claimed (live contract read)
       responses:
@@ -5617,6 +5774,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/system/modelist:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: System-mode change events (default pagination)
       description: Without path parameters offset=0 and limit=10000.
@@ -5639,6 +5797,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/system/modelist/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: System-mode change events (paginated)
       description: With offset=-1 the list covers events from contract deployment; when empty a synthetic pre-round-0 row (EvtLogId -1) is returned.
@@ -5664,6 +5823,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/system/admin_events/{evtlog_start}/{evtlog_end}:
     get:
+      deprecated: true
       tags: [cosmicgame-system]
       summary: Admin configuration events in an event-log range
       parameters:
@@ -5696,6 +5856,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/current_offers/{order_by}:
     get:
+      deprecated: true
       tags: [randomwalk-trading]
       summary: Active marketplace offers
       parameters:
@@ -5723,6 +5884,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/floor_price:
     get:
+      deprecated: true
       tags: [randomwalk-trading]
       summary: Current floor price
       responses:
@@ -5745,6 +5907,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/trading/history/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [randomwalk-trading]
       summary: Trading history (paginated)
       parameters:
@@ -5769,6 +5932,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/trading/by_user/{user_aid}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [randomwalk-trading]
       summary: Trading history of one user
       description: The offset and limit path segments are accepted but currently ignored by the handler (the full per-user history is returned).
@@ -5799,6 +5963,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/trading/sales/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [randomwalk-trading]
       summary: Sale history (completed sales, paginated)
       parameters:
@@ -5823,6 +5988,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/tokens/list/sequential:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: All minted tokens in mint order
       responses:
@@ -5842,6 +6008,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/tokens/list/by_period/{init_ts}/{fin_ts}:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: Tokens minted within a time range
       parameters:
@@ -5867,6 +6034,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/tokens/info/{token_id}:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: Token details
       parameters:
@@ -5886,6 +6054,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/randomwalk/tokens/info/{token_id}:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: Token details (reverse-proxy friendly alias)
       description: Same handler as /api/randomwalk/tokens/info/{token_id}; provided for deployments where only /api/cosmicgame/* is forwarded to the app.
@@ -5906,6 +6075,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/tokens/name_changes/{token_id}:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: Name changes of one token
       parameters:
@@ -5927,6 +6097,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/tokens/history/{token_id}/{offset}/{limit}:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: Full event history of one token
       parameters:
@@ -5953,6 +6124,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/tokens/by_user/{user_aid}:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: Tokens owned by one user
       description: The user identifier can be a numeric address id or a 40/42-character hex address.
@@ -5981,6 +6153,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/contracts:
     get:
+      deprecated: true
       tags: [randomwalk-tokens]
       summary: RandomWalk contract addresses
       description: Marketplace and RandomWalk NFT contract addresses from the rw_contracts table (same source as the ETL).
@@ -6002,6 +6175,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/statistics/by_token:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Collection statistics
       responses:
@@ -6021,6 +6195,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/statistics/by_market:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Marketplace statistics
       responses:
@@ -6040,6 +6215,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/statistics/trading_volume/{init_ts}/{fin_ts}/{interval_secs}:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Trading volume per period
       parameters:
@@ -6066,6 +6242,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/statistics/mint_intervals:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Time intervals between consecutive mints
       responses:
@@ -6087,6 +6264,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/statistics/floor_price/{init_ts}/{fin_ts}/{interval_secs}:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Floor price over time
       description: init_ts 0 defaults to the collection launch timestamp, fin_ts 0 defaults to now, interval 0 (or max int) defaults to one day.
@@ -6122,6 +6300,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/statistics/withdrawal_chart:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Withdrawal chart data
       responses:
@@ -6147,6 +6326,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/user/info/{user_aid}:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: User trading profile
       parameters:
@@ -6175,6 +6355,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/top5tokens:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Top five traded tokens
       responses:
@@ -6194,6 +6375,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/mint_report:
     get:
+      deprecated: true
       tags: [randomwalk-statistics]
       summary: Monthly mint report
       responses:
@@ -6213,6 +6395,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/explore/random:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Random token ids for exploration
       description: Returns a bare JSON array of token ids (no envelope).
@@ -6239,6 +6422,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/random:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Random token ids (legacy alias)
       description: Legacy alias of /api/randomwalk/explore/random; returns a bare JSON array of token ids.
@@ -6265,6 +6449,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/token-ranking/order:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Token ids ordered by Elo rating (ascending)
       description: Returns a bare JSON array of token ids (no envelope).
@@ -6285,6 +6470,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/rating_order:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Token ids ordered by Elo rating (legacy alias)
       description: Legacy alias of /api/randomwalk/token-ranking/order.
@@ -6305,6 +6491,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/vote_count:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Total number of beauty-contest votes
       responses:
@@ -6325,6 +6512,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/ranking/sign-challenge:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Issue a one-time nonce for a wallet-signed vote
       description: The nonce expires after 15 minutes and is consumed by POST /api/randomwalk/add_game.
@@ -6348,6 +6536,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/ranking/beauty-pair-ids:
     get:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Random pair of token ids for the beauty contest
       description: When voter is supplied the pair is re-rolled up to 50 times to avoid pairs that wallet already voted on; pair_exhausted is true when no unvoted pair could be found.
@@ -6383,6 +6572,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/token-ranking/match:
     post:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Record a ranking match result (admin)
       description: Records a pairwise beauty-contest result and updates Elo ratings. Requires the X-Ranking-Admin-Key header (fails closed with 503 when no key is configured) and is rate limited to 2 rps (burst 5) per IP. Public voting must use POST /api/randomwalk/add_game instead.
@@ -6417,6 +6607,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/randomwalk/add_game:
     post:
+      deprecated: true
       tags: [randomwalk-ranking]
       summary: Submit a wallet-signed beauty-contest vote
       description: Verifies an EIP-191 personal_sign signature over the vote message, consumes the one-time sign_nonce, stores the voter and enforces one vote per pair per wallet. Rate limited to 1 rps (burst 10) per IP.

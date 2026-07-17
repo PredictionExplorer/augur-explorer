@@ -23,7 +23,7 @@ var RandomWalkEventSigs = map[string]string{
 	"ddf252ad": "Transfer",
 }
 
-func TestDecodeArbitrumReceipts(t *testing.T) {
+func TestArbitrumReceipts(t *testing.T) {
 	// Open freezer reader
 	fr, err := freezerscanner.NewFreezerReader("../mainnet")
 	if err != nil {
@@ -48,7 +48,7 @@ func TestDecodeArbitrumReceipts(t *testing.T) {
 			continue
 		}
 
-		logs, err := DecodeArbitrumReceipts(data)
+		logs, err := ArbitrumReceipts(data)
 		if err != nil {
 			continue
 		}
@@ -108,7 +108,7 @@ func TestDecodeFirstBlocks(t *testing.T) {
 			continue
 		}
 
-		logs, err := DecodeArbitrumReceipts(data)
+		logs, err := ArbitrumReceipts(data)
 		if err != nil {
 			t.Logf("Block %d: decode error: %v", blockNum, err)
 			continue

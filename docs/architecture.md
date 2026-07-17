@@ -54,14 +54,21 @@ flowchart LR
    processing watermark only advances past fully processed blocks.
    PostgreSQL triggers maintain aggregate tables (`cg_bidder`,
    `cg_glob_stats`, ...) so reads stay cheap.
-2. **Serve.** `apiserver` exposes the domain tables through the frozen v1 JSON
-   API ([openapi.yaml](openapi.yaml)) and the incremental, OpenAPI-first v2
-   API ([openapi-v2.yaml](openapi-v2.yaml)). V2 handlers implement generated
-   strict stdlib interfaces on an injected `internal/api/v2.Server`; both
-   versions share the same middleware and pgx store. The server also exposes
-   ERC-721 `tokenURI` metadata at `/metadata/:token_id` (host-dispatched
-   between the two collections) and the NFT image/video asset mirror at
-   `/images/*`.
+2. **Serve.** `apiserver` exposes the domain tables through two API
+   generations: the OpenAPI-first v2 API ([openapi-v2.yaml](openapi-v2.yaml))
+   is the canonical surface — its endpoint inventory is complete and every v1
+   read/write behavior has a bounded replacement (mapped in
+   [api-v2-migration.md](api-v2-migration.md)) — while the frozen v1 API
+   ([openapi.yaml](openapi.yaml)) is deprecated: every v1 response carries an
+   RFC 9745 `Deprecation` header and a migration-guide `Link` (plus an RFC
+   8594 `Sunset` header once `V1_SUNSET_AT` announces the removal date), and
+   v1 keeps answering byte-identically until the ADR-0005 sunset gates are
+   met. V2 handlers implement generated strict stdlib interfaces on an
+   injected `internal/api/v2.Server`; both versions share the same middleware
+   and pgx store. The server also exposes ERC-721 `tokenURI` metadata at
+   `/metadata/:token_id` (host-dispatched between the two collections, and
+   permanently outside the versioned API because the deployed contracts pin
+   the path) and the NFT image/video asset mirror at `/images/*`.
 3. **Notify.** `notibot` polls for new events and posts to Discord/Twitter;
    `rwalk-alarm` and `srvmonitor` watch service health and alert via WhatsApp
    and a terminal dashboard.
@@ -87,7 +94,7 @@ flowchart LR
 | `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients, the unified RandomWalk bot (`rwbot`) and the URL watchdog (`urlalarm`) |
 | `internal/srvmonitor` | Terminal server-monitoring engine (monitors, alarm tracker, layout; termbox UI in `termboxui`) |
 | `internal/testdb` | Disposable migrated Postgres for integration tests (testcontainers) |
-| `contracts/` | abigen-generated Go bindings (do not edit by hand) |
+| `contracts/` | abigen-generated Go bindings (`bindings.gen.go` per package, regenerated from committed `buildjson/` artifacts with the go.mod-pinned abigen — see `contracts/README.md`) |
 | `db/migrations` | goose schema migrations — the source of truth for the schema |
 | `deploy/` | Dockerfile, systemd units |
 | `faq-bot/` | Separate Python/Next.js RAG stack, proxied by apiserver |
@@ -110,6 +117,14 @@ Recorded as ADRs in [docs/adr/](adr/):
   closed; all routes are rate limited per client IP.
 - **ADR-0005** — OpenAPI-first API v2 with generated strict stdlib handlers,
   opaque cursor pagination, RFC 9457 errors, and traffic-gated v1 retirement.
+- **ADR-0006** — coverage policy: canonical handwritten-production metrics,
+  generated/test-only exclusions, ratcheted floors and the ≥95% changed-code
+  commit gate.
+- **ADR-0007** — HTTP edge: global gzip compression and weak-ETag
+  conditional requests in the middleware chain, transport-level headers.
+- **ADR-0008** — v2 write conventions: POSTs with typed 201 bodies,
+  RFC 9457 problem details, spec-declared auth headers and per-operation
+  rate limits.
 
 ## Databases and schemas
 

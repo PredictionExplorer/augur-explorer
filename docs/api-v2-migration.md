@@ -4,6 +4,12 @@ API v2 decomposes the frozen v1 mega-responses into typed resources. V1
 remains available while consumers migrate and is removed only after the
 sunset gates in [ADR-0005](adr/0005-api-v2.md) are met.
 
+As of 2026-07-16 the v1 surface is formally deprecated: every v1 operation
+is flagged `deprecated: true` in [openapi.yaml](openapi.yaml) and answers
+with an RFC 9745 `Deprecation` header plus a `Link` to this guide. The
+RFC 8594 `Sunset` header will announce the removal date once the gates are
+met (`V1_SUNSET_AT`).
+
 ## CosmicGame dashboard
 
 Replace `GET /api/cosmicgame/statistics/dashboard` with the following

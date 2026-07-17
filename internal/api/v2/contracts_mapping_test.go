@@ -28,19 +28,19 @@ func TestMapContractAddressRegistry(t *testing.T) {
 		t.Fatal("zero implementation address accepted")
 	}
 
-	invalidFields := map[string]func(*cgmodel.CosmicGameContractAddrs){
-		"CosmicGame":         func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicGameAddr = "bad" },
-		"CosmicSignature":    func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicSignatureAddr = "bad" },
-		"CosmicToken":        func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicTokenAddr = "bad" },
-		"CosmicDAO":          func(r *cgmodel.CosmicGameContractAddrs) { r.CosmicDaoAddr = "bad" },
-		"charity wallet":     func(r *cgmodel.CosmicGameContractAddrs) { r.CharityWalletAddr = "bad" },
-		"prizes wallet":      func(r *cgmodel.CosmicGameContractAddrs) { r.PrizesWalletAddr = "bad" },
-		"RandomWalk":         func(r *cgmodel.CosmicGameContractAddrs) { r.RandomWalkAddr = "bad" },
-		"CST staking":        func(r *cgmodel.CosmicGameContractAddrs) { r.StakingWalletCSTAddr = "bad" },
-		"RandomWalk staking": func(r *cgmodel.CosmicGameContractAddrs) { r.StakingWalletRWalkAddr = "bad" },
-		"marketing":          func(r *cgmodel.CosmicGameContractAddrs) { r.MarketingWalletAddr = "bad" },
-		"marketplace":        func(r *cgmodel.CosmicGameContractAddrs) { r.MarketplaceAddr = "bad" },
-		"implementation":     func(r *cgmodel.CosmicGameContractAddrs) { r.ImplementationAddr = "bad" },
+	invalidFields := map[string]func(*cgmodel.ContractAddrs){
+		"CosmicGame":         func(r *cgmodel.ContractAddrs) { r.CosmicGameAddr = "bad" },
+		"CosmicSignature":    func(r *cgmodel.ContractAddrs) { r.CosmicSignatureAddr = "bad" },
+		"CosmicToken":        func(r *cgmodel.ContractAddrs) { r.CosmicTokenAddr = "bad" },
+		"CosmicDAO":          func(r *cgmodel.ContractAddrs) { r.CosmicDaoAddr = "bad" },
+		"charity wallet":     func(r *cgmodel.ContractAddrs) { r.CharityWalletAddr = "bad" },
+		"prizes wallet":      func(r *cgmodel.ContractAddrs) { r.PrizesWalletAddr = "bad" },
+		"RandomWalk":         func(r *cgmodel.ContractAddrs) { r.RandomWalkAddr = "bad" },
+		"CST staking":        func(r *cgmodel.ContractAddrs) { r.StakingWalletCSTAddr = "bad" },
+		"RandomWalk staking": func(r *cgmodel.ContractAddrs) { r.StakingWalletRWalkAddr = "bad" },
+		"marketing":          func(r *cgmodel.ContractAddrs) { r.MarketingWalletAddr = "bad" },
+		"marketplace":        func(r *cgmodel.ContractAddrs) { r.MarketplaceAddr = "bad" },
+		"implementation":     func(r *cgmodel.ContractAddrs) { r.ImplementationAddr = "bad" },
 	}
 	for name, mutate := range invalidFields {
 		t.Run(name, func(t *testing.T) {
@@ -400,8 +400,8 @@ func FuzzMapCachedSpecialWinners(f *testing.F) {
 	})
 }
 
-func validContractAddressRecord() cgmodel.CosmicGameContractAddrs {
-	return cgmodel.CosmicGameContractAddrs{
+func validContractAddressRecord() cgmodel.ContractAddrs {
+	return cgmodel.ContractAddrs{
 		CosmicGameAddr:         "0x2000000000000000000000000000000000000002",
 		CosmicSignatureAddr:    "0x3000000000000000000000000000000000000003",
 		CosmicTokenAddr:        "0x4000000000000000000000000000000000000004",

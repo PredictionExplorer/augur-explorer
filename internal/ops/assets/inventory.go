@@ -13,6 +13,7 @@ import (
 // AssetKind identifies one asset resolved by the inventory.
 type AssetKind string
 
+// The asset kinds the inventory scans for.
 const (
 	AssetImage   AssetKind = "image"
 	AssetPreview AssetKind = "preview"

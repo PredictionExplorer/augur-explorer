@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,12 +19,17 @@ var hunkPattern = regexp.MustCompile(
 type ChangedLines map[string]map[int]struct{}
 
 // ParseUnifiedDiff parses added and modified lines from a Git unified diff.
+// Files outside the coverage scope (cmd/ and internal/) are skipped rather
+// than rejected: the staged diff deliberately covers every Go file, and Go
+// code elsewhere (e.g. the generated contracts/*/bindings.gen.go or the
+// contracts/internal tooling) is out of the gate's jurisdiction by policy.
 func ParseUnifiedDiff(reader io.Reader) (ChangedLines, error) {
 	changed := make(ChangedLines)
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(make([]byte, 64*1024), 4*1024*1024)
 
 	var currentFile string
+	skipFile := false
 	oldLine := 0
 	newLine := 0
 	inHunk := false
@@ -33,14 +39,15 @@ func ParseUnifiedDiff(reader io.Reader) (ChangedLines, error) {
 		line := scanner.Text()
 		switch {
 		case strings.HasPrefix(line, "+++ "):
-			file, err := diffPath(strings.TrimPrefix(line, "+++ "))
+			file, inScope, err := diffPath(strings.TrimPrefix(line, "+++ "))
 			if err != nil {
 				return nil, fmt.Errorf("diff line %d: %w", lineNumber, err)
 			}
 			currentFile = file
+			skipFile = !inScope
 			inHunk = false
 		case strings.HasPrefix(line, "@@ "):
-			if currentFile == "" {
+			if currentFile == "" && !skipFile {
 				return nil, fmt.Errorf("diff line %d: hunk has no target file", lineNumber)
 			}
 			match := hunkPattern.FindStringSubmatch(line)
@@ -58,7 +65,7 @@ func ParseUnifiedDiff(reader io.Reader) (ChangedLines, error) {
 			}
 			inHunk = true
 		case inHunk && strings.HasPrefix(line, "+"):
-			if currentFile != "/dev/null" {
+			if !skipFile && currentFile != "/dev/null" {
 				lines := changed[currentFile]
 				if lines == nil {
 					lines = make(map[int]struct{})
@@ -95,19 +102,34 @@ func ParseUnifiedDiff(reader io.Reader) (ChangedLines, error) {
 	return changed, nil
 }
 
-func diffPath(raw string) (string, error) {
+// diffPath maps one diff target to a repository-relative path. inScope
+// reports whether the file participates in coverage analysis; out-of-scope
+// targets (anything outside cmd/ and internal/) parse successfully but are
+// skipped by the caller. Unlike profile paths, diff paths are already
+// repository-relative, so no module-prefix stripping applies — which also
+// keeps contracts/internal/* from being misread as the repository's
+// internal/ tree.
+func diffPath(raw string) (file string, inScope bool, err error) {
 	if raw == "/dev/null" {
-		return raw, nil
+		return raw, true, nil
 	}
 	if strings.HasPrefix(raw, `"`) {
 		unquoted, err := strconv.Unquote(raw)
 		if err != nil {
-			return "", fmt.Errorf("invalid quoted diff path: %w", err)
+			return "", false, fmt.Errorf("invalid quoted diff path: %w", err)
 		}
 		raw = unquoted
 	}
 	raw = strings.TrimPrefix(raw, "b/")
-	return normalizeProfilePath(raw)
+	file = strings.TrimPrefix(strings.ReplaceAll(raw, `\`, "/"), "./")
+	cleaned := path.Clean(file)
+	if cleaned == "." || strings.HasPrefix(cleaned, "../") {
+		return "", false, fmt.Errorf("unsafe diff path %q", raw)
+	}
+	if !strings.HasPrefix(cleaned, "cmd/") && !strings.HasPrefix(cleaned, "internal/") {
+		return "", false, nil
+	}
+	return cleaned, true, nil
 }
 
 // PatchAnalysis is the changed-code statement coverage result.

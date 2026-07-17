@@ -44,9 +44,9 @@ func TestDecodeReceiptAlternative(t *testing.T) {
 		simpleReceipt{Status: 1, CumulativeGasUsed: 42000, Logs: []*StoredLog{fallbackLog}},
 	})
 
-	result, err := DecodeReceipts(blob)
+	result, err := Receipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeReceipts: %v", err)
+		t.Fatalf("Receipts: %v", err)
 	}
 	if len(result.Receipts) != 1 {
 		t.Fatalf("got %d receipts, want 1", len(result.Receipts))
@@ -80,9 +80,9 @@ func TestDecodeReceiptLogsOnly(t *testing.T) {
 		},
 	})
 
-	result, err := DecodeReceipts(blob)
+	result, err := Receipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeReceipts: %v", err)
+		t.Fatalf("Receipts: %v", err)
 	}
 	if len(result.Receipts) != 1 {
 		t.Fatalf("got %d receipts, want 1", len(result.Receipts))
@@ -107,9 +107,9 @@ func TestDecodeReceiptLogsOnlyNoLogs(t *testing.T) {
 	blob := mustEncode(t, []interface{}{
 		[]interface{}{[]byte("only"), []byte("scalar"), []byte("fields"), []byte("here")},
 	})
-	result, err := DecodeReceipts(blob)
+	result, err := Receipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeReceipts: %v", err)
+		t.Fatalf("Receipts: %v", err)
 	}
 	if len(result.Receipts) != 1 || len(result.Receipts[0].Logs) != 0 {
 		t.Fatalf("want one log-less receipt, got %+v", result.Receipts)
@@ -120,7 +120,7 @@ func TestDecodeReceiptLogsOnlyNoLogs(t *testing.T) {
 // element is not even an RLP list.
 func TestDecodeReceiptLogsOnlyNotAList(t *testing.T) {
 	blob := mustEncode(t, []interface{}{[]byte{0xaa, 0xbb}})
-	if _, err := DecodeReceipts(blob); err == nil || !strings.Contains(err.Error(), "expected list") {
+	if _, err := Receipts(blob); err == nil || !strings.Contains(err.Error(), "expected list") {
 		t.Fatalf("want expected-list error, got %v", err)
 	}
 }
@@ -136,9 +136,9 @@ func TestDecodeStorageReceiptPreByzantium(t *testing.T) {
 		Bloom:             types.Bloom{},
 		Logs:              nil,
 	}})
-	result, err := DecodeReceipts(blob)
+	result, err := Receipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeReceipts: %v", err)
+		t.Fatalf("Receipts: %v", err)
 	}
 	if got := result.Receipts[0].Status; got != 1 {
 		t.Errorf("pre-Byzantium receipt status = %d, want 1", got)
@@ -149,7 +149,7 @@ func TestDecodeStorageReceiptPreByzantium(t *testing.T) {
 // a bare tx-type byte spliced before a receipt parses as its own single-byte
 // list element. The strip leaves an empty payload that defeats all three
 // decoders, so the legacy decoder rejects the whole blob (unlike
-// DecodeArbitrumReceipts, which skips the stray element).
+// ArbitrumReceipts, which skips the stray element).
 func TestDecodeStorageReceiptTypeByteElement(t *testing.T) {
 	inner := mustEncode(t, ReceiptForStorage{
 		PostStateOrStatus: []byte{1},
@@ -158,15 +158,15 @@ func TestDecodeStorageReceiptTypeByteElement(t *testing.T) {
 	})
 	blob := mustEncode(t, []rlp.RawValue{{0x02}, inner})
 
-	if _, err := DecodeReceipts(blob); err == nil || !strings.Contains(err.Error(), "failed to decode receipt 0") {
+	if _, err := Receipts(blob); err == nil || !strings.Contains(err.Error(), "failed to decode receipt 0") {
 		t.Fatalf("stray type byte should fail the legacy decoder, got %v", err)
 	}
 }
 
-func TestDecodeReceiptsMalformedTopLevel(t *testing.T) {
+func TestReceiptsMalformedTopLevel(t *testing.T) {
 	// Valid RLP header covering the payload, but the payload is a string,
 	// not a receipts list.
-	if _, err := DecodeReceipts([]byte{0x81, 0x80}); err == nil {
+	if _, err := Receipts([]byte{0x81, 0x80}); err == nil {
 		t.Fatal("string payload should fail the top-level list decode")
 	}
 }
@@ -211,9 +211,9 @@ func TestTrySnappyDecompressNitroHeader(t *testing.T) {
 	// varint(len(payload)) + two junk header bytes + payload
 	blob := append(binary.AppendUvarint(nil, uint64(len(payload))), 0x00, 0x01)
 	blob = append(blob, payload...)
-	result, err := DecodeReceipts(blob)
+	result, err := Receipts(blob)
 	if err != nil {
-		t.Fatalf("DecodeReceipts(nitro header): %v", err)
+		t.Fatalf("Receipts(nitro header): %v", err)
 	}
 	if len(result.Receipts) != 1 {
 		t.Fatalf("got %d receipts, want 1", len(result.Receipts))
@@ -223,19 +223,19 @@ func TestTrySnappyDecompressNitroHeader(t *testing.T) {
 	// from the RLP prefix onward, which still decodes.
 	blob = append(binary.AppendUvarint(nil, uint64(len(payload)*10)), 0x00, 0x01)
 	blob = append(blob, payload...)
-	if _, err := DecodeReceipts(blob); err != nil {
-		t.Fatalf("DecodeReceipts(nitro header, oversized varint): %v", err)
+	if _, err := Receipts(blob); err != nil {
+		t.Fatalf("Receipts(nitro header, oversized varint): %v", err)
 	}
 
 	// No RLP prefix within 10 bytes of the varint: data returned unchanged
 	// and the top-level decode fails.
 	junk := []byte{0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-	if _, err := DecodeReceipts(junk); err == nil {
+	if _, err := Receipts(junk); err == nil {
 		t.Fatal("junk without RLP should fail to decode")
 	}
 
 	// Non-terminating varint: data returned unchanged, decode fails.
-	if _, err := DecodeReceipts([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}); err == nil {
+	if _, err := Receipts([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}); err == nil {
 		t.Fatal("non-terminating varint should fail to decode")
 	}
 }

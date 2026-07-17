@@ -225,7 +225,7 @@ def _integration_notes() -> dict[str, Any]:
             "first_bid_rule": "The first bid in a round must be ETH (not CST).",
         },
         "abi_source": "Copied from frontend/src/contracts/*.json (used by the live dApp via viem/wagmi).",
-        "go_binding_source": "Monorepo Go bindings: rwcg/contracts/cosmicgame/CosmicSignatureGame.go (generated via abigen).",
+        "go_binding_source": "Monorepo Go bindings: rwcg/contracts/cosmicgame/bindings.gen.go (generated via abigen).",
     }
 
 

@@ -20,6 +20,7 @@ type kindsConfig struct {
 	Int64    int64         `env:"T_I64"`
 	Float    float64       `env:"T_FLOAT" default:"1.5"`
 	Dur      time.Duration `env:"T_DUR" default:"30s"`
+	Time     time.Time     `env:"T_TIME"`
 	List     []int64       `env:"T_LIST"`
 	Req      string        `env:"T_REQ" required:"true"`
 	Nested   struct {
@@ -34,6 +35,7 @@ func TestLoadAppliesValuesAndDefaults(t *testing.T) {
 	err := Load(&cfg, mapEnv(map[string]string{
 		"T_BOOL": " yes ",
 		"T_I64":  "-42",
+		"T_TIME": "2027-01-01T00:00:00Z",
 		"T_LIST": "1, 2,,3",
 		"T_REQ":  "here",
 		"T_DUR":  "2m",
@@ -44,6 +46,9 @@ func TestLoadAppliesValuesAndDefaults(t *testing.T) {
 	if cfg.Str != "dflt" || !cfg.Bool || !cfg.BoolDflt || cfg.Int != 7 || cfg.Int64 != -42 ||
 		cfg.Float != 1.5 || cfg.Dur != 2*time.Minute || cfg.Req != "here" || cfg.Nested.Inner != "in" {
 		t.Errorf("loaded config = %+v", cfg)
+	}
+	if want := time.Date(2027, time.January, 1, 0, 0, 0, 0, time.UTC); !cfg.Time.Equal(want) {
+		t.Errorf("Time = %v, want %v", cfg.Time, want)
 	}
 	if len(cfg.List) != 3 || cfg.List[0] != 1 || cfg.List[1] != 2 || cfg.List[2] != 3 {
 		t.Errorf("List = %v, want [1 2 3]", cfg.List)
@@ -58,24 +63,26 @@ func TestLoadAggregatesEveryProblem(t *testing.T) {
 		"T_INT":   "seven",
 		"T_FLOAT": "x",
 		"T_DUR":   "fast",
+		"T_TIME":  "tomorrow",
 		"T_LIST":  "1,a",
 		// T_REQ unset
 	}))
 	if err == nil {
-		t.Fatal("Load accepted a config with six problems")
+		t.Fatal("Load accepted a config with seven problems")
 	}
 	var le *LoadError
 	if !errors.As(err, &le) {
 		t.Fatalf("error type = %T, want *LoadError", err)
 	}
-	if len(le.Problems) != 6 {
-		t.Fatalf("got %d problems, want 6:\n%s", len(le.Problems), err)
+	if len(le.Problems) != 7 {
+		t.Fatalf("got %d problems, want 7:\n%s", len(le.Problems), err)
 	}
 	for _, want := range []string{
 		`T_BOOL: cannot parse "maybe" as a boolean`,
 		`T_INT: cannot parse "seven" as an integer`,
 		`T_FLOAT: cannot parse "x" as a number`,
 		`T_DUR: cannot parse "fast" as a duration`,
+		`T_TIME: cannot parse "tomorrow" as an RFC 3339 timestamp`,
 		`T_LIST: cannot parse list entry "a" as an integer`,
 		"T_REQ: required but not set",
 	} {
@@ -167,8 +174,8 @@ func TestLoadSkipsUnexportedAndUntaggedFields(t *testing.T) {
 func TestVarsListsEveryTaggedField(t *testing.T) {
 	t.Parallel()
 	vars := Vars(&kindsConfig{})
-	if len(vars) != 10 {
-		t.Fatalf("got %d vars, want 10: %+v", len(vars), vars)
+	if len(vars) != 11 {
+		t.Fatalf("got %d vars, want 11: %+v", len(vars), vars)
 	}
 	byName := map[string]Var{}
 	for _, v := range vars {
@@ -207,12 +214,13 @@ func FuzzLoadValue(f *testing.F) {
 			I  int64         `env:"I"`
 			F  float64       `env:"F"`
 			D  time.Duration `env:"D"`
+			T  time.Time     `env:"T"`
 			L  []int64       `env:"L"`
 			S  string        `env:"S"`
 			SR string        `env:"SR" secret:"true"`
 			SU string        `env:"SU" secret:"url"`
 		}
-		env := map[string]string{"B": b, "I": i, "F": fl, "D": d, "L": l, "S": b, "SR": i, "SU": fl}
+		env := map[string]string{"B": b, "I": i, "F": fl, "D": d, "T": d, "L": l, "S": b, "SR": i, "SU": fl}
 		err := Load(&cfg, mapEnv(env))
 		var le *LoadError
 		if err != nil && !errors.As(err, &le) {

@@ -13,7 +13,7 @@ import (
 
 var errCachedLiveUnavailable = errors.New("cached live resource is unavailable")
 
-func mapContractAddressRegistry(record cgmodel.CosmicGameContractAddrs) (ContractAddressRegistry, error) {
+func mapContractAddressRegistry(record cgmodel.ContractAddrs) (ContractAddressRegistry, error) {
 	values := []struct {
 		name  string
 		value string

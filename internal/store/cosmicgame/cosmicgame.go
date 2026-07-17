@@ -11,7 +11,7 @@ import (
 // ContractAddrs returns the CosmicGame contract address registry
 // (cg_contracts, one row) plus the RandomWalk marketplace address.
 // A database without the registry row yields store.ErrNotFound.
-func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.CosmicGameContractAddrs, error) {
+func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.ContractAddrs, error) {
 	query := `SELECT
 			cg.cosmic_game_addr,
 			cg.cosmic_signature_addr,
@@ -26,7 +26,7 @@ func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.CosmicGameContractAdd
 			COALESCE((SELECT marketplace_addr FROM rw_contracts LIMIT 1), '') AS marketplace_addr,
 			cg.implementation_addr
 		FROM cg_contracts cg`
-	var out cgmodel.CosmicGameContractAddrs
+	var out cgmodel.ContractAddrs
 	err := r.pool().QueryRow(ctx, query).Scan(
 		&out.CosmicGameAddr,
 		&out.CosmicSignatureAddr,
@@ -42,7 +42,7 @@ func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.CosmicGameContractAdd
 		&out.ImplementationAddr,
 	)
 	if err != nil {
-		return cgmodel.CosmicGameContractAddrs{}, store.WrapError("cosmic game contract addrs", err)
+		return cgmodel.ContractAddrs{}, store.WrapError("cosmic game contract addrs", err)
 	}
 	return out, nil
 }
@@ -50,9 +50,9 @@ func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.CosmicGameContractAdd
 // ProcessingStatus returns the ETL watermark (last processed event id and
 // block number), lazily creating the singleton cg_proc_status row on a fresh
 // database.
-func (r *Repo) ProcessingStatus(ctx context.Context) (cgmodel.CosmicGameProcStatus, error) {
+func (r *Repo) ProcessingStatus(ctx context.Context) (cgmodel.ProcStatus, error) {
 	const op = "cosmic game processing status"
-	var out cgmodel.CosmicGameProcStatus
+	var out cgmodel.ProcStatus
 	var lastEvtID, lastBlock *int64
 	err := r.pool().QueryRow(ctx, "SELECT last_evt_id, last_block_num FROM cg_proc_status").Scan(&lastEvtID, &lastBlock)
 	if err != nil {
@@ -79,7 +79,7 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (cgmodel.CosmicGameProcStat
 }
 
 // UpdateProcessingStatus persists the ETL watermark.
-func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *cgmodel.CosmicGameProcStatus) error {
+func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *cgmodel.ProcStatus) error {
 	query := "UPDATE cg_proc_status SET last_evt_id = $1, last_block_num = $2"
 	_, err := r.pool().Exec(ctx, query, status.LastEvtIdProcessed, status.LastBlockNum)
 	return store.WrapError("update cosmic game processing status", err)

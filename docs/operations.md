@@ -150,6 +150,30 @@ curl -s https://api.example/version | jq   # {"version":…,"commit":…,…}
 /opt/rwcg/bin/apiserver --version          # same identity on the host
 ```
 
+## v1 deprecation headers and the sunset date
+
+The frozen v1 API (everything under `/api/cosmicgame/` and
+`/api/randomwalk/` except the FAQ proxy) is deprecated in favor of
+`/api/v2`; the policy lives in `internal/api/routes.V1Deprecated` and a
+drift test pins it to the `deprecated: true` flags in `docs/openapi.yaml`.
+Every deprecated response — including errors, 304 revalidations and 404s
+under those prefixes — carries:
+
+- `Deprecation: @1784160000` (RFC 9745; the 2026-07-16 deprecation moment),
+- `Link: <…/docs/api-v2-migration.md>; rel="deprecation"` (the v1→v2 map),
+- `Sunset: <HTTP-date>` (RFC 8594) **only when** `V1_SUNSET_AT` is set.
+
+Leave `V1_SUNSET_AT` unset until the ADR-0005 sunset gates are met (known
+consumers migrated, 30 consecutive zero-traffic days, announced not-before
+date). Once the date is announced, set it in the apiserver env file
+(RFC 3339, e.g. `V1_SUNSET_AT=2027-01-01T00:00:00Z`) and restart; removal
+of the v1 layer itself is a code change gated on the same criteria.
+
+```bash
+curl -sI https://api.example/api/cosmicgame/rounds/list/0/10 \
+  | grep -iE 'deprecation|sunset|link'
+```
+
 ## Security posture
 
 - Read API is public by design; every route is rate limited per client IP.

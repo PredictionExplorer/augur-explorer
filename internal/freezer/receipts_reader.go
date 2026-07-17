@@ -22,6 +22,7 @@ const (
 	DefaultChunkSize = uint64(2_000_000_000)
 )
 
+// Sentinel errors reported by freezer index and data-file reads.
 var (
 	ErrBlockNotFound    = errors.New("block not found in index")
 	ErrInvalidIndex     = errors.New("invalid index file")

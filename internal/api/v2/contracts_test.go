@@ -22,7 +22,7 @@ func TestContractResourcesSuccess(t *testing.T) {
 		return validContractSnapshot()
 	}}
 	server := newContractTestServer(t, fakeContractAddressReader{
-		get: func(context.Context) (cgmodel.CosmicGameContractAddrs, error) {
+		get: func(context.Context) (cgmodel.ContractAddrs, error) {
 			return validContractAddressRecord(), nil
 		},
 	}, state)
@@ -132,8 +132,8 @@ func TestContractResourcesHideInternalErrors(t *testing.T) {
 	t.Run("repository", func(t *testing.T) {
 		t.Parallel()
 		server := newContractTestServer(t, fakeContractAddressReader{
-			get: func(context.Context) (cgmodel.CosmicGameContractAddrs, error) {
-				return cgmodel.CosmicGameContractAddrs{}, secret
+			get: func(context.Context) (cgmodel.ContractAddrs, error) {
+				return cgmodel.ContractAddrs{}, secret
 			},
 		}, fakeContractState{})
 		response := serve(t, server, contractAddressesInstance)

@@ -365,7 +365,7 @@ func processChunk(ctx context.Context, reader *freezerscanner.WorkerReader, chun
 			continue
 		}
 
-		logs, err := decode.DecodeArbitrumReceipts(data)
+		logs, err := decode.ArbitrumReceipts(data)
 		if err != nil {
 			totalErrors.Add(1)
 			errorLog.Log(block, "decode", err.Error())

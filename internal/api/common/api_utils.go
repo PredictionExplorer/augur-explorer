@@ -8,6 +8,10 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
 
+// ParseTimeframeParams reads the legacy init_ts/fin_ts/interval_secs path
+// parameters, answering the v1 error envelope on any missing or malformed
+// value. The bool reports whether parsing succeeded; a zero fin_ts becomes
+// the maximum timestamp and a zero interval collapses to the full window.
 func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 	var err error
 	pInitTs := c.Param("init_ts")
@@ -75,6 +79,9 @@ func ParseTimeframeParams(c *httpx.Context) (bool, int, int, int) {
 	return true, initTs, finTs, intervalSecs
 }
 
+// ParseOffsetLimitParamsJSON reads the legacy offset/limit path parameters,
+// answering the v1 error envelope on any missing or malformed value. The
+// bool reports whether parsing succeeded.
 func ParseOffsetLimitParamsJSON(c *httpx.Context) (bool, int, int) {
 	var err error
 	pOffset := c.Param("offset")

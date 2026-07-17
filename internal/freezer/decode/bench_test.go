@@ -53,7 +53,7 @@ func BenchmarkReceiptsDecode(b *testing.B) {
 		b.SetBytes(int64(len(raw)))
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			out, err := DecodeReceipts(raw)
+			out, err := Receipts(raw)
 			if err != nil {
 				b.Fatalf("decode: %v", err)
 			}
@@ -67,7 +67,7 @@ func BenchmarkReceiptsDecode(b *testing.B) {
 		b.SetBytes(int64(len(compressed)))
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			out, err := DecodeReceipts(compressed)
+			out, err := Receipts(compressed)
 			if err != nil {
 				b.Fatalf("decode: %v", err)
 			}

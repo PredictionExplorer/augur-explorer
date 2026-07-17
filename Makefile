@@ -34,14 +34,16 @@ $(COMMANDS):
 	@mkdir -p $(BIN)
 	go build -ldflags "$(LDFLAGS)" -o $(BIN)/$@ ./cmd/$@
 
-## generate: regenerate committed OpenAPI v2 server/models
+## generate: regenerate committed generated code (OpenAPI v2 server/models, contract bindings)
 generate:
 	go generate ./internal/api/v2
+	go generate ./contracts/...
 
-## generate-check: fail when committed OpenAPI v2 generated code is stale
+## generate-check: fail when committed generated code is stale
 generate-check:
 	go generate ./internal/api/v2
-	git diff --exit-code -- internal/api/v2/api.gen.go
+	go generate ./contracts/...
+	git diff --exit-code -- internal/api/v2/api.gen.go 'contracts/*/bindings.gen.go'
 
 ## test: run unit tests with the race detector
 test:

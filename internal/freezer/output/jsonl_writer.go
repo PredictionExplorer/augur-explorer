@@ -70,16 +70,19 @@ func NewJSONLWriter(path string) (*JSONLWriter, error) {
 	}, nil
 }
 
+// Write encodes one record as a JSON line.
 func (jw *JSONLWriter) Write(record *LogRecord) error {
 	jw.mu.Lock()
 	defer jw.mu.Unlock()
 	return jw.encoder.Encode(record)
 }
 
+// Flush is a no-op: json.Encoder writes through on every Encode.
 func (jw *JSONLWriter) Flush() error {
 	return nil // json.Encoder doesn't buffer
 }
 
+// Close closes the underlying file when the writer owns one.
 func (jw *JSONLWriter) Close() error {
 	if jw.closer != nil {
 		return jw.closer.Close()
@@ -131,6 +134,7 @@ func NewCSVWriter(path string) (*CSVWriter, error) {
 	return cw, nil
 }
 
+// Write appends one record as a CSV row.
 func (cw *CSVWriter) Write(record *LogRecord) error {
 	cw.mu.Lock()
 	defer cw.mu.Unlock()
@@ -152,6 +156,7 @@ func (cw *CSVWriter) Write(record *LogRecord) error {
 	})
 }
 
+// Flush writes buffered rows through and reports any write error.
 func (cw *CSVWriter) Flush() error {
 	cw.mu.Lock()
 	defer cw.mu.Unlock()
@@ -159,6 +164,8 @@ func (cw *CSVWriter) Flush() error {
 	return cw.w.Error()
 }
 
+// Close flushes buffered rows and closes the underlying file when the
+// writer owns one.
 func (cw *CSVWriter) Close() error {
 	if err := cw.Flush(); err != nil {
 		return err

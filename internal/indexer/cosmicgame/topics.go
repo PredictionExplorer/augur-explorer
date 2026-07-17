@@ -1,15 +1,14 @@
-// Topic-hash constants for every CosmicGame-family event the ETL dispatches.
-// Hand-maintained against the generated ABIs; TestRegistryConstantsMatchABIEventIDs
-// pins each constant to its ABI-derived event ID so regeneration cannot
-// silently retire a dispatch, and TestLegacyConstantsHaveNoABIEvent documents
-// the raw-decoded events no current ABI defines.
-
 package cosmicgame
 
 import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
+// Topic-hash constants for every CosmicGame-family event the ETL dispatches.
+// Hand-maintained against the generated ABIs; TestRegistryConstantsMatchABIEventIDs
+// pins each constant to its ABI-derived event ID so regeneration cannot
+// silently retire a dispatch, and TestLegacyConstantsHaveNoABIEvent documents
+// the raw-decoded events no current ABI defines.
 const (
 	TopicPrizeClaimEvent         = "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591" // ICosmicSignatureGame.sol:MainPrizeClaimed
 	TopicBidEvent                = "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549" // IBidding.sol:BidPlaced (legacy)
@@ -44,7 +43,8 @@ const (
 	TopicERC20TransferErr        = "f7fce645f12ae266a329c431e96ebea892316a1415809056621ffeea04efd4ab" // ICosmicSignatureErrors.sol:ERC20TransferFailed
 	TopicFirstBidEvent           = "028a52641badd593b7f30072734c0b97e449213f55b5c3663756427340accd3c" // ICosmicSignatureGame.sol:FirstBidPlacedInRound
 
-	/// Admin events.
+	// Admin events.
+
 	TopicProxyUpgraded                               = "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b" // IERC1967.sol:Upgraded
 	TopicAdminChanged                                = "7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f" // IERC1967.sol:AdminChanged
 	TopicTreasurerChanged                            = "df73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e" // IMarketingWallet.sol:TreasurerAddressChanged

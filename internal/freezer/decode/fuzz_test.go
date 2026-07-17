@@ -47,12 +47,12 @@ func FuzzReceiptsDecode(f *testing.F) {
 	f.Add([]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05})
 	f.Add([]byte{0xff, 0xff, 0xff, 0xff})
 	f.Fuzz(func(t *testing.T, data []byte) {
-		result, err := DecodeReceipts(data)
+		result, err := Receipts(data)
 		if err != nil {
 			return
 		}
 		if result == nil {
-			t.Fatal("DecodeReceipts returned nil result with nil error")
+			t.Fatal("Receipts returned nil result with nil error")
 		}
 		// Structural consistency: AllLogs is exactly the receipts' logs, in order,
 		// and every log's indices point back at its receipt.
@@ -87,13 +87,13 @@ func FuzzArbitrumLegacyDecode(f *testing.F) {
 	f.Add([]byte{byte(len(valid)), 0x00, 0x00, 0xc1, 0x80})
 	f.Add([]byte{0x01, 0x02, 0x03, 0x04})
 	f.Fuzz(func(t *testing.T, data []byte) {
-		logs, err := DecodeArbitrumReceipts(data)
+		logs, err := ArbitrumReceipts(data)
 		if err != nil {
 			return
 		}
 		for i, lg := range logs {
 			if lg == nil {
-				t.Fatalf("DecodeArbitrumReceipts returned nil log at %d", i)
+				t.Fatalf("ArbitrumReceipts returned nil log at %d", i)
 			}
 		}
 	})
@@ -114,12 +114,12 @@ func FuzzArbitrumLogDecode(f *testing.F) {
 	f.Add([]byte{0xc0})
 	f.Add([]byte{0xc3, 0x01, 0x02, 0x03})
 	f.Fuzz(func(t *testing.T, data []byte) {
-		lg, err := DecodeArbitrumLog(data)
+		lg, err := ArbitrumLog(data)
 		if err != nil {
 			return
 		}
 		if lg == nil {
-			t.Fatal("DecodeArbitrumLog returned nil log with nil error")
+			t.Fatal("ArbitrumLog returned nil log with nil error")
 		}
 	})
 }

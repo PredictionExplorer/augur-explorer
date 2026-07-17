@@ -1,3 +1,7 @@
+// Command covergate evaluates a Go coverage profile against the repository
+// coverage policy (ADR-0006): it deduplicates profile blocks, excludes
+// generated and test-only code from the canonical metrics, intersects diffs
+// with executable lines and fails when a configured floor is missed.
 package main
 
 import (

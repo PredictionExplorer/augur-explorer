@@ -63,7 +63,7 @@ func (c Contracts) All() []ethcommon.Address {
 // every address in the address table (the fresh-database bootstrap) and
 // resolves the ids the handlers need. Registration order is fixed: on an
 // empty database it determines the assigned address ids.
-func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store) (Contracts, cgmodel.CosmicGameContractAddrs, error) {
+func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store) (Contracts, cgmodel.ContractAddrs, error) {
 	addrs, err := repo.ContractAddrs(ctx)
 	if err != nil {
 		return Contracts{}, addrs, fmt.Errorf("reading contract addresses: %w", err)

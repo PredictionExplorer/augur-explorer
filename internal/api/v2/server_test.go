@@ -74,7 +74,7 @@ type fakeBiddingAnalyticsReader struct {
 }
 
 type fakeContractAddressReader struct {
-	get func(context.Context) (cgmodel.CosmicGameContractAddrs, error)
+	get func(context.Context) (cgmodel.ContractAddrs, error)
 }
 
 type fakeParticipantReader struct {
@@ -893,9 +893,9 @@ func (f fakeBiddingAnalyticsReader) BidTimeBounds(ctx context.Context) (int64, i
 	return f.bounds(ctx)
 }
 
-func (f fakeContractAddressReader) ContractAddrs(ctx context.Context) (cgmodel.CosmicGameContractAddrs, error) {
+func (f fakeContractAddressReader) ContractAddrs(ctx context.Context) (cgmodel.ContractAddrs, error) {
 	if f.get == nil {
-		return cgmodel.CosmicGameContractAddrs{}, nil
+		return cgmodel.ContractAddrs{}, nil
 	}
 	return f.get(ctx)
 }

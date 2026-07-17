@@ -1,6 +1,8 @@
 # ADR-0002: Database layer — pgx driver, goose migrations, incremental sqlc
 
-Date: 2026-07-06. Status: accepted (migration in progress).
+Date: 2026-07-06. Status: accepted; migration completed 2026-07-08 (the
+whole store is context-first, error-returning, pgx-native — see
+MODERNIZATION.md §5; the interim sqlc scaffolding was retired, D7).
 
 ## Context
 

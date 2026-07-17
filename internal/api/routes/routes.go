@@ -7,6 +7,7 @@ package routes
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
@@ -42,6 +43,13 @@ type Options struct {
 	// is useful for the frozen v1 route-drift test.
 	V2 *v2.Server
 
+	// V1SunsetAt, when non-zero, announces the earliest v1 removal moment
+	// through the RFC 8594 Sunset header on every deprecated v1 response
+	// (config V1_SUNSET_AT). Zero — the default until the D6 sunset gates
+	// are met — omits the header; the Deprecation header and migration
+	// Link are emitted regardless.
+	V1SunsetAt time.Time
+
 	// Extra is appended to the global middleware chain after the standard
 	// stack (production adds Prometheus request metrics here).
 	Extra []httpx.Middleware
@@ -59,6 +67,15 @@ type Options struct {
 func New(st *store.Store, opts Options) *httpx.Router {
 	r := httpx.NewRouter()
 
+	// Outermost: every response under a deprecated v1 path — including
+	// preflights, rate-limit rejections and 404s — announces the
+	// deprecation (RFC 9745) and, once configured, the sunset date.
+	r.Use(common.DeprecationHeaders(common.DeprecationPolicy{
+		Match:        func(req *http.Request) bool { return V1Deprecated(req.URL.Path) },
+		DeprecatedAt: V1DeprecatedAt,
+		LinkURL:      V1MigrationGuideURL,
+		SunsetAt:     opts.V1SunsetAt,
+	}))
 	r.Use(common.CORS(), common.Recovery(opts.PanicLog))
 	if opts.AccessLog != nil {
 		r.Use(common.AccessLog(opts.AccessLog))

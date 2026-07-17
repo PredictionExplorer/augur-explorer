@@ -10,6 +10,9 @@ type Transaction struct {
 	DateTime  string
 }
 
+// CGStatistics is the global statistics block of the v1 dashboard and
+// statistics endpoints: lifetime bid/prize/donation/staking aggregates
+// maintained by the database triggers.
 type CGStatistics struct {
 	TotalBids                             uint64
 	CurNumBids                            uint64
@@ -54,6 +57,9 @@ type CGStatistics struct {
 	StakeStatisticsCST                    CGStakeStatsCST
 	StakeStatisticsRWalk                  CGStakeStatsRWalk
 }
+
+// CGBidRec is one bid row as served by the v1 bid listings: the bid event
+// joined with donation attachments, prize timing and display fields.
 type CGBidRec struct {
 	Tx                         Transaction
 	BidderAid                  int64
@@ -93,9 +99,13 @@ type CGBannedBidRec struct {
 	CreatedAt int64  `json:"created_at"`
 }
 
+// CGClaimPrizeTx wraps the transaction that claimed a round's main prize.
 type CGClaimPrizeTx struct {
 	Tx Transaction
 }
+
+// CGMainPrizeInfo describes a round's main prize: the winner, the ETH/CST
+// amounts and the prize NFT with its generation seed.
 type CGMainPrizeInfo struct {
 	WinnerAid    int64
 	WinnerAddr   string
@@ -107,11 +117,15 @@ type CGMainPrizeInfo struct {
 	NftTokenId   uint64
 	Seed         string
 }
+
+// CGCharityDeposit is the charity allocation of a completed round.
 type CGCharityDeposit struct {
 	CharityAddress   string
 	CharityAmount    string
 	CharityAmountETH float64
 }
+
+// CGStakingDeposit is the CST-staker reward deposit of a completed round.
 type CGStakingDeposit struct {
 	StakingDepositId        int64
 	StakingDepositAmount    string
@@ -120,18 +134,24 @@ type CGStakingDeposit struct {
 	StakingPerTokenEth      float64
 	StakingNumStakedTokens  int64
 }
+
+// CGEnduranceChampionPrize is a round's endurance-champion award (NFT + CST).
 type CGEnduranceChampionPrize struct {
 	WinnerAddr   string
 	NftTokenId   int64
 	CstAmount    string
 	CstAmountEth float64
 }
+
+// CGLastCSTBidderPrize is a round's last-CST-bidder award (NFT + CST).
 type CGLastCSTBidderPrize struct {
 	WinnerAddr   string
 	NftTokenId   int64
 	CstAmount    string
 	CstAmountEth float64
 }
+
+// CGChronoWarriorPrize is a round's chrono-warrior award (ETH, CST and NFT).
 type CGChronoWarriorPrize struct {
 	WinnerAddr   string
 	EthAmount    string
@@ -140,6 +160,9 @@ type CGChronoWarriorPrize struct {
 	CstAmountEth float64
 	NftTokenId   int64
 }
+
+// CGRoundRec is the complete v1 round record: the claim transaction, every
+// prize category, per-round statistics and the inline prize collections.
 type CGRoundRec struct {
 	RoundNum          uint64
 	ClaimPrizeTx      CGClaimPrizeTx
@@ -155,6 +178,9 @@ type CGRoundRec struct {
 	RaffleETHDeposits []CGPrizeDepositRec
 	AllPrizes         []CGPrizeHistory
 }
+
+// CGUserInfo is the aggregate portion of the v1 user/info mega-response:
+// lifetime bid, prize, raffle, transfer and donation counters for one wallet.
 type CGUserInfo struct {
 	AddressId                   int64
 	Address                     string
@@ -174,6 +200,9 @@ type CGUserInfo struct {
 	TotalDonatedAmountEth       float64
 	StakingStatisticsRWalk      CGStakeStatsRWalk
 }
+
+// CGCharityDonation is one ETH donation received by the CharityWallet,
+// either voluntary (direct send) or forwarded by the CosmicGame contract.
 type CGCharityDonation struct {
 	Tx          Transaction
 	DonorAid    int64
@@ -183,6 +212,9 @@ type CGCharityDonation struct {
 	IsVoluntary bool // true - made by direct send, false=made by CosmicGame contract
 	RoundNum    int64
 }
+
+// CGCosmicGameDonationSimple is one plain ETH donation to the game (no info
+// record attached).
 type CGCosmicGameDonationSimple struct {
 	Tx        Transaction
 	DonorAid  int64
@@ -191,6 +223,9 @@ type CGCosmicGameDonationSimple struct {
 	AmountEth float64
 	RoundNum  int64
 }
+
+// CGCosmicGameDonationWithInfo is one ETH donation to the game carrying a
+// JSON info record stored contract-side.
 type CGCosmicGameDonationWithInfo struct {
 	Tx         Transaction
 	DonorAid   int64
@@ -201,6 +236,9 @@ type CGCosmicGameDonationWithInfo struct {
 	CGRecordId int64 // CosmicGame contract's record id
 	DataJson   string
 }
+
+// CGDonationCombinedRec is one row of the merged ETH donation listing,
+// discriminating plain donations from with-info donations via RecordType.
 type CGDonationCombinedRec struct {
 	RecordType int64 // 0 - simple donation, 1 - donation with info
 	Tx         Transaction
@@ -212,6 +250,9 @@ type CGDonationCombinedRec struct {
 	CGRecordId int64 // CosmicGame contract's record id
 	DataJson   string
 }
+
+// CGUniqueBidder is one row of the unique-bidders directory with lifetime
+// bid count and largest ETH bid.
 type CGUniqueBidder struct {
 	BidderAid       int64
 	BidderAddr      string
@@ -219,6 +260,9 @@ type CGUniqueBidder struct {
 	MaxBidAmount    string
 	MaxBidAmountEth float64 // same as above but with 18 decimal places (i.e. in ETH )
 }
+
+// CGWinnerStats is the per-winner aggregate block (cg_winner row): prize
+// counts and sums by asset kind plus lifetime spend.
 type CGWinnerStats struct {
 	MaxWinAmount    string
 	MaxWinAmountEth float64
@@ -232,6 +276,9 @@ type CGWinnerStats struct {
 	TotalSpent      string
 	TotalSpentEth   float64
 }
+
+// CGUniqueWinner is one row of the unique-winners directory with the
+// embedded per-winner statistics block.
 type CGUniqueWinner struct {
 	WinnerAid       int64
 	WinnerAddr      string
@@ -241,6 +288,9 @@ type CGUniqueWinner struct {
 	PrizesSum       float64 // all winnings in ETH
 	WinnerStats     CGWinnerStats
 }
+
+// CGUniqueDonor is one row of the unique-donors directory with donation
+// count and lifetime donated ETH.
 type CGUniqueDonor struct {
 	DonorAid        int64
 	DonorAddr       string
@@ -248,6 +298,9 @@ type CGUniqueDonor struct {
 	TotalDonated    string
 	TotalDonatedEth float64
 }
+
+// CGRoiLeaderboardEntry is one row of the ROI leaderboard: per-bidder spend,
+// winnings and derived return-on-investment metrics.
 type CGRoiLeaderboardEntry struct {
 	BidderAid          int64
 	BidderAddr         string
@@ -326,6 +379,9 @@ type CGRoundClaimDetail struct {
 	ClaimTransactions []CGClaimTxn
 	AttachedTokens    []CGAttachedToken
 }
+
+// CGERC20Donation is one ERC-20 donation attached to a bid, with the round
+// winner (when the round completed) for claim attribution.
 type CGERC20Donation struct {
 	RecordId   int64
 	Tx         Transaction
@@ -340,6 +396,9 @@ type CGERC20Donation struct {
 	WinnerAddr string
 	// Claimed						bool
 }
+
+// CGSummarizedERC20Donation aggregates the ERC-20 donations of one
+// (round, token) pair with the claimed/unclaimed amount split.
 type CGSummarizedERC20Donation struct {
 	RecordId           int64
 	Tx                 Transaction
@@ -356,6 +415,8 @@ type CGSummarizedERC20Donation struct {
 	WinnerAddr         string
 	Claimed            bool
 }
+
+// CGNFTDonation is one ERC-721 token donated to the game during a round.
 type CGNFTDonation struct {
 	RecordId       int64
 	Tx             Transaction
@@ -368,16 +429,24 @@ type CGNFTDonation struct {
 	NFTTokenURI    string
 	Index          int64
 }
+
+// CGNFTDonationStats counts donated NFTs per originating ERC-721 contract.
 type CGNFTDonationStats struct {
 	TokenAddressId int64
 	TokenAddress   string
 	NumDonations   int64 // total number of donated tokens per this contract
 }
+
+// CGRecordCounters carries the canonical record counts used by list
+// endpoints for client-side pagination.
 type CGRecordCounters struct {
 	TotalBids        int64
 	TotalPrizes      int64
 	TotalDonatedNFTs int64
 }
+
+// CGPrizeDepositRec is one PrizesWallet ETH deposit (raffle or chrono
+// warrior) with its claim status.
 type CGPrizeDepositRec struct {
 	RecordId       int64
 	Tx             Transaction
@@ -391,6 +460,9 @@ type CGPrizeDepositRec struct {
 	ClaimTimeStamp int64
 	ClaimDateTime  string
 }
+
+// CGRaffleNFTWinnerRec is one raffle NFT win (bidder or staker pool) with
+// the minted token and CST amount.
 type CGRaffleNFTWinnerRec struct {
 	RecordId     int64
 	Tx           Transaction
@@ -404,6 +476,9 @@ type CGRaffleNFTWinnerRec struct {
 	IsRWalk      bool
 	IsStaker     bool
 }
+
+// CGDonatedNFTClaimRec is one donated-NFT claim event joined with the
+// donation it settles.
 type CGDonatedNFTClaimRec struct {
 	RecordId    int64
 	Tx          Transaction
@@ -417,6 +492,9 @@ type CGDonatedNFTClaimRec struct {
 	WinnerAddr  string
 	DonorAddr   string
 }
+
+// CGERC20ClaimRec is one donated-ERC-20 claim event joined with the
+// donation it settles.
 type CGERC20ClaimRec struct {
 	RecordId   int64
 	Tx         Transaction
@@ -430,6 +508,9 @@ type CGERC20ClaimRec struct {
 	WinnerAddr string
 	DonorAddr  string
 }
+
+// CGCosmicSignatureMintRec is one Cosmic Signature token mint with current
+// ownership, naming and staking state joined in.
 type CGCosmicSignatureMintRec struct {
 	RecordId               int64
 	Tx                     Transaction
@@ -454,6 +535,9 @@ type CGCosmicSignatureMintRec struct {
 	ActualUnstakeTimeStamp int64 // if there is unstake record, these fields hold dates
 	ActualUnstakeDateTime  string
 }
+
+// CGRoundStats is the per-round statistics block (cg_round_stats row) plus
+// the round timing fields derived from contract parameters.
 type CGRoundStats struct {
 	RoundNum                  int64
 	TotalBids                 int64
@@ -477,6 +561,9 @@ type CGRoundStats struct {
 	RoundEndTime                       string // ISO 8601 format
 	RoundDurationSeconds               int64
 }
+
+// CGClaimInfo summarizes one wallet's pending (unclaimed) winnings for the
+// v1 notification red-box.
 type CGClaimInfo struct {
 	ETHRaffleToClaim           float64
 	ETHRaffleToClaimWei        string
@@ -486,6 +573,9 @@ type CGClaimInfo struct {
 	UnclaimedStakingReward     float64
 	DonatedERC20Tokens         []ERC20DonatedTokensInfo
 }
+
+// CGPrizeHistory is one row of the unified prize table (cg_prize),
+// discriminated by RecordType across every prize kind the game awards.
 type CGPrizeHistory struct {
 	Tx             Transaction
 	RecordType     int64 // 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - LastCst Bid NFT winner, 9 - Endurance ERC20 winner, 10 - LastCst Bid ERC20 winner , 11 - Donated ERC20 token , 12 - Chrono Warrior, 16 - Donated NFT (timeout), 17 - Donated ERC20 (timeout), 18 - Raffle ETH (timeout)
@@ -501,6 +591,8 @@ type CGPrizeHistory struct {
 	WinnerAddr     string
 	WinnerAid      int64
 }
+
+// CGTokenName is one Cosmic Signature token (re)naming event.
 type CGTokenName struct {
 	Tx           Transaction
 	TokenId      int64
@@ -508,6 +600,9 @@ type CGTokenName struct {
 	ChangedByAid int64
 	ChangedBy    string
 }
+
+// CGTransfer is one Cosmic Signature ERC-721 transfer with the mint/burn
+// discrimination in TransferType.
 type CGTransfer struct {
 	RecordId     int64
 	Tx           Transaction
@@ -518,6 +613,9 @@ type CGTransfer struct {
 	ToAid        int64
 	TransferType int64 // 0 - regular transfer , 1 - mint, 2 - burn (there are no burns in CST)
 }
+
+// CGCharityWithdrawal is one DonationSent event: ETH leaving the
+// CharityWallet toward the configured charity.
 type CGCharityWithdrawal struct {
 	RecordId        int64
 	Tx              Transaction
@@ -525,21 +623,32 @@ type CGCharityWithdrawal struct {
 	Amount          string
 	AmountEth       float64
 }
+
+// CGTokenSearchResult is one hit of the token name search.
 type CGTokenSearchResult struct {
 	MintTimeStamp int64
 	MintDateTime  string
 	TokenId       int64
 	TokenName     string
 }
+
+// CGDonatedTokenDistrRec counts donated NFTs per contract for the global
+// statistics distribution.
 type CGDonatedTokenDistrRec struct {
 	ContractAddr     string
 	NumDonatedTokens int64
 }
+
+// CGCSTokenDistributionRec is one owner's Cosmic Signature token count in
+// the ownership distribution.
 type CGCSTokenDistributionRec struct {
 	OwnerAid  int64
 	OwnerAddr string
 	NumTokens int64
 }
+
+// CGCosmicTokenHolderRec is one CosmicToken (ERC-20) holder with balance
+// and share of total supply.
 type CGCosmicTokenHolderRec struct {
 	OwnerAid        int64
 	OwnerAddr       string
@@ -579,6 +688,9 @@ type CGTotalSupplyHistoryRec struct {
 	TotalSupply    string
 	TotalSupplyEth float64
 }
+
+// CGCosmicTokenStats is the global CosmicToken (ERC-20) statistics response:
+// supply, source/sink breakdown, activity counters and top holders.
 type CGCosmicTokenStats struct {
 	// Supply metrics
 	TotalSupply    string
@@ -609,6 +721,9 @@ type CGCosmicTokenStats struct {
 	// Top holders
 	TopHolders []CGCosmicTokenHolderRec
 }
+
+// CGUserCosmicTokenSummary is one wallet's CosmicToken (ERC-20) position:
+// balance, per-source earnings, bid consumption and net flow.
 type CGUserCosmicTokenSummary struct {
 	UserAddr          string
 	UserAid           int64
@@ -642,6 +757,9 @@ type CGUserCosmicTokenSummary struct {
 	NumMints     int64
 	NumBurns     int64
 }
+
+// CGERC20TransferRec is one CosmicToken (ERC-20) transfer with the
+// mint/burn discrimination in TransferType.
 type CGERC20TransferRec struct {
 	RecordId     int64
 	Tx           Transaction
@@ -653,6 +771,8 @@ type CGERC20TransferRec struct {
 	Value        string
 	ValueFloat   float64
 }
+
+// CGRWalkUsed is one RandomWalk token consumed for a discounted bid.
 type CGRWalkUsed struct {
 	RecordId     int64
 	EvtLogId     int64
@@ -666,6 +786,8 @@ type CGRWalkUsed struct {
 	BidderAddr   string
 	RWalkTokenId int64
 }
+
+// CGMarketingRewardRec is one MarketingWallet CST payout to a marketer.
 type CGMarketingRewardRec struct {
 	RecordId     int64
 	Tx           Transaction
@@ -674,6 +796,8 @@ type CGMarketingRewardRec struct {
 	MarketerAid  int64
 	MarketerAddr string
 }
+
+// CGSystemModeRec is one system-mode change event of the game contract.
 type CGSystemModeRec struct {
 	EvtLogId     int64
 	BlockNum     int64
@@ -684,6 +808,9 @@ type CGSystemModeRec struct {
 	NextEvtLogId int64
 	RoundNum     int64
 }
+
+// CGAdminEvent is one admin parameter/address change in the unified admin
+// event listing, discriminated by the RecordType codes below.
 type CGAdminEvent struct {
 	RecordType int64 // Type codes:
 	// 			0		Undefined
@@ -739,6 +866,9 @@ type CGAdminEvent struct {
 	StringValue   string
 	ResolvedValue string // Human-readable value when IntegerValue is a divisor (or direct unit conversion)
 }
+
+// ERC20DonatedTokensInfo is one round's donated-ERC-20 entitlement of a
+// wallet, listed in the pending-winnings summary.
 type ERC20DonatedTokensInfo struct {
 	RoundNum  int64
 	TokenAid  int64

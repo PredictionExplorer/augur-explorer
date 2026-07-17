@@ -93,21 +93,21 @@ type NodeFillRepository interface {
 // NodeFillWriter is the per-row archive persistence surface.
 type NodeFillWriter interface {
 	EventLogExists(ctx context.Context, txHash string, logIndex int) (bool, error)
-	InsertEventLog(ctx context.Context, event ArchiveEventLog) (bool, error)
+	InsertEventLog(ctx context.Context, event EventLog) (bool, error)
 	TransactionExists(ctx context.Context, txHash string) (bool, error)
-	InsertTransaction(ctx context.Context, tx ArchiveTransaction) (bool, error)
+	InsertTransaction(ctx context.Context, tx Transaction) (bool, error)
 	BlockExists(ctx context.Context, blockNum int64, blockHash string) (bool, error)
 	InsertBlock(
 		ctx context.Context,
-		block ArchiveBlock,
+		block Block,
 		projectAddresses []string,
 		forceProjectCleanup bool,
 	) (bool, error)
 	Close() error
 }
 
-// ArchiveEventLog is the row written to arch_evtlog by node-fill.
-type ArchiveEventLog struct {
+// EventLog is the row written to arch_evtlog by node-fill.
+type EventLog struct {
 	BlockNum        int64
 	LogIndex        int
 	TxHash          string
@@ -116,8 +116,8 @@ type ArchiveEventLog struct {
 	LogRLP          []byte
 }
 
-// ArchiveTransaction is the row written to arch_tx by node-fill.
-type ArchiveTransaction struct {
+// Transaction is the row written to arch_tx by node-fill.
+type Transaction struct {
 	BlockNum       int64
 	FromAddressID  int64
 	ToAddressID    int64
@@ -131,8 +131,8 @@ type ArchiveTransaction struct {
 	InputSig       string
 }
 
-// ArchiveBlock is the row written to arch_block by node-fill.
-type ArchiveBlock struct {
+// Block is the row written to arch_block by node-fill.
+type Block struct {
 	BlockNum   int64
 	NumTx      int64
 	Timestamp  uint64
@@ -304,7 +304,7 @@ func (f *NodeFiller) RunProject(
 					f.printf("encode log: %v", err)
 					return nil
 				}
-				inserted, err := writer.InsertEventLog(ctx, ArchiveEventLog{
+				inserted, err := writer.InsertEventLog(ctx, EventLog{
 					BlockNum:        int64(logEntry.BlockNumber),
 					LogIndex:        logIndex,
 					TxHash:          txHash,
@@ -481,7 +481,7 @@ func (f *NodeFiller) ensureTransaction(
 		inputSig = "0x" + hex.EncodeToString(tx.Data()[:4])
 	}
 
-	insertedRow, err := writer.InsertTransaction(ctx, ArchiveTransaction{
+	insertedRow, err := writer.InsertTransaction(ctx, Transaction{
 		BlockNum:       blockNum,
 		FromAddressID:  fromAddressID,
 		ToAddressID:    toAddressID,
@@ -534,7 +534,7 @@ func (f *NodeFiller) ensureBlock(
 		return 0, 0, dbError, err
 	}
 	forceProjectCleanup := exists
-	insertedRow, err := writer.InsertBlock(ctx, ArchiveBlock{
+	insertedRow, err := writer.InsertBlock(ctx, Block{
 		BlockNum:   blockNum,
 		NumTx:      int64(len(block.Transactions())),
 		Timestamp:  header.Time,
@@ -565,10 +565,13 @@ type SQLNodeFillRepository struct {
 	DB *sql.DB
 }
 
+// ProjectContracts resolves the registered contract addresses for project.
 func (r *SQLNodeFillRepository) ProjectContracts(ctx context.Context, project string) (Contracts, error) {
 	return LoadProjectContracts(ctx, r.DB, project)
 }
 
+// ResolveStartBlock returns flagFrom when set, otherwise auto-detects the
+// earliest block referenced by the project's addresses and events.
 func (r *SQLNodeFillRepository) ResolveStartBlock(
 	ctx context.Context,
 	contracts Contracts,
@@ -591,6 +594,8 @@ func (r *SQLNodeFillRepository) ResolveStartBlock(
 	return SelectStartBlock(flagFrom, fromAddress, fromEvent)
 }
 
+// ArchivedBlockNumbers lists the distinct block numbers already archived
+// for the project's contracts within [fromBlock, toBlock].
 func (r *SQLNodeFillRepository) ArchivedBlockNumbers(
 	ctx context.Context,
 	contracts Contracts,
@@ -663,6 +668,8 @@ func RequireArchLogIndex(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+// PrepareWriter prepares the archive insert/exists statements and returns
+// the writer that owns them; callers must Close it.
 func (r *SQLNodeFillRepository) PrepareWriter(ctx context.Context) (NodeFillWriter, error) {
 	writer := &sqlNodeFillWriter{}
 	var err error
@@ -771,7 +778,7 @@ func (w *sqlNodeFillWriter) EventLogExists(ctx context.Context, txHash string, l
 	return statementExists(ctx, w.eventExists, txHash, logIndex)
 }
 
-func (w *sqlNodeFillWriter) InsertEventLog(ctx context.Context, event ArchiveEventLog) (bool, error) {
+func (w *sqlNodeFillWriter) InsertEventLog(ctx context.Context, event EventLog) (bool, error) {
 	result, err := w.insertEvent.ExecContext(ctx,
 		event.BlockNum,
 		event.LogIndex,
@@ -787,7 +794,7 @@ func (w *sqlNodeFillWriter) TransactionExists(ctx context.Context, txHash string
 	return statementExists(ctx, w.txExists, txHash)
 }
 
-func (w *sqlNodeFillWriter) InsertTransaction(ctx context.Context, tx ArchiveTransaction) (bool, error) {
+func (w *sqlNodeFillWriter) InsertTransaction(ctx context.Context, tx Transaction) (bool, error) {
 	result, err := w.insertTx.ExecContext(ctx,
 		tx.BlockNum,
 		tx.FromAddressID,
@@ -810,7 +817,7 @@ func (w *sqlNodeFillWriter) BlockExists(ctx context.Context, blockNum int64, blo
 
 func (w *sqlNodeFillWriter) InsertBlock(
 	ctx context.Context,
-	block ArchiveBlock,
+	block Block,
 	projectAddresses []string,
 	forceProjectCleanup bool,
 ) (bool, error) {

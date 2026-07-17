@@ -14,6 +14,8 @@ import (
 	"net/http"
 )
 
+// Whatsapp is a WhatsApp Cloud API client bound to one sending phone
+// number.
 type Whatsapp struct {
 	Token         string
 	APIVersion    string
@@ -26,6 +28,8 @@ type Whatsapp struct {
 	// HTTPClient issues the requests; nil selects http.DefaultClient.
 	HTTPClient *http.Client
 }
+
+// TemplateLanguage selects the language of a WhatsApp message template.
 type TemplateLanguage struct {
 	Code string `json:"code,omitempty"`
 }
@@ -57,10 +61,13 @@ type SendWithTemplateRequest struct {
 	Template         Template `json:"template,omitempty"`
 }
 
+// LanguageEnglish is the default template language.
 var LanguageEnglish = TemplateLanguage{
 	Code: "en",
 }
 
+// NewWhatsapp returns a client for the given bearer token and sending phone
+// number, defaulting to English templates and Graph API v14.0.
 func NewWhatsapp(token string, phoneNumberID string) *Whatsapp {
 	return &Whatsapp{
 		Language:      LanguageEnglish,
@@ -120,6 +127,8 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 	return res, nil
 }
 
+// SendWithTemplate sends the named message template with the given
+// components to toPhoneNumber.
 func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
 	request := wa.createSendWithTemplateRequest(toPhoneNumber, templateName, wa.Language, components)
 
@@ -157,6 +166,8 @@ func (wa *Whatsapp) createSendWithTemplateRequest(receiverPhoneNumber string, te
 	}
 }
 
+// GenerateTemplateParameters builds one template parameter per argument;
+// an empty parameterType defaults to "text".
 func (wa *Whatsapp) GenerateTemplateParameters(parameterType string, args ...string) (res []TemplateParameters) {
 	if parameterType == "" {
 		parameterType = "text"

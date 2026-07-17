@@ -4,6 +4,8 @@ package randomwalk
 // API Response Types
 // =====================================================================
 
+// Offer is one marketplace offer row (sell or buy side, per OfferType) with
+// its outcome flags and the seller's profit when resolved.
 type Offer struct {
 	Id           int64
 	EvtLogId     int64
@@ -29,6 +31,7 @@ type Offer struct {
 	WasCanceled  bool
 }
 
+// TokenMint is one RandomWalk token mint with its generation seed and price.
 type TokenMint struct {
 	TokenId      int64
 	BlockNum     int64
@@ -44,6 +47,8 @@ type TokenMint struct {
 	TxHash       string
 }
 
+// TokenMintCSV is the extended mint row of the CSV export: the mint joined
+// with lifetime trading, naming and current-owner columns.
 type TokenMintCSV struct {
 	TokenId      int64
 	BlockNum     int64
@@ -64,6 +69,7 @@ type TokenMintCSV struct {
 	LastOwner    string
 }
 
+// UserToken is one RandomWalk token currently owned by a wallet.
 type UserToken struct {
 	TokenId      int64
 	ContractAid  int64
@@ -73,6 +79,8 @@ type UserToken struct {
 	Price        float64
 }
 
+// RWalkStats is the global RandomWalk statistics response: mint, trading and
+// withdrawal aggregates (rw_stats row).
 type RWalkStats struct {
 	TradingVol         float64
 	NumTrades          int64
@@ -86,11 +94,13 @@ type RWalkStats struct {
 	WithdrawalAmount   float64 // the latest amount
 }
 
+// MarketStats is the marketplace trading aggregate (volume and trade count).
 type MarketStats struct {
 	TradingVol float64
 	NumTrades  int64
 }
 
+// HistEntryMint is the token-history entry for the mint (RecordType 1).
 type HistEntryMint struct { // type = 1
 	BlockNum     int64
 	TimeStamp    int64
@@ -105,6 +115,8 @@ type HistEntryMint struct { // type = 1
 	Price        float64
 }
 
+// HistEntryOffer is the token-history entry for an offer creation
+// (RecordType 2).
 type HistEntryOffer struct { // type = 2
 	BlockNum     int64
 	TimeStamp    int64
@@ -122,6 +134,8 @@ type HistEntryOffer struct { // type = 2
 	Price        float64
 }
 
+// HistEntryOfferCanceled is the token-history entry for an offer
+// cancellation (RecordType 3).
 type HistEntryOfferCanceled struct { // type = 3
 	BlockNum        int64
 	TimeStamp       int64
@@ -141,6 +155,8 @@ type HistEntryOfferCanceled struct { // type = 3
 	Address         string
 }
 
+// HistEntryItemBought is the token-history entry for a marketplace sale
+// (RecordType 4).
 type HistEntryItemBought struct { // type = 4
 	BlockNum     int64
 	TimeStamp    int64
@@ -160,6 +176,7 @@ type HistEntryItemBought struct { // type = 4
 	Address      string
 }
 
+// HistEntryTokenName is the token-history entry for a rename (RecordType 5).
 type HistEntryTokenName struct { // type = 5
 	BlockNum     int64
 	TimeStamp    int64
@@ -170,6 +187,8 @@ type HistEntryTokenName struct { // type = 5
 	TokenName    string
 }
 
+// HistEntryTransfer is the token-history entry for an ERC-721 transfer
+// (RecordType 6).
 type HistEntryTransfer struct { // type = 6
 	BlockNum     int64
 	TimeStamp    int64
@@ -184,11 +203,15 @@ type HistEntryTransfer struct { // type = 6
 	TransferId   int64
 }
 
+// FullHistoryEntry is one polymorphic token-history row: RecordType selects
+// which HistEntry* shape Record carries.
 type FullHistoryEntry struct {
 	RecordType int // Mint, or any other event starting with HistEntry*
 	Record     interface{}
 }
 
+// VolumeHistory is one bucket of the trading-volume time series with the
+// running total.
 type VolumeHistory struct {
 	StartTs       int64
 	NumOperations int64
@@ -196,6 +219,7 @@ type VolumeHistory struct {
 	VolumeAccum   float64
 }
 
+// TokenNameRec is one token rename with the owner at rename time.
 type TokenNameRec struct {
 	BlockNum     int64
 	TimeStamp    int64
@@ -209,6 +233,7 @@ type TokenNameRec struct {
 	OwnerAddr    string
 }
 
+// UserInfo is one wallet's RandomWalk activity aggregate (rw_users row).
 type UserInfo struct {
 	UserAid               int64
 	UserAddr              string
@@ -219,12 +244,15 @@ type UserInfo struct {
 	IsMarketPlaceContract bool // true if the User is not really a user, but is a marketplace contract
 }
 
+// TopTradedToken is one row of the most-traded-tokens ranking.
 type TopTradedToken struct {
 	TokenId     int64
 	TotalTrades int64
 	SeedHex     string
 }
 
+// TokenInfo is the per-token detail: current owner, seed, trading aggregates
+// and naming state.
 type TokenInfo struct {
 	TokenId            int64
 	CurOwnerAid        int64
@@ -239,6 +267,8 @@ type TokenInfo struct {
 	LastNameUpdateDate string
 }
 
+// MintInterval is one mint's spacing from the previous mint (the retired
+// mint-intervals chart).
 type MintInterval struct {
 	MintNumber int64 // sequential number of mint (same as token_id)
 	TimeStamp  int64
@@ -246,12 +276,15 @@ type MintInterval struct {
 	TokenId    int64
 }
 
+// WithdrawalChartEntry is one point of the withdrawable-amount chart.
 type WithdrawalChartEntry struct {
 	TimeStamp        int64
 	DateTime         string
 	WithdrawalAmount float64
 }
 
+// TradingHistoryLog is one offer joined with its outcome (sale or
+// cancellation) for the trading-history listing, with display durations.
 type TradingHistoryLog struct {
 	Id               int64
 	EvtLogId         int64
@@ -285,11 +318,13 @@ type TradingHistoryLog struct {
 	RealTs           int64
 }
 
+// FloorPrice is one point of the sell-side listing-floor history.
 type FloorPrice struct {
 	TimeStamp int64
 	Price     float64
 }
 
+// MintReportRec is one calendar month's mint totals in the mint report.
 type MintReportRec struct {
 	Year         int64
 	Month        int64

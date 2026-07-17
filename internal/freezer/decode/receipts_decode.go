@@ -37,9 +37,9 @@ type BlockReceipts struct {
 	AllLogs  []*DecodedLog // Flattened list of all logs
 }
 
-// DecodeReceipts decodes a raw freezer receipts blob into structured receipts
+// Receipts decodes a raw freezer receipts blob into structured receipts
 // It handles snappy decompression and RLP decoding.
-func DecodeReceipts(data []byte) (*BlockReceipts, error) {
+func Receipts(data []byte) (*BlockReceipts, error) {
 	if len(data) == 0 {
 		return &BlockReceipts{}, nil
 	}

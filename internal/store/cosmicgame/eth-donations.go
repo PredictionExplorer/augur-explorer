@@ -395,6 +395,7 @@ func (r *Repo) EthDonations(ctx context.Context) ([]cgmodel.CGDonationCombinedRe
 // produced a v2 round donation record.
 type RoundEthDonationKind string
 
+// The two direct-donation record kinds.
 const (
 	RoundEthDonationPlain    RoundEthDonationKind = "plain"
 	RoundEthDonationWithInfo RoundEthDonationKind = "withInfo"

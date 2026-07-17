@@ -11,6 +11,7 @@ import (
 // ParticipantKind scopes a participant-directory cursor to one endpoint.
 type ParticipantKind string
 
+// The participant-directory kinds served by the v2 API.
 const (
 	ParticipantBidders            ParticipantKind = "bidders"
 	ParticipantWinners            ParticipantKind = "winners"
@@ -30,6 +31,8 @@ type ParticipantPageCursor struct {
 	AddressID int64
 }
 
+// BidderParticipantRecord is one bidder-directory row: lifetime bid count
+// and largest exact ETH bid.
 type BidderParticipantRecord struct {
 	BidderAid int64
 	Address   string
@@ -37,6 +40,8 @@ type BidderParticipantRecord struct {
 	MaxBidWei string
 }
 
+// WinnerParticipantRecord is one winner-directory row: prize counts by kind
+// and exact ETH won/spent totals.
 type WinnerParticipantRecord struct {
 	WinnerAid          int64
 	Address            string
@@ -49,6 +54,8 @@ type WinnerParticipantRecord struct {
 	TotalETHSpentWei   string
 }
 
+// DonorParticipantRecord is one ETH-donor-directory row with the exact
+// lifetime donated total.
 type DonorParticipantRecord struct {
 	DonorAid        int64
 	Address         string
@@ -56,6 +63,8 @@ type DonorParticipantRecord struct {
 	TotalDonatedWei string
 }
 
+// CSTStakerParticipantRecord is one CST-staker-directory row with action
+// counts and exact reward accounting.
 type CSTStakerParticipantRecord struct {
 	StakerAid          int64
 	Address            string
@@ -66,6 +75,8 @@ type CSTStakerParticipantRecord struct {
 	UnclaimedRewardWei string
 }
 
+// RandomWalkStakerParticipantRecord is one RandomWalk-staker-directory row
+// with action counts and staking-raffle mints.
 type RandomWalkStakerParticipantRecord struct {
 	StakerAid          int64
 	Address            string
@@ -75,6 +86,8 @@ type RandomWalkStakerParticipantRecord struct {
 	MintedTokenCount   int64
 }
 
+// DualStakerParticipantRecord is one dual-staker-directory row: a wallet
+// with both CST and RandomWalk staking history, both stat groups inline.
 type DualStakerParticipantRecord struct {
 	StakerAid                    int64
 	Address                      string

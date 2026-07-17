@@ -3,8 +3,11 @@ info:
   title: RWCG Backend API v2
   version: 0.18.0
   description: |
-    Resource-oriented API for RandomWalk and CosmicGame. V2 is introduced
-    incrementally while the frozen v1 contract remains available.
+    Resource-oriented API for RandomWalk and CosmicGame. This is the
+    canonical specification: the v2 endpoint inventory is complete, every
+    v1 read/write surface has a bounded replacement here (mapped in
+    docs/api-v2-migration.md), and v1 is deprecated (RFC 9745 Deprecation
+    headers) pending the ADR-0005 sunset gates.
 servers:
   - url: /
 paths:

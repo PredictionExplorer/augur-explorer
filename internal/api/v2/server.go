@@ -75,7 +75,7 @@ type biddingAnalyticsReader interface {
 }
 
 type contractAddressReader interface {
-	ContractAddrs(context.Context) (cgmodel.CosmicGameContractAddrs, error)
+	ContractAddrs(context.Context) (cgmodel.ContractAddrs, error)
 }
 
 type participantReader interface {

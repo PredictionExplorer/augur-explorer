@@ -21,10 +21,11 @@ Arbitrum RPC ──► cg-etl / rw-etl ──► PostgreSQL ──► apiserver 
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full picture,
-[docs/openapi.yaml](docs/openapi.yaml) for the frozen v1 contract,
-[docs/openapi-v2.yaml](docs/openapi-v2.yaml) for the incremental v2 contract,
-and
-[docs/adr/](docs/adr/) for the key design decisions.
+[docs/openapi-v2.yaml](docs/openapi-v2.yaml) for the canonical v2 contract,
+[docs/openapi.yaml](docs/openapi.yaml) for the frozen (deprecated) v1
+contract with [docs/api-v2-migration.md](docs/api-v2-migration.md) mapping
+every v1 path to its replacement, and [docs/adr/](docs/adr/) for the key
+design decisions.
 
 ## Quick start
 
@@ -53,7 +54,7 @@ Or everything in containers: `docker compose --profile etl up`.
 |------|---------|
 | `cmd/` | One directory per binary: `apiserver`, `cg-etl`, `rw-etl`, `notibot`, `freezer-scan`, `srvmonitor`, CLIs (`cgctl`, `rwctl`, `opsctl`), ... |
 | `internal/` | Shared packages: `api` (handlers), `store` (database), `indexer`, `model`, `freezer`, `notify`, `testdb` |
-| `contracts/` | Generated abigen contract bindings |
+| `contracts/` | Generated abigen contract bindings (reproducible via `make generate`; see `contracts/README.md`) |
 | `db/migrations/` | goose schema migrations (source of truth for the schema) |
 | `deploy/` | Dockerfile and systemd units |
 | `docs/` | Architecture, operations runbook, OpenAPI spec, ADRs |
@@ -62,7 +63,7 @@ Or everything in containers: `docker compose --profile etl up`.
 ## Development
 
 ```bash
-make generate          # regenerate OpenAPI v2 models/server
+make generate          # regenerate OpenAPI v2 models/server + contract bindings
 make test              # unit tests (race detector)
 make test-integration  # + real Postgres via testcontainers
 make coverage-check    # enforced global + changed-code coverage policy

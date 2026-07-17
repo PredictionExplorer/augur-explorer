@@ -497,10 +497,14 @@ Required environment variables:
 - `RPC_URL` (for live blockchain queries)
 - `ENABLE_ROUTES_COSMICGAME` / `ENABLE_ROUTES_RANDOMWALK` (optional, default true)
 
-The frozen v1 endpoint reference is [openapi.yaml](openapi.yaml). The
-incremental, resource-oriented v2 surface is documented in
-[openapi-v2.yaml](openapi-v2.yaml) and [ADR-0005](adr/0005-api-v2.md). The
-full environment-variable reference is [.env.example](../.env.example).
+The canonical, resource-oriented v2 surface is documented in
+[openapi-v2.yaml](openapi-v2.yaml) and [ADR-0005](adr/0005-api-v2.md); its
+endpoint inventory is complete and [api-v2-migration.md](api-v2-migration.md)
+maps every v1 path to its replacement. The frozen v1 reference is
+[openapi.yaml](openapi.yaml) — deprecated (every v1 response carries RFC 9745
+`Deprecation` headers) but answering byte-identically until the ADR-0005
+sunset gates are met. The full environment-variable reference is
+[.env.example](../.env.example).
 
 ---
 
