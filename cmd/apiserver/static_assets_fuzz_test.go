@@ -56,6 +56,7 @@ func assertInsideRoot(t *testing.T, root, full, urlRel string) {
 }
 
 func fuzzPathSeeds(f *testing.F) {
+	f.Helper()
 	seed := "0xf4bcfd7913601331aff2ff6f771f05806cd4983381a217fc02b7e4f2c497f788"
 	for _, s := range []string{
 		"new/cosmicsignature/" + seed + ".png",

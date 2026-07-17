@@ -46,7 +46,8 @@ func buildBidPlacedLog(b *testing.B, cgABI *abi.ABI) *types.Log {
 	if err != nil {
 		b.Fatalf("packing BidPlaced topics: %v", err)
 	}
-	topics := []ethcommon.Hash{event.ID}
+	topics := make([]ethcommon.Hash, 0, 1+len(topicRows))
+	topics = append(topics, event.ID)
 	for _, row := range topicRows {
 		topics = append(topics, row[0])
 	}
@@ -69,7 +70,7 @@ func BenchmarkEventDecode(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		var ethEvt cgc.CosmicSignatureGameBidPlaced
 		if err := parsed.UnpackIntoInterface(&ethEvt, "BidPlaced", lg.Data); err != nil {
 			b.Fatalf("unpack: %v", err)

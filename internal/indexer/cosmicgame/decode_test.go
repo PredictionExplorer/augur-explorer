@@ -3,10 +3,15 @@
 package cosmicgame
 
 import (
+	"math"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
 // packERC20TransferFailedData builds the canonical ABI encoding of the
@@ -58,6 +63,36 @@ func TestErc20TransferFailedAmountShortData(t *testing.T) {
 		if _, err := erc20TransferFailedAmount(make([]byte, n)); err == nil {
 			t.Errorf("%d-byte data: want error, got nil", n)
 		}
+	}
+}
+
+// TestDecodeInitializedVersionBounds pins the totality guard on the
+// OpenZeppelin Initialized(uint64 version) decode: a version beyond int64
+// fails the batch loudly instead of wrapping negative in the database,
+// while the maximum representable version decodes exactly.
+func TestDecodeInitializedVersionBounds(t *testing.T) {
+	h := newUnitHandlers(t)
+	elog := &store.EthereumEventLog{EvtID: 1, BlockNum: 2, TxID: 3}
+
+	// One ABI word carrying version = 2^63 — one past math.MaxInt64.
+	word := make([]byte, 32)
+	word[24] = 0x80
+	lg := &types.Log{Data: word}
+	if _, err := h.decodeInitialized(lg, elog); err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Fatalf("decodeInitialized(2^63) error = %v, want version-overflow rejection", err)
+	}
+
+	// math.MaxInt64 itself is the last valid value.
+	word[24] = 0x7f
+	for i := 25; i < 32; i++ {
+		word[i] = 0xff
+	}
+	evt, err := h.decodeInitialized(lg, elog)
+	if err != nil {
+		t.Fatalf("decodeInitialized(MaxInt64): %v", err)
+	}
+	if evt.Version != math.MaxInt64 {
+		t.Fatalf("Version = %d, want math.MaxInt64", evt.Version)
 	}
 }
 

@@ -72,7 +72,7 @@ func gameStubFull() *testchain.ContractStub {
 	stub.Return("getDurationUntilMainPrize", big.NewInt(0))
 	stub.Return("delayDurationBeforeRoundActivation", big.NewInt(0))
 	stub.Return("owner", testSignerAddr)
-	stub.Return("roundActivationTime", big.NewInt(int64(testchain.BlockTime(100))+1000))
+	stub.Return("roundActivationTime", big.NewInt(testchain.BlockTimeInt64(100)+1000))
 	stub.Return("mainPrizeTimeIncrementInMicroSeconds", big.NewInt(3600*1_000_000))
 	stub.Return("initialDurationUntilMainPrizeDivisor", big.NewInt(200))
 	return stub

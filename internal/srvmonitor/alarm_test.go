@@ -70,7 +70,7 @@ func TestAlarmTrackerThresholdAndCooldown(t *testing.T) {
 	ctx := context.Background()
 
 	// Four occurrences: below threshold, no notification.
-	for i := 0; i < AlarmThreshold-1; i++ {
+	for range AlarmThreshold - 1 {
 		tracker.RecordAlarm(ctx, "db down")
 		clock.advance(time.Minute)
 	}
@@ -95,7 +95,7 @@ func TestAlarmTrackerThresholdAndCooldown(t *testing.T) {
 	clock.advance(NotificationCooldown)
 	// Re-arm the window: occurrences must again reach the threshold within
 	// AlarmTimeWindow of "now" (older ones were pruned).
-	for i := 0; i < AlarmThreshold; i++ {
+	for range AlarmThreshold {
 		tracker.RecordAlarm(ctx, "db down")
 	}
 	if got := len(runner.commandNames()); got != 2 {
@@ -110,7 +110,7 @@ func TestAlarmTrackerWindowPruning(t *testing.T) {
 
 	// Four occurrences, then a long pause: the window empties, so the next
 	// occurrence counts as 1 and no notification fires.
-	for i := 0; i < AlarmThreshold-1; i++ {
+	for range AlarmThreshold - 1 {
 		tracker.RecordAlarm(ctx, "flaky")
 	}
 	clock.advance(AlarmTimeWindow + time.Minute)
@@ -126,7 +126,7 @@ func TestAlarmTrackerDisabledAndEmpty(t *testing.T) {
 	tracker, runner, _, sink := newAlarmTest(false)
 	ctx := context.Background()
 
-	for i := 0; i < AlarmThreshold*2; i++ {
+	for range AlarmThreshold * 2 {
 		tracker.RecordAlarm(ctx, "ignored")
 	}
 	tracker.SendTestNotification(ctx, "test")
@@ -139,7 +139,7 @@ func TestAlarmTrackerDisabledAndEmpty(t *testing.T) {
 
 	// Empty messages are ignored even when enabled.
 	enabled, runner2, _, _ := newAlarmTest(true)
-	for i := 0; i < AlarmThreshold*2; i++ {
+	for range AlarmThreshold * 2 {
 		enabled.RecordAlarm(ctx, "")
 	}
 	if got := len(runner2.commandNames()); got != 0 {
@@ -204,7 +204,7 @@ func TestAlarmTrackerCleanupOldData(t *testing.T) {
 	tracker, _, clock, _ := newAlarmTest(true)
 	ctx := context.Background()
 
-	for i := 0; i < AlarmThreshold; i++ {
+	for range AlarmThreshold {
 		tracker.RecordAlarm(ctx, "old alarm") // fifth one notifies
 	}
 	tracker.RecordAlarm(ctx, "recent alarm")

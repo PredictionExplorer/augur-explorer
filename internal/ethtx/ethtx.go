@@ -241,7 +241,7 @@ func (s *Session) TransactOpts(value *big.Int, gasLimit uint64) *bind.TransactOp
 	key := s.Acc.PrivateKey
 	return &bind.TransactOpts{
 		From:     s.Acc.Address,
-		Nonce:    big.NewInt(int64(s.Acc.Nonce)),
+		Nonce:    new(big.Int).SetUint64(s.Acc.Nonce),
 		Value:    value,
 		GasLimit: gasLimit,
 		GasPrice: s.AdjustedGasPrice(),

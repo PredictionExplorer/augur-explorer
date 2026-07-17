@@ -364,7 +364,7 @@ func (e *Engine) runInitialBidding(ctx context.Context) {
 		_ = e.cfg.Sleep(ctx, afterTxDelay)
 
 		// Wait for the receipt.
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			_ = e.cfg.Sleep(ctx, afterTxDelay)
 			receipt, err := e.ethClient.TransactionReceipt(ctx, tx.Hash())
 			if err == nil {

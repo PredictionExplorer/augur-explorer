@@ -120,6 +120,7 @@ func (r *errorReadCloser) Close() error {
 func TestCheckEndpointTransportReadAndRequestErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("transport", func(t *testing.T) {
+		t.Parallel()
 		want := errors.New("connection refused")
 		result := CheckEndpoint(context.Background(), testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
 			return nil, want
@@ -129,6 +130,7 @@ func TestCheckEndpointTransportReadAndRequestErrors(t *testing.T) {
 		}
 	})
 	t.Run("nil response", func(t *testing.T) {
+		t.Parallel()
 		result := CheckEndpoint(context.Background(), testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
 			return nil, nil
 		}), "https://api.example.test/path", 10)
@@ -137,6 +139,7 @@ func TestCheckEndpointTransportReadAndRequestErrors(t *testing.T) {
 		}
 	})
 	t.Run("body read", func(t *testing.T) {
+		t.Parallel()
 		want := errors.New("body interrupted")
 		body := &errorReadCloser{err: want}
 		result := CheckEndpoint(context.Background(), testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
@@ -147,6 +150,7 @@ func TestCheckEndpointTransportReadAndRequestErrors(t *testing.T) {
 		}
 	})
 	t.Run("malformed URL", func(t *testing.T) {
+		t.Parallel()
 		result := CheckEndpoint(context.Background(), testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
 			t.Fatal("client should not be called")
 			return nil, nil
@@ -290,6 +294,7 @@ func TestRunValidationAndSourceErrors(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := Run(context.Background(), test.opts)
 			if err == nil {
 				t.Fatal("expected error")

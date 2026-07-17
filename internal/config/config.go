@@ -170,16 +170,18 @@ func setField(v reflect.Value, raw string) error {
 		v.SetFloat(f)
 		return nil
 	case reflect.Slice:
-		if v.Type().Elem().Kind() == reflect.Int64 {
-			list, err := parseInt64List(raw)
-			if err != nil {
-				return err
-			}
-			v.Set(reflect.ValueOf(list))
-			return nil
+		if v.Type().Elem().Kind() != reflect.Int64 {
+			panic(fmt.Sprintf("config: unsupported field kind %s", v.Type()))
 		}
+		list, err := parseInt64List(raw)
+		if err != nil {
+			return err
+		}
+		v.Set(reflect.ValueOf(list))
+		return nil
+	default:
+		panic(fmt.Sprintf("config: unsupported field kind %s", v.Type()))
 	}
-	panic(fmt.Sprintf("config: unsupported field kind %s", v.Type()))
 }
 
 // parseBool accepts the common spellings of a boolean flag. Unlike the

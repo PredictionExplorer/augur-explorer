@@ -198,7 +198,7 @@ func TestRateLimitConfiguration(t *testing.T) {
 				c.JSON(http.StatusOK, httpx.H{"ok": true})
 			}, RateLimit(tt.rps, tt.burst))
 
-			for i := 0; i < tt.requests; i++ {
+			for i := range tt.requests {
 				w := httptest.NewRecorder()
 				req := httptest.NewRequest(http.MethodGet, "/limited", nil)
 				req.RemoteAddr = "203.0.113.10:1234"

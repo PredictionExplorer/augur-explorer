@@ -88,12 +88,14 @@ func TestCheckTokenImageRejectsMalformedURL(t *testing.T) {
 func TestCheckTokenImageHandlesIncompleteClientResponses(t *testing.T) {
 	t.Parallel()
 	t.Run("nil response", func(t *testing.T) {
+		t.Parallel()
 		client := httpClientFunc(func(*http.Request) (*http.Response, error) { return nil, nil })
 		if _, err := CheckTokenImage(context.Background(), client, "https://images.example/image.png"); err == nil {
 			t.Fatal("nil response unexpectedly succeeded")
 		}
 	})
 	t.Run("nil body", func(t *testing.T) {
+		t.Parallel()
 		client := httpClientFunc(func(*http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusNoContent}, nil
 		})
@@ -222,6 +224,7 @@ func TestVerifyTokenImagesValidationAndSourceErrors(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			if _, err := VerifyTokenImages(context.Background(), test.opts); err == nil {
 				t.Fatal("expected error")
 			}

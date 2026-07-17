@@ -46,8 +46,8 @@ func TestScan(t *testing.T) {
 
 	t.Run("keep bounds the ring", func(t *testing.T) {
 		t.Parallel()
-		var lines []string
-		for i := 0; i < 10; i++ {
+		lines := make([]string, 0, 10)
+		for i := range 10 {
 			lines = append(lines,
 				`time=2026-07-09T02:42:09.121-05:00 level=INFO msg=request method=GET path="/api/`+strings.Repeat("x", i+1)+`" status=500 duration_ms=1 ip=1.1.1.1`)
 		}

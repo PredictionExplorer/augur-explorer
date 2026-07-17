@@ -260,16 +260,19 @@ func TestStaticAssetsThroughProductionChain(t *testing.T) {
 func TestResolveNFTStaticMountLayouts(t *testing.T) {
 	t.Parallel()
 	nestedThumbs := func(t *testing.T) string {
+		t.Helper()
 		root := t.TempDir()
 		writeFile(t, filepath.Join(root, "randomwalk", "000010_black_thumb.jpg"))
 		return root
 	}
 	rootThumbs := func(t *testing.T) string {
+		t.Helper()
 		root := t.TempDir()
 		writeFile(t, filepath.Join(root, "000010_black_thumb.jpg"))
 		return root
 	}
 	emptyNested := func(t *testing.T) string {
+		t.Helper()
 		root := t.TempDir()
 		if err := os.MkdirAll(filepath.Join(root, "randomwalk"), 0o750); err != nil {
 			t.Fatal(err)
@@ -289,7 +292,7 @@ func TestResolveNFTStaticMountLayouts(t *testing.T) {
 		{"root thumbs flat", rootThumbs, true, "/images", func(abs string) string { return abs }},
 		{"empty nested dir standard", emptyNested, false, "/images", func(abs string) string { return abs }},
 		{"empty nested dir flat", emptyNested, true, "/images", func(abs string) string { return filepath.Join(abs, "randomwalk") }},
-		{"bare dir standard", func(t *testing.T) string { return t.TempDir() }, false, "/images", func(abs string) string { return abs }},
+		{"bare dir standard", func(t *testing.T) string { t.Helper(); return t.TempDir() }, false, "/images", func(abs string) string { return abs }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

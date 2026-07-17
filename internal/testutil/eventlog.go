@@ -50,9 +50,10 @@ func BuildEventLog(t *testing.T, contractABI *abi.ABI, eventName string, address
 // 0x prefix) and 32-byte data words, for events that no current ABI defines.
 func BuildRawLog(t *testing.T, topic0Hex string, address common.Address, indexedTopics []common.Hash, dataWords ...*big.Int) *types.Log {
 	t.Helper()
-	topics := []common.Hash{common.HexToHash("0x" + topic0Hex)}
+	topics := make([]common.Hash, 0, 1+len(indexedTopics))
+	topics = append(topics, common.HexToHash("0x"+topic0Hex))
 	topics = append(topics, indexedTopics...)
-	var data []byte
+	data := make([]byte, 0, common.HashLength*len(dataWords))
 	for _, w := range dataWords {
 		data = append(data, common.BigToHash(w).Bytes()...)
 	}

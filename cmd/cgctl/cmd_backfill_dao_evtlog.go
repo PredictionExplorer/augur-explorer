@@ -43,6 +43,16 @@ Environment:
 
 func init() { register(newBackfillDaoEvtlogCmd()) }
 
+// blockNumFromWatermark converts a database block watermark to a block
+// number, rejecting negative values instead of letting them wrap into an
+// astronomically large scan end.
+func blockNumFromWatermark(source string, n int64) (uint64, error) {
+	if n < 0 {
+		return 0, fmt.Errorf("%s watermark is negative: %d", source, n)
+	}
+	return uint64(n), nil
+}
+
 func runBackfillDaoEvtlog(cmd *cobra.Command, fromBlock, toBlock uint64) error {
 	ctx := cmd.Context()
 	logger := slog.New(slog.NewTextHandler(cmd.OutOrStdout(), nil))
@@ -82,13 +92,19 @@ func runBackfillDaoEvtlog(cmd *cobra.Command, fromBlock, toBlock uint64) error {
 		if err != nil {
 			return fmt.Errorf("reading processing status: %w", err)
 		}
-		endBlock = uint64(status.LastBlockNum)
+		endBlock, err = blockNumFromWatermark("processing status", status.LastBlockNum)
+		if err != nil {
+			return err
+		}
 		if endBlock == 0 {
 			last, err := st.LastBlockNum(ctx)
 			if err != nil {
 				return fmt.Errorf("reading last block watermark: %w", err)
 			}
-			endBlock = uint64(last)
+			endBlock, err = blockNumFromWatermark("last_block", last)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if endBlock < fromBlock {

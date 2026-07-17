@@ -66,7 +66,7 @@ func newVerifyOwnerCmd() *cobra.Command {
 				fmt.Fprintf(cmd.OutOrStdout(), "Num tokens in database is set correctly (%v tokens)\n", numToks)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Starting verification process, will loop %v times\n", numToks)
-			for i := int64(0); i < numToks; i++ {
+			for i := range numToks {
 				chainOwnerAddr, err := rwalk.OwnerOf(copts, big.NewInt(i))
 				if err != nil {
 					return fmt.Errorf("error during Owner() call: %w", err)

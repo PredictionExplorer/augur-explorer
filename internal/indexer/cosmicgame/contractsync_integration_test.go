@@ -12,8 +12,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/big"
+	"strings"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/ethclient"
+	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
@@ -166,6 +171,47 @@ func TestSyncContractParamsFromChain(t *testing.T) {
 		if final[table] != want {
 			t.Errorf("%s rows after targeted change = %d, want %d", table, final[table], want)
 		}
+	}
+}
+
+// TestSyncContractParamsRejectsOverflowingHeaderTime pins the chain-boundary
+// guard in allocChainSyncEvtlog: a header timestamp beyond int64 (corrupt
+// node data) aborts the sync before any row is written, instead of wrapping
+// into a negative correction timestamp. A private fake chain keeps the huge
+// time offset away from the shared harness chain.
+func TestSyncContractParamsRejectsOverflowingHeaderTime(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	chain := testchain.New(t)
+	chain.EnsureBlock(500)
+	chain.RegisterCall(addr(fxGameAddr), v1GameStub().Handler())
+	chain.RegisterCall(addr(fxPrizesAddr), prizesWalletStub().Handler())
+
+	rpcClient, err := ethrpc.DialContext(ctx, chain.URL())
+	if err != nil {
+		t.Fatalf("dialing fake chain: %v", err)
+	}
+	t.Cleanup(rpcClient.Close)
+	var total uint64
+	if err := rpcClient.CallContext(ctx, &total, "evm_increaseTime", int64(math.MaxInt64)); err != nil {
+		t.Fatalf("evm_increaseTime: %v", err)
+	}
+	// A block built now carries BaseTime + offset, past math.MaxInt64.
+	chain.EnsureBlock(501)
+
+	client := ethclient.NewClient(rpcClient)
+	err = SyncContractParams(ctx, cgRepo, dbStore, client, fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler))
+	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Fatalf("sync error = %v, want header-timestamp overflow", err)
+	}
+
+	var blocks int
+	if err := testDB.SQL.QueryRow("SELECT COUNT(*) FROM block").Scan(&blocks); err != nil {
+		t.Fatalf("counting blocks: %v", err)
+	}
+	if blocks != 0 {
+		t.Errorf("block rows = %d, want 0 (guard must fire before InsertBlock)", blocks)
 	}
 }
 

@@ -247,6 +247,7 @@ func TestRunInventoryMissingOnlyAndCompleteMessage(t *testing.T) {
 func TestRunInventoryErrorsAndCancellation(t *testing.T) {
 	t.Parallel()
 	t.Run("already canceled", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		_, err := RunInventory(ctx, InventoryOptions{})
@@ -255,12 +256,14 @@ func TestRunInventoryErrorsAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("nil source", func(t *testing.T) {
+		t.Parallel()
 		_, err := RunInventory(context.Background(), InventoryOptions{BaseDir: t.TempDir(), Schema: "public"})
 		if err == nil || !strings.Contains(err.Error(), "source") {
 			t.Fatalf("error = %v", err)
 		}
 	})
 	t.Run("invalid schema", func(t *testing.T) {
+		t.Parallel()
 		_, err := RunInventory(context.Background(), InventoryOptions{
 			Source: &fakeTokenSource{}, BaseDir: t.TempDir(), Schema: "bad.schema",
 		})
@@ -269,6 +272,7 @@ func TestRunInventoryErrorsAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("source error", func(t *testing.T) {
+		t.Parallel()
 		base := t.TempDir()
 		want := errors.New("database unavailable")
 		_, err := RunInventory(context.Background(), InventoryOptions{
@@ -279,6 +283,7 @@ func TestRunInventoryErrorsAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("invalid base", func(t *testing.T) {
+		t.Parallel()
 		path := filepath.Join(t.TempDir(), "file")
 		writeTestFile(t, path)
 		_, err := RunInventory(context.Background(), InventoryOptions{
@@ -289,6 +294,7 @@ func TestRunInventoryErrorsAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("missing base", func(t *testing.T) {
+		t.Parallel()
 		path := filepath.Join(t.TempDir(), "missing")
 		_, err := RunInventory(context.Background(), InventoryOptions{
 			Source: &fakeTokenSource{}, BaseDir: path, Schema: "public",
@@ -298,6 +304,7 @@ func TestRunInventoryErrorsAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("cancel after load", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		source := &fakeTokenSource{
 			tokens: []Token{{TokenID: 1, Seed: "1"}},

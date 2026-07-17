@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -250,7 +251,12 @@ func (f *NodeFiller) RunProject(
 		func(ctx context.Context, logEntry types.Log) error {
 			stats.LogsFromNode++
 
-			blockNum := int64(logEntry.BlockNumber)
+			blockNum, err := chainBlockNum(logEntry.BlockNumber)
+			if err != nil {
+				// Corrupt node data: abort instead of archiving under a
+				// wrapped negative block number.
+				return err
+			}
 			if !options.DryRun {
 				if _, done := ensuredBlocks[blockNum]; !done {
 					insertedCount, skippedCount, kind, err := f.ensureBlock(
@@ -305,7 +311,7 @@ func (f *NodeFiller) RunProject(
 					return nil
 				}
 				inserted, err := writer.InsertEventLog(ctx, EventLog{
-					BlockNum:        int64(logEntry.BlockNumber),
+					BlockNum:        blockNum,
 					LogIndex:        logIndex,
 					TxHash:          txHash,
 					ContractAddress: logEntry.Address.Hex(),
@@ -335,7 +341,7 @@ func (f *NodeFiller) RunProject(
 			// failure prevented arch_tx/arch_block from being filled, so always
 			// repair those rows even when this log was already present.
 			insertedCount, skippedCount, kind, err := f.ensureTransaction(
-				ctx, writer, txHash, int64(logEntry.BlockNumber),
+				ctx, writer, txHash, blockNum,
 			)
 			if err != nil {
 				if ctxErr := contextError(ctx, err); ctxErr != nil {
@@ -376,7 +382,7 @@ func (f *NodeFiller) RunProject(
 		}
 	}
 	stats.BlocksScanned = scanStats.BlocksScanned
-	stats.FilterRetries += int64(scanStats.FilterErrors)
+	stats.FilterRetries += int64(scanStats.FilterErrors) // #nosec G115 -- in-process retry counter, bounded far below int64
 	closeErr := writer.Close()
 	writerClosed = true
 	if scanErr != nil {
@@ -386,6 +392,16 @@ func (f *NodeFiller) RunProject(
 		return stats, fmt.Errorf("archive node-fill: close writer: %w", closeErr)
 	}
 	return stats, nil
+}
+
+// chainBlockNum converts an RPC-supplied block number to the int64 the
+// archive schema stores, rejecting values beyond int64 (corrupt node data)
+// instead of wrapping them negative.
+func chainBlockNum(n uint64) (int64, error) {
+	if n > math.MaxInt64 {
+		return 0, fmt.Errorf("archive node-fill: block number %d overflows int64", n)
+	}
+	return int64(n), nil
 }
 
 type nodeFillFilterer struct {
@@ -479,6 +495,10 @@ func (f *NodeFiller) ensureTransaction(
 	inputSig := ""
 	if len(tx.Data()) >= 4 {
 		inputSig = "0x" + hex.EncodeToString(tx.Data()[:4])
+	}
+	if receipt.GasUsed > math.MaxInt64 {
+		// Corrupt node data: gas is bounded by the block gas limit.
+		return 0, 0, rpcError, fmt.Errorf("transaction %s: gas used %d overflows int64", txHash, receipt.GasUsed)
 	}
 
 	insertedRow, err := writer.InsertTransaction(ctx, Transaction{
@@ -633,12 +653,12 @@ func SelectStartBlock(flagFrom uint64, fromAddress, fromEvent sql.NullInt64) (ui
 	if flagFrom > 0 {
 		return flagFrom, nil
 	}
-	var candidates []int64
+	var candidates []uint64
 	if fromAddress.Valid && fromAddress.Int64 > 0 {
-		candidates = append(candidates, fromAddress.Int64)
+		candidates = append(candidates, uint64(fromAddress.Int64))
 	}
 	if fromEvent.Valid && fromEvent.Int64 > 0 {
-		candidates = append(candidates, fromEvent.Int64)
+		candidates = append(candidates, uint64(fromEvent.Int64))
 	}
 	if len(candidates) == 0 {
 		return 0, errors.New("could not auto-detect start block; pass --from <deployment_block>")
@@ -649,7 +669,7 @@ func SelectStartBlock(flagFrom uint64, fromAddress, fromEvent sql.NullInt64) (ui
 			minimum = candidate
 		}
 	}
-	return uint64(minimum), nil
+	return minimum, nil
 }
 
 // RequireArchLogIndex verifies the natural-key column required by node-fill.

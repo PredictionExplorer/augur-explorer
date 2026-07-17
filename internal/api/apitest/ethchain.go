@@ -104,7 +104,8 @@ func registerChainState(chain *testchain.Chain) chainStubs {
 	gameStub.Return("lastBidderAddress", alice)
 	gameStub.Return("initialDurationUntilMainPrizeDivisor", big.NewInt(2))
 	gameStub.Return("timeoutDurationToClaimMainPrize", big.NewInt(86400))
-	gameStub.Return("mainPrizeTime", big.NewInt(int64(testchain.BlockTime(chainTipBlock))+3600))
+	mainPrizeTime := new(big.Int).SetUint64(testchain.BlockTime(chainTipBlock))
+	gameStub.Return("mainPrizeTime", mainPrizeTime.Add(mainPrizeTime, big.NewInt(3600)))
 	gameStub.Return("delayDurationBeforeRoundActivation", big.NewInt(600))
 	gameStub.Return("roundActivationTime", big.NewInt(1767228200))
 

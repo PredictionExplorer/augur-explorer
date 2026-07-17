@@ -82,7 +82,7 @@ func LoadJSONL(r io.Reader) (map[Key]int, map[string]bool, error) {
 		contracts[contract] = true
 
 		events[Key{
-			BlockNum: int64(record.BlockNumber),
+			BlockNum: int64(record.BlockNumber), // #nosec G115 -- scanner output from real freezer files fits int64
 			Topic0:   topic0,
 			Contract: contract,
 		}]++

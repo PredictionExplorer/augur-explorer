@@ -2,8 +2,10 @@ package testchain
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math/big"
+	"strings"
 	"testing"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -55,6 +57,21 @@ func TestMissingBlockIsNotFound(t *testing.T) {
 	_, err := ec.HeaderByNumber(context.Background(), big.NewInt(999))
 	if !errors.Is(err, ethereum.NotFound) {
 		t.Errorf("missing block error = %v, want ethereum.NotFound", err)
+	}
+}
+
+// TestParseBlockTagRejectsOverflowingHeight pins the fake node's guard: a
+// hex block tag beyond int64 answers an error instead of wrapping into a
+// negative height.
+func TestParseBlockTagRejectsOverflowingHeight(t *testing.T) {
+	chain := New(t)
+	_, err := chain.parseBlockTag(json.RawMessage(`"0xffffffffffffffff"`))
+	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Fatalf("parseBlockTag error = %v, want int64 overflow rejection", err)
+	}
+	height, err := chain.parseBlockTag(json.RawMessage(`"0x2a"`))
+	if err != nil || height != 42 {
+		t.Fatalf("parseBlockTag(0x2a) = %d, %v; want 42", height, err)
 	}
 }
 

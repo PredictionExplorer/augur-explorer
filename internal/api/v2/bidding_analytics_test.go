@@ -17,7 +17,7 @@ import (
 func TestBiddingActivityReturnsBoundedSpikes(t *testing.T) {
 	t.Parallel()
 	records := make([]cgmodel.CGBidFrequencyBucket, 0, 11)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		count := int64(0)
 		if i == 5 {
 			count = 20

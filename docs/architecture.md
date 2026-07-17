@@ -148,5 +148,7 @@ CI.
 
 - `GET /healthz` — liveness; `GET /readyz` — readiness (DB ping).
 - Prometheus metrics and pprof on the private `METRICS_ADDR` listener.
-- Request metrics: `rwcg_http_requests_total`,
-  `rwcg_http_request_duration_seconds` (labelled by route template).
+- Request metrics: `rwcg_http_requests_total` (labelled by route template,
+  status class and `deprecated` — the v1-membership flag the sunset gate
+  reads; see docs/operations.md) and `rwcg_http_request_duration_seconds`
+  (labelled by route template).

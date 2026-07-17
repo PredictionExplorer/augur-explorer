@@ -66,7 +66,7 @@ func TestAddressCacheEvictsLeastRecentlyUsed(t *testing.T) {
 func TestAddressCacheBoundHolds(t *testing.T) {
 	const bound = 16
 	c := newAddressCache(bound)
-	for i := 0; i < 10*bound; i++ {
+	for i := range 10 * bound {
 		c.put(fmt.Sprintf("0x%040x", i), int64(i))
 	}
 	if got := c.len(); got != bound {
@@ -109,11 +109,11 @@ func TestAddressCacheZeroSizeUsesDefault(t *testing.T) {
 func TestAddressCacheConcurrent(t *testing.T) {
 	c := newAddressCache(64)
 	var wg sync.WaitGroup
-	for g := 0; g < 8; g++ {
+	for g := range 8 {
 		wg.Add(1)
 		go func(g int) {
 			defer wg.Done()
-			for i := 0; i < 500; i++ {
+			for i := range 500 {
 				addr := fmt.Sprintf("0x%040x", i%100)
 				if aid, ok := c.get(addr); ok && aid != int64(i%100) {
 					t.Errorf("corrupted entry: get(%s) = %d", addr, aid)

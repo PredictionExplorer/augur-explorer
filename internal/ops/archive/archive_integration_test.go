@@ -94,8 +94,8 @@ func TestNodeFillDryRunInsertIdempotencyAndRPCError(t *testing.T) {
 		chain.AttachLogs(tx.Hash(), []*types.Log{{
 			Address:     contract,
 			Topics:      []common.Hash{topic},
-			Data:        []byte{byte(block)},
-			BlockNumber: uint64(block),
+			Data:        []byte{byte(block & 0xff)},
+			BlockNumber: uint64(block), // #nosec G115 -- positive test block constant
 			BlockHash:   chain.BlockHash(block),
 			TxHash:      tx.Hash(),
 			Index:       0,

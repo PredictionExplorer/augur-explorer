@@ -179,7 +179,8 @@ func TestLiveContractReadFailures(t *testing.T) {
 	t.Run("prize time keeps 200 shape when the contract is unreachable", func(t *testing.T) {
 		h.gameStub.Handle("mainPrizeTime", rpcFail)
 		t.Cleanup(func() {
-			h.gameStub.Return("mainPrizeTime", big.NewInt(int64(testchain.BlockTime(chainTipBlock))+3600))
+			mainPrizeTime := new(big.Int).SetUint64(testchain.BlockTime(chainTipBlock))
+			h.gameStub.Return("mainPrizeTime", mainPrizeTime.Add(mainPrizeTime, big.NewInt(3600)))
 		})
 
 		w := h.get(t, "/api/cosmicgame/rounds/current/time")

@@ -66,7 +66,7 @@ func (f fakeRankingRepository) ContractAddrs(ctx context.Context) (rwmodel.Contr
 func (f fakeRankingRepository) ExploreRandomTokenIDs(ctx context.Context, rwalkAid, maxID int64, limit int) ([]int64, error) {
 	if f.explore == nil {
 		out := make([]int64, 0, limit)
-		for i := 0; i < limit; i++ {
+		for i := range limit {
 			out = append(out, int64(10+i))
 		}
 		return out, nil
@@ -165,7 +165,7 @@ type countingEntropy struct {
 func (c *countingEntropy) Read(p []byte) (int, error) {
 	c.calls++
 	for i := range p {
-		p[i] = byte(c.calls)
+		p[i] = byte(c.calls & 0xff)
 	}
 	return len(p), nil
 }
@@ -1394,7 +1394,7 @@ func TestRankingWriteRateLimits(t *testing.T) {
 		router := httpx.NewRouter()
 		server.RegisterRoutes(router)
 
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			exhaust := httptest.NewRequest(http.MethodPost, "/api/v2/randomwalk/ranking/challenges", nil)
 			router.ServeHTTP(httptest.NewRecorder(), exhaust)
 		}
@@ -1421,7 +1421,7 @@ func TestRankingWriteRateLimits(t *testing.T) {
 		})
 		router := httpx.NewRouter()
 		server.RegisterRoutes(router)
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			request := httptest.NewRequest(http.MethodGet, "/api/v2/randomwalk/ranking/statistics", nil)
 			response := httptest.NewRecorder()
 			router.ServeHTTP(response, request)

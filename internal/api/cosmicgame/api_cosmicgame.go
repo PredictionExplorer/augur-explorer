@@ -144,7 +144,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 			}
 		}
 	case reflect.Struct:
-		for i := 0; i < val.NumField(); i++ {
+		for i := range val.NumField() {
 			f := val.Field(i)
 			if !f.CanSet() {
 				continue
@@ -162,9 +162,11 @@ func sanitizeFloatsForJSON(v interface{}) {
 					sanitizeFloatsForJSON(f.Interface())
 				}
 			case reflect.Slice:
-				for j := 0; j < f.Len(); j++ {
+				for j := range f.Len() {
 					sanitizeFloatsForJSON(f.Index(j).Addr().Interface())
 				}
+			default:
+				// Other field kinds cannot carry float64 values.
 			}
 		}
 	case reflect.Pointer:
@@ -172,9 +174,11 @@ func sanitizeFloatsForJSON(v interface{}) {
 			sanitizeFloatsForJSON(val.Interface())
 		}
 	case reflect.Slice:
-		for i := 0; i < val.Len(); i++ {
+		for i := range val.Len() {
 			sanitizeFloatsForJSON(val.Index(i).Addr().Interface())
 		}
+	default:
+		// Other kinds cannot carry float64 values.
 	}
 }
 

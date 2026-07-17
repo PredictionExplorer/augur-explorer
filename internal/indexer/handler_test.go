@@ -315,3 +315,30 @@ func TestLogProcessorErrors(t *testing.T) {
 		t.Errorf("corrupt RLP: got %v, want RLP decode error", err)
 	}
 }
+
+// TestLogProcessorRejectsNegativeBlockNumber pins the corrupt-row guard: a
+// negative stored block number must fail the batch instead of wrapping into
+// an astronomical uint64 on the reconstructed log.
+func TestLogProcessorRejectsNegativeBlockNumber(t *testing.T) {
+	var rec recordingHandler
+	reg, err := NewRegistry(rec.handler(handlerTopicA, "EventA"))
+	if err != nil {
+		t.Fatalf("NewRegistry: %v", err)
+	}
+	src := fakeEventLogSource{
+		7: {
+			EvtID:           7,
+			BlockNum:        -1234,
+			ContractAddress: contractX.Hex(),
+			RlpLog:          mustRLP(t, &types.Log{Address: contractX, Topics: []common.Hash{handlerTopicA}}),
+		},
+	}
+
+	err = LogProcessor(src, reg)(context.Background(), 7)
+	if err == nil || !strings.Contains(err.Error(), "negative block number") {
+		t.Fatalf("process error = %v, want negative-block-number rejection", err)
+	}
+	if len(rec.decoded) != 0 {
+		t.Error("corrupt row reached a handler")
+	}
+}

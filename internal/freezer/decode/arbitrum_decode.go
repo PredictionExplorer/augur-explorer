@@ -76,12 +76,14 @@ func smartDecompress(data []byte) ([]byte, error) {
 	// Scan for RLP list prefix after varint
 	for offset := varintBytes; offset < len(data) && offset < varintBytes+10; offset++ {
 		if data[offset] >= 0xc0 {
-			// Found RLP start
-			remaining := len(data) - offset
-			if uint64(remaining) >= rlpSize {
-				return data[offset : offset+int(rlpSize)], nil
+			// Found RLP start. Slicing the tail with the uint64 size
+			// directly avoids any lossy conversion of the
+			// attacker-controlled varint value.
+			tail := data[offset:]
+			if uint64(len(tail)) >= rlpSize {
+				return tail[:rlpSize], nil
 			}
-			return data[offset:], nil
+			return tail, nil
 		}
 	}
 

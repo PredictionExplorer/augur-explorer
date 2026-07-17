@@ -117,6 +117,12 @@ The API server terminates TLS itself — there is no reverse proxy — so the
 response-edge policy lives in the shared middleware chain
 ([ADR-0007](adr/0007-http-edge.md)):
 
+- **Listener timeouts**: every listener bounds header reads (10s), full
+  request reads (30s — bodies are small JSON) and idle keep-alive
+  connections (120s). There is deliberately **no WriteTimeout** while the
+  frozen v1 API can stream unbounded arrays to slow clients; revisit at v1
+  removal.
+
 - **Compression**: JSON/text responses ≥ 1 KiB are gzip-encoded for clients
   sending `Accept-Encoding: gzip`. Images and video are never re-compressed.
   Every response carries `Vary: Accept-Encoding`.
@@ -173,6 +179,40 @@ of the v1 layer itself is a code change gated on the same criteria.
 curl -sI https://api.example/api/cosmicgame/rounds/list/0/10 \
   | grep -iE 'deprecation|sunset|link'
 ```
+
+### Measuring the sunset gate (v1 traffic)
+
+`rwcg_http_requests_total` carries a `deprecated` label derived from the
+same `routes.V1Deprecated` policy as the headers, so metric and header can
+never disagree. `deprecated="true"` covers every request under the
+deprecated prefixes — matched routes *and* 404s (`route="unmatched"`), so
+probing bots don't hide in unrouted paths. The exempt surfaces (health,
+`/version`, `/api/v2/*`, the FAQ proxy, the contract-pinned metadata
+routes) count `deprecated="false"`.
+
+Current v1 request rate, per route:
+
+```promql
+sum by (route) (rate(rwcg_http_requests_total{deprecated="true"}[1h]))
+```
+
+The D6 zero-traffic check — total v1 requests over the last 30 days,
+excluding documented probes — must evaluate to zero:
+
+```promql
+sum(increase(rwcg_http_requests_total{deprecated="true"}[30d]))
+```
+
+**Documented probes:** monitoring that intentionally hits v1 (e.g. an
+uptime check pinned to a legacy route) must either move to `/healthz` /
+`/api/v2` before the measurement window starts, or be excluded explicitly
+by its route label — record any such exclusion here with the route and the
+reason. There are currently **no** documented probes: the expression above
+must read exactly zero.
+
+Dashboards written before the label existed keep their shape with
+`sum without (deprecated) (...)`; the label was added 2026-07-16 and old
+series simply lack it.
 
 ## Security posture
 

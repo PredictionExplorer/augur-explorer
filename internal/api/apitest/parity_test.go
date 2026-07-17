@@ -39,6 +39,7 @@ type parityCase struct {
 // placeholder when present; used for legitimately random values.
 func redactStringFields(fields ...string) redactor {
 	return func(t *testing.T, body any) any {
+		t.Helper()
 		m, ok := body.(map[string]any)
 		if !ok {
 			t.Fatalf("expected JSON object for redaction, got %T", body)

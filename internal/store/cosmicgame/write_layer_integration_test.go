@@ -27,7 +27,7 @@ func TestDeleteMethodsValidSQL(t *testing.T) {
 	errType := reflect.TypeOf((*error)(nil)).Elem()
 
 	swept := 0
-	for i := 0; i < repoType.NumMethod(); i++ {
+	for i := range repoType.NumMethod() {
 		m := repoType.Method(i)
 		if !strings.HasPrefix(m.Name, "Delete") {
 			continue

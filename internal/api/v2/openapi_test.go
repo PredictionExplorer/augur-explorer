@@ -45,7 +45,7 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 
 	router := httpx.NewRouter()
 	newTestServer(t, fakeBidReader{}).RegisterRoutes(router)
-	registered := make([]string, 0)
+	registered := make([]string, 0, len(router.Routes()))
 	for _, route := range router.Routes() {
 		registered = append(registered, route.Method+" "+route.Pattern)
 	}

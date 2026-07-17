@@ -39,7 +39,7 @@ func startReadChain(t *testing.T) *testchain.Chain {
 // infoGameStub scripts every read the info command makes against a V1 game.
 func infoGameStub() *testchain.ContractStub {
 	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI)
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 
 	// Round status.
 	stub.Return("roundNum", big.NewInt(3))
@@ -194,7 +194,7 @@ func TestInfoCommandV2Sections(t *testing.T) {
 func TestInfoCommandInactiveRoundAndDefaultAddress(t *testing.T) {
 	chain := startReadChain(t)
 	stub := infoGameStub()
-	stub.Return("roundActivationTime", big.NewInt(int64(testchain.BlockTime(100))+120))
+	stub.Return("roundActivationTime", big.NewInt(testchain.BlockTimeInt64(100)+120))
 	registerInfoWorld(t, chain, stub)
 	// The default local Hardhat address is used when no arg is given.
 	chain.RegisterCall(common.HexToAddress(defaultLocalGameAddr), stub.Handler())

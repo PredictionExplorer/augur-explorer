@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +16,16 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
+
+// logBlockNum converts an RPC-supplied log block number to the int64 the
+// store schema uses, rejecting values beyond int64 (corrupt node data)
+// instead of wrapping them negative.
+func logBlockNum(lg *types.Log) (int64, error) {
+	if lg.BlockNumber > math.MaxInt64 {
+		return 0, fmt.Errorf("log block number %d overflows int64", lg.BlockNumber)
+	}
+	return int64(lg.BlockNumber), nil
+}
 
 // EnsureBlockExists verifies the block exists in the database with the
 // expected hash, inserting it from the chain when missing. A stored hash that
@@ -143,7 +154,11 @@ func (e *Engine) fetchTransactionFromArchive(ctx context.Context, txHash string,
 // InsertEventLog stores one fetched log in evt_log (resolving the emitting
 // contract's address id first) and returns the new row's id.
 func (e *Engine) InsertEventLog(ctx context.Context, log types.Log, txID int64) (int64, error) {
-	contractAid, err := e.store.LookupOrCreateAddress(ctx, log.Address.Hex(), int64(log.BlockNumber), txID)
+	blockNum, err := logBlockNum(&log)
+	if err != nil {
+		return 0, err
+	}
+	contractAid, err := e.store.LookupOrCreateAddress(ctx, log.Address.Hex(), blockNum, txID)
 	if err != nil {
 		return 0, fmt.Errorf("contract address lookup failed for %s: %w", log.Address.Hex(), err)
 	}

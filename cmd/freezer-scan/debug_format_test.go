@@ -42,7 +42,7 @@ func TestDebugFormat(t *testing.T) {
 	t.Logf("Little-endian 32-bit prefix: %d (0x%08x)", len32le, len32le)
 
 	// 3. Try snappy decode on data starting at various offsets
-	for offset := 0; offset < 10; offset++ {
+	for offset := range 10 {
 		decoded, err := snappy.Decode(nil, data[offset:])
 		if err == nil {
 			t.Logf("Snappy decode succeeded at offset %d, decoded %d bytes", offset, len(decoded))
@@ -71,7 +71,7 @@ func TestDebugFormat(t *testing.T) {
 	t.Logf("If interpreted as typed tx, type would be: %d", data[0])
 
 	// 6. Look for RLP list markers in the data
-	for i := 0; i < min(100, len(data)); i++ {
+	for i := range min(100, len(data)) {
 		if data[i] >= 0xc0 && data[i] <= 0xf7 {
 			t.Logf("Possible RLP short list at offset %d: 0x%02x", i, data[i])
 		}

@@ -15,8 +15,8 @@ import (
 
 // newUnitHandlers builds a Handlers set over inert dependencies: good enough
 // for registry construction and pure decode calls.
-func newUnitHandlers(t testing.TB) *Handlers {
-	t.Helper()
+func newUnitHandlers(tb testing.TB) *Handlers {
+	tb.Helper()
 	h, err := New(Config{
 		Repo: rwstore.NewRepo(nil),
 		Contracts: Contracts{
@@ -26,7 +26,7 @@ func newUnitHandlers(t testing.TB) *Handlers {
 		Logger: slog.New(slog.DiscardHandler),
 	})
 	if err != nil {
-		t.Fatalf("New: %v", err)
+		tb.Fatalf("New: %v", err)
 	}
 	return h
 }

@@ -11,25 +11,37 @@ linters:
   enable:
     - bodyclose      # HTTP response bodies must be closed
     - copyloopvar    # detects pre-Go1.22 loop-var copies that are now redundant
+    - errchkjson     # JSON encode errors checked; unsafe types surfaced
     - errname        # error vars named errFoo, types named FooError
     - errorlint      # errors compared/wrapped with errors.Is/As/%w
+    - exhaustive     # enum switches handle every value (or declare a default)
     - godot          # comments end in a period
     - gosec          # security checks (SQL building, file perms, crypto)
+    - intrange       # Go 1.22 range-over-int instead of C-style loops
     - misspell       # commonly misspelled English words
     - noctx          # HTTP requests must carry a context
     - nolintlint     # nolint directives must be specific and justified
+    - prealloc       # preallocate slices with a knowable capacity
+    - reassign       # no reassignment of other packages' variables
     - revive         # doc-comment enforcement only; see settings below
     - rowserrcheck   # sql.Rows.Err must be checked
     - sqlclosecheck  # sql.Rows/Stmt must be closed
+    - thelper        # test helpers call t.Helper() and name testing.TB "tb"
+    - tparallel      # parallel parents parallelize their subtests
     - unconvert      # redundant type conversions
     - unparam        # unused function parameters
     - usestdlibvars  # http.StatusOK instead of 200, etc.
+    - usetesting     # t.Setenv/t.TempDir/t.Context instead of os equivalents
     - wastedassign   # assignments never read
     # Deliberately not enabled (§8.4): contextcheck (its inherited-context
     # heuristics fight the engines' deliberate context.WithoutCancel batch
     # completion), paralleltest (t.Parallel over the shared testcontainer
     # harnesses would race the fixture-restoring mutation tests), testifylint
-    # (the repository uses the standard library test style, not testify).
+    # (the repository uses the standard library test style, not testify),
+    # nilerr (the v2 strict handlers legitimately return (problemResponse,
+    # nil) after mapping an error to its RFC 9457 response, and the indexer
+    # retry loops deliberately absorb errors they have logged — annotating
+    # ~30 correct sites buys nothing).
   settings:
     errcheck:
       exclude-functions:
@@ -40,9 +52,10 @@ linters:
         - fmt.Fprint
         - fmt.Fprintf
         - fmt.Fprintln
-    gosec:
-      excludes:
-        - G115 # integer overflow conversions — pervasive in chain math; revisit per-case
+    exhaustive:
+      # A default case is a deliberate statement about the remaining values;
+      # switches without one must enumerate the enum completely.
+      default-signifies-exhaustive: true
     revive:
       # Only the documentation rules run (an empty rule list would enable
       # revive's whole default set): every exported symbol and every package
@@ -82,10 +95,20 @@ linters:
       - path: ^internal/model/
         text: "ST1003"
       # Context-free request/listen constructors are idiomatic in tests
-      # (httptest.NewRequest carries context.Background by design).
+      # (httptest.NewRequest carries context.Background by design), and
+      # table-driven fixture literals stay readable without capacity hints
+      # (prealloc is a production micro-optimization).
       - path: _test\.go$
         linters:
           - noctx
+          - prealloc
+      # The ETL fixture and story tables defer log construction in
+      # per-entry closures. A failure must attribute to the fixture entry
+      # itself, so t.Helper() (which would re-attribute to the replay
+      # harness) is deliberately absent from them.
+      - path: (cosmicgame|randomwalk)/(fixtures|story)_test\.go$
+        linters:
+          - thelper
 
 formatters:
   enable:

@@ -178,11 +178,11 @@ func TestJSONLWriterSerializesConcurrentWrites(t *testing.T) {
 	writer := &JSONLWriter{w: &buffer, encoder: json.NewEncoder(&buffer)}
 	const records = 100
 	var wait sync.WaitGroup
-	for i := 0; i < records; i++ {
+	for i := range uint64(records) {
 		wait.Add(1)
-		go func(index int) {
+		go func(index uint64) {
 			defer wait.Done()
-			if err := writer.Write(testLogRecord(uint64(index))); err != nil {
+			if err := writer.Write(testLogRecord(index)); err != nil {
 				t.Errorf("Write(%d): %v", index, err)
 			}
 		}(i)

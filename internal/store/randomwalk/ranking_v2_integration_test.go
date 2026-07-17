@@ -488,7 +488,7 @@ func BenchmarkRankingQueries(b *testing.B) {
 
 	b.Run("ratings_page", func(b *testing.B) {
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			records, _, err := r.RankingRatingsPage(ctx, aidRandomWalk, nil, 50)
 			if err != nil || len(records) == 0 {
 				b.Fatalf("ratings page: %v (%d rows)", err, len(records))
@@ -498,7 +498,7 @@ func BenchmarkRankingQueries(b *testing.B) {
 
 	b.Run("statistics", func(b *testing.B) {
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			record, err := r.RankingStatistics(ctx)
 			if err != nil || record.TotalVotes == 0 {
 				b.Fatalf("statistics: %v (%+v)", err, record)

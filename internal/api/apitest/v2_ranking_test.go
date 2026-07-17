@@ -617,7 +617,7 @@ func TestAPIV2RankingWriteRateLimit(t *testing.T) {
 	var limited *httptest.ResponseRecorder
 	// The default challenge bucket is 2 rps with burst 20; drain it from
 	// one address.
-	for i := 0; i < 25; i++ {
+	for i := range 25 {
 		response := h.do(t, request{
 			method:     http.MethodPost,
 			path:       v2RankingChallenges,

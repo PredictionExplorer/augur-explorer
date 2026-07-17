@@ -53,11 +53,19 @@ type Client struct {
 	WaitTimeout time.Duration
 }
 
+// generateRequest is the artifact-generator service's POST body.
+type generateRequest struct {
+	TokenID int64  `json:"token_id"`
+	Seed    string `json:"seed"`
+}
+
 // Generate asks the generator service to create image/video artifacts for a
 // token.
 func (c *Client) Generate(ctx context.Context, tokenID int64, seed string) error {
-	// A fixed-shape map of an int64 and a string cannot fail to encode.
-	payload, _ := json.Marshal(map[string]interface{}{"token_id": tokenID, "seed": seed})
+	payload, err := json.Marshal(generateRequest{TokenID: tokenID, Seed: seed})
+	if err != nil {
+		return fmt.Errorf("encoding generation request: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.RequestURL, bytes.NewReader(payload))
 	if err != nil {
 		return fmt.Errorf("building generation request: %w", err)

@@ -182,6 +182,11 @@ func LogProcessor(src EventLogSource, registry *Registry) ProcessFunc {
 		if err := rlp.DecodeBytes(evtlog.RlpLog, &lg); err != nil {
 			return fmt.Errorf("processing event %v: RLP decode: %w", evtID, err)
 		}
+		if evtlog.BlockNum < 0 {
+			// A negative stored block number is corrupt data; converting it
+			// would wrap into an astronomical block number.
+			return fmt.Errorf("processing event %v: negative block number %d", evtID, evtlog.BlockNum)
+		}
 		// The RLP payload carries only the consensus fields; the derived
 		// fields ride in the evt_log columns.
 		lg.BlockNumber = uint64(evtlog.BlockNum)

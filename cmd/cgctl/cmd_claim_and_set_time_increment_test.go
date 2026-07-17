@@ -22,7 +22,7 @@ const (
 // plannerStub returns a game stub with the planner's baseline reads:
 // round 3, target increment NOT set, target delay set, no bids, inactive.
 func plannerStub(chain *testchain.Chain) *testchain.ContractStub {
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI)
 	stub.Return("roundNum", big.NewInt(3))
 	stub.Return("getTotalNumBids", big.NewInt(0))
@@ -95,7 +95,7 @@ func TestPlannerPathBInactiveDirect(t *testing.T) {
 
 func TestPlannerPathCClaimThenSet(t *testing.T) {
 	chain := startFundedChain(t)
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub := plannerStub(chain)
 	// Active round with the signer as claimable last bidder; delay differs
 	// so the planner sends delay → claim → increment (3 txs).
@@ -138,7 +138,7 @@ func TestPlannerPathCClaimThenSet(t *testing.T) {
 
 func TestPlannerPathDDeferThenSet(t *testing.T) {
 	chain := startFundedChain(t)
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub := plannerStub(chain)
 	// Active round, other bidder, prize not claimable.
 	stub.Return("getTotalNumBids", big.NewInt(5))
@@ -175,7 +175,7 @@ func TestPlannerPathDDeferThenSet(t *testing.T) {
 
 func TestPlannerDeferExhaustionFails(t *testing.T) {
 	chain := startFundedChain(t)
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub := plannerStub(chain)
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)
@@ -205,7 +205,7 @@ func TestPlannerHardhatTimeAdvanceForClaim(t *testing.T) {
 	t.Setenv("PKEY_HEX", testSignerKey)
 	t.Setenv("GAS_PRICE_MULTIPLIER", "")
 
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub := plannerStub(chain)
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)
@@ -243,7 +243,7 @@ func TestPlannerHardhatTimeAdvanceForClaim(t *testing.T) {
 
 func TestPlannerRealNetworkRefusesEarlyClaim(t *testing.T) {
 	chain := startFundedChain(t) // chain id 1337: not a dev chain
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub := plannerStub(chain)
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)

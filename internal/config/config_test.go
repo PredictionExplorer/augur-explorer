@@ -153,6 +153,19 @@ func TestLoadPanicsOnUnsupportedFieldKind(t *testing.T) {
 	_ = Load(&cfg, mapEnv(map[string]string{"U": "1"}))
 }
 
+func TestLoadPanicsOnUnsupportedSliceElement(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if recover() == nil {
+			t.Fatal("Load accepted a non-int64 slice field")
+		}
+	}()
+	var cfg struct {
+		S []string `env:"S"`
+	}
+	_ = Load(&cfg, mapEnv(map[string]string{"S": "a,b"}))
+}
+
 func TestLoadSkipsUnexportedAndUntaggedFields(t *testing.T) {
 	t.Parallel()
 	var cfg struct {

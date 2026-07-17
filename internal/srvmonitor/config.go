@@ -103,7 +103,7 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 	cfg.OfficialRPCSepoliaArb = getenv("OFFICIAL_RPC_SEPOLIA_ARB")
 
 	// Load RPC nodes (RPC0 through RPC9)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		name := getenv(fmt.Sprintf("RPC%d_NAME", i))
 		url := getenv(fmt.Sprintf("RPC%d_URL", i))
 		chainID := getenv(fmt.Sprintf("RPC%d_CHAINID", i))

@@ -56,8 +56,8 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		return out
 	}
 	sourceBlockNumber := header.Number.Int64()
-	out.SourceBlockNumber = uint64(sourceBlockNumber)
-	out.SourceBlockTimeStamp = int64(header.Time) // #nosec G115 -- checked above
+	out.SourceBlockNumber = uint64(sourceBlockNumber) // #nosec G115 -- checked above
+	out.SourceBlockTimeStamp = int64(header.Time)     // #nosec G115 -- checked above
 
 	contract, err := cg.NewCosmicSignatureGame(s.addrs.CosmicGame, s.client)
 	if err != nil {

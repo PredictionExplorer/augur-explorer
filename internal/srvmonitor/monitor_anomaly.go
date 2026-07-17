@@ -109,7 +109,7 @@ func (m *AnomalyMonitor) display(disp Display) {
 
 	// Clear the content rows so shorter new lines fully overwrite older ones.
 	blank := strings.Repeat(" ", anomalyMaxLineWidth)
-	for i := 0; i < AnomalyDisplayCount; i++ {
+	for i := range AnomalyDisplayCount {
 		disp.DrawText(Position{X: 1, Y: y + 1 + i}, blank, ColorDefault, ColorDefault)
 	}
 

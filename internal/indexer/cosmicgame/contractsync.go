@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -44,6 +45,9 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 	if err != nil {
 		return nil, fmt.Errorf("HeaderByNumber: %w", err)
 	}
+	if header.Time > math.MaxInt64 {
+		return nil, fmt.Errorf("header timestamp %d overflows int64", header.Time)
+	}
 	if err := st.InsertBlock(ctx, header); err != nil {
 		return nil, fmt.Errorf("InsertBlock: %w", err)
 	}
@@ -78,7 +82,7 @@ func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr str
 		EvtID:       evtID,
 		BlockNum:    blockNum,
 		TxID:        txID,
-		TimeStamp:   int64(header.Time),
+		TimeStamp:   int64(header.Time), // #nosec G115 -- checked above
 		ContractAid: contractAid,
 	}, nil
 }

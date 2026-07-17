@@ -42,7 +42,7 @@ func FuzzReceiptsDecode(f *testing.F) {
 	f.Add(valid)
 	f.Add(snappy.Encode(nil, valid))
 	// Arbitrum Nitro style: varint(size) + 2 header bytes + raw RLP.
-	nitro := append([]byte{byte(len(valid)), 0x00, 0x00}, valid...)
+	nitro := append([]byte{byte(len(valid)), 0x00, 0x00}, valid...) // #nosec G115 -- seed payload < 128, one varint byte
 	f.Add(nitro)
 	f.Add([]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05})
 	f.Add([]byte{0xff, 0xff, 0xff, 0xff})
@@ -84,7 +84,7 @@ func FuzzArbitrumLegacyDecode(f *testing.F) {
 	f.Add([]byte{0xc0})
 	f.Add(valid)
 	f.Add(snappy.Encode(nil, valid))
-	f.Add([]byte{byte(len(valid)), 0x00, 0x00, 0xc1, 0x80})
+	f.Add([]byte{byte(len(valid)), 0x00, 0x00, 0xc1, 0x80}) // #nosec G115 -- seed payload < 128, one varint byte
 	f.Add([]byte{0x01, 0x02, 0x03, 0x04})
 	f.Fuzz(func(t *testing.T, data []byte) {
 		logs, err := ArbitrumReceipts(data)

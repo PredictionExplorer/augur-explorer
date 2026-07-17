@@ -118,7 +118,7 @@ func (s *Server) GetRandomWalkRankingPair(
 	}
 	pairExhausted := voterAid > 0
 	var ids []int64
-	for attempt := 0; attempt < attempts; attempt++ {
+	for range attempts {
 		var err error
 		ids, err = s.exploreRankingTokenIDs(ctx, 2)
 		if err != nil {

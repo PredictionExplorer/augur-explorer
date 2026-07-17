@@ -57,6 +57,7 @@ var CosmicGameConfig = ProjectConfig{
 func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 	config ProjectConfig, startBlock, endBlock uint64,
 ) (match, missing, extra int) {
+	t.Helper()
 	if len(config.Contracts) == 0 {
 		t.Logf("Skipping %s - no contracts configured", config.Name)
 		return 0, 0, 0
@@ -152,7 +153,7 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 			}
 
 			topic0 := strings.ToLower(log.Topics[0].Hex()[2:10])
-			key := eventKey{int64(blockNum), topic0, addr}
+			key := eventKey{int64(blockNum), topic0, addr} // #nosec G115 -- real mainnet block numbers, far below int64
 			freezerEvents[key]++
 		}
 	}
@@ -257,7 +258,7 @@ func TestVerifyCosmicGame(t *testing.T) {
 		endBlock = maxBlock
 	}
 
-	match, missing, extra := verifyProject(t, db, fr, CosmicGameConfig, uint64(minBlock), uint64(endBlock))
+	match, missing, extra := verifyProject(t, db, fr, CosmicGameConfig, uint64(minBlock), uint64(endBlock)) // #nosec G115 -- non-negative DB block numbers
 
 	total := match + missing
 	if total == 0 {
@@ -325,7 +326,7 @@ func TestVerifyAllProjects(t *testing.T) {
 				endBlock = maxBlock.Int64
 			}
 
-			match, missing, extra := verifyProject(t, db, fr, config, uint64(minBlock.Int64), uint64(endBlock))
+			match, missing, extra := verifyProject(t, db, fr, config, uint64(minBlock.Int64), uint64(endBlock)) // #nosec G115 -- non-negative DB block numbers
 
 			total := match + missing
 			if total == 0 {

@@ -59,8 +59,9 @@ func runSetRoundActivation(cmd *cobra.Command, verbose bool, args []string) erro
 		return fmt.Errorf("getting contract owner: %w", err)
 	}
 
-	secsUntilCurrent := currentActivation.Int64() - int64(s.Net.BlockTime)
-	secsUntilNew := timestamp - int64(s.Net.BlockTime)
+	blockTime := int64(s.Net.BlockTime) // #nosec G115 -- real chain timestamps fit int64; display-only CLI
+	secsUntilCurrent := currentActivation.Int64() - blockTime
+	secsUntilNew := timestamp - blockTime
 
 	s.Out.Section("CURRENT STATE")
 	s.Out.KeyValue("Contract Owner", owner.String())

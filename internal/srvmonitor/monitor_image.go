@@ -87,7 +87,7 @@ func (m *ImageMonitor) checkImages(ctx context.Context, errorChan chan<- string)
 	// Get latest 3 token IDs from database
 	tokenIDs, err := m.getLatestTokens(ctx, 3)
 	if err != nil {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			m.data.LatestTokens[i] = ImageCheckStatus{TokenID: -1, ErrStr: fmt.Sprintf("DB Error: %v", err)}
 		}
 		m.data.RandomToken = ImageCheckStatus{TokenID: -1, ErrStr: fmt.Sprintf("DB Error: %v", err)}
@@ -249,7 +249,7 @@ func (m *ImageMonitor) display(disp Display) {
 
 	// Line 1: Latest 3 + Random
 	x := 1
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if m.data.LatestTokens[i].TokenID == -1 {
 			continue
 		}

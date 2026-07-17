@@ -31,34 +31,42 @@ func TestReadCommandsConnectFailure(t *testing.T) {
 		run  func(t *testing.T) error
 	}{
 		{"info", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newInfoCmd(), testGameAddr.Hex())
 			return err
 		}},
 		{"owner", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newOwnerCmd(), testGameAddr.Hex())
 			return err
 		}},
 		{"donation-records", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newDonationRecordsCmd(), testGameAddr.Hex())
 			return err
 		}},
 		{"erc20 balance", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newERC20BalanceCmd(), testTokenAddr.Hex(), otherAddr.Hex())
 			return err
 		}},
 		{"erc20 allowance", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newERC20AllowanceCmd(), testTokenAddr.Hex(), otherAddr.Hex(), testSignerAddr.Hex())
 			return err
 		}},
 		{"nft approved", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newNFTApprovedCmd(), testNFTAddr.Hex(), "7")
 			return err
 		}},
 		{"nft is-approved-for-all", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newNFTIsApprovedForAllCmd(), testNFTAddr.Hex(), otherAddr.Hex(), testSignerAddr.Hex())
 			return err
 		}},
 		{"nft owner-of", func(t *testing.T) error {
+			t.Helper()
 			_, err := executeCmd(t, newNFTOwnerOfCmd(), testNFTAddr.Hex(), "7")
 			return err
 		}},
@@ -130,7 +138,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 
 	t.Run("claim tx reverts", func(t *testing.T) {
 		chain := startFundedChain(t)
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", testSignerAddr)
@@ -145,7 +153,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 
 	t.Run("defer tx reverts", func(t *testing.T) {
 		chain := startFundedChain(t)
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
@@ -162,7 +170,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 
 	t.Run("post-claim window still active", func(t *testing.T) {
 		chain := startFundedChain(t)
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", testSignerAddr)
@@ -215,7 +223,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 
 	t.Run("path B round activates before increment", func(t *testing.T) {
 		chain := startFundedChain(t)
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		var reads atomic.Int64
 		stub.Handle("roundActivationTime", func([]any) ([]any, error) {
@@ -237,7 +245,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		chain := startFundedChain(t)
 		stub := plannerStub(chain)
 		var reads atomic.Int64
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub.Handle("roundActivationTime", func([]any) ([]any, error) {
 			if reads.Add(1) == 1 {
 				return []any{big.NewInt(blockTime + 1000)}, nil
@@ -265,7 +273,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		newActiveClaimable := func(t *testing.T) *testchain.Chain {
 			t.Helper()
 			chain := startFundedChain(t)
-			blockTime := int64(testchain.BlockTime(100))
+			blockTime := testchain.BlockTimeInt64(100)
 			stub := plannerStub(chain)
 			stub.Return("getTotalNumBids", big.NewInt(5))
 			stub.Return("lastBidderAddress", testSignerAddr)
@@ -306,7 +314,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		newActiveNotClaimable := func(t *testing.T) (*testchain.Chain, *testchain.ContractStub) {
 			t.Helper()
 			chain := startFundedChain(t)
-			blockTime := int64(testchain.BlockTime(100))
+			blockTime := testchain.BlockTimeInt64(100)
 			stub := plannerStub(chain)
 			stub.Return("getTotalNumBids", big.NewInt(5))
 			stub.Return("lastBidderAddress", otherAddr)
@@ -341,7 +349,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 
 		// The deferred increment send is the second transaction.
 		chain2, stub2 := newActiveNotClaimable(t)
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub2.Handle("roundActivationTime", func([]any) ([]any, error) {
 			if chain2.SubmittedTxCount() >= 1 {
 				return []any{big.NewInt(blockTime + 100000)}, nil
@@ -359,7 +367,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		// Every defer attempt reads active, but the post-loop re-read sees
 		// the window open: openInactiveWindow succeeds after 3 transactions.
 		chain := startFundedChain(t)
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
@@ -391,7 +399,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		t.Setenv("PKEY_HEX", testSignerKey)
 		t.Setenv("GAS_PRICE_MULTIPLIER", "")
 
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
@@ -420,7 +428,7 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		t.Setenv("PKEY_HEX", testSignerKey)
 		t.Setenv("GAS_PRICE_MULTIPLIER", "")
 
-		blockTime := int64(testchain.BlockTime(100))
+		blockTime := testchain.BlockTimeInt64(100)
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
@@ -478,7 +486,7 @@ func TestInfoCommandZeroPriceAnnotations(t *testing.T) {
 	stub.Return("cstDutchAuctionBeginningBidPrice", big.NewInt(0))
 	// The CST auction's second value is a start timestamp (Unix seconds),
 	// exercising the elapsed-from-start rendering.
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	stub.Return("getCstDutchAuctionDurations", big.NewInt(1800), big.NewInt(blockTime-120))
 	registerInfoWorld(t, chain, stub)
 
@@ -505,7 +513,7 @@ func TestInfoCommandZeroPriceAnnotations(t *testing.T) {
 func TestInfoCommandNegativeStartTimestampClamps(t *testing.T) {
 	chain := startReadChain(t)
 	stub := infoGameStub()
-	blockTime := int64(testchain.BlockTime(100))
+	blockTime := testchain.BlockTimeInt64(100)
 	// A start timestamp in the future clamps the derived elapsed to zero.
 	stub.Return("getCstDutchAuctionDurations", big.NewInt(1800), big.NewInt(blockTime+500))
 	registerInfoWorld(t, chain, stub)

@@ -317,6 +317,7 @@ func TestPerformSignedBeautyVoteValidatesBeforeDatabase(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := a.performSignedBeautyVote(
 				context.Background(),
 				tt.nft1,
@@ -400,6 +401,7 @@ func TestPerformSignedBeautyVoteWithDependencies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			var steps []string
 			deps := signedBeautyVoteDependencies{
 				rankingMatchDependencies: rankingMatchDependencies{

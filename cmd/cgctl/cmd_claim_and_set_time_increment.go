@@ -162,7 +162,8 @@ func sendDelay(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSi
 }
 
 func sendDeferActivation(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, delaySeconds int64) error {
-	newActivation := big.NewInt(int64(s.Net.BlockTime) + delaySeconds + 5)
+	newActivation := new(big.Int).SetUint64(s.Net.BlockTime)
+	newActivation.Add(newActivation, big.NewInt(delaySeconds+5))
 	s.Out.TxSubmitting("SetRoundActivationTime", nil, ethtx.GasLimitAdminCall, s.AdjustedGasPrice())
 	s.Out.KeyValue("New activation time", newActivation.String())
 	tx, err := game.SetRoundActivationTime(

@@ -146,11 +146,11 @@ func TestConcurrentDrawsAreSerialized(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			d.DrawText(srvmonitor.Position{X: 0, Y: 1}, "xy", srvmonitor.ColorWhite, srvmonitor.ColorDefault)
 		}
 	}()
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		d.DrawText(srvmonitor.Position{X: 0, Y: 2}, "ab", srvmonitor.ColorWhite, srvmonitor.ColorDefault)
 		d.Clear()
 		d.Flush()

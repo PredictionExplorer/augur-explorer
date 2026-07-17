@@ -310,10 +310,10 @@ func DiffSnapshots(before, after Snapshot) ([]byte, error) {
 		}
 		sort.Strings(keys)
 		for _, key := range keys {
-			for i := 0; i < counts[key]; i++ {
+			for range counts[key] {
 				td.Added = append(td.Added, decoded[key])
 			}
-			for i := 0; i < -counts[key]; i++ {
+			for range -counts[key] {
 				td.Removed = append(td.Removed, decoded[key])
 			}
 		}

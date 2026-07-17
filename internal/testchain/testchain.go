@@ -25,6 +25,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -44,7 +45,13 @@ const BaseTime = 1767225600
 
 // BlockTime returns the deterministic timestamp of a block.
 func BlockTime(blockNum int64) uint64 {
-	return uint64(BaseTime + blockNum*100)
+	return uint64(BaseTime + blockNum*100) // #nosec G115 -- small positive test block numbers
+}
+
+// BlockTimeInt64 is BlockTime for assertions against int64-typed production
+// values; the arithmetic never leaves the int64 domain.
+func BlockTimeInt64(blockNum int64) int64 {
+	return BaseTime + blockNum*100
 }
 
 // chainIDValue is an arbitrary fixed chain id for the fake chain.
@@ -219,7 +226,7 @@ func (c *Chain) AddTx(blockNum int64, to common.Address, data []byte) *types.Tra
 	}
 
 	tx := types.NewTx(&types.LegacyTx{
-		Nonce:    uint64(blockNum)*1000 + uint64(txIndex),
+		Nonce:    uint64(blockNum)*1000 + uint64(txIndex), // #nosec G115 -- small positive test block numbers
 		GasPrice: big.NewInt(1_000_000_000),
 		Gas:      500_000,
 		To:       &to,
@@ -280,7 +287,7 @@ func (c *Chain) Reorg(fromBlock int64) {
 	}
 	kept := c.logs[:0]
 	for _, l := range c.logs {
-		if int64(l.BlockNumber) < fromBlock {
+		if int64(l.BlockNumber) < fromBlock { // #nosec G115 -- fake-chain logs carry small positive block numbers
 			kept = append(kept, l)
 		}
 	}
@@ -365,11 +372,14 @@ func (c *Chain) handleRPC(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	// The response maps hold only JSON-safe values (strings, numbers and
+	// nested json.Unmarshal output); a write failure means the test client
+	// disconnected, which the client side reports on its own.
 	if single {
-		_ = json.NewEncoder(w).Encode(resps[0])
+		_ = json.NewEncoder(w).Encode(resps[0]) //nolint:errchkjson // JSON-safe by construction; client reports transport failures
 		return
 	}
-	_ = json.NewEncoder(w).Encode(resps)
+	_ = json.NewEncoder(w).Encode(resps) //nolint:errchkjson // JSON-safe by construction; client reports transport failures
 }
 
 func (c *Chain) dispatch(req rpcRequest) (any, error) {
@@ -387,7 +397,7 @@ func (c *Chain) dispatch(req rpcRequest) (any, error) {
 	case "eth_chainId":
 		return hexUint64(c.chainID.Uint64()), nil
 	case "eth_blockNumber":
-		return hexUint64(uint64(c.tip)), nil
+		return hexUint64(uint64(c.tip)), nil // #nosec G115 -- the fake chain's tip is a small positive test height
 	case "eth_getBlockByNumber":
 		return c.getBlockByNumber(req.Params)
 	case "eth_getTransactionByHash":
@@ -434,6 +444,9 @@ func (c *Chain) parseBlockTag(raw json.RawMessage) (int64, error) {
 	v, err := hexToUint64(tag)
 	if err != nil {
 		return 0, err
+	}
+	if v > math.MaxInt64 {
+		return 0, fmt.Errorf("testchain: block tag %s overflows int64", tag)
 	}
 	return int64(v), nil
 }
@@ -497,7 +510,7 @@ func (c *Chain) getTransactionByHash(params []json.RawMessage) (any, error) {
 	}
 	header := c.ensureBlockLocked(entry.blockNum)
 	m["blockHash"] = header.Hash().Hex()
-	m["blockNumber"] = hexUint64(uint64(entry.blockNum))
+	m["blockNumber"] = hexUint64(uint64(entry.blockNum)) // #nosec G115 -- small positive test block numbers
 	m["transactionIndex"] = hexUint64(uint64(entry.txIndex))
 	m["from"] = c.sender.Hex()
 	return m, nil
@@ -582,7 +595,7 @@ func (c *Chain) getLogs(params []json.RawMessage) (any, error) {
 	}
 	out := make([]types.Log, 0)
 	for _, l := range c.logs {
-		if int64(l.BlockNumber) < from || int64(l.BlockNumber) > to {
+		if int64(l.BlockNumber) < from || int64(l.BlockNumber) > to { // #nosec G115 -- fake-chain logs carry small positive block numbers
 			continue
 		}
 		if len(addrs) > 0 && !containsAddress(addrs, l.Address) {

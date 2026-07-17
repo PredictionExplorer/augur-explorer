@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/big"
 	"strings"
 	"sync"
@@ -136,6 +137,97 @@ func unitEngine(t *testing.T, cfg Config) *Engine {
 	return e
 }
 
+// TestLogBlockNum pins the chain-boundary conversion every pipeline entry
+// point applies to log block numbers: values through math.MaxInt64 convert
+// exactly, anything larger is rejected as corrupt node data.
+func TestLogBlockNum(t *testing.T) {
+	for _, tc := range []struct {
+		in   uint64
+		want int64
+	}{
+		{0, 0},
+		{455_767_500, 455_767_500},
+		{math.MaxInt64, math.MaxInt64},
+	} {
+		got, err := logBlockNum(&types.Log{BlockNumber: tc.in})
+		if err != nil || got != tc.want {
+			t.Errorf("logBlockNum(%d) = %d, %v; want %d", tc.in, got, err, tc.want)
+		}
+	}
+	if _, err := logBlockNum(&types.Log{BlockNumber: math.MaxInt64 + 1}); err == nil {
+		t.Error("logBlockNum(MaxInt64+1): want error, got nil")
+	}
+}
+
+// TestPipelineRejectsOverflowingBlockNumber drives a log whose block number
+// exceeds int64 through processBatch, InsertEventLog and the backfill scan:
+// all must fail loudly before touching the database (the engine store here
+// has no pool).
+func TestPipelineRejectsOverflowingBlockNumber(t *testing.T) {
+	overflowing := types.Log{BlockNumber: math.MaxUint64}
+	client := &fakeClient{
+		filterLogsFn: func(_, _ uint64) ([]types.Log, error) {
+			return []types.Log{overflowing}, nil
+		},
+	}
+	e := unitEngine(t, Config{Client: client})
+
+	last, stage, err := e.processBatch(context.Background(), []types.Log{overflowing})
+	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Fatalf("processBatch error = %v, want block-number overflow", err)
+	}
+	if last != 0 || stage != "block" {
+		t.Errorf("processBatch = (last %d, stage %q), want (0, block)", last, stage)
+	}
+
+	if _, err := e.InsertEventLog(context.Background(), overflowing, 1); err == nil ||
+		!strings.Contains(err.Error(), "overflows int64") {
+		t.Errorf("InsertEventLog error = %v, want block-number overflow", err)
+	}
+
+	stats, err := e.BackfillContractEvtLogs(context.Background(), []common.Address{{0x01}}, 1, 1, 10)
+	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Errorf("BackfillContractEvtLogs error = %v, want block-number overflow", err)
+	}
+	if stats.LogsSeen != 1 {
+		t.Errorf("backfill saw %d logs before rejecting, want 1", stats.LogsSeen)
+	}
+}
+
+// failingProgress accepts the watermark read but fails every write, driving
+// the run loop's watermark-failure arm.
+type failingProgress struct {
+	fakeProgress
+	writeErr error
+}
+
+func (p *failingProgress) SetLastBlock(context.Context, int64) error { return p.writeErr }
+
+// TestRunWatermarkWriteFailureTripsBreaker pins the watermark stage: a
+// healthy batch whose progress write keeps failing must retry and then trip
+// the circuit breaker with the watermark stage in the error.
+func TestRunWatermarkWriteFailureTripsBreaker(t *testing.T) {
+	writeErr := errors.New("watermark write refused")
+	client := &fakeClient{
+		blockNumberFn: func() (uint64, error) { return 12, nil },
+		filterLogsFn:  func(_, _ uint64) ([]types.Log, error) { return nil, nil },
+	}
+	e := unitEngine(t, Config{
+		Client:    client,
+		Progress:  &failingProgress{fakeProgress: fakeProgress{last: 10}, writeErr: writeErr},
+		Process:   func(context.Context, int64) error { return nil },
+		Contracts: []common.Address{{0x01}},
+		Retry:     RetryConfig{MaxConsecutiveFailures: 2, MinDelay: time.Millisecond, MaxDelay: 2 * time.Millisecond},
+	})
+	err := runWithTimeout(t, e, context.Background())
+	if err == nil || !errors.Is(err, writeErr) {
+		t.Fatalf("Run = %v, want the watermark write failure", err)
+	}
+	if !strings.Contains(err.Error(), "watermark") {
+		t.Errorf("breaker error missing watermark stage: %v", err)
+	}
+}
+
 // runWithTimeout runs Run on a goroutine and fails the test if it does not
 // return within the deadline.
 func runWithTimeout(t *testing.T, e *Engine, ctx context.Context) error {
@@ -242,6 +334,32 @@ func TestRunCircuitBreakerTripsAfterConsecutiveHeadFailures(t *testing.T) {
 	}
 	if client.blockNumberCall != 3 {
 		t.Errorf("BlockNumber called %d times, want exactly 3", client.blockNumberCall)
+	}
+}
+
+// TestRunRejectsOverflowingChainHead pins the chain-boundary guard on the
+// head read: a head beyond int64 (corrupt node data) is a batch failure that
+// trips the breaker instead of wrapping the watermark negative.
+func TestRunRejectsOverflowingChainHead(t *testing.T) {
+	client := &fakeClient{
+		blockNumberFn: func() (uint64, error) { return math.MaxUint64, nil },
+	}
+	e := unitEngine(t, Config{
+		Client:    client,
+		Progress:  &fakeProgress{last: 10},
+		Process:   func(context.Context, int64) error { return nil },
+		Contracts: []common.Address{{0x01}},
+		Retry:     RetryConfig{MaxConsecutiveFailures: 2, MinDelay: time.Millisecond, MaxDelay: 2 * time.Millisecond},
+	})
+	err := runWithTimeout(t, e, context.Background())
+	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Fatalf("Run = %v, want chain-head overflow failure", err)
+	}
+	if !strings.Contains(err.Error(), "chain_head") {
+		t.Errorf("breaker error missing stage: %v", err)
+	}
+	if got := len(client.ranges()); got != 0 {
+		t.Errorf("overflowing head still fetched %d ranges, want 0", got)
 	}
 }
 

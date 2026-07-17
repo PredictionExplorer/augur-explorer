@@ -348,7 +348,7 @@ func (b *bot) run(t *testing.T) (stop func() error) {
 // waitSignals reads n signals from ch, failing the test on timeout.
 func waitSignals(t *testing.T, ch chan struct{}, n int) {
 	t.Helper()
-	for i := 0; i < n; i++ {
+	for i := range n {
 		select {
 		case <-ch:
 		case <-time.After(5 * time.Second):

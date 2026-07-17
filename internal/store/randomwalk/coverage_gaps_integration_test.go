@@ -90,7 +90,7 @@ func TestWriteMethodsPropagateCancellation(t *testing.T) {
 	rv := reflect.ValueOf(r)
 	rt := rv.Type()
 	swept := 0
-	for i := 0; i < rt.NumMethod(); i++ {
+	for i := range rt.NumMethod() {
 		m := rt.Method(i)
 		if !strings.HasPrefix(m.Name, "Insert") && !strings.HasPrefix(m.Name, "Update") {
 			continue

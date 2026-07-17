@@ -133,7 +133,7 @@ func (o Output) TxSubmitting(action string, value *big.Int, gasLimit uint64, gas
 	}
 	o.printf("Gas Limit           = %d\n", gasLimit)
 	o.printf("Gas Price (gwei)    = %.4f\n", WeiToGwei(gasPrice))
-	maxCostWei := new(big.Int).Mul(gasPrice, big.NewInt(int64(gasLimit)))
+	maxCostWei := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gasLimit))
 	ethValue := new(big.Float).Quo(new(big.Float).SetInt(maxCostWei), big.NewFloat(1e18))
 	o.printf("Max Gas Cost (ETH)  = %s\n", ethValue.Text('f', 6))
 }

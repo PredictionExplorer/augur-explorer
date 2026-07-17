@@ -46,7 +46,7 @@ func mintLog(tokenID int64, owner string) func(t *testing.T) *types.Log {
 	return func(t *testing.T) *types.Log {
 		var seed [32]byte
 		seed[0] = 0x5e
-		seed[31] = byte(tokenID)
+		seed[31] = byte(tokenID & 0xff)
 		return buildLog(t, fxRwalkABI, "MintEvent", addr(fxRandomWalkAddr),
 			[]any{bigInt(tokenID), addr(owner)}, []any{seed, eth(1)})
 	}

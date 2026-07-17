@@ -75,11 +75,7 @@ func buildFreezer(t *testing.T, blocks [][]byte) *freezerscanner.ParallelReader 
 
 	index := make([]byte, 0, len(offsets)*6)
 	for _, off := range offsets {
-		entry := []byte{
-			byte(off >> 40), byte(off >> 32), byte(off >> 24),
-			byte(off >> 16), byte(off >> 8), byte(off),
-		}
-		index = append(index, entry...)
+		index = append(index, freezerscanner.Uint48ToBytes(off)...)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "receipts.cidx"), index, 0o600); err != nil {
 		t.Fatalf("writing cidx: %v", err)
@@ -424,8 +420,8 @@ func TestScanBestEffortVsFailFast(t *testing.T) {
 func TestScanCancellationReturnsPartialResults(t *testing.T) {
 	// Many blocks and one worker with tiny chunks: cancellation between
 	// chunks must stop the scan without an error.
-	var blocks [][]byte
-	for i := 0; i < 50; i++ {
+	blocks := make([][]byte, 0, 50)
+	for i := range 50 {
 		blocks = append(blocks, receiptsBlob(t, []*types.Log{simpleLog(contractA, topicX, byte(i))}))
 	}
 	reader := buildFreezer(t, blocks)
@@ -508,7 +504,7 @@ func TestLastScannedBlock(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for i := 0; i < 40_000; i++ { // ~1.2MB, past the 1MB whole-file limit
+		for i := range 40_000 { // ~1.2MB, past the 1MB whole-file limit
 			fmt.Fprintf(f, `{"blockNumber":%d,"pad":"%s"}`+"\n", i, strings.Repeat("x", 8))
 		}
 		_ = f.Close()
@@ -655,10 +651,9 @@ func buildRegressingFreezer(t *testing.T) *freezerscanner.ParallelReader {
 	t.Helper()
 	dir := t.TempDir()
 	offsets := []uint64{50, 10, 60}
-	var index []byte
+	index := make([]byte, 0, len(offsets)*freezerscanner.IndexEntrySize)
 	for _, off := range offsets {
-		index = append(index,
-			byte(off>>40), byte(off>>32), byte(off>>24), byte(off>>16), byte(off>>8), byte(off))
+		index = append(index, freezerscanner.Uint48ToBytes(off)...)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "receipts.cidx"), index, 0o600); err != nil {
 		t.Fatal(err)
@@ -705,9 +700,9 @@ func TestScanReadErrorFailFastAndBestEffort(t *testing.T) {
 func TestScanMidRunCancellation(t *testing.T) {
 	// Enough work that cancellation lands mid-scan: many blocks with real
 	// receipts, one worker, small chunks.
-	var blocks [][]byte
+	blocks := make([][]byte, 0, 3000)
 	payload := receiptsBlob(t, []*types.Log{simpleLog(contractA, topicX, 1)})
-	for i := 0; i < 3000; i++ {
+	for range 3000 {
 		blocks = append(blocks, payload)
 	}
 	reader := buildFreezer(t, blocks)
@@ -757,7 +752,7 @@ func TestErrorLogNilIsSafe(t *testing.T) {
 
 func TestErrorLogAppendsAcrossSessions(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "err.log")
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		el, err := NewErrorLog(path)
 		if err != nil {
 			t.Fatalf("NewErrorLog: %v", err)

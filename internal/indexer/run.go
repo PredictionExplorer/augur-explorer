@@ -8,6 +8,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -85,6 +86,15 @@ func (e *Engine) Run(ctx context.Context) error {
 			}
 			continue
 		}
+		if head > math.MaxInt64 {
+			// Corrupt node data: every downstream block number is stored as
+			// int64, so an absurd head must not wrap the watermark negative.
+			if stop := e.batchFailure(ctx, &failures, "chain_head",
+				fmt.Errorf("chain head %d overflows int64", head)); stop != nil {
+				return stop
+			}
+			continue
+		}
 
 		fromBlock := uint64(lastProcessed + 1)
 		if fromBlock > head {
@@ -138,13 +148,14 @@ func (e *Engine) Run(ctx context.Context) error {
 			continue
 		}
 
-		if err := e.setLastBlock(dbCtx, int64(toBlock)); err != nil {
+		completedBlock := int64(toBlock) // #nosec G115 -- toBlock <= head, guarded against int64 overflow above
+		if err := e.setLastBlock(dbCtx, completedBlock); err != nil {
 			if stop := e.batchFailure(ctx, &failures, "watermark", err); stop != nil {
 				return stop
 			}
 			continue
 		}
-		lastProcessed = int64(toBlock)
+		lastProcessed = completedBlock
 
 		failures = 0
 		e.metrics.batchProcessed(time.Since(started).Seconds())
@@ -163,7 +174,10 @@ func (e *Engine) processBatch(ctx context.Context, logs []types.Log) (lastComple
 	var currentBlock int64
 	for i := range logs {
 		log := logs[i]
-		blockNum := int64(log.BlockNumber)
+		blockNum, err := logBlockNum(&log)
+		if err != nil {
+			return lastCompleted, "block", err
+		}
 		if currentBlock != 0 && blockNum > currentBlock {
 			lastCompleted = currentBlock
 		}

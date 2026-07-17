@@ -64,8 +64,9 @@ func renderField(f reflect.StructField, fv reflect.Value) string {
 			parts = append(parts, fmt.Sprintf("%v", fv.Index(i).Interface()))
 		}
 		return strings.Join(parts, ",")
+	default:
+		panic(fmt.Sprintf("config: unsupported field kind %s", fv.Type()))
 	}
-	panic(fmt.Sprintf("config: unsupported field kind %s", fv.Type()))
 }
 
 // RedactURL reduces a URL to scheme://host for logging: the path and query

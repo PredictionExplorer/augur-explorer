@@ -476,6 +476,7 @@ func TestROIRecordOrderingBranches(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			current := record
 			current.RoundsParticipated = test.rounds
 			switch test.sort {

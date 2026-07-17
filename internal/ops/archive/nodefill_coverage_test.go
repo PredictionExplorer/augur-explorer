@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"math"
 	"math/big"
 	"strings"
 	"testing"
@@ -520,6 +521,39 @@ func TestNodeFillerPerRowBranches(t *testing.T) {
 	}
 }
 
+// TestNodeFillerRejectsOverflowingBlockNumber pins the chain-boundary
+// guard: a node-supplied block number beyond int64 must abort the scan
+// instead of wrapping into a negative archive row.
+func TestNodeFillerRejectsOverflowingBlockNumber(t *testing.T) {
+	overflowing := coverageLog()
+	overflowing.BlockNumber = math.MaxUint64
+	client := &coverageClient{filterResponses: []filterResponse{{logs: []types.Log{overflowing}}}}
+	filler := validCoverageFiller(&coverageWriter{}, client)
+	_, err := filler.RunProject(context.Background(), ProjectRandomWalk, NodeFillOptions{
+		FromBlock: 10,
+		EndBlock:  10,
+		BatchSize: 1,
+	})
+	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
+		t.Fatalf("error = %v, want block-number overflow", err)
+	}
+}
+
+// TestChainBlockNum pins the checked conversion the node-fill scan applies
+// to every RPC-supplied block number.
+func TestChainBlockNum(t *testing.T) {
+	t.Parallel()
+	for _, in := range []uint64{0, 10, math.MaxInt64} {
+		got, err := chainBlockNum(in)
+		if err != nil || got != int64(in) { // #nosec G115 -- in <= MaxInt64 by construction
+			t.Errorf("chainBlockNum(%d) = %d, %v; want exact value", in, got, err)
+		}
+	}
+	if _, err := chainBlockNum(math.MaxInt64 + 1); err == nil {
+		t.Error("chainBlockNum(MaxInt64+1): want error, got nil")
+	}
+}
+
 func TestNodeFillerJoinsScanAndCloseErrors(t *testing.T) {
 	scanErr := errors.New("stop retrying")
 	closeErr := errors.New("close writer")
@@ -732,6 +766,21 @@ func TestEnsureTransactionBranches(t *testing.T) {
 			client:    successfulTxClient(baseTx),
 			addresses: &coverageAddressStore{errAt: 2, err: sentinel},
 			wantKind:  dbError,
+			wantErr:   true,
+		},
+		{
+			// Corrupt node data: gas beyond int64 must abort as an RPC
+			// error, not wrap negative in the archive row.
+			name: "gas used overflows int64",
+			writer: &coverageWriter{transactionExistsFn: func(context.Context, string) (bool, error) {
+				return false, nil
+			}},
+			client: &coverageClient{
+				tx:      baseTx,
+				receipt: &types.Receipt{GasUsed: math.MaxUint64, TransactionIndex: 3},
+			},
+			addresses: &coverageAddressStore{},
+			wantKind:  rpcError,
 			wantErr:   true,
 		},
 		{

@@ -216,7 +216,7 @@ func splitETagList(header string) []string {
 	var members []string
 	start := 0
 	inQuotes := false
-	for i := 0; i < len(header); i++ {
+	for i := range len(header) {
 		switch header[i] {
 		case '"':
 			inQuotes = !inQuotes

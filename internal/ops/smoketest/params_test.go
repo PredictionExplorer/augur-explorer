@@ -74,7 +74,7 @@ func (f fakeParameterSource) Parameters(ctx context.Context) (Params, error) {
 func TestDefaultParamsAreComplete(t *testing.T) {
 	t.Parallel()
 	value := reflect.ValueOf(DefaultParams())
-	for i := 0; i < value.NumField(); i++ {
+	for i := range value.NumField() {
 		if value.Field(i).String() == "" {
 			t.Errorf("default %s is empty", value.Type().Field(i).Name)
 		}
@@ -136,6 +136,7 @@ func TestSQLParameterSourceLoadsValuesAndQueriesTokenNameColumn(t *testing.T) {
 func TestSQLParameterSourceFallbacksAndCancellation(t *testing.T) {
 	t.Parallel()
 	t.Run("query errors use defaults", func(t *testing.T) {
+		t.Parallel()
 		db := sql.OpenDB(parameterTestConnector{query: func(context.Context, string) (driver.Rows, error) {
 			return nil, errors.New("missing table")
 		}})
@@ -149,6 +150,7 @@ func TestSQLParameterSourceFallbacksAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("null and empty rows use defaults", func(t *testing.T) {
+		t.Parallel()
 		call := 0
 		db := sql.OpenDB(parameterTestConnector{query: func(context.Context, string) (driver.Rows, error) {
 			call++
@@ -167,6 +169,7 @@ func TestSQLParameterSourceFallbacksAndCancellation(t *testing.T) {
 		}
 	})
 	t.Run("cancellation is returned", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		db := sql.OpenDB(parameterTestConnector{query: func(context.Context, string) (driver.Rows, error) {

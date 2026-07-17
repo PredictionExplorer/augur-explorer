@@ -150,7 +150,7 @@ func TestArbitrumReceiptsNitroHeader(t *testing.T) {
 	payload := mustEncode(t, []rlp.RawValue{receipt})
 
 	// varint(size) + junk header + raw RLP.
-	blob := append([]byte{byte(len(payload)), 0x00, 0x01}, payload...)
+	blob := append([]byte{byte(len(payload)), 0x00, 0x01}, payload...) // #nosec G115 -- fixture payload < 128, one varint byte
 	logs, err := ArbitrumReceipts(blob)
 	if err != nil {
 		t.Fatalf("ArbitrumReceipts(nitro header): %v", err)

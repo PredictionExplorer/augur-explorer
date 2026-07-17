@@ -2,6 +2,7 @@ package freezerscanner
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,7 @@ import (
 // offset, mirroring the on-disk geth freezer index format.
 func writeCidx(t *testing.T, dir string, offsets []uint64) {
 	t.Helper()
-	var index []byte
+	index := make([]byte, 0, len(offsets)*IndexEntrySize)
 	for _, off := range offsets {
 		index = append(index, Uint48ToBytes(off)...)
 	}
@@ -23,7 +24,7 @@ func writeCidx(t *testing.T, dir string, offsets []uint64) {
 
 func writeCdat(t *testing.T, dir string, index int, data []byte) {
 	t.Helper()
-	name := filepath.Join(dir, "receipts."+strings.Repeat("0", 3)+string(rune('0'+index))+".cdat")
+	name := filepath.Join(dir, fmt.Sprintf("receipts.%04d.cdat", index))
 	if err := os.WriteFile(name, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +35,7 @@ func writeCdat(t *testing.T, dir string, index int, data []byte) {
 func seqBytes(start, n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = byte(start + i)
+		b[i] = byte((start + i) & 0xff)
 	}
 	return b
 }
@@ -156,6 +157,26 @@ func TestParallelReaderMissingCdatForOffset(t *testing.T) {
 	}
 }
 
+// TestParallelReaderShortReadOnTruncatedFile pins the short-read guard: a
+// cdat file that shrinks after indexing (the entry keeps the stat-time
+// size) must produce a loud error instead of returning partial data.
+func TestParallelReaderShortReadOnTruncatedFile(t *testing.T) {
+	dir := t.TempDir()
+	writeCdat(t, dir, 0, seqBytes(0, 10))
+	writeCidx(t, dir, []uint64{0, 8})
+
+	pr := newSmallChunkReader(t, dir, 16)
+	wr := pr.NewWorkerReader()
+	defer func() { _ = wr.Close() }()
+
+	if err := os.Truncate(filepath.Join(dir, "receipts.0000.cdat"), 4); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wr.ReadItem(0); err == nil || !strings.Contains(err.Error(), "short read") {
+		t.Fatalf("ReadItem(truncated) = %v, want short-read error", err)
+	}
+}
+
 func TestParallelReaderLastBlockBeyondData(t *testing.T) {
 	dir := t.TempDir()
 	writeCdat(t, dir, 0, seqBytes(0, 8))
@@ -186,6 +207,11 @@ func TestNewParallelReader(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(ancient, "receipts.junk.cdat"), []byte{1}, 0o600); err != nil {
 		t.Fatal(err)
 	}
+	// A negative index is skipped too: it would otherwise wrap into an
+	// astronomical startOffset (index is unsigned by construction).
+	if err := os.WriteFile(filepath.Join(ancient, "receipts.-1.cdat"), []byte{1}, 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	pr, err := NewParallelReader(dir)
 	if err != nil {
@@ -200,7 +226,7 @@ func TestNewParallelReader(t *testing.T) {
 		t.Errorf("indexSizeMB = %v, want %v", indexSizeMB, wantMB)
 	}
 	if cdatFiles != 1 {
-		t.Errorf("cdatFiles = %d, want 1 (junk file must be skipped)", cdatFiles)
+		t.Errorf("cdatFiles = %d, want 1 (junk and negative-index files must be skipped)", cdatFiles)
 	}
 
 	if got := pr.MaxAvailableBlock(); got != 2 {

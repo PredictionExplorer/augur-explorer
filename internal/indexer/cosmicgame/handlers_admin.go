@@ -5,6 +5,8 @@ package cosmicgame
 
 import (
 	"context"
+	"fmt"
+	"math"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -926,6 +928,11 @@ func (h *Handlers) decodeInitialized(lg *types.Log, elog *store.EthereumEventLog
 	var ethEvt cgc.CosmicSignatureGameInitialized
 	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "Initialized", lg.Data); err != nil {
 		return nil, err
+	}
+	if ethEvt.Version > math.MaxInt64 {
+		// Decode must be total: a malformed log fails the batch instead of
+		// wrapping the version negative in the database.
+		return nil, fmt.Errorf("version %d in Initialized event overflows int64", ethEvt.Version)
 	}
 	evt := &cgmodel.CGInitialized{}
 	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)

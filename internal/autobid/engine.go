@@ -363,7 +363,7 @@ func (e *Engine) createTransactOpts(ctx context.Context, value *big.Int, gasLimi
 
 	txopts := &bind.TransactOpts{
 		From:     e.address,
-		Nonce:    big.NewInt(int64(nonce)),
+		Nonce:    new(big.Int).SetUint64(nonce),
 		GasPrice: ethtx.AdjustGasPriceBy(gasPrice, e.cfg.GasPriceMultiplier),
 		GasLimit: gasLimit,
 		Signer: func(_ common.Address, tx *types.Transaction) (*types.Transaction, error) {

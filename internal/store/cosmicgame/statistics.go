@@ -84,7 +84,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		return cgmodel.CGStatistics{}, store.WrapError(op+": unique bidders", err)
 	}
 	if nullBidders.Valid {
-		stats.NumUniqueBidders = uint64(nullBidders.Int64)
+		stats.NumUniqueBidders = uint64(nullBidders.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
 
 	var nullWinners sql.NullInt64
@@ -109,7 +109,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		return cgmodel.CGStatistics{}, store.WrapError(op+": unique winners", err)
 	}
 	if nullWinners.Valid {
-		stats.NumUniqueWinners = uint64(nullWinners.Int64)
+		stats.NumUniqueWinners = uint64(nullWinners.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
 	if nullSumWei.Valid {
 		stats.TotalPrizesPaidAmountWei = nullSumWei.String
@@ -118,7 +118,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		stats.TotalPrizesPaidAmountEth = nullSumEth.Float64
 	}
 	if nullTotalPrizeAwards.Valid {
-		stats.TotalPrizeAwards = uint64(nullTotalPrizeAwards.Int64)
+		stats.TotalPrizeAwards = uint64(nullTotalPrizeAwards.Int64) // #nosec G115 -- COALESCE(SUM(count),0) is non-negative
 	}
 
 	var nullDonors sql.NullInt64
@@ -155,7 +155,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		return cgmodel.CGStatistics{}, store.WrapError(op+": unique stakers cst", err)
 	}
 	if nullStakers.Valid {
-		stats.NumUniqueStakersCST = uint64(nullStakers.Int64)
+		stats.NumUniqueStakersCST = uint64(nullStakers.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
 	err = r.pool().QueryRow(ctx,
 		"SELECT COUNT(*) AS total FROM cg_staker_rwalk WHERE num_stake_actions > 0",
@@ -164,7 +164,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		return cgmodel.CGStatistics{}, store.WrapError(op+": unique stakers rwalk", err)
 	}
 	if nullStakers.Valid {
-		stats.NumUniqueStakersRWalk = uint64(nullStakers.Int64)
+		stats.NumUniqueStakersRWalk = uint64(nullStakers.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
 	err = r.pool().QueryRow(ctx,
 		"SELECT "+
@@ -179,7 +179,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		return cgmodel.CGStatistics{}, store.WrapError(op+": unique stakers both", err)
 	}
 	if nullStakers.Valid {
-		stats.NumUniqueStakersBoth = uint64(nullStakers.Int64)
+		stats.NumUniqueStakersBoth = uint64(nullStakers.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
 
 	var nullDonatedNfts sql.NullInt64
@@ -189,7 +189,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGStatistics{}, store.WrapError(op+": donated nfts", err)
 	}
-	stats.NumDonatedNFTs = uint64(nullDonatedNfts.Int64)
+	stats.NumDonatedNFTs = uint64(nullDonatedNfts.Int64) // #nosec G115 -- SUM of non-negative counters
 
 	var namedTokens int64
 	err = r.pool().QueryRow(ctx,
@@ -215,7 +215,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		return cgmodel.CGStatistics{}, store.WrapError(op+": cg_prize rows", err)
 	}
 	if nullCgPrizeRows.Valid {
-		stats.CgPrizeRowCount = uint64(nullCgPrizeRows.Int64)
+		stats.CgPrizeRowCount = uint64(nullCgPrizeRows.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
 
 	stats.DonatedTokenDistribution, err = r.DonatedTokenDistribution(ctx)

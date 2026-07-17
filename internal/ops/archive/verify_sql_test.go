@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 )
 
 func verifierCountOps(counts ...int64) []scriptOp {
-	ops := []scriptOp{
+	ops := make([]scriptOp, 0, 2+len(counts))
+	ops = append(ops,
 		queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
 		queryOp("SELECT addr FROM address", []string{"addr"}, []driver.Value{"0x08"}),
-	}
+	)
 	for _, count := range counts {
 		ops = append(ops, queryOp("", []string{"count"}, []driver.Value{count}))
 	}
@@ -85,8 +87,8 @@ func TestSQLVerifierStrictnessAndWarnings(t *testing.T) {
 func TestSQLVerifierEveryQueryFailure(t *testing.T) {
 	sentinel := errors.New("verification query failed")
 	const queryCount = 10
-	for failAt := 0; failAt < queryCount; failAt++ {
-		t.Run(strings.ReplaceAll(string(rune('A'+failAt)), " ", "_"), func(t *testing.T) {
+	for failAt := range queryCount {
+		t.Run(fmt.Sprintf("fail_at_%d", failAt), func(t *testing.T) {
 			ops := verifierCountOps()
 			for index := 0; index <= failAt; index++ {
 				if index == failAt {

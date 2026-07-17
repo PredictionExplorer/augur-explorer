@@ -218,6 +218,9 @@ func runEventLoop(ctx context.Context, events <-chan termbox.Event, disp srvmoni
 					cancel()
 					return
 				}
+			case termbox.EventMouse, termbox.EventRaw, termbox.EventNone:
+				// Ignored: the dashboard only reacts to keys, resizes and
+				// termbox errors.
 			case termbox.EventResize:
 				logger.Info(fmt.Sprintf("Resize event: w=%d, h=%d", ev.Width, ev.Height))
 				disp.Clear()

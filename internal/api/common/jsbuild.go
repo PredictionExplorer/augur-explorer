@@ -16,7 +16,7 @@ import (
 func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry) template.JS {
 	dataStr := "["
 
-	for i := 0; i < len(*intervals); i++ {
+	for i := range len(*intervals) {
 		if len(dataStr) > 1 {
 			dataStr = dataStr + ","
 		}
@@ -42,7 +42,7 @@ func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry)
 func BuildJSFloorPriceData(intervals *[]rwmodel.FloorPrice) template.JS {
 	dataStr := "["
 
-	for i := 0; i < len(*intervals); i++ {
+	for i := range len(*intervals) {
 		if len(dataStr) > 1 {
 			dataStr = dataStr + ","
 		}

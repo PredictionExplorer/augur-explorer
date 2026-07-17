@@ -67,7 +67,7 @@ func TestPrizeClaimsPage(t *testing.T) {
 	}
 
 	second, hasMore, err := r.PrizeClaimsPage(ctx, &RoundPageCursor{
-		RoundNum:   int64(first[1].RoundNum),
+		RoundNum:   int64(first[1].RoundNum), // #nosec G115 -- small fixture round number
 		EventLogID: first[1].ClaimPrizeTx.Tx.EvtLogId,
 	}, 2)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -40,16 +41,30 @@ type FreezerReader struct {
 	itemCount   uint64       // Number of blocks in the index
 	chunkSize   uint64       // Size of each cdat chunk
 	cdatFiles   []*cdatEntry // Sorted list of cdat files with their ranges
-	fileHandles map[int]*os.File
+	fileHandles map[uint64]*os.File
 	mu          sync.RWMutex
 }
 
 // cdatEntry represents a .cdat file with its global offset range.
 type cdatEntry struct {
-	index       int // File index (e.g., 6 for receipts.0006.cdat)
+	// index is the file index (e.g., 6 for receipts.0006.cdat). Unsigned by
+	// construction: filename parsing rejects negative indexes, which would
+	// otherwise wrap into astronomical start offsets.
+	index       uint64
 	path        string
 	startOffset uint64 // Global offset where this file starts
-	size        int64  // Size of this file
+	size        uint64 // Size of this file (guarded non-negative at Stat time)
+}
+
+// fileReadOffset converts a within-file offset to the int64 that
+// os.File.ReadAt expects. Offsets are bounded by the cdat chunk size (2 GB
+// in production freezers), so an overflow means corrupt bookkeeping and is
+// rejected rather than wrapped into a negative seek.
+func fileReadOffset(off uint64) (int64, error) {
+	if off > math.MaxInt64 {
+		return 0, fmt.Errorf("file offset %d overflows int64", off)
+	}
+	return int64(off), nil
 }
 
 // NewFreezerReader creates a new freezer reader
@@ -57,7 +72,7 @@ type cdatEntry struct {
 func NewFreezerReader(ancientDir string) (*FreezerReader, error) {
 	fr := &FreezerReader{
 		chunkSize:   DefaultChunkSize,
-		fileHandles: make(map[int]*os.File),
+		fileHandles: make(map[uint64]*os.File),
 	}
 
 	// Try to find cidx file
@@ -93,7 +108,7 @@ func NewFreezerReader(ancientDir string) (*FreezerReader, error) {
 	}
 	fr.cidxSize = info.Size()
 
-	if fr.cidxSize%IndexEntrySize != 0 {
+	if fr.cidxSize < 0 || fr.cidxSize%IndexEntrySize != 0 {
 		_ = cidxFile.Close() // best-effort cleanup on error path
 		return nil, fmt.Errorf("%w: cidx size %d not divisible by %d", ErrInvalidIndex, fr.cidxSize, IndexEntrySize)
 	}
@@ -123,9 +138,11 @@ func (fr *FreezerReader) indexCdatFiles() error {
 	// Parse file indices and build entries
 	var entries []*cdatEntry
 	for _, path := range matches {
-		var index int
+		var index uint64
 		base := filepath.Base(path)
-		// Parse receipts.XXXX.cdat format
+		// Parse receipts.XXXX.cdat format. The unsigned target makes
+		// Sscanf reject negative indexes, which the offset math below
+		// would otherwise wrap.
 		if _, err := fmt.Sscanf(base, "receipts.%d.cdat", &index); err != nil {
 			continue // Skip files that don't match the pattern
 		}
@@ -134,11 +151,15 @@ func (fr *FreezerReader) indexCdatFiles() error {
 		if err != nil {
 			return fmt.Errorf("failed to stat %s: %w", path, err)
 		}
+		size := info.Size()
+		if size < 0 {
+			return fmt.Errorf("stat %s: negative size %d", path, size)
+		}
 
 		entries = append(entries, &cdatEntry{
 			index: index,
 			path:  path,
-			size:  info.Size(),
+			size:  uint64(size),
 		})
 	}
 
@@ -150,7 +171,7 @@ func (fr *FreezerReader) indexCdatFiles() error {
 	// Calculate global offsets for each file
 	// Note: In geth's freezer, file index * chunkSize gives the starting offset
 	for _, entry := range entries {
-		entry.startOffset = uint64(entry.index) * fr.chunkSize
+		entry.startOffset = entry.index * fr.chunkSize
 	}
 
 	fr.cdatFiles = entries
@@ -169,7 +190,10 @@ func (fr *FreezerReader) ReadOffset(blockNum uint64) (uint64, error) {
 	}
 
 	buf := make([]byte, IndexEntrySize)
-	pos := int64(blockNum) * IndexEntrySize
+	pos, err := fileReadOffset(blockNum * IndexEntrySize)
+	if err != nil {
+		return 0, fmt.Errorf("index position for block %d: %w", blockNum, err)
+	}
 
 	n, err := fr.cidxFile.ReadAt(buf, pos)
 	if err != nil && !errors.Is(err, io.EOF) {
@@ -208,7 +232,7 @@ func (fr *FreezerReader) ReadItem(blockNum uint64) ([]byte, error) {
 	} else {
 		// Last block - read to end of last cdat file
 		lastEntry := fr.cdatFiles[len(fr.cdatFiles)-1]
-		endOffset := lastEntry.startOffset + uint64(lastEntry.size)
+		endOffset := lastEntry.startOffset + lastEntry.size
 		if offset > endOffset {
 			return nil, fmt.Errorf("%w: offset %d beyond data end %d", ErrInvalidOffset, offset, endOffset)
 		}
@@ -229,7 +253,7 @@ func (fr *FreezerReader) dataEndOffset() uint64 {
 		return 0
 	}
 	last := fr.cdatFiles[len(fr.cdatFiles)-1]
-	return last.startOffset + uint64(last.size)
+	return last.startOffset + last.size
 }
 
 // readBytes reads a range of bytes from the cdat files, handling boundary spanning.
@@ -254,7 +278,7 @@ func (fr *FreezerReader) readBytes(offset, length uint64, blockNum uint64) ([]by
 
 		// Calculate position within this file
 		fileOffset := currentOffset - entry.startOffset
-		availableInFile := uint64(entry.size) - fileOffset
+		availableInFile := entry.size - fileOffset
 
 		// Determine how much to read from this file
 		toRead := remaining
@@ -269,11 +293,16 @@ func (fr *FreezerReader) readBytes(offset, length uint64, blockNum uint64) ([]by
 		}
 
 		// Read the data
-		n, err := f.ReadAt(result[resultPos:resultPos+toRead], int64(fileOffset))
+		readAt, err := fileReadOffset(fileOffset)
+		if err != nil {
+			return nil, fmt.Errorf("block %d in %s: %w", blockNum, entry.path, err)
+		}
+		dst := result[resultPos : resultPos+toRead]
+		n, err := f.ReadAt(dst, readAt)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("read error in %s at offset %d: %w", entry.path, fileOffset, err)
 		}
-		if uint64(n) != toRead {
+		if n != len(dst) {
 			return nil, fmt.Errorf("short read in %s: wanted %d, got %d", entry.path, toRead, n)
 		}
 
@@ -291,7 +320,7 @@ func (fr *FreezerReader) findCdatForOffset(offset uint64) (*cdatEntry, error) {
 	defer fr.mu.RUnlock()
 
 	for _, entry := range fr.cdatFiles {
-		endOffset := entry.startOffset + uint64(entry.size)
+		endOffset := entry.startOffset + entry.size
 		if offset >= entry.startOffset && offset < endOffset {
 			return entry, nil
 		}
@@ -337,7 +366,7 @@ func (fr *FreezerReader) Close() error {
 		}
 	}
 
-	fr.fileHandles = make(map[int]*os.File)
+	fr.fileHandles = make(map[uint64]*os.File)
 	return firstErr
 }
 

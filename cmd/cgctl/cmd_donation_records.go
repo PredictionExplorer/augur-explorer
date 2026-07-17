@@ -72,7 +72,7 @@ func runDonationRecords(cmd *cobra.Command, addrArg string) error {
 		return nil
 	}
 
-	for i := int64(0); i < n; i++ {
+	for i := range n {
 		rec, err := game.EthDonationWithInfoRecords(copts, big.NewInt(i))
 		if err != nil {
 			out.KeyValue("Error at record "+strconv.FormatInt(i, 10), err.Error())

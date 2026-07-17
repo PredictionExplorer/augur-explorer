@@ -1,6 +1,7 @@
 package decode
 
 import (
+	"math"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -171,6 +172,38 @@ func TestComputeLogIdentityHash(t *testing.T) {
 	}
 }
 
+// TestComputeLogIdentityHashKnownAnswers pins the exact hash values so the
+// byte layout (8-byte block number, 4-byte tx/log indexes, address, topics,
+// data keccak) can never drift: identity hashes are compared across runs,
+// so a silent layout change would break deduplication. The vectors were
+// captured from the original shift-based implementation before it moved to
+// encoding/binary, and include the maximum-index edge where the 4-byte
+// fields truncate a 64-bit uint.
+func TestComputeLogIdentityHashKnownAnswers(t *testing.T) {
+	t.Parallel()
+	log := &DecodedLog{
+		Address:    common.HexToAddress("0x1111111111111111111111111111111111111111"),
+		Topics:     []common.Hash{common.HexToHash("0xaaaa"), common.HexToHash("0xbbbb")},
+		DataKeccak: common.HexToHash("0xcccc"),
+	}
+	cases := []struct {
+		blockNum          uint64
+		txIndex, logIndex uint
+		want              string
+	}{
+		{0, 0, 0, "0x69bde4f6147b1dabc352695d9ce8a71b20ee774d31979820885fca927ee843a0"},
+		{123456789, 3, 17, "0x7808e2826556d8117bcec2b2b66b176571fce74ca788bc9c6fd80e02873d0ba5"},
+		{math.MaxUint64, math.MaxUint32, math.MaxUint32, "0x1335aaecefe2a4d01031f7e2adcb34a14c69a9d6fcda029cef11f69d9c99ef54"},
+	}
+	for _, c := range cases {
+		got := ComputeLogIdentityHash(c.blockNum, c.txIndex, c.logIndex, log).Hex()
+		if got != c.want {
+			t.Errorf("ComputeLogIdentityHash(%d, %d, %d) = %s, want %s",
+				c.blockNum, c.txIndex, c.logIndex, got, c.want)
+		}
+	}
+}
+
 // TestSnappyBlobWithRLPLikeFirstByte pins the format-detection fix: snappy's
 // decompressed-length uvarint starts with a byte >= 0xc0 for half of all
 // payload lengths > 127 (low 7 bits >= 0x40), so a first-byte check alone
@@ -191,7 +224,7 @@ func TestSnappyBlobWithRLPLikeFirstByte(t *testing.T) {
 	// RLP-list range (decompressed length with low 7 bits >= 0x40).
 	receipts := []ReceiptForStorage{receipt}
 	var compressed []byte
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		encoded, err := rlp.EncodeToBytes(receipts)
 		if err != nil {
 			t.Fatalf("encoding receipts: %v", err)

@@ -78,7 +78,7 @@ func VerifyTokenImages(ctx context.Context, opts VerifyTokenImagesOptions) (Imag
 	summary.Tokens = count
 	logger.Printf("num_tokens = %v", count)
 
-	for tokenID := int64(0); tokenID < count; tokenID++ {
+	for tokenID := range count {
 		if err := ctx.Err(); err != nil {
 			return summary, err
 		}

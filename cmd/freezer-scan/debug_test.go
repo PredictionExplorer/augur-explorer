@@ -17,7 +17,7 @@ func readOffset(path string, block uint64) (uint64, error) {
 	}
 	defer func() { _ = f.Close() }()
 	buf := make([]byte, 6)
-	if _, err := f.ReadAt(buf, int64(block*6)); err != nil {
+	if _, err := f.ReadAt(buf, int64(block*6)); err != nil { // #nosec G115 -- diagnostic tool; real block numbers fit int64
 		return 0, err
 	}
 	return uint64(buf[0])<<40 | uint64(buf[1])<<32 | uint64(buf[2])<<24 |
@@ -54,14 +54,14 @@ func TestDebugBlock(t *testing.T) {
 	info, _ := f.Stat()
 	t.Logf("File size: %d, requested offset: %d", info.Size(), fileOffset)
 
-	if fileOffset >= uint64(info.Size()) {
+	if fileOffset >= uint64(info.Size()) { // #nosec G115 -- regular-file size is non-negative
 		t.Logf("PROBLEM: File offset %d is beyond file size %d!", fileOffset, info.Size())
 		t.Logf("This means the data at this offset doesn't exist in the sparse file")
 		return
 	}
 
 	data := make([]byte, length)
-	n, _ := f.ReadAt(data, int64(fileOffset))
+	n, _ := f.ReadAt(data, int64(fileOffset)) // #nosec G115 -- bounded by the file-size check above
 	t.Logf("Read %d bytes", n)
 
 	if n > 0 {
@@ -82,7 +82,7 @@ func TestDebugBlock(t *testing.T) {
 			t.Logf("Varint at start: size=%d, bytes=%d", size, vlen)
 
 			// Try RLP from different offsets
-			for off := 0; off <= 4; off++ {
+			for off := range 5 {
 				if off < n && data[off] >= 0xc0 {
 					var rawReceipts []rlp.RawValue
 					err := rlp.DecodeBytes(data[off:n], &rawReceipts)
@@ -134,7 +134,7 @@ func TestDebugFileStart(t *testing.T) {
 	// At 4635: f0 04 86... - 0xf0 is RLP list with payload 48 bytes... doesn't match 15874!
 
 	// Let me try different header sizes
-	for headerSkip := 0; headerSkip <= 4; headerSkip++ {
+	for headerSkip := range 5 {
 		pos := 4631
 		size, vlen := decodeVarint(data[pos:])
 		rlpStart := pos + vlen + headerSkip
@@ -144,8 +144,8 @@ func TestDebugFileStart(t *testing.T) {
 				headerSkip, size, pos, rlpStart, data[rlpStart])
 
 			// Try to decode
-			if int(size) < len(data)-rlpStart {
-				rlpData := data[rlpStart : rlpStart+int(size)]
+			if int(size) < len(data)-rlpStart { // #nosec G115 -- diagnostic over real freezer data; sizes fit int
+				rlpData := data[rlpStart : rlpStart+int(size)] // #nosec G115 -- bounded by the check above
 				var rawReceipts []rlp.RawValue
 				err := rlp.DecodeBytes(rlpData, &rawReceipts)
 				if err == nil {
@@ -165,7 +165,7 @@ func TestDebugFileStart(t *testing.T) {
 
 	// Maybe the varint is the UNCOMPRESSED size, and the data is snappy compressed
 	// Let's try snappy decode from different starting positions
-	for hdrSkip := 0; hdrSkip <= 4; hdrSkip++ {
+	for hdrSkip := range 5 {
 		compStart := pos + vlen + hdrSkip
 		// Try snappy decode with various chunk sizes
 		for chunkSize := 100; chunkSize <= 10000; chunkSize += 500 {
@@ -190,7 +190,7 @@ func TestDebugFileStart(t *testing.T) {
 	t.Logf("Snappy DecodedLen from pos %d: %d, err: %v", pos+vlen, decodedLen, err)
 
 	// If DecodedLen matches varint size, data is snappy compressed
-	if decodedLen == int(size) {
+	if decodedLen == int(size) { // #nosec G115 -- diagnostic over real freezer data; sizes fit int
 		t.Logf("DecodedLen matches varint! Data is likely snappy compressed")
 		decoded, err := snappy.Decode(nil, compData[:decodedLen])
 		if err != nil {

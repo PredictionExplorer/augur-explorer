@@ -173,7 +173,7 @@ func TestBackfillDaoEvtlogCommand(t *testing.T) {
 		chain.AttachLogs(tx.Hash(), []*types.Log{{
 			Address:     daoAddr,
 			Topics:      []common.Hash{topic},
-			BlockNumber: uint64(blockNum),
+			BlockNumber: uint64(blockNum), // #nosec G115 -- positive test block constant
 			BlockHash:   chain.BlockHash(blockNum),
 			TxHash:      tx.Hash(),
 			Index:       0,
@@ -226,6 +226,52 @@ func TestBackfillDaoEvtlogValidatesRange(t *testing.T) {
 	_, err := executeCmd(t, newBackfillDaoEvtlogCmd(), "--from-block=100", "--to-block=50")
 	if err == nil || !strings.Contains(err.Error(), "to-block 50 < from-block 100") {
 		t.Errorf("inverted range = %v", err)
+	}
+}
+
+// TestBackfillDaoEvtlogRejectsNegativeWatermarks pins the corrupt-watermark
+// guards: without --to-block the scan end comes from the database, and a
+// negative value there must abort instead of wrapping into an astronomical
+// block range.
+func TestBackfillDaoEvtlogRejectsNegativeWatermarks(t *testing.T) {
+	setPGEnv(t)
+	chain := testchain.New(t)
+	chain.EnsureBlock(10)
+	t.Setenv("RPC_URL", chain.URL())
+	ctx := context.Background()
+
+	setWatermarks := func(procStatus, lastBlock int64) {
+		t.Helper()
+		if _, err := sharedStore.Pool().Exec(ctx,
+			"UPDATE cg_proc_status SET last_block_num = $1", procStatus); err != nil {
+			t.Fatalf("setting cg_proc_status watermark: %v", err)
+		}
+		if _, err := sharedStore.Pool().Exec(ctx,
+			"UPDATE last_block SET block_num = $1", lastBlock); err != nil {
+			t.Fatalf("setting last_block watermark: %v", err)
+		}
+	}
+	// ProcessingStatus lazily creates the singleton row on a fresh database.
+	status, err := sharedRepo.ProcessingStatus(ctx)
+	if err != nil {
+		t.Fatalf("bootstrapping cg_proc_status: %v", err)
+	}
+	origLast, err := sharedStore.LastBlockNum(ctx)
+	if err != nil {
+		t.Fatalf("reading last_block watermark: %v", err)
+	}
+	t.Cleanup(func() { setWatermarks(status.LastBlockNum, origLast) })
+
+	setWatermarks(-7, origLast)
+	_, err = executeCmd(t, newBackfillDaoEvtlogCmd())
+	if err == nil || !strings.Contains(err.Error(), "processing status watermark is negative") {
+		t.Errorf("negative processing status = %v", err)
+	}
+
+	setWatermarks(0, -9)
+	_, err = executeCmd(t, newBackfillDaoEvtlogCmd())
+	if err == nil || !strings.Contains(err.Error(), "last_block watermark is negative") {
+		t.Errorf("negative last_block = %v", err)
 	}
 }
 

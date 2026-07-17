@@ -76,7 +76,7 @@ func encode(s string, double bool) []byte {
 		m = 5
 	}
 	n := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if noEscape[s[i]] {
 			n++
 		} else {
@@ -88,7 +88,7 @@ func encode(s string, double bool) []byte {
 
 	// Encode it.
 	j := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		b := s[i]
 		if noEscape[b] {
 			p[j] = b

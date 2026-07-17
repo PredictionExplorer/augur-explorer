@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,13 +14,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 )
 
 var (
 	httpRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "rwcg_http_requests_total",
-		Help: "HTTP requests processed, by method, route and status class.",
-	}, []string{"method", "route", "status"})
+		Help: "HTTP requests processed, by method, route, status class and " +
+			"v1-deprecation membership (docs/operations.md documents the " +
+			"sunset-gate queries over the deprecated label).",
+	}, []string{"method", "route", "status", "deprecated"})
 
 	httpRequestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "rwcg_http_request_duration_seconds",
@@ -30,12 +34,17 @@ var (
 
 // metricsMiddleware records Prometheus counters/latency for every request.
 // The route label uses the matched route pattern (not the raw URL) to keep
-// metric cardinality bounded.
+// metric cardinality bounded. The deprecated label mirrors the RFC 9745
+// header policy exactly — both derive from routes.V1Deprecated on the
+// request path — so the D6 sunset gate ("30 consecutive zero-traffic days
+// on v1") is measurable straight from rwcg_http_requests_total, including
+// unmatched 404s under the deprecated prefixes.
 func metricsMiddleware() httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			rw := httpx.WrapResponseWriter(w)
+			deprecated := strconv.FormatBool(routes.V1Deprecated(r.URL.Path))
 			next.ServeHTTP(rw, r)
 
 			route := httpx.PatternPath(r)
@@ -43,7 +52,7 @@ func metricsMiddleware() httpx.Middleware {
 				route = "unmatched" // 404s and unrouted paths share one label
 			}
 			status := statusClass(rw.Status())
-			httpRequestsTotal.WithLabelValues(r.Method, route, status).Inc()
+			httpRequestsTotal.WithLabelValues(r.Method, route, status, deprecated).Inc()
 			httpRequestDuration.WithLabelValues(r.Method, route).Observe(time.Since(start).Seconds())
 		})
 	}
@@ -83,6 +92,8 @@ func startInternalServer(metricsAddr string, logger *slog.Logger) *http.Server {
 		Addr:              addr,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       readTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 	go func() {
 		logger.Info("internal metrics/pprof server listening", "addr", addr)

@@ -139,6 +139,7 @@ func TestRandomWalkMetadataFlatAssetPaths(t *testing.T) {
 // key 401. The success request is issued by the caller against the harness
 // router (whose modules carry the test admin keys).
 func adminAuthMatrix(t *testing.T, h *harness, path, header, envVar string, payload any) {
+	t.Helper()
 	t.Run("no_key_configured_503", func(t *testing.T) {
 		code, body := postJSONRouter(t, keylessRouter(t, h), path, payload, map[string]string{header: adminKey})
 		if code != http.StatusServiceUnavailable {

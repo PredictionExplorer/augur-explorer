@@ -40,6 +40,36 @@ import (
 // SIGTERM/SIGINT arrives before the listeners are closed forcefully.
 const shutdownTimeout = 15 * time.Second
 
+// Public-listener timeouts. Request bodies are small JSON documents (the
+// largest are the ranking POSTs), so a slow-body client is bounded by
+// readTimeout on top of the header bound. idleTimeout reaps abandoned
+// keep-alive connections. There is deliberately NO WriteTimeout: several
+// frozen v1 endpoints stream unbounded arrays, and a write cap would sever
+// legitimate large responses to slow clients — revisit when v1 is removed
+// (docs/MODERNIZATION.md §6.3).
+const (
+	readHeaderTimeout = 10 * time.Second
+	readTimeout       = 30 * time.Second
+	idleTimeout       = 120 * time.Second
+)
+
+// newPublicServer builds one public listener's http.Server with the
+// production timeout policy. tlsConfig is cloned per server: ServeTLS
+// mutates the config (HTTP/2 NextProtos), so sharing one pointer across
+// listeners was a data race.
+func newPublicServer(handler http.Handler, tlsConfig *tls.Config) *http.Server {
+	srv := &http.Server{
+		Handler:           handler,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		IdleTimeout:       idleTimeout,
+	}
+	if tlsConfig != nil {
+		srv.TLSConfig = tlsConfig.Clone()
+	}
+	return srv
+}
+
 // buildModules constructs the enabled v1 API modules over the shared
 // dependencies. A disabled module stays nil: its routes are not registered
 // and the shared /metadata dispatch answers the legacy unavailable envelope.
@@ -217,11 +247,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 					return
 				}
 				logger.Info("HTTPS bound and listening", "addr", ln.Addr().String())
-				// Each server gets its own tls.Config clone: ServeTLS
-				// mutates the config (HTTP/2 NextProtos), so the primary
-				// and extra listeners racing on a shared pointer was a
-				// data race.
-				serve(&http.Server{Handler: r, TLSConfig: tlsConfig.Clone(), ReadHeaderTimeout: 10 * time.Second}, ln, true)
+				serve(newPublicServer(r, tlsConfig), ln, true)
 			}
 			startTLS(cfg.HTTPSHostname)
 			if cfg.HTTPSExtraListenAddr != "" {
@@ -235,7 +261,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 			return fmt.Errorf("HTTP bind failed on port %s: %w", cfg.HTTPPort, err)
 		}
 		logger.Info("listening", "port", cfg.HTTPPort)
-		serve(&http.Server{Handler: r, ReadHeaderTimeout: 10 * time.Second}, ln, false)
+		serve(newPublicServer(r, nil), ln, false)
 	}
 	if len(servers) == 0 {
 		return errors.New("configuration error: no listeners started — check the TLS certificate paths")

@@ -202,6 +202,7 @@ func TestSQLTokenSourceLoadsNormalizesAndDeduplicates(t *testing.T) {
 func TestSQLTokenSourceDatabaseErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("query error", func(t *testing.T) {
+		t.Parallel()
 		want := errors.New("query failed")
 		db := sql.OpenDB(tokenTestConnector{query: func(context.Context, string) (driver.Rows, error) {
 			return nil, want
@@ -213,6 +214,7 @@ func TestSQLTokenSourceDatabaseErrors(t *testing.T) {
 		}
 	})
 	t.Run("scan error", func(t *testing.T) {
+		t.Parallel()
 		db := sql.OpenDB(tokenTestConnector{query: func(context.Context, string) (driver.Rows, error) {
 			return &tokenTestRows{values: [][]driver.Value{{"not-an-integer", "seed"}}}, nil
 		}})
@@ -222,6 +224,7 @@ func TestSQLTokenSourceDatabaseErrors(t *testing.T) {
 		}
 	})
 	t.Run("rows error", func(t *testing.T) {
+		t.Parallel()
 		want := errors.New("row stream failed")
 		db := sql.OpenDB(tokenTestConnector{query: func(context.Context, string) (driver.Rows, error) {
 			return &tokenTestRows{

@@ -126,6 +126,27 @@ func TestVerifyHappyPathWithRLPFixtures(t *testing.T) {
 	}
 }
 
+// TestVerifyRejectsNegativeBlockNumber pins the corrupt-input guard: a
+// negative block number must fail verification loudly instead of wrapping
+// into an astronomical backup path that would report every log missing.
+func TestVerifyRejectsNegativeBlockNumber(t *testing.T) {
+	dir := t.TempDir()
+	address := common.HexToAddress("0x3000000000000000000000000000000000000003")
+	tx := fixtureTx(102)
+	log := fixtureLog(address, 1, 0xaa)
+	row := fixtureEventRow(t, 51, tx, log)
+	row.BlockNum = -51
+
+	_, err := Verify(context.Background(), VerifyConfig{
+		OutputDir: dir,
+		Rows:      []EventRow{row},
+		MaxReport: 50,
+	})
+	if err == nil || !strings.Contains(err.Error(), "negative block number") {
+		t.Fatalf("Verify error = %v, want negative-block-number rejection", err)
+	}
+}
+
 func TestVerifyDuplicatesRemainDistinctRows(t *testing.T) {
 	dir := t.TempDir()
 	address := common.HexToAddress("0x3000000000000000000000000000000000000003")

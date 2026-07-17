@@ -490,7 +490,7 @@ func collectParticipantPages[T any](
 		all   []T
 		after *ParticipantPageCursor
 	)
-	for pageNumber := 0; pageNumber < 100; pageNumber++ {
+	for pageNumber := range 100 {
 		rows, more, err := page(ctx, after, 1)
 		if err != nil {
 			t.Fatalf("%s page %d: %v", kind, pageNumber, err)

@@ -36,7 +36,7 @@ func (e *env) addLog(t *testing.T, block int64, topic ethcommon.Hash, logIndex u
 	e.chain.AttachLogs(tx.Hash(), []*types.Log{{
 		Address:     watchedContract,
 		Topics:      []ethcommon.Hash{topic},
-		BlockNumber: uint64(block),
+		BlockNumber: uint64(block), // #nosec G115 -- positive test block constant
 		BlockHash:   e.chain.BlockHash(block),
 		TxHash:      tx.Hash(),
 		Index:       logIndex,

@@ -4,6 +4,7 @@ package decode
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -97,14 +98,16 @@ func trySnappyDecompress(data []byte) []byte {
 	// Find where valid RLP starts (scan for RLP list prefix after varint)
 	for offset := varintBytes; offset < len(data) && offset < varintBytes+10; offset++ {
 		if isValidRLPPrefix(data[offset]) {
-			// Found RLP start, check if the size makes sense
-			remainingData := len(data) - offset
-			if uint64(remainingData) >= rlpSize {
+			// Found RLP start, check if the size makes sense. Slicing the
+			// tail with the uint64 size directly avoids any lossy
+			// conversion of the attacker-controlled varint value.
+			tail := data[offset:]
+			if uint64(len(tail)) >= rlpSize {
 				// Size matches, extract exact amount
-				return data[offset : offset+int(rlpSize)]
+				return tail[:rlpSize]
 			}
 			// Size doesn't match exactly, return from this offset
-			return data[offset:]
+			return tail
 		}
 	}
 
@@ -159,7 +162,9 @@ func rlpListCoversExactly(data []byte) bool {
 		}
 		declared = declared<<8 | uint64(b)
 	}
-	return declared == uint64(len(data)-1-lenLen)
+	// The guard above ensures len(data) >= 1+lenLen, so the payload slice
+	// is valid and its length is the exact non-negative comparison value.
+	return declared == uint64(len(data[1+lenLen:]))
 }
 
 // ReceiptForStorage is a minimal struct for RLP decoding storage receipts
@@ -393,29 +398,15 @@ func FilterLogs(logs []*DecodedLog, contracts map[common.Address]bool, eventSigs
 func ComputeLogIdentityHash(blockNum uint64, txIndex, logIndex uint, log *DecodedLog) common.Hash {
 	var buf bytes.Buffer
 
-	// Write block number (8 bytes)
-	b := make([]byte, 8)
-	b[0] = byte(blockNum >> 56)
-	b[1] = byte(blockNum >> 48)
-	b[2] = byte(blockNum >> 40)
-	b[3] = byte(blockNum >> 32)
-	b[4] = byte(blockNum >> 24)
-	b[5] = byte(blockNum >> 16)
-	b[6] = byte(blockNum >> 8)
-	b[7] = byte(blockNum)
-	buf.Write(b)
-
-	// Write tx index (4 bytes)
-	buf.WriteByte(byte(txIndex >> 24))
-	buf.WriteByte(byte(txIndex >> 16))
-	buf.WriteByte(byte(txIndex >> 8))
-	buf.WriteByte(byte(txIndex))
-
-	// Write log index (4 bytes)
-	buf.WriteByte(byte(logIndex >> 24))
-	buf.WriteByte(byte(logIndex >> 16))
-	buf.WriteByte(byte(logIndex >> 8))
-	buf.WriteByte(byte(logIndex))
+	// Fixed-width big-endian prefix: block number (8 bytes), tx index and
+	// log index (4 bytes each). Positions within a block are far below
+	// 2^32; the explicit masks document the historical 32-bit layout and
+	// keep the hash byte-identical (pinned by the known-answer test).
+	var prefix [16]byte
+	binary.BigEndian.PutUint64(prefix[0:8], blockNum)
+	binary.BigEndian.PutUint32(prefix[8:12], uint32(txIndex&0xffffffff))
+	binary.BigEndian.PutUint32(prefix[12:16], uint32(logIndex&0xffffffff))
+	buf.Write(prefix[:])
 
 	// Write address
 	buf.Write(log.Address.Bytes())

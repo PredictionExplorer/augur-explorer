@@ -58,7 +58,7 @@ func DiffSummary(want, got []byte) string {
 	wantLines := strings.Split(string(want), "\n")
 	gotLines := strings.Split(string(got), "\n")
 	limit := min(len(wantLines), len(gotLines))
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		if wantLines[i] != gotLines[i] {
 			lo := max(0, i-2)
 			hiW := min(len(wantLines), i+3)

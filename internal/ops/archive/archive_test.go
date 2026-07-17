@@ -106,6 +106,7 @@ func (f *fakeExporter) ExportProject(_ context.Context, project string) (archive
 func TestExportProjectsOrderCancellationAndErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("ordered", func(t *testing.T) {
+		t.Parallel()
 		exporter := &fakeExporter{}
 		results, err := archive.ExportProjects(context.Background(), []string{"cg", "rw"}, exporter)
 		if err != nil {
@@ -119,6 +120,7 @@ func TestExportProjectsOrderCancellationAndErrors(t *testing.T) {
 		}
 	})
 	t.Run("project error stops later projects", func(t *testing.T) {
+		t.Parallel()
 		exporter := &fakeExporter{errFor: "bad"}
 		results, err := archive.ExportProjects(context.Background(), []string{"ok", "bad", "never"}, exporter)
 		if err == nil {
@@ -129,6 +131,7 @@ func TestExportProjectsOrderCancellationAndErrors(t *testing.T) {
 		}
 	})
 	t.Run("cancellation stops later projects", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		exporter := &fakeExporter{cancel: cancel}
 		results, err := archive.ExportProjects(ctx, []string{"first", "never"}, exporter)

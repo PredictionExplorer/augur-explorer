@@ -102,7 +102,7 @@ func TestDecodeFirstBlocks(t *testing.T) {
 	}
 
 	successCount := 0
-	for blockNum := uint64(0); blockNum < 100; blockNum++ {
+	for blockNum := range uint64(100) {
 		data, err := fr.ReadItem(blockNum)
 		if err != nil || len(data) == 0 {
 			continue

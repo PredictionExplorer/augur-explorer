@@ -340,7 +340,7 @@ func TestEngineRWalkMintPathExtractsTokenFromReceipt(t *testing.T) {
 		return []*types.Log{{
 			Address:     rwalkAddr,
 			Topics:      []common.Hash{rwalkMintEventTopic, common.BigToHash(big.NewInt(42))},
-			BlockNumber: uint64(blockNum),
+			BlockNumber: uint64(blockNum), // #nosec G115 -- positive fake-chain block number
 			TxHash:      tx.Hash(),
 		}}
 	})

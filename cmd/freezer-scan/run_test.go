@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
+	freezerscanner "github.com/PredictionExplorer/augur-explorer/internal/freezer"
 	"github.com/PredictionExplorer/augur-explorer/internal/freezer/decode"
 )
 
@@ -61,12 +62,11 @@ func writeTestFreezer(t *testing.T) (dir string, addr common.Address) {
 		return encoded
 	}
 
+	blobs := [][]byte{blob(0), blob(1), blob(2)}
 	var data []byte
-	var index []byte
-	for _, b := range [][]byte{blob(0), blob(1), blob(2)} {
-		off := uint64(len(data))
-		index = append(index,
-			byte(off>>40), byte(off>>32), byte(off>>24), byte(off>>16), byte(off>>8), byte(off))
+	index := make([]byte, 0, len(blobs)*freezerscanner.IndexEntrySize)
+	for _, b := range blobs {
+		index = append(index, freezerscanner.Uint48ToBytes(uint64(len(data)))...)
 		data = append(data, b...)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "receipts.cidx"), index, 0o600); err != nil {

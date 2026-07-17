@@ -85,28 +85,31 @@ func TestExportValidationAndUtilities(t *testing.T) {
 }
 
 func contractSourceOps(after ...scriptOp) []scriptOp {
-	ops := []scriptOp{
+	ops := make([]scriptOp, 0, 2+len(after))
+	ops = append(ops,
 		queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
 		queryOp("SELECT addr FROM address", []string{"addr"}, []driver.Value{"0x08"}),
-	}
+	)
 	return append(ops, after...)
 }
 
 func emptyEventSourceOps(after ...scriptOp) []scriptOp {
-	ops := []scriptOp{
+	ops := make([]scriptOp, 0, 2+len(after))
+	ops = append(ops,
 		queryOp("SELECT COUNT(*) FROM evt_log", []string{"count"}, []driver.Value{int64(0)}),
 		queryOp("FROM evt_log e JOIN transaction", []string{
 			"block_num", "id", "tx_id", "log_index", "tx_hash", "addr", "topic0_sig", "log_rlp",
 		}),
-	}
+	)
 	return append(ops, after...)
 }
 
 func eventDestinationOps(after ...scriptOp) []scriptOp {
-	ops := []scriptOp{
+	ops := make([]scriptOp, 0, 2+len(after))
+	ops = append(ops,
 		queryOp("COALESCE(MAX(evt_id)", []string{"max"}, []driver.Value{int64(0)}),
 		prepareOp("INSERT INTO arch_evtlog"),
-	}
+	)
 	return append(ops, after...)
 }
 

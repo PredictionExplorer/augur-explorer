@@ -181,7 +181,7 @@ func (a *API) handleRankingBeautyPairIDs(c *httpx.Context) {
 
 	if voterAid > 0 {
 		found := false
-		for attempt := 0; attempt < maxAttempts; attempt++ {
+		for range maxAttempts {
 			ids, err = a.fetchExploreRandomTokenIDs(c.Request.Context(), 2)
 			if err != nil {
 				a.respondStoreError(c, err)

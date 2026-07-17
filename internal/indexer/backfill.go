@@ -53,12 +53,17 @@ func (e *Engine) BackfillContractEvtLogs(
 			}
 			st.LogsSeen++
 
+			blockNum, err := logBlockNum(log)
+			if err != nil {
+				return st, err
+			}
+
 			txID, err := e.store.TransactionIDByHash(ctx, log.TxHash.Hex())
 			if err != nil && !errors.Is(err, store.ErrNotFound) {
 				return st, fmt.Errorf("transaction id lookup tx=%s: %w", log.TxHash.Hex(), err)
 			}
 			if err == nil && txID > 0 {
-				exists, err := e.store.EvtLogExists(ctx, int64(log.BlockNumber), txID, int(log.Index))
+				exists, err := e.store.EvtLogExists(ctx, blockNum, txID, int(log.Index))
 				if err != nil {
 					return st, fmt.Errorf("evt_log existence check block=%d tx=%d log_index=%d: %w",
 						log.BlockNumber, txID, log.Index, err)
@@ -69,16 +74,16 @@ func (e *Engine) BackfillContractEvtLogs(
 				}
 			}
 
-			if _, err := e.EnsureBlockExists(ctx, int64(log.BlockNumber), log.BlockHash.Hex()); err != nil {
+			if _, err := e.EnsureBlockExists(ctx, blockNum, log.BlockHash.Hex()); err != nil {
 				return st, fmt.Errorf("EnsureBlockExists block=%d: %w", log.BlockNumber, err)
 			}
 
-			txID, _, err = e.EnsureTransactionExists(ctx, log.TxHash, int64(log.BlockNumber))
+			txID, _, err = e.EnsureTransactionExists(ctx, log.TxHash, blockNum)
 			if err != nil {
 				return st, fmt.Errorf("EnsureTransactionExists tx=%s: %w", log.TxHash.Hex(), err)
 			}
 
-			exists, err := e.store.EvtLogExists(ctx, int64(log.BlockNumber), txID, int(log.Index))
+			exists, err := e.store.EvtLogExists(ctx, blockNum, txID, int(log.Index))
 			if err != nil {
 				return st, fmt.Errorf("evt_log existence check block=%d tx=%d log_index=%d: %w",
 					log.BlockNumber, txID, log.Index, err)

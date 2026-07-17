@@ -341,7 +341,7 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 
 	tx := testChain.AddTx(blockNum, to, nil)
 	for i, l := range logs {
-		l.BlockNumber = uint64(blockNum)
+		l.BlockNumber = uint64(blockNum) // #nosec G115 -- positive test block constant
 		l.BlockHash = testChain.BlockHash(blockNum)
 		l.TxHash = tx.Hash()
 		l.TxIndex = 0

@@ -107,6 +107,7 @@ func FuzzDecodeRoundNFTDonationCursor(f *testing.F) {
 }
 
 func fuzzRoundDonationCursor(f *testing.F, resource roundDonationResource) {
+	f.Helper()
 	valid, err := encodeRoundDonationCursor(roundDonationCursor{
 		Version:    roundDonationCursorVersion,
 		Round:      7,

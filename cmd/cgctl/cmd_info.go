@@ -62,7 +62,7 @@ func runInfo(cmd *cobra.Command, addrArg string) error {
 	}
 	gameV2, _ := cgcontracts.NewCosmicSignatureGameV2(gameAddr, net.Client)
 
-	blockTime := int64(net.BlockTime)
+	blockTime := int64(net.BlockTime) // #nosec G115 -- real chain timestamps fit int64; display-only CLI
 
 	if err := printRoundStatus(w, out, game, copts, blockTime); err != nil {
 		return err

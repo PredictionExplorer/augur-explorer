@@ -169,10 +169,11 @@ func newV2GameStub() *testchain.ContractStub {
 	stub.Return("getNextEthBidPrice", mustBig("1010000000000000"))
 	stub.Return("getNextCstBidPrice", mustBig("55000000000000000000"))
 	stub.Return("getEthDutchAuctionDurations", big.NewInt(86400), big.NewInt(7200))
+	cstAuctionStart := new(big.Int).SetUint64(testchain.BlockTime(0))
 	stub.Return(
 		"getCstDutchAuctionDurations",
 		big.NewInt(28800),
-		big.NewInt(int64(testchain.BlockTime(0))-100),
+		cstAuctionStart.Sub(cstAuctionStart, big.NewInt(100)),
 	)
 	stub.Return("getDurationUntilMainPrize", big.NewInt(3600))
 	stub.Return("getMainEthPrizeAmount", mustBig("2000000000000000000"))
@@ -1247,11 +1248,11 @@ func TestSnapshotConcurrency(t *testing.T) {
 		defer wg.Done()
 		s.Run(ctx)
 	}()
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < 200; j++ {
+			for range 200 {
 				snap := s.Snapshot()
 				if snap.BidPrice == "" && snap.RoundNum == 7 {
 					// Refresh batches must never publish a half-written
@@ -1289,7 +1290,7 @@ func TestFetchLiveSpecialWinnersHappyPath(t *testing.T) {
 	if out.RoundNum != 7 {
 		t.Errorf("RoundNum = %d, want 7", out.RoundNum)
 	}
-	if out.SourceBlockNumber != 50 || out.SourceBlockTimeStamp != int64(testchain.BlockTime(50)) {
+	if out.SourceBlockNumber != 50 || uint64(out.SourceBlockTimeStamp) != testchain.BlockTime(50) { // #nosec G115 -- positive fake-chain timestamp
 		t.Errorf("source block = %d @ %d", out.SourceBlockNumber, out.SourceBlockTimeStamp)
 	}
 	if out.LastBidderAddress != bidderAddr.String() || out.LastBidderLastBidTime != 1767230000 {

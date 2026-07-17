@@ -79,8 +79,10 @@ func (pr *ParallelReader) indexCdatFiles() error {
 
 	var entries []*cdatEntry
 	for _, path := range matches {
-		var index int
+		var index uint64
 		base := filepath.Base(path)
+		// The unsigned target makes Sscanf reject negative indexes, which
+		// the offset math below would otherwise wrap.
 		if _, err := fmt.Sscanf(base, "receipts.%d.cdat", &index); err != nil {
 			continue
 		}
@@ -89,11 +91,15 @@ func (pr *ParallelReader) indexCdatFiles() error {
 		if err != nil {
 			return fmt.Errorf("failed to stat %s: %w", path, err)
 		}
+		size := info.Size()
+		if size < 0 {
+			return fmt.Errorf("stat %s: negative size %d", path, size)
+		}
 
 		entries = append(entries, &cdatEntry{
 			index: index,
 			path:  path,
-			size:  info.Size(),
+			size:  uint64(size),
 		})
 	}
 
@@ -102,7 +108,7 @@ func (pr *ParallelReader) indexCdatFiles() error {
 	})
 
 	for _, entry := range entries {
-		entry.startOffset = uint64(entry.index) * pr.chunkSize
+		entry.startOffset = entry.index * pr.chunkSize
 	}
 
 	pr.cdatFiles = entries
@@ -137,7 +143,7 @@ type BlockData struct {
 // Each worker has its own file handles to avoid contention.
 type WorkerReader struct {
 	pr          *ParallelReader
-	fileHandles map[int]*os.File
+	fileHandles map[uint64]*os.File
 	mu          sync.Mutex
 }
 
@@ -145,7 +151,7 @@ type WorkerReader struct {
 func (pr *ParallelReader) NewWorkerReader() *WorkerReader {
 	return &WorkerReader{
 		pr:          pr,
-		fileHandles: make(map[int]*os.File),
+		fileHandles: make(map[uint64]*os.File),
 	}
 }
 
@@ -160,7 +166,7 @@ func (wr *WorkerReader) Close() error {
 			firstErr = err
 		}
 	}
-	wr.fileHandles = make(map[int]*os.File)
+	wr.fileHandles = make(map[uint64]*os.File)
 	return firstErr
 }
 
@@ -186,7 +192,7 @@ func (wr *WorkerReader) ReadItem(blockNum uint64) ([]byte, error) {
 			return nil, fmt.Errorf("no cdat files available")
 		}
 		lastEntry := wr.pr.cdatFiles[len(wr.pr.cdatFiles)-1]
-		endOffset := lastEntry.startOffset + uint64(lastEntry.size)
+		endOffset := lastEntry.startOffset + lastEntry.size
 		if offset > endOffset {
 			return nil, fmt.Errorf("offset %d beyond data end %d", offset, endOffset)
 		}
@@ -206,7 +212,7 @@ func (pr *ParallelReader) dataEndOffset() uint64 {
 		return 0
 	}
 	last := pr.cdatFiles[len(pr.cdatFiles)-1]
-	return last.startOffset + uint64(last.size)
+	return last.startOffset + last.size
 }
 
 // readBytes reads data spanning potentially multiple cdat files.
@@ -229,7 +235,7 @@ func (wr *WorkerReader) readBytes(offset, length uint64, blockNum uint64) ([]byt
 		}
 
 		fileOffset := currentOffset - entry.startOffset
-		availableInFile := uint64(entry.size) - fileOffset
+		availableInFile := entry.size - fileOffset
 
 		toRead := remaining
 		if toRead > availableInFile {
@@ -241,11 +247,16 @@ func (wr *WorkerReader) readBytes(offset, length uint64, blockNum uint64) ([]byt
 			return nil, err
 		}
 
-		n, err := f.ReadAt(result[resultPos:resultPos+toRead], int64(fileOffset))
+		readAt, err := fileReadOffset(fileOffset)
+		if err != nil {
+			return nil, fmt.Errorf("block %d in %s: %w", blockNum, entry.path, err)
+		}
+		dst := result[resultPos : resultPos+toRead]
+		n, err := f.ReadAt(dst, readAt)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("read error in %s at offset %d: %w", entry.path, fileOffset, err)
 		}
-		if uint64(n) != toRead {
+		if n != len(dst) {
 			return nil, fmt.Errorf("short read in %s: wanted %d, got %d", entry.path, toRead, n)
 		}
 
@@ -260,7 +271,7 @@ func (wr *WorkerReader) readBytes(offset, length uint64, blockNum uint64) ([]byt
 // findCdatForOffset finds which cdat file contains the offset.
 func (wr *WorkerReader) findCdatForOffset(offset uint64) (*cdatEntry, error) {
 	for _, entry := range wr.pr.cdatFiles {
-		endOffset := entry.startOffset + uint64(entry.size)
+		endOffset := entry.startOffset + entry.size
 		if offset >= entry.startOffset && offset < endOffset {
 			return entry, nil
 		}
@@ -288,7 +299,7 @@ func (wr *WorkerReader) getFileHandle(entry *cdatEntry) (*os.File, error) {
 
 // CdatFileInfo returns info about cdat files.
 func (pr *ParallelReader) CdatFileInfo() []string {
-	var info []string
+	info := make([]string, 0, len(pr.cdatFiles))
 	for _, entry := range pr.cdatFiles {
 		info = append(info, fmt.Sprintf("index=%d path=%s startOffset=%d size=%d",
 			entry.index, entry.path, entry.startOffset, entry.size))
@@ -304,7 +315,7 @@ func (pr *ParallelReader) MaxAvailableBlock() uint64 {
 
 	// Find the last cdat file's end offset
 	lastEntry := pr.cdatFiles[len(pr.cdatFiles)-1]
-	maxDataOffset := lastEntry.startOffset + uint64(lastEntry.size)
+	maxDataOffset := lastEntry.startOffset + lastEntry.size
 
 	// Binary search to find the last block that fits within available data
 	low, high := uint64(0), pr.itemCount

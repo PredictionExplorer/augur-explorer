@@ -192,6 +192,11 @@ func verifyRowsWithEncoder(
 		row := input
 		row.TxHash = toolutil.NormalizeTxHash(row.TxHash)
 		row.ContractAddr = toolutil.NormalizeAddr(row.ContractAddr)
+		if row.BlockNum < 0 {
+			// A negative block number is corrupt input; converting it
+			// would wrap into an astronomical backup path.
+			return stats, fmt.Errorf("txcollector: event row %s has negative block number %d", row.TxHash, row.BlockNum)
+		}
 		key := verifyTxKey{hash: row.TxHash, blockNum: uint64(row.BlockNum)}
 		byTx[key] = append(byTx[key], row)
 	}
@@ -351,7 +356,7 @@ func checkBackupCoverage(
 		}
 		hash := toolutil.NormalizeTxHash(row.TxHash)
 		if _, exists := sqlTxs[hash]; !exists {
-			sqlTxs[hash] = uint64(row.BlockNum)
+			sqlTxs[hash] = uint64(row.BlockNum) // #nosec G115 -- rows already validated non-negative by verifyRowsWithEncoder
 		}
 	}
 

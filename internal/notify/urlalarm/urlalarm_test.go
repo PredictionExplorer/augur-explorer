@@ -98,7 +98,7 @@ func TestEngineHealthyURLNeverNotifies(t *testing.T) {
 	notifier := &fakeNotifier{}
 	e, _ := newTestEngine(map[string]string{server.URL: "API down"}, notifier)
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		e.CheckAll(context.Background())
 	}
 	if notifier.sentCount() != 0 {
@@ -164,7 +164,7 @@ func TestEngineRecoveryResetsCounter(t *testing.T) {
 	e, _ := newTestEngine(map[string]string{server.URL: "API"}, notifier)
 
 	// 500, 500 (2 fails), 200 (reset), 500, 500 (2 fails): never reaches 3.
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		e.CheckAll(context.Background())
 	}
 	if notifier.sentCount() != 0 {
@@ -184,7 +184,7 @@ func TestEngineMalformedURL(t *testing.T) {
 	// failure counts like any network error.
 	e, _ := newTestEngine(map[string]string{"http://x/\x7f": "API"}, notifier)
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		e.CheckAll(context.Background())
 	}
 	if notifier.sentCount() != 2 {
@@ -203,7 +203,7 @@ func TestEngineNetworkErrorText(t *testing.T) {
 	notifier := &fakeNotifier{}
 	e, _ := newTestEngine(map[string]string{"http://127.0.0.1:1/x": "API"}, notifier)
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		e.CheckAll(context.Background())
 	}
 	if notifier.sentCount() != 2 {
@@ -227,7 +227,7 @@ func TestEngineNotifierFailureLoggedAndOthersStillNotified(t *testing.T) {
 	notifier := &fakeNotifier{fail: map[string]error{"+1555": errors.New("graph api rejected")}}
 	e, logBuf := newTestEngine(map[string]string{server.URL: "API"}, notifier)
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		e.CheckAll(context.Background())
 	}
 	// Only bob's message went through; alice's failure is logged.

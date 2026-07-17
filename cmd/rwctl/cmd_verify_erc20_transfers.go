@@ -27,7 +27,7 @@ func checkTransferLog(ctx context.Context, repo *rwstore.Repo, out io.Writer, lg
 		return fmt.Errorf("transfers for tx %v: %w", lg.TxHash.String(), err)
 	}
 	found := false
-	for i := 0; i < len(transfers); i++ {
+	for i := range transfers {
 		item := &transfers[i]
 		if from == item.From && to == item.To && tokenID == item.TokenId {
 			found = true

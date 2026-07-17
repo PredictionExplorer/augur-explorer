@@ -140,7 +140,10 @@ func (cw *CSVWriter) Write(record *LogRecord) error {
 	defer cw.mu.Unlock()
 
 	// Convert topics array to JSON string
-	topicsJSON, _ := json.Marshal(record.Topics)
+	topicsJSON, err := json.Marshal(record.Topics)
+	if err != nil {
+		return fmt.Errorf("encoding topics column: %w", err)
+	}
 
 	return cw.w.Write([]string{
 		strconv.FormatUint(record.BlockNumber, 10),

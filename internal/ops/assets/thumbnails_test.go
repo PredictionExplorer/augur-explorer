@@ -115,6 +115,7 @@ func TestGenerateThumbnailsStaleForceAndMinAge(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 7, 12, 12, 0, 0, 0, time.UTC)
 	t.Run("stale and current", func(t *testing.T) {
+		t.Parallel()
 		base := t.TempDir()
 		dir := filepath.Join(base, "0x1")
 		src := filepath.Join(dir, "image.png")
@@ -146,6 +147,7 @@ func TestGenerateThumbnailsStaleForceAndMinAge(t *testing.T) {
 	})
 
 	t.Run("force", func(t *testing.T) {
+		t.Parallel()
 		base := t.TempDir()
 		dir := filepath.Join(base, "0x1")
 		src := filepath.Join(dir, "image.png")
@@ -169,6 +171,7 @@ func TestGenerateThumbnailsStaleForceAndMinAge(t *testing.T) {
 	})
 
 	t.Run("minimum age", func(t *testing.T) {
+		t.Parallel()
 		base := t.TempDir()
 		src := filepath.Join(base, "0x1", "image.png")
 		writeTestFile(t, src)
@@ -342,6 +345,7 @@ func TestGenerateThumbnailsCancellation(t *testing.T) {
 func TestGenerateThumbnailsCancellationAfterLoadAndRunnerDeadline(t *testing.T) {
 	t.Parallel()
 	t.Run("after source load", func(t *testing.T) {
+		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		source := &fakeTokenSource{
 			tokens: []Token{{TokenID: 1, Seed: "1"}},
@@ -354,6 +358,7 @@ func TestGenerateThumbnailsCancellationAfterLoadAndRunnerDeadline(t *testing.T) 
 		}
 	})
 	t.Run("runner deadline", func(t *testing.T) {
+		t.Parallel()
 		base := t.TempDir()
 		now := time.Date(2026, 7, 12, 12, 0, 0, 0, time.UTC)
 		src := filepath.Join(base, "0x1", "image.png")
@@ -370,6 +375,7 @@ func TestGenerateThumbnailsCancellationAfterLoadAndRunnerDeadline(t *testing.T) 
 		}
 	})
 	t.Run("after runner success", func(t *testing.T) {
+		t.Parallel()
 		base := t.TempDir()
 		now := time.Date(2026, 7, 12, 12, 0, 0, 0, time.UTC)
 		dir := filepath.Join(base, "0x1")
@@ -434,6 +440,7 @@ func TestGenerateThumbnailsValidation(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			if _, err := GenerateThumbnails(context.Background(), test.opts); err == nil {
 				t.Fatal("expected validation error")
 			}

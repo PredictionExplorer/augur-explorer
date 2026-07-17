@@ -1,8 +1,11 @@
 package freezerscanner
 
 import (
+	"errors"
+	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -34,6 +37,39 @@ func TestUint48ToBytes(t *testing.T) {
 	}
 }
 
+// TestFileReadOffset pins the checked uint64→int64 conversion feeding
+// os.File.ReadAt: in-range offsets pass through exactly, and values beyond
+// int64 (corrupt bookkeeping — real offsets are bounded by the 2GB chunk
+// size) are rejected instead of wrapping into a negative seek.
+func TestFileReadOffset(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		in   uint64
+		want int64
+	}{
+		{0, 0},
+		{1, 1},
+		{DefaultChunkSize, int64(DefaultChunkSize)},
+		{math.MaxInt64, math.MaxInt64},
+	} {
+		got, err := fileReadOffset(tc.in)
+		if err != nil {
+			t.Errorf("fileReadOffset(%d): unexpected error %v", tc.in, err)
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("fileReadOffset(%d) = %d, want %d", tc.in, got, tc.want)
+		}
+	}
+
+	for _, in := range []uint64{math.MaxInt64 + 1, math.MaxUint64} {
+		if _, err := fileReadOffset(in); err == nil {
+			t.Errorf("fileReadOffset(%d): want overflow error, got nil", in)
+		}
+	}
+}
+
 func TestIndexEntryParsing(t *testing.T) {
 	// Create a temporary directory with mock index file
 	tmpDir := t.TempDir()
@@ -45,8 +81,8 @@ func TestIndexEntryParsing(t *testing.T) {
 
 	// Create mock cidx file with 10 entries
 	// Each entry is 6 bytes, offsets: 0, 10, 20, 30, 40, 50, 60, 70, 80, 90
-	var cidxData []byte
-	for i := 0; i < 10; i++ {
+	cidxData := make([]byte, 0, 10*IndexEntrySize)
+	for i := range 10 {
 		offset := uint64(i * 10)
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
@@ -63,6 +99,12 @@ func TestIndexEntryParsing(t *testing.T) {
 	if err := os.WriteFile(cdatPath, cdatData, 0o600); err != nil {
 		t.Fatalf("Failed to create cdat file: %v", err)
 	}
+	// A negative-index cdat file must be skipped during discovery: parsed
+	// into the unsigned index it is rejected, where it would previously
+	// wrap into an astronomical startOffset shadowing real data.
+	if err := os.WriteFile(filepath.Join(cdatDir, "receipts.-1.cdat"), []byte{1}, 0o600); err != nil {
+		t.Fatalf("Failed to create negative-index cdat file: %v", err)
+	}
 
 	// Open reader
 	reader, err := NewFreezerReader(tmpDir)
@@ -71,13 +113,17 @@ func TestIndexEntryParsing(t *testing.T) {
 	}
 	defer func() { _ = reader.Close() }()
 
+	if got := len(reader.cdatFiles); got != 1 {
+		t.Errorf("indexed %d cdat files, want 1 (negative index skipped)", got)
+	}
+
 	// Verify item count
 	if reader.ItemCount() != 10 {
 		t.Errorf("ItemCount() = %d, want 10", reader.ItemCount())
 	}
 
 	// Verify offsets
-	for i := uint64(0); i < 10; i++ {
+	for i := range uint64(10) {
 		offset, err := reader.ReadOffset(i)
 		if err != nil {
 			t.Errorf("ReadOffset(%d) error: %v", i, err)
@@ -96,6 +142,77 @@ func TestIndexEntryParsing(t *testing.T) {
 	}
 }
 
+// writeFreezerFixture lays out a receipts.cidx with the given offsets and
+// one receipts.0000.cdat of dataSize bytes, returning the directory.
+func writeFreezerFixture(t *testing.T, offsets []uint64, dataSize int) string {
+	t.Helper()
+	dir := t.TempDir()
+	cidxData := make([]byte, 0, len(offsets)*IndexEntrySize)
+	for _, offset := range offsets {
+		cidxData = append(cidxData, Uint48ToBytes(offset)...)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "receipts.cidx"), cidxData, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "receipts.0000.cdat"), make([]byte, dataSize), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+// TestFreezerReaderLastBlockReadsToDataEnd pins the last-block branch: with
+// no next index entry, the read extends to the end of the final cdat file.
+func TestFreezerReaderLastBlockReadsToDataEnd(t *testing.T) {
+	dir := writeFreezerFixture(t, []uint64{0, 6}, 10)
+	reader, err := NewFreezerReader(dir)
+	if err != nil {
+		t.Fatalf("NewFreezerReader: %v", err)
+	}
+	defer func() { _ = reader.Close() }()
+
+	data, err := reader.ReadItem(1)
+	if err != nil {
+		t.Fatalf("ReadItem(last): %v", err)
+	}
+	if len(data) != 4 { // bytes [6, 10)
+		t.Errorf("last block read %d bytes, want 4", len(data))
+	}
+}
+
+// TestFreezerReaderLastBlockBeyondDataEnd pins the corrupt-index guard on
+// the last-block branch: an offset past the data end must error, not read.
+func TestFreezerReaderLastBlockBeyondDataEnd(t *testing.T) {
+	dir := writeFreezerFixture(t, []uint64{0, 20}, 10)
+	reader, err := NewFreezerReader(dir)
+	if err != nil {
+		t.Fatalf("NewFreezerReader: %v", err)
+	}
+	defer func() { _ = reader.Close() }()
+
+	if _, err := reader.ReadItem(1); !errors.Is(err, ErrInvalidOffset) {
+		t.Fatalf("ReadItem(beyond end) = %v, want ErrInvalidOffset", err)
+	}
+}
+
+// TestFreezerReaderShortReadOnTruncatedFile pins the short-read guard: a
+// cdat file that shrinks after indexing (the entry keeps the stat-time
+// size) must produce a loud error instead of returning partial data.
+func TestFreezerReaderShortReadOnTruncatedFile(t *testing.T) {
+	dir := writeFreezerFixture(t, []uint64{0, 8}, 10)
+	reader, err := NewFreezerReader(dir)
+	if err != nil {
+		t.Fatalf("NewFreezerReader: %v", err)
+	}
+	defer func() { _ = reader.Close() }()
+
+	if err := os.Truncate(filepath.Join(dir, "receipts.0000.cdat"), 4); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := reader.ReadItem(0); err == nil || !strings.Contains(err.Error(), "short read") {
+		t.Fatalf("ReadItem(truncated) = %v, want short-read error", err)
+	}
+}
+
 func TestValidateIndexRange(t *testing.T) {
 	tmpDir := t.TempDir()
 	cidxPath := filepath.Join(tmpDir, "receipts.cidx")
@@ -105,8 +222,8 @@ func TestValidateIndexRange(t *testing.T) {
 	}
 
 	// Create valid monotonic index
-	var cidxData []byte
 	offsets := []uint64{0, 10, 20, 30, 40, 50}
+	cidxData := make([]byte, 0, len(offsets)*IndexEntrySize)
 	for _, offset := range offsets {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
@@ -141,8 +258,8 @@ func TestReadItem(t *testing.T) {
 	}
 
 	// Create index with offsets: 0, 5, 15, 30
-	var cidxData []byte
 	offsets := []uint64{0, 5, 15, 30}
+	cidxData := make([]byte, 0, len(offsets)*IndexEntrySize)
 	for _, offset := range offsets {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
@@ -206,7 +323,7 @@ func TestReadItemCorruptIndexHugeOffset(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Block 0 spans [0, 2^48-1) according to the corrupt index.
-	var cidxData []byte
+	cidxData := make([]byte, 0, 2*IndexEntrySize)
 	for _, offset := range []uint64{0, 0xFFFFFFFFFFFF} {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}
@@ -251,8 +368,8 @@ func TestEmptyBlock(t *testing.T) {
 	// Block 0: offset 0-5 (5 bytes)
 	// Block 1: offset 5-5 (0 bytes - empty!)
 	// Block 2: offset 5-10 (5 bytes)
-	var cidxData []byte
 	offsets := []uint64{0, 5, 5, 10}
+	cidxData := make([]byte, 0, len(offsets)*IndexEntrySize)
 	for _, offset := range offsets {
 		cidxData = append(cidxData, Uint48ToBytes(offset)...)
 	}

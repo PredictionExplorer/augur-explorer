@@ -29,7 +29,7 @@ func TestBatchPolicyTransitions(t *testing.T) {
 	if b.size != 200 {
 		t.Errorf("after onFetchError: size = %d, want 200 (halved)", b.size)
 	}
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		b.onFetchError()
 	}
 	if b.size != 10 {

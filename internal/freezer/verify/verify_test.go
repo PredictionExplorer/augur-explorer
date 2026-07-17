@@ -99,7 +99,7 @@ func TestBlockRange(t *testing.T) {
 	// Map iteration order is randomized; repeat so both the "lower than
 	// min" and "higher than max" branches are exercised regardless of
 	// which key comes first.
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		events := map[Key]int{
 			{BlockNum: 50, Topic0: "a", Contract: "c"}:  1,
 			{BlockNum: 7, Topic0: "b", Contract: "c"}:   1,
@@ -172,7 +172,7 @@ func TestCompareDetailCaps(t *testing.T) {
 	t.Parallel()
 	db := make(map[Key]int)
 	freezer := make(map[Key]int)
-	for i := int64(0); i < 20; i++ {
+	for i := range int64(20) {
 		db[key(i, "aaaa", "0xc")] = 1          // all missing from freezer
 		freezer[key(100+i, "bbbb", "0xc")] = 1 // all extra
 	}
