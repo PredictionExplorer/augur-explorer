@@ -19,7 +19,7 @@ import (
 // always a compile-time literal supplied by the named methods below, never
 // request or chain input.
 func (r *Repo) deleteByEvtlogID(ctx context.Context, table string, evtlogID int64) error {
-	_, err := r.pool().Exec(ctx, "DELETE FROM "+table+" WHERE evtlog_id=$1", evtlogID)
+	_, err := r.q(ctx).Exec(ctx, "DELETE FROM "+table+" WHERE evtlog_id=$1", evtlogID)
 	return store.WrapError("delete from "+table, err)
 }
 

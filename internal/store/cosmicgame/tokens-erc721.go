@@ -192,7 +192,7 @@ func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (cgm
 	var nullStakedOwnerAddr sql.NullString
 	var nullStaked sql.NullBool
 	var nullEnduTokenID, nullStelTokenID sql.NullInt64
-	err := r.pool().QueryRow(ctx, query, tokenID).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, tokenID).Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
 		&rec.Tx.TxId,
@@ -424,7 +424,7 @@ func (r *Repo) NamedTokens(ctx context.Context) ([]cgmodel.CGTokenSearchResult, 
 // Signature tokens.
 func (r *Repo) CosmicSignatureTokenCount(ctx context.Context) (int64, error) {
 	var numToks int64
-	err := r.pool().QueryRow(ctx, "SELECT COUNT(*) FROM cg_mint_event").Scan(&numToks)
+	err := r.q(ctx).QueryRow(ctx, "SELECT COUNT(*) FROM cg_mint_event").Scan(&numToks)
 	if err != nil {
 		return 0, store.WrapError("cosmic signature token count", err)
 	}
@@ -435,7 +435,7 @@ func (r *Repo) CosmicSignatureTokenCount(ctx context.Context) (int64, error) {
 // store.ErrNotFound for an unknown token id.
 func (r *Repo) CosmicSignatureTokenSeed(ctx context.Context, tokenID int64) (string, error) {
 	var seed string
-	err := r.pool().QueryRow(ctx, "SELECT seed FROM cg_mint_event WHERE token_id=$1", tokenID).Scan(&seed)
+	err := r.q(ctx).QueryRow(ctx, "SELECT seed FROM cg_mint_event WHERE token_id=$1", tokenID).Scan(&seed)
 	if err != nil {
 		return "", store.WrapError("cosmic signature token seed", err)
 	}

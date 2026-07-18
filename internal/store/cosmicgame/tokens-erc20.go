@@ -41,7 +41,7 @@ func (r *Repo) CosmicTokenStatistics(ctx context.Context) (cgmodel.CGCosmicToken
 	const op = "cosmic token statistics"
 	var stats cgmodel.CGCosmicTokenStats
 
-	err := r.pool().QueryRow(ctx, `SELECT
+	err := r.q(ctx).QueryRow(ctx, `SELECT
 			COUNT(*) as holder_count,
 			COALESCE(SUM(cur_balance), 0) as total_supply,
 			COALESCE(SUM(cur_balance)/1e18, 0) as total_supply_eth
@@ -53,7 +53,7 @@ func (r *Repo) CosmicTokenStatistics(ctx context.Context) (cgmodel.CGCosmicToken
 	}
 
 	// Bidding rewards (CST ERC20 given for bidding).
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_reward), 0), COALESCE(SUM(cst_reward)/1e18, 0) FROM cg_bid WHERE cst_reward > 0").
 		Scan(&stats.EarnedFromBidding, &stats.EarnedFromBiddingEth)
 	if err != nil {
@@ -61,42 +61,42 @@ func (r *Repo) CosmicTokenStatistics(ctx context.Context) (cgmodel.CGCosmicToken
 	}
 
 	// Marketing rewards (CST ERC20).
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(amount), 0), COALESCE(SUM(amount)/1e18, 0) FROM cg_mkt_reward").
 		Scan(&stats.DistributedToMarketers, &stats.DistributedToMarketersEth)
 	if err != nil {
 		return stats, store.WrapError(op+": marketing rewards", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM cg_prize_claim WHERE cst_amount > 0").
 		Scan(&stats.GivenAsMainPrizes, &stats.GivenAsMainPrizesEth)
 	if err != nil {
 		return stats, store.WrapError(op+": main prizes", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM cg_raffle_nft_prize WHERE cst_amount > 0").
 		Scan(&stats.GivenAsRafflePrizes, &stats.GivenAsRafflePrizesEth)
 	if err != nil {
 		return stats, store.WrapError(op+": raffle prizes", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM cg_chrono_warrior_prize WHERE cst_amount > 0").
 		Scan(&stats.GivenAsChronoWarriorPrizes, &stats.GivenAsChronoWarriorPrizesEth)
 	if err != nil {
 		return stats, store.WrapError(op+": chrono warrior prizes", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(total_cst_consumed, 0), COALESCE(total_cst_consumed/1e18, 0) FROM cg_glob_stats LIMIT 1").
 		Scan(&stats.ConsumedInBids, &stats.ConsumedInBidsEth)
 	if err != nil {
 		return stats, store.WrapError(op+": consumed in bids", err)
 	}
 
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			COUNT(CASE WHEN otype = 1 THEN 1 END) as mints,
 			COUNT(CASE WHEN otype = 2 THEN 1 END) as burns,
 			COUNT(CASE WHEN otype = 0 THEN 1 END) as transfers
@@ -137,7 +137,7 @@ func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (cgmod
 	var summary cgmodel.CGUserCosmicTokenSummary
 	summary.UserAid = userAid
 
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(cur_balance, 0), COALESCE(cur_balance/1e18, 0) FROM cg_costok_owner WHERE owner_aid=$1", userAid).
 		Scan(&summary.CurrentBalance, &summary.CurrentBalanceEth)
 	if err != nil {
@@ -148,42 +148,42 @@ func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (cgmod
 		summary.CurrentBalanceEth = 0
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_reward), 0), COALESCE(SUM(cst_reward)/1e18, 0) FROM cg_bid WHERE bidder_aid=$1 AND cst_reward > 0", userAid).
 		Scan(&summary.EarnedFromBidding, &summary.EarnedFromBiddingEth)
 	if err != nil {
 		return summary, store.WrapError(op+": bidding rewards", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM cg_prize_claim WHERE winner_aid=$1 AND cst_amount > 0", userAid).
 		Scan(&summary.EarnedFromMainPrizes, &summary.EarnedFromMainPrizesEth)
 	if err != nil {
 		return summary, store.WrapError(op+": main prizes", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM cg_raffle_nft_prize WHERE winner_aid=$1 AND cst_amount > 0", userAid).
 		Scan(&summary.EarnedFromRafflePrizes, &summary.EarnedFromRafflePrizesEth)
 	if err != nil {
 		return summary, store.WrapError(op+": raffle prizes", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_amount), 0), COALESCE(SUM(cst_amount)/1e18, 0) FROM cg_chrono_warrior_prize WHERE winner_aid=$1 AND cst_amount > 0", userAid).
 		Scan(&summary.EarnedFromChronoWarrior, &summary.EarnedFromChronoWarriorEth)
 	if err != nil {
 		return summary, store.WrapError(op+": chrono warrior prizes", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(amount), 0), COALESCE(SUM(amount)/1e18, 0) FROM cg_mkt_reward WHERE marketer_aid=$1", userAid).
 		Scan(&summary.EarnedFromMarketing, &summary.EarnedFromMarketingEth)
 	if err != nil {
 		return summary, store.WrapError(op+": marketing rewards", err)
 	}
 
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(SUM(cst_price), 0), COALESCE(SUM(cst_price)/1e18, 0) FROM cg_bid WHERE bidder_aid=$1 AND cst_price > 0", userAid).
 		Scan(&summary.ConsumedInBids, &summary.ConsumedInBidsEth)
 	if err != nil {
@@ -197,7 +197,7 @@ func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (cgmod
 		summary.EarnedFromMarketingEth
 	summary.NetCSTFlowEth = summary.TotalEarnedEth - summary.ConsumedInBidsEth
 
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			COUNT(CASE WHEN otype = 1 THEN 1 END) as mints,
 			COUNT(CASE WHEN otype = 2 THEN 1 END) as burns,
 			COUNT(*) as total_transfers

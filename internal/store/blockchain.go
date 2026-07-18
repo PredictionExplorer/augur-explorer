@@ -32,7 +32,7 @@ const evtLogColumns = `
 func (s *Store) EventLog(ctx context.Context, evtlogID int64) (EthereumEventLog, error) {
 	var evtlog EthereumEventLog
 	evtlog.EvtID = evtlogID
-	err := s.pool.QueryRow(ctx, "SELECT "+evtLogColumns+" WHERE e.id=$1", evtlogID).Scan(
+	err := s.q(ctx).QueryRow(ctx, "SELECT "+evtLogColumns+" WHERE e.id=$1", evtlogID).Scan(
 		&evtlog.BlockNum,
 		&evtlog.TimeStamp,
 		&evtlog.TxID,
@@ -52,7 +52,7 @@ func (s *Store) EventLog(ctx context.Context, evtlogID int64) (EthereumEventLog,
 // given topic-0 signature, in insertion order.
 func (s *Store) EventsBySigAndTx(ctx context.Context, txID int64, sig string) ([]EthereumEventLog, error) {
 	query := "SELECT e.id," + evtLogColumns + " WHERE e.tx_id=$1 AND e.topic0_sig=$2 ORDER BY e.id"
-	return QueryList(ctx, s.pool, fmt.Sprintf("event logs for tx %v sig %v", txID, sig), 8, query,
+	return QueryList(ctx, s.q(ctx), fmt.Sprintf("event logs for tx %v sig %v", txID, sig), 8, query,
 		func(rows pgx.Rows, evtlog *EthereumEventLog) error {
 			return rows.Scan(
 				&evtlog.EvtID,
@@ -76,7 +76,7 @@ func (s *Store) EventLogRLPsBefore(ctx context.Context, txID, contractAid, befor
 	query := `SELECT log_rlp FROM evt_log
 		WHERE tx_id=$1 AND contract_aid=$2 AND id<$3 AND topic0_sig=$4
 		ORDER BY id DESC`
-	return QueryList(ctx, s.pool, fmt.Sprintf("event log RLPs for tx %v sig %v", txID, sig), 4, query,
+	return QueryList(ctx, s.q(ctx), fmt.Sprintf("event log RLPs for tx %v sig %v", txID, sig), 4, query,
 		func(rows pgx.Rows, rlp *[]byte) error {
 			return rows.Scan(rlp)
 		}, txID, contractAid, beforeID, sig)
@@ -90,7 +90,7 @@ func (s *Store) EventLogRLPsBefore(ctx context.Context, txID, contractAid, befor
 // inserted yields a wrapped ErrNotFound.
 func (s *Store) BlockHash(ctx context.Context, blockNum int64) (string, error) {
 	var blockHash string
-	err := s.pool.QueryRow(ctx, "SELECT block_hash FROM block WHERE block_num = $1", blockNum).Scan(&blockHash)
+	err := s.q(ctx).QueryRow(ctx, "SELECT block_hash FROM block WHERE block_num = $1", blockNum).Scan(&blockHash)
 	if err != nil {
 		return "", WrapError(fmt.Sprintf("block hash lookup for block %d", blockNum), err)
 	}
@@ -101,7 +101,7 @@ func (s *Store) BlockHash(ctx context.Context, blockNum int64) (string, error) {
 // (0 when the singleton row is missing or NULL).
 func (s *Store) LastBlockNum(ctx context.Context) (int64, error) {
 	var blockNum *int64
-	err := s.pool.QueryRow(ctx, "SELECT block_num FROM last_block LIMIT 1").Scan(&blockNum)
+	err := s.q(ctx).QueryRow(ctx, "SELECT block_num FROM last_block LIMIT 1").Scan(&blockNum)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil
@@ -116,14 +116,14 @@ func (s *Store) LastBlockNum(ctx context.Context) (int64, error) {
 
 // SetLastBlockNum updates the ETL block watermark.
 func (s *Store) SetLastBlockNum(ctx context.Context, blockNum int64) error {
-	_, err := s.pool.Exec(ctx, "UPDATE last_block SET block_num = $1", blockNum)
+	_, err := s.q(ctx).Exec(ctx, "UPDATE last_block SET block_num = $1", blockNum)
 	return WrapError("set last block num", err)
 }
 
 // DeleteBlock deletes a block and all its associated data (cascades via
 // foreign keys; the plpgsql delete triggers reverse the aggregates).
 func (s *Store) DeleteBlock(ctx context.Context, blockNum int64) error {
-	_, err := s.pool.Exec(ctx, "DELETE FROM block WHERE block_num = $1", blockNum)
+	_, err := s.q(ctx).Exec(ctx, "DELETE FROM block WHERE block_num = $1", blockNum)
 	return WrapError(fmt.Sprintf("delete block %d", blockNum), err)
 }
 
@@ -135,7 +135,7 @@ func (s *Store) DeleteBlock(ctx context.Context, blockNum int64) error {
 // log_index).
 func (s *Store) EvtLogExists(ctx context.Context, blockNum, txID int64, logIndex int) (bool, error) {
 	var evtID int64
-	err := s.pool.QueryRow(ctx,
+	err := s.q(ctx).QueryRow(ctx,
 		"SELECT id FROM evt_log WHERE block_num=$1 AND tx_id=$2 AND log_index=$3 LIMIT 1",
 		blockNum, txID, logIndex).Scan(&evtID)
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *Store) EvtLogExists(ctx context.Context, blockNum, txID int64, logIndex
 // contract address (case-insensitive).
 func (s *Store) CountEvtLogsForContract(ctx context.Context, contractAddr string) (int64, error) {
 	var count int64
-	err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM evt_log e
+	err := s.q(ctx).QueryRow(ctx, `SELECT COUNT(*) FROM evt_log e
 		JOIN address a ON e.contract_aid=a.address_id
 		WHERE lower(a.addr)=lower($1)`, contractAddr).Scan(&count)
 	if err != nil {
@@ -164,7 +164,7 @@ func (s *Store) CountEvtLogsForContract(ctx context.Context, contractAddr string
 // was never stored yields a wrapped ErrNotFound.
 func (s *Store) TransactionIDByHash(ctx context.Context, txHash string) (int64, error) {
 	var txID int64
-	err := s.pool.QueryRow(ctx, "SELECT id FROM transaction WHERE tx_hash = $1", txHash).Scan(&txID)
+	err := s.q(ctx).QueryRow(ctx, "SELECT id FROM transaction WHERE tx_hash = $1", txHash).Scan(&txID)
 	if err != nil {
 		return 0, WrapError(fmt.Sprintf("transaction id lookup for %v", txHash), err)
 	}

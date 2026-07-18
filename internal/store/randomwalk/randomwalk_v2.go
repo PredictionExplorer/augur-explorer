@@ -282,7 +282,7 @@ func (r *Repo) TokenDetailV2(ctx context.Context, tokenID int64) (TokenDetailRec
 	WHERE m.contract_aid=$1 AND m.token_id=$2
 	ORDER BY m.evtlog_id DESC
 	LIMIT 1`
-	rows, err := r.pool().Query(ctx, query, addrs.RandomWalkAid, tokenID)
+	rows, err := r.q(ctx).Query(ctx, query, addrs.RandomWalkAid, tokenID)
 	if err != nil {
 		return TokenDetailRecord{}, store.WrapError(op, err)
 	}
@@ -304,7 +304,7 @@ func (r *Repo) TokenDetailV2(ctx context.Context, tokenID int64) (TokenDetailRec
 
 	var nameTs sql.NullInt64
 	var nameText string
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			EXTRACT(EPOCH FROM time_stamp)::BIGINT,
 			time_stamp
 		FROM rw_token_name
@@ -333,7 +333,7 @@ func (r *Repo) CollectionTokenExists(ctx context.Context, tokenID int64) (bool, 
 		return false, err
 	}
 	var exists bool
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM rw_mint_evt WHERE contract_aid=$1 AND token_id=$2)",
 		addrs.RandomWalkAid, tokenID).Scan(&exists)
 	if err != nil {
@@ -1198,7 +1198,7 @@ func (r *Repo) FloorPriceV2(ctx context.Context) (FloorPriceRecord, error) {
 		return FloorPriceRecord{}, err
 	}
 	var record FloorPriceRecord
-	err = r.pool().QueryRow(ctx, `SELECT COUNT(*)
+	err = r.q(ctx).QueryRow(ctx, `SELECT COUNT(*)
 		FROM rw_new_offer
 		WHERE active AND otype=1 AND contract_aid=$1 AND rwalk_aid=$2`,
 		addrs.MarketPlaceAid, addrs.RandomWalkAid).Scan(&record.ActiveSellOfferCount)
@@ -1206,7 +1206,7 @@ func (r *Repo) FloorPriceV2(ctx context.Context) (FloorPriceRecord, error) {
 		return FloorPriceRecord{}, store.WrapError(op+": count", err)
 	}
 	var floor FloorListingRecord
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			offer_id,
 			token_id,
 			price::TEXT,
@@ -1272,7 +1272,7 @@ func (r *Repo) UserProfileV2(ctx context.Context, userAid int64) (UserProfileRec
 	// trade (the mint trigger has no insert-if-missing fallback). The
 	// trade/volume/profit accumulators are trigger-maintained correctly.
 	record := UserProfileRecord{Aid: userAid}
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			a.addr,
 			(SELECT COUNT(*) FROM rw_mint_evt m
 				WHERE m.owner_aid=a.address_id AND m.contract_aid=$2),
@@ -1458,7 +1458,7 @@ func (r *Repo) StatisticsV2(ctx context.Context) (StatisticsRecord, error) {
 	)
 	// rw_stats.total_withdrawals is a dead accumulator (nothing ever writes
 	// it), so the withdrawal count comes from the ledger itself.
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			s.total_num_toks,
 			s.total_num_trades,
 			s.total_vol::TEXT,
@@ -1579,7 +1579,7 @@ func (r *Repo) TradingVolumeSeries(
 		return "", nil, err
 	}
 
-	err = r.pool().QueryRow(ctx, `SELECT COALESCE(SUM(o.price), 0)::TEXT
+	err = r.q(ctx).QueryRow(ctx, `SELECT COALESCE(SUM(o.price), 0)::TEXT
 		FROM rw_item_bought ib
 			INNER JOIN rw_new_offer o
 				ON o.contract_aid=ib.contract_aid AND o.offer_id=ib.offer_id

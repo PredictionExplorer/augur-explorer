@@ -166,7 +166,7 @@ func (r *Repo) latestInt64ParamAtEvtlog(ctx context.Context, table, column strin
 		column, table, cmp,
 	)
 	var val sql.NullString
-	err := r.pool().QueryRow(ctx, query, evtlogID).Scan(&val)
+	err := r.q(ctx).QueryRow(ctx, query, evtlogID).Scan(&val)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, false, nil
 	}
@@ -189,7 +189,7 @@ func (r *Repo) latestInt64ParamAtEvtlog(ctx context.Context, table, column strin
 func (r *Repo) latestActivationSpanSeconds(ctx context.Context, evtlogID int64) (int64, bool, error) {
 	const op = "latest activation span seconds"
 	query := "SELECT new_atime FROM cg_adm_acttime WHERE evtlog_id <= $1 ORDER BY evtlog_id DESC, id DESC LIMIT 2"
-	rows, err := r.pool().Query(ctx, query, evtlogID)
+	rows, err := r.q(ctx).Query(ctx, query, evtlogID)
 	if err != nil {
 		return 0, false, store.WrapError(op, err)
 	}
@@ -227,7 +227,7 @@ func (r *Repo) latestActivationSpanSeconds(ctx context.Context, evtlogID int64) 
 func (r *Repo) latestEthBidPriceWeiBeforeEvtlog(ctx context.Context, evtlogID int64) (int64, bool, error) {
 	query := "SELECT eth_price FROM cg_bid WHERE evtlog_id < $1 AND eth_price > 0 ORDER BY evtlog_id DESC LIMIT 1"
 	var val sql.NullString
-	err := r.pool().QueryRow(ctx, query, evtlogID).Scan(&val)
+	err := r.q(ctx).QueryRow(ctx, query, evtlogID).Scan(&val)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, false, nil
 	}

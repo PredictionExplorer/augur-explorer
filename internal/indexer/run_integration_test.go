@@ -345,8 +345,10 @@ func TestRunShutdownMidBatchCompletesTheBatch(t *testing.T) {
 	if got := len(proc.processed()); got != 3 {
 		t.Errorf("processed %d events before exit, want the whole batch of 3", got)
 	}
-	if got := progress.writesCopy(); len(got) != 1 || got[0] != 102 {
-		t.Errorf("watermark writes = %v, want [102] (batch acknowledged before exit)", got)
+	// Each block acknowledges itself inside its own transaction, so the
+	// whole in-flight batch leaves three watermark writes ending at 102.
+	if got := progress.writesCopy(); len(got) != 3 || got[len(got)-1] != 102 {
+		t.Errorf("watermark writes = %v, want [100 101 102] (batch acknowledged before exit)", got)
 	}
 }
 

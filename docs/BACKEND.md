@@ -210,12 +210,15 @@ The ETL (Extract, Transform, Load) process synchronizes blockchain events to the
 │  2. Fetch current block number from blockchain                    │
 │  3. Calculate block range (adaptive batch sizing: 1K-1M blocks)   │
 │  4. Fetch events using eth_getLogs (FilterLogs)                   │
-│  5. For each event:                                               │
+│  5. For each block with events — in ONE database transaction      │
+│     (ADR-0010): for each of its events:                           │
 │     a. Ensure block exists in database                            │
 │     b. Ensure transaction exists in database                      │
 │     c. Insert raw event log (RLP-encoded)                         │
 │     d. Decode and process event (domain-specific)                 │
-│  6. Update processing status                                      │
+│     then update the processing status and COMMIT — the block's    │
+│     rows, domain writes and watermark land (or vanish) together   │
+│  6. Acknowledge the event-free tail of the scanned range          │
 │  7. Repeat                                                        │
 └──────────────────────────────────────────────────────────────────┘
 ```

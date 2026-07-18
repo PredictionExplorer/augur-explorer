@@ -27,7 +27,7 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (rwmodel.ProcStatus, error)
 	const op = "randomwalk processing status"
 	var output rwmodel.ProcStatus
 	var lastID, lastBlock *int64
-	err := r.pool().QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock)
+	err := r.q(ctx).QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock)
 	if err != nil {
 		wrapped := store.WrapError(op, err)
 		if !errors.Is(wrapped, store.ErrNotFound) {
@@ -35,10 +35,10 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (rwmodel.ProcStatus, error)
 		}
 		// Fresh database: create the singleton row and report the zero
 		// watermark it holds.
-		if _, err := r.pool().Exec(ctx, "INSERT INTO rw_proc_status DEFAULT VALUES"); err != nil {
+		if _, err := r.q(ctx).Exec(ctx, "INSERT INTO rw_proc_status DEFAULT VALUES"); err != nil {
 			return output, store.WrapError(op+": insert default row", err)
 		}
-		if err := r.pool().QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock); err != nil {
+		if err := r.q(ctx).QueryRow(ctx, "SELECT last_evt_id,last_block FROM rw_proc_status").Scan(&lastID, &lastBlock); err != nil {
 			return output, store.WrapError(op, err)
 		}
 	}
@@ -53,7 +53,7 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (rwmodel.ProcStatus, error)
 
 // UpdateProcessingStatus persists the ETL watermark.
 func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *rwmodel.ProcStatus) error {
-	_, err := r.pool().Exec(ctx, "UPDATE rw_proc_status SET last_evt_id = $1,last_block=$2",
+	_, err := r.q(ctx).Exec(ctx, "UPDATE rw_proc_status SET last_evt_id = $1,last_block=$2",
 		status.LastIdProcessed, status.LastBlockNum)
 	return store.WrapError("update randomwalk processing status", err)
 }
@@ -74,7 +74,7 @@ func (r *Repo) ContractAddrs(ctx context.Context) (rwmodel.ContractAddresses, er
 		FROM rw_contracts rw
 			JOIN address mp_a ON rw.marketplace_addr=mp_a.addr
 			JOIN address rw_a ON rw.randomwalk_addr=rw_a.addr`
-	err := r.pool().QueryRow(ctx, query).Scan(
+	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&output.MarketPlace,
 		&output.RandomWalk,
 		&output.MarketPlaceAid,
@@ -90,7 +90,7 @@ func (r *Repo) ContractAddrs(ctx context.Context) (rwmodel.ContractAddresses, er
 // from rw_contracts without joining the address table — the ETL uses it at
 // startup to register both addresses before ContractAddrs can resolve them.
 func (r *Repo) RawContractAddrs(ctx context.Context) (marketplace, randomwalk string, err error) {
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT marketplace_addr, randomwalk_addr FROM rw_contracts LIMIT 1").Scan(&marketplace, &randomwalk)
 	if err != nil {
 		return "", "", store.WrapError("raw randomwalk contract addrs", err)
@@ -133,7 +133,7 @@ func (r *Repo) InsertNewOffer(ctx context.Context, evt *rwmodel.NewOffer) error 
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12,$13
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -172,7 +172,7 @@ func (r *Repo) InsertItemBought(ctx context.Context, evt *rwmodel.ItemBought) er
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -198,7 +198,7 @@ func (r *Repo) InsertOfferCanceled(ctx context.Context, evt *rwmodel.OfferCancel
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -230,7 +230,7 @@ func (r *Repo) InsertWithdrawal(ctx context.Context, evt *rwmodel.Withdrawal) er
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -256,7 +256,7 @@ func (r *Repo) InsertTokenName(ctx context.Context, evt *rwmodel.TokenName) erro
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -285,7 +285,7 @@ func (r *Repo) InsertMint(ctx context.Context, evt *rwmodel.MintEvent) error {
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -331,7 +331,7 @@ func (r *Repo) InsertTransfer(ctx context.Context, evt *rwmodel.Transfer) error 
 		) VALUES (
 			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9
 		)`
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -358,7 +358,7 @@ func (r *Repo) OfferExists(ctx context.Context, contractAddr string, offerID int
 		return false, err
 	}
 	var id int64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT id FROM rw_new_offer WHERE contract_aid=$1 AND offer_id=$2",
 		contractAid, offerID).Scan(&id)
 	if err != nil {
@@ -381,7 +381,7 @@ func (r *Repo) TokenExists(ctx context.Context, contractAddr string, tokenID int
 		return false, err
 	}
 	var id int64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT id FROM rw_mint_evt WHERE contract_aid=$1 AND token_id=$2",
 		contractAid, tokenID).Scan(&id)
 	if err != nil {
@@ -401,14 +401,14 @@ func (r *Repo) TokenExists(ctx context.Context, contractAddr string, tokenID int
 // when the user has no rank entry yet (the rwctl top-rated cron owns this
 // table; there is no trigger maintaining it).
 func (r *Repo) updateRank(ctx context.Context, op, rankColumn, valueColumn string, aid int64, rank float64, value any) error {
-	res, err := r.pool().Exec(ctx,
+	res, err := r.q(ctx).Exec(ctx,
 		"UPDATE rw_uranks SET "+rankColumn+" = $2,"+valueColumn+"=$3 WHERE aid = $1",
 		aid, rank, value)
 	if err != nil {
 		return store.WrapError(op, err)
 	}
 	if res.RowsAffected() == 0 {
-		_, err := r.pool().Exec(ctx,
+		_, err := r.q(ctx).Exec(ctx,
 			"INSERT INTO rw_uranks(aid,"+rankColumn+","+valueColumn+") VALUES($1,$2,$3)",
 			aid, rank, value)
 		if err != nil {
@@ -522,7 +522,7 @@ func (r *Repo) MintEventsForNotification(ctx context.Context, rwalkAid, startTs 
 // seeded yet) yields the zero status.
 func (r *Repo) MessagingStatus(ctx context.Context) (rwmodel.MsgStatus, error) {
 	var output rwmodel.MsgStatus
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT last_tx_id,last_evtlog_id,last_block_num,last_timestamp FROM rw_messaging_status").Scan(
 		&output.TxId,
 		&output.EvtLogId,
@@ -542,7 +542,7 @@ func (r *Repo) UpdateMessagingStatus(ctx context.Context, status *rwmodel.MsgSta
 			last_evtlog_id = $2,
 			last_block_num = $3,
 			last_timestamp = $4`
-	_, err := r.pool().Exec(ctx, query, status.TxId, status.EvtLogId, status.BlockNum, status.TimeStamp)
+	_, err := r.q(ctx).Exec(ctx, query, status.TxId, status.EvtLogId, status.BlockNum, status.TimeStamp)
 	return store.WrapError("update messaging status", err)
 }
 
@@ -698,7 +698,7 @@ func (r *Repo) AllEventsForNotificationMintsOnly(ctx context.Context, rwalkAid, 
 // ServerTimestamp returns the database server's current Unix timestamp.
 func (r *Repo) ServerTimestamp(ctx context.Context) (int64, error) {
 	var ts sql.NullInt64
-	err := r.pool().QueryRow(ctx, "SELECT EXTRACT(EPOCH FROM now())::BIGINT AS ts").Scan(&ts)
+	err := r.q(ctx).QueryRow(ctx, "SELECT EXTRACT(EPOCH FROM now())::BIGINT AS ts").Scan(&ts)
 	if err != nil {
 		return 0, store.WrapError("server timestamp", err)
 	}
@@ -709,7 +709,7 @@ func (r *Repo) ServerTimestamp(ctx context.Context) (int64, error) {
 // no mints exist.
 func (r *Repo) LastMintTimestamp(ctx context.Context) (int64, error) {
 	var ts sql.NullInt64
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts FROM rw_mint_evt ORDER BY id DESC LIMIT 1").Scan(&ts)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -443,7 +443,7 @@ func (r *Repo) BidTimeBounds(ctx context.Context) (minTs, maxTs int64, err error
 		"COALESCE(FLOOR(EXTRACT(EPOCH FROM MIN(time_stamp))), 0)::BIGINT, " +
 		"COALESCE(FLOOR(EXTRACT(EPOCH FROM MAX(time_stamp))), 0)::BIGINT " +
 		"FROM cg_bid"
-	if err := r.pool().QueryRow(ctx, query).Scan(&minTs, &maxTs); err != nil {
+	if err := r.q(ctx).QueryRow(ctx, query).Scan(&minTs, &maxTs); err != nil {
 		return 0, 0, store.WrapError("bid time bounds", err)
 	}
 	return minTs, maxTs, nil

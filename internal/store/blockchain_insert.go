@@ -18,7 +18,7 @@ import (
 func (s *Store) InsertBlock(ctx context.Context, header *types.Header) error {
 	blockNum := header.Number.Int64()
 	op := fmt.Sprintf("insert block %v", blockNum)
-	_, err := s.pool.Exec(ctx, `INSERT INTO block (
+	_, err := s.q(ctx).Exec(ctx, `INSERT INTO block (
 			block_num, block_hash, ts, parent_hash
 		) VALUES (
 			$1, $2, TO_TIMESTAMP($3), $4
@@ -49,7 +49,7 @@ func (s *Store) InsertBlock(ctx context.Context, header *types.Header) error {
 // no archive entry). Returns the transaction id.
 func (s *Store) InsertMinimalTransaction(ctx context.Context, txHash string, blockNum int64) (int64, error) {
 	var txID int64
-	err := s.pool.QueryRow(ctx, `INSERT INTO transaction (
+	err := s.q(ctx).QueryRow(ctx, `INSERT INTO transaction (
 			block_num, tx_hash, tx_index,
 			from_aid, to_aid, value,
 			gas_used, gas_price,
@@ -110,7 +110,7 @@ func (s *Store) InsertTransaction(ctx context.Context, tx *types.Transaction, bl
 	}
 
 	var txID int64
-	err = s.pool.QueryRow(ctx, `INSERT INTO transaction (
+	err = s.q(ctx).QueryRow(ctx, `INSERT INTO transaction (
 			block_num, tx_hash, tx_index,
 			from_aid, to_aid, value,
 			gas_used, gas_price,
@@ -148,7 +148,7 @@ func (s *Store) NextEventLogIndex(ctx context.Context, blockNum int64, minimum u
 		return 0, fmt.Errorf("next event log index: invalid block or minimum")
 	}
 	var next int64
-	err := s.pool.QueryRow(ctx, `SELECT GREATEST(
+	err := s.q(ctx).QueryRow(ctx, `SELECT GREATEST(
 			COALESCE(MAX(log_index)::BIGINT + 1, $2::BIGINT),
 			$2::BIGINT
 		)
@@ -186,14 +186,14 @@ func (s *Store) InsertEventLog(ctx context.Context, log types.Log, txID, contrac
 		return 0, fmt.Errorf("%s: RLP encode: %w", op, err)
 	}
 
-	if _, err := s.pool.Exec(ctx,
+	if _, err := s.q(ctx).Exec(ctx,
 		"DELETE FROM evt_log WHERE block_num = $1 AND log_index = $2",
 		log.BlockNumber, log.Index); err != nil {
 		return 0, WrapError(op+": delete before insert", err)
 	}
 
 	var evtID int64
-	err = s.pool.QueryRow(ctx, `INSERT INTO evt_log (
+	err = s.q(ctx).QueryRow(ctx, `INSERT INTO evt_log (
 			block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp
 		) VALUES (
 			$1, $2, $3, $4, $5, $6

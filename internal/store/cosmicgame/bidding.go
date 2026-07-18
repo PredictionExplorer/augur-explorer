@@ -178,7 +178,7 @@ func bidList(ctx context.Context, r *Repo, op, whereClause, orderBy, paging stri
 // or store.ErrNotFound when that event has no bid.
 func (r *Repo) BidIDByEvtlog(ctx context.Context, evtlogID int64) (int64, error) {
 	var id int64
-	err := r.pool().QueryRow(ctx, "SELECT b.id FROM cg_bid b WHERE b.evtlog_id=$1", evtlogID).Scan(&id)
+	err := r.q(ctx).QueryRow(ctx, "SELECT b.id FROM cg_bid b WHERE b.evtlog_id=$1", evtlogID).Scan(&id)
 	if err != nil {
 		return 0, store.WrapError("bid id by evtlog", err)
 	}
@@ -211,7 +211,7 @@ func (r *Repo) BidInfo(ctx context.Context, evtlogID int64) (cgmodel.CGBidRec, e
 // bidPosition within roundNum, or store.ErrNotFound.
 func (r *Repo) EvtlogIDByRoundAndBidPosition(ctx context.Context, roundNum, bidPosition int64) (int64, error) {
 	var evtlogID int64
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT b.evtlog_id FROM cg_bid b WHERE b.round_num=$1 AND b.bid_position=$2",
 		roundNum, bidPosition).Scan(&evtlogID)
 	if err != nil {
@@ -249,7 +249,7 @@ func (r *Repo) BidsByRound(ctx context.Context, roundNum int64, sort, offset, li
 		return nil, 0, err
 	}
 	var totalRows int64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT count(*) AS total_rows FROM cg_bid b WHERE round_num=$1", roundNum).Scan(&totalRows)
 	if err != nil {
 		return nil, 0, store.WrapError(op+": total count", err)
@@ -355,7 +355,7 @@ func (r *Repo) BidByRoundAndPosition(ctx context.Context, roundNum, bidPosition 
 // list for that round.
 func (r *Repo) BidCountForRound(ctx context.Context, roundNum int64) (int64, error) {
 	var n int64
-	err := r.pool().QueryRow(ctx, "SELECT count(*) FROM cg_bid WHERE round_num=$1", roundNum).Scan(&n)
+	err := r.q(ctx).QueryRow(ctx, "SELECT count(*) FROM cg_bid WHERE round_num=$1", roundNum).Scan(&n)
 	if err != nil {
 		return 0, store.WrapError("bid count for round", err)
 	}
@@ -370,7 +370,7 @@ func (r *Repo) LastCstBidEvtlogForBidder(ctx context.Context, roundNum int64, bi
 		WHERE b.round_num=$1 AND lower(ba.addr)=lower($2) AND b.cst_price > 0
 		ORDER BY b.time_stamp DESC LIMIT 1`
 	var evtlogID int64
-	err := r.pool().QueryRow(ctx, query, roundNum, bidderAddr).Scan(&evtlogID)
+	err := r.q(ctx).QueryRow(ctx, query, roundNum, bidderAddr).Scan(&evtlogID)
 	if err != nil {
 		return 0, store.WrapError("last cst bid evtlog for bidder", err)
 	}
@@ -392,7 +392,7 @@ func (r *Repo) LastCstBidEvtlogForBidderAtBlock(
 			AND b.bid_type = 2 AND b.block_num <= $3
 		ORDER BY b.block_num DESC, b.evtlog_id DESC LIMIT 1`
 	var evtlogID int64
-	err := r.pool().QueryRow(ctx, query, roundNum, bidderAddr, maxBlockNum).Scan(&evtlogID)
+	err := r.q(ctx).QueryRow(ctx, query, roundNum, bidderAddr, maxBlockNum).Scan(&evtlogID)
 	if err != nil {
 		return 0, store.WrapError("last block-pinned cst bid evtlog for bidder", err)
 	}
@@ -408,7 +408,7 @@ func (r *Repo) RoundStartTimestamp(ctx context.Context, roundNum uint64) (int64,
 		WHERE round_num=$1
 		ORDER BY b.id LIMIT 1`
 	var ts int64
-	err := r.pool().QueryRow(ctx, query, roundNum).Scan(&ts)
+	err := r.q(ctx).QueryRow(ctx, query, roundNum).Scan(&ts)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil
@@ -461,7 +461,7 @@ func (r *Repo) RandomWalkTokensUsedInBids(ctx context.Context) ([]cgmodel.CGRWal
 // the ETL persists in that case.
 func (r *Repo) BidRowIDByEvtlogID(ctx context.Context, bidEvtlogID int64) (int64, error) {
 	var id int64
-	err := r.pool().QueryRow(ctx, "SELECT id FROM cg_bid WHERE evtlog_id=$1", bidEvtlogID).Scan(&id)
+	err := r.q(ctx).QueryRow(ctx, "SELECT id FROM cg_bid WHERE evtlog_id=$1", bidEvtlogID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil

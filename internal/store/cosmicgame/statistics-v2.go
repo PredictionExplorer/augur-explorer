@@ -113,7 +113,7 @@ func (r *Repo) CosmicGameGlobalStatistics(ctx context.Context) (GlobalStatistics
 			total_cst_given_in_prizes::TEXT
 		FROM cg_glob_stats
 		LIMIT 1`
-	err = r.pool().QueryRow(ctx, query).Scan(
+	err = r.q(ctx).QueryRow(ctx, query).Scan(
 		&record.VoluntaryDonationsTotalWei,
 		&record.CosmicGameDonationsTotalWei,
 		&record.DirectDonationsTotalWei,
@@ -506,7 +506,7 @@ func (r *Repo) ClaimSummaryByRound(ctx context.Context, roundNum int64) (ClaimSu
 		return ClaimSummaryRecord{}, errors.New("claim summary by round: round must be non-negative")
 	}
 	var rec ClaimSummaryRecord
-	err := r.pool().QueryRow(ctx, claimSummaryV2Select+" WHERE pc.round_num=$1", roundNum).Scan(
+	err := r.q(ctx).QueryRow(ctx, claimSummaryV2Select+" WHERE pc.round_num=$1", roundNum).Scan(
 		&rec.RoundNum,
 		&rec.EventLogID,
 		&rec.ClaimWindowTimeout,

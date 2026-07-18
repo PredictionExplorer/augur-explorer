@@ -48,12 +48,15 @@ flowchart LR
    checks and rolled back, then the event is dispatched through the typed
    handler registry (`internal/indexer/cosmicgame`, `.../randomwalk`): a pure
    decode step turns the log into a domain event, a store step writes it to
-   its domain table (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...). Failed
-   batches retry with exponential backoff (the
-   process exits only after repeated consecutive failures), and the
-   processing watermark only advances past fully processed blocks.
-   PostgreSQL triggers maintain aggregate tables (`cg_bidder`,
-   `cg_glob_stats`, ...) so reads stay cheap.
+   its domain table (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...). All of
+   a block's writes — rows, domain writes and the processing watermark —
+   commit in one database transaction
+   ([ADR-0010](adr/0010-transactional-ingestion.md)), so readers never see a
+   partially applied block and the watermark can never disagree with the
+   data it acknowledges. Failed blocks roll back cleanly and batches retry
+   with exponential backoff (the process exits only after repeated
+   consecutive failures). PostgreSQL triggers maintain aggregate tables
+   (`cg_bidder`, `cg_glob_stats`, ...) so reads stay cheap.
 2. **Serve.** `apiserver` exposes the domain tables through two API
    generations: the OpenAPI-first v2 API ([openapi-v2.yaml](openapi-v2.yaml))
    is the canonical surface — its endpoint inventory is complete and every v1
@@ -127,6 +130,9 @@ Recorded as ADRs in [docs/adr/](adr/):
   rate limits.
 - **ADR-0009** — v2 bid moderation: bounded active-ban resources, canonical
   bidder resolution, database-enforced uniqueness and DELETE for removal.
+- **ADR-0010** — transactional ingestion: one database transaction per
+  block commits its rows, domain writes and processing watermark together,
+  via a context-scoped querier and a transaction-aware address cache.
 
 ## Databases and schemas
 

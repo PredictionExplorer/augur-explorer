@@ -348,7 +348,7 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRe
 			) d ON p.round_num = d.round_num
 		WHERE p.round_num=$1`
 
-	row := r.pool().QueryRow(ctx, query, roundNum)
+	row := r.q(ctx).QueryRow(ctx, query, roundNum)
 	var nullSeed sql.NullString
 	var nullDepAmount, nullDepAmountPerTok sql.NullString
 	var nullDepAmountEth, nullDepAmountPerTokenEth sql.NullFloat64
@@ -690,7 +690,7 @@ func (r *Repo) CompletedRoundExists(ctx context.Context, roundNum int64) (bool, 
 		return false, errors.New("completed round exists: round must be non-negative")
 	}
 	var exists bool
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT EXISTS (SELECT 1 FROM cg_prize_claim WHERE round_num=$1)",
 		roundNum,
 	).Scan(&exists)

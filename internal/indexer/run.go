@@ -24,10 +24,17 @@ import (
 // context that inherits values but not cancellation, so a SIGTERM arriving
 // mid-batch still gets the promised "finish batch, write status, exit 0".
 //
-// Failure semantics: any failed batch is retried from the last fully
-// completed block with exponential backoff. The watermark only ever advances
-// past blocks whose events were all processed, so a mid-block failure
-// re-fetches that whole block; processors stay idempotent under that replay.
+// Atomicity semantics: each block's writes — block/transaction/event-log
+// rows, every handler's domain writes and the processing watermark — commit
+// in one database transaction (processBlock), so readers never observe a
+// partially applied block and the watermark can never disagree with the
+// data it acknowledges (ADR-0010). Empty tail ranges are acknowledged with
+// a plain watermark write after the batch.
+//
+// Failure semantics: a failed block rolls its transaction back and the
+// batch is retried from the last committed block with exponential backoff.
+// The watermark only ever advances past blocks whose events were all
+// processed; processors stay idempotent under replay as defense in depth.
 func (e *Engine) Run(ctx context.Context) error {
 	if e.progress == nil || e.process == nil {
 		return fmt.Errorf("indexer: Run requires Config.Progress and Config.Process")
@@ -129,19 +136,16 @@ func (e *Engine) Run(ctx context.Context) error {
 			"from_block", fromBlock, "to_block", toBlock,
 			"batch_size", batch.size, "events", len(logs))
 
-		if lastCompleted, stage, err := e.processBatch(dbCtx, logs); err != nil {
-			// Acknowledge the blocks that completed before the failing one,
-			// then retry the rest of the batch. Never acknowledge the
-			// failing block itself: a block boundary is the only safe
-			// watermark (advancing to the failing log's own block would
-			// permanently skip that block's remaining logs).
-			if lastCompleted > lastProcessed {
-				if ackErr := e.setLastBlock(dbCtx, lastCompleted); ackErr != nil {
-					e.log.Error("partial watermark write failed", "block", lastCompleted, "err", ackErr)
-				} else {
-					lastProcessed = lastCompleted
-				}
-			}
+		lastCompleted, stage, err := e.processBatch(dbCtx, logs)
+		if lastCompleted > lastProcessed {
+			// Every completed block committed atomically with its own
+			// watermark write, so the in-memory cursor just follows. The
+			// failing block itself is never acknowledged: a block boundary
+			// is the only safe watermark (advancing to the failing log's
+			// own block would permanently skip that block's remaining logs).
+			lastProcessed = lastCompleted
+		}
+		if err != nil {
 			if stop := e.batchFailure(ctx, &failures, stage, err); stop != nil {
 				return stop
 			}
@@ -149,13 +153,17 @@ func (e *Engine) Run(ctx context.Context) error {
 		}
 
 		completedBlock := int64(toBlock) // #nosec G115 -- toBlock <= head, guarded against int64 overflow above
-		if err := e.setLastBlock(dbCtx, completedBlock); err != nil {
-			if stop := e.batchFailure(ctx, &failures, "watermark", err); stop != nil {
-				return stop
+		if completedBlock > lastProcessed {
+			// Acknowledge the event-free tail of the scanned range (the
+			// blocks with events acknowledged themselves transactionally).
+			if err := e.setLastBlock(dbCtx, completedBlock); err != nil {
+				if stop := e.batchFailure(ctx, &failures, "watermark", err); stop != nil {
+					return stop
+				}
+				continue
 			}
-			continue
+			lastProcessed = completedBlock
 		}
-		lastProcessed = completedBlock
 
 		failures = 0
 		e.metrics.batchProcessed(time.Since(started).Seconds())
@@ -167,42 +175,84 @@ func (e *Engine) Run(ctx context.Context) error {
 	}
 }
 
-// processBatch pipes every log through the storage pipeline and the
-// processor. On failure it returns the last block whose logs all completed
-// (0 when none did), the failed pipeline stage and the error.
+// processBatch splits the fetched logs into per-block groups (eth_getLogs
+// returns them block-ordered) and commits each group through processBlock.
+// It returns the last block that committed (0 when none did), and on
+// failure the failed pipeline stage and the error.
 func (e *Engine) processBatch(ctx context.Context, logs []types.Log) (lastCompleted int64, stage string, err error) {
-	var currentBlock int64
-	for i := range logs {
-		log := logs[i]
-		blockNum, err := logBlockNum(&log)
+	for start := 0; start < len(logs); {
+		blockNum, err := logBlockNum(&logs[start])
 		if err != nil {
 			return lastCompleted, "block", err
 		}
-		if currentBlock != 0 && blockNum > currentBlock {
-			lastCompleted = currentBlock
+		end := start + 1
+		for end < len(logs) && logs[end].BlockNumber == logs[start].BlockNumber {
+			end++
 		}
-		currentBlock = blockNum
-
-		if _, err := e.EnsureBlockExists(ctx, blockNum, log.BlockHash.Hex()); err != nil {
-			return lastCompleted, "block", err
+		if stage, err := e.processBlock(ctx, blockNum, logs[start:end]); err != nil {
+			return lastCompleted, stage, err
 		}
-
-		txID, _, err := e.EnsureTransactionExists(ctx, log.TxHash, blockNum)
-		if err != nil {
-			return lastCompleted, "transaction", err
-		}
-
-		evtID, err := e.InsertEventLog(ctx, log, txID)
-		if err != nil {
-			return lastCompleted, "event_log", err
-		}
-
-		if err := e.process(ctx, evtID); err != nil {
-			return lastCompleted, "process", fmt.Errorf("processing event %d: %w", evtID, err)
-		}
-		e.metrics.eventProcessed(e.eventTypeLabel(&log))
+		lastCompleted = blockNum
+		start = end
 	}
-	return 0, "", nil
+	return lastCompleted, "", nil
+}
+
+// processBlock pipes one block's logs through the storage pipeline and the
+// processor inside a single database transaction that also carries the
+// watermark write, so the block's rows, its domain writes and its
+// acknowledgment commit or vanish together. Metrics are recorded only after
+// the commit succeeds — a rolled-back block counts nothing.
+func (e *Engine) processBlock(ctx context.Context, blockNum int64, logs []types.Log) (stage string, err error) {
+	eventTypes := make([]string, 0, len(logs))
+	err = e.store.InTx(ctx, func(txCtx context.Context) error {
+		for i := range logs {
+			log := logs[i]
+			if _, err := e.EnsureBlockExists(txCtx, blockNum, log.BlockHash.Hex()); err != nil {
+				stage = "block"
+				return err
+			}
+
+			txID, _, err := e.EnsureTransactionExists(txCtx, log.TxHash, blockNum)
+			if err != nil {
+				stage = "transaction"
+				return err
+			}
+
+			evtID, err := e.InsertEventLog(txCtx, log, txID)
+			if err != nil {
+				stage = "event_log"
+				return err
+			}
+
+			if err := e.process(txCtx, evtID); err != nil {
+				stage = "process"
+				return fmt.Errorf("processing event %d: %w", evtID, err)
+			}
+			eventTypes = append(eventTypes, e.eventTypeLabel(&log))
+		}
+		if e.progress != nil {
+			if err := e.progress.SetLastBlock(txCtx, blockNum); err != nil {
+				stage = "watermark"
+				return fmt.Errorf("updating processing status: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		if stage == "" {
+			// InTx failed outside the pipeline: transaction begin or commit.
+			stage = "commit"
+		}
+		return stage, err
+	}
+	for _, eventType := range eventTypes {
+		e.metrics.eventProcessed(eventType)
+	}
+	if e.progress != nil {
+		e.metrics.watermark(blockNum)
+	}
+	return "", nil
 }
 
 // lastProcessedBlock reads the processing watermark, falling back to the

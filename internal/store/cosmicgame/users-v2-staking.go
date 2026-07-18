@@ -502,7 +502,7 @@ func (r *Repo) UserStakingDepositsPage(
 func (r *Repo) StakingDepositExists(ctx context.Context, depositID int64) (bool, error) {
 	const op = "staking deposit exists"
 	var exists bool
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM cg_staking_eth_deposit WHERE deposit_id=$1)",
 		depositID,
 	).Scan(&exists)
@@ -648,7 +648,7 @@ func (r *Repo) UserStakingTokenRewardsPage(
 func (r *Repo) CosmicSignatureTokenExists(ctx context.Context, tokenID int64) (bool, error) {
 	const op = "cosmic signature token exists"
 	var exists bool
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM cg_mint_event WHERE token_id=$1)",
 		tokenID,
 	).Scan(&exists)

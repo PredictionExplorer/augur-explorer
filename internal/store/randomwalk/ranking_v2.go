@@ -116,7 +116,7 @@ type RankingStatisticsRecord struct {
 func (r *Repo) RankingStatistics(ctx context.Context) (RankingStatisticsRecord, error) {
 	const op = "ranking statistics"
 	var rec RankingStatisticsRecord
-	err := r.pool().QueryRow(ctx, `
+	err := r.q(ctx).QueryRow(ctx, `
 SELECT
 	(SELECT COUNT(*) FROM rw_ranking_match),
 	(SELECT COUNT(*) FROM rw_ranking_match WHERE voter_aid IS NOT NULL),
@@ -145,11 +145,11 @@ func (r *Repo) CreateRankingVoteNonce(ctx context.Context, nonce string, ttl tim
 	if ttl <= 0 {
 		return time.Time{}, errors.New("create ranking vote nonce: ttl must be positive")
 	}
-	if _, err := r.pool().Exec(ctx, `DELETE FROM rw_ranking_vote_nonce WHERE expires_at < NOW()`); err != nil {
+	if _, err := r.q(ctx).Exec(ctx, `DELETE FROM rw_ranking_vote_nonce WHERE expires_at < NOW()`); err != nil {
 		return time.Time{}, store.WrapError("purge expired ranking vote nonces", err)
 	}
 	var expiresAt time.Time
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		`INSERT INTO rw_ranking_vote_nonce (nonce, expires_at) VALUES ($1, NOW() + $2) RETURNING expires_at`,
 		nonce, ttl).Scan(&expiresAt)
 	if err != nil {

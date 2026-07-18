@@ -214,7 +214,7 @@ func (r *Repo) ERC20DonationInfo(ctx context.Context, id int64) (cgmodel.CGERC20
 		WHERE d.id=$1`
 	var rec cgmodel.CGERC20Donation
 	rec.RecordId = id
-	err := r.pool().QueryRow(ctx, query, id).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, id).Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
 		&rec.Tx.TxId,

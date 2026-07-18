@@ -38,7 +38,7 @@ func checkAdminIdent(kind, name string) error {
 // as a decimal string.
 func (r *Repo) GlobStatsCstRewardForBidding(ctx context.Context) (string, error) {
 	var reward string
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT cst_reward_for_bidding FROM cg_glob_stats LIMIT 1",
 	).Scan(&reward)
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *Repo) LatestDecimalParam(ctx context.Context, table, column string) (va
 	}
 	query := fmt.Sprintf("SELECT %s FROM %s ORDER BY id DESC LIMIT 1", column, table)
 	var val *string
-	err = r.pool().QueryRow(ctx, query).Scan(&val)
+	err = r.q(ctx).QueryRow(ctx, query).Scan(&val)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", false, nil
 	}
@@ -100,7 +100,7 @@ func (r *Repo) InsertAdminCorrectionDecimal(ctx context.Context, table, column, 
 		"INSERT INTO %s (evtlog_id, block_num, tx_id, time_stamp, contract_aid, %s) VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6)",
 		table, column,
 	)
-	_, err := r.pool().Exec(ctx, query,
+	_, err := r.q(ctx).Exec(ctx, query,
 		meta.EvtID,
 		meta.BlockNum,
 		meta.TxID,
@@ -120,7 +120,7 @@ func (r *Repo) InsertAdminCorrectionERC20Reward(ctx context.Context, reward stri
 	query := "INSERT INTO cg_adm_erc20_reward(" +
 		"evtlog_id, block_num, tx_id, time_stamp, contract_aid, new_reward" +
 		") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
-	_, err := r.pool().Exec(ctx, query,
+	_, err := r.q(ctx).Exec(ctx, query,
 		meta.EvtID,
 		meta.BlockNum,
 		meta.TxID,

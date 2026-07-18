@@ -240,7 +240,7 @@ func (r *Repo) EthDonationWithInfoRecord(ctx context.Context, recordID int64) (c
 	query := ethDonationsWithInfoSelectSQL + `
 		WHERE d.record_id=$1`
 	var rec cgmodel.CGCosmicGameDonationWithInfo
-	err := r.pool().QueryRow(ctx, query, recordID).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, recordID).Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
 		&rec.Tx.TxId,
@@ -275,7 +275,7 @@ func (r *Repo) DonationReceivedEvtIDByTx(ctx context.Context, txID int64, sig st
 			(e.topic0_sig=$2)
 		LIMIT 1`
 	var nullID sql.NullInt64
-	err := r.pool().QueryRow(ctx, query, txID, sig).Scan(&nullID)
+	err := r.q(ctx).QueryRow(ctx, query, txID, sig).Scan(&nullID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil

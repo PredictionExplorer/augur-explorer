@@ -111,7 +111,7 @@ func (r *Repo) NFTDonationInfo(ctx context.Context, id int64) (cgmodel.CGNFTDona
 		WHERE d.id=$1`
 	var rec cgmodel.CGNFTDonation
 	rec.RecordId = id
-	err := r.pool().QueryRow(ctx, query, id).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, id).Scan(
 		&rec.Tx.EvtLogId,
 		&rec.Tx.BlockNum,
 		&rec.Tx.TxId,

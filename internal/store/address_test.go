@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -101,6 +102,70 @@ func TestAddressCacheZeroSizeUsesDefault(t *testing.T) {
 	c := newAddressCache(0)
 	if c.max != DefaultAddressCacheSize {
 		t.Fatalf("max = %d, want default %d", c.max, DefaultAddressCacheSize)
+	}
+}
+
+func TestAddressCachePutAll(t *testing.T) {
+	c := newAddressCache(4)
+	c.put("0xa", 1)
+	c.putAll(map[string]int64{"0xb": 2, "0xc": 3})
+	c.putAll(nil) // a transaction that created no addresses
+	for addr, want := range map[string]int64{"0xa": 1, "0xb": 2, "0xc": 3} {
+		if aid, ok := c.get(addr); !ok || aid != want {
+			t.Errorf("get(%s) = %d, %v; want %d, true", addr, aid, ok, want)
+		}
+	}
+}
+
+// TestTxOverlayCacheSemantics pins the transaction-aware cache routing
+// without a database: inside a transaction owned by the Store, resolved ids
+// go to (and are served from) the per-transaction overlay; the shared LRU
+// stays untouched until InTx flushes it on commit. A transaction owned by a
+// different Store is invisible.
+func TestTxOverlayCacheSemantics(t *testing.T) {
+	s := NewFromPool(nil)
+	plain := context.Background()
+
+	// Outside any transaction: straight to the shared LRU.
+	s.cacheAddressID(plain, "0xshared", 1)
+	if aid, ok := s.cachedAddressID(plain, "0xshared"); !ok || aid != 1 {
+		t.Fatalf("shared cache round trip = (%d, %v), want (1, true)", aid, ok)
+	}
+
+	// Inside this Store's transaction: writes land in the overlay only.
+	st := &txState{owner: s}
+	txCtx := context.WithValue(plain, txKey{}, st)
+	s.cacheAddressID(txCtx, "0xtx", 2)
+	if aid, ok := s.cachedAddressID(txCtx, "0xtx"); !ok || aid != 2 {
+		t.Errorf("overlay read through tx ctx = (%d, %v), want (2, true)", aid, ok)
+	}
+	if _, ok := s.cachedAddressID(plain, "0xtx"); ok {
+		t.Error("overlay entry leaked into the shared LRU before commit")
+	}
+	// Shared entries stay visible inside the transaction.
+	if aid, ok := s.cachedAddressID(txCtx, "0xshared"); !ok || aid != 1 {
+		t.Errorf("shared entry through tx ctx = (%d, %v), want (1, true)", aid, ok)
+	}
+
+	// The commit flush publishes the overlay.
+	s.addrCache.putAll(st.overlay)
+	if aid, ok := s.cachedAddressID(plain, "0xtx"); !ok || aid != 2 {
+		t.Errorf("post-flush shared read = (%d, %v), want (2, true)", aid, ok)
+	}
+
+	// A transaction owned by another Store neither reads nor writes this
+	// Store's overlay: the entry goes to this Store's shared LRU instead.
+	other := NewFromPool(nil)
+	foreignCtx := context.WithValue(plain, txKey{}, &txState{owner: other})
+	s.cacheAddressID(foreignCtx, "0xforeign", 3)
+	if aid, ok := s.cachedAddressID(plain, "0xforeign"); !ok || aid != 3 {
+		t.Errorf("foreign-tx write skipped the shared LRU = (%d, %v), want (3, true)", aid, ok)
+	}
+	if other.txState(foreignCtx) == nil {
+		t.Error("owner Store must recognize its own transaction state")
+	}
+	if s.txState(foreignCtx) != nil {
+		t.Error("foreign transaction state must be invisible to this Store")
 	}
 }
 

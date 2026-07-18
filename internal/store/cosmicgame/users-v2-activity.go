@@ -565,7 +565,7 @@ func (r *Repo) UserCosmicTokenSummaryV2(
 			CROSS JOIN activity a`
 
 	var record UserCosmicTokenSummaryRecord
-	err := r.pool().QueryRow(ctx, query, userAid).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, userAid).Scan(
 		&record.BalanceWei,
 		&record.BiddingRewardsWei,
 		&record.MainPrizesWei,
@@ -645,7 +645,7 @@ func (r *Repo) UserPendingWinnings(
 			CROSS JOIN erc20 e`
 
 	var record UserPendingWinningsRecord
-	err := r.pool().QueryRow(ctx, query, userAid).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, userAid).Scan(
 		&record.RaffleEthWei,
 		&record.ChronoWarriorEthWei,
 		&record.DonatedNftCount,

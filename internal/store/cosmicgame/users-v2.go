@@ -124,7 +124,7 @@ func (r *Repo) UserProfile(ctx context.Context, userAid int64) (UserProfileRecor
 
 	var record UserProfileRecord
 	var maxETHBid sql.NullString
-	err := r.pool().QueryRow(ctx, query, userAid).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, userAid).Scan(
 		&record.Address,
 		&record.BidCount,
 		&maxETHBid,

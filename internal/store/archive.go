@@ -31,7 +31,7 @@ type ArchivedTransaction struct {
 func (s *Store) ArchivedTransactionByHash(ctx context.Context, txHash string) (*ArchivedTransaction, error) {
 	var tx ArchivedTransaction
 	var inputSig *string
-	err := s.pool.QueryRow(ctx, `SELECT
+	err := s.q(ctx).QueryRow(ctx, `SELECT
 			block_num, tx_hash, tx_index,
 			from_aid, to_aid, value,
 			gas_used, gas_price, input_sig,
@@ -65,7 +65,7 @@ func (s *Store) ArchivedTransactionByHash(ctx context.Context, txHash string) (*
 // data (idempotent on tx_hash) and returns the transaction id.
 func (s *Store) InsertTransactionFromArchive(ctx context.Context, arch *ArchivedTransaction) (int64, error) {
 	var txID int64
-	err := s.pool.QueryRow(ctx, `INSERT INTO transaction (
+	err := s.q(ctx).QueryRow(ctx, `INSERT INTO transaction (
 			block_num, tx_hash, tx_index,
 			from_aid, to_aid, value,
 			gas_used, gas_price,

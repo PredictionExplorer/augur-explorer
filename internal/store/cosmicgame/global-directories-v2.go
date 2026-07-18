@@ -253,7 +253,7 @@ func (r *Repo) CosmicSignatureTokenDetailV2(
 		stakedAt      sql.NullInt64
 		stakedAtText  string
 	)
-	err := r.pool().QueryRow(ctx, query, tokenID).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, tokenID).Scan(
 		&rec.MintTx.EvtLogId,
 		&rec.MintTx.BlockNum,
 		&rec.MintTx.TxId,
@@ -693,7 +693,7 @@ func (r *Repo) CosmicTokenStatisticsV2(ctx context.Context) (CosmicTokenStatisti
 
 	var record CosmicTokenStatisticsRecord
 	var topHolders []byte
-	err := r.pool().QueryRow(ctx, query).Scan(
+	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&record.TotalSupplyWei,
 		&record.HolderCount,
 		&record.BiddingRewardsWei,

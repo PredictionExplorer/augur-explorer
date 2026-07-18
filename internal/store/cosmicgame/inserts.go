@@ -22,7 +22,7 @@ func (r *Repo) insertAdminValue(ctx context.Context, table, column string, evtID
 	query := "INSERT INTO " + table +
 		"(evtlog_id,block_num,tx_id,time_stamp,contract_aid," + column +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
-	_, err := r.pool().Exec(ctx, query, evtID, blockNum, txID, timeStamp, contractAid, value)
+	_, err := r.q(ctx).Exec(ctx, query, evtID, blockNum, txID, timeStamp, contractAid, value)
 	return store.WrapError("insert into "+table, err)
 }
 
@@ -43,7 +43,7 @@ func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *cgmodel.CGPrizeClaimEv
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"round_num,token_id,winner_aid,timeout,amount,cst_amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -76,7 +76,7 @@ func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 	}
 
 	var bidPosition int64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COALESCE(MAX(bid_position), 0) + 1 FROM cg_bid WHERE round_num = $1",
 		evt.RoundNum).Scan(&bidPosition)
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,bid_cst_reward_amount,cst_dutch_auction_duration,prize_time,msg,round_num,bid_type,bid_position" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -142,7 +142,7 @@ func (r *Repo) InsertRoundStarted(ctx context.Context, evt *cgmodel.CGRoundStart
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"round_num,start_ts" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -171,7 +171,7 @@ func (r *Repo) InsertEthDonation(ctx context.Context, evt *cgmodel.CGDonationEve
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,round_num,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -200,7 +200,7 @@ func (r *Repo) InsertEthDonationWithInfo(ctx context.Context, evt *cgmodel.CGDon
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,round_num,record_id,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -219,7 +219,7 @@ func (r *Repo) InsertEthDonationWithInfo(ctx context.Context, evt *cgmodel.CGDon
 // with ON DELETE CASCADE, so re-processing the parent event replaces it).
 func (r *Repo) InsertDonationJSON(ctx context.Context, recordID int64, data string) error {
 	query := "INSERT INTO cg_donation_json(record_id,data) VALUES($1,$2)"
-	_, err := r.pool().Exec(ctx, query, recordID, data)
+	_, err := r.q(ctx).Exec(ctx, query, recordID, data)
 	return store.WrapError("insert into cg_donation_json", err)
 }
 
@@ -238,7 +238,7 @@ func (r *Repo) InsertDonationReceived(ctx context.Context, evt *cgmodel.CGDonati
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,amount,round_num" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -266,7 +266,7 @@ func (r *Repo) InsertDonationSent(ctx context.Context, evt *cgmodel.CGDonationSe
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"charity_aid,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -297,7 +297,7 @@ func (r *Repo) InsertERC20Donation(ctx context.Context, evt *cgmodel.CGERC20Dona
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,token_aid,round_num,bid_id,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -331,7 +331,7 @@ func (r *Repo) InsertNFTDonation(ctx context.Context, evt *cgmodel.CGNFTDonation
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"donor_aid,token_aid,token_id,round_num,idx,bid_id,token_uri" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -367,7 +367,7 @@ func (r *Repo) InsertDonatedTokenClaim(ctx context.Context, evt *cgmodel.CGDonat
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"round_num,idx,token_aid,winner_aid,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -401,7 +401,7 @@ func (r *Repo) InsertDonatedNFTClaim(ctx context.Context, evt *cgmodel.CGDonated
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"round_num,idx,token_aid,winner_aid,token_id" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -431,7 +431,7 @@ func (r *Repo) InsertFundsToCharity(ctx context.Context, evt *cgmodel.CGFundsToC
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"charity_aid,amount" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -456,7 +456,7 @@ func (r *Repo) InsertTokenName(ctx context.Context, evt *cgmodel.CGTokenNameEven
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"token_id,token_name" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -484,7 +484,7 @@ func (r *Repo) InsertMint(ctx context.Context, evt *cgmodel.CGMintEvent) error {
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"owner_aid,cur_owner_aid,token_id,round_num,seed" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -520,7 +520,7 @@ func (r *Repo) InsertCosmicSignatureTransfer(ctx context.Context, evt *cgmodel.C
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"token_id,from_aid,to_aid,otype" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -555,7 +555,7 @@ func (r *Repo) InsertCosmicTokenTransfer(ctx context.Context, evt *cgmodel.CGERC
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"value,from_aid,to_aid,otype" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -601,7 +601,7 @@ func (r *Repo) InsertPrizeDeposit(ctx context.Context, evt *cgmodel.CGPrizesEthD
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,winner_index,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -634,7 +634,7 @@ func (r *Repo) InsertPrizeWithdrawal(ctx context.Context, evt *cgmodel.CGPrizesE
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"round_num,winner_aid,beneficiary_aid,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -663,7 +663,7 @@ func (r *Repo) InsertRaffleNFTWinner(ctx context.Context, evt *cgmodel.CGRaffleN
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,token_id,winner_idx,cst_amount,is_rwalk,is_staker" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -695,7 +695,7 @@ func (r *Repo) InsertRaffleETHWinner(ctx context.Context, evt *cgmodel.CGRaffleE
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,winner_idx,amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -726,7 +726,7 @@ func (r *Repo) InsertEnduranceWinner(ctx context.Context, evt *cgmodel.CGEnduran
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,erc721_token_id,erc20_amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -756,7 +756,7 @@ func (r *Repo) InsertLastCstBidderWinner(ctx context.Context, evt *cgmodel.CGLas
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,erc721_token_id,erc20_amount" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -785,7 +785,7 @@ func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *cgmodel.CGChronoWar
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"winner_aid,round_num,winner_index,eth_amount,cst_amount,nft_id" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -816,7 +816,7 @@ func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFund
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"destination_aid,amount" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -843,7 +843,7 @@ func (r *Repo) InsertERC20TransferFailed(ctx context.Context, evt *cgmodel.CGErc
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"destination_aid,amount" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -872,7 +872,7 @@ func (r *Repo) InsertNftStakedCST(ctx context.Context, evt *cgmodel.CGNftStakedC
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"action_id,token_id,num_staked_nfts,reward_per_staker,staker_aid" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -902,7 +902,7 @@ func (r *Repo) InsertNftStakedRWalk(ctx context.Context, evt *cgmodel.CGNftStake
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"action_id,token_id,num_staked_nfts,staker_aid" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -932,7 +932,7 @@ func (r *Repo) InsertNftUnstakedCST(ctx context.Context, evt *cgmodel.CGNftUnsta
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"action_id,token_id,num_staked_nfts,staker_aid,reward,reward_per_tok,action_counter" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -964,7 +964,7 @@ func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUns
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"action_id,token_id,num_staked_nfts,staker_aid" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -989,7 +989,7 @@ func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDe
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -1024,7 +1024,7 @@ func (r *Repo) InsertMarketingRewardPaid(ctx context.Context, evt *cgmodel.CGMar
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"amount,marketer_aid" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -1137,7 +1137,7 @@ func (r *Repo) InsertCharityReceiverChange(ctx context.Context, evt *cgmodel.CGC
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"charity_aid" +
 		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -1320,7 +1320,7 @@ func (r *Repo) InsertAdminChanged(ctx context.Context, evt *cgmodel.CGAdminChang
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"old_admin_aid,new_admin_aid" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
@@ -1352,7 +1352,7 @@ func (r *Repo) InsertOwnershipTransfer(ctx context.Context, evt *cgmodel.CGOwner
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
 		"prev_owner_aid,new_owner_aid,contract_code" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8)"
-	_, err = r.pool().Exec(ctx, query,
+	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,

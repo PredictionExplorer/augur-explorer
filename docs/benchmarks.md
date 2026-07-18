@@ -18,6 +18,7 @@ go test ./internal/api/common/   -bench 'BenchmarkCompress|BenchmarkConditionalE
 # DB benchmarks (Docker required; runs against the seeded test container)
 go test -tags=integration ./internal/store/cosmicgame/ -bench BenchmarkStatisticsQueries -benchmem -count=6 -run '^$' -timeout 15m
 go test -tags=integration ./internal/store/randomwalk/ -bench BenchmarkRandomWalkV2Queries -benchmem -count=6 -run '^$' -timeout 15m
+go test -tags=integration ./internal/indexer/ -bench BenchmarkIngestBlock -benchmem -count=6 -run '^$' -timeout 15m
 
 # Compare against a previous run
 go install golang.org/x/perf/cmd/benchstat@latest
@@ -73,6 +74,8 @@ machine — compare them only against runs captured the same way.
 | `BenchmarkRandomWalkV2Queries/statistics` | 399,000 | 4,888 | 90 | one-snapshot collection/marketplace/withdrawal aggregate |
 | `BenchmarkRankingQueries/ratings_page` | 180,000 | 2,645 | 17 | full rating directory page with per-token match counts |
 | `BenchmarkRankingQueries/statistics` | 166,000 | 580 | 6 | one-snapshot beauty-contest vote/voter/rated counters |
+| `BenchmarkIngestBlock/tx_block_3_logs` (indexer) | 3,940,000 | 7,326 | 127 | steady-state replay of a 3-log block through the per-block ingestion transaction (ADR-0010): BEGIN + pipeline + watermark + COMMIT |
+| `BenchmarkIngestBlock/autocommit_3_logs` (indexer) | 3,620,000 | 7,665 | 120 | the identical pipeline without the transaction wrapper — the delta (~330µs, ~9%) is the atomicity cost |
 
 History:
 
@@ -178,3 +181,22 @@ History:
   deliberately added **no migration**: a keyset index over
   `COALESCE(rating, 1200)` would optimize a sub-200 µs sequential scan of
   a size-capped table.
+- **2026-07-18 (transactional-ingestion sprint)** — added the
+  `BenchmarkIngestBlock` pair quantifying ADR-0010's per-block transaction:
+  a three-log block replayed in steady state costs ~3.94 ms through the
+  transaction versus ~3.62 ms through the raw autocommit pipeline (~10
+  container round trips either way), so the BEGIN/COMMIT/watermark wrapper
+  adds ~330 µs (~9%) per block — far below the RPC latency that dominates
+  live ingestion, and in production the single fsync per block *replaces*
+  one per autocommitted statement. The guarded query benchmarks re-ran
+  after every repo method moved onto the per-call querier resolution: the
+  CosmicGame suite ran at-or-faster than its baselines
+  (`cosmic_token_statistics` 233 µs vs 433, `supply_by_bid_page` 206 µs vs
+  322, the staking pages 170–212 µs vs 181–433) and a serial A/B against
+  the pre-change commit (same machine, back-to-back worktree runs) put the
+  ranking queries dead even — `ratings_page` 178 µs new vs 177 µs old,
+  `statistics` 164 µs new vs 166 µs old — with byte-identical B/op and
+  allocation counts everywhere: the querier resolution is one context
+  lookup per query and costs nothing measurable. (A first parallel run had
+  shown the RandomWalk suite +14–18%; that was contention from running two
+  container benchmark suites simultaneously, disproven by the serial A/B.)

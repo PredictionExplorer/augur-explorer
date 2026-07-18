@@ -46,7 +46,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 		"total_mkt_rewards/1e18," +
 		"num_mkt_rewards " +
 		"FROM cg_glob_stats LIMIT 1"
-	err := r.pool().QueryRow(ctx, query).Scan(
+	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&stats.NumVoluntaryDonations,
 		&stats.SumVoluntaryDonationsEth,
 		&stats.NumCosmicGameDonations,
@@ -77,7 +77,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	}
 
 	var nullBidders sql.NullInt64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COUNT(*) AS total FROM cg_bidder WHERE num_bids > 0",
 	).Scan(&nullBidders)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -91,7 +91,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	var nullSumWei sql.NullString
 	var nullSumEth sql.NullFloat64
 	var nullTotalPrizeAwards sql.NullInt64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT "+
 			"COUNT(*) AS total,"+
 			"SUM(prizes_sum) AS sum_wei,"+
@@ -122,7 +122,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	}
 
 	var nullDonors sql.NullInt64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT "+
 			"COUNT(*) AS total,"+
 			"SUM(total_eth_donated) AS sum_wei,"+
@@ -148,7 +148,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	}
 
 	var nullStakers sql.NullInt64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COUNT(*) AS total FROM cg_staker_cst WHERE num_stake_actions > 0",
 	).Scan(&nullStakers)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -157,7 +157,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	if nullStakers.Valid {
 		stats.NumUniqueStakersCST = uint64(nullStakers.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT COUNT(*) AS total FROM cg_staker_rwalk WHERE num_stake_actions > 0",
 	).Scan(&nullStakers)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -166,7 +166,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	if nullStakers.Valid {
 		stats.NumUniqueStakersRWalk = uint64(nullStakers.Int64) // #nosec G115 -- COUNT(*) is non-negative
 	}
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT "+
 			"COUNT(*) all_tokens_num "+
 			"FROM address a "+
@@ -183,7 +183,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	}
 
 	var nullDonatedNfts sql.NullInt64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT SUM(num_donated) as total FROM cg_nft_stats",
 	).Scan(&nullDonatedNfts)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -192,7 +192,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	stats.NumDonatedNFTs = uint64(nullDonatedNfts.Int64) // #nosec G115 -- SUM of non-negative counters
 
 	var namedTokens int64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT count(*) AS total FROM cg_mint_event WHERE LENGTH(token_name) > 0 ",
 	).Scan(&namedTokens)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -201,7 +201,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	stats.TotalNamedTokens = namedTokens
 
 	var numUsersMissingWithdrawal int64
-	err = r.pool().QueryRow(ctx,
+	err = r.q(ctx).QueryRow(ctx,
 		"SELECT count(winner_aid) AS total FROM cg_raffle_winner_stats WHERE amount_sum > 0 ",
 	).Scan(&numUsersMissingWithdrawal)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -210,7 +210,7 @@ func (r *Repo) CosmicGameStatistics(ctx context.Context) (cgmodel.CGStatistics, 
 	stats.NumWinnersWithPendingRaffleWithdrawal = numUsersMissingWithdrawal
 
 	var nullCgPrizeRows sql.NullInt64
-	err = r.pool().QueryRow(ctx, "SELECT COUNT(*) AS total FROM cg_prize").Scan(&nullCgPrizeRows)
+	err = r.q(ctx).QueryRow(ctx, "SELECT COUNT(*) AS total FROM cg_prize").Scan(&nullCgPrizeRows)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGStatistics{}, store.WrapError(op+": cg_prize rows", err)
 	}
@@ -245,7 +245,7 @@ func (r *Repo) StakeStatisticsCst(ctx context.Context) (cgmodel.CGStakeStatsCST,
 		"total_num_stakers, " +
 		"num_deposits " +
 		"FROM cg_stake_stats_cst LIMIT 1"
-	err := r.pool().QueryRow(ctx, query).Scan(
+	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&stats.TotalTokensStaked,
 		&stats.TotalReward,
 		&stats.TotalRewardEth,
@@ -268,7 +268,7 @@ func (r *Repo) StakeStatisticsRwalk(ctx context.Context) (cgmodel.CGStakeStatsRW
 		"total_num_stakers, " +
 		"total_nft_mints " +
 		"FROM cg_stake_stats_rwalk LIMIT 1"
-	err := r.pool().QueryRow(ctx, query).Scan(
+	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&stats.TotalTokensStaked,
 		&stats.NumActiveStakers,
 		&stats.TotalTokensMinted,
@@ -308,7 +308,7 @@ func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (c
 	var nullParamWindowStart, nullRoundStart, nullRoundEnd sql.NullString
 	var nullActivationTime sql.NullInt64
 	var nullParamWindowDuration, nullRoundDuration sql.NullInt64
-	err := r.pool().QueryRow(ctx, query, roundNum).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, roundNum).Scan(
 		&stats.RoundNum,
 		&stats.TotalBids,
 		&stats.TotalDonatedNFTs,
@@ -373,7 +373,7 @@ func (r *Repo) activationTimeFromEvents(ctx context.Context, roundNum int64) (in
 		"WHERE (SELECT COALESCE(MAX(p.round_num), -1) + 1 FROM cg_prize_claim p) = $1 " +
 		"ORDER BY r.id DESC LIMIT 1"
 	var t int64
-	err := r.pool().QueryRow(ctx, query, roundNum).Scan(&t)
+	err := r.q(ctx).QueryRow(ctx, query, roundNum).Scan(&t)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, nil
@@ -683,7 +683,7 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]cgmodel.CGRoundClaimSummary
 
 func (r *Repo) scanUnclaimedItems(ctx context.Context, query, assetType string, appendItem func(int64, cgmodel.CGClaimUnclaimedItem)) error {
 	const op = "claims by round: unclaimed items"
-	rows, err := r.pool().Query(ctx, query)
+	rows, err := r.q(ctx).Query(ctx, query)
 	if err != nil {
 		return store.WrapError(op, err)
 	}
@@ -702,7 +702,7 @@ func (r *Repo) scanUnclaimedItems(ctx context.Context, query, assetType string, 
 
 func (r *Repo) scanUnclaimedNFTItems(ctx context.Context, query string, appendItem func(int64, cgmodel.CGClaimUnclaimedItem)) error {
 	const op = "claims by round: unclaimed nft items"
-	rows, err := r.pool().Query(ctx, query)
+	rows, err := r.q(ctx).Query(ctx, query)
 	if err != nil {
 		return store.WrapError(op, err)
 	}
@@ -721,7 +721,7 @@ func (r *Repo) scanUnclaimedNFTItems(ctx context.Context, query string, appendIt
 
 func (r *Repo) scanUnclaimedERC20Items(ctx context.Context, query string, appendItem func(int64, cgmodel.CGClaimUnclaimedItem)) error {
 	const op = "claims by round: unclaimed erc20 items"
-	rows, err := r.pool().Query(ctx, query)
+	rows, err := r.q(ctx).Query(ctx, query)
 	if err != nil {
 		return store.WrapError(op, err)
 	}
@@ -1031,15 +1031,15 @@ func (r *Repo) NFTDonationStats(ctx context.Context) ([]cgmodel.CGNFTDonationSta
 func (r *Repo) RecordCounters(ctx context.Context) (cgmodel.CGRecordCounters, error) {
 	const op = "record counters"
 	var output cgmodel.CGRecordCounters
-	err := r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM cg_bid").Scan(&output.TotalBids)
+	err := r.q(ctx).QueryRow(ctx, "SELECT count(*) AS total FROM cg_bid").Scan(&output.TotalBids)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGRecordCounters{}, store.WrapError(op+": bids", err)
 	}
-	err = r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM cg_prize_claim").Scan(&output.TotalPrizes)
+	err = r.q(ctx).QueryRow(ctx, "SELECT count(*) AS total FROM cg_prize_claim").Scan(&output.TotalPrizes)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGRecordCounters{}, store.WrapError(op+": prizes", err)
 	}
-	err = r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM cg_nft_donation").Scan(&output.TotalDonatedNFTs)
+	err = r.q(ctx).QueryRow(ctx, "SELECT count(*) AS total FROM cg_nft_donation").Scan(&output.TotalDonatedNFTs)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGRecordCounters{}, store.WrapError(op+": nft donations", err)
 	}

@@ -260,6 +260,13 @@ series simply lack it.
   advances past fully processed blocks, and the engine re-reads it from
   `cg_proc_status`/`rw_proc_status` at startup (rewind it with the ETL
   stopped if you need a manual replay).
+- ETL atomicity (since the transactional-ingestion change, ADR-0010): each
+  block's rows, domain writes and watermark update commit in one database
+  transaction, so a crash or failure can no longer leave a partially applied
+  block behind. `rwcg_etl_batch_failures_total{stage}` gained the `commit`
+  stage (transaction begin/commit failures); the other stages — `fetch`,
+  `chain_head`, `block`, `transaction`, `event_log`, `process`, `watermark`
+  — keep their meanings.
 - `GET /readyz` returns 503 whenever the database is unreachable — wire it
   into your load balancer health checks.
 

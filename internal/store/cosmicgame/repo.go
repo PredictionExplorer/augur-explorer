@@ -23,7 +23,14 @@ func NewRepo(st *store.Store) *Repo {
 	return &Repo{store: st}
 }
 
-// pool is a shorthand used by the query methods.
+// q resolves the querier for ctx — the transaction the context carries when
+// one was begun by this repo's Store (store.InTx), otherwise the shared
+// pool. Every query method runs through it, which is what lets the indexer
+// commit a block's domain writes atomically with its watermark.
+func (r *Repo) q(ctx context.Context) store.Querier { return r.store.Querier(ctx) }
+
+// pool exposes the raw connection pool for the integration tests' fixture
+// mutation and cleanup SQL, which must run outside any transaction.
 func (r *Repo) pool() *pgxpool.Pool { return r.store.Pool() }
 
 // addrID resolves addr to its address_id through the shared Store's
@@ -38,5 +45,5 @@ func (r *Repo) addrID(ctx context.Context, addr string, blockNum, txID int64) (i
 // capHint) so an empty result marshals as [] — the shape every legacy caller
 // and golden file relies on.
 func queryList[T any](ctx context.Context, r *Repo, op string, capHint int, query string, scanRow func(pgx.Rows, *T) error, args ...any) ([]T, error) {
-	return store.QueryList(ctx, r.pool(), op, capHint, query, scanRow, args...)
+	return store.QueryList(ctx, r.q(ctx), op, capHint, query, scanRow, args...)
 }

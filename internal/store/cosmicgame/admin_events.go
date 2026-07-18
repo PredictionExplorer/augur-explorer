@@ -47,7 +47,7 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]cgmo
 		ORDER BY evtlog_id DESC
 		OFFSET $1 LIMIT $2`
 
-	rows, err := r.pool().Query(ctx, query, offset, limit)
+	rows, err := r.q(ctx).Query(ctx, query, offset, limit)
 	if err != nil {
 		return nil, store.WrapError(op, err)
 	}

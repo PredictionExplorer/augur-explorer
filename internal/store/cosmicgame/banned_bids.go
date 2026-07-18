@@ -71,7 +71,7 @@ func (r *Repo) BidderAddressForBid(ctx context.Context, bidID int64) (string, er
 		return "", fmt.Errorf("bidder address for bid: invalid bid id")
 	}
 	var address string
-	err := r.pool().QueryRow(ctx, `SELECT a.addr
+	err := r.q(ctx).QueryRow(ctx, `SELECT a.addr
 		FROM cg_bid AS b
 		JOIN address AS a ON a.address_id = b.bidder_aid
 		WHERE b.id = $1`, bidID).Scan(&address)
@@ -93,7 +93,7 @@ func (r *Repo) CreateBannedBid(
 		return cgmodel.CGBannedBidRec{}, fmt.Errorf("create banned bid: invalid input")
 	}
 	var rec cgmodel.CGBannedBidRec
-	err := r.pool().QueryRow(ctx, `INSERT INTO cg_banned_bids (bid_id, user_addr, created_at)
+	err := r.q(ctx).QueryRow(ctx, `INSERT INTO cg_banned_bids (bid_id, user_addr, created_at)
 		VALUES ($1, $2, $3)
 		RETURNING id, bid_id, user_addr, created_at`,
 		bidID, userAddr, bannedAt.Unix(),
@@ -117,7 +117,7 @@ func (r *Repo) RemoveBannedBid(ctx context.Context, bidID int64) (bool, error) {
 	if bidID < 1 {
 		return false, fmt.Errorf("remove banned bid: invalid bid id")
 	}
-	tag, err := r.pool().Exec(ctx, "DELETE FROM cg_banned_bids WHERE bid_id = $1", bidID)
+	tag, err := r.q(ctx).Exec(ctx, "DELETE FROM cg_banned_bids WHERE bid_id = $1", bidID)
 	if err != nil {
 		return false, store.WrapError("remove banned bid", err)
 	}
@@ -126,6 +126,6 @@ func (r *Repo) RemoveBannedBid(ctx context.Context, bidID int64) (bool, error) {
 
 // DeleteBannedBid removes all bans of the given bid id (unban).
 func (r *Repo) DeleteBannedBid(ctx context.Context, bidID int64) error {
-	_, err := r.pool().Exec(ctx, "DELETE FROM cg_banned_bids WHERE bid_id = $1", bidID)
+	_, err := r.q(ctx).Exec(ctx, "DELETE FROM cg_banned_bids WHERE bid_id = $1", bidID)
 	return store.WrapError("delete banned bid", err)
 }

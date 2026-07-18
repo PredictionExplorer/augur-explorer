@@ -298,7 +298,7 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwmodel.RWalkStats, error) {
 	const op = "random walk stats"
 	var output rwmodel.RWalkStats
-	err := r.pool().QueryRow(ctx, `SELECT
+	err := r.q(ctx).QueryRow(ctx, `SELECT
 			total_vol/1e+18,
 			total_num_trades,
 			total_num_toks,
@@ -319,7 +319,7 @@ func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwmodel.RWa
 		return output, store.WrapError(op, err)
 	}
 	var nUniqUsers sql.NullInt64
-	err = r.pool().QueryRow(ctx, "SELECT count(*) AS total FROM rw_uranks").Scan(&nUniqUsers)
+	err = r.q(ctx).QueryRow(ctx, "SELECT count(*) AS total FROM rw_uranks").Scan(&nUniqUsers)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return output, nil
@@ -330,7 +330,7 @@ func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwmodel.RWa
 		output.UniqueUsers = nUniqUsers.Int64
 	}
 	var nLastPrice sql.NullFloat64
-	err = r.pool().QueryRow(ctx, "SELECT price/1e+18 price FROM rw_mint_evt ORDER BY id DESC LIMIT 1").Scan(&nLastPrice)
+	err = r.q(ctx).QueryRow(ctx, "SELECT price/1e+18 price FROM rw_mint_evt ORDER BY id DESC LIMIT 1").Scan(&nLastPrice)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return output, nil
@@ -347,7 +347,7 @@ func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwmodel.RWa
 // stats row yields zeros.
 func (r *Repo) MarketStats(ctx context.Context, marketAid int64) (rwmodel.MarketStats, error) {
 	var output rwmodel.MarketStats
-	err := r.pool().QueryRow(ctx, `SELECT
+	err := r.q(ctx).QueryRow(ctx, `SELECT
 			total_vol/1e+18,
 			total_num_trades
 		FROM rw_mkt_stats
@@ -835,7 +835,7 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwmodel.FullHistoryEntry) error {
 func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int64, initTs, finTs, interval int) ([]rwmodel.VolumeHistory, error) {
 	const op = "market trading volume by period"
 	var initialVolume sql.NullFloat64
-	err := r.pool().QueryRow(ctx, `SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b
+	err := r.q(ctx).QueryRow(ctx, `SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b
 			JOIN rw_new_offer o ON o.offer_id=b.offer_id
 			WHERE (b.time_stamp < TO_TIMESTAMP($1)) AND (o.contract_aid=$2)`,
 		initTs, contractAid).Scan(&initialVolume)
@@ -962,7 +962,7 @@ func (r *Repo) FloorPrice(ctx context.Context, rwalkAid, marketAid int64) (noOff
 		WHERE (active = 't') AND (otype=1) AND (o.rwalk_aid=$1) AND (o.contract_aid=$2)
 		ORDER BY o.price ASC
 		LIMIT 1`
-	err = r.pool().QueryRow(ctx, query, rwalkAid, marketAid).Scan(
+	err = r.q(ctx).QueryRow(ctx, query, rwalkAid, marketAid).Scan(
 		&nFloorPrice,
 		&nOfferID,
 		&nTokenID,
@@ -1059,7 +1059,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid, rwalkAid int64) (rwmodel.U
 	const op = "rwalk user info"
 	var output rwmodel.UserInfo
 	var nullAid sql.NullInt64
-	err := r.pool().QueryRow(ctx,
+	err := r.q(ctx).QueryRow(ctx,
 		"SELECT contract_aid FROM rw_new_offer WHERE contract_aid=$1 LIMIT 1", userAid).Scan(&nullAid)
 	if err == nil {
 		output.IsMarketPlaceContract = true
@@ -1067,7 +1067,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid, rwalkAid int64) (rwmodel.U
 		return output, store.WrapError(op+": marketplace check", err)
 	}
 	output.UserAid = userAid
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			us.total_vol/1e+18,
 			us.total_num_trades,
 			us.total_num_toks,
@@ -1109,7 +1109,7 @@ func (r *Repo) TokenInfo(ctx context.Context, rwalkAid, tokenID int64) (rwmodel.
 	const op = "rwalk token info"
 	var output rwmodel.TokenInfo
 	output.TokenId = tokenID
-	err := r.pool().QueryRow(ctx, `SELECT
+	err := r.q(ctx).QueryRow(ctx, `SELECT
 			t.cur_owner_aid,
 			oa.addr,
 			seed_hex,
@@ -1133,7 +1133,7 @@ func (r *Repo) TokenInfo(ctx context.Context, rwalkAid, tokenID int64) (rwmodel.
 	if err != nil {
 		return output, store.WrapError(op, err)
 	}
-	err = r.pool().QueryRow(ctx, `SELECT
+	err = r.q(ctx).QueryRow(ctx, `SELECT
 			EXTRACT(EPOCH FROM time_stamp)::BIGINT as ts,
 			time_stamp
 		FROM rw_token_name
@@ -1151,7 +1151,7 @@ func (r *Repo) TokenInfo(ctx context.Context, rwalkAid, tokenID int64) (rwmodel.
 // for real database failures.
 func (r *Repo) TokenMinted(ctx context.Context, tokenID int64) (bool, error) {
 	var got int64
-	err := r.pool().QueryRow(ctx, "SELECT token_id FROM rw_mint_evt m WHERE token_id=$1", tokenID).Scan(&got)
+	err := r.q(ctx).QueryRow(ctx, "SELECT token_id FROM rw_mint_evt m WHERE token_id=$1", tokenID).Scan(&got)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
@@ -1289,7 +1289,7 @@ func (r *Repo) FloorPriceByPeriod(ctx context.Context, rwalkAid, marketAid int64
 		"GROUP BY start_ts " +
 		"ORDER BY start_ts"
 
-	rows, err := r.pool().Query(ctx, query, initTs, finTs, interval, marketAid, rwalkAid)
+	rows, err := r.q(ctx).Query(ctx, query, initTs, finTs, interval, marketAid, rwalkAid)
 	if err != nil {
 		return nil, store.WrapError(op, err)
 	}

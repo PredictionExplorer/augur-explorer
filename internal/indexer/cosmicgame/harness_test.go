@@ -349,24 +349,32 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 	}
 	testChain.AttachLogs(tx.Hash(), logs)
 
+	// One transaction per ingested chain transaction, mirroring the engine's
+	// per-block InTx: the fixtures prove every handler behaves identically
+	// inside the production transaction scope.
 	evtIDs := make([]int64, 0, len(logs))
-	for _, l := range logs {
-		ctx := context.Background()
-		if _, err := testIndexer.EnsureBlockExists(ctx, blockNum, l.BlockHash.Hex()); err != nil {
-			t.Fatalf("EnsureBlockExists(%d): %v", blockNum, err)
+	err := dbStore.InTx(context.Background(), func(ctx context.Context) error {
+		for _, l := range logs {
+			if _, err := testIndexer.EnsureBlockExists(ctx, blockNum, l.BlockHash.Hex()); err != nil {
+				return fmt.Errorf("EnsureBlockExists(%d): %w", blockNum, err)
+			}
+			txID, _, err := testIndexer.EnsureTransactionExists(ctx, l.TxHash, blockNum)
+			if err != nil {
+				return fmt.Errorf("EnsureTransactionExists(%s): %w", l.TxHash, err)
+			}
+			evtID, err := testIndexer.InsertEventLog(ctx, *l, txID)
+			if err != nil {
+				return fmt.Errorf("InsertEventLog: %w", err)
+			}
+			if err := testProcess(ctx, evtID); err != nil {
+				return fmt.Errorf("processing event %d: %w", evtID, err)
+			}
+			evtIDs = append(evtIDs, evtID)
 		}
-		txID, _, err := testIndexer.EnsureTransactionExists(ctx, l.TxHash, blockNum)
-		if err != nil {
-			t.Fatalf("EnsureTransactionExists(%s): %v", l.TxHash, err)
-		}
-		evtID, err := testIndexer.InsertEventLog(ctx, *l, txID)
-		if err != nil {
-			t.Fatalf("InsertEventLog: %v", err)
-		}
-		if err := testProcess(context.Background(), evtID); err != nil {
-			t.Fatalf("processing event %d: %v", evtID, err)
-		}
-		evtIDs = append(evtIDs, evtID)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("ingesting logs: %v", err)
 	}
 	return evtIDs
 }

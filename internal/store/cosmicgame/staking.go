@@ -108,7 +108,7 @@ func (r *Repo) StakeActionCstInfo(ctx context.Context, actionID int64) (cgmodel.
 	var nullTxHash, nullStakerAddr, nullReward, nullRewardPerTok sql.NullString
 	var nullRewardEth, nullRewardPerTokEth sql.NullFloat64
 
-	err := r.pool().QueryRow(ctx, query, actionID).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, actionID).Scan(
 		&rec.Stake.RecordId, &rec.Stake.Tx.EvtLogId, &rec.Stake.Tx.BlockNum, &rec.Stake.Tx.TxId, &rec.Stake.Tx.TxHash,
 		&rec.Stake.Tx.TimeStamp, store.TimeText(&rec.Stake.Tx.DateTime), &rec.Stake.ActionId, &rec.Stake.TokenId,
 		&rec.Stake.RoundNum, &rec.Stake.NumStakedNFTs, &rec.Stake.StakerAid, &rec.Stake.StakerAddr,
@@ -183,7 +183,7 @@ func (r *Repo) StakeActionRwalkInfo(ctx context.Context, actionID int64) (cgmode
 	var nullBlockNum, nullTokenID, nullRoundNum, nullNumStakedNFTs, nullStakerAid sql.NullInt64
 	var nullTxHash, nullStakerAddr sql.NullString
 
-	err := r.pool().QueryRow(ctx, query, actionID).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, actionID).Scan(
 		&rec.Stake.RecordId, &rec.Stake.Tx.EvtLogId, &rec.Stake.Tx.BlockNum, &rec.Stake.Tx.TxId, &rec.Stake.Tx.TxHash,
 		&rec.Stake.Tx.TimeStamp, store.TimeText(&rec.Stake.Tx.DateTime), &rec.Stake.ActionId, &rec.Stake.TokenId,
 		&rec.Stake.RoundNum, &rec.Stake.NumStakedNFTs, &rec.Stake.StakerAid, &rec.Stake.StakerAddr,
@@ -901,7 +901,7 @@ func (r *Repo) lastBlockTimestamp(ctx context.Context) (int64, error) {
 	query := "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
 		"FROM block,last_block WHERE last_block.block_num=block.block_num"
 	var ts int64
-	err := r.pool().QueryRow(ctx, query).Scan(&ts)
+	err := r.q(ctx).QueryRow(ctx, query).Scan(&ts)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, nil
 	}
@@ -1020,7 +1020,7 @@ func (r *Repo) StakingCstUserDepositRewards(ctx context.Context, userAid int64) 
 		"WHERE str.staker_aid=$1 " +
 		"ORDER BY d.id ASC,sa_action_id DESC "
 
-	rows, err := r.pool().Query(ctx, query, userAid)
+	rows, err := r.q(ctx).Query(ctx, query, userAid)
 	if err != nil {
 		return nil, store.WrapError(op, err)
 	}

@@ -8,15 +8,14 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // QueryList runs a SELECT and scans every row with scanRow, wrapping any
 // failure with op context via WrapError. The result is always a non-nil
 // slice (capacity capHint) so an empty result marshals as JSON [] — the
 // shape every legacy caller and golden file relies on.
-func QueryList[T any](ctx context.Context, pool *pgxpool.Pool, op string, capHint int, query string, scanRow func(pgx.Rows, *T) error, args ...any) ([]T, error) {
-	rows, err := pool.Query(ctx, query, args...)
+func QueryList[T any](ctx context.Context, q Querier, op string, capHint int, query string, scanRow func(pgx.Rows, *T) error, args ...any) ([]T, error) {
+	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, WrapError(op, err)
 	}

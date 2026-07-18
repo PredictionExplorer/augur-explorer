@@ -54,7 +54,7 @@ func (r *Repo) FallbackRandomTokenIDs(ctx context.Context, rwalkAid, maxID int64
 // is deliberate: these feed handlers that marshal the value directly, and
 // the legacy layer returned nil for an empty result.
 func (r *Repo) scanTokenIDs(ctx context.Context, op, query string, args ...any) ([]int64, error) {
-	rows, err := r.pool().Query(ctx, query, args...)
+	rows, err := r.q(ctx).Query(ctx, query, args...)
 	if err != nil {
 		return nil, store.WrapError(op, err)
 	}
@@ -80,7 +80,7 @@ func (r *Repo) HasRankingVoteForVoterPair(ctx context.Context, voterAid, nft1, n
 		return false, nil
 	}
 	var one int
-	err := r.pool().QueryRow(ctx, `
+	err := r.q(ctx).QueryRow(ctx, `
 SELECT 1 FROM rw_ranking_match
 WHERE voter_aid = $1
   AND LEAST(nft1, nft2) = LEAST($2::bigint, $3::bigint)
@@ -99,7 +99,7 @@ LIMIT 1`,
 // CountRankingMatches returns total pairwise rows (for the Elo K factor).
 func (r *Repo) CountRankingMatches(ctx context.Context) (int64, error) {
 	var n int64
-	err := r.pool().QueryRow(ctx, `SELECT COUNT(*) FROM rw_ranking_match`).Scan(&n)
+	err := r.q(ctx).QueryRow(ctx, `SELECT COUNT(*) FROM rw_ranking_match`).Scan(&n)
 	if err != nil {
 		return 0, store.WrapError("count ranking matches", err)
 	}
@@ -126,7 +126,7 @@ func (r *Repo) RatingPair(ctx context.Context, nft1, nft2 int64) (r1, r2 float64
 		dst *float64
 	}{{nft1, &r1}, {nft2, &r2}} {
 		var rating *float64
-		err := r.pool().QueryRow(ctx, `SELECT rating FROM rw_token_ranking WHERE token_id = $1`, pair.id).Scan(&rating)
+		err := r.q(ctx).QueryRow(ctx, `SELECT rating FROM rw_token_ranking WHERE token_id = $1`, pair.id).Scan(&rating)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return 0, 0, store.WrapError("rating pair lookup", err)
 		}

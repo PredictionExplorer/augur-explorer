@@ -27,7 +27,7 @@ func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.ContractAddrs, error)
 			cg.implementation_addr
 		FROM cg_contracts cg`
 	var out cgmodel.ContractAddrs
-	err := r.pool().QueryRow(ctx, query).Scan(
+	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&out.CosmicGameAddr,
 		&out.CosmicSignatureAddr,
 		&out.CosmicTokenAddr,
@@ -54,7 +54,7 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (cgmodel.ProcStatus, error)
 	const op = "cosmic game processing status"
 	var out cgmodel.ProcStatus
 	var lastEvtID, lastBlock *int64
-	err := r.pool().QueryRow(ctx, "SELECT last_evt_id, last_block_num FROM cg_proc_status").Scan(&lastEvtID, &lastBlock)
+	err := r.q(ctx).QueryRow(ctx, "SELECT last_evt_id, last_block_num FROM cg_proc_status").Scan(&lastEvtID, &lastBlock)
 	if err != nil {
 		wrapped := store.WrapError(op, err)
 		if !errors.Is(wrapped, store.ErrNotFound) {
@@ -62,10 +62,10 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (cgmodel.ProcStatus, error)
 		}
 		// Fresh database: create the singleton row and report the zero
 		// watermark it holds.
-		if _, err := r.pool().Exec(ctx, "INSERT INTO cg_proc_status DEFAULT VALUES"); err != nil {
+		if _, err := r.q(ctx).Exec(ctx, "INSERT INTO cg_proc_status DEFAULT VALUES"); err != nil {
 			return out, store.WrapError(op+": insert default row", err)
 		}
-		if err := r.pool().QueryRow(ctx, "SELECT last_evt_id, last_block_num FROM cg_proc_status").Scan(&lastEvtID, &lastBlock); err != nil {
+		if err := r.q(ctx).QueryRow(ctx, "SELECT last_evt_id, last_block_num FROM cg_proc_status").Scan(&lastEvtID, &lastBlock); err != nil {
 			return out, store.WrapError(op, err)
 		}
 	}
@@ -81,6 +81,6 @@ func (r *Repo) ProcessingStatus(ctx context.Context) (cgmodel.ProcStatus, error)
 // UpdateProcessingStatus persists the ETL watermark.
 func (r *Repo) UpdateProcessingStatus(ctx context.Context, status *cgmodel.ProcStatus) error {
 	query := "UPDATE cg_proc_status SET last_evt_id = $1, last_block_num = $2"
-	_, err := r.pool().Exec(ctx, query, status.LastEvtIdProcessed, status.LastBlockNum)
+	_, err := r.q(ctx).Exec(ctx, query, status.LastEvtIdProcessed, status.LastBlockNum)
 	return store.WrapError("update cosmic game processing status", err)
 }

@@ -52,7 +52,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid int64) (cgmodel.CGUserInfo,
 	var nullCountDonations sql.NullInt64
 	var nullTotalEthDonated sql.NullFloat64
 
-	err := r.pool().QueryRow(ctx, query, userAid).Scan(
+	err := r.q(ctx).QueryRow(ctx, query, userAid).Scan(
 		&rec.AddressId,
 		&rec.Address,
 		&nullNumBids,
@@ -127,7 +127,7 @@ func (r *Repo) UserInfo(ctx context.Context, userAid int64) (cgmodel.CGUserInfo,
 		"FROM cg_staker_rwalk s " +
 		"WHERE staker_aid=$1"
 	var nullTotalTokensStaked, nullNumStakeActions, nullNumUnstakeActions, nullNumTokensMinted sql.NullInt64
-	err = r.pool().QueryRow(ctx, query, userAid).Scan(
+	err = r.q(ctx).QueryRow(ctx, query, userAid).Scan(
 		&nullTotalTokensStaked,
 		&nullNumStakeActions,
 		&nullNumUnstakeActions,
@@ -930,7 +930,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgm
 	var nullRaffleEth sql.NullFloat64
 	query := "SELECT SUM(amount), SUM(amount)/1e18 FROM cg_prize_deposit " +
 		"WHERE winner_aid = $1 AND winner_index < 4 AND claimed = false"
-	err := r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullRaffleWei, &nullRaffleEth)
+	err := r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullRaffleWei, &nullRaffleEth)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGClaimInfo{}, store.WrapError(op+": raffle eth", err)
 	}
@@ -943,7 +943,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgm
 
 	var nullNfts sql.NullInt64
 	query = "SELECT unclaimed_nfts FROM cg_winner WHERE winner_aid = $1"
-	err = r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullNfts)
+	err = r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullNfts)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGClaimInfo{}, store.WrapError(op+": unclaimed nfts", err)
 	}
@@ -955,7 +955,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgm
 	var nullChronoEth sql.NullFloat64
 	query = "SELECT SUM(amount), SUM(amount)/1e18 FROM cg_prize_deposit " +
 		"WHERE winner_aid = $1 AND winner_index = 4 AND claimed = false"
-	err = r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullChronoWei, &nullChronoEth)
+	err = r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullChronoWei, &nullChronoEth)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return cgmodel.CGClaimInfo{}, store.WrapError(op+": chrono warrior eth", err)
 	}
@@ -968,7 +968,7 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgm
 
 	var nullStakingRewards sql.NullFloat64
 	query = "SELECT unclaimed_reward/1e18 FROM cg_staker_cst WHERE staker_aid=$1"
-	err = r.pool().QueryRow(ctx, query, winnerAid).Scan(&nullStakingRewards)
+	err = r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullStakingRewards)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return output, nil

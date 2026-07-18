@@ -73,6 +73,13 @@ func (c *addressCache) put(addr string, aid int64) {
 	}
 }
 
+// putAll flushes a transaction overlay into the cache (InTx, after commit).
+func (c *addressCache) putAll(entries map[string]int64) {
+	for addr, aid := range entries {
+		c.put(addr, aid)
+	}
+}
+
 func (c *addressCache) len() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -86,32 +93,67 @@ func (c *addressCache) reset() {
 	c.items = make(map[string]*list.Element, c.max)
 }
 
+// cachedAddressID consults the shared LRU and, inside a transaction begun
+// by this Store, the transaction's overlay of not-yet-committed creations.
+func (s *Store) cachedAddressID(ctx context.Context, addr string) (int64, bool) {
+	if aid, ok := s.addrCache.get(addr); ok {
+		return aid, true
+	}
+	if st := s.txState(ctx); st != nil {
+		aid, ok := st.overlay[addr]
+		return aid, ok
+	}
+	return 0, false
+}
+
+// cacheAddressID records a resolved id. Inside a transaction the entry goes
+// to the transaction overlay only — a rollback discards it, a commit
+// flushes it into the shared LRU (InTx) — so the shared cache can never
+// hold an id whose address row was rolled away.
+func (s *Store) cacheAddressID(ctx context.Context, addr string, aid int64) {
+	if st := s.txState(ctx); st != nil {
+		if st.overlay == nil {
+			st.overlay = make(map[string]int64, 8)
+		}
+		st.overlay[addr] = aid
+		return
+	}
+	s.addrCache.put(addr, aid)
+}
+
 // LookupOrCreateAddress returns the address_id for addr, inserting a new
 // address row (recorded against blockNum/txID) when it doesn't exist yet.
-// Results are memoized in the Store's bounded LRU cache.
+// Results are memoized in the Store's bounded LRU cache (transaction-safe:
+// see cacheAddressID).
 func (s *Store) LookupOrCreateAddress(ctx context.Context, addr string, blockNum, txID int64) (int64, error) {
-	if aid, ok := s.addrCache.get(addr); ok {
+	if aid, ok := s.cachedAddressID(ctx, addr); ok {
 		return aid, nil
 	}
 	if len(addr) == 0 {
 		return 0, fmt.Errorf("lookup/create address: empty address (block %d, tx %d)", blockNum, txID)
 	}
+	q := s.q(ctx)
 	var aid int64
-	err := s.pool.QueryRow(ctx, "SELECT address_id FROM address WHERE addr=$1", addr).Scan(&aid)
+	err := q.QueryRow(ctx, "SELECT address_id FROM address WHERE addr=$1", addr).Scan(&aid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		err = s.pool.QueryRow(ctx,
-			"INSERT INTO address(addr,block_num,tx_id) VALUES($1,$2,$3) RETURNING address_id",
+		// ON CONFLICT DO NOTHING keeps the create race-safe in both modes:
+		// a plain INSERT losing the race raises a unique violation, which
+		// inside a transaction would poison every later statement (25P02);
+		// a conflict here simply returns no row and the re-read below picks
+		// up the winner. The existing row keeps its first-seen block.
+		err = q.QueryRow(ctx,
+			"INSERT INTO address(addr,block_num,tx_id) VALUES($1,$2,$3) ON CONFLICT (addr) DO NOTHING RETURNING address_id",
 			addr, blockNum, txID).Scan(&aid)
-		if isUniqueViolation(err) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			// A concurrent writer created the row between our SELECT and
 			// INSERT; re-read so both callers agree on the id.
-			err = s.pool.QueryRow(ctx, "SELECT address_id FROM address WHERE addr=$1", addr).Scan(&aid)
+			err = q.QueryRow(ctx, "SELECT address_id FROM address WHERE addr=$1", addr).Scan(&aid)
 		}
 	}
 	if err != nil {
 		return 0, WrapError("lookup/create address "+addr, err)
 	}
-	s.addrCache.put(addr, aid)
+	s.cacheAddressID(ctx, addr, aid)
 	return aid, nil
 }
 
@@ -119,15 +161,15 @@ func (s *Store) LookupOrCreateAddress(ctx context.Context, addr string, blockNum
 // a wrapped ErrNotFound. Hits populate the same cache as
 // LookupOrCreateAddress.
 func (s *Store) LookupAddressID(ctx context.Context, addr string) (int64, error) {
-	if aid, ok := s.addrCache.get(addr); ok {
+	if aid, ok := s.cachedAddressID(ctx, addr); ok {
 		return aid, nil
 	}
 	var aid int64
-	err := s.pool.QueryRow(ctx, "SELECT address_id FROM address WHERE addr=$1", addr).Scan(&aid)
+	err := s.q(ctx).QueryRow(ctx, "SELECT address_id FROM address WHERE addr=$1", addr).Scan(&aid)
 	if err != nil {
 		return 0, WrapError("address id lookup for "+addr, err)
 	}
-	s.addrCache.put(addr, aid)
+	s.cacheAddressID(ctx, addr, aid)
 	return aid, nil
 }
 
@@ -135,7 +177,7 @@ func (s *Store) LookupAddressID(ctx context.Context, addr string) (int64, error)
 // yields a wrapped ErrNotFound.
 func (s *Store) AddressByID(ctx context.Context, aid int64) (string, error) {
 	var addr string
-	err := s.pool.QueryRow(ctx, "SELECT addr FROM address WHERE address_id=$1", aid).Scan(&addr)
+	err := s.q(ctx).QueryRow(ctx, "SELECT addr FROM address WHERE address_id=$1", aid).Scan(&addr)
 	if err != nil {
 		return "", WrapError(fmt.Sprintf("address lookup for id %d", aid), err)
 	}
