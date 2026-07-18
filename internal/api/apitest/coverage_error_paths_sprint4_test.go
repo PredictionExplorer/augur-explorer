@@ -8,20 +8,40 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 )
 
+const faultTableBackupSuffix = "_fault_backup"
+
 // faultTable renames a table for the duration of one subtest so a specific
 // repository call fails while every earlier query in the handler succeeds.
+// The apitest package shares one database, so callers must remain sequential.
 func faultTable(t *testing.T, h *harness, table string) {
 	t.Helper()
-	backup := table + "_sprint4_backup"
-	if _, err := h.db.Exec("ALTER TABLE " + table + " RENAME TO " + backup); err != nil {
+	backup := table + faultTableBackupSuffix
+	tableID := pgx.Identifier{table}.Sanitize()
+	backupID := pgx.Identifier{backup}.Sanitize()
+	rename := func(from, to string) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_, err := h.db.ExecContext(ctx, "ALTER TABLE "+from+" RENAME TO "+to)
+		return err
+	}
+
+	if err := rename(tableID, backupID); err != nil {
 		t.Fatal(err)
 	}
+	// Drop connections that may hold cached descriptions for the renamed
+	// relation. The next repository call must resolve the deliberately broken
+	// schema rather than reuse connection-local statement state.
+	h.store.Pool().Reset()
 	t.Cleanup(func() {
-		if _, err := h.db.Exec("ALTER TABLE " + backup + " RENAME TO " + table); err != nil {
+		defer h.store.Pool().Reset()
+		if err := rename(backupID, tableID); err != nil {
 			t.Errorf("restore %s: %v", table, err)
 		}
 	})
