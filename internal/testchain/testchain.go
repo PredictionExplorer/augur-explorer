@@ -24,11 +24,13 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -248,7 +250,7 @@ func (c *Chain) AttachLogs(txHash common.Hash, logs []*types.Log) {
 	defer c.mu.Unlock()
 	entry, ok := c.txs[txHash]
 	if !ok {
-		panic(fmt.Sprintf("testchain: AttachLogs: unknown tx %s", txHash.Hex()))
+		panic("testchain: AttachLogs: unknown tx " + txHash.Hex())
 	}
 	for _, l := range logs {
 		if l.Topics == nil {
@@ -462,7 +464,7 @@ func hexToUint64(s string) (uint64, error) {
 
 func (c *Chain) getBlockByNumber(params []json.RawMessage) (any, error) {
 	if len(params) < 1 {
-		return nil, fmt.Errorf("testchain: eth_getBlockByNumber needs params")
+		return nil, errors.New("testchain: eth_getBlockByNumber needs params")
 	}
 	num, err := c.parseBlockTag(params[0])
 	if err != nil {
@@ -557,7 +559,7 @@ func mustMarshal(v any) []byte {
 
 func paramHash(params []json.RawMessage) (common.Hash, error) {
 	if len(params) < 1 {
-		return common.Hash{}, fmt.Errorf("testchain: missing hash param")
+		return common.Hash{}, errors.New("testchain: missing hash param")
 	}
 	var s string
 	if err := json.Unmarshal(params[0], &s); err != nil {
@@ -575,7 +577,7 @@ type logFilter struct {
 
 func (c *Chain) getLogs(params []json.RawMessage) (any, error) {
 	if len(params) < 1 {
-		return nil, fmt.Errorf("testchain: eth_getLogs needs a filter")
+		return nil, errors.New("testchain: eth_getLogs needs a filter")
 	}
 	var f logFilter
 	if err := json.Unmarshal(params[0], &f); err != nil {
@@ -633,12 +635,7 @@ func filterAddresses(raw json.RawMessage) ([]common.Address, error) {
 }
 
 func containsAddress(addrs []common.Address, a common.Address) bool {
-	for _, x := range addrs {
-		if x == a {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(addrs, a)
 }
 
 type callObject struct {
@@ -650,14 +647,14 @@ type callObject struct {
 
 func (c *Chain) ethCall(params []json.RawMessage) (any, error) {
 	if len(params) < 1 {
-		return nil, fmt.Errorf("testchain: eth_call needs a call object")
+		return nil, errors.New("testchain: eth_call needs a call object")
 	}
 	var call callObject
 	if err := json.Unmarshal(params[0], &call); err != nil {
 		return nil, fmt.Errorf("testchain: bad call object: %w", err)
 	}
 	if call.To == nil {
-		return nil, fmt.Errorf("testchain: eth_call without `to` not supported")
+		return nil, errors.New("testchain: eth_call without `to` not supported")
 	}
 	handler, ok := c.calls[*call.To]
 	if !ok {

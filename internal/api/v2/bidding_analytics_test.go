@@ -3,10 +3,9 @@ package v2
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -295,10 +294,10 @@ func TestAnalyticsBucketCounts(t *testing.T) {
 	if got := epochAlignedBucketCount(3599, 3601, 3600); got != 2 {
 		t.Fatalf("epoch-aligned split count = %d", got)
 	}
-	if _, err := resolveAnalyticsWindow(0, 2000, int64Pointer(1), 1, false); err != nil {
+	if _, err := resolveAnalyticsWindow(0, 2000, new(int64(1)), 1, false); err != nil {
 		t.Fatalf("maximum bucket count rejected: %v", err)
 	}
-	if _, err := resolveAnalyticsWindow(0, 2001, int64Pointer(1), 1, false); err == nil {
+	if _, err := resolveAnalyticsWindow(0, 2001, new(int64(1)), 1, false); err == nil {
 		t.Fatal("over-limit bucket count accepted")
 	}
 }
@@ -353,17 +352,13 @@ func newBiddingAnalyticsTestServer(t *testing.T, analytics biddingAnalyticsReade
 		fakeRandomWalkReader{},
 		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}
 	return server
 }
 
-func int64Pointer(value int64) *int64 {
-	return &value
-}
-
 func int64String(value int64) string {
-	return fmt.Sprintf("%d", value)
+	return strconv.FormatInt(value, 10)
 }

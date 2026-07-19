@@ -8,7 +8,7 @@ package cosmicgame
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math/big"
 	"testing"
 
@@ -25,11 +25,11 @@ import (
 type inertCaller struct{}
 
 func (inertCaller) CodeAt(context.Context, ethcommon.Address, *big.Int) ([]byte, error) {
-	return nil, fmt.Errorf("inertCaller: no chain")
+	return nil, errors.New("inertCaller: no chain")
 }
 
 func (inertCaller) CallContract(context.Context, ethereum.CallMsg, *big.Int) ([]byte, error) {
-	return nil, fmt.Errorf("inertCaller: no chain")
+	return nil, errors.New("inertCaller: no chain")
 }
 
 var _ bind.ContractCaller = inertCaller{}

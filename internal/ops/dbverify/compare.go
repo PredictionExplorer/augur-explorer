@@ -3,8 +3,9 @@
 package dbverify
 
 import (
+	"encoding/hex"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -164,14 +165,14 @@ func CompareBlocks(primary, secondary map[string]BlockRecord, reportLimit int) C
 // duplicate records retain their multiplicity.
 func IndexEventLogsByRLP(events []EventLogRecord) map[string]EventLogRecord {
 	ordered := append([]EventLogRecord(nil), events...)
-	sort.SliceStable(ordered, func(i, j int) bool {
-		return eventLogSortKey(ordered[i]) < eventLogSortKey(ordered[j])
+	slices.SortStableFunc(ordered, func(a, b EventLogRecord) int {
+		return strings.Compare(eventLogSortKey(a), eventLogSortKey(b))
 	})
 
 	indexed := make(map[string]EventLogRecord, len(events))
 	occurrences := make(map[string]int)
 	for _, event := range ordered {
-		baseKey := fmt.Sprintf("%x", event.LogRLP)
+		baseKey := hex.EncodeToString(event.LogRLP)
 		occurrences[baseKey]++
 		indexed[occurrenceKey(baseKey, occurrences[baseKey])] = event
 	}
@@ -305,7 +306,7 @@ func sortedKeys[T any](records map[string]T) []string {
 	for key := range records {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return keys
 }
 

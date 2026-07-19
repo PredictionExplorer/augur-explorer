@@ -84,7 +84,7 @@ func (a *API) handleStakingCstActionsByUser(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
-			"UserAddr": pUserAddr, "UserAid": int64(0), "StakingCSTActions": []interface{}{},
+			"UserAddr": pUserAddr, "UserAid": int64(0), "StakingCSTActions": []any{},
 		})
 		return
 	}
@@ -139,7 +139,7 @@ func (a *API) handleStakingCstRewardsToClaimByUser(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "UnclaimedEthDeposits": []interface{}{},
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "UnclaimedEthDeposits": []any{},
 		})
 		return
 	}
@@ -170,7 +170,7 @@ func (a *API) handleStakedTokensCstByUser(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "StakedTokensCST": []interface{}{},
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "StakedTokensCST": []any{},
 		})
 		return
 	}
@@ -226,7 +226,7 @@ func (a *API) handleStakingCstRewardsCollectedByUser(c *httpx.Context) {
 		}
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
-			"UserAddr": pUserAddr, "UserAid": int64(0), "CollectedStakingCSTRewards": []interface{}{},
+			"UserAddr": pUserAddr, "UserAid": int64(0), "CollectedStakingCSTRewards": []any{},
 		})
 		return
 	}
@@ -342,7 +342,7 @@ func (a *API) handleStakingCstMintsByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "CSTStakingRewardMints": []interface{}{},
+			"status": 1, "error": "", "CSTStakingRewardMints": []any{},
 		})
 		return
 	}
@@ -381,7 +381,7 @@ func (a *API) handleStakingCstRewardsActionIDsByDeposit(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
-			"DepositId": depositID, "ActionIdsWithClaimInfo": []interface{}{},
+			"DepositId": depositID, "ActionIdsWithClaimInfo": []any{},
 		})
 		return
 	}
@@ -413,7 +413,7 @@ func (a *API) handleStakingCstByUserByDepositRewards(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": pUserAddr, "RewardsByDeposit": []interface{}{},
+			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": pUserAddr, "RewardsByDeposit": []any{},
 		})
 		return
 	}
@@ -445,7 +445,7 @@ func (a *API) handleStakingCstByUserByTokenRewards(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "RewardsByToken": []interface{}{},
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "RewardsByToken": []any{},
 		})
 		return
 	}
@@ -486,7 +486,7 @@ func (a *API) handleStakingCstByUserByTokenRewardsDetails(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
-			"TokenId": tokenID, "RewardsByTokenDetails": []interface{}{},
+			"TokenId": tokenID, "RewardsByTokenDetails": []any{},
 		})
 		return
 	}

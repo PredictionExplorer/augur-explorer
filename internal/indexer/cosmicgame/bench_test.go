@@ -70,7 +70,7 @@ func BenchmarkEventDecode(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		var ethEvt cgc.CosmicSignatureGameBidPlaced
 		if err := parsed.UnpackIntoInterface(&ethEvt, "BidPlaced", lg.Data); err != nil {
 			b.Fatalf("unpack: %v", err)

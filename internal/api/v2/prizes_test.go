@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -279,7 +278,7 @@ func TestListRoundPrizesResponseIsDeterministic(t *testing.T) {
 
 func newPrizeTestServer(t *testing.T, prizes roundPrizeReader) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	server, err := newServer(
 		nil,
 		fakeBidReader{},
@@ -324,5 +323,5 @@ func servePrizeContext(
 }
 
 func itoaV2(value int64) string {
-	return fmt.Sprintf("%d", value)
+	return strconv.FormatInt(value, 10)
 }

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -110,8 +111,8 @@ func TestTotalTokensCommand(t *testing.T) {
 		t.Fatalf("total-tokens: %v\noutput: %s", err, out)
 	}
 	// The value is printed without a trailing newline for shell capture.
-	if out != fmt.Sprintf("%v", want) {
-		t.Errorf("total-tokens output = %q, want %q", out, fmt.Sprint(want))
+	if out != strconv.FormatInt(want, 10) {
+		t.Errorf("total-tokens output = %q, want %d", out, want)
 	}
 }
 

@@ -111,13 +111,13 @@ func TestTokensPageFiltersAndSorts(t *testing.T) {
 		"name case-insensitive": {TokenFilter{NameContains: "wand"}, TokenSortByID, []int64{10}},
 		"name literal wildcard": {TokenFilter{NameContains: "%"}, TokenSortByID, nil},
 		"minted window": {
-			TokenFilter{MintedFrom: int64Pointer(1767228700), MintedUntil: int64Pointer(1767228900)},
+			TokenFilter{MintedFrom: new(int64(1767228700)), MintedUntil: new(int64(1767228900))},
 			TokenSortByID,
 			[]int64{11, 12},
 		},
 		"most traded": {TokenFilter{}, TokenSortByTrades, []int64{10, 11, 12, 13}},
 		"most traded windowed": {
-			TokenFilter{MintedFrom: int64Pointer(1767228700)},
+			TokenFilter{MintedFrom: new(int64(1767228700))},
 			TokenSortByTrades,
 			[]int64{11, 12, 13},
 		},
@@ -1159,5 +1159,3 @@ func TestRandomWalkV2ReadIndexesExist(t *testing.T) {
 		}
 	}
 }
-
-func int64Pointer(value int64) *int64 { return &value }

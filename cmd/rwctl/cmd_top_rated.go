@@ -1,9 +1,10 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -75,22 +76,22 @@ func newTopRatedCmd() *cobra.Command {
 				return err
 			}
 
-			sort.SliceStable(records, func(i, j int) bool {
-				return records[j].TotalTrades < records[i].TotalTrades
+			slices.SortStableFunc(records, func(a, b rwmodel.RankStats) int {
+				return cmp.Compare(b.TotalTrades, a.TotalTrades)
 			})
 			if err := updateTradeRanks(ctx, repo, records); err != nil {
 				return err
 			}
 
-			sort.SliceStable(records, func(i, j int) bool {
-				return records[j].ProfitLoss < records[i].ProfitLoss
+			slices.SortStableFunc(records, func(a, b rwmodel.RankStats) int {
+				return cmp.Compare(b.ProfitLoss, a.ProfitLoss)
 			})
 			if err := updateProfitRanks(ctx, repo, records); err != nil {
 				return err
 			}
 
-			sort.SliceStable(records, func(i, j int) bool {
-				return records[j].VolumeTraded < records[i].VolumeTraded
+			slices.SortStableFunc(records, func(a, b rwmodel.RankStats) int {
+				return cmp.Compare(b.VolumeTraded, a.VolumeTraded)
 			})
 			return updateVolumeRanks(ctx, repo, records)
 		},

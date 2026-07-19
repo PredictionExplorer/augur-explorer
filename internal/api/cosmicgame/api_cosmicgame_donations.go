@@ -164,7 +164,7 @@ func (a *API) handleDonationsByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "CombinedDonationRecords": []interface{}{},
+			"status": 1, "error": "", "CombinedDonationRecords": []any{},
 			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
@@ -341,7 +341,7 @@ func (a *API) handleDonationsErc20ByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "DonatedPrizesERC20ByWinner": []interface{}{},
+			"status": 1, "error": "", "DonatedPrizesERC20ByWinner": []any{},
 			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
@@ -434,7 +434,7 @@ func (a *API) handleDonationsErc20DonatedByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "DonationsERC20ByDonor": []interface{}{},
+			"status": 1, "error": "", "DonationsERC20ByDonor": []any{},
 			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
@@ -504,7 +504,7 @@ func (a *API) handleErc20ClaimsByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "ERC20ClaimsByWinner": []interface{}{},
+			"status": 1, "error": "", "ERC20ClaimsByWinner": []any{},
 			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return

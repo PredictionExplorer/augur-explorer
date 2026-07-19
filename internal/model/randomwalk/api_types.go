@@ -207,7 +207,7 @@ type HistEntryTransfer struct { // type = 6
 // which HistEntry* shape Record carries.
 type FullHistoryEntry struct {
 	RecordType int // Mint, or any other event starting with HistEntry*
-	Record     interface{}
+	Record     any
 }
 
 // VolumeHistory is one bucket of the trading-volume time series with the

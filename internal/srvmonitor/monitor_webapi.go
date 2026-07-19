@@ -2,6 +2,7 @@ package srvmonitor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -89,9 +90,7 @@ func (m *WebAPIMonitor) checkAPI(ctx context.Context, status *WebAPIStatus, erro
 
 	// Internal probe: confirms the backend process + DB are answering.
 	// Keeps the lenient 2xx-4xx "alive" rule for backward compatibility.
-	innerWg.Add(1)
-	go func() {
-		defer innerWg.Done()
+	innerWg.Go(func() {
 		url := fmt.Sprintf("http://%s:%s%v", status.Config.Host, status.Config.Port, status.Config.URI)
 		alive, err := m.probeInternal(ctx, url)
 		if err != nil {
@@ -103,16 +102,14 @@ func (m *WebAPIMonitor) checkAPI(ctx context.Context, status *WebAPIStatus, erro
 		status.Alive = alive
 		status.ErrStr = ""
 		if !alive {
-			sendErr(ctx, errorChan, fmt.Sprintf("%s (internal): unexpected HTTP status", status.Config.Title))
+			sendErr(ctx, errorChan, status.Config.Title+" (internal): unexpected HTTP status")
 		}
-	}()
+	})
 
 	// Public probe: exercises the full user-facing path (DNS, TLS, proxy).
 	// Only runs when a public URL is configured; requires a strict 200 + body.
 	if status.Config.PublicURL != "" {
-		innerWg.Add(1)
-		go func() {
-			defer innerWg.Done()
+		innerWg.Go(func() {
 			if err := m.probePublic(ctx, status.Config.PublicURL); err != nil {
 				status.PublicAlive = false
 				status.PublicErrStr = err.Error()
@@ -121,7 +118,7 @@ func (m *WebAPIMonitor) checkAPI(ctx context.Context, status *WebAPIStatus, erro
 			}
 			status.PublicAlive = true
 			status.PublicErrStr = ""
-		}()
+		})
 	}
 
 	innerWg.Wait()
@@ -154,7 +151,7 @@ func (m *WebAPIMonitor) probePublic(ctx context.Context, url string) error {
 	}
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 	if len(body) == 0 {
-		return fmt.Errorf("HTTP 200 but empty body")
+		return errors.New("HTTP 200 but empty body")
 	}
 	return nil
 }

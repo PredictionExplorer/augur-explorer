@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -258,8 +258,8 @@ func resolveValue(col string, val any, res *resolvers) any {
 // sortRows orders rows by their canonical JSON encoding, giving every table a
 // stable order without knowing its natural key.
 func sortRows(rows []Row) {
-	sort.Slice(rows, func(i, j int) bool {
-		return canonical(rows[i]) < canonical(rows[j])
+	slices.SortFunc(rows, func(a, b Row) int {
+		return strings.Compare(canonical(a), canonical(b))
 	})
 }
 
@@ -308,7 +308,7 @@ func DiffSnapshots(before, after Snapshot) ([]byte, error) {
 		for key := range counts {
 			keys = append(keys, key)
 		}
-		sort.Strings(keys)
+		slices.Sort(keys)
 		for _, key := range keys {
 			for range counts[key] {
 				td.Added = append(td.Added, decoded[key])

@@ -1,7 +1,6 @@
 package toolutil
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,12 +9,12 @@ import (
 
 // TxRLPPath returns the path for a backed-up transaction RLP blob.
 func TxRLPPath(outputDir string, blockNum uint64, txHash string) string {
-	return filepath.Join(outputDir, fmt.Sprintf("%d", blockNum), txHash+"_tx.rlp")
+	return filepath.Join(outputDir, strconv.FormatUint(blockNum, 10), txHash+"_tx.rlp")
 }
 
 // ReceiptRLPPath returns the path for a backed-up receipt RLP blob.
 func ReceiptRLPPath(outputDir string, blockNum uint64, txHash string) string {
-	return filepath.Join(outputDir, fmt.Sprintf("%d", blockNum), txHash+"_receipt.rlp")
+	return filepath.Join(outputDir, strconv.FormatUint(blockNum, 10), txHash+"_receipt.rlp")
 }
 
 // BackupTxOnDisk maps tx_hash -> block_num for every *_tx.rlp under outputDir.

@@ -155,7 +155,7 @@ func (a *AlarmTracker) sendNotification(ctx context.Context, message string, cou
 	if _, vibrateErr := a.run(ctx, "termux-vibrate", "-d", "1000"); vibrateErr != nil {
 		a.logger.Info(fmt.Sprintf("termux-vibrate also failed: %v", vibrateErr))
 		// Last resort: terminal beep (BEL character)
-		a.logger.Info(fmt.Sprintf("\a\a\a ALERT (no notification sent): %s", message))
+		a.logger.Info("\a\a\a ALERT (no notification sent): " + message)
 		return
 	}
 	a.logger.Info("Vibration alert sent successfully")

@@ -3,7 +3,6 @@ package v2
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -224,7 +223,7 @@ func TestGetRoundResponses(t *testing.T) {
 
 func newRoundTestServer(t *testing.T, rounds roundReader) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	server, err := newServer(
 		nil,
 		fakeBidReader{},

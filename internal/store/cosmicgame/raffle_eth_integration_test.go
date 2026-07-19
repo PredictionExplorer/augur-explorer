@@ -5,6 +5,7 @@ package cosmicgame
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -106,7 +107,7 @@ func TestRaffleEthDepositsByRoundPage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrizeDepositsByRound: %v", err)
 	}
-	paged := append(first, second...)
+	paged := slices.Concat(first, second)
 	if len(legacy) != len(paged) {
 		t.Fatalf("legacy/page lengths = %d/%d", len(legacy), len(paged))
 	}

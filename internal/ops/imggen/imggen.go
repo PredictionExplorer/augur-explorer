@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -167,10 +168,10 @@ type ScanOptions struct {
 // on; only a token-list failure or cancellation aborts it.
 func Scan(ctx context.Context, opts ScanOptions) error {
 	if opts.Source == nil {
-		return fmt.Errorf("token source is nil")
+		return errors.New("token source is nil")
 	}
 	if opts.Client == nil {
-		return fmt.Errorf("client is nil")
+		return errors.New("client is nil")
 	}
 	pacing := opts.TokenPacing
 	if pacing <= 0 {

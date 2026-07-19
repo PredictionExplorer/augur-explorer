@@ -119,17 +119,18 @@ func (m *DiskMonitor) display(disp Display) {
 			ColorYellow, ColorDefault)
 
 		// Output lines or error
-		if status.ErrStr != "" {
+		switch {
+		case status.ErrStr != "":
 			disp.DrawText(Position{X: status.X, Y: status.Y + 1}, "ERROR: "+status.ErrStr,
 				ColorRed, ColorDefault)
-		} else if status.Output != "" {
+		case status.Output != "":
 			lines := strings.Split(status.Output, "\n")
 			for i := 1; i < len(lines)-1; i++ {
 				line := lines[i]
 				disp.DrawText(Position{X: status.X, Y: status.Y + i}, line,
 					ColorWhite, ColorDefault)
 			}
-		} else {
+		default:
 			disp.DrawText(Position{X: status.X, Y: status.Y + 1}, "Checking...",
 				ColorYellow, ColorDefault)
 		}

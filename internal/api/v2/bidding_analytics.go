@@ -36,6 +36,7 @@ type analyticsRange struct {
 
 type analyticsWindow struct {
 	analyticsRange
+
 	intervalSeconds int64
 	storeInterval   int
 }

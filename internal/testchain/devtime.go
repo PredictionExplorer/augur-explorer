@@ -9,6 +9,7 @@ package testchain
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 )
@@ -35,14 +36,14 @@ func (c *Chain) TimeOffset() uint64 {
 
 func (c *Chain) evmIncreaseTime(params []json.RawMessage) (any, error) {
 	if len(params) < 1 {
-		return nil, fmt.Errorf("testchain: evm_increaseTime needs a seconds param")
+		return nil, errors.New("testchain: evm_increaseTime needs a seconds param")
 	}
 	var secs int64
 	if err := json.Unmarshal(params[0], &secs); err != nil {
 		return nil, fmt.Errorf("testchain: bad evm_increaseTime param: %w", err)
 	}
 	if secs < 0 {
-		return nil, fmt.Errorf("testchain: evm_increaseTime seconds must be non-negative")
+		return nil, errors.New("testchain: evm_increaseTime seconds must be non-negative")
 	}
 	// Hardhat answers with the total adjustment in seconds.
 	return c.timeOffset.Add(uint64(secs)), nil

@@ -71,44 +71,71 @@ func setup(getenv func(string) string) (*setupResult, error) {
 	}, nil
 }
 
+// display is the full terminal-owning surface runMain drives: the monitor
+// Display contract plus the init/teardown lifecycle of the concrete UI.
+type display interface {
+	srvmonitor.Display
+	Init() error
+	Close() error
+}
+
+// Production wiring, stubbed by tests so main and runMain are coverable
+// without a real terminal or killing the test process.
+var (
+	osExit     = os.Exit
+	newDisplay = func() display { return termboxui.New() }
+	pollEvent  = termbox.PollEvent
+)
+
 func main() {
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
-	// Setup panic recovery
+	if err := runMain(); err != nil {
+		fmt.Printf("%v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns every deferred cleanup (panic recovery, log rotation, display
+// shutdown) so all of it runs before main decides the exit code (os.Exit
+// skips deferred calls).
+func runMain() (err error) {
+	// Panic recovery: restore the terminal and surface the panic as the
+	// process error instead of leaving the TUI wedged.
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("PANIC: %v\n", r)
 			termbox.Close()
-			os.Exit(1)
+			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
 
 	s, err := setup(os.Getenv)
 	if err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
+		return err
 	}
 	logger := s.logger
 	defer func() { _ = os.Rename(s.logPath, s.oldPath) }() // best-effort log rotation on exit
 
 	// Initialize display
-	disp := termboxui.New()
+	disp := newDisplay()
 	if err := disp.Init(); err != nil {
 		logger.Info(fmt.Sprintf("Failed to initialize display: %v", err))
-		fmt.Printf("Failed to initialize display: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to initialize display: %w", err)
 	}
 	defer func() { _ = disp.Close() }() // termbox Close never returns an error
 
 	// Feed termbox events to the loop; the goroutine unblocks (and the
-	// process exits) once the dashboard returns.
+	// process exits) once the dashboard returns. The poller is captured
+	// once so the goroutine never re-reads the package variable.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	poll := pollEvent
 	events := make(chan termbox.Event)
 	go func() {
 		for {
-			ev := termbox.PollEvent()
+			ev := poll()
 			select {
 			case events <- ev:
 			case <-ctx.Done():
@@ -121,6 +148,7 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGWINCH, syscall.SIGUSR1)
 
 	runDashboard(ctx, cancel, s, disp, events, sigChan)
+	return nil
 }
 
 // runDashboard wires the monitor manager over the initialized display and

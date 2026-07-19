@@ -38,6 +38,7 @@ package tweets
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/hmac"
 	"crypto/rand"
@@ -47,9 +48,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -90,17 +92,18 @@ func encode(s string, double bool) []byte {
 	j := 0
 	for i := range len(s) {
 		b := s[i]
-		if noEscape[b] {
+		switch {
+		case noEscape[b]:
 			p[j] = b
 			j++
-		} else if double {
+		case double:
 			p[j] = '%'
 			p[j+1] = '2'
 			p[j+2] = '5'
 			p[j+3] = "0123456789ABCDEF"[b>>4]
 			p[j+4] = "0123456789ABCDEF"[b&15]
 			j += 5
-		} else {
+		default:
 			p[j] = '%'
 			p[j+1] = "0123456789ABCDEF"[b>>4]
 			p[j+2] = "0123456789ABCDEF"[b&15]
@@ -112,19 +115,15 @@ func encode(s string, double bool) []byte {
 
 type keyValue struct{ key, value []byte }
 
-type byKeyValue []keyValue
-
-func (p byKeyValue) Len() int      { return len(p) }
-func (p byKeyValue) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-func (p byKeyValue) Less(i, j int) bool {
-	sgn := bytes.Compare(p[i].key, p[j].key)
-	if sgn == 0 {
-		sgn = bytes.Compare(p[i].value, p[j].value)
-	}
-	return sgn < 0
+// compareKeyValue orders parameters by key, then by value, as RFC 5849
+// section 3.4.1.3.2 requires for the signature base string.
+func compareKeyValue(a, b keyValue) int {
+	return cmp.Or(bytes.Compare(a.key, b.key), bytes.Compare(a.value, b.value))
 }
 
-func (p byKeyValue) appendValues(values url.Values) byKeyValue {
+type keyValues []keyValue
+
+func (p keyValues) appendValues(values url.Values) keyValues {
 	for k, vs := range values {
 		k := encode(k, true)
 		for _, v := range vs {
@@ -168,13 +167,13 @@ func writeBaseString(w io.Writer, method string, u *url.URL, form url.Values, oa
 	// double encoded in a single step. This is safe because double encoding
 	// does not change the sort order.
 	queryParams := u.Query()
-	p := make(byKeyValue, 0, len(form)+len(queryParams)+len(oauthParams))
+	p := make(keyValues, 0, len(form)+len(queryParams)+len(oauthParams))
 	p = p.appendValues(form)
 	p = p.appendValues(queryParams)
 	for k, v := range oauthParams {
 		p = append(p, keyValue{encode(k, true), encode(v, true)})
 	}
-	sort.Sort(p)
+	slices.SortFunc(p, compareKeyValue)
 
 	// Write the parameters.
 	encodedAmp := encode("&", false)
@@ -367,9 +366,7 @@ func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Respo
 	if req.URL.RawQuery != "" {
 		return nil, errors.New("oauth: url must not contain a query string")
 	}
-	for k, v := range c.Header {
-		req.Header[k] = v
-	}
+	maps.Copy(req.Header, c.Header)
 	r.u = req.URL
 	req.Header.Set("Authorization", c.authorizationHeader(r))
 	if r.method == http.MethodGet {
@@ -484,9 +481,7 @@ func (c *Client) RequestTokenContext(ctx context.Context, temporaryCredentials *
 // resource owner authorization.
 func (c *Client) AuthorizationURL(temporaryCredentials *Credentials, additionalParams url.Values) string {
 	params := make(url.Values)
-	for k, vs := range additionalParams {
-		params[k] = vs
-	}
+	maps.Copy(params, additionalParams)
 	params.Set("oauth_token", temporaryCredentials.Token)
 	return c.ResourceOwnerAuthorizationURI + "?" + params.Encode()
 }

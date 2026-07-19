@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -1702,7 +1701,7 @@ func TestNewServerValidatesDependencies(t *testing.T) {
 
 func newTestServer(t *testing.T, bids bidReader) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	server, err := newServer(
 		nil,
 		bids,

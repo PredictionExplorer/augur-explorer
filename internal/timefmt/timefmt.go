@@ -75,7 +75,7 @@ func DurationToString(year, month, day, hour, min, sec int) string {
 	}
 	if month > 0 {
 		if len(output) > 0 {
-			output = output + ","
+			output += ","
 		}
 		if month == 1 {
 			output = fmt.Sprintf("%v %v month", output, month)
@@ -85,7 +85,7 @@ func DurationToString(year, month, day, hour, min, sec int) string {
 	}
 	if day > 0 {
 		if len(output) > 0 {
-			output = output + ","
+			output += ","
 		}
 		if day == 1 {
 			output = fmt.Sprintf("%v %v day", output, day)
@@ -95,7 +95,7 @@ func DurationToString(year, month, day, hour, min, sec int) string {
 	}
 	if hour > 0 {
 		if len(output) > 0 {
-			output = output + ","
+			output += ","
 		}
 		if hour == 1 {
 			output = fmt.Sprintf("%v %v hour", output, hour)
@@ -105,7 +105,7 @@ func DurationToString(year, month, day, hour, min, sec int) string {
 	}
 	if min > 0 {
 		if len(output) > 0 {
-			output = output + ","
+			output += ","
 		}
 		if min == 1 {
 			output = fmt.Sprintf("%v %v minute", output, min)

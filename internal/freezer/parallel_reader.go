@@ -1,12 +1,13 @@
 package freezerscanner
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"sync"
 )
 
@@ -103,8 +104,8 @@ func (pr *ParallelReader) indexCdatFiles() error {
 		})
 	}
 
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].index < entries[j].index
+	slices.SortFunc(entries, func(a, b *cdatEntry) int {
+		return cmp.Compare(a.index, b.index)
 	})
 
 	for _, entry := range entries {
@@ -189,7 +190,7 @@ func (wr *WorkerReader) ReadItem(blockNum uint64) ([]byte, error) {
 	} else {
 		// Last block
 		if len(wr.pr.cdatFiles) == 0 {
-			return nil, fmt.Errorf("no cdat files available")
+			return nil, errors.New("no cdat files available")
 		}
 		lastEntry := wr.pr.cdatFiles[len(wr.pr.cdatFiles)-1]
 		endOffset := lastEntry.startOffset + lastEntry.size
@@ -237,10 +238,7 @@ func (wr *WorkerReader) readBytes(offset, length uint64, blockNum uint64) ([]byt
 		fileOffset := currentOffset - entry.startOffset
 		availableInFile := entry.size - fileOffset
 
-		toRead := remaining
-		if toRead > availableInFile {
-			toRead = availableInFile
-		}
+		toRead := min(remaining, availableInFile)
 
 		f, err := wr.getFileHandle(entry)
 		if err != nil {

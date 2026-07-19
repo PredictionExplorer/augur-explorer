@@ -135,7 +135,7 @@ func TestAdminUint256EventsUnpack(t *testing.T) {
 	val := big.NewInt(42)
 	cases := []struct {
 		name string
-		out  interface{}
+		out  any
 	}{
 		{"BidCstRewardAmountMultiplierChanged", &CosmicSignatureGameV2BidCstRewardAmountMultiplierChanged{}},
 		{"CstDutchAuctionDurationChanged", &CosmicSignatureGameV2CstDutchAuctionDurationChanged{}},

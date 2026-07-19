@@ -36,7 +36,7 @@ func BenchmarkRandomWalkV2Queries(b *testing.B) {
 	// order book that backs the marketplace UI.
 	b.Run("token_events", func(b *testing.B) {
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			records, _, err := r.TokenEventsPage(ctx, 10, nil, 50)
 			if err != nil || len(records) == 0 {
 				b.Fatalf("token events: %v (%d rows)", err, len(records))
@@ -46,7 +46,7 @@ func BenchmarkRandomWalkV2Queries(b *testing.B) {
 
 	b.Run("offer_history", func(b *testing.B) {
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			records, _, err := r.OfferHistoryPage(ctx, nil, 50)
 			if err != nil || len(records) == 0 {
 				b.Fatalf("offer history: %v (%d rows)", err, len(records))
@@ -56,7 +56,7 @@ func BenchmarkRandomWalkV2Queries(b *testing.B) {
 
 	b.Run("offers_price_asc", func(b *testing.B) {
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			records, _, err := r.ActiveOffersPage(ctx, OfferSortPriceAsc, nil, 50)
 			if err != nil || len(records) == 0 {
 				b.Fatalf("active offers: %v (%d rows)", err, len(records))
@@ -66,7 +66,7 @@ func BenchmarkRandomWalkV2Queries(b *testing.B) {
 
 	b.Run("statistics", func(b *testing.B) {
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			record, err := r.StatisticsV2(ctx)
 			if err != nil || record.MintedCount == 0 {
 				b.Fatalf("statistics: %v (%+v)", err, record)

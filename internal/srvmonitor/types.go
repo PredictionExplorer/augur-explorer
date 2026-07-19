@@ -103,6 +103,7 @@ func (c AnomalyConfig) Enabled() bool {
 // EventTableConfig holds event table monitoring configuration.
 type EventTableConfig struct {
 	DatabaseConfig
+
 	TableName  string // e.g., "cg_proc_status" or "rw_proc_status"
 	ColumnName string // e.g., "last_evt_id" or "last_block"
 }

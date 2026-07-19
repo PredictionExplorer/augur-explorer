@@ -27,6 +27,7 @@ type ResponseWriter interface {
 // responseWriter is the concrete ResponseWriter used by the Router.
 type responseWriter struct {
 	http.ResponseWriter
+
 	status int
 	size   int
 }

@@ -1,6 +1,7 @@
 package srvmonitor
 
 import (
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -45,7 +46,7 @@ func TestLoadFromEnvMinimal(t *testing.T) {
 func TestLoadFromEnvFull(t *testing.T) {
 	t.Parallel()
 	env := minimalEnv()
-	for k, v := range map[string]string{
+	maps.Copy(env, map[string]string{
 		"OFFICIAL_RPC_MAINNET": "node0",
 		"RPC1_NAME":            "follower",
 		"RPC1_URL":             "http://rpc1.example",
@@ -87,9 +88,7 @@ func TestLoadFromEnvFull(t *testing.T) {
 		"RWALK_CONTRACT_ADDR": "0x1111111111111111111111111111111111111111",
 
 		"MOBILE_NOTIF": "yes",
-	} {
-		env[k] = v
-	}
+	})
 
 	cfg, err := LoadFromEnv(envMap(env))
 	if err != nil {

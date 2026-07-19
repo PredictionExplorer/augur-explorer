@@ -3,10 +3,12 @@
 package assets
 
 import (
+	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -57,7 +59,7 @@ func (s SQLTokenSource) TokenSeeds(ctx context.Context, schema string) ([]Token,
 		return nil, err
 	}
 	if s.DB == nil {
-		return nil, fmt.Errorf("token database is nil")
+		return nil, errors.New("token database is nil")
 	}
 
 	// #nosec G201 -- schema is accepted only after the identifier whitelist above.
@@ -131,11 +133,11 @@ func NormalizeTokens(tokens []Token) []Token {
 			normalized = append(normalized, token)
 		}
 	}
-	sort.SliceStable(normalized, func(i, j int) bool {
-		if normalized[i].TokenID != normalized[j].TokenID {
-			return normalized[i].TokenID < normalized[j].TokenID
-		}
-		return normalized[i].Seed < normalized[j].Seed
+	slices.SortStableFunc(normalized, func(a, b Token) int {
+		return cmp.Or(
+			cmp.Compare(a.TokenID, b.TokenID),
+			cmp.Compare(a.Seed, b.Seed),
+		)
 	})
 
 	seen := make(map[string]struct{}, len(normalized))

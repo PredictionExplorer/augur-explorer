@@ -1,10 +1,10 @@
 {
   "version": 1,
   "legacyInternalFloor": 92.2,
-  "internalFloor": 95.2,
-  "productionFloor": 94.5,
+  "internalFloor": 95.3,
+  "productionFloor": 94.8,
   "patchFloor": 95.0,
-  "internalTarget": 95.2,
+  "internalTarget": 95.3,
   "productionTarget": 95.0,
   "criticalPackageTarget": 95.0,
   "commitGateEnabled": true,

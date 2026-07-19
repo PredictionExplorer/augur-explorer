@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -287,7 +286,7 @@ func TestListRoundDonationsPropagateCancelledContextAsOpaqueError(t *testing.T) 
 
 func newDonationTestServer(t *testing.T, donations roundDonationReader) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	server, err := newServer(
 		nil,
 		fakeBidReader{},

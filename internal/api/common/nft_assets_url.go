@@ -49,8 +49,8 @@ func NormalizeNFTAssetsPublicBase(b string) string {
 	if strings.HasSuffix(b, "/images") {
 		return b
 	}
-	if strings.HasSuffix(b, "/randomwalk") {
-		return strings.TrimSuffix(b, "/randomwalk") + "/images"
+	if before, ok := strings.CutSuffix(b, "/randomwalk"); ok {
+		return before + "/images"
 	}
 	return b + "/images"
 }

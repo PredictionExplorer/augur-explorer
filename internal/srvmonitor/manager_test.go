@@ -32,8 +32,7 @@ func TestManagerHandlesErrors(t *testing.T) {
 	mgr := NewManager(disp, logger, tracker, 5, 40)
 	mgr.Register(&stubMonitor{name: "stub", errors: []string{"", "first failure", "second failure", "third failure"}})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	mgr.Start(ctx)
 
 	// The first two non-empty errors land on the display's error area.

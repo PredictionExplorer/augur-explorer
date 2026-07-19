@@ -20,14 +20,14 @@ type fakeNotifier struct {
 	fail map[string]error
 }
 
-func (f *fakeNotifier) SendText(phone, text string) (map[string]interface{}, error) {
+func (f *fakeNotifier) SendText(phone, text string) (map[string]any, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if err, ok := f.fail[phone]; ok {
-		return map[string]interface{}{"error": "scripted"}, err
+		return map[string]any{"error": "scripted"}, err
 	}
 	f.sent = append(f.sent, [2]string{phone, text})
-	return map[string]interface{}{"messages": []any{}}, nil
+	return map[string]any{"messages": []any{}}, nil
 }
 
 func (f *fakeNotifier) sentCount() int {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -394,7 +393,7 @@ func TestRoundRaffleHandlersAreDeterministic(t *testing.T) {
 
 func newRaffleTestServer(t *testing.T, raffles roundRaffleReader) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	server, err := newServer(
 		nil,
 		fakeBidReader{},

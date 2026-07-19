@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -82,7 +83,7 @@ func runBackfillDaoEvtlog(cmd *cobra.Command, fromBlock, toBlock uint64) error {
 	}
 	daoAddr := ethcommon.HexToAddress(contracts.CosmicDaoAddr)
 	if (daoAddr == ethcommon.Address{}) {
-		return fmt.Errorf("cosmic_dao_addr is zero in cg_contracts")
+		return errors.New("cosmic_dao_addr is zero in cg_contracts")
 	}
 	logger.Info("resolved contract", "cosmic_dao", daoAddr.Hex())
 
@@ -130,7 +131,7 @@ func runBackfillDaoEvtlog(cmd *cobra.Command, fromBlock, toBlock uint64) error {
 	}
 	logger.Info("cosmic_dao evt_log total", "rows", count)
 	if stats.Inserted == 0 && count == 0 {
-		return fmt.Errorf("no cosmic_dao evt_log rows found or inserted")
+		return errors.New("no cosmic_dao evt_log rows found or inserted")
 	}
 	return nil
 }

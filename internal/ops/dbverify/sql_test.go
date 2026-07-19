@@ -175,7 +175,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		t.Parallel()
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: "ORDER BY e.log_rlp, e.block_num, t.tx_hash, e.id",
-			argCount:      intPointer(0),
+			argCount:      new(0),
 			rows: [][]any{
 				{int64(1), "tx-a", []byte{0xaa}},
 				{int64(2), "tx-b", []byte{0xaa}},
@@ -200,7 +200,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 			t.Parallel()
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: "WHERE e.contract_aid = ANY($1)",
-				argCount:      intPointer(1),
+				argCount:      new(1),
 			})
 
 			got, err := loader.LoadEventRecords(context.Background(), filter)
@@ -273,7 +273,7 @@ func TestSQLLoaderTransactionHashesBranches(t *testing.T) {
 			t.Parallel()
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: "SELECT DISTINCT t.tx_hash",
-				argCount:      intPointer(1),
+				argCount:      new(1),
 				rows:          [][]any{{"a"}, {"b"}},
 			})
 
@@ -335,7 +335,7 @@ func TestSQLLoaderLoadTransactionsBranches(t *testing.T) {
 			t.Parallel()
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains,
-				argCount:      intPointer(test.argCount),
+				argCount:      new(test.argCount),
 				rows:          [][]any{{int64(1), "tx", int64(2), int64(3)}},
 			})
 
@@ -375,7 +375,7 @@ func TestSQLLoaderBlockNumbersBranches(t *testing.T) {
 			t.Parallel()
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: "SELECT DISTINCT t.block_num",
-				argCount:      intPointer(1),
+				argCount:      new(1),
 				rows:          [][]any{{int64(1)}, {int64(2)}},
 			})
 
@@ -437,7 +437,7 @@ func TestSQLLoaderLoadBlocksBranches(t *testing.T) {
 			t.Parallel()
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains,
-				argCount:      intPointer(test.argCount),
+				argCount:      new(test.argCount),
 				rows:          [][]any{{int64(1), "block", "parent", int64(2)}},
 			})
 
@@ -493,7 +493,7 @@ func TestSQLLoaderCountEventLogsBranches(t *testing.T) {
 			t.Parallel()
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains,
-				argCount:      intPointer(test.argCount),
+				argCount:      new(test.argCount),
 				rows:          [][]any{{int64(12)}},
 			})
 
@@ -582,7 +582,7 @@ func TestSQLLoaderDetailedEventLogsBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains[0],
 				queryParts:    test.queryContains,
-				argCount:      intPointer(test.argCount),
+				argCount:      new(test.argCount),
 				rows: [][]any{{
 					int64(1),
 					"tx",
@@ -768,8 +768,4 @@ func newScriptedDB(t *testing.T, expectations ...queryExpectation) (dbverify.Que
 	}
 	script := testutil.NewScriptedPgx(ops...)
 	return script, script
-}
-
-func intPointer(value int) *int {
-	return &value
 }

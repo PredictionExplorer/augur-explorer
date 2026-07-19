@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -34,7 +34,7 @@ func TestRouteDriftAgainstOpenAPI(t *testing.T) {
 			missingFromRouter = append(missingFromRouter, op)
 		}
 	}
-	sort.Strings(missingFromRouter)
+	slices.Sort(missingFromRouter)
 	for _, op := range missingFromRouter {
 		t.Errorf("documented in openapi.yaml but not registered on the router: %s", op)
 	}
@@ -45,7 +45,7 @@ func TestRouteDriftAgainstOpenAPI(t *testing.T) {
 			missingFromSpec = append(missingFromSpec, op)
 		}
 	}
-	sort.Strings(missingFromSpec)
+	slices.Sort(missingFromSpec)
 	for _, op := range missingFromSpec {
 		t.Errorf("registered on the router but not documented in openapi.yaml: %s", op)
 	}

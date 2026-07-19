@@ -25,7 +25,7 @@ var arbLog = Log{
 // at the given index; fields before it are scalar placeholders.
 func encodeArbReceipt(t *testing.T, totalFields, logsIdx int, logs []Log) []byte {
 	t.Helper()
-	fields := make([]interface{}, totalFields)
+	fields := make([]any, totalFields)
 	for i := range fields {
 		fields[i] = []byte{byte(i + 1)}
 	}
@@ -115,11 +115,11 @@ func TestArbitrumReceiptsSkipsBadEntries(t *testing.T) {
 
 func TestArbitrumReceiptsMalformedLogSkipped(t *testing.T) {
 	// A log with fewer than 3 fields fails ArbitrumLog and is dropped.
-	badLog := mustEncode(t, []interface{}{[]byte{0x01}})
+	badLog := mustEncode(t, []any{[]byte{0x01}})
 	goodLog := mustEncode(t, arbLog)
 	logsList := mustEncode(t, []rlp.RawValue{badLog, goodLog})
 
-	fields := []interface{}{[]byte{1}, []byte{2}, []byte{3}, rlp.RawValue(logsList)}
+	fields := []any{[]byte{1}, []byte{2}, []byte{3}, rlp.RawValue(logsList)}
 	receipt := mustEncode(t, fields)
 	blob := mustEncode(t, []rlp.RawValue{receipt})
 
@@ -195,21 +195,21 @@ func TestArbitrumLogErrors(t *testing.T) {
 	if _, err := ArbitrumLog([]byte{0xaa}); err == nil {
 		t.Error("non-list log must fail")
 	}
-	short := mustEncode(t, []interface{}{[]byte{1}, []byte{2}})
+	short := mustEncode(t, []any{[]byte{1}, []byte{2}})
 	if _, err := ArbitrumLog(short); err == nil || !strings.Contains(err.Error(), "expected 3 fields") {
 		t.Errorf("two-field log: %v", err)
 	}
 	// Field decoders: address must be 20 bytes, topics a list of hashes,
 	// data a byte string.
-	badAddr := mustEncode(t, []interface{}{[]byte{1, 2, 3}, []common.Hash{}, []byte{}})
+	badAddr := mustEncode(t, []any{[]byte{1, 2, 3}, []common.Hash{}, []byte{}})
 	if _, err := ArbitrumLog(badAddr); err == nil || !strings.Contains(err.Error(), "decode address") {
 		t.Errorf("bad address: %v", err)
 	}
-	badTopics := mustEncode(t, []interface{}{arbLog.Address, []byte{0x01}, []byte{}})
+	badTopics := mustEncode(t, []any{arbLog.Address, []byte{0x01}, []byte{}})
 	if _, err := ArbitrumLog(badTopics); err == nil || !strings.Contains(err.Error(), "decode topics") {
 		t.Errorf("bad topics: %v", err)
 	}
-	badData := mustEncode(t, []interface{}{arbLog.Address, []common.Hash{}, []common.Hash{{}}})
+	badData := mustEncode(t, []any{arbLog.Address, []common.Hash{}, []common.Hash{{}}})
 	if _, err := ArbitrumLog(badData); err == nil || !strings.Contains(err.Error(), "decode data") {
 		t.Errorf("bad data: %v", err)
 	}

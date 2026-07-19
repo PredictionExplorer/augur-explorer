@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -43,7 +44,7 @@ func runSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string) error 
 		return err
 	}
 	if desiredSeconds <= 0 {
-		return fmt.Errorf("time_increment_seconds must be positive")
+		return errors.New("time_increment_seconds must be positive")
 	}
 
 	s, err := newTxSession(cmd, verbose)

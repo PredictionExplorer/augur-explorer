@@ -16,7 +16,7 @@ import (
 // decodeReceiptLogsOnly (stream scan). Each layer is pinned with a synthetic
 // RLP fixture of the shape that triggers it.
 
-func mustEncode(t *testing.T, v interface{}) []byte {
+func mustEncode(t *testing.T, v any) []byte {
 	t.Helper()
 	b, err := rlp.EncodeToBytes(v)
 	if err != nil {
@@ -40,7 +40,7 @@ func TestDecodeReceiptAlternative(t *testing.T) {
 		CumulativeGasUsed uint64
 		Logs              []*StoredLog
 	}
-	blob := mustEncode(t, []interface{}{
+	blob := mustEncode(t, []any{
 		simpleReceipt{Status: 1, CumulativeGasUsed: 42000, Logs: []*StoredLog{fallbackLog}},
 	})
 
@@ -71,8 +71,8 @@ func TestDecodeReceiptAlternative(t *testing.T) {
 // receipt whose third field is a non-bloom string defeats both struct
 // decoders, but the scanner skips the scalars and still extracts the logs.
 func TestDecodeReceiptLogsOnly(t *testing.T) {
-	blob := mustEncode(t, []interface{}{
-		[]interface{}{
+	blob := mustEncode(t, []any{
+		[]any{
 			[]byte{1},          // status-ish scalar
 			uint64(21000),      // gas
 			[]byte("notbloom"), // wrong-size bloom: kills ReceiptForStorage; 4th field kills the alternative
@@ -104,8 +104,8 @@ func TestDecodeReceiptLogsOnly(t *testing.T) {
 // TestDecodeReceiptLogsOnlyNoLogs pins the soft-empty result when the
 // unrecognized receipt has no list field at all.
 func TestDecodeReceiptLogsOnlyNoLogs(t *testing.T) {
-	blob := mustEncode(t, []interface{}{
-		[]interface{}{[]byte("only"), []byte("scalar"), []byte("fields"), []byte("here")},
+	blob := mustEncode(t, []any{
+		[]any{[]byte("only"), []byte("scalar"), []byte("fields"), []byte("here")},
 	})
 	result, err := Receipts(blob)
 	if err != nil {
@@ -119,7 +119,7 @@ func TestDecodeReceiptLogsOnlyNoLogs(t *testing.T) {
 // TestDecodeReceiptLogsOnlyNotAList pins the terminal error when a receipt
 // element is not even an RLP list.
 func TestDecodeReceiptLogsOnlyNotAList(t *testing.T) {
-	blob := mustEncode(t, []interface{}{[]byte{0xaa, 0xbb}})
+	blob := mustEncode(t, []any{[]byte{0xaa, 0xbb}})
 	if _, err := Receipts(blob); err == nil || !strings.Contains(err.Error(), "expected list") {
 		t.Fatalf("want expected-list error, got %v", err)
 	}

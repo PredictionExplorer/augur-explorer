@@ -6,12 +6,13 @@ package verify
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -250,15 +251,12 @@ func sortedKeys(m map[Key]int) []Key {
 	for key := range m {
 		keys = append(keys, key)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		a, b := keys[i], keys[j]
-		if a.BlockNum != b.BlockNum {
-			return a.BlockNum < b.BlockNum
-		}
-		if a.Topic0 != b.Topic0 {
-			return a.Topic0 < b.Topic0
-		}
-		return a.Contract < b.Contract
+	slices.SortFunc(keys, func(a, b Key) int {
+		return cmp.Or(
+			cmp.Compare(a.BlockNum, b.BlockNum),
+			cmp.Compare(a.Topic0, b.Topic0),
+			cmp.Compare(a.Contract, b.Contract),
+		)
 	})
 	return keys
 }

@@ -2,11 +2,12 @@ package assets
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -103,7 +104,7 @@ func RunInventory(ctx context.Context, opts InventoryOptions) (InventorySummary,
 		return summary, err
 	}
 	if opts.Source == nil {
-		return summary, fmt.Errorf("token source is nil")
+		return summary, errors.New("token source is nil")
 	}
 	if err := ValidateSchema(opts.Schema); err != nil {
 		return summary, err
@@ -199,7 +200,7 @@ func RunInventory(ctx context.Context, opts InventoryOptions) (InventorySummary,
 	}
 
 	if len(missingLines) > 0 {
-		sort.Strings(missingLines)
+		slices.Sort(missingLines)
 		fmt.Fprintf(out, "Tokens with missing assets (%d):\n", len(missingLines))
 		for _, line := range missingLines {
 			fmt.Fprintln(out, line)
@@ -211,7 +212,7 @@ func RunInventory(ctx context.Context, opts InventoryOptions) (InventorySummary,
 	}
 
 	if len(paddedLines) > 0 {
-		sort.Strings(paddedLines)
+		slices.Sort(paddedLines)
 		fmt.Fprintf(out, "Seed-padding mismatches — found only via zero-padded 64-char name (%d):\n", len(paddedLines))
 		for _, line := range paddedLines {
 			fmt.Fprintln(out, line)
@@ -327,7 +328,7 @@ func layoutBreakdown(counts map[string]int, order []string) string {
 			extra = append(extra, fmt.Sprintf("%s %d", layout, count))
 		}
 	}
-	sort.Strings(extra)
+	slices.Sort(extra)
 	parts = append(parts, extra...)
 	if len(parts) == 0 {
 		return ""

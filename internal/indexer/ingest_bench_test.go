@@ -98,7 +98,7 @@ func BenchmarkIngestBlock(b *testing.B) {
 
 	b.Run("tx_block_3_logs", func(b *testing.B) {
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			if _, stage, err := engine.processBatch(ctx, logs); err != nil {
 				b.Fatalf("processBatch (stage %s): %v", stage, err)
 			}
@@ -107,7 +107,7 @@ func BenchmarkIngestBlock(b *testing.B) {
 
 	b.Run("autocommit_3_logs", func(b *testing.B) {
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			for i := range logs {
 				log := logs[i]
 				if _, err := engine.EnsureBlockExists(ctx, blockNum, log.BlockHash.Hex()); err != nil {

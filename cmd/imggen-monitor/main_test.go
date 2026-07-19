@@ -58,13 +58,13 @@ func TestRunFlagAndConfigErrors(t *testing.T) {
 func TestRunOneShotGeneration(t *testing.T) {
 	t.Parallel()
 	var mu sync.Mutex
-	var payloads []map[string]interface{}
+	var payloads []map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/generate" || r.Method != http.MethodPost {
 			http.NotFound(w, r)
 			return
 		}
-		var payload map[string]interface{}
+		var payload map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

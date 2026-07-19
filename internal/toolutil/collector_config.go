@@ -2,6 +2,7 @@ package toolutil
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -46,7 +47,7 @@ func LoadCollectorConfig(path string) (*CollectorConfig, error) {
 		return nil, err
 	}
 	if cfg.OutputDir == "" {
-		return nil, fmt.Errorf("output_dir is required")
+		return nil, errors.New("output_dir is required")
 	}
 	return &cfg, nil
 }
@@ -98,7 +99,7 @@ func (c *CollectorConfig) ResolveContractAddresses() ([]string, error) {
 		}
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("no contract addresses: set contract_addresses and/or contracts in config")
+		return nil, errors.New("no contract addresses: set contract_addresses and/or contracts in config")
 	}
 	return out, nil
 }

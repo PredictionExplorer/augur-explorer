@@ -3,7 +3,6 @@ package v2
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -37,7 +36,7 @@ func newUserHistoryTestServer(t *testing.T, histories userHistoryReader) *Server
 		fakeRandomWalkReader{},
 		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

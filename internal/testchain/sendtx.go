@@ -9,6 +9,7 @@ package testchain
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -134,7 +135,7 @@ func (c *Chain) getTransactionCount(params []json.RawMessage) (any, error) {
 
 func paramAddress(params []json.RawMessage) (common.Address, error) {
 	if len(params) < 1 {
-		return common.Address{}, fmt.Errorf("testchain: missing address param")
+		return common.Address{}, errors.New("testchain: missing address param")
 	}
 	var s string
 	if err := json.Unmarshal(params[0], &s); err != nil {
@@ -155,7 +156,7 @@ func (c *Chain) sendRawTransaction(params []json.RawMessage) (any, error) {
 		return nil, fmt.Errorf("%s", msg)
 	}
 	if len(params) < 1 {
-		return nil, fmt.Errorf("testchain: eth_sendRawTransaction needs raw tx bytes")
+		return nil, errors.New("testchain: eth_sendRawTransaction needs raw tx bytes")
 	}
 	var rawHex string
 	if err := json.Unmarshal(params[0], &rawHex); err != nil {

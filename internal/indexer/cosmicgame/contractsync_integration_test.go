@@ -10,7 +10,6 @@ package cosmicgame
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"math"
 	"math/big"
@@ -239,7 +238,7 @@ func TestSyncContractParamsSkipsUnreadableParams(t *testing.T) {
 	requireLatestParam(t, "cg_adm_cst_auclen", "new_len", "400")
 	for _, table := range []string{"cg_adm_timeout_claimprize", "cg_adm_price_inc", "cg_adm_timeout_withdraw", "cg_delay_duration"} {
 		var n int
-		if err := testDB.SQL.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&n); err != nil {
+		if err := testDB.SQL.QueryRow("SELECT COUNT(*) FROM " + table).Scan(&n); err != nil {
 			t.Fatalf("counting %s: %v", table, err)
 		}
 		if n != 0 {

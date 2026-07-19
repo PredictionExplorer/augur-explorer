@@ -75,7 +75,7 @@ type VideoUploadStatus struct {
 	ProcessingInfo   ProcessingInfo `json:"processing_info"`
 }
 
-func decodeResponse(resp *http.Response, data interface{}) error {
+func decodeResponse(resp *http.Response, data any) error {
 	p, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error reading response body: %w", err)
@@ -182,7 +182,7 @@ func SendTweetWithVideo(apiKey, apiSecret, accessToken, tokenSecret, message str
 	encodedVideoData := base64.StdEncoding.EncodeToString(videoData)
 	form := url.Values{
 		"command":        {"INIT"},
-		"total_bytes":    {fmt.Sprintf("%v", len(videoData))},
+		"total_bytes":    {strconv.Itoa(len(videoData))},
 		"media_category": {"tweet_video"},
 		"media_type":     {"video/mp4"},
 	}
@@ -213,7 +213,7 @@ func SendTweetWithVideo(apiKey, apiSecret, accessToken, tokenSecret, message str
 		"command":       {"APPEND"},
 		"media_id":      {uploadID},
 		"media_data":    {encodedVideoData + "\r\n"},
-		"segment_index": {fmt.Sprintf("%v", 0)},
+		"segment_index": {"0"},
 	}
 	client.Header = make(map[string][]string)
 	client.Header.Set("Content-Type", "application/octet-stream")

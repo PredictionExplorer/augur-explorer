@@ -63,13 +63,7 @@ func backoffDelay(attempt int, minDelay, maxDelay time.Duration, randFloat func(
 	}
 	// Jitter in [0.75, 1.25).
 	jitter := 0.75 + 0.5*randFloat()
-	d = time.Duration(float64(d) * jitter)
-	if d > maxDelay {
-		d = maxDelay
-	}
-	if d < 0 {
-		d = 0
-	}
+	d = max(min(time.Duration(float64(d)*jitter), maxDelay), 0)
 	return d
 }
 

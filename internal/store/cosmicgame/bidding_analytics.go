@@ -1,9 +1,10 @@
 package cosmicgame
 
 import (
+	"cmp"
 	"context"
 	"math"
-	"sort"
+	"slices"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
@@ -409,10 +410,7 @@ func (r *Repo) topBidderActivePeriods(
 		); err != nil {
 			return err
 		}
-		rec.DurationSecs = rec.PeriodEnd - rec.PeriodStart
-		if rec.DurationSecs < 0 {
-			rec.DurationSecs = 0
-		}
+		rec.DurationSecs = max(rec.PeriodEnd-rec.PeriodStart, 0)
 		return nil
 	}
 	// bidderAids is a native []int64, encoded by pgx as bigint[]. gapHours
@@ -543,8 +541,8 @@ func DetectBidSpikes(buckets []cgmodel.CGBidFrequencyBucket, intervalSecs int) [
 		spikes = append(spikes, spike)
 	}
 
-	sort.Slice(spikes, func(i, j int) bool {
-		return spikes[i].StartTs < spikes[j].StartTs
+	slices.SortFunc(spikes, func(a, b cgmodel.CGBidSpike) int {
+		return cmp.Compare(a.StartTs, b.StartTs)
 	})
 	for i := range spikes {
 		spikes[i].Index = i

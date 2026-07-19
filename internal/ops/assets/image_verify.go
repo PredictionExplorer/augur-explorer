@@ -2,6 +2,7 @@ package assets
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -55,13 +56,13 @@ func VerifyTokenImages(ctx context.Context, opts VerifyTokenImagesOptions) (Imag
 		return summary, err
 	}
 	if opts.Source == nil {
-		return summary, fmt.Errorf("token count source is nil")
+		return summary, errors.New("token count source is nil")
 	}
 	if opts.Client == nil {
-		return summary, fmt.Errorf("HTTP client is nil")
+		return summary, errors.New("HTTP client is nil")
 	}
 	if strings.TrimSpace(opts.BaseURL) == "" {
-		return summary, fmt.Errorf("image base URL is empty")
+		return summary, errors.New("image base URL is empty")
 	}
 	logger := opts.Logger
 	if logger == nil {
@@ -130,7 +131,7 @@ func CheckTokenImage(ctx context.Context, client HTTPClient, imageURL string) (i
 		return 0, err
 	}
 	if resp == nil {
-		return 0, fmt.Errorf("HTTP client returned a nil response")
+		return 0, errors.New("HTTP client returned a nil response")
 	}
 	if resp.Body == nil {
 		resp.Body = http.NoBody

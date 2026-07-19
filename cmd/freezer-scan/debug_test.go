@@ -213,10 +213,3 @@ func decodeVarint(data []byte) (uint64, int) {
 	}
 	return value, 0
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

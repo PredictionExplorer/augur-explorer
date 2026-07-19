@@ -104,7 +104,7 @@ func TestCosmicGameUserAddressBoundaries(t *testing.T) {
 				t.Fatalf("malformed wallet caused server failure: status=%d body=%s",
 					response.Code, response.Body.String())
 			}
-			var body interface{}
+			var body any
 			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 				t.Fatalf("decode response: %v\n%s", err, response.Body.String())
 			}
@@ -117,7 +117,7 @@ func TestCosmicGameUserAddressBoundaries(t *testing.T) {
 				t.Fatalf("unindexed wallet caused server failure: status=%d body=%s",
 					response.Code, response.Body.String())
 			}
-			var body interface{}
+			var body any
 			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 				t.Fatalf("decode response: %v\n%s", err, response.Body.String())
 			}

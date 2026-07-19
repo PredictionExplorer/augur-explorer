@@ -126,7 +126,7 @@ func standardBlocks(t *testing.T) [][]byte {
 func records(t *testing.T, jsonl []byte) []map[string]any {
 	t.Helper()
 	var out []map[string]any
-	for _, line := range bytes.Split(bytes.TrimSpace(jsonl), []byte("\n")) {
+	for line := range bytes.SplitSeq(bytes.TrimSpace(jsonl), []byte("\n")) {
 		if len(line) == 0 {
 			continue
 		}

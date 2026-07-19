@@ -4,6 +4,7 @@
 package freezerscanner
 
 import (
+	"cmp"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -11,7 +12,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"sync"
 )
 
@@ -164,8 +165,8 @@ func (fr *FreezerReader) indexCdatFiles() error {
 	}
 
 	// Sort by index
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].index < entries[j].index
+	slices.SortFunc(entries, func(a, b *cdatEntry) int {
+		return cmp.Compare(a.index, b.index)
 	})
 
 	// Calculate global offsets for each file
@@ -281,10 +282,7 @@ func (fr *FreezerReader) readBytes(offset, length uint64, blockNum uint64) ([]by
 		availableInFile := entry.size - fileOffset
 
 		// Determine how much to read from this file
-		toRead := remaining
-		if toRead > availableInFile {
-			toRead = availableInFile
-		}
+		toRead := min(remaining, availableInFile)
 
 		// Get file handle
 		f, err := fr.getFileHandle(entry)

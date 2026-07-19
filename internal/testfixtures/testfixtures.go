@@ -20,7 +20,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"sort"
+	"slices"
 )
 
 //go:embed seed/*.sql
@@ -43,7 +43,7 @@ func ApplyFS(ctx context.Context, db *sql.DB, fsys fs.FS, dir string) error {
 	if len(entries) == 0 {
 		return fmt.Errorf("no seed files found under %s", dir)
 	}
-	sort.Strings(entries)
+	slices.Sort(entries)
 	for _, path := range entries {
 		contents, err := fs.ReadFile(fsys, path)
 		if err != nil {

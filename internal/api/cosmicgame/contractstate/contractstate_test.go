@@ -1243,15 +1243,11 @@ func TestSnapshotConcurrency(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		s.Run(ctx)
-	}()
+	})
 	for range 8 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 200 {
 				snap := s.Snapshot()
 				if snap.BidPrice == "" && snap.RoundNum == 7 {
@@ -1262,7 +1258,7 @@ func TestSnapshotConcurrency(t *testing.T) {
 				}
 				s.SetBidPrice(snap.BidPrice, snap.BidPriceEth)
 			}
-		}()
+		})
 	}
 	time.Sleep(50 * time.Millisecond)
 	cancel()

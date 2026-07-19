@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -41,7 +41,7 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 			specRoutes = append(specRoutes, strings.ToUpper(method)+" "+path)
 		}
 	}
-	sort.Strings(specRoutes)
+	slices.Sort(specRoutes)
 	if len(specRoutes) != 102 {
 		t.Fatalf("OpenAPI v2 operation count = %d, want 102", len(specRoutes))
 	}
@@ -52,7 +52,7 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 	for _, route := range router.Routes() {
 		registered = append(registered, route.Method+" "+route.Pattern)
 	}
-	sort.Strings(registered)
+	slices.Sort(registered)
 
 	if !reflect.DeepEqual(registered, specRoutes) {
 		t.Fatalf("generated route drift\nregistered: %v\nspec:       %v", registered, specRoutes)

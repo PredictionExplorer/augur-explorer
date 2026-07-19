@@ -73,7 +73,7 @@ func resolveAdminEventFromContract(v1 *cg.CosmicSignatureGame, v2 *cg.CosmicSign
 			if dur, err := v2.CstDutchAuctionDuration(copts); err == nil && dur.Sign() > 0 && rec.IntegerValue > 0 {
 				delta := dur.Int64() / rec.IntegerValue
 				if delta > 0 {
-					return fmt.Sprintf("%s change per bid", formatDurationSeconds(delta))
+					return formatDurationSeconds(delta) + " change per bid"
 				}
 			}
 		}

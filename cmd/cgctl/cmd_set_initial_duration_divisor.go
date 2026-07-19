@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -43,7 +44,7 @@ func runSetInitialDurationDivisor(cmd *cobra.Command, verbose bool, args []strin
 		return err
 	}
 	if divisor <= 0 {
-		return fmt.Errorf("divisor must be positive")
+		return errors.New("divisor must be positive")
 	}
 
 	s, err := newTxSession(cmd, verbose)

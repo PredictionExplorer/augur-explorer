@@ -32,9 +32,7 @@ the token owner.
 
 ` + readEnvHelp,
 		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTApproved(cmd, args)
-		},
+		RunE: runNFTApproved,
 	}
 }
 
@@ -46,9 +44,7 @@ func newNFTIsApprovedForAllCmd() *cobra.Command {
 
 ` + readEnvHelp,
 		Args: cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTIsApprovedForAll(cmd, args)
-		},
+		RunE: runNFTIsApprovedForAll,
 	}
 }
 
@@ -61,9 +57,7 @@ and ETH balance.
 
 ` + readEnvHelp,
 		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNFTOwnerOf(cmd, args)
-		},
+		RunE: runNFTOwnerOf,
 	}
 }
 

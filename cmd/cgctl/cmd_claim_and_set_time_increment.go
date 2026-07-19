@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -289,13 +290,13 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 	}
 	timeIncrementSeconds, err := parseInt64("time_increment_seconds", args[1])
 	if err != nil || timeIncrementSeconds <= 0 {
-		return fmt.Errorf("time_increment_seconds must be a positive integer")
+		return errors.New("time_increment_seconds must be a positive integer")
 	}
 	delaySeconds := int64(300)
 	if len(args) == 3 {
 		delaySeconds, err = parseInt64("delay_seconds", args[2])
 		if err != nil || delaySeconds <= 0 {
-			return fmt.Errorf("delay_seconds must be a positive integer")
+			return errors.New("delay_seconds must be a positive integer")
 		}
 	}
 
@@ -352,7 +353,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 	}
 
 	if s.Acc.Address != state.owner {
-		return fmt.Errorf("PKEY_HEX must be the contract owner to set time increment")
+		return errors.New("PKEY_HEX must be the contract owner to set time increment")
 	}
 
 	if !state.delayAlreadySet {
@@ -384,7 +385,8 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 		return nil
 	}
 
-	if state.roundInactive {
+	switch {
+	case state.roundInactive:
 		s.Out.Section("SET TIME INCREMENT (INACTIVE ROUND)")
 		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed: %w", err)
@@ -395,7 +397,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 		if err := sendIncrement(ctx, s, game, newIncrementMicros); err != nil {
 			return err
 		}
-	} else if claimOK {
+	case claimOK:
 		s.Out.Section("CLAIM MAIN PRIZE")
 		if err := maybeAdvanceForClaim(ctx, s, game, state); err != nil {
 			return err
@@ -416,7 +418,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 		if err := sendIncrement(ctx, s, game, newIncrementMicros); err != nil {
 			return err
 		}
-	} else {
+	default:
 		if s.Out.Verbose {
 			s.Out.Section("DEFER ROUND ACTIVATION (NO CLAIMABLE PRIZE)")
 			s.Out.KeyValue("Reason", claimReason)

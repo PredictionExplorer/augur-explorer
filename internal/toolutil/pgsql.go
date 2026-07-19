@@ -1,7 +1,7 @@
 package toolutil
 
 import (
-	"fmt"
+	"errors"
 	"net/url"
 	"os"
 	"strings"
@@ -19,7 +19,7 @@ func PostgresConnStringFromEnv() (string, error) {
 	dbName := os.Getenv("PGSQL_DATABASE")
 	pass := os.Getenv("PGSQL_PASSWORD")
 	if host == "" || user == "" || dbName == "" {
-		return "", fmt.Errorf("DATABASE_URL, or PGSQL_HOST, PGSQL_USERNAME, and PGSQL_DATABASE must be set (or pass -db)")
+		return "", errors.New("DATABASE_URL, or PGSQL_HOST, PGSQL_USERNAME, and PGSQL_DATABASE must be set (or pass -db)")
 	}
 	u := &url.URL{
 		Scheme: "postgres",

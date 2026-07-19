@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +25,7 @@ func main() {
 
 func run(dirs []string) error {
 	if len(dirs) == 0 {
-		return fmt.Errorf("usage: extract <binding package dirs>")
+		return errors.New("usage: extract <binding package dirs>")
 	}
 	for _, dir := range dirs {
 		metas, err := buildjson.Extract(dir)

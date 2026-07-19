@@ -206,7 +206,7 @@ func newRankingTestServer(t *testing.T, ranking rankingRepository, config Rankin
 		fakeRandomWalkReader{},
 		ranking,
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		slog.New(slog.DiscardHandler),
 	)
 	if err != nil {
 		t.Fatalf("newServer: %v", err)

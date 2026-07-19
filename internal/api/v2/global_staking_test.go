@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +36,7 @@ func newGlobalStakingTestServer(t *testing.T, staking globalStakingReader) *Serv
 		fakeRandomWalkReader{},
 		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

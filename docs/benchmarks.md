@@ -25,57 +25,58 @@ go install golang.org/x/perf/cmd/benchstat@latest
 benchstat old.txt new.txt
 ```
 
-## Baselines — 2026-07-07
+## Baselines — 2026-07-18 (b.Loop re-baseline)
 
-The initial rows were recorded on an Apple M4 Max (arm64, 16 threads), Go
-1.26.4, macOS 15. The 2026-07-10 bidding-analytics rows use the same machine
-with Go 1.26.5 and macOS 26.5.1. Numbers are medians of `-count=6`. The
-statistics queries include the testcontainers-Postgres round trip on the same
-machine — compare them only against runs captured the same way.
+Recorded on an Apple M4 Max (arm64, 16 threads), Go 1.26.5, macOS 26.5.1.
+Numbers are medians of `-count=6`. The statistics queries include the
+testcontainers-Postgres round trip on the same machine — compare them only
+against runs captured the same way. **Every measured loop uses Go 1.24's
+`b.Loop()` since the 2026-07-18 modern-idioms sprint (D17)** — compare only
+against post-conversion runs; the pre-conversion table is in git history.
 
 | Benchmark | ns/op | B/op | allocs/op | Notes |
 |---|---|---|---|---|
-| `BenchmarkEventDecode` (cg-etl) | 2,130 | 2,920 | 43 | v1 `BidPlaced` ABI unpack + topic extraction |
-| `BenchmarkReceiptsDecode/raw_rlp` (freezer) | 24,600 | 31,617 | 287 | 10 receipts x 3 logs, ~300 MB/s |
-| `BenchmarkReceiptsDecode/snappy` (freezer) | 26,800 | 39,822 | 288 | same payload, snappy-compressed |
+| `BenchmarkEventDecode` (cg-etl) | 2,220 | 2,920 | 43 | v1 `BidPlaced` ABI unpack + topic extraction |
+| `BenchmarkReceiptsDecode/raw_rlp` (freezer) | 22,600 | 31,618 | 287 | 10 receipts x 3 logs, ~300 MB/s |
+| `BenchmarkReceiptsDecode/snappy` (freezer) | 24,300 | 39,823 | 288 | same payload, snappy-compressed |
 | `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,144 | 5,373 | 15 | parallel, per-IP limiter map path (stdlib router) |
 | `BenchmarkRateLimiter/shared_ip` (api/common) | 1,298 | 5,374 | 15 | parallel, single-bucket contention (stdlib router) |
 | `BenchmarkCompress/gzip_32KiB` (api/common) | 114,300 | 59,500 | 30 | full middleware exchange, pooled gzip level 6, ~286 MB/s |
 | `BenchmarkCompress/identity_32KiB` (api/common) | 4,410 | 47,184 | 21 | negotiation + passthrough for a non-gzip client |
 | `BenchmarkConditionalETag/tag_32KiB` (api/common) | 16,800 | 88,252 | 24 | buffer + SHA-256 weak validator + release, ~1.95 GB/s |
 | `BenchmarkConditionalETag/revalidate_304_32KiB` (api/common) | 13,700 | 47,627 | 26 | matching If-None-Match short-circuits to an empty 304 |
-| `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,530,000 | 14,390 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
-| `BenchmarkStatisticsQueries/claims_by_round` | 936,000 | 9,625 | 82 | per-round claim summary CTE (pgx-native Repo) |
-| `BenchmarkStatisticsQueries/roi_leaderboard` | 315,000 | 23,870 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
-| `BenchmarkStatisticsQueries/bidding_frequency_15m` | 196,000 | 8,604 | 37 | indexed, zero-filled 15-minute frequency series with round-open exclusion |
-| `BenchmarkStatisticsQueries/bidding_frequency_1h` | 192,000 | 8,131 | 20 | indexed UTC epoch-aligned hourly frequency branch |
-| `BenchmarkStatisticsQueries/bidding_type_ratio_15m` | 188,000 | 19,308 | 32 | indexed, zero-filled 15-minute bid-type composition series |
-| `BenchmarkStatisticsQueries/top_bidder_active_periods` | 400,000 | 13,831 | 54 | bounded lifetime top-20 lookup plus windowed session segmentation |
-| `BenchmarkStatisticsQueries/bid_time_bounds` | 167,000 | 468 | 6 | first/last indexed bid timestamps |
+| `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,199,000 | 14,384 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/claims_by_round` | 777,000 | 9,622 | 82 | per-round claim summary CTE (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/roi_leaderboard` | 268,000 | 23,856 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
+| `BenchmarkStatisticsQueries/bidding_frequency_15m` | 192,000 | 8,604 | 37 | indexed, zero-filled 15-minute frequency series with round-open exclusion |
+| `BenchmarkStatisticsQueries/bidding_frequency_1h` | 175,000 | 8,132 | 20 | indexed UTC epoch-aligned hourly frequency branch |
+| `BenchmarkStatisticsQueries/bidding_type_ratio_15m` | 179,000 | 19,308 | 32 | indexed, zero-filled 15-minute bid-type composition series |
+| `BenchmarkStatisticsQueries/top_bidder_active_periods` | 391,000 | 13,832 | 54 | bounded lifetime top-20 lookup plus windowed session segmentation |
+| `BenchmarkStatisticsQueries/bid_time_bounds` | 168,000 | 468 | 6 | first/last indexed bid timestamps |
 | `BenchmarkStatisticsQueries/participant_bidders` | 172,000 | 4,092 | 26 | first 50 bidders on the indexed bid-count keyset |
-| `BenchmarkStatisticsQueries/participant_winners` | 465,000 | 7,844 | 33 | canonical prize/event reconstruction; independent of replay-sensitive aggregates |
-| `BenchmarkStatisticsQueries/participant_donors` | 172,000 | 3,555 | 14 | first 50 donors on the indexed exact-wei keyset |
-| `BenchmarkStatisticsQueries/participant_cst_stakers` | 173,000 | 5,243 | 15 | first 50 CST stakers on the indexed reward keyset |
-| `BenchmarkStatisticsQueries/participant_randomwalk_stakers` | 171,000 | 4,259 | 15 | first 50 RandomWalk stakers on the indexed token-count keyset |
-| `BenchmarkStatisticsQueries/participant_dual_stakers` | 194,000 | 7,316 | 11 | first 50 dual stakers; computed cross-table token-count order |
-| `BenchmarkStatisticsQueries/user_profile` | 499,000 | 3,453 | 18 | exact bounded profile with canonical prize reconstruction |
-| `BenchmarkStatisticsQueries/user_bids_page` | 280,000 | 41,961 | 488 | first 50 full bid resources on the indexed user/event keyset |
-| `BenchmarkStatisticsQueries/global_token_page` | 360,000 | 20,303 | 124 | first 50 global tokens with scalar-subquery mint provenance |
-| `BenchmarkStatisticsQueries/cosmic_token_statistics` | 433,000 | 2,648 | 33 | one-snapshot ERC-20 aggregate with jsonb top-holder list |
-| `BenchmarkStatisticsQueries/supply_by_bid_page` | 322,000 | 17,893 | 142 | first 50 supply-ledger rows with streamed running totals |
-| `BenchmarkStatisticsQueries/global_staking_actions_page` | 207,000 | 14,283 | 55 | bounded two-branch global CST stake/unstake event merge |
-| `BenchmarkStatisticsQueries/global_staked_tokens_page` | 196,000 | 10,273 | 18 | live globally staked CST membership with mint provenance |
-| `BenchmarkStatisticsQueries/global_staking_deposits_page` | 433,000 | 12,397 | 19 | page-first exact reward-deposit aggregates and claim progress |
-| `BenchmarkStatisticsQueries/round_staking_rewards_page` | 181,000 | 7,192 | 19 | one round's per-staker exact reward allocations |
-| `BenchmarkStatisticsQueries/global_staker_raffle_page` | 186,000 | 10,576 | 35 | one filtered global staker-raffle NFT page |
-| `BenchmarkRandomWalkV2Queries/token_events` | 546,000 | 43,640 | 224 | six-branch bounded per-token provenance merge |
-| `BenchmarkRandomWalkV2Queries/offer_history` | 410,000 | 20,444 | 176 | offer-creation ledger with purchase/cancel outcome joins |
-| `BenchmarkRandomWalkV2Queries/offers_price_asc` | 345,000 | 10,110 | 37 | live order book on the partial (price, evtlog) index |
-| `BenchmarkRandomWalkV2Queries/statistics` | 399,000 | 4,888 | 90 | one-snapshot collection/marketplace/withdrawal aggregate |
-| `BenchmarkRankingQueries/ratings_page` | 180,000 | 2,645 | 17 | full rating directory page with per-token match counts |
+| `BenchmarkStatisticsQueries/participant_winners` | 373,000 | 7,844 | 33 | canonical prize/event reconstruction; independent of replay-sensitive aggregates |
+| `BenchmarkStatisticsQueries/participant_donors` | 163,000 | 3,556 | 14 | first 50 donors on the indexed exact-wei keyset |
+| `BenchmarkStatisticsQueries/participant_cst_stakers` | 168,000 | 5,244 | 15 | first 50 CST stakers on the indexed reward keyset |
+| `BenchmarkStatisticsQueries/participant_randomwalk_stakers` | 165,000 | 4,259 | 15 | first 50 RandomWalk stakers on the indexed token-count keyset |
+| `BenchmarkStatisticsQueries/participant_dual_stakers` | 181,000 | 7,316 | 11 | first 50 dual stakers; computed cross-table token-count order |
+| `BenchmarkStatisticsQueries/user_profile` | 416,000 | 3,452 | 18 | exact bounded profile with canonical prize reconstruction |
+| `BenchmarkStatisticsQueries/user_bids_page` | 234,000 | 41,960 | 488 | first 50 full bid resources on the indexed user/event keyset |
+| `BenchmarkStatisticsQueries/global_token_page` | 305,000 | 20,431 | 124 | first 50 global tokens with scalar-subquery mint provenance |
+| `BenchmarkStatisticsQueries/cosmic_token_statistics` | 236,000 | 2,708 | 33 | one-snapshot ERC-20 aggregate with jsonb top-holder list |
+| `BenchmarkStatisticsQueries/supply_by_bid_page` | 208,000 | 17,836 | 142 | first 50 supply-ledger rows with streamed running totals |
+| `BenchmarkStatisticsQueries/global_staking_actions_page` | 206,000 | 14,282 | 55 | bounded two-branch global CST stake/unstake event merge |
+| `BenchmarkStatisticsQueries/global_staked_tokens_page` | 197,000 | 10,273 | 18 | live globally staked CST membership with mint provenance |
+| `BenchmarkStatisticsQueries/global_staking_deposits_page` | 201,000 | 12,394 | 19 | page-first exact reward-deposit aggregates and claim progress |
+| `BenchmarkStatisticsQueries/round_staking_rewards_page` | 175,000 | 7,192 | 19 | one round's per-staker exact reward allocations |
+| `BenchmarkStatisticsQueries/global_staker_raffle_page` | 179,000 | 10,575 | 35 | one filtered global staker-raffle NFT page |
+| `BenchmarkRandomWalkV2Queries/token_events` | 547,000 | 43,641 | 224 | six-branch bounded per-token provenance merge |
+| `BenchmarkRandomWalkV2Queries/offer_history` | 408,000 | 20,444 | 176 | offer-creation ledger with purchase/cancel outcome joins |
+| `BenchmarkRandomWalkV2Queries/offers_price_asc` | 349,000 | 10,109 | 37 | live order book on the partial (price, evtlog) index |
+| `BenchmarkRandomWalkV2Queries/statistics` | 398,000 | 4,888 | 90 | one-snapshot collection/marketplace/withdrawal aggregate |
+| `BenchmarkRankingQueries/ratings_page` | 174,000 | 2,645 | 17 | full rating directory page with per-token match counts |
 | `BenchmarkRankingQueries/statistics` | 166,000 | 580 | 6 | one-snapshot beauty-contest vote/voter/rated counters |
-| `BenchmarkIngestBlock/tx_block_3_logs` (indexer) | 3,940,000 | 7,326 | 127 | steady-state replay of a 3-log block through the per-block ingestion transaction (ADR-0010): BEGIN + pipeline + watermark + COMMIT |
-| `BenchmarkIngestBlock/autocommit_3_logs` (indexer) | 3,620,000 | 7,665 | 120 | the identical pipeline without the transaction wrapper — the delta (~330µs, ~9%) is the atomicity cost |
+| `BenchmarkIngestBlock/tx_block_3_logs` (indexer) | 3,990,000 | 7,334 | 127 | steady-state replay of a 3-log block through the per-block ingestion transaction (ADR-0010): BEGIN + pipeline + watermark + COMMIT |
+| `BenchmarkIngestBlock/autocommit_3_logs` (indexer) | 3,710,000 | 7,666 | 120 | the identical pipeline without the transaction wrapper — the delta (~330µs, ~9%) is the atomicity cost |
 
 History:
 
@@ -200,3 +201,21 @@ History:
   lookup per query and costs nothing measurable. (A first parallel run had
   shown the RandomWalk suite +14–18%; that was contention from running two
   container benchmark suites simultaneously, disproven by the serial A/B.)
+- **2026-07-18 (modern-idioms sprint, D17)** — all 41 leaf benchmarks moved
+  from `for range b.N` to Go 1.24 `b.Loop()` (the two `RunParallel`
+  rate-limiter benchmarks keep `pb.Next()`), and the whole table was
+  re-measured in one sitting because `b.Loop` numbers are not automatically
+  comparable to `b.N` numbers (it pins the call and its results against
+  dead-code elimination — the reason upstream keeps the `bloop` fixer out
+  of the default `go fix` suite). The verdict: allocation counts are
+  byte-identical everywhere, and every latency landed at or below its old
+  baseline band — the unit decoders moved −8%/+4% (`raw_rlp` 22.6 µs,
+  `EventDecode` 2.22 µs), the container queries re-ran at-or-faster with
+  the usual seed-volume drift in the other direction (`user_profile` 416 µs
+  against the stale 499 µs row that had drifted to ~780 µs by 07-15,
+  `cosmic_token_statistics` 236 µs vs 433, `supply_by_bid_page` 208 µs vs
+  322, `global_staking_deposits_page` 201 µs vs 433), and the ADR-0010
+  ingest-transaction pair still shows the same ~280 µs (~8%) atomicity
+  delta (3.99 ms tx vs 3.71 ms autocommit). No regression: the loop idiom
+  is measurement-neutral for these I/O- and decode-bound bodies, exactly
+  as the D17 rationale predicted.

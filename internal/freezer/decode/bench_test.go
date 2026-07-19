@@ -19,9 +19,9 @@ import (
 func buildReceiptsBlob(b *testing.B) []byte {
 	b.Helper()
 	receipts := make([]ReceiptForStorage, 0, 10)
-	for i := byte(0); i < 10; i++ {
+	for i := range byte(10) {
 		logs := make([]*types.Log, 0, 3)
-		for j := byte(0); j < 3; j++ {
+		for j := range byte(3) {
 			logs = append(logs, &types.Log{
 				Address: common.BytesToAddress([]byte{0x20, i, j}),
 				Topics: []common.Hash{
@@ -52,7 +52,7 @@ func BenchmarkReceiptsDecode(b *testing.B) {
 	b.Run("raw_rlp", func(b *testing.B) {
 		b.SetBytes(int64(len(raw)))
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			out, err := Receipts(raw)
 			if err != nil {
 				b.Fatalf("decode: %v", err)
@@ -66,7 +66,7 @@ func BenchmarkReceiptsDecode(b *testing.B) {
 	b.Run("snappy", func(b *testing.B) {
 		b.SetBytes(int64(len(compressed)))
 		b.ReportAllocs()
-		for range b.N {
+		for b.Loop() {
 			out, err := Receipts(compressed)
 			if err != nil {
 				b.Fatalf("decode: %v", err)

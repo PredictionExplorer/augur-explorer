@@ -260,6 +260,7 @@ func TestRunRetriesBatchAfterTransientProcessorFailure(t *testing.T) {
 // a hard (non-"not found") error, then delegates to the real client.
 type flakyTxClient struct {
 	Client
+
 	mu       sync.Mutex
 	failures map[ethcommon.Hash]int
 }

@@ -3,11 +3,13 @@ package common
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -310,7 +312,7 @@ func TestCompressContentLengthDroppedOnlyWhenCompressing(t *testing.T) {
 	body := jsonPayload(8 * 1024)
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Content-Length", fmt.Sprint(len(body)))
+		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(body)
 	}
@@ -318,7 +320,7 @@ func TestCompressContentLengthDroppedOnlyWhenCompressing(t *testing.T) {
 		t.Fatal("Content-Length must be dropped when the body is re-encoded")
 	}
 	identity := serveCompressed(t, handler, func(r *http.Request) { r.Header.Del("Accept-Encoding") })
-	if got := identity.Header().Get("Content-Length"); got != fmt.Sprint(len(body)) {
+	if got := identity.Header().Get("Content-Length"); got != strconv.Itoa(len(body)) {
 		t.Fatalf("identity Content-Length = %q, want %d preserved", got, len(body))
 	}
 }
@@ -355,7 +357,7 @@ func TestCompressHeaderOnlyResponse(t *testing.T) {
 // so Recovery (outside) can still answer a clean 500.
 func TestCompressPanicLeavesResponseUnwritten(t *testing.T) {
 	t.Parallel()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -434,7 +436,7 @@ type failingWriter struct {
 }
 
 func (f *failingWriter) Write([]byte) (int, error) {
-	return 0, fmt.Errorf("connection reset by test")
+	return 0, errors.New("connection reset by test")
 }
 
 // TestCompressUnderlyingWriteFailure proves an engage-time write failure
@@ -463,9 +465,7 @@ func TestCompressConcurrentRequests(t *testing.T) {
 	h := Compress()(jsonHandler(body))
 	var wg sync.WaitGroup
 	for range 16 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 8 {
 				w := httptest.NewRecorder()
 				req := httptest.NewRequest(http.MethodGet, "/x", nil)
@@ -476,7 +476,7 @@ func TestCompressConcurrentRequests(t *testing.T) {
 					return
 				}
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }

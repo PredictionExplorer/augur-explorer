@@ -1,7 +1,6 @@
 package srvmonitor
 
 import (
-	"fmt"
 	"log/slog"
 )
 
@@ -142,7 +141,7 @@ func BuildManager(cfg *Config, disp Display, logger *slog.Logger, anomalyDir str
 	}
 
 	for _, name := range mgr.MonitorNames() {
-		logger.Info(fmt.Sprintf("Registered: %s", name))
+		logger.Info("Registered: " + name)
 	}
 
 	return mgr, layout

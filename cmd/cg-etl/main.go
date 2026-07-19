@@ -50,20 +50,28 @@ func (p cgProgress) SetLastBlock(ctx context.Context, block int64) error {
 	return p.repo.UpdateProcessingStatus(ctx, &status)
 }
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
+	if err := runMain(); err != nil {
+		fmt.Fprintf(os.Stderr, "cg-etl: %v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain() error {
 	// Graceful shutdown: on SIGINT/SIGTERM/SIGHUP finish the current event
 	// batch, write status, and exit 0 cleanly. The engine checks ctx between
 	// batches and during waits.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
-
-	if err := run(ctx, os.Getenv, os.Stdout, prometheus.DefaultRegisterer, prometheus.DefaultGatherer); err != nil {
-		fmt.Fprintf(os.Stderr, "cg-etl: %v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx, os.Getenv, os.Stdout, prometheus.DefaultRegisterer, prometheus.DefaultGatherer)
 }
 
 // run wires every dependency and drives the indexing engine until ctx is

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -86,16 +87,16 @@ func GenerateThumbnails(ctx context.Context, opts ThumbnailOptions) (ThumbnailSu
 		return summary, err
 	}
 	if opts.Source == nil {
-		return summary, fmt.Errorf("token source is nil")
+		return summary, errors.New("token source is nil")
 	}
 	if opts.Runner == nil {
-		return summary, fmt.Errorf("command runner is nil")
+		return summary, errors.New("command runner is nil")
 	}
 	if opts.MagickPath == "" {
-		return summary, fmt.Errorf("ImageMagick path is empty")
+		return summary, errors.New("ImageMagick path is empty")
 	}
 	if opts.MinAge < 0 {
-		return summary, fmt.Errorf("minimum source age must be non-negative")
+		return summary, errors.New("minimum source age must be non-negative")
 	}
 	if err := ValidateSchema(opts.Schema); err != nil {
 		return summary, err
@@ -233,7 +234,7 @@ func thumbnailCommandArgs(src, dst string, spec thumbnailSpec) []string {
 		"-colorspace", "sRGB",
 		"-modulate", "100,112,100",
 		"-unsharp", spec.unsharp,
-		"-quality", fmt.Sprintf("%d", spec.quality),
+		"-quality", strconv.Itoa(spec.quality),
 		"-define", "webp:method=6",
 		dst,
 	}

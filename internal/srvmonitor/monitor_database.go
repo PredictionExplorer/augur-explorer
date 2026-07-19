@@ -3,6 +3,7 @@ package srvmonitor
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -147,7 +148,7 @@ func (m *DatabaseMonitor) display(disp Display) {
 		disp.DrawText(Position{X: status.X, Y: y}, aliveStr, color, ColorDefault)
 
 		// Block number (second column)
-		disp.DrawText(Position{X: status.X + 10, Y: y}, fmt.Sprintf("%v", status.LastBlockNum),
+		disp.DrawText(Position{X: status.X + 10, Y: y}, strconv.FormatInt(status.LastBlockNum, 10),
 			ColorBlue, ColorDefault)
 
 		// Name (third column - shifted right)

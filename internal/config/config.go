@@ -128,7 +128,7 @@ func visitFields(v reflect.Value, fn func(f reflect.StructField, fv reflect.Valu
 // Load documentation; an unsupported kind panics (programmer error caught by
 // the loader tests).
 func setField(v reflect.Value, raw string) error {
-	if v.Type() == reflect.TypeOf(time.Duration(0)) {
+	if v.Type() == reflect.TypeFor[time.Duration]() {
 		d, err := time.ParseDuration(raw)
 		if err != nil {
 			return fmt.Errorf("cannot parse %q as a duration (examples: 30s, 5m)", raw)
@@ -136,7 +136,7 @@ func setField(v reflect.Value, raw string) error {
 		v.SetInt(int64(d))
 		return nil
 	}
-	if v.Type() == reflect.TypeOf(time.Time{}) {
+	if v.Type() == reflect.TypeFor[time.Time]() {
 		t, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
 			return fmt.Errorf("cannot parse %q as an RFC 3339 timestamp (example: 2027-01-01T00:00:00Z)", raw)

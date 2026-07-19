@@ -97,6 +97,10 @@ jobs:
       - uses: golangci/golangci-lint-action@v8
         with:
           version: latest
+      - name: Modern-idiom gate (go fix)
+        run: |
+          go fix -diff ./...
+          go fix -diff -tags=integration ./...
 
   vulncheck:
     name: Vulnerability scan

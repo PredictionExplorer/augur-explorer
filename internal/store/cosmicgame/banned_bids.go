@@ -2,6 +2,7 @@ package cosmicgame
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -68,7 +69,7 @@ func (r *Repo) BannedBidsPage(
 // identifier, or store.ErrNotFound when the bid does not exist.
 func (r *Repo) BidderAddressForBid(ctx context.Context, bidID int64) (string, error) {
 	if bidID < 1 {
-		return "", fmt.Errorf("bidder address for bid: invalid bid id")
+		return "", errors.New("bidder address for bid: invalid bid id")
 	}
 	var address string
 	err := r.q(ctx).QueryRow(ctx, `SELECT a.addr
@@ -90,7 +91,7 @@ func (r *Repo) CreateBannedBid(
 	bannedAt time.Time,
 ) (cgmodel.CGBannedBidRec, error) {
 	if bidID < 1 || userAddr == "" || bannedAt.IsZero() || bannedAt.Unix() < 0 {
-		return cgmodel.CGBannedBidRec{}, fmt.Errorf("create banned bid: invalid input")
+		return cgmodel.CGBannedBidRec{}, errors.New("create banned bid: invalid input")
 	}
 	var rec cgmodel.CGBannedBidRec
 	err := r.q(ctx).QueryRow(ctx, `INSERT INTO cg_banned_bids (bid_id, user_addr, created_at)
@@ -115,7 +116,7 @@ func (r *Repo) InsertBannedBid(ctx context.Context, bidID int64, userAddr string
 // whether a row existed.
 func (r *Repo) RemoveBannedBid(ctx context.Context, bidID int64) (bool, error) {
 	if bidID < 1 {
-		return false, fmt.Errorf("remove banned bid: invalid bid id")
+		return false, errors.New("remove banned bid: invalid bid id")
 	}
 	tag, err := r.q(ctx).Exec(ctx, "DELETE FROM cg_banned_bids WHERE bid_id = $1", bidID)
 	if err != nil {

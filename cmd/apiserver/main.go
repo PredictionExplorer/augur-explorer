@@ -128,18 +128,26 @@ func buildModules(
 	return cgAPI, rwAPI, faqProxy, nil
 }
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
+	if err := runMain(); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain() error {
 	// Root context: cancelled on SIGINT/SIGTERM, which starts the drain.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	if err := run(ctx, os.Getenv, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx, os.Getenv, os.Stdout)
 }
 
 // run wires every dependency and serves until ctx is cancelled (returning
@@ -222,9 +230,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 
 	serve := func(srv *http.Server, ln net.Listener, useTLS bool) {
 		servers = append(servers, srv)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			var err error
 			if useTLS {
 				err = srv.ServeTLS(ln, "", "")
@@ -234,7 +240,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				logger.Error(fmt.Sprintf("HTTP server %s: %v", ln.Addr(), err))
 			}
-		}()
+		})
 	}
 
 	// TLS: HTTPS_HOSTNAME is the primary bind address (e.g. :443 or 0.0.0.0:443).

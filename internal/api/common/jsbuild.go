@@ -4,6 +4,7 @@ package common
 import (
 	"fmt"
 	"html/template"
+	"strconv"
 	"time"
 
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
@@ -18,7 +19,7 @@ func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry)
 
 	for i := range len(*intervals) {
 		if len(dataStr) > 1 {
-			dataStr = dataStr + ","
+			dataStr += ","
 		}
 		e := &(*intervals)[i]
 		var entry string
@@ -29,11 +30,11 @@ func BuildJSRandomwalkWithdrawalChart(intervals *[]rwmodel.WithdrawalChartEntry)
 			"y:" + fmt.Sprintf("%.18f", e.WithdrawalAmount) + "," +
 			"amount: " + fmt.Sprintf("%v", e.WithdrawalAmount) + "," +
 			"date_str: \"" + dateStr + "\"," +
-			"timestamp:" + fmt.Sprintf("%v", e.TimeStamp) + "" +
+			"timestamp:" + strconv.FormatInt(e.TimeStamp, 10) +
 			"}"
-		dataStr = dataStr + entry
+		dataStr += entry
 	}
-	dataStr = dataStr + "]"
+	dataStr += "]"
 	return template.JS(dataStr) // #nosec G203 -- numeric-only content built above; no user-controlled strings
 }
 
@@ -44,7 +45,7 @@ func BuildJSFloorPriceData(intervals *[]rwmodel.FloorPrice) template.JS {
 
 	for i := range len(*intervals) {
 		if len(dataStr) > 1 {
-			dataStr = dataStr + ","
+			dataStr += ","
 		}
 		e := &(*intervals)[i]
 		var entry string
@@ -56,8 +57,8 @@ func BuildJSFloorPriceData(intervals *[]rwmodel.FloorPrice) template.JS {
 			"price: " + fmt.Sprintf("%v", e.Price) + "," +
 			"date_str: \"" + dateStr + "\"" +
 			"}"
-		dataStr = dataStr + entry
+		dataStr += entry
 	}
-	dataStr = dataStr + "]"
+	dataStr += "]"
 	return template.JS(dataStr) // #nosec G203 -- numeric-only content built above; no user-controlled strings
 }

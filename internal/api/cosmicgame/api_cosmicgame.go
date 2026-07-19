@@ -45,15 +45,15 @@ func respondUserAddrNotIndexedUserInfoJSON(c *httpx.Context, userAddr string) {
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status": 1, "error": "", "UserInfo": emptyUserInfo,
-		"Bids": []interface{}{}, "MainPrizeClaims": []interface{}{}, "PrizeHistory": []interface{}{},
-		"TokenDonationsMade": httpx.H{"NFTDonations": []interface{}{}, "ERC20Donations": []interface{}{}},
-		"ETHDonationsMade":   []interface{}{}, "MarketingRewardsAwarded": []interface{}{},
-		"DonatedNFTsClaimed": []interface{}{}, "DonatedTokensClaimed": []interface{}{},
-		"UnclaimedAssets":       httpx.H{"ETHPrizes": []interface{}{}, "DonatedNFTs": []interface{}{}},
-		"CurrentlyStakedTokens": httpx.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
-		"StakingActions":        httpx.H{"CST": []interface{}{}, "RWalk": []interface{}{}},
-		"ERC20Transfers":        []interface{}{}, "ERC721Transfers": []interface{}{},
-		"CosmicSignatureTokensOwned": []interface{}{},
+		"Bids": []any{}, "MainPrizeClaims": []any{}, "PrizeHistory": []any{},
+		"TokenDonationsMade": httpx.H{"NFTDonations": []any{}, "ERC20Donations": []any{}},
+		"ETHDonationsMade":   []any{}, "MarketingRewardsAwarded": []any{},
+		"DonatedNFTsClaimed": []any{}, "DonatedTokensClaimed": []any{},
+		"UnclaimedAssets":       httpx.H{"ETHPrizes": []any{}, "DonatedNFTs": []any{}},
+		"CurrentlyStakedTokens": httpx.H{"CST": []any{}, "RWalk": []any{}},
+		"StakingActions":        httpx.H{"CST": []any{}, "RWalk": []any{}},
+		"ERC20Transfers":        []any{}, "ERC721Transfers": []any{},
+		"CosmicSignatureTokensOwned": []any{},
 	})
 }
 
@@ -80,7 +80,7 @@ func safeFloat64(f float64) float64 {
 
 // sanitizeMapFloatsForJSON recurses into maps and slices and replaces any float64 NaN/±Inf with 0.
 // Used so that c.JSON never sees NaN even if a value was missed earlier.
-func sanitizeMapFloatsForJSON(m map[string]interface{}) {
+func sanitizeMapFloatsForJSON(m map[string]any) {
 	for k, v := range m {
 		if v == nil {
 			continue
@@ -90,15 +90,15 @@ func sanitizeMapFloatsForJSON(m map[string]interface{}) {
 			if math.IsNaN(val) || math.IsInf(val, 0) {
 				m[k] = 0.0
 			}
-		case map[string]interface{}:
+		case map[string]any:
 			sanitizeMapFloatsForJSON(val)
-		case []interface{}:
+		case []any:
 			for i, e := range val {
 				if f, ok := e.(float64); ok && (math.IsNaN(f) || math.IsInf(f, 0)) {
 					val[i] = 0.0
-				} else if m2, ok := e.(map[string]interface{}); ok {
+				} else if m2, ok := e.(map[string]any); ok {
 					sanitizeMapFloatsForJSON(m2)
-				} else if s2, ok := e.([]interface{}); ok {
+				} else if s2, ok := e.([]any); ok {
 					sanitizeSliceFloatsForJSON(s2)
 				}
 			}
@@ -109,13 +109,13 @@ func sanitizeMapFloatsForJSON(m map[string]interface{}) {
 	}
 }
 
-func sanitizeSliceFloatsForJSON(s []interface{}) {
+func sanitizeSliceFloatsForJSON(s []any) {
 	for i, e := range s {
 		if f, ok := e.(float64); ok && (math.IsNaN(f) || math.IsInf(f, 0)) {
 			s[i] = 0.0
-		} else if m2, ok := e.(map[string]interface{}); ok {
+		} else if m2, ok := e.(map[string]any); ok {
 			sanitizeMapFloatsForJSON(m2)
-		} else if s2, ok := e.([]interface{}); ok {
+		} else if s2, ok := e.([]any); ok {
 			sanitizeSliceFloatsForJSON(s2)
 		}
 	}
@@ -123,7 +123,7 @@ func sanitizeSliceFloatsForJSON(s []interface{}) {
 
 // sanitizeFloatsForJSON recursively replaces NaN and ±Inf float64 with 0 in v (in-place).
 // Pass a pointer to a struct so fields can be modified. Prevents "json: unsupported value: NaN" panic.
-func sanitizeFloatsForJSON(v interface{}) {
+func sanitizeFloatsForJSON(v any) {
 	if v == nil {
 		return
 	}
@@ -144,8 +144,7 @@ func sanitizeFloatsForJSON(v interface{}) {
 			}
 		}
 	case reflect.Struct:
-		for i := range val.NumField() {
-			f := val.Field(i)
+		for _, f := range val.Fields() {
 			if !f.CanSet() {
 				continue
 			}
@@ -949,15 +948,9 @@ func (a *API) handleRoiLeaderboard(c *httpx.Context) {
 		return
 	}
 
-	minBids := cgdb.ParseOptionalIntQuery(c.Query("min_bids"), 5)
-	if minBids < 0 {
-		minBids = 0
-	}
+	minBids := max(cgdb.ParseOptionalIntQuery(c.Query("min_bids"), 5), 0)
 	sortBy := c.Query("sort") // one of: net_pl(default), roi, winrate, spent, nfts, bids
-	offset := cgdb.ParseOptionalIntQuery(c.Query("offset"), 0)
-	if offset < 0 {
-		offset = 0
-	}
+	offset := max(cgdb.ParseOptionalIntQuery(c.Query("offset"), 0), 0)
 	limit := cgdb.ParseOptionalIntQuery(c.Query("limit"), 100)
 	if limit <= 0 || limit > 1000 {
 		limit = 100
@@ -1116,7 +1109,7 @@ func (a *API) handleNftDonationsByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "NFTDonationsByDonor": []interface{}{},
+			"status": 1, "error": "", "NFTDonationsByDonor": []any{},
 			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
@@ -1857,7 +1850,7 @@ func (a *API) handleDonatedNftClaimsByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
+			"status": 1, "error": "", "DonatedNFTClaims": []any{},
 			"UserInfo": cgmodel.CGUserInfo{Address: pUserAddr},
 		})
 		return
@@ -1865,7 +1858,7 @@ func (a *API) handleDonatedNftClaimsByUser(c *httpx.Context) {
 	userInfo, err := a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "DonatedNFTClaims": []interface{}{},
+			"status": 1, "error": "", "DonatedNFTClaims": []any{},
 			"UserInfo": cgmodel.CGUserInfo{Address: pUserAddr},
 		})
 		return
@@ -1901,7 +1894,7 @@ func (a *API) handleTimeCurrent(c *httpx.Context) {
 		common.RespondErrorJSON(c, fmt.Sprintf("%v", err))
 		return
 	}
-	rpcobj := make(map[string]interface{})
+	rpcobj := make(map[string]any)
 	err = json.Unmarshal(raw, &rpcobj)
 	if err != nil {
 		common.RespondErrorJSON(c, fmt.Sprintf("Error decoding JSON: %v", err))
@@ -1932,7 +1925,7 @@ func (a *API) handleTimeUntilPrize(c *httpx.Context) {
 	// Function: getDurationUntilMainPrize() - returns time until prize can be claimed
 	const timeUntilPrizeSig string = "0x36750d2c"
 	var raw json.RawMessage
-	args := map[string]interface{}{
+	args := map[string]any{
 		"to":   a.state.Snapshot().Addrs.CosmicGame.String(),
 		"data": timeUntilPrizeSig,
 	}
@@ -2001,7 +1994,7 @@ func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet — return 200 with empty winnings so UI works
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "Winnings": []interface{}{}, "UserAddr": pUserAddr, "UserAid": int64(0),
+			"status": 1, "error": "", "Winnings": []any{}, "UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
 	}
@@ -2038,7 +2031,7 @@ func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
-			"UserPrizeHistory": []interface{}{},
+			"UserPrizeHistory": []any{},
 		})
 		return
 	}
@@ -2046,7 +2039,7 @@ func (a *API) handlePrizeHistoryDetailByUser(c *httpx.Context) {
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": userAid,
-			"UserPrizeHistory": []interface{}{},
+			"UserPrizeHistory": []any{},
 		})
 		return
 	}
@@ -2108,7 +2101,7 @@ func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
+			"status": 1, "error": "", "UnclaimedDonatedNFTs": []any{},
 			"UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
@@ -2116,7 +2109,7 @@ func (a *API) handleUnclaimedDonatedNftsByUser(c *httpx.Context) {
 	_, err = a.repo.UserInfo(c.Request.Context(), userAid)
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UnclaimedDonatedNFTs": []interface{}{},
+			"status": 1, "error": "", "UnclaimedDonatedNFTs": []any{},
 			"UserAddr": pUserAddr, "UserAid": userAid,
 		})
 		return
@@ -2190,7 +2183,7 @@ func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
-			"UnclaimedDeposits": []interface{}{},
+			"UnclaimedDeposits": []any{},
 		})
 		return
 	}
@@ -2198,7 +2191,7 @@ func (a *API) handleUnclaimedPrizeDepositsByUser(c *httpx.Context) {
 	if errors.Is(err, store.ErrNotFound) {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": userAid,
-			"UnclaimedDeposits": []interface{}{},
+			"UnclaimedDeposits": []any{},
 		})
 		return
 	}
@@ -2240,7 +2233,7 @@ func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 		}
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0),
-			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
+			"UserTokens": []any{}, "Offset": offset, "Limit": limit,
 		})
 		return
 	}
@@ -2252,7 +2245,7 @@ func (a *API) handleCosmicSignatureTokenListByUser(c *httpx.Context) {
 		}
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": userAid,
-			"UserTokens": []interface{}{}, "Offset": offset, "Limit": limit,
+			"UserTokens": []any{}, "Offset": offset, "Limit": limit,
 		})
 		return
 	}
@@ -2785,7 +2778,7 @@ func (a *API) handleMarketingRewardsByUser(c *httpx.Context) {
 		}
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "Offset": offset, "Limit": limit,
-			"UserAddr": pUserAddr, "UserAid": int64(0), "UserMarketingRewards": []interface{}{},
+			"UserAddr": pUserAddr, "UserAid": int64(0), "UserMarketingRewards": []any{},
 		})
 		return
 	}

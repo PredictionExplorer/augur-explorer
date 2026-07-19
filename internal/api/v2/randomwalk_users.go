@@ -16,7 +16,7 @@ func (s *Server) GetRandomWalkUser(
 	ctx context.Context,
 	request GetRandomWalkUserRequestObject,
 ) (GetRandomWalkUserResponseObject, error) {
-	instance := fmt.Sprintf("/api/v2/randomwalk/users/%s", request.Address)
+	instance := "/api/v2/randomwalk/users/" + request.Address
 	internal := func() GetRandomWalkUserResponseObject {
 		return GetRandomWalkUser500ApplicationProblemPlusJSONResponse{
 			InternalErrorApplicationProblemPlusJSONResponse: InternalErrorApplicationProblemPlusJSONResponse(

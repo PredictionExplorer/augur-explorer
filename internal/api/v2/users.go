@@ -18,7 +18,7 @@ func (s *Server) GetCosmicGameUser(
 	ctx context.Context,
 	request GetCosmicGameUserRequestObject,
 ) (GetCosmicGameUserResponseObject, error) {
-	instance := fmt.Sprintf("/api/v2/cosmicgame/users/%s", request.Address)
+	instance := "/api/v2/cosmicgame/users/" + request.Address
 	address, _, valid := userAddressInput(request.Address)
 	if !valid {
 		return GetCosmicGameUser400ApplicationProblemPlusJSONResponse{

@@ -12,20 +12,30 @@ linters:
     - bodyclose      # HTTP response bodies must be closed
     - copyloopvar    # detects pre-Go1.22 loop-var copies that are now redundant
     - depguard       # banned imports (see settings: lib/pq must stay retired)
+    - embeddedstructfieldcheck # blank line between embedded and regular fields
     - errchkjson     # JSON encode errors checked; unsafe types surfaced
     - errname        # error vars named errFoo, types named FooError
     - errorlint      # errors compared/wrapped with errors.Is/As/%w
     - exhaustive     # enum switches handle every value (or declare a default)
+    - exptostd       # x/exp helpers replaced by their stdlib graduations
+    - fatcontext     # no context accumulation inside loops
+    - gocritic       # style/diagnostic/perf checks (exitAfterDefer, appendAssign, ...)
     - godot          # comments end in a period
     - gosec          # security checks (SQL building, file perms, crypto)
+    - iface          # no identical/unused interface declarations
     - intrange       # Go 1.22 range-over-int instead of C-style loops
+    - mirror         # right bytes/strings API variant, no wasteful conversions
     - misspell       # commonly misspelled English words
+    - nilnesserr     # err checks that test the wrong (nil) error variable
     - noctx          # HTTP requests must carry a context
     - nolintlint     # nolint directives must be specific and justified
+    - perfsprint     # strconv/concat instead of fmt.Sprintf, errors.New instead of constant fmt.Errorf
     - prealloc       # preallocate slices with a knowable capacity
     - reassign       # no reassignment of other packages' variables
+    - recvcheck      # no mixed value/pointer receivers on one type
     - revive         # doc-comment enforcement only; see settings below
     - rowserrcheck   # sql.Rows.Err must be checked
+    - sloglint       # slog hygiene (slog.DiscardHandler over io.Discard handlers)
     - sqlclosecheck  # sql.Rows/Stmt must be closed
     - thelper        # test helpers call t.Helper() and name testing.TB "tb"
     - tparallel      # parallel parents parallelize their subtests

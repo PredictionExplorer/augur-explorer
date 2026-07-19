@@ -31,24 +31,32 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
+	if err := runMain(os.Args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "rwalk-alarm: %v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	if err := run(ctx, os.Args[1:], os.Getenv, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "rwalk-alarm: %v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx, args, os.Getenv, os.Stdout)
 }
 
 // run loads the typed configuration and drives the engine until ctx is
 // cancelled.
 func run(ctx context.Context, args []string, getenv func(string) string, out io.Writer) error {
 	if len(args) != 1 {
-		return fmt.Errorf("usage: rwalk-alarm [url_list_file]")
+		return errors.New("usage: rwalk-alarm [url_list_file]")
 	}
 
 	cfg, err := config.LoadRwalkAlarm(getenv)

@@ -49,7 +49,7 @@ type TemplateParameters struct {
 // Template for WhatsApp template messages.
 type Template struct {
 	Name       string           `json:"name,omitempty"`
-	Language   TemplateLanguage `json:"language,omitempty"`
+	Language   TemplateLanguage `json:"language"`
 	Components []Components     `json:"components,omitempty"`
 }
 
@@ -58,7 +58,7 @@ type SendWithTemplateRequest struct {
 	MessagingProduct string   `json:"messaging_product,omitempty"`
 	To               string   `json:"to,omitempty"`
 	Type             string   `json:"type,omitempty"`
-	Template         Template `json:"template,omitempty"`
+	Template         Template `json:"template"`
 }
 
 // LanguageEnglish is the default template language.
@@ -78,16 +78,16 @@ func NewWhatsapp(token string, phoneNumberID string) *Whatsapp {
 }
 
 func parseHTTPError(body io.Reader) (err error) {
-	var errRes map[string]map[string]interface{}
+	var errRes map[string]map[string]any
 	err = json.NewDecoder(body).Decode(&errRes)
 	if err != nil {
-		return fmt.Errorf("unparsed error message")
+		return errors.New("unparsed error message")
 	}
 	msg := fmt.Sprintf("%s", errRes["error"]["message"])
 	return errors.New(msg)
 }
 
-func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}, err error) {
+func (wa *Whatsapp) sendMessage(request any) (res map[string]any, err error) {
 	jsonRequest, err := json.Marshal(request)
 	if err != nil {
 		return res, err
@@ -129,7 +129,7 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 
 // SendWithTemplate sends the named message template with the given
 // components to toPhoneNumber.
-func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
+func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]any, err error) {
 	request := wa.createSendWithTemplateRequest(toPhoneNumber, templateName, wa.Language, components)
 
 	return wa.sendMessage(request)
@@ -140,8 +140,8 @@ func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, 
 // Note: the recipient must initiate a conversation with the sending account
 // first, otherwise the message will be classified as spam and won't be
 // delivered, though no error is reported.
-func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]interface{}, err error) {
-	request := map[string]interface{}{
+func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]any, err error) {
+	request := map[string]any{
 		"messaging_product": "whatsapp",
 		"to":                toPhoneNumber,
 		"type":              "text",

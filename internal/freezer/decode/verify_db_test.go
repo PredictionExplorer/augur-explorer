@@ -256,10 +256,7 @@ func TestVerifyCosmicGame(t *testing.T) {
 	}
 
 	// Test first 100K blocks
-	endBlock := minBlock + 100000
-	if endBlock > maxBlock {
-		endBlock = maxBlock
-	}
+	endBlock := min(minBlock+100000, maxBlock)
 
 	match, missing, extra := verifyProject(t, db, fr, CosmicGameConfig, uint64(minBlock), uint64(endBlock)) // #nosec G115 -- non-negative DB block numbers
 
@@ -317,10 +314,7 @@ func TestVerifyAllProjects(t *testing.T) {
 			}
 
 			// Test first 100K blocks
-			endBlock := minBlock.Int64 + 100000
-			if endBlock > maxBlock.Int64 {
-				endBlock = maxBlock.Int64
-			}
+			endBlock := min(minBlock.Int64+100000, maxBlock.Int64)
 
 			match, missing, extra := verifyProject(t, db, fr, config, uint64(minBlock.Int64), uint64(endBlock)) // #nosec G115 -- non-negative DB block numbers
 

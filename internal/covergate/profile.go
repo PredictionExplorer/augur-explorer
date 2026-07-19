@@ -259,7 +259,7 @@ func (builder *metricBuilder) add(block Block) {
 	}
 }
 
-func (builder metricBuilder) metric() Metric {
+func (builder *metricBuilder) metric() Metric {
 	percent := 0.0
 	if builder.total > 0 {
 		percent = 100 * float64(builder.covered) / float64(builder.total)

@@ -14,6 +14,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -90,12 +91,7 @@ func acceptsSource(h EventHandler, addr common.Address) bool {
 	if len(sources) == 0 {
 		return true
 	}
-	for _, s := range sources {
-		if s == addr {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(sources, addr)
 }
 
 // Registry maps topic0 hashes to their event handlers. Multiple handlers may

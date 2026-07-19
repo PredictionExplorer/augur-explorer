@@ -2,11 +2,12 @@ package txcollector
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -211,15 +212,15 @@ func verifyRowsWithEncoder(
 	for key := range byTx {
 		keys = append(keys, key)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		if keys[i].blockNum != keys[j].blockNum {
-			return keys[i].blockNum < keys[j].blockNum
-		}
-		return keys[i].hash < keys[j].hash
+	slices.SortFunc(keys, func(a, b verifyTxKey) int {
+		return cmp.Or(
+			cmp.Compare(a.blockNum, b.blockNum),
+			cmp.Compare(a.hash, b.hash),
+		)
 	})
 	for key := range byTx {
-		sort.SliceStable(byTx[key], func(i, j int) bool {
-			return byTx[key][i].LogIndex < byTx[key][j].LogIndex
+		slices.SortStableFunc(byTx[key], func(a, b EventRow) int {
+			return cmp.Compare(a.LogIndex, b.LogIndex)
 		})
 	}
 
@@ -407,7 +408,7 @@ func sortedHashes(values map[string]uint64) []string {
 	for hash := range values {
 		hashes = append(hashes, hash)
 	}
-	sort.Strings(hashes)
+	slices.Sort(hashes)
 	return hashes
 }
 

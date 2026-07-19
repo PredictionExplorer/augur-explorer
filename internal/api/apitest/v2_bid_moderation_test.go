@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -214,7 +213,7 @@ func TestAPIV2BidModerationAdminFailsClosed(t *testing.T) {
 	keyless, err := apiv2.NewServer(
 		h.store,
 		h.state,
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		slog.New(slog.DiscardHandler),
 		apiv2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
 		apiv2.WithAdmin(apiv2.AdminConfig{
 			AdminKeys: []common.AdminKey{{Name: "ADMIN_API_KEY", Value: ""}},

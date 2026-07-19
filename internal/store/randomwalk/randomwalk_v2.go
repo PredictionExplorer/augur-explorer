@@ -261,6 +261,7 @@ func (r *Repo) TokensPage(
 // TokenDetailRecord is one minted token plus its naming recency.
 type TokenDetailRecord struct {
 	TokenRecord
+
 	NameChangeTs   int64
 	NameChangeText string
 }

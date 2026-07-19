@@ -16,7 +16,7 @@ type Report struct {
 }
 
 // Passed reports whether every configured floor was satisfied.
-func (report Report) Passed() bool {
+func (report *Report) Passed() bool {
 	return len(report.Failures) == 0
 }
 
@@ -39,7 +39,7 @@ func Evaluate(policy Policy, analysis Analysis, patch *PatchAnalysis) Report {
 
 func (report *Report) checkMetric(name string, metric Metric, floor float64) {
 	if metric.Total == 0 {
-		report.Failures = append(report.Failures, fmt.Sprintf("%s coverage has no statements", name))
+		report.Failures = append(report.Failures, name+" coverage has no statements")
 		return
 	}
 	if metric.Percent+1e-9 < floor {

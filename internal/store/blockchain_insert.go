@@ -5,6 +5,7 @@ package store
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -145,7 +146,7 @@ func (s *Store) InsertTransaction(ctx context.Context, tx *types.Transaction, bl
 // through InsertEventLog's delete-before-insert replay semantics.
 func (s *Store) NextEventLogIndex(ctx context.Context, blockNum int64, minimum uint) (uint, error) {
 	if blockNum < 0 || uint64(minimum) > math.MaxInt32 {
-		return 0, fmt.Errorf("next event log index: invalid block or minimum")
+		return 0, errors.New("next event log index: invalid block or minimum")
 	}
 	var next int64
 	err := s.q(ctx).QueryRow(ctx, `SELECT GREATEST(
@@ -158,7 +159,7 @@ func (s *Store) NextEventLogIndex(ctx context.Context, blockNum int64, minimum u
 		return 0, WrapError("next event log index", err)
 	}
 	if next < 0 || next > math.MaxInt32 {
-		return 0, fmt.Errorf("next event log index: exhausted int32 range")
+		return 0, errors.New("next event log index: exhausted int32 range")
 	}
 	return uint(next), nil
 }

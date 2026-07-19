@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -269,7 +268,7 @@ func newParticipantTestServer(t *testing.T, participants participantReader) *Ser
 		fakeRandomWalkReader{},
 		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

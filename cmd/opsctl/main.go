@@ -48,10 +48,21 @@ func newRootCmd() *cobra.Command {
 	return root
 }
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
+	if err := runMain(os.Args[1:]); err != nil {
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := newRootCmd().ExecuteContext(ctx); err != nil {
-		os.Exit(1)
-	}
+	root := newRootCmd()
+	root.SetArgs(args)
+	return root.ExecuteContext(ctx)
 }

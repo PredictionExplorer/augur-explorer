@@ -6,10 +6,12 @@ package cosmicgame
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -146,7 +148,7 @@ func (s *paramSyncer) syncInt64(name, table, column string, wantValue int64, con
 	if err != nil {
 		return false, err
 	}
-	valStr := fmt.Sprintf("%d", wantValue)
+	valStr := strconv.FormatInt(wantValue, 10)
 	if err := s.repo.InsertAdminCorrectionDecimal(s.ctx, table, column, valStr, s.meta, aid); err != nil {
 		return false, fmt.Errorf("%s: %w", name, err)
 	}
@@ -177,7 +179,7 @@ func (s *paramSyncer) syncCstReward(wantValue string) (bool, error) {
 // cmd/cg-etl runs it once at startup, before the polling loop.
 func SyncContractParams(ctx context.Context, repo *cgdb.Repo, st *store.Store, client *ethclient.Client, gameAddr, prizesWalletAddr string, logger *slog.Logger) error {
 	if client == nil {
-		return fmt.Errorf("eth client is nil")
+		return errors.New("eth client is nil")
 	}
 	game := ethcommon.HexToAddress(gameAddr)
 	v1, _ := cgc.NewCosmicSignatureGame(game, client)
@@ -252,7 +254,7 @@ func SyncContractParams(ctx context.Context, repo *cgdb.Repo, st *store.Store, c
 	}
 
 	if cstAucChangeDiv := readCSTAuctionDurationChangeDivisor(v2, &copts, mechanics); cstAucChangeDiv >= 0 {
-		valStr := fmt.Sprintf("%d", cstAucChangeDiv)
+		valStr := strconv.FormatInt(cstAucChangeDiv, 10)
 		changed, err := syncer.syncDecimal("cst_dutch_auction_duration_change_divisor", "cg_adm_cst_auclen_chg_div", "new_len", valStr, "")
 		if err != nil {
 			return err
@@ -297,7 +299,7 @@ func readDelayDuration(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV
 			return val.Int64(), nil
 		}
 	}
-	return 0, fmt.Errorf("can't read delayDurationBeforeRoundActivation")
+	return 0, errors.New("can't read delayDurationBeforeRoundActivation")
 }
 
 func readCstReward(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) (string, error) {
@@ -316,7 +318,7 @@ func readCstReward(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, o
 			return val.String(), nil
 		}
 	}
-	return "", fmt.Errorf("can't read CST bid reward")
+	return "", errors.New("can't read CST bid reward")
 }
 
 func readRoundStartCSTAuction(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) (string, error) {
@@ -335,7 +337,7 @@ func readRoundStartCSTAuction(v1 *cgc.CosmicSignatureGame, v2 *cgc.CosmicSignatu
 			return val.String(), nil
 		}
 	}
-	return "", fmt.Errorf("can't read CST dutch auction duration")
+	return "", errors.New("can't read CST dutch auction duration")
 }
 
 func readCSTAuctionDurationChangeDivisor(v2 *cgc.CosmicSignatureGameV2, opts *bind.CallOpts, mechanics int64) int64 {
@@ -352,7 +354,7 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 	v1Big := func(read func(*cgc.CosmicSignatureGame, *bind.CallOpts) (*big.Int, error)) func(*cgc.CosmicSignatureGame, *cgc.CosmicSignatureGameV2, *bind.CallOpts) (string, error) {
 		return func(v1 *cgc.CosmicSignatureGame, _ *cgc.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error) {
 			if v1 == nil {
-				return "", fmt.Errorf("v1 binding unavailable")
+				return "", errors.New("v1 binding unavailable")
 			}
 			val, err := read(v1, opts)
 			if err != nil {

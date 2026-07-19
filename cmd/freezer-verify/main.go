@@ -12,6 +12,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -27,22 +28,29 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
 	// Before the flag set parses: --version must win over flag validation.
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	passed, err := run(ctx, os.Args[1:], os.Stdout, os.Stderr)
+	passed, err := runMain(os.Args[1:])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "freezer-verify: %v\n", err)
-		os.Exit(1)
 	}
-	if !passed {
-		os.Exit(1)
+	if err != nil || !passed {
+		osExit(1)
 	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain(args []string) (bool, error) {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return run(ctx, args, os.Stdout, os.Stderr)
 }
 
 // run executes the verification and reports whether it met the match
@@ -61,7 +69,7 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error
 	}
 
 	if *inputFile == "" {
-		return false, fmt.Errorf("--input is required")
+		return false, errors.New("--input is required")
 	}
 	if !verify.ValidTableName(*tableName) {
 		return false, fmt.Errorf("invalid table name %q: must be a plain SQL identifier", *tableName)
@@ -86,7 +94,7 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) (bool, error
 
 	minBlock, maxBlock, ok := verify.BlockRange(freezerEvents)
 	if !ok {
-		return false, fmt.Errorf("no events found in input file")
+		return false, errors.New("no events found in input file")
 	}
 	logger.Info(fmt.Sprintf("Block range in file: %d - %d", minBlock, maxBlock))
 

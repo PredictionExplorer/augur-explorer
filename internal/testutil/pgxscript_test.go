@@ -17,7 +17,7 @@ func TestScriptedPgxServesRowsAndRecordsViolations(t *testing.T) {
 		Kind:     "query",
 		Contains: "FROM widgets",
 		Parts:    []string{"ORDER BY id", "not-in-the-query"},
-		ArgCount: IntPointer(2),
+		ArgCount: new(2),
 		Rows:     [][]any{{int64(1), "a"}, {int64(2), "b"}},
 	})
 	rows, err := script.Query(context.Background(), "SELECT id, name FROM widgets ORDER BY id", 1)

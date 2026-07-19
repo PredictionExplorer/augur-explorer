@@ -64,7 +64,7 @@ func (m *AnomalyMonitor) Start(ctx context.Context, disp Display, errorChan chan
 func (m *AnomalyMonitor) check(ctx context.Context, disp Display, errorChan chan<- string) {
 	if err := m.fetch(ctx); err != nil {
 		m.errStr = err.Error()
-		sendErr(ctx, errorChan, fmt.Sprintf("Anomaly fetch: %s", m.errStr))
+		sendErr(ctx, errorChan, "Anomaly fetch: "+m.errStr)
 		m.display(disp)
 		return
 	}
@@ -72,7 +72,7 @@ func (m *AnomalyMonitor) check(ctx context.Context, disp Display, errorChan chan
 	lines, err := readLastLines(m.localFile, AnomalyDisplayCount)
 	if err != nil {
 		m.errStr = err.Error()
-		sendErr(ctx, errorChan, fmt.Sprintf("Anomaly read: %s", m.errStr))
+		sendErr(ctx, errorChan, "Anomaly read: "+m.errStr)
 		m.display(disp)
 		return
 	}

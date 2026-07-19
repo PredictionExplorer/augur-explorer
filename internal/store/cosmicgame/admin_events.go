@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -223,19 +224,20 @@ const ownershipBranchSQL = `(
 
 // adminEventsQuery assembles the full UNION over every admin event table.
 func adminEventsQuery() string {
-	sql := "SELECT record_type, record_id, evtlog_id, block_num, tx_id, tx_hash, ts, date_time, addr_value, int_value, float_value, string_value FROM ("
+	var sql strings.Builder
+	sql.WriteString("SELECT record_type, record_id, evtlog_id, block_num, tx_id, tx_hash, ts, date_time, addr_value, int_value, float_value, string_value FROM (")
 	for i, b := range adminEventBranches {
 		if i > 0 {
-			sql += " UNION ALL "
+			sql.WriteString(" UNION ALL ")
 		}
 		if b.recordType == 34 {
-			sql += ownershipBranchSQL
+			sql.WriteString(ownershipBranchSQL)
 			continue
 		}
-		sql += b.sql()
+		sql.WriteString(b.sql())
 	}
-	sql += ") everything ORDER BY evtlog_id"
-	return sql
+	sql.WriteString(") everything ORDER BY evtlog_id")
+	return sql.String()
 }
 
 // AdminEventsInRange returns every admin/configuration event with

@@ -3,7 +3,6 @@
 package apitest
 
 import (
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -46,7 +45,7 @@ func TestTwoIndependentRoutersInOneProcess(t *testing.T) {
 	v2Server, err := v2.NewServer(
 		h.store,
 		cgAPI.ContractState(),
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		slog.New(slog.DiscardHandler),
 		v2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
 	)
 	if err != nil {

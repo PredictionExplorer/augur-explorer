@@ -7,7 +7,6 @@ package indexer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"math"
 	"math/big"
@@ -198,6 +197,7 @@ func TestPipelineRejectsOverflowingBlockNumber(t *testing.T) {
 // the run loop's watermark-failure arm.
 type failingProgress struct {
 	fakeProgress
+
 	writeErr error
 }
 
@@ -417,7 +417,7 @@ func TestRunFetchErrorShrinksBatchAndEmptySuccessGrowsIt(t *testing.T) {
 		step++
 		switch step {
 		case 1, 2:
-			return nil, fmt.Errorf("query returned more than 10000 results")
+			return nil, errors.New("query returned more than 10000 results")
 		case 3, 4:
 			return nil, nil // empty success: batch doubles
 		default:

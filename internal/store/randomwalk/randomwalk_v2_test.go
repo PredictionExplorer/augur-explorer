@@ -131,7 +131,7 @@ func TestValidWeiString(t *testing.T) {
 		"1.5":                         false,
 		"1e18":                        false,
 		"0x10":                        false,
-		" 1":                          false,
+		" 1":                          false, //nolint:gocritic // deliberate: leading whitespace must be rejected
 		"9" + strings.Repeat("0", 77): true,
 	} {
 		if got := validWeiString(value); got != want {

@@ -5,7 +5,7 @@ package cosmicgame
 import (
 	"context"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -60,7 +60,7 @@ func TestUserCosmicSignatureTokensPage(t *testing.T) {
 	for i := range legacy {
 		legacyIDs[i] = legacy[i].TokenId
 	}
-	sort.Slice(legacyIDs, func(i, j int) bool { return legacyIDs[i] < legacyIDs[j] })
+	slices.Sort(legacyIDs)
 
 	gotIDs := walkUserTokenPages(t, 1,
 		func(after *UserTokenPageCursor, limit int) ([]UserOwnedTokenRecord, bool, error) {

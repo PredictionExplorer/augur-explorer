@@ -3,7 +3,6 @@ package v2
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -218,7 +217,7 @@ func newContractTestServer(
 		fakeRandomWalkReader{},
 		fakeRankingRepository{},
 		state,
-		slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

@@ -2,7 +2,7 @@ package apitest
 
 import (
 	"os"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -60,7 +60,7 @@ func TestDeprecationPolicyMatchesOpenAPI(t *testing.T) {
 			}
 		}
 	}
-	sort.Strings(problems)
+	slices.Sort(problems)
 	for _, p := range problems {
 		t.Errorf("spec deprecated flag disagrees with routes.V1Deprecated: %s", p)
 	}

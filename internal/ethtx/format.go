@@ -24,7 +24,7 @@ func WeiToEthCompact(wei *big.Int) string {
 // and symbol, e.g. FormatTokenAmount(1500000, 6, "USDC") = "1.500000 USDC".
 func FormatTokenAmount(amount *big.Int, decimals uint8, symbol string) string {
 	if amount == nil {
-		return fmt.Sprintf("0 %s", symbol)
+		return "0 " + symbol
 	}
 	if decimals == 0 {
 		return fmt.Sprintf("%s %s", amount.String(), symbol)

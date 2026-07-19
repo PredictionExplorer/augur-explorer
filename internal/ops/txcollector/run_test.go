@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -130,13 +130,9 @@ func fixtureTx(nonce uint64) *types.Transaction {
 		Nonce:    nonce,
 		GasPrice: big.NewInt(1),
 		Gas:      21_000,
-		To:       ptr(common.HexToAddress("0x1000000000000000000000000000000000000001")),
+		To:       new(common.HexToAddress("0x1000000000000000000000000000000000000001")),
 		Value:    big.NewInt(0),
 	})
-}
-
-func ptr[T any](value T) *T {
-	return &value
 }
 
 func fixtureReceipt(tx *types.Transaction, logs ...*types.Log) *types.Receipt {
@@ -255,8 +251,8 @@ func TestRunSortsSameBlockTransactionsByHash(t *testing.T) {
 		t.Fatalf("Run: %v", err)
 	}
 	want := []common.Hash{first.Hash(), second.Hash()}
-	sort.Slice(want, func(i, j int) bool {
-		return bytes.Compare(want[i][:], want[j][:]) < 0
+	slices.SortFunc(want, func(a, b common.Hash) int {
+		return bytes.Compare(a[:], b[:])
 	})
 	if got := client.transactionOrder(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("transaction order = %v, want %v", got, want)

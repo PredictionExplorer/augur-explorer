@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -23,7 +24,7 @@ func newNewOfferCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			method := args[0]
 			if method != "BUY" && method != "SELL" {
-				return fmt.Errorf("invalid operation: must be BUY or SELL")
+				return errors.New("invalid operation: must be BUY or SELL")
 			}
 			marketAddr := common.HexToAddress(args[1])
 			nftAddr := common.HexToAddress(args[2])

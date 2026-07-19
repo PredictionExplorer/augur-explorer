@@ -65,7 +65,7 @@ func (m *Manager) Start(ctx context.Context) {
 	go m.alarmTracker.RunCleanup(ctx)
 
 	for _, monitor := range m.monitors {
-		m.logger.Info(fmt.Sprintf("Starting monitor: %s", monitor.Name()))
+		m.logger.Info("Starting monitor: " + monitor.Name())
 		go monitor.Start(ctx, m.display, m.errorChan)
 	}
 }

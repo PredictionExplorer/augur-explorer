@@ -56,7 +56,7 @@ func (a *API) handleTokenMetadata(c *httpx.Context) {
 	pad := fmt.Sprintf("%06d", tokenID)
 	name := strings.TrimSpace(info.CurName)
 	if name == "" {
-		name = fmt.Sprintf("Random Walk #%s", pad)
+		name = "Random Walk #" + pad
 	}
 	var imageURL, animationURL string
 	if a.assetsFlatPaths {

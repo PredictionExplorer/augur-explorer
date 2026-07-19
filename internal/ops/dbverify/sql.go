@@ -64,7 +64,7 @@ func LoadRandomWalkContractAddressIDs(ctx context.Context, db Querier) ([]int64,
 		return nil, fmt.Errorf("contract aids: %w", err)
 	}
 	if len(ids) == 0 {
-		return nil, fmt.Errorf("no contract addresses found in rw_contracts")
+		return nil, errors.New("no contract addresses found in rw_contracts")
 	}
 	return ids, nil
 }

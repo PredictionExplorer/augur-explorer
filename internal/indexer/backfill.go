@@ -36,10 +36,7 @@ func (e *Engine) BackfillContractEvtLogs(
 	}
 
 	for from := fromBlock; from <= toBlock; {
-		to := from + batchSize - 1
-		if to > toBlock {
-			to = toBlock
-		}
+		to := min(from+batchSize-1, toBlock)
 
 		logs, err := FetchLogs(ctx, e.client, from, to, contracts)
 		if err != nil {

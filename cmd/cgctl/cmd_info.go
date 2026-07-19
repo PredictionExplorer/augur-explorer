@@ -287,10 +287,7 @@ func printBiddingPrices(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicS
 	// CST auction: contract may return (duration, startTimestamp) not
 	// (duration, secondsElapsed); startTimestamp is Unix seconds.
 	if cstAuctionElapsed.Cmp(cstAuctionDuration) > 0 && cstAuctionElapsed.Cmp(big.NewInt(1e9)) > 0 {
-		elapsed := blockTime - cstAuctionElapsed.Int64()
-		if elapsed < 0 {
-			elapsed = 0
-		}
+		elapsed := max(blockTime-cstAuctionElapsed.Int64(), 0)
 		fmt.Fprintf(w, "%-28s= %v / %v (elapsed from start_ts; raw 2nd value was start timestamp)\n", "CST Dutch auction elapsed/total", elapsed, cstAuctionDuration.String())
 	} else {
 		out.KeyValue("CST Dutch auction elapsed/total", fmt.Sprintf("%v / %v", cstAuctionElapsed.String(), cstAuctionDuration.String()))

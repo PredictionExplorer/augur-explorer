@@ -3,10 +3,11 @@ package smoketest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -72,14 +73,14 @@ func Run(ctx context.Context, opts Options) (Summary, error) {
 		return summary, err
 	}
 	if opts.Source == nil {
-		return summary, fmt.Errorf("parameter source is nil")
+		return summary, errors.New("parameter source is nil")
 	}
 	if opts.Client == nil {
-		return summary, fmt.Errorf("HTTP client is nil")
+		return summary, errors.New("HTTP client is nil")
 	}
 	baseURL := strings.TrimRight(strings.TrimSpace(opts.BaseURL), "/")
 	if baseURL == "" {
-		return summary, fmt.Errorf("API base URL is empty")
+		return summary, errors.New("API base URL is empty")
 	}
 	out := opts.Output
 	if out == nil {
@@ -221,7 +222,7 @@ func BodyError(body []byte) (string, bool) {
 	for key := range object {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	for _, key := range keys {
 		if strings.EqualFold(key, "error") {
 			if rendered, ok := nonEmptyError(object[key]); ok {

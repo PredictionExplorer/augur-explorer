@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -356,9 +357,9 @@ func ROILeaderboardSortValue(record ROILeaderboardRecord, sortBy ROILeaderboardS
 	case ROILeaderboardSpent:
 		return record.TotalEthSpentWei
 	case ROILeaderboardNFTs:
-		return fmt.Sprintf("%d", record.NFTPrizesCount)
+		return strconv.FormatInt(record.NFTPrizesCount, 10)
 	case ROILeaderboardBids:
-		return fmt.Sprintf("%d", record.NumBids)
+		return strconv.FormatInt(record.NumBids, 10)
 	default:
 		return ""
 	}

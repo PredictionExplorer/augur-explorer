@@ -17,7 +17,7 @@ import (
 type artifactServer struct {
 	mu       sync.Mutex
 	present  map[string]bool // "000042.png" -> exists
-	genCalls []map[string]interface{}
+	genCalls []map[string]any
 	genCode  int // response code for generation requests (default 200)
 	server   *httptest.Server
 }
@@ -27,7 +27,7 @@ func newArtifactServer(t *testing.T) *artifactServer {
 	s := &artifactServer{present: make(map[string]bool), genCode: http.StatusOK}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
-		var payload map[string]interface{}
+		var payload map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -74,10 +74,10 @@ func (s *artifactServer) addArtifacts(tokenID int64) {
 	s.present[fmt.Sprintf("%06d.mp4", tokenID)] = true
 }
 
-func (s *artifactServer) generationCalls() []map[string]interface{} {
+func (s *artifactServer) generationCalls() []map[string]any {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]map[string]interface{}(nil), s.genCalls...)
+	return append([]map[string]any(nil), s.genCalls...)
 }
 
 // staticSource serves a fixed token list.

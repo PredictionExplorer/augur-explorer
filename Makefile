@@ -20,7 +20,7 @@ LDFLAGS := -X $(VERSION_PKG).version=$(VERSION) \
            -X $(VERSION_PKG).commit=$(COMMIT) \
            -X $(VERSION_PKG).buildDate=$(BUILD_DATE)
 
-.PHONY: all build $(COMMANDS) generate generate-check test test-integration coverage-check hooks-install fuzz-smoke lint migrate-up fmt vet vuln clean help
+.PHONY: all build $(COMMANDS) generate generate-check test test-integration coverage-check hooks-install fuzz-smoke lint fix migrate-up fmt vet vuln clean help
 
 all: build
 
@@ -68,6 +68,11 @@ fuzz-smoke:
 ## lint: run golangci-lint (install: brew install golangci-lint)
 lint:
 	golangci-lint run
+
+## fix: apply the Go modernize fixers (CI enforces a clean `go fix -diff`)
+fix:
+	go fix ./...
+	go fix -tags=integration ./...
 
 ## migrate-up: apply database migrations (uses PGSQL_* env or GOOSE_DBSTRING)
 migrate-up:

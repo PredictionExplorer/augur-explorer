@@ -5,7 +5,7 @@ package apitest
 import (
 	"net/http"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -488,7 +488,7 @@ func TestAPIParity(t *testing.T) {
 	for tmpl := range parityCases {
 		templates = append(templates, tmpl)
 	}
-	sort.Strings(templates)
+	slices.Sort(templates)
 
 	for _, tmpl := range templates {
 		for _, pc := range parityCases[tmpl] {

@@ -11,6 +11,7 @@ package scan
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -18,7 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -92,20 +93,14 @@ type Stats struct {
 // DefaultWorkers derives the worker count from the CPU count, clamped to
 // [16, 64] like the legacy tool.
 func DefaultWorkers(numCPU int) int {
-	workers := numCPU * 2
-	if workers < 16 {
-		workers = 16
-	}
-	if workers > 64 {
-		workers = 64
-	}
+	workers := min(max(numCPU*2, 16), 64)
 	return workers
 }
 
 // ParseContracts parses a comma-separated list of hex contract addresses.
 func ParseContracts(csv string) (map[common.Address]bool, error) {
 	out := make(map[common.Address]bool)
-	for _, addr := range strings.Split(csv, ",") {
+	for addr := range strings.SplitSeq(csv, ",") {
 		addr = strings.TrimSpace(addr)
 		if addr == "" {
 			continue
@@ -121,7 +116,7 @@ func ParseContracts(csv string) (map[common.Address]bool, error) {
 // ParseEventSigs parses a comma-separated list of 32-byte hex topic0 hashes.
 func ParseEventSigs(csv string) (map[common.Hash]bool, error) {
 	out := make(map[common.Hash]bool)
-	for _, sig := range strings.Split(csv, ",") {
+	for sig := range strings.SplitSeq(csv, ",") {
 		sig = strings.TrimSpace(sig)
 		if sig == "" {
 			continue
@@ -225,10 +220,7 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 
 	var chunks []freezerscanner.BlockRange
 	for chunkStart := stats.StartBlock; chunkStart < stats.EndBlock; chunkStart += chunkSize {
-		chunkEnd := chunkStart + chunkSize
-		if chunkEnd > stats.EndBlock {
-			chunkEnd = stats.EndBlock
-		}
+		chunkEnd := min(chunkStart+chunkSize, stats.EndBlock)
 		chunks = append(chunks, freezerscanner.BlockRange{Start: chunkStart, End: chunkEnd})
 	}
 	logf("  Chunks: %d (each %d blocks)", len(chunks), chunkSize)
@@ -265,9 +257,7 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 
 	var wg sync.WaitGroup
 	for range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			workerReader := reader.NewWorkerReader()
 			defer func() { _ = workerReader.Close() }() // best-effort close of read-only handles
 
@@ -281,7 +271,7 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 					&processedBlocks, &totalMatched, &totalLogs, &totalErrors, errorLog)
 				resultChan <- chunkResult{chunkIdx: chunkIdx, tempFile: tempFile, err: err}
 			}
-		}()
+		})
 	}
 
 	go func() {
@@ -311,7 +301,7 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 	close(progressDone)
 
 	// Merge in chunk order so the output stays block-sorted.
-	sort.Slice(results, func(i, j int) bool { return results[i].chunkIdx < results[j].chunkIdx })
+	slices.SortFunc(results, func(a, b chunkResult) int { return cmp.Compare(a.chunkIdx, b.chunkIdx) })
 	logf("Merging results...")
 	if err := mergeChunkFiles(results, stats.OutputPath, appendMode, stdout); err != nil {
 		return stats, fmt.Errorf("merge failed: %w", err)
@@ -488,10 +478,7 @@ func lastScannedBlock(path string) (block uint64, found bool, warn error) {
 		}
 	} else {
 		const tailSize = 4096
-		seekPos := stat.Size() - tailSize
-		if seekPos < 0 {
-			seekPos = 0
-		}
+		seekPos := max(stat.Size()-tailSize, 0)
 		if _, err := file.Seek(seekPos, io.SeekStart); err != nil {
 			return 0, false, nil
 		}

@@ -45,24 +45,39 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
+// Package-level so main stays re-runnable under tests (the global FlagSet
+// rejects duplicate definitions).
+var (
+	flagTwitter = flag.Bool("twitter", false, "Send messages to Twitter")
+	flagDiscord = flag.Bool("discord", false, "Send messages to Discord")
+)
+
 func main() {
 	// Before flag.Parse: --version must win over flag validation.
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
-	flagTwitter := flag.Bool("twitter", false, "Send messages to Twitter")
-	flagDiscord := flag.Bool("discord", false, "Send messages to Discord")
 	flag.Parse()
 	if !*flagTwitter && !*flagDiscord {
 		fmt.Fprintf(os.Stderr, "Please use --twitter or --discord flag\n")
-		os.Exit(1)
+		osExit(1)
+		return
 	}
+	if err := runMain(*flagTwitter, *flagDiscord); err != nil {
+		fmt.Fprintf(os.Stderr, "notibot: %v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain(twitterOn, discordOn bool) error {
 	ctx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()
-	if err := run(ctx, os.Getenv, os.Stdout, *flagTwitter, *flagDiscord); err != nil {
-		fmt.Fprintf(os.Stderr, "notibot: %v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx, os.Getenv, os.Stdout, twitterOn, discordOn)
 }
 
 // run wires the notification engine and blocks until ctx is cancelled
@@ -158,6 +173,4 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, twit
 // newDiscordClient builds the disgord client; a package variable so the
 // integration tests can point it at a stub Discord REST server (disgord.New
 // probes the bot identity at construction).
-var newDiscordClient = func(cfg disgord.Config) *disgord.Client {
-	return disgord.New(cfg)
-}
+var newDiscordClient = disgord.New

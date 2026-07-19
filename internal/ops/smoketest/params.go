@@ -5,7 +5,7 @@ package smoketest
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -111,7 +111,7 @@ func WithDefaults(params Params) Params {
 // Parameters implements ParameterSource.
 func (s SQLParameterSource) Parameters(ctx context.Context) (Params, error) {
 	if s.DB == nil {
-		return Params{}, fmt.Errorf("parameter database is nil")
+		return Params{}, errors.New("parameter database is nil")
 	}
 	return loadParameters(func(query, fallback string) (string, error) {
 		return queryValue(ctx, s.DB, query, fallback)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -169,7 +168,7 @@ func TestGetCurrentRoundHidesInternalFailures(t *testing.T) {
 			t.Parallel()
 			snapshot := tc.snapshot
 			if snapshot == nil {
-				snapshot = func() contractstate.Snapshot { return validCurrentRoundSnapshot() }
+				snapshot = validCurrentRoundSnapshot
 			}
 			server := newCurrentRoundTestServer(t,
 				fakeContractState{snapshot: snapshot},
@@ -211,7 +210,7 @@ func TestGetCurrentRoundHonorsCancelledContext(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			server := newCurrentRoundTestServer(t,
-				fakeContractState{snapshot: func() contractstate.Snapshot { return validCurrentRoundSnapshot() }},
+				fakeContractState{snapshot: validCurrentRoundSnapshot},
 				currentRounds,
 			)
 			ctx, cancel := context.WithCancel(context.Background())
@@ -227,7 +226,7 @@ func TestGetCurrentRoundResponseIsDeterministic(t *testing.T) {
 	t.Parallel()
 
 	server := newCurrentRoundTestServer(t,
-		fakeContractState{snapshot: func() contractstate.Snapshot { return validCurrentRoundSnapshot() }},
+		fakeContractState{snapshot: validCurrentRoundSnapshot},
 		fakeCurrentRoundReader{
 			statistics: func(context.Context, int64) (cgmodel.CGRoundStats, error) {
 				return validCurrentRoundStats(), nil
@@ -251,7 +250,7 @@ func newCurrentRoundTestServer(
 	currentRounds currentRoundReader,
 ) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	server, err := newServer(
 		nil,
 		fakeBidReader{},

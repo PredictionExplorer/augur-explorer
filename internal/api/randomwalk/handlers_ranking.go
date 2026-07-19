@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -37,6 +38,7 @@ type rankingMatchDependencies struct {
 
 type signedBeautyVoteDependencies struct {
 	rankingMatchDependencies
+
 	lookupOrCreateAddress   func(context.Context, string, int64, int64) (int64, error)
 	consumeRankingVoteNonce func(context.Context, pgx.Tx, string) (bool, error)
 	chainAllowed            func(int64) bool
@@ -302,12 +304,7 @@ func (a *API) rankingVoteChainAllowed(chainID int64) bool {
 	if len(a.voteChainIDs) == 0 {
 		return true
 	}
-	for _, allowed := range a.voteChainIDs {
-		if allowed == chainID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(a.voteChainIDs, chainID)
 }
 
 func (a *API) performSignedBeautyVote(ctx context.Context, nft1, nft2 int64, nft1Won bool, chainID int64, signNonce, signature string) error {

@@ -143,7 +143,7 @@ func (r *Repo) resolveCstDutchAuctionDurationChangeDivisor(ctx context.Context, 
 	if delta <= 0 {
 		return "", nil
 	}
-	return fmt.Sprintf("%s change per bid", formatDurationSeconds(delta)), nil
+	return formatDurationSeconds(delta) + " change per bid", nil
 }
 
 // latestInt64ParamAtEvtlog returns the most recent value of an admin

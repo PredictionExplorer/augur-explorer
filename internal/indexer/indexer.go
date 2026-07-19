@@ -15,6 +15,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/big"
@@ -164,10 +165,10 @@ type Engine struct {
 // New validates the configuration and builds an Engine.
 func New(cfg Config) (*Engine, error) {
 	if cfg.Store == nil {
-		return nil, fmt.Errorf("indexer: Config.Store is required")
+		return nil, errors.New("indexer: Config.Store is required")
 	}
 	if cfg.Client == nil {
-		return nil, fmt.Errorf("indexer: Config.Client is required")
+		return nil, errors.New("indexer: Config.Client is required")
 	}
 	logger := cfg.Logger
 	if logger == nil {

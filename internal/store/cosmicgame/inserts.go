@@ -86,12 +86,13 @@ func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 	}
 
 	cstReward, rewardErr := r.GlobStatsCstRewardForBidding(ctx)
-	if evt.BidCstRewardAmount != "-1" {
+	switch {
+	case evt.BidCstRewardAmount != "-1":
 		cstReward = evt.BidCstRewardAmount
-	} else if rewardErr != nil {
+	case rewardErr != nil:
 		return fmt.Errorf("%s: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): %w",
 			op, rewardErr)
-	} else if cstReward == "" || cstReward == "0" {
+	case cstReward == "" || cstReward == "0":
 		return fmt.Errorf("%s: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): value=%q",
 			op, cstReward)
 	}

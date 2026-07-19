@@ -24,7 +24,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
-	"github.com/PredictionExplorer/augur-explorer/internal/api/v2"
+	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
@@ -106,7 +106,7 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	v2Server, err := v2.NewServer(
 		st,
 		cgAPI.ContractState(),
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		slog.New(slog.DiscardHandler),
 		// Pin relative-time fields so HTTP goldens do not age.
 		v2.WithClock(func() time.Time { return time.Unix(1767230000, 0) }),
 		v2.WithAdmin(v2.AdminConfig{

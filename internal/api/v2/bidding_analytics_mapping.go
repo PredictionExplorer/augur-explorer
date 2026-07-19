@@ -1,10 +1,11 @@
 package v2
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"math/big"
-	"sort"
+	"slices"
 	"time"
 
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
@@ -68,10 +69,7 @@ func mapBidSpikes(records []cgmodel.CGBidSpike, to int64) ([]BidSpike, error) {
 		if record.PeakNumBids < 0 || record.TotalBids < record.PeakNumBids || record.BucketCount < 1 {
 			return nil, fmt.Errorf("spike %d has inconsistent counts", i)
 		}
-		endTimestamp := record.EndTs
-		if endTimestamp > to {
-			endTimestamp = to
-		}
+		endTimestamp := min(record.EndTs, to)
 		mapped = append(mapped, BidSpike{
 			BucketCount:    record.BucketCount,
 			EndTimestamp:   endTimestamp,
@@ -195,11 +193,11 @@ func mapTopBidderActivePeriods(
 		return nil, nil, errors.New("repository returned more top bidders than requested")
 	}
 	sortedBidders := append([]cgmodel.CGTopBidderInfo(nil), bidderRecords...)
-	sort.Slice(sortedBidders, func(i, j int) bool {
-		if sortedBidders[i].NumBids != sortedBidders[j].NumBids {
-			return sortedBidders[i].NumBids > sortedBidders[j].NumBids
-		}
-		return sortedBidders[i].BidderAid < sortedBidders[j].BidderAid
+	slices.SortFunc(sortedBidders, func(a, b cgmodel.CGTopBidderInfo) int {
+		return cmp.Or(
+			cmp.Compare(b.NumBids, a.NumBids),
+			cmp.Compare(a.BidderAid, b.BidderAid),
+		)
 	})
 	bidders := make([]TopBidder, 0, len(sortedBidders))
 	addresses := make(map[int64]string, len(sortedBidders))
@@ -223,14 +221,12 @@ func mapTopBidderActivePeriods(
 	}
 
 	sortedPeriods := append([]cgmodel.CGBidderActivePeriod(nil), periodRecords...)
-	sort.Slice(sortedPeriods, func(i, j int) bool {
-		if sortedPeriods[i].PeriodStart != sortedPeriods[j].PeriodStart {
-			return sortedPeriods[i].PeriodStart < sortedPeriods[j].PeriodStart
-		}
-		if sortedPeriods[i].BidderAid != sortedPeriods[j].BidderAid {
-			return sortedPeriods[i].BidderAid < sortedPeriods[j].BidderAid
-		}
-		return sortedPeriods[i].PeriodEnd < sortedPeriods[j].PeriodEnd
+	slices.SortFunc(sortedPeriods, func(a, b cgmodel.CGBidderActivePeriod) int {
+		return cmp.Or(
+			cmp.Compare(a.PeriodStart, b.PeriodStart),
+			cmp.Compare(a.BidderAid, b.BidderAid),
+			cmp.Compare(a.PeriodEnd, b.PeriodEnd),
+		)
 	})
 	periods := make([]BidderActivePeriod, 0, len(sortedPeriods))
 	for i := range sortedPeriods {

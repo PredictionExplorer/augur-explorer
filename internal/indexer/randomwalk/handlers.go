@@ -13,6 +13,7 @@ package randomwalk
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -90,7 +91,7 @@ type Handlers struct {
 // handler registry.
 func New(cfg Config) (*Handlers, error) {
 	if cfg.Repo == nil {
-		return nil, fmt.Errorf("randomwalk handlers: Config.Repo is required")
+		return nil, errors.New("randomwalk handlers: Config.Repo is required")
 	}
 	logger := cfg.Logger
 	if logger == nil {

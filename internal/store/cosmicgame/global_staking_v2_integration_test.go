@@ -3,10 +3,11 @@
 package cosmicgame
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
@@ -86,7 +87,7 @@ func TestGlobalStakingActionPagesMatchLegacy(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			sort.Slice(legacy, func(i, j int) bool { return legacy[i] > legacy[j] })
+			slices.SortFunc(legacy, func(a, b int64) int { return cmp.Compare(b, a) })
 			paged := walkGlobalStakingActions(t, tc.fetch, 1)
 			got := make([]int64, len(paged))
 			for i := range paged {

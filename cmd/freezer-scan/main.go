@@ -20,6 +20,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -53,18 +54,28 @@ var (
 	chunkSize    = flag.Uint64("chunkSize", 50000, "Blocks per worker chunk")
 )
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
 	// Before flag.Parse: --version must win over flag validation.
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
 	flag.Parse()
+	if err := runMain(); err != nil {
+		fmt.Fprintf(os.Stderr, "freezer-scan: %v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain() error {
 	// SIGINT/SIGTERM cancel the scan; completed chunks still merge.
 	ctx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stopSignals()
-	if err := run(ctx, os.Stdout); err != nil {
-		log.Fatalf("%v", err)
-	}
+	return run(ctx, os.Stdout)
 }
 
 // run executes the scan described by the package flags, writing --info and
@@ -72,7 +83,7 @@ func main() {
 func run(ctx context.Context, infoOut io.Writer) error {
 	if *ancientDir == "" && *receiptsCidx == "" {
 		flag.Usage()
-		return fmt.Errorf("--ancientDir or --receiptsCidx is required")
+		return errors.New("--ancientDir or --receiptsCidx is required")
 	}
 
 	// Determine ancient directory

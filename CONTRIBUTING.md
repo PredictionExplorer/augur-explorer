@@ -14,12 +14,14 @@ make test        # unit tests (race detector, shuffled)
 make coverage-check # full integration + global/staged coverage policy
 make fuzz-smoke  # every fuzz target briefly (FUZZTIME=30s to change)
 make lint        # golangci-lint (config in .golangci.yml)
+make fix         # apply the Go modernize fixers (CI fails on pending fixes)
 make fmt         # gofmt the tree
 make hooks-install # install the repository's pre-commit coverage gate
 ```
 
-CI runs build, tidy-check, unit + integration tests, lint, and govulncheck on
-every PR — all must pass.
+CI runs build, tidy-check, unit + integration tests, lint (including a
+`go fix -diff` modern-idiom gate), and govulncheck on every PR — all must
+pass.
 
 ## Code standards
 

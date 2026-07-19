@@ -84,7 +84,7 @@ func (a *API) handleStakingActionsRwalkByUser(c *httpx.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, httpx.H{
 			"status": 1, "error": "", "UserAid": int64(0), "UserAddr": pUserAddr,
-			"Offset": offset, "Limit": limit, "UserStakingActionsRWalk": []interface{}{},
+			"Offset": offset, "Limit": limit, "UserStakingActionsRWalk": []any{},
 		})
 		return
 	}
@@ -166,7 +166,7 @@ func (a *API) handleStakingRwalkMintsByUser(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet — return 200 with empty list so UI works
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "RWalkStakingRewardMints": []interface{}{},
+			"status": 1, "error": "", "RWalkStakingRewardMints": []any{},
 		})
 		return
 	}
@@ -196,7 +196,7 @@ func (a *API) handleStakedTokensRwalkByUser(c *httpx.Context) {
 	if err != nil {
 		// Address not in DB yet (e.g. new wallet) — return 200 with empty list so UI and bidding still work
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "StakedTokensRWalk": []interface{}{},
+			"status": 1, "error": "", "UserAddr": pUserAddr, "UserAid": int64(0), "StakedTokensRWalk": []any{},
 		})
 		return
 	}

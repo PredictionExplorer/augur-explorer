@@ -3,10 +3,11 @@
 package cosmicgame
 
 import (
+	"cmp"
 	"context"
 	"math/big"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -70,7 +71,7 @@ func TestCosmicSignatureTokensGlobalPage(t *testing.T) {
 			legacyIDs = append(legacyIDs, legacy[i].TokenId)
 		}
 	}
-	sort.Slice(legacyIDs, func(i, j int) bool { return legacyIDs[i] > legacyIDs[j] })
+	slices.SortFunc(legacyIDs, func(a, b int64) int { return cmp.Compare(b, a) })
 
 	all := walkGlobalTokenPages(t, r, GlobalTokenFilter{}, 1)
 	gotIDs := make([]int64, len(all))
@@ -126,7 +127,7 @@ func TestCosmicSignatureTokensGlobalPageFilters(t *testing.T) {
 	for i := range legacy {
 		wantNamed[i] = legacy[i].TokenId
 	}
-	sort.Slice(wantNamed, func(i, j int) bool { return wantNamed[i] > wantNamed[j] })
+	slices.SortFunc(wantNamed, func(a, b int64) int { return cmp.Compare(b, a) })
 	named := walkGlobalTokenPages(t, r, GlobalTokenFilter{NamedOnly: true}, 1)
 	gotNamed := make([]int64, len(named))
 	for i := range named {
@@ -152,7 +153,7 @@ func TestCosmicSignatureTokensGlobalPageFilters(t *testing.T) {
 	for i := range searched {
 		wantFound[i] = searched[i].TokenId
 	}
-	sort.Slice(wantFound, func(i, j int) bool { return wantFound[i] > wantFound[j] })
+	slices.SortFunc(wantFound, func(a, b int64) int { return cmp.Compare(b, a) })
 	found := walkGlobalTokenPages(t, r, GlobalTokenFilter{NameContains: "gene"}, 1)
 	gotFound := make([]int64, len(found))
 	for i := range found {

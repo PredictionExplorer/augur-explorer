@@ -10,6 +10,7 @@ package urlalarm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -31,7 +32,7 @@ const (
 // Notifier sends a text notification to a phone number. It is satisfied by
 // *wanotif.Whatsapp.
 type Notifier interface {
-	SendText(toPhoneNumber string, text string) (map[string]interface{}, error)
+	SendText(toPhoneNumber string, text string) (map[string]any, error)
 }
 
 // Config holds the engine configuration.
@@ -177,7 +178,7 @@ func ParseURLList(data []byte) (map[string]string, error) {
 		urls[fields[0]] = fields[1]
 	}
 	if len(urls) == 0 {
-		return nil, fmt.Errorf("URL list is empty")
+		return nil, errors.New("URL list is empty")
 	}
 	return urls, nil
 }
@@ -187,7 +188,7 @@ func ParseURLList(data []byte) (map[string]string, error) {
 func ParsePhoneList(s string) (map[string]string, error) {
 	people := make(map[string]string)
 	if s == "" {
-		return nil, fmt.Errorf("phone list is empty")
+		return nil, errors.New("phone list is empty")
 	}
 	for rowNum, entry := range strings.Split(s, ",") {
 		personPhone := strings.Split(entry, ":")

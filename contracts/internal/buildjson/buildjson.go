@@ -20,13 +20,14 @@ package buildjson
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -154,7 +155,7 @@ func metaFromLit(lit *ast.CompositeLit) (Meta, error) {
 		}
 	}
 	if meta.ABI == "" {
-		return Meta{}, fmt.Errorf("no ABI literal found")
+		return Meta{}, errors.New("no ABI literal found")
 	}
 	return meta, nil
 }
@@ -311,6 +312,6 @@ func SortedKeys[V any](m map[string]V) []string {
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return keys
 }

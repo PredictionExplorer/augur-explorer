@@ -4,13 +4,14 @@ package txcollector
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -152,11 +153,11 @@ func Run(ctx context.Context, cfg Config, opts RunOptions) (RunStats, error) {
 	for hash, blockNum := range seen {
 		refs = append(refs, txRef{hash: hash, blockNum: blockNum})
 	}
-	sort.Slice(refs, func(i, j int) bool {
-		if refs[i].blockNum != refs[j].blockNum {
-			return refs[i].blockNum < refs[j].blockNum
-		}
-		return bytes.Compare(refs[i].hash[:], refs[j].hash[:]) < 0
+	slices.SortFunc(refs, func(a, b txRef) int {
+		return cmp.Or(
+			cmp.Compare(a.blockNum, b.blockNum),
+			bytes.Compare(a.hash[:], b.hash[:]),
+		)
 	})
 
 	logf(cfg.Logger, "Collected %d unique transactions from logs; fetching tx + receipt …", len(refs))

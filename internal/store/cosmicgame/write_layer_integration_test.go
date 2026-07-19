@@ -22,13 +22,12 @@ func TestDeleteMethodsValidSQL(t *testing.T) {
 	r := repo(t)
 	ctx := context.Background()
 
-	repoType := reflect.TypeOf(r)
-	ctxType := reflect.TypeOf((*context.Context)(nil)).Elem()
-	errType := reflect.TypeOf((*error)(nil)).Elem()
+	repoType := reflect.TypeFor[*Repo]()
+	ctxType := reflect.TypeFor[context.Context]()
+	errType := reflect.TypeFor[error]()
 
 	swept := 0
-	for i := range repoType.NumMethod() {
-		m := repoType.Method(i)
+	for m := range repoType.Methods() {
 		if !strings.HasPrefix(m.Name, "Delete") {
 			continue
 		}
@@ -36,7 +35,7 @@ func TestDeleteMethodsValidSQL(t *testing.T) {
 		// (receiver, ctx, int64) error — the by-evtlog-id delete shape
 		// (DeleteBannedBid shares it; the sweep covers it too).
 		if mt.NumIn() != 3 || mt.NumOut() != 1 ||
-			mt.In(1) != ctxType || mt.In(2) != reflect.TypeOf(int64(0)) || mt.Out(0) != errType {
+			mt.In(1) != ctxType || mt.In(2) != reflect.TypeFor[int64]() || mt.Out(0) != errType {
 			continue
 		}
 		swept++

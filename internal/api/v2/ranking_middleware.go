@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
@@ -128,12 +129,7 @@ func (c RankingConfig) voteChainAllowed(chainID int64) bool {
 	if len(c.VoteChainIDs) == 0 {
 		return true
 	}
-	for _, allowed := range c.VoteChainIDs {
-		if allowed == chainID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.VoteChainIDs, chainID)
 }
 
 // writeRateLimitMiddleware enforces all per-operation v2 write buckets.

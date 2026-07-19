@@ -209,6 +209,7 @@ type GlobalTokenStake struct {
 // owner and, while staked, the locking stake action.
 type GlobalTokenDetailRecord struct {
 	GlobalTokenRecord
+
 	CurrentStake *GlobalTokenStake
 }
 

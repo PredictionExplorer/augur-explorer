@@ -7,6 +7,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -37,10 +38,10 @@ import (
 // processed; processors stay idempotent under replay as defense in depth.
 func (e *Engine) Run(ctx context.Context) error {
 	if e.progress == nil || e.process == nil {
-		return fmt.Errorf("indexer: Run requires Config.Progress and Config.Process")
+		return errors.New("indexer: Run requires Config.Progress and Config.Process")
 	}
 	if len(e.contracts) == 0 {
-		return fmt.Errorf("indexer: Run requires a non-empty Config.Contracts (an empty FilterLogs address list would match every contract)")
+		return errors.New("indexer: Run requires a non-empty Config.Contracts (an empty FilterLogs address list would match every contract)")
 	}
 
 	// In-flight batch DB work must complete even when shutdown has been
@@ -113,10 +114,7 @@ func (e *Engine) Run(ctx context.Context) error {
 			}
 			continue
 		}
-		toBlock := fromBlock + batch.size - 1
-		if toBlock > head {
-			toBlock = head
-		}
+		toBlock := min(fromBlock+batch.size-1, head)
 
 		started := time.Now()
 		logs, err := FetchLogs(ctx, e.client, fromBlock, toBlock, e.contracts)

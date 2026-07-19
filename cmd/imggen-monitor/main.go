@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -41,17 +42,25 @@ import (
 // httpRequestTimeout bounds each artifact-server or generator request.
 const httpRequestTimeout = 30 * time.Second
 
+// osExit is stubbed by tests that drive main through its failure arm.
+var osExit = os.Exit
+
 func main() {
 	if version.HandleFlag(os.Args[1:], os.Stdout) {
 		return
 	}
+	if err := runMain(os.Args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "imggen-monitor: %v\n", err)
+		osExit(1)
+	}
+}
+
+// runMain owns the signal-scoped context so its deferred cleanup always runs
+// before main decides the exit code (os.Exit skips deferred calls).
+func runMain(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	if err := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "imggen-monitor: %v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx, args, os.Getenv, os.Stdout, os.Stderr, os.Stdout)
 }
 
 // repoTokenSource adapts the CosmicGame repository to imggen.TokenSource.
@@ -100,7 +109,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 	// One-shot mode: request generation for a single token.
 	if *tokenID >= 0 {
 		if *seed == "" {
-			return fmt.Errorf("-token requires -seed")
+			return errors.New("-token requires -seed")
 		}
 		return client.Generate(ctx, *tokenID, *seed)
 	}

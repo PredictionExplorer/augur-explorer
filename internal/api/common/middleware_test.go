@@ -3,7 +3,6 @@ package common
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"math"
 	"net"
@@ -329,7 +328,7 @@ func TestRecoveryPassesNormalResponsesWithDefaultLogger(t *testing.T) {
 }
 
 func TestRecoveryHandlesOrdinaryErrorPanic(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	h := Recovery(logger)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic(errors.New("ordinary failure"))
 	}))
@@ -355,7 +354,7 @@ func TestRecoveryRepanicsAbortHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Recovery(slog.New(slog.NewTextHandler(io.Discard, nil)))(
+			h := Recovery(slog.New(slog.DiscardHandler))(
 				http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 					panic(tt.err)
 				}),
@@ -377,7 +376,7 @@ func TestRecoveryRepanicsAbortHandler(t *testing.T) {
 
 func TestRecoveryDoesNotOverrideStartedResponse(t *testing.T) {
 	r := httpx.NewRouter()
-	r.Use(Recovery(slog.New(slog.NewTextHandler(io.Discard, nil))))
+	r.Use(Recovery(slog.New(slog.DiscardHandler)))
 	r.GET("/late-boom", func(c *httpx.Context) {
 		c.Status(http.StatusOK)
 		panic("after header")

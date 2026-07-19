@@ -284,10 +284,7 @@ func txMismatchStats(ctx context.Context, db Querier, addressIDs []int64) (core,
 	).Scan(&core); err != nil {
 		return 0, 0, fmt.Errorf("tx mismatch (core): %w", err)
 	}
-	numLogsOnly = strict - core
-	if numLogsOnly < 0 {
-		numLogsOnly = 0
-	}
+	numLogsOnly = max(strict-core, 0)
 	return core, numLogsOnly, nil
 }
 

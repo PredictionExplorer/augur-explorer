@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -349,7 +348,7 @@ func newUserTestServer(t *testing.T, users userReader) *Server {
 		fakeRandomWalkReader{},
 		fakeRankingRepository{},
 		fakeContractState{},
-		slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}

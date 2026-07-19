@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -114,7 +114,7 @@ func childCommandNames(command *cobra.Command) []string {
 	for _, child := range command.Commands() {
 		names = append(names, child.Name())
 	}
-	sort.Strings(names)
+	slices.Sort(names)
 	return names
 }
 
@@ -123,6 +123,6 @@ func sortedKeys(values map[string][]string) []string {
 	for key := range values {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return keys
 }

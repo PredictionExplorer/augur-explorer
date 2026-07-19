@@ -41,9 +41,6 @@ type PgxOp struct {
 	OnCall func()
 }
 
-// IntPointer returns a pointer to value, for PgxOp.ArgCount literals.
-func IntPointer(value int) *int { return &value }
-
 // ScriptedPgx serves scripted results through the pgx query surface the ops
 // packages consume (Exec/Query/QueryRow) plus the pool-shaped Ping/Close,
 // so it satisfies both the per-package Querier interfaces and command

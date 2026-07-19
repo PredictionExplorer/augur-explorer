@@ -83,18 +83,37 @@ func TestFloatSanitizersRemoveNonFiniteValuesRecursively(t *testing.T) {
 		}
 	})
 
+	t.Run("slice elements recurse into maps and slices", func(t *testing.T) {
+		value := []any{
+			math.NaN(),
+			map[string]any{"nested": math.Inf(1)},
+			[]any{math.Inf(-1), "unchanged"},
+			"unchanged",
+		}
+		sanitizeSliceFloatsForJSON(value)
+		assertFiniteJSON(t, map[string]any{"wrapped": value})
+		nestedMap, ok := value[1].(map[string]any)
+		if !ok || nestedMap["nested"] != 0.0 {
+			t.Fatalf("map element not sanitized: %#v", value[1])
+		}
+		nestedSlice, ok := value[2].([]any)
+		if !ok || nestedSlice[0] != 0.0 || nestedSlice[1] != "unchanged" {
+			t.Fatalf("slice element not sanitized: %#v", value[2])
+		}
+	})
+
 	t.Run("maps and interface slices", func(t *testing.T) {
-		value := map[string]interface{}{
+		value := map[string]any{
 			"nil":    nil,
 			"finite": 3.5,
 			"nan":    math.NaN(),
-			"map": map[string]interface{}{
+			"map": map[string]any{
 				"positiveInfinity": math.Inf(1),
 			},
-			"slice": []interface{}{
+			"slice": []any{
 				math.Inf(-1),
-				map[string]interface{}{"nestedNaN": math.NaN()},
-				[]interface{}{math.Inf(1), "unchanged"},
+				map[string]any{"nestedNaN": math.NaN()},
+				[]any{math.Inf(1), "unchanged"},
 			},
 			"other": "unchanged",
 		}
@@ -183,7 +202,7 @@ func TestRespondStoreErrorKeepsDetailsOutOfResponse(t *testing.T) {
 	})
 }
 
-func assertFiniteJSON(t *testing.T, value interface{}) {
+func assertFiniteJSON(t *testing.T, value any) {
 	t.Helper()
 	if _, err := json.Marshal(value); err != nil {
 		t.Fatalf("value is not valid JSON after sanitizing: %v\n%#v", err, value)

@@ -39,10 +39,10 @@ func renderField(f reflect.StructField, fv reflect.Value) string {
 	case "url":
 		return RedactURL(fv.String())
 	}
-	if fv.Type() == reflect.TypeOf(time.Duration(0)) {
+	if fv.Type() == reflect.TypeFor[time.Duration]() {
 		return time.Duration(fv.Int()).String()
 	}
-	if fv.Type() == reflect.TypeOf(time.Time{}) {
+	if fv.Type() == reflect.TypeFor[time.Time]() {
 		t, _ := fv.Interface().(time.Time)
 		if t.IsZero() {
 			return "[unset]"

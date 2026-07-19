@@ -3,7 +3,7 @@ package srvmonitor
 import (
 	"context"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -46,8 +46,8 @@ type ImageMonitor struct {
 	interval time.Duration
 	connect  Connector
 	client   *http.Client
-	// randInt63n picks the random spot-check token; tests pin it.
-	randInt63n func(n int64) int64
+	// randInt64N picks the random spot-check token; tests pin it.
+	randInt64N func(n int64) int64
 }
 
 // NewImageMonitor creates a new image monitor.
@@ -60,7 +60,7 @@ func NewImageMonitor(imgCfg ImageServerConfig, dbCfg DatabaseConfig, baseY int, 
 		connect:  ConnectPostgres,
 		client:   &http.Client{Timeout: imageProbeTimeout},
 		// Non-cryptographic sampling of a token id to spot-check the server.
-		randInt63n: rand.Int63n,
+		randInt64N: rand.Int64N,
 	}
 }
 
@@ -147,7 +147,7 @@ func (m *ImageMonitor) checkImages(ctx context.Context, errorChan chan<- string)
 	if len(tokenIDs) > 0 {
 		maxTokenID := tokenIDs[0]
 		if maxTokenID > 0 {
-			randomTokenID := m.randInt63n(maxTokenID + 1)
+			randomTokenID := m.randInt64N(maxTokenID + 1)
 			m.data.RandomToken.TokenID = randomTokenID
 			isPresent, err := m.checkImage(ctx, randomTokenID)
 			m.data.RandomToken.IsPresent = isPresent

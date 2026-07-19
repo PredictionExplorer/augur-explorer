@@ -31,9 +31,7 @@ metadata and the user's ETH balance.
 
 ` + readEnvHelp,
 		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runERC20Balance(cmd, args)
-		},
+		RunE: runERC20Balance,
 	}
 }
 
@@ -45,9 +43,7 @@ func newERC20AllowanceCmd() *cobra.Command {
 
 ` + readEnvHelp,
 		Args: cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runERC20Allowance(cmd, args)
-		},
+		RunE: runERC20Allowance,
 	}
 }
 

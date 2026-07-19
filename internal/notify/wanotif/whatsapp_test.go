@@ -93,14 +93,14 @@ func TestSendText(t *testing.T) {
 	if ct := gotReq.Header.Get("Content-Type"); ct != "application/json" {
 		t.Errorf("Content-Type = %q", ct)
 	}
-	var payload map[string]interface{}
+	var payload map[string]any
 	if err := json.Unmarshal(*gotBody, &payload); err != nil {
 		t.Fatalf("request body is not JSON: %v", err)
 	}
 	if payload["to"] != "15550001111" || payload["type"] != "text" {
 		t.Errorf("payload envelope = %v", payload)
 	}
-	if text, ok := payload["text"].(map[string]interface{}); !ok || text["body"] != "server down" {
+	if text, ok := payload["text"].(map[string]any); !ok || text["body"] != "server down" {
 		t.Errorf("payload text = %v", payload["text"])
 	}
 }

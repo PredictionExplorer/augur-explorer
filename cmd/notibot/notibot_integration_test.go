@@ -44,10 +44,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	os.Exit(runMain(m))
+	os.Exit(testMainRun(m))
 }
 
-func runMain(m *testing.M) int {
+func testMainRun(m *testing.M) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 

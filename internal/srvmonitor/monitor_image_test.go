@@ -69,7 +69,7 @@ func newImageTestSetup(t *testing.T, tokenIDs []int64, nextTokenID int64) *image
 		RPCURL:       chain.URL(),
 	}, dbConfig("rwalk"), 35, testIntervals())
 	m.connect = connector(conn, nil)
-	m.randInt63n = func(n int64) int64 { return 2 } // deterministic random pick
+	m.randInt64N = func(n int64) int64 { return 2 } // deterministic random pick
 
 	s.monitor = m
 	return s
@@ -205,7 +205,7 @@ func TestImageMonitorMalformedImageURL(t *testing.T) {
 		RPCURL:       chain.URL(),
 	}, dbConfig("rwalk"), 35, testIntervals())
 	m.connect = connector(conn, nil)
-	m.randInt63n = func(int64) int64 { return 3 }
+	m.randInt64N = func(int64) int64 { return 3 }
 
 	errCh := make(chan string, 10)
 	m.check(context.Background(), newFakeDisplay(), errCh)
@@ -258,7 +258,7 @@ func TestImageMonitorContractFailure(t *testing.T) {
 		RPCURL:       "http://127.0.0.1:1", // unreachable node
 	}, dbConfig("rwalk"), 35, testIntervals())
 	m.connect = connector(conn, nil)
-	m.randInt63n = func(int64) int64 { return 0 }
+	m.randInt64N = func(int64) int64 { return 0 }
 
 	errCh := make(chan string, 10)
 	m.check(context.Background(), newFakeDisplay(), errCh)
@@ -322,7 +322,7 @@ func TestImageMonitorImageServerUnreachable(t *testing.T) {
 		RPCURL:       chain.URL(),
 	}, dbConfig("rwalk"), 35, testIntervals())
 	m.connect = connector(conn, nil)
-	m.randInt63n = func(int64) int64 { return 3 }
+	m.randInt64N = func(int64) int64 { return 3 }
 
 	errCh := make(chan string, 10)
 	m.check(context.Background(), newFakeDisplay(), errCh)

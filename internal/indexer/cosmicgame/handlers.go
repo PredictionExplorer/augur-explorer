@@ -7,6 +7,7 @@ package cosmicgame
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -150,13 +151,13 @@ type Handlers struct {
 // handler registry.
 func New(cfg Config) (*Handlers, error) {
 	if cfg.Repo == nil {
-		return nil, fmt.Errorf("cosmicgame handlers: Config.Repo is required")
+		return nil, errors.New("cosmicgame handlers: Config.Repo is required")
 	}
 	if cfg.Store == nil {
-		return nil, fmt.Errorf("cosmicgame handlers: Config.Store is required")
+		return nil, errors.New("cosmicgame handlers: Config.Store is required")
 	}
 	if cfg.Caller == nil {
-		return nil, fmt.Errorf("cosmicgame handlers: Config.Caller is required")
+		return nil, errors.New("cosmicgame handlers: Config.Caller is required")
 	}
 	logger := cfg.Logger
 	if logger == nil {

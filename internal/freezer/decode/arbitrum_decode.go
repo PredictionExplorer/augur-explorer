@@ -2,6 +2,7 @@
 package decode
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -70,7 +71,7 @@ func smartDecompress(data []byte) ([]byte, error) {
 	// Parse varint at start
 	rlpSize, varintBytes := decodeVarintLocal(data)
 	if varintBytes == 0 || rlpSize == 0 {
-		return nil, fmt.Errorf("invalid varint header")
+		return nil, errors.New("invalid varint header")
 	}
 
 	// Scan for RLP list prefix after varint
@@ -87,7 +88,7 @@ func smartDecompress(data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no valid RLP found after header")
+	return nil, errors.New("no valid RLP found after header")
 }
 
 // decodeVarintLocal decodes a varint, returns value and bytes consumed.

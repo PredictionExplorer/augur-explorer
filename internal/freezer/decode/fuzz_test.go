@@ -101,7 +101,7 @@ func FuzzArbitrumLegacyDecode(f *testing.F) {
 
 func FuzzArbitrumLogDecode(f *testing.F) {
 	// A well-formed log: [address, topics, data]
-	good, err := rlp.EncodeToBytes([]interface{}{
+	good, err := rlp.EncodeToBytes([]any{
 		common.HexToAddress("0x1234567890123456789012345678901234567890"),
 		[]common.Hash{common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")},
 		[]byte{0x01, 0x02},
