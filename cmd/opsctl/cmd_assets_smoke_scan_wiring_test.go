@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,20 +30,20 @@ func TestAssetsInventoryCommandWiring(t *testing.T) {
 		t.Fatal("environment connection used with --db")
 		return "", nil
 	}
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
 		// #nosec G101 -- deliberately fake URL verifies password redaction.
-		if driverName != "postgres" || conn != "postgres://user:secret@db.example/app" {
-			t.Fatalf("open = %q/%q", driverName, conn)
+		if conn != "postgres://user:secret@db.example/app" {
+			t.Fatalf("open conn = %q", conn)
 		}
 		return db, nil
 	}
-	deps.ping = func(ctx context.Context, gotDB *sql.DB) error {
+	deps.ping = func(ctx context.Context, gotDB opsDB) error {
 		if err := ctx.Err(); err != nil || gotDB != db {
-			t.Fatalf("ping = %v/%p", err, gotDB)
+			t.Fatalf("ping = %v/%v", err, gotDB)
 		}
 		return nil
 	}
-	deps.newSource = func(gotDB *sql.DB) opsassets.TokenSource {
+	deps.newSource = func(gotDB opsDB) opsassets.TokenSource {
 		if gotDB != db {
 			t.Fatal("wrong inventory source database")
 		}
@@ -82,9 +81,6 @@ func TestAssetsInventoryCommandWiring(t *testing.T) {
 	if !strings.Contains(result.stdout, "inventory wiring complete") {
 		t.Fatalf("stdout = %q", result.stdout)
 	}
-	if db.Stats().MaxOpenConnections != 2 {
-		t.Fatalf("max connections = %d", db.Stats().MaxOpenConnections)
-	}
 	assertCommandDBClosed(t, db)
 }
 
@@ -93,14 +89,14 @@ func TestAssetsInventoryCommandSetupAndErrors(t *testing.T) {
 		db := newCommandTestDB(t)
 		deps := defaultAssetsInventoryDeps()
 		deps.postgresConn = func() (string, error) { return "environment-dsn", nil }
-		deps.openDB = func(_ string, conn string) (*sql.DB, error) {
+		deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
 			if conn != "environment-dsn" {
 				t.Fatalf("conn = %q", conn)
 			}
 			return db, nil
 		}
-		deps.ping = func(context.Context, *sql.DB) error { return nil }
-		deps.newSource = func(*sql.DB) opsassets.TokenSource {
+		deps.ping = func(context.Context, opsDB) error { return nil }
+		deps.newSource = func(opsDB) opsassets.TokenSource {
 			return tokenSourceFunc(func(context.Context, string) ([]opsassets.Token, error) { return nil, nil })
 		}
 		deps.run = func(context.Context, opsassets.InventoryOptions) (opsassets.InventorySummary, error) {
@@ -137,7 +133,7 @@ func TestAssetsInventoryCommandSetupAndErrors(t *testing.T) {
 	t.Run("open", func(t *testing.T) {
 		want := errors.New("database unavailable")
 		deps := defaultAssetsInventoryDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(newAssetsInventoryCmdWithDeps(deps), "--db", "database")
 		if !errors.Is(result.err, want) || !strings.Contains(result.err.Error(), "connect") {
 			t.Fatalf("error = %v", result.err)
@@ -148,8 +144,8 @@ func TestAssetsInventoryCommandSetupAndErrors(t *testing.T) {
 		db := newCommandTestDB(t)
 		want := errors.New("ping failed")
 		deps := defaultAssetsInventoryDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-		deps.ping = func(context.Context, *sql.DB) error { return want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+		deps.ping = func(context.Context, opsDB) error { return want }
 		result := executeCommand(newAssetsInventoryCmdWithDeps(deps), "--db", "database")
 		if !errors.Is(result.err, want) || !strings.Contains(result.err.Error(), "ping database") {
 			t.Fatalf("error = %v", result.err)
@@ -167,9 +163,9 @@ func TestAssetsInventoryCommandSetupAndErrors(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			db := newCommandTestDB(t)
 			deps := defaultAssetsInventoryDeps()
-			deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-			deps.ping = func(context.Context, *sql.DB) error { return nil }
-			deps.newSource = func(*sql.DB) opsassets.TokenSource { return nil }
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.ping = func(context.Context, opsDB) error { return nil }
+			deps.newSource = func(opsDB) opsassets.TokenSource { return nil }
 			deps.run = func(context.Context, opsassets.InventoryOptions) (opsassets.InventorySummary, error) {
 				return opsassets.InventorySummary{}, test.err
 			}
@@ -204,14 +200,14 @@ func TestAssetsThumbnailsCommandWiring(t *testing.T) {
 		}
 		return "/opt/bin/magick", nil
 	}
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-		if driverName != "postgres" || conn != "database" {
-			t.Fatalf("open = %q/%q", driverName, conn)
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
+		if conn != "database" {
+			t.Fatalf("open conn = %q", conn)
 		}
 		return db, nil
 	}
-	deps.ping = func(context.Context, *sql.DB) error { return nil }
-	deps.newSource = func(*sql.DB) opsassets.TokenSource { return source }
+	deps.ping = func(context.Context, opsDB) error { return nil }
+	deps.newSource = func(opsDB) opsassets.TokenSource { return source }
 	deps.runner = runner
 	deps.clock = clock
 	deps.generate = func(
@@ -325,7 +321,7 @@ func TestAssetsThumbnailsCommandValidationSetupAndErrors(t *testing.T) {
 		want := errors.New("database unavailable")
 		deps := defaultAssetsThumbnailsDeps()
 		deps.resolveMagick = func(string) (string, error) { return "/magick", nil }
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(
 			newAssetsGenThumbnailsCmdWithDeps(deps),
 			"--base", t.TempDir(),
@@ -341,8 +337,8 @@ func TestAssetsThumbnailsCommandValidationSetupAndErrors(t *testing.T) {
 		want := errors.New("ping failed")
 		deps := defaultAssetsThumbnailsDeps()
 		deps.resolveMagick = func(string) (string, error) { return "/magick", nil }
-		deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-		deps.ping = func(context.Context, *sql.DB) error { return want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+		deps.ping = func(context.Context, opsDB) error { return want }
 		result := executeCommand(
 			newAssetsGenThumbnailsCmdWithDeps(deps),
 			"--base", t.TempDir(),
@@ -364,9 +360,9 @@ func TestAssetsThumbnailsCommandValidationSetupAndErrors(t *testing.T) {
 			db := newCommandTestDB(t)
 			deps := defaultAssetsThumbnailsDeps()
 			deps.resolveMagick = func(string) (string, error) { return "/magick", nil }
-			deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-			deps.ping = func(context.Context, *sql.DB) error { return nil }
-			deps.newSource = func(*sql.DB) opsassets.TokenSource { return nil }
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.ping = func(context.Context, opsDB) error { return nil }
+			deps.newSource = func(opsDB) opsassets.TokenSource { return nil }
 			deps.generate = func(context.Context, opsassets.ThumbnailOptions) (opsassets.ThumbnailSummary, error) {
 				return opsassets.ThumbnailSummary{}, test.err
 			}
@@ -578,10 +574,7 @@ func TestSmoketestCommandWiring(t *testing.T) {
 	}
 	deps := defaultSmoketestDeps()
 	deps.getenv = func(name string) string { return values[name] }
-	deps.openDB = func(driverName, dsn string) (*sql.DB, error) {
-		if driverName != "postgres" {
-			t.Fatalf("driver = %q", driverName)
-		}
+	deps.openDB = func(_ context.Context, dsn string) (opsDB, error) {
 		parsed, err := url.Parse(dsn)
 		if err != nil {
 			t.Fatal(err)
@@ -594,8 +587,8 @@ func TestSmoketestCommandWiring(t *testing.T) {
 		}
 		return db, nil
 	}
-	deps.ping = func(context.Context, *sql.DB) error { return nil }
-	deps.newSource = func(*sql.DB) smoketest.ParameterSource { return source }
+	deps.ping = func(context.Context, opsDB) error { return nil }
+	deps.newSource = func(opsDB) smoketest.ParameterSource { return source }
 	deps.client = client
 	deps.apiBase = func() string { return "https://api.example/root" }
 	deps.run = func(ctx context.Context, options smoketest.Options) (smoketest.Summary, error) {
@@ -635,7 +628,7 @@ func TestSmoketestCommandSetupAndErrors(t *testing.T) {
 	t.Run("missing environment", func(t *testing.T) {
 		deps := defaultSmoketestDeps()
 		deps.getenv = func(string) string { return "" }
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			t.Fatal("database opened")
 			return nil, nil
 		}
@@ -649,7 +642,7 @@ func TestSmoketestCommandSetupAndErrors(t *testing.T) {
 		want := errors.New("open failed")
 		deps := defaultSmoketestDeps()
 		deps.getenv = func(name string) string { return requiredEnv[name] }
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(newSmoketestCmdWithDeps(deps))
 		if !errors.Is(result.err, want) || !strings.Contains(result.err.Error(), "DB open failed") {
 			t.Fatalf("error = %v", result.err)
@@ -661,8 +654,8 @@ func TestSmoketestCommandSetupAndErrors(t *testing.T) {
 		want := errors.New("ping failed")
 		deps := defaultSmoketestDeps()
 		deps.getenv = func(name string) string { return requiredEnv[name] }
-		deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-		deps.ping = func(context.Context, *sql.DB) error { return want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+		deps.ping = func(context.Context, opsDB) error { return want }
 		result := executeCommand(newSmoketestCmdWithDeps(deps))
 		if !errors.Is(result.err, want) || !strings.Contains(result.err.Error(), "DB ping failed") {
 			t.Fatalf("error = %v", result.err)
@@ -681,9 +674,9 @@ func TestSmoketestCommandSetupAndErrors(t *testing.T) {
 			db := newCommandTestDB(t)
 			deps := defaultSmoketestDeps()
 			deps.getenv = func(name string) string { return requiredEnv[name] }
-			deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-			deps.ping = func(context.Context, *sql.DB) error { return nil }
-			deps.newSource = func(*sql.DB) smoketest.ParameterSource { return nil }
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.ping = func(context.Context, opsDB) error { return nil }
+			deps.newSource = func(opsDB) smoketest.ParameterSource { return nil }
 			deps.apiBase = func() string { return "http://api" }
 			deps.run = func(context.Context, smoketest.Options) (smoketest.Summary, error) {
 				return smoketest.Summary{}, test.err
@@ -715,13 +708,13 @@ func TestCstAuctionLengthCommandWiring(t *testing.T) {
 		}
 		return rpc, nil
 	}
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-		if driverName != "postgres" || conn != "database" {
-			t.Fatalf("open = %q/%q", driverName, conn)
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
+		if conn != "database" {
+			t.Fatalf("open conn = %q", conn)
 		}
 		return db, nil
 	}
-	deps.newKeySource = func(gotDB *sql.DB) cstscan.KeySource {
+	deps.newKeySource = func(gotDB opsDB) cstscan.KeySource {
 		if gotDB != db {
 			t.Fatal("wrong key-source database")
 		}
@@ -778,7 +771,7 @@ func TestCstAuctionLengthCommandWithoutDatabase(t *testing.T) {
 	deps := defaultCstAuctionLenDeps()
 	deps.getenv = func(string) string { return "rpc" }
 	deps.dialRPC = func(context.Context, string) (cstAuctionLenRPC, error) { return rpc, nil }
-	deps.openDB = func(string, string) (*sql.DB, error) {
+	deps.openDB = func(context.Context, string) (opsDB, error) {
 		t.Fatal("database opened without --db")
 		return nil, nil
 	}
@@ -836,7 +829,7 @@ func TestCstAuctionLengthValidationSetupAndErrors(t *testing.T) {
 		deps := defaultCstAuctionLenDeps()
 		deps.getenv = func(string) string { return "rpc" }
 		deps.dialRPC = func(context.Context, string) (cstAuctionLenRPC, error) { return rpc, nil }
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(newScanCstAuctionLenCmdWithDeps(deps), "--db", "database")
 		if !errors.Is(result.err, want) || !strings.Contains(result.err.Error(), "db open") {
 			t.Fatalf("error = %v", result.err)
@@ -859,8 +852,8 @@ func TestCstAuctionLengthValidationSetupAndErrors(t *testing.T) {
 			deps := defaultCstAuctionLenDeps()
 			deps.getenv = func(string) string { return "rpc" }
 			deps.dialRPC = func(context.Context, string) (cstAuctionLenRPC, error) { return rpc, nil }
-			deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-			deps.newKeySource = func(*sql.DB) cstscan.KeySource { return nil }
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.newKeySource = func(opsDB) cstscan.KeySource { return nil }
 			deps.scan = func(context.Context, cstscan.Config, cstscan.Options) (cstscan.Stats, error) {
 				return cstscan.Stats{}, test.err
 			}
@@ -875,7 +868,6 @@ func TestCstAuctionLengthValidationSetupAndErrors(t *testing.T) {
 
 func TestAssetSmokeAndScanDefaultDependencyAdapters(t *testing.T) {
 	_ = runVerifyTokenImages
-	_ = connectSmoketestDB
 
 	db := newCommandTestDB(t)
 	if _, ok := defaultAssetsInventoryDeps().newSource(db).(opsassets.SQLTokenSource); !ok {
@@ -883,6 +875,23 @@ func TestAssetSmokeAndScanDefaultDependencyAdapters(t *testing.T) {
 	}
 	if _, ok := defaultAssetsThumbnailsDeps().newSource(db).(opsassets.SQLTokenSource); !ok {
 		t.Fatal("default thumbnail source is not SQLTokenSource")
+	}
+	for name, ping := range map[string]func(context.Context, opsDB) error{
+		"inventory":  defaultAssetsInventoryDeps().ping,
+		"thumbnails": defaultAssetsThumbnailsDeps().ping,
+		"smoketest":  defaultSmoketestDeps().ping,
+	} {
+		if err := ping(context.Background(), db); err != nil {
+			t.Fatalf("default %s ping adapter = %v", name, err)
+		}
+	}
+
+	// The production connect path builds a lazy pool from DATABASE_URL and
+	// fails on the eager ping (nothing listens on port 1).
+	t.Setenv("DATABASE_URL", "postgres://user:pass@127.0.0.1:1/db?sslmode=disable&connect_timeout=1")
+	if _, err := connectSmoketestDB(context.Background()); err == nil ||
+		!strings.Contains(err.Error(), "DB ping failed") {
+		t.Fatalf("connectSmoketestDB against a dead endpoint = %v", err)
 	}
 	imageClient, ok := defaultAssetsVerifyTokenImagesDeps().client.(*http.Client)
 	if !ok || imageClient.Timeout != rwalkImageRequestTimeout {

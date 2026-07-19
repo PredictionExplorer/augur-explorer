@@ -4,12 +4,20 @@ package archive
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// Querier is the narrow pgx query surface the archive operations use.
+// *pgxpool.Pool, *pgx.Conn and pgx.Tx satisfy it.
+type Querier interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
 
 // Project selector values accepted by the archive commands.
 const (
@@ -39,7 +47,7 @@ func ResolveProjects(project string) ([]string, error) {
 
 // LoadProjectContracts resolves the registered contract address ids and
 // addresses for project. Every query is bound to ctx.
-func LoadProjectContracts(ctx context.Context, db *sql.DB, project string) (Contracts, error) {
+func LoadProjectContracts(ctx context.Context, db Querier, project string) (Contracts, error) {
 	var query string
 	switch project {
 	case ProjectRandomWalk:
@@ -69,11 +77,11 @@ func LoadProjectContracts(ctx context.Context, db *sql.DB, project string) (Cont
 		return Contracts{}, fmt.Errorf("unknown project %q (want %s or %s)", project, ProjectCosmicGame, ProjectRandomWalk)
 	}
 
-	rows, err := db.QueryContext(ctx, query)
+	rows, err := db.Query(ctx, query)
 	if err != nil {
 		return Contracts{}, fmt.Errorf("contract aids: %w", err)
 	}
-	defer func(contractRows *sql.Rows) { _ = contractRows.Close() }(rows)
+	defer func(contractRows pgx.Rows) { contractRows.Close() }(rows)
 
 	var contracts Contracts
 	for rows.Next() {
@@ -90,14 +98,14 @@ func LoadProjectContracts(ctx context.Context, db *sql.DB, project string) (Cont
 		return Contracts{}, fmt.Errorf("no contract addresses found for project %q", project)
 	}
 
-	rows, err = db.QueryContext(ctx,
+	rows, err = db.Query(ctx,
 		`SELECT addr FROM address WHERE address_id = ANY($1) ORDER BY address_id`,
-		pq.Array(contracts.AddressIDs),
+		contracts.AddressIDs,
 	)
 	if err != nil {
 		return Contracts{}, fmt.Errorf("resolve addrs: %w", err)
 	}
-	defer func(addressRows *sql.Rows) { _ = addressRows.Close() }(rows)
+	defer func(addressRows pgx.Rows) { addressRows.Close() }(rows)
 	for rows.Next() {
 		var addr string
 		if err := rows.Scan(&addr); err != nil {

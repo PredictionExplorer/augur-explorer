@@ -2,28 +2,30 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
 )
 
+// dbCompareMaxConns bounds the pools of the two-database comparison
+// commands; the loaders run one query at a time per handle.
+const dbCompareMaxConns = 2
+
 type dbEvtlogDiffDeps struct {
-	openDB    func(string, string) (*sql.DB, error)
-	loadIDs   func(context.Context, *sql.DB) ([]int64, error)
-	newLoader func(*sql.DB) dbverify.Loader
+	openDB    func(context.Context, string) (opsDB, error)
+	loadIDs   func(context.Context, dbverify.Querier) ([]int64, error)
+	newLoader func(dbverify.Querier) dbverify.Loader
 	diff      func(context.Context, dbverify.Loader, dbverify.Loader, []int64, int, int) (dbverify.EventLogDiffReport, error)
 }
 
 func defaultDBEvtlogDiffDeps() dbEvtlogDiffDeps {
 	return dbEvtlogDiffDeps{
-		openDB:  sql.Open,
+		openDB:  openOpsDB(dbCompareMaxConns),
 		loadIDs: dbverify.LoadRandomWalkContractAddressIDs,
-		newLoader: func(db *sql.DB) dbverify.Loader {
+		newLoader: func(db dbverify.Querier) dbverify.Loader {
 			return &dbverify.SQLLoader{DB: db}
 		},
 		diff: dbverify.DiffEventLogs,
@@ -73,18 +75,18 @@ func runEvtlogDiffWithDeps(
 	limit int,
 	deps dbEvtlogDiffDeps,
 ) error {
-	primaryDB, err := deps.openDB("postgres", primaryConn)
+	primaryDB, err := deps.openDB(ctx, primaryConn)
 	if err != nil {
 		return fmt.Errorf("connect to primary: %w", err)
 	}
-	defer func() { _ = primaryDB.Close() }()
+	defer primaryDB.Close()
 	logger.Println("Connected to primary database")
 
-	secondaryDB, err := deps.openDB("postgres", secondaryConn)
+	secondaryDB, err := deps.openDB(ctx, secondaryConn)
 	if err != nil {
 		return fmt.Errorf("connect to secondary: %w", err)
 	}
-	defer func() { _ = secondaryDB.Close() }()
+	defer secondaryDB.Close()
 	logger.Println("Connected to secondary database")
 
 	contractAddressIDs, err := deps.loadIDs(ctx, primaryDB)

@@ -8,7 +8,6 @@ exclude github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1
 require (
 	github.com/ethereum/go-ethereum v1.17.4
 	github.com/gin-gonic/gin v1.12.0 // indirect
-	github.com/lib/pq v1.12.3
 	//	github.com/wealdtech/go-ens 2be8e3e5fa10e897e9957584302fae93d43d6cc1
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.56.0 // indirect

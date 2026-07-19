@@ -2,7 +2,6 @@ package archive
 
 import (
 	"context"
-	"database/sql/driver"
 	"errors"
 	"math"
 	"math/big"
@@ -169,12 +168,6 @@ type coverageAddressStore struct {
 	errAt int
 	err   error
 }
-
-type coverageCloser struct {
-	err error
-}
-
-func (c coverageCloser) Close() error { return c.err }
 
 func (s *coverageAddressStore) LookupOrCreateAddress(context.Context, string, int64, int64) (int64, error) {
 	s.calls++
@@ -1028,8 +1021,8 @@ func TestNodeFillSQLRepositoryAndSchemaBranches(t *testing.T) {
 	contracts := Contracts{AddressIDs: []int64{8}, Addresses: []string{"0x08"}}
 	t.Run("auto start", func(t *testing.T) {
 		repository := &SQLNodeFillRepository{DB: openScriptDB(t,
-			queryOp("MIN(block_num) FROM address", []string{"min"}, []driver.Value{int64(20)}),
-			queryOp("MIN(block_num) FROM evt_log", []string{"min"}, []driver.Value{int64(10)}),
+			queryOp("MIN(block_num) FROM address", []any{int64(20)}),
+			queryOp("MIN(block_num) FROM evt_log", []any{int64(10)}),
 		)}
 		start, err := repository.ResolveStartBlock(context.Background(), contracts, 0)
 		if err != nil || start != 10 {
@@ -1046,7 +1039,7 @@ func TestNodeFillSQLRepositoryAndSchemaBranches(t *testing.T) {
 	})
 	t.Run("event start query", func(t *testing.T) {
 		repository := &SQLNodeFillRepository{DB: openScriptDB(t,
-			queryOp("MIN(block_num) FROM address", []string{"min"}, []driver.Value{int64(20)}),
+			queryOp("MIN(block_num) FROM address", []any{int64(20)}),
 			queryErrorOp("MIN(block_num) FROM evt_log", sentinel),
 		)}
 		if _, err := repository.ResolveStartBlock(context.Background(), contracts, 0); !errors.Is(err, sentinel) {
@@ -1063,7 +1056,7 @@ func TestNodeFillSQLRepositoryAndSchemaBranches(t *testing.T) {
 	})
 	t.Run("schema missing", func(t *testing.T) {
 		err := RequireArchLogIndex(context.Background(), openScriptDB(t,
-			queryOp("information_schema.columns", []string{"count"}, []driver.Value{int64(0)}),
+			queryOp("information_schema.columns", []any{int64(0)}),
 		))
 		if err == nil || !strings.Contains(err.Error(), "log_index missing") {
 			t.Fatalf("error = %v", err)
@@ -1071,7 +1064,7 @@ func TestNodeFillSQLRepositoryAndSchemaBranches(t *testing.T) {
 	})
 	t.Run("schema present", func(t *testing.T) {
 		err := RequireArchLogIndex(context.Background(), openScriptDB(t,
-			queryOp("information_schema.columns", []string{"count"}, []driver.Value{int64(1)}),
+			queryOp("information_schema.columns", []any{int64(1)}),
 		))
 		if err != nil {
 			t.Fatalf("error = %v", err)
@@ -1079,76 +1072,105 @@ func TestNodeFillSQLRepositoryAndSchemaBranches(t *testing.T) {
 	})
 }
 
-func TestPrepareWriterEveryFailure(t *testing.T) {
-	sentinel := errors.New("prepare failed")
-	matches := []string{
-		"INSERT INTO arch_evtlog",
-		"SELECT 1 FROM arch_evtlog",
-		"INSERT INTO arch_tx",
-		"SELECT 1 FROM arch_tx",
-		"DELETE FROM arch_tx at",
-		"DELETE FROM arch_evtlog",
-		"DELETE FROM arch_block",
-		"INSERT INTO arch_block",
-		"SELECT 1 FROM arch_block",
+func TestPrepareWriterValidation(t *testing.T) {
+	if _, err := (&SQLNodeFillRepository{}).PrepareWriter(context.Background()); err == nil ||
+		!strings.Contains(err.Error(), "database is required") {
+		t.Fatalf("nil-database error = %v", err)
 	}
-	for failAt := range matches {
-		t.Run(matches[failAt], func(t *testing.T) {
-			ops := make([]scriptOp, 0, failAt+1)
-			for index := 0; index <= failAt; index++ {
-				if index == failAt {
-					ops = append(ops, prepareErrorOp(matches[index], sentinel))
-				} else {
-					ops = append(ops, prepareOp(matches[index]))
-				}
-			}
-			_, err := (&SQLNodeFillRepository{DB: openScriptDB(t, ops...)}).PrepareWriter(context.Background())
-			if !errors.Is(err, sentinel) {
-				t.Fatalf("error = %v", err)
-			}
-		})
+	writer, err := (&SQLNodeFillRepository{DB: openScriptDB(t)}).PrepareWriter(context.Background())
+	if err != nil {
+		t.Fatalf("PrepareWriter() error = %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
 	}
 }
 
-func TestPreparedHelpersAndCloseBranches(t *testing.T) {
+func TestSQLNodeFillWriterBranches(t *testing.T) {
 	sentinel := errors.New("statement failed")
-	t.Run("statement query error", func(t *testing.T) {
-		statement := prepareStatement(t,
-			prepareOp("INSERT test statement"),
-			queryErrorOp("INSERT test statement", sentinel),
-		)
-		if _, err := statementExists(context.Background(), statement); !errors.Is(err, sentinel) {
+	t.Run("exists query error", func(t *testing.T) {
+		db := openScriptDB(t, queryErrorOp("SELECT 1 FROM arch_tx", sentinel))
+		writer := &sqlNodeFillWriter{db: db}
+		if _, err := writer.TransactionExists(context.Background(), "0xtx"); !errors.Is(err, sentinel) {
 			t.Fatalf("error = %v", err)
 		}
 	})
-	t.Run("row result error", func(t *testing.T) {
-		if _, err := rowInserted(nil, sentinel); !errors.Is(err, sentinel) {
-			t.Fatalf("error = %v", err)
+	t.Run("exists false on no rows", func(t *testing.T) {
+		db := openScriptDB(t, queryOp("SELECT 1 FROM arch_evtlog"))
+		writer := &sqlNodeFillWriter{db: db}
+		exists, err := writer.EventLogExists(context.Background(), "0xtx", 0)
+		if err != nil || exists {
+			t.Fatalf("exists/error = %v/%v", exists, err)
 		}
 	})
-	t.Run("rows affected error", func(t *testing.T) {
-		if _, err := rowInserted(scriptResult{affectedErr: sentinel}, nil); !errors.Is(err, sentinel) {
-			t.Fatalf("error = %v", err)
+	t.Run("exists true on row", func(t *testing.T) {
+		db := openScriptDB(t, queryOp("SELECT 1 FROM arch_block", []any{int64(1)}))
+		writer := &sqlNodeFillWriter{db: db}
+		exists, err := writer.BlockExists(context.Background(), 10, "hash")
+		if err != nil || !exists {
+			t.Fatalf("exists/error = %v/%v", exists, err)
 		}
 	})
-	t.Run("zero rows", func(t *testing.T) {
-		inserted, err := rowInserted(scriptResult{}, nil)
+	t.Run("conflict skips insert", func(t *testing.T) {
+		db := openScriptDB(t, execOp("INSERT INTO arch_tx", 0))
+		writer := &sqlNodeFillWriter{db: db}
+		inserted, err := writer.InsertTransaction(context.Background(), Transaction{TxHash: "0xtx"})
 		if err != nil || inserted {
 			t.Fatalf("inserted/error = %v/%v", inserted, err)
 		}
 	})
-	t.Run("nil statements", func(t *testing.T) {
-		if err := (&sqlNodeFillWriter{}).Close(); err != nil {
+	t.Run("insert event error", func(t *testing.T) {
+		db := openScriptDB(t, execErrorOp("INSERT INTO arch_evtlog", sentinel))
+		writer := &sqlNodeFillWriter{db: db}
+		if _, err := writer.InsertEventLog(context.Background(), EventLog{}); !errors.Is(err, sentinel) {
 			t.Fatalf("error = %v", err)
 		}
 	})
-	t.Run("first close error", func(t *testing.T) {
-		err := closeStatements([]statementCloser{
-			coverageCloser{err: sentinel},
-			coverageCloser{err: errors.New("second")},
-		})
-		if !errors.Is(err, sentinel) {
-			t.Fatalf("close error = %v", err)
+	t.Run("insert transaction error", func(t *testing.T) {
+		db := openScriptDB(t, execErrorOp("INSERT INTO arch_tx", sentinel))
+		writer := &sqlNodeFillWriter{db: db}
+		if _, err := writer.InsertTransaction(context.Background(), Transaction{}); !errors.Is(err, sentinel) {
+			t.Fatalf("error = %v", err)
+		}
+	})
+	t.Run("insert block cleanup errors", func(t *testing.T) {
+		for failAt, contains := range []string{
+			"DELETE FROM arch_tx at",
+			"DELETE FROM arch_evtlog",
+			"DELETE FROM arch_block",
+			"INSERT INTO arch_block",
+		} {
+			ops := make([]scriptOp, 0, failAt+1)
+			for range failAt {
+				ops = append(ops, execOp("", 1))
+			}
+			ops = append(ops, execErrorOp(contains, sentinel))
+			writer := &sqlNodeFillWriter{db: openScriptDB(t, ops...)}
+			if _, err := writer.InsertBlock(
+				context.Background(),
+				Block{BlockNum: 10, BlockHash: "hash"},
+				[]string{"0x08"},
+				false,
+			); !errors.Is(err, sentinel) {
+				t.Fatalf("cleanup step %d error = %v", failAt, err)
+			}
+		}
+	})
+	t.Run("insert block success", func(t *testing.T) {
+		writer := &sqlNodeFillWriter{db: openScriptDB(t,
+			execOp("DELETE FROM arch_tx at", 0),
+			execOp("DELETE FROM arch_evtlog", 0),
+			execOp("DELETE FROM arch_block", 0),
+			execOp("INSERT INTO arch_block", 1),
+		)}
+		inserted, err := writer.InsertBlock(
+			context.Background(),
+			Block{BlockNum: 10, BlockHash: "hash"},
+			[]string{"0x08"},
+			true,
+		)
+		if err != nil || !inserted {
+			t.Fatalf("inserted/error = %v/%v", inserted, err)
 		}
 	})
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer/logscan"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
@@ -579,10 +579,10 @@ func (f *NodeFiller) printf(format string, args ...any) {
 	}
 }
 
-// SQLNodeFillRepository implements NodeFillRepository over one database/sql
-// adapter. It does not own DB.
+// SQLNodeFillRepository implements NodeFillRepository over one pgx query
+// handle. It does not own DB.
 type SQLNodeFillRepository struct {
-	DB *sql.DB
+	DB Querier
 }
 
 // ProjectContracts resolves the registered contract addresses for project.
@@ -601,14 +601,14 @@ func (r *SQLNodeFillRepository) ResolveStartBlock(
 		return flagFrom, nil
 	}
 	var fromAddress, fromEvent sql.NullInt64
-	if err := r.DB.QueryRowContext(ctx, `
+	if err := r.DB.QueryRow(ctx, `
 		SELECT MIN(block_num) FROM address WHERE addr = ANY($1)
-	`, pq.Array(contracts.Addresses)).Scan(&fromAddress); err != nil {
+	`, contracts.Addresses).Scan(&fromAddress); err != nil {
 		return 0, fmt.Errorf("read minimum contract block: %w", err)
 	}
-	if err := r.DB.QueryRowContext(ctx, `
+	if err := r.DB.QueryRow(ctx, `
 		SELECT MIN(block_num) FROM evt_log WHERE contract_aid = ANY($1)
-	`, pq.Array(contracts.AddressIDs)).Scan(&fromEvent); err != nil {
+	`, contracts.AddressIDs).Scan(&fromEvent); err != nil {
 		return 0, fmt.Errorf("read minimum event block: %w", err)
 	}
 	return SelectStartBlock(flagFrom, fromAddress, fromEvent)
@@ -622,17 +622,17 @@ func (r *SQLNodeFillRepository) ArchivedBlockNumbers(
 	fromBlock uint64,
 	toBlock uint64,
 ) ([]int64, error) {
-	rows, err := r.DB.QueryContext(ctx, `
+	rows, err := r.DB.Query(ctx, `
 		SELECT DISTINCT block_num
 		FROM arch_evtlog
 		WHERE contract_addr = ANY($1)
 		  AND block_num BETWEEN $2 AND $3
 		ORDER BY block_num
-	`, pq.Array(contracts.Addresses), fromBlock, toBlock)
+	`, contracts.Addresses, fromBlock, toBlock)
 	if err != nil {
 		return nil, fmt.Errorf("read archived project blocks: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var blocks []int64
 	for rows.Next() {
@@ -673,9 +673,9 @@ func SelectStartBlock(flagFrom uint64, fromAddress, fromEvent sql.NullInt64) (ui
 }
 
 // RequireArchLogIndex verifies the natural-key column required by node-fill.
-func RequireArchLogIndex(ctx context.Context, db *sql.DB) error {
+func RequireArchLogIndex(ctx context.Context, db Querier) error {
 	var count int
-	err := db.QueryRowContext(ctx, `
+	err := db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM information_schema.columns
 		WHERE table_name = 'arch_evtlog' AND column_name = 'log_index'
 	`).Scan(&count)
@@ -688,39 +688,23 @@ func RequireArchLogIndex(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// PrepareWriter prepares the archive insert/exists statements and returns
-// the writer that owns them; callers must Close it.
-func (r *SQLNodeFillRepository) PrepareWriter(ctx context.Context) (NodeFillWriter, error) {
-	writer := &sqlNodeFillWriter{}
-	var err error
-	if writer.insertEvent, err = r.DB.PrepareContext(ctx, `
+// nodeFillWriterSQL holds the fixed statements the node-fill writer runs.
+// pgx caches prepared statements per connection, so there is nothing to
+// prepare or release explicitly.
+const (
+	nodeFillInsertEventSQL = `
 		INSERT INTO arch_evtlog (block_num, evt_id, log_index, tx_hash, contract_addr, topic0_sig, log_rlp)
 		VALUES ($1, NULL, $2, $3, $4, $5, $6)
 		ON CONFLICT (tx_hash, log_index) DO NOTHING
-	`); err != nil {
-		return nil, fmt.Errorf("prepare arch_evtlog: %w", err)
-	}
-	if writer.eventExists, err = r.DB.PrepareContext(ctx,
-		`SELECT 1 FROM arch_evtlog WHERE tx_hash = $1 AND log_index = $2`,
-	); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare exists check: %w", err)
-	}
-	if writer.insertTx, err = r.DB.PrepareContext(ctx, `
+	`
+	nodeFillEventExistsSQL = `SELECT 1 FROM arch_evtlog WHERE tx_hash = $1 AND log_index = $2`
+	nodeFillInsertTxSQL    = `
 		INSERT INTO arch_tx (block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (tx_hash) DO NOTHING
-	`); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare arch_tx: %w", err)
-	}
-	if writer.txExists, err = r.DB.PrepareContext(ctx,
-		`SELECT 1 FROM arch_tx WHERE tx_hash = $1`,
-	); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare tx exists: %w", err)
-	}
-	if writer.cleanupTx, err = r.DB.PrepareContext(ctx, `
+	`
+	nodeFillTxExistsSQL  = `SELECT 1 FROM arch_tx WHERE tx_hash = $1`
+	nodeFillCleanupTxSQL = `
 		DELETE FROM arch_tx at
 		WHERE at.block_num = $1
 		  AND EXISTS (
@@ -738,11 +722,8 @@ func (r *SQLNodeFillRepository) PrepareWriter(ctx context.Context) (NodeFillWrit
 			SELECT 1 FROM arch_block
 			WHERE block_num = $1 AND block_hash IS DISTINCT FROM $2
 		  ))
-	`); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare stale transaction cleanup: %w", err)
-	}
-	if writer.cleanupLogs, err = r.DB.PrepareContext(ctx, `
+	`
+	nodeFillCleanupLogsSQL = `
 		DELETE FROM arch_evtlog
 		WHERE block_num = $1
 		  AND contract_addr = ANY($3)
@@ -750,18 +731,12 @@ func (r *SQLNodeFillRepository) PrepareWriter(ctx context.Context) (NodeFillWrit
 			SELECT 1 FROM arch_block
 			WHERE block_num = $1 AND block_hash IS DISTINCT FROM $2
 		  ))
-	`); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare stale log cleanup: %w", err)
-	}
-	if writer.cleanupBlock, err = r.DB.PrepareContext(ctx, `
+	`
+	nodeFillCleanupBlockSQL = `
 		DELETE FROM arch_block
 		WHERE block_num = $1 AND block_hash IS DISTINCT FROM $2
-	`); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare stale block cleanup: %w", err)
-	}
-	if writer.insertBlock, err = r.DB.PrepareContext(ctx, `
+	`
+	nodeFillInsertBlockSQL = `
 		INSERT INTO arch_block (block_num, num_tx, ts, cash_flow, block_hash, parent_hash)
 		VALUES ($1, $2, TO_TIMESTAMP($3), 0, $4, $5)
 		ON CONFLICT (block_hash) DO UPDATE SET
@@ -769,37 +744,31 @@ func (r *SQLNodeFillRepository) PrepareWriter(ctx context.Context) (NodeFillWrit
 			num_tx = EXCLUDED.num_tx,
 			ts = EXCLUDED.ts,
 			parent_hash = EXCLUDED.parent_hash
-	`); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare arch_block: %w", err)
+	`
+	nodeFillBlockExistsSQL = `SELECT 1 FROM arch_block WHERE block_num = $1 AND block_hash = $2`
+)
+
+// PrepareWriter returns the per-run archive persistence surface; callers
+// must Close it. The pgx statement cache replaces the explicit statement
+// preparation the database/sql implementation needed, so this never touches
+// the database.
+func (r *SQLNodeFillRepository) PrepareWriter(_ context.Context) (NodeFillWriter, error) {
+	if r.DB == nil {
+		return nil, errors.New("archive node-fill: database is required")
 	}
-	if writer.blockExists, err = r.DB.PrepareContext(ctx,
-		`SELECT 1 FROM arch_block WHERE block_num = $1 AND block_hash = $2`,
-	); err != nil {
-		_ = writer.Close()
-		return nil, fmt.Errorf("prepare block exists: %w", err)
-	}
-	return writer, nil
+	return &sqlNodeFillWriter{db: r.DB}, nil
 }
 
 type sqlNodeFillWriter struct {
-	insertEvent  *sql.Stmt
-	eventExists  *sql.Stmt
-	insertTx     *sql.Stmt
-	txExists     *sql.Stmt
-	cleanupTx    *sql.Stmt
-	cleanupLogs  *sql.Stmt
-	cleanupBlock *sql.Stmt
-	insertBlock  *sql.Stmt
-	blockExists  *sql.Stmt
+	db Querier
 }
 
 func (w *sqlNodeFillWriter) EventLogExists(ctx context.Context, txHash string, logIndex int) (bool, error) {
-	return statementExists(ctx, w.eventExists, txHash, logIndex)
+	return rowExists(ctx, w.db, nodeFillEventExistsSQL, txHash, logIndex)
 }
 
 func (w *sqlNodeFillWriter) InsertEventLog(ctx context.Context, event EventLog) (bool, error) {
-	result, err := w.insertEvent.ExecContext(ctx,
+	tag, err := w.db.Exec(ctx, nodeFillInsertEventSQL,
 		event.BlockNum,
 		event.LogIndex,
 		event.TxHash,
@@ -807,15 +776,18 @@ func (w *sqlNodeFillWriter) InsertEventLog(ctx context.Context, event EventLog) 
 		event.Topic0Sig,
 		event.LogRLP,
 	)
-	return rowInserted(result, err)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
 }
 
 func (w *sqlNodeFillWriter) TransactionExists(ctx context.Context, txHash string) (bool, error) {
-	return statementExists(ctx, w.txExists, txHash)
+	return rowExists(ctx, w.db, nodeFillTxExistsSQL, txHash)
 }
 
 func (w *sqlNodeFillWriter) InsertTransaction(ctx context.Context, tx Transaction) (bool, error) {
-	result, err := w.insertTx.ExecContext(ctx,
+	tag, err := w.db.Exec(ctx, nodeFillInsertTxSQL,
 		tx.BlockNum,
 		tx.FromAddressID,
 		tx.ToAddressID,
@@ -828,11 +800,14 @@ func (w *sqlNodeFillWriter) InsertTransaction(ctx context.Context, tx Transactio
 		tx.TxHash,
 		tx.InputSig,
 	)
-	return rowInserted(result, err)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
 }
 
 func (w *sqlNodeFillWriter) BlockExists(ctx context.Context, blockNum int64, blockHash string) (bool, error) {
-	return statementExists(ctx, w.blockExists, blockNum, blockHash)
+	return rowExists(ctx, w.db, nodeFillBlockExistsSQL, blockNum, blockHash)
 }
 
 func (w *sqlNodeFillWriter) InsertBlock(
@@ -841,85 +816,46 @@ func (w *sqlNodeFillWriter) InsertBlock(
 	projectAddresses []string,
 	forceProjectCleanup bool,
 ) (bool, error) {
-	for _, statement := range []*sql.Stmt{w.cleanupTx, w.cleanupLogs} {
-		if _, err := statement.ExecContext(
+	for _, statement := range []string{nodeFillCleanupTxSQL, nodeFillCleanupLogsSQL} {
+		if _, err := w.db.Exec(
 			ctx,
+			statement,
 			block.BlockNum,
 			block.BlockHash,
-			pq.Array(projectAddresses),
+			projectAddresses,
 			forceProjectCleanup,
 		); err != nil {
 			return false, err
 		}
 	}
-	if _, err := w.cleanupBlock.ExecContext(ctx, block.BlockNum, block.BlockHash); err != nil {
+	if _, err := w.db.Exec(ctx, nodeFillCleanupBlockSQL, block.BlockNum, block.BlockHash); err != nil {
 		return false, err
 	}
-	result, err := w.insertBlock.ExecContext(ctx,
+	tag, err := w.db.Exec(ctx, nodeFillInsertBlockSQL,
 		block.BlockNum,
 		block.NumTx,
 		block.Timestamp,
 		block.BlockHash,
 		block.ParentHash,
 	)
-	return rowInserted(result, err)
-}
-
-func (w *sqlNodeFillWriter) Close() error {
-	var statements []statementCloser
-	for _, statement := range []*sql.Stmt{
-		w.insertEvent,
-		w.eventExists,
-		w.insertTx,
-		w.txExists,
-		w.cleanupTx,
-		w.cleanupLogs,
-		w.cleanupBlock,
-		w.insertBlock,
-		w.blockExists,
-	} {
-		if statement != nil {
-			statements = append(statements, statement)
-		}
+	if err != nil {
+		return false, err
 	}
-	return closeStatements(statements)
+	return tag.RowsAffected() > 0, nil
 }
 
-type statementCloser interface {
-	Close() error
-}
+func (w *sqlNodeFillWriter) Close() error { return nil }
 
-func closeStatements(statements []statementCloser) error {
-	var first error
-	for _, statement := range statements {
-		if err := statement.Close(); err != nil && first == nil {
-			first = err
-		}
-	}
-	return first
-}
-
-func statementExists(ctx context.Context, statement *sql.Stmt, args ...any) (bool, error) {
+func rowExists(ctx context.Context, db Querier, query string, args ...any) (bool, error) {
 	var one int
-	err := statement.QueryRowContext(ctx, args...).Scan(&one)
-	if errors.Is(err, sql.ErrNoRows) {
+	err := db.QueryRow(ctx, query, args...).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
 	return true, nil
-}
-
-func rowInserted(result sql.Result, err error) (bool, error) {
-	if err != nil {
-		return false, err
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	return affected > 0, nil
 }
 
 func contextError(ctx context.Context, err error) error {

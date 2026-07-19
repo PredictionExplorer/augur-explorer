@@ -3,13 +3,13 @@ package smoketest
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type fakeParameterSource struct {
@@ -18,50 +18,40 @@ type fakeParameterSource struct {
 	load   func(context.Context)
 }
 
-type parameterTestConnector struct {
-	query func(context.Context, string) (driver.Rows, error)
+// queryRowFake adapts a per-query callback to the pgx Querier seam; it
+// mirrors a live pool by answering context errors without reaching the
+// callback.
+type queryRowFake struct {
+	query func(query string) pgx.Row
 }
 
-func (c parameterTestConnector) Connect(context.Context) (driver.Conn, error) {
-	return parameterTestConn(c), nil
-}
-
-func (c parameterTestConnector) Driver() driver.Driver { return parameterTestDriver{connector: c} }
-
-type parameterTestDriver struct{ connector parameterTestConnector }
-
-func (d parameterTestDriver) Open(string) (driver.Conn, error) {
-	return d.connector.Connect(context.Background())
-}
-
-type parameterTestConn struct {
-	query func(context.Context, string) (driver.Rows, error)
-}
-
-func (c parameterTestConn) Prepare(string) (driver.Stmt, error) {
-	return nil, errors.New("Prepare is not supported")
-}
-func (parameterTestConn) Close() error              { return nil }
-func (parameterTestConn) Begin() (driver.Tx, error) { return nil, errors.New("Begin is not supported") }
-func (c parameterTestConn) QueryContext(ctx context.Context, query string, _ []driver.NamedValue) (driver.Rows, error) {
-	return c.query(ctx, query)
-}
-
-type parameterTestRows struct {
-	value driver.Value
-	empty bool
-	read  bool
-}
-
-func (*parameterTestRows) Columns() []string { return []string{"value"} }
-func (*parameterTestRows) Close() error      { return nil }
-func (r *parameterTestRows) Next(dest []driver.Value) error {
-	if r.empty || r.read {
-		return io.EOF
+func (f queryRowFake) QueryRow(ctx context.Context, query string, _ ...any) pgx.Row {
+	if err := ctx.Err(); err != nil {
+		return staticRow{err: err}
 	}
-	r.read = true
-	dest[0] = r.value
-	return nil
+	return f.query(query)
+}
+
+// staticRow is a pgx.Row serving one scripted value (or error, or the
+// no-rows sentinel when empty).
+type staticRow struct {
+	value any
+	empty bool
+	err   error
+}
+
+func (r staticRow) Scan(dest ...any) error {
+	if r.err != nil {
+		return r.err
+	}
+	if r.empty {
+		return pgx.ErrNoRows
+	}
+	scanner, ok := dest[0].(sql.Scanner)
+	if !ok {
+		return fmt.Errorf("unexpected scan destination %T", dest[0])
+	}
+	return scanner.Scan(r.value)
 }
 
 func (f fakeParameterSource) Parameters(ctx context.Context) (Params, error) {
@@ -112,11 +102,10 @@ func TestSQLParameterSourceRejectsNilDB(t *testing.T) {
 func TestSQLParameterSourceLoadsValuesAndQueriesTokenNameColumn(t *testing.T) {
 	t.Parallel()
 	var queries []string
-	db := sql.OpenDB(parameterTestConnector{query: func(_ context.Context, query string) (driver.Rows, error) {
+	db := queryRowFake{query: func(query string) pgx.Row {
 		queries = append(queries, query)
-		return &parameterTestRows{value: fmt.Sprintf("value-%02d", len(queries))}, nil
-	}})
-	t.Cleanup(func() { _ = db.Close() })
+		return staticRow{value: fmt.Sprintf("value-%02d", len(queries))}
+	}}
 	got, err := (SQLParameterSource{DB: db}).Parameters(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -137,10 +126,9 @@ func TestSQLParameterSourceFallbacksAndCancellation(t *testing.T) {
 	t.Parallel()
 	t.Run("query errors use defaults", func(t *testing.T) {
 		t.Parallel()
-		db := sql.OpenDB(parameterTestConnector{query: func(context.Context, string) (driver.Rows, error) {
-			return nil, errors.New("missing table")
-		}})
-		defer func() { _ = db.Close() }()
+		db := queryRowFake{query: func(string) pgx.Row {
+			return staticRow{err: errors.New("missing table")}
+		}}
 		got, err := (SQLParameterSource{DB: db}).Parameters(context.Background())
 		if err != nil {
 			t.Fatal(err)
@@ -152,14 +140,13 @@ func TestSQLParameterSourceFallbacksAndCancellation(t *testing.T) {
 	t.Run("null and empty rows use defaults", func(t *testing.T) {
 		t.Parallel()
 		call := 0
-		db := sql.OpenDB(parameterTestConnector{query: func(context.Context, string) (driver.Rows, error) {
+		db := queryRowFake{query: func(string) pgx.Row {
 			call++
 			if call%2 == 0 {
-				return &parameterTestRows{empty: true}, nil
+				return staticRow{empty: true}
 			}
-			return &parameterTestRows{value: nil}, nil
-		}})
-		defer func() { _ = db.Close() }()
+			return staticRow{value: nil}
+		}}
 		got, err := (SQLParameterSource{DB: db}).Parameters(context.Background())
 		if err != nil {
 			t.Fatal(err)
@@ -172,11 +159,10 @@ func TestSQLParameterSourceFallbacksAndCancellation(t *testing.T) {
 		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		db := sql.OpenDB(parameterTestConnector{query: func(context.Context, string) (driver.Rows, error) {
+		db := queryRowFake{query: func(string) pgx.Row {
 			t.Fatal("query callback should not run for canceled context")
-			return nil, nil
-		}})
-		defer func() { _ = db.Close() }()
+			return staticRow{}
+		}}
 		_, err := (SQLParameterSource{DB: db}).Parameters(ctx)
 		if !errors.Is(err, context.Canceled) {
 			t.Fatalf("error = %v", err)

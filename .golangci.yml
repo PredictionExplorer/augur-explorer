@@ -11,6 +11,7 @@ linters:
   enable:
     - bodyclose      # HTTP response bodies must be closed
     - copyloopvar    # detects pre-Go1.22 loop-var copies that are now redundant
+    - depguard       # banned imports (see settings: lib/pq must stay retired)
     - errchkjson     # JSON encode errors checked; unsafe types surfaced
     - errname        # error vars named errFoo, types named FooError
     - errorlint      # errors compared/wrapped with errors.Is/As/%w
@@ -43,6 +44,15 @@ linters:
     # retry loops deliberately absorb errors they have logged — annotating
     # ~30 correct sites buys nothing).
   settings:
+    depguard:
+      rules:
+        # The one-driver sprint retired lib/pq: every PostgreSQL access path
+        # (store, ops tooling, tests) runs on pgx. This gate keeps the second
+        # driver from creeping back in (same ratchet class as the gin removal).
+        one-postgres-driver:
+          deny:
+            - pkg: github.com/lib/pq
+              desc: "use pgx (github.com/jackc/pgx/v5); lib/pq was retired by the one-driver sprint"
     errcheck:
       exclude-functions:
         # Best-effort writes to HTTP clients / loggers.

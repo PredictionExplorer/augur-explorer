@@ -3,12 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
-	"database/sql"
-	"database/sql/driver"
-	"errors"
 	"math/big"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -19,6 +15,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
+	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
 )
 
 type commandOutput struct {
@@ -38,40 +35,18 @@ func executeCommand(command *cobra.Command, args ...string) commandOutput {
 	return commandOutput{stdout: stdout.String(), stderr: stderr.String(), err: err}
 }
 
-type testSQLConnector struct{}
-
-func (testSQLConnector) Connect(context.Context) (driver.Conn, error) {
-	return testSQLConn{}, nil
-}
-
-func (testSQLConnector) Driver() driver.Driver { return testSQLDriver{} }
-
-type testSQLDriver struct{}
-
-func (testSQLDriver) Open(string) (driver.Conn, error) { return testSQLConn{}, nil }
-
-type testSQLConn struct{}
-
-func (testSQLConn) Prepare(string) (driver.Stmt, error) {
-	return nil, errors.New("prepare is not supported")
-}
-
-func (testSQLConn) Close() error               { return nil }
-func (testSQLConn) Begin() (driver.Tx, error)  { return nil, errors.New("begin is not supported") }
-func (testSQLConn) Ping(context.Context) error { return nil }
-
-func newCommandTestDB(t *testing.T) *sql.DB {
+// newCommandTestDB returns an opsDB fake whose Close call is observable.
+func newCommandTestDB(t *testing.T) *testutil.ScriptedPgx {
 	t.Helper()
-	db := sql.OpenDB(testSQLConnector{})
-	t.Cleanup(func() { _ = db.Close() })
+	db := testutil.NewScriptedPgx()
+	t.Cleanup(db.Close)
 	return db
 }
 
-func assertCommandDBClosed(t *testing.T, db *sql.DB) {
+func assertCommandDBClosed(t *testing.T, db *testutil.ScriptedPgx) {
 	t.Helper()
-	err := db.PingContext(context.Background())
-	if err == nil || !strings.Contains(err.Error(), "database is closed") {
-		t.Fatalf("database was not closed: %v", err)
+	if !db.Closed() {
+		t.Fatal("database was not closed")
 	}
 }
 

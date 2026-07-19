@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
@@ -24,7 +22,7 @@ type archiveNodeFillRPC interface {
 }
 
 type archiveNodeFillStorage struct {
-	db           *sql.DB
+	db           archive.Querier
 	addressStore archive.AddressStore
 	close        func()
 }
@@ -33,9 +31,9 @@ type archiveNodeFillDeps struct {
 	getenv          func(string) string
 	resolveProjects func(string) ([]string, error)
 	openStorage     func(context.Context, string) (archiveNodeFillStorage, error)
-	requireSchema   func(context.Context, *sql.DB) error
+	requireSchema   func(context.Context, archive.Querier) error
 	dialRPC         func(context.Context, string) (archiveNodeFillRPC, error)
-	newRepository   func(*sql.DB) archive.NodeFillRepository
+	newRepository   func(archive.Querier) archive.NodeFillRepository
 	runProject      func(context.Context, *archive.NodeFiller, string, archive.NodeFillOptions) (archive.FillStats, error)
 }
 
@@ -48,7 +46,7 @@ func defaultArchiveNodeFillDeps() archiveNodeFillDeps {
 		dialRPC: func(ctx context.Context, rpcURL string) (archiveNodeFillRPC, error) {
 			return ethclient.DialContext(ctx, rpcURL)
 		},
-		newRepository: func(db *sql.DB) archive.NodeFillRepository {
+		newRepository: func(db archive.Querier) archive.NodeFillRepository {
 			return &archive.SQLNodeFillRepository{DB: db}
 		},
 		runProject: func(
@@ -72,15 +70,11 @@ func openArchiveNodeFillStorage(ctx context.Context, dbConn string) (archiveNode
 	if err != nil {
 		return archiveNodeFillStorage{}, fmt.Errorf("db pool connect: %w", err)
 	}
-	sqlDB := stdlib.OpenDBFromPool(pool)
 	st := store.NewFromPool(pool)
 	return archiveNodeFillStorage{
-		db:           sqlDB,
+		db:           pool,
 		addressStore: st,
-		close: func() {
-			_ = sqlDB.Close()
-			st.Close()
-		},
+		close:        st.Close,
 	}, nil
 }
 
@@ -130,9 +124,8 @@ the goose migrations under db/migrations.`,
 			}
 			ctx := cmd.Context()
 
-			// One pgx pool backs both store.Store and the SQL-heavy archive
-			// repository. Closing the SQL adapter does not close the pool;
-			// store owns and closes it after the adapter is closed.
+			// One pgx pool backs both store.Store (the address cache) and
+			// the archive repository; store owns and closes it.
 			storage, err := deps.openStorage(ctx, dbConn)
 			if err != nil {
 				return err

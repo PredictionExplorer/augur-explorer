@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,17 +10,20 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/smoketest"
 )
 
+// smoketestMaxConns bounds the parameter-database pool; the source runs one
+// query at a time.
+const smoketestMaxConns = 2
+
 type smoketestDeps struct {
 	getenv    func(string) string
-	openDB    func(string, string) (*sql.DB, error)
-	ping      func(context.Context, *sql.DB) error
-	newSource func(*sql.DB) smoketest.ParameterSource
+	openDB    func(context.Context, string) (opsDB, error)
+	ping      func(context.Context, opsDB) error
+	newSource func(opsDB) smoketest.ParameterSource
 	client    smoketest.HTTPClient
 	apiBase   func() string
 	run       func(context.Context, smoketest.Options) (smoketest.Summary, error)
@@ -30,11 +32,11 @@ type smoketestDeps struct {
 func defaultSmoketestDeps() smoketestDeps {
 	return smoketestDeps{
 		getenv: os.Getenv,
-		openDB: sql.Open,
-		ping: func(ctx context.Context, db *sql.DB) error {
-			return db.PingContext(ctx)
+		openDB: openOpsDB(smoketestMaxConns),
+		ping: func(ctx context.Context, db opsDB) error {
+			return db.Ping(ctx)
 		},
-		newSource: func(db *sql.DB) smoketest.ParameterSource {
+		newSource: func(db opsDB) smoketest.ParameterSource {
 			return smoketest.SQLParameterSource{DB: db}
 		},
 		client:  &http.Client{Timeout: 60 * time.Second},
@@ -80,7 +82,7 @@ func runSmoketestWithDeps(cmd *cobra.Command, deps smoketestDeps) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	_, err = deps.run(cmd.Context(), smoketest.Options{
 		Source:  deps.newSource(db),
@@ -105,11 +107,11 @@ func smoketestAPIBase() string {
 }
 
 // connectSmoketestDB opens the parameter database from the PGSQL_* env vars.
-func connectSmoketestDB(ctx context.Context) (*sql.DB, error) {
+func connectSmoketestDB(ctx context.Context) (opsDB, error) {
 	return connectSmoketestDBWithDeps(ctx, defaultSmoketestDeps())
 }
 
-func connectSmoketestDBWithDeps(ctx context.Context, deps smoketestDeps) (*sql.DB, error) {
+func connectSmoketestDBWithDeps(ctx context.Context, deps smoketestDeps) (opsDB, error) {
 	dsn := strings.TrimSpace(deps.getenv("DATABASE_URL"))
 	if dsn == "" {
 		host := deps.getenv("PGSQL_HOST")
@@ -127,12 +129,12 @@ func connectSmoketestDBWithDeps(ctx context.Context, deps smoketestDeps) (*sql.D
 			RawQuery: "sslmode=disable",
 		}).String()
 	}
-	db, err := deps.openDB("postgres", dsn)
+	db, err := deps.openDB(ctx, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("DB open failed: %w", err)
 	}
 	if err := deps.ping(ctx, db); err != nil {
-		_ = db.Close()
+		db.Close()
 		return nil, fmt.Errorf("DB ping failed: %w", err)
 	}
 	return db, nil

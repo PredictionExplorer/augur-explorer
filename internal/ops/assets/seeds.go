@@ -4,11 +4,12 @@ package assets
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // SeedHexLength is the full 32-byte seed width as lowercase hexadecimal.
@@ -25,9 +26,15 @@ type TokenSource interface {
 	TokenSeeds(ctx context.Context, schema string) ([]Token, error)
 }
 
+// Querier is the narrow pgx query surface used by SQLTokenSource.
+// *pgxpool.Pool, *pgx.Conn and pgx.Tx satisfy it.
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
 // SQLTokenSource loads token seeds from cg_mint_event.
 type SQLTokenSource struct {
-	DB *sql.DB
+	DB Querier
 }
 
 var (
@@ -58,11 +65,11 @@ func (s SQLTokenSource) TokenSeeds(ctx context.Context, schema string) ([]Token,
 		"SELECT token_id, seed FROM %s.cg_mint_event WHERE seed IS NOT NULL AND seed <> '' ORDER BY token_id",
 		schema,
 	)
-	rows, err := s.DB.QueryContext(ctx, query)
+	rows, err := s.DB.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	tokens := make([]Token, 0)
 	for rows.Next() {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -12,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
 
 	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
@@ -27,9 +25,9 @@ type assetsThumbnailsDeps struct {
 	getenv        func(string) string
 	postgresConn  func() (string, error)
 	resolveMagick func(string) (string, error)
-	openDB        func(string, string) (*sql.DB, error)
-	ping          func(context.Context, *sql.DB) error
-	newSource     func(*sql.DB) opsassets.TokenSource
+	openDB        func(context.Context, string) (opsDB, error)
+	ping          func(context.Context, opsDB) error
+	newSource     func(opsDB) opsassets.TokenSource
 	runner        opsassets.CommandRunner
 	clock         opsassets.Clock
 	generate      func(context.Context, opsassets.ThumbnailOptions) (opsassets.ThumbnailSummary, error)
@@ -40,11 +38,11 @@ func defaultAssetsThumbnailsDeps() assetsThumbnailsDeps {
 		getenv:        os.Getenv,
 		postgresConn:  toolutil.PostgresConnStringFromEnv,
 		resolveMagick: resolveMagick,
-		openDB:        sql.Open,
-		ping: func(ctx context.Context, db *sql.DB) error {
-			return db.PingContext(ctx)
+		openDB:        openOpsDB(assetsMaxConns),
+		ping: func(ctx context.Context, db opsDB) error {
+			return db.Ping(ctx)
 		},
-		newSource: func(db *sql.DB) opsassets.TokenSource {
+		newSource: func(db opsDB) opsassets.TokenSource {
 			return opsassets.SQLTokenSource{DB: db}
 		},
 		runner:   opsassets.ExecCommandRunner{},
@@ -158,12 +156,11 @@ func runGenThumbnailsWithDeps(
 		}
 	}
 
-	db, err := deps.openDB("postgres", conn)
+	db, err := deps.openDB(cmd.Context(), conn)
 	if err != nil {
 		return fmt.Errorf("connect: %w", err)
 	}
-	defer func() { _ = db.Close() }()
-	db.SetMaxOpenConns(2)
+	defer db.Close()
 	if err := deps.ping(cmd.Context(), db); err != nil {
 		return fmt.Errorf("ping database: %w", err)
 	}

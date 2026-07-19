@@ -43,13 +43,6 @@ func TestPostgresConnStringFromEnv(t *testing.T) {
 		parsed.Query().Get("sslmode") != "disable" {
 		t.Fatalf("connection URL = %s", connection)
 	}
-	database, err := OpenPostgresFromEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := database.Close(); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestPostgresConnStringRequiresCoreFields(t *testing.T) {

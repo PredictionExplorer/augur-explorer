@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 // DefaultExportBatchSize is the row batch used by archive export.
@@ -58,11 +56,11 @@ func ExportProjects(ctx context.Context, projects []string, exporter ProjectExpo
 	return results, nil
 }
 
-// SQLExporter copies archive data between two database/sql handles. The
-// caller owns both handles.
+// SQLExporter copies archive data between two pgx query handles. The caller
+// owns both handles.
 type SQLExporter struct {
-	Source      *sql.DB
-	Destination *sql.DB
+	Source      Querier
+	Destination Querier
 	BatchSize   int
 	Logger      Logger
 }
@@ -125,11 +123,11 @@ func ResumeFloor(positions []ResumePosition) int64 {
 // EventLogResumeFloor loads each contract's independent archive watermark and
 // returns their minimum. A global maximum is unsafe when projects share an
 // archive.
-func EventLogResumeFloor(ctx context.Context, db *sql.DB, contractAddresses []string) (int64, []ResumePosition, error) {
+func EventLogResumeFloor(ctx context.Context, db Querier, contractAddresses []string) (int64, []ResumePosition, error) {
 	positions := make([]ResumePosition, 0, len(contractAddresses))
 	for _, address := range contractAddresses {
 		var maxEventID int64
-		err := db.QueryRowContext(ctx, `
+		err := db.QueryRow(ctx, `
 			SELECT COALESCE(MAX(evt_id), 0)
 			FROM arch_evtlog
 			WHERE contract_addr = $1
@@ -145,14 +143,20 @@ func EventLogResumeFloor(ctx context.Context, db *sql.DB, contractAddresses []st
 	return ResumeFloor(positions), positions, nil
 }
 
+const insertArchEvtlogSQL = `
+		INSERT INTO arch_evtlog (block_num, evt_id, log_index, tx_hash, contract_addr, topic0_sig, log_rlp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (tx_hash, log_index) DO NOTHING
+	`
+
 func (e *SQLExporter) exportEventLogs(ctx context.Context, contracts Contracts) (int64, error) {
 	e.println("=== Exporting event logs for contracts ===")
 	e.println("Counting events...")
 	countStart := time.Now()
 	var totalEvents int64
-	err := e.Source.QueryRowContext(ctx,
+	err := e.Source.QueryRow(ctx,
 		"SELECT COUNT(*) FROM evt_log WHERE contract_aid = ANY($1)",
-		pq.Array(contracts.AddressIDs),
+		contracts.AddressIDs,
 	).Scan(&totalEvents)
 	if err != nil {
 		return 0, fmt.Errorf("count events: %w", err)
@@ -170,16 +174,6 @@ func (e *SQLExporter) exportEventLogs(ctx context.Context, contracts Contracts) 
 	}
 	e.printf("Resume floor evt_id (min over contracts) = %d — exporting source evt_log rows with id > %d", currentID, currentID)
 
-	insertStmt, err := e.Destination.PrepareContext(ctx, `
-		INSERT INTO arch_evtlog (block_num, evt_id, log_index, tx_hash, contract_addr, topic0_sig, log_rlp)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		ON CONFLICT (tx_hash, log_index) DO NOTHING
-	`)
-	if err != nil {
-		return 0, fmt.Errorf("prepare arch_evtlog insert: %w", err)
-	}
-	defer func() { _ = insertStmt.Close() }()
-
 	txIDs := make(map[int64]struct{})
 	var totalProcessed int64
 	startTime := time.Now()
@@ -189,7 +183,7 @@ func (e *SQLExporter) exportEventLogs(ctx context.Context, contracts Contracts) 
 		}
 		batchStart := time.Now()
 		e.printf("Querying events where id > %d (limit %d)...", currentID, e.batchSize())
-		batchCount, lastID, err := e.exportEventLogBatch(ctx, insertStmt, contracts.AddressIDs, currentID, txIDs)
+		batchCount, lastID, err := e.exportEventLogBatch(ctx, contracts.AddressIDs, currentID, txIDs)
 		if err != nil {
 			return totalProcessed, err
 		}
@@ -213,13 +207,12 @@ func (e *SQLExporter) exportEventLogs(ctx context.Context, contracts Contracts) 
 
 func (e *SQLExporter) exportEventLogBatch(
 	ctx context.Context,
-	insertStmt *sql.Stmt,
 	contractAIDs []int64,
 	afterID int64,
 	txIDs map[int64]struct{},
 ) (int, int64, error) {
 	queryStart := time.Now()
-	rows, err := e.Source.QueryContext(ctx, `
+	rows, err := e.Source.Query(ctx, `
 		SELECT e.block_num, e.id, e.tx_id, e.log_index, t.tx_hash, a.addr, e.topic0_sig, e.log_rlp
 		FROM evt_log e
 		JOIN transaction t ON e.tx_id = t.id
@@ -227,11 +220,11 @@ func (e *SQLExporter) exportEventLogBatch(
 		WHERE e.contract_aid = ANY($1) AND e.id > $2
 		ORDER BY e.id
 		LIMIT $3
-	`, pq.Array(contractAIDs), afterID, e.batchSize())
+	`, contractAIDs, afterID, e.batchSize())
 	if err != nil {
 		return 0, 0, fmt.Errorf("query evt_log batch: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 	e.printf("Query returned in %.1f ms, processing rows...", time.Since(queryStart).Seconds()*1000)
 
 	var (
@@ -252,7 +245,7 @@ func (e *SQLExporter) exportEventLogBatch(
 		if err := rows.Scan(&blockNum, &eventID, &txID, &logIndex, &txHash, &contract, &topic0, &encodedLog); err != nil {
 			return 0, 0, fmt.Errorf("scan evt_log row: %w", err)
 		}
-		if _, err := insertStmt.ExecContext(ctx,
+		if _, err := e.Destination.Exec(ctx, insertArchEvtlogSQL,
 			blockNum, eventID, logIndex, txHash, contract, topic0, encodedLog,
 		); err != nil {
 			return 0, 0, fmt.Errorf("insert arch_evtlog evt_id %d tx %s log_index %d: %w", eventID, txHash, logIndex, err)
@@ -266,6 +259,12 @@ func (e *SQLExporter) exportEventLogBatch(
 	}
 	return batchCount, lastID, nil
 }
+
+const insertArchTxSQL = `
+		INSERT INTO arch_tx (block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		ON CONFLICT (tx_hash) DO NOTHING
+	`
 
 func (e *SQLExporter) exportTransactions(ctx context.Context) (int64, error) {
 	e.println("=== Exporting transactions ===")
@@ -286,16 +285,6 @@ func (e *SQLExporter) exportTransactions(ctx context.Context) (int64, error) {
 		return 0, nil
 	}
 
-	insertStmt, err := e.Destination.PrepareContext(ctx, `
-		INSERT INTO arch_tx (block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		ON CONFLICT (tx_hash) DO NOTHING
-	`)
-	if err != nil {
-		return 0, fmt.Errorf("prepare arch_tx insert: %w", err)
-	}
-	defer func() { _ = insertStmt.Close() }()
-
 	blockNums := make(map[int64]struct{})
 	var totalProcessed int64
 	startTime := time.Now()
@@ -307,7 +296,7 @@ func (e *SQLExporter) exportTransactions(ctx context.Context) (int64, error) {
 		end := min(i+e.batchSize(), len(missingTxHashes))
 		batch := missingTxHashes[i:end]
 		e.printf("Querying %d transactions...", len(batch))
-		batchCount, err := e.exportTransactionBatch(ctx, insertStmt, batch, blockNums)
+		batchCount, err := e.exportTransactionBatch(ctx, batch, blockNums)
 		if err != nil {
 			return totalProcessed, err
 		}
@@ -327,20 +316,21 @@ func (e *SQLExporter) exportTransactions(ctx context.Context) (int64, error) {
 
 func (e *SQLExporter) exportTransactionBatch(
 	ctx context.Context,
-	insertStmt *sql.Stmt,
 	txHashes []string,
 	blockNums map[int64]struct{},
 ) (int, error) {
 	queryStart := time.Now()
-	rows, err := e.Source.QueryContext(ctx, `
-		SELECT block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value, gas_price, tx_hash, input_sig
+	// value and gas_price are NUMERIC; the ::text casts preserve the exact
+	// server-side text rendering the legacy text-protocol driver received.
+	rows, err := e.Source.Query(ctx, `
+		SELECT block_num, from_aid, to_aid, gas_used, tx_index, num_logs, ctrct_create, value::text, gas_price::text, tx_hash, input_sig
 		FROM transaction
 		WHERE tx_hash = ANY($1)
-	`, pq.Array(txHashes))
+	`, txHashes)
 	if err != nil {
 		return 0, fmt.Errorf("query transaction batch: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 	e.printf("Query returned in %.1f ms", time.Since(queryStart).Seconds()*1000)
 
 	batchCount := 0
@@ -368,7 +358,7 @@ func (e *SQLExporter) exportTransactionBatch(
 		if inputSig.Valid {
 			inputSigValue = inputSig.String
 		}
-		if _, err := insertStmt.ExecContext(ctx,
+		if _, err := e.Destination.Exec(ctx, insertArchTxSQL,
 			blockNum, fromAID, toAID, gasUsed, txIndex, numLogs, contractMade,
 			value, gasPrice, txHash, inputSigValue,
 		); err != nil {
@@ -382,6 +372,12 @@ func (e *SQLExporter) exportTransactionBatch(
 	}
 	return batchCount, nil
 }
+
+const insertArchBlockSQL = `
+		INSERT INTO arch_block (block_num, num_tx, ts, cash_flow, block_hash, parent_hash)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (block_hash) DO NOTHING
+	`
 
 func (e *SQLExporter) exportBlocks(ctx context.Context) (int64, error) {
 	e.println("=== Exporting blocks ===")
@@ -402,16 +398,6 @@ func (e *SQLExporter) exportBlocks(ctx context.Context) (int64, error) {
 		return 0, nil
 	}
 
-	insertStmt, err := e.Destination.PrepareContext(ctx, `
-		INSERT INTO arch_block (block_num, num_tx, ts, cash_flow, block_hash, parent_hash)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (block_hash) DO NOTHING
-	`)
-	if err != nil {
-		return 0, fmt.Errorf("prepare arch_block insert: %w", err)
-	}
-	defer func() { _ = insertStmt.Close() }()
-
 	var totalProcessed int64
 	startTime := time.Now()
 	for i := 0; i < len(missingBlockNums); i += e.batchSize() {
@@ -422,7 +408,7 @@ func (e *SQLExporter) exportBlocks(ctx context.Context) (int64, error) {
 		end := min(i+e.batchSize(), len(missingBlockNums))
 		batch := missingBlockNums[i:end]
 		e.printf("Querying %d blocks...", len(batch))
-		batchCount, err := e.exportBlockBatch(ctx, insertStmt, batch)
+		batchCount, err := e.exportBlockBatch(ctx, batch)
 		if err != nil {
 			return totalProcessed, err
 		}
@@ -440,17 +426,18 @@ func (e *SQLExporter) exportBlocks(ctx context.Context) (int64, error) {
 	return totalProcessed, nil
 }
 
-func (e *SQLExporter) exportBlockBatch(ctx context.Context, insertStmt *sql.Stmt, blockNums []int64) (int, error) {
+func (e *SQLExporter) exportBlockBatch(ctx context.Context, blockNums []int64) (int, error) {
 	queryStart := time.Now()
-	rows, err := e.Source.QueryContext(ctx, `
-		SELECT block_num, num_tx, ts, cash_flow, block_hash, parent_hash
+	// cash_flow is NUMERIC; see exportTransactionBatch for the ::text cast.
+	rows, err := e.Source.Query(ctx, `
+		SELECT block_num, num_tx, ts, cash_flow::text, block_hash, parent_hash
 		FROM block
 		WHERE block_num = ANY($1)
-	`, pq.Array(blockNums))
+	`, blockNums)
 	if err != nil {
 		return 0, fmt.Errorf("query block batch: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 	e.printf("Query returned in %.1f ms", time.Since(queryStart).Seconds()*1000)
 
 	batchCount := 0
@@ -466,7 +453,9 @@ func (e *SQLExporter) exportBlockBatch(ctx context.Context, insertStmt *sql.Stmt
 		if err := rows.Scan(&blockNum, &numTx, &timestamp, &cashFlow, &blockHash, &parent); err != nil {
 			return 0, fmt.Errorf("scan block row: %w", err)
 		}
-		if _, err := insertStmt.ExecContext(ctx, blockNum, numTx, timestamp, cashFlow, blockHash, parent); err != nil {
+		if _, err := e.Destination.Exec(ctx, insertArchBlockSQL,
+			blockNum, numTx, timestamp, cashFlow, blockHash, parent,
+		); err != nil {
 			return 0, fmt.Errorf("insert arch_block %d: %w", blockNum, err)
 		}
 		batchCount++
@@ -477,12 +466,12 @@ func (e *SQLExporter) exportBlockBatch(ctx context.Context, insertStmt *sql.Stmt
 	return batchCount, nil
 }
 
-func queryStringColumn(ctx context.Context, db *sql.DB, query string) ([]string, error) {
-	rows, err := db.QueryContext(ctx, query)
+func queryStringColumn(ctx context.Context, db Querier, query string) ([]string, error) {
+	rows, err := db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 	var values []string
 	for rows.Next() {
 		var value string
@@ -494,12 +483,12 @@ func queryStringColumn(ctx context.Context, db *sql.DB, query string) ([]string,
 	return values, rows.Err()
 }
 
-func queryInt64Column(ctx context.Context, db *sql.DB, query string) ([]int64, error) {
-	rows, err := db.QueryContext(ctx, query)
+func queryInt64Column(ctx context.Context, db Querier, query string) ([]int64, error) {
+	rows, err := db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 	var values []int64
 	for rows.Next() {
 		var value int64

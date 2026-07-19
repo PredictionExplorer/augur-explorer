@@ -2,35 +2,37 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 
-	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
 
 	opsassets "github.com/PredictionExplorer/augur-explorer/internal/ops/assets"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
 
+// assetsMaxConns bounds the asset command pools; the token source runs one
+// query.
+const assetsMaxConns = 2
+
 type assetsInventoryDeps struct {
 	postgresConn func() (string, error)
-	openDB       func(string, string) (*sql.DB, error)
-	ping         func(context.Context, *sql.DB) error
-	newSource    func(*sql.DB) opsassets.TokenSource
+	openDB       func(context.Context, string) (opsDB, error)
+	ping         func(context.Context, opsDB) error
+	newSource    func(opsDB) opsassets.TokenSource
 	run          func(context.Context, opsassets.InventoryOptions) (opsassets.InventorySummary, error)
 }
 
 func defaultAssetsInventoryDeps() assetsInventoryDeps {
 	return assetsInventoryDeps{
 		postgresConn: toolutil.PostgresConnStringFromEnv,
-		openDB:       sql.Open,
-		ping: func(ctx context.Context, db *sql.DB) error {
-			return db.PingContext(ctx)
+		openDB:       openOpsDB(assetsMaxConns),
+		ping: func(ctx context.Context, db opsDB) error {
+			return db.Ping(ctx)
 		},
-		newSource: func(db *sql.DB) opsassets.TokenSource {
+		newSource: func(db opsDB) opsassets.TokenSource {
 			return opsassets.SQLTokenSource{DB: db}
 		},
 		run: opsassets.RunInventory,
@@ -114,12 +116,11 @@ func runAssetInventoryWithDeps(
 		}
 	}
 
-	db, err := deps.openDB("postgres", conn)
+	db, err := deps.openDB(cmd.Context(), conn)
 	if err != nil {
 		return fmt.Errorf("connect: %w", err)
 	}
-	defer func() { _ = db.Close() }()
-	db.SetMaxOpenConns(2)
+	defer db.Close()
 	if err := deps.ping(cmd.Context(), db); err != nil {
 		return fmt.Errorf("ping database: %w", err)
 	}

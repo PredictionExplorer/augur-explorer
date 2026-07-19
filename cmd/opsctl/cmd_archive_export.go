@@ -2,28 +2,31 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
 )
 
+// archiveMaxConns bounds the archive command pools. The exporter streams a
+// source batch while inserting on the destination, so each handle needs at
+// most two connections.
+const archiveMaxConns = 2
+
 type archiveExportDeps struct {
 	resolveProjects func(string) ([]string, error)
-	openDB          func(string, string) (*sql.DB, error)
-	newExporter     func(*sql.DB, *sql.DB, archive.Logger) archive.ProjectExporter
+	openDB          func(context.Context, string) (opsDB, error)
+	newExporter     func(source, destination archive.Querier, logger archive.Logger) archive.ProjectExporter
 	exportProjects  func(context.Context, []string, archive.ProjectExporter) ([]archive.ExportResult, error)
 }
 
 func defaultArchiveExportDeps() archiveExportDeps {
 	return archiveExportDeps{
 		resolveProjects: archive.ResolveProjects,
-		openDB:          sql.Open,
-		newExporter: func(source, destination *sql.DB, logger archive.Logger) archive.ProjectExporter {
+		openDB:          openOpsDB(archiveMaxConns),
+		newExporter: func(source, destination archive.Querier, logger archive.Logger) archive.ProjectExporter {
 			return &archive.SQLExporter{
 				Source:      source,
 				Destination: destination,
@@ -64,19 +67,17 @@ MAX(evt_id) already archived on the destination.`,
 				return err
 			}
 
-			srcDB, err := deps.openDB("postgres", srcConn)
+			srcDB, err := deps.openDB(cmd.Context(), srcConn)
 			if err != nil {
 				return fmt.Errorf("connect to source: %w", err)
 			}
-			defer func() { _ = srcDB.Close() }()
-			srcDB.SetMaxOpenConns(2)
+			defer srcDB.Close()
 
-			dstDB, err := deps.openDB("postgres", dstConn)
+			dstDB, err := deps.openDB(cmd.Context(), dstConn)
 			if err != nil {
 				return fmt.Errorf("connect to destination: %w", err)
 			}
-			defer func() { _ = dstDB.Close() }()
-			dstDB.SetMaxOpenConns(2)
+			defer dstDB.Close()
 
 			logger := log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
 			exporter := deps.newExporter(srcDB, dstDB, logger)

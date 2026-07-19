@@ -2,7 +2,6 @@ package archive
 
 import (
 	"context"
-	"database/sql/driver"
 	"errors"
 	"strings"
 	"testing"
@@ -10,13 +9,13 @@ import (
 
 func TestLoadProjectContractsCosmicGame(t *testing.T) {
 	db := openScriptDB(t,
-		queryOp("JOIN cg_contracts", []string{"address_id"},
-			[]driver.Value{int64(2)},
-			[]driver.Value{int64(3)},
+		queryOp("JOIN cg_contracts",
+			[]any{int64(2)},
+			[]any{int64(3)},
 		),
-		queryOp("SELECT addr FROM address", []string{"addr"},
-			[]driver.Value{"0x02"},
-			[]driver.Value{"0x03"},
+		queryOp("SELECT addr FROM address",
+			[]any{"0x02"},
+			[]any{"0x03"},
 		),
 	)
 	contracts, err := LoadProjectContracts(context.Background(), db, ProjectCosmicGame)
@@ -46,34 +45,28 @@ func TestLoadProjectContractsFailures(t *testing.T) {
 		{
 			name:    "contract scan",
 			project: ProjectRandomWalk,
-			ops: []scriptOp{queryOp("JOIN rw_contracts", []string{"address_id"},
-				[]driver.Value{"not-an-integer"},
+			ops: []scriptOp{queryOp("JOIN rw_contracts",
+				[]any{"not-an-integer"},
 			)},
 			want: "scan contract aid",
 		},
 		{
 			name:    "contract iteration",
 			project: ProjectRandomWalk,
-			ops: []scriptOp{{
-				kind:      "query",
-				contains:  "JOIN rw_contracts",
-				columns:   []string{"address_id"},
-				nextErrAt: 0,
-				nextErr:   sentinel,
-			}},
-			want: "contract aids",
+			ops:     []scriptOp{queryIterErrorOp("JOIN rw_contracts", sentinel)},
+			want:    "contract aids",
 		},
 		{
 			name:    "no contracts",
 			project: ProjectRandomWalk,
-			ops:     []scriptOp{queryOp("JOIN rw_contracts", []string{"address_id"})},
+			ops:     []scriptOp{queryOp("JOIN rw_contracts")},
 			want:    "no contract addresses found",
 		},
 		{
 			name:    "address query",
 			project: ProjectRandomWalk,
 			ops: []scriptOp{
-				queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
+				queryOp("JOIN rw_contracts", []any{int64(8)}),
 				queryErrorOp("SELECT addr FROM address", sentinel),
 			},
 			want: "resolve addrs",
@@ -82,8 +75,8 @@ func TestLoadProjectContractsFailures(t *testing.T) {
 			name:    "address scan",
 			project: ProjectRandomWalk,
 			ops: []scriptOp{
-				queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
-				queryOp("SELECT addr FROM address", []string{"addr"}, []driver.Value{nil}),
+				queryOp("JOIN rw_contracts", []any{int64(8)}),
+				queryOp("SELECT addr FROM address", []any{nil}),
 			},
 			want: "scan contract address",
 		},
@@ -91,14 +84,8 @@ func TestLoadProjectContractsFailures(t *testing.T) {
 			name:    "address iteration",
 			project: ProjectRandomWalk,
 			ops: []scriptOp{
-				queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
-				{
-					kind:      "query",
-					contains:  "SELECT addr FROM address",
-					columns:   []string{"addr"},
-					nextErrAt: 0,
-					nextErr:   sentinel,
-				},
+				queryOp("JOIN rw_contracts", []any{int64(8)}),
+				queryIterErrorOp("SELECT addr FROM address", sentinel),
 			},
 			want: "resolve addrs",
 		},
@@ -106,8 +93,8 @@ func TestLoadProjectContractsFailures(t *testing.T) {
 			name:    "no resolved addresses",
 			project: ProjectRandomWalk,
 			ops: []scriptOp{
-				queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
-				queryOp("SELECT addr FROM address", []string{"addr"}),
+				queryOp("JOIN rw_contracts", []any{int64(8)}),
+				queryOp("SELECT addr FROM address"),
 			},
 			want: "no contract addresses resolved",
 		},

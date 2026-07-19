@@ -2,29 +2,27 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
 )
 
 type dbVerifyDeps struct {
-	openDB    func(string, string) (*sql.DB, error)
-	loadIDs   func(context.Context, *sql.DB) ([]int64, error)
-	newLoader func(*sql.DB) dbverify.Loader
+	openDB    func(context.Context, string) (opsDB, error)
+	loadIDs   func(context.Context, dbverify.Querier) ([]int64, error)
+	newLoader func(dbverify.Querier) dbverify.Loader
 	verify    func(context.Context, dbverify.Loader, dbverify.Loader, []int64, int) (dbverify.VerifyReport, error)
 }
 
 func defaultDBVerifyDeps() dbVerifyDeps {
 	return dbVerifyDeps{
-		openDB:  sql.Open,
+		openDB:  openOpsDB(dbCompareMaxConns),
 		loadIDs: dbverify.LoadRandomWalkContractAddressIDs,
-		newLoader: func(db *sql.DB) dbverify.Loader {
+		newLoader: func(db dbverify.Querier) dbverify.Loader {
 			return &dbverify.SQLLoader{DB: db}
 		},
 		verify: dbverify.VerifyDatabases,
@@ -51,18 +49,18 @@ exactly the same records.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger := log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
-			primaryDB, err := deps.openDB("postgres", primaryConn)
+			primaryDB, err := deps.openDB(cmd.Context(), primaryConn)
 			if err != nil {
 				return fmt.Errorf("connect to primary: %w", err)
 			}
-			defer func() { _ = primaryDB.Close() }()
+			defer primaryDB.Close()
 			logger.Println("Connected to primary database")
 
-			secondaryDB, err := deps.openDB("postgres", secondaryConn)
+			secondaryDB, err := deps.openDB(cmd.Context(), secondaryConn)
 			if err != nil {
 				return fmt.Errorf("connect to secondary: %w", err)
 			}
-			defer func() { _ = secondaryDB.Close() }()
+			defer secondaryDB.Close()
 			logger.Println("Connected to secondary database")
 
 			contractAddressIDs, err := deps.loadIDs(cmd.Context(), primaryDB)

@@ -27,8 +27,8 @@ func TestArchiveExportVerifyAndIdempotentResume(t *testing.T) {
 	}
 
 	exporter := &archive.SQLExporter{
-		Source:      db.SQL,
-		Destination: db.SQL,
+		Source:      db.Pool,
+		Destination: db.Pool,
 		BatchSize:   7,
 	}
 	if _, err := exporter.ExportProject(ctx, archive.ProjectRandomWalk); err != nil {
@@ -36,7 +36,7 @@ func TestArchiveExportVerifyAndIdempotentResume(t *testing.T) {
 	}
 	before := archiveCounts(t, ctx, db)
 
-	report, err := (&archive.SQLVerifier{DB: db.SQL}).VerifyProject(
+	report, err := (&archive.SQLVerifier{DB: db.Pool}).VerifyProject(
 		ctx,
 		archive.ProjectRandomWalk,
 		archive.VerifyOptions{},
@@ -71,7 +71,7 @@ func archiveCounts(t *testing.T, ctx context.Context, db *testdb.DB) counts {
 		"SELECT COUNT(*) FROM arch_tx":     &result.txs,
 		"SELECT COUNT(*) FROM arch_block":  &result.blocks,
 	} {
-		if err := db.SQL.QueryRowContext(ctx, query).Scan(destination); err != nil {
+		if err := db.Pool.QueryRow(ctx, query).Scan(destination); err != nil {
 			t.Fatalf("counting archive rows: %v", err)
 		}
 	}
@@ -111,7 +111,7 @@ func TestNodeFillDryRunInsertIdempotencyAndRPCError(t *testing.T) {
 	}
 	defer client.Close()
 	filler := &archive.NodeFiller{
-		Repository:   &archive.SQLNodeFillRepository{DB: db.SQL},
+		Repository:   &archive.SQLNodeFillRepository{DB: db.Pool},
 		AddressStore: store.NewFromPool(db.Pool),
 		Client:       client,
 		Sleep: func(context.Context, time.Duration) error {
@@ -155,10 +155,10 @@ func TestNodeFillDryRunInsertIdempotencyAndRPCError(t *testing.T) {
 	// Simulate a partial prior run: arch_evtlog committed, then the dependent
 	// transaction/block writes failed. A retry must repair those rows even
 	// though the event log itself is already present.
-	if _, err := db.SQL.ExecContext(ctx, `DELETE FROM arch_tx WHERE tx_hash = $1`, insertHash.Hex()); err != nil {
+	if _, err := db.Pool.Exec(ctx, `DELETE FROM arch_tx WHERE tx_hash = $1`, insertHash.Hex()); err != nil {
 		t.Fatalf("deleting archived transaction: %v", err)
 	}
-	if _, err := db.SQL.ExecContext(ctx, `DELETE FROM arch_block WHERE block_num = $1`, int64(901)); err != nil {
+	if _, err := db.Pool.Exec(ctx, `DELETE FROM arch_block WHERE block_num = $1`, int64(901)); err != nil {
 		t.Fatalf("deleting archived block: %v", err)
 	}
 	repairStats, err := filler.RunProject(ctx, archive.ProjectRandomWalk, archive.NodeFillOptions{

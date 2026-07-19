@@ -19,7 +19,7 @@ func TestSQLTokenSourceLoadsSeededDatabase(t *testing.T) {
 		t.Fatalf("apply fixtures: %v", err)
 	}
 
-	tokens, err := (SQLTokenSource{DB: db.SQL}).TokenSeeds(ctx, "public")
+	tokens, err := (SQLTokenSource{DB: db.Pool}).TokenSeeds(ctx, "public")
 	if err != nil {
 		t.Fatalf("TokenSeeds(): %v", err)
 	}

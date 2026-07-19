@@ -2,18 +2,13 @@ package dbverify_test
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
 	"errors"
-	"fmt"
-	"io"
 	"reflect"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/dbverify"
+	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
 )
 
 func TestSQLLoaderRequiresDatabase(t *testing.T) {
@@ -99,8 +94,7 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		t.Parallel()
 		db, script := newScriptedDB(t, queryExpectation{
 			queryContains: "JOIN rw_contracts",
-			columns:       []string{"address_id"},
-			rows:          [][]driver.Value{{int64(4)}, {int64(9)}},
+			rows:          [][]any{{int64(4)}, {int64(9)}},
 		})
 
 		got, err := dbverify.LoadRandomWalkContractAddressIDs(context.Background(), db)
@@ -110,14 +104,13 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		if want := []int64{4, 9}; !reflect.DeepEqual(got, want) {
 			t.Errorf("ids = %v, want %v", got, want)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("empty", func(t *testing.T) {
 		t.Parallel()
 		db, script := newScriptedDB(t, queryExpectation{
 			queryContains: "JOIN rw_contracts",
-			columns:       []string{"address_id"},
 		})
 
 		_, err := dbverify.LoadRandomWalkContractAddressIDs(context.Background(), db)
@@ -125,7 +118,7 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "no contract addresses") {
 			t.Fatalf("error = %v, want no-addresses error", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("query failure", func(t *testing.T) {
@@ -141,15 +134,14 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		if !errors.Is(err, errQuery) || !strings.Contains(err.Error(), "contract aids") {
 			t.Fatalf("error = %v, want wrapped query failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("scan failure", func(t *testing.T) {
 		t.Parallel()
 		db, script := newScriptedDB(t, queryExpectation{
 			queryContains: "JOIN rw_contracts",
-			columns:       []string{"address_id"},
-			rows:          [][]driver.Value{{"not-an-integer"}},
+			rows:          [][]any{{"not-an-integer"}},
 		})
 
 		_, err := dbverify.LoadRandomWalkContractAddressIDs(context.Background(), db)
@@ -157,7 +149,7 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "scan contract aid") {
 			t.Fatalf("error = %v, want scan failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("rows failure", func(t *testing.T) {
@@ -165,7 +157,6 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		errRows := errors.New("rows failed")
 		db, script := newScriptedDB(t, queryExpectation{
 			queryContains: "JOIN rw_contracts",
-			columns:       []string{"address_id"},
 			rowsErr:       errRows,
 		})
 
@@ -174,7 +165,7 @@ func TestLoadRandomWalkContractAddressIDsBranches(t *testing.T) {
 		if !errors.Is(err, errRows) || !strings.Contains(err.Error(), "contract aids") {
 			t.Fatalf("error = %v, want wrapped rows failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 }
 
@@ -185,8 +176,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: "ORDER BY e.log_rlp, e.block_num, t.tx_hash, e.id",
 			argCount:      intPointer(0),
-			columns:       []string{"block_num", "tx_hash", "log_rlp"},
-			rows: [][]driver.Value{
+			rows: [][]any{
 				{int64(1), "tx-a", []byte{0xaa}},
 				{int64(2), "tx-b", []byte{0xaa}},
 			},
@@ -199,7 +189,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		if len(got) != 2 || got["aa"].TxHash != "tx-a" || got["aa#2"].TxHash != "tx-b" {
 			t.Errorf("records = %+v, want both duplicate occurrences", got)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	for name, filter := range map[string][]int64{
@@ -211,7 +201,6 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: "WHERE e.contract_aid = ANY($1)",
 				argCount:      intPointer(1),
-				columns:       []string{"block_num", "tx_hash", "log_rlp"},
 			})
 
 			got, err := loader.LoadEventRecords(context.Background(), filter)
@@ -221,7 +210,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 			if len(got) != 0 {
 				t.Errorf("records = %+v, want empty", got)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -238,15 +227,14 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		if !errors.Is(err, errQuery) {
 			t.Fatalf("error = %v, want query failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("scan failure", func(t *testing.T) {
 		t.Parallel()
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: "FROM evt_log e",
-			columns:       []string{"block_num", "tx_hash", "log_rlp"},
-			rows:          [][]driver.Value{{"bad-block", "tx", []byte{0x01}}},
+			rows:          [][]any{{"bad-block", "tx", []byte{0x01}}},
 		})
 
 		_, err := loader.LoadEventRecords(context.Background(), nil)
@@ -254,7 +242,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "scan event") {
 			t.Fatalf("error = %v, want event scan failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("rows failure", func(t *testing.T) {
@@ -262,7 +250,6 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		errRows := errors.New("rows failed")
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: "FROM evt_log e",
-			columns:       []string{"block_num", "tx_hash", "log_rlp"},
 			rowsErr:       errRows,
 		})
 
@@ -271,7 +258,7 @@ func TestSQLLoaderLoadEventRecordsBranches(t *testing.T) {
 		if !errors.Is(err, errRows) {
 			t.Fatalf("error = %v, want rows failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 }
 
@@ -287,8 +274,7 @@ func TestSQLLoaderTransactionHashesBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: "SELECT DISTINCT t.tx_hash",
 				argCount:      intPointer(1),
-				columns:       []string{"tx_hash"},
-				rows:          [][]driver.Value{{"a"}, {"b"}},
+				rows:          [][]any{{"a"}, {"b"}},
 			})
 
 			got, err := loader.TransactionHashesFromEvents(context.Background(), filter)
@@ -298,7 +284,7 @@ func TestSQLLoaderTransactionHashesBranches(t *testing.T) {
 			if want := []string{"a", "b"}; !reflect.DeepEqual(got, want) {
 				t.Errorf("hashes = %v, want %v", got, want)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -306,7 +292,6 @@ func TestSQLLoaderTransactionHashesBranches(t *testing.T) {
 		t,
 		"transaction hashes",
 		"SELECT DISTINCT t.tx_hash",
-		"tx_hash",
 		nil,
 		func(loader *dbverify.SQLLoader) error {
 			_, err := loader.TransactionHashesFromEvents(context.Background(), []int64{1})
@@ -327,7 +312,7 @@ func TestSQLLoaderLoadTransactionsBranches(t *testing.T) {
 		if err != nil || len(got) != 0 {
 			t.Fatalf("LoadTransactions(empty) = %+v, %v", got, err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	for name, test := range map[string]struct {
@@ -351,8 +336,7 @@ func TestSQLLoaderLoadTransactionsBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains,
 				argCount:      intPointer(test.argCount),
-				columns:       []string{"block_num", "tx_hash", "gas_used", "num_logs"},
-				rows:          [][]driver.Value{{int64(1), "tx", int64(2), int64(3)}},
+				rows:          [][]any{{int64(1), "tx", int64(2), int64(3)}},
 			})
 
 			got, err := loader.LoadTransactions(context.Background(), test.filter)
@@ -363,7 +347,7 @@ func TestSQLLoaderLoadTransactionsBranches(t *testing.T) {
 			if got["tx"] != want {
 				t.Errorf("transaction = %+v, want %+v", got["tx"], want)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -371,8 +355,7 @@ func TestSQLLoaderLoadTransactionsBranches(t *testing.T) {
 		t,
 		"transactions",
 		"FROM transaction",
-		[]string{"block_num", "tx_hash", "gas_used", "num_logs"},
-		[]driver.Value{"bad-block", "tx", int64(2), int64(3)},
+		[]any{"bad-block", "tx", int64(2), int64(3)},
 		func(loader *dbverify.SQLLoader) error {
 			_, err := loader.LoadTransactions(context.Background(), nil)
 			return err
@@ -393,8 +376,7 @@ func TestSQLLoaderBlockNumbersBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: "SELECT DISTINCT t.block_num",
 				argCount:      intPointer(1),
-				columns:       []string{"block_num"},
-				rows:          [][]driver.Value{{int64(1)}, {int64(2)}},
+				rows:          [][]any{{int64(1)}, {int64(2)}},
 			})
 
 			got, err := loader.BlockNumbersFromEvents(context.Background(), filter)
@@ -404,7 +386,7 @@ func TestSQLLoaderBlockNumbersBranches(t *testing.T) {
 			if want := []int64{1, 2}; !reflect.DeepEqual(got, want) {
 				t.Errorf("numbers = %v, want %v", got, want)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -412,7 +394,6 @@ func TestSQLLoaderBlockNumbersBranches(t *testing.T) {
 		t,
 		"block numbers",
 		"SELECT DISTINCT t.block_num",
-		"block_num",
 		"bad-integer",
 		func(loader *dbverify.SQLLoader) error {
 			_, err := loader.BlockNumbersFromEvents(context.Background(), []int64{1})
@@ -433,7 +414,7 @@ func TestSQLLoaderLoadBlocksBranches(t *testing.T) {
 		if err != nil || len(got) != 0 {
 			t.Fatalf("LoadBlocks(empty) = %+v, %v", got, err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	for name, test := range map[string]struct {
@@ -457,8 +438,7 @@ func TestSQLLoaderLoadBlocksBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains,
 				argCount:      intPointer(test.argCount),
-				columns:       []string{"block_num", "block_hash", "parent_hash", "num_tx"},
-				rows:          [][]driver.Value{{int64(1), "block", "parent", int64(2)}},
+				rows:          [][]any{{int64(1), "block", "parent", int64(2)}},
 			})
 
 			got, err := loader.LoadBlocks(context.Background(), test.filter)
@@ -469,7 +449,7 @@ func TestSQLLoaderLoadBlocksBranches(t *testing.T) {
 			if got["block"] != want {
 				t.Errorf("block = %+v, want %+v", got["block"], want)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -477,8 +457,7 @@ func TestSQLLoaderLoadBlocksBranches(t *testing.T) {
 		t,
 		"blocks",
 		"FROM block",
-		[]string{"block_num", "block_hash", "parent_hash", "num_tx"},
-		[]driver.Value{"bad-block", "block", "parent", int64(2)},
+		[]any{"bad-block", "block", "parent", int64(2)},
 		func(loader *dbverify.SQLLoader) error {
 			_, err := loader.LoadBlocks(context.Background(), nil)
 			return err
@@ -515,8 +494,7 @@ func TestSQLLoaderCountEventLogsBranches(t *testing.T) {
 			loader, script := newScriptedLoader(t, queryExpectation{
 				queryContains: test.queryContains,
 				argCount:      intPointer(test.argCount),
-				columns:       []string{"count"},
-				rows:          [][]driver.Value{{int64(12)}},
+				rows:          [][]any{{int64(12)}},
 			})
 
 			got, err := loader.CountEventLogs(context.Background(), test.filter)
@@ -524,7 +502,7 @@ func TestSQLLoaderCountEventLogsBranches(t *testing.T) {
 			if err != nil || got != 12 {
 				t.Fatalf("CountEventLogs() = %d, %v; want 12, nil", got, err)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -541,15 +519,14 @@ func TestSQLLoaderCountEventLogsBranches(t *testing.T) {
 		if !errors.Is(err, errQuery) {
 			t.Fatalf("error = %v, want query failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 
 	t.Run("scan failure", func(t *testing.T) {
 		t.Parallel()
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: "SELECT COUNT(*)",
-			columns:       []string{"count"},
-			rows:          [][]driver.Value{{"bad-count"}},
+			rows:          [][]any{{"bad-count"}},
 		})
 
 		_, err := loader.CountEventLogs(context.Background(), nil)
@@ -557,7 +534,7 @@ func TestSQLLoaderCountEventLogsBranches(t *testing.T) {
 		if err == nil {
 			t.Fatal("CountEventLogs() scan unexpectedly succeeded")
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 }
 
@@ -606,8 +583,7 @@ func TestSQLLoaderDetailedEventLogsBranches(t *testing.T) {
 				queryContains: test.queryContains[0],
 				queryParts:    test.queryContains,
 				argCount:      intPointer(test.argCount),
-				columns:       []string{"block_num", "tx_hash", "addr", "topic0_sig", "log_rlp"},
-				rows: [][]driver.Value{{
+				rows: [][]any{{
 					int64(1),
 					"tx",
 					"contract",
@@ -630,7 +606,7 @@ func TestSQLLoaderDetailedEventLogsBranches(t *testing.T) {
 			if !reflect.DeepEqual(got, want) {
 				t.Errorf("events = %+v, want %+v", got, want)
 			}
-			script.assertDone(t)
+			script.AssertDone(t)
 		})
 	}
 
@@ -638,8 +614,7 @@ func TestSQLLoaderDetailedEventLogsBranches(t *testing.T) {
 		t,
 		"detailed events",
 		"JOIN address a",
-		[]string{"block_num", "tx_hash", "addr", "topic0_sig", "log_rlp"},
-		[]driver.Value{"bad-block", "tx", "contract", "topic", []byte{0xaa}},
+		[]any{"bad-block", "tx", "contract", "topic", []byte{0xaa}},
 		func(loader *dbverify.SQLLoader) error {
 			_, err := loader.LoadDetailedEventLogs(context.Background(), nil, 0)
 			return err
@@ -652,8 +627,7 @@ func runSingleColumnLoaderErrors(
 	t *testing.T,
 	name string,
 	queryContains string,
-	column string,
-	badValue driver.Value,
+	badValue any,
 	call func(*dbverify.SQLLoader) error,
 	scanMessage string,
 ) {
@@ -671,14 +645,13 @@ func runSingleColumnLoaderErrors(
 		if !errors.Is(err, errQuery) {
 			t.Fatalf("error = %v, want query failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 	t.Run(name+" scan failure", func(t *testing.T) {
 		t.Parallel()
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: queryContains,
-			columns:       []string{column},
-			rows:          [][]driver.Value{{badValue}},
+			rows:          [][]any{{badValue}},
 		})
 
 		err := call(loader)
@@ -686,14 +659,13 @@ func runSingleColumnLoaderErrors(
 		if err == nil || !strings.Contains(err.Error(), scanMessage) {
 			t.Fatalf("error = %v, want %q scan failure", err, scanMessage)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 	t.Run(name+" rows failure", func(t *testing.T) {
 		t.Parallel()
 		errRows := errors.New("rows failed")
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: queryContains,
-			columns:       []string{column},
 			rowsErr:       errRows,
 		})
 
@@ -702,7 +674,7 @@ func runSingleColumnLoaderErrors(
 		if !errors.Is(err, errRows) {
 			t.Fatalf("error = %v, want rows failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 }
 
@@ -710,8 +682,7 @@ func runRecordLoaderErrors(
 	t *testing.T,
 	name string,
 	queryContains string,
-	columns []string,
-	badRow []driver.Value,
+	badRow []any,
 	call func(*dbverify.SQLLoader) error,
 	scanMessage string,
 ) {
@@ -729,14 +700,13 @@ func runRecordLoaderErrors(
 		if !errors.Is(err, errQuery) {
 			t.Fatalf("error = %v, want query failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 	t.Run(name+" scan failure", func(t *testing.T) {
 		t.Parallel()
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: queryContains,
-			columns:       columns,
-			rows:          [][]driver.Value{badRow},
+			rows:          [][]any{badRow},
 		})
 
 		err := call(loader)
@@ -744,14 +714,13 @@ func runRecordLoaderErrors(
 		if err == nil || !strings.Contains(err.Error(), scanMessage) {
 			t.Fatalf("error = %v, want %q scan failure", err, scanMessage)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
 	t.Run(name+" rows failure", func(t *testing.T) {
 		t.Parallel()
 		errRows := errors.New("rows failed")
 		loader, script := newScriptedLoader(t, queryExpectation{
 			queryContains: queryContains,
-			columns:       columns,
 			rowsErr:       errRows,
 		})
 
@@ -760,183 +729,45 @@ func runRecordLoaderErrors(
 		if !errors.Is(err, errRows) {
 			t.Fatalf("error = %v, want rows failure", err)
 		}
-		script.assertDone(t)
+		script.AssertDone(t)
 	})
-}
-
-const scriptedDriverName = "dbverify-scripted"
-
-var (
-	scriptedDatabases  sync.Map
-	scriptedDBSequence atomic.Uint64
-)
-
-func init() {
-	sql.Register(scriptedDriverName, scriptedDriver{})
 }
 
 type queryExpectation struct {
 	queryContains string
 	queryParts    []string
 	argCount      *int
-	columns       []string
-	rows          [][]driver.Value
+	rows          [][]any
 	rowsErr       error
 	err           error
 }
 
-type queryScript struct {
-	mu           sync.Mutex
-	expectations []queryExpectation
-	validation   []string
+func (e queryExpectation) op() testutil.PgxOp {
+	return testutil.PgxOp{
+		Kind:     "query",
+		Contains: e.queryContains,
+		Parts:    e.queryParts,
+		ArgCount: e.argCount,
+		Rows:     e.rows,
+		RowsErr:  e.rowsErr,
+		Err:      e.err,
+	}
 }
 
-func newScriptedLoader(t *testing.T, expectations ...queryExpectation) (*dbverify.SQLLoader, *queryScript) {
+func newScriptedLoader(t *testing.T, expectations ...queryExpectation) (*dbverify.SQLLoader, *testutil.ScriptedPgx) {
 	t.Helper()
 	db, script := newScriptedDB(t, expectations...)
 	return &dbverify.SQLLoader{DB: db}, script
 }
 
-func newScriptedDB(t *testing.T, expectations ...queryExpectation) (*sql.DB, *queryScript) {
+func newScriptedDB(t *testing.T, expectations ...queryExpectation) (dbverify.Querier, *testutil.ScriptedPgx) {
 	t.Helper()
-	name := fmt.Sprintf("dbverify-script-%d", scriptedDBSequence.Add(1))
-	script := &queryScript{expectations: append([]queryExpectation(nil), expectations...)}
-	scriptedDatabases.Store(name, script)
-	db, err := sql.Open(scriptedDriverName, name)
-	if err != nil {
-		t.Fatalf("opening scripted database: %v", err)
+	ops := make([]testutil.PgxOp, 0, len(expectations))
+	for _, expectation := range expectations {
+		ops = append(ops, expectation.op())
 	}
-	db.SetMaxOpenConns(1)
-	t.Cleanup(func() {
-		if err := db.Close(); err != nil {
-			t.Errorf("closing scripted database: %v", err)
-		}
-		scriptedDatabases.Delete(name)
-	})
-	return db, script
-}
-
-func (s *queryScript) next(query string, args []driver.NamedValue) (driver.Rows, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if len(s.expectations) == 0 {
-		return nil, errors.New("unexpected query")
-	}
-	expectation := s.expectations[0]
-	s.expectations = s.expectations[1:]
-	normalized := strings.Join(strings.Fields(query), " ")
-	if expectation.queryContains != "" && !strings.Contains(normalized, expectation.queryContains) {
-		s.validation = append(
-			s.validation,
-			fmt.Sprintf("query %q does not contain %q", normalized, expectation.queryContains),
-		)
-	}
-	for _, part := range expectation.queryParts {
-		if !strings.Contains(normalized, part) {
-			s.validation = append(s.validation, fmt.Sprintf("query %q does not contain %q", normalized, part))
-		}
-	}
-	if expectation.argCount != nil && len(args) != *expectation.argCount {
-		s.validation = append(
-			s.validation,
-			fmt.Sprintf("query %q has %d args, want %d", normalized, len(args), *expectation.argCount),
-		)
-	}
-	if expectation.err != nil {
-		return nil, expectation.err
-	}
-	return &scriptedRows{
-		columns: append([]string(nil), expectation.columns...),
-		rows:    cloneDriverRows(expectation.rows),
-		rowsErr: expectation.rowsErr,
-	}, nil
-}
-
-func (s *queryScript) assertDone(t *testing.T) {
-	t.Helper()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if len(s.expectations) != 0 {
-		t.Errorf("%d scripted queries were not executed", len(s.expectations))
-	}
-	for _, message := range s.validation {
-		t.Error(message)
-	}
-}
-
-type scriptedDriver struct{}
-
-func (scriptedDriver) Open(name string) (driver.Conn, error) {
-	value, ok := scriptedDatabases.Load(name)
-	if !ok {
-		return nil, fmt.Errorf("scripted database %q is not registered", name)
-	}
-	script, ok := value.(*queryScript)
-	if !ok {
-		return nil, fmt.Errorf("scripted database %q has invalid state", name)
-	}
-	return &scriptedConn{script: script}, nil
-}
-
-type scriptedConn struct {
-	script *queryScript
-}
-
-func (c *scriptedConn) Prepare(string) (driver.Stmt, error) {
-	return nil, errors.New("scripted prepared statements are unsupported")
-}
-
-func (c *scriptedConn) Close() error {
-	return nil
-}
-
-func (c *scriptedConn) Begin() (driver.Tx, error) {
-	return nil, errors.New("scripted transactions are unsupported")
-}
-
-func (c *scriptedConn) QueryContext(
-	_ context.Context,
-	query string,
-	args []driver.NamedValue,
-) (driver.Rows, error) {
-	return c.script.next(query, args)
-}
-
-type scriptedRows struct {
-	columns []string
-	rows    [][]driver.Value
-	rowsErr error
-	index   int
-}
-
-func (r *scriptedRows) Columns() []string {
-	return r.columns
-}
-
-func (r *scriptedRows) Close() error {
-	return nil
-}
-
-func (r *scriptedRows) Next(destination []driver.Value) error {
-	if r.index < len(r.rows) {
-		copy(destination, r.rows[r.index])
-		r.index++
-		return nil
-	}
-	if r.rowsErr != nil {
-		err := r.rowsErr
-		r.rowsErr = nil
-		return err
-	}
-	return io.EOF
-}
-
-func cloneDriverRows(rows [][]driver.Value) [][]driver.Value {
-	cloned := make([][]driver.Value, len(rows))
-	for index, row := range rows {
-		cloned[index] = append([]driver.Value(nil), row...)
-	}
-	return cloned
+	script := testutil.NewScriptedPgx(ops...)
+	return script, script
 }
 
 func intPointer(value int) *int {

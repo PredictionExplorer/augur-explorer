@@ -2,7 +2,6 @@ package archive
 
 import (
 	"context"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,11 +11,11 @@ import (
 func verifierCountOps(counts ...int64) []scriptOp {
 	ops := make([]scriptOp, 0, 2+len(counts))
 	ops = append(ops,
-		queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
-		queryOp("SELECT addr FROM address", []string{"addr"}, []driver.Value{"0x08"}),
+		queryOp("JOIN rw_contracts", []any{int64(8)}),
+		queryOp("SELECT addr FROM address", []any{"0x08"}),
 	)
 	for _, count := range counts {
-		ops = append(ops, queryOp("", []string{"count"}, []driver.Value{count}))
+		ops = append(ops, queryOp("", []any{count}))
 	}
 	return ops
 }
@@ -94,7 +93,7 @@ func TestSQLVerifierEveryQueryFailure(t *testing.T) {
 				if index == failAt {
 					ops = append(ops, queryErrorOp("", sentinel))
 				} else {
-					ops = append(ops, queryOp("", []string{"count"}, []driver.Value{int64(0)}))
+					ops = append(ops, queryOp("", []any{int64(0)}))
 				}
 			}
 			_, err := (&SQLVerifier{DB: openScriptDB(t, ops...)}).VerifyProject(
@@ -115,8 +114,8 @@ func TestMismatchQueryHelpersBranches(t *testing.T) {
 		core, skew, err := txMismatchStats(
 			context.Background(),
 			openScriptDB(t,
-				queryOp("", []string{"count"}, []driver.Value{int64(0)}),
-				queryOp("", []string{"count"}, []driver.Value{int64(1)}),
+				queryOp("", []any{int64(0)}),
+				queryOp("", []any{int64(1)}),
 			),
 			[]int64{8},
 		)
@@ -138,7 +137,7 @@ func TestMismatchQueryHelpersBranches(t *testing.T) {
 		_, _, err := txMismatchStats(
 			context.Background(),
 			openScriptDB(t,
-				queryOp("", []string{"count"}, []driver.Value{int64(0)}),
+				queryOp("", []any{int64(0)}),
 				queryErrorOp("", sentinel),
 			),
 			[]int64{8},
@@ -161,7 +160,7 @@ func TestMismatchQueryHelpersBranches(t *testing.T) {
 		_, _, err := blockMismatchStats(
 			context.Background(),
 			openScriptDB(t,
-				queryOp("", []string{"count"}, []driver.Value{int64(0)}),
+				queryOp("", []any{int64(0)}),
 				queryErrorOp("", sentinel),
 			),
 			[]string{"0x08"},

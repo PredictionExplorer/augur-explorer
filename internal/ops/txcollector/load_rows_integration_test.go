@@ -20,7 +20,7 @@ func TestLoadEventRowsPostgresSuccessFilterCancelAndError(t *testing.T) {
 	}
 
 	const contract = "0x2000000000000000000000000000000000000002"
-	rows, err := LoadEventRows(t.Context(), db.SQL, []string{contract}, 127)
+	rows, err := LoadEventRows(t.Context(), db.Pool, []string{contract}, 127)
 	if err != nil {
 		t.Fatalf("LoadEventRows: %v", err)
 	}
@@ -36,7 +36,7 @@ func TestLoadEventRowsPostgresSuccessFilterCancelAndError(t *testing.T) {
 		}
 	}
 
-	empty, err := LoadEventRows(t.Context(), db.SQL, []string{contract}, 1_000_000)
+	empty, err := LoadEventRows(t.Context(), db.Pool, []string{contract}, 1_000_000)
 	if err != nil {
 		t.Fatalf("empty filtered query: %v", err)
 	}
@@ -46,14 +46,15 @@ func TestLoadEventRowsPostgresSuccessFilterCancelAndError(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := LoadEventRows(ctx, db.SQL, []string{contract}, 0); !errors.Is(err, context.Canceled) {
+	if _, err := LoadEventRows(ctx, db.Pool, []string{contract}, 0); !errors.Is(err, context.Canceled) {
 		t.Fatalf("canceled query error = %v, want context canceled", err)
 	}
 
+	db.Pool.Close()
 	if err := db.SQL.Close(); err != nil {
 		t.Fatalf("closing database: %v", err)
 	}
-	if _, err := LoadEventRows(context.Background(), db.SQL, []string{contract}, 0); err == nil {
+	if _, err := LoadEventRows(context.Background(), db.Pool, []string{contract}, 0); err == nil {
 		t.Fatal("query on closed PostgreSQL database succeeded")
 	}
 }

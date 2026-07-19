@@ -1,28 +1,15 @@
 package toolutil
 
 import (
-	"database/sql"
 	"fmt"
 	"net/url"
 	"os"
 	"strings"
-
-	_ "github.com/lib/pq"
 )
-
-// OpenPostgresFromEnv connects using DATABASE_URL when set, otherwise
-// PGSQL_HOST, PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD.
-// Host may be host:port (e.g. 69.10.55.2:5432).
-func OpenPostgresFromEnv() (*sql.DB, error) {
-	conn, err := PostgresConnStringFromEnv()
-	if err != nil {
-		return nil, err
-	}
-	return sql.Open("postgres", conn)
-}
 
 // PostgresConnStringFromEnv returns DATABASE_URL when set, otherwise a
 // postgres URL built from the standard PGSQL_* variables.
+// Host may be host:port (e.g. 69.10.55.2:5432).
 func PostgresConnStringFromEnv() (string, error) {
 	if u := strings.TrimSpace(os.Getenv("DATABASE_URL")); u != "" {
 		return u, nil

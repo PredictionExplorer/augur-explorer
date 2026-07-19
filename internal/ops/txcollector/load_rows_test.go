@@ -2,97 +2,108 @@ package txcollector
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
 	"errors"
-	"fmt"
-	"io"
 	"reflect"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
-var (
-	txDriverSequence atomic.Uint64
-	errTXUnsupported = errors.New("txcollector test driver: unsupported operation")
-)
+type txQueryFunc func(ctx context.Context, query string, args []any) (pgx.Rows, error)
 
-type txQueryFunc func(context.Context, string, []driver.NamedValue) (driver.Rows, error)
-
-type txTestDriver struct {
+// txQuerier adapts a per-query callback to the pgx Querier seam.
+type txQuerier struct {
 	query txQueryFunc
 }
 
-func (d txTestDriver) Open(string) (driver.Conn, error) {
-	return &txTestConn{query: d.query}, nil
+func (q txQuerier) Query(ctx context.Context, query string, args ...any) (pgx.Rows, error) {
+	return q.query(ctx, query, args)
 }
 
-type txTestConn struct {
-	query txQueryFunc
-}
-
-func (c *txTestConn) Prepare(string) (driver.Stmt, error) {
-	return nil, errTXUnsupported
-}
-
-func (c *txTestConn) Close() error {
-	return nil
-}
-
-func (c *txTestConn) Begin() (driver.Tx, error) {
-	return nil, errTXUnsupported
-}
-
-func (c *txTestConn) QueryContext(
-	ctx context.Context,
-	query string,
-	args []driver.NamedValue,
-) (driver.Rows, error) {
-	return c.query(ctx, query, args)
-}
-
+// txTestRows is a pgx.Rows fake with per-row hooks and close tracking.
 type txTestRows struct {
 	mu          sync.Mutex
-	columns     []string
-	values      [][]driver.Value
+	values      [][]any
 	next        int
+	current     []any
 	terminalErr error
 	onNext      func()
 	closed      bool
+	err         error
 }
 
-func (r *txTestRows) Columns() []string {
-	return append([]string(nil), r.columns...)
-}
-
-func (r *txTestRows) Close() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.closed = true
-	return nil
-}
-
-func (r *txTestRows) Next(dest []driver.Value) error {
+func (r *txTestRows) Next() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.next < len(r.values) {
-		copy(dest, r.values[r.next])
+		r.current = r.values[r.next]
 		r.next++
 		if r.onNext != nil {
 			r.onNext()
 		}
-		return nil
+		return true
 	}
 	if r.terminalErr != nil {
-		err := r.terminalErr
+		r.err = r.terminalErr
 		r.terminalErr = nil
-		return err
 	}
-	return io.EOF
+	return false
+}
+
+func (r *txTestRows) Scan(dest ...any) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	values := r.current
+	if len(dest) != len(values) {
+		return errors.New("txcollector test rows: destination arity mismatch")
+	}
+	for i, value := range values {
+		switch d := dest[i].(type) {
+		case *int64:
+			v, ok := value.(int64)
+			if !ok {
+				return errors.New("txcollector test rows: not an int64")
+			}
+			*d = v
+		case *int:
+			v, ok := value.(int64)
+			if !ok {
+				return errors.New("txcollector test rows: not an int")
+			}
+			*d = int(v)
+		case *string:
+			v, ok := value.(string)
+			if !ok {
+				return errors.New("txcollector test rows: not a string")
+			}
+			*d = v
+		case *[]byte:
+			v, ok := value.([]byte)
+			if !ok {
+				return errors.New("txcollector test rows: not bytes")
+			}
+			*d = v
+		default:
+			return errors.New("txcollector test rows: unsupported destination")
+		}
+	}
+	return nil
+}
+
+func (r *txTestRows) Err() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.err
+}
+
+func (r *txTestRows) Close() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.closed = true
 }
 
 func (r *txTestRows) isClosed() bool {
@@ -101,32 +112,17 @@ func (r *txTestRows) isClosed() bool {
 	return r.closed
 }
 
-func openTXTestDB(t *testing.T, query txQueryFunc) *sql.DB {
-	t.Helper()
-	name := fmt.Sprintf("txcollector-test-%d", txDriverSequence.Add(1))
-	sql.Register(name, txTestDriver{query: query})
-	db, err := sql.Open(name, "")
-	if err != nil {
-		t.Fatalf("sql.Open: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := db.Close(); err != nil {
-			t.Errorf("closing test database: %v", err)
-		}
-	})
-	return db
-}
-
-func eventRowColumns() []string {
-	return []string{"block_num", "log_index", "tx_hash", "addr", "topic0_sig", "log_rlp"}
-}
+func (*txTestRows) CommandTag() pgconn.CommandTag                { return pgconn.CommandTag{} }
+func (*txTestRows) FieldDescriptions() []pgconn.FieldDescription { return nil }
+func (*txTestRows) RawValues() [][]byte                          { return nil }
+func (*txTestRows) Values() ([]any, error)                       { return nil, nil }
+func (*txTestRows) Conn() *pgx.Conn                              { return nil }
 
 func TestLoadEventRowsSuccessAndQueryArguments(t *testing.T) {
 	txHash := common.HexToHash("0xabcd")
 	address := common.HexToAddress("0xabcdef0000000000000000000000000000001234")
 	rows := &txTestRows{
-		columns: eventRowColumns(),
-		values: [][]driver.Value{{
+		values: [][]any{{
 			int64(125),
 			int64(7),
 			"0x" + strings.ToUpper(txHash.Hex()[2:]),
@@ -136,7 +132,7 @@ func TestLoadEventRowsSuccessAndQueryArguments(t *testing.T) {
 		}},
 	}
 	contracts := []string{address.Hex()}
-	db := openTXTestDB(t, func(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	db := txQuerier{query: func(_ context.Context, query string, args []any) (pgx.Rows, error) {
 		if !strings.Contains(query, "a.addr = ANY($1)") ||
 			!strings.Contains(query, "e.block_num >= $2") ||
 			!strings.Contains(query, "ORDER BY t.tx_hash, e.log_index") {
@@ -145,14 +141,14 @@ func TestLoadEventRowsSuccessAndQueryArguments(t *testing.T) {
 		if len(args) != 2 {
 			t.Fatalf("args = %v, want two", args)
 		}
-		if got, ok := args[0].Value.(string); !ok || !strings.Contains(got, contracts[0]) {
-			t.Fatalf("contract argument = %#v", args[0].Value)
+		if got, ok := args[0].([]string); !ok || !reflect.DeepEqual(got, contracts) {
+			t.Fatalf("contract argument = %#v", args[0])
 		}
-		if args[1].Value != int64(120) {
-			t.Fatalf("from-block argument = %#v, want int64(120)", args[1].Value)
+		if args[1] != uint64(120) {
+			t.Fatalf("from-block argument = %#v, want uint64(120)", args[1])
 		}
 		return rows, nil
-	})
+	}}
 
 	got, err := LoadEventRows(context.Background(), db, contracts, 120)
 	if err != nil {
@@ -182,10 +178,10 @@ func TestLoadEventRowsErrors(t *testing.T) {
 	})
 
 	t.Run("empty contracts", func(t *testing.T) {
-		db := openTXTestDB(t, func(context.Context, string, []driver.NamedValue) (driver.Rows, error) {
+		db := txQuerier{query: func(context.Context, string, []any) (pgx.Rows, error) {
 			t.Fatal("query called for empty contracts")
 			return nil, nil
-		})
+		}}
 		if _, err := LoadEventRows(context.Background(), db, nil, 0); err == nil {
 			t.Fatal("LoadEventRows succeeded without contracts")
 		}
@@ -193,21 +189,20 @@ func TestLoadEventRowsErrors(t *testing.T) {
 
 	t.Run("query", func(t *testing.T) {
 		boom := errors.New("query failed")
-		db := openTXTestDB(t, func(context.Context, string, []driver.NamedValue) (driver.Rows, error) {
+		db := txQuerier{query: func(context.Context, string, []any) (pgx.Rows, error) {
 			return nil, boom
-		})
+		}}
 		if _, err := LoadEventRows(context.Background(), db, []string{"0x1"}, 0); !errors.Is(err, boom) {
 			t.Fatalf("error = %v, want query error", err)
 		}
 	})
 
 	t.Run("scan", func(t *testing.T) {
-		db := openTXTestDB(t, func(context.Context, string, []driver.NamedValue) (driver.Rows, error) {
+		db := txQuerier{query: func(context.Context, string, []any) (pgx.Rows, error) {
 			return &txTestRows{
-				columns: eventRowColumns(),
-				values:  [][]driver.Value{{"not-a-block", int64(1), "0x1", "0x2", "topic", []byte{1}}},
+				values: [][]any{{"not-a-block", int64(1), "0x1", "0x2", "topic", []byte{1}}},
 			}, nil
-		})
+		}}
 		if _, err := LoadEventRows(context.Background(), db, []string{"0x1"}, 0); err == nil {
 			t.Fatal("LoadEventRows succeeded with an invalid row")
 		}
@@ -215,9 +210,9 @@ func TestLoadEventRowsErrors(t *testing.T) {
 
 	t.Run("rows", func(t *testing.T) {
 		boom := errors.New("rows failed")
-		db := openTXTestDB(t, func(context.Context, string, []driver.NamedValue) (driver.Rows, error) {
-			return &txTestRows{columns: eventRowColumns(), terminalErr: boom}, nil
-		})
+		db := txQuerier{query: func(context.Context, string, []any) (pgx.Rows, error) {
+			return &txTestRows{terminalErr: boom}, nil
+		}}
 		if _, err := LoadEventRows(context.Background(), db, []string{"0x1"}, 0); !errors.Is(err, boom) {
 			t.Fatalf("error = %v, want rows error", err)
 		}
@@ -225,15 +220,14 @@ func TestLoadEventRowsErrors(t *testing.T) {
 
 	t.Run("cancellation while iterating", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		db := openTXTestDB(t, func(context.Context, string, []driver.NamedValue) (driver.Rows, error) {
+		db := txQuerier{query: func(context.Context, string, []any) (pgx.Rows, error) {
 			return &txTestRows{
-				columns: eventRowColumns(),
-				values: [][]driver.Value{{
+				values: [][]any{{
 					int64(1), int64(1), "0x1", "0x2", "topic", []byte{1},
 				}},
 				onNext: cancel,
 			}, nil
-		})
+		}}
 		if _, err := LoadEventRows(ctx, db, []string{"0x1"}, 0); !errors.Is(err, context.Canceled) {
 			t.Fatalf("error = %v, want context canceled", err)
 		}

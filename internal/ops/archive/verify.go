@@ -2,11 +2,8 @@ package archive
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/lib/pq"
 )
 
 // VerifyOptions controls which snapshot metadata differences are blocking.
@@ -102,7 +99,7 @@ func VerifyProjects(
 // SQLVerifier runs archive consistency queries against one database. The
 // caller owns DB.
 type SQLVerifier struct {
-	DB     *sql.DB
+	DB     Querier
 	Logger Logger
 }
 
@@ -134,7 +131,7 @@ func (v *SQLVerifier) VerifyProject(
 			SELECT 1 FROM arch_evtlog ae
 			WHERE ae.tx_hash = t.tx_hash AND ae.log_index = e.log_index
 		)
-	`, pq.Array(contracts.AddressIDs))
+	`, contracts.AddressIDs)
 	if err != nil {
 		return result, err
 	}
@@ -148,7 +145,7 @@ func (v *SQLVerifier) VerifyProject(
 			INNER JOIN transaction t ON e.tx_id = t.id
 			WHERE t.tx_hash = ae.tx_hash AND e.log_index = ae.log_index
 		)
-	`, pq.Array(contracts.Addresses))
+	`, contracts.Addresses)
 	if err != nil {
 		return result, err
 	}
@@ -168,7 +165,7 @@ func (v *SQLVerifier) VerifyProject(
 			OR ae.log_rlp IS DISTINCT FROM e.log_rlp
 			OR (ae.evt_id IS NOT NULL AND ae.evt_id IS DISTINCT FROM e.id)
 		)
-	`, pq.Array(contracts.Addresses))
+	`, contracts.Addresses)
 	if err != nil {
 		return result, err
 	}
@@ -179,7 +176,7 @@ func (v *SQLVerifier) VerifyProject(
 		INNER JOIN transaction t ON e.tx_id = t.id
 		WHERE e.contract_aid = ANY($1)
 		AND NOT EXISTS (SELECT 1 FROM arch_tx at WHERE at.tx_hash = t.tx_hash)
-	`, pq.Array(contracts.AddressIDs))
+	`, contracts.AddressIDs)
 	if err != nil {
 		return result, err
 	}
@@ -189,7 +186,7 @@ func (v *SQLVerifier) VerifyProject(
 		SELECT COUNT(*) FROM arch_evtlog ae
 		WHERE ae.contract_addr = ANY($1)
 		AND NOT EXISTS (SELECT 1 FROM arch_tx at WHERE at.tx_hash = ae.tx_hash)
-	`, pq.Array(contracts.Addresses))
+	`, contracts.Addresses)
 	if err != nil {
 		return result, err
 	}
@@ -215,7 +212,7 @@ func (v *SQLVerifier) VerifyProject(
 			SELECT DISTINCT ae.tx_hash FROM arch_evtlog ae WHERE ae.contract_addr = ANY($1)
 		)
 		AND NOT EXISTS (SELECT 1 FROM arch_block ab WHERE ab.block_num = at.block_num)
-	`, pq.Array(contracts.Addresses))
+	`, contracts.Addresses)
 	if err != nil {
 		return result, err
 	}
@@ -241,7 +238,7 @@ func (v *SQLVerifier) VerifyProject(
 	return result, nil
 }
 
-func txMismatchStats(ctx context.Context, db *sql.DB, addressIDs []int64) (core, numLogsOnly int64, err error) {
+func txMismatchStats(ctx context.Context, db Querier, addressIDs []int64) (core, numLogsOnly int64, err error) {
 	base := `
 		FROM (
 			SELECT DISTINCT t.tx_hash AS tx_hash
@@ -275,15 +272,15 @@ func txMismatchStats(ctx context.Context, db *sql.DB, addressIDs []int64) (core,
 			OR at.gas_price IS DISTINCT FROM t.gas_price`
 
 	var strict int64
-	if err := db.QueryRowContext(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*) `+base+` WHERE `+whereStrict,
-		pq.Array(addressIDs),
+		addressIDs,
 	).Scan(&strict); err != nil {
 		return 0, 0, fmt.Errorf("tx mismatch (strict): %w", err)
 	}
-	if err := db.QueryRowContext(ctx,
+	if err := db.QueryRow(ctx,
 		`SELECT COUNT(*) `+base+` WHERE `+whereCore,
-		pq.Array(addressIDs),
+		addressIDs,
 	).Scan(&core); err != nil {
 		return 0, 0, fmt.Errorf("tx mismatch (core): %w", err)
 	}
@@ -294,7 +291,7 @@ func txMismatchStats(ctx context.Context, db *sql.DB, addressIDs []int64) (core,
 	return core, numLogsOnly, nil
 }
 
-func blockMismatchStats(ctx context.Context, db *sql.DB, addresses []string) (hash, metadata int64, err error) {
+func blockMismatchStats(ctx context.Context, db Querier, addresses []string) (hash, metadata int64, err error) {
 	subquery := `
 		SELECT DISTINCT at.block_num FROM arch_tx at
 		WHERE at.tx_hash IN (
@@ -320,18 +317,18 @@ func blockMismatchStats(ctx context.Context, db *sql.DB, addresses []string) (ha
 		AND ab.block_hash IS NOT DISTINCT FROM b.block_hash
 		AND ab.parent_hash IS NOT DISTINCT FROM b.parent_hash`
 
-	if err := db.QueryRowContext(ctx, hashQuery, pq.Array(addresses)).Scan(&hash); err != nil {
+	if err := db.QueryRow(ctx, hashQuery, addresses).Scan(&hash); err != nil {
 		return 0, 0, fmt.Errorf("block hash mismatch: %w", err)
 	}
-	if err := db.QueryRowContext(ctx, metadataQuery, pq.Array(addresses)).Scan(&metadata); err != nil {
+	if err := db.QueryRow(ctx, metadataQuery, addresses).Scan(&metadata); err != nil {
 		return 0, 0, fmt.Errorf("block meta mismatch: %w", err)
 	}
 	return hash, metadata, nil
 }
 
-func countRow(ctx context.Context, db *sql.DB, query string, args ...any) (int64, error) {
+func countRow(ctx context.Context, db Querier, query string, args ...any) (int64, error) {
 	var count int64
-	if err := db.QueryRowContext(ctx, query, args...).Scan(&count); err != nil {
+	if err := db.QueryRow(ctx, query, args...).Scan(&count); err != nil {
 		return 0, fmt.Errorf("count query failed: %w\n%s", err, query)
 	}
 	return count, nil

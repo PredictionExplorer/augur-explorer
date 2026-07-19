@@ -2,14 +2,14 @@ package archive
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
 )
 
 type recordingLogger struct {
@@ -46,8 +46,8 @@ func TestExportValidationAndUtilities(t *testing.T) {
 	}
 	for name, exporter := range map[string]*SQLExporter{
 		"nil receiver": nil,
-		"nil source":   {Destination: &sql.DB{}},
-		"nil dest":     {Source: &sql.DB{}},
+		"nil source":   {Destination: testutil.NewScriptedPgx()},
+		"nil dest":     {Source: testutil.NewScriptedPgx()},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := exporter.ExportProject(context.Background(), ProjectRandomWalk); err == nil {
@@ -87,8 +87,8 @@ func TestExportValidationAndUtilities(t *testing.T) {
 func contractSourceOps(after ...scriptOp) []scriptOp {
 	ops := make([]scriptOp, 0, 2+len(after))
 	ops = append(ops,
-		queryOp("JOIN rw_contracts", []string{"address_id"}, []driver.Value{int64(8)}),
-		queryOp("SELECT addr FROM address", []string{"addr"}, []driver.Value{"0x08"}),
+		queryOp("JOIN rw_contracts", []any{int64(8)}),
+		queryOp("SELECT addr FROM address", []any{"0x08"}),
 	)
 	return append(ops, after...)
 }
@@ -96,19 +96,16 @@ func contractSourceOps(after ...scriptOp) []scriptOp {
 func emptyEventSourceOps(after ...scriptOp) []scriptOp {
 	ops := make([]scriptOp, 0, 2+len(after))
 	ops = append(ops,
-		queryOp("SELECT COUNT(*) FROM evt_log", []string{"count"}, []driver.Value{int64(0)}),
-		queryOp("FROM evt_log e JOIN transaction", []string{
-			"block_num", "id", "tx_id", "log_index", "tx_hash", "addr", "topic0_sig", "log_rlp",
-		}),
+		queryOp("SELECT COUNT(*) FROM evt_log", []any{int64(0)}),
+		queryOp("FROM evt_log e JOIN transaction"),
 	)
 	return append(ops, after...)
 }
 
 func eventDestinationOps(after ...scriptOp) []scriptOp {
-	ops := make([]scriptOp, 0, 2+len(after))
+	ops := make([]scriptOp, 0, 1+len(after))
 	ops = append(ops,
-		queryOp("COALESCE(MAX(evt_id)", []string{"max"}, []driver.Value{int64(0)}),
-		prepareOp("INSERT INTO arch_evtlog"),
+		queryOp("COALESCE(MAX(evt_id)", []any{int64(0)}),
 	)
 	return append(ops, after...)
 }
@@ -149,7 +146,7 @@ func TestSQLExporterProjectStageErrors(t *testing.T) {
 			name:   "block export",
 			source: contractSourceOps(emptyEventSourceOps()...),
 			dest: eventDestinationOps(
-				queryOp("SELECT DISTINCT e.tx_hash", []string{"tx_hash"}),
+				queryOp("SELECT DISTINCT e.tx_hash"),
 				queryErrorOp("SELECT DISTINCT tx.block_num", sentinel),
 			),
 			want:    "find missing blocks",
@@ -179,7 +176,7 @@ func TestEventLogResumeFloorErrorAndEmpty(t *testing.T) {
 	_, positions, err = EventLogResumeFloor(
 		context.Background(),
 		openScriptDB(t,
-			queryOp("COALESCE(MAX(evt_id)", []string{"max"}, []driver.Value{int64(10)}),
+			queryOp("COALESCE(MAX(evt_id)", []any{int64(10)}),
 			queryErrorOp("COALESCE(MAX(evt_id)", sentinel),
 		),
 		[]string{"a", "b"},
@@ -206,31 +203,19 @@ func TestExportEventLogsSetupFailures(t *testing.T) {
 		{
 			name: "resume",
 			source: []scriptOp{
-				queryOp("SELECT COUNT(*) FROM evt_log", []string{"count"}, []driver.Value{int64(1)}),
+				queryOp("SELECT COUNT(*) FROM evt_log", []any{int64(1)}),
 			},
 			dest: []scriptOp{queryErrorOp("COALESCE(MAX(evt_id)", sentinel)},
 			want: "read resume position",
 		},
 		{
-			name: "prepare",
-			source: []scriptOp{
-				queryOp("SELECT COUNT(*) FROM evt_log", []string{"count"}, []driver.Value{int64(1)}),
-			},
-			dest: []scriptOp{
-				queryOp("COALESCE(MAX(evt_id)", []string{"max"}, []driver.Value{int64(0)}),
-				prepareErrorOp("INSERT INTO arch_evtlog", sentinel),
-			},
-			want: "prepare arch_evtlog",
-		},
-		{
 			name: "batch",
 			source: []scriptOp{
-				queryOp("SELECT COUNT(*) FROM evt_log", []string{"count"}, []driver.Value{int64(1)}),
+				queryOp("SELECT COUNT(*) FROM evt_log", []any{int64(1)}),
 				queryErrorOp("FROM evt_log e", sentinel),
 			},
 			dest: []scriptOp{
-				queryOp("COALESCE(MAX(evt_id)", []string{"max"}, []driver.Value{int64(0)}),
-				prepareOp("INSERT INTO arch_evtlog"),
+				queryOp("COALESCE(MAX(evt_id)", []any{int64(0)}),
 			},
 			want: "query evt_log batch",
 		},
@@ -252,16 +237,14 @@ func TestExportEventLogsSetupFailures(t *testing.T) {
 func TestExportLoopsHonorCancellation(t *testing.T) {
 	t.Run("events", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		prepare := prepareOp("INSERT INTO arch_evtlog")
-		prepare.onCall = cancel
+		defer cancel()
+		resume := queryOp("COALESCE(MAX(evt_id)", []any{int64(0)})
+		resume.OnCall = cancel
 		exporter := &SQLExporter{
 			Source: openScriptDB(t,
-				queryOp("SELECT COUNT(*) FROM evt_log", []string{"count"}, []driver.Value{int64(1)}),
+				queryOp("SELECT COUNT(*) FROM evt_log", []any{int64(1)}),
 			),
-			Destination: openScriptDB(t,
-				queryOp("COALESCE(MAX(evt_id)", []string{"max"}, []driver.Value{int64(0)}),
-				prepare,
-			),
+			Destination: openScriptDB(t, resume),
 		}
 		_, err := exporter.exportEventLogs(ctx, Contracts{
 			AddressIDs: []int64{8},
@@ -273,14 +256,12 @@ func TestExportLoopsHonorCancellation(t *testing.T) {
 	})
 	t.Run("transactions", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		prepare := prepareOp("INSERT INTO arch_tx")
-		prepare.onCall = cancel
+		defer cancel()
+		missing := queryOp("SELECT DISTINCT e.tx_hash", []any{"tx"})
+		missing.OnCall = cancel
 		exporter := &SQLExporter{
-			Source: openScriptDB(t),
-			Destination: openScriptDB(t,
-				queryOp("SELECT DISTINCT e.tx_hash", []string{"tx_hash"}, []driver.Value{"tx"}),
-				prepare,
-			),
+			Source:      openScriptDB(t),
+			Destination: openScriptDB(t, missing),
 		}
 		_, err := exporter.exportTransactions(ctx)
 		if !errors.Is(err, context.Canceled) {
@@ -289,14 +270,12 @@ func TestExportLoopsHonorCancellation(t *testing.T) {
 	})
 	t.Run("blocks", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		prepare := prepareOp("INSERT INTO arch_block")
-		prepare.onCall = cancel
+		defer cancel()
+		missing := queryOp("SELECT DISTINCT tx.block_num", []any{int64(10)})
+		missing.OnCall = cancel
 		exporter := &SQLExporter{
-			Source: openScriptDB(t),
-			Destination: openScriptDB(t,
-				queryOp("SELECT DISTINCT tx.block_num", []string{"block_num"}, []driver.Value{int64(10)}),
-				prepare,
-			),
+			Source:      openScriptDB(t),
+			Destination: openScriptDB(t, missing),
 		}
 		_, err := exporter.exportBlocks(ctx)
 		if !errors.Is(err, context.Canceled) {
@@ -305,19 +284,8 @@ func TestExportLoopsHonorCancellation(t *testing.T) {
 	})
 }
 
-func prepareStatement(t *testing.T, ops ...scriptOp) *sql.Stmt {
-	t.Helper()
-	db := openScriptDB(t, ops...)
-	statement, err := db.PrepareContext(context.Background(), "INSERT test statement")
-	if err != nil {
-		t.Fatalf("preparing scripted statement: %v", err)
-	}
-	t.Cleanup(func() { _ = statement.Close() })
-	return statement
-}
-
-func eventRow() []driver.Value {
-	return []driver.Value{
+func eventRow() []any {
+	return []any{
 		int64(10), int64(20), int64(30), int64(1),
 		"0xtx", "0xcontract", "deadbeef",
 		[]byte{0x01},
@@ -329,54 +297,40 @@ func TestExportEventLogBatchFailures(t *testing.T) {
 	tests := []struct {
 		name   string
 		source scriptOp
-		stmt   []scriptOp
+		dest   []scriptOp
 		want   string
 	}{
 		{
 			name:   "query",
 			source: queryErrorOp("FROM evt_log e", sentinel),
-			stmt:   []scriptOp{prepareOp("INSERT test statement")},
 			want:   "query evt_log batch",
 		},
 		{
 			name: "scan",
-			source: queryOp("FROM evt_log e", []string{
-				"block_num", "id", "tx_id", "log_index", "tx_hash", "addr", "topic0_sig", "log_rlp",
-			}, []driver.Value{"bad", int64(2), int64(3), int64(0), "tx", "addr", "topic", []byte{1}}),
-			stmt: []scriptOp{prepareOp("INSERT test statement")},
+			source: queryOp("FROM evt_log e",
+				[]any{"bad", int64(2), int64(3), int64(0), "tx", "addr", "topic", []byte{1}}),
 			want: "scan evt_log row",
 		},
 		{
-			name: "insert",
-			source: queryOp("FROM evt_log e", []string{
-				"block_num", "id", "tx_id", "log_index", "tx_hash", "addr", "topic0_sig", "log_rlp",
-			}, eventRow()),
-			stmt: []scriptOp{
-				prepareOp("INSERT test statement"),
-				execErrorOp("INSERT test statement", sentinel),
-			},
-			want: "insert arch_evtlog",
+			name:   "insert",
+			source: queryOp("FROM evt_log e", eventRow()),
+			dest:   []scriptOp{execErrorOp("INSERT INTO arch_evtlog", sentinel)},
+			want:   "insert arch_evtlog",
 		},
 		{
-			name: "iteration",
-			source: scriptOp{
-				kind:      "query",
-				contains:  "FROM evt_log e",
-				columns:   []string{"block_num", "id", "tx_id", "log_index", "tx_hash", "addr", "topic0_sig", "log_rlp"},
-				nextErrAt: 0,
-				nextErr:   sentinel,
-			},
-			stmt: []scriptOp{prepareOp("INSERT test statement")},
-			want: "iterate evt_log batch",
+			name:   "iteration",
+			source: queryIterErrorOp("FROM evt_log e", sentinel),
+			want:   "iterate evt_log batch",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			statement := prepareStatement(t, test.stmt...)
-			exporter := &SQLExporter{Source: openScriptDB(t, test.source)}
+			exporter := &SQLExporter{
+				Source:      openScriptDB(t, test.source),
+				Destination: openScriptDB(t, test.dest...),
+			}
 			_, _, err := exporter.exportEventLogBatch(
 				context.Background(),
-				statement,
 				[]int64{8},
 				0,
 				map[int64]struct{}{},
@@ -385,6 +339,21 @@ func TestExportEventLogBatchFailures(t *testing.T) {
 				t.Fatalf("error = %v, want containing %q", err, test.want)
 			}
 		})
+	}
+}
+
+func TestExportEventLogBatchSuccess(t *testing.T) {
+	exporter := &SQLExporter{
+		Source:      openScriptDB(t, queryOp("FROM evt_log e", eventRow())),
+		Destination: openScriptDB(t, execOp("INSERT INTO arch_evtlog", 1)),
+	}
+	txIDs := map[int64]struct{}{}
+	count, lastID, err := exporter.exportEventLogBatch(context.Background(), []int64{8}, 0, txIDs)
+	if err != nil || count != 1 || lastID != 20 {
+		t.Fatalf("count/lastID/error = %d/%d/%v", count, lastID, err)
+	}
+	if _, ok := txIDs[30]; !ok {
+		t.Fatalf("tx ids = %v, want 30 recorded", txIDs)
 	}
 }
 
@@ -402,19 +371,10 @@ func TestExportTransactionsFailures(t *testing.T) {
 			want: "find missing transactions",
 		},
 		{
-			name: "prepare",
-			dest: []scriptOp{
-				queryOp("SELECT DISTINCT e.tx_hash", []string{"tx_hash"}, []driver.Value{"tx"}),
-				prepareErrorOp("INSERT INTO arch_tx", sentinel),
-			},
-			want: "prepare arch_tx",
-		},
-		{
 			name:   "batch",
 			source: []scriptOp{queryErrorOp("FROM transaction", sentinel)},
 			dest: []scriptOp{
-				queryOp("SELECT DISTINCT e.tx_hash", []string{"tx_hash"}, []driver.Value{"tx"}),
-				prepareOp("INSERT INTO arch_tx"),
+				queryOp("SELECT DISTINCT e.tx_hash", []any{"tx"}),
 			},
 			want: "query transaction batch",
 		},
@@ -434,8 +394,8 @@ func TestExportTransactionsFailures(t *testing.T) {
 	}
 }
 
-func transactionRow(input any) []driver.Value {
-	return []driver.Value{
+func transactionRow(input any) []any {
+	return []any{
 		int64(10), int64(1), int64(2), int64(21_000), int64(3), int64(4),
 		false, "1", "2", "0xtx", input,
 	}
@@ -443,76 +403,55 @@ func transactionRow(input any) []driver.Value {
 
 func TestExportTransactionBatchBranches(t *testing.T) {
 	sentinel := errors.New("transaction batch failed")
-	columns := []string{
-		"block_num", "from_aid", "to_aid", "gas_used", "tx_index", "num_logs",
-		"ctrct_create", "value", "gas_price", "tx_hash", "input_sig",
-	}
 	tests := []struct {
 		name   string
 		source scriptOp
-		stmt   []scriptOp
+		dest   []scriptOp
 		want   string
 		ok     bool
 	}{
 		{
 			name:   "query",
 			source: queryErrorOp("FROM transaction", sentinel),
-			stmt:   []scriptOp{prepareOp("INSERT test statement")},
 			want:   "query transaction batch",
 		},
 		{
 			name:   "scan",
-			source: queryOp("FROM transaction", columns, transactionRow(nil)[:3]),
-			stmt:   []scriptOp{prepareOp("INSERT test statement")},
+			source: queryOp("FROM transaction", transactionRow(nil)[:3]),
 			want:   "scan transaction row",
 		},
 		{
 			name:   "insert",
-			source: queryOp("FROM transaction", columns, transactionRow("0x12345678")),
-			stmt: []scriptOp{
-				prepareOp("INSERT test statement"),
-				execErrorOp("INSERT test statement", sentinel),
-			},
-			want: "insert arch_tx",
+			source: queryOp("FROM transaction", transactionRow("0x12345678")),
+			dest:   []scriptOp{execErrorOp("INSERT INTO arch_tx", sentinel)},
+			want:   "insert arch_tx",
 		},
 		{
-			name: "iteration",
-			source: scriptOp{
-				kind:      "query",
-				contains:  "FROM transaction",
-				columns:   columns,
-				nextErrAt: 0,
-				nextErr:   sentinel,
-			},
-			stmt: []scriptOp{prepareOp("INSERT test statement")},
-			want: "iterate transaction batch",
+			name:   "iteration",
+			source: queryIterErrorOp("FROM transaction", sentinel),
+			want:   "iterate transaction batch",
 		},
 		{
 			name:   "nullable input signature",
-			source: queryOp("FROM transaction", columns, transactionRow(nil)),
-			stmt: []scriptOp{
-				prepareOp("INSERT test statement"),
-				execOp("INSERT test statement", 1),
-			},
-			ok: true,
+			source: queryOp("FROM transaction", transactionRow(nil)),
+			dest:   []scriptOp{execOp("INSERT INTO arch_tx", 1)},
+			ok:     true,
 		},
 		{
 			name:   "valid input signature",
-			source: queryOp("FROM transaction", columns, transactionRow("0x12345678")),
-			stmt: []scriptOp{
-				prepareOp("INSERT test statement"),
-				execOp("INSERT test statement", 1),
-			},
-			ok: true,
+			source: queryOp("FROM transaction", transactionRow("0x12345678")),
+			dest:   []scriptOp{execOp("INSERT INTO arch_tx", 1)},
+			ok:     true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			statement := prepareStatement(t, test.stmt...)
-			exporter := &SQLExporter{Source: openScriptDB(t, test.source)}
+			exporter := &SQLExporter{
+				Source:      openScriptDB(t, test.source),
+				Destination: openScriptDB(t, test.dest...),
+			}
 			count, err := exporter.exportTransactionBatch(
 				context.Background(),
-				statement,
 				[]string{"tx"},
 				map[int64]struct{}{},
 			)
@@ -543,19 +482,10 @@ func TestExportBlocksFailures(t *testing.T) {
 			want: "find missing blocks",
 		},
 		{
-			name: "prepare",
-			dest: []scriptOp{
-				queryOp("SELECT DISTINCT tx.block_num", []string{"block_num"}, []driver.Value{int64(10)}),
-				prepareErrorOp("INSERT INTO arch_block", sentinel),
-			},
-			want: "prepare arch_block",
-		},
-		{
 			name:   "batch",
 			source: []scriptOp{queryErrorOp("FROM block", sentinel)},
 			dest: []scriptOp{
-				queryOp("SELECT DISTINCT tx.block_num", []string{"block_num"}, []driver.Value{int64(10)}),
-				prepareOp("INSERT INTO arch_block"),
+				queryOp("SELECT DISTINCT tx.block_num", []any{int64(10)}),
 			},
 			want: "query block batch",
 		},
@@ -575,60 +505,49 @@ func TestExportBlocksFailures(t *testing.T) {
 	}
 }
 
-func blockRow() []driver.Value {
-	return []driver.Value{
+func blockRow() []any {
+	return []any{
 		int64(10), int64(2), time.Unix(1_700_000_000, 0), "3.5", "hash", "parent",
 	}
 }
 
 func TestExportBlockBatchFailures(t *testing.T) {
 	sentinel := errors.New("block batch failed")
-	columns := []string{"block_num", "num_tx", "ts", "cash_flow", "block_hash", "parent_hash"}
 	tests := []struct {
 		name   string
 		source scriptOp
-		stmt   []scriptOp
+		dest   []scriptOp
 		want   string
 	}{
 		{
 			name:   "query",
 			source: queryErrorOp("FROM block", sentinel),
-			stmt:   []scriptOp{prepareOp("INSERT test statement")},
 			want:   "query block batch",
 		},
 		{
 			name:   "scan",
-			source: queryOp("FROM block", columns, []driver.Value{"bad", int64(1), time.Now(), "0", "h", "p"}),
-			stmt:   []scriptOp{prepareOp("INSERT test statement")},
+			source: queryOp("FROM block", []any{"bad", int64(1), time.Now(), "0", "h", "p"}),
 			want:   "scan block row",
 		},
 		{
 			name:   "insert",
-			source: queryOp("FROM block", columns, blockRow()),
-			stmt: []scriptOp{
-				prepareOp("INSERT test statement"),
-				execErrorOp("INSERT test statement", sentinel),
-			},
-			want: "insert arch_block",
+			source: queryOp("FROM block", blockRow()),
+			dest:   []scriptOp{execErrorOp("INSERT INTO arch_block", sentinel)},
+			want:   "insert arch_block",
 		},
 		{
-			name: "iteration",
-			source: scriptOp{
-				kind:      "query",
-				contains:  "FROM block",
-				columns:   columns,
-				nextErrAt: 0,
-				nextErr:   sentinel,
-			},
-			stmt: []scriptOp{prepareOp("INSERT test statement")},
-			want: "iterate block batch",
+			name:   "iteration",
+			source: queryIterErrorOp("FROM block", sentinel),
+			want:   "iterate block batch",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			statement := prepareStatement(t, test.stmt...)
-			exporter := &SQLExporter{Source: openScriptDB(t, test.source)}
-			_, err := exporter.exportBlockBatch(context.Background(), statement, []int64{10})
+			exporter := &SQLExporter{
+				Source:      openScriptDB(t, test.source),
+				Destination: openScriptDB(t, test.dest...),
+			}
+			_, err := exporter.exportBlockBatch(context.Background(), []int64{10})
 			if err == nil || !strings.Contains(err.Error(), test.want) {
 				t.Fatalf("error = %v, want containing %q", err, test.want)
 			}
@@ -640,12 +559,12 @@ func TestColumnQueryFailures(t *testing.T) {
 	sentinel := errors.New("column query failed")
 	for _, test := range []struct {
 		name string
-		run  func(*sql.DB) error
+		run  func(Querier) error
 		op   scriptOp
 	}{
 		{
 			name: "string query",
-			run: func(db *sql.DB) error {
+			run: func(db Querier) error {
 				_, err := queryStringColumn(context.Background(), db, "SELECT strings")
 				return err
 			},
@@ -653,23 +572,23 @@ func TestColumnQueryFailures(t *testing.T) {
 		},
 		{
 			name: "string scan",
-			run: func(db *sql.DB) error {
+			run: func(db Querier) error {
 				_, err := queryStringColumn(context.Background(), db, "SELECT strings")
 				return err
 			},
-			op: queryOp("SELECT strings", []string{"value"}, []driver.Value{nil}),
+			op: queryOp("SELECT strings", []any{nil}),
 		},
 		{
 			name: "string iteration",
-			run: func(db *sql.DB) error {
+			run: func(db Querier) error {
 				_, err := queryStringColumn(context.Background(), db, "SELECT strings")
 				return err
 			},
-			op: scriptOp{kind: "query", contains: "SELECT strings", columns: []string{"value"}, nextErrAt: 0, nextErr: sentinel},
+			op: queryIterErrorOp("SELECT strings", sentinel),
 		},
 		{
 			name: "int query",
-			run: func(db *sql.DB) error {
+			run: func(db Querier) error {
 				_, err := queryInt64Column(context.Background(), db, "SELECT ints")
 				return err
 			},
@@ -677,19 +596,19 @@ func TestColumnQueryFailures(t *testing.T) {
 		},
 		{
 			name: "int scan",
-			run: func(db *sql.DB) error {
+			run: func(db Querier) error {
 				_, err := queryInt64Column(context.Background(), db, "SELECT ints")
 				return err
 			},
-			op: queryOp("SELECT ints", []string{"value"}, []driver.Value{"bad"}),
+			op: queryOp("SELECT ints", []any{"bad"}),
 		},
 		{
 			name: "int iteration",
-			run: func(db *sql.DB) error {
+			run: func(db Querier) error {
 				_, err := queryInt64Column(context.Background(), db, "SELECT ints")
 				return err
 			},
-			op: scriptOp{kind: "query", contains: "SELECT ints", columns: []string{"value"}, nextErrAt: 0, nextErr: sentinel},
+			op: queryIterErrorOp("SELECT ints", sentinel),
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

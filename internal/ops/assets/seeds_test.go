@@ -2,13 +2,14 @@ package assets
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
 	"errors"
-	"io"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
 )
 
 type fakeTokenSource struct {
@@ -18,55 +19,23 @@ type fakeTokenSource struct {
 	schema string
 }
 
-type tokenTestConnector struct {
-	query func(context.Context, string) (driver.Rows, error)
+// tokenQueryFake adapts a per-query callback to the pgx Querier seam.
+type tokenQueryFake struct {
+	query func(query string) (pgx.Rows, error)
 }
 
-func (c tokenTestConnector) Connect(context.Context) (driver.Conn, error) {
-	return tokenTestConn(c), nil
+func (f tokenQueryFake) Query(_ context.Context, query string, _ ...any) (pgx.Rows, error) {
+	return f.query(query)
 }
 
-func (c tokenTestConnector) Driver() driver.Driver { return tokenTestDriver{connector: c} }
-
-type tokenTestDriver struct{ connector tokenTestConnector }
-
-func (d tokenTestDriver) Open(string) (driver.Conn, error) {
-	return d.connector.Connect(context.Background())
-}
-
-type tokenTestConn struct {
-	query func(context.Context, string) (driver.Rows, error)
-}
-
-func (c tokenTestConn) Prepare(string) (driver.Stmt, error) {
-	return nil, errors.New("Prepare is not supported")
-}
-func (tokenTestConn) Close() error              { return nil }
-func (tokenTestConn) Begin() (driver.Tx, error) { return nil, errors.New("Begin is not supported") }
-func (c tokenTestConn) QueryContext(ctx context.Context, query string, _ []driver.NamedValue) (driver.Rows, error) {
-	return c.query(ctx, query)
-}
-
-type tokenTestRows struct {
-	values   [][]driver.Value
-	index    int
-	finalErr error
-}
-
-func (*tokenTestRows) Columns() []string { return []string{"token_id", "seed"} }
-func (*tokenTestRows) Close() error      { return nil }
-func (r *tokenTestRows) Next(dest []driver.Value) error {
-	if r.index < len(r.values) {
-		copy(dest, r.values[r.index])
-		r.index++
-		return nil
+func tokenRows(finalErr error, values ...[]any) pgx.Rows {
+	ops := testutil.PgxOp{Kind: "query", Rows: values, RowsErr: finalErr}
+	script := testutil.NewScriptedPgx(ops)
+	rows, err := script.Query(context.Background(), "")
+	if err != nil {
+		panic(err)
 	}
-	if r.finalErr != nil {
-		err := r.finalErr
-		r.finalErr = nil
-		return err
-	}
-	return io.EOF
+	return rows
 }
 
 func (f *fakeTokenSource) TokenSeeds(ctx context.Context, schema string) ([]Token, error) {
@@ -175,16 +144,15 @@ func TestSQLTokenSourceValidation(t *testing.T) {
 func TestSQLTokenSourceLoadsNormalizesAndDeduplicates(t *testing.T) {
 	t.Parallel()
 	var gotQuery string
-	db := sql.OpenDB(tokenTestConnector{query: func(_ context.Context, query string) (driver.Rows, error) {
+	db := tokenQueryFake{query: func(query string) (pgx.Rows, error) {
 		gotQuery = query
-		return &tokenTestRows{values: [][]driver.Value{
-			{int64(2), " 0xBB "},
-			{int64(1), "AA"},
-			{int64(3), "bb"},
-			{int64(4), ""},
-		}}, nil
-	}})
-	t.Cleanup(func() { _ = db.Close() })
+		return tokenRows(nil,
+			[]any{int64(2), " 0xBB "},
+			[]any{int64(1), "AA"},
+			[]any{int64(3), "bb"},
+			[]any{int64(4), ""},
+		), nil
+	}}
 	got, err := (SQLTokenSource{DB: db}).TokenSeeds(context.Background(), "tenant_1")
 	if err != nil {
 		t.Fatal(err)
@@ -204,10 +172,9 @@ func TestSQLTokenSourceDatabaseErrors(t *testing.T) {
 	t.Run("query error", func(t *testing.T) {
 		t.Parallel()
 		want := errors.New("query failed")
-		db := sql.OpenDB(tokenTestConnector{query: func(context.Context, string) (driver.Rows, error) {
+		db := tokenQueryFake{query: func(string) (pgx.Rows, error) {
 			return nil, want
-		}})
-		defer func() { _ = db.Close() }()
+		}}
 		_, err := (SQLTokenSource{DB: db}).TokenSeeds(context.Background(), "public")
 		if !errors.Is(err, want) {
 			t.Fatalf("error = %v", err)
@@ -215,10 +182,9 @@ func TestSQLTokenSourceDatabaseErrors(t *testing.T) {
 	})
 	t.Run("scan error", func(t *testing.T) {
 		t.Parallel()
-		db := sql.OpenDB(tokenTestConnector{query: func(context.Context, string) (driver.Rows, error) {
-			return &tokenTestRows{values: [][]driver.Value{{"not-an-integer", "seed"}}}, nil
-		}})
-		defer func() { _ = db.Close() }()
+		db := tokenQueryFake{query: func(string) (pgx.Rows, error) {
+			return tokenRows(nil, []any{"not-an-integer", "seed"}), nil
+		}}
 		if _, err := (SQLTokenSource{DB: db}).TokenSeeds(context.Background(), "public"); err == nil {
 			t.Fatal("scan error was ignored")
 		}
@@ -226,13 +192,9 @@ func TestSQLTokenSourceDatabaseErrors(t *testing.T) {
 	t.Run("rows error", func(t *testing.T) {
 		t.Parallel()
 		want := errors.New("row stream failed")
-		db := sql.OpenDB(tokenTestConnector{query: func(context.Context, string) (driver.Rows, error) {
-			return &tokenTestRows{
-				values:   [][]driver.Value{{int64(1), "seed"}},
-				finalErr: want,
-			}, nil
-		}})
-		defer func() { _ = db.Close() }()
+		db := tokenQueryFake{query: func(string) (pgx.Rows, error) {
+			return tokenRows(want, []any{int64(1), "seed"}), nil
+		}}
 		_, err := (SQLTokenSource{DB: db}).TokenSeeds(context.Background(), "public")
 		if !errors.Is(err, want) {
 			t.Fatalf("error = %v", err)

@@ -6,6 +6,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const zeroAddress = "0x0000000000000000000000000000000000000000"
@@ -38,10 +40,16 @@ type ParameterSource interface {
 	Parameters(ctx context.Context) (Params, error)
 }
 
+// Querier is the narrow pgx query surface used by SQLParameterSource.
+// *pgxpool.Pool, *pgx.Conn and pgx.Tx satisfy it.
+type Querier interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
 // SQLParameterSource loads parameters from the CosmicGame database. Individual
 // missing/erroring queries retain the legacy type-valid fallback behavior.
 type SQLParameterSource struct {
-	DB *sql.DB
+	DB Querier
 }
 
 // DefaultParams returns type-valid fallback values for every endpoint.
@@ -210,9 +218,9 @@ func loadParameters(queryValue func(query, fallback string) (string, error)) (Pa
 	return WithDefaults(params), nil
 }
 
-func queryValue(ctx context.Context, db *sql.DB, query, fallback string) (string, error) {
+func queryValue(ctx context.Context, db Querier, query, fallback string) (string, error) {
 	var value sql.NullString
-	if err := db.QueryRowContext(ctx, query).Scan(&value); err != nil {
+	if err := db.QueryRow(ctx, query).Scan(&value); err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return "", ctxErr
 		}

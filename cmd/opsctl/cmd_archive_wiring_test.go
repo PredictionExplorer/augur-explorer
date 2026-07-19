@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"reflect"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
+	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
 )
 
 type archiveExporterFunc func(context.Context, string) (archive.ExportStats, error)
@@ -45,17 +45,14 @@ func TestArchiveExportCommandWiring(t *testing.T) {
 		}
 		return []string{archive.ProjectCosmicGame, archive.ProjectRandomWalk}, nil
 	}
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-		if driverName != "postgres" {
-			t.Fatalf("driver = %q", driverName)
-		}
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
 		openCalls = append(openCalls, conn)
 		if len(openCalls) == 1 {
 			return srcDB, nil
 		}
 		return dstDB, nil
 	}
-	deps.newExporter = func(source, destination *sql.DB, logger archive.Logger) archive.ProjectExporter {
+	deps.newExporter = func(source, destination archive.Querier, logger archive.Logger) archive.ProjectExporter {
 		if source != srcDB || destination != dstDB {
 			t.Fatalf("exporter databases = %p, %p", source, destination)
 		}
@@ -92,10 +89,6 @@ func TestArchiveExportCommandWiring(t *testing.T) {
 	if !reflect.DeepEqual(projects, []string{archive.ProjectCosmicGame, archive.ProjectRandomWalk}) {
 		t.Fatalf("projects = %v", projects)
 	}
-	if srcDB.Stats().MaxOpenConnections != 2 || dstDB.Stats().MaxOpenConnections != 2 {
-		t.Fatalf("max connections = source %d destination %d",
-			srcDB.Stats().MaxOpenConnections, dstDB.Stats().MaxOpenConnections)
-	}
 	if !strings.Contains(result.stderr, "export factory ready") ||
 		!strings.Contains(result.stderr, "=== All exports complete ===") {
 		t.Fatalf("stderr = %q", result.stderr)
@@ -107,7 +100,7 @@ func TestArchiveExportCommandWiring(t *testing.T) {
 func TestArchiveExportCommandFailuresAndCancellation(t *testing.T) {
 	t.Run("project validation", func(t *testing.T) {
 		deps := defaultArchiveExportDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			t.Fatal("database opened after invalid project")
 			return nil, nil
 		}
@@ -125,7 +118,7 @@ func TestArchiveExportCommandFailuresAndCancellation(t *testing.T) {
 	t.Run("source open", func(t *testing.T) {
 		want := errors.New("source unavailable")
 		deps := defaultArchiveExportDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(
 			newArchiveExportCmdWithDeps(deps),
 			"--src", "source",
@@ -142,7 +135,7 @@ func TestArchiveExportCommandFailuresAndCancellation(t *testing.T) {
 		want := errors.New("destination unavailable")
 		calls := 0
 		deps := defaultArchiveExportDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return srcDB, nil
@@ -167,14 +160,14 @@ func TestArchiveExportCommandFailuresAndCancellation(t *testing.T) {
 		want := errors.New("copy failed")
 		calls := 0
 		deps := defaultArchiveExportDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return srcDB, nil
 			}
 			return dstDB, nil
 		}
-		deps.newExporter = func(*sql.DB, *sql.DB, archive.Logger) archive.ProjectExporter {
+		deps.newExporter = func(archive.Querier, archive.Querier, archive.Logger) archive.ProjectExporter {
 			return archiveExporterFunc(func(context.Context, string) (archive.ExportStats, error) {
 				return archive.ExportStats{}, nil
 			})
@@ -204,14 +197,14 @@ func TestArchiveExportCommandFailuresAndCancellation(t *testing.T) {
 		dstDB := newCommandTestDB(t)
 		calls := 0
 		deps := defaultArchiveExportDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return srcDB, nil
 			}
 			return dstDB, nil
 		}
-		deps.newExporter = func(*sql.DB, *sql.DB, archive.Logger) archive.ProjectExporter { return nil }
+		deps.newExporter = func(archive.Querier, archive.Querier, archive.Logger) archive.ProjectExporter { return nil }
 		deps.exportProjects = func(
 			ctx context.Context,
 			_ []string,
@@ -243,13 +236,13 @@ func TestArchiveVerifyCommandWiringAndFailureReport(t *testing.T) {
 		deps.resolveProjects = func(project string) ([]string, error) {
 			return []string{project}, nil
 		}
-		deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-			if driverName != "postgres" || conn != "archive-db" {
-				t.Fatalf("open = %q %q", driverName, conn)
+		deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
+			if conn != "archive-db" {
+				t.Fatalf("open conn = %q", conn)
 			}
 			return db, nil
 		}
-		deps.newVerifier = func(gotDB *sql.DB, logger archive.Logger) archive.ProjectVerifier {
+		deps.newVerifier = func(gotDB archive.Querier, logger archive.Logger) archive.ProjectVerifier {
 			if gotDB != db {
 				t.Fatal("wrong verifier database")
 			}
@@ -297,8 +290,8 @@ func TestArchiveVerifyCommandWiringAndFailureReport(t *testing.T) {
 	t.Run("blocking mismatch", func(t *testing.T) {
 		db := newCommandTestDB(t)
 		deps := defaultArchiveVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-		deps.newVerifier = func(*sql.DB, archive.Logger) archive.ProjectVerifier { return nil }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+		deps.newVerifier = func(archive.Querier, archive.Logger) archive.ProjectVerifier { return nil }
 		deps.verifyProjects = func(
 			context.Context,
 			[]string,
@@ -324,7 +317,7 @@ func TestArchiveVerifyCommandWiringAndFailureReport(t *testing.T) {
 func TestArchiveVerifyCommandSetupAndOperationalErrors(t *testing.T) {
 	t.Run("invalid project", func(t *testing.T) {
 		deps := defaultArchiveVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			t.Fatal("database opened")
 			return nil, nil
 		}
@@ -341,7 +334,7 @@ func TestArchiveVerifyCommandSetupAndOperationalErrors(t *testing.T) {
 	t.Run("database open", func(t *testing.T) {
 		want := errors.New("database unavailable")
 		deps := defaultArchiveVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(
 			newArchiveVerifyCmdWithDeps(deps),
 			"--db", "archive-db",
@@ -362,8 +355,8 @@ func TestArchiveVerifyCommandSetupAndOperationalErrors(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			db := newCommandTestDB(t)
 			deps := defaultArchiveVerifyDeps()
-			deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-			deps.newVerifier = func(*sql.DB, archive.Logger) archive.ProjectVerifier { return nil }
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.newVerifier = func(archive.Querier, archive.Logger) archive.ProjectVerifier { return nil }
 			deps.verifyProjects = func(
 				context.Context,
 				[]string,
@@ -387,7 +380,7 @@ func TestArchiveVerifyCommandSetupAndOperationalErrors(t *testing.T) {
 
 func successfulArchiveNodeFillDeps(
 	t *testing.T,
-	db *sql.DB,
+	db *testutil.ScriptedPgx,
 	rpc *fakeOpsRPC,
 ) (archiveNodeFillDeps, *bool) {
 	t.Helper()
@@ -416,11 +409,11 @@ func successfulArchiveNodeFillDeps(
 			db: db,
 			close: func() {
 				closed = true
-				_ = db.Close()
+				db.Close()
 			},
 		}, nil
 	}
-	deps.requireSchema = func(context.Context, *sql.DB) error { return nil }
+	deps.requireSchema = func(context.Context, archive.Querier) error { return nil }
 	deps.dialRPC = func(ctx context.Context, rpcURL string) (archiveNodeFillRPC, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -430,7 +423,7 @@ func successfulArchiveNodeFillDeps(
 		}
 		return rpc, nil
 	}
-	deps.newRepository = func(gotDB *sql.DB) archive.NodeFillRepository {
+	deps.newRepository = func(gotDB archive.Querier) archive.NodeFillRepository {
 		if gotDB != db {
 			t.Fatal("wrong repository database")
 		}
@@ -573,7 +566,7 @@ func TestArchiveNodeFillCommandSetupFailures(t *testing.T) {
 		rpc := &fakeOpsRPC{head: 1}
 		deps, closed := successfulArchiveNodeFillDeps(t, db, rpc)
 		want := errors.New("missing log index")
-		deps.requireSchema = func(context.Context, *sql.DB) error { return want }
+		deps.requireSchema = func(context.Context, archive.Querier) error { return want }
 		result := executeCommand(
 			newArchiveNodeFillCmdWithDeps(deps),
 			"--db", "archive-db",
@@ -678,7 +671,7 @@ func TestArchiveNodeFillRunErrorsAndCancellation(t *testing.T) {
 		rpc := &fakeOpsRPC{head: 90}
 		deps, _ := successfulArchiveNodeFillDeps(t, db, rpc)
 		deps.openStorage = func(context.Context, string) (archiveNodeFillStorage, error) {
-			return archiveNodeFillStorage{db: db, close: func() { _ = db.Close() }}, nil
+			return archiveNodeFillStorage{db: db, close: db.Close}, nil
 		}
 		deps.dialRPC = func(context.Context, string) (archiveNodeFillRPC, error) {
 			return rpc, nil

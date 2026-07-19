@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -11,7 +10,6 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/cstscan"
@@ -29,6 +27,9 @@ const (
 	// Retry behavior retained from the legacy standalone scanner.
 	cstAucLenMinBatch   = uint64(1_000)
 	cstAucLenRetryDelay = 3 * time.Second
+	// cstAucLenMaxConns bounds the optional cross-check pool; the key source
+	// runs one query.
+	cstAucLenMaxConns = 2
 )
 
 type cstAuctionLenRPC interface {
@@ -39,8 +40,8 @@ type cstAuctionLenRPC interface {
 type cstAuctionLenDeps struct {
 	getenv       func(string) string
 	dialRPC      func(context.Context, string) (cstAuctionLenRPC, error)
-	openDB       func(string, string) (*sql.DB, error)
-	newKeySource func(*sql.DB) cstscan.KeySource
+	openDB       func(context.Context, string) (opsDB, error)
+	newKeySource func(opsDB) cstscan.KeySource
 	scan         func(context.Context, cstscan.Config, cstscan.Options) (cstscan.Stats, error)
 }
 
@@ -50,8 +51,8 @@ func defaultCstAuctionLenDeps() cstAuctionLenDeps {
 		dialRPC: func(ctx context.Context, rpcURL string) (cstAuctionLenRPC, error) {
 			return ethclient.DialContext(ctx, rpcURL)
 		},
-		openDB: sql.Open,
-		newKeySource: func(db *sql.DB) cstscan.KeySource {
+		openDB: openOpsDB(cstAucLenMaxConns),
+		newKeySource: func(db opsDB) cstscan.KeySource {
 			return cstscan.PostgresKeySource{DB: db}
 		},
 		scan: cstscan.Scan,
@@ -100,16 +101,13 @@ Requires the RPC_URL environment variable.`,
 			}
 			defer client.Close()
 
-			var (
-				keySource cstscan.KeySource
-				db        *sql.DB
-			)
+			var keySource cstscan.KeySource
 			if dbConn != "" {
-				db, err = deps.openDB("postgres", dbConn)
+				db, err := deps.openDB(cmd.Context(), dbConn)
 				if err != nil {
 					return fmt.Errorf("db open: %w", err)
 				}
-				defer func() { _ = db.Close() }()
+				defer db.Close()
 				keySource = deps.newKeySource(db)
 			}
 

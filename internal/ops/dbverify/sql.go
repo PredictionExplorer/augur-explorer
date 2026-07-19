@@ -2,13 +2,19 @@ package dbverify
 
 import (
 	"context"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
 )
+
+// Querier is the narrow pgx query surface the loaders use. *pgxpool.Pool,
+// *pgx.Conn and pgx.Tx satisfy it.
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
 
 // Loader separates database reads from pure comparison and reporting logic.
 type Loader interface {
@@ -21,21 +27,21 @@ type Loader interface {
 	LoadDetailedEventLogs(ctx context.Context, contractAddressIDs []int64, limit int) ([]EventLogRecord, error)
 }
 
-// SQLLoader reads comparison data from one database/sql handle. It does not
+// SQLLoader reads comparison data from one pgx query handle. It does not
 // own DB. A nil filter slice means load all rows.
 type SQLLoader struct {
-	DB *sql.DB
+	DB Querier
 }
 
 var errDatabaseRequired = errors.New("dbverify: database is required")
 
 // LoadRandomWalkContractAddressIDs returns the primary database's RandomWalk
 // contract ids in stable order.
-func LoadRandomWalkContractAddressIDs(ctx context.Context, db *sql.DB) ([]int64, error) {
+func LoadRandomWalkContractAddressIDs(ctx context.Context, db Querier) ([]int64, error) {
 	if db == nil {
 		return nil, errDatabaseRequired
 	}
-	rows, err := db.QueryContext(ctx, `
+	rows, err := db.Query(ctx, `
 		SELECT DISTINCT a.address_id
 		FROM address a
 		JOIN rw_contracts rc ON a.addr = rc.randomwalk_addr OR a.addr = rc.marketplace_addr
@@ -44,7 +50,7 @@ func LoadRandomWalkContractAddressIDs(ctx context.Context, db *sql.DB) ([]int64,
 	if err != nil {
 		return nil, fmt.Errorf("contract aids: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var ids []int64
 	for rows.Next() {
@@ -77,19 +83,19 @@ func (l *SQLLoader) LoadEventRecords(
 		SELECT e.block_num, t.tx_hash, e.log_rlp
 		FROM evt_log e
 		JOIN transaction t ON e.tx_id = t.id`
-	var rows *sql.Rows
+	var rows pgx.Rows
 	if contractAddressIDs != nil {
-		rows, err = db.QueryContext(ctx,
+		rows, err = db.Query(ctx,
 			query+" WHERE e.contract_aid = ANY($1) ORDER BY e.log_rlp, e.block_num, t.tx_hash, e.id",
-			pq.Array(contractAddressIDs),
+			contractAddressIDs,
 		)
 	} else {
-		rows, err = db.QueryContext(ctx, query+" ORDER BY e.log_rlp, e.block_num, t.tx_hash, e.id")
+		rows, err = db.Query(ctx, query+" ORDER BY e.log_rlp, e.block_num, t.tx_hash, e.id")
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	records := make(map[string]EventRecord)
 	occurrences := make(map[string]int)
@@ -118,17 +124,17 @@ func (l *SQLLoader) TransactionHashesFromEvents(
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.QueryContext(ctx, `
+	rows, err := db.Query(ctx, `
 		SELECT DISTINCT t.tx_hash
 		FROM evt_log e
 		JOIN transaction t ON e.tx_id = t.id
 		WHERE e.contract_aid = ANY($1)
 		ORDER BY t.tx_hash
-	`, pq.Array(contractAddressIDs))
+	`, contractAddressIDs)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var hashes []string
 	for rows.Next() {
@@ -155,22 +161,22 @@ func (l *SQLLoader) LoadTransactions(
 	query := `
 		SELECT block_num, tx_hash, gas_used, num_logs
 		FROM transaction`
-	var rows *sql.Rows
+	var rows pgx.Rows
 	if txHashes != nil {
 		if len(txHashes) == 0 {
 			return records, nil
 		}
-		rows, err = db.QueryContext(ctx,
+		rows, err = db.Query(ctx,
 			query+" WHERE tx_hash = ANY($1) ORDER BY tx_hash",
-			pq.Array(txHashes),
+			txHashes,
 		)
 	} else {
-		rows, err = db.QueryContext(ctx, query+" ORDER BY tx_hash")
+		rows, err = db.Query(ctx, query+" ORDER BY tx_hash")
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	for rows.Next() {
 		var record TransactionRecord
@@ -192,17 +198,17 @@ func (l *SQLLoader) BlockNumbersFromEvents(
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.QueryContext(ctx, `
+	rows, err := db.Query(ctx, `
 		SELECT DISTINCT t.block_num
 		FROM evt_log e
 		JOIN transaction t ON e.tx_id = t.id
 		WHERE e.contract_aid = ANY($1)
 		ORDER BY t.block_num
-	`, pq.Array(contractAddressIDs))
+	`, contractAddressIDs)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var numbers []int64
 	for rows.Next() {
@@ -229,22 +235,22 @@ func (l *SQLLoader) LoadBlocks(
 	query := `
 		SELECT block_num, block_hash, parent_hash, num_tx
 		FROM block`
-	var rows *sql.Rows
+	var rows pgx.Rows
 	if blockNumbers != nil {
 		if len(blockNumbers) == 0 {
 			return records, nil
 		}
-		rows, err = db.QueryContext(ctx,
+		rows, err = db.Query(ctx,
 			query+" WHERE block_num = ANY($1) ORDER BY block_num",
-			pq.Array(blockNumbers),
+			blockNumbers,
 		)
 	} else {
-		rows, err = db.QueryContext(ctx, query+" ORDER BY block_num")
+		rows, err = db.Query(ctx, query+" ORDER BY block_num")
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	for rows.Next() {
 		var record BlockRecord
@@ -269,12 +275,12 @@ func (l *SQLLoader) CountEventLogs(
 	query := "SELECT COUNT(*) FROM evt_log"
 	var count int64
 	if contractAddressIDs != nil {
-		err = db.QueryRowContext(ctx,
+		err = db.QueryRow(ctx,
 			query+" WHERE contract_aid = ANY($1)",
-			pq.Array(contractAddressIDs),
+			contractAddressIDs,
 		).Scan(&count)
 	} else {
-		err = db.QueryRowContext(ctx, query).Scan(&count)
+		err = db.QueryRow(ctx, query).Scan(&count)
 	}
 	if err != nil {
 		return 0, err
@@ -300,7 +306,7 @@ func (l *SQLLoader) LoadDetailedEventLogs(
 		JOIN address a ON e.contract_aid = a.address_id`
 	args := make([]any, 0, 2)
 	if contractAddressIDs != nil {
-		args = append(args, pq.Array(contractAddressIDs))
+		args = append(args, contractAddressIDs)
 		query += " WHERE e.contract_aid = ANY($1)"
 	}
 	query += " ORDER BY e.block_num, e.id"
@@ -309,11 +315,11 @@ func (l *SQLLoader) LoadDetailedEventLogs(
 		// #nosec G202 -- only the generated placeholder ordinal is interpolated.
 		query += fmt.Sprintf(" LIMIT $%d", len(args))
 	}
-	rows, err := db.QueryContext(ctx, query, args...)
+	rows, err := db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var events []EventLogRecord
 	for rows.Next() {
@@ -332,7 +338,7 @@ func (l *SQLLoader) LoadDetailedEventLogs(
 	return events, rows.Err()
 }
 
-func (l *SQLLoader) database() (*sql.DB, error) {
+func (l *SQLLoader) database() (Querier, error) {
 	if l == nil || l.DB == nil {
 		return nil, errDatabaseRequired
 	}

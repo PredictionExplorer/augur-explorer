@@ -19,7 +19,7 @@ func TestSQLParameterSourceLoadsSeededDatabase(t *testing.T) {
 		t.Fatalf("apply fixtures: %v", err)
 	}
 
-	params, err := (SQLParameterSource{DB: db.SQL}).Parameters(ctx)
+	params, err := (SQLParameterSource{DB: db.Pool}).Parameters(ctx)
 	if err != nil {
 		t.Fatalf("Parameters(): %v", err)
 	}

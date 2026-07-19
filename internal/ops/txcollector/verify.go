@@ -3,7 +3,6 @@ package txcollector
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -11,10 +10,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
+
+// Querier is the narrow pgx query surface used by LoadEventRows.
+// *pgxpool.Pool, *pgx.Conn and pgx.Tx satisfy it.
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
 
 // ErrVerificationFailed is returned when a blocking backup mismatch is found.
 var ErrVerificationFailed = errors.New("tx-collector verification failed")
@@ -79,7 +84,7 @@ func (s VerifyStats) HasMismatches() bool {
 // The caller owns opening and closing db.
 func LoadEventRows(
 	ctx context.Context,
-	db *sql.DB,
+	db Querier,
 	contractAddrs []string,
 	fromBlock uint64,
 ) ([]EventRow, error) {
@@ -99,11 +104,11 @@ func LoadEventRows(
 		AND e.block_num >= $2
 		ORDER BY t.tx_hash, e.log_index
 	`
-	rows, err := db.QueryContext(ctx, query, pq.Array(contractAddrs), fromBlock)
+	rows, err := db.Query(ctx, query, contractAddrs, fromBlock)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var result []EventRow
 	for rows.Next() {

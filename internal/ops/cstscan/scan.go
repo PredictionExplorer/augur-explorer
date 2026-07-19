@@ -4,7 +4,6 @@ package cstscan
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +13,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer/logscan"
 )
@@ -48,10 +48,16 @@ func (f KeySourceFunc) LoadKeys(ctx context.Context) (map[EventKey]struct{}, err
 	return f(ctx)
 }
 
+// Querier is the narrow pgx query surface used by PostgresKeySource.
+// *pgxpool.Pool, *pgx.Conn and pgx.Tx satisfy it.
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
 // PostgresKeySource loads keys from cg_adm_cst_auclen_chg_div. The caller owns
 // opening and closing DB.
 type PostgresKeySource struct {
-	DB *sql.DB
+	DB Querier
 }
 
 // LoadKeys implements KeySource.
@@ -64,11 +70,11 @@ func (source PostgresKeySource) LoadKeys(ctx context.Context) (map[EventKey]stru
 		FROM cg_adm_cst_auclen_chg_div r
 		JOIN evt_log e ON e.id = r.evtlog_id
 		JOIN transaction t ON t.id = e.tx_id`
-	rows, err := source.DB.QueryContext(ctx, query)
+	rows, err := source.DB.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("db query: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	keys := make(map[EventKey]struct{})
 	for rows.Next() {

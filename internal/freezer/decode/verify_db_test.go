@@ -1,14 +1,30 @@
 package decode
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 	"testing"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	freezerscanner "github.com/PredictionExplorer/augur-explorer/internal/freezer"
 )
+
+// openProdVerifyPool connects to the local production-shaped database this
+// harness verifies against; callers skip when it is unavailable.
+func openProdVerifyPool(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+	pool, err := pgxpool.New(context.Background(), "user=cosmicgame dbname=cosmicgame sslmode=disable")
+	if err != nil {
+		t.Skipf("Cannot connect to database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	if err := pool.Ping(context.Background()); err != nil {
+		t.Skipf("Cannot ping database: %v", err)
+	}
+	return pool
+}
 
 // ProjectConfig defines contract addresses and expected event signatures for a project.
 type ProjectConfig struct {
@@ -54,7 +70,7 @@ var CosmicGameConfig = ProjectConfig{
 }
 
 // verifyProject compares freezer events with database events for a project.
-func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
+func verifyProject(t *testing.T, db *pgxpool.Pool, fr *freezerscanner.FreezerReader,
 	config ProjectConfig, startBlock, endBlock uint64,
 ) (match, missing, extra int) {
 	t.Helper()
@@ -73,7 +89,8 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 	var contractAids []int64
 	for _, addr := range config.Contracts {
 		var aid int64
-		err := db.QueryRow("SELECT address_id FROM address WHERE LOWER(addr) = LOWER($1)", addr).Scan(&aid)
+		err := db.QueryRow(context.Background(),
+			"SELECT address_id FROM address WHERE LOWER(addr) = LOWER($1)", addr).Scan(&aid)
 		if err != nil {
 			t.Logf("%s: Contract %s not found in database", config.Name, addr)
 			continue
@@ -87,7 +104,7 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 	}
 
 	// Query database events
-	rows, err := db.Query(`
+	rows, err := db.Query(context.Background(), `
 		SELECT e.block_num, e.topic0_sig, a.addr, COUNT(*) as cnt
 		FROM evt_log e
 		JOIN address a ON e.contract_aid = a.address_id
@@ -95,11 +112,11 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 		  AND e.contract_aid = ANY($3)
 		GROUP BY e.block_num, e.topic0_sig, a.addr
 		ORDER BY e.block_num
-	`, startBlock, endBlock, pq.Array(contractAids))
+	`, startBlock, endBlock, contractAids)
 	if err != nil {
 		t.Fatalf("Query error: %v", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	type eventKey struct {
 		blockNum int64
@@ -186,14 +203,7 @@ func verifyProject(t *testing.T, db *sql.DB, fr *freezerscanner.FreezerReader,
 
 // TestVerifyRandomWalk verifies RandomWalk project events.
 func TestVerifyRandomWalk(t *testing.T) {
-	db, err := sql.Open("postgres", "user=cosmicgame dbname=cosmicgame sslmode=disable")
-	if err != nil {
-		t.Skipf("Cannot connect to database: %v", err)
-	}
-	defer func() { _ = db.Close() }()
-	if err := db.Ping(); err != nil {
-		t.Skipf("Cannot ping database: %v", err)
-	}
+	db := openProdVerifyPool(t)
 
 	fr, err := freezerscanner.NewFreezerReader("../mainnet")
 	if err != nil {
@@ -226,14 +236,7 @@ func TestVerifyCosmicGame(t *testing.T) {
 		t.Skip("CosmicGame mainnet contracts not configured yet")
 	}
 
-	db, err := sql.Open("postgres", "user=cosmicgame dbname=cosmicgame sslmode=disable")
-	if err != nil {
-		t.Skipf("Cannot connect to database: %v", err)
-	}
-	defer func() { _ = db.Close() }()
-	if err := db.Ping(); err != nil {
-		t.Skipf("Cannot ping database: %v", err)
-	}
+	db := openProdVerifyPool(t)
 
 	fr, err := freezerscanner.NewFreezerReader("../mainnet")
 	if err != nil {
@@ -242,12 +245,12 @@ func TestVerifyCosmicGame(t *testing.T) {
 
 	// Get block range from database
 	var minBlock, maxBlock int64
-	err = db.QueryRow(`
+	err = db.QueryRow(context.Background(), `
 		SELECT MIN(e.block_num), MAX(e.block_num)
 		FROM evt_log e
 		JOIN address a ON e.contract_aid = a.address_id
 		WHERE LOWER(a.addr) = ANY($1)
-	`, pq.Array(CosmicGameConfig.Contracts)).Scan(&minBlock, &maxBlock)
+	`, CosmicGameConfig.Contracts).Scan(&minBlock, &maxBlock)
 	if err != nil || minBlock == 0 {
 		t.Skip("No CosmicGame events in database")
 	}
@@ -279,14 +282,7 @@ func TestVerifyCosmicGame(t *testing.T) {
 
 // TestVerifyAllProjects runs verification for all configured projects.
 func TestVerifyAllProjects(t *testing.T) {
-	db, err := sql.Open("postgres", "user=cosmicgame dbname=cosmicgame sslmode=disable")
-	if err != nil {
-		t.Skipf("Cannot connect to database: %v", err)
-	}
-	defer func() { _ = db.Close() }()
-	if err := db.Ping(); err != nil {
-		t.Skipf("Cannot ping database: %v", err)
-	}
+	db := openProdVerifyPool(t)
 
 	fr, err := freezerscanner.NewFreezerReader("../mainnet")
 	if err != nil {
@@ -309,12 +305,12 @@ func TestVerifyAllProjects(t *testing.T) {
 				contractsLower[i] = strings.ToLower(c)
 			}
 
-			err := db.QueryRow(`
+			err := db.QueryRow(context.Background(), `
 				SELECT MIN(e.block_num), MAX(e.block_num)
 				FROM evt_log e
 				JOIN address a ON e.contract_aid = a.address_id
 				WHERE LOWER(a.addr) = ANY($1)
-			`, pq.Array(contractsLower)).Scan(&minBlock, &maxBlock)
+			`, contractsLower).Scan(&minBlock, &maxBlock)
 			if err != nil || !minBlock.Valid {
 				t.Skipf("%s: No events in database", config.Name)
 				return

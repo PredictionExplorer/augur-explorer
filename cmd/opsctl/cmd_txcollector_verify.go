@@ -2,22 +2,24 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq" // postgres driver
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
 	"github.com/PredictionExplorer/augur-explorer/internal/toolutil"
 )
 
+// txCollectorVerifyMaxConns bounds the verification pool; the loader runs
+// one streaming query.
+const txCollectorVerifyMaxConns = 4
+
 type txCollectorVerifyDeps struct {
 	loadConfig   func(string) (*toolutil.CollectorConfig, error)
 	postgresConn func() (string, error)
-	openDB       func(string, string) (*sql.DB, error)
-	loadRows     func(context.Context, *sql.DB, []string, uint64) ([]txcollector.EventRow, error)
+	openDB       func(context.Context, string) (opsDB, error)
+	loadRows     func(context.Context, txcollector.Querier, []string, uint64) ([]txcollector.EventRow, error)
 	verify       func(context.Context, txcollector.VerifyConfig) (txcollector.VerifyStats, error)
 }
 
@@ -25,7 +27,7 @@ func defaultTxCollectorVerifyDeps() txCollectorVerifyDeps {
 	return txCollectorVerifyDeps{
 		loadConfig:   toolutil.LoadCollectorConfig,
 		postgresConn: toolutil.PostgresConnStringFromEnv,
-		openDB:       sql.Open,
+		openDB:       openOpsDB(txCollectorVerifyMaxConns),
 		loadRows:     txcollector.LoadEventRows,
 		verify:       txcollector.Verify,
 	}
@@ -82,12 +84,11 @@ PGSQL_USERNAME, PGSQL_DATABASE and PGSQL_PASSWORD environment variables.`,
 				}
 			}
 
-			db, err := deps.openDB("postgres", conn)
+			db, err := deps.openDB(cmd.Context(), conn)
 			if err != nil {
 				return fmt.Errorf("connect: %w", err)
 			}
-			defer func() { _ = db.Close() }()
-			db.SetMaxOpenConns(4)
+			defer db.Close()
 
 			logger.Printf("Output dir: %s", cfg.OutputDir)
 			logger.Printf("Contracts (%d): %v", len(contractAddrs), contractAddrs)

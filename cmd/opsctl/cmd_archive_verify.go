@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/archive"
@@ -15,16 +13,16 @@ import (
 
 type archiveVerifyDeps struct {
 	resolveProjects func(string) ([]string, error)
-	openDB          func(string, string) (*sql.DB, error)
-	newVerifier     func(*sql.DB, archive.Logger) archive.ProjectVerifier
+	openDB          func(context.Context, string) (opsDB, error)
+	newVerifier     func(archive.Querier, archive.Logger) archive.ProjectVerifier
 	verifyProjects  func(context.Context, []string, archive.VerifyOptions, archive.ProjectVerifier) (archive.VerificationReport, error)
 }
 
 func defaultArchiveVerifyDeps() archiveVerifyDeps {
 	return archiveVerifyDeps{
 		resolveProjects: archive.ResolveProjects,
-		openDB:          sql.Open,
-		newVerifier: func(db *sql.DB, logger archive.Logger) archive.ProjectVerifier {
+		openDB:          openOpsDB(archiveMaxConns),
+		newVerifier: func(db archive.Querier, logger archive.Logger) archive.ProjectVerifier {
 			return &archive.SQLVerifier{DB: db, Logger: logger}
 		},
 		verifyProjects: archive.VerifyProjects,
@@ -56,12 +54,11 @@ mismatch is found; metadata drift is a warning unless a --strict-* flag is set.`
 			if err != nil {
 				return err
 			}
-			db, err := deps.openDB("postgres", dbConn)
+			db, err := deps.openDB(cmd.Context(), dbConn)
 			if err != nil {
 				return fmt.Errorf("connect: %w", err)
 			}
-			defer func() { _ = db.Close() }()
-			db.SetMaxOpenConns(2)
+			defer db.Close()
 
 			options := archive.VerifyOptions{
 				StrictBlockMetadata: strictBlockMeta,

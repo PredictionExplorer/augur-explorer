@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"reflect"
@@ -21,17 +20,14 @@ func TestDBVerifyCommandWiring(t *testing.T) {
 	secondary := newCommandTestDB(t)
 	var openCalls []string
 	deps := defaultDBVerifyDeps()
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-		if driverName != "postgres" {
-			t.Fatalf("driver = %q", driverName)
-		}
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
 		openCalls = append(openCalls, conn)
 		if len(openCalls) == 1 {
 			return primary, nil
 		}
 		return secondary, nil
 	}
-	deps.loadIDs = func(ctx context.Context, db *sql.DB) ([]int64, error) {
+	deps.loadIDs = func(ctx context.Context, db dbverify.Querier) ([]int64, error) {
 		if err := ctx.Err(); err != nil || db != primary {
 			t.Fatalf("load ids context/db = %v/%p", err, db)
 		}
@@ -91,14 +87,14 @@ func TestDBVerifyCommandMismatchAndErrors(t *testing.T) {
 		secondary := newCommandTestDB(t)
 		calls := 0
 		deps := defaultDBVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return primary, nil
 			}
 			return secondary, nil
 		}
-		deps.loadIDs = func(context.Context, *sql.DB) ([]int64, error) { return []int64{1}, nil }
+		deps.loadIDs = func(context.Context, dbverify.Querier) ([]int64, error) { return []int64{1}, nil }
 		deps.verify = func(
 			context.Context,
 			dbverify.Loader,
@@ -126,7 +122,7 @@ func TestDBVerifyCommandMismatchAndErrors(t *testing.T) {
 	t.Run("primary open", func(t *testing.T) {
 		want := errors.New("primary unavailable")
 		deps := defaultDBVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(
 			newDBVerifyCmdWithDeps(deps),
 			"--primary", "primary",
@@ -142,7 +138,7 @@ func TestDBVerifyCommandMismatchAndErrors(t *testing.T) {
 		want := errors.New("secondary unavailable")
 		calls := 0
 		deps := defaultDBVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return primary, nil
@@ -166,14 +162,14 @@ func TestDBVerifyCommandMismatchAndErrors(t *testing.T) {
 		want := errors.New("contracts failed")
 		calls := 0
 		deps := defaultDBVerifyDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return primary, nil
 			}
 			return secondary, nil
 		}
-		deps.loadIDs = func(context.Context, *sql.DB) ([]int64, error) { return nil, want }
+		deps.loadIDs = func(context.Context, dbverify.Querier) ([]int64, error) { return nil, want }
 		result := executeCommand(
 			newDBVerifyCmdWithDeps(deps),
 			"--primary", "primary",
@@ -196,14 +192,14 @@ func TestDBVerifyCommandMismatchAndErrors(t *testing.T) {
 			secondary := newCommandTestDB(t)
 			calls := 0
 			deps := defaultDBVerifyDeps()
-			deps.openDB = func(string, string) (*sql.DB, error) {
+			deps.openDB = func(context.Context, string) (opsDB, error) {
 				calls++
 				if calls == 1 {
 					return primary, nil
 				}
 				return secondary, nil
 			}
-			deps.loadIDs = func(context.Context, *sql.DB) ([]int64, error) { return []int64{1}, nil }
+			deps.loadIDs = func(context.Context, dbverify.Querier) ([]int64, error) { return []int64{1}, nil }
 			deps.verify = func(
 				context.Context,
 				dbverify.Loader,
@@ -230,10 +226,7 @@ func TestDBEvtlogDiffCommandWiring(t *testing.T) {
 	secondary := newCommandTestDB(t)
 	calls := 0
 	deps := defaultDBEvtlogDiffDeps()
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-		if driverName != "postgres" {
-			t.Fatalf("driver = %q", driverName)
-		}
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
 		calls++
 		if calls == 1 {
 			if conn != "primary-dsn" {
@@ -246,7 +239,7 @@ func TestDBEvtlogDiffCommandWiring(t *testing.T) {
 		}
 		return secondary, nil
 	}
-	deps.loadIDs = func(context.Context, *sql.DB) ([]int64, error) { return []int64{21}, nil }
+	deps.loadIDs = func(context.Context, dbverify.Querier) ([]int64, error) { return []int64{21}, nil }
 	deps.diff = func(
 		_ context.Context,
 		primaryLoader, secondaryLoader dbverify.Loader,
@@ -296,7 +289,7 @@ func TestDBEvtlogDiffCommandErrors(t *testing.T) {
 	t.Run("primary open", func(t *testing.T) {
 		want := errors.New("primary unavailable")
 		deps := defaultDBEvtlogDiffDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(
 			newDBEvtlogDiffCmdWithDeps(deps),
 			"--primary", "primary",
@@ -312,7 +305,7 @@ func TestDBEvtlogDiffCommandErrors(t *testing.T) {
 		want := errors.New("secondary unavailable")
 		calls := 0
 		deps := defaultDBEvtlogDiffDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return primary, nil
@@ -336,14 +329,14 @@ func TestDBEvtlogDiffCommandErrors(t *testing.T) {
 		want := errors.New("contracts failed")
 		calls := 0
 		deps := defaultDBEvtlogDiffDeps()
-		deps.openDB = func(string, string) (*sql.DB, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) {
 			calls++
 			if calls == 1 {
 				return primary, nil
 			}
 			return secondary, nil
 		}
-		deps.loadIDs = func(context.Context, *sql.DB) ([]int64, error) { return nil, want }
+		deps.loadIDs = func(context.Context, dbverify.Querier) ([]int64, error) { return nil, want }
 		result := executeCommand(
 			newDBEvtlogDiffCmdWithDeps(deps),
 			"--primary", "primary",
@@ -366,14 +359,14 @@ func TestDBEvtlogDiffCommandErrors(t *testing.T) {
 			secondary := newCommandTestDB(t)
 			calls := 0
 			deps := defaultDBEvtlogDiffDeps()
-			deps.openDB = func(string, string) (*sql.DB, error) {
+			deps.openDB = func(context.Context, string) (opsDB, error) {
 				calls++
 				if calls == 1 {
 					return primary, nil
 				}
 				return secondary, nil
 			}
-			deps.loadIDs = func(context.Context, *sql.DB) ([]int64, error) { return []int64{1}, nil }
+			deps.loadIDs = func(context.Context, dbverify.Querier) ([]int64, error) { return []int64{1}, nil }
 			deps.diff = func(
 				context.Context,
 				dbverify.Loader,
@@ -587,15 +580,15 @@ func TestTxCollectorVerifyCommandWiring(t *testing.T) {
 		envCalls++
 		return "env-dsn", nil
 	}
-	deps.openDB = func(driverName, conn string) (*sql.DB, error) {
-		if driverName != "postgres" || conn != "explicit-dsn" {
-			t.Fatalf("open = %q/%q", driverName, conn)
+	deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
+		if conn != "explicit-dsn" {
+			t.Fatalf("open conn = %q", conn)
 		}
 		return db, nil
 	}
 	deps.loadRows = func(
 		ctx context.Context,
-		gotDB *sql.DB,
+		gotDB txcollector.Querier,
 		addresses []string,
 		fromBlock uint64,
 	) ([]txcollector.EventRow, error) {
@@ -638,9 +631,6 @@ func TestTxCollectorVerifyCommandWiring(t *testing.T) {
 			t.Fatalf("stderr missing %q: %q", want, result.stderr)
 		}
 	}
-	if db.Stats().MaxOpenConnections != 4 {
-		t.Fatalf("max connections = %d", db.Stats().MaxOpenConnections)
-	}
 	assertCommandDBClosed(t, db)
 }
 
@@ -650,13 +640,13 @@ func TestTxCollectorVerifyFallbackAndErrors(t *testing.T) {
 		deps := defaultTxCollectorVerifyDeps()
 		deps.loadConfig = func(string) (*toolutil.CollectorConfig, error) { return collectorConfig(), nil }
 		deps.postgresConn = func() (string, error) { return "environment-dsn", nil }
-		deps.openDB = func(_ string, conn string) (*sql.DB, error) {
+		deps.openDB = func(_ context.Context, conn string) (opsDB, error) {
 			if conn != "environment-dsn" {
 				t.Fatalf("conn = %q", conn)
 			}
 			return db, nil
 		}
-		deps.loadRows = func(context.Context, *sql.DB, []string, uint64) ([]txcollector.EventRow, error) {
+		deps.loadRows = func(context.Context, txcollector.Querier, []string, uint64) ([]txcollector.EventRow, error) {
 			return nil, nil
 		}
 		deps.verify = func(context.Context, txcollector.VerifyConfig) (txcollector.VerifyStats, error) {
@@ -706,7 +696,7 @@ func TestTxCollectorVerifyFallbackAndErrors(t *testing.T) {
 		want := errors.New("database unavailable")
 		deps := defaultTxCollectorVerifyDeps()
 		deps.loadConfig = func(string) (*toolutil.CollectorConfig, error) { return collectorConfig(), nil }
-		deps.openDB = func(string, string) (*sql.DB, error) { return nil, want }
+		deps.openDB = func(context.Context, string) (opsDB, error) { return nil, want }
 		result := executeCommand(
 			newTxCollectorVerifyCmdWithDeps(deps),
 			"--config", "collector.json",
@@ -722,8 +712,8 @@ func TestTxCollectorVerifyFallbackAndErrors(t *testing.T) {
 		want := errors.New("query failed")
 		deps := defaultTxCollectorVerifyDeps()
 		deps.loadConfig = func(string) (*toolutil.CollectorConfig, error) { return collectorConfig(), nil }
-		deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-		deps.loadRows = func(context.Context, *sql.DB, []string, uint64) ([]txcollector.EventRow, error) {
+		deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+		deps.loadRows = func(context.Context, txcollector.Querier, []string, uint64) ([]txcollector.EventRow, error) {
 			return nil, want
 		}
 		result := executeCommand(
@@ -748,8 +738,8 @@ func TestTxCollectorVerifyFallbackAndErrors(t *testing.T) {
 			db := newCommandTestDB(t)
 			deps := defaultTxCollectorVerifyDeps()
 			deps.loadConfig = func(string) (*toolutil.CollectorConfig, error) { return collectorConfig(), nil }
-			deps.openDB = func(string, string) (*sql.DB, error) { return db, nil }
-			deps.loadRows = func(context.Context, *sql.DB, []string, uint64) ([]txcollector.EventRow, error) {
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.loadRows = func(context.Context, txcollector.Querier, []string, uint64) ([]txcollector.EventRow, error) {
 				return nil, nil
 			}
 			deps.verify = func(context.Context, txcollector.VerifyConfig) (txcollector.VerifyStats, error) {
