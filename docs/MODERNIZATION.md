@@ -33,33 +33,33 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-18 (modern-idioms sprint: the Go 1.26 `go fix` modernize
-suite applied repo-wide and enforced forever by a CI `go fix -diff` gate;
-the `sort` package and `math/rand` v1 retired from the non-generated tree
-in favor of `slices`/`cmp` and `math/rand/v2`; ten more linters at zero
-findings — `gocritic`'s `exitAfterDefer` audit put every signal-handling
-binary's cleanup behind tested `runMain` seams; all 41 leaf benchmarks
-moved to Go 1.24 `b.Loop()` and re-baselined (D17). Every remaining
-unchecked item is external (frontend migration), production-gated (v1
-removal, run-loop.sh deletion, prod-RLP replay) or a decision (D1).)
+Measured 2026-07-20 (indexer-integrity sprint: ADR-0010's block-atomicity
+claim is now proven through real CosmicGame and RandomWalk handlers,
+plpgsql triggers and production progress adapters; raw archive-format RLP
+bytes replay through both real registries; Go 1.26 `testing/synctest` makes
+retry/cancellation tests deterministic. The new separated-failure test
+found and fixed a circuit-breaker bug: a healthy caught-up poll did not
+reset the failure streak. Every remaining unchecked item is external
+(frontend migration), production-gated (v1 removal, run-loop.sh deletion,
+production-exported RLP samples) or a decision (D1).)
 Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **187,441** (+480 this sprint: ten `runMain` seams, their exit-path and dashboard-lifecycle tests and a handful of multi-line `cmp.Or` comparators outweigh the idiom deletions — dead pointer helpers, `sort.Interface` boilerplate, hand-rolled clamp/copy loops; generated `internal/api/v2/api.gen.go` and `contracts/*/bindings.gen.go` are separate) | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **188,818** (+1,377 this sprint: real-handler rollback/visibility matrices for both domains, the strict archive-compatible RLP corpus loader/installer, exhaustive parser tests and its determinism/round-trip fuzzer; generated `internal/api/v2/api.gen.go` and `contracts/*/bindings.gen.go` are separate) | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
 | snake_case functions | ~700 | **0** — **target met**; `staticcheck ST1003` enforces it permanently | **0** — met | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
 | `os.Exit` in library code (`internal/`) | ~560 | **0 non-test calls** — **target met** (`primitives.Fatalf` was dead code, deleted with the D4 dissolution; the remaining matches are idiomatic test-harness `TestMain`s and doc comments) | **0** (allowed only in `cmd/*/main.go` startup) — met | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **0** — **target met** | **0** — met | `rg -l '^\s*\. "github' --type go internal cmd contracts` |
 | Package-level mutable globals (api + etl) | ~120 | **0 mutable** — **target met**: the v1 modules are injected structs (`cosmicgame.API`, `randomwalk.API`, `faq.Proxy`; `common.Ctx` deleted). What remains at package level is immutable (error sentinels, prometheus registrations) plus the one documented process-wide readiness atomic (`common.draining`) | ~0 (DI everywhere) — met | manual review per package |
 | golangci-lint issues | 433 (first run) | **0** — **target met**, with a stricter set than the baseline (`ST1003` re-enabled; `godot`, `noctx`, `revive` `exported`/`package-comments`; since the lint-frontier sprint `errchkjson`, `exhaustive`, `intrange`, `prealloc`, `reassign`, `thelper`, `tparallel` and `usetesting` at zero findings, **and the last blanket exclusion — gosec G115 — is deleted**: every integer conversion is checked or per-case justified; `gci` + `gofumpt` enforced as formatters; since the one-driver sprint `depguard` denies `lib/pq`; since the modern-idioms sprint `gocritic`, `perfsprint`, `sloglint`, `recvcheck`, `embeddedstructfieldcheck`, `iface`, `mirror`, `exptostd`, `fatcontext` and `nilnesserr` at zero findings, and CI additionally fails on any pending `go fix` modernization) | **0** — met | `golangci-lint run` + `go fix -diff ./...` |
-| Test files | 17 | **369** (+10: an exit-path `runMain` test per signal-handling binary) | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
-| Fuzz targets | 0 | **70** (+1: hostile bid-ban cursor decoder; full fleet retained) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
+| Test files | 17 | **374** (+5: two real-handler atomicity matrices, two real-registry RLP corpus replays and the corpus format/validation suite) | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
+| Fuzz targets | 0 | **71** (+1: strict RLP-corpus parser determinism and write/read round-trip; full fleet retained) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
 | Benchmarks | 0 | **9** (41 leaf benchmarks incl. the ADR-0010 ingest-transaction pair; all measured loops on Go 1.24 `b.Loop()` since the modern-idioms sprint, baselines re-recorded in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
 | Coverage on `internal/` (unit) | 2.4% | **66.2%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Legacy `internal/` integration coverage (enforced) | n/a | **92.27%** (29,801/32,297; floor 92.2%) | ratchet only; never lower | `make coverage-check` |
-| Handwritten production `internal/` coverage (enforced) | n/a | **95.31%** (23,657/24,821; floor 95.3%; generated API + test-only harnesses excluded by ADR-0006) | **≥95% — met**; commit gate active | `make coverage-check` |
-| Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **94.92%** (27,185/28,639; floor 94.8%; the modern-idioms sprint put the `main()` failure arms themselves under test via `osExit` seams) | **≥90% — met**; ratchet only | `make coverage-check` |
-| Changed executable Go coverage (enforced) | n/a | **96.21%** (508/528; the residue is deep error arms whose lines the idiom sweep merely re-spelled — e.g. `errors.New` conversions inside store/indexer failure paths) | **≥95%** | `make coverage-check` |
+| Legacy `internal/` integration coverage (enforced) | n/a | **92.27%** (29,913/32,420; floor 92.2%) | ratchet only; never lower | `make coverage-check` |
+| Handwritten production `internal/` coverage (enforced) | n/a | **95.30%** (23,656/24,822; floor 95.3%; generated API + test-only harnesses excluded by ADR-0006) | **≥95% — met**; commit gate active | `make coverage-check` |
+| Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **94.92%** (27,184/28,640; floor 94.8%) | **≥90% — met**; ratchet only | `make coverage-check` |
+| Changed executable Go coverage (enforced) | n/a | **100.00%** (3/3; the caught-up breaker reset is fully exercised) | **≥95%** | `make coverage-check` |
 | Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
 | Routes on stdlib router | 0 | **all** — frozen v1 (188 OpenAPI operations incl. `/version`; **180 now deprecated** with spec flags + RFC 9745 headers, 8 exempt) plus **102 generated v2 operations** (the prior 99-operation read/ranking surface plus public paginated bid bans and apiKey-secured create/delete), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
 | `context.Context` on store methods | 0% | **100% — 474 Repo methods (CosmicGame 385 + RandomWalk 89, incl. the two D15 querier resolvers) + 23 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
@@ -280,10 +280,20 @@ FK resolution to natural keys — addresses, tx hashes, `evt:block/logindex`).
       unknown token/offer, marketplace story golden). RW handlers insert
       without delete-first, so single-event replay is impossible by design
       (UNIQUE(evtlog_id) aborts); re-processing is pinned via the reorg test.
-- [~] RLP replay: the synthetic fixtures round-trip real RLP through
-      `evt_log.log_rlp` (encode on insert, decode in `process_single_event`),
-      which pins the storage format end to end. Replaying production-exported
-      samples (via `opsctl archive export`) remains open — needs prod access.
+- [x] RLP storage/replay safety net: synthetic fixtures round-trip through
+      `evt_log.log_rlp`, and the indexer-integrity sprint made the byte
+      boundary explicit. Strict archive-shaped JSONL corpora reject malformed
+      JSON/hex/RLP, inconsistent contract/topic fields, duplicate chain
+      identities and oversized lines; fixture-derived CosmicGame and
+      RandomWalk samples are inserted with their exact raw `log_rlp` bytes
+      (no re-encode) and dispatched through the real registries, handlers and
+      triggers. The format and export workflow are documented and tested.
+      *(2026-07-20)*
+- [~] Production RLP replay samples: use the documented
+      `opsctl archive export` → `arch_evtlog` JSONL workflow to extend the
+      committed corpora with complete representative production transactions.
+      The harness is ready; obtaining and reviewing the samples still needs
+      production access and remains the only open §4.3 sub-item.
 - [x] Reorg simulation: `TestReorgRollbackAndReplay` (both ETLs) reorgs the
       fake chain mid-story, drives `EnsureBlockExists` → `HandleChainSplit`,
       pins the rolled-back state as a golden (trigger delete paths reverse
@@ -1282,7 +1292,12 @@ binaries are pure wiring.
       last fully completed block with exponential backoff (±25% jitter, 1s→60s
       cap); `Run` returns only after `MaxConsecutiveFailures` (10) failures in
       a row, so systemd restarts resume from the watermark. Two data-loss bugs
-      of the legacy loops fixed on the way — see the progress log.)*
+      of the legacy loops fixed on the way — see the progress log. Extended
+      2026-07-20: Go 1.26 `testing/synctest` now pins cancellation during both
+      backoff and caught-up waits plus separated transient-failure streaks
+      without wall-clock sleeps. The latter exposed a real bug: a healthy
+      caught-up poll did not clear the breaker count, so separated outages
+      could be misclassified as consecutive; caught-up success now resets it.)*
 - [x] Status/progress persisted transactionally with the batch's inserts
       *(2026-07-18 — transactional-ingestion sprint, D15,
       [ADR-0010](adr/0010-transactional-ingestion.md): each block with
@@ -1300,7 +1315,14 @@ binaries are pure wiring.
       load-bearing to defense in depth. The fault-injection matrix proves
       zero-residue rollback at the transaction/process/watermark stages
       and clean convergence on retry; both fixture harnesses ingest
-      through `InTx`, all goldens byte-identical.)*
+      through `InTx`, all goldens byte-identical. Extended 2026-07-20: the
+      proof now runs through `Engine.Run` with the real CosmicGame and
+      RandomWalk registries, handlers, repository writes, plpgsql triggers
+      and progress adapters. Mid-block handler failure leaves no layer-1,
+      domain, aggregate, address-cache or watermark residue; an earlier
+      committed block survives, retry converges to a clean control, and a
+      second connection observes handler rows plus watermark only after the
+      shared commit. ADR-0010 records the evidence.)*
 - [x] `log/slog` structured logging (block ranges, event counts, timings);
       keep file output via slog handler during transition *(2026-07-09 — the
       engine, startup sync and both mains log structured records through
@@ -1599,6 +1621,7 @@ done.**
 | HTTP handler (httptest) | v1 parity + v2 suites | 0, 2 | full request→response through real router |
 | Benchmarks | §4.5 + benchstat | 0, re-run 1–3 | no performance regressions |
 | E2E smoke | `opsctl smoketest` in compose | 2 | whole stack boots and answers |
+| Deterministic concurrency | `testing/synctest` + channel barriers | always | timers, retries and cancellation without wall-clock flakes |
 | Race + shuffle | CI, all tests | always | concurrency safety |
 
 ---
@@ -1624,6 +1647,7 @@ done.**
 | D15 | ETL transaction granularity and querier plumbing (supersedes the §7 deferral) | per-event tx / per-block tx / per-batch tx; explicit `pgx.Tx` parameters / context-scoped querier | **decided 2026-07-18: one transaction per block with events, carried by the context** ([ADR-0010](adr/0010-transactional-ingestion.md)) — the block boundary is the watermark's only safe unit, batches can span RPC-heavy minutes, and per-block commits keep the engine's partial-progress semantics while making data + watermark atomic (fewer fsyncs than per-statement autocommit; the container benchmark puts the wrapper at ~9% per block). `Store.InTx` carries the transaction through the context with an owner check, so all 472 repo methods join without signature changes and a foreign Store can never adopt another Store's transaction; explicit `pgx.Tx` threading through 85 handlers was rejected as signature churn with no added safety. The address cache gained a per-transaction overlay (flush on commit, discard on rollback) and `ON CONFLICT DO NOTHING` creation. Empty tail ranges keep their plain watermark write; the v2 ranking writes keep their explicit-transaction helpers. |
 | D16 | Ops-toolchain PostgreSQL driver (the last `database/sql` + `lib/pq` code: `internal/ops/*`, `internal/toolutil`, the `opsctl` commands and the freezer DB-verify harness) | keep lib/pq / swap the driver under `database/sql` (pgx `stdlib`) / convert to pgx-native | **decided 2026-07-18: pgx-native everywhere; lib/pq deleted** — the ops engines moved onto narrow per-package pgx `Querier` interfaces (the `freezer/verify` precedent; `*pgxpool.Pool` satisfies all of them), `pq.Array` became native slice binding, node-fill's nine `*sql.Stmt`s dissolved into pgx's per-connection statement cache (`PrepareWriter` no longer touches the database), and the `stdlib.OpenDBFromPool` bridge died — one pgxpool serves both the `store.Store` address cache and the archive statements. The stdlib-driver swap was rejected: it would keep two query surfaces and the scripted `database/sql` driver fakes alive for no benefit. SQL is byte-identical except three `::text` casts on the NUMERIC columns archive export copies (`transaction.value`/`gas_price`, `block.cash_flow`) — the cast reproduces exactly the server-side text rendering the text-protocol driver received, pinned by the export integration test. `github.com/lib/pq` left `go.mod`; a `depguard` rule denies it permanently (the gin-removal ratchet class). `database/sql` value types (`sql.NullString`, `sql.NullInt64`) remain where pgx scans them natively — they are stdlib, driver-free. |
 | D17 | Benchmark loop idiom (41 leaf benchmarks on `for range b.N`) | keep `b.N` loops / adopt Go 1.24 `b.Loop()` with a full re-baseline | **decided 2026-07-18: `b.Loop()` everywhere, baselines re-recorded** — `b.Loop` keeps the benchmarked call and its results alive (no dead-code elimination skew) and excludes per-iteration bookkeeping, so its numbers are more truthful; upstream deliberately leaves the `bloop` fixer out of the default `go fix` suite precisely because converted numbers can shift (golang/go#74967), which is why the conversion is paired with re-measured medians in [benchmarks.md](benchmarks.md) rather than assumed comparable. The two `RunParallel` rate-limiter benchmarks keep `pb.Next()` (the parallel API has no `b.Loop` equivalent). |
+| D18 | Production RLP replay corpus format | SQL dump / one raw-RLP file per event / strict archive-shaped JSONL | **decided 2026-07-20: strict archive-shaped JSONL** — each line mirrors `arch_evtlog` (`project`, block/event/log identity, tx hash, contract, topic0 and 0x RLP). JSONL is diffable, streamable and directly emitted from an `opsctl archive export` destination; the loader caps lines at 2 MiB and rejects unknown fields, malformed identities/RLP, column-vs-payload disagreement and duplicate chain identities before installing exact bytes. Complete sibling logs stay adjacent so handlers that inspect their transaction work unchanged. Fixture-derived samples keep CI live; production-exported additions remain gated on access and review. |
 
 ---
 
@@ -1631,6 +1655,7 @@ done.**
 
 | Date | Commit | What landed |
 |---|---|---|
+| 2026-07-20 | — | **Indexer-integrity sprint (§4.3/§7 hardening; D18 decided; ADR-0010 verification completed):** production-faithful harnesses now drive `Engine.Run` through the real CosmicGame and RandomWalk registries, handlers, repositories, progress adapters and plpgsql triggers. Representative multi-log bid/sale blocks fail after earlier handler writes; the failed block leaves zero layer-1/domain/aggregate/address-cache/watermark residue, a prior block in the fetched range survives, retry converges byte-for-byte to a clean control, and second-connection snapshots prove handler rows plus watermark become visible only at commit. **RLP safety net:** strict archive-shaped JSONL (`RLPCorpusEntry`) validates bounded JSON/hex/RLP, chain identities, contract/topic consistency and duplicates; `InstallRLPCorpus` inserts exact exported bytes without re-encoding, and committed fixture-derived samples dispatch through both real registries and triggers. The `opsctl archive export` → reviewed JSONL workflow is documented; production samples remain access-gated. `FuzzLoadRLPCorpus` pins totality, determinism and valid write/read closure (fleet 70 → 71; dedicated 10s run green). **Deterministic retries:** Go 1.26 `testing/synctest` replaces wall-clock coordination for caught-up/backoff cancellation, timer boundaries and separated failure streaks; the matrix found and fixed a real breaker bug — a healthy caught-up poll did not reset the consecutive-failure count. **Verification:** all 71 fuzz targets ran for 10s; one pre-existing cursor fuzzer hit only the Go worker stop deadline and passed a dedicated 30s reproduction (no crasher). Build, vet, generation drift, lint (0), modernize gates, govulncheck (0 reachable), full race+shuffle unit and race integration suites, repeated integrity matrices and the authoritative coverage gate pass; all existing goldens remain byte-identical. Metrics: LOC **187,441 → 188,818**, test files **369 → 374**, legacy internal **92.27%** (29,913/32,420), handwritten internal **95.30%** (23,656/24,822), all production **94.92%** (27,184/28,640), changed executable Go **100%** (3/3). |
 | 2026-07-06 | `85941dba` | Foundation: layout, Go 1.26, CI, hardening, docs (see §3) |
 | 2026-07-06 | `a7971755` | **Fuzz fleet sprint (§4.4 + §4.6 nightly CI):** 28 fuzz targets + ~20 accompanying unit/property test funcs across 15 packages; `scripts/fuzz-all.sh`, `make fuzz-smoke`, nightly `.github/workflows/fuzz.yml`. Testability extractions (behavior-preserving, pinned by unit tests): metadata host dispatch → `metadataHostServesCosmicSignature` (`cmd/apiserver`), ORDER BY whitelists → `roiLeaderboardOrderClause` / `activeOffersOrderClause`. **Bug found & fixed:** corrupt freezer index entry could OOM-kill the process via an up-to-2^48-byte allocation in `FreezerReader.readBytes` / `WorkerReader.readBytes`; both now bounds-check against the data end (`TestReadItemCorruptIndexHugeOffset`). Test files 19 → 39. |
 | 2026-07-07 | `aa9c686e` | **ETL fixture sprint (§4.3 complete + §4.2 write-path/trigger/base items):** `internal/testchain` (deterministic fake Ethereum node: real header hashes, signed txs so sender recovery works, receipts, `eth_getLogs`, registrable `eth_call` handlers, `Reorg()`) and `internal/testutil` (golden compare; canonical DB snapshot/diff with surrogate keys dropped and FKs resolved to natural identifiers). `cmd/cg-etl`: 74 per-event fixtures through the real pipeline with full trigger side effects pinned (84 goldens incl. scripted-round story + reorg rollback), every fixture re-processed to prove the delete-then-insert recovery path is state-neutral, plus a no-Docker unit test pinning all registry topic constants against ABI event IDs. `cmd/rw-etl`: all 7 event types, marketplace story, reorg test (13 goldens). `internal/etl`: blockops/chainsplit/tx-fallback/evt-log-dedup integration tests. **Seven production bugs found & fixed:** (1) `proc_admin_changed_event` unpacked ERC-1967 `AdminChanged` with the game ABI — the event is not in that ABI, so every occurrence killed the ETL (new `erc1967_abi`); (2) `proc_time_increase_changed_event` unpacked `TimeIncreaseChanged` by name from an ABI that doesn't define it — same crash mode (now decodes the raw uint256; `TestLegacyConstantsHaveNoABIEvent` guards the inverse direction); (3) `proc_token_generation_script_url_event` deleted from the *message-length* table before inserting, so re-processing a script-URL event aborted on the unique constraint; (4) `Delete_fund_transfer_failed_event`/`Delete_erc20_transfer_failed_event` referenced non-existent table names (`cg_fund_transfer_err`/`cg_erc20_transfer_err`) — any re-process/reorg of those events killed the ETL; (5) `last_block` was created rowless and every writer uses plain UPDATE, so on a fresh migrated DB the watermark never advanced and `HandleChainSplit` had nothing to roll back (migration `00005` seeds the row); (6) `on_nft_unstaked_{cst,rwalk}_delete()` never restored the staked-token row ("To Do" comment), so reorg rollback couldn't reverse reward deposits and replay double-counted `cg_staker_cst.total_reward` (migration `00006`); (7) `on_item_bought_delete()` referenced `NEW.*` in a DELETE trigger (always null → market volume/trade reversal silently skipped), restored the seller's `price_bought` to the sale price instead of the purchase price (profit became 0 on replay) and never reversed profit bookkeeping (migration `00007`). CI coverage ratchet floor raised 50% → 60% (measured 62.7%, up from 53.0%). Test files 44 → 53; golden files 183 → 280. |

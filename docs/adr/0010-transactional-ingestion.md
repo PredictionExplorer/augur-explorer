@@ -120,3 +120,32 @@ deterministically.
   and re-inserts atomically with that block; if the block later fails, the
   reorg metric may count the same split again on retry (the counter tracks
   detections, not distinct splits).
+
+## Verification
+
+The original stage matrix in
+`internal/indexer/tx_atomicity_integration_test.go` injects failures at
+block, transaction, event-log, process, watermark and transaction machinery
+boundaries. The indexer-integrity sprint added the production-faithful half
+of that proof:
+
+- `internal/indexer/{cosmicgame,randomwalk}/handler_atomicity_integration_test.go`
+  drives real registries, handlers, repository methods and plpgsql triggers
+  through `Engine.Run`/`processBatch`, including the real domain progress
+  adapters.
+- A CosmicGame bid block and a RandomWalk sale block fail after earlier real
+  handler writes. The failed block leaves no layer-1, domain, aggregate,
+  address-cache or watermark residue; an earlier block in the same fetched
+  range remains committed.
+- Restoring the dependency and retrying produces a canonical database
+  snapshot identical to a clean run.
+- A second database connection observes the pre-block snapshot while all
+  handler writes are held before the progress update, then observes handler
+  rows, trigger aggregates, layer-1 rows and the watermark together after
+  commit.
+
+The same sprint moved cancellation-during-backoff and caught-up waits onto
+Go's deterministic `testing/synctest` clock. That test exposed and fixed a
+breaker bug: a healthy caught-up poll did not reset the consecutive-failure
+counter, so two separated transient failure streaks could be misclassified
+as one continuous outage.

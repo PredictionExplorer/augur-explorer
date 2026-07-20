@@ -50,6 +50,17 @@ pass.
   where the code allows it.
 - Integration tests that need PostgreSQL use `internal/testdb` and the
   `integration` build tag: `make test-integration`.
+- Timer/retry/cancellation unit tests should use Go's `testing/synctest`
+  fake clock or explicit channel barriers rather than millisecond sleeps.
+  Keep real deadlines only as outer guards around network/PostgreSQL
+  integration tests.
+- ETL changes must preserve the real-handler atomicity matrix under
+  `internal/indexer/{cosmicgame,randomwalk}`: a failed block leaves no
+  layer-1, domain, trigger-aggregate, address-cache or watermark residue,
+  and retry converges to a clean run. RLP format changes must also update
+  the strict archive-compatible `testdata/rlp_corpus.jsonl` replay samples;
+  follow the export workflow in
+  [docs/operations.md](docs/operations.md#refreshing-the-production-rlp-replay-corpus).
 - **API parity suite** (`internal/api/apitest`): boots the real router against
   a seeded testcontainers database and pins every v1 GET route as a golden
   file under `testdata/golden/`. It is the contract for the v1 freeze — any

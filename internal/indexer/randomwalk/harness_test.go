@@ -229,11 +229,121 @@ func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string
 	}
 }
 
-// ingestTx records one transaction with its logs on the fake chain and runs
-// every log through the production pipeline, returning the evt_log ids.
-func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) []int64 {
-	t.Helper()
+// harnessProgress is the production rw-etl watermark adapter with an
+// optional post-write hook. Tests use the hook to cancel Engine.Run only
+// after the target block's watermark write has joined its transaction.
+type harnessProgress struct {
+	repo  *rwstore.Repo
+	onSet func(block int64)
+}
 
+func (p *harnessProgress) LastBlock(ctx context.Context) (int64, error) {
+	status, err := p.repo.ProcessingStatus(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return status.LastBlockNum, nil
+}
+
+func (p *harnessProgress) SetLastBlock(ctx context.Context, block int64) error {
+	status, err := p.repo.ProcessingStatus(ctx)
+	if err != nil {
+		return err
+	}
+	status.LastBlockNum = block
+	if err := p.repo.UpdateProcessingStatus(ctx, &status); err != nil {
+		return err
+	}
+	if p.onSet != nil {
+		p.onSet(block)
+	}
+	return nil
+}
+
+// primeHarnessProgress makes the next Engine.Run start at firstBlock without
+// changing the layer-1 last_block watermark being tested.
+func primeHarnessProgress(t *testing.T, firstBlock int64) *harnessProgress {
+	t.Helper()
+	progress := &harnessProgress{repo: rwRepo}
+	status, err := rwRepo.ProcessingStatus(context.Background())
+	if err != nil {
+		t.Fatalf("reading processing status: %v", err)
+	}
+	status.LastBlockNum = firstBlock - 1
+	if err := rwRepo.UpdateProcessingStatus(context.Background(), &status); err != nil {
+		t.Fatalf("priming processing status: %v", err)
+	}
+	return progress
+}
+
+// newHarnessRunEngine builds the same Engine configuration as cmd/rw-etl,
+// with a fixed batch width and one-attempt breaker for deterministic
+// integration tests.
+func newHarnessRunEngine(
+	t *testing.T,
+	progress indexer.Progress,
+	process indexer.ProcessFunc,
+	batchSize uint64,
+) *indexer.Engine {
+	t.Helper()
+	if process == nil {
+		process = testProcess
+	}
+	engine, err := indexer.New(indexer.Config{
+		Store:     dbStore,
+		Client:    eclient,
+		Progress:  progress,
+		Process:   process,
+		Contracts: testContracts.All(),
+		Logger:    slog.New(slog.DiscardHandler),
+		TopicName: testHandlers.Registry().TopicName,
+		Batch: indexer.BatchConfig{
+			Initial: batchSize,
+			Min:     batchSize,
+			Max:     batchSize,
+		},
+		Retry: indexer.RetryConfig{
+			MaxConsecutiveFailures: 1,
+			MinDelay:               time.Nanosecond,
+			MaxDelay:               time.Nanosecond,
+		},
+		CaughtUpDelay: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("building run engine: %v", err)
+	}
+	return engine
+}
+
+// runHarnessRange runs the production polling loop from firstBlock through
+// targetBlock and cancels immediately after the target watermark commits.
+// A returned error is the engine's real breaker error.
+func runHarnessRange(
+	t *testing.T,
+	firstBlock, targetBlock int64,
+	batchSize uint64,
+) error {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	progress := primeHarnessProgress(t, firstBlock)
+	progress.onSet = func(block int64) {
+		if block == targetBlock {
+			cancel()
+		}
+	}
+	err := newHarnessRunEngine(t, progress, nil, batchSize).Run(ctx)
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		t.Fatal("Engine.Run timed out")
+	}
+	return err
+}
+
+// stageTx records one transaction and its logs on the fake chain without
+// touching PostgreSQL. Engine.Run can then fetch and ingest the block through
+// the exact production processBatch path.
+func stageTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) {
+	t.Helper()
 	tx := testChain.AddTx(blockNum, to, nil)
 	for i, l := range logs {
 		l.BlockNumber = uint64(blockNum) // #nosec G115 -- positive test block constant
@@ -243,6 +353,14 @@ func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex 
 		l.Index = startLogIndex + uint(i)
 	}
 	testChain.AttachLogs(tx.Hash(), logs)
+}
+
+// ingestTx records one transaction with its logs on the fake chain and runs
+// every log through the production pipeline, returning the evt_log ids.
+func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) []int64 {
+	t.Helper()
+
+	stageTx(t, blockNum, to, startLogIndex, logs)
 
 	// One transaction per ingested chain transaction, mirroring the engine's
 	// per-block InTx: the fixtures prove every handler behaves identically

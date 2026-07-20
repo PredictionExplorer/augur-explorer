@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -79,6 +80,12 @@ func (f *fakeClient) ranges() [][2]uint64 {
 	out := make([][2]uint64, len(f.fetchedRanges))
 	copy(out, f.fetchedRanges)
 	return out
+}
+
+func (f *fakeClient) blockCalls() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.blockNumberCall
 }
 
 // fakeProgress is an in-memory watermark.
@@ -283,31 +290,92 @@ func TestRunExitsOnCanceledContext(t *testing.T) {
 }
 
 func TestRunCaughtUpWaitsAndHonorsCancel(t *testing.T) {
-	client := &fakeClient{
-		blockNumberFn: func() (uint64, error) { return 10, nil }, // head == watermark
-	}
-	e := unitEngine(t, Config{
-		Client:        client,
-		Progress:      &fakeProgress{last: 10},
-		Process:       func(context.Context, int64) error { return nil },
-		Contracts:     []common.Address{{0x01}},
-		CaughtUpDelay: time.Hour, // cancellation must interrupt the wait
-	})
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(50 * time.Millisecond)
+	synctest.Test(t, func(t *testing.T) {
+		client := &fakeClient{
+			blockNumberFn: func() (uint64, error) { return 10, nil }, // head == watermark
+		}
+		e := unitEngine(t, Config{
+			Client:        client,
+			Progress:      &fakeProgress{last: 10},
+			Process:       func(context.Context, int64) error { return nil },
+			Contracts:     []common.Address{{0x01}},
+			CaughtUpDelay: time.Hour, // cancellation must interrupt the wait
+		})
+		ctx, cancel := context.WithCancel(t.Context())
+		done := make(chan error, 1)
+		go func() { done <- e.Run(ctx) }()
+
+		synctest.Wait() // Run is blocked in the one-hour caught-up wait.
+		if got := client.blockCalls(); got != 1 {
+			t.Fatalf("BlockNumber calls before cancel = %d, want 1", got)
+		}
 		cancel()
-	}()
-	start := time.Now()
-	if err := runWithTimeout(t, e, ctx); err != nil {
-		t.Fatalf("Run = %v, want nil", err)
+		synctest.Wait()
+		if err := <-done; err != nil {
+			t.Fatalf("Run = %v, want nil", err)
+		}
+		if got := len(client.ranges()); got != 0 {
+			t.Errorf("caught-up loop fetched %d ranges, want 0", got)
+		}
+	})
+}
+
+func TestRunCancellationDuringBackoffSleep(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		headErr := errors.New("temporary RPC outage")
+		client := &fakeClient{
+			blockNumberFn: func() (uint64, error) { return 0, headErr },
+		}
+		e := unitEngine(t, Config{
+			Client:    client,
+			Progress:  &fakeProgress{last: 10},
+			Process:   func(context.Context, int64) error { return nil },
+			Contracts: []common.Address{{0x01}},
+			Retry: RetryConfig{
+				MaxConsecutiveFailures: 10,
+				MinDelay:               time.Hour,
+				MaxDelay:               time.Hour,
+			},
+		})
+		ctx, cancel := context.WithCancel(t.Context())
+		done := make(chan error, 1)
+		go func() { done <- e.Run(ctx) }()
+
+		synctest.Wait() // Run is blocked in its first retry backoff.
+		if got := client.blockCalls(); got != 1 {
+			t.Fatalf("BlockNumber calls before cancel = %d, want 1", got)
+		}
+		cancel()
+		synctest.Wait()
+		if err := <-done; err != nil {
+			t.Fatalf("Run after backoff cancellation = %v, want nil", err)
+		}
+		if got := client.blockCalls(); got != 1 {
+			t.Fatalf("BlockNumber calls after cancel = %d, want 1", got)
+		}
+	})
+}
+
+func TestEngineSleepBoundaryAndExpiry(t *testing.T) {
+	e := &Engine{}
+	if !e.sleep(context.Background(), 0) {
+		t.Fatal("zero delay on active context = false, want true")
 	}
-	if elapsed := time.Since(start); elapsed > 10*time.Second {
-		t.Errorf("caught-up wait ignored cancellation (took %v)", elapsed)
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if e.sleep(cancelled, 0) {
+		t.Fatal("zero delay on cancelled context = true, want false")
 	}
-	if got := len(client.ranges()); got != 0 {
-		t.Errorf("caught-up loop fetched %d ranges, want 0", got)
-	}
+
+	synctest.Test(t, func(t *testing.T) {
+		start := time.Now()
+		if !e.sleep(t.Context(), time.Hour) {
+			t.Fatal("timer expiry = false, want true")
+		}
+		if elapsed := time.Since(start); elapsed != time.Hour {
+			t.Fatalf("fake elapsed time = %v, want 1h", elapsed)
+		}
+	})
 }
 
 func TestRunCircuitBreakerTripsAfterConsecutiveHeadFailures(t *testing.T) {
@@ -364,44 +432,45 @@ func TestRunRejectsOverflowingChainHead(t *testing.T) {
 }
 
 func TestRunRecoversAfterTransientFailures(t *testing.T) {
-	// Two head failures, then a healthy caught-up chain: the loop must keep
-	// going (failures < breaker limit) and reach the caught-up wait.
-	calls := 0
-	var mu sync.Mutex
-	client := &fakeClient{}
-	client.blockNumberFn = func() (uint64, error) {
-		mu.Lock()
-		defer mu.Unlock()
-		calls++
-		if calls <= 2 {
-			return 0, errors.New("transient blip")
-		}
-		return 10, nil
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	e := unitEngine(t, Config{
-		Client:    client,
-		Progress:  &fakeProgress{last: 10},
-		Process:   func(context.Context, int64) error { return nil },
-		Contracts: []common.Address{{0x01}},
-		Retry:     RetryConfig{MaxConsecutiveFailures: 3, MinDelay: time.Millisecond, MaxDelay: 2 * time.Millisecond},
-	})
-	go func() {
-		// Give the loop time to pass the failures and hit caught-up waits.
-		for {
-			mu.Lock()
-			done := calls >= 5
-			mu.Unlock()
-			if done {
-				cancel()
-				return
+	synctest.Test(t, func(t *testing.T) {
+		// Two failures, one healthy caught-up poll, then two more failures.
+		// The healthy poll must reset the breaker; otherwise call 4 would be
+		// treated as the third consecutive failure and Run would exit.
+		calls := 0
+		ctx, cancel := context.WithCancel(t.Context())
+		client := &fakeClient{}
+		client.blockNumberFn = func() (uint64, error) {
+			calls++
+			switch calls {
+			case 1, 2, 4, 5:
+				return 0, errors.New("transient blip")
+			default:
+				if calls >= 6 {
+					cancel()
+				}
+				return 10, nil
 			}
-			time.Sleep(time.Millisecond)
 		}
-	}()
-	if err := runWithTimeout(t, e, ctx); err != nil {
-		t.Fatalf("Run = %v, want nil (breaker must reset after success)", err)
-	}
+		e := unitEngine(t, Config{
+			Client:        client,
+			Progress:      &fakeProgress{last: 10},
+			Process:       func(context.Context, int64) error { return nil },
+			Contracts:     []common.Address{{0x01}},
+			Retry:         RetryConfig{MaxConsecutiveFailures: 3, MinDelay: time.Millisecond, MaxDelay: 2 * time.Millisecond},
+			CaughtUpDelay: time.Millisecond,
+		})
+		done := make(chan error, 1)
+		go func() { done <- e.Run(ctx) }()
+
+		time.Sleep(20 * time.Millisecond) // fake time; enough for every scripted wait
+		synctest.Wait()
+		if err := <-done; err != nil {
+			t.Fatalf("Run = %v, want nil after separated failure streaks", err)
+		}
+		if calls != 6 {
+			t.Fatalf("BlockNumber calls = %d, want 6", calls)
+		}
+	})
 }
 
 func TestRunFetchErrorShrinksBatchAndEmptySuccessGrowsIt(t *testing.T) {

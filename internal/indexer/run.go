@@ -107,6 +107,10 @@ func (e *Engine) Run(ctx context.Context) error {
 		fromBlock := uint64(lastProcessed + 1)
 		if fromBlock > head {
 			// Caught up: wait for new blocks with small real-time batches.
+			// A successful head read is a healthy complete poll cycle even
+			// though there is no range to fetch. It breaks a streak of
+			// transient failures just like a successfully processed batch.
+			failures = 0
 			batch.onCaughtUp()
 			if !e.sleep(ctx, e.caughtUpDelay) {
 				e.log.Info("exiting by user request")
