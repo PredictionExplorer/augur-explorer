@@ -82,6 +82,7 @@ DROP TABLE IF EXISTS
 	cg_delay_duration,
 	cg_chrono_warrior_prize,
 	cg_banned_bids,
+	cg_live_state_updates,
 	cg_transfer_stats,
 	cg_round_stats,
 	cg_bidder,

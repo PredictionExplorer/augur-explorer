@@ -503,9 +503,12 @@ func main() {
 	marketing_wallet_addr = ethcommon.HexToAddress(cg_contracts.MarketingWalletAddr)
 	implementation_addr = ethcommon.HexToAddress(cg_contracts.ImplementationAddr)
 
-	if err := syncContractParamsFromChain(&storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
-		Error.Printf("Contract param chain sync failed: %v", err)
-		os.Exit(1)
+	// Read-only drift check: verifies DB parameter history against live chain state.
+	// Writes nothing; a reported drift means a missed/undecoded event (a bug).
+	if drifted, err := checkContractParamsDrift(&storagew, eclient, cg_contracts.CosmicGameAddr, cg_contracts.PrizesWalletAddr, Info, Error); err != nil {
+		Error.Printf("Contract param drift check failed: %v", err)
+	} else if drifted > 0 {
+		Error.Printf("Contract param drift check: %d parameter(s) out of sync with chain", drifted)
 	}
 
 	// V3 champion durations: saved on-chain at claimMainPrize without an event, so they are

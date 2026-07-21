@@ -456,3 +456,20 @@ CREATE TABLE cg_banned_bids (
 	created_at  BIGINT NOT NULL
 );
 CREATE INDEX idx_cg_banned_bids_bid_id ON cg_banned_bids(bid_id);
+
+-- Live state updates: contract state variables that change WITHOUT emitting an event
+-- (e.g. V3 championDurations[roundNum], written at claimMainPrize). Values are read via
+-- eth_call and recorded here. Deliberately has no evtlog_id/tx_id: rows in this table do
+-- not descend from evt_log, and evt_log must contain only real on-chain events.
+-- Variables that emit a *Changed event must NEVER be written here; they are tracked
+-- through their cg_adm_* history tables populated from evt_log.
+CREATE TABLE cg_live_state_updates (
+	id            BIGSERIAL PRIMARY KEY,
+	variable_name TEXT NOT NULL,				-- e.g. 'endurance_champion_duration'
+	contract_aid  BIGINT NOT NULL,				-- contract holding the state variable
+	round_num     BIGINT NOT NULL DEFAULT -1,	-- context key for per-round variables; -1 = global
+	block_num     BIGINT NOT NULL,				-- chain head at the time the value was read
+	time_stamp    TIMESTAMPTZ NOT NULL DEFAULT NOW(),	-- when the ETL observed the value
+	new_value     DECIMAL NOT NULL
+);
+CREATE INDEX idx_cg_live_state_updates_var ON cg_live_state_updates(variable_name, round_num, id);

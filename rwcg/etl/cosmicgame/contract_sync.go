@@ -1,22 +1,31 @@
 package main
 
+// Startup drift check for contract parameters.
+//
+// Every parameter listed here emits a *Changed event, and the ETL decodes all of them,
+// so the DB history tables are the source of truth. This check reads the live values
+// via eth_call and compares them against the latest DB values: a mismatch means an
+// event was missed or not decoded — a bug to investigate — and is logged as an error.
+// NOTHING is written to the database. In particular, no synthetic evt_log rows, no
+// sentinel transactions and no correction rows are created (that legacy mechanism was
+// removed; see cg_live_state_updates for state variables that have no events).
+//
+// A parameter with no DB history at all is reported as info: it simply has never been
+// changed on-chain (its value was set in the constructor/initializer without an event),
+// so there is nothing to compare against.
+
 import (
-	"context"
 	"fmt"
 	"log"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
 	cgdb "github.com/PredictionExplorer/augur-explorer/rwcg/dbs/cosmicgame"
 )
-
-const chainSyncTxHash = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
 
 const (
 	contractMechanicsUnknown int64 = 0
@@ -32,140 +41,94 @@ type contractParamSync struct {
 	read         func(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) (string, error)
 }
 
-func chainSyncLogIndex() uint {
-	return 990000 + uint(time.Now().UnixNano()%10000)
-}
-
-func allocChainSyncEvtlog(sw *cgdb.SQLStorageWrapper, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
-	header, err := client.HeaderByNumber(context.Background(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("HeaderByNumber: %w", err)
-	}
-	if err := sw.S.Insert_block(header); err != nil {
-		return nil, fmt.Errorf("Insert_block: %w", err)
-	}
-
-	blockNum := header.Number.Int64()
-	txId, err := sw.S.Insert_minimal_transaction(chainSyncTxHash, blockNum)
-	if err != nil {
-		return nil, fmt.Errorf("Insert_minimal_transaction: %w", err)
-	}
-
-	contractAid := sw.S.Lookup_or_create_address(contractAddr, blockNum, txId)
-	syncLog := types.Log{
-		Address:     ethcommon.HexToAddress(contractAddr),
-		BlockNumber: header.Number.Uint64(),
-		TxHash:      ethcommon.HexToHash(chainSyncTxHash),
-		Index:       chainSyncLogIndex(),
-	}
-
-	evtId, err := sw.S.Insert_event_log(syncLog, txId, contractAid)
-	if err != nil {
-		return nil, fmt.Errorf("Insert_event_log: %w", err)
-	}
-
-	return &cgdb.AdminCorrectionMeta{
-		EvtId:       evtId,
-		BlockNum:    blockNum,
-		TxId:        txId,
-		TimeStamp:   int64(header.Time),
-		ContractAid: contractAid,
-	}, nil
-}
-
-// syncContractParamsFromChain reads live monetary/timed settings from RPC and inserts SQL
-// correction rows when the latest admin/history value differs from chain.
-func syncContractParamsFromChain(sw *cgdb.SQLStorageWrapper, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) error {
+// checkContractParamsDrift compares live chain values against the latest DB history
+// values and returns the number of drifted parameters. Read-only: logs findings and
+// writes nothing.
+func checkContractParamsDrift(sw *cgdb.SQLStorageWrapper, client *ethclient.Client, gameAddr, prizesWalletAddr string, info, errLog *log.Logger) (int, error) {
 	if client == nil {
-		return fmt.Errorf("eth client is nil")
+		return 0, fmt.Errorf("eth client is nil")
 	}
 	game := ethcommon.HexToAddress(gameAddr)
 	v1, _ := cosmicgame.NewCosmicSignatureGame(game, client)
 	v2, _ := cosmicgame.NewCosmicSignatureGameV2(game, client)
 	if v1 == nil && v2 == nil {
-		return fmt.Errorf("can't bind CosmicGame at %s", gameAddr)
+		return 0, fmt.Errorf("can't bind CosmicGame at %s", gameAddr)
 	}
 
 	var copts bind.CallOpts
 	mechanics := probeContractMechanics(v1, v2, &copts)
 
-	meta, err := allocChainSyncEvtlog(sw, gameAddr, client)
-	if err != nil {
-		return fmt.Errorf("alloc chain sync evtlog: %w", err)
+	var drifted int
+	compare := func(name, table, column, chainValue string) error {
+		dbValue, hasRow, err := sw.Get_latest_decimal_param(table, column)
+		if err != nil {
+			return fmt.Errorf("%s: %w", name, err)
+		}
+		if !hasRow {
+			info.Printf("drift check: %s has no DB history (never changed on-chain); chain value: %s", name, chainValue)
+			return nil
+		}
+		if !cgdb.DecimalStringsEqual(dbValue, chainValue) {
+			drifted++
+			errLog.Printf("drift check: DRIFT %s: db=%s chain=%s (missed or undecoded event — investigate)", name, dbValue, chainValue)
+			info.Printf("drift check: DRIFT %s: db=%s chain=%s", name, dbValue, chainValue)
+		}
+		return nil
 	}
 
-	var updated int
 	for _, p := range buildContractParamSyncList(mechanics) {
 		chainValue, err := p.read(v1, v2, &copts)
 		if err != nil {
-			errLog.Printf("chain sync: skip %s: %v", p.name, err)
+			errLog.Printf("drift check: skip %s: %v", p.name, err)
 			continue
 		}
-		var changed bool
+		if err := compare(p.name, p.table, p.column, chainValue); err != nil {
+			return drifted, err
+		}
 		if p.name == "cst_reward_for_bidding" {
-			changed, err = sw.SyncCstRewardIfMismatch(chainValue, meta)
-		} else if p.contractAddr != "" {
-			changed, err = sw.SyncAdminDecimalParamIfMismatchForContract(p.name, p.table, p.column, chainValue, p.contractAddr, meta)
-		} else {
-			changed, err = sw.SyncAdminDecimalParamIfMismatch(p.name, p.table, p.column, chainValue, meta)
-		}
-		if err != nil {
-			return err
-		}
-		if changed {
-			updated++
-			info.Printf("chain sync: updated %s => %s", p.name, chainValue)
+			// cg_glob_stats holds a trigger-maintained copy; verify it as well.
+			globReward, err := sw.Get_glob_stats_cst_reward_for_bidding()
+			if err != nil {
+				return drifted, fmt.Errorf("cst_reward_for_bidding (cg_glob_stats): %w", err)
+			}
+			if !cgdb.DecimalStringsEqual(globReward, chainValue) {
+				drifted++
+				errLog.Printf("drift check: DRIFT cg_glob_stats.cst_reward_for_bidding: db=%s chain=%s", globReward, chainValue)
+			}
 		}
 	}
 
 	if delay, err := readDelayDuration(v1, v2, &copts); err == nil {
-		changed, err := sw.SyncAdminInt64ParamIfMismatch("delay_before_round_activation", "cg_delay_duration", "new_value", delay, meta)
-		if err != nil {
-			return err
-		}
-		if changed {
-			updated++
-			info.Printf("chain sync: updated delay_before_round_activation => %d", delay)
+		if err := compare("delay_before_round_activation", "cg_delay_duration", "new_value", fmt.Sprintf("%d", delay)); err != nil {
+			return drifted, err
 		}
 	} else {
-		errLog.Printf("chain sync: skip delay_before_round_activation: %v", err)
+		errLog.Printf("drift check: skip delay_before_round_activation: %v", err)
 	}
 
 	if prizesWalletAddr != "" {
 		pw, err := cosmicgame.NewPrizesWallet(ethcommon.HexToAddress(prizesWalletAddr), client)
 		if err != nil {
-			errLog.Printf("chain sync: skip timeout_withdraw_prizes: bind PrizesWallet: %v", err)
+			errLog.Printf("drift check: skip timeout_withdraw_prizes: bind PrizesWallet: %v", err)
 		} else if val, err := pw.TimeoutDurationToWithdrawPrizes(&copts); err != nil {
-			errLog.Printf("chain sync: skip timeout_withdraw_prizes: %v", err)
-		} else {
-			changed, err := sw.SyncAdminInt64ParamIfMismatchForContract(
-				"timeout_withdraw_prizes", "cg_adm_timeout_withdraw", "new_timeout",
-				val.Int64(), meta, prizesWalletAddr,
-			)
-			if err != nil {
-				return err
-			}
-			if changed {
-				updated++
-				info.Printf("chain sync: updated timeout_withdraw_prizes => %s", val.String())
-			}
+			errLog.Printf("drift check: skip timeout_withdraw_prizes: %v", err)
+		} else if err := compare("timeout_withdraw_prizes", "cg_adm_timeout_withdraw", "new_timeout", val.String()); err != nil {
+			return drifted, err
 		}
 	}
 
 	if cstAucChangeDiv := readCSTAuctionDurationChangeDivisor(v2, &copts, mechanics); cstAucChangeDiv >= 0 {
-		valStr := fmt.Sprintf("%d", cstAucChangeDiv)
-		changed, err := sw.SyncAdminDecimalParamIfMismatch("cst_dutch_auction_duration_change_divisor", "cg_adm_cst_auclen_chg_div", "new_len", valStr, meta)
-		if err != nil {
-			return err
-		}
-		if changed {
-			updated++
-			info.Printf("chain sync: updated cst_dutch_auction_duration_change_divisor => %s", valStr)
+		if err := compare("cst_dutch_auction_duration_change_divisor", "cg_adm_cst_auclen_chg_div", "new_len", fmt.Sprintf("%d", cstAucChangeDiv)); err != nil {
+			return drifted, err
 		}
 	}
 
-	info.Printf("chain sync complete: %d parameter(s) corrected from live RPC (mechanics v%d)", updated, mechanics)
-	return nil
+	if drifted == 0 {
+		info.Printf("drift check complete: all parameters match chain (mechanics v%d)", mechanics)
+	} else {
+		info.Printf("drift check complete: %d parameter(s) DRIFTED from chain (mechanics v%d) — see error log", drifted, mechanics)
+	}
+	return drifted, nil
 }
 
 func probeContractMechanics(v1 *cosmicgame.CosmicSignatureGame, v2 *cosmicgame.CosmicSignatureGameV2, opts *bind.CallOpts) int64 {

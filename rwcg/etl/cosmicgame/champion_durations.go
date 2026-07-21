@@ -16,12 +16,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/rwcg/contracts/cosmicgame"
+	etlcommon "github.com/PredictionExplorer/augur-explorer/rwcg/etl/common"
 )
 
 const CHAMPION_DURATIONS_CALL_TIMEOUT = 30 * time.Second
@@ -71,8 +73,39 @@ func store_champion_durations_for_round(round_num int64) bool {
 		return true
 	}
 	storagew.Update_round_champion_durations(round_num, endurance, chrono)
+	record_champion_duration_live_updates(round_num, endurance, chrono)
 	Info.Printf("championDurations(%v): endurance=%v chrono=%v (stored in cg_round_stats)\n", round_num, endurance, chrono)
 	return true
+}
+
+// record_champion_duration_live_updates appends the fetched values to
+// cg_live_state_updates, the audit table for state variables that change on-chain
+// without emitting an event. Non-fatal: cg_round_stats already holds the values, and
+// a duplicate observation of an unchanged value is skipped by the DB layer.
+func record_champion_duration_live_updates(round_num, endurance, chrono int64) {
+	blockNum, err := etlcommon.GetCurrentBlockNumber(eclient)
+	if err != nil {
+		Error.Printf("live state update championDurations(%v): can't get chain head: %v\n", round_num, err)
+		return
+	}
+	gameAid := storagew.S.Lookup_or_create_address(cg_contracts.CosmicGameAddr, int64(blockNum), 0)
+	updates := []struct {
+		name  string
+		value int64
+	}{
+		{"endurance_champion_duration", endurance},
+		{"chrono_warrior_duration", chrono},
+	}
+	for _, u := range updates {
+		inserted, err := storagew.Insert_live_state_update_if_changed(u.name, gameAid, round_num, int64(blockNum), fmt.Sprintf("%d", u.value))
+		if err != nil {
+			Error.Printf("live state update %s round=%v: %v\n", u.name, round_num, err)
+			continue
+		}
+		if inserted {
+			Info.Printf("live state update: %s round=%v value=%v block=%v\n", u.name, round_num, u.value, blockNum)
+		}
+	}
 }
 
 // backfill_champion_durations runs at ETL startup and populates champion durations for
@@ -99,6 +132,7 @@ func backfill_champion_durations() {
 			continue // pre-V3 round; keep zeros
 		}
 		storagew.Update_round_champion_durations(round_num, endurance, chrono)
+		record_champion_duration_live_updates(round_num, endurance, chrono)
 		Info.Printf("Champion durations backfill: round %v endurance=%v chrono=%v\n", round_num, endurance, chrono)
 	}
 	Info.Printf("Champion durations backfill: done\n")

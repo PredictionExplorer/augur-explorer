@@ -146,6 +146,7 @@ rwcg/tools/arch_verify
 rwcg/tools/transaction-collector
 rwcg/tools/transaction-collector-verify
 rwcg/tools/scan_cst_auclen_chg_div
+rwcg/tools/transaction_collector
 rwcg/websrv/websrv
 rwcg/etl/cosmicgame/imggen_monitor/imggen_exec
 rwcg/etl/cosmicgame/imggen_monitor/imggen_monitor
