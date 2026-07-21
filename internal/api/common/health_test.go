@@ -80,6 +80,16 @@ func TestReadyzDrainingWinsOverEverything(t *testing.T) {
 	}
 }
 
+func TestSetServingStartsNewLifecycle(t *testing.T) {
+	SetDraining()
+	t.Cleanup(SetServing)
+	SetServing()
+	r := newHealthRouterWithPing(func(context.Context) error { return nil })
+	if w := doGet(r, "/readyz"); w.Code != http.StatusOK {
+		t.Fatalf("readyz after SetServing = %d %s, want 200", w.Code, w.Body.String())
+	}
+}
+
 func TestReadyzDatabasePingResults(t *testing.T) {
 	draining.Store(false)
 	t.Cleanup(func() { draining.Store(false) })

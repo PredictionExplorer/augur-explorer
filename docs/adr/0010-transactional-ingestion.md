@@ -49,6 +49,22 @@ after a successful commit, so a rolled-back block counts nothing; Begin and
 Commit failures surface as the new `commit` stage of
 `rwcg_etl_batch_failures_total`.
 
+### Historical event-log backfill uses the same boundary
+
+`Engine.BackfillContractEvtLogs` also groups fetched logs by block and runs
+each block's layer-1 writes through `Store.InTx`. It deliberately does not
+invoke domain handlers or write a domain progress row, but its block,
+transaction, address-cache and `evt_log` effects now commit together. Stats
+are merged only after commit, so a failed block contributes no inserted or
+skipped counts; earlier committed blocks remain durable and retry is
+idempotent.
+
+The backfill sorts by block, transaction index and log index before opening
+transactions. A malformed or overflowing log is rejected before database
+access, while every log grouped into one block must agree on the block hash.
+The unit remains one block rather than one fetch batch for the same latency
+and partial-progress reasons as live polling.
+
 ### Context-scoped querier (`store.Querier`, `Store.InTx`)
 
 `Store.InTx(ctx, fn)` begins a `pgx.Tx` and passes fn a context carrying
@@ -94,10 +110,9 @@ deterministically.
 
 - A block's rows, its domain writes and its watermark acknowledgment are
   atomic. Idempotent delete-then-insert replay remains in place as defense
-  in depth (and still covers operator tools like the evt_log backfill,
-  which stay non-transactional), but no correctness claim rests on it for
-  the polling loop anymore. The §7 revisit trigger — "if a non-idempotent
-  handler ever appears" — is retired.
+  in depth, but no correctness claim rests on it for the polling loop or the
+  historical evt_log backfill. The §7 revisit trigger — "if a
+  non-idempotent handler ever appears" — is retired.
 - Watermark writes happen once per block-with-events instead of once per
   batch. Total commit work *drops*: one fsync per block replaces one per
   statement. The container benchmark (`BenchmarkIngestBlock`) measures the
@@ -149,3 +164,12 @@ Go's deterministic `testing/synctest` clock. That test exposed and fixed a
 breaker bug: a healthy caught-up poll did not reset the consecutive-failure
 counter, so two separated transient failure streaks could be misclassified
 as one continuous outage.
+
+The 2026-07-21 historical-ingestion sprint extended the proof to
+`BackfillContractEvtLogs`. A trigger fails the later log of a two-log block:
+the block, both transactions, event logs, newly resolved addresses,
+transaction-local cache overlay and `last_block` update all disappear, while
+the prior block and its stats remain committed. Removing the fault and
+retrying stores canonical RLP bytes and converges cleanly. Separate cases pin
+pre-transaction identity validation plus block, transaction lookup/insert
+and event-existence failures.

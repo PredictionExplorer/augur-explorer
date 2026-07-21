@@ -51,7 +51,7 @@ test:
 
 ## test-integration: run tests that need Docker (testcontainers)
 test-integration:
-	go test -race -tags=integration -timeout 20m ./...
+	go test -race -shuffle=on -tags=integration -timeout 20m ./...
 
 ## coverage-check: run the staged-diff and repository coverage gates
 coverage-check:

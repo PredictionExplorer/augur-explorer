@@ -19,6 +19,11 @@ var draining atomic.Bool
 // stays false until the process exits.
 func SetDraining() { draining.Store(true) }
 
+// SetServing starts a new server lifecycle in the ready-to-serve state. The
+// production process calls it once before opening listeners; tests that invoke
+// the process runner repeatedly use the same lifecycle boundary.
+func SetServing() { draining.Store(false) }
+
 // RegisterHealthRoutes adds liveness and readiness probes to the public router.
 // st may be nil, in which case /readyz always reports unready.
 func RegisterHealthRoutes(r *httpx.Router, st *store.Store) {

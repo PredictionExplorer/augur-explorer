@@ -242,6 +242,41 @@ func TestReorgChangesHashesAndDropsState(t *testing.T) {
 	}
 }
 
+func TestClearTransactionsFromPreservesBlockIdentity(t *testing.T) {
+	chain, ec := client(t)
+	to := common.HexToAddress("0x2000000000000000000000000000000000000002")
+	tx := chain.AddTx(6, to, nil)
+	chain.AttachLogs(tx.Hash(), []*types.Log{{
+		Address:     to,
+		Topics:      []common.Hash{{}},
+		BlockNumber: 6,
+		TxHash:      tx.Hash(),
+	}})
+	blockHash := chain.BlockHash(6)
+
+	chain.ClearTransactionsFrom(6)
+
+	if chain.BlockHash(6) != blockHash {
+		t.Fatal("fixture cleanup changed the block hash")
+	}
+	if _, _, err := ec.TransactionByHash(context.Background(), tx.Hash()); !errors.Is(err, ethereum.NotFound) {
+		t.Errorf("cleared transaction: err = %v, want ethereum.NotFound", err)
+	}
+	logs, err := ec.FilterLogs(context.Background(), ethereum.FilterQuery{
+		FromBlock: big.NewInt(6),
+		ToBlock:   big.NewInt(6),
+	})
+	if err != nil {
+		t.Fatalf("FilterLogs: %v", err)
+	}
+	if len(logs) != 0 {
+		t.Fatalf("cleared logs survived: %+v", logs)
+	}
+	if repeated := chain.AddTx(6, to, nil); repeated.Hash() != tx.Hash() {
+		t.Fatalf("re-added transaction hash = %s, want %s", repeated.Hash(), tx.Hash())
+	}
+}
+
 func TestRepeatedEnsureBlockIsStable(t *testing.T) {
 	chain, _ := client(t)
 	h1 := chain.BlockHash(9)

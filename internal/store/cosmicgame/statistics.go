@@ -651,7 +651,8 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]cgmodel.CGRoundClaimSummary
 	// Unclaimed secondary ETH prizes.
 	ethQ := "SELECT d.round_num, a.addr, d.amount/1e18 " +
 		"FROM cg_prize_deposit d JOIN address a ON a.address_id=d.winner_aid " +
-		"WHERE NOT d.claimed"
+		"WHERE NOT d.claimed " +
+		"ORDER BY d.round_num DESC, d.winner_index, d.id"
 	if err := r.scanUnclaimedItems(ctx, ethQ, "ETH", appendItem); err != nil {
 		return nil, err
 	}
@@ -663,7 +664,8 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]cgmodel.CGRoundClaimSummary
 		"JOIN address ta ON ta.address_id=d.token_aid " +
 		"LEFT JOIN cg_prize_claim pc ON pc.round_num=d.round_num " +
 		"LEFT JOIN address w ON w.address_id=pc.winner_aid " +
-		"WHERE c.round_num IS NULL"
+		"WHERE c.round_num IS NULL " +
+		"ORDER BY d.round_num DESC, d.idx, d.id"
 	if err := r.scanUnclaimedNFTItems(ctx, nftQ, appendItem); err != nil {
 		return nil, err
 	}
@@ -674,7 +676,8 @@ func (r *Repo) ClaimsByRound(ctx context.Context) ([]cgmodel.CGRoundClaimSummary
 		"JOIN address ta ON ta.address_id=s.token_aid " +
 		"LEFT JOIN cg_prize_claim pc ON pc.round_num=s.round_num " +
 		"LEFT JOIN address w ON w.address_id=pc.winner_aid " +
-		"WHERE NOT s.claimed"
+		"WHERE NOT s.claimed " +
+		"ORDER BY s.round_num DESC, s.token_aid"
 	if err := r.scanUnclaimedERC20Items(ctx, ercQ, appendItem); err != nil {
 		return nil, err
 	}

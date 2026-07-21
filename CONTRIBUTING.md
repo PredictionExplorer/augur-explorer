@@ -58,8 +58,12 @@ pass.
   `internal/indexer/{cosmicgame,randomwalk}`: a failed block leaves no
   layer-1, domain, trigger-aggregate, address-cache or watermark residue,
   and retry converges to a clean run. RLP format changes must also update
-  the strict archive-compatible `testdata/rlp_corpus.jsonl` replay samples;
-  follow the export workflow in
+  `internal/rlpcorpus` and the strict archive-compatible
+  `testdata/rlp_corpus.jsonl` replay samples. Keep complete transaction
+  siblings adjacent and test both exact-byte installation and production
+  `Engine.Run` ingestion. Fixture-derived samples must stay identified as
+  fixtures; only reviewed `opsctl archive corpus-export` output may be called
+  production-derived. Follow the workflow in
   [docs/operations.md](docs/operations.md#refreshing-the-production-rlp-replay-corpus).
 - **API parity suite** (`internal/api/apitest`): boots the real router against
   a seeded testcontainers database and pins every v1 GET route as a golden

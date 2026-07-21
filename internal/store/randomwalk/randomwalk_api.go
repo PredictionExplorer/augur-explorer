@@ -1092,7 +1092,7 @@ func (r *Repo) Top5TradedTokens(ctx context.Context) ([]rwmodel.TopTradedToken, 
 			num_trades,
 			seed_hex
 		FROM rw_token t
-		ORDER BY num_trades DESC
+		ORDER BY num_trades DESC, token_id ASC
 		LIMIT 5`
 	return queryList(ctx, r, "top 5 traded tokens", 16, query, func(rows pgx.Rows, rec *rwmodel.TopTradedToken) error {
 		return rows.Scan(

@@ -296,6 +296,27 @@ func (c *Chain) Reorg(fromBlock int64) {
 	c.logs = kept
 }
 
+// ClearTransactionsFrom removes transactions and logs at or above fromBlock
+// without changing block headers. Fixture suites use it to make a transaction's
+// block-derived nonce and hash independent of test execution order; Reorg is
+// the separate operation for tests that need replacement block hashes.
+func (c *Chain) ClearTransactionsFrom(fromBlock int64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for hash, entry := range c.txs {
+		if entry.blockNum >= fromBlock {
+			delete(c.txs, hash)
+		}
+	}
+	kept := c.logs[:0]
+	for _, log := range c.logs {
+		if int64(log.BlockNumber) < fromBlock { // #nosec G115 -- fake-chain logs carry small positive block numbers
+			kept = append(kept, log)
+		}
+	}
+	c.logs = kept
+}
+
 // RegisterCall installs the eth_call handler for one contract address.
 func (c *Chain) RegisterCall(to common.Address, handler CallHandler) {
 	c.mu.Lock()

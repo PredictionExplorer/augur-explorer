@@ -189,6 +189,7 @@ func eventFixtures() []fixture {
 func TestEventFixtures(t *testing.T) {
 	for _, fx := range eventFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
+			testChain.ClearTransactionsFrom(fx.block)
 			resetDB(t)
 			base := snapshot(t)
 

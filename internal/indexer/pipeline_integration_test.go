@@ -8,6 +8,7 @@
 package indexer
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 	promtestutil "github.com/prometheus/client_golang/prometheus/testutil"
@@ -381,6 +383,29 @@ func TestInsertEventLogDeduplicatesByBlockAndIndex(t *testing.T) {
 	}
 	if count != 1 {
 		t.Errorf("evt_log rows for (100,4) = %d, want 1", count)
+	}
+	wantRLP, err := rlp.EncodeToBytes(&logTemplate)
+	if err != nil {
+		t.Fatalf("encode source log: %v", err)
+	}
+	var storedRLP []byte
+	if err := e.db.SQL.QueryRow(
+		`SELECT log_rlp FROM evt_log WHERE block_num=100 AND log_index=4`,
+	).Scan(&storedRLP); err != nil {
+		t.Fatalf("read stored RLP: %v", err)
+	}
+	if !bytes.Equal(storedRLP, wantRLP) {
+		t.Fatal("InsertEventLog changed canonical source RLP")
+	}
+	var decoded types.Log
+	if err := rlp.DecodeBytes(storedRLP, &decoded); err != nil {
+		t.Fatalf("decode stored RLP: %v", err)
+	}
+	if decoded.Address != logTemplate.Address ||
+		!bytes.Equal(decoded.Data, logTemplate.Data) ||
+		len(decoded.Topics) != 1 ||
+		decoded.Topics[0] != logTemplate.Topics[0] {
+		t.Fatalf("stored RLP consensus fields changed: got=%+v want=%+v", decoded, logTemplate)
 	}
 }
 

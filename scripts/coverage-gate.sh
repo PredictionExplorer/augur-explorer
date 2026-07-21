@@ -95,7 +95,7 @@ if [[ "$run_tests" == true ]]; then
 		echo "coverage gate: generating integration profile (cache $cache_key)"
 		# The ${arr[@]+...} form keeps `set -u` happy on bash 3.2 (macOS
 		# default) when the array is empty.
-		go test ${race_args[@]+"${race_args[@]}"} -tags=integration -timeout 20m \
+		go test ${race_args[@]+"${race_args[@]}"} -shuffle=on -tags=integration -timeout 20m \
 			-covermode=atomic \
 			-coverprofile="$tmp_profile" \
 			-coverpkg=./cmd/...,./internal/... \

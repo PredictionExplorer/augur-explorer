@@ -195,8 +195,17 @@ func TestPipelineRejectsOverflowingBlockNumber(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
 		t.Errorf("BackfillContractEvtLogs error = %v, want block-number overflow", err)
 	}
-	if stats.LogsSeen != 1 {
-		t.Errorf("backfill saw %d logs before rejecting, want 1", stats.LogsSeen)
+	if stats != (BackfillStats{}) {
+		t.Errorf("backfill reported non-durable work before rejecting: %+v", stats)
+	}
+	if stats, err := e.backfillBlock(context.Background(), nil); err != nil || stats != (BackfillStats{}) {
+		t.Errorf("empty backfill block = %+v, %v", stats, err)
+	}
+	valid := types.Log{BlockNumber: 1}
+	if stats, err := e.backfillBlock(context.Background(), []types.Log{valid, overflowing}); err == nil ||
+		!strings.Contains(err.Error(), "overflows int64") ||
+		stats != (BackfillStats{}) {
+		t.Errorf("later overflow backfill = %+v, %v", stats, err)
 	}
 }
 

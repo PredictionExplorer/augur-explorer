@@ -33,33 +33,36 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-20 (indexer-integrity sprint: ADR-0010's block-atomicity
-claim is now proven through real CosmicGame and RandomWalk handlers,
-plpgsql triggers and production progress adapters; raw archive-format RLP
-bytes replay through both real registries; Go 1.26 `testing/synctest` makes
-retry/cancellation tests deterministic. The new separated-failure test
-found and fixed a circuit-breaker bug: a healthy caught-up poll did not
-reset the failure streak. Every remaining unchecked item is external
-(frontend migration), production-gated (v1 removal, run-loop.sh deletion,
-production-exported RLP samples) or a decision (D1).)
+Measured 2026-07-21 (historical-ingestion integrity sprint: the evt_log-only
+backfill now commits one block at a time through `Store.InTx`; strict RLP
+format ownership moved to `internal/rlpcorpus`, a native
+`opsctl archive corpus-export` emits complete selected transactions, and
+both expanded multi-log corpora replay byte-identically through direct
+archive installation and production `Engine.Run`. Integration shuffle is
+now enforced everywhere and exposed four real determinism defects: stale
+process readiness across runner lifecycles, fixture transaction hashes that
+depended on test order, and missing tie/order clauses in RandomWalk
+top-traded tokens and CosmicGame claim items. Every remaining unchecked item
+is external (frontend migration), production-gated (v1 removal,
+run-loop.sh deletion, production-exported RLP samples) or a decision (D1).)
 Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **188,818** (+1,377 this sprint: real-handler rollback/visibility matrices for both domains, the strict archive-compatible RLP corpus loader/installer, exhaustive parser tests and its determinism/round-trip fuzzer; generated `internal/api/v2/api.gen.go` and `contracts/*/bindings.gen.go` are separate) | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **190,400** (+1,582 this sprint: block-atomic backfill, production-neutral RLP format/export tooling, expanded dual-path corpus suites and shuffle-order regressions; generated `internal/api/v2/api.gen.go` and `contracts/*/bindings.gen.go` are separate) | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
 | snake_case functions | ~700 | **0** — **target met**; `staticcheck ST1003` enforces it permanently | **0** — met | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
 | `os.Exit` in library code (`internal/`) | ~560 | **0 non-test calls** — **target met** (`primitives.Fatalf` was dead code, deleted with the D4 dissolution; the remaining matches are idiomatic test-harness `TestMain`s and doc comments) | **0** (allowed only in `cmd/*/main.go` startup) — met | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **0** — **target met** | **0** — met | `rg -l '^\s*\. "github' --type go internal cmd contracts` |
 | Package-level mutable globals (api + etl) | ~120 | **0 mutable** — **target met**: the v1 modules are injected structs (`cosmicgame.API`, `randomwalk.API`, `faq.Proxy`; `common.Ctx` deleted). What remains at package level is immutable (error sentinels, prometheus registrations) plus the one documented process-wide readiness atomic (`common.draining`) | ~0 (DI everywhere) — met | manual review per package |
 | golangci-lint issues | 433 (first run) | **0** — **target met**, with a stricter set than the baseline (`ST1003` re-enabled; `godot`, `noctx`, `revive` `exported`/`package-comments`; since the lint-frontier sprint `errchkjson`, `exhaustive`, `intrange`, `prealloc`, `reassign`, `thelper`, `tparallel` and `usetesting` at zero findings, **and the last blanket exclusion — gosec G115 — is deleted**: every integer conversion is checked or per-case justified; `gci` + `gofumpt` enforced as formatters; since the one-driver sprint `depguard` denies `lib/pq`; since the modern-idioms sprint `gocritic`, `perfsprint`, `sloglint`, `recvcheck`, `embeddedstructfieldcheck`, `iface`, `mirror`, `exptostd`, `fatcontext` and `nilnesserr` at zero findings, and CI additionally fails on any pending `go fix` modernization) | **0** — met | `golangci-lint run` + `go fix -diff ./...` |
-| Test files | 17 | **374** (+5: two real-handler atomicity matrices, two real-registry RLP corpus replays and the corpus format/validation suite) | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
-| Fuzz targets | 0 | **71** (+1: strict RLP-corpus parser determinism and write/read round-trip; full fleet retained) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
+| Test files | 17 | **379** (+5: backfill atomicity, archive exporter unit/integration, opsctl wiring and the promoted RLP format suite; the two domain corpus files gained production-path cases) | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
+| Fuzz targets | 0 | **71** (strict RLP-corpus totality/determinism now includes a valid multi-log transaction seed; full fleet retained) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
 | Benchmarks | 0 | **9** (41 leaf benchmarks incl. the ADR-0010 ingest-transaction pair; all measured loops on Go 1.24 `b.Loop()` since the modern-idioms sprint, baselines re-recorded in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
-| Coverage on `internal/` (unit) | 2.4% | **66.2%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Legacy `internal/` integration coverage (enforced) | n/a | **92.27%** (29,913/32,420; floor 92.2%) | ratchet only; never lower | `make coverage-check` |
-| Handwritten production `internal/` coverage (enforced) | n/a | **95.30%** (23,656/24,822; floor 95.3%; generated API + test-only harnesses excluded by ADR-0006) | **≥95% — met**; commit gate active | `make coverage-check` |
-| Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **94.92%** (27,184/28,640; floor 94.8%) | **≥90% — met**; ratchet only | `make coverage-check` |
-| Changed executable Go coverage (enforced) | n/a | **100.00%** (3/3; the caught-up breaker reset is fully exercised) | **≥95%** | `make coverage-check` |
+| Coverage on `internal/` (unit) | 2.4% | **66.3%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
+| Legacy `internal/` integration coverage (enforced) | n/a | **92.34%** (30,051/32,545; floor 92.3%) | ratchet only; never lower | `make coverage-check` |
+| Handwritten production `internal/` coverage (enforced) | n/a | **95.38%** (23,871/25,026; floor 95.3%; generated API + test-only harnesses excluded by ADR-0006) | **≥95% — met**; commit gate active | `make coverage-check` |
+| Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **94.99%** (27,420/28,865; floor 94.9%) | **≥90% — met**; ratchet only | `make coverage-check` |
+| Changed executable Go coverage (enforced) | n/a | **100.00%** (76/76) | **≥95%** | `make coverage-check` |
 | Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
 | Routes on stdlib router | 0 | **all** — frozen v1 (188 OpenAPI operations incl. `/version`; **180 now deprecated** with spec flags + RFC 9745 headers, 8 exempt) plus **102 generated v2 operations** (the prior 99-operation read/ranking surface plus public paginated bid bans and apiKey-secured create/delete), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
 | `context.Context` on store methods | 0% | **100% — 474 Repo methods (CosmicGame 385 + RandomWalk 89, incl. the two D15 querier resolvers) + 23 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
@@ -282,18 +285,24 @@ FK resolution to natural keys — addresses, tx hashes, `evt:block/logindex`).
       (UNIQUE(evtlog_id) aborts); re-processing is pinned via the reorg test.
 - [x] RLP storage/replay safety net: synthetic fixtures round-trip through
       `evt_log.log_rlp`, and the indexer-integrity sprint made the byte
-      boundary explicit. Strict archive-shaped JSONL corpora reject malformed
-      JSON/hex/RLP, inconsistent contract/topic fields, duplicate chain
-      identities and oversized lines; fixture-derived CosmicGame and
-      RandomWalk samples are inserted with their exact raw `log_rlp` bytes
-      (no re-encode) and dispatched through the real registries, handlers and
-      triggers. The format and export workflow are documented and tested.
-      *(2026-07-20)*
+      boundary explicit. Extended 2026-07-21: production-neutral
+      `internal/rlpcorpus` rejects malformed JSON/hex/RLP, inconsistent
+      contract/topic fields, duplicates, split transaction groups,
+      non-increasing sibling indexes and oversized lines. The CosmicGame
+      corpus now includes a complete three-log first-bid transaction and
+      RandomWalk includes offer plus two-log sale; both replay in two modes:
+      exact raw-byte installation and decoded RPC logs through
+      `Engine.Run`/`InsertEventLog`, with byte-identical stored RLP and the
+      same real handler/trigger outcomes. `opsctl archive corpus-export`
+      replaces the hand-written psql renderer: explicit transaction hashes
+      fetch every sibling row, preserve request/log order and validate the
+      entire output before writing. The installer itself is one transaction.
 - [~] Production RLP replay samples: use the documented
-      `opsctl archive export` → `arch_evtlog` JSONL workflow to extend the
-      committed corpora with complete representative production transactions.
-      The harness is ready; obtaining and reviewing the samples still needs
-      production access and remains the only open §4.3 sub-item.
+      `opsctl archive export` → `opsctl archive corpus-export` workflow to
+      extend the committed corpora with complete representative production
+      transactions. The engineering path is fully automated and tested;
+      obtaining and reviewing real samples still needs production access and
+      remains the only open §4.3 sub-item.
 - [x] Reorg simulation: `TestReorgRollbackAndReplay` (both ETLs) reorgs the
       fake chain mid-story, drives `EnsureBlockExists` → `HandleChainSplit`,
       pins the rolled-back state as a golden (trigger delete paths reverse
@@ -1352,7 +1361,11 @@ binaries are pure wiring.
       loop itself is covered by new unit tests (breaker, backoff, batch
       adaptation, caught-up/shutdown) and integration tests (end-to-end
       batches, transient-failure recovery, mid-block failure regression,
-      shutdown-mid-batch, reorg-through-the-loop, backfill idempotence).)*
+      shutdown-mid-batch, reorg-through-the-loop, backfill idempotence).
+      Extended 2026-07-21: the evt_log-only backfill now sorts and commits
+      one block at a time through `Store.InTx`; a later-log failure proves
+      zero block/transaction/event/address-cache residue, prior-block
+      durability, committed-only stats and clean retry convergence.)*
 
 ---
 
@@ -1647,7 +1660,8 @@ done.**
 | D15 | ETL transaction granularity and querier plumbing (supersedes the §7 deferral) | per-event tx / per-block tx / per-batch tx; explicit `pgx.Tx` parameters / context-scoped querier | **decided 2026-07-18: one transaction per block with events, carried by the context** ([ADR-0010](adr/0010-transactional-ingestion.md)) — the block boundary is the watermark's only safe unit, batches can span RPC-heavy minutes, and per-block commits keep the engine's partial-progress semantics while making data + watermark atomic (fewer fsyncs than per-statement autocommit; the container benchmark puts the wrapper at ~9% per block). `Store.InTx` carries the transaction through the context with an owner check, so all 472 repo methods join without signature changes and a foreign Store can never adopt another Store's transaction; explicit `pgx.Tx` threading through 85 handlers was rejected as signature churn with no added safety. The address cache gained a per-transaction overlay (flush on commit, discard on rollback) and `ON CONFLICT DO NOTHING` creation. Empty tail ranges keep their plain watermark write; the v2 ranking writes keep their explicit-transaction helpers. |
 | D16 | Ops-toolchain PostgreSQL driver (the last `database/sql` + `lib/pq` code: `internal/ops/*`, `internal/toolutil`, the `opsctl` commands and the freezer DB-verify harness) | keep lib/pq / swap the driver under `database/sql` (pgx `stdlib`) / convert to pgx-native | **decided 2026-07-18: pgx-native everywhere; lib/pq deleted** — the ops engines moved onto narrow per-package pgx `Querier` interfaces (the `freezer/verify` precedent; `*pgxpool.Pool` satisfies all of them), `pq.Array` became native slice binding, node-fill's nine `*sql.Stmt`s dissolved into pgx's per-connection statement cache (`PrepareWriter` no longer touches the database), and the `stdlib.OpenDBFromPool` bridge died — one pgxpool serves both the `store.Store` address cache and the archive statements. The stdlib-driver swap was rejected: it would keep two query surfaces and the scripted `database/sql` driver fakes alive for no benefit. SQL is byte-identical except three `::text` casts on the NUMERIC columns archive export copies (`transaction.value`/`gas_price`, `block.cash_flow`) — the cast reproduces exactly the server-side text rendering the text-protocol driver received, pinned by the export integration test. `github.com/lib/pq` left `go.mod`; a `depguard` rule denies it permanently (the gin-removal ratchet class). `database/sql` value types (`sql.NullString`, `sql.NullInt64`) remain where pgx scans them natively — they are stdlib, driver-free. |
 | D17 | Benchmark loop idiom (41 leaf benchmarks on `for range b.N`) | keep `b.N` loops / adopt Go 1.24 `b.Loop()` with a full re-baseline | **decided 2026-07-18: `b.Loop()` everywhere, baselines re-recorded** — `b.Loop` keeps the benchmarked call and its results alive (no dead-code elimination skew) and excludes per-iteration bookkeeping, so its numbers are more truthful; upstream deliberately leaves the `bloop` fixer out of the default `go fix` suite precisely because converted numbers can shift (golang/go#74967), which is why the conversion is paired with re-measured medians in [benchmarks.md](benchmarks.md) rather than assumed comparable. The two `RunParallel` rate-limiter benchmarks keep `pb.Next()` (the parallel API has no `b.Loop` equivalent). |
-| D18 | Production RLP replay corpus format | SQL dump / one raw-RLP file per event / strict archive-shaped JSONL | **decided 2026-07-20: strict archive-shaped JSONL** — each line mirrors `arch_evtlog` (`project`, block/event/log identity, tx hash, contract, topic0 and 0x RLP). JSONL is diffable, streamable and directly emitted from an `opsctl archive export` destination; the loader caps lines at 2 MiB and rejects unknown fields, malformed identities/RLP, column-vs-payload disagreement and duplicate chain identities before installing exact bytes. Complete sibling logs stay adjacent so handlers that inspect their transaction work unchanged. Fixture-derived samples keep CI live; production-exported additions remain gated on access and review. |
+| D18 | Production RLP replay corpus format | SQL dump / one raw-RLP file per event / strict archive-shaped JSONL | **decided 2026-07-20: strict archive-shaped JSONL** — each line mirrors `arch_evtlog` (`project`, block/event/log identity, tx hash, contract, topic0 and 0x RLP). JSONL is diffable and streamable; since 2026-07-21 `opsctl archive corpus-export` selects explicit complete transactions, preserves raw bytes/order and validates with the production-neutral `internal/rlpcorpus` package before writing. The loader caps lines at 2 MiB and rejects unknown fields, malformed identities/RLP, column-vs-payload disagreement, duplicate chain identities, split transaction groups and descending sibling indexes. Fixture-derived samples keep CI live; production-exported additions remain gated on access and review. |
+| D19 | Historical evt_log backfill transaction granularity | autocommit per statement / transaction per block / transaction per fetch batch | **decided 2026-07-21: transaction per block through `Store.InTx`** — the backfill shares live ingestion's smallest truthful chain boundary without holding one transaction across a large RPC batch. Block/transaction/event/address-cache writes and the base `last_block` update commit or vanish together; stats merge only after commit, prior blocks survive a later failure and reruns remain idempotent. Pre-validating and sorting fetched logs before opening the transaction rejects overflow/mixed block identities without database access. |
 
 ---
 
@@ -1655,6 +1669,7 @@ done.**
 
 | Date | Commit | What landed |
 |---|---|---|
+| 2026-07-21 | — | **Historical-ingestion integrity sprint (§4.3/§7 hardening; D18 extended, D19 decided; ADR-0010 extended):** `BackfillContractEvtLogs` now validates/sorts fetched logs before database access and commits each block through `Store.InTx`; durable stats merge only after commit. A later-log trigger failure proves the failed block leaves no block/transaction/event/address/address-cache/`last_block` residue, an earlier block survives, and retry converges with byte-identical RLP; focused cases cover overflow/mixed identities, block verification, transaction lookup/insert, event existence, cancellation, batch boundaries and duplicate reruns. **RLP production path:** format ownership moved from test-only code to `internal/rlpcorpus`; strict JSONL now enforces contiguous transaction groups and increasing sibling indexes. `opsctl archive corpus-export --project … --tx-hash …` reads every selected transaction sibling from `arch_evtlog`, preserves exact bytes and deterministic request/log order, fails before output on malformed/missing data, and replaces the manual psql renderer. CosmicGame and RandomWalk fixture corpora grew from one row each to four (three-log first bid; offer + two-log sale); exact installation is atomic, while parallel suites decode the same bytes onto `testchain` and prove `Engine.Run`/`InsertEventLog` stores canonical bytes and reaches matching real handler/trigger outcomes. **Permanent shuffle ratchet:** integration commands in Make, coverage and CI now use `-shuffle=on`. Repeated randomized runs exposed and fixed stale apiserver drain state across runner lifecycles, shared-chain fixture transaction hashes that depended on package test order (new header-preserving transaction cleanup), and missing deterministic ties/order clauses in RandomWalk top-traded tokens and CosmicGame claim items; zero goldens changed. **Verification:** build, vet, generation drift, lint (0), both modernize gates, full race+shuffle unit/integration suites and coverage pass; all 71 fuzz targets pass a 1s smoke run and the changed `FuzzLoad` parser passes a dedicated 10s run. Metrics: LOC **188,818 → 190,400**, test files **374 → 379**, unit internal **66.3%**, legacy internal **92.34%** (30,051/32,545; floor 92.2→92.3), handwritten internal **95.38%** (23,871/25,026), all production **94.99%** (27,420/28,865; floor 94.8→94.9), changed executable Go **100%** (76/76). |
 | 2026-07-20 | — | **Indexer-integrity sprint (§4.3/§7 hardening; D18 decided; ADR-0010 verification completed):** production-faithful harnesses now drive `Engine.Run` through the real CosmicGame and RandomWalk registries, handlers, repositories, progress adapters and plpgsql triggers. Representative multi-log bid/sale blocks fail after earlier handler writes; the failed block leaves zero layer-1/domain/aggregate/address-cache/watermark residue, a prior block in the fetched range survives, retry converges byte-for-byte to a clean control, and second-connection snapshots prove handler rows plus watermark become visible only at commit. **RLP safety net:** strict archive-shaped JSONL (`RLPCorpusEntry`) validates bounded JSON/hex/RLP, chain identities, contract/topic consistency and duplicates; `InstallRLPCorpus` inserts exact exported bytes without re-encoding, and committed fixture-derived samples dispatch through both real registries and triggers. The `opsctl archive export` → reviewed JSONL workflow is documented; production samples remain access-gated. `FuzzLoadRLPCorpus` pins totality, determinism and valid write/read closure (fleet 70 → 71; dedicated 10s run green). **Deterministic retries:** Go 1.26 `testing/synctest` replaces wall-clock coordination for caught-up/backoff cancellation, timer boundaries and separated failure streaks; the matrix found and fixed a real breaker bug — a healthy caught-up poll did not reset the consecutive-failure count. **Verification:** all 71 fuzz targets ran for 10s; one pre-existing cursor fuzzer hit only the Go worker stop deadline and passed a dedicated 30s reproduction (no crasher). Build, vet, generation drift, lint (0), modernize gates, govulncheck (0 reachable), full race+shuffle unit and race integration suites, repeated integrity matrices and the authoritative coverage gate pass; all existing goldens remain byte-identical. Metrics: LOC **187,441 → 188,818**, test files **369 → 374**, legacy internal **92.27%** (29,913/32,420), handwritten internal **95.30%** (23,656/24,822), all production **94.92%** (27,184/28,640), changed executable Go **100%** (3/3). |
 | 2026-07-06 | `85941dba` | Foundation: layout, Go 1.26, CI, hardening, docs (see §3) |
 | 2026-07-06 | `a7971755` | **Fuzz fleet sprint (§4.4 + §4.6 nightly CI):** 28 fuzz targets + ~20 accompanying unit/property test funcs across 15 packages; `scripts/fuzz-all.sh`, `make fuzz-smoke`, nightly `.github/workflows/fuzz.yml`. Testability extractions (behavior-preserving, pinned by unit tests): metadata host dispatch → `metadataHostServesCosmicSignature` (`cmd/apiserver`), ORDER BY whitelists → `roiLeaderboardOrderClause` / `activeOffersOrderClause`. **Bug found & fixed:** corrupt freezer index entry could OOM-kill the process via an up-to-2^48-byte allocation in `FreezerReader.readBytes` / `WorkerReader.readBytes`; both now bounds-check against the data end (`TestReadItemCorruptIndexHugeOffset`). Test files 19 → 39. |

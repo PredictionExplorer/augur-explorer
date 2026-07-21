@@ -55,7 +55,7 @@ jobs:
           go-version-file: go.mod
       - name: Run integration tests (testcontainers)
         run: |
-          go test -race -tags=integration -timeout 20m \
+          go test -race -shuffle=on -tags=integration -timeout 20m \
             -covermode=atomic \
             -coverprofile=coverage-integration.out \
             -coverpkg=./cmd/...,./internal/... \

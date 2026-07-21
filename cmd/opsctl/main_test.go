@@ -14,7 +14,7 @@ func TestRootCommandTree(t *testing.T) {
 	t.Parallel()
 	root := newRootCmd()
 	want := map[string][]string{
-		"archive":      {"export", "node-fill", "verify"},
+		"archive":      {"corpus-export", "export", "node-fill", "verify"},
 		"assets":       {"gen-thumbnails", "inventory", "verify-token-images"},
 		"db":           {"evtlog-diff", "verify"},
 		"scan":         {"cst-auction-len"},
@@ -58,6 +58,7 @@ func TestRequiredFlagsFailBeforeExternalSetup(t *testing.T) {
 		args []string
 		want string
 	}{
+		{name: "archive corpus export", args: []string{"archive", "corpus-export"}, want: `required flag(s) "db", "project", "tx-hash"`},
 		{name: "archive export", args: []string{"archive", "export"}, want: `required flag(s) "dst", "project", "src"`},
 		{name: "archive node fill", args: []string{"archive", "node-fill"}, want: `required flag(s) "db", "project"`},
 		{name: "archive verify", args: []string{"archive", "verify"}, want: `required flag(s) "db", "project"`},

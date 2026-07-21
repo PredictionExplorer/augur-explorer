@@ -267,6 +267,10 @@ series simply lack it.
   stage (transaction begin/commit failures); the other stages — `fetch`,
   `chain_head`, `block`, `transaction`, `event_log`, `process`, `watermark`
   — keep their meanings.
+- `cgctl backfill-dao-evtlog` uses the same one-transaction-per-block boundary
+  for its layer-1 writes. A failed block contributes no durable rows or
+  success stats; prior blocks stay committed and rerunning the range is
+  idempotent.
 - `GET /readyz` returns 503 whenever the database is unreachable — wire it
   into your load balancer health checks.
 
@@ -275,12 +279,14 @@ series simply lack it.
 The committed
 `internal/indexer/{cosmicgame,randomwalk}/testdata/rlp_corpus.jsonl` files use
 the same fields as `arch_evtlog`, with `log_rlp` rendered as 0x-prefixed hex.
-They are strict test inputs: malformed JSON/hex/RLP, unknown fields,
-inconsistent contract/topic data, duplicate `(tx_hash, log_index)` identities
-and lines over 2 MiB are rejected before PostgreSQL is touched.
+`internal/rlpcorpus` owns the strict format: malformed JSON/hex/RLP, unknown
+fields, inconsistent contract/topic data, duplicate `(tx_hash, log_index)`
+identities, split transaction groups, descending sibling log indexes and
+lines over 2 MiB are rejected before PostgreSQL is touched.
 
-Export one project into a fresh scratch database, then render selected rows
-as JSONL:
+Export one project into a fresh scratch database. Select a small set of
+representative transaction hashes during review, then let the native exporter
+include every archived sibling log and render canonical JSONL:
 
 ```bash
 opsctl archive export \
@@ -288,30 +294,24 @@ opsctl archive export \
   --src "$PRODUCTION_DATABASE_URL" \
   --dst "$SCRATCH_DATABASE_URL"
 
-psql "$SCRATCH_DATABASE_URL" -XAt -v project=cosmicgame -c "
-  SELECT json_build_object(
-    'project', :'project',
-    'blockNum', block_num,
-    'eventId', COALESCE(evt_id, 0),
-    'logIndex', log_index,
-    'txHash', btrim(tx_hash),
-    'contractAddress', btrim(contract_addr),
-    'topic0Sig', btrim(topic0_sig),
-    'logRlp', '0x' || encode(log_rlp, 'hex')
-  )::text
-  FROM arch_evtlog
-  ORDER BY evt_id NULLS LAST, tx_hash, log_index
-" > /tmp/cosmicgame-rlp-corpus.jsonl
+opsctl archive corpus-export \
+  --db "$SCRATCH_DATABASE_URL" \
+  --project cosmicgame \
+  --tx-hash "$TX_HASH_1" \
+  --tx-hash "$TX_HASH_2" \
+  > /tmp/cosmicgame-rlp-corpus.jsonl
 ```
 
-Use `project=randomwalk` and a fresh destination for the RandomWalk corpus.
-Select a small representative set of complete transactions (keep every
-sibling log a handler may query), review the public-chain payloads, and copy
-the result into the matching `testdata/rlp_corpus.jsonl`. Validate both the
-format and real-handler replay before committing:
+Use `--project randomwalk` and a fresh destination for the RandomWalk corpus.
+The transaction hashes are repeatable and their order is preserved; a missing
+transaction, malformed archive row or partial query is a hard error, and the
+summary goes to stderr so stdout remains clean JSONL. Review the public-chain
+payloads, then copy the result into the matching `testdata/rlp_corpus.jsonl`.
+Validate the format, exact-byte direct replay and production `Engine.Run`
+path before committing:
 
 ```bash
-go test ./internal/testutil -run RLPCorpus
+go test ./internal/rlpcorpus ./internal/testutil
 go test -tags=integration \
   ./internal/indexer/cosmicgame ./internal/indexer/randomwalk \
   -run RLPCorpus
@@ -327,7 +327,7 @@ production samples.
 | Task | Command |
 |------|---------|
 | Verify DB contents against chain | `opsctl db verify`, `opsctl db evtlog-diff` |
-| Export/verify RLP archives | `opsctl archive export` / `verify` / `node-fill` |
+| Export/verify RLP archives and corpora | `opsctl archive export` / `corpus-export` / `verify` / `node-fill` |
 | Check NFT asset presence | `opsctl assets inventory`, `imggen-monitor` |
 | Regenerate thumbnails | `opsctl assets gen-thumbnails` |
 | API smoke test | `opsctl smoketest` |

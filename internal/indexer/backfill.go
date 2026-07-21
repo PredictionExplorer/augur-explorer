@@ -3,11 +3,14 @@
 package indexer
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
@@ -19,9 +22,16 @@ type BackfillStats struct {
 	Skipped  int
 }
 
+func (s *BackfillStats) add(other BackfillStats) {
+	s.LogsSeen += other.LogsSeen
+	s.Inserted += other.Inserted
+	s.Skipped += other.Skipped
+}
+
 // BackfillContractEvtLogs inserts missing evt_log rows for contract logs in
 // [fromBlock, toBlock]. Domain event processors are not invoked; callers use
-// this for contracts whose events are stored in evt_log only.
+// this for contracts whose events are stored in evt_log only. Each block is
+// committed atomically, and returned statistics describe committed work only.
 func (e *Engine) BackfillContractEvtLogs(
 	ctx context.Context,
 	contracts []common.Address,
@@ -43,62 +53,117 @@ func (e *Engine) BackfillContractEvtLogs(
 			return st, fmt.Errorf("FilterLogs [%d..%d]: %w", from, to, err)
 		}
 
-		for i := range logs {
-			log := &logs[i]
-			if log.Removed {
-				continue
+		active := make([]types.Log, 0, len(logs))
+		for _, log := range logs {
+			if !log.Removed {
+				active = append(active, log)
 			}
-			st.LogsSeen++
+		}
+		slices.SortStableFunc(active, func(a, b types.Log) int {
+			return cmp.Or(
+				cmp.Compare(a.BlockNumber, b.BlockNumber),
+				cmp.Compare(a.TxIndex, b.TxIndex),
+				cmp.Compare(a.Index, b.Index),
+			)
+		})
 
-			blockNum, err := logBlockNum(log)
+		for first := 0; first < len(active); {
+			last := first + 1
+			for last < len(active) && active[last].BlockNumber == active[first].BlockNumber {
+				last++
+			}
+			blockStats, err := e.backfillBlock(ctx, active[first:last])
 			if err != nil {
-				return st, err
+				return st, fmt.Errorf("backfill block %d: %w", active[first].BlockNumber, err)
 			}
-
-			txID, err := e.store.TransactionIDByHash(ctx, log.TxHash.Hex())
-			if err != nil && !errors.Is(err, store.ErrNotFound) {
-				return st, fmt.Errorf("transaction id lookup tx=%s: %w", log.TxHash.Hex(), err)
-			}
-			if err == nil && txID > 0 {
-				exists, err := e.store.EvtLogExists(ctx, blockNum, txID, int(log.Index))
-				if err != nil {
-					return st, fmt.Errorf("evt_log existence check block=%d tx=%d log_index=%d: %w",
-						log.BlockNumber, txID, log.Index, err)
-				}
-				if exists {
-					st.Skipped++
-					continue
-				}
-			}
-
-			if _, err := e.EnsureBlockExists(ctx, blockNum, log.BlockHash.Hex()); err != nil {
-				return st, fmt.Errorf("EnsureBlockExists block=%d: %w", log.BlockNumber, err)
-			}
-
-			txID, _, err = e.EnsureTransactionExists(ctx, log.TxHash, blockNum)
-			if err != nil {
-				return st, fmt.Errorf("EnsureTransactionExists tx=%s: %w", log.TxHash.Hex(), err)
-			}
-
-			exists, err := e.store.EvtLogExists(ctx, blockNum, txID, int(log.Index))
-			if err != nil {
-				return st, fmt.Errorf("evt_log existence check block=%d tx=%d log_index=%d: %w",
-					log.BlockNumber, txID, log.Index, err)
-			}
-			if exists {
-				st.Skipped++
-				continue
-			}
-
-			if _, err := e.InsertEventLog(ctx, *log, txID); err != nil {
-				return st, fmt.Errorf("InsertEventLog block=%d tx=%s log_index=%d: %w",
-					log.BlockNumber, log.TxHash.Hex(), log.Index, err)
-			}
-			st.Inserted++
+			st.add(blockStats)
+			first = last
 		}
 
 		from = to + 1
 	}
 
 	return st, nil
+}
+
+func (e *Engine) backfillBlock(ctx context.Context, logs []types.Log) (BackfillStats, error) {
+	if len(logs) == 0 {
+		return BackfillStats{}, nil
+	}
+
+	blockNum, err := logBlockNum(&logs[0])
+	if err != nil {
+		return BackfillStats{}, err
+	}
+	blockHash := logs[0].BlockHash
+	for i := range logs {
+		currentNum, err := logBlockNum(&logs[i])
+		if err != nil {
+			return BackfillStats{}, err
+		}
+		if currentNum != blockNum || logs[i].BlockHash != blockHash {
+			return BackfillStats{}, fmt.Errorf(
+				"inconsistent block identity at log %d: got block=%d hash=%s, want block=%d hash=%s",
+				i,
+				currentNum,
+				logs[i].BlockHash.Hex(),
+				blockNum,
+				blockHash.Hex(),
+			)
+		}
+	}
+
+	var blockStats BackfillStats
+	err = e.store.InTx(ctx, func(txCtx context.Context) error {
+		if _, err := e.EnsureBlockExists(txCtx, blockNum, blockHash.Hex()); err != nil {
+			return fmt.Errorf("EnsureBlockExists block=%d: %w", blockNum, err)
+		}
+
+		pending := BackfillStats{LogsSeen: len(logs)}
+		for i := range logs {
+			log := &logs[i]
+			txID, err := e.store.TransactionIDByHash(txCtx, log.TxHash.Hex())
+			switch {
+			case errors.Is(err, store.ErrNotFound):
+				txID, _, err = e.EnsureTransactionExists(txCtx, log.TxHash, blockNum)
+				if err != nil {
+					return fmt.Errorf("EnsureTransactionExists tx=%s: %w", log.TxHash.Hex(), err)
+				}
+			case err != nil:
+				return fmt.Errorf("transaction id lookup tx=%s: %w", log.TxHash.Hex(), err)
+			}
+
+			exists, err := e.store.EvtLogExists(txCtx, blockNum, txID, int(log.Index))
+			if err != nil {
+				return fmt.Errorf(
+					"evt_log existence check block=%d tx=%d log_index=%d: %w",
+					blockNum,
+					txID,
+					log.Index,
+					err,
+				)
+			}
+			if exists {
+				pending.Skipped++
+				continue
+			}
+
+			if _, err := e.InsertEventLog(txCtx, *log, txID); err != nil {
+				return fmt.Errorf(
+					"InsertEventLog block=%d tx=%s log_index=%d: %w",
+					blockNum,
+					log.TxHash.Hex(),
+					log.Index,
+					err,
+				)
+			}
+			pending.Inserted++
+		}
+		blockStats = pending
+		return nil
+	})
+	if err != nil {
+		return BackfillStats{}, err
+	}
+	return blockStats, nil
 }
