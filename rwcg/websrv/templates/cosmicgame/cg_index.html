@@ -276,6 +276,14 @@
 					<div class="info-label">Late-Bid Premium Exponent</div>
 					<div class="info-value">{{.V3Config.RoundLateBidPremiumExponent}}</div>
 				</div>
+				<div class="info-item">
+					<div class="info-label">CST Auction Restart Floor (derived)</div>
+					<div class="info-value">{{.V3Config.CstAuctionPriceMinLimitEth}} CST</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">CST Reward / Prize-Time Increment (derived)</div>
+					<div class="info-value">{{.V3Config.CstRewardPerTimeIncrementEth}} CST</div>
+				</div>
 			</div>
 		</div>
 		{{end}}

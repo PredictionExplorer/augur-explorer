@@ -2,6 +2,7 @@ package cosmicgame
 
 import (
 	"errors"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -80,11 +81,18 @@ func resolveMechanicsVersion(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2,
 }
 
 // readRoundStartCSTAuctionSetting returns the live CST round-start auction parameter.
-// V1: cstDutchAuctionDurationDivisor (divisor). V2/V3: cstDutchAuctionDuration (seconds), same storage slot.
+// V1: cstDutchAuctionDurationDivisor (divisor). V2: cstDutchAuctionDuration (seconds), same storage slot.
+// V3: the cstDutchAuctionDuration slot is an inert leftover; the real (emergent) duration is
+// derived from the wage-rate price decay and exposed via getCstDutchAuctionDurations().
 func readRoundStartCSTAuctionSetting(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2, v3 *CosmicSignatureGameV3, opts *bind.CallOpts) int64 {
 	switch getContractMechanicsVersion() {
-	case contractMechanicsV3, contractMechanicsV2:
-		// V3 keeps the V2 selector, so the V2 binding reads it fine on a V3 contract.
+	case contractMechanicsV3:
+		if v3 != nil {
+			if duration, _, err := v3.GetCstDutchAuctionDurations(opts); err == nil {
+				return duration.Int64()
+			}
+		}
+	case contractMechanicsV2:
 		if v2 != nil {
 			if val, err := v2.CstDutchAuctionDuration(opts); err == nil {
 				return val.Int64()
@@ -133,8 +141,9 @@ func readTokenReward(v1 *CosmicSignatureGame, v2 *CosmicSignatureGameV2, v3 *Cos
 }
 
 // V3LiveConfig holds the live values of the 5 V3-only configuration parameters (ISystemEventsV3),
-// plus the derived late-bid window duration. IsV3 is false when the contract is still V1/V2, in which
-// case the other fields are unset and the dashboard hides the V3 section.
+// plus derived values (late-bid window, CST auction restart floor, per-increment CST accrual).
+// IsV3 is false when the contract is still V1/V2, in which case the other fields are unset and
+// the dashboard hides the V3 section.
 type V3LiveConfig struct {
 	IsV3                                bool
 	RoundLateBidDurationDivisor         string // roundLateBidDurationDivisor
@@ -143,6 +152,15 @@ type V3LiveConfig struct {
 	RoundLateBidPremiumExponent         int64  // roundLateBidPricePremiumAmountExponent
 	LastBidderBidCstRewardAmountPercentage int64 // lastBidderBidCstRewardAmountPercentage (0..100; share minted to the outbid bidder)
 	MainPrizeNumCosmicSignatureNfts     int64  // mainPrizeNumCosmicSignatureNfts
+	CstAuctionPriceMinLimit             string  // getCstDutchAuctionBeginningBidPriceMinLimit() — derived restart floor, CST wei (180 CST at defaults)
+	CstAuctionPriceMinLimitEth          float64
+	CstRewardPerTimeIncrement           string  // getBidCstRewardAmountPerMainPrizeTimeIncrement() — CST accrued per main-prize time increment, wei (60 CST at defaults)
+	CstRewardPerTimeIncrementEth        float64
+}
+
+func weiToEthFloat(val *big.Int) float64 {
+	f, _ := new(big.Float).Quo(new(big.Float).SetInt(val), big.NewFloat(1e18)).Float64()
+	return f
 }
 
 // readV3Config reads the 5 new V3 configuration getters (and the derived late-bid window). Returns
@@ -170,6 +188,14 @@ func readV3Config(v3 *CosmicSignatureGameV3, opts *bind.CallOpts) V3LiveConfig {
 	}
 	if val, err := v3.MainPrizeNumCosmicSignatureNfts(opts); err == nil {
 		cfg.MainPrizeNumCosmicSignatureNfts = val.Int64()
+	}
+	if val, err := v3.GetCstDutchAuctionBeginningBidPriceMinLimit(opts); err == nil {
+		cfg.CstAuctionPriceMinLimit = val.String()
+		cfg.CstAuctionPriceMinLimitEth = weiToEthFloat(val)
+	}
+	if val, err := v3.GetBidCstRewardAmountPerMainPrizeTimeIncrement(opts); err == nil {
+		cfg.CstRewardPerTimeIncrement = val.String()
+		cfg.CstRewardPerTimeIncrementEth = weiToEthFloat(val)
 	}
 	return cfg
 }
