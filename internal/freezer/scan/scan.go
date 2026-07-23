@@ -229,7 +229,8 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 	var totalErrors atomic.Int64
 
 	progressDone := make(chan struct{})
-	go func() {
+	var progressWG sync.WaitGroup
+	progressWG.Go(func() {
 		ticker := time.NewTicker(progressEvery)
 		defer ticker.Stop()
 		for {
@@ -250,55 +251,27 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 				return
 			}
 		}
-	}()
+	})
+	stopProgress := func() {
+		close(progressDone)
+		progressWG.Wait()
+	}
 
-	chunkChan := make(chan int, len(chunks))
-	resultChan := make(chan chunkResult, workers)
-
-	var wg sync.WaitGroup
-	for range workers {
-		wg.Go(func() {
-			workerReader := reader.NewWorkerReader()
-			defer func() { _ = workerReader.Close() }() // best-effort close of read-only handles
-
-			for chunkIdx := range chunkChan {
-				if ctx.Err() != nil {
-					return
-				}
-				chunk := chunks[chunkIdx]
+	results, chunkErr := runChunks(ctx, chunks, workers, !opts.BestEffort, func() (chunkProcessor, func()) {
+		workerReader := reader.NewWorkerReader()
+		return func(runCtx context.Context, chunkIdx int, chunk freezerscanner.BlockRange) chunkResult {
 				tempFile := filepath.Join(tempDir, fmt.Sprintf("chunk-%08d.jsonl", chunkIdx))
-				err := processChunk(ctx, workerReader, chunk, tempFile, opts,
+				err := processChunk(runCtx, workerReader, chunk, tempFile, opts,
 					&processedBlocks, &totalMatched, &totalLogs, &totalErrors, errorLog)
-				resultChan <- chunkResult{chunkIdx: chunkIdx, tempFile: tempFile, err: err}
+				return chunkResult{chunkIdx: chunkIdx, tempFile: tempFile, err: err}
+			}, func() {
+				_ = workerReader.Close() // best-effort close of read-only handles
 			}
-		})
+	})
+	stopProgress()
+	if chunkErr != nil {
+		return stats, chunkErr
 	}
-
-	go func() {
-		defer close(chunkChan)
-		for i := range chunks {
-			select {
-			case chunkChan <- i:
-			case <-ctx.Done():
-				return // stop queueing further chunks on interrupt
-			}
-		}
-	}()
-
-	go func() {
-		wg.Wait()
-		close(resultChan)
-	}()
-
-	results := make([]chunkResult, 0, len(chunks))
-	for result := range resultChan {
-		results = append(results, result)
-		if result.err != nil && !opts.BestEffort {
-			close(progressDone)
-			return stats, fmt.Errorf("chunk %d failed: %w", result.chunkIdx, result.err)
-		}
-	}
-	close(progressDone)
 
 	// Merge in chunk order so the output stays block-sorted.
 	slices.SortFunc(results, func(a, b chunkResult) int { return cmp.Compare(a.chunkIdx, b.chunkIdx) })
@@ -317,6 +290,70 @@ func Run(ctx context.Context, reader *freezerscanner.ParallelReader, opts Option
 		stats.ProcessedBlocks, elapsed, float64(stats.ProcessedBlocks)/elapsed.Seconds())
 	logf("Total logs: %d, Matched: %d, Errors: %d", stats.TotalLogs, stats.MatchedLogs, stats.Errors)
 	return stats, nil
+}
+
+// runChunks owns the worker pool for one scan. On the first fail-fast error it
+// cancels in-flight work but keeps draining results until every worker has
+// returned, so callers can safely remove worker-owned temporary files.
+type chunkProcessor func(context.Context, int, freezerscanner.BlockRange) chunkResult
+
+func runChunks(
+	ctx context.Context,
+	chunks []freezerscanner.BlockRange,
+	workers int,
+	failFast bool,
+	newProcessor func() (chunkProcessor, func()),
+) ([]chunkResult, error) {
+	runCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	chunkChan := make(chan int, len(chunks))
+	resultChan := make(chan chunkResult, workers)
+
+	var wg sync.WaitGroup
+	for range workers {
+		wg.Go(func() {
+			process, closeProcessor := newProcessor()
+			defer closeProcessor()
+			for chunkIdx := range chunkChan {
+				if runCtx.Err() != nil {
+					return
+				}
+				result := process(runCtx, chunkIdx, chunks[chunkIdx])
+				if result.err != nil && failFast {
+					cancel()
+				}
+				resultChan <- result
+			}
+		})
+	}
+
+	go func() {
+		defer close(chunkChan)
+		for i := range chunks {
+			select {
+			case chunkChan <- i:
+			case <-runCtx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	results := make([]chunkResult, 0, len(chunks))
+	var firstErr error
+	for result := range resultChan {
+		results = append(results, result)
+		if result.err != nil && failFast && firstErr == nil {
+			firstErr = fmt.Errorf("chunk %d failed: %w", result.chunkIdx, result.err)
+			cancel()
+		}
+	}
+	return results, firstErr
 }
 
 // processChunk scans one block range sequentially into a temp JSONL file.

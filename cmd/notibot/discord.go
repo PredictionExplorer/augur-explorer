@@ -20,7 +20,7 @@ type discordSink struct {
 	notifyChannel disgord.Snowflake
 	channels      map[rwbot.StatChannel]disgord.Snowflake
 	log           *slog.Logger
-	sleep         func(time.Duration) // injected in tests
+	sleep         func(context.Context, time.Duration) error // injected in tests
 }
 
 func newDiscordSink(client *disgord.Client, keys discordKeys, log *slog.Logger) *discordSink {
@@ -34,18 +34,27 @@ func newDiscordSink(client *disgord.Client, keys discordKeys, log *slog.Logger) 
 			rwbot.ChannelLastReward: disgord.Snowflake(keys.RewardStatsChanID),
 		},
 		log:   log,
-		sleep: time.Sleep,
+		sleep: sleepContext,
+	}
+}
+
+func sleepContext(ctx context.Context, delay time.Duration) error {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
 	}
 }
 
 // SendMessage posts the notification text with the token image attached and
 // an embed linking to the detail page.
-//
-//nolint:staticcheck // SA1019: the deprecated disgord builder API is what the legacy bot shipped with; migrating is a separate change
-func (d *discordSink) SendMessage(_ context.Context, text string, image []byte, detailURL string) error {
-	_, err := d.client.Channel(d.notifyChannel).CreateMessage(&disgord.CreateMessageParams{
+func (d *discordSink) SendMessage(ctx context.Context, text string, image []byte, detailURL string) error {
+	_, err := d.client.Channel(d.notifyChannel).WithContext(ctx).CreateMessage(&disgord.CreateMessage{
 		Content: text,
-		Files: []disgord.CreateMessageFileParams{
+		Files: []disgord.CreateMessageFile{
 			{Reader: bytes.NewReader(image), FileName: "token.png", SpoilerTag: false},
 		},
 		Embed: &disgord.Embed{
@@ -59,23 +68,22 @@ func (d *discordSink) SendMessage(_ context.Context, text string, image []byte, 
 // SetChannelName renames a statistics channel. Channels without a configured
 // id are skipped; a rate-limited rename is retried once after the delay
 // Discord reports.
-func (d *discordSink) SetChannelName(_ context.Context, ch rwbot.StatChannel, name string) error {
+func (d *discordSink) SetChannelName(ctx context.Context, ch rwbot.StatChannel, name string) error {
 	id, ok := d.channels[ch]
 	if !ok || id == 0 {
 		return nil
 	}
 	rename := func() error {
-		//nolint:staticcheck // SA1019: the deprecated disgord builder API is what the legacy bot shipped with
-		_, err := d.client.Channel(id).UpdateBuilder().SetName(name).Execute()
+		_, err := d.client.Channel(id).WithContext(ctx).Update(&disgord.UpdateChannel{Name: &name})
 		return err
 	}
-	return renameWithRetry(rename, d.sleep)
+	return renameWithRetry(ctx, rename, d.sleep)
 }
 
 // renameWithRetry executes rename and, when Discord answers with a
 // rate-limit error carrying retry_after, waits that many seconds plus one
 // for safety and retries once.
-func renameWithRetry(rename func() error, sleep func(time.Duration)) error {
+func renameWithRetry(ctx context.Context, rename func() error, sleep func(context.Context, time.Duration) error) error {
 	err := rename()
 	if err == nil {
 		return nil
@@ -84,6 +92,8 @@ func renameWithRetry(rename func() error, sleep func(time.Duration)) error {
 	if !ok {
 		return err
 	}
-	sleep(time.Duration(delaySec)*time.Second + time.Second)
+	if err := sleep(ctx, time.Duration(delaySec)*time.Second+time.Second); err != nil {
+		return err
+	}
 	return rename()
 }

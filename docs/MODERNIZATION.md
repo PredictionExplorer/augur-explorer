@@ -33,36 +33,34 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 
 ## 2. Metrics dashboard
 
-Measured 2026-07-21 (historical-ingestion integrity sprint: the evt_log-only
-backfill now commits one block at a time through `Store.InTx`; strict RLP
-format ownership moved to `internal/rlpcorpus`, a native
-`opsctl archive corpus-export` emits complete selected transactions, and
-both expanded multi-log corpora replay byte-identically through direct
-archive installation and production `Engine.Run`. Integration shuffle is
-now enforced everywhere and exposed four real determinism defects: stale
-process readiness across runner lifecycles, fixture transaction hashes that
-depended on test order, and missing tie/order clauses in RandomWalk
-top-traded tokens and CosmicGame claim items. Every remaining unchecked item
-is external (frontend migration), production-gated (v1 removal,
-run-loop.sh deletion, production-exported RLP samples) or a decision (D1).)
+Measured 2026-07-21 (structured-concurrency hardening sprint: freezer
+fail-fast now cancels, drains and joins its complete worker pool before
+temporary-file cleanup; rwbot owns its Discord sidecar; autobid propagates
+contexts through every contract call and quiesces its token search before
+reconnect/return; apiserver binds listeners transactionally and joins public,
+internal and contract-refresh work before closing dependencies. The
+rate-limiter's immortal `time.Tick` goroutine is gone in favor of bounded
+request-time eviction. Every remaining unchecked item is external (frontend
+migration), production-gated (v1 removal, run-loop.sh deletion,
+production-exported RLP samples) or a decision (D1).)
 Update after each phase.
 
 | Metric | Baseline (start of project) | Current | Target | How to measure |
 |---|---|---|---|---|
-| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **190,400** (+1,582 this sprint: block-atomic backfill, production-neutral RLP format/export tooling, expanded dual-path corpus suites and shuffle-order regressions; generated `internal/api/v2/api.gen.go` and `contracts/*/bindings.gen.go` are separate) | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
+| Hand-written Go LOC (`cmd/` + `internal/`) | ~60,000 (plus 124k frozen legacy) | **191,090** (+690 this sprint: lifecycle coordinators, context propagation and deterministic cancellation/rollback matrices; generated `internal/api/v2/api.gen.go` and `contracts/*/bindings.gen.go` are separate) | n/a (informational) | `rg --files internal cmd -g '*.go' -g '!internal/api/v2/api.gen.go' \| tr '\n' '\0' \| xargs -0 wc -l \| tail -1` |
 | snake_case functions | ~700 | **0** — **target met**; `staticcheck ST1003` enforces it permanently | **0** — met | `rg "^func (\([^)]+\) )?[A-Za-z]+_[A-Za-z0-9_]*\(" --type go -c internal cmd` |
 | `os.Exit` in library code (`internal/`) | ~560 | **0 non-test calls** — **target met** (`primitives.Fatalf` was dead code, deleted with the D4 dissolution; the remaining matches are idiomatic test-harness `TestMain`s and doc comments) | **0** (allowed only in `cmd/*/main.go` startup) — met | `rg -c "os\.Exit" internal` |
 | Dot-import files | ~70 | **0** — **target met** | **0** — met | `rg -l '^\s*\. "github' --type go internal cmd contracts` |
 | Package-level mutable globals (api + etl) | ~120 | **0 mutable** — **target met**: the v1 modules are injected structs (`cosmicgame.API`, `randomwalk.API`, `faq.Proxy`; `common.Ctx` deleted). What remains at package level is immutable (error sentinels, prometheus registrations) plus the one documented process-wide readiness atomic (`common.draining`) | ~0 (DI everywhere) — met | manual review per package |
 | golangci-lint issues | 433 (first run) | **0** — **target met**, with a stricter set than the baseline (`ST1003` re-enabled; `godot`, `noctx`, `revive` `exported`/`package-comments`; since the lint-frontier sprint `errchkjson`, `exhaustive`, `intrange`, `prealloc`, `reassign`, `thelper`, `tparallel` and `usetesting` at zero findings, **and the last blanket exclusion — gosec G115 — is deleted**: every integer conversion is checked or per-case justified; `gci` + `gofumpt` enforced as formatters; since the one-driver sprint `depguard` denies `lib/pq`; since the modern-idioms sprint `gocritic`, `perfsprint`, `sloglint`, `recvcheck`, `embeddedstructfieldcheck`, `iface`, `mirror`, `exptostd`, `fatcontext` and `nilnesserr` at zero findings, and CI additionally fails on any pending `go fix` modernization) | **0** — met | `golangci-lint run` + `go fix -diff ./...` |
-| Test files | 17 | **379** (+5: backfill atomicity, archive exporter unit/integration, opsctl wiring and the promoted RLP format suite; the two domain corpus files gained production-path cases) | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
+| Test files | 17 | **379** (unchanged; lifecycle coverage expanded in the existing freezer, rwbot, autobid, API middleware and apiserver suites) | 100+ — met | `rg --files -g '*_test.go' \| wc -l` |
 | Fuzz targets | 0 | **71** (strict RLP-corpus totality/determinism now includes a valid multi-log transaction seed; full fleet retained) | **25+** (see §4.4) — met | `rg "func Fuzz" internal cmd contracts -c` |
 | Benchmarks | 0 | **9** (41 leaf benchmarks incl. the ADR-0010 ingest-transaction pair; all measured loops on Go 1.24 `b.Loop()` since the modern-idioms sprint, baselines re-recorded in `docs/benchmarks.md`) | keep green vs baselines | `rg "func Benchmark" cmd internal -c` |
-| Coverage on `internal/` (unit) | 2.4% | **66.3%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
-| Legacy `internal/` integration coverage (enforced) | n/a | **92.34%** (30,051/32,545; floor 92.3%) | ratchet only; never lower | `make coverage-check` |
-| Handwritten production `internal/` coverage (enforced) | n/a | **95.38%** (23,871/25,026; floor 95.3%; generated API + test-only harnesses excluded by ADR-0006) | **≥95% — met**; commit gate active | `make coverage-check` |
-| Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **94.99%** (27,420/28,865; floor 94.9%) | **≥90% — met**; ratchet only | `make coverage-check` |
-| Changed executable Go coverage (enforced) | n/a | **100.00%** (76/76) | **≥95%** | `make coverage-check` |
+| Coverage on `internal/` (unit) | 2.4% | **66.4%** | superseded by the integration ratchet below | `go test -coverprofile=c.out ./internal/... && go tool cover -func=c.out \| tail -1` |
+| Legacy `internal/` integration coverage (enforced) | n/a | **92.38%** (30,146/32,632; floor 92.3%) | ratchet only; never lower | `make coverage-check` |
+| Handwritten production `internal/` coverage (enforced) | n/a | **95.43%** (23,966/25,113; floor **95.4%**; generated API + test-only harnesses excluded by ADR-0006) | **≥95% — met**; commit gate active | `make coverage-check` |
+| Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **95.02%** (27,547/28,990; floor **95.0%**) | **≥95% — met**; ratchet only | `make coverage-check` |
+| Changed executable Go coverage (enforced) | n/a | **97.26%** (355/365) | **≥95%** | `make coverage-check` |
 | Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
 | Routes on stdlib router | 0 | **all** — frozen v1 (188 OpenAPI operations incl. `/version`; **180 now deprecated** with spec flags + RFC 9745 headers, 8 exempt) plus **102 generated v2 operations** (the prior 99-operation read/ranking surface plus public paginated bid bans and apiKey-secured create/delete), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
 | `context.Context` on store methods | 0% | **100% — 474 Repo methods (CosmicGame 385 + RandomWalk 89, incl. the two D15 querier resolvers) + 23 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
@@ -1584,6 +1582,46 @@ done.**
       [contracts/README.md](../contracts/README.md) documents provenance,
       the routine workflow and the full-from-Solidity path.)*
 
+### 8.6 Structured concurrency and lifecycle ownership
+
+**Complete as of 2026-07-21 (structured-concurrency hardening sprint; D20).
+Phase 4 remains complete with an explicit no-orphan-work invariant.**
+
+- [x] [`internal/freezer/scan`](../internal/freezer/scan) fail-fast owns the
+      whole worker pool: the first fatal chunk error cancels siblings before
+      another chunk can start, the coordinator drains every result, joins
+      every worker/reader and stops the progress reporter before temporary
+      files are removed or `Run` returns. Best-effort and caller-cancelled
+      partial-result semantics remain unchanged.
+- [x] Long-running engines own their sidecars. `rwbot.Run` derives a run
+      context and joins the Discord last-minted loop on every return; the
+      production Discord adapter carries that context through HTTP and
+      rate-limit waits.
+      `autobid` gives every generated contract call a caller context, makes
+      transaction submission cancellable, cancels/joins the RandomWalk token
+      search before reconnect or return, bounds shutdown statistics reads,
+      retains the last known balance when cancellation prevents a final RPC,
+      and closes its RPC client on construction failure and after its single
+      Run lifecycle.
+- [x] Apiserver startup is transactional: metrics, TLS and plain listeners
+      bind before any serves; any later fatal bind/configuration failure
+      closes the whole bound set. Public/internal serve goroutines and the
+      contract-state refresh are joined before the store/RPC dependencies
+      close. The per-IP limiter's process-lifetime `time.Tick` goroutine was
+      replaced by request-time TTL eviction, so constructing a router starts
+      no immortal maintenance work.
+- [x] Channel-barrier/race tests pin multi-worker fail-fast, caller
+      cancellation, fatal-return sidecar cleanup, blocked RPC search shutdown,
+      Discord HTTP/rate-limit cancellation, transaction-context propagation,
+      idempotent client cleanup, synchronous metrics binding, listener
+      rollback/rebind and background-refresh completion. Timing sleeps were
+      removed from the touched lifecycle tests; real deadlines remain only
+      outer deadlock guards.
+- [x] The native pre-commit gate runs the same race-enabled integration
+      profile as CI, and its cache key includes race mode. Local commits can
+      neither reuse a non-race profile against race-measured ratchets nor
+      disagree with the branch-protection Coverage Gate.
+
 ---
 
 ## 9. Phase 5 — Finish line
@@ -1634,7 +1672,7 @@ done.**
 | HTTP handler (httptest) | v1 parity + v2 suites | 0, 2 | full request→response through real router |
 | Benchmarks | §4.5 + benchstat | 0, re-run 1–3 | no performance regressions |
 | E2E smoke | `opsctl smoketest` in compose | 2 | whole stack boots and answers |
-| Deterministic concurrency | `testing/synctest` + channel barriers | always | timers, retries and cancellation without wall-clock flakes |
+| Deterministic concurrency | `testing/synctest` + channel barriers | always | timers/retries without wall-clock flakes; every child is cancelled and joined before its owner returns |
 | Race + shuffle | CI, all tests | always | concurrency safety |
 
 ---
@@ -1662,6 +1700,7 @@ done.**
 | D17 | Benchmark loop idiom (41 leaf benchmarks on `for range b.N`) | keep `b.N` loops / adopt Go 1.24 `b.Loop()` with a full re-baseline | **decided 2026-07-18: `b.Loop()` everywhere, baselines re-recorded** — `b.Loop` keeps the benchmarked call and its results alive (no dead-code elimination skew) and excludes per-iteration bookkeeping, so its numbers are more truthful; upstream deliberately leaves the `bloop` fixer out of the default `go fix` suite precisely because converted numbers can shift (golang/go#74967), which is why the conversion is paired with re-measured medians in [benchmarks.md](benchmarks.md) rather than assumed comparable. The two `RunParallel` rate-limiter benchmarks keep `pb.Next()` (the parallel API has no `b.Loop` equivalent). |
 | D18 | Production RLP replay corpus format | SQL dump / one raw-RLP file per event / strict archive-shaped JSONL | **decided 2026-07-20: strict archive-shaped JSONL** — each line mirrors `arch_evtlog` (`project`, block/event/log identity, tx hash, contract, topic0 and 0x RLP). JSONL is diffable and streamable; since 2026-07-21 `opsctl archive corpus-export` selects explicit complete transactions, preserves raw bytes/order and validates with the production-neutral `internal/rlpcorpus` package before writing. The loader caps lines at 2 MiB and rejects unknown fields, malformed identities/RLP, column-vs-payload disagreement, duplicate chain identities, split transaction groups and descending sibling indexes. Fixture-derived samples keep CI live; production-exported additions remain gated on access and review. |
 | D19 | Historical evt_log backfill transaction granularity | autocommit per statement / transaction per block / transaction per fetch batch | **decided 2026-07-21: transaction per block through `Store.InTx`** — the backfill shares live ingestion's smallest truthful chain boundary without holding one transaction across a large RPC batch. Block/transaction/event/address-cache writes and the base `last_block` update commit or vanish together; stats merge only after commit, prior blocks survive a later failure and reruns remain idempotent. Pre-validating and sorting fetched logs before opening the transaction rejects overflow/mixed block identities without database access. |
+| D20 | Background-work ownership | fire-and-forget process goroutines / caller-owned context only / run-scoped cancel-and-join | **decided 2026-07-21: run-scoped cancel-and-join** — a function that starts workers, sidecars, refresh loops or listeners owns a derived context and does not return until all children stop. Resources normally close after the join; a transport that must close to unblock an in-flight call (autobid's RPC client) is cancelled, closed and then joined before replacement/return. Listener startup is bind-then-serve with rollback of the complete bound set. Maintenance that can be done lazily (the per-IP visitor eviction) runs on requests rather than an immortal ticker. Context cancellation is necessary but not sufficient: the owner waits, and tests prove the happens-before edge with channels rather than sleeps. |
 
 ---
 
@@ -1669,6 +1708,7 @@ done.**
 
 | Date | Commit | What landed |
 |---|---|---|
+| 2026-07-21 | — | **Structured-concurrency hardening sprint (§8.6; D20 decided):** established the repository-wide rule that the starter owns cancellation, joining and resource teardown. `freezer/scan` now cancels the whole worker pool on the first fail-fast chunk error, drains results, joins each worker-owned reader and stops its progress reporter before temp cleanup; deterministic barriers prove no later chunk starts and caller cancellation still returns partial results. `rwbot.Run` owns/joins the Discord last-minted sidecar even on fatal DB returns; the production Discord adapter now carries context through REST calls and rate-limit sleeps so the join is actually bounded. `autobid` removed its shared context-free `bind.CallOpts`: every contract read and transaction submission now carries the caller context; its background RWalk search is single-run-owned, cancelled/joined before reconnect/return, shutdown stats are bounded and retain the last known balance, and RPC clients close on constructor failure and Run completion. Apiserver derives a run context, joins contract refresh before closing store/RPC, synchronously binds the complete metrics/TLS/plain listener set before any serve, rolls every bound listener back on later startup failure and joins public/internal serve goroutines on shutdown. **Additional lifecycle bug found:** each router construction started permanent `time.Tick` goroutines for per-IP eviction; cleanup is request-time now, retaining the ten-minute bound with zero background work. Tests cover multi-worker failure, sidecar fatal exit, blocked Discord/RPC cancellation, transaction-context propagation, idempotent close, synchronous metrics bind/join, full TLS+metrics rollback/rebind and refresh completion; coordination sleeps in those cases became channel barriers. **Verification:** build, vet under both tag sets, generation drift, lint (0), both `go fix` gates, full race+shuffle unit and integration suites, both coverage gates and govulncheck (0 reachable) pass. The 71-target one-second fuzz fleet hit the known Go worker stop-deadline class once on `FuzzDecodeROILeaderboardCursor` with no crasher; a dedicated 10-second run passed 1.2M executions. Rate-limit medians re-based at 1,220/1,332 ns/op for the deliberate lazy-cleanup tradeoff, allocations unchanged. Metrics: LOC **190,400 → 191,090**, test files **379**, unit internal **66.4%**, legacy internal **92.38%** (30,146/32,632), handwritten internal **95.43%** (23,966/25,113; floor 95.3→95.4), all production **95.02%** (27,547/28,990; floor 94.9→95.0), changed executable Go **97.26%** (355/365). |
 | 2026-07-21 | — | **Historical-ingestion integrity sprint (§4.3/§7 hardening; D18 extended, D19 decided; ADR-0010 extended):** `BackfillContractEvtLogs` now validates/sorts fetched logs before database access and commits each block through `Store.InTx`; durable stats merge only after commit. A later-log trigger failure proves the failed block leaves no block/transaction/event/address/address-cache/`last_block` residue, an earlier block survives, and retry converges with byte-identical RLP; focused cases cover overflow/mixed identities, block verification, transaction lookup/insert, event existence, cancellation, batch boundaries and duplicate reruns. **RLP production path:** format ownership moved from test-only code to `internal/rlpcorpus`; strict JSONL now enforces contiguous transaction groups and increasing sibling indexes. `opsctl archive corpus-export --project … --tx-hash …` reads every selected transaction sibling from `arch_evtlog`, preserves exact bytes and deterministic request/log order, fails before output on malformed/missing data, and replaces the manual psql renderer. CosmicGame and RandomWalk fixture corpora grew from one row each to four (three-log first bid; offer + two-log sale); exact installation is atomic, while parallel suites decode the same bytes onto `testchain` and prove `Engine.Run`/`InsertEventLog` stores canonical bytes and reaches matching real handler/trigger outcomes. **Permanent shuffle ratchet:** integration commands in Make, coverage and CI now use `-shuffle=on`. Repeated randomized runs exposed and fixed stale apiserver drain state across runner lifecycles, shared-chain fixture transaction hashes that depended on package test order (new header-preserving transaction cleanup), and missing deterministic ties/order clauses in RandomWalk top-traded tokens and CosmicGame claim items; zero goldens changed. **Verification:** build, vet, generation drift, lint (0), both modernize gates, full race+shuffle unit/integration suites and coverage pass; all 71 fuzz targets pass a 1s smoke run and the changed `FuzzLoad` parser passes a dedicated 10s run. Metrics: LOC **188,818 → 190,400**, test files **374 → 379**, unit internal **66.3%**, legacy internal **92.34%** (30,051/32,545; floor 92.2→92.3), handwritten internal **95.38%** (23,871/25,026), all production **94.99%** (27,420/28,865; floor 94.8→94.9), changed executable Go **100%** (76/76). |
 | 2026-07-20 | — | **Indexer-integrity sprint (§4.3/§7 hardening; D18 decided; ADR-0010 verification completed):** production-faithful harnesses now drive `Engine.Run` through the real CosmicGame and RandomWalk registries, handlers, repositories, progress adapters and plpgsql triggers. Representative multi-log bid/sale blocks fail after earlier handler writes; the failed block leaves zero layer-1/domain/aggregate/address-cache/watermark residue, a prior block in the fetched range survives, retry converges byte-for-byte to a clean control, and second-connection snapshots prove handler rows plus watermark become visible only at commit. **RLP safety net:** strict archive-shaped JSONL (`RLPCorpusEntry`) validates bounded JSON/hex/RLP, chain identities, contract/topic consistency and duplicates; `InstallRLPCorpus` inserts exact exported bytes without re-encoding, and committed fixture-derived samples dispatch through both real registries and triggers. The `opsctl archive export` → reviewed JSONL workflow is documented; production samples remain access-gated. `FuzzLoadRLPCorpus` pins totality, determinism and valid write/read closure (fleet 70 → 71; dedicated 10s run green). **Deterministic retries:** Go 1.26 `testing/synctest` replaces wall-clock coordination for caught-up/backoff cancellation, timer boundaries and separated failure streaks; the matrix found and fixed a real breaker bug — a healthy caught-up poll did not reset the consecutive-failure count. **Verification:** all 71 fuzz targets ran for 10s; one pre-existing cursor fuzzer hit only the Go worker stop deadline and passed a dedicated 30s reproduction (no crasher). Build, vet, generation drift, lint (0), modernize gates, govulncheck (0 reachable), full race+shuffle unit and race integration suites, repeated integrity matrices and the authoritative coverage gate pass; all existing goldens remain byte-identical. Metrics: LOC **187,441 → 188,818**, test files **369 → 374**, legacy internal **92.27%** (29,913/32,420), handwritten internal **95.30%** (23,656/24,822), all production **94.92%** (27,184/28,640), changed executable Go **100%** (3/3). |
 | 2026-07-06 | `85941dba` | Foundation: layout, Go 1.26, CI, hardening, docs (see §3) |

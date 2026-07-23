@@ -168,10 +168,12 @@ func RequireAdminKey(header string, keys ...AdminKey) httpx.Middleware {
 
 // ipLimiter tracks one token bucket per client IP with lazy eviction.
 type ipLimiter struct {
-	mu       sync.Mutex
-	visitors map[string]*visitor
-	rps      rate.Limit
-	burst    int
+	mu          sync.Mutex
+	visitors    map[string]*visitor
+	rps         rate.Limit
+	burst       int
+	now         func() time.Time
+	lastCleanup time.Time
 }
 
 type visitor struct {
@@ -186,30 +188,30 @@ func newIPLimiter(rps float64, burst int) *ipLimiter {
 		visitors: make(map[string]*visitor),
 		rps:      rate.Limit(rps),
 		burst:    burst,
+		now:      time.Now,
 	}
-	// Evict idle entries so the map cannot grow without bound.
-	go func() {
-		for range time.Tick(visitorTTL) {
-			l.mu.Lock()
-			for ip, v := range l.visitors {
-				if time.Since(v.lastSeen) > visitorTTL {
-					delete(l.visitors, ip)
-				}
-			}
-			l.mu.Unlock()
-		}
-	}()
 	return l
 }
 
 func (l *ipLimiter) allow(ip string) bool {
 	l.mu.Lock()
+	now := l.now()
+	if l.lastCleanup.IsZero() {
+		l.lastCleanup = now
+	} else if now.Sub(l.lastCleanup) >= visitorTTL {
+		for visitorIP, v := range l.visitors {
+			if now.Sub(v.lastSeen) > visitorTTL {
+				delete(l.visitors, visitorIP)
+			}
+		}
+		l.lastCleanup = now
+	}
 	v, ok := l.visitors[ip]
 	if !ok {
 		v = &visitor{limiter: rate.NewLimiter(l.rps, l.burst)}
 		l.visitors[ip] = v
 	}
-	v.lastSeen = time.Now()
+	v.lastSeen = now
 	l.mu.Unlock()
 	return v.limiter.Allow()
 }

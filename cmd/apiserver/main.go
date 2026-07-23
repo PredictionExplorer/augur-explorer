@@ -70,6 +70,13 @@ func newPublicServer(handler http.Handler, tlsConfig *tls.Config) *http.Server {
 	return srv
 }
 
+type boundHTTPServer struct {
+	server   *http.Server
+	listener net.Listener
+	useTLS   bool
+	internal bool
+}
+
 // buildModules constructs the enabled v1 API modules over the shared
 // dependencies. A disabled module stays nil: its routes are not registered
 // and the shared /metadata dispatch answers the legacy unavailable envelope.
@@ -164,23 +171,39 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
 
+	runCtx, cancelRun := context.WithCancel(ctx)
+	ctx = runCtx
 	rpcClient, err := ethrpc.DialContext(ctx, cfg.RPCURL)
 	if err != nil {
+		cancelRun()
 		return fmt.Errorf("can't establish connection to RPC service: %w", err)
 	}
+	var (
+		deps              *serverDeps
+		backgroundRefresh <-chan struct{}
+	)
+	defer func() {
+		cancelRun()
+		if backgroundRefresh != nil {
+			<-backgroundRefresh
+		}
+		if deps != nil {
+			deps.store.Close()
+		}
+		rpcClient.Close()
+	}()
 	ethClient := ethclient.NewClient(rpcClient)
-	deps, err := newServerDeps(ctx, cfg, logger)
+	deps, err = newServerDeps(ctx, cfg, logger)
 	if err != nil {
 		return err
 	}
-	defer deps.store.Close()
 
 	cgAPI, rwAPI, faqProxy, err := buildModules(ctx, cfg, deps, ethClient, rpcClient)
 	if err != nil {
 		return err
 	}
 	if cgAPI != nil {
-		cgAPI.StartBackgroundRefresh(ctx)
+		backgroundRefresh = cgAPI.StartBackgroundRefresh(ctx)
 	}
 
 	// The shared constructor (internal/api/routes) builds the middleware
@@ -221,28 +244,30 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		RegisterExtra: registerStaticAssetRoutes(staticAssetsConfig(cfg, logger)),
 	})
 
-	// Internal metrics/pprof listener (METRICS_ADDR).
-	internalSrv := startInternalServer(cfg.MetricsAddr, logger)
+	// Bind every listener before starting any serving goroutine. The deferred
+	// closes make startup transactional: a later fatal bind/configuration
+	// error cannot leave an earlier TLS or metrics listener behind.
+	var bound []boundHTTPServer
+	defer func() {
+		for i := range bound {
+			_ = bound[i].listener.Close()
+		}
+	}()
 
-	// Public listeners. Each runs in its own goroutine and is tracked for
-	// the coordinated Shutdown below.
-	var servers []*http.Server
-	var wg sync.WaitGroup
-
-	serve := func(srv *http.Server, ln net.Listener, useTLS bool) {
-		servers = append(servers, srv)
-		wg.Go(func() {
-			var err error
-			if useTLS {
-				err = srv.ServeTLS(ln, "", "")
-			} else {
-				err = srv.Serve(ln)
-			}
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.Error(fmt.Sprintf("HTTP server %s: %v", ln.Addr(), err))
-			}
+	internalSrv, internalListener, err := listenInternalServer(ctx, cfg.MetricsAddr)
+	if err != nil {
+		// Preserve the historical optional-listener policy: the public API
+		// may still start, but the configured observability failure is loud.
+		logger.Error(fmt.Sprintf("internal metrics server: %v", err))
+	} else if internalSrv != nil {
+		bound = append(bound, boundHTTPServer{
+			server:   internalSrv,
+			listener: internalListener,
+			internal: true,
 		})
 	}
+
+	publicCount := 0
 
 	// TLS: HTTPS_HOSTNAME is the primary bind address (e.g. :443 or 0.0.0.0:443).
 	// Optional HTTPS_EXTRA_LISTEN_ADDR starts a second TLS listener (e.g. :1443) with the same routes and certs.
@@ -259,7 +284,12 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 					return
 				}
 				logger.Info("HTTPS bound and listening", "addr", ln.Addr().String())
-				serve(newPublicServer(r, tlsConfig), ln, true)
+				bound = append(bound, boundHTTPServer{
+					server:   newPublicServer(r, tlsConfig),
+					listener: ln,
+					useTLS:   true,
+				})
+				publicCount++
 			}
 			startTLS(cfg.HTTPSHostname)
 			if cfg.HTTPSExtraListenAddr != "" {
@@ -273,10 +303,38 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 			return fmt.Errorf("HTTP bind failed on port %s: %w", cfg.HTTPPort, err)
 		}
 		logger.Info("listening", "port", cfg.HTTPPort)
-		serve(newPublicServer(r, nil), ln, false)
+		bound = append(bound, boundHTTPServer{
+			server:   newPublicServer(r, nil),
+			listener: ln,
+		})
+		publicCount++
 	}
-	if len(servers) == 0 {
+	if publicCount == 0 {
 		return errors.New("configuration error: no listeners started — check the TLS certificate paths")
+	}
+
+	var wg sync.WaitGroup
+	for i := range bound {
+		binding := &bound[i]
+		wg.Go(func() {
+			if binding.internal {
+				logger.Info("internal metrics/pprof server listening", "addr", binding.listener.Addr().String())
+			}
+			var err error
+			if binding.useTLS {
+				err = binding.server.ServeTLS(binding.listener, "", "")
+			} else {
+				err = binding.server.Serve(binding.listener)
+			}
+			if err == nil || errors.Is(err, http.ErrServerClosed) {
+				return
+			}
+			if binding.internal {
+				logger.Error(fmt.Sprintf("internal metrics server: %v", err))
+				return
+			}
+			logger.Error(fmt.Sprintf("HTTP server %s: %v", binding.listener.Addr(), err))
+		})
 	}
 
 	// Block until SIGINT/SIGTERM, then drain: readiness flips false so load
@@ -289,17 +347,25 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
-	for _, srv := range servers {
-		if err := srv.Shutdown(shutdownCtx); err != nil {
+	for i := range bound {
+		if bound[i].internal {
+			continue
+		}
+		if err := bound[i].server.Shutdown(shutdownCtx); err != nil {
 			logger.Error(fmt.Sprintf("shutdown: %v", err))
+			_ = bound[i].server.Close()
+		}
+	}
+	for i := range bound {
+		if !bound[i].internal {
+			continue
+		}
+		if err := bound[i].server.Shutdown(shutdownCtx); err != nil {
+			logger.Error(fmt.Sprintf("shutdown internal server: %v", err))
+			_ = bound[i].server.Close()
 		}
 	}
 	wg.Wait()
-	if internalSrv != nil {
-		if err := internalSrv.Shutdown(shutdownCtx); err != nil {
-			logger.Error(fmt.Sprintf("shutdown internal server: %v", err))
-		}
-	}
 	logger.Info("shutdown: complete")
 	return nil
 }

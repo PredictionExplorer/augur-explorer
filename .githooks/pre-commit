@@ -12,6 +12,9 @@ case "$status" in
 		exit 0
 		;;
 	enabled\ *)
+		# CI and the versioned ratchets use the race-enabled integration
+		# profile; the local commit gate must measure the same executable set.
+		export COVERAGE_RACE=1
 		exec "$repo_root/scripts/coverage-gate.sh"
 		;;
 	*)

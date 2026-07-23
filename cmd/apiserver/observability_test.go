@@ -1,13 +1,12 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
-	"log/slog"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -17,76 +16,65 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 )
 
-// logSink is a mutex-guarded writer for records emitted by server goroutines.
-type logSink struct {
-	mu  sync.Mutex
-	buf strings.Builder
-}
-
-func (s *logSink) Write(p []byte) (int, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.buf.Write(p)
-}
-
-func (s *logSink) String() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.buf.String()
-}
-
-func TestStartInternalServerDisabledWhenUnset(t *testing.T) {
+func TestListenInternalServerDisabledWhenUnset(t *testing.T) {
 	t.Parallel()
-	if srv := startInternalServer("  ", slog.New(slog.DiscardHandler)); srv != nil {
+	srv, listener, err := listenInternalServer(t.Context(), "  ")
+	if err != nil {
+		t.Fatalf("listenInternalServer: %v", err)
+	}
+	if srv != nil || listener != nil {
 		t.Fatal("empty METRICS_ADDR must disable the internal server")
 	}
 }
 
-func TestStartInternalServerServesMetrics(t *testing.T) {
+func TestListenInternalServerServesMetricsAndJoins(t *testing.T) {
 	t.Parallel()
-	sink := &logSink{}
-	logger := slog.New(slog.NewTextHandler(sink, nil))
-	srv := startInternalServer("127.0.0.1:0", logger)
-	if srv == nil {
-		t.Fatal("internal server not started")
+	srv, listener, err := listenInternalServer(t.Context(), "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listenInternalServer: %v", err)
 	}
-	t.Cleanup(func() { _ = srv.Close() })
+	done := make(chan error, 1)
+	go func() { done <- srv.Serve(listener) }()
 
-	// ListenAndServe binds asynchronously on the configured address; with
-	// port 0 the bound port is not observable, so this test only proves the
-	// startup record appears and the server participates in Close.
-	deadline := time.Now().Add(5 * time.Second)
-	for !strings.Contains(sink.String(), "internal metrics/pprof server listening") {
-		if time.Now().After(deadline) {
-			t.Fatalf("startup record missing: %q", sink.String())
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("http://" + listener.Addr().String() + "/metrics")
+	if err != nil {
+		t.Fatalf("GET /metrics: %v", err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /metrics = %d, want 200", resp.StatusCode)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		t.Fatalf("Shutdown: %v", err)
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, http.ErrServerClosed) {
+			t.Fatalf("Serve returned %v, want %v", err, http.ErrServerClosed)
 		}
-		time.Sleep(2 * time.Millisecond)
+	case <-time.After(5 * time.Second):
+		t.Fatal("internal server goroutine did not join after Shutdown")
 	}
 }
 
-func TestStartInternalServerLogsListenFailure(t *testing.T) {
+func TestListenInternalServerReportsBindFailureSynchronously(t *testing.T) {
 	t.Parallel()
-	// Squat the port first so ListenAndServe fails.
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = ln.Close() })
 
-	sink := &logSink{}
-	logger := slog.New(slog.NewTextHandler(sink, nil))
-	srv := startInternalServer(ln.Addr().String(), logger)
-	if srv == nil {
-		t.Fatal("internal server not constructed")
+	srv, listener, err := listenInternalServer(t.Context(), ln.Addr().String())
+	if err == nil {
+		t.Fatal("listenInternalServer accepted an occupied address")
 	}
-	t.Cleanup(func() { _ = srv.Close() })
-
-	deadline := time.Now().Add(5 * time.Second)
-	for !strings.Contains(sink.String(), "internal metrics server:") {
-		if time.Now().After(deadline) {
-			t.Fatalf("listen failure was not logged: %q", sink.String())
-		}
-		time.Sleep(2 * time.Millisecond)
+	if srv != nil || listener != nil {
+		t.Fatal("failed bind returned a partially constructed server")
 	}
 }
 

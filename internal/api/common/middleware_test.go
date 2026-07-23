@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
@@ -245,6 +246,31 @@ func TestRateLimitIsolatesClients(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected different client to have its own bucket, got %d", w.Code)
+	}
+}
+
+func TestIPLimiterLazilyEvictsIdleVisitors(t *testing.T) {
+	t.Parallel()
+
+	now := time.Unix(1_700_000_000, 0)
+	limiter := newIPLimiter(1, 1)
+	limiter.now = func() time.Time { return now }
+	if !limiter.allow("old") {
+		t.Fatal("first request for old visitor was rejected")
+	}
+
+	now = now.Add(visitorTTL + time.Nanosecond)
+	if !limiter.allow("new") {
+		t.Fatal("first request for new visitor was rejected")
+	}
+
+	limiter.mu.Lock()
+	defer limiter.mu.Unlock()
+	if _, ok := limiter.visitors["old"]; ok {
+		t.Fatal("idle visitor was not evicted during request-time cleanup")
+	}
+	if _, ok := limiter.visitors["new"]; !ok {
+		t.Fatal("current visitor missing after cleanup")
 	}
 }
 

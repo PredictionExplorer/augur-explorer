@@ -39,8 +39,8 @@ against post-conversion runs; the pre-conversion table is in git history.
 | `BenchmarkEventDecode` (cg-etl) | 2,220 | 2,920 | 43 | v1 `BidPlaced` ABI unpack + topic extraction |
 | `BenchmarkReceiptsDecode/raw_rlp` (freezer) | 22,600 | 31,618 | 287 | 10 receipts x 3 logs, ~300 MB/s |
 | `BenchmarkReceiptsDecode/snappy` (freezer) | 24,300 | 39,823 | 288 | same payload, snappy-compressed |
-| `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,144 | 5,373 | 15 | parallel, per-IP limiter map path (stdlib router) |
-| `BenchmarkRateLimiter/shared_ip` (api/common) | 1,298 | 5,374 | 15 | parallel, single-bucket contention (stdlib router) |
+| `BenchmarkRateLimiter/distinct_ips` (api/common) | 1,220 | 5,373 | 15 | parallel, per-IP limiter map path + lazy TTL cleanup check |
+| `BenchmarkRateLimiter/shared_ip` (api/common) | 1,332 | 5,374 | 15 | parallel, single-bucket contention + lazy TTL cleanup check |
 | `BenchmarkCompress/gzip_32KiB` (api/common) | 114,300 | 59,500 | 30 | full middleware exchange, pooled gzip level 6, ~286 MB/s |
 | `BenchmarkCompress/identity_32KiB` (api/common) | 4,410 | 47,184 | 21 | negotiation + passthrough for a non-gzip client |
 | `BenchmarkConditionalETag/tag_32KiB` (api/common) | 16,800 | 88,252 | 24 | buffer + SHA-256 weak validator + release, ~1.95 GB/s |
@@ -219,3 +219,10 @@ History:
   delta (3.99 ms tx vs 3.71 ms autocommit). No regression: the loop idiom
   is measurement-neutral for these I/O- and decode-bound bodies, exactly
   as the D17 rationale predicted.
+- **2026-07-21 (structured-concurrency sprint, D20)** — re-based the two
+  rate-limiter rows after replacing one immortal `time.Tick` eviction
+  goroutine per router/limiter with request-time TTL cleanup. Six-run
+  medians are 1,220 ns/op for distinct IPs and 1,332 ns/op for the shared
+  bucket (formerly 1,144/1,298); the deliberate lifecycle fix costs
+  ~76/~34 ns per request while allocations remain byte-identical at
+  15 and router construction now starts zero maintenance goroutines.

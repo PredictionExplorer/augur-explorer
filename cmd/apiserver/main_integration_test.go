@@ -425,6 +425,46 @@ func TestRunStartupFailures(t *testing.T) {
 		}
 	})
 
+	t.Run("later HTTP bind failure rolls back earlier listeners", func(t *testing.T) {
+		rollbackDB := testdb.New(t)
+		if err := testfixtures.Apply(ctx, rollbackDB.SQL); err != nil {
+			t.Fatalf("applying rollback fixtures: %v", err)
+		}
+		chain := testchain.New(t)
+		registerBootChainState(chain)
+		setEnv(t, rollbackDB.ConnString, chain.URL())
+
+		certFile, keyFile := writeSelfSignedCert(t, t.TempDir(), "rollback")
+		tlsAddr := net.JoinHostPort("127.0.0.1", freePort(t))
+		metricsAddr := net.JoinHostPort("127.0.0.1", freePort(t))
+		squatted, err := net.Listen("tcp", ":0") // #nosec G102 -- deliberately squats the wildcard HTTP port
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = squatted.Close() })
+		_, httpPort, _ := net.SplitHostPort(squatted.Addr().String())
+
+		t.Setenv("HTTPS_HOSTNAME", tlsAddr)
+		t.Setenv("TLS_CERT_FILE", certFile)
+		t.Setenv("TLS_KEY_FILE", keyFile)
+		t.Setenv("METRICS_ADDR", metricsAddr)
+		t.Setenv("HTTP_PORT", httpPort)
+
+		runCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		err = run(runCtx, os.Getenv, io.Discard)
+		if err == nil || !strings.Contains(err.Error(), "HTTP bind failed") {
+			t.Fatalf("run error = %v, want HTTP bind failure", err)
+		}
+		for _, addr := range []string{tlsAddr, metricsAddr} {
+			listener, listenErr := net.Listen("tcp", addr)
+			if listenErr != nil {
+				t.Fatalf("listener %s remained bound after startup rollback: %v", addr, listenErr)
+			}
+			_ = listener.Close()
+		}
+	})
+
 	t.Run("HTTPS-only with unreadable certificates starts no listener", func(t *testing.T) {
 		chain := testchain.New(t)
 		registerBootChainState(chain)

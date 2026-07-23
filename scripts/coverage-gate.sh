@@ -82,6 +82,7 @@ if [[ "$run_tests" == true ]]; then
 			git ls-files -s -- '*.go' go.mod go.sum 'db/migrations/*.sql' \
 				'internal/testfixtures/**/*.sql' "$policy"
 			go version
+			echo "coverage_race=${COVERAGE_RACE:-0}"
 		} | git hash-object --stdin
 	)
 	profile="$cache_dir/$cache_key.out"

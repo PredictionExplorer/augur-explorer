@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -223,6 +224,14 @@ func New(cfg Config) (*Engine, error) {
 // database read/write fails (error return: the binaries keep the legacy
 // crash-and-restart semantics, resuming from the persisted watermark).
 func (e *Engine) Run(ctx context.Context) error {
+	runCtx, cancel := context.WithCancel(ctx)
+	var sidecars sync.WaitGroup
+	defer func() {
+		cancel()
+		sidecars.Wait()
+	}()
+	ctx = runCtx
+
 	status, err := e.cfg.Data.MessagingStatus(ctx)
 	if err != nil {
 		return e.runErr(ctx, fmt.Errorf("reading messaging status: %w", err))
@@ -255,7 +264,7 @@ func (e *Engine) Run(ctx context.Context) error {
 	)
 
 	if e.cfg.Discord != nil {
-		go e.lastMintedLoop(ctx)
+		sidecars.Go(func() { e.lastMintedLoop(ctx) })
 		if amount, werr := e.withdrawalBounded(ctx); werr == nil {
 			e.setChannelName(ctx, ChannelLastReward, RewardChannelName(amount))
 		}
@@ -519,6 +528,9 @@ func (e *Engine) setChannelName(ctx context.Context, ch StatChannel, name string
 // lastMintedLoop keeps the Discord "last mint ago" channel fresh: one
 // immediate update, then one per LastMintedInterval, until ctx is cancelled.
 func (e *Engine) lastMintedLoop(ctx context.Context) {
+	if ctx.Err() != nil {
+		return
+	}
 	e.updateLastMinted(ctx)
 	ticker := time.NewTicker(e.cfg.LastMintedInterval)
 	defer ticker.Stop()

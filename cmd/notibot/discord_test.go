@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -76,7 +77,7 @@ func stubDiscord(t *testing.T, status int, respBody string) (*discordSink, *[]st
 		RewardStatsChanID: 105,
 	}
 	sink := newDiscordSink(client, keys, slog.New(slog.DiscardHandler))
-	sink.sleep = func(time.Duration) {}
+	sink.sleep = func(context.Context, time.Duration) error { return nil }
 	return sink, &calls
 }
 
@@ -173,7 +174,10 @@ func TestDiscordSinkRateLimitedRenameRetries(t *testing.T) {
 	})
 	sink := newDiscordSink(client, discordKeys{PriceStatsChanID: 103}, slog.New(slog.DiscardHandler))
 	var slept time.Duration
-	sink.sleep = func(d time.Duration) { slept = d }
+	sink.sleep = func(_ context.Context, d time.Duration) error {
+		slept = d
+		return nil
+	}
 
 	if err := sink.SetChannelName(context.Background(), rwbot.ChannelPrice, "n"); err != nil {
 		t.Fatalf("SetChannelName after rate limit: %v (calls %d)", err, calls)
@@ -183,5 +187,52 @@ func TestDiscordSinkRateLimitedRenameRetries(t *testing.T) {
 	}
 	if slept < time.Second {
 		t.Errorf("slept %v, want at least the reported retry_after + safety", slept)
+	}
+}
+
+func TestDiscordSinkRenameHonorsContext(t *testing.T) {
+	t.Parallel()
+
+	requestStarted := make(chan struct{})
+	releaseHandler := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/users/@me") {
+			_, _ = w.Write([]byte(`{"id":"1","username":"bot"}`))
+			return
+		}
+		close(requestStarted)
+		select {
+		case <-r.Context().Done():
+		case <-releaseHandler:
+		}
+	}))
+	t.Cleanup(srv.Close)
+	t.Cleanup(func() { close(releaseHandler) })
+	target, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := disgord.New(disgord.Config{
+		BotToken:   "t",
+		HTTPClient: &http.Client{Transport: rewriteTransport{target: target}},
+	})
+	sink := newDiscordSink(client, discordKeys{PriceStatsChanID: 103}, slog.New(slog.DiscardHandler))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- sink.SetChannelName(ctx, rwbot.ChannelPrice, "n") }()
+	select {
+	case <-requestStarted:
+		cancel()
+	case <-time.After(5 * time.Second):
+		t.Fatal("Discord rename request did not start")
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) && !strings.Contains(err.Error(), context.Canceled.Error()) {
+			t.Fatalf("SetChannelName after cancellation = %v, want context cancellation", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Discord rename did not return after context cancellation")
 	}
 }

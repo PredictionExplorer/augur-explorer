@@ -145,14 +145,22 @@ func newGameWorld(t *testing.T) *gameWorld {
 // syncBuffer is a bytes.Buffer safe for concurrent writes by the engine and
 // reads by the test goroutine.
 type syncBuffer struct {
-	mu  sync.Mutex
-	buf bytes.Buffer
+	mu      sync.Mutex
+	buf     bytes.Buffer
+	changed chan struct{}
 }
 
 func (b *syncBuffer) Write(p []byte) (int, error) {
 	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.buf.Write(p)
+	n, err := b.buf.Write(p)
+	b.mu.Unlock()
+	if b.changed != nil {
+		select {
+		case b.changed <- struct{}{}:
+		default:
+		}
+	}
+	return n, err
 }
 
 func (b *syncBuffer) String() string {
@@ -161,11 +169,24 @@ func (b *syncBuffer) String() string {
 	return b.buf.String()
 }
 
+func (b *syncBuffer) waitFor(ctx context.Context, text string) bool {
+	for {
+		if strings.Contains(b.String(), text) {
+			return true
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-b.changed:
+		}
+	}
+}
+
 // newTestEngine builds an engine over the world with no-op sleeps and the
 // output captured.
 func newTestEngine(t *testing.T, w *gameWorld, mutate func(*Config)) (*Engine, *syncBuffer) {
 	t.Helper()
-	out := &syncBuffer{}
+	out := &syncBuffer{changed: make(chan struct{}, 1)}
 	cfg := Config{
 		RPCURL:        w.chain.URL(),
 		PrivateKeyHex: testKeyHex,
@@ -187,6 +208,7 @@ func newTestEngine(t *testing.T, w *gameWorld, mutate func(*Config)) (*Engine, *
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
+	t.Cleanup(e.Close)
 	return e, out
 }
 
@@ -417,13 +439,27 @@ func TestEngineChainResetAborts(t *testing.T) {
 
 func TestEngineContextCancellationStopsRun(t *testing.T) {
 	w := newGameWorld(t)
-	e, out := newTestEngine(t, w, nil)
+	sleepEntered := make(chan struct{}, 1)
+	e, out := newTestEngine(t, w, func(cfg *Config) {
+		cfg.Sleep = func(ctx context.Context, _ time.Duration) error {
+			select {
+			case sleepEntered <- struct{}{}:
+			default:
+			}
+			<-ctx.Done()
+			return ctx.Err()
+		}
+	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- e.Run(ctx) }()
-	time.Sleep(200 * time.Millisecond)
-	cancel()
+	select {
+	case <-sleepEntered:
+		cancel()
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run did not reach its cancellable loop wait")
+	}
 
 	select {
 	case err := <-done:
@@ -435,6 +471,9 @@ func TestEngineContextCancellationStopsRun(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "SESSION SUMMARY") {
 		t.Errorf("cancelled run should print the session summary:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "Current Balance:   50.000000000000000000 ETH") {
+		t.Errorf("cancelled run should report the last known balance:\n%s", out.String())
 	}
 }
 
@@ -546,18 +585,13 @@ func TestEngineInitialBiddingOnNewRound(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	go func() {
-		// Stop the engine shortly after the initial bids are in.
-		deadline := time.Now().Add(25 * time.Second)
-		for time.Now().Before(deadline) {
-			if w.chain.SubmittedTxCount() >= 2 && strings.Contains(out.String(), "Initial bidding finished") {
-				cancel()
-				return
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
-	}()
-	if err := e.Run(ctx); err != nil {
+	done := make(chan error, 1)
+	go func() { done <- e.Run(ctx) }()
+	if !out.waitFor(ctx, "Initial bidding finished") {
+		t.Fatalf("initial bidding did not finish:\n%s", out.String())
+	}
+	cancel()
+	if err := <-done; err != nil {
 		t.Fatalf("Run: %v\noutput:\n%s", err, out.String())
 	}
 
@@ -642,14 +676,14 @@ func TestFindRWalkTokenID(t *testing.T) {
 	})
 
 	e, _ := newTestEngine(t, w, nil)
-	e.findRWalkTokenID()
+	e.findRWalkTokenID(t.Context())
 	if got := e.nextRWalkTokenID.Load(); got != 1 {
 		t.Errorf("nextRWalkTokenID = %d, want 1", got)
 	}
 
 	// A found token that has since been used resets and re-searches.
 	w.game.Return("usedRandomWalkNfts", big.NewInt(1)) // everything used now
-	e.findRWalkTokenID()
+	e.findRWalkTokenID(t.Context())
 	if got := e.nextRWalkTokenID.Load(); got != -1 {
 		t.Errorf("nextRWalkTokenID after all used = %d, want -1", got)
 	}

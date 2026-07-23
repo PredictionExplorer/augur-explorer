@@ -122,14 +122,21 @@ func (a *API) ContractState() *contractstate.State {
 }
 
 // StartBackgroundRefresh launches the periodic contract/database state
-// refresh loops and returns immediately; cancelling ctx stops them. Call it
-// after a successful New. The API parity test harness deliberately never
-// calls it, keeping snapshots deterministic.
-func (a *API) StartBackgroundRefresh(ctx context.Context) {
+// refresh loops and returns a channel closed after they stop. Cancelling ctx
+// stops them; owners should wait for the channel before closing the state
+// dependencies. Call it after a successful New. The API parity test harness
+// deliberately never calls it, keeping snapshots deterministic.
+func (a *API) StartBackgroundRefresh(ctx context.Context) <-chan struct{} {
+	done := make(chan struct{})
 	if a.state == nil {
-		return
+		close(done)
+		return done
 	}
-	go a.state.Run(ctx)
+	go func() {
+		defer close(done)
+		a.state.Run(ctx)
+	}()
+	return done
 }
 
 // dbInitialized reports whether the module was constructed with a database

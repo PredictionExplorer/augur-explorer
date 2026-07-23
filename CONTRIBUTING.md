@@ -54,6 +54,13 @@ pass.
   fake clock or explicit channel barriers rather than millisecond sleeps.
   Keep real deadlines only as outer guards around network/PostgreSQL
   integration tests.
+- Functions that start background work own its lifecycle: derive a child
+  context, cancel it on every return path, and join every goroutine before
+  returning. Close dependencies after the join; a transport that must be
+  closed to unblock an in-flight call is the narrow exception—cancel first,
+  close it, then join before replacement/return, with a regression test.
+  Bind all listeners before serving so a later startup failure can roll the
+  whole set back.
 - ETL changes must preserve the real-handler atomicity matrix under
   `internal/indexer/{cosmicgame,randomwalk}`: a failed block leaves no
   layer-1, domain, trigger-aggregate, address-cache or watermark residue,
@@ -91,7 +98,8 @@ pass.
 - Run `make hooks-install` once per clone. Commit enforcement is active and
   fail-closed now that handwritten internal coverage is above 90%; both the
   hook and CI enforce every current ratchet plus 95% changed-code coverage.
-  The hook requires Docker, caches successful profiles under
+  The hook requires Docker, runs the same race-enabled integration profile
+  as CI, and caches successful profiles under
   `.git/coverage-gate/`, and refuses ambiguous partially staged Go changes.
   Local hooks can be bypassed by Git, so the GitHub **Coverage Gate** check
   must remain required by branch protection.

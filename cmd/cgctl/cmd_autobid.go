@@ -56,6 +56,7 @@ Environment (optional):
 			if err != nil {
 				return fmt.Errorf("failed to initialize bot: %w", err)
 			}
+			defer engine.Close()
 			return engine.Run(cmd.Context())
 		},
 	}

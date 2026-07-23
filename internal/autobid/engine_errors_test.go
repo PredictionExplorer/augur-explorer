@@ -14,10 +14,18 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 )
+
+type chainIDRPC struct{}
+
+// ChainId deliberately follows the JSON-RPC method spelling eth_chainId.
+func (chainIDRPC) ChainId() hexutil.Big { //nolint:staticcheck // RPC method name, not a Go API
+	return hexutil.Big(*big.NewInt(1))
+}
 
 func TestNewEngineContractFailures(t *testing.T) {
 	cases := []struct {
@@ -84,6 +92,90 @@ func TestNewEngineChainIDFailure(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "getting chain id") {
 		t.Errorf("New = %v, want chain-id failure", err)
+	}
+}
+
+func TestNewClosesRPCClientAfterPostDialFailure(t *testing.T) {
+	t.Parallel()
+
+	server := ethrpc.NewServer()
+	if err := server.RegisterName("eth", chainIDRPC{}); err != nil {
+		t.Fatalf("register chain-id RPC: %v", err)
+	}
+	t.Cleanup(server.Stop)
+	client := ethrpc.DialInProc(server)
+	_, err := New(t.Context(), Config{
+		RPCURL:        "in-process",
+		PrivateKeyHex: "not-a-private-key",
+		GameAddr:      gameAddr,
+		Out:           &syncBuffer{},
+		Dial: func(context.Context, string) (*ethrpc.Client, error) {
+			return client, nil
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "parsing private key") {
+		t.Fatalf("New = %v, want private-key failure", err)
+	}
+	var chainID string
+	if err := client.CallContext(t.Context(), &chainID, "eth_chainId"); !errors.Is(err, ethrpc.ErrClientQuit) {
+		t.Fatalf("post-failure RPC call = %v, want %v", err, ethrpc.ErrClientQuit)
+	}
+}
+
+func TestCloseIsIdempotent(t *testing.T) {
+	t.Parallel()
+
+	var nilEngine *Engine
+	nilEngine.Close()
+
+	server := ethrpc.NewServer()
+	t.Cleanup(server.Stop)
+	e := &Engine{rpcClient: ethrpc.DialInProc(server)}
+	e.Close()
+	e.Close()
+
+	var chainID string
+	if err := e.rpcClient.CallContext(t.Context(), &chainID, "eth_chainId"); !errors.Is(err, ethrpc.ErrClientQuit) {
+		t.Fatalf("RPC call after Close = %v, want %v", err, ethrpc.ErrClientQuit)
+	}
+}
+
+func TestRunCancelsAndJoinsRWalkSearch(t *testing.T) {
+	t.Parallel()
+
+	w := newGameWorld(t)
+	searchEntered := make(chan struct{})
+	releaseServerCall := make(chan struct{})
+	t.Cleanup(func() { close(releaseServerCall) })
+	w.rwalk.Handle("nextTokenId", func([]any) ([]any, error) {
+		close(searchEntered)
+		<-releaseServerCall
+		return []any{big.NewInt(1)}, nil
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	e, out := newTestEngine(t, w, nil)
+	done := make(chan error, 1)
+	go func() { done <- e.Run(ctx) }()
+	select {
+	case <-searchEntered:
+		cancel()
+	case <-time.After(5 * time.Second):
+		t.Fatal("background RWalk search did not start")
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("Run = %v, want graceful cancellation", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("Run did not cancel and join the in-flight RWalk search (ctx=%v searching=%v)\n%s",
+			ctx.Err(), e.rwalkSearching.Load(), out.String())
+	}
+	if e.rwalkSearching.Load() {
+		t.Fatal("Run returned while the RWalk search was still active")
 	}
 }
 
@@ -303,7 +395,7 @@ func TestLogAfterBidReadFailure(t *testing.T) {
 	w.game.Handle("lastBidderAddress", func([]any) ([]any, error) {
 		return nil, errors.New("bidder read down")
 	})
-	e.logAfterBid("ETH")
+	e.logAfterBid(t.Context(), "ETH")
 	if !strings.Contains(out.String(), "Error checking last bidder: ") {
 		t.Errorf("output missing bidder read failure:\n%s", out.String())
 	}
@@ -323,6 +415,19 @@ func TestCreateTransactOptsFailures(t *testing.T) {
 	if _, err := e.createTransactOpts(context.Background(), nil, bidGasLimit); err == nil ||
 		!strings.Contains(err.Error(), "getting gas price") {
 		t.Errorf("gas price failure = %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	opts, err := e.createTransactOpts(ctx, nil, bidGasLimit)
+	if err != nil {
+		t.Fatalf("createTransactOpts: %v", err)
+	}
+	if opts.Context != ctx {
+		t.Fatal("transaction options did not retain the caller context")
+	}
+	cancel()
+	if !errors.Is(opts.Context.Err(), context.Canceled) {
+		t.Fatalf("transaction context after cancel = %v, want %v", opts.Context.Err(), context.Canceled)
 	}
 }
 
@@ -355,7 +460,7 @@ func TestFindRWalkTokenIDErrorPaths(t *testing.T) {
 
 	t.Run("nextTokenId fails", func(t *testing.T) {
 		w.rwalk.Handle("nextTokenId", func([]any) ([]any, error) { return nil, errors.New("x") })
-		e.findRWalkTokenID()
+		e.findRWalkTokenID(t.Context())
 		if got := e.nextRWalkTokenID.Load(); got != -1 {
 			t.Errorf("token after failed nextTokenId = %d", got)
 		}
@@ -365,7 +470,7 @@ func TestFindRWalkTokenIDErrorPaths(t *testing.T) {
 	t.Run("ownerOf fails aborts scan", func(t *testing.T) {
 		w.rwalk.Handle("ownerOf", func([]any) ([]any, error) { return nil, errors.New("x") })
 		e.prevRWalkTokenID.Store(-1)
-		e.findRWalkTokenID()
+		e.findRWalkTokenID(t.Context())
 		if got := e.nextRWalkTokenID.Load(); got != -1 {
 			t.Errorf("token after failed ownerOf = %d", got)
 		}
@@ -373,7 +478,7 @@ func TestFindRWalkTokenIDErrorPaths(t *testing.T) {
 
 	t.Run("concurrent search is single flight", func(t *testing.T) {
 		e.rwalkSearching.Store(true)
-		e.findRWalkTokenID() // returns immediately
+		e.findRWalkTokenID(t.Context()) // returns immediately
 		e.rwalkSearching.Store(false)
 	})
 }
@@ -561,7 +666,7 @@ func TestFindRWalkTokenIDKeepsValidToken(t *testing.T) {
 	e, _ := newTestEngine(t, w, nil)
 	// usedRandomWalkNfts answers 0 (unused): the held token stays.
 	e.nextRWalkTokenID.Store(5)
-	e.findRWalkTokenID()
+	e.findRWalkTokenID(t.Context())
 	if got := e.nextRWalkTokenID.Load(); got != 5 {
 		t.Errorf("valid token reset: %d, want 5", got)
 	}
@@ -571,9 +676,14 @@ func TestPrintStatsBalanceFailure(t *testing.T) {
 	w := newGameWorld(t)
 	e, out := newTestEngine(t, w, nil)
 	w.chain.FailNextRPC("eth_getBalance", "down")
-	e.printStats()
-	if !strings.Contains(out.String(), "Current Balance:   0.000000000000000000 ETH") {
-		t.Errorf("stats with failed balance read:\n%s", out.String())
+	e.printStats(t.Context())
+	for _, want := range []string{
+		"Current Balance:   50.000000000000000000 ETH",
+		"Balance Change:    +0.000000000000000000 ETH",
+	} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("stats with failed balance read missing %q:\n%s", want, out.String())
+		}
 	}
 }
 

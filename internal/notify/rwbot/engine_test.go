@@ -27,6 +27,7 @@ type fakeData struct {
 	statusErr   error
 	events      []rwmodel.NotificationEvent2
 	eventsErr   error
+	eventsWait  <-chan struct{}
 	updateErr   error
 	updates     []rwmodel.MsgStatus
 	noOffers    bool
@@ -54,7 +55,17 @@ func (d *fakeData) UpdateMessagingStatus(_ context.Context, status *rwmodel.MsgS
 	return nil
 }
 
-func (d *fakeData) AllEventsForNotificationSinceEvtlog(_ context.Context, _, since int64) ([]rwmodel.NotificationEvent2, error) {
+func (d *fakeData) AllEventsForNotificationSinceEvtlog(ctx context.Context, _, since int64) ([]rwmodel.NotificationEvent2, error) {
+	d.mu.Lock()
+	wait := d.eventsWait
+	d.mu.Unlock()
+	if wait != nil {
+		select {
+		case <-wait:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.eventsErr != nil {
@@ -209,6 +220,34 @@ func (f *fakeDiscord) renamed() []channelRename {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]channelRename(nil), f.renames...)
+}
+
+type lifecycleDiscord struct {
+	lastDateStarted chan struct{}
+	lastDateStopped chan struct{}
+	startOnce       sync.Once
+	stopOnce        sync.Once
+}
+
+func newLifecycleDiscord() *lifecycleDiscord {
+	return &lifecycleDiscord{
+		lastDateStarted: make(chan struct{}),
+		lastDateStopped: make(chan struct{}),
+	}
+}
+
+func (*lifecycleDiscord) SendMessage(context.Context, string, []byte, string) error {
+	return nil
+}
+
+func (d *lifecycleDiscord) SetChannelName(ctx context.Context, ch StatChannel, _ string) error {
+	if ch != ChannelLastDate {
+		return nil
+	}
+	d.startOnce.Do(func() { close(d.lastDateStarted) })
+	<-ctx.Done()
+	d.stopOnce.Do(func() { close(d.lastDateStopped) })
+	return ctx.Err()
 }
 
 type mediaResp struct {
@@ -830,6 +869,43 @@ func TestEventsFetchErrorIsFatal(t *testing.T) {
 	}
 	if err := engine.Run(context.Background()); err == nil || !strings.Contains(err.Error(), "notification events") {
 		t.Errorf("Run = %v, want events-fetch error", err)
+	}
+}
+
+func TestFatalReturnCancelsAndJoinsLastMintedLoop(t *testing.T) {
+	t.Parallel()
+
+	b := newBot()
+	b.data.lastMint = 1
+	b.data.eventsErr = errors.New("db gone")
+	discord := newLifecycleDiscord()
+	b.cfg.Discord = discord
+	b.data.eventsWait = discord.lastDateStarted
+
+	engine, err := New(b.cfg)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	done := make(chan error, 1)
+	go func() { done <- engine.Run(context.Background()) }()
+
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "notification events") {
+			t.Fatalf("Run = %v, want notification-events error", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run did not return after its fatal data-source error")
+	}
+	select {
+	case <-discord.lastDateStarted:
+	default:
+		t.Fatal("last-minted sidecar did not start")
+	}
+	select {
+	case <-discord.lastDateStopped:
+	default:
+		t.Fatal("Run returned before the last-minted sidecar stopped")
 	}
 }
 

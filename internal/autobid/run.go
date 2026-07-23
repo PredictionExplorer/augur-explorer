@@ -20,26 +20,69 @@ func (e *Engine) Run(ctx context.Context) error {
 	e.logf("Playing round %v", e.roundNumPlayed)
 	e.printConfig()
 
+	var (
+		searchCancel context.CancelFunc
+		searchDone   chan struct{}
+	)
+	cancelSearch := func() {
+		if searchDone == nil {
+			return
+		}
+		searchCancel()
+	}
+	waitSearch := func() {
+		if searchDone == nil {
+			return
+		}
+		<-searchDone
+		searchCancel = nil
+		searchDone = nil
+	}
+	shutdown := func() {
+		cancelSearch()
+		e.Close()
+		waitSearch()
+	}
+	defer shutdown()
+
 	for {
+		if searchDone != nil {
+			select {
+			case <-searchDone:
+				searchCancel()
+				searchCancel = nil
+				searchDone = nil
+			default:
+			}
+		}
 		if ctx.Err() != nil {
+			shutdown()
 			e.logf("Shutting down gracefully...")
-			e.printStats()
+			e.printStats(ctx)
 			return nil
 		}
 
 		// Check connection health and reconnect if needed.
 		if e.consecutiveErrors >= maxConsecutiveErrors {
+			cancelSearch()
+			if e.rpcClient != nil {
+				// The search may be blocked in an RPC transport that does not
+				// return on request-context cancellation until the client is
+				// closed. This client is about to be replaced by reconnect.
+				e.rpcClient.Close()
+			}
+			waitSearch()
 			e.logf("[WARNING] %d consecutive errors detected, connection may be unstable", e.consecutiveErrors)
 			if err := e.reconnect(ctx); err != nil {
 				if ctx.Err() != nil {
 					e.logf("Shutting down gracefully...")
-					e.printStats()
+					e.printStats(ctx)
 					return nil
 				}
 				e.logf("[ERROR] Reconnection failed: %v", err)
 				if e.reconnectCount >= maxReconnectAttempts {
 					e.logf("[FATAL] Max reconnection attempts reached, exiting...")
-					e.printStats()
+					e.printStats(ctx)
 					return fmt.Errorf("max reconnection attempts reached: %w", err)
 				}
 				if err := e.cfg.Sleep(ctx, reconnectDelay); err != nil {
@@ -52,8 +95,15 @@ func (e *Engine) Run(ctx context.Context) error {
 		e.logf("=== Event loop (pending=%s, rwalkNext=%v) ===", e.pendingKind, e.nextRWalkTokenID.Load())
 
 		// Search for RWalk tokens in the background.
-		if e.nextRWalkTokenID.Load() == -1 {
-			go e.findRWalkTokenID()
+		if e.nextRWalkTokenID.Load() == -1 && searchDone == nil {
+			searchCtx, cancel := context.WithCancel(ctx)
+			done := make(chan struct{})
+			searchCancel = cancel
+			searchDone = done
+			go func() {
+				defer close(done)
+				e.findRWalkTokenID(searchCtx)
+			}()
 		}
 
 		// Refresh market data.
@@ -74,7 +124,7 @@ func (e *Engine) Run(ctx context.Context) error {
 			e.waitPendingTx(ctx)
 		} else {
 			// Check for a round change.
-			if stop, err := e.checkRoundChange(); stop {
+			if stop, err := e.checkRoundChange(ctx); stop {
 				return err
 			}
 			e.step(ctx)
@@ -256,16 +306,16 @@ func (e *Engine) waitPendingTx(ctx context.Context) {
 	switch kind {
 	case pendingCSTBid:
 		e.stats.cstBidCount++
-		e.logAfterBid("CST")
+		e.logAfterBid(ctx, "CST")
 	case pendingETHBid:
 		e.stats.ethBidCount++
 		e.stats.totalEthSpent.Add(e.stats.totalEthSpent, e.pendingValue)
-		e.logAfterBid("ETH")
+		e.logAfterBid(ctx, "ETH")
 	case pendingRWalkBid:
 		e.stats.rwalkBidCount++
 		e.stats.totalEthSpent.Add(e.stats.totalEthSpent, e.pendingValue)
 		e.nextRWalkTokenID.Store(-1)
-		e.logAfterBid("RWalk")
+		e.logAfterBid(ctx, "RWalk")
 	case pendingRWalkMint:
 		e.handleMintReceipt(ctx, receipt)
 	case pendingClaim:
@@ -294,8 +344,8 @@ func (e *Engine) handleMintReceipt(ctx context.Context, receipt *types.Receipt) 
 
 // logAfterBid reports whether the bot holds the last-bidder position after a
 // confirmed bid.
-func (e *Engine) logAfterBid(bidType string) {
-	lastBidder, err := e.gameContract.LastBidderAddress(&e.callOpts)
+func (e *Engine) logAfterBid(ctx context.Context, bidType string) {
+	lastBidder, err := e.gameContract.LastBidderAddress(callOpts(ctx))
 	if err != nil {
 		e.logf("Error checking last bidder: %v", err)
 		return
@@ -317,6 +367,7 @@ func (e *Engine) runInitialBidding(ctx context.Context) {
 	bidCount := 0
 	totalSpent := big.NewInt(0)
 	ethBalance := e.market.EthBalance
+	opts := callOpts(ctx)
 
 	for failures := 0; failures <= 5; {
 		if ctx.Err() != nil {
@@ -327,7 +378,7 @@ func (e *Engine) runInitialBidding(ctx context.Context) {
 			break
 		}
 
-		bidPrice, err := e.gameContract.GetNextEthBidPrice(&e.callOpts)
+		bidPrice, err := e.gameContract.GetNextEthBidPrice(opts)
 		if err != nil {
 			e.logf("Error getting bid price: %v", err)
 			failures++

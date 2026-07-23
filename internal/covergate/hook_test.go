@@ -133,6 +133,24 @@ func TestNativeCommitGateIsEnabledAtNinetyPercent(t *testing.T) {
 	}
 }
 
+func TestNativeCommitHookUsesRaceProfileAndDistinctCacheKey(t *testing.T) {
+	t.Parallel()
+	repoRoot := covergateRepoRoot(t)
+	for path, required := range map[string][]byte{
+		".githooks/pre-commit":     []byte("export COVERAGE_RACE=1"),
+		"scripts/coverage-gate.sh": []byte(`coverage_race=${COVERAGE_RACE:-0}`),
+	} {
+		// #nosec G304 -- both paths are fixed repository files.
+		data, err := os.ReadFile(filepath.Join(repoRoot, path))
+		if err != nil {
+			t.Fatalf("reading %s: %v", path, err)
+		}
+		if !bytes.Contains(data, required) {
+			t.Fatalf("%s missing %q", path, required)
+		}
+	}
+}
+
 func covergateRepoRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"log/slog"
+	"context"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"strconv"
@@ -71,14 +71,19 @@ func statusClass(code int) string {
 	}
 }
 
-// startInternalServer serves /metrics and /debug/pprof on a private listener.
+// listenInternalServer binds /metrics and /debug/pprof on a private listener.
 // These must never be exposed publicly, so they live on their own port,
 // controlled by METRICS_ADDR (e.g. "127.0.0.1:9090"). Unset means disabled.
-// The returned server (nil when disabled) participates in graceful shutdown.
-func startInternalServer(metricsAddr string, logger *slog.Logger) *http.Server {
+// Binding is synchronous so startup can roll back every open listener before
+// any serving goroutine starts. Nil server/listener means disabled.
+func listenInternalServer(ctx context.Context, metricsAddr string) (*http.Server, net.Listener, error) {
 	addr := strings.TrimSpace(metricsAddr)
 	if addr == "" {
-		return nil
+		return nil, nil, nil
+	}
+	listener, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
+	if err != nil {
+		return nil, nil, err
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
@@ -95,11 +100,5 @@ func startInternalServer(metricsAddr string, logger *slog.Logger) *http.Server {
 		ReadTimeout:       readTimeout,
 		IdleTimeout:       idleTimeout,
 	}
-	go func() {
-		logger.Info("internal metrics/pprof server listening", "addr", addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error(fmt.Sprintf("internal metrics server: %v", err))
-		}
-	}()
-	return srv
+	return srv, listener, nil
 }

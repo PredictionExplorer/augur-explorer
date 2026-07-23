@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -417,6 +418,80 @@ func TestScanBestEffortVsFailFast(t *testing.T) {
 	})
 }
 
+func TestRunChunksFailFastCancelsAndJoinsWorkers(t *testing.T) {
+	t.Parallel()
+
+	const workers = 3
+	chunks := make([]freezerscanner.BlockRange, 6)
+	for i := range chunks {
+		chunks[i] = freezerscanner.BlockRange{Start: uint64(i), End: uint64(i + 1)}
+	}
+
+	wantErr := errors.New("injected chunk failure")
+	entered := make(chan int, len(chunks))
+	releaseFailure := make(chan struct{})
+	cancelledWorkers := make(chan int, workers-1)
+	closedProcessors := make(chan struct{}, workers)
+
+	var (
+		results []chunkResult
+		runErr  error
+	)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		results, runErr = runChunks(t.Context(), chunks, workers, true, func() (chunkProcessor, func()) {
+			return func(ctx context.Context, chunkIdx int, _ freezerscanner.BlockRange) chunkResult {
+					entered <- chunkIdx
+					if chunkIdx == 0 {
+						<-releaseFailure
+						return chunkResult{chunkIdx: chunkIdx, err: wantErr}
+					}
+					<-ctx.Done()
+					cancelledWorkers <- chunkIdx
+					return chunkResult{chunkIdx: chunkIdx}
+				}, func() {
+					closedProcessors <- struct{}{}
+				}
+		})
+	}()
+
+	started := make(map[int]bool, workers)
+	for range workers {
+		select {
+		case idx := <-entered:
+			started[idx] = true
+		case <-time.After(5 * time.Second):
+			t.Fatal("workers did not start their first chunks")
+		}
+	}
+	if !started[0] {
+		t.Fatalf("started chunks = %v, want failing chunk 0 in flight", started)
+	}
+	close(releaseFailure)
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("runChunks did not return after fail-fast cancellation")
+	}
+	if !errors.Is(runErr, wantErr) {
+		t.Fatalf("runChunks error = %v, want %v", runErr, wantErr)
+	}
+	if len(results) != workers {
+		t.Fatalf("results = %d, want one from each in-flight worker", len(results))
+	}
+	if got := len(cancelledWorkers); got != workers-1 {
+		t.Fatalf("cancelled workers = %d, want %d", got, workers-1)
+	}
+	if got := len(closedProcessors); got != workers {
+		t.Fatalf("closed processors = %d, want %d before return", got, workers)
+	}
+	if got := len(entered); got != 0 {
+		t.Fatalf("additional chunks started after cancellation: %d", got)
+	}
+}
+
 func TestScanCancellationReturnsPartialResults(t *testing.T) {
 	// Many blocks and one worker with tiny chunks: cancellation between
 	// chunks must stop the scan without an error.
@@ -697,28 +772,34 @@ func TestScanReadErrorFailFastAndBestEffort(t *testing.T) {
 	})
 }
 
-func TestScanMidRunCancellation(t *testing.T) {
-	// Enough work that cancellation lands mid-scan: many blocks with real
-	// receipts, one worker, small chunks.
-	blocks := make([][]byte, 0, 3000)
-	payload := receiptsBlob(t, []*types.Log{simpleLog(contractA, topicX, 1)})
-	for range 3000 {
-		blocks = append(blocks, payload)
-	}
-	reader := buildFreezer(t, blocks)
+func TestRunChunksCallerCancellationReturnsPartialResults(t *testing.T) {
+	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(3 * time.Millisecond)
-		cancel()
-	}()
-	var out bytes.Buffer
-	stats, err := Run(ctx, reader, Options{OutPath: "-", Stdout: &out, Workers: 1, ChunkSize: 50})
-	if err != nil {
-		t.Fatalf("Run after mid-scan cancel: %v", err)
+	chunks := make([]freezerscanner.BlockRange, 5)
+	for i := range chunks {
+		chunks[i] = freezerscanner.BlockRange{Start: uint64(i), End: uint64(i + 1)}
 	}
-	// Whatever completed before the cancel is merged; no error either way.
-	t.Logf("processed %d blocks before cancellation", stats.ProcessedBlocks)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	results, err := runChunks(ctx, chunks, 2, true, func() (chunkProcessor, func()) {
+		return func(ctx context.Context, chunkIdx int, _ freezerscanner.BlockRange) chunkResult {
+			if chunkIdx == 0 {
+				cancel()
+			} else {
+				<-ctx.Done()
+			}
+			return chunkResult{chunkIdx: chunkIdx, tempFile: fmt.Sprintf("chunk-%d", chunkIdx)}
+		}, func() {}
+	})
+	if err != nil {
+		t.Fatalf("runChunks after caller cancellation: %v", err)
+	}
+	if len(results) == 0 || len(results) >= len(chunks) {
+		t.Fatalf("partial results = %d, want between 1 and %d", len(results), len(chunks)-1)
+	}
+	if !slices.ContainsFunc(results, func(result chunkResult) bool { return result.chunkIdx == 0 }) {
+		t.Fatalf("partial results = %+v, want completed chunk 0", results)
+	}
 }
 
 func TestLastScannedBlockBlankLine(t *testing.T) {

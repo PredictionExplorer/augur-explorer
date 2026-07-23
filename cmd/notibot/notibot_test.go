@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
@@ -76,7 +77,11 @@ func TestReadDiscordKeysErrors(t *testing.T) {
 func TestRenameWithRetry(t *testing.T) {
 	t.Run("first attempt succeeds", func(t *testing.T) {
 		calls := 0
-		err := renameWithRetry(func() error { calls++; return nil }, func(time.Duration) { t.Error("slept without rate limit") })
+		err := renameWithRetry(context.Background(), func() error { calls++; return nil },
+			func(context.Context, time.Duration) error {
+				t.Error("slept without rate limit")
+				return nil
+			})
 		if err != nil || calls != 1 {
 			t.Errorf("err = %v, calls = %d", err, calls)
 		}
@@ -84,13 +89,16 @@ func TestRenameWithRetry(t *testing.T) {
 	t.Run("rate limited then succeeds", func(t *testing.T) {
 		calls := 0
 		var slept time.Duration
-		err := renameWithRetry(func() error {
+		err := renameWithRetry(context.Background(), func() error {
 			calls++
 			if calls == 1 {
 				return errors.New(`HTTP 429 {"message": "rate limited", "retry_after": 2.35}`)
 			}
 			return nil
-		}, func(d time.Duration) { slept = d })
+		}, func(_ context.Context, d time.Duration) error {
+			slept = d
+			return nil
+		})
 		if err != nil || calls != 2 {
 			t.Errorf("err = %v, calls = %d, want retry", err, calls)
 		}
@@ -100,19 +108,42 @@ func TestRenameWithRetry(t *testing.T) {
 	})
 	t.Run("non-rate-limit error is returned without retry", func(t *testing.T) {
 		calls := 0
-		err := renameWithRetry(func() error { calls++; return errors.New("permission denied") }, func(time.Duration) {})
+		err := renameWithRetry(context.Background(),
+			func() error { calls++; return errors.New("permission denied") },
+			func(context.Context, time.Duration) error { return nil })
 		if err == nil || calls != 1 {
 			t.Errorf("err = %v, calls = %d, want single failing attempt", err, calls)
 		}
 	})
 	t.Run("rate limited twice returns second error", func(t *testing.T) {
 		calls := 0
-		err := renameWithRetry(func() error {
+		err := renameWithRetry(context.Background(), func() error {
 			calls++
 			return errors.New(`retry_after": 1.0`)
-		}, func(time.Duration) {})
+		}, func(context.Context, time.Duration) error { return nil })
 		if err == nil || calls != 2 {
 			t.Errorf("err = %v, calls = %d, want exactly one retry", err, calls)
+		}
+	})
+	t.Run("cancellation during rate-limit wait stops retry", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		calls := 0
+		err := renameWithRetry(ctx, func() error {
+			calls++
+			return errors.New(`retry_after": 60.0`)
+		}, sleepContext)
+		if !errors.Is(err, context.Canceled) || calls != 1 {
+			t.Errorf("err = %v, calls = %d, want one attempt and context cancellation", err, calls)
+		}
+	})
+}
+
+func TestSleepContextCompletes(t *testing.T) {
+	t.Parallel()
+	synctest.Test(t, func(t *testing.T) {
+		if err := sleepContext(t.Context(), time.Hour); err != nil {
+			t.Fatalf("sleepContext: %v", err)
 		}
 	})
 }

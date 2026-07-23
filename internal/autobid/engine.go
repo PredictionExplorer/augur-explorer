@@ -45,6 +45,7 @@ const (
 	afterTxDelay         = 2 * time.Second        // after submitting a transaction
 	idleDelay            = 5 * time.Second        // when there is nothing to do
 	reconnectDelay       = 5 * time.Second        // before a reconnection attempt
+	statsRPCTimeout      = 5 * time.Second        // bound the optional shutdown balance read
 	maxReceiptRetries    = 3                      // abandon a pending-tx wait after this many polls
 	bidGasLimit          = 1000000
 	claimGasLimit        = 5000000
@@ -133,7 +134,6 @@ type Engine struct {
 
 	rpcClient *ethrpc.Client
 	ethClient *ethclient.Client
-	callOpts  bind.CallOpts
 
 	gameContract  *cgcontracts.CosmicSignatureGame
 	rwalkContract *rwcontracts.RWalk
@@ -170,7 +170,8 @@ type Engine struct {
 
 	// outMu serializes writes to cfg.Out: the RWalk token search logs from
 	// its background goroutine.
-	outMu sync.Mutex
+	outMu     sync.Mutex
+	closeOnce sync.Once
 }
 
 // New connects to the RPC endpoint, loads the contracts and prepares the
@@ -199,6 +200,12 @@ func New(ctx context.Context, cfg Config) (*Engine, error) {
 	}
 	e.nextRWalkTokenID.Store(-1)
 	e.prevRWalkTokenID.Store(-1)
+	ready := false
+	defer func() {
+		if !ready {
+			e.Close()
+		}
+	}()
 
 	var err error
 	e.rpcClient, err = cfg.Dial(ctx, cfg.RPCURL)
@@ -222,11 +229,11 @@ func New(ctx context.Context, cfg Config) (*Engine, error) {
 	}
 	e.address = crypto.PubkeyToAddress(*publicKey)
 
-	if err := e.bindContracts(); err != nil {
+	if err := e.bindContracts(ctx); err != nil {
 		return nil, err
 	}
 
-	roundNum, err := e.gameContract.RoundNum(&e.callOpts)
+	roundNum, err := e.gameContract.RoundNum(callOpts(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("getting roundNum: %w", err)
 	}
@@ -237,7 +244,25 @@ func New(ctx context.Context, cfg Config) (*Engine, error) {
 		return nil, fmt.Errorf("getting initial balance: %w", err)
 	}
 
+	ready = true
 	return e, nil
+}
+
+// Close releases the Engine's Ethereum RPC client. It is idempotent and must
+// be called after Run returns; an Engine is intended for one Run lifecycle.
+func (e *Engine) Close() {
+	if e == nil {
+		return
+	}
+	e.closeOnce.Do(func() {
+		if e.rpcClient != nil {
+			e.rpcClient.Close()
+		}
+	})
+}
+
+func callOpts(ctx context.Context) *bind.CallOpts {
+	return &bind.CallOpts{Context: ctx}
 }
 
 // sleepContext sleeps for d unless ctx is cancelled first.
@@ -258,13 +283,13 @@ func sleepContext(ctx context.Context, d time.Duration) error {
 // bindContracts (re)instantiates the contract bindings against the current
 // client: the game proxy plus the RandomWalk and PrizesWallet addresses it
 // publishes.
-func (e *Engine) bindContracts() error {
+func (e *Engine) bindContracts(ctx context.Context) error {
 	var err error
 	e.gameContract, err = cgcontracts.NewCosmicSignatureGame(e.cfg.GameAddr, e.ethClient)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame contract: %w", err)
 	}
-	rwalkAddr, err := e.gameContract.RandomWalkNft(&e.callOpts)
+	rwalkAddr, err := e.gameContract.RandomWalkNft(callOpts(ctx))
 	if err != nil {
 		return fmt.Errorf("getting RWalk addr: %w", err)
 	}
@@ -272,7 +297,7 @@ func (e *Engine) bindContracts() error {
 	if err != nil {
 		return fmt.Errorf("creating RWalk instance: %w", err)
 	}
-	prizesAddr, err := e.gameContract.PrizesWallet(&e.callOpts)
+	prizesAddr, err := e.gameContract.PrizesWallet(callOpts(ctx))
 	if err != nil {
 		return fmt.Errorf("fetching PrizesWallet address: %w", err)
 	}
@@ -339,7 +364,7 @@ func (e *Engine) reconnect(ctx context.Context) error {
 		return fmt.Errorf("chain ID mismatch after reconnect: expected %v, got %v", e.chainID, chainID)
 	}
 
-	if err := e.bindContracts(); err != nil {
+	if err := e.bindContracts(ctx); err != nil {
 		return fmt.Errorf("reconnect failed: %w", err)
 	}
 
@@ -362,6 +387,7 @@ func (e *Engine) createTransactOpts(ctx context.Context, value *big.Int, gasLimi
 	}
 
 	txopts := &bind.TransactOpts{
+		Context:  ctx,
 		From:     e.address,
 		Nonce:    new(big.Int).SetUint64(nonce),
 		GasPrice: ethtx.AdjustGasPriceBy(gasPrice, e.cfg.GasPriceMultiplier),
@@ -385,20 +411,21 @@ func (e *Engine) createTransactOpts(ctx context.Context, value *big.Int, gasLimi
 func (e *Engine) refreshMarket(ctx context.Context) error {
 	var m Market
 	var err error
+	opts := callOpts(ctx)
 
-	m.CstPrice, err = e.gameContract.GetNextCstBidPrice(&e.callOpts)
+	m.CstPrice, err = e.gameContract.GetNextCstBidPrice(opts)
 	if err != nil {
 		return fmt.Errorf("getting CST bid price: %w", err)
 	}
-	m.EthBidPrice, err = e.gameContract.GetNextEthBidPrice(&e.callOpts)
+	m.EthBidPrice, err = e.gameContract.GetNextEthBidPrice(opts)
 	if err != nil {
 		return fmt.Errorf("getting ETH bid price: %w", err)
 	}
-	m.TimeUntilPrize, err = e.gameContract.GetDurationUntilMainPrize(&e.callOpts)
+	m.TimeUntilPrize, err = e.gameContract.GetDurationUntilMainPrize(opts)
 	if err != nil {
 		return fmt.Errorf("getting time until prize: %w", err)
 	}
-	tokenAddr, err := e.gameContract.Token(&e.callOpts)
+	tokenAddr, err := e.gameContract.Token(opts)
 	if err != nil {
 		return fmt.Errorf("getting token address: %w", err)
 	}
@@ -406,11 +433,11 @@ func (e *Engine) refreshMarket(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("instantiating token contract: %w", err)
 	}
-	m.CstBalance, err = tokenContract.BalanceOf(&e.callOpts, e.address)
+	m.CstBalance, err = tokenContract.BalanceOf(opts, e.address)
 	if err != nil {
 		return fmt.Errorf("getting CST balance: %w", err)
 	}
-	m.LastBidder, err = e.gameContract.LastBidderAddress(&e.callOpts)
+	m.LastBidder, err = e.gameContract.LastBidderAddress(opts)
 	if err != nil {
 		return fmt.Errorf("getting last bidder: %w", err)
 	}
@@ -418,7 +445,7 @@ func (e *Engine) refreshMarket(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting ETH balance: %w", err)
 	}
-	m.RWalkMintPrice, err = e.rwalkContract.GetMintPrice(&e.callOpts)
+	m.RWalkMintPrice, err = e.rwalkContract.GetMintPrice(opts)
 	if err != nil {
 		return fmt.Errorf("getting RWalk mint price: %w", err)
 	}
@@ -433,11 +460,12 @@ func (e *Engine) checkTimeoutClaim(ctx context.Context) bool {
 	if isZeroAddress(e.market.LastBidder) {
 		return false
 	}
-	timeoutDuration, err := e.gameContract.TimeoutDurationToClaimMainPrize(&e.callOpts)
+	opts := callOpts(ctx)
+	timeoutDuration, err := e.gameContract.TimeoutDurationToClaimMainPrize(opts)
 	if err != nil {
 		return false
 	}
-	prizeTime, err := e.gameContract.MainPrizeTime(&e.callOpts)
+	prizeTime, err := e.gameContract.MainPrizeTime(opts)
 	if err != nil {
 		return false
 	}
@@ -468,8 +496,9 @@ var ErrChainReset = errors.New("blockchain was reset")
 // checkRoundChange detects the end of the round played. It returns stop=true
 // when the engine must terminate: with a nil error when the round ended
 // normally, or wrapping ErrChainReset when the round number went backwards.
-func (e *Engine) checkRoundChange() (stop bool, err error) {
-	rnum, err := e.gameContract.RoundNum(&e.callOpts)
+func (e *Engine) checkRoundChange(ctx context.Context) (stop bool, err error) {
+	opts := callOpts(ctx)
+	rnum, err := e.gameContract.RoundNum(opts)
 	if err != nil {
 		e.logf("Error getting roundNum: %v", err)
 		return false, nil
@@ -483,11 +512,11 @@ func (e *Engine) checkRoundChange() (stop bool, err error) {
 	if rnum.Int64() < e.roundNumPlayed {
 		e.logf("ERROR: Round number decreased (%v -> %v) - blockchain was reset!", e.roundNumPlayed, rnum.Int64())
 		e.logf("Exiting to prevent unintended spending. Restart bot manually.")
-		e.printStats()
+		e.printStats(ctx)
 		return true, fmt.Errorf("%w (round %v -> %v)", ErrChainReset, e.roundNumPlayed, rnum.Int64())
 	}
 
-	winner, err := e.prizesWallet.MainPrizeBeneficiaryAddresses(&e.callOpts, big.NewInt(e.roundNumPlayed))
+	winner, err := e.prizesWallet.MainPrizeBeneficiaryAddresses(opts, big.NewInt(e.roundNumPlayed))
 	if err == nil {
 		if e.isMyAddress(winner) {
 			e.logf("I am the winner of round %v!", e.roundNumPlayed)
@@ -504,20 +533,21 @@ func (e *Engine) checkRoundChange() (stop bool, err error) {
 		return false, nil
 	}
 	e.logf("Round ended, exiting...")
-	e.printStats()
+	e.printStats(ctx)
 	return true, nil
 }
 
 // findRWalkTokenID searches for an unused RWalk token owned by the bot. It
 // runs in a background goroutine; at most one search is active at a time.
-func (e *Engine) findRWalkTokenID() {
+func (e *Engine) findRWalkTokenID(ctx context.Context) {
 	if !e.rwalkSearching.CompareAndSwap(false, true) {
 		return
 	}
 	defer e.rwalkSearching.Store(false)
+	opts := callOpts(ctx)
 
 	if next := e.nextRWalkTokenID.Load(); next > -1 {
-		wasUsed, err := e.gameContract.UsedRandomWalkNfts(&e.callOpts, big.NewInt(next))
+		wasUsed, err := e.gameContract.UsedRandomWalkNfts(opts, big.NewInt(next))
 		if err == nil && wasUsed.Cmp(big.NewInt(1)) == 0 {
 			e.logf("Resetting nextRWalkTokenID (%v) - already used", next)
 			e.nextRWalkTokenID.Store(-1)
@@ -527,21 +557,26 @@ func (e *Engine) findRWalkTokenID() {
 	}
 
 	targetID := e.prevRWalkTokenID.Load() + 1
-	lastTokenID, err := e.rwalkContract.NextTokenId(&e.callOpts)
+	lastTokenID, err := e.rwalkContract.NextTokenId(opts)
 	if err != nil {
-		e.logf("Error calling NextTokenId(): %v", err)
+		if ctx.Err() == nil {
+			e.logf("Error calling NextTokenId(): %v", err)
+		}
 		return
 	}
 
 	for targetID < lastTokenID.Int64() {
-		owner, err := e.rwalkContract.OwnerOf(&e.callOpts, big.NewInt(targetID))
+		if ctx.Err() != nil {
+			return
+		}
+		owner, err := e.rwalkContract.OwnerOf(opts, big.NewInt(targetID))
 		if err != nil {
 			return
 		}
 		e.prevRWalkTokenID.Store(targetID)
 
 		if e.isMyAddress(owner) {
-			wasUsed, err := e.gameContract.UsedRandomWalkNfts(&e.callOpts, big.NewInt(targetID))
+			wasUsed, err := e.gameContract.UsedRandomWalkNfts(opts, big.NewInt(targetID))
 			if err == nil && wasUsed.Sign() == 0 {
 				e.nextRWalkTokenID.Store(targetID)
 				e.logf("Found RWalk token %v for bidding", targetID)
@@ -568,12 +603,19 @@ func (e *Engine) printConfig() {
 }
 
 // printStats logs the session statistics summary.
-func (e *Engine) printStats() {
+func (e *Engine) printStats(ctx context.Context) {
 	duration := time.Since(e.stats.startTime)
 
-	currentBalance, err := e.ethClient.BalanceAt(context.Background(), e.address, nil)
-	if err != nil {
-		currentBalance = big.NewInt(0)
+	currentBalance := new(big.Int).Set(e.stats.startBalance)
+	if e.market.EthBalance != nil {
+		currentBalance.Set(e.market.EthBalance)
+	}
+	if ctx.Err() == nil {
+		statsCtx, cancel := context.WithTimeout(ctx, statsRPCTimeout)
+		defer cancel()
+		if balance, err := e.ethClient.BalanceAt(statsCtx, e.address, nil); err == nil {
+			currentBalance.Set(balance)
+		}
 	}
 	balanceChange := new(big.Int).Sub(currentBalance, e.stats.startBalance)
 

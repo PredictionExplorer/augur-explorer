@@ -209,9 +209,17 @@ func TestCosmicGameModuleConstruction(t *testing.T) {
 		}
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel() // Run exits promptly on an already-cancelled context
-		module.StartBackgroundRefresh(ctx)
+		select {
+		case <-module.StartBackgroundRefresh(ctx):
+		case <-time.After(5 * time.Second):
+			t.Fatal("background refresh did not report that it stopped")
+		}
 
 		// A bare module has no state; the call is a documented no-op.
-		cosmicgame.NewBare().StartBackgroundRefresh(ctx)
+		select {
+		case <-cosmicgame.NewBare().StartBackgroundRefresh(ctx):
+		default:
+			t.Fatal("bare module returned a live background-refresh channel")
+		}
 	})
 }
