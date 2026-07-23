@@ -1,6 +1,7 @@
 package srvmonitor
 
 import (
+	"fmt"
 	"maps"
 	"strings"
 	"testing"
@@ -37,6 +38,9 @@ func TestLoadFromEnvMinimal(t *testing.T) {
 	}
 	if cfg.Intervals != DefaultIntervals() {
 		t.Fatalf("Intervals = %+v, want defaults", cfg.Intervals)
+	}
+	if cfg.Anomaly.StaleAfter != DefaultAnomalyStaleAfter {
+		t.Fatalf("anomaly stale threshold = %v, want %v", cfg.Anomaly.StaleAfter, DefaultAnomalyStaleAfter)
 	}
 	if cfg.MobileNotif || cfg.Anomaly.Enabled() {
 		t.Fatalf("cfg = %+v, want notifications and anomaly disabled", cfg)
@@ -82,6 +86,7 @@ func TestLoadFromEnvFull(t *testing.T) {
 		"ANOMALY_SSH_USER":    "ops",
 		"ANOMALY_SSH_HOST":    "websrv",
 		"ANOMALY_REMOTE_FILE": "/var/log/anomalies.log",
+		"ANOMALY_STALE_SECS":  "900",
 
 		"DB_RWLK_NAME_SRV":    "rw",
 		"DB_RWLK_HOST_SRV":    "rw.example",
@@ -89,6 +94,15 @@ func TestLoadFromEnvFull(t *testing.T) {
 
 		"MOBILE_NOTIF": "yes",
 	})
+	for i := 3; i <= 6; i++ {
+		env[fmt.Sprintf("DB_L1EVT%d_NAME", i)] = fmt.Sprintf("evt%d", i)
+		env[fmt.Sprintf("DB_L1EVT%d_HOST", i)] = fmt.Sprintf("evt%d.example", i)
+		env[fmt.Sprintf("DB_L1EVT%d_DBNAME", i)] = fmt.Sprintf("events%d", i)
+		env[fmt.Sprintf("DB_L1EVT%d_USER", i)] = "reader"
+		env[fmt.Sprintf("DB_L1EVT%d_PASS", i)] = "secret"
+		env[fmt.Sprintf("DB_L1EVT%d_TABLE", i)] = fmt.Sprintf("status_%d", i)
+		env[fmt.Sprintf("DB_L1EVT%d_COLUMN", i)] = fmt.Sprintf("watermark_%d", i)
+	}
 
 	cfg, err := LoadFromEnv(envMap(env))
 	if err != nil {
@@ -99,7 +113,7 @@ func TestLoadFromEnvFull(t *testing.T) {
 		t.Fatalf("official flags = %+v", cfg.RPCNodes)
 	}
 
-	if len(cfg.EventTableDBs) != 2 {
+	if len(cfg.EventTableDBs) != 6 {
 		t.Fatalf("EventTableDBs = %+v", cfg.EventTableDBs)
 	}
 	// Defaults apply to evt1; explicit values to evt2.
@@ -108,6 +122,11 @@ func TestLoadFromEnvFull(t *testing.T) {
 	}
 	if cfg.EventTableDBs[1].TableName != "rw_proc_status" || cfg.EventTableDBs[1].ColumnName != "last_block" {
 		t.Fatalf("evt2 = %+v", cfg.EventTableDBs[1])
+	}
+	if cfg.EventTableDBs[5].Name != "evt6" ||
+		cfg.EventTableDBs[5].TableName != "status_6" ||
+		cfg.EventTableDBs[5].ColumnName != "watermark_6" {
+		t.Fatalf("evt6 = %+v", cfg.EventTableDBs[5])
 	}
 
 	if len(cfg.ApplicationDBs) != 1 || cfg.ApplicationDBs[0].Name != "cg app" {
@@ -131,11 +150,53 @@ func TestLoadFromEnvFull(t *testing.T) {
 	if !cfg.Anomaly.Enabled() {
 		t.Fatalf("Anomaly = %+v, want enabled", cfg.Anomaly)
 	}
+	if cfg.Anomaly.StaleAfter != 15*time.Minute {
+		t.Fatalf("Anomaly.StaleAfter = %v, want 15m", cfg.Anomaly.StaleAfter)
+	}
 	if cfg.RWalkDB.Host != "rw.example" || cfg.RWalkImage.ContractAddr == "" {
 		t.Fatalf("RWalk config = %+v / %+v", cfg.RWalkDB, cfg.RWalkImage)
 	}
 	if !cfg.MobileNotif {
 		t.Fatal("MobileNotif = false, want true")
+	}
+}
+
+func TestLoadFromEnvAnomalyStaleSeconds(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name    string
+		value   string
+		want    time.Duration
+		wantErr bool
+	}{
+		{name: "default", want: DefaultAnomalyStaleAfter},
+		{name: "seconds", value: "1", want: time.Second},
+		{name: "trimmed", value: " 900 ", want: 15 * time.Minute},
+		{name: "zero", value: "0", wantErr: true},
+		{name: "negative", value: "-1", wantErr: true},
+		{name: "duration syntax rejected", value: "30m", wantErr: true},
+		{name: "fraction rejected", value: "1.5", wantErr: true},
+		{name: "duration overflow rejected", value: "9223372037", wantErr: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			env := minimalEnv()
+			env["ANOMALY_STALE_SECS"] = tc.value
+			cfg, err := LoadFromEnv(envMap(env))
+			if tc.wantErr {
+				if err == nil || !strings.Contains(err.Error(), "ANOMALY_STALE_SECS") {
+					t.Fatalf("error = %v, want strict ANOMALY_STALE_SECS failure", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Anomaly.StaleAfter != tc.want {
+				t.Fatalf("StaleAfter = %v, want %v", cfg.Anomaly.StaleAfter, tc.want)
+			}
+		})
 	}
 }
 
@@ -229,6 +290,19 @@ func TestLoadFromEnvValidation(t *testing.T) {
 		}
 		if err := cfg.Validate(); err != nil {
 			t.Fatalf("safe root probe error = %v", err)
+		}
+	})
+
+	t.Run("negative anomaly threshold is invalid", func(t *testing.T) {
+		t.Parallel()
+		cfg := Config{
+			RPCNodes:  []RPCConfig{{Name: "node", URL: "http://rpc"}},
+			Layer1DBs: []DatabaseConfig{{Name: "db", Host: "db"}},
+			Anomaly:   AnomalyConfig{StaleAfter: -time.Second},
+			Intervals: DefaultIntervals(),
+		}
+		if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "ANOMALY_STALE_SECS") {
+			t.Fatalf("negative stale threshold error = %v", err)
 		}
 	})
 }

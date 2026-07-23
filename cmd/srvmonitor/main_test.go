@@ -401,7 +401,9 @@ func TestLogConfigSummary(t *testing.T) {
 	}
 	logConfigSummary(logger, cfg)
 	out := s.String()
-	if !strings.Contains(out, "1 RPC nodes") || !strings.Contains(out, "Anomaly monitor: u@h:/f") {
+	if !strings.Contains(out, "1 RPC nodes") ||
+		!strings.Contains(out, "Anomaly monitor: u@h:/f") ||
+		!strings.Contains(out, "stale after 30m0s") {
 		t.Fatalf("log = %q", out)
 	}
 

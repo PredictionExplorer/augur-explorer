@@ -12,15 +12,22 @@ func fullConfig() *Config {
 		RPCNodes:       []RPCConfig{{Name: "n", URL: "http://rpc"}},
 		Layer1DBs:      []DatabaseConfig{dbConfig("l1a"), dbConfig("l1b")},
 		ApplicationDBs: []DatabaseConfig{dbConfig("app1"), dbConfig("app2"), dbConfig("app3")},
-		EventTableDBs:  []EventTableConfig{evtConfig("evt1"), evtConfig("evt2")},
-		WebAPIs:        []WebAPIConfig{{Title: "api1"}, {Title: "api2"}},
-		DiskMonitors:   []DiskConfig{{Title: "disk1"}},
-		SSLCerts:       []SSLCertConfig{{Host: "a"}, {Host: "b"}, {Host: "c"}},
-		Anomaly:        anomalyConfig(),
-		RWalkDB:        dbConfig("rwalk"),
-		RWalkImage:     ImageServerConfig{URL: "http://img"},
-		MobileNotif:    true,
-		Intervals:      testIntervals(),
+		EventTableDBs: []EventTableConfig{
+			evtConfig("evt1"),
+			evtConfig("evt2"),
+			evtConfig("evt3"),
+			evtConfig("evt4"),
+			evtConfig("evt5"),
+			evtConfig("evt6"),
+		},
+		WebAPIs:      []WebAPIConfig{{Title: "api1"}, {Title: "api2"}},
+		DiskMonitors: []DiskConfig{{Title: "disk1"}},
+		SSLCerts:     []SSLCertConfig{{Host: "a"}, {Host: "b"}, {Host: "c"}},
+		Anomaly:      anomalyConfig(),
+		RWalkDB:      dbConfig("rwalk"),
+		RWalkImage:   ImageServerConfig{URL: "http://img"},
+		MobileNotif:  true,
+		Intervals:    testIntervals(),
 	}
 }
 
@@ -33,17 +40,17 @@ func TestComputeLayoutFullConfig(t *testing.T) {
 	if l.EventTableBaseY != 28 {
 		t.Fatalf("EventTableBaseY = %d, want 28", l.EventTableBaseY)
 	}
-	// Web API header: 25 + 3 apps + 2 evt + 1 gap = 31.
-	if l.WebAPIBaseY != 31 {
-		t.Fatalf("WebAPIBaseY = %d, want 31", l.WebAPIBaseY)
+	// Web API header: 25 + 3 apps + 6 event DBs + 1 gap = 35.
+	if l.WebAPIBaseY != 35 {
+		t.Fatalf("WebAPIBaseY = %d, want 35", l.WebAPIBaseY)
 	}
-	// Image: 31 + 1 header + 2 APIs + 1 gap = 35.
-	if l.ImageBaseY != 35 {
-		t.Fatalf("ImageBaseY = %d, want 35", l.ImageBaseY)
+	// Image: 35 + 1 header + 2 APIs + 1 gap = 39.
+	if l.ImageBaseY != 39 {
+		t.Fatalf("ImageBaseY = %d, want 39", l.ImageBaseY)
 	}
 	// Anomaly: image header + 2 content lines below.
-	if l.AnomalyBaseY != 38 {
-		t.Fatalf("AnomalyBaseY = %d, want 38", l.AnomalyBaseY)
+	if l.AnomalyBaseY != 42 {
+		t.Fatalf("AnomalyBaseY = %d, want 42", l.AnomalyBaseY)
 	}
 	// SSL column is fixed.
 	if l.SSLBaseX != 62 || l.SSLBaseY != 24 {

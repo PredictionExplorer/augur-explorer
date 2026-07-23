@@ -2,6 +2,7 @@ package config
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,23 +14,36 @@ import (
 // cliOnlyVars are environment variables documented in .env.example that are
 // read outside the tag-driven service structs: operator CLI wiring and
 // srvmonitor's indexed-family loader. Each entry names its reader.
-var cliOnlyVars = map[string]string{
-	"PKEY_HEX":                         "cmd/cgctl, cmd/rwctl (env.go)",
-	"CGAME_ADDR":                       "cmd/cgctl (env.go)",
-	"GAS_PRICE_MULTIPLIER":             "cmd/cgctl, cmd/rwctl (env.go)",
-	"API_BASE":                         "cmd/opsctl (cmd_smoketest.go)",
-	"MAX_ETH_BID":                      "cmd/cgctl (cmd_autobid.go)",
-	"MAX_CST_BID":                      "cmd/cgctl (cmd_autobid.go)",
-	"RWALK_MIN_PRICE":                  "cmd/cgctl (cmd_autobid.go)",
-	"TIME_BEFORE_PRIZE":                "cmd/cgctl (cmd_autobid.go)",
-	"CST_BID_ANYWAY":                   "cmd/cgctl (cmd_autobid.go)",
-	"AT_STARTUP_BID_UP_TO_PRICE_LEVEL": "cmd/cgctl (cmd_autobid.go)",
-	"SRV1_WEB_API_NAME":                "internal/srvmonitor (config.go)",
-	"SRV1_WEB_API_HOST":                "internal/srvmonitor (config.go)",
-	"SRV1_WEB_API_PORT":                "internal/srvmonitor (config.go)",
-	"SRV1_WEB_API_URI":                 "internal/srvmonitor (config.go)",
-	"SRV1_WEB_API_PUBLIC_URL":          "internal/srvmonitor (config.go)",
-}
+var cliOnlyVars = func() map[string]string {
+	vars := map[string]string{
+		"PKEY_HEX":                         "cmd/cgctl, cmd/rwctl (env.go)",
+		"CGAME_ADDR":                       "cmd/cgctl (env.go)",
+		"GAS_PRICE_MULTIPLIER":             "cmd/cgctl, cmd/rwctl (env.go)",
+		"API_BASE":                         "cmd/opsctl (cmd_smoketest.go)",
+		"MAX_ETH_BID":                      "cmd/cgctl (cmd_autobid.go)",
+		"MAX_CST_BID":                      "cmd/cgctl (cmd_autobid.go)",
+		"RWALK_MIN_PRICE":                  "cmd/cgctl (cmd_autobid.go)",
+		"TIME_BEFORE_PRIZE":                "cmd/cgctl (cmd_autobid.go)",
+		"CST_BID_ANYWAY":                   "cmd/cgctl (cmd_autobid.go)",
+		"AT_STARTUP_BID_UP_TO_PRICE_LEVEL": "cmd/cgctl (cmd_autobid.go)",
+		"SRV1_WEB_API_NAME":                "internal/srvmonitor (config.go)",
+		"SRV1_WEB_API_HOST":                "internal/srvmonitor (config.go)",
+		"SRV1_WEB_API_PORT":                "internal/srvmonitor (config.go)",
+		"SRV1_WEB_API_URI":                 "internal/srvmonitor (config.go)",
+		"SRV1_WEB_API_PUBLIC_URL":          "internal/srvmonitor (config.go)",
+		"ANOMALY_TITLE":                    "internal/srvmonitor (config.go)",
+		"ANOMALY_SSH_USER":                 "internal/srvmonitor (config.go)",
+		"ANOMALY_SSH_HOST":                 "internal/srvmonitor (config.go)",
+		"ANOMALY_REMOTE_FILE":              "internal/srvmonitor (config.go)",
+		"ANOMALY_STALE_SECS":               "internal/srvmonitor (config.go)",
+	}
+	for i := 1; i <= 6; i++ {
+		for _, suffix := range []string{"NAME", "HOST", "DBNAME", "USER", "PASS", "TABLE", "COLUMN"} {
+			vars[fmt.Sprintf("DB_L1EVT%d_%s", i, suffix)] = "internal/srvmonitor (config.go)"
+		}
+	}
+	return vars
+}()
 
 // envExampleEntry is one (possibly commented) VAR=value line.
 type envExampleEntry struct {
@@ -143,9 +157,12 @@ func TestCLIOnlyVarsAreReferencedInCode(t *testing.T) {
 	}
 	indexedDigits := regexp.MustCompile(`[0-9]+`)
 	for name, reader := range cliOnlyVars {
-		indexedName := indexedDigits.ReplaceAllString(name, "%d")
-		if !strings.Contains(sources.String(), `"`+name+`"`) &&
-			!strings.Contains(sources.String(), `"`+indexedName+`"`) {
+		referenced := strings.Contains(sources.String(), `"`+name+`"`)
+		for _, match := range indexedDigits.FindAllStringIndex(name, -1) {
+			template := name[:match[0]] + "%d" + name[match[1]:]
+			referenced = referenced || strings.Contains(sources.String(), `"`+template+`"`)
+		}
+		if !referenced {
 			t.Errorf("cliOnlyVars entry %s claims reader %q but no configured source references it", name, reader)
 		}
 	}

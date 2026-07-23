@@ -97,11 +97,30 @@ sudo cp deploy/systemd/*.service deploy/systemd/*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now rwcg-apiserver@cosmic rwcg-apiserver@rwalk
 sudo systemctl enable --now rwcg-etl@cg rwcg-etl@rw
-sudo systemctl enable --now rwcg-notibot rwcg-imggen-monitor.timer
+sudo systemctl enable --now rwcg-notibot rwcg-imggen-monitor.timer \
+  rwcg-loganomaly.timer
 ```
 
 These replace the legacy `run-loop-*.sh` nohup scripts (still present next to
 each command for the transition; delete them once systemd is live).
+`rwcg-loganomaly.timer` is a persistent five-minute timer over a bounded
+one-shot service. The service first exports the configured apiserver journal,
+then atomically generates the anomaly file; a failed export or scan exits
+nonzero and is retried by systemd. Configure its non-secret inputs in
+`/etc/rwcg/loganomaly.env`:
+
+```bash
+LOGANOMALY_JOURNAL_UNIT=rwcg-apiserver@cosmic
+LOGANOMALY_SINCE=-2d
+LOGANOMALY_IN=/var/lib/rwcg/loganomaly/webserver_cosmic_journal.log
+LOGANOMALY_OUT=/var/lib/rwcg/loganomaly/webserver_anomalies.log
+LOGANOMALY_MIN_STATUS=500
+LOGANOMALY_KEEP=50
+```
+
+The `rwcg` account must be able to read its apiserver journal. Keep both paths
+under the unit-managed `/var/lib/rwcg/loganomaly` state directory so
+`ProtectSystem=strict` and `ProtectHome=read-only` remain effective.
 
 ### Reading logs
 
@@ -322,20 +341,17 @@ series simply lack it.
 ## Monitoring
 
 - `srvmonitor` — terminal dashboard checking RPC nodes, DB, D6-safe web API
-  paths, disk, image server; optional WhatsApp/Android alerts (see
-  `cmd/srvmonitor/README.md`).
+  paths, disk, image server and anomaly-feed freshness; optional
+  WhatsApp/Android alerts (see `cmd/srvmonitor/README.md`).
 - `loganomaly` — scans the API access log for 5xx/panics, feeding srvmonitor.
   It understands slog JSON records (production), slog text lines and the
-  legacy `[GIN]` lines still present in older capture files. Under systemd,
-  export the journal for it on the production host, e.g. a cron entry:
-
-  ```bash
-  journalctl -u rwcg-apiserver@cosmic --since -2d -o cat \
-    > ~/ae_logs/webserver_cosmic_journal.log \
-    && loganomaly -in ~/ae_logs/webserver_cosmic_journal.log
-  ```
-
-  The anomalies file and the srvmonitor scp pipeline are unchanged.
+  legacy `[GIN]` lines still present in older capture files. Every successful
+  generation begins with `#TS=<unix-seconds>`, even when no anomalies were
+  found. `srvmonitor` strips that metadata, shows its age and emits a stable
+  repeated alarm once it exceeds `ANOMALY_STALE_SECS` (default 1800);
+  markerless/malformed-marker files remain legacy-compatible with no stale
+  claim. The systemd one-shot above owns the journal export and generation;
+  point `ANOMALY_REMOTE_FILE` at its `LOGANOMALY_OUT`.
 - Prometheus can scrape `METRICS_ADDR/metrics`; alert on
   `rwcg_http_requests_total{status="5xx"}` and request-duration percentiles.
   Since the stdlib-router migration the `route` label uses ServeMux syntax

@@ -3,6 +3,7 @@ package srvmonitor
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -98,6 +99,7 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 	cfg := &Config{
 		Intervals: DefaultIntervals(),
 	}
+	var loadProblems []string
 
 	// Load official RPC identifiers
 	cfg.OfficialRPCMainnet = getenv("OFFICIAL_RPC_MAINNET")
@@ -145,8 +147,8 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 		}
 	}
 
-	// Load Event Table databases (DB_L1EVT1 and DB_L1EVT2)
-	for i := 1; i <= 2; i++ {
+	// Load Event Table databases (DB_L1EVT1 through DB_L1EVT6)
+	for i := 1; i <= 6; i++ {
 		name := getenv(fmt.Sprintf("DB_L1EVT%d_NAME", i))
 		host := getenv(fmt.Sprintf("DB_L1EVT%d_HOST", i))
 		dbname := getenv(fmt.Sprintf("DB_L1EVT%d_DBNAME", i))
@@ -249,11 +251,17 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 	}
 
 	// Load WebSrv anomaly monitoring (optional; enabled when user/host/file set)
+	staleAfter, err := parseAnomalyStaleAfter(getenv("ANOMALY_STALE_SECS"))
+	if err != nil {
+		loadProblems = append(loadProblems, err.Error())
+		staleAfter = DefaultAnomalyStaleAfter
+	}
 	cfg.Anomaly = AnomalyConfig{
 		Title:      getenv("ANOMALY_TITLE"),
 		User:       getenv("ANOMALY_SSH_USER"),
 		Host:       getenv("ANOMALY_SSH_HOST"),
 		RemoteFile: getenv("ANOMALY_REMOTE_FILE"),
+		StaleAfter: staleAfter,
 	}
 
 	// Load RWalk Image Monitoring
@@ -276,16 +284,44 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 	mobileNotif := strings.ToLower(getenv("MOBILE_NOTIF"))
 	cfg.MobileNotif = (mobileNotif == "yes" || mobileNotif == "true" || mobileNotif == "1")
 
-	// Validate critical configuration
-	if err := cfg.Validate(); err != nil {
-		return nil, err
+	// Validate critical configuration and report malformed typed values
+	// together with structural problems.
+	loadProblems = append(loadProblems, cfg.validationProblems()...)
+	if len(loadProblems) > 0 {
+		return nil, fmt.Errorf("invalid configuration: %s", strings.Join(loadProblems, ", "))
 	}
 
 	return cfg, nil
 }
 
+// parseAnomalyStaleAfter parses ANOMALY_STALE_SECS as a strictly positive
+// integer count of seconds. Empty selects the production default.
+func parseAnomalyStaleAfter(raw string) (time.Duration, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return DefaultAnomalyStaleAfter, nil
+	}
+	seconds, err := strconv.ParseInt(raw, 10, 64)
+	const maxDurationSeconds = (1<<63 - 1) / int64(time.Second)
+	if err != nil || seconds <= 0 || seconds > maxDurationSeconds {
+		return 0, fmt.Errorf(
+			"ANOMALY_STALE_SECS: %q is not a positive integer number of seconds",
+			raw,
+		)
+	}
+	return time.Duration(seconds) * time.Second, nil
+}
+
 // Validate checks if required configuration is present.
 func (c *Config) Validate() error {
+	problems := c.validationProblems()
+	if len(problems) > 0 {
+		return fmt.Errorf("invalid configuration: %s", strings.Join(problems, ", "))
+	}
+	return nil
+}
+
+func (c *Config) validationProblems() []string {
 	var problems []string
 
 	if len(c.RPCNodes) == 0 {
@@ -294,6 +330,10 @@ func (c *Config) Validate() error {
 
 	if len(c.Layer1DBs) == 0 {
 		problems = append(problems, "at least one Layer1 database")
+	}
+
+	if c.Anomaly.StaleAfter < 0 {
+		problems = append(problems, "ANOMALY_STALE_SECS must be positive")
 	}
 
 	for _, api := range c.WebAPIs {
@@ -332,9 +372,5 @@ func (c *Config) Validate() error {
 		}
 	}
 
-	if len(problems) > 0 {
-		return fmt.Errorf("invalid configuration: %s", strings.Join(problems, ", "))
-	}
-
-	return nil
+	return problems
 }

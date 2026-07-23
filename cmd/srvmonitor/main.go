@@ -193,7 +193,17 @@ func logConfigSummary(logger *slog.Logger, cfg *srvmonitor.Config) {
 	logger.Info(fmt.Sprintf("  - %d Disk monitors", len(cfg.DiskMonitors)))
 	logger.Info(fmt.Sprintf("  - %d SSL certificates", len(cfg.SSLCerts)))
 	if cfg.Anomaly.Enabled() {
-		logger.Info(fmt.Sprintf("  - Anomaly monitor: %s@%s:%s", cfg.Anomaly.User, cfg.Anomaly.Host, cfg.Anomaly.RemoteFile))
+		staleAfter := cfg.Anomaly.StaleAfter
+		if staleAfter <= 0 {
+			staleAfter = srvmonitor.DefaultAnomalyStaleAfter
+		}
+		logger.Info(fmt.Sprintf(
+			"  - Anomaly monitor: %s@%s:%s (stale after %s)",
+			cfg.Anomaly.User,
+			cfg.Anomaly.Host,
+			cfg.Anomaly.RemoteFile,
+			staleAfter,
+		))
 	} else {
 		logger.Info("  - Anomaly monitor: DISABLED (set ANOMALY_SSH_USER, ANOMALY_SSH_HOST, ANOMALY_REMOTE_FILE)")
 	}

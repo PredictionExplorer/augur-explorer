@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestScan(t *testing.T) {
@@ -90,49 +91,69 @@ func TestScan(t *testing.T) {
 
 func TestWriteOut(t *testing.T) {
 	t.Parallel()
+	firstGeneration := time.Unix(1_720_000_000, 0)
+	secondGeneration := firstGeneration.Add(5 * time.Minute)
 
-	t.Run("writes lines and replaces previous file", func(t *testing.T) {
+	t.Run("writes heartbeat and replaces previous generation", func(t *testing.T) {
 		t.Parallel()
 		path := filepath.Join(t.TempDir(), "sub", "anomalies.log")
 
-		if err := writeOut(path, []string{"first", "second"}); err != nil {
+		if err := writeOutWithClock(path, []string{"first", "second"}, func() time.Time {
+			return firstGeneration
+		}); err != nil {
 			t.Fatal(err)
 		}
 		data, err := os.ReadFile(path) //nolint:gosec // test path under t.TempDir
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(data) != "first\nsecond\n" {
+		if string(data) != "#TS=1720000000\nfirst\nsecond\n" {
 			t.Fatalf("content = %q", data)
 		}
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o640 {
+			t.Fatalf("mode = %o, want 640", got)
+		}
 
-		// A rewrite fully replaces the file and leaves no temp file behind.
-		if err := writeOut(path, []string{"only"}); err != nil {
+		// A rewrite refreshes the heartbeat, fully replaces the anomaly rows,
+		// and leaves no temporary file behind.
+		if err := writeOutWithClock(path, []string{"only"}, func() time.Time {
+			return secondGeneration
+		}); err != nil {
 			t.Fatal(err)
 		}
 		data, err = os.ReadFile(path) //nolint:gosec // test path under t.TempDir
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(data) != "only\n" {
+		if string(data) != "#TS=1720000300\nonly\n" {
 			t.Fatalf("content = %q", data)
 		}
-		if _, err := os.Stat(path + ".tmp"); !os.IsNotExist(err) {
-			t.Fatalf("temp file left behind: %v", err)
+		entries, err := os.ReadDir(filepath.Dir(path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(entries) != 1 || entries[0].Name() != filepath.Base(path) {
+			t.Fatalf("output directory entries = %v, want only final file", entries)
 		}
 	})
 
-	t.Run("empty anomaly list writes empty file", func(t *testing.T) {
+	t.Run("empty anomaly list still writes heartbeat", func(t *testing.T) {
 		t.Parallel()
 		path := filepath.Join(t.TempDir(), "anomalies.log")
-		if err := writeOut(path, nil); err != nil {
+		if err := writeOutWithClock(path, nil, func() time.Time {
+			return firstGeneration
+		}); err != nil {
 			t.Fatal(err)
 		}
 		data, err := os.ReadFile(path) //nolint:gosec // test path under t.TempDir
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(data) != 0 {
+		if string(data) != "#TS=1720000000\n" {
 			t.Fatalf("content = %q", data)
 		}
 	})
@@ -141,6 +162,27 @@ func TestWriteOut(t *testing.T) {
 		t.Parallel()
 		if err := writeOut("/dev/null/nope/anomalies.log", []string{"x"}); err == nil {
 			t.Fatal("unwritable dir must error")
+		}
+	})
+
+	t.Run("rename failure removes temporary file", func(t *testing.T) {
+		t.Parallel()
+		path := filepath.Join(t.TempDir(), "occupied")
+		if err := os.Mkdir(path, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(path, "child"), []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := writeOutWithClock(path, []string{"x"}, time.Now); err == nil {
+			t.Fatal("rename over a non-empty directory must fail")
+		}
+		entries, err := os.ReadDir(filepath.Dir(path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(entries) != 1 || entries[0].Name() != filepath.Base(path) {
+			t.Fatalf("temporary output leaked after rename failure: %v", entries)
 		}
 	})
 }

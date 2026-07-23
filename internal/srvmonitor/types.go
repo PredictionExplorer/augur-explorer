@@ -10,6 +10,8 @@
 // implementations plus the termbox UI (internal/srvmonitor/termboxui).
 package srvmonitor
 
+import "time"
+
 // Position represents a screen position.
 type Position struct {
 	X int
@@ -89,11 +91,16 @@ type SSLCertConfig struct {
 // AnomalyConfig holds configuration for fetching the websrv anomalies file
 // (produced by the loganomaly tool on the production host) via scp.
 type AnomalyConfig struct {
-	Title      string // optional display label
-	User       string // ssh user, e.g. "cgprod"
-	Host       string // ssh host/alias, e.g. "cosmic1"
-	RemoteFile string // path to the anomalies file on the remote host
+	Title      string        // optional display label
+	User       string        // ssh user, e.g. "cgprod"
+	Host       string        // ssh host/alias, e.g. "cosmic1"
+	RemoteFile string        // path to the anomalies file on the remote host
+	StaleAfter time.Duration // maximum heartbeat age; zero selects DefaultAnomalyStaleAfter
 }
+
+// DefaultAnomalyStaleAfter is the maximum heartbeat age used when the
+// operator does not configure ANOMALY_STALE_SECS.
+const DefaultAnomalyStaleAfter = 30 * time.Minute
 
 // Enabled reports whether anomaly monitoring is configured.
 func (c AnomalyConfig) Enabled() bool {

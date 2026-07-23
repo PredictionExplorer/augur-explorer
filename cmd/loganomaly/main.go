@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
@@ -263,34 +264,64 @@ func splitRequest(s string) (method, path string) {
 	return method, strings.Trim(rest, "\"")
 }
 
-// writeOut writes the anomalies atomically (temp file + rename) so a concurrent
-// scp never observes a half-written file.
-func writeOut(path string, lines []string) error {
-	if dir := filepath.Dir(path); dir != "" {
-		if err := os.MkdirAll(dir, 0o750); err != nil {
-			return err
-		}
-	}
+const anomalyHeartbeatMarker = "#TS="
 
-	tmp := path + ".tmp"
-	f, err := os.Create(filepath.Clean(tmp))
-	if err != nil {
+// writeOut writes anomalies using the wall clock.
+func writeOut(path string, lines []string) error {
+	return writeOutWithClock(path, lines, time.Now)
+}
+
+// writeOutWithClock writes a generation heartbeat followed by the anomalies.
+// It uses a synced temporary file and an atomic rename so a concurrent scp
+// observes either the previous complete generation or the next one, never a
+// partial file. now is injected so tests can pin the heartbeat exactly.
+func writeOutWithClock(path string, lines []string, now func() time.Time) error {
+	cleanPath := filepath.Clean(path)
+	dir := filepath.Dir(cleanPath)
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return err
 	}
 
+	f, err := os.CreateTemp(dir, "."+filepath.Base(cleanPath)+".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmp := f.Name()
+	defer func() {
+		_ = f.Close()
+		_ = os.Remove(tmp)
+	}()
+
 	w := bufio.NewWriter(f)
+	if _, err := fmt.Fprintf(w, "%s%d\n", anomalyHeartbeatMarker, now().Unix()); err != nil {
+		return err
+	}
 	for _, l := range lines {
 		if _, err := fmt.Fprintln(w, l); err != nil {
-			_ = f.Close() // best-effort cleanup on error path
 			return err
 		}
 	}
 	if err := w.Flush(); err != nil {
-		_ = f.Close() // best-effort cleanup on error path
+		return err
+	}
+	if err := f.Chmod(0o640); err != nil {
+		return err
+	}
+	if err := f.Sync(); err != nil {
 		return err
 	}
 	if err := f.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	if err := os.Rename(tmp, cleanPath); err != nil {
+		return err
+	}
+
+	// Persist the rename itself, not only the file contents.
+	directory, err := os.Open(dir) // #nosec G304 -- dir is derived from the operator-provided output path.
+	if err != nil {
+		return err
+	}
+	defer func() { _ = directory.Close() }()
+	return directory.Sync()
 }

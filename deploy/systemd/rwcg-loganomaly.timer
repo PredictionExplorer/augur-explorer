@@ -1,0 +1,15 @@
+# Generate an anomaly heartbeat every five minutes. Persistent=true catches
+# one missed calendar activation after a host was powered off.
+
+[Unit]
+Description=Run rwcg-loganomaly every five minutes
+
+[Timer]
+OnBootSec=1min
+OnCalendar=*-*-* *:0/5:00
+AccuracySec=15s
+Persistent=true
+Unit=rwcg-loganomaly.service
+
+[Install]
+WantedBy=timers.target

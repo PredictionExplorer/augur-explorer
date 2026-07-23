@@ -1823,6 +1823,9 @@ cannot accidentally keep deprecated v1 traffic alive.**
       flags in the v1 spec; the v2 info block declares canonical status.
       See the §6.3 headers item for the runtime side.)*
 - [ ] Delete `cmd/*/run-loop.sh` scripts after systemd cutover confirmed in prod
+      (`loganomaly` now has a persistent five-minute systemd timer; its
+      transitional loop resolves the sibling binary and exits if it disappears,
+      but remains in-tree until this production gate is closed)
 - [x] Update `docs/architecture.md`, `docs/BACKEND.md`, `docs/operations.md`
       to the post-rewrite reality; refresh ADR statuses *(2026-07-16 —
       architecture/BACKEND/README now present v2 as the canonical complete

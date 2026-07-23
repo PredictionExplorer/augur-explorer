@@ -1,0 +1,26 @@
+# One bounded anomaly-generation pass, scheduled by rwcg-loganomaly.timer.
+
+[Unit]
+Description=RWCG web log anomaly scanner
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=5min
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+User=rwcg
+EnvironmentFile=/etc/rwcg/loganomaly.env
+WorkingDirectory=/opt/rwcg
+ExecStartPre=/bin/sh -eu -c "tmp=\"$${LOGANOMALY_IN}.journal-tmp\"; trap 'rm -f -- \"$$tmp\"' EXIT; /usr/bin/journalctl --unit=\"$${LOGANOMALY_JOURNAL_UNIT}\" --since=\"$${LOGANOMALY_SINCE}\" --output=cat > \"$$tmp\"; /bin/mv -- \"$$tmp\" \"$${LOGANOMALY_IN}\""
+ExecStart=/opt/rwcg/bin/loganomaly -in ${LOGANOMALY_IN} -out ${LOGANOMALY_OUT} -min-status ${LOGANOMALY_MIN_STATUS} -keep ${LOGANOMALY_KEEP}
+TimeoutStartSec=2min
+Restart=on-failure
+RestartSec=30s
+UMask=0027
+StateDirectory=rwcg/loganomaly
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/rwcg/loganomaly
+PrivateTmp=true
