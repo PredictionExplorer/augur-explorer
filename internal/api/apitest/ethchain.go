@@ -69,6 +69,7 @@ func registerChainState(chain *testchain.Chain) chainStubs {
 	gameStub := testchain.MustContractStub(
 		cg.CosmicSignatureGameMetaData.ABI,
 		cg.CosmicSignatureGameV2MetaData.ABI,
+		cg.CosmicSignatureGameV3MetaData.ABI,
 	)
 
 	// Owner-tunable constants.
@@ -85,10 +86,6 @@ func registerChainState(chain *testchain.Chain) chainStubs {
 	gameStub.Return("numRaffleCosmicSignatureNftsForBidders", big.NewInt(5))
 	gameStub.Return("numRaffleCosmicSignatureNftsForRandomWalkNftStakers", big.NewInt(4))
 	gameStub.Return("cstDutchAuctionDurationDivisor", big.NewInt(11)) // V1 marker
-	gameStub.Return("cstDutchAuctionDuration", big.NewInt(28800))
-	gameStub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(33))
-	gameStub.Return("getBidCstRewardAmount", wei("99000000000000000000"))
-	gameStub.Return("bidCstRewardAmountMultiplier", big.NewInt(7))
 
 	// Per-round live state.
 	gameStub.Return("roundNum", big.NewInt(chainRoundNum))

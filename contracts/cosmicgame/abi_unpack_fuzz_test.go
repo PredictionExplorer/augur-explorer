@@ -17,6 +17,7 @@ var cgEventABIs = sync.OnceValue(func() []abi.ABI {
 	jsons := []string{
 		CosmicSignatureGameMetaData.ABI,
 		CosmicSignatureGameV2MetaData.ABI,
+		CosmicSignatureGameV3MetaData.ABI,
 		CosmicSignatureNftMetaData.ABI,
 		CosmicSignatureTokenMetaData.ABI,
 		PrizesWalletMetaData.ABI,

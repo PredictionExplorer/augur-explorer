@@ -706,6 +706,103 @@ func (h *Handlers) storeCstAuctionDurationChangeDivisorChanged(ctx context.Conte
 	return h.repo.InsertCstAuctionDurationChangeDivisorChange(ctx, evt)
 }
 
+// --- V3 late-bid, reward-split and multi-NFT configuration ---
+
+func (h *Handlers) decodeRoundLateBidDurationDivisorChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGRoundLateBidDurationDivisorChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3RoundLateBidDurationDivisorChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "RoundLateBidDurationDivisorChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGRoundLateBidDurationDivisorChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeRoundLateBidDurationDivisorChanged(ctx context.Context, evt *cgmodel.CGRoundLateBidDurationDivisorChanged) error {
+	h.log.Info("RoundLateBidDurationDivisorChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteRoundLateBidDurationDivisorChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertRoundLateBidDurationDivisorChange(ctx, evt)
+}
+
+func (h *Handlers) decodeRoundLateBidPremiumBaseMultiplierChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGRoundLateBidPricePremiumAmountBaseMultiplierChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3RoundLateBidPricePremiumAmountBaseMultiplierChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "RoundLateBidPricePremiumAmountBaseMultiplierChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGRoundLateBidPricePremiumAmountBaseMultiplierChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeRoundLateBidPremiumBaseMultiplierChanged(ctx context.Context, evt *cgmodel.CGRoundLateBidPricePremiumAmountBaseMultiplierChanged) error {
+	h.log.Info("RoundLateBidPricePremiumAmountBaseMultiplierChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteRoundLateBidPremiumBaseMultiplierChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertRoundLateBidPremiumBaseMultiplierChange(ctx, evt)
+}
+
+func (h *Handlers) decodeRoundLateBidPremiumExponentChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGRoundLateBidPricePremiumAmountExponentChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3RoundLateBidPricePremiumAmountExponentChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "RoundLateBidPricePremiumAmountExponentChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGRoundLateBidPricePremiumAmountExponentChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeRoundLateBidPremiumExponentChanged(ctx context.Context, evt *cgmodel.CGRoundLateBidPricePremiumAmountExponentChanged) error {
+	h.log.Info("RoundLateBidPricePremiumAmountExponentChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteRoundLateBidPremiumExponentChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertRoundLateBidPremiumExponentChange(ctx, evt)
+}
+
+func (h *Handlers) decodeLastBidderRewardPercentageChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3LastBidderBidCstRewardAmountPercentageChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "LastBidderBidCstRewardAmountPercentageChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeLastBidderRewardPercentageChanged(ctx context.Context, evt *cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged) error {
+	h.log.Info("LastBidderBidCstRewardAmountPercentageChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteLastBidderRewardPercentageChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertLastBidderRewardPercentageChange(ctx, evt)
+}
+
+func (h *Handlers) decodeMainPrizeNumNftsChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3MainPrizeNumCosmicSignatureNftsChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "MainPrizeNumCosmicSignatureNftsChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeMainPrizeNumNftsChanged(ctx context.Context, evt *cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged) error {
+	h.log.Info("MainPrizeNumCosmicSignatureNftsChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteMainPrizeNumNftsChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertMainPrizeNumNftsChange(ctx, evt)
+}
+
 func (h *Handlers) decodeEthAuctionDurationDivisorChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGEthDutchAuctionDurationDivisorChanged, error) {
 	var ethEvt cgc.CosmicSignatureGameEthDutchAuctionDurationDivisorChanged
 	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "EthDutchAuctionDurationDivisorChanged", lg.Data); err != nil {

@@ -129,16 +129,8 @@ func (s *State) refreshConstants(ctx context.Context) {
 		s.logf("Can't instantiate CosmicGame contract: no code at given address\n")
 	}
 
-	v1, v2 := s.bindLiveReaders()
-	if v1 == nil {
-		s.logf("Can't instantiate CosmicGame contract at %v . Contract constants won't be fetched\n", s.addrs.CosmicGame)
-		s.mu.Lock()
-		s.snap.ConstantsReady = false
-		s.snap.ConfigurationReady = false
-		s.mu.Unlock()
-		return
-	}
-
+	v1, v2, v3 := s.bindLiveReaders()
+	mechanics := s.resolveMechanicsVersion(v1, v2, v3, &copts)
 	cur := s.Snapshot()
 	ready := true
 	charityAddressReady := true
@@ -169,7 +161,7 @@ func (s *State) refreshConstants(ctx context.Context) {
 	} else {
 		cur.CharityPercentage = parsed
 	}
-	if fixedReward, multiplier, err := s.bidCSTRewardConfiguration(v1, v2, &copts); err != nil {
+	if fixedReward, multiplier, err := s.bidCSTRewardConfiguration(v1, v2, v3, &copts); err != nil {
 		s.logf("Error at CST bid reward configuration call: %v\n", err)
 		cur.TokenReward = "error"
 		ready = false
@@ -266,7 +258,7 @@ func (s *State) refreshConstants(ctx context.Context) {
 		cur.RaffleNFTWinnersStakingRWalk = parsed
 	}
 	var divisorReady bool
-	cur.CSTAuctionDurationChangeDivisor, divisorReady = s.cstAuctionDurationChangeDivisor(v1, v2, &copts)
+	cur.CSTAuctionDurationChangeDivisor, divisorReady = s.cstAuctionDurationChangeDivisor(v1, v2, v3, &copts)
 	if !divisorReady {
 		s.logf("Error reading CST auction duration-change divisor\n")
 		ready = false
@@ -281,7 +273,19 @@ func (s *State) refreshConstants(ctx context.Context) {
 	} else {
 		cur.TreasurerAddr = addr
 	}
-	cur.MechanicsVersion = s.mechanicsVersion()
+	cur.MechanicsVersion = mechanics
+	if mechanics == mechanicsV3 {
+		v3Config, err := readV3Configuration(v3, &copts)
+		if err != nil {
+			s.logf("Error reading V3 configuration: %v\n", err)
+			cur.V3 = V3Configuration{}
+			ready = false
+		} else {
+			cur.V3 = v3Config
+		}
+	} else {
+		cur.V3 = V3Configuration{}
+	}
 
 	s.mu.Lock()
 	charityAddressChanged := s.snap.CharityAddr != cur.CharityAddr
@@ -301,6 +305,7 @@ func (s *State) refreshConstants(ctx context.Context) {
 	s.snap.RaffleNFTWinnersStakingRWalk = cur.RaffleNFTWinnersStakingRWalk
 	s.snap.CSTAuctionDurationChangeDivisor = cur.CSTAuctionDurationChangeDivisor
 	s.snap.TreasurerAddr = cur.TreasurerAddr
+	s.snap.V3 = cur.V3
 	s.snap.MechanicsVersion = cur.MechanicsVersion
 	s.snap.ConstantsMechanicsVersion = cur.MechanicsVersion
 	s.snap.ConstantsReady = ready
@@ -329,19 +334,14 @@ func (s *State) refreshVariables(ctx context.Context) {
 		return
 	}
 
-	v1, v2 := s.bindLiveReaders()
-	if v1 == nil {
-		s.logf("Can't instantiate CosmicGame contract at %v . Contract variables won't be fetched\n", s.addrs.CosmicGame)
-		return
-	}
-
+	v1, v2, v3 := s.bindLiveReaders()
 	cur := s.Snapshot()
+	cur.MechanicsVersion = s.resolveMechanicsVersion(v1, v2, v3, &copts)
 
-	cur.RoundStartAuctionLength = s.roundStartCSTAuctionSetting(v1, v2, &copts)
+	cur.RoundStartAuctionLength = s.roundStartCSTAuctionSetting(v1, v2, v3, &copts)
 	if cur.RoundStartAuctionLength == -1 {
-		s.logf("Error reading CST round-start auction setting (V1 divisor / V2 duration)\n")
+		s.logf("Error reading CST round-start auction setting (V1 divisor / V2 duration / V3 derived duration)\n")
 	}
-	cur.MechanicsVersion = s.mechanicsVersion()
 
 	if val, err := v1.GetNextEthBidPrice(&copts); err != nil {
 		s.logf("Error at GetBidPrice() call: %v\n", err)
@@ -375,13 +375,20 @@ func (s *State) refreshVariables(ctx context.Context) {
 		cur.ETHAuctionDuration = durationSeconds
 		cur.ETHAuctionElapsed = elapsedSeconds
 	}
-	if duration, elapsed, err := v1.GetCstDutchAuctionDurations(&copts); err != nil {
-		s.logf("Error at GetCstDutchAuctionDurations() call: %v\n", err)
+	var cstDuration, cstElapsed *big.Int
+	var cstDurationErr error
+	if cur.MechanicsVersion == mechanicsV3 && v3 != nil {
+		cstDuration, cstElapsed, cstDurationErr = v3.GetCstDutchAuctionDurations(&copts)
+	} else {
+		cstDuration, cstElapsed, cstDurationErr = v1.GetCstDutchAuctionDurations(&copts)
+	}
+	if cstDurationErr != nil {
+		s.logf("Error at GetCstDutchAuctionDurations() call: %v\n", cstDurationErr)
 		cur.CSTAuctionDuration = -1
 		cur.CSTAuctionElapsed = -1
 	} else if durationSeconds, elapsedSeconds, ok := normalizeAuctionProgress(
-		duration,
-		elapsed,
+		cstDuration,
+		cstElapsed,
 		blockTimestamp,
 		true,
 	); !ok {
@@ -394,7 +401,7 @@ func (s *State) refreshVariables(ctx context.Context) {
 	}
 	if cur.MechanicsVersion == mechanicsV1 {
 		cur.NextCSTBidReward = cur.FixedCSTBidReward
-	} else if reward, err := s.tokenReward(v1, v2, &copts); err != nil {
+	} else if reward, err := s.tokenReward(v1, v2, v3, &copts); err != nil {
 		s.logf("Error at TokenReward() call: %v\n", err)
 		cur.TokenReward = "error"
 		cur.NextCSTBidReward = "error"
@@ -625,6 +632,17 @@ func configurationReady(snapshot Snapshot) bool {
 	case mechanicsV2:
 		return snapshot.CSTAuctionDurationChangeDivisor > 0 &&
 			cachedDecimalReady(snapshot.BidCSTRewardMultiplier)
+	case mechanicsV3:
+		return snapshot.CSTAuctionDurationChangeDivisor > 0 &&
+			cachedDecimalReady(snapshot.BidCSTRewardMultiplier) &&
+			cachedDecimalReady(snapshot.V3.RoundLateBidDurationDivisor) &&
+			snapshot.V3.RoundLateBidDurationSeconds > 0 &&
+			cachedDecimalReady(snapshot.V3.RoundLateBidPricePremiumAmountBaseMultiplier) &&
+			snapshot.V3.RoundLateBidPricePremiumAmountExponent >= 0 &&
+			percentageReady(snapshot.V3.LastBidderBidCstRewardAmountPercentage) &&
+			snapshot.V3.MainPrizeNumCosmicSignatureNfts > 0 &&
+			cachedDecimalReady(snapshot.V3.CstDutchAuctionBeginningBidPriceMinLimit) &&
+			cachedDecimalReady(snapshot.V3.BidCstRewardAmountPerMainPrizeTimeIncrement)
 	default:
 		return false
 	}

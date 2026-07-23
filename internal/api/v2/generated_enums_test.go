@@ -128,8 +128,8 @@ func TestContractConfigurationVariantAccessors(t *testing.T) {
 		t.Fatalf("v1 variant round trip = %+v", roundTripped)
 	}
 
-	v2Mode := Dynamic
-	v2Auction := DurationSeconds
+	v2Mode := ContractConfiguration1CstBidRewardModeDynamic
+	v2Auction := ContractConfiguration1CstRoundStartAuctionModeDurationSeconds
 	v2Mechanics := V2
 	v2Variant := ContractConfiguration1{
 		CstBidRewardMode:         &v2Mode,
@@ -143,9 +143,26 @@ func TestContractConfigurationVariantAccessors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AsContractConfiguration1: %v", err)
 	}
-	if merged.CstBidRewardMode == nil || *merged.CstBidRewardMode != Dynamic ||
-		merged.CstRoundStartAuctionMode == nil || *merged.CstRoundStartAuctionMode != DurationSeconds {
+	if merged.CstBidRewardMode == nil || *merged.CstBidRewardMode != ContractConfiguration1CstBidRewardModeDynamic ||
+		merged.CstRoundStartAuctionMode == nil || *merged.CstRoundStartAuctionMode != ContractConfiguration1CstRoundStartAuctionModeDurationSeconds {
 		t.Fatalf("v2 variant merge = %+v", merged)
+	}
+
+	v3Mode := ContractConfiguration2CstBidRewardModeDynamic
+	v3Auction := ContractConfiguration2CstRoundStartAuctionModeDurationSeconds
+	v3Mechanics := V3
+	v3Variant := ContractConfiguration2{
+		CstBidRewardMode:         &v3Mode,
+		CstRoundStartAuctionMode: &v3Auction,
+		MechanicsVersion:         &v3Mechanics,
+	}
+	if err := union.MergeContractConfiguration2(v3Variant); err != nil {
+		t.Fatalf("MergeContractConfiguration2: %v", err)
+	}
+	v3RoundTripped, err := union.AsContractConfiguration2()
+	if err != nil || v3RoundTripped.MechanicsVersion == nil ||
+		*v3RoundTripped.MechanicsVersion != V3 {
+		t.Fatalf("v3 variant merge = %+v, err=%v", v3RoundTripped, err)
 	}
 
 	var fresh ContractConfiguration

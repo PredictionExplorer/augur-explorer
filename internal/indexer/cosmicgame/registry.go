@@ -28,6 +28,7 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 
 	return []indexer.EventHandler{
 		indexer.NewHandler(topicHash(TopicPrizeClaimEvent), "MainPrizeClaimed", game, h.decodeMainPrizeClaimed, h.storeMainPrizeClaimed),
+		indexer.NewHandler(topicHash(TopicPrizeClaimEventV3), "MainPrizeClaimedV3", game, h.decodeMainPrizeClaimedV3, h.storeMainPrizeClaimedV3),
 		indexer.NewHandler(topicHash(TopicBidEvent), "BidPlaced", game, h.decodeBidPlacedV1, h.storeBid),
 		indexer.NewHandler(topicHash(TopicBidEventV2), "BidPlacedV2", game, h.decodeBidPlacedV2, h.storeBid),
 		indexer.NewHandler(topicHash(TopicEthDonatedEvent), "EthDonated", game, h.decodeEthDonated, h.storeEthDonated),
@@ -85,6 +86,11 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicCstDutchAuctionDurationDivisorChanged), "CstDutchAuctionDurationDivisorChanged", game, h.decodeCstDutchAuctionDurationDivisorChanged, h.storeCstAuctionLengthChange("CstDutchAuctionDurationDivisorChanged")),
 		indexer.NewHandler(topicHash(TopicCstDutchAuctionDurationChanged), "CstDutchAuctionDurationChanged", game, h.decodeCstDutchAuctionDurationChanged, h.storeCstAuctionLengthChange("CstDutchAuctionDurationChanged")),
 		indexer.NewHandler(topicHash(TopicCstDutchAuctionDurationChangeDivisorChanged), "CstDutchAuctionDurationChangeDivisorChanged", game, h.decodeCstAuctionDurationChangeDivisorChanged, h.storeCstAuctionDurationChangeDivisorChanged),
+		indexer.NewHandler(topicHash(TopicRoundLateBidDurationDivisorChanged), "RoundLateBidDurationDivisorChanged", game, h.decodeRoundLateBidDurationDivisorChanged, h.storeRoundLateBidDurationDivisorChanged),
+		indexer.NewHandler(topicHash(TopicRoundLateBidPremiumBaseMultiplierChanged), "RoundLateBidPricePremiumAmountBaseMultiplierChanged", game, h.decodeRoundLateBidPremiumBaseMultiplierChanged, h.storeRoundLateBidPremiumBaseMultiplierChanged),
+		indexer.NewHandler(topicHash(TopicRoundLateBidPremiumExponentChanged), "RoundLateBidPricePremiumAmountExponentChanged", game, h.decodeRoundLateBidPremiumExponentChanged, h.storeRoundLateBidPremiumExponentChanged),
+		indexer.NewHandler(topicHash(TopicLastBidderRewardPercentageChanged), "LastBidderBidCstRewardAmountPercentageChanged", game, h.decodeLastBidderRewardPercentageChanged, h.storeLastBidderRewardPercentageChanged),
+		indexer.NewHandler(topicHash(TopicMainPrizeNumNftsChanged), "MainPrizeNumCosmicSignatureNftsChanged", game, h.decodeMainPrizeNumNftsChanged, h.storeMainPrizeNumNftsChanged),
 		indexer.NewHandler(topicHash(TopicEthDutchAuctionDurationDivisorChanged), "EthDutchAuctionDurationDivisorChanged", game, h.decodeEthAuctionDurationDivisorChanged, h.storeEthAuctionDurationDivisorChanged),
 		indexer.NewHandler(topicHash(TopicEthDutchAuctionEndingPriceDivisorChanged), "EthDutchAuctionEndingBidPriceDivisorChanged", game, h.decodeEthAuctionEndingBidPriceDivisorChanged, h.storeEthAuctionEndingBidPriceDivisorChanged),
 		indexer.NewHandler(topicHash(TopicCstRewardForBiddingChanged), "CstRewardAmountForBiddingChanged", game, h.decodeCstRewardAmountForBiddingChanged, h.storeCstRewardForBiddingChange("CstRewardAmountForBiddingChanged")),

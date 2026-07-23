@@ -467,6 +467,11 @@ The following dashboard fields move to `/contracts/configuration`:
 - V1 exposes `fixedCstBidRewardWei` and a CST auction divisor.
 - V2 exposes `cstBidRewardMultiplier`, a CST auction duration and its
   duration-change divisor.
+- V3 keeps the dynamic reward mode and adds the late-bid divisor/window,
+  premium base/exponent, previous-bidder reward percentage, main-prize NFT
+  count, derived CST auction floor and CST reward per prize-time increment.
+  Its CST round-start value comes from `getCstDutchAuctionDurations`, not the
+  inert V2 storage-slot getter.
 - The MarketingWallet's owner-tunable treasurer is `treasurerAddress`
   (from `marketing/config/current`, decision D11).
 
@@ -475,6 +480,13 @@ The following dashboard fields move to `/contracts/configuration`:
 the same resource. V2 auction progress is block-pinned and clamped to
 `0..duration`; a V2 CST auction start timestamp is normalized to elapsed
 seconds.
+
+V3 main-prize responses retain `nftTokenId` as the first token for existing
+clients and additionally expose `numCosmicSignatureNfts` plus
+`nftTokenIds`. Completed-round statistics expose the two final champion
+durations when the event-less on-chain snapshot is available. V3 bid rows
+add the current/previous bidder CST reward shares and previous recipient;
+legacy V1/V2 rows keep their existing shape.
 
 The dashboard's charity balance moves to `/contracts/balances`. The v1
 floating-point CosmicGame balance is replaced by exact

@@ -32,6 +32,9 @@ func (r *Repo) DeletePrizeClaim(ctx context.Context, evtlogID int64) error {
 
 // DeleteBid removes a BidPlaced row.
 func (r *Repo) DeleteBid(ctx context.Context, evtlogID int64) error {
+	if err := r.deleteByEvtlogID(ctx, "cg_bid_reward", evtlogID); err != nil {
+		return err
+	}
 	return r.deleteByEvtlogID(ctx, "cg_bid", evtlogID)
 }
 
@@ -353,6 +356,35 @@ func (r *Repo) DeleteCstAuctionLengthChange(ctx context.Context, evtlogID int64)
 // DeleteCstAuctionDurationChangeDivisorChange removes a CstDutchAuctionDurationChangeDivisorChanged row.
 func (r *Repo) DeleteCstAuctionDurationChangeDivisorChange(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_adm_cst_auclen_chg_div", evtlogID)
+}
+
+// DeleteRoundLateBidDurationDivisorChange removes a V3 late-bid duration
+// divisor history row.
+func (r *Repo) DeleteRoundLateBidDurationDivisorChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_late_bid_dur_divisor", evtlogID)
+}
+
+// DeleteRoundLateBidPremiumBaseMultiplierChange removes a V3 late-bid
+// premium base-multiplier history row.
+func (r *Repo) DeleteRoundLateBidPremiumBaseMultiplierChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_late_bid_premium_base_mul", evtlogID)
+}
+
+// DeleteRoundLateBidPremiumExponentChange removes a V3 late-bid premium
+// exponent history row.
+func (r *Repo) DeleteRoundLateBidPremiumExponentChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_late_bid_premium_exponent", evtlogID)
+}
+
+// DeleteLastBidderRewardPercentageChange removes a V3 previous-last-bidder
+// reward percentage history row.
+func (r *Repo) DeleteLastBidderRewardPercentageChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_last_bidder_reward_pct", evtlogID)
+}
+
+// DeleteMainPrizeNumNftsChange removes a V3 main-prize NFT-count history row.
+func (r *Repo) DeleteMainPrizeNumNftsChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_main_prize_num_nfts", evtlogID)
 }
 
 // DeleteEthAuctionDurationDivisorChange removes an EthDutchAuctionDurationDivisorChanged row.

@@ -221,6 +221,24 @@ func mapBid(record cgmodel.CGBidRec) (Bid, error) {
 	if bid.BidCstRewardAmountWei, err = optionalAmount(record.BidCstRewardAmount); err != nil {
 		return Bid{}, fmt.Errorf("bid cst reward: %w", err)
 	}
+	if record.PreviousBidderAddr != "" ||
+		(record.PreviousBidderCstRewardAmount != "" && record.PreviousBidderCstRewardAmount != "0") {
+		if !ethcommon.IsHexAddress(record.PreviousBidderAddr) {
+			return Bid{}, errors.New("invalid previous bidder address")
+		}
+		previousReward, err := requiredAmount(record.PreviousBidderCstRewardAmount)
+		if err != nil {
+			return Bid{}, fmt.Errorf("previous bidder CST reward: %w", err)
+		}
+		thisReward, err := requiredAmount(record.ThisBidderCstRewardAmount)
+		if err != nil {
+			return Bid{}, fmt.Errorf("this bidder CST reward: %w", err)
+		}
+		previousAddress := ethcommon.HexToAddress(record.PreviousBidderAddr).Hex()
+		bid.PreviousBidderAddress = &previousAddress
+		bid.PreviousBidderCstRewardAmountWei = &previousReward
+		bid.ThisBidderCstRewardAmountWei = &thisReward
+	}
 	if record.CstDutchAuctionDurationInt >= 0 {
 		value := record.CstDutchAuctionDurationInt
 		bid.CstDutchAuctionDurationSeconds = &value

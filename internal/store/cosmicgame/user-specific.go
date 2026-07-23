@@ -167,12 +167,15 @@ func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]cgmode
 		"p.amount/1e18 amount_eth, " +
 		"p.round_num," +
 		"p.token_id," +
+		"p.num_cs_nfts," +
 		"m.seed," +
 		"s.total_bids," +
 		"s.total_nft_donated, " +
 		"s.total_raffle_eth_deposits," +
 		"s.total_raffle_eth_deposits/1e18 eth_deposits," +
 		"s.total_raffle_nfts, " +
+		"s.endurance_champion_duration, " +
+		"s.chrono_warrior_duration, " +
 		"COALESCE(d.donation_amount,0)," +
 		"COALESCE(d.donation_amount,0)/1e+18, " +
 		"COALESCE(d.charity_addr,'0x0')" +
@@ -205,12 +208,15 @@ func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]cgmode
 			&rec.MainPrize.EthAmountEth,
 			&rec.RoundNum,
 			&rec.MainPrize.NftTokenId,
+			&rec.MainPrize.NumCSNfts,
 			&nullSeed,
 			&rec.RoundStats.TotalBids,
 			&rec.RoundStats.TotalDonatedNFTs,
 			&rec.RoundStats.TotalRaffleEthDeposits,
 			&rec.RoundStats.TotalRaffleEthDepositsEth,
 			&rec.RoundStats.TotalRaffleNFTs,
+			&rec.RoundStats.EnduranceChampionDuration,
+			&rec.RoundStats.ChronoWarriorDuration,
 			&rec.CharityDeposit.CharityAmount,
 			&rec.CharityDeposit.CharityAmountETH,
 			&rec.CharityDeposit.CharityAddress,
@@ -223,7 +229,7 @@ func (r *Repo) PrizeClaimsByUser(ctx context.Context, winnerAid int64) ([]cgmode
 		} else {
 			rec.MainPrize.Seed = "???"
 		}
-		return nil
+		return fillMainPrizeNFTIDs(&rec.MainPrize)
 	}
 	return queryList(ctx, r, "prize claims by user", 32, query, scan, winnerAid)
 }
@@ -605,7 +611,7 @@ func (r *Repo) StakedTokensCstByUser(ctx context.Context, userAid int64) ([]cgmo
 		"LEFT JOIN transaction t ON t.id=tx_id " +
 		"LEFT JOIN address wa ON m.owner_aid=wa.address_id " +
 		"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id " +
-		"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id " +
+		"LEFT JOIN cg_prize_claim p ON m.token_id>=p.token_id AND m.token_id<p.token_id+p.num_cs_nfts " +
 		"LEFT JOIN cg_nft_staked_cst a ON a.action_id=st.stake_action_id " +
 		"WHERE st.staker_aid=$1 " +
 		"ORDER BY m.token_id"
@@ -659,7 +665,7 @@ func (r *Repo) StakedTokensRwalkByUser(ctx context.Context, userAid int64) ([]cg
 		"LEFT JOIN transaction t ON t.id=tx_id " +
 		"LEFT JOIN address wa ON m.owner_aid=wa.address_id " +
 		"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id " +
-		"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id " +
+		"LEFT JOIN cg_prize_claim p ON m.token_id>=p.token_id AND m.token_id<p.token_id+p.num_cs_nfts " +
 		"LEFT JOIN cg_nft_staked_rwalk a ON a.action_id=st.stake_action_id " +
 		"WHERE st.staker_aid=$1 " +
 		"ORDER BY m.token_id"

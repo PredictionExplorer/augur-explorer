@@ -487,6 +487,46 @@ func eventFixtures() []fixture {
 			}}}},
 		}},
 
+		// --- V3 ---
+		{name: "admin_late_bid_duration_divisor_v3", block: 1830, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicRoundLateBidDurationDivisorChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "RoundLateBidDurationDivisorChanged", addr(game), nil, []any{bigInt(4)})
+		}}}}}},
+		{name: "admin_late_bid_premium_base_v3", block: 1840, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicRoundLateBidPremiumBaseMultiplierChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountBaseMultiplierChanged", addr(game), nil, []any{bigInt(2)})
+		}}}}}},
+		{name: "admin_late_bid_premium_exponent_v3", block: 1850, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicRoundLateBidPremiumExponentChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountExponentChanged", addr(game), nil, []any{bigInt(3)})
+		}}}}}},
+		{name: "admin_last_bidder_reward_percentage_v3", block: 1860, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicLastBidderRewardPercentageChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "LastBidderBidCstRewardAmountPercentageChanged", addr(game), nil, []any{bigInt(90)})
+		}}}}}},
+		{name: "admin_main_prize_num_nfts_v3", block: 1870, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicMainPrizeNumNftsChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "MainPrizeNumCosmicSignatureNftsChanged", addr(game), nil, []any{bigInt(3)})
+		}}}}}},
+		{name: "prize_claim_main_v3", block: 1880, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicPrizeClaimEventV3, func(t *testing.T) *types.Log {
+			championDurationsMu.Lock()
+			championDurations[1] = [2]int64{700, 900}
+			championDurationsMu.Unlock()
+			return buildLog(t, gameV3ABI, "MainPrizeClaimed", addr(game),
+				[]any{bigInt(1), addr(fxAlice), bigInt(100)},
+				[]any{eth(3), eth(10), bigInt(3), bigInt(600)})
+		}}}}}},
+		{name: "bid_reward_split_v3", block: 1890, txs: []fixtureTx{{to: game, logs: []fixtureLog{
+			{TopicTransferEvt, func(t *testing.T) *types.Log {
+				return buildLog(t, erc20ABI, "Transfer", addr(token),
+					[]any{addr("0x0000000000000000000000000000000000000000"), addr(fxBob)}, []any{eth(90)})
+			}},
+			{TopicTransferEvt, func(t *testing.T) *types.Log {
+				return buildLog(t, erc20ABI, "Transfer", addr(token),
+					[]any{addr("0x0000000000000000000000000000000000000000"), addr(fxAlice)}, []any{eth(10)})
+			}},
+			{TopicBidEventV2, func(t *testing.T) *types.Log {
+				return buildLog(t, gameV3ABI, "BidPlaced", addr(game),
+					[]any{bigInt(1), addr(fxAlice), bigInt(-1)},
+					[]any{bigInt(100000000000000000), bigInt(-1), "v3 split bid", eth(100), bigInt(3600), bigInt(1767228000)})
+			}},
+		}}}},
+
 		// --- Negative / dispatch edge cases ---
 		{name: "unknown_topic_noop", block: 1800, txs: []fixtureTx{{to: game, logs: []fixtureLog{{"", func(t *testing.T) *types.Log {
 			return &types.Log{

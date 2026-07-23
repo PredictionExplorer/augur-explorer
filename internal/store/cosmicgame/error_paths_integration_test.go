@@ -169,9 +169,18 @@ func TestErrorPathsConvertedFiles(t *testing.T) {
 			_, err := spareRepo.CosmicSignatureTokenCount(ctx)
 			return err
 		},
-		"InsertAdminCorrectionDecimal": func() error {
-			meta := &AdminCorrectionMeta{EvtID: 5001, BlockNum: 1, TxID: 1001, TimeStamp: 1, ContractAid: aidCosmicGame}
-			return spareRepo.InsertAdminCorrectionDecimal(ctx, "cg_adm_charity_pcent", "percentage", "1", meta, 0)
+		"InsertLiveStateUpdateIfChanged": func() error {
+			_, err := spareRepo.InsertLiveStateUpdateIfChanged(
+				ctx, "endurance_champion_duration", aidCosmicGame, 1, 1, 1, "1",
+			)
+			return err
+		},
+		"UpdateRoundChampionDurations": func() error {
+			return spareRepo.UpdateRoundChampionDurations(ctx, 1, 1, 1)
+		},
+		"LatestLiveStateUpdate": func() error {
+			_, err := spareRepo.LatestLiveStateUpdate(ctx, "endurance_champion_duration", 1)
+			return err
 		},
 		"DeleteMint": func() error {
 			return spareRepo.DeleteMint(ctx, -1)

@@ -197,6 +197,11 @@ var adminEventBranches = []adminEventBranch{
 	{recordType: 37, table: "cg_adm_eth_auc_endprice", intValue: "r.new_len"},                                        // EthDutchAuctionEndingBidPriceDivisorChanged
 	{recordType: 38, table: "cg_adm_chrono_pcent", intValue: "r.percentage"},                                         // ChronoWarriorPercentageChanged
 	{recordType: 39, table: "cg_adm_cst_auclen_chg_div", intValue: "r.new_len"},                                      // CstDutchAuctionDurationChangeDivisorChanged
+	{recordType: 40, table: "cg_adm_late_bid_dur_divisor", intValue: "r.new_value"},                                  // RoundLateBidDurationDivisorChanged
+	{recordType: 41, table: "cg_adm_late_bid_premium_base_mul", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountBaseMultiplierChanged
+	{recordType: 42, table: "cg_adm_late_bid_premium_exponent", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountExponentChanged
+	{recordType: 43, table: "cg_adm_last_bidder_reward_pct", intValue: "r.new_value"},                                // LastBidderBidCstRewardAmountPercentageChanged
+	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},                                   // MainPrizeNumCosmicSignatureNftsChanged
 }
 
 // ownershipBranchSQL handles record_type 34, whose two address joins (previous
@@ -241,7 +246,7 @@ func adminEventsQuery() string {
 }
 
 // AdminEventsInRange returns every admin/configuration event with
-// evtlog_start < evtlog_id < evtlog_end, across all 39 admin event tables,
+// evtlog_start < evtlog_id < evtlog_end, across all 44 admin event tables,
 // ordered by evtlog_id.
 func (r *Repo) AdminEventsInRange(ctx context.Context, evtlogStart, evtlogEnd int64) ([]cgmodel.CGAdminEvent, error) {
 	scan := func(rows pgx.Rows, rec *cgmodel.CGAdminEvent) error {

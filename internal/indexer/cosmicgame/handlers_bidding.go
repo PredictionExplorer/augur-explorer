@@ -80,20 +80,28 @@ func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *store.EthereumEventLog
 	return evt, nil
 }
 
-// storeBid persists a decoded v1 or v2 bid: the CST bid reward is resolved
-// from the transaction's ERC20 mint (a store read), then the row is written
-// delete-then-insert.
+// storeBid persists a decoded bid: the CST mint split is resolved from the
+// transaction's ERC20 Transfer logs, then the row and normalized reward
+// shares are written delete-then-insert.
 func (h *Handlers) storeBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
-	var err error
-	evt.ERC20Value, err = h.cstBidReward(ctx, evt.EvtId, evt.TxId, evt.LastBidderAddr)
+	thisReward, previousReward, previousAddr, err := h.cstBidRewards(
+		ctx, evt.EvtId, evt.TxId, evt.LastBidderAddr,
+	)
 	if err != nil {
 		return fmt.Errorf("bid (evt id %v): %w", evt.EvtId, err)
 	}
+	evt.ThisBidderReward = thisReward
+	evt.PrevBidderReward = previousReward
+	evt.PrevBidderAddr = previousAddr
+	evt.ERC20Value = evt.ThisBidderReward
 
 	h.log.Info("BidPlaced",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "bidder", evt.LastBidderAddr,
 		"bid_type", evt.BidType, "eth_price", evt.EthPrice, "cst_price", evt.CstPrice,
-		"rwalk_token_id", evt.RandomWalkTokenId, "cst_reward", evt.ERC20Value,
+		"rwalk_token_id", evt.RandomWalkTokenId,
+		"this_bidder_reward", evt.ThisBidderReward,
+		"previous_bidder_reward", evt.PrevBidderReward,
+		"previous_bidder", evt.PrevBidderAddr,
 		"prize_time", evt.PrizeTime, "message", evt.Message)
 
 	if err := h.repo.DeleteBid(ctx, evt.EvtId); err != nil {

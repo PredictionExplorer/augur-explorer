@@ -61,34 +61,39 @@ type CGStatistics struct {
 // CGBidRec is one bid row as served by the v1 bid listings: the bid event
 // joined with donation attachments, prize timing and display fields.
 type CGBidRec struct {
-	Tx                         Transaction
-	BidderAid                  int64
-	BidderAddr                 string
-	EthPrice                   string
-	EthPriceEth                float64 // divided by 1e18 (or -1 if CST bid)
-	CstPrice                   string
-	CstPriceEth                float64 // divided by 1e18 (or -1 if ETH bid)
-	RWalkNFTId                 int64
-	RoundNum                   int64
-	BidType                    int64
-	BidPosition                int64
-	PrizeTime                  int64
-	PrizeTimeDate              string
-	TimeUntilPrize             int64 // Seconds until prize (0 if already ended)
-	CSTReward                  string
-	CSTRewardEth               float64
-	BidCstRewardAmount         string  // IBiddingV2 BidPlaced wei; "-1" = legacy bid v1
-	BidCstRewardAmountEth      float64 // /1e18 when BidCstRewardAmount >= 0; else -1
-	CstDutchAuctionDuration    string  // per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
-	CstDutchAuctionDurationInt int64   // numeric duration when >= 0; else -1
-	NFTDonationTokenId         int64
-	NFTDonationTokenAddr       string
-	NFTTokenURI                string
-	ImageURL                   string
-	Message                    string
-	DonatedERC20TokenAddr      string
-	DonatedERC20TokenAmount    string
-	DonatedERC20TokenAmountEth float64
+	Tx                            Transaction
+	BidderAid                     int64
+	BidderAddr                    string
+	EthPrice                      string
+	EthPriceEth                   float64 // divided by 1e18 (or -1 if CST bid)
+	CstPrice                      string
+	CstPriceEth                   float64 // divided by 1e18 (or -1 if ETH bid)
+	RWalkNFTId                    int64
+	RoundNum                      int64
+	BidType                       int64
+	BidPosition                   int64
+	PrizeTime                     int64
+	PrizeTimeDate                 string
+	TimeUntilPrize                int64 // Seconds until prize (0 if already ended)
+	CSTReward                     string
+	CSTRewardEth                  float64
+	BidCstRewardAmount            string  // IBiddingV2 BidPlaced wei; "-1" = legacy bid v1
+	BidCstRewardAmountEth         float64 // /1e18 when BidCstRewardAmount >= 0; else -1
+	PreviousBidderCstRewardAmount string  `json:"PreviousBidderCstRewardAmount,omitempty"`
+	PreviousCstRewardAmountEth    float64 `json:"PreviousCstRewardAmountEth,omitempty"`
+	ThisBidderCstRewardAmount     string  `json:"ThisBidderCstRewardAmount,omitempty"`
+	ThisCstRewardAmountEth        float64 `json:"ThisCstRewardAmountEth,omitempty"`
+	PreviousBidderAddr            string  `json:"PreviousBidderAddr,omitempty"`
+	CstDutchAuctionDuration       string  // per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
+	CstDutchAuctionDurationInt    int64   // numeric duration when >= 0; else -1
+	NFTDonationTokenId            int64
+	NFTDonationTokenAddr          string
+	NFTTokenURI                   string
+	ImageURL                      string
+	Message                       string
+	DonatedERC20TokenAddr         string
+	DonatedERC20TokenAmount       string
+	DonatedERC20TokenAmountEth    float64
 }
 
 // CGBannedBidRec is one row from cg_banned_bids (API: get_banned_bids).
@@ -114,7 +119,9 @@ type CGMainPrizeInfo struct {
 	EthAmountEth float64
 	CstAmount    string
 	CstAmountEth float64
-	NftTokenId   uint64
+	NftTokenId   uint64  // V3: first of NumCSNfts sequential token IDs
+	NumCSNfts    int64   `json:"NumCSNfts,omitempty"`   // V1/V2: implicit 1; V3: number of main-prize NFTs
+	NftTokenIds  []int64 `json:"NftTokenIds,omitempty"` // complete sequential V3 award
 	Seed         string
 }
 
@@ -560,6 +567,8 @@ type CGRoundStats struct {
 	RoundStartTime                     string // ISO 8601 format
 	RoundEndTime                       string // ISO 8601 format
 	RoundDurationSeconds               int64
+	EnduranceChampionDuration          int64 `json:"EnduranceChampionDuration,omitempty"` // V3 championDurations(round).enduranceChampion
+	ChronoWarriorDuration              int64 `json:"ChronoWarriorDuration,omitempty"`     // V3 championDurations(round).chronoWarrior
 }
 
 // CGClaimInfo summarizes one wallet's pending (unclaimed) winnings for the
@@ -853,6 +862,11 @@ type CGAdminEvent struct {
 	//			37		EthDutchAuctionEndingBidPriceDivisorChanged
 	//			38		ChronoWarriorEthPrizeAmountPercentageChanged
 	//			39		CstDutchAuctionDurationChangeDivisorChanged (V2)
+	//			40		RoundLateBidDurationDivisorChanged (V3)
+	//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
+	//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
+	//			43		LastBidderBidCstRewardAmountPercentageChanged (V3)
+	//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
 	RecordId      int64
 	EvtLogId      int64
 	BlockNum      int64

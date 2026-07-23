@@ -5,7 +5,7 @@ serves:
 
 | Package | Contracts | Generated file |
 |---|---|---|
-| `contracts/cosmicgame` | CosmicSignatureGame proxy (V1 + V2 mechanics), CosmicSignature NFT, CosmicSignatureToken (ERC-20), DAO, Charity/Prizes/Marketing wallets, both staking wallets, Arbitrum precompile helpers, OpenZeppelin bases and the SampToken test ERC-20 (112 types) | `bindings.gen.go` |
+| `contracts/cosmicgame` | CosmicSignatureGame proxy (V1 + V2 + V3 mechanics), CosmicSignature NFT, CosmicSignatureToken (ERC-20), DAO, Charity/Prizes/Marketing wallets, both staking wallets, Arbitrum precompile helpers, OpenZeppelin bases and the SampToken test ERC-20 (113 types) | `bindings.gen.go` |
 | `contracts/randomwalk` | RandomWalk NFT, RandomWalk marketplace (2 types) | `bindings.gen.go` |
 
 Each package is one abigen invocation over one committed build artifact,
@@ -63,7 +63,7 @@ compiler output — the artifacts here cannot invent new ABIs:
 1. On the machine with the Solidity sources, compile with the pinned solc
    versions (`build-wrappers.sh` in `contracts/cosmicgame/` documents the
    exact invocations: solc 0.8.30 for V1 contracts, 0.8.34 for
-   CosmicSignatureGameV2, `--via-ir`, OpenZeppelin 5.1/5.02 remappings) and
+   CosmicSignatureGameV2/V3, `--via-ir`, OpenZeppelin 5.1/5.02 remappings) and
    produce the per-contract `combined.json` outputs.
 2. Merge the needed contract types into the package's
    `buildjson/combined.json` (keep the `<File>.sol:<Type>` naming; drop
@@ -74,6 +74,7 @@ compiler output — the artifacts here cannot invent new ABIs:
    changed, and the decode fixtures replay every event type through the
    real pipeline.
 
-The V2-mechanics upgrade of 2025 is the reference example: it added
-`CosmicSignatureGameV2` as a separate type instead of mutating the V1
-bindings, keeping both event generations decodable.
+Mechanics upgrades are additive binding types: V2 added
+`CosmicSignatureGameV2`, and V3 adds `CosmicSignatureGameV3` reconstructed
+from the authoritative `a1eb87d6` generated wrapper. Older types remain
+unchanged so all historical event generations stay decodable.

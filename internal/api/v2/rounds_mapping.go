@@ -135,6 +135,9 @@ func mapMainPrize(prize cgmodel.CGMainPrizeInfo) (MainPrize, error) {
 	if prize.TimeoutTs < 0 {
 		return MainPrize{}, errors.New("negative secondary-prize claim deadline")
 	}
+	if prize.NumCSNfts < 0 {
+		return MainPrize{}, errors.New("negative main-prize NFT count")
+	}
 
 	result := MainPrize{
 		EthAmountWei:  ethAmount,
@@ -155,6 +158,30 @@ func mapMainPrize(prize cgmodel.CGMainPrizeInfo) (MainPrize, error) {
 	if prize.TimeoutTs > 0 {
 		deadline := time.Unix(prize.TimeoutTs, 0).UTC()
 		result.SecondaryPrizeClaimDeadline = &deadline
+	}
+	if prize.NumCSNfts > 1 {
+		if prize.NftTokenId > maxSignedInt64-uint64(prize.NumCSNfts-1) {
+			return MainPrize{}, errors.New("main-prize token range exceeds int64")
+		}
+		tokenIDs := prize.NftTokenIds
+		if len(tokenIDs) == 0 {
+			tokenIDs = make([]int64, prize.NumCSNfts)
+			for i := range tokenIDs {
+				tokenIDs[i] = int64(prize.NftTokenId) + int64(i)
+			}
+		}
+		if int64(len(tokenIDs)) != prize.NumCSNfts {
+			return MainPrize{}, errors.New("main-prize token count does not match token IDs")
+		}
+		for i, tokenID := range tokenIDs {
+			if tokenID != int64(prize.NftTokenId)+int64(i) {
+				return MainPrize{}, errors.New("main-prize token IDs are not sequential")
+			}
+		}
+		count := prize.NumCSNfts
+		copied := append([]int64(nil), tokenIDs...)
+		result.NumCosmicSignatureNfts = &count
+		result.NftTokenIds = &copied
 	}
 	return result, nil
 }
@@ -191,7 +218,10 @@ func mapRoundStatistics(stats cgmodel.CGRoundStats) (RoundStatistics, error) {
 		value := time.Unix(stats.ActivationTime, 0).UTC()
 		result.ActivatedAt = &value
 	}
-	if stats.ParamWindowDurationSeconds < 0 || stats.RoundDurationSeconds < 0 {
+	if stats.ParamWindowDurationSeconds < 0 ||
+		stats.RoundDurationSeconds < 0 ||
+		stats.EnduranceChampionDuration < 0 ||
+		stats.ChronoWarriorDuration < 0 {
 		return RoundStatistics{}, errors.New("negative round duration")
 	}
 	if stats.ParamWindowDurationSeconds > 0 {
@@ -207,6 +237,14 @@ func mapRoundStatistics(stats cgmodel.CGRoundStats) (RoundStatistics, error) {
 	if stats.RoundDurationSeconds > 0 {
 		value := stats.RoundDurationSeconds
 		result.RoundDurationSeconds = &value
+	}
+	if stats.EnduranceChampionDuration > 0 {
+		value := stats.EnduranceChampionDuration
+		result.EnduranceChampionDurationSeconds = &value
+	}
+	if stats.ChronoWarriorDuration > 0 {
+		value := stats.ChronoWarriorDuration
+		result.ChronoWarriorDurationSeconds = &value
 	}
 	return result, nil
 }

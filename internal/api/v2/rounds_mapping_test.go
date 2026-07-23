@@ -126,6 +126,39 @@ func TestMapRoundDetail(t *testing.T) {
 	}
 }
 
+func TestMapRoundV3MultiNFTAndChampionDurations(t *testing.T) {
+	t.Parallel()
+	record := validRoundRecord()
+	first := int64(record.MainPrize.NftTokenId) // #nosec G115 -- bounded fixture token ID
+	record.MainPrize.NumCSNfts = 3
+	record.MainPrize.NftTokenIds = []int64{first, first + 1, first + 2}
+	record.RoundStats.EnduranceChampionDuration = 700
+	record.RoundStats.ChronoWarriorDuration = 900
+
+	got, err := mapRound(record)
+	if err != nil {
+		t.Fatalf("mapRound V3: %v", err)
+	}
+	if got.MainPrize.NumCosmicSignatureNfts == nil ||
+		*got.MainPrize.NumCosmicSignatureNfts != 3 ||
+		got.MainPrize.NftTokenIds == nil ||
+		len(*got.MainPrize.NftTokenIds) != 3 {
+		t.Fatalf("V3 main prize = %+v", got.MainPrize)
+	}
+	if got.Statistics.EnduranceChampionDurationSeconds == nil ||
+		*got.Statistics.EnduranceChampionDurationSeconds != 700 ||
+		got.Statistics.ChronoWarriorDurationSeconds == nil ||
+		*got.Statistics.ChronoWarriorDurationSeconds != 900 {
+		t.Fatalf("V3 round statistics = %+v", got.Statistics)
+	}
+	record.MainPrize.NftTokenIds = nil
+	generated, err := mapRound(record)
+	if err != nil || generated.MainPrize.NftTokenIds == nil ||
+		len(*generated.MainPrize.NftTokenIds) != 3 {
+		t.Fatalf("generated V3 token IDs = %+v, %v", generated.MainPrize, err)
+	}
+}
+
 func TestMapRoundOmitsSentinelsAndLegacyCollections(t *testing.T) {
 	t.Parallel()
 
@@ -181,20 +214,35 @@ func TestMapRoundRejectsInvalidStoreData(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]func(*cgmodel.CGRoundRec){
-		"round overflow":       func(r *cgmodel.CGRoundRec) { r.RoundNum = math.MaxUint64 },
-		"claim identity":       func(r *cgmodel.CGRoundRec) { r.ClaimPrizeTx.Tx.EvtLogId = 0 },
-		"claim hash":           func(r *cgmodel.CGRoundRec) { r.ClaimPrizeTx.Tx.TxHash = "bad" },
-		"claim timestamp":      func(r *cgmodel.CGRoundRec) { r.ClaimPrizeTx.Tx.DateTime = "bad" },
-		"winner address":       func(r *cgmodel.CGRoundRec) { r.MainPrize.WinnerAddr = "bad" },
-		"main eth amount":      func(r *cgmodel.CGRoundRec) { r.MainPrize.EthAmount = "-1" },
-		"main cst amount":      func(r *cgmodel.CGRoundRec) { r.MainPrize.CstAmount = "wat" },
-		"main token overflow":  func(r *cgmodel.CGRoundRec) { r.MainPrize.NftTokenId = math.MaxUint64 },
+		"round overflow":      func(r *cgmodel.CGRoundRec) { r.RoundNum = math.MaxUint64 },
+		"claim identity":      func(r *cgmodel.CGRoundRec) { r.ClaimPrizeTx.Tx.EvtLogId = 0 },
+		"claim hash":          func(r *cgmodel.CGRoundRec) { r.ClaimPrizeTx.Tx.TxHash = "bad" },
+		"claim timestamp":     func(r *cgmodel.CGRoundRec) { r.ClaimPrizeTx.Tx.DateTime = "bad" },
+		"winner address":      func(r *cgmodel.CGRoundRec) { r.MainPrize.WinnerAddr = "bad" },
+		"main eth amount":     func(r *cgmodel.CGRoundRec) { r.MainPrize.EthAmount = "-1" },
+		"main cst amount":     func(r *cgmodel.CGRoundRec) { r.MainPrize.CstAmount = "wat" },
+		"main token overflow": func(r *cgmodel.CGRoundRec) { r.MainPrize.NftTokenId = math.MaxUint64 },
+		"main count negative": func(r *cgmodel.CGRoundRec) { r.MainPrize.NumCSNfts = -1 },
+		"main range overflow": func(r *cgmodel.CGRoundRec) {
+			r.MainPrize.NftTokenId = math.MaxInt64
+			r.MainPrize.NumCSNfts = 2
+		},
+		"main count mismatch": func(r *cgmodel.CGRoundRec) {
+			r.MainPrize.NumCSNfts = 3
+			r.MainPrize.NftTokenIds = []int64{1, 2}
+		},
+		"main IDs nonsequential": func(r *cgmodel.CGRoundRec) {
+			r.MainPrize.NumCSNfts = 3
+			firstTokenID := int64(r.MainPrize.NftTokenId) // #nosec G115 -- bounded fixture token ID
+			r.MainPrize.NftTokenIds = []int64{firstTokenID, firstTokenID + 2, firstTokenID + 3}
+		},
 		"main deadline":        func(r *cgmodel.CGRoundRec) { r.MainPrize.TimeoutTs = -1 },
 		"negative aggregate":   func(r *cgmodel.CGRoundRec) { r.RoundStats.TotalBids = -1 },
 		"raffle amount":        func(r *cgmodel.CGRoundRec) { r.RoundStats.TotalRaffleEthDeposits = "1.2" },
 		"donation amount":      func(r *cgmodel.CGRoundRec) { r.RoundStats.TotalDonatedAmount = "-1" },
 		"timing timestamp":     func(r *cgmodel.CGRoundRec) { r.RoundStats.RoundStartTime = "bad" },
 		"timing duration":      func(r *cgmodel.CGRoundRec) { r.RoundStats.RoundDurationSeconds = -1 },
+		"champion duration":    func(r *cgmodel.CGRoundRec) { r.RoundStats.EnduranceChampionDuration = -1 },
 		"charity address":      func(r *cgmodel.CGRoundRec) { r.CharityDeposit.CharityAddress = "bad" },
 		"staking identity":     func(r *cgmodel.CGRoundRec) { r.StakingDeposit.StakingDepositId = -2 },
 		"staking amount":       func(r *cgmodel.CGRoundRec) { r.StakingDeposit.StakingDepositAmount = "" },

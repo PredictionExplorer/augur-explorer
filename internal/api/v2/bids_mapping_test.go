@@ -84,6 +84,27 @@ func TestMapBidOmitsAbsentOptionalFields(t *testing.T) {
 	}
 }
 
+func TestMapBidV3RewardSplit(t *testing.T) {
+	t.Parallel()
+	record := validBidRecord()
+	record.ThisBidderCstRewardAmount = "10000000000000000000"
+	record.PreviousBidderCstRewardAmount = "90000000000000000000"
+	record.PreviousBidderAddr = "0x2200000000000000000000000000000000000022"
+
+	got, err := mapBid(record)
+	if err != nil {
+		t.Fatalf("mapBid V3: %v", err)
+	}
+	if got.ThisBidderCstRewardAmountWei == nil ||
+		*got.ThisBidderCstRewardAmountWei != "10000000000000000000" ||
+		got.PreviousBidderCstRewardAmountWei == nil ||
+		*got.PreviousBidderCstRewardAmountWei != "90000000000000000000" ||
+		got.PreviousBidderAddress == nil ||
+		*got.PreviousBidderAddress != "0x2200000000000000000000000000000000000022" {
+		t.Fatalf("V3 bid split = %+v", got)
+	}
+}
+
 func TestMapBidRejectsInvalidStoreData(t *testing.T) {
 	t.Parallel()
 
@@ -100,6 +121,21 @@ func TestMapBidRejectsInvalidStoreData(t *testing.T) {
 		"nft address":        func(r *cgmodel.CGBidRec) { r.NFTDonationTokenAddr = "bad" },
 		"erc20 address":      func(r *cgmodel.CGBidRec) { r.DonatedERC20TokenAddr = "bad" },
 		"erc20 amount":       func(r *cgmodel.CGBidRec) { r.DonatedERC20TokenAmount = "wat" },
+		"previous bidder address": func(r *cgmodel.CGBidRec) {
+			r.PreviousBidderAddr = "bad"
+			r.PreviousBidderCstRewardAmount = "90"
+			r.ThisBidderCstRewardAmount = "10"
+		},
+		"previous bidder reward": func(r *cgmodel.CGBidRec) {
+			r.PreviousBidderAddr = "0x2200000000000000000000000000000000000022"
+			r.PreviousBidderCstRewardAmount = "-1"
+			r.ThisBidderCstRewardAmount = "10"
+		},
+		"this bidder reward": func(r *cgmodel.CGBidRec) {
+			r.PreviousBidderAddr = "0x2200000000000000000000000000000000000022"
+			r.PreviousBidderCstRewardAmount = "90"
+			r.ThisBidderCstRewardAmount = "bad"
+		},
 	}
 	for name, mutate := range tests {
 		t.Run(name, func(t *testing.T) {

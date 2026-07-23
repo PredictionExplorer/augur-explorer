@@ -42,7 +42,8 @@ const nftListSelectSQL = `SELECT
 		LEFT JOIN transaction t ON t.id=tx_id
 		LEFT JOIN address wa ON m.owner_aid=wa.address_id
 		LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id
-		LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id
+		LEFT JOIN cg_prize_claim p
+			ON m.token_id>=p.token_id AND m.token_id<p.token_id+p.num_cs_nfts
 		LEFT JOIN cg_nft_staked_cst sa ON sa.token_id=m.token_id
 		LEFT JOIN cg_nft_unstaked_cst ua ON ua.token_id=m.token_id
 		LEFT JOIN cg_lastcst_prize cst ON (m.token_id=cst.erc721_token_id AND m.round_num=cst.round_num)
@@ -176,7 +177,8 @@ func (r *Repo) CosmicSignatureTokenInfo(ctx context.Context, tokenID int64) (cgm
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address wa ON m.owner_aid=wa.address_id
 			LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id
-			LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id
+			LEFT JOIN cg_prize_claim p
+				ON m.token_id>=p.token_id AND m.token_id<p.token_id+p.num_cs_nfts
 			LEFT JOIN cg_staked_token_cst st ON (m.token_id=st.token_id)
 			LEFT JOIN cg_nft_staked_cst sa ON sa.token_id = m.token_id
 			LEFT JOIN cg_nft_unstaked_cst u ON u.token_id=m.token_id

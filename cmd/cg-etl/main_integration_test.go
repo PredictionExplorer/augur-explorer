@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"math"
 	"net/url"
 	"os"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -83,9 +85,8 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	go func() { done <- run(runCtx, os.Getenv, &logBuf, reg, reg) }()
 
-	// The startup chain sync allocates a synthetic event log at the current
-	// tip, so the engine resumes already caught up. Wait for the engine to
-	// resolve its watermark, then advance the chain: completing that batch
+	// The startup drift audit is read-only. Wait for the engine to resolve
+	// its fixture watermark, then advance the chain: completing that batch
 	// proves the whole loop works and persists the watermark.
 	waitForCondition(t, done, cancel, &logBuf, "engine start", func() bool {
 		return strings.Contains(logBuf.String(), "resuming after last processed block")
@@ -301,7 +302,7 @@ func TestProgressAdapter(t *testing.T) {
 	}
 }
 
-func TestRunContractSyncFailure(t *testing.T) {
+func TestRunContractDriftAuditFailure(t *testing.T) {
 	db := testdb.New(t)
 	ctx := context.Background()
 	if err := testfixtures.Apply(ctx, db.SQL); err != nil {
@@ -311,13 +312,87 @@ func TestRunContractSyncFailure(t *testing.T) {
 	chain.EnsureBlock(150)
 	setEnv(t, db.ConnString, chain.URL())
 
-	// The startup sync allocates its synthetic event log at the chain tip
-	// (a HeaderByNumber read); failing that read makes the whole sync (and
-	// run) fail.
+	// The read-only startup audit pins its calls to the latest header;
+	// failing that read makes the audit (and run) fail without DB writes.
 	chain.FailNextRPC("eth_getBlockByNumber", "head read refused")
 
 	err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
-	if err == nil || !strings.Contains(err.Error(), "contract param chain sync failed") {
+	if err == nil || !strings.Contains(err.Error(), "contract parameter drift audit failed") {
 		t.Fatalf("err = %v", err)
 	}
+}
+
+func TestRunChampionRecoveryHeaderFailureIsNonFatal(t *testing.T) {
+	db := testdb.New(t)
+	ctx := context.Background()
+	if err := testfixtures.Apply(ctx, db.SQL); err != nil {
+		t.Fatal(err)
+	}
+	chain := testchain.New(t)
+	chain.EnsureBlock(150)
+	chain.FailRPCAfter("eth_getBlockByNumber", 1, "recovery head refused")
+	setEnv(t, db.ConnString, chain.URL())
+
+	var logBuf syncBuffer
+	runCtx, cancel := context.WithCancel(ctx)
+	done := make(chan error, 1)
+	reg := prometheus.NewRegistry()
+	go func() { done <- run(runCtx, os.Getenv, &logBuf, reg, reg) }()
+	waitForCondition(t, done, cancel, &logBuf, "engine after skipped recovery", func() bool {
+		return strings.Contains(logBuf.String(), "resuming after last processed block")
+	})
+	cancel()
+	if err := awaitRun(done); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(logBuf.String(), "Champion duration recovery skipped") {
+		t.Fatalf("missing recovery warning:\n%s", logBuf.String())
+	}
+}
+
+func TestRunChampionRecoveryFailures(t *testing.T) {
+	t.Run("invalid header timestamp", func(t *testing.T) {
+		db := testdb.New(t)
+		ctx := context.Background()
+		if err := testfixtures.Apply(ctx, db.SQL); err != nil {
+			t.Fatal(err)
+		}
+		chain := testchain.New(t)
+		rpcClient, err := rpc.DialContext(ctx, chain.URL())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rpcClient.Close()
+		var total uint64
+		if err := rpcClient.CallContext(ctx, &total, "evm_increaseTime", int64(math.MaxInt64)); err != nil {
+			t.Fatal(err)
+		}
+		chain.EnsureBlock(1)
+		setEnv(t, db.ConnString, chain.URL())
+		err = run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
+		if err == nil || !strings.Contains(err.Error(), "header timestamp") {
+			t.Fatalf("overflow recovery error = %v", err)
+		}
+	})
+
+	t.Run("store failure", func(t *testing.T) {
+		db := testdb.New(t)
+		ctx := context.Background()
+		if err := testfixtures.Apply(ctx, db.SQL); err != nil {
+			t.Fatal(err)
+		}
+		chain := testchain.New(t)
+		chain.EnsureBlock(150)
+		setEnv(t, db.ConnString, chain.URL())
+		if _, err := db.SQL.Exec("ALTER TABLE cg_round_stats RENAME TO cg_round_stats_recovery_backup"); err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			_, _ = db.SQL.Exec("ALTER TABLE cg_round_stats_recovery_backup RENAME TO cg_round_stats")
+		}()
+		err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
+		if err == nil || !strings.Contains(err.Error(), "champion duration recovery failed") {
+			t.Fatalf("store recovery error = %v", err)
+		}
+	})
 }

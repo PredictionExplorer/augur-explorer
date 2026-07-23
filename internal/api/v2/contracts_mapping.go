@@ -132,6 +132,51 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 			return ContractConfiguration{}, fmt.Errorf("CST bid reward multiplier: %w", err)
 		}
 		result.CstBidRewardMultiplier = &multiplier
+	case 3:
+		if snapshot.CSTAuctionDurationChangeDivisor <= 0 {
+			return ContractConfiguration{}, errors.New("v3 mechanics lacks an auction-change divisor")
+		}
+		result.MechanicsVersion = ContractMechanicsVersionV3
+		result.CstBidRewardMode = CstBidRewardDynamic
+		result.CstRoundStartAuctionMode = CstRoundStartAuctionModeDurationSeconds
+		divisor := snapshot.CSTAuctionDurationChangeDivisor
+		result.CstDutchAuctionDurationChangeDivisor = &divisor
+		multiplier, err := requiredAmount(snapshot.BidCSTRewardMultiplier)
+		if err != nil {
+			return ContractConfiguration{}, fmt.Errorf("CST bid reward multiplier: %w", err)
+		}
+		result.CstBidRewardMultiplier = &multiplier
+
+		lateBidDivisor, err := requiredAmount(snapshot.V3.RoundLateBidDurationDivisor)
+		if err != nil {
+			return ContractConfiguration{}, fmt.Errorf("late-bid duration divisor: %w", err)
+		}
+		premiumBase, err := requiredAmount(snapshot.V3.RoundLateBidPricePremiumAmountBaseMultiplier)
+		if err != nil {
+			return ContractConfiguration{}, fmt.Errorf("late-bid premium base multiplier: %w", err)
+		}
+		auctionFloor, err := requiredAmount(snapshot.V3.CstDutchAuctionBeginningBidPriceMinLimit)
+		if err != nil {
+			return ContractConfiguration{}, fmt.Errorf("CST auction beginning-price floor: %w", err)
+		}
+		rewardPerIncrement, err := requiredAmount(snapshot.V3.BidCstRewardAmountPerMainPrizeTimeIncrement)
+		if err != nil {
+			return ContractConfiguration{}, fmt.Errorf("CST reward per main-prize increment: %w", err)
+		}
+		if snapshot.V3.RoundLateBidDurationSeconds <= 0 ||
+			snapshot.V3.RoundLateBidPricePremiumAmountExponent < 0 ||
+			!validPercent(snapshot.V3.LastBidderBidCstRewardAmountPercentage) ||
+			snapshot.V3.MainPrizeNumCosmicSignatureNfts <= 0 {
+			return ContractConfiguration{}, errors.New("cached v3 contract configuration is inconsistent")
+		}
+		result.RoundLateBidDurationDivisor = &lateBidDivisor
+		result.RoundLateBidDurationSeconds = &snapshot.V3.RoundLateBidDurationSeconds
+		result.RoundLateBidPricePremiumAmountBaseMultiplier = &premiumBase
+		result.RoundLateBidPricePremiumAmountExponent = &snapshot.V3.RoundLateBidPricePremiumAmountExponent
+		result.LastBidderBidCstRewardAmountPercentage = &snapshot.V3.LastBidderBidCstRewardAmountPercentage
+		result.MainPrizeNumCosmicSignatureNfts = &snapshot.V3.MainPrizeNumCosmicSignatureNfts
+		result.CstDutchAuctionBeginningBidPriceMinLimitWei = &auctionFloor
+		result.BidCstRewardAmountPerMainPrizeTimeIncrementWei = &rewardPerIncrement
 	default:
 		return ContractConfiguration{}, errors.New("unknown contract mechanics version")
 	}

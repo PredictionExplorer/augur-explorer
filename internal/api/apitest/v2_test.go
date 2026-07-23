@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -2686,8 +2687,18 @@ func TestAPIV2ContractResources(t *testing.T) {
 		h.gameStub.Return("cstDutchAuctionDurationDivisor", big.NewInt(11))
 		h.gameStub.Return("getCstDutchAuctionDurations", big.NewInt(28800), big.NewInt(3600))
 		h.gameStub.Handle("cstDutchAuctionDuration", rpcFailure)
+		h.gameStub.Handle("cstDutchAuctionDurationChangeDivisor", rpcFailure)
+		h.gameStub.Handle("getBidCstRewardAmount", rpcFailure)
+		h.gameStub.Handle("bidCstRewardAmountMultiplier", rpcFailure)
+		h.gameStub.Handle("mainPrizeNumCosmicSignatureNfts", rpcFailure)
+		h.gameStub.Handle("roundLateBidDurationDivisor", rpcFailure)
+		h.gameStub.Handle("getRoundLateBidDuration", rpcFailure)
+		h.gameStub.Handle("roundLateBidPricePremiumAmountBaseMultiplier", rpcFailure)
+		h.gameStub.Handle("roundLateBidPricePremiumAmountExponent", rpcFailure)
+		h.gameStub.Handle("lastBidderBidCstRewardAmountPercentage", rpcFailure)
+		h.gameStub.Handle("getCstDutchAuctionBeginningBidPriceMinLimit", rpcFailure)
+		h.gameStub.Handle("getBidCstRewardAmountPerMainPrizeTimeIncrement", rpcFailure)
 		h.state.LoadInitial(context.Background())
-		h.gameStub.Return("cstDutchAuctionDuration", big.NewInt(28800))
 	}
 	t.Cleanup(restoreV1)
 
@@ -2751,6 +2762,10 @@ func TestAPIV2ContractResources(t *testing.T) {
 	})
 
 	h.gameStub.Handle("cstDutchAuctionDurationDivisor", rpcFailure)
+	h.gameStub.Return("cstDutchAuctionDuration", big.NewInt(28800))
+	h.gameStub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(33))
+	h.gameStub.Return("getBidCstRewardAmount", wei("99000000000000000000"))
+	h.gameStub.Return("bidCstRewardAmountMultiplier", big.NewInt(7))
 	h.gameStub.Return(
 		"getCstDutchAuctionDurations",
 		big.NewInt(28800),
@@ -2761,6 +2776,27 @@ func TestAPIV2ContractResources(t *testing.T) {
 		{name: "contracts_configuration_v2", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
 		{name: "contracts_current_bid_prices_v2", target: v2CurrentBidPrices, template: v2CurrentBidPrices, pathParams: map[string]string{}},
 	})
+	h.gameStub.Return("mainPrizeNumCosmicSignatureNfts", big.NewInt(3))
+	h.gameStub.Return("roundLateBidDurationDivisor", big.NewInt(4))
+	h.gameStub.Return("getRoundLateBidDuration", big.NewInt(900))
+	h.gameStub.Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(2))
+	h.gameStub.Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3))
+	h.gameStub.Return("lastBidderBidCstRewardAmountPercentage", big.NewInt(90))
+	h.gameStub.Return("getCstDutchAuctionBeginningBidPriceMinLimit", wei("180000000000000000000"))
+	h.gameStub.Return("getBidCstRewardAmountPerMainPrizeTimeIncrement", wei("60000000000000000000"))
+	h.state.LoadInitial(context.Background())
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{
+		{name: "contracts_configuration_v3", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
+	})
+	var v3Dashboard map[string]any
+	decodeV2JSON(t, h.get(t, "/api/cosmicgame/statistics/dashboard"), &v3Dashboard)
+	v3Compat, ok := v3Dashboard["V3Config"].(map[string]any)
+	if !ok ||
+		v3Dashboard["ContractMechanicsVersion"] != float64(3) ||
+		v3Compat["LastBidderBidCstRewardAmountPercentage"] != float64(90) ||
+		v3Compat["MainPrizeNumCosmicSignatureNfts"] != float64(3) {
+		t.Fatalf("v1 V3 compatibility dashboard = %+v", v3Dashboard)
+	}
 	restoreV1()
 }
 
@@ -3759,6 +3795,48 @@ func TestAPIV2RoundBids(t *testing.T) {
 	runV2GoldenCases(t, h, spec, cases)
 }
 
+func TestAPIV2BidV3RewardFixture(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var bidID, evtlogID, roundNum, bidderAid int64
+	if err := h.db.QueryRowContext(context.Background(), `SELECT
+			id,evtlog_id,round_num,bidder_aid
+		FROM cg_bid WHERE round_num=0 AND bid_position=3`,
+	).Scan(&bidID, &evtlogID, &roundNum, &bidderAid); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.db.ExecContext(context.Background(), `INSERT INTO cg_bid_reward(
+			evtlog_id,bid_id,round_num,recipient_aid,reward_type,amount
+		) VALUES
+			($1,$2,$3,$4,0,10000000000000000000),
+			($1,$2,$3,22,1,90000000000000000000)`,
+		evtlogID, bidID, roundNum, bidderAid); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = h.db.ExecContext(context.Background(),
+			"DELETE FROM cg_bid_reward WHERE bid_id=$1", bidID)
+	})
+
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{{
+		name:       "get_bid_v3_reward_split",
+		target:     "/api/v2/cosmicgame/rounds/0/bids/3",
+		template:   v2GetRoundBidPath,
+		pathParams: map[string]string{"round": "0", "position": "3"},
+	}})
+
+	var legacy map[string]any
+	decodeV2JSON(t, h.get(t, fmt.Sprintf("/api/cosmicgame/bid/info/%d", evtlogID)), &legacy)
+	bidInfo := legacy["BidInfo"].(map[string]any)
+	if bidInfo["PreviousBidderCstRewardAmount"] != "90000000000000000000" ||
+		bidInfo["ThisBidderCstRewardAmount"] != "10000000000000000000" {
+		t.Fatalf("v1 V3 bid compatibility = %+v", bidInfo)
+	}
+}
+
 func TestAPIV2Rounds(t *testing.T) {
 	h := server(t)
 	spec, err := apiv2.GetSpec()
@@ -3857,6 +3935,46 @@ func TestAPIV2Rounds(t *testing.T) {
 	}
 
 	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2RoundV3Fixture(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.db.ExecContext(context.Background(), `UPDATE cg_prize_claim
+		SET num_cs_nfts=3 WHERE round_num=2`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.db.ExecContext(context.Background(), `UPDATE cg_round_stats
+		SET endurance_champion_duration=700,chrono_warrior_duration=900
+		WHERE round_num=2`); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = h.db.ExecContext(context.Background(), `UPDATE cg_prize_claim
+			SET num_cs_nfts=1 WHERE round_num=2`)
+		_, _ = h.db.ExecContext(context.Background(), `UPDATE cg_round_stats
+			SET endurance_champion_duration=0,chrono_warrior_duration=0
+			WHERE round_num=2`)
+	})
+
+	runV2GoldenCases(t, h, spec, []v2GoldenCase{{
+		name:       "rounds_get_2_v3",
+		target:     "/api/v2/cosmicgame/rounds/2",
+		template:   v2GetRoundPath,
+		pathParams: map[string]string{"round": "2"},
+	}})
+
+	var legacy map[string]any
+	decodeV2JSON(t, h.get(t, "/api/cosmicgame/rounds/info/2"), &legacy)
+	roundInfo := legacy["RoundInfo"].(map[string]any)
+	mainPrize := roundInfo["MainPrize"].(map[string]any)
+	tokenIDs := mainPrize["NftTokenIds"].([]any)
+	if mainPrize["NumCSNfts"] != float64(3) || len(tokenIDs) != 3 {
+		t.Fatalf("v1 V3 round compatibility = %+v", mainPrize)
+	}
 }
 
 func runV2GoldenCases(t *testing.T, h *harness, spec *openapi3.T, cases []v2GoldenCase) {

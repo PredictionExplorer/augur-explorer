@@ -95,7 +95,8 @@ func (r *Repo) UserCosmicSignatureTokensPage(
 			LEFT JOIN transaction t ON t.id=m.tx_id
 			LEFT JOIN address wa ON wa.address_id=m.owner_aid
 			LEFT JOIN cg_staked_token_cst st ON st.token_id=m.token_id
-			LEFT JOIN cg_prize_claim pc ON pc.token_id=m.token_id
+			LEFT JOIN cg_prize_claim pc
+				ON m.token_id>=pc.token_id AND m.token_id<pc.token_id+pc.num_cs_nfts
 			LEFT JOIN cg_raffle_nft_prize rnw
 				ON (rnw.token_id=m.token_id AND rnw.round_num=m.round_num)
 			LEFT JOIN cg_endurance_prize endu

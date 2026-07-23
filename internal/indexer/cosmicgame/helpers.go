@@ -20,58 +20,78 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// cstBidReward returns the CST bid reward (the amount minted to the bidder)
-// for this bid transaction.
-//
-// The reward is located by MATCHING the correct Transfer event rather than by
-// positional offset from the bid event. Per bid the only CST mint is the bid
-// reward credited to the bidder, i.e. an ERC20 Transfer with from == zero
-// address (mint) and to == bidder. (A CST bid also burns the paid price,
-// emitting Transfer(bidder -> 0x0); that is ignored by this match. The
-// marketing-wallet CST contribution is minted at round end, not per bid.)
-//
-// In V2 the reward is dynamic (BiddingV2.getBidCstRewardAmountAdvanced) and
-// is 0 for the earliest bid(s) of a round. When it is 0 the contract performs
-// no mint, so there is no matching Transfer and "0" is correctly reported
-// instead of failing.
-func (h *Handlers) cstBidReward(ctx context.Context, bidEvtlogID, txID int64, bidderAddr string) (string, error) {
+type bidRewardMint struct {
+	to     ethcommon.Address
+	amount *big.Int
+}
+
+func classifyBidRewardMints(mints []bidRewardMint) (thisReward, previousReward, previousAddr string) {
+	switch len(mints) {
+	case 0:
+		return "0", "0", ""
+	case 1:
+		return mints[0].amount.String(), "0", ""
+	}
+	total := new(big.Int)
+	previousIndex := 0
+	for i := range mints {
+		total.Add(total, mints[i].amount)
+		if mints[i].amount.Cmp(mints[previousIndex].amount) > 0 {
+			previousIndex = i
+		}
+	}
+	previous := mints[previousIndex]
+	current := new(big.Int).Sub(total, previous.amount)
+	return current.String(), previous.amount.String(), previous.to.String()
+}
+
+// cstBidRewards derives the V3 current/previous bidder split from the CST
+// mint Transfer logs preceding the bid. V1/V2 (and a first V3 bid) have one
+// mint, while a normal V3 bid has two; the larger 90% mint belongs to the
+// outbid previous-last bidder.
+func (h *Handlers) cstBidRewards(
+	ctx context.Context,
+	bidEvtlogID, txID int64,
+	bidderAddr string,
+) (thisReward, previousReward, previousAddr string, err error) {
+	_ = bidderAddr // one-mint V1/V2 rows are always the current bidder's share
 	elogRLPs, err := h.store.EventLogRLPsBefore(ctx, txID, h.c.CosmicTokenAid, bidEvtlogID, TopicTransferEvt[:8])
 	if err != nil {
-		return "", fmt.Errorf("cstBidReward(): %w", err)
+		return "", "", "", fmt.Errorf("cstBidRewards(): %w", err)
 	}
-	bidder := ethcommon.HexToAddress(bidderAddr)
+	mints := make([]bidRewardMint, 0, 2)
 	for _, raw := range elogRLPs {
 		var lg types.Log
 		if err := rlp.DecodeBytes(raw, &lg); err != nil {
-			// A stored evt_log row that fails to decode is an invalid
-			// database state; abort the batch instead of guessing.
-			return "", fmt.Errorf("cstBidReward(): RLP decode: %w", err)
+			return "", "", "", fmt.Errorf("cstBidRewards(): RLP decode: %w", err)
 		}
-		// ERC20 Transfer indexes `from` and `to`, so they live in the topics, not in Data.
-		if len(lg.Topics) < 3 {
+		if len(lg.Topics) < 3 || ethcommon.BytesToAddress(lg.Topics[1][12:]) != (ethcommon.Address{}) {
 			continue
 		}
-		from := ethcommon.BytesToAddress(lg.Topics[1][12:])
-		to := ethcommon.BytesToAddress(lg.Topics[2][12:])
-		if from != (ethcommon.Address{}) || to != bidder {
-			continue // not the bid reward mint to the bidder
+		var transfer cgc.ERC20Transfer
+		if err := h.erc20ABI.UnpackIntoInterface(&transfer, "Transfer", lg.Data); err != nil {
+			return "", "", "", fmt.Errorf("cstBidRewards(): Transfer decode: %w", err)
 		}
-		var ethEvt cgc.ERC20Transfer
-		if err := h.erc20ABI.UnpackIntoInterface(&ethEvt, "Transfer", lg.Data); err != nil {
-			return "", fmt.Errorf("cstBidReward(): Transfer decode (%+v): %w", lg, err)
-		}
-		return ethEvt.Value.String(), nil
+		amount := new(big.Int).Set(transfer.Value)
+		mints = append(mints, bidRewardMint{
+			to:     ethcommon.BytesToAddress(lg.Topics[2][12:]),
+			amount: amount,
+		})
 	}
-	// No mint to the bidder in this transaction => the dynamic CST bid reward was 0.
-	return "0", nil
+	thisReward, previousReward, previousAddr = classifyBidRewardMints(mints)
+	return thisReward, previousReward, previousAddr, nil
 }
 
 // prizeRoundInTx returns the round number of the MainPrizeClaimed event in
 // txID, or -1 when the transaction contains none (a standalone donation).
 func (h *Handlers) prizeRoundInTx(ctx context.Context, txID int64) (int64, error) {
-	evtList, err := h.store.EventsBySigAndTx(ctx, txID, TopicPrizeClaimEvent[:8])
-	if err != nil {
-		return 0, fmt.Errorf("prizeRoundInTx(): %w", err)
+	evtList := make([]store.EthereumEventLog, 0, 1)
+	for _, topic := range []string{TopicPrizeClaimEvent, TopicPrizeClaimEventV3} {
+		events, err := h.store.EventsBySigAndTx(ctx, txID, topic[:8])
+		if err != nil {
+			return 0, fmt.Errorf("prizeRoundInTx(): %w", err)
+		}
+		evtList = append(evtList, events...)
 	}
 	if len(evtList) == 0 {
 		return -1, nil

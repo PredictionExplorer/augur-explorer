@@ -302,7 +302,9 @@ func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (c
 		"round_end_time::text," +
 		"round_duration_seconds, " +
 		"total_cst_in_bids/1e18, " +
-		"total_eth_in_bids/1e18 " +
+		"total_eth_in_bids/1e18, " +
+		"endurance_champion_duration, " +
+		"chrono_warrior_duration " +
 		"FROM cg_round_stats WHERE round_num=$1"
 
 	var nullParamWindowStart, nullRoundStart, nullRoundEnd sql.NullString
@@ -326,6 +328,8 @@ func (r *Repo) CosmicGameRoundStatistics(ctx context.Context, roundNum int64) (c
 		&nullRoundDuration,
 		&stats.TotalCstInBidsEth,
 		&stats.TotalEthInBidsEth,
+		&stats.EnduranceChampionDuration,
+		&stats.ChronoWarriorDuration,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

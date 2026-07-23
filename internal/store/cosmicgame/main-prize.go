@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/jackc/pgx/v5"
 
@@ -26,6 +27,7 @@ const prizeClaimsSelect = `SELECT
 			p.amount/1e18 amount_eth,
 			p.round_num,
 			p.token_id,
+			p.num_cs_nfts,
 			m.seed,
 			s.total_bids,
 			s.total_nft_donated,
@@ -33,6 +35,8 @@ const prizeClaimsSelect = `SELECT
 			s.total_raffle_eth_deposits,
 			s.total_raffle_eth_deposits/1e18 eth_deposits,
 			s.total_raffle_nfts,
+			s.endurance_champion_duration,
+			s.chrono_warrior_duration,
 			d.donation_amount,
 			d.donation_amount/1e18 AS amount_eth,
 			d.charity_addr,
@@ -105,6 +109,7 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 		&rec.MainPrize.EthAmountEth,
 		&rec.RoundNum,
 		&rec.MainPrize.NftTokenId,
+		&rec.MainPrize.NumCSNfts,
 		&nullSeed,
 		&rec.RoundStats.TotalBids,
 		&rec.RoundStats.TotalDonatedNFTs,
@@ -112,6 +117,8 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 		&rec.RoundStats.TotalRaffleEthDeposits,
 		&rec.RoundStats.TotalRaffleEthDepositsEth,
 		&rec.RoundStats.TotalRaffleNFTs,
+		&rec.RoundStats.EnduranceChampionDuration,
+		&rec.RoundStats.ChronoWarriorDuration,
 		&nullCharityAmount,
 		&nullCharityAmountEth,
 		&nullCharityAddr,
@@ -188,6 +195,30 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 		rec.CharityDeposit.CharityAddress = nullCharityAddr.String
 	}
 	applyStakingDeposit(&rec.StakingDeposit, nullDepAmount, nullDepAmountEth, nullDepAmountPerTok, nullDepAmountPerTokenEth, nullDepDepositNum, nullNumStakedNfts)
+	return fillMainPrizeNFTIDs(&rec.MainPrize)
+}
+
+func fillMainPrizeNFTIDs(prize *cgmodel.CGMainPrizeInfo) error {
+	count := prize.NumCSNfts
+	if count <= 0 {
+		count = 1
+	}
+	if count == 1 {
+		// V1/V2 compatibility: one NFT is implicit in NftTokenId, so the
+		// V3-only fields stay omitted from legacy JSON.
+		prize.NumCSNfts = 0
+		prize.NftTokenIds = nil
+		return nil
+	}
+	if prize.NftTokenId > math.MaxInt64 ||
+		count-1 > math.MaxInt64-int64(prize.NftTokenId) {
+		return errors.New("main-prize NFT range exceeds int64")
+	}
+	prize.NftTokenIds = make([]int64, 0, count)
+	first := int64(prize.NftTokenId)
+	for offset := range count {
+		prize.NftTokenIds = append(prize.NftTokenIds, first+offset)
+	}
 	return nil
 }
 
@@ -287,6 +318,7 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRe
 			p.cst_amount/1e18 cst_amount_eth,
 			p.round_num,
 			p.token_id,
+			p.num_cs_nfts,
 			m.seed,
 			s.total_bids,
 			s.total_nft_donated,
@@ -325,7 +357,9 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRe
 			s.param_window_duration_seconds,
 			s.round_start_time,
 			s.round_end_time,
-			s.round_duration_seconds
+			s.round_duration_seconds,
+			s.endurance_champion_duration,
+			s.chrono_warrior_duration
 		FROM cg_prize_claim p
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address wa ON p.winner_aid=wa.address_id
@@ -384,6 +418,7 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRe
 		&nullMainCstAmountEth,
 		&rec.RoundNum,
 		&rec.MainPrize.NftTokenId,
+		&rec.MainPrize.NumCSNfts,
 		&nullSeed,
 		&rec.RoundStats.TotalBids,
 		&rec.RoundStats.TotalDonatedNFTs,
@@ -423,6 +458,8 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRe
 		&nullRoundStartTime,
 		&nullRoundEndTime,
 		&nullRoundDuration,
+		&rec.RoundStats.EnduranceChampionDuration,
+		&rec.RoundStats.ChronoWarriorDuration,
 	)
 	if err != nil {
 		return rec, store.WrapError(op, err)
@@ -496,6 +533,9 @@ func (r *Repo) RoundInfo(ctx context.Context, roundNum int64) (cgmodel.CGRoundRe
 	}
 	if nullRoundDuration.Valid {
 		rec.RoundStats.RoundDurationSeconds = nullRoundDuration.Int64
+	}
+	if err := fillMainPrizeNFTIDs(&rec.MainPrize); err != nil {
+		return rec, store.WrapError(op, err)
 	}
 
 	return rec, nil

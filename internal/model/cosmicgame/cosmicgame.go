@@ -37,7 +37,8 @@ type CGPrizeClaimEvent struct {
 	TxId         int64
 	ContractAddr string
 	RoundNum     int64
-	TokenId      int64
+	TokenId      int64 // V3: first of NumCSNfts sequential token IDs
+	NumCSNfts    int64 // V1/V2: 1; V3: number of main-prize NFTs
 	WinnerAddr   string
 	Timeout      int64
 	Amount       string
@@ -64,6 +65,25 @@ type CGBidEvent struct {
 	Message                 string
 	BidCstRewardAmount      string // IBiddingV2 BidPlaced; "-1" if V1 event
 	CstDutchAuctionDuration string // IBiddingV2 BidPlaced; "-1" if V1 event
+	// V3 splits the bid CST mint between the bidder placing this bid and
+	// the outbid previous-last bidder. V1/V2 put the complete reward in
+	// ThisBidderReward and leave the previous-bidder fields empty/zero.
+	ThisBidderReward string
+	PrevBidderReward string
+	PrevBidderAddr   string
+}
+
+// CGBidReward is one recipient share of a bid's CST mint. RewardType 0 is
+// the bidder placing the bid; reward type 1 is the outbid previous bidder.
+type CGBidReward struct {
+	ID            int64
+	EvtLogID      int64
+	BidID         int64
+	RoundNum      int64
+	RecipientAid  int64
+	RecipientAddr string
+	RewardType    int16
+	Amount        string
 }
 
 // CGDonationEvent records a plain EthDonated contract event: a direct ETH
@@ -707,6 +727,61 @@ type CGMainPrizeMicroSecondsIncreaseChanged struct {
 	NewMicroseconds string
 }
 
+// CGRoundLateBidDurationDivisorChanged records the V3 late-bid-window
+// duration divisor.
+type CGRoundLateBidDurationDivisorChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	NewValue  string
+}
+
+// CGRoundLateBidPricePremiumAmountBaseMultiplierChanged records the V3
+// late-bid price premium base multiplier.
+type CGRoundLateBidPricePremiumAmountBaseMultiplierChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	NewValue  string
+}
+
+// CGRoundLateBidPricePremiumAmountExponentChanged records the V3 late-bid
+// price premium exponent.
+type CGRoundLateBidPricePremiumAmountExponentChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	NewValue  string
+}
+
+// CGLastBidderBidCstRewardAmountPercentageChanged records the percentage of
+// a V3 bid reward paid to the outbid previous-last bidder.
+type CGLastBidderBidCstRewardAmountPercentageChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	NewValue  string
+}
+
+// CGMainPrizeNumCosmicSignatureNftsChanged records the number of sequential
+// Cosmic Signature NFTs awarded with the V3 main prize.
+type CGMainPrizeNumCosmicSignatureNftsChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	NewValue  string
+}
+
 // CGInitialSecondsUntilPrizeChanged records an admin change of the initial
 // main-prize countdown at round start.
 type CGInitialSecondsUntilPrizeChanged struct {
@@ -931,4 +1006,16 @@ type CGRoundStarted struct {
 	Contract       string
 	RoundNum       int64
 	StartTimestamp int64
+}
+
+// CGLiveStateUpdate is one audited observation of event-less on-chain state.
+// Evented configuration values never belong in this table.
+type CGLiveStateUpdate struct {
+	ID           int64
+	VariableName string
+	ContractAid  int64
+	RoundNum     int64
+	BlockNum     int64
+	TimeStamp    int64
+	NewValue     string
 }

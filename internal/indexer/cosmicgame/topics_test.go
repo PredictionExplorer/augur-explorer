@@ -27,6 +27,7 @@ func mustABI(t *testing.T, raw string) *abi.ABI {
 func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 	game := mustABI(t, cgc.CosmicSignatureGameABI)
 	gameV2 := mustABI(t, cgc.CosmicSignatureGameV2ABI)
+	gameV3 := mustABI(t, cgc.CosmicSignatureGameV3ABI)
 	nft := mustABI(t, cgc.CosmicSignatureNftABI)
 	charity := mustABI(t, cgc.CharityWalletABI)
 	prizes := mustABI(t, cgc.PrizesWalletABI)
@@ -42,6 +43,7 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		event    string
 	}{
 		{TopicPrizeClaimEvent, game, "MainPrizeClaimed"},
+		{TopicPrizeClaimEventV3, gameV3, "MainPrizeClaimed"},
 		{TopicBidEvent, game, "BidPlaced"},
 		{TopicBidEventV2, gameV2, "BidPlaced"},
 		{TopicEthDonatedEvent, game, "EthDonated"},
@@ -105,6 +107,11 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicBidCstRewardAmountMultiplierChanged, gameV2, "BidCstRewardAmountMultiplierChanged"},
 		{TopicCstDutchAuctionDurationChanged, gameV2, "CstDutchAuctionDurationChanged"},
 		{TopicCstDutchAuctionDurationChangeDivisorChanged, gameV2, "CstDutchAuctionDurationChangeDivisorChanged"},
+		{TopicRoundLateBidDurationDivisorChanged, gameV3, "RoundLateBidDurationDivisorChanged"},
+		{TopicRoundLateBidPremiumBaseMultiplierChanged, gameV3, "RoundLateBidPricePremiumAmountBaseMultiplierChanged"},
+		{TopicRoundLateBidPremiumExponentChanged, gameV3, "RoundLateBidPricePremiumAmountExponentChanged"},
+		{TopicLastBidderRewardPercentageChanged, gameV3, "LastBidderBidCstRewardAmountPercentageChanged"},
+		{TopicMainPrizeNumNftsChanged, gameV3, "MainPrizeNumCosmicSignatureNftsChanged"},
 		{TopicStaticCstReward, game, "CstPrizeAmountChanged"},
 		{TopicMaxMessageLength, game, "BidMessageLengthMaxLimitChanged"},
 		{TopicTokenScriptURL, nft, "NftGenerationScriptUriChanged"},
@@ -134,12 +141,13 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 func TestLegacyConstantsHaveNoABIEvent(t *testing.T) {
 	game := mustABI(t, cgc.CosmicSignatureGameABI)
 	gameV2 := mustABI(t, cgc.CosmicSignatureGameV2ABI)
+	gameV3 := mustABI(t, cgc.CosmicSignatureGameV3ABI)
 	for name, constant := range map[string]string{
 		"TopicTimeIncreaseChanged":       TopicTimeIncreaseChanged,
 		"TopicBidCstRewardAmountChanged": TopicBidCstRewardAmountChanged,
 		"TopicERC20TransferErr":          TopicERC20TransferErr,
 	} {
-		for _, a := range []*abi.ABI{game, gameV2} {
+		for _, a := range []*abi.ABI{game, gameV2, gameV3} {
 			for _, ev := range a.Events {
 				if ev.ID.Hex()[2:] == constant {
 					t.Errorf("%s (%s) now exists in an ABI as %s: switch its handler from raw decoding to ABI unpacking",

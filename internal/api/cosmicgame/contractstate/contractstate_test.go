@@ -187,6 +187,47 @@ func newV2GameStub() *testchain.ContractStub {
 	return stub
 }
 
+func newV3GameStub() *testchain.ContractStub {
+	stub := testchain.MustContractStub(cg.CosmicSignatureGameV3MetaData.ABI)
+	stub.Return("ethBidPriceIncreaseDivisor", big.NewInt(100))
+	stub.Return("charityAddress", charityAddr)
+	stub.Return("charityEthDonationAmountPercentage", big.NewInt(10))
+	stub.Return("mainEthPrizeAmountPercentage", big.NewInt(25))
+	stub.Return("raffleTotalEthPrizeAmountForBiddersPercentage", big.NewInt(5))
+	stub.Return("chronoWarriorEthPrizeAmountPercentage", big.NewInt(7))
+	stub.Return("cosmicSignatureNftStakingTotalEthRewardAmountPercentage", big.NewInt(10))
+	stub.Return("mainPrizeTimeIncrementIncreaseDivisor", big.NewInt(50))
+	stub.Return("numRaffleEthPrizesForBidders", big.NewInt(3))
+	stub.Return("numRaffleCosmicSignatureNftsForBidders", big.NewInt(5))
+	stub.Return("numRaffleCosmicSignatureNftsForRandomWalkNftStakers", big.NewInt(4))
+	stub.Return("cstDutchAuctionDuration", big.NewInt(999)) // inert V2 slot on V3
+	stub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(33))
+	stub.Return("getBidCstRewardAmount", mustBig("99000000000000000000"))
+	stub.Return("bidCstRewardAmountMultiplier", big.NewInt(7))
+	stub.Return("getNextEthBidPrice", mustBig("1010000000000000"))
+	stub.Return("getNextCstBidPrice", mustBig("55000000000000000000"))
+	stub.Return("getEthDutchAuctionDurations", big.NewInt(86400), big.NewInt(7200))
+	stub.Return("getCstDutchAuctionDurations", big.NewInt(12345), big.NewInt(100))
+	stub.Return("getDurationUntilMainPrize", big.NewInt(3600))
+	stub.Return("getMainEthPrizeAmount", mustBig("2000000000000000000"))
+	stub.Return("getCosmicSignatureNftStakingTotalEthRewardAmount", mustBig("300000000000000000"))
+	stub.Return("getRaffleTotalEthPrizeAmountForBidders", mustBig("150000000000000000"))
+	stub.Return("roundNum", big.NewInt(7))
+	stub.Return("mainPrizeTimeIncrementInMicroSeconds", big.NewInt(3600000000))
+	stub.Return("lastBidderAddress", bidderAddr)
+	stub.Return("initialDurationUntilMainPrizeDivisor", big.NewInt(2))
+	stub.Return("timeoutDurationToClaimMainPrize", big.NewInt(86400))
+	stub.Return("roundLateBidDurationDivisor", big.NewInt(4))
+	stub.Return("getRoundLateBidDuration", big.NewInt(900))
+	stub.Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(2))
+	stub.Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3))
+	stub.Return("lastBidderBidCstRewardAmountPercentage", big.NewInt(90))
+	stub.Return("mainPrizeNumCosmicSignatureNfts", big.NewInt(3))
+	stub.Return("getCstDutchAuctionBeginningBidPriceMinLimit", mustBig("180000000000000000000"))
+	stub.Return("getBidCstRewardAmountPerMainPrizeTimeIncrement", mustBig("60000000000000000000"))
+	return stub
+}
+
 func mustBig(s string) *big.Int {
 	v, ok := new(big.Int).SetString(s, 10)
 	if !ok {
@@ -714,6 +755,79 @@ func TestMechanicsV2Detection(t *testing.T) {
 	}
 }
 
+func TestMechanicsV3DetectionAndLatestConfiguration(t *testing.T) {
+	chain := testchain.New(t)
+	chain.RegisterCall(gameAddr, newV3GameStub().Handler())
+	s := newTestState(t, chain, defaultFakeDB())
+
+	s.LoadInitial(context.Background())
+	snap := s.Snapshot()
+	if snap.MechanicsVersion != mechanicsV3 {
+		t.Fatalf("MechanicsVersion = %d, want V3", snap.MechanicsVersion)
+	}
+	if snap.RoundStartAuctionLength != 12345 {
+		t.Fatalf("RoundStartAuctionLength = %d, want derived V3 duration 12345", snap.RoundStartAuctionLength)
+	}
+	if !snap.ConstantsReady || !snap.ConfigurationReady || !snap.BidPricesReady {
+		t.Fatalf("V3 readiness = constants:%v configuration:%v prices:%v",
+			snap.ConstantsReady, snap.ConfigurationReady, snap.BidPricesReady)
+	}
+	if snap.V3.LastBidderBidCstRewardAmountPercentage != 90 ||
+		snap.V3.MainPrizeNumCosmicSignatureNfts != 3 ||
+		snap.V3.CstDutchAuctionBeginningBidPriceMinLimit != "180000000000000000000" ||
+		snap.V3.BidCstRewardAmountPerMainPrizeTimeIncrement != "60000000000000000000" {
+		t.Fatalf("V3 configuration = %+v", snap.V3)
+	}
+}
+
+func TestReadV3ConfigurationFailures(t *testing.T) {
+	t.Parallel()
+	if _, err := readV3Configuration(nil, &bind.CallOpts{}); err == nil {
+		t.Fatal("nil V3 binding was accepted")
+	}
+	callFailure := func([]any) ([]any, error) { return nil, errors.New("forced V3 getter failure") }
+	tests := []struct {
+		name   string
+		method string
+		value  *big.Int
+	}{
+		{name: "duration divisor read", method: "roundLateBidDurationDivisor"},
+		{name: "derived duration read", method: "getRoundLateBidDuration"},
+		{name: "zero derived duration", method: "getRoundLateBidDuration", value: big.NewInt(0)},
+		{name: "premium base read", method: "roundLateBidPricePremiumAmountBaseMultiplier"},
+		{name: "premium exponent read", method: "roundLateBidPricePremiumAmountExponent"},
+		{name: "premium exponent overflow", method: "roundLateBidPricePremiumAmountExponent", value: new(big.Int).Lsh(big.NewInt(1), 80)},
+		{name: "last bidder percentage read", method: "lastBidderBidCstRewardAmountPercentage"},
+		{name: "last bidder percentage domain", method: "lastBidderBidCstRewardAmountPercentage", value: big.NewInt(101)},
+		{name: "main prize count read", method: "mainPrizeNumCosmicSignatureNfts"},
+		{name: "main prize count domain", method: "mainPrizeNumCosmicSignatureNfts", value: big.NewInt(0)},
+		{name: "auction floor read", method: "getCstDutchAuctionBeginningBidPriceMinLimit"},
+		{name: "reward increment read", method: "getBidCstRewardAmountPerMainPrizeTimeIncrement"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			stub := newV3GameStub()
+			if test.value == nil {
+				stub.Handle(test.method, callFailure)
+			} else {
+				stub.Return(test.method, test.value)
+			}
+			chain := testchain.New(t)
+			chain.RegisterCall(gameAddr, stub.Handler())
+			state := newTestState(t, chain, defaultFakeDB())
+			opts, _, err := state.latestCallOpts(t.Context())
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, _, v3 := state.bindLiveReaders()
+			if _, err := readV3Configuration(v3, &opts); err == nil {
+				t.Fatal("invalid V3 configuration was accepted")
+			}
+		})
+	}
+}
+
 func TestV2ChangeDivisorFailureMarksConstantsUnavailable(t *testing.T) {
 	chain := testchain.New(t)
 	stub := newV2GameStub()
@@ -775,7 +889,7 @@ func TestMechanicsHelpersRecoverFromStaleV2Cache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("latestCallOpts: %v", err)
 	}
-	v1, v2 := s.bindLiveReaders()
+	v1, v2, v3 := s.bindLiveReaders()
 
 	tests := []struct {
 		name   string
@@ -785,7 +899,7 @@ func TestMechanicsHelpersRecoverFromStaleV2Cache(t *testing.T) {
 		{
 			name: "round-start setting",
 			invoke: func() (string, bool) {
-				value := s.roundStartCSTAuctionSetting(v1, v2, &copts)
+				value := s.roundStartCSTAuctionSetting(v1, v2, v3, &copts)
 				return strconv.FormatInt(value, 10), value >= 0
 			},
 			want: "11",
@@ -793,7 +907,7 @@ func TestMechanicsHelpersRecoverFromStaleV2Cache(t *testing.T) {
 		{
 			name: "duration-change divisor",
 			invoke: func() (string, bool) {
-				value, ok := s.cstAuctionDurationChangeDivisor(v1, v2, &copts)
+				value, ok := s.cstAuctionDurationChangeDivisor(v1, v2, v3, &copts)
 				return strconv.FormatInt(value, 10), ok
 			},
 			want: "-1",
@@ -801,7 +915,7 @@ func TestMechanicsHelpersRecoverFromStaleV2Cache(t *testing.T) {
 		{
 			name: "live reward",
 			invoke: func() (string, bool) {
-				value, err := s.tokenReward(v1, v2, &copts)
+				value, err := s.tokenReward(v1, v2, v3, &copts)
 				return value, err == nil
 			},
 			want: "100000000000000000000",
@@ -809,7 +923,7 @@ func TestMechanicsHelpersRecoverFromStaleV2Cache(t *testing.T) {
 		{
 			name: "reward configuration",
 			invoke: func() (string, bool) {
-				fixed, multiplier, err := s.bidCSTRewardConfiguration(v1, v2, &copts)
+				fixed, multiplier, err := s.bidCSTRewardConfiguration(v1, v2, v3, &copts)
 				return fixed + multiplier, err == nil && multiplier == ""
 			},
 			want: "100000000000000000000",
@@ -949,14 +1063,14 @@ func TestLiveReadHelpersWithoutBindings(t *testing.T) {
 	s := newTestState(t, chain, defaultFakeDB())
 	opts := &bind.CallOpts{}
 
-	if got := s.roundStartCSTAuctionSetting(nil, nil, opts); got != -1 {
-		t.Errorf("roundStartCSTAuctionSetting(nil, nil) = %d, want -1", got)
+	if got := s.roundStartCSTAuctionSetting(nil, nil, nil, opts); got != -1 {
+		t.Errorf("roundStartCSTAuctionSetting(nil, nil, nil) = %d, want -1", got)
 	}
-	if got, ok := s.cstAuctionDurationChangeDivisor(nil, nil, opts); got != -1 || ok {
-		t.Errorf("cstAuctionDurationChangeDivisor(nil, nil) = %d,%v, want -1,false", got, ok)
+	if got, ok := s.cstAuctionDurationChangeDivisor(nil, nil, nil, opts); got != -1 || ok {
+		t.Errorf("cstAuctionDurationChangeDivisor(nil, nil, nil) = %d,%v, want -1,false", got, ok)
 	}
-	if _, err := s.tokenReward(nil, nil, opts); err == nil {
-		t.Error("tokenReward(nil, nil) should error")
+	if _, err := s.tokenReward(nil, nil, nil, opts); err == nil {
+		t.Error("tokenReward(nil, nil, nil) should error")
 	}
 }
 
@@ -1058,6 +1172,50 @@ func TestReadinessRejectsIncoherentSnapshots(t *testing.T) {
 			},
 			wantConfiguration: true,
 			wantBidPrices:     true,
+		},
+		{
+			name: "coherent V3",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.MechanicsVersion = mechanicsV3
+				snapshot.ConstantsMechanicsVersion = mechanicsV3
+				snapshot.VariablesMechanicsVersion = mechanicsV3
+				snapshot.FixedCSTBidReward = ""
+				snapshot.BidCSTRewardMultiplier = "7"
+				snapshot.CSTAuctionDurationChangeDivisor = 33
+				snapshot.V3 = V3Configuration{
+					RoundLateBidDurationDivisor:                  "4",
+					RoundLateBidDurationSeconds:                  900,
+					RoundLateBidPricePremiumAmountBaseMultiplier: "2",
+					RoundLateBidPricePremiumAmountExponent:       3,
+					LastBidderBidCstRewardAmountPercentage:       90,
+					MainPrizeNumCosmicSignatureNfts:              3,
+					CstDutchAuctionBeginningBidPriceMinLimit:     "180",
+					BidCstRewardAmountPerMainPrizeTimeIncrement:  "60",
+				}
+			},
+			wantConfiguration: true,
+			wantBidPrices:     true,
+		},
+		{
+			name: "V3 missing latest derived getter",
+			mutate: func(snapshot *Snapshot) {
+				snapshot.MechanicsVersion = mechanicsV3
+				snapshot.ConstantsMechanicsVersion = mechanicsV3
+				snapshot.VariablesMechanicsVersion = mechanicsV3
+				snapshot.FixedCSTBidReward = ""
+				snapshot.BidCSTRewardMultiplier = "7"
+				snapshot.CSTAuctionDurationChangeDivisor = 33
+				snapshot.V3 = V3Configuration{
+					RoundLateBidDurationDivisor:                  "4",
+					RoundLateBidDurationSeconds:                  900,
+					RoundLateBidPricePremiumAmountBaseMultiplier: "2",
+					RoundLateBidPricePremiumAmountExponent:       3,
+					LastBidderBidCstRewardAmountPercentage:       90,
+					MainPrizeNumCosmicSignatureNfts:              3,
+					CstDutchAuctionBeginningBidPriceMinLimit:     "180",
+				}
+			},
+			wantBidPrices: true,
 		},
 		{
 			name: "mixed mechanics generations",

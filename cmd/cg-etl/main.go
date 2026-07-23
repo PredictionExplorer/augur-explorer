@@ -1,8 +1,9 @@
 // The CosmicGame ETL: indexes every CosmicGame-family contract event into
 // PostgreSQL. main wires the process-wide dependencies (typed configuration,
 // process logger, RPC client, store, the handler set of
-// internal/indexer/cosmicgame), runs the startup contract-parameter sync and
-// hands control to the shared indexing engine (internal/indexer).
+// internal/indexer/cosmicgame), audits contract-parameter drift, recovers
+// event-less V3 champion durations and hands control to the shared indexing
+// engine (internal/indexer).
 package main
 
 import (
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"os"
 	"os/signal"
 	"strings"
@@ -21,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/config"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethcall"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	cgindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -153,9 +156,31 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 		return fmt.Errorf("can't build event handlers: %w", err)
 	}
 
-	if err := cgindexer.SyncContractParams(ctx, cgRepo, dbStore, eclient, cgAddrs.CosmicGameAddr, cgAddrs.PrizesWalletAddr, logger); err != nil {
-		logger.Error("Contract param chain sync failed", "err", err)
-		return fmt.Errorf("contract param chain sync failed: %w", err)
+	if _, err := cgindexer.CheckContractParamsDrift(
+		ctx,
+		cgRepo,
+		eclient,
+		cgAddrs.CosmicGameAddr,
+		cgAddrs.PrizesWalletAddr,
+		logger,
+	); err != nil {
+		logger.Error("Contract parameter drift audit failed", "err", err)
+		return fmt.Errorf("contract parameter drift audit failed: %w", err)
+	}
+
+	recoveryCtx, cancelRecovery := context.WithTimeout(ctx, ethcall.DefaultTimeout)
+	header, headerErr := eclient.HeaderByNumber(recoveryCtx, nil)
+	cancelRecovery()
+	if headerErr != nil {
+		logger.Warn("Champion duration recovery skipped: latest header unavailable", "err", headerErr)
+	} else if header.Time > math.MaxInt64 {
+		return fmt.Errorf("champion duration recovery: header timestamp %d overflows int64", header.Time)
+	} else if err := handlers.RecoverChampionDurations(
+		ctx,
+		header.Number.Int64(),
+		int64(header.Time), // #nosec G115 -- bounded above
+	); err != nil {
+		return fmt.Errorf("champion duration recovery failed: %w", err)
 	}
 
 	// Private metrics/pprof listener, enabled by METRICS_ADDR (never expose

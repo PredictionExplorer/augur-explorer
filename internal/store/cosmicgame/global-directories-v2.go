@@ -81,7 +81,8 @@ const globalTokenProjectionSQL = `
 		m.cur_owner_aid,
 		oa.addr,
 		EXISTS(SELECT 1 FROM cg_staked_token_cst st WHERE st.token_id=m.token_id),
-		EXISTS(SELECT 1 FROM cg_prize_claim pc WHERE pc.token_id=m.token_id),
+		EXISTS(SELECT 1 FROM cg_prize_claim pc
+			WHERE m.token_id>=pc.token_id AND m.token_id<pc.token_id+pc.num_cs_nfts),
 		(SELECT rnw.is_rwalk FROM cg_raffle_nft_prize rnw
 			WHERE rnw.token_id=m.token_id AND rnw.round_num=m.round_num),
 		(SELECT rnw.is_staker FROM cg_raffle_nft_prize rnw

@@ -40,6 +40,7 @@ type Contracts struct {
 	MarketingWallet ethcommon.Address
 	Implementation  ethcommon.Address
 
+	GameAid        int64
 	CosmicTokenAid int64
 }
 
@@ -93,6 +94,10 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 	if err != nil {
 		return Contracts{}, addrs, fmt.Errorf("looking up CosmicToken address id: %w", err)
 	}
+	gameAid, err := st.LookupAddressID(ctx, addrs.CosmicGameAddr)
+	if err != nil {
+		return Contracts{}, addrs, fmt.Errorf("looking up CosmicGame address id: %w", err)
+	}
 
 	return Contracts{
 		Game:            ethcommon.HexToAddress(addrs.CosmicGameAddr),
@@ -105,6 +110,7 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		StakingRWalk:    ethcommon.HexToAddress(addrs.StakingWalletRWalkAddr),
 		MarketingWallet: ethcommon.HexToAddress(addrs.MarketingWalletAddr),
 		Implementation:  ethcommon.HexToAddress(addrs.ImplementationAddr),
+		GameAid:         gameAid,
 		CosmicTokenAid:  tokenAid,
 	}, addrs, nil
 }
@@ -139,6 +145,7 @@ type Handlers struct {
 
 	gameABI            *abi.ABI
 	gameV2ABI          *abi.ABI
+	gameV3ABI          *abi.ABI
 	signatureABI       *abi.ABI
 	charityWalletABI   *abi.ABI
 	prizesWalletABI    *abi.ABI
@@ -182,6 +189,7 @@ func New(cfg Config) (*Handlers, error) {
 	}{
 		{&h.gameABI, "CosmicSignatureGame", cgc.CosmicSignatureGameABI},
 		{&h.gameV2ABI, "CosmicSignatureGameV2", cgc.CosmicSignatureGameV2ABI},
+		{&h.gameV3ABI, "CosmicSignatureGameV3", cgc.CosmicSignatureGameV3ABI},
 		{&h.signatureABI, "CosmicSignatureNft", cgc.CosmicSignatureNftABI},
 		{&h.charityWalletABI, "CharityWallet", cgc.CharityWalletABI},
 		{&h.prizesWalletABI, "PrizesWallet", cgc.PrizesWalletABI},

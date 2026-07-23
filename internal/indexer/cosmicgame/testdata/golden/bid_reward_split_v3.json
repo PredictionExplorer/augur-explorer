@@ -1,0 +1,282 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x0000000000000000000000000000000000000000",
+        "block_num": 1890
+      },
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1890
+      },
+      {
+        "addr": "0x2200000000000000000000000000000000000022",
+        "block_num": 1890
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1890
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1890,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T04:30:00+00:00"
+      }
+    ]
+  },
+  "cg_bid": {
+    "added": [
+      {
+        "bid_cst_reward_amount": 100000000000000000000,
+        "bid_position": 1,
+        "bid_type": 0,
+        "bidder_aid": "0x2100000000000000000000000000000000000021",
+        "block_num": 1890,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "cst_dutch_auction_duration": 3600,
+        "cst_price": -1,
+        "cst_reward": 100000000000000000000,
+        "eth_price": 100000000000000000,
+        "evtlog_id": "evt:1890/2",
+        "msg": "v3 split bid",
+        "prize_time": "2026-01-01T00:40:00+00:00",
+        "round_num": 1,
+        "rwalk_nft_id": -1,
+        "time_stamp": "2026-01-03T04:30:00+00:00",
+        "tx_id": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410"
+      }
+    ]
+  },
+  "cg_bid_reward": {
+    "added": [
+      {
+        "amount": 10000000000000000000,
+        "bid_id": "evt:1890/2",
+        "evtlog_id": "evt:1890/2",
+        "recipient_aid": "0x2100000000000000000000000000000000000021",
+        "reward_type": 0,
+        "round_num": 1
+      },
+      {
+        "amount": 90000000000000000000,
+        "bid_id": "evt:1890/2",
+        "evtlog_id": "evt:1890/2",
+        "recipient_aid": "0x2200000000000000000000000000000000000022",
+        "reward_type": 1,
+        "round_num": 1
+      }
+    ]
+  },
+  "cg_bidder": {
+    "added": [
+      {
+        "bidder_aid": "0x2100000000000000000000000000000000000021",
+        "max_bid": 100000000000000000,
+        "num_bids": 1,
+        "tokens_minted": 0,
+        "total_cst_spent": 0,
+        "total_eth_spent": 100000000000000000
+      }
+    ]
+  },
+  "cg_costok_owner": {
+    "added": [
+      {
+        "cur_balance": 10000000000000000000,
+        "owner_aid": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "cur_balance": 90000000000000000000,
+        "owner_aid": "0x2200000000000000000000000000000000000022"
+      }
+    ]
+  },
+  "cg_erc20_transfer": {
+    "added": [
+      {
+        "block_num": 1890,
+        "contract_aid": "0x4000000000000000000000000000000000000004",
+        "evtlog_id": "evt:1890/0",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "otype": 1,
+        "time_stamp": "2026-01-03T04:30:00+00:00",
+        "to_aid": "0x2200000000000000000000000000000000000022",
+        "tx_id": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410",
+        "value": 90000000000000000000
+      },
+      {
+        "block_num": 1890,
+        "contract_aid": "0x4000000000000000000000000000000000000004",
+        "evtlog_id": "evt:1890/1",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "otype": 1,
+        "time_stamp": "2026-01-03T04:30:00+00:00",
+        "to_aid": "0x2100000000000000000000000000000000000021",
+        "tx_id": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410",
+        "value": 10000000000000000000
+      }
+    ]
+  },
+  "cg_glob_stats": {
+    "added": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 1,
+        "direct_donations": 0,
+        "num_bids": 1,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ],
+    "removed": [
+      {
+        "cg_donations_total": 0,
+        "cst_reward_for_bidding": 100000000000000000000,
+        "cur_num_bids": 0,
+        "direct_donations": 0,
+        "num_bids": 0,
+        "num_bids_cst": 0,
+        "num_cg_donations": 0,
+        "num_direct_donations": 0,
+        "num_mints": 0,
+        "num_mkt_rewards": 0,
+        "num_rwalk_used": 0,
+        "num_vol_donations": 0,
+        "num_wins": 0,
+        "num_withdrawals": 0,
+        "sum_withdrawals": 0,
+        "total_chrono_warrior_eth_deposits": 0,
+        "total_cst_consumed": 0,
+        "total_cst_given_in_prizes": 0,
+        "total_erc20_donations": 0,
+        "total_mkt_rewards": 0,
+        "total_nft_donated": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_eth_withdrawn": 0,
+        "vol_donations_total": 0
+      }
+    ]
+  },
+  "cg_round_stats": {
+    "added": [
+      {
+        "activation_time": null,
+        "chrono_warrior_prize_eth": 0,
+        "donations_round_count": 0,
+        "donations_round_total": 0,
+        "num_contracts_donated_erc20": 0,
+        "num_erc20_donations": 0,
+        "param_window_duration_seconds": null,
+        "param_window_start_time": null,
+        "round_duration_seconds": null,
+        "round_end_time": null,
+        "round_num": 1,
+        "round_start_time": null,
+        "total_bids": 1,
+        "total_cst_in_bids": 0,
+        "total_cst_paid_in_prizes": 0,
+        "total_eth_in_bids": 0,
+        "total_nft_donated": 0,
+        "total_nfts_minted": 0,
+        "total_raffle_eth_deposits": 0,
+        "total_raffle_nfts": 0
+      }
+    ]
+  },
+  "cg_transfer_stats": {
+    "added": [
+      {
+        "erc20_num_transfers": 1,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x2100000000000000000000000000000000000021"
+      },
+      {
+        "erc20_num_transfers": 1,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x2200000000000000000000000000000000000022"
+      },
+      {
+        "erc20_num_transfers": 2,
+        "erc721_num_transfers": 0,
+        "user_aid": "0x0000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1890,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 2,
+        "topic0_sig": "1d1f406c",
+        "tx_id": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410"
+      },
+      {
+        "block_num": 1890,
+        "contract_aid": "0x4000000000000000000000000000000000000004",
+        "log_index": 0,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410"
+      },
+      {
+        "block_num": 1890,
+        "contract_aid": "0x4000000000000000000000000000000000000004",
+        "log_index": 1,
+        "topic0_sig": "ddf252ad",
+        "tx_id": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1890
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1890,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 3,
+        "to_aid": "0x2000000000000000000000000000000000000002",
+        "tx_hash": "0xc9617023f1234648b6f574c92d16a819fcd24f70700648626928ed77e103c410",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

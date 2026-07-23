@@ -96,18 +96,20 @@ func listTables(ctx context.Context, conn *sql.Conn) ([]string, error) {
 
 // resolvers hold the surrogate-key-to-natural-key maps of one snapshot.
 type resolvers struct {
-	addr   map[int64]string // address.address_id -> hex address
-	txHash map[int64]string // transaction.id      -> tx hash
-	evtKey map[int64]string // evt_log.id          -> "evt:<block>/<logIndex>"
-	bidKey map[int64]string // cg_bid.id           -> evtKey of the bid's event
+	addr                 map[int64]string // address.address_id -> hex address
+	txHash               map[int64]string // transaction.id      -> tx hash
+	evtKey               map[int64]string // evt_log.id          -> "evt:<block>/<logIndex>"
+	bidKey               map[int64]string // cg_bid.id           -> evtKey of the bid's event
+	bidHasPreviousReward map[int64]bool
 }
 
 func loadResolvers(ctx context.Context, conn *sql.Conn) (*resolvers, error) {
 	res := &resolvers{
-		addr:   make(map[int64]string),
-		txHash: make(map[int64]string),
-		evtKey: make(map[int64]string),
-		bidKey: make(map[int64]string),
+		addr:                 make(map[int64]string),
+		txHash:               make(map[int64]string),
+		evtKey:               make(map[int64]string),
+		bidKey:               make(map[int64]string),
+		bidHasPreviousReward: make(map[int64]bool),
 	}
 	if err := loadMap(ctx, conn, "SELECT address_id, addr FROM address", res.addr); err != nil {
 		return nil, err
@@ -148,7 +150,24 @@ func loadResolvers(ctx context.Context, conn *sql.Conn) (*resolvers, error) {
 			res.bidKey[id] = res.evtKey[evtlogID.Int64]
 		}
 	}
-	return res, bidRows.Err()
+	if err := bidRows.Err(); err != nil {
+		return nil, err
+	}
+	rewardRows, err := conn.QueryContext(ctx, `SELECT bid_id,BOOL_OR(reward_type=1)
+		FROM cg_bid_reward GROUP BY bid_id`)
+	if err != nil {
+		return nil, fmt.Errorf("loading bid reward resolver: %w", err)
+	}
+	defer func() { _ = rewardRows.Close() }()
+	for rewardRows.Next() {
+		var bidID int64
+		var hasPrevious bool
+		if err := rewardRows.Scan(&bidID, &hasPrevious); err != nil {
+			return nil, fmt.Errorf("scanning bid reward resolver: %w", err)
+		}
+		res.bidHasPreviousReward[bidID] = hasPrevious
+	}
+	return res, rewardRows.Err()
 }
 
 func loadMap(ctx context.Context, conn *sql.Conn, query string, dst map[int64]string) error {
@@ -189,6 +208,13 @@ func dumpTable(ctx context.Context, conn *sql.Conn, table string, res *resolvers
 		if err != nil {
 			return nil, fmt.Errorf("decoding %s row: %w", table, err)
 		}
+		if table == "cg_bid_reward" && !isV3SplitRewardRow(row, res) {
+			// Migration 00026 backfills one type-0 row for every historical
+			// V1/V2 bid. Hide that compatibility-only row so pre-V3 goldens
+			// remain unchanged; true V3 splits (which also have type 1) stay
+			// fully visible.
+			continue
+		}
 		out = append(out, transformRow(table, row, res))
 	}
 	if err := rows.Err(); err != nil {
@@ -219,9 +245,37 @@ func transformRow(table string, row Row, res *resolvers) Row {
 		if droppedColumns[col] || droppedColumns[table+"."+col] {
 			continue
 		}
+		if isDefaultV3CompatibilityColumn(table, col, val) {
+			continue
+		}
 		out[col] = resolveValue(col, val, res)
 	}
 	return out
+}
+
+func isV3SplitRewardRow(row Row, res *resolvers) bool {
+	value, ok := row["bid_id"].(json.Number)
+	if !ok {
+		return true
+	}
+	bidID, err := value.Int64()
+	return err != nil || res.bidHasPreviousReward[bidID]
+}
+
+func isDefaultV3CompatibilityColumn(table, column string, value any) bool {
+	number, ok := value.(json.Number)
+	if !ok {
+		return false
+	}
+	switch table + "." + column {
+	case "cg_prize_claim.num_cs_nfts":
+		return number.String() == "1"
+	case "cg_round_stats.endurance_champion_duration",
+		"cg_round_stats.chrono_warrior_duration":
+		return number.String() == "0"
+	default:
+		return false
+	}
 }
 
 // resolveValue maps surrogate-key column values to natural identifiers.

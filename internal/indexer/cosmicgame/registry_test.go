@@ -29,6 +29,7 @@ func unitContracts() Contracts {
 		StakingRWalk:    a(8),
 		MarketingWallet: a(9),
 		Implementation:  a(10),
+		GameAid:         1,
 		CosmicTokenAid:  3,
 	}
 }
@@ -56,16 +57,16 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 	h := newUnitHandlers(t)
 	reg := h.Registry()
 
-	// One registration per legacy dispatch row (75), plus one: the single
-	// Transfer row split into the ERC721 and ERC20 handlers. The two
-	// CharityAddressChanged rows were already separate registrations.
-	if got := len(reg.Handlers()); got != 76 {
-		t.Errorf("registered handlers = %d, want 76", got)
+	// The 76 V1/V2 registrations plus V3 MainPrizeClaimed and five V3
+	// configuration events.
+	if got := len(reg.Handlers()); got != 82 {
+		t.Errorf("registered handlers = %d, want 82", got)
 	}
 
 	for _, c := range []struct{ topic, want string }{
 		{TopicBidEvent, "BidPlaced"},
 		{TopicBidEventV2, "BidPlacedV2"},
+		{TopicPrizeClaimEventV3, "MainPrizeClaimedV3"},
 		{TopicMintEvent, "NftMinted"},
 		{TopicTransferEvt, "Transfer"},
 		// The two shared-signature pairs resolve to one label each

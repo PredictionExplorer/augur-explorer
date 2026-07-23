@@ -21,6 +21,9 @@ const bidSelectBase = "SELECT b.evtlog_id,b.block_num,t.id,t.tx_hash," +
 	"d.token_id,d.tok_addr, d.token_uri, b.msg, b.round_num, " +
 	"b.cst_reward, b.cst_reward/1e18, " +
 	"b.bid_cst_reward_amount, (CASE WHEN b.bid_cst_reward_amount >= 0 THEN b.bid_cst_reward_amount/1e18 ELSE -1 END), " +
+	"COALESCE(br.prev_reward,0), COALESCE(br.prev_reward,0)/1e18, " +
+	"COALESCE(br.this_reward,b.cst_reward,0), COALESCE(br.this_reward,b.cst_reward,0)/1e18, " +
+	"COALESCE(pba.addr,''), " +
 	"b.cst_dutch_auction_duration, (CASE WHEN b.cst_dutch_auction_duration >= 0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END), " +
 	"b.bid_type, " +
 	"EXTRACT(EPOCH FROM b.prize_time)::BIGINT AS prize_time_ts, b.prize_time, " +
@@ -29,6 +32,12 @@ const bidSelectBase = "SELECT b.evtlog_id,b.block_num,t.id,t.tx_hash," +
 	"FROM cg_bid b " +
 	"LEFT JOIN transaction t ON t.id=tx_id " +
 	"LEFT JOIN address ba ON b.bidder_aid=ba.address_id " +
+	"LEFT JOIN LATERAL (SELECT " +
+	"MAX(amount) FILTER (WHERE reward_type=1) AS prev_reward, " +
+	"MAX(amount) FILTER (WHERE reward_type=0) AS this_reward, " +
+	"MAX(recipient_aid) FILTER (WHERE reward_type=1) AS prev_aid " +
+	"FROM cg_bid_reward WHERE bid_id=b.id) br ON true " +
+	"LEFT JOIN address pba ON pba.address_id=br.prev_aid " +
 	"LEFT JOIN LATERAL (SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.token_uri " +
 	"FROM cg_nft_donation d " +
 	"JOIN address ta ON d.token_aid=ta.address_id) d ON b.id=d.bid_id " +
@@ -104,6 +113,8 @@ func scanBidRow(rows pgx.Rows, rec *cgmodel.CGBidRec) error {
 	var nullTokAddr, nullTokenURI sql.NullString
 	var nullDonatedERC20Addr, nullDonatedERC20Amount sql.NullString
 	var nullDonatedERC20AmountEth sql.NullFloat64
+	var previousReward, thisReward, previousAddr string
+	var previousRewardEth, thisRewardEth float64
 
 	err := rows.Scan(
 		&rec.Tx.EvtLogId,
@@ -128,6 +139,11 @@ func scanBidRow(rows pgx.Rows, rec *cgmodel.CGBidRec) error {
 		&rec.CSTRewardEth,
 		&rec.BidCstRewardAmount,
 		&rec.BidCstRewardAmountEth,
+		&previousReward,
+		&previousRewardEth,
+		&thisReward,
+		&thisRewardEth,
+		&previousAddr,
 		&rec.CstDutchAuctionDuration,
 		&rec.CstDutchAuctionDurationInt,
 		&rec.BidType,
@@ -161,6 +177,13 @@ func scanBidRow(rows pgx.Rows, rec *cgmodel.CGBidRec) error {
 	}
 	if nullDonatedERC20AmountEth.Valid {
 		rec.DonatedERC20TokenAmountEth = nullDonatedERC20AmountEth.Float64
+	}
+	if previousAddr != "" {
+		rec.PreviousBidderCstRewardAmount = previousReward
+		rec.PreviousCstRewardAmountEth = previousRewardEth
+		rec.ThisBidderCstRewardAmount = thisReward
+		rec.ThisCstRewardAmountEth = thisRewardEth
+		rec.PreviousBidderAddr = previousAddr
 	}
 	return nil
 }

@@ -187,3 +187,49 @@ func TestRealHandlerWritesAndWatermarkBecomeVisibleTogether(t *testing.T) {
 		t.Fatalf("committed progress = %d, want %d", status.LastBlockNum, blockNum)
 	}
 }
+
+func TestV3ClaimLiveStateFailureRollsBackAndRetries(t *testing.T) {
+	resetDB(t)
+	const (
+		blockNum = int64(5200)
+		roundNum = int64(10)
+	)
+	testChain.Reorg(blockNum)
+	championDurationsMu.Lock()
+	championDurations[roundNum] = [2]int64{700, 900}
+	championDurationsMu.Unlock()
+	stageTx(t, blockNum, addr(fxGameAddr), 0, []*types.Log{
+		buildLog(t, gameV3ABI, "MainPrizeClaimed", addr(fxGameAddr),
+			[]any{bigInt(roundNum), addr(fxAlice), bigInt(100)},
+			[]any{eth(3), eth(10), bigInt(3), bigInt(600)}),
+	})
+	primeHarnessProgress(t, blockNum)
+	baseline := snapshot(t)
+
+	restore := faultHarnessTable(t, "cg_live_state_updates")
+	err := runHarnessRange(t, blockNum, blockNum, 1)
+	if err == nil || !strings.Contains(err.Error(), "stage process") {
+		restore()
+		t.Fatalf("faulted V3 claim error = %v", err)
+	}
+	restore()
+	requireNoDiff(t, baseline, snapshot(t), "V3 live-state rollback")
+
+	if err := runHarnessRange(t, blockNum, blockNum, 1); err != nil {
+		t.Fatalf("retry V3 claim: %v", err)
+	}
+	var claims, updates int
+	if err := testDB.SQL.QueryRow(
+		"SELECT COUNT(*) FROM cg_prize_claim WHERE round_num=$1", roundNum,
+	).Scan(&claims); err != nil {
+		t.Fatal(err)
+	}
+	if err := testDB.SQL.QueryRow(
+		"SELECT COUNT(*) FROM cg_live_state_updates WHERE round_num=$1", roundNum,
+	).Scan(&updates); err != nil {
+		t.Fatal(err)
+	}
+	if claims != 1 || updates != 2 {
+		t.Fatalf("retried V3 rows = claims:%d updates:%d", claims, updates)
+	}
+}

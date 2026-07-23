@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -61,9 +62,9 @@ const (
 	fxCharityRcv = "0x2800000000000000000000000000000000000028"
 )
 
-// seedCstRewardForBidding stands in for the ETL's startup chain sync
-// (SyncContractParams), which populates cg_glob_stats from contract
-// state; V1 BidPlaced inserts refuse to run without it.
+// seedCstRewardForBidding mirrors the historical/operator-maintained
+// cg_glob_stats fallback. Production V1 handlers normally use the actual
+// transaction mint; V2/V3 carry their reward in BidPlaced.
 const seedCstRewardForBidding = "100000000000000000000"
 
 var (
@@ -84,6 +85,7 @@ var (
 	// ABI handles for the fixture-log builders (parsed once in TestMain).
 	gameABI            *abi.ABI
 	gameV2ABI          *abi.ABI
+	gameV3ABI          *abi.ABI
 	signatureABI       *abi.ABI
 	charityWalletABI   *abi.ABI
 	prizesWalletABI    *abi.ABI
@@ -93,6 +95,9 @@ var (
 	erc20ABI           *abi.ABI
 	erc721ABI          *abi.ABI
 	erc1967ABI         *abi.ABI
+
+	championDurationsMu sync.RWMutex
+	championDurations   = make(map[int64][2]int64)
 )
 
 // TestMain owns the database container, the fake chain and the harness state
@@ -165,6 +170,7 @@ func initHarness(ctx context.Context, db *testdb.DB) error {
 	}{
 		{&gameABI, cgc.CosmicSignatureGameABI},
 		{&gameV2ABI, cgc.CosmicSignatureGameV2ABI},
+		{&gameV3ABI, cgc.CosmicSignatureGameV3ABI},
 		{&signatureABI, cgc.CosmicSignatureNftABI},
 		{&charityWalletABI, cgc.CharityWalletABI},
 		{&prizesWalletABI, cgc.PrizesWalletABI},
@@ -192,21 +198,40 @@ func initHarness(ctx context.Context, db *testdb.DB) error {
 func registerCallHandlers() {
 	game := ethcommon.HexToAddress(fxGameAddr)
 	donationRecords := gameABI.Methods["ethDonationWithInfoRecords"]
+	championMethod := gameV3ABI.Methods["championDurations"]
 	testChain.RegisterCall(game, func(input []byte) ([]byte, error) {
-		if len(input) < 4 || string(input[:4]) != string(donationRecords.ID) {
+		if len(input) < 4 {
 			return nil, fmt.Errorf("unexpected call to game contract: %x", input)
 		}
-		args, err := donationRecords.Inputs.Unpack(input[4:])
-		if err != nil {
-			return nil, fmt.Errorf("unpacking donation record args: %w", err)
+		switch string(input[:4]) {
+		case string(donationRecords.ID):
+			args, err := donationRecords.Inputs.Unpack(input[4:])
+			if err != nil {
+				return nil, fmt.Errorf("unpacking donation record args: %w", err)
+			}
+			recordID := args[0].(*big.Int)
+			return donationRecords.Outputs.Pack(
+				big.NewInt(0),
+				ethcommon.Address{},
+				big.NewInt(0),
+				fmt.Sprintf(`{"fixture":"donation record %v"}`, recordID),
+			)
+		case string(championMethod.ID):
+			args, err := championMethod.Inputs.Unpack(input[4:])
+			if err != nil {
+				return nil, fmt.Errorf("unpacking championDurations args: %w", err)
+			}
+			round := args[0].(*big.Int).Int64()
+			championDurationsMu.RLock()
+			durations := championDurations[round]
+			championDurationsMu.RUnlock()
+			return championMethod.Outputs.Pack(
+				big.NewInt(durations[0]),
+				big.NewInt(durations[1]),
+			)
+		default:
+			return nil, fmt.Errorf("unexpected call to game contract: %x", input)
 		}
-		recordID := args[0].(*big.Int)
-		return donationRecords.Outputs.Pack(
-			big.NewInt(0),
-			ethcommon.Address{},
-			big.NewInt(0),
-			fmt.Sprintf(`{"fixture":"donation record %v"}`, recordID),
-		)
 	})
 
 	tokenURI := signatureABI.Methods["tokenURI"]
@@ -279,6 +304,9 @@ func resetDB(t *testing.T) {
 		t.Fatalf("truncating tables: %v", err)
 	}
 	dbStore.ResetAddressCache()
+	championDurationsMu.Lock()
+	clear(championDurations)
+	championDurationsMu.Unlock()
 
 	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
 		t.Fatalf("re-seeding database: %v", err)

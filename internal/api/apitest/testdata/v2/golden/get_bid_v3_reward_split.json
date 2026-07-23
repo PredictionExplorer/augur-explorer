@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "bidCstRewardAmountWei": "98000000000000000000",
+    "bidType": "cst",
+    "bidderAddress": "0x2300000000000000000000000000000000000023",
+    "blockNumber": 103,
+    "cstDutchAuctionDurationSeconds": 1800,
+    "cstPriceWei": "200000000000000000000",
+    "cstRewardWei": "100000000000000000000",
+    "eventLogId": 5008,
+    "message": "cst bid",
+    "occurredAt": "2026-01-01T00:05:00Z",
+    "position": 3,
+    "previousBidderAddress": "0x2200000000000000000000000000000000000022",
+    "previousBidderCstRewardAmountWei": "90000000000000000000",
+    "prizeAt": "2026-01-01T01:05:00Z",
+    "round": 0,
+    "thisBidderCstRewardAmountWei": "10000000000000000000",
+    "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001004"
+  }
+}

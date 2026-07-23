@@ -6,6 +6,9 @@ package cosmicgame
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"math"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -35,20 +38,71 @@ func (h *Handlers) decodeMainPrizeClaimed(lg *types.Log, elog *store.EthereumEve
 	evt.Amount = ethEvt.EthPrizeAmount.String()
 	evt.CstAmount = ethEvt.CstPrizeAmount.String()
 	evt.TokenId = lg.Topics[3].Big().Int64()
+	evt.NumCSNfts = 1
 	evt.Timeout = ethEvt.TimeoutTimeToWithdrawSecondaryPrizes.Int64()
 	return evt, nil
+}
+
+func (h *Handlers) decodeMainPrizeClaimedV3(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGPrizeClaimEvent, error) {
+	if err := requireTopics(lg, 4); err != nil {
+		return nil, err
+	}
+	var ethEvt cgc.CosmicSignatureGameV3MainPrizeClaimed
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "MainPrizeClaimed", lg.Data); err != nil {
+		return nil, err
+	}
+	if ethEvt.PrizeNumCosmicSignatureNfts == nil ||
+		!ethEvt.PrizeNumCosmicSignatureNfts.IsInt64() ||
+		ethEvt.PrizeNumCosmicSignatureNfts.Sign() <= 0 {
+		return nil, fmt.Errorf("invalid V3 main-prize NFT count %v", ethEvt.PrizeNumCosmicSignatureNfts)
+	}
+	roundNum := lg.Topics[1].Big()
+	firstTokenID := lg.Topics[3].Big()
+	timeout := ethEvt.TimeoutTimeToWithdrawSecondaryPrizes
+	if !roundNum.IsInt64() || roundNum.Sign() < 0 ||
+		!firstTokenID.IsInt64() || firstTokenID.Sign() < 0 ||
+		timeout == nil || !timeout.IsInt64() || timeout.Sign() < 0 {
+		return nil, errors.New("V3 main-prize integer exceeds int64")
+	}
+	numNFTs := ethEvt.PrizeNumCosmicSignatureNfts.Int64()
+	if firstTokenID.Int64() > math.MaxInt64-(numNFTs-1) {
+		return nil, errors.New("V3 main-prize NFT range exceeds int64")
+	}
+
+	return &cgmodel.CGPrizeClaimEvent{
+		EvtId:        elog.EvtID,
+		BlockNum:     elog.BlockNum,
+		TimeStamp:    elog.TimeStamp,
+		TxId:         elog.TxID,
+		ContractAddr: lg.Address.String(),
+		RoundNum:     roundNum.Int64(),
+		TokenId:      firstTokenID.Int64(),
+		NumCSNfts:    numNFTs,
+		WinnerAddr:   ethcommon.BytesToAddress(lg.Topics[2][12:]).String(),
+		Timeout:      timeout.Int64(),
+		Amount:       ethEvt.EthPrizeAmount.String(),
+		CstAmount:    ethEvt.CstPrizeAmount.String(),
+	}, nil
 }
 
 func (h *Handlers) storeMainPrizeClaimed(ctx context.Context, evt *cgmodel.CGPrizeClaimEvent) error {
 	h.log.Info("MainPrizeClaimed",
 		"evt_id", evt.EvtId, "round", evt.RoundNum, "winner", evt.WinnerAddr,
 		"amount", evt.Amount, "cst_amount", evt.CstAmount, "token_id", evt.TokenId,
-		"withdraw_timeout", evt.Timeout)
+		"num_cs_nfts", evt.NumCSNfts, "withdraw_timeout", evt.Timeout)
 
 	if err := h.repo.DeletePrizeClaim(ctx, evt.EvtId); err != nil {
 		return err
 	}
 	return h.repo.InsertPrizeClaim(ctx, evt)
+}
+
+func (h *Handlers) storeMainPrizeClaimedV3(ctx context.Context, evt *cgmodel.CGPrizeClaimEvent) error {
+	if err := h.storeMainPrizeClaimed(ctx, evt); err != nil {
+		return err
+	}
+	_, err := h.captureChampionDurations(ctx, evt.RoundNum, evt.BlockNum, evt.TimeStamp)
+	return err
 }
 
 func (h *Handlers) decodePrizesEthReceived(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGPrizesEthDeposit, error) {

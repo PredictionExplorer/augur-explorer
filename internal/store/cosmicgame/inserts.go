@@ -31,6 +31,10 @@ func (r *Repo) insertAdminValue(ctx context.Context, table, column string, evtID
 // InsertPrizeClaim records a MainPrizeClaimed event.
 func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *cgmodel.CGPrizeClaimEvent) error {
 	const op = "insert into cg_prize_claim"
+	numCSNfts := evt.NumCSNfts
+	if numCSNfts <= 0 {
+		numCSNfts = 1
+	}
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
 	if err != nil {
 		return store.WrapError(op, err)
@@ -41,8 +45,8 @@ func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *cgmodel.CGPrizeClaimEv
 	}
 	query := "INSERT INTO cg_prize_claim(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
-		"round_num,token_id,winner_aid,timeout,amount,cst_amount" +
-		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
+		"round_num,token_id,num_cs_nfts,winner_aid,timeout,amount,cst_amount" +
+		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -51,6 +55,7 @@ func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *cgmodel.CGPrizeClaimEv
 		contractAid,
 		evt.RoundNum,
 		evt.TokenId,
+		numCSNfts,
 		winnerAid,
 		evt.Timeout,
 		evt.Amount,
@@ -62,8 +67,8 @@ func (r *Repo) InsertPrizeClaim(ctx context.Context, evt *cgmodel.CGPrizeClaimEv
 // InsertBid records a BidPlaced event (V1 and V2 share the shape; V2 carries
 // real BidCstRewardAmount/CstDutchAuctionDuration values, V1 passes "-1").
 // The bid position is derived from the bids already stored for the round;
-// the CST bidding reward falls back to cg_glob_stats.cst_reward_for_bidding
-// (populated by admin events or the ETL startup chain sync) for V1 events.
+// V1 rewards use the transaction's actual CST mint when available, then
+// fall back to the trigger-maintained cg_glob_stats configuration.
 func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 	const op = "insert into cg_bid"
 	contractAid, err := r.addrID(ctx, evt.ContractAddr, 0, 0)
@@ -85,16 +90,18 @@ func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 		return store.WrapError(op+": bid position", err)
 	}
 
-	cstReward, rewardErr := r.GlobStatsCstRewardForBidding(ctx)
+	var cstReward string
 	switch {
 	case evt.BidCstRewardAmount != "-1":
 		cstReward = evt.BidCstRewardAmount
-	case rewardErr != nil:
-		return fmt.Errorf("%s: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): %w",
-			op, rewardErr)
-	case cstReward == "" || cstReward == "0":
-		return fmt.Errorf("%s: cst_reward_for_bidding unset in cg_glob_stats (process admin events or restart ETL for chain sync): value=%q",
-			op, cstReward)
+	case evt.ERC20Value != "" && evt.ERC20Value != "-1":
+		cstReward = evt.ERC20Value
+	default:
+		configured, rewardErr := r.GlobStatsCstRewardForBidding(ctx)
+		cstReward, rewardErr = configuredBidReward(configured, rewardErr)
+		if rewardErr != nil {
+			return fmt.Errorf("%s: %w", op, rewardErr)
+		}
 	}
 
 	// ETH and RandomWalk bids carry no CST price; CST bids no ETH price.
@@ -109,8 +116,9 @@ func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 	query := "INSERT INTO cg_bid(" +
 		"evtlog_id,block_num,time_stamp,tx_id,contract_aid," +
 		"bidder_aid,rwalk_nft_id,eth_price,cst_price,cst_reward,bid_cst_reward_amount,cst_dutch_auction_duration,prize_time,msg,round_num,bid_type,bid_position" +
-		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17)"
-	_, err = r.q(ctx).Exec(ctx, query,
+		") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13),$14,$15,$16,$17) RETURNING id"
+	var bidID int64
+	err = r.q(ctx).QueryRow(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -128,8 +136,62 @@ func (r *Repo) InsertBid(ctx context.Context, evt *cgmodel.CGBidEvent) error {
 		evt.RoundNum,
 		evt.BidType,
 		bidPosition,
+	).Scan(&bidID)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	return r.insertBidRewards(ctx, evt, bidID, bidderAid, cstReward)
+}
+
+func (r *Repo) insertBidRewards(
+	ctx context.Context,
+	evt *cgmodel.CGBidEvent,
+	bidID, bidderAid int64,
+	totalReward string,
+) error {
+	const op = "insert into cg_bid_reward"
+	thisReward := effectiveThisBidderReward(
+		evt.ThisBidderReward, evt.ERC20Value, totalReward,
 	)
-	return store.WrapError(op, err)
+	_, err := r.q(ctx).Exec(ctx, `INSERT INTO cg_bid_reward(
+			evtlog_id,bid_id,round_num,recipient_aid,reward_type,amount
+		) VALUES($1,$2,$3,$4,0,$5)`,
+		evt.EvtId, bidID, evt.RoundNum, bidderAid, thisReward)
+	if err != nil {
+		return store.WrapError(op+": this bidder", err)
+	}
+	if evt.PrevBidderAddr == "" || evt.PrevBidderReward == "" || evt.PrevBidderReward == "0" {
+		return nil
+	}
+	previousAid, err := r.addrID(ctx, evt.PrevBidderAddr, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op+": previous bidder address", err)
+	}
+	_, err = r.q(ctx).Exec(ctx, `INSERT INTO cg_bid_reward(
+			evtlog_id,bid_id,round_num,recipient_aid,reward_type,amount
+		) VALUES($1,$2,$3,$4,1,$5)`,
+		evt.EvtId, bidID, evt.RoundNum, previousAid, evt.PrevBidderReward)
+	return store.WrapError(op+": previous bidder", err)
+}
+
+func effectiveThisBidderReward(splitReward, transactionMint, totalReward string) string {
+	if splitReward != "" && splitReward != "-1" {
+		return splitReward
+	}
+	if transactionMint != "" && transactionMint != "-1" {
+		return transactionMint
+	}
+	return totalReward
+}
+
+func configuredBidReward(value string, err error) (string, error) {
+	if err != nil {
+		return "", fmt.Errorf("cst_reward_for_bidding unavailable: %w", err)
+	}
+	if value == "" || value == "0" {
+		return "", fmt.Errorf("cst_reward_for_bidding is unset: value=%q", value)
+	}
+	return value, nil
 }
 
 // InsertRoundStarted records a FirstBidPlacedInRound event.
@@ -1467,6 +1529,61 @@ func (r *Repo) InsertCstAuctionDurationChangeDivisorChange(ctx context.Context, 
 		return store.WrapError("insert into cg_adm_cst_auclen_chg_div", err)
 	}
 	return r.insertAdminValue(ctx, "cg_adm_cst_auclen_chg_div", "new_len",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertRoundLateBidDurationDivisorChange records a V3
+// RoundLateBidDurationDivisorChanged event.
+func (r *Repo) InsertRoundLateBidDurationDivisorChange(ctx context.Context, evt *cgmodel.CGRoundLateBidDurationDivisorChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_late_bid_dur_divisor", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_late_bid_dur_divisor", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertRoundLateBidPremiumBaseMultiplierChange records a V3
+// RoundLateBidPricePremiumAmountBaseMultiplierChanged event.
+func (r *Repo) InsertRoundLateBidPremiumBaseMultiplierChange(ctx context.Context, evt *cgmodel.CGRoundLateBidPricePremiumAmountBaseMultiplierChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_late_bid_premium_base_mul", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_late_bid_premium_base_mul", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertRoundLateBidPremiumExponentChange records a V3
+// RoundLateBidPricePremiumAmountExponentChanged event.
+func (r *Repo) InsertRoundLateBidPremiumExponentChange(ctx context.Context, evt *cgmodel.CGRoundLateBidPricePremiumAmountExponentChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_late_bid_premium_exponent", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_late_bid_premium_exponent", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertLastBidderRewardPercentageChange records a V3
+// LastBidderBidCstRewardAmountPercentageChanged event.
+func (r *Repo) InsertLastBidderRewardPercentageChange(ctx context.Context, evt *cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_last_bidder_reward_pct", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_last_bidder_reward_pct", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertMainPrizeNumNftsChange records a V3
+// MainPrizeNumCosmicSignatureNftsChanged event.
+func (r *Repo) InsertMainPrizeNumNftsChange(ctx context.Context, evt *cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_main_prize_num_nfts", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_main_prize_num_nfts", "new_value",
 		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
 }
 

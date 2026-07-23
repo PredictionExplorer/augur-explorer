@@ -1,11 +1,5 @@
 //go:build integration
 
-// Integration tests for the startup contract-parameter sync
-// (syncContractParamsFromChain): against the real database and a stubbed
-// game/prizes-wallet contract, the first run inserts correction rows for
-// every readable parameter, a repeated run with unchanged chain state inserts
-// nothing (and leaves the address table untouched), and a changed chain value
-// produces exactly one new correction.
 package cosmicgame
 
 import (
@@ -16,49 +10,45 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 )
 
-// syncedAdminTables lists every table the V1-mechanics sync writes.
-var syncedAdminTables = []string{
-	"cg_adm_erc20_reward",
-	"cg_adm_cst_auclen",
-	"cg_adm_timeout_claimprize",
-	"cg_adm_price_inc",
-	"cg_adm_time_inc",
-	"cg_adm_prize_microsec",
-	"cg_adm_inisecprize",
-	"cg_adm_eth_auclen",
-	"cg_adm_eth_auc_endprice",
-	"cg_adm_cst_min_limit",
-	"cg_adm_mkt_reward",
-	"cg_delay_duration",
-	"cg_adm_timeout_withdraw",
-}
-
-func tableCounts(t *testing.T, tables []string) map[string]int {
-	t.Helper()
-	out := make(map[string]int, len(tables))
-	for _, table := range tables {
-		var n int
-		if err := testDB.SQL.QueryRow("SELECT COUNT(*) FROM " + table).Scan(&n); err != nil {
-			t.Fatalf("counting %s: %v", table, err)
-		}
-		out[table] = n
-	}
-	return out
-}
-
-// v1GameStub stubs every V1 parameter read the sync performs. The CST reward
-// matches the harness seed value so the glob-stats side stays consistent.
-func v1GameStub() *testchain.ContractStub {
-	return testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI).
-		Return("cstDutchAuctionDurationDivisor", big.NewInt(400)). // mechanics probe -> V1
+func driftV1GameStub() *testchain.ContractStub {
+	return testchain.MustContractStub(
+		cgc.CosmicSignatureGameABI,
+		cgc.CosmicSignatureGameV2ABI,
+		cgc.CosmicSignatureGameV3ABI,
+	).
+		Return("cstDutchAuctionDurationDivisor", big.NewInt(400)).
 		Return("cstRewardAmountForBidding", eth(100)).
+		Return("timeoutDurationToClaimMainPrize", big.NewInt(86400)).
+		Return("ethBidPriceIncreaseDivisor", big.NewInt(125)).
+		Return("mainPrizeTimeIncrementIncreaseDivisor", big.NewInt(50)).
+		Return("mainPrizeTimeIncrementInMicroSeconds", big.NewInt(3_600_000_000)).
+		Return("initialDurationUntilMainPrizeDivisor", big.NewInt(200)).
+		Return("ethDutchAuctionDurationDivisor", big.NewInt(40)).
+		Return("ethDutchAuctionEndingBidPriceDivisor", big.NewInt(10)).
+		Return("cstDutchAuctionBeginningBidPriceMinLimit", eth(200)).
+		Return("marketingWalletCstContributionAmount", eth(300)).
+		Return("delayDurationBeforeRoundActivation", big.NewInt(1800))
+}
+
+func driftV3GameStub() *testchain.ContractStub {
+	return testchain.MustContractStub(
+		cgc.CosmicSignatureGameABI,
+		cgc.CosmicSignatureGameV2ABI,
+		cgc.CosmicSignatureGameV3ABI,
+	).
+		Return("mainPrizeNumCosmicSignatureNfts", big.NewInt(3)).
+		Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(33)).
+		Return("bidCstRewardAmountMultiplier", eth(100)).
+		Return("roundLateBidDurationDivisor", big.NewInt(4)).
+		Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(2)).
+		Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3)).
+		Return("lastBidderBidCstRewardAmountPercentage", big.NewInt(90)).
 		Return("timeoutDurationToClaimMainPrize", big.NewInt(86400)).
 		Return("ethBidPriceIncreaseDivisor", big.NewInt(100)).
 		Return("mainPrizeTimeIncrementIncreaseDivisor", big.NewInt(50)).
@@ -71,178 +61,126 @@ func v1GameStub() *testchain.ContractStub {
 		Return("delayDurationBeforeRoundActivation", big.NewInt(1800))
 }
 
-func prizesWalletStub() *testchain.ContractStub {
+func prizesWalletDriftStub() *testchain.ContractStub {
 	return testchain.MustContractStub(cgc.PrizesWalletABI).
 		Return("timeoutDurationToWithdrawPrizes", big.NewInt(604800))
 }
 
-func requireLatestParam(t *testing.T, table, column, want string) {
-	t.Helper()
-	got, hasRow, err := cgRepo.LatestDecimalParam(context.Background(), table, column)
-	if err != nil {
-		t.Fatalf("LatestDecimalParam(%s.%s): %v", table, column, err)
-	}
-	if !hasRow {
-		t.Fatalf("%s has no correction row", table)
-	}
-	if got != want {
-		t.Errorf("%s.%s = %s, want %s", table, column, got, want)
-	}
-}
-
-func TestSyncContractParamsFromChain(t *testing.T) {
-	resetDB(t)
-	// The stub replaces the harness's game-contract call handler; restore it
-	// for the fixture tests that follow.
-	t.Cleanup(registerCallHandlers)
-	// The sync anchors its correction rows to the latest chain block.
-	testChain.EnsureBlock(500)
-
-	gameStub := v1GameStub()
-	testChain.RegisterCall(addr(fxGameAddr), gameStub.Handler())
-	testChain.RegisterCall(addr(fxPrizesAddr), prizesWalletStub().Handler())
-
-	logger := slog.New(slog.DiscardHandler)
-	ctx := context.Background()
-
-	// First run on a fresh database: every parameter gets a correction row.
-	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
-		t.Fatalf("first sync run: %v", err)
-	}
-
-	requireLatestParam(t, "cg_adm_erc20_reward", "new_reward", eth(100).String())
-	requireLatestParam(t, "cg_adm_cst_auclen", "new_len", "400")
-	requireLatestParam(t, "cg_adm_timeout_claimprize", "new_timeout", "86400")
-	requireLatestParam(t, "cg_adm_price_inc", "new_price_increase", "100")
-	requireLatestParam(t, "cg_adm_mkt_reward", "new_reward", eth(300).String())
-	requireLatestParam(t, "cg_delay_duration", "new_value", "1800")
-	requireLatestParam(t, "cg_adm_timeout_withdraw", "new_timeout", "604800")
-
-	globReward, err := cgRepo.GlobStatsCstRewardForBidding(ctx)
-	if err != nil {
-		t.Fatalf("GlobStatsCstRewardForBidding: %v", err)
-	}
-	if globReward != eth(100).String() {
-		t.Errorf("glob stats CST reward = %s, want %s", globReward, eth(100).String())
-	}
-
-	// V1 mechanics: the V2-only auction-duration-change divisor is skipped.
-	var chgDivRows int
-	if err := testDB.SQL.QueryRow("SELECT COUNT(*) FROM cg_adm_cst_auclen_chg_div").Scan(&chgDivRows); err != nil {
-		t.Fatalf("counting cg_adm_cst_auclen_chg_div: %v", err)
-	}
-	if chgDivRows != 0 {
-		t.Errorf("cg_adm_cst_auclen_chg_div rows = %d, want 0 under V1 mechanics", chgDivRows)
-	}
-
-	for _, table := range syncedAdminTables {
-		if n := tableCounts(t, []string{table})[table]; n != 1 {
-			t.Errorf("%s rows after first run = %d, want 1", table, n)
-		}
-	}
-
-	// Second run with identical chain state: check-then-correct inserts
-	// nothing and the address table stays untouched.
-	watched := append([]string{"address"}, syncedAdminTables...)
-	before := tableCounts(t, watched)
-	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
-		t.Fatalf("second sync run: %v", err)
-	}
-	after := tableCounts(t, watched)
-	for _, table := range watched {
-		if before[table] != after[table] {
-			t.Errorf("%s rows changed on a clean re-run: %d -> %d", table, before[table], after[table])
-		}
-	}
-
-	// An on-chain admin change: exactly that parameter gains a correction.
-	gameStub.Return("ethBidPriceIncreaseDivisor", big.NewInt(125))
-	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, logger); err != nil {
-		t.Fatalf("third sync run: %v", err)
-	}
-	requireLatestParam(t, "cg_adm_price_inc", "new_price_increase", "125")
-	final := tableCounts(t, watched)
-	for _, table := range watched {
-		want := after[table]
-		if table == "cg_adm_price_inc" {
-			want++
-		}
-		if final[table] != want {
-			t.Errorf("%s rows after targeted change = %d, want %d", table, final[table], want)
-		}
-	}
-}
-
-// TestSyncContractParamsRejectsOverflowingHeaderTime pins the chain-boundary
-// guard in allocChainSyncEvtlog: a header timestamp beyond int64 (corrupt
-// node data) aborts the sync before any row is written, instead of wrapping
-// into a negative correction timestamp. A private fake chain keeps the huge
-// time offset away from the shared harness chain.
-func TestSyncContractParamsRejectsOverflowingHeaderTime(t *testing.T) {
-	resetDB(t)
-	ctx := context.Background()
-
-	chain := testchain.New(t)
-	chain.EnsureBlock(500)
-	chain.RegisterCall(addr(fxGameAddr), v1GameStub().Handler())
-	chain.RegisterCall(addr(fxPrizesAddr), prizesWalletStub().Handler())
-
-	rpcClient, err := ethrpc.DialContext(ctx, chain.URL())
-	if err != nil {
-		t.Fatalf("dialing fake chain: %v", err)
-	}
-	t.Cleanup(rpcClient.Close)
-	var total uint64
-	if err := rpcClient.CallContext(ctx, &total, "evm_increaseTime", int64(math.MaxInt64)); err != nil {
-		t.Fatalf("evm_increaseTime: %v", err)
-	}
-	// A block built now carries BaseTime + offset, past math.MaxInt64.
-	chain.EnsureBlock(501)
-
-	client := ethclient.NewClient(rpcClient)
-	err = SyncContractParams(ctx, cgRepo, dbStore, client, fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler))
-	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
-		t.Fatalf("sync error = %v, want header-timestamp overflow", err)
-	}
-
-	var blocks int
-	if err := testDB.SQL.QueryRow("SELECT COUNT(*) FROM block").Scan(&blocks); err != nil {
-		t.Fatalf("counting blocks: %v", err)
-	}
-	if blocks != 0 {
-		t.Errorf("block rows = %d, want 0 (guard must fire before InsertBlock)", blocks)
-	}
-}
-
-// TestSyncContractParamsSkipsUnreadableParams pins the degraded mode: when a
-// parameter read reverts, the sync logs and skips it instead of failing the
-// whole startup.
-func TestSyncContractParamsSkipsUnreadableParams(t *testing.T) {
+func TestContractDriftAuditIsReadOnlyAndPreservesSentinelRows(t *testing.T) {
 	resetDB(t)
 	t.Cleanup(registerCallHandlers)
 	testChain.EnsureBlock(500)
 
-	// Only two parameters answer; everything else reverts.
-	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI).
-		Return("cstDutchAuctionDurationDivisor", big.NewInt(400)).
-		Return("cstRewardAmountForBidding", eth(100))
+	ingestTx(t, 500, addr(fxGameAddr), 0, []*types.Log{
+		buildLog(t, gameABI, "EthBidPriceIncreaseDivisorChanged", addr(fxGameAddr), nil, []any{big.NewInt(100)}),
+	})
+	const sentinel = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+	if _, err := testDB.SQL.Exec(`UPDATE transaction SET tx_hash=$1
+		WHERE id=(SELECT tx_id FROM cg_adm_price_inc LIMIT 1)`, sentinel); err != nil {
+		t.Fatalf("marking historical sentinel transaction: %v", err)
+	}
+
+	stub := driftV1GameStub()
 	testChain.RegisterCall(addr(fxGameAddr), stub.Handler())
+	testChain.RegisterCall(addr(fxPrizesAddr), prizesWalletDriftStub().Handler())
+	before := snapshot(t)
+
+	drifted, err := CheckContractParamsDrift(
+		context.Background(), cgRepo, eclient,
+		fxGameAddr, fxPrizesAddr, nil,
+	)
+	if err != nil {
+		t.Fatalf("drift audit: %v", err)
+	}
+	if drifted != 1 {
+		t.Fatalf("drifted = %d, want exactly the price divisor", drifted)
+	}
+	requireNoDiff(t, before, snapshot(t), "read-only drift audit")
+
+	var sentinelRows int
+	if err := testDB.SQL.QueryRow(
+		"SELECT COUNT(*) FROM transaction WHERE tx_hash=$1", sentinel,
+	).Scan(&sentinelRows); err != nil {
+		t.Fatal(err)
+	}
+	if sentinelRows != 1 {
+		t.Fatalf("sentinel transaction rows = %d, want preserved", sentinelRows)
+	}
+
+	stub.Return("ethBidPriceIncreaseDivisor", big.NewInt(100))
+	drifted, err = CheckContractParamsDrift(
+		context.Background(), cgRepo, eclient,
+		fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler),
+	)
+	if err != nil || drifted != 0 {
+		t.Fatalf("matching drift audit = %d, %v", drifted, err)
+	}
+	requireNoDiff(t, before, snapshot(t), "matching read-only drift audit")
+}
+
+func TestContractDriftAuditV3Configuration(t *testing.T) {
+	resetDB(t)
+	t.Cleanup(registerCallHandlers)
+	testChain.EnsureBlock(510)
+	ingestTx(t, 510, addr(fxGameAddr), 0, []*types.Log{
+		buildLog(t, gameV3ABI, "RoundLateBidDurationDivisorChanged", addr(fxGameAddr), nil, []any{big.NewInt(4)}),
+		buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountBaseMultiplierChanged", addr(fxGameAddr), nil, []any{big.NewInt(2)}),
+		buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountExponentChanged", addr(fxGameAddr), nil, []any{big.NewInt(3)}),
+		buildLog(t, gameV3ABI, "LastBidderBidCstRewardAmountPercentageChanged", addr(fxGameAddr), nil, []any{big.NewInt(90)}),
+		buildLog(t, gameV3ABI, "MainPrizeNumCosmicSignatureNftsChanged", addr(fxGameAddr), nil, []any{big.NewInt(3)}),
+	})
+	adminEvents, err := cgRepo.AdminEventsInRange(context.Background(), 0, math.MaxInt64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seenTypes := make(map[int64]bool)
+	for _, event := range adminEvents {
+		seenTypes[event.RecordType] = true
+	}
+	for recordType := int64(40); recordType <= 44; recordType++ {
+		if !seenTypes[recordType] {
+			t.Errorf("admin event record type %d was not queryable", recordType)
+		}
+	}
+	testChain.RegisterCall(addr(fxGameAddr), driftV3GameStub().Handler())
+	testChain.RegisterCall(addr(fxPrizesAddr), prizesWalletDriftStub().Handler())
+	before := snapshot(t)
+
+	drifted, err := CheckContractParamsDrift(
+		context.Background(), cgRepo, eclient,
+		fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler),
+	)
+	if err != nil || drifted != 0 {
+		t.Fatalf("V3 drift audit = %d, %v", drifted, err)
+	}
+	requireNoDiff(t, before, snapshot(t), "V3 drift audit")
+}
+
+func TestContractDriftAuditFailuresAndUnreadableGetters(t *testing.T) {
+	resetDB(t)
+	t.Cleanup(registerCallHandlers)
+	logger := slog.New(slog.DiscardHandler)
+	if _, err := CheckContractParamsDrift(
+		context.Background(), cgRepo, nil,
+		fxGameAddr, fxPrizesAddr, logger,
+	); err == nil || !strings.Contains(err.Error(), "eth client is nil") {
+		t.Fatalf("nil client error = %v", err)
+	}
+
+	testChain.EnsureBlock(520)
+	testChain.RegisterCall(addr(fxGameAddr), testchain.MustContractStub(
+		cgc.CosmicSignatureGameABI,
+		cgc.CosmicSignatureGameV2ABI,
+		cgc.CosmicSignatureGameV3ABI,
+	).Return("cstDutchAuctionDurationDivisor", big.NewInt(400)).
+		Return("cstRewardAmountForBidding", eth(100)).Handler())
 	testChain.RegisterCall(addr(fxPrizesAddr), testchain.MustContractStub(cgc.PrizesWalletABI).Handler())
-
-	ctx := context.Background()
-	if err := SyncContractParams(ctx, cgRepo, dbStore, eclient, fxGameAddr, fxPrizesAddr, slog.New(slog.DiscardHandler)); err != nil {
-		t.Fatalf("sync with unreadable params: %v", err)
+	before := snapshot(t)
+	if _, err := CheckContractParamsDrift(
+		context.Background(), cgRepo, eclient,
+		fxGameAddr, fxPrizesAddr, logger,
+	); err != nil {
+		t.Fatalf("unreadable getters should be skipped: %v", err)
 	}
-
-	requireLatestParam(t, "cg_adm_erc20_reward", "new_reward", eth(100).String())
-	requireLatestParam(t, "cg_adm_cst_auclen", "new_len", "400")
-	for _, table := range []string{"cg_adm_timeout_claimprize", "cg_adm_price_inc", "cg_adm_timeout_withdraw", "cg_delay_duration"} {
-		var n int
-		if err := testDB.SQL.QueryRow("SELECT COUNT(*) FROM " + table).Scan(&n); err != nil {
-			t.Fatalf("counting %s: %v", table, err)
-		}
-		if n != 0 {
-			t.Errorf("%s rows = %d, want 0 (parameter was unreadable)", table, n)
-		}
-	}
+	requireNoDiff(t, before, snapshot(t), "degraded drift audit")
 }

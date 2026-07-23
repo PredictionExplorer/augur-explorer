@@ -82,6 +82,19 @@ type Config struct {
 	DBReadTimeout          time.Duration
 }
 
+// V3Configuration is the live V3-only configuration, including the latest
+// derived getters added in a1eb87d6.
+type V3Configuration struct {
+	RoundLateBidDurationDivisor                  string
+	RoundLateBidDurationSeconds                  int64
+	RoundLateBidPricePremiumAmountBaseMultiplier string
+	RoundLateBidPricePremiumAmountExponent       int64
+	LastBidderBidCstRewardAmountPercentage       int64
+	MainPrizeNumCosmicSignatureNfts              int64
+	CstDutchAuctionBeginningBidPriceMinLimit     string
+	BidCstRewardAmountPerMainPrizeTimeIncrement  string
+}
+
 // Snapshot is one consistent value copy of the cached state. Field groups
 // mirror the refresh cycles; the zero value of each field is what
 // handlers observed before the first successful refresh, and the documented
@@ -111,6 +124,7 @@ type Snapshot struct {
 	// refreshed with the constants group; a failed read keeps the
 	// previous address (zero until the first success).
 	TreasurerAddr             ethcommon.Address
+	V3                        V3Configuration
 	ConstantsReady            bool
 	ConfigurationReady        bool
 	ConstantsMechanicsVersion int64
@@ -160,7 +174,7 @@ type Snapshot struct {
 	RoundStartTimestamp int64
 
 	// MechanicsVersion is the detected contract generation:
-	// 0 unknown, 1 V1, 2 V2.
+	// 0 unknown, 1 V1, 2 V2, 3 V3.
 	MechanicsVersion int64
 }
 

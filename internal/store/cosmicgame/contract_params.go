@@ -12,18 +12,9 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 )
 
-// AdminCorrectionMeta holds evt_log/block metadata for synthetic admin correction inserts.
-type AdminCorrectionMeta struct {
-	EvtID       int64
-	BlockNum    int64
-	TxID        int64
-	TimeStamp   int64
-	ContractAid int64
-}
-
 // adminTableIdent guards the table/column names interpolated into the
 // admin-parameter SQL below. Callers pass compile-time literals from the
-// cg-etl sync registry; the check turns any future slip into a loud error
+// cg-etl drift registry; the check turns any future slip into a loud error
 // instead of an injection vector.
 var adminTableIdent = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
@@ -80,56 +71,4 @@ func DecimalStringsEqual(a, b string) bool {
 		return a == b
 	}
 	return av.Cmp(bv) == 0
-}
-
-// InsertAdminCorrectionDecimal inserts a correction row into an
-// admin/history table. contractAid 0 means the row belongs to the game
-// contract of meta; pass a non-zero aid to attribute it to a peripheral
-// contract instead.
-func (r *Repo) InsertAdminCorrectionDecimal(ctx context.Context, table, column, value string, meta *AdminCorrectionMeta, contractAid int64) error {
-	if err := checkAdminIdent("table", table); err != nil {
-		return err
-	}
-	if err := checkAdminIdent("column", column); err != nil {
-		return err
-	}
-	if contractAid == 0 {
-		contractAid = meta.ContractAid
-	}
-	query := fmt.Sprintf(
-		"INSERT INTO %s (evtlog_id, block_num, tx_id, time_stamp, contract_aid, %s) VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6)",
-		table, column,
-	)
-	_, err := r.q(ctx).Exec(ctx, query,
-		meta.EvtID,
-		meta.BlockNum,
-		meta.TxID,
-		meta.TimeStamp,
-		contractAid,
-		value,
-	)
-	if err != nil {
-		return store.WrapError("insert admin correction "+table+"."+column, err)
-	}
-	return nil
-}
-
-// InsertAdminCorrectionERC20Reward inserts a cg_adm_erc20_reward row (the
-// insert trigger updates cg_glob_stats.cst_reward_for_bidding).
-func (r *Repo) InsertAdminCorrectionERC20Reward(ctx context.Context, reward string, meta *AdminCorrectionMeta) error {
-	query := "INSERT INTO cg_adm_erc20_reward(" +
-		"evtlog_id, block_num, tx_id, time_stamp, contract_aid, new_reward" +
-		") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
-	_, err := r.q(ctx).Exec(ctx, query,
-		meta.EvtID,
-		meta.BlockNum,
-		meta.TxID,
-		meta.TimeStamp,
-		meta.ContractAid,
-		reward,
-	)
-	if err != nil {
-		return store.WrapError("insert admin correction erc20 reward", err)
-	}
-	return nil
 }

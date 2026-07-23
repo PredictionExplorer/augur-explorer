@@ -46,6 +46,11 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     37: "EthDutchAuctionEndingBidPriceDivisorChanged",
     38: "ChronoWarriorEthPrizeAmountPercentChanged",
     39: "CstDutchAuctionDurationChangeDivisorChanged",
+    40: "RoundLateBidDurationDivisorChanged",
+    41: "RoundLateBidPricePremiumAmountBaseMultiplierChanged",
+    42: "RoundLateBidPricePremiumAmountExponentChanged",
+    43: "LastBidderBidCstRewardAmountPercentageChanged",
+    44: "MainPrizeNumCosmicSignatureNftsChanged",
 }
 
 

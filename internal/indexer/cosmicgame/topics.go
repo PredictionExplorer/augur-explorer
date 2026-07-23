@@ -10,7 +10,8 @@ import (
 // silently retire a dispatch, and TestLegacyConstantsHaveNoABIEvent documents
 // the raw-decoded events no current ABI defines.
 const (
-	TopicPrizeClaimEvent         = "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591" // ICosmicSignatureGame.sol:MainPrizeClaimed
+	TopicPrizeClaimEvent         = "8c551ec2b6f186753e27f1cf46f84b57f4f83f721e8c1e6170ae512845ced591" // ICosmicSignatureGame.sol:MainPrizeClaimed (V1/V2)
+	TopicPrizeClaimEventV3       = "9314e78538382a9fc6cd54cee107c8a7721d172c43b2e48c2e7a51f200fc3788" // IMainPrize2V3.sol:MainPrizeClaimed
 	TopicBidEvent                = "bcb004d688d0951e50c218ded0d0d574bde915630e29b92987b1f2eab9556549" // IBidding.sol:BidPlaced (legacy)
 	TopicBidEventV2              = "1d1f406c89e99504a7222aaba50bf96b9f91f522ebc6ea825255145919e102ec" // IBiddingV2.sol:BidPlaced; both topics handled in parallel
 	TopicEthDonatedEvent         = "e32cacf203d00685e2b4d8b0a90e7cd8f3f8a208fdf116f4bb36abe08b7d548e" // IEthDonations.sol:EthDonated
@@ -83,6 +84,11 @@ const (
 	TopicBidCstRewardAmountMultiplierChanged         = "40b9c59af8c486ccf8c7cc73df5a51e7cc29747ea7d39f99632ecaf9caa2ed1f" // ISystemEventsV2.sol:BidCstRewardAmountMultiplierChanged
 	TopicCstDutchAuctionDurationChanged              = "4abea08c196329c357e3175d011af39a8625be99ef0ba5a0f3547a95534fedb7" // ISystemEventsV2.sol:CstDutchAuctionDurationChanged
 	TopicCstDutchAuctionDurationChangeDivisorChanged = "acbc6b6929088e4b2d043625fa7248e00fb6658a425eb9d9dc8c37b18c7f3e6f" // ISystemEventsV2.sol:CstDutchAuctionDurationChangeDivisorChanged
+	TopicRoundLateBidDurationDivisorChanged          = "7acba37d1b2d934e554139ff1d470d2cce50a7b6e56870577249b87564a95a69" // ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
+	TopicRoundLateBidPremiumBaseMultiplierChanged    = "169f25ec19cc5b518dc57adf05bb2d85155b1d6c60767e9f0e3ced18eac0ab77" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
+	TopicRoundLateBidPremiumExponentChanged          = "cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
+	TopicLastBidderRewardPercentageChanged           = "c63013cf34a6f7b20983b293d1787e833f8de2db868e904525fc2910df652a97" // ISystemEventsV3.sol:LastBidderBidCstRewardAmountPercentageChanged
+	TopicMainPrizeNumNftsChanged                     = "616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564" // ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
 	TopicStaticCstReward                             = "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
 	TopicMaxMessageLength                            = "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged
 	TopicTokenScriptURL                              = "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c" // #nosec G101 -- event signature hash, not a credential; ICosmicSignatureNft.sol:NftGenerationScriptUrlChanged

@@ -438,7 +438,7 @@ func (r *Repo) StakedTokensCstGlobal(ctx context.Context) ([]cgmodel.CGStakedTok
 		"LEFT JOIN transaction t ON t.id=m.tx_id " +
 		"LEFT JOIN address wa ON m.owner_aid=wa.address_id " +
 		"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id " +
-		"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id " +
+		"LEFT JOIN cg_prize_claim p ON m.token_id>=p.token_id AND m.token_id<p.token_id+p.num_cs_nfts " +
 		"LEFT JOIN cg_nft_staked_cst a ON a.action_id=st.stake_action_id " +
 		"LEFT JOIN address sa ON a.staker_aid = sa.address_id " +
 		"ORDER BY m.token_id"
@@ -499,7 +499,7 @@ func (r *Repo) StakedTokensRwalkGlobal(ctx context.Context) ([]cgmodel.CGStakedT
 		"LEFT JOIN transaction t ON t.id=m.tx_id " +
 		"LEFT JOIN address wa ON m.owner_aid=wa.address_id " +
 		"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id " +
-		"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id " +
+		"LEFT JOIN cg_prize_claim p ON m.token_id>=p.token_id AND m.token_id<p.token_id+p.num_cs_nfts " +
 		"LEFT JOIN cg_nft_staked_rwalk a ON a.action_id=st.stake_action_id " +
 		"LEFT JOIN address sa ON a.staker_aid = sa.address_id " +
 		"ORDER BY m.token_id"

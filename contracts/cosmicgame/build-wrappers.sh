@@ -4,7 +4,7 @@
 # Single pass: compile all from compiled-Cosmic-Signature, then generate Go.
 # Output directory: /tmp/cosmicgame-wrappers
 #
-# Prerequisites: solc at /usr/local/bin/solc-0.8.30 (V1) and solc-0.8.34 (V2), abigen at ~/bin/abigen-1.15.5
+# Prerequisites: solc at /usr/local/bin/solc-0.8.30 (V1) and solc-0.8.34 (V2/V3), abigen at ~/bin/abigen-1.15.5
 #
 
 set -e
@@ -23,6 +23,7 @@ readonly PRODUCTION_SYMLINK="${BASE_PATH}/production"
 readonly CONTRACTS=(
 	CosmicSignatureGame
 	CosmicSignatureGameV2
+	CosmicSignatureGameV3
 	CosmicSignatureNft
 	CosmicSignatureToken
 	CharityWallet
@@ -55,11 +56,11 @@ cd "$SRC_DIR"
 
 for contract in "${CONTRACTS[@]}"; do
 	entry="${contract}.sol"
-	if [[ ! -f "$entry" ]] && [[ "$contract" == "CosmicSignatureGameV2" ]]; then
-		# V2 lives alongside V1 in production; compiled-Cosmic-Signature may only have V1 until updated.
-		v2_src="/home/niko/eth/dev/b/todays/Cosmic-Signature/contracts/production/${entry}"
-		if [[ -f "$v2_src" ]]; then
-			entry="$v2_src"
+	if [[ ! -f "$entry" ]] && { [[ "$contract" == "CosmicSignatureGameV2" ]] || [[ "$contract" == "CosmicSignatureGameV3" ]]; }; then
+		# Upgrade implementations live alongside V1 in production; the compiled source tree may lag.
+		upgrade_src="/home/niko/eth/dev/b/todays/Cosmic-Signature/contracts/production/${entry}"
+		if [[ -f "$upgrade_src" ]]; then
+			entry="$upgrade_src"
 		fi
 	fi
 	if [[ ! -f "$entry" ]]; then
@@ -69,7 +70,7 @@ for contract in "${CONTRACTS[@]}"; do
 	comb_dir="$OUT_DIR/${contract}-combined"
 	mkdir -p "$comb_dir"
 
-	if [[ "$contract" == "CosmicSignatureGame" ]] || [[ "$contract" == "CosmicSignatureGameV2" ]]; then
+	if [[ "$contract" == "CosmicSignatureGame" ]] || [[ "$contract" == "CosmicSignatureGameV2" ]] || [[ "$contract" == "CosmicSignatureGameV3" ]]; then
 		remaps=(":@openzeppelin=$OPENZEPPELIN_5_1")
 	elif [[ "$contract" == "PrizesWallet" ]]; then
 		remaps=(":@openzeppelin=$OPENZEPPELIN_5_02")
@@ -81,7 +82,7 @@ for contract in "${CONTRACTS[@]}"; do
 
 	echo "  $contract"
 	solc_bin="$SOLC"
-	[[ "$contract" == "CosmicSignatureGameV2" ]] && solc_bin="$SOLC_V2"
+	{ [[ "$contract" == "CosmicSignatureGameV2" ]] || [[ "$contract" == "CosmicSignatureGameV3" ]]; } && solc_bin="$SOLC_V2"
 	if ! "$solc_bin" --overwrite --via-ir --combined-json bin,abi,userdoc,devdoc,metadata "${remaps[@]}" "$entry" -o "$comb_dir" 2>"$OUT_DIR/solc-errors-$contract.txt"; then
 		echo "    Error: solc failed, see $OUT_DIR/solc-errors-$contract.txt" >&2
 		continue
@@ -104,16 +105,16 @@ for contract in "${CONTRACTS[@]}"; do
 		continue
 	fi
 	abigen_args=(--combined-json "$combined" --pkg "$PKG" --type "$contract" --out "$outfile")
-	# V2 shares many mixin types already generated in CosmicSignatureGame.go; keep only the main contract.
-	if [[ "$contract" == "CosmicSignatureGameV2" ]]; then
-		v2_exc=$(python3 - "$combined" <<'PY'
+	# V2/V3 share mixin types already generated from V1; keep only each main implementation.
+	if [[ "$contract" == "CosmicSignatureGameV2" ]] || [[ "$contract" == "CosmicSignatureGameV3" ]]; then
+		upgrade_exc=$(python3 - "$combined" "$contract" <<'PY'
 import json, sys
 with open(sys.argv[1]) as f:
     names = sorted(set(k.split(":")[1] for k in json.load(f)["contracts"]))
-print(",".join(f"*:{n}" for n in names if n != "CosmicSignatureGameV2"))
+print(",".join(f"*:{n}" for n in names if n != sys.argv[2]))
 PY
 )
-		abigen_args+=(--exc="$v2_exc")
+		abigen_args+=(--exc="$upgrade_exc")
 	fi
 	if "$ABIGEN" "${abigen_args[@]}" 2>/dev/null; then
 		echo "  $contract -> $outfile"

@@ -92,6 +92,35 @@ func TestMapContractConfigurationMechanics(t *testing.T) {
 		*v2.CstDutchAuctionDurationChangeDivisor != 33 {
 		t.Fatalf("v2 configuration = %+v", v2)
 	}
+
+	v3Snapshot := v2Snapshot
+	v3Snapshot.MechanicsVersion = 3
+	v3Snapshot.ConstantsMechanicsVersion = 3
+	v3Snapshot.VariablesMechanicsVersion = 3
+	v3Snapshot.RoundStartAuctionLength = 12345
+	v3Snapshot.V3 = contractstate.V3Configuration{
+		RoundLateBidDurationDivisor:                  "4",
+		RoundLateBidDurationSeconds:                  900,
+		RoundLateBidPricePremiumAmountBaseMultiplier: "2",
+		RoundLateBidPricePremiumAmountExponent:       3,
+		LastBidderBidCstRewardAmountPercentage:       90,
+		MainPrizeNumCosmicSignatureNfts:              3,
+		CstDutchAuctionBeginningBidPriceMinLimit:     "180000000000000000000",
+		BidCstRewardAmountPerMainPrizeTimeIncrement:  "60000000000000000000",
+	}
+	v3, err := mapContractConfiguration(v3Snapshot)
+	if err != nil {
+		t.Fatalf("map v3 configuration: %v", err)
+	}
+	if v3.MechanicsVersion != ContractMechanicsVersionV3 ||
+		v3.MainPrizeNumCosmicSignatureNfts == nil ||
+		*v3.MainPrizeNumCosmicSignatureNfts != 3 ||
+		v3.LastBidderBidCstRewardAmountPercentage == nil ||
+		*v3.LastBidderBidCstRewardAmountPercentage != 90 ||
+		v3.CstDutchAuctionBeginningBidPriceMinLimitWei == nil ||
+		*v3.CstDutchAuctionBeginningBidPriceMinLimitWei != "180000000000000000000" {
+		t.Fatalf("v3 configuration = %+v", v3)
+	}
 }
 
 func TestMapContractConfigurationFailures(t *testing.T) {
@@ -116,6 +145,63 @@ func TestMapContractConfigurationFailures(t *testing.T) {
 			mutate(&snapshot)
 			if _, err := mapContractConfiguration(snapshot); err == nil {
 				t.Fatal("invalid configuration accepted")
+			}
+		})
+	}
+}
+
+func TestMapContractConfigurationV3Failures(t *testing.T) {
+	t.Parallel()
+	validV3 := func() contractstate.Snapshot {
+		snapshot := validContractSnapshot()
+		snapshot.MechanicsVersion = 3
+		snapshot.ConstantsMechanicsVersion = 3
+		snapshot.VariablesMechanicsVersion = 3
+		snapshot.FixedCSTBidReward = ""
+		snapshot.BidCSTRewardMultiplier = "7"
+		snapshot.CSTAuctionDurationChangeDivisor = 33
+		snapshot.V3 = contractstate.V3Configuration{
+			RoundLateBidDurationDivisor:                  "4",
+			RoundLateBidDurationSeconds:                  900,
+			RoundLateBidPricePremiumAmountBaseMultiplier: "2",
+			RoundLateBidPricePremiumAmountExponent:       3,
+			LastBidderBidCstRewardAmountPercentage:       90,
+			MainPrizeNumCosmicSignatureNfts:              3,
+			CstDutchAuctionBeginningBidPriceMinLimit:     "180",
+			BidCstRewardAmountPerMainPrizeTimeIncrement:  "60",
+		}
+		return snapshot
+	}
+	tests := map[string]func(*contractstate.Snapshot){
+		"change divisor": func(s *contractstate.Snapshot) {
+			s.CSTAuctionDurationChangeDivisor = 0
+		},
+		"reward multiplier": func(s *contractstate.Snapshot) {
+			s.BidCSTRewardMultiplier = "bad"
+		},
+		"late divisor": func(s *contractstate.Snapshot) {
+			s.V3.RoundLateBidDurationDivisor = "bad"
+		},
+		"premium base": func(s *contractstate.Snapshot) {
+			s.V3.RoundLateBidPricePremiumAmountBaseMultiplier = "bad"
+		},
+		"auction floor": func(s *contractstate.Snapshot) {
+			s.V3.CstDutchAuctionBeginningBidPriceMinLimit = "bad"
+		},
+		"reward increment": func(s *contractstate.Snapshot) {
+			s.V3.BidCstRewardAmountPerMainPrizeTimeIncrement = "bad"
+		},
+		"V3 domain": func(s *contractstate.Snapshot) {
+			s.V3.RoundLateBidDurationSeconds = 0
+		},
+	}
+	for name, mutate := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			snapshot := validV3()
+			mutate(&snapshot)
+			if _, err := mapContractConfiguration(snapshot); err == nil {
+				t.Fatal("invalid V3 configuration accepted")
 			}
 		})
 	}

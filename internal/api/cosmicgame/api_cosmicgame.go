@@ -307,6 +307,19 @@ func (a *API) handleDashboard(c *httpx.Context) {
 		"TsRoundStart":                         snap.RoundStartTimestamp,
 		"ContractAddrs":                        caddrs,
 	}
+	if snap.MechanicsVersion == 3 {
+		payload["V3Config"] = httpx.H{
+			"IsV3":                                   true,
+			"RoundLateBidDurationDivisor":            snap.V3.RoundLateBidDurationDivisor,
+			"RoundLateBidDurationSeconds":            snap.V3.RoundLateBidDurationSeconds,
+			"RoundLateBidPremiumBaseMultiplier":      snap.V3.RoundLateBidPricePremiumAmountBaseMultiplier,
+			"RoundLateBidPremiumExponent":            snap.V3.RoundLateBidPricePremiumAmountExponent,
+			"LastBidderBidCstRewardAmountPercentage": snap.V3.LastBidderBidCstRewardAmountPercentage,
+			"MainPrizeNumCosmicSignatureNfts":        snap.V3.MainPrizeNumCosmicSignatureNfts,
+			"CstAuctionPriceMinLimit":                snap.V3.CstDutchAuctionBeginningBidPriceMinLimit,
+			"CstRewardPerTimeIncrement":              snap.V3.BidCstRewardAmountPerMainPrizeTimeIncrement,
+		}
+	}
 	sanitizeMapFloatsForJSON(payload)
 	c.JSON(http.StatusOK, payload)
 }
