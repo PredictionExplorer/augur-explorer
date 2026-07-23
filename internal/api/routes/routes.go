@@ -60,9 +60,10 @@ type Options struct {
 }
 
 // New builds the standard middleware chain — CORS, panic recovery, optional
-// access log, gzip compression, per-IP rate limiting, extras, conditional
-// requests — and registers every injected module, the v2 surface, health
-// probes, the version endpoint, and host-dispatched metadata.
+// access log, gzip compression, per-IP rate limiting, extras, the request
+// body cap, conditional requests — and registers every injected module, the
+// v2 surface, health probes, the version endpoint, and host-dispatched
+// metadata.
 // st may be nil (bare route-table construction for drift tests).
 func New(st *store.Store, opts Options) *httpx.Router {
 	r := httpx.NewRouter()
@@ -88,6 +89,10 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	// own stricter limits at registration.
 	r.Use(common.RateLimit(50, 100))
 	r.Use(opts.Extra...)
+	// Bounded request bodies: declared oversized bodies answer 413 here
+	// (inside the metrics extras, so rejections are observable); undeclared
+	// ones fail at first read past the cap inside the consuming handler.
+	r.Use(common.MaxRequestBody(common.MaxRequestBodyBytes))
 	// Innermost global: hashes identity bodies before compression, answers
 	// If-None-Match revalidations with 304 and applies the default
 	// Cache-Control policy where no layer chose one.

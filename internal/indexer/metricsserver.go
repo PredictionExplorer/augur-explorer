@@ -36,6 +36,9 @@ func StartMetricsServer(ctx context.Context, addr string, gatherer prometheus.Ga
 	srv := &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
+		// Server-level records (accept errors, handshake noise) go through
+		// the process logger instead of stderr.
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
 	}
 	go func() {
 		logger.Info("internal metrics/pprof server listening", "addr", listener.Addr().String())

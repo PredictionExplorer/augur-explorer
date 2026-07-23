@@ -112,6 +112,11 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 		return fmt.Errorf("can't connect to PostgreSQL database: %w\n%s", err, store.ConnectHint(err))
 	}
 	defer dbStore.Close()
+	poolCollector := store.NewPoolCollector(dbStore.Pool())
+	if err := reg.Register(poolCollector); err != nil {
+		return fmt.Errorf("registering db pool metrics: %w", err)
+	}
+	defer reg.Unregister(poolCollector)
 	rwRepo := rwstore.NewRepo(dbStore)
 
 	// Register the contract addresses (fresh-database bootstrap) and build

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
@@ -21,7 +22,9 @@ import (
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
-const problemTypeBase = "https://api.cosmicsignature.com/problems/"
+// problemTypeBase is shared with the middleware chain (the body-cap 413s),
+// so every problem the process emits carries the same type prefix.
+const problemTypeBase = common.ProblemTypeBase
 
 type bidReader interface {
 	BidsByRoundPage(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
@@ -447,6 +450,16 @@ func (s *Server) RegisterRoutes(r *httpx.Router) {
 }
 
 func (s *Server) writeRequestError(w http.ResponseWriter, req *http.Request, err error) {
+	// An undeclared oversized body fails inside the generated JSON decode
+	// with the body-cap middleware's *http.MaxBytesError; it is a 413, not
+	// a malformed request, and renders exactly like the middleware's own
+	// declared-length rejection.
+	var maxBytes *http.MaxBytesError
+	if errors.As(err, &maxBytes) {
+		s.writeProblem(w, requestTooLargeProblem(maxBytes.Limit, req.URL.Path))
+		return
+	}
+
 	detail := "A path or query parameter has an invalid value."
 	var invalid *InvalidParamFormatError
 	var required *RequiredParamError
@@ -500,6 +513,16 @@ func internalProblem(instance string) Problem {
 		"internal",
 		"Internal server error",
 		"The request could not be completed.",
+		instance,
+	)
+}
+
+func requestTooLargeProblem(limit int64, instance string) Problem {
+	return newProblem(
+		http.StatusRequestEntityTooLarge,
+		"request-too-large",
+		"Request body too large",
+		common.RequestBodyTooLargeDetail(limit),
 		instance,
 	)
 }

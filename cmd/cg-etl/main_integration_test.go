@@ -80,7 +80,8 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 	var logBuf syncBuffer
 	runCtx, cancel := context.WithCancel(ctx)
 	done := make(chan error, 1)
-	go func() { done <- run(runCtx, os.Getenv, &logBuf, prometheus.NewRegistry(), prometheus.NewRegistry()) }()
+	reg := prometheus.NewRegistry()
+	go func() { done <- run(runCtx, os.Getenv, &logBuf, reg, reg) }()
 
 	// The startup chain sync allocates a synthetic event log at the current
 	// tip, so the engine resumes already caught up. Wait for the engine to
@@ -97,9 +98,26 @@ func TestRunBootAndGracefulShutdown(t *testing.T) {
 		return lastBlock == 200
 	})
 
+	// The production registry carries the engine and DB-pool series while
+	// the process runs; the pool acquires counter has advanced through the
+	// real ingestion workload.
+	if got := gatheredValue(t, reg, "rwcg_db_pool_acquires_total"); got < 1 {
+		t.Errorf("rwcg_db_pool_acquires_total = %v, want at least 1", got)
+	}
+
 	cancel()
 	if err := awaitRun(done); err != nil {
 		t.Fatalf("run returned %v, want nil on graceful shutdown", err)
+	}
+
+	// Shutdown unregisters the pool collector: a future run in the same
+	// process (or registry) can never collide with a closed pool's series.
+	if families, err := reg.Gather(); err == nil {
+		for _, family := range families {
+			if strings.HasPrefix(family.GetName(), "rwcg_db_pool_") {
+				t.Errorf("%s still registered after shutdown", family.GetName())
+			}
+		}
 	}
 
 	// §8.3: structured records on the log stream replace the legacy
@@ -122,6 +140,28 @@ func awaitRun(done chan error) error {
 	case <-time.After(60 * time.Second):
 		return context.DeadlineExceeded
 	}
+}
+
+// gatheredValue returns the single sample of the named series (counter or
+// gauge), or fails if it is not currently registered.
+func gatheredValue(t *testing.T, reg *prometheus.Registry, name string) float64 {
+	t.Helper()
+	families, err := reg.Gather()
+	if err != nil {
+		t.Fatalf("Gather: %v", err)
+	}
+	for _, family := range families {
+		if family.GetName() != name {
+			continue
+		}
+		metric := family.GetMetric()[0]
+		if counter := metric.GetCounter(); counter != nil {
+			return counter.GetValue()
+		}
+		return metric.GetGauge().GetValue()
+	}
+	t.Fatalf("series %s not registered", name)
+	return 0
 }
 
 // waitForCondition polls cond for up to a minute; on timeout it stops the
@@ -193,6 +233,23 @@ func TestRunFailures(t *testing.T) {
 		setEnv(t, db.ConnString, chain.URL())
 		err := run(ctx, os.Getenv, io.Discard, prometheus.NewRegistry(), prometheus.NewRegistry())
 		if err == nil || !strings.Contains(err.Error(), "contract address bootstrap failed") {
+			t.Fatalf("err = %v", err)
+		}
+	})
+
+	t.Run("pool metrics registration conflict", func(t *testing.T) {
+		// A registry already carrying one of the pool series makes the
+		// collector registration fail loudly instead of serving a partial
+		// metric set.
+		chain := testchain.New(t)
+		setEnv(t, db.ConnString, chain.URL())
+		reg := prometheus.NewRegistry()
+		reg.MustRegister(prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "rwcg_db_pool_max_conns",
+			Help: "squats the pool collector's series",
+		}))
+		err := run(ctx, os.Getenv, io.Discard, reg, reg)
+		if err == nil || !strings.Contains(err.Error(), "registering db pool metrics") {
 			t.Fatalf("err = %v", err)
 		}
 	})

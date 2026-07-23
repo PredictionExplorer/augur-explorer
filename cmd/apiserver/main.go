@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"net"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
@@ -33,6 +35,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
 	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/config"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
@@ -56,18 +59,28 @@ const (
 // newPublicServer builds one public listener's http.Server with the
 // production timeout policy. tlsConfig is cloned per server: ServeTLS
 // mutates the config (HTTP/2 NextProtos), so sharing one pointer across
-// listeners was a data race.
-func newPublicServer(handler http.Handler, tlsConfig *tls.Config) *http.Server {
+// listeners was a data race. errorLog routes the server's own records (TLS
+// handshake failures, accept errors) through the process logger instead of
+// stderr.
+func newPublicServer(handler http.Handler, tlsConfig *tls.Config, errorLog *log.Logger) *http.Server {
 	srv := &http.Server{
 		Handler:           handler,
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		IdleTimeout:       idleTimeout,
+		ErrorLog:          errorLog,
 	}
 	if tlsConfig != nil {
 		srv.TLSConfig = tlsConfig.Clone()
 	}
 	return srv
+}
+
+// serverErrorLog adapts the process slog logger for http.Server.ErrorLog.
+// Handshake failures from internet background noise are operational
+// warnings, not errors.
+func serverErrorLog(logger *slog.Logger) *log.Logger {
+	return slog.NewLogLogger(logger.Handler(), slog.LevelWarn)
 }
 
 type boundHTTPServer struct {
@@ -197,6 +210,14 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	if err != nil {
 		return err
 	}
+	// Pool saturation/latency visibility on /metrics. Registration is
+	// paired with unregistration so run lifecycles (and their pools) never
+	// collide on the process-wide default registry.
+	poolCollector := store.NewPoolCollector(deps.store.Pool())
+	if err := prometheus.Register(poolCollector); err != nil {
+		return fmt.Errorf("registering db pool metrics: %w", err)
+	}
+	defer prometheus.Unregister(poolCollector)
 
 	cgAPI, rwAPI, faqProxy, err := buildModules(ctx, cfg, deps, ethClient, rpcClient)
 	if err != nil {
@@ -254,7 +275,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		}
 	}()
 
-	internalSrv, internalListener, err := listenInternalServer(ctx, cfg.MetricsAddr)
+	internalSrv, internalListener, err := listenInternalServer(ctx, cfg.MetricsAddr, serverErrorLog(logger))
 	if err != nil {
 		// Preserve the historical optional-listener policy: the public API
 		// may still start, but the configured observability failure is loud.
@@ -276,7 +297,9 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		if len(certs) == 0 {
 			logger.Warn("TLS: no certificates loaded; HTTPS listeners not started")
 		} else {
-			tlsConfig := &tls.Config{Certificates: certs}
+			// TLS 1.2 floor: Go's server default still admits 1.0/1.1
+			// handshakes, which no supported client needs.
+			tlsConfig := &tls.Config{Certificates: certs, MinVersion: tls.VersionTLS12}
 			startTLS := func(addr string) {
 				ln, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
 				if err != nil {
@@ -285,7 +308,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 				}
 				logger.Info("HTTPS bound and listening", "addr", ln.Addr().String())
 				bound = append(bound, boundHTTPServer{
-					server:   newPublicServer(r, tlsConfig),
+					server:   newPublicServer(r, tlsConfig, serverErrorLog(logger)),
 					listener: ln,
 					useTLS:   true,
 				})
@@ -304,7 +327,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		}
 		logger.Info("listening", "port", cfg.HTTPPort)
 		bound = append(bound, boundHTTPServer{
-			server:   newPublicServer(r, nil),
+			server:   newPublicServer(r, nil, serverErrorLog(logger)),
 			listener: ln,
 		})
 		publicCount++

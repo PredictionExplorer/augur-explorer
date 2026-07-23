@@ -14,6 +14,7 @@ go test ./internal/indexer/cosmicgame/ -bench BenchmarkEventDecode -benchmem -co
 go test ./internal/freezer/decode/ -bench BenchmarkReceiptsDecode -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench BenchmarkRateLimiter    -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench 'BenchmarkCompress|BenchmarkConditionalETag' -benchmem -count=6 -run '^$'
+go test ./internal/api/common/   -bench BenchmarkMaxRequestBody -benchmem -count=6 -run '^$'
 
 # DB benchmarks (Docker required; runs against the seeded test container)
 go test -tags=integration ./internal/store/cosmicgame/ -bench BenchmarkStatisticsQueries -benchmem -count=6 -run '^$' -timeout 15m
@@ -45,6 +46,9 @@ against post-conversion runs; the pre-conversion table is in git history.
 | `BenchmarkCompress/identity_32KiB` (api/common) | 4,410 | 47,184 | 21 | negotiation + passthrough for a non-gzip client |
 | `BenchmarkConditionalETag/tag_32KiB` (api/common) | 16,800 | 88,252 | 24 | buffer + SHA-256 weak validator + release, ~1.95 GB/s |
 | `BenchmarkConditionalETag/revalidate_304_32KiB` (api/common) | 13,700 | 47,627 | 26 | matching If-None-Match short-circuits to an empty 304 |
+| `BenchmarkMaxRequestBody/get_passthrough` (api/common) | 793 | 5,436 | 16 | full router exchange; the cap wrapper on a bodyless request |
+| `BenchmarkMaxRequestBody/post_1KiB_within_cap` (api/common) | 852 | 5,505 | 18 | 1 KiB body read through MaxBytesReader |
+| `BenchmarkMaxRequestBody/declared_oversize_413` (api/common) | 1,543 | 6,856 | 32 | Content-Length pre-check renders the legacy 413 without reading |
 | `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,199,000 | 14,384 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/claims_by_round` | 777,000 | 9,622 | 82 | per-round claim summary CTE (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/roi_leaderboard` | 268,000 | 23,856 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |
@@ -226,3 +230,13 @@ History:
   bucket (formerly 1,144/1,298); the deliberate lifecycle fix costs
   ~76/~34 ns per request while allocations remain byte-identical at
   15 and router construction now starts zero maintenance goroutines.
+- **2026-07-22 (edge-hardening sprint, D21)** — added the request-body-cap
+  middleware baselines. The wrapper every request now traverses costs
+  under a microsecond through a full router exchange (~793 ns bodyless,
+  ~852 ns with a 1 KiB body — both dominated by the router/recorder
+  fixture, so the marginal middleware cost is tens of nanoseconds), and a
+  declared-oversize rejection renders its 413 in ~1.5 µs without reading
+  the body. The neighbouring middleware suites re-ran clean in the same
+  sitting: rate limiter 1,146–1,352 ns/op straddling its 1,220/1,332
+  baselines, Compress and ConditionalETag medians within 2% with
+  byte-identical allocation counts.

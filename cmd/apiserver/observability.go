@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -76,7 +77,7 @@ func statusClass(code int) string {
 // controlled by METRICS_ADDR (e.g. "127.0.0.1:9090"). Unset means disabled.
 // Binding is synchronous so startup can roll back every open listener before
 // any serving goroutine starts. Nil server/listener means disabled.
-func listenInternalServer(ctx context.Context, metricsAddr string) (*http.Server, net.Listener, error) {
+func listenInternalServer(ctx context.Context, metricsAddr string, errorLog *log.Logger) (*http.Server, net.Listener, error) {
 	addr := strings.TrimSpace(metricsAddr)
 	if addr == "" {
 		return nil, nil, nil
@@ -99,6 +100,7 @@ func listenInternalServer(ctx context.Context, metricsAddr string) (*http.Server
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       readTimeout,
 		IdleTimeout:       idleTimeout,
+		ErrorLog:          errorLog,
 	}
 	return srv, listener, nil
 }

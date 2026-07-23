@@ -5,6 +5,7 @@ package faq
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,8 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 )
+
+// maxUpstreamResponseBytes caps how much of an upstream FAQ response the
+// proxy buffers before relaying it (4 MiB). A misbehaving upstream must not
+// be able to exhaust API server memory; legitimate FAQ answers are a few KB.
+const maxUpstreamResponseBytes = 4 << 20
 
 // Proxy forwards FAQ requests to the configured upstream.
 type Proxy struct {
@@ -65,6 +72,13 @@ func (p *Proxy) proxyFAQ(c *httpx.Context) {
 	target := p.upstreamURL + mapFAQPath(c.Request.URL.Path)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		// The shared MaxRequestBody middleware bounds the body; a read past
+		// the cap is the client's fault (413), any other failure is not.
+		var maxBytes *http.MaxBytesError
+		if errors.As(err, &maxBytes) {
+			common.RespondRequestBodyTooLarge(c, maxBytes.Limit)
+			return
+		}
 		p.logger.Error(fmt.Sprintf("faq proxy read body: %v", err))
 		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq proxy read failed"})
 		return
@@ -72,7 +86,8 @@ func (p *Proxy) proxyFAQ(c *httpx.Context) {
 
 	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, target, bytes.NewReader(body))
 	if err != nil {
-		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": err.Error()})
+		p.logger.Error(fmt.Sprintf("faq proxy build request for %s: %v", target, err))
+		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq proxy request build failed"})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -93,9 +108,16 @@ func (p *Proxy) proxyFAQ(c *httpx.Context) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, err := io.ReadAll(resp.Body)
+	// Read one byte past the cap so a response of exactly the cap size
+	// still relays while anything larger is rejected, not truncated.
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxUpstreamResponseBytes+1))
 	if err != nil {
 		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq proxy response read failed"})
+		return
+	}
+	if len(respBody) > maxUpstreamResponseBytes {
+		p.logger.Error(fmt.Sprintf("faq proxy upstream %s: response exceeds %d bytes", target, maxUpstreamResponseBytes))
+		c.JSON(http.StatusBadGateway, httpx.H{"status": 0, "error": "faq upstream response too large"})
 		return
 	}
 

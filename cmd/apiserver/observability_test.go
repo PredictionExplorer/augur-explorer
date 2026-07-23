@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,7 +21,7 @@ import (
 
 func TestListenInternalServerDisabledWhenUnset(t *testing.T) {
 	t.Parallel()
-	srv, listener, err := listenInternalServer(t.Context(), "  ")
+	srv, listener, err := listenInternalServer(t.Context(), "  ", nil)
 	if err != nil {
 		t.Fatalf("listenInternalServer: %v", err)
 	}
@@ -29,9 +32,13 @@ func TestListenInternalServerDisabledWhenUnset(t *testing.T) {
 
 func TestListenInternalServerServesMetricsAndJoins(t *testing.T) {
 	t.Parallel()
-	srv, listener, err := listenInternalServer(t.Context(), "127.0.0.1:0")
+	errorLog := serverErrorLog(slog.New(slog.DiscardHandler))
+	srv, listener, err := listenInternalServer(t.Context(), "127.0.0.1:0", errorLog)
 	if err != nil {
 		t.Fatalf("listenInternalServer: %v", err)
+	}
+	if srv.ErrorLog != errorLog {
+		t.Error("internal server must route its ErrorLog through the process logger")
 	}
 	done := make(chan error, 1)
 	go func() { done <- srv.Serve(listener) }()
@@ -69,7 +76,7 @@ func TestListenInternalServerReportsBindFailureSynchronously(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = ln.Close() })
 
-	srv, listener, err := listenInternalServer(t.Context(), ln.Addr().String())
+	srv, listener, err := listenInternalServer(t.Context(), ln.Addr().String(), nil)
 	if err == nil {
 		t.Fatal("listenInternalServer accepted an occupied address")
 	}
@@ -81,13 +88,15 @@ func TestListenInternalServerReportsBindFailureSynchronously(t *testing.T) {
 // TestNewPublicServerTimeoutPolicy pins the listener hardening: header,
 // body-read and keep-alive-idle bounds are set, WriteTimeout is deliberately
 // zero while frozen v1 endpoints stream unbounded arrays to slow clients,
-// and each TLS server clones the shared config (ServeTLS mutates it).
+// each TLS server clones the shared config (ServeTLS mutates it), and the
+// server's own error records route through the process logger.
 func TestNewPublicServerTimeoutPolicy(t *testing.T) {
 	t.Parallel()
 	handler := http.NewServeMux()
 	tlsConfig := &tls.Config{ServerName: "api.example"}
+	errorLog := serverErrorLog(slog.New(slog.DiscardHandler))
 
-	srv := newPublicServer(handler, tlsConfig)
+	srv := newPublicServer(handler, tlsConfig, errorLog)
 	if srv.ReadHeaderTimeout != readHeaderTimeout || srv.ReadTimeout != readTimeout || srv.IdleTimeout != idleTimeout {
 		t.Errorf("timeouts = (header %v, read %v, idle %v), want (%v, %v, %v)",
 			srv.ReadHeaderTimeout, srv.ReadTimeout, srv.IdleTimeout,
@@ -102,9 +111,27 @@ func TestNewPublicServerTimeoutPolicy(t *testing.T) {
 	if srv.TLSConfig.ServerName != tlsConfig.ServerName {
 		t.Error("TLS clone lost the original settings")
 	}
+	if srv.ErrorLog != errorLog {
+		t.Error("public server must route its ErrorLog through the process logger")
+	}
 
-	if plain := newPublicServer(handler, nil); plain.TLSConfig != nil {
+	if plain := newPublicServer(handler, nil, nil); plain.TLSConfig != nil {
 		t.Error("plain listener must not carry a TLS config")
+	}
+}
+
+// TestServerErrorLogRoutesThroughSlog proves stdlib http.Server records land
+// on the structured process logger at warning level instead of stderr.
+func TestServerErrorLogRoutesThroughSlog(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
+
+	serverErrorLog(logger).Printf("http: TLS handshake error from 198.51.100.7:4242: EOF")
+
+	logged := buf.String()
+	if !strings.Contains(logged, "level=WARN") || !strings.Contains(logged, "TLS handshake error") {
+		t.Fatalf("server error record not routed through slog at WARN: %q", logged)
 	}
 }
 

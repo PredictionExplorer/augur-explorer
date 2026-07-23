@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
 	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
 	"github.com/PredictionExplorer/augur-explorer/internal/testfixtures"
@@ -146,6 +148,48 @@ func TestRunBootServeAndGracefulShutdown(t *testing.T) {
 		t.Fatalf("POST bid ban = %d, want 409\n%s", banResponse.StatusCode, banBody)
 	}
 
+	// The body cap guards the production listener: a declared oversized
+	// body is rejected with the v2 problem shape before any handler (or
+	// admin auth) runs.
+	oversized, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		base+"/api/v2/cosmicgame/moderation/banned-bids",
+		strings.NewReader(`{"bidId":`+strings.Repeat("9", 2<<20)+`}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	oversized.Header.Set("Content-Type", "application/json")
+	oversizedResponse, err := http.DefaultClient.Do(oversized)
+	if err != nil {
+		t.Fatalf("POST oversized body: %v", err)
+	}
+	oversizedBody, _ := io.ReadAll(oversizedResponse.Body)
+	_ = oversizedResponse.Body.Close()
+	if oversizedResponse.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Fatalf("POST oversized body = %d, want 413\n%s", oversizedResponse.StatusCode, oversizedBody)
+	}
+	if !strings.Contains(string(oversizedBody), "request-too-large") {
+		t.Fatalf("oversized-body response is not the shared problem: %s", oversizedBody)
+	}
+
+	// The private metrics listener exposes the HTTP and DB-pool series the
+	// operations runbook queries; its bound address is announced in the
+	// startup log.
+	metricsAddr := loggedListenerAddr(t, logBuf.String(), "internal metrics/pprof server listening")
+	metricsResp, err := http.Get("http://" + metricsAddr + "/metrics")
+	if err != nil {
+		t.Fatalf("GET /metrics: %v", err)
+	}
+	metricsBody, _ := io.ReadAll(metricsResp.Body)
+	_ = metricsResp.Body.Close()
+	if metricsResp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /metrics = %d\n%s", metricsResp.StatusCode, metricsBody)
+	}
+	for _, series := range []string{"rwcg_http_requests_total", "rwcg_db_pool_acquires_total", "rwcg_db_pool_max_conns"} {
+		if !strings.Contains(string(metricsBody), series) {
+			t.Errorf("/metrics missing %s", series)
+		}
+	}
+
 	cancel()
 	select {
 	case err := <-done:
@@ -208,6 +252,24 @@ func (b *syncBuffer) String() string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return b.buf.String()
+}
+
+// loggedListenerAddr extracts the addr attribute of the JSON log record with
+// the given msg (the internal listener binds :0 in tests, so the real port
+// is only known through its startup record).
+func loggedListenerAddr(t *testing.T, stream, msg string) string {
+	t.Helper()
+	for line := range strings.Lines(stream) {
+		var rec map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(line)), &rec) != nil || rec["msg"] != msg {
+			continue
+		}
+		if addr, ok := rec["addr"].(string); ok && addr != "" {
+			return addr
+		}
+	}
+	t.Fatalf("no %q record with an addr attribute in the log stream:\n%s", msg, stream)
+	return ""
 }
 
 // assertJSONLogRecords proves the stream is one JSON record per line and
@@ -390,6 +452,28 @@ func TestRunStartupFailures(t *testing.T) {
 		err := run(ctx, os.Getenv, io.Discard)
 		if err == nil || !strings.Contains(err.Error(), "CosmicGame module init failed") ||
 			!strings.Contains(err.Error(), "ENABLE_ROUTES_COSMICGAME=false") {
+			t.Fatalf("err = %v", err)
+		}
+	})
+
+	t.Run("pool metrics registration conflict", func(t *testing.T) {
+		// The process-wide default registry already carrying one of the
+		// pool series makes the collector registration fail loudly instead
+		// of serving a partial metric set. The squatter reuses the
+		// production help text: the registry remembers name→help pairs
+		// even after unregistration, so a different help would panic here
+		// whenever another run() already executed in this test process.
+		chain := testchain.New(t)
+		setEnv(t, db.ConnString, chain.URL())
+		t.Setenv("HTTP_PORT", "0")
+		squatter := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "rwcg_db_pool_max_conns",
+			Help: "Configured maximum size of the pgx connection pool.",
+		})
+		prometheus.MustRegister(squatter)
+		t.Cleanup(func() { prometheus.Unregister(squatter) })
+		err := run(ctx, os.Getenv, io.Discard)
+		if err == nil || !strings.Contains(err.Error(), "registering db pool metrics") {
 			t.Fatalf("err = %v", err)
 		}
 	})
@@ -588,6 +672,27 @@ func TestRunServesTLSListeners(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("TLS /healthz on %s = %d", addr, resp.StatusCode)
 		}
+
+		// The TLS 1.2 floor: a legacy 1.1-only client must be refused at
+		// the handshake, a 1.2 handshake must succeed.
+		legacy, err := tls.Dial("tcp", addr, &tls.Config{
+			InsecureSkipVerify: true, //nolint:gosec // G402: self-signed test certificate
+			MinVersion:         tls.VersionTLS11,
+			MaxVersion:         tls.VersionTLS11,
+		})
+		if err == nil {
+			_ = legacy.Close()
+			t.Fatalf("TLS 1.1 handshake on %s succeeded, want refusal (MinVersion floor)", addr)
+		}
+		modern, err := tls.Dial("tcp", addr, &tls.Config{
+			InsecureSkipVerify: true, //nolint:gosec // G402: self-signed test certificate
+			MinVersion:         tls.VersionTLS12,
+			MaxVersion:         tls.VersionTLS12,
+		})
+		if err != nil {
+			t.Fatalf("TLS 1.2 handshake on %s failed: %v", addr, err)
+		}
+		_ = modern.Close()
 	}
 
 	cancel()

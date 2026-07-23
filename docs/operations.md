@@ -122,7 +122,23 @@ response-edge policy lives in the shared middleware chain
   connections (120s). There is deliberately **no WriteTimeout** while the
   frozen v1 API can stream unbounded arrays to slow clients; revisit at v1
   removal.
-
+- **TLS floor**: the public HTTPS listeners require TLS 1.2 or newer
+  (Go's server default still admits 1.0/1.1). Handshake failures and other
+  `http.Server` records land on the process logger at `WARN` instead of
+  stderr, so scanner noise is filterable with `LOG_LEVEL=error`.
+- **Request-body cap**: every request body is bounded at **1 MiB** by the
+  shared middleware (the largest legitimate bodies — ranking votes — are a
+  few hundred bytes). A request declaring a larger `Content-Length` is
+  answered `413` immediately; one that streams past the cap fails at the
+  first read inside the consuming layer. The 413 shape follows the route
+  family: RFC 9457 `application/problem+json`
+  (`…/problems/request-too-large`, declared on the three body-accepting v2
+  operations) under `/api/v2/`, the legacy `{"status":0,"error":…}`
+  envelope everywhere else, and the frozen v1 handlers keep their
+  `400 {"error":"http: request body too large"}` bind shape for undeclared
+  overflows. The FAQ proxy additionally caps buffered upstream responses at
+  4 MiB (`502` beyond it). There are no environment switches: the limits
+  are fixed, like the rest of the edge policy.
 - **Compression**: JSON/text responses ≥ 1 KiB are gzip-encoded for clients
   sending `Accept-Encoding: gzip`. Images and video are never re-compressed.
   Every response carries `Vary: Accept-Encoding`.
@@ -248,6 +264,25 @@ series simply lack it.
   Since the stdlib-router migration the `route` label uses ServeMux syntax
   (`/api/.../{param}` instead of `/api/.../:param`) — update dashboards that
   filter on route values.
+- The apiserver and both ETLs also export their shared pgx pool as
+  `rwcg_db_pool_*`: saturation gauges (`acquired_conns`, `idle_conns`,
+  `constructing_conns`, `total_conns` against the `max_conns` bound) and
+  cumulative counters (`acquires_total`, `acquire_duration_seconds_total`,
+  `empty_acquires_total` + `empty_acquire_wait_seconds_total` — the
+  pool-exhaustion signals — `canceled_acquires_total`, `new_conns_total`,
+  `max_lifetime_destroys_total`, `max_idle_destroys_total`). Useful alerts:
+
+  ```promql
+  # Queries queueing because the pool is exhausted (per second)
+  rate(rwcg_db_pool_empty_acquires_total[5m]) > 0
+
+  # Mean time spent waiting for a connection
+  rate(rwcg_db_pool_acquire_duration_seconds_total[5m])
+    / rate(rwcg_db_pool_acquires_total[5m])
+
+  # Sustained saturation: every connection checked out
+  rwcg_db_pool_acquired_conns >= rwcg_db_pool_max_conns
+  ```
 - The ETLs (`cg-etl`, `rw-etl`) honor `METRICS_ADDR` too (each process needs
   its own port on a shared host) and expose `rwcg_etl_last_block` (the
   processing watermark — alert when it stops advancing),

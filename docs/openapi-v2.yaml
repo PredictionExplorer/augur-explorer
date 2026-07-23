@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.19.0
+  version: 0.20.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. This is the
     canonical specification: the v2 endpoint inventory is complete, every
@@ -60,6 +60,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -2183,6 +2185,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "409":
           $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -2214,6 +2218,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -9257,6 +9263,14 @@ components:
             $ref: "#/components/schemas/Problem"
     Conflict:
       description: The request conflicts with an existing record.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RequestTooLarge:
+      description: |
+        The request body exceeds the global 1 MiB cap. The same limit is
+        enforced on every route by the shared middleware chain.
       content:
         application/problem+json:
           schema:
