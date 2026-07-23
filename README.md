@@ -6,9 +6,10 @@ the data through a JSON API, with notification bots and operational tooling
 around the core.
 
 - **CosmicGame** (cosmicsignature.com): a round-based bidding game — ETH/CST
-  bids on a Dutch auction, a main prize clock extended by each bid, raffles,
-  special prizes (Endurance Champion, Chrono Warrior), NFT minting, staking
-  rewards, and charity donations.
+  bids on a Dutch auction, V1/V2/V3 mechanics, a main prize clock extended by
+  each bid, raffles, special prizes (Endurance Champion, Chrono Warrior),
+  multi-NFT minting, staking rewards, charity donations, and Cosmic Signature
+  views over the shared marketplace.
 - **RandomWalk** (randomwalknft.com): a generative NFT collection with a
   built-in marketplace, on-chain token naming, and an Elo-style community
   ranking game.
@@ -53,7 +54,7 @@ Or everything in containers: `docker compose --profile etl up`.
 | Path | Purpose |
 |------|---------|
 | `cmd/` | One directory per binary: `apiserver`, `cg-etl`, `rw-etl`, `notibot`, `freezer-scan`, `srvmonitor`, CLIs (`cgctl`, `rwctl`, `opsctl`), ... |
-| `internal/` | Shared packages: `api` (handlers), `store` (database), `indexer`, `model`, `freezer`, `notify`, `testdb` |
+| `internal/` | Shared packages: `api` (handlers), `store` (database + collection-scoped marketplace), `indexer`, `model`, `freezer`, `notify`, `testdb` |
 | `contracts/` | Generated abigen contract bindings (reproducible via `make generate`; see `contracts/README.md`) |
 | `db/migrations/` | goose schema migrations (source of truth for the schema) |
 | `deploy/` | Dockerfile and systemd units |

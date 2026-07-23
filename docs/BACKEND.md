@@ -36,7 +36,7 @@ The backend consists of three main components:
 | ETL - CosmicGame | `cmd/cg-etl/` | Processes CosmicGame contract events |
 | ETL - RandomWalk | `cmd/rw-etl/` | Processes RandomWalk contract events |
 | Web Server | `cmd/apiserver/` + `internal/api/` | REST API serving data to frontend |
-| Database Layer | `dbs/` | PostgreSQL connection and queries |
+| Database Layer | `internal/store/` | pgx-native PostgreSQL pool and domain queries |
 | SQL Schema | `db/migrations/` | goose schema migrations |
 | Contracts | `contracts/` | ABI definitions for smart contracts |
 
@@ -79,7 +79,7 @@ Game event and statistics tables. Most tables reference `evt_log(id)` for tracea
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| `cg_prize_claim` | Main prize claims | `round_num`, `winner_aid`, `amount`, `token_id` |
+| `cg_prize_claim` | Main prize claims (V3 may mint multiple sequential NFTs) | `round_num`, `winner_aid`, `amount`, `token_id`, `num_cs_nfts` |
 | `cg_prize` | Unified prize records | `round_num`, `winner_index`, `ptype` |
 | `cg_raffle_nft_prize` | Raffle NFT prizes | `round_num`, `winner_aid`, `token_id`, `winner_idx` |
 | `cg_raffle_eth_prize` | Raffle ETH prizes | `round_num`, `winner_aid`, `amount` |
@@ -92,6 +92,7 @@ Game event and statistics tables. Most tables reference `evt_log(id)` for tracea
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
 | `cg_bid` | Bid events | `bidder_aid`, `round_num`, `bid_type`, `eth_price`, `cst_price`, `msg` |
+| `cg_bid_reward` | Normalized CST reward recipients (current/previous bidder) | `bid_id`, `recipient_aid`, `reward_type`, `amount` |
 | `cg_first_bid` | First bid in each round | `round_num`, `start_ts` |
 
 #### Donation Tables
@@ -140,7 +141,7 @@ Game event and statistics tables. Most tables reference `evt_log(id)` for tracea
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| `cg_round_stats` | Per-round statistics | `round_num`, `total_bids`, `total_eth_in_bids` |
+| `cg_round_stats` | Per-round statistics and V3 champion snapshots | `round_num`, `total_bids`, `total_eth_in_bids`, `endurance_champion_duration`, `chrono_warrior_duration` |
 | `cg_glob_stats` | Global statistics | `num_bids`, `num_wins`, `total_raffle_eth_deposits` |
 | `cg_bidder` | Bidder statistics | `bidder_aid`, `num_bids`, `max_bid` |
 | `cg_winner` | Winner statistics | `winner_aid`, `prizes_count`, `prizes_sum` |
@@ -153,10 +154,17 @@ Tables prefixed with `cg_adm_*` track configuration changes:
 - `cg_adm_raffle_pcent`, `cg_adm_chrono_pcent`
 - `cg_adm_charity_wallet`, `cg_adm_rwalk_addr`, `cg_adm_prizes_wallet_addr`
 - `cg_adm_time_inc`, `cg_adm_price_inc`, `cg_adm_acttime`
+- V3 late-bid divisor/premium, last-bidder reward percentage and main-prize
+  NFT-count tables. Event-less V3 observations are stored separately in
+  `cg_live_state_updates`; startup contract sync only reports drift and never
+  fabricates `evt_log` rows.
 
 ### 3. RandomWalk Schema
 
-NFT marketplace tables.
+RandomWalk NFT/ranking tables plus the shared marketplace event ledger.
+Marketplace rows carry the traded collection address, so both RandomWalk and
+Cosmic Signature expose collection-scoped views without cross-collection
+leakage.
 
 #### Core Tables
 

@@ -6,10 +6,11 @@ data flows, and where each concern lives in the repository.
 ## System overview
 
 The backend indexes two families of smart contracts on Arbitrum —
-**CosmicGame** (a round-based bidding game with prizes, raffles, staking and
-charity mechanics) and **RandomWalk** (an NFT collection with a built-in
-marketplace and community ranking) — into PostgreSQL, and serves that data
-through a JSON API.
+**CosmicGame** (a round-based bidding game with V1/V2/V3 mechanics, prizes,
+raffles, staking, charity and Cosmic Signature marketplace views) and
+**RandomWalk** (an NFT collection with a multi-collection marketplace and
+community ranking) — into PostgreSQL, and serves that data through a JSON
+API.
 
 ```mermaid
 flowchart LR
@@ -48,7 +49,12 @@ flowchart LR
    checks and rolled back, then the event is dispatched through the typed
    handler registry (`internal/indexer/cosmicgame`, `.../randomwalk`): a pure
    decode step turns the log into a domain event, a store step writes it to
-   its domain table (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...). All of
+   its domain table (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...).
+   CosmicGame keeps both V2 and V3 event topics registered; V3 adds multi-NFT
+   claims, normalized bid-reward shares and bounded recovery of the
+   event-less `championDurations(round)` snapshot. Evented configuration is
+   audited read-only against chain state, while event-less observations live
+   in `cg_live_state_updates` rather than synthetic event rows. All of
    a block's writes — rows, domain writes and the processing watermark —
    commit in one database transaction
    ([ADR-0010](adr/0010-transactional-ingestion.md)), so readers never see a
@@ -88,7 +94,7 @@ flowchart LR
 | `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons (engines in `internal/srvmonitor` and `internal/notify/urlalarm`) |
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Thin operator CLI wiring (contract interaction, social tools, data ops) |
 | `internal/api` | HTTP stack: frozen v1 handlers, generated/injected `v2`, `httpx` router, `faq` proxy, shared middleware |
-| `internal/store` | pgx-native database layer: pool-owning `Store` + `cosmicgame`/`randomwalk` repos (ADR-0002) |
+| `internal/store` | pgx-native database layer: pool-owning `Store`, `cosmicgame`/`randomwalk` repos and collection-scoped shared `marketplace` reads (ADR-0002) |
 | `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry plus reusable adaptive `logscan` ranges |
 | `internal/ops` | Context-aware engines behind `opsctl`: archive, assets, CST scan, DB verification, API smoke testing and transaction backups |
 | `internal/model` | Domain types and API response structs (`cosmicgame`, `randomwalk`) |
@@ -140,10 +146,12 @@ Everything lives in one PostgreSQL database (default schema `public`):
 
 - **Layer-1 tables** (`block`, `address`, `transaction`, `evt_log`,
   `evt_topic`) store raw chain data with RLP payloads for replay/verification.
-- **CosmicGame tables** (`cg_*`) hold decoded game events and trigger-managed
-  aggregates.
-- **RandomWalk tables** (`rw_*`) hold mints, marketplace activity, and the
-  Elo-style ranking state.
+- **CosmicGame tables** (`cg_*`) hold decoded V1/V2/V3 events,
+  trigger-managed aggregates, normalized `cg_bid_reward` shares and the
+  event-less `cg_live_state_updates` audit.
+- **RandomWalk tables** (`rw_*`) hold mints, the shared multi-collection
+  marketplace activity used by both NFT APIs, and the Elo-style ranking
+  state.
 - **Archive tables** (`arch_*`) mirror pruned historical data recovered from
   geth freezer files.
 
@@ -160,3 +168,7 @@ CI.
   status class and `deprecated` — the v1-membership flag the sunset gate
   reads; see docs/operations.md) and `rwcg_http_request_duration_seconds`
   (labelled by route template).
+- `loganomaly` atomically publishes a `#TS=` heartbeat on every generation;
+  srvmonitor strips it, displays freshness and alarms when the feed exceeds
+  `ANOMALY_STALE_SECS`. A hardened systemd timer owns the five-minute
+  one-shot schedule.

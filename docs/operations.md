@@ -306,7 +306,7 @@ must read exactly zero.
 
 Repository-owned probes enforce that invariant:
 
-- bare `opsctl smoketest` runs all 97 safe v2 GET operations; use explicit
+- bare `opsctl smoketest` runs all 101 safe v2 GET operations; use explicit
   `--suite=v1` only for an operator-invoked compatibility regression, never
   as a scheduled uptime probe;
 - `opsctl smoketest --suite=operational` needs no database credentials and
@@ -406,6 +406,33 @@ series simply lack it.
   idempotent.
 - `GET /readyz` returns 503 whenever the database is unreachable — wire it
   into your load balancer health checks.
+
+### CosmicSignatureGame V3 rollout
+
+Migrations `00026_cosmicgame_v3.sql` and
+`00027_rw_marketplace_collection_indexes.sql` are additive/reversible: they
+add V3 claim/reward/configuration/live-state storage and concurrent
+collection-scoped marketplace indexes. Deploy in this order:
+
+1. Back up PostgreSQL, stop `cg-etl`, and apply migrations.
+2. Deploy the regenerated V3-aware `cg-etl` and API binaries together.
+3. Start `cg-etl`; its bounded startup recovery fills missing
+   `championDurations(round)` snapshots, while claim-time RPC failures remain
+   non-fatal and are retried on restart.
+4. Check startup logs for `contract parameter drift`. Evented `cg_adm_*`
+   history is authoritative; the drift audit no longer writes synthetic
+   chain events.
+5. Run `opsctl smoketest` (101 v2 GETs), then the explicit
+   `--suite=v1` compatibility sweep (145 requests).
+
+Migration `00026` intentionally preserves historical rows created by the old
+`0xcccc…cccc` synthetic parameter-sync transaction. Do not delete them during
+the binary rollout. After the drift-only ETL has run cleanly against a
+production clone, inventory the sentinel transaction/event/domain rows,
+verify no real event references them, take another backup, and perform a
+separately reviewed cleanup during an ETL maintenance window. The automatic
+goose migration must remain non-destructive because cleanup ordering depends
+on the deployed binary.
 
 ### Refreshing the production RLP replay corpus
 
