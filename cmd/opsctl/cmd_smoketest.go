@@ -52,43 +52,64 @@ func newSmoketestCmd() *cobra.Command {
 }
 
 func newSmoketestCmdWithDeps(deps smoketestDeps) *cobra.Command {
+	suite := string(smoketest.SuiteV2)
 	cmd := &cobra.Command{
 		Use:   "smoketest",
-		Short: "Hit every /api/cosmicgame/... endpoint and report failures",
-		Long: `Hits every /api/cosmicgame/... endpoint of the cosmicgame websrv and
-reports non-200 responses (and in-body error/status:0) as FAILED. A 400/500 or
-an "error" body usually means a broken SQL query in the handler.
+		Short: "Validate API surfaces and operational probes",
+		Long: `Validates the canonical v2 API by default. The v2 suite hits every
+documented GET operation, requires HTTP 200, validates each response against
+the embedded OpenAPI contract and rejects deprecated response headers.
+
+The frozen v1 regression remains available with --suite=v1, and --suite=both
+runs v2 followed by v1. The lightweight --suite=operational set checks health,
+readiness, version and stable v2 resources without opening PostgreSQL.
 
 Environment:
 
 	PGSQL_HOST (host:port), PGSQL_USERNAME, PGSQL_DATABASE, PGSQL_PASSWORD
-	           database used to fetch real URL parameter values
+	           database used to fetch real URL parameter values (not needed
+	           by --suite=operational)
 	HTTP_PORT  websrv port; API base defaults to http://127.0.0.1:$HTTP_PORT
 	API_BASE   optional; overrides the base URL`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSmoketestWithDeps(cmd, deps)
+			return runSmoketestWithDeps(cmd, deps, suite)
 		},
 	}
+	cmd.Flags().StringVar(
+		&suite,
+		"suite",
+		string(smoketest.SuiteV2),
+		"probe suite: v2, v1, both, or operational",
+	)
 	return cmd
 }
 
 func runSmoketest(cmd *cobra.Command) error {
-	return runSmoketestWithDeps(cmd, defaultSmoketestDeps())
+	return runSmoketestWithDeps(cmd, defaultSmoketestDeps(), string(smoketest.SuiteV2))
 }
 
-func runSmoketestWithDeps(cmd *cobra.Command, deps smoketestDeps) error {
-	db, err := connectSmoketestDBWithDeps(cmd.Context(), deps)
+func runSmoketestWithDeps(cmd *cobra.Command, deps smoketestDeps, suiteValue string) error {
+	suite, err := smoketest.ParseSuite(suiteValue)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
 
+	var source smoketest.ParameterSource
+	if suite.RequiresParameters() {
+		db, err := connectSmoketestDBWithDeps(cmd.Context(), deps)
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		source = deps.newSource(db)
+	}
 	_, err = deps.run(cmd.Context(), smoketest.Options{
-		Source:  deps.newSource(db),
+		Source:  source,
 		Client:  deps.client,
 		BaseURL: deps.apiBase(),
 		Output:  cmd.OutOrStdout(),
+		Suite:   suite,
 	})
 	return err
 }

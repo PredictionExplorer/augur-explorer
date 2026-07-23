@@ -29,6 +29,13 @@ make build
 ```
 
 Or run the full stack in containers: `docker compose --profile etl up`.
+The apiserver Compose service is healthy only after `/readyz` confirms its
+database. Run the D6-safe, no-credentials whole-stack probe with:
+
+```bash
+docker compose --profile smoke up --build --abort-on-container-exit \
+  --exit-code-from smoketest smoketest
+```
 
 ## Testing
 
@@ -228,7 +235,7 @@ sum by (route) (rate(rwcg_http_request_timeouts_total[15m])) > 0
 
 The frozen v1 API (everything under `/api/cosmicgame/` and
 `/api/randomwalk/` except the FAQ proxy) is deprecated in favor of
-`/api/v2`; the policy lives in `internal/api/routes.V1Deprecated` and a
+`/api/v2`; the policy lives in `internal/api/policy.V1Deprecated` and a
 drift test pins it to the `deprecated: true` flags in `docs/openapi.yaml`.
 Every deprecated response — including errors, 304 revalidations and 404s
 under those prefixes — carries:
@@ -251,7 +258,7 @@ curl -sI https://api.example/api/cosmicgame/rounds/list/0/10 \
 ### Measuring the sunset gate (v1 traffic)
 
 `rwcg_http_requests_total` carries a `deprecated` label derived from the
-same `routes.V1Deprecated` policy as the headers, so metric and header can
+same `policy.V1Deprecated` policy as the headers, so metric and header can
 never disagree. `deprecated="true"` covers every request under the
 deprecated prefixes — matched routes *and* 404s (`route="unmatched"`), so
 probing bots don't hide in unrouted paths. The exempt surfaces (health,
@@ -278,6 +285,23 @@ by its route label — record any such exclusion here with the route and the
 reason. There are currently **no** documented probes: the expression above
 must read exactly zero.
 
+Repository-owned probes enforce that invariant:
+
+- bare `opsctl smoketest` runs all 97 safe v2 GET operations; use explicit
+  `--suite=v1` only for an operator-invoked compatibility regression, never
+  as a scheduled uptime probe;
+- `opsctl smoketest --suite=operational` needs no database credentials and
+  checks `/healthz`, `/readyz`, `/version`, and stable DB-backed v2 reads;
+- srvmonitor rejects configured internal or public URLs under either
+  deprecated v1 prefix at startup. Use `/readyz` internally and a stable
+  resource such as `/api/v2/cosmicgame/rounds?limit=1` publicly.
+
+The full v2 suite intentionally fails on a contract-state 503 because that is
+user-visible dependency degradation. The operational uptime suite excludes
+`contracts/configuration`, `contracts/balances`, and `rounds/current*`: these
+correctly return 503 while their RPC-backed cache is unavailable and must not
+make the process/DB uptime probe flap.
+
 Dashboards written before the label existed keep their shape with
 `sum without (deprecated) (...)`; the label was added 2026-07-16 and old
 series simply lack it.
@@ -297,8 +321,9 @@ series simply lack it.
 
 ## Monitoring
 
-- `srvmonitor` — terminal dashboard checking RPC nodes, DB, web APIs, disk,
-  image server; optional WhatsApp/Android alerts (see `cmd/srvmonitor/README.md`).
+- `srvmonitor` — terminal dashboard checking RPC nodes, DB, D6-safe web API
+  paths, disk, image server; optional WhatsApp/Android alerts (see
+  `cmd/srvmonitor/README.md`).
 - `loganomaly` — scans the API access log for 5xx/panics, feeding srvmonitor.
   It understands slog JSON records (production), slog text lines and the
   legacy `[GIN]` lines still present in older capture files. Under systemd,
@@ -422,6 +447,8 @@ production samples.
 | Export/verify RLP archives and corpora | `opsctl archive export` / `corpus-export` / `verify` / `node-fill` |
 | Check NFT asset presence | `opsctl assets inventory`, `imggen-monitor` |
 | Regenerate thumbnails | `opsctl assets gen-thumbnails` |
-| API smoke test | `opsctl smoketest` |
+| Canonical v2 API smoke test | `opsctl smoketest` |
+| D6-safe uptime/Compose probe | `opsctl smoketest --suite=operational` |
+| Frozen v1 compatibility regression | `opsctl smoketest --suite=v1` (manual only; generates deprecated traffic) |
 | Contract admin (owner ops) | `cgctl --help` (bid, claim-prize, set-* commands) |
 | Social/notification tools | `rwctl --help` (tweet-mints, notify-bot, ...) |

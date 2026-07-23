@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 type testHTTPClientFunc func(*http.Request) (*http.Response, error)
@@ -159,6 +160,16 @@ func TestCheckEndpointTransportReadAndRequestErrors(t *testing.T) {
 			t.Fatalf("result = %#v", result)
 		}
 	})
+	t.Run("URL without scheme", func(t *testing.T) {
+		t.Parallel()
+		result := CheckEndpoint(context.Background(), testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
+			t.Fatal("client should not be called")
+			return nil, nil
+		}), "bad\x7furl", 10)
+		if !result.Failed || !strings.Contains(result.Reason, "request error") {
+			t.Fatalf("result = %#v", result)
+		}
+	})
 }
 
 func TestCheckEndpointPropagatesRequestContext(t *testing.T) {
@@ -193,10 +204,12 @@ func TestRunStableSummaryAndOutput(t *testing.T) {
 		})
 		var out bytes.Buffer
 		summary, err := Run(context.Background(), Options{
-			Source:  fakeParameterSource{params: Params{UserAddress: "0xUser", RoundNumber: "8"}},
-			Client:  client,
-			BaseURL: "https://api.example.test/",
-			Output:  &out,
+			Source:        fakeParameterSource{params: Params{UserAddress: "0xUser", RoundNumber: "8"}},
+			Client:        client,
+			BaseURL:       "https://api.example.test/",
+			Output:        &out,
+			Suite:         SuiteV1,
+			DisablePacing: true,
 		})
 		return summary, out.String(), requested, err
 	}
@@ -244,6 +257,7 @@ func TestRunAllSuccessful(t *testing.T) {
 	var out bytes.Buffer
 	summary, err := Run(context.Background(), Options{
 		Source: fakeParameterSource{}, Client: client, BaseURL: "https://api.example.test", Output: &out,
+		Suite: SuiteV1, DisablePacing: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -251,7 +265,7 @@ func TestRunAllSuccessful(t *testing.T) {
 	if summary.Total != 142 || summary.OK != 142 || len(summary.Failures) != 0 {
 		t.Fatalf("summary = %#v", summary)
 	}
-	if !strings.Contains(out.String(), "All endpoints returned 200 with no error body.") {
+	if !strings.Contains(out.String(), "All selected endpoints returned contract-valid HTTP 200 responses.") {
 		t.Fatalf("output missing success message")
 	}
 }
@@ -268,6 +282,7 @@ func TestRunCancellationStopsWithoutFailureSummary(t *testing.T) {
 	})
 	summary, err := Run(ctx, Options{
 		Source: fakeParameterSource{}, Client: client, BaseURL: "https://api.example.test",
+		Suite: SuiteV1, DisablePacing: true,
 	})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("summary=%#v error=%v", summary, err)
@@ -303,5 +318,123 @@ func TestRunValidationAndSourceErrors(t *testing.T) {
 				t.Fatalf("error = %v", err)
 			}
 		})
+	}
+}
+
+func TestRunOperationalSkipsParametersAndBothAggregatesSuites(t *testing.T) {
+	t.Parallel()
+	t.Run("operational skips source", func(t *testing.T) {
+		t.Parallel()
+		loadCalled := false
+		client := testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
+			return response(http.StatusServiceUnavailable, "unavailable"), nil
+		})
+		summary, err := Run(context.Background(), Options{
+			Source: fakeParameterSource{load: func(context.Context) { loadCalled = true }},
+			Client: client, BaseURL: "https://api.example", Suite: SuiteOperational,
+		})
+		var failures FailuresError
+		if !errors.As(err, &failures) || failures.Count != 6 {
+			t.Fatalf("summary/error = %#v / %v", summary, err)
+		}
+		if loadCalled {
+			t.Fatal("operational suite loaded database parameters")
+		}
+		if summary.Total != 6 || len(summary.Suites) != 1 ||
+			summary.Suites[0].Suite != SuiteOperational {
+			t.Fatalf("summary = %#v", summary)
+		}
+	})
+
+	t.Run("both", func(t *testing.T) {
+		t.Parallel()
+		client := testHTTPClientFunc(func(req *http.Request) (*http.Response, error) {
+			if strings.HasPrefix(req.URL.Path, "/api/v2/") {
+				return response(http.StatusServiceUnavailable, "v2 unavailable"), nil
+			}
+			return response(http.StatusOK, `[]`), nil
+		})
+		summary, err := Run(context.Background(), Options{
+			Source: fakeParameterSource{}, Client: client, BaseURL: "https://api.example",
+			Suite: SuiteBoth, DisablePacing: true,
+		})
+		var failures FailuresError
+		if !errors.As(err, &failures) || failures.Count != 97 {
+			t.Fatalf("summary/error = %#v / %v", summary, err)
+		}
+		if summary.Total != 239 || summary.OK != 142 || len(summary.Suites) != 2 ||
+			summary.Suites[0].Suite != SuiteV2 || summary.Suites[1].Suite != SuiteV1 {
+			t.Fatalf("summary = %#v", summary)
+		}
+	})
+}
+
+func TestRunDefaultIsV2(t *testing.T) {
+	t.Parallel()
+	requests := 0
+	client := testHTTPClientFunc(func(req *http.Request) (*http.Response, error) {
+		requests++
+		if !strings.HasPrefix(req.URL.Path, "/api/v2/") {
+			t.Errorf("default suite requested non-v2 path %q", req.URL.Path)
+		}
+		return response(http.StatusServiceUnavailable, "unavailable"), nil
+	})
+	summary, err := Run(context.Background(), Options{
+		Source: fakeParameterSource{}, Client: client, BaseURL: "https://api.example",
+		DisablePacing: true,
+	})
+	var failures FailuresError
+	if !errors.As(err, &failures) || failures.Count != 97 || requests != 97 ||
+		summary.Total != 97 || summary.Suites[0].Suite != SuiteV2 {
+		t.Fatalf("requests/summary/error = %d / %#v / %v", requests, summary, err)
+	}
+}
+
+func TestRunRejectsInvalidSuiteAndCancellationAfterParameterLoad(t *testing.T) {
+	t.Parallel()
+	client := testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
+		t.Fatal("client should not be called")
+		return nil, nil
+	})
+	if _, err := Run(context.Background(), Options{
+		Client: client, BaseURL: "https://api.example", Suite: Suite("invalid"),
+	}); err == nil || !strings.Contains(err.Error(), "suite is invalid") {
+		t.Fatalf("invalid suite error = %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	_, err := Run(ctx, Options{
+		Source: fakeParameterSource{load: func(context.Context) { cancel() }},
+		Client: client, BaseURL: "https://api.example", Suite: SuiteV1,
+		DisablePacing: true,
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("post-parameter cancellation error = %v", err)
+	}
+}
+
+func TestRunCancellationInterruptsProbePacing(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(context.Background())
+	first := make(chan struct{})
+	client := testHTTPClientFunc(func(*http.Request) (*http.Response, error) {
+		select {
+		case first <- struct{}{}:
+		default:
+		}
+		return response(http.StatusOK, `[]`), nil
+	})
+	done := make(chan error, 1)
+	go func() {
+		_, err := Run(ctx, Options{
+			Source: fakeParameterSource{}, Client: client, BaseURL: "https://api.example",
+			Suite: SuiteV1, ProbeInterval: time.Hour,
+		})
+		done <- err
+	}()
+	<-first
+	cancel()
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("pacing cancellation error = %v", err)
 	}
 }

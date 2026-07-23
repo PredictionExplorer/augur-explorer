@@ -37,6 +37,25 @@ PostgreSQL — see the package's test suite.
 | `MOBILE_NOTIF` (`yes`/`true`/`1`) | Android alerts via termux-notification (see `MOBILE_NOTIFICATIONS.md`) |
 | `TMPDIR` | Log and anomaly-file directory (default `/tmp`) |
 
+Web API probes are part of the v1 sunset measurement. Configuration rejects
+deprecated `/api/cosmicgame/*` and `/api/randomwalk/*` probe paths so a
+monitor cannot silently keep `deprecated="true"` traffic alive. Use
+readiness for the internal process/DB path and a stable DB-backed v2 resource
+for the public TLS/proxy path:
+
+```sh
+SRV1_WEB_API_NAME=cosmic-api
+SRV1_WEB_API_HOST=127.0.0.1
+SRV1_WEB_API_PORT=8080
+SRV1_WEB_API_URI=/readyz
+SRV1_WEB_API_PUBLIC_URL=https://api.example/api/v2/cosmicgame/rounds?limit=1
+```
+
+Do not use contract-state resources such as
+`/api/v2/cosmicgame/rounds/current` as uptime probes: they deliberately
+return 503 while the RPC-backed cache is unavailable. `opsctl smoketest`
+checks those resources as part of the full v2 degradation suite.
+
 ## Alerting
 
 Monitor failures flow into a central manager: they are logged, painted on

@@ -50,6 +50,7 @@ func TestSmoketestCommandSurface(t *testing.T) {
 	if err := cmd.Args(cmd, []string{"extra"}); err == nil {
 		t.Fatal("smoketest accepted a positional argument")
 	}
+	assertFlagDefault(t, cmd, "suite", "v2")
 }
 
 func TestAssetRunnersRejectInvalidSchemaBeforeExternalSetup(t *testing.T) {

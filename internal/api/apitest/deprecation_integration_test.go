@@ -15,7 +15,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/policy"
 )
 
 // wantV1Deprecation asserts the exact deprecation header triple of a
@@ -26,7 +26,7 @@ func wantV1Deprecation(t *testing.T, header http.Header, context string) {
 	if got, want := header.Get("Deprecation"), "@1784160000"; got != want {
 		t.Errorf("%s: Deprecation = %q, want %q", context, got, want)
 	}
-	wantLink := `<` + routes.V1MigrationGuideURL + `>; rel="deprecation"; type="text/markdown"`
+	wantLink := `<` + policy.V1MigrationGuideURL + `>; rel="deprecation"; type="text/markdown"`
 	if got := header.Get("Link"); got != wantLink {
 		t.Errorf("%s: Link = %q, want %q", context, got, wantLink)
 	}

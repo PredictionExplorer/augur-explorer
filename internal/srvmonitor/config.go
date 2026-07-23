@@ -2,8 +2,11 @@ package srvmonitor
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/policy"
 )
 
 // Intervals bundles every polling period and in-check wait the monitors use.
@@ -283,18 +286,54 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 
 // Validate checks if required configuration is present.
 func (c *Config) Validate() error {
-	var missing []string
+	var problems []string
 
 	if len(c.RPCNodes) == 0 {
-		missing = append(missing, "at least one RPC node (RPC0_NAME, RPC0_URL)")
+		problems = append(problems, "at least one RPC node (RPC0_NAME, RPC0_URL)")
 	}
 
 	if len(c.Layer1DBs) == 0 {
-		missing = append(missing, "at least one Layer1 database")
+		problems = append(problems, "at least one Layer1 database")
 	}
 
-	if len(missing) > 0 {
-		return fmt.Errorf("missing required configuration: %s", strings.Join(missing, ", "))
+	for _, api := range c.WebAPIs {
+		title := api.Title
+		if title == "" {
+			title = api.Host
+		}
+		internalURI := api.URI
+		if internalURI == "" {
+			internalURI = "/"
+		}
+		parsedInternal, err := url.ParseRequestURI(internalURI)
+		if err != nil || !strings.HasPrefix(parsedInternal.Path, "/") {
+			problems = append(problems, fmt.Sprintf("web API %q has an invalid internal URI", title))
+		} else if policy.V1Deprecated(parsedInternal.Path) {
+			problems = append(problems, fmt.Sprintf(
+				"web API %q internal URI %q is deprecated v1; use /readyz or /api/v2",
+				title,
+				parsedInternal.Path,
+			))
+		}
+
+		if api.PublicURL == "" {
+			continue
+		}
+		parsedPublic, err := url.ParseRequestURI(api.PublicURL)
+		if err != nil || parsedPublic.Host == "" ||
+			(parsedPublic.Scheme != "http" && parsedPublic.Scheme != "https") {
+			problems = append(problems, fmt.Sprintf("web API %q has an invalid public URL", title))
+		} else if policy.V1Deprecated(parsedPublic.Path) {
+			problems = append(problems, fmt.Sprintf(
+				"web API %q public path %q is deprecated v1; use /api/v2",
+				title,
+				parsedPublic.Path,
+			))
+		}
+	}
+
+	if len(problems) > 0 {
+		return fmt.Errorf("invalid configuration: %s", strings.Join(problems, ", "))
 	}
 
 	return nil

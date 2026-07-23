@@ -11,8 +11,8 @@ import (
 )
 
 // cliOnlyVars are environment variables documented in .env.example that are
-// read by operator CLI tools with their own flag/env handling rather than a
-// service configuration struct. Each entry names its reader.
+// read outside the tag-driven service structs: operator CLI wiring and
+// srvmonitor's indexed-family loader. Each entry names its reader.
 var cliOnlyVars = map[string]string{
 	"PKEY_HEX":                         "cmd/cgctl, cmd/rwctl (env.go)",
 	"CGAME_ADDR":                       "cmd/cgctl (env.go)",
@@ -24,6 +24,11 @@ var cliOnlyVars = map[string]string{
 	"TIME_BEFORE_PRIZE":                "cmd/cgctl (cmd_autobid.go)",
 	"CST_BID_ANYWAY":                   "cmd/cgctl (cmd_autobid.go)",
 	"AT_STARTUP_BID_UP_TO_PRICE_LEVEL": "cmd/cgctl (cmd_autobid.go)",
+	"SRV1_WEB_API_NAME":                "internal/srvmonitor (config.go)",
+	"SRV1_WEB_API_HOST":                "internal/srvmonitor (config.go)",
+	"SRV1_WEB_API_PORT":                "internal/srvmonitor (config.go)",
+	"SRV1_WEB_API_URI":                 "internal/srvmonitor (config.go)",
+	"SRV1_WEB_API_PUBLIC_URL":          "internal/srvmonitor (config.go)",
 }
 
 // envExampleEntry is one (possibly commented) VAR=value line.
@@ -123,7 +128,7 @@ func TestCLIOnlyVarsAreReferencedInCode(t *testing.T) {
 	root := filepath.Join(filepath.Dir(thisFile), "..", "..")
 
 	var sources strings.Builder
-	for _, dir := range []string{"cmd/cgctl", "cmd/rwctl", "cmd/opsctl"} {
+	for _, dir := range []string{"cmd/cgctl", "cmd/rwctl", "cmd/opsctl", "internal/srvmonitor"} {
 		files, err := filepath.Glob(filepath.Join(root, dir, "*.go"))
 		if err != nil {
 			t.Fatalf("glob %s: %v", dir, err)
@@ -136,9 +141,12 @@ func TestCLIOnlyVarsAreReferencedInCode(t *testing.T) {
 			sources.Write(b)
 		}
 	}
+	indexedDigits := regexp.MustCompile(`[0-9]+`)
 	for name, reader := range cliOnlyVars {
-		if !strings.Contains(sources.String(), `"`+name+`"`) {
-			t.Errorf("cliOnlyVars entry %s claims reader %q but no cmd/ source references it", name, reader)
+		indexedName := indexedDigits.ReplaceAllString(name, "%d")
+		if !strings.Contains(sources.String(), `"`+name+`"`) &&
+			!strings.Contains(sources.String(), `"`+indexedName+`"`) {
+			t.Errorf("cliOnlyVars entry %s claims reader %q but no configured source references it", name, reader)
 		}
 	}
 }

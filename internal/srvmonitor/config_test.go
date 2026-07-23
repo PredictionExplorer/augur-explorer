@@ -65,8 +65,8 @@ func TestLoadFromEnvFull(t *testing.T) {
 		"SRV1_WEB_API_NAME":       "api1",
 		"SRV1_WEB_API_HOST":       "10.0.0.5",
 		"SRV1_WEB_API_PORT":       "8090",
-		"SRV1_WEB_API_URI":        "/api/time/current",
-		"SRV1_WEB_API_PUBLIC_URL": "https://a1.example/api",
+		"SRV1_WEB_API_URI":        "/readyz",
+		"SRV1_WEB_API_PUBLIC_URL": "https://a1.example/api/v2/cosmicgame/rounds?limit=1",
 
 		"SSH_CMD_DF_SRV1_NAME":    "disk1",
 		"SSH_CMD_DF_SRV1_USER":    "ops",
@@ -113,7 +113,8 @@ func TestLoadFromEnvFull(t *testing.T) {
 	if len(cfg.ApplicationDBs) != 1 || cfg.ApplicationDBs[0].Name != "cg app" {
 		t.Fatalf("ApplicationDBs = %+v", cfg.ApplicationDBs)
 	}
-	if len(cfg.WebAPIs) != 1 || cfg.WebAPIs[0].PublicURL != "https://a1.example/api" {
+	if len(cfg.WebAPIs) != 1 ||
+		cfg.WebAPIs[0].PublicURL != "https://a1.example/api/v2/cosmicgame/rounds?limit=1" {
 		t.Fatalf("WebAPIs = %+v", cfg.WebAPIs)
 	}
 	if len(cfg.DiskMonitors) != 1 || cfg.DiskMonitors[0].DeviceList != "/dev/sda1" {
@@ -184,6 +185,50 @@ func TestLoadFromEnvValidation(t *testing.T) {
 		_, err := LoadFromEnv(envMap(map[string]string{}))
 		if err == nil || !strings.Contains(err.Error(), "RPC node") || !strings.Contains(err.Error(), "Layer1") {
 			t.Fatalf("err = %v", err)
+		}
+	})
+
+	t.Run("deprecated and malformed web probes aggregate", func(t *testing.T) {
+		t.Parallel()
+		env := minimalEnv()
+		// #nosec G101 -- sentinel credential proves URL errors redact values.
+		maps.Copy(env, map[string]string{
+			"SRV1_WEB_API_NAME":       "legacy internal",
+			"SRV1_WEB_API_HOST":       "api.internal",
+			"SRV1_WEB_API_URI":        "/api/cosmicgame/statistics/dashboard",
+			"SRV1_WEB_API_PUBLIC_URL": "https://api.example/api/randomwalk/statistics",
+			"SRV2_WEB_API_NAME":       "malformed",
+			"SRV2_WEB_API_HOST":       "api.internal",
+			"SRV2_WEB_API_URI":        "not-an-absolute-path",
+			"SRV2_WEB_API_PUBLIC_URL": "ftp://user:password-secret@api.example/healthz",
+		})
+		_, err := LoadFromEnv(envMap(env))
+		if err == nil {
+			t.Fatal("unsafe web probes unexpectedly succeeded")
+		}
+		for _, want := range []string{
+			"legacy internal", "deprecated v1", "malformed",
+			"invalid internal URI", "invalid public URL",
+		} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error %q missing %q", err, want)
+			}
+		}
+		if strings.Contains(err.Error(), "password-secret") {
+			t.Fatalf("configuration error leaked public URL credentials: %v", err)
+		}
+	})
+
+	t.Run("untitled root probe without public URL is valid", func(t *testing.T) {
+		t.Parallel()
+		cfg := Config{
+			RPCNodes:  []RPCConfig{{Name: "node", URL: "http://rpc"}},
+			Layer1DBs: []DatabaseConfig{{Name: "db", Host: "db"}},
+			WebAPIs:   []WebAPIConfig{{Host: "api.internal"}},
+			Intervals: DefaultIntervals(),
+		}
+		if err := cfg.Validate(); err != nil {
+			t.Fatalf("safe root probe error = %v", err)
 		}
 	})
 }

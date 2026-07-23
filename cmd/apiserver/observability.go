@@ -15,7 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
-	"github.com/PredictionExplorer/augur-explorer/internal/api/routes"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/policy"
 )
 
 var (
@@ -53,7 +53,7 @@ func countRequestTimeout(r *http.Request) {
 // metricsMiddleware records Prometheus counters/latency for every request.
 // The route label uses the matched route pattern (not the raw URL) to keep
 // metric cardinality bounded. The deprecated label mirrors the RFC 9745
-// header policy exactly — both derive from routes.V1Deprecated on the
+// header policy exactly — both derive from policy.V1Deprecated on the
 // request path — so the D6 sunset gate ("30 consecutive zero-traffic days
 // on v1") is measurable straight from rwcg_http_requests_total, including
 // unmatched 404s under the deprecated prefixes.
@@ -62,7 +62,7 @@ func metricsMiddleware() httpx.Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			rw := httpx.WrapResponseWriter(w)
-			deprecated := strconv.FormatBool(routes.V1Deprecated(r.URL.Path))
+			deprecated := strconv.FormatBool(policy.V1Deprecated(r.URL.Path))
 			next.ServeHTTP(rw, r)
 
 			route := httpx.PatternPath(r)

@@ -21,6 +21,7 @@ type Params struct {
 	BidRound           string
 	BidPosition        string
 	TokenID            string
+	RandomWalkTokenID  string
 	TokenName          string
 	ETHDonationID      string
 	NFTDonationID      string
@@ -62,6 +63,7 @@ func DefaultParams() Params {
 		BidRound:           "0",
 		BidPosition:        "1",
 		TokenID:            "0",
+		RandomWalkTokenID:  "0",
 		TokenName:          "a",
 		ETHDonationID:      "1",
 		NFTDonationID:      "1",
@@ -93,6 +95,7 @@ func WithDefaults(params Params) Params {
 	fill(&params.BidRound, params.RoundNumber)
 	fill(&params.BidPosition, defaults.BidPosition)
 	fill(&params.TokenID, defaults.TokenID)
+	fill(&params.RandomWalkTokenID, defaults.RandomWalkTokenID)
 	fill(&params.TokenName, defaults.TokenName)
 	fill(&params.ETHDonationID, defaults.ETHDonationID)
 	fill(&params.NFTDonationID, defaults.NFTDonationID)
@@ -164,6 +167,10 @@ func loadParameters(queryValue func(query, fallback string) (string, error)) (Pa
 	}
 	if err := load(&params.TokenID,
 		"SELECT token_id FROM cg_mint_event ORDER BY token_id DESC LIMIT 1", params.TokenID); err != nil {
+		return Params{}, err
+	}
+	if err := load(&params.RandomWalkTokenID,
+		"SELECT token_id FROM rw_mint_evt ORDER BY token_id DESC LIMIT 1", params.RandomWalkTokenID); err != nil {
 		return Params{}, err
 	}
 	if err := load(&params.TokenName,

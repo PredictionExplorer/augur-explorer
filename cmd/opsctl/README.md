@@ -34,7 +34,7 @@ scanners share the adaptive range/retry implementation in
 | `opsctl assets inventory` | `rwcg/tools/asset_inventory.go` | Inventory Cosmic Signature assets on disk vs DB seeds |
 | `opsctl assets gen-thumbnails` | `rwcg/tools/gen_thumbnails.go` | Generate WebP thumbnails for per-seed packages |
 | `opsctl assets verify-token-images` | `cmd/notibot/scripts/verify-token-imgs.go` | Check RandomWalk token image URLs for HTTP 403 |
-| `opsctl smoketest` | `rwcg/tools/api_smoketest.go` | Hit every `/api/cosmicgame/...` endpoint and report failures |
+| `opsctl smoketest` | `rwcg/tools/api_smoketest.go` | Validate the canonical v2 API, frozen v1 compatibility surface, or D6-safe operational probes |
 | `opsctl scan cst-auction-len` | `rwcg/tools/scan_cst_auclen_chg_div.go` | Scan chain for `CstDutchAuctionDurationChangeDivisorChanged` events |
 
 `dev-scripts/check_cs_images.sh` (formerly `rwcg/tools/check_cs_images.sh`)
@@ -47,7 +47,7 @@ frontend web server (via `psql` + `curl`), complementing the on-disk checks of
 | Variable | Used by | Meaning |
 |---|---|---|
 | `RPC_URL` | `archive node-fill`, `scan cst-auction-len` | Ethereum/Arbitrum JSON-RPC endpoint |
-| `PGSQL_HOST` (`host[:port]`), `PGSQL_USERNAME`, `PGSQL_DATABASE`, `PGSQL_PASSWORD` | `tx-collector verify`, `assets inventory`, `assets gen-thumbnails`, `assets verify-token-images`, `smoketest` | PostgreSQL connection (used when no `--db` flag is given) |
+| `PGSQL_HOST` (`host[:port]`), `PGSQL_USERNAME`, `PGSQL_DATABASE`, `PGSQL_PASSWORD` | `tx-collector verify`, `assets inventory`, `assets gen-thumbnails`, `assets verify-token-images`, `smoketest` | PostgreSQL connection (used when no `--db` flag is given; `smoketest --suite=operational` does not need it) |
 | `NFT_ASSETS_ROOT` | `assets gen-thumbnails` | Asset root; default base dir is `$NFT_ASSETS_ROOT/new/cosmicsignature` |
 | `API_BASE` | `smoketest` | Overrides the API base URL |
 | `HTTP_PORT` | `smoketest` | websrv port; base defaults to `http://127.0.0.1:$HTTP_PORT` (9090 when unset) |
@@ -244,17 +244,34 @@ connection comes from the `PGSQL_*` environment variables.
 
 ## smoketest
 
-Hits every `/api/cosmicgame/...` endpoint of the cosmicgame websrv and reports
-non-200 responses (and in-body `error` / `"status":0`) as FAILED. Real URL
-parameters (addresses, ids, rounds, token ids, timestamps) are fetched from
-the database so handlers are exercised with live values. Exits non-zero when
-any endpoint fails. No flags; configured entirely via `API_BASE`, `HTTP_PORT`
-and `PGSQL_*` (see the table above).
+The default `v2` suite discovers every GET operation from the embedded
+canonical OpenAPI document (currently 97), binds production-shaped path/query
+values from PostgreSQL, requires HTTP 200, validates each response against the
+operation schema, and fails if a v2 response carries `Deprecation` or `Sunset`.
+Requests are paced at 50 rps so the test cannot trip the API's own global
+limiter.
+
+| `--suite` | Database | Purpose |
+|---|---|---|
+| `v2` (default) | required | Full canonical v2 read-surface and dependency-degradation check |
+| `v1` | required | Frozen 142-request v1 compatibility regression |
+| `both` | required | v2 followed by v1, with per-suite and aggregate failures |
+| `operational` | not used | `/healthz`, `/readyz`, `/version`, and three stable DB-backed v2 reads for uptime/Compose |
+
+The operational set deliberately excludes contract-state cache resources:
+those return a correct 503 when RPC-backed state is unavailable and the full
+v2 suite must report that degradation. The v1 suite retains its legacy
+top-level `error` / numeric `"status":0` detection until v1 is retired.
 
 ```sh
 source ~/configs/cg-prod.env
 opsctl smoketest
-API_BASE=http://127.0.0.1:9090 opsctl smoketest
+opsctl smoketest --suite=both
+API_BASE=http://127.0.0.1:9090 opsctl smoketest --suite=operational
+
+# Whole-stack, D6-safe local smoke:
+docker compose --profile smoke up --build --abort-on-container-exit \
+  --exit-code-from smoketest smoketest
 ```
 
 ## scan

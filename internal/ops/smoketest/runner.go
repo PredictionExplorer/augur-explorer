@@ -10,6 +10,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/getkin/kin-openapi/routers"
 )
 
 const (
@@ -19,6 +23,9 @@ const (
 
 	// DefaultMaxBodyBytes bounds each response body read to one MiB.
 	DefaultMaxBodyBytes int64 = 1 << 20
+	// DefaultProbeInterval respects the public API's sustained 50 rps
+	// limiter, preventing a local smoke run from creating its own 429s.
+	DefaultProbeInterval = 20 * time.Millisecond
 )
 
 // HTTPClient is the request surface required by the smoke-test engine.
@@ -35,16 +42,27 @@ type EndpointResult struct {
 
 // Failure records one failed endpoint in stable execution order.
 type Failure struct {
-	StatusCode int
-	Endpoint   string
-	Reason     string
+	Suite       Suite
+	OperationID string
+	StatusCode  int
+	Endpoint    string
+	Reason      string
 }
 
-// Summary is the deterministic result of a smoke-test run.
+// SuiteSummary is the deterministic result for one selected API surface.
+type SuiteSummary struct {
+	Suite    Suite
+	Total    int
+	OK       int
+	Failures []Failure
+}
+
+// Summary is the aggregate deterministic result of a smoke-test run.
 type Summary struct {
 	Total    int
 	OK       int
 	Failures []Failure
+	Suites   []SuiteSummary
 }
 
 // FailuresError reports that one or more endpoints failed.
@@ -58,22 +76,22 @@ func (e FailuresError) Error() string {
 
 // Options configures Run.
 type Options struct {
-	Source       ParameterSource
-	Client       HTTPClient
-	BaseURL      string
-	Output       io.Writer
-	MaxBodyBytes int64
+	Source        ParameterSource
+	Client        HTTPClient
+	BaseURL       string
+	Output        io.Writer
+	MaxBodyBytes  int64
+	Suite         Suite
+	ProbeInterval time.Duration
+	DisablePacing bool
 }
 
-// Run loads parameters, checks every endpoint in stable order, and writes the
-// legacy colored opsctl report.
+// Run loads parameters when needed, checks the selected suites in stable
+// order, and writes a deterministic opsctl report.
 func Run(ctx context.Context, opts Options) (Summary, error) {
 	var summary Summary
 	if err := ctx.Err(); err != nil {
 		return summary, err
-	}
-	if opts.Source == nil {
-		return summary, errors.New("parameter source is nil")
 	}
 	if opts.Client == nil {
 		return summary, errors.New("HTTP client is nil")
@@ -82,6 +100,27 @@ func Run(ctx context.Context, opts Options) (Summary, error) {
 	if baseURL == "" {
 		return summary, errors.New("API base URL is empty")
 	}
+	suite := opts.Suite
+	if suite == "" {
+		suite = SuiteV2
+	}
+	members, err := suite.members()
+	if err != nil {
+		return summary, err
+	}
+
+	params := DefaultParams()
+	if suite.RequiresParameters() {
+		if opts.Source == nil {
+			return summary, errors.New("parameter source is nil")
+		}
+		params, err = opts.Source.Parameters(ctx)
+		if err != nil {
+			return summary, fmt.Errorf("load smoketest parameters: %w", err)
+		}
+		params = WithDefaults(params)
+	}
+
 	out := opts.Output
 	if out == nil {
 		out = io.Discard
@@ -90,40 +129,65 @@ func Run(ctx context.Context, opts Options) (Summary, error) {
 	if maxBodyBytes <= 0 {
 		maxBodyBytes = DefaultMaxBodyBytes
 	}
-
-	params, err := opts.Source.Parameters(ctx)
-	if err != nil {
-		return summary, fmt.Errorf("load smoketest parameters: %w", err)
+	interval := opts.ProbeInterval
+	if !opts.DisablePacing && interval <= 0 {
+		interval = DefaultProbeInterval
 	}
-	params = WithDefaults(params)
-	endpoints := BuildEndpoints(params)
-	summary.Total = len(endpoints)
+	if opts.DisablePacing {
+		interval = 0
+	}
 
 	fmt.Fprintf(out, "API base : %s\n", baseURL)
-	fmt.Fprintf(out, "Params   : userAddr=%s round=%s bidEvtlog=%s tokenId=%s nftDonId=%s erc20DonId=%s cstAction=%s rwalkAction=%s deposit=%s\n\n",
-		params.UserAddress, params.RoundNumber, params.BidEventLogID, params.TokenID, params.NFTDonationID,
-		params.ERC20DonationID, params.CSTActionID, params.RandomWalkActionID, params.DepositID)
+	fmt.Fprintf(out, "Suite    : %s\n", suite)
+	if suite.RequiresParameters() {
+		fmt.Fprintf(out, "Params   : userAddr=%s round=%s bidEvtlog=%s tokenId=%s rwalkTokenId=%s nftDonId=%s erc20DonId=%s cstAction=%s rwalkAction=%s deposit=%s\n",
+			params.UserAddress, params.RoundNumber, params.BidEventLogID, params.TokenID, params.RandomWalkTokenID,
+			params.NFTDonationID, params.ERC20DonationID, params.CSTActionID, params.RandomWalkActionID, params.DepositID)
+	}
 
-	for _, endpoint := range endpoints {
-		if err := ctx.Err(); err != nil {
-			return summary, err
+	requestsStarted := 0
+	for _, member := range members {
+		probes, buildErr := buildProbes(member, params)
+		if buildErr != nil {
+			return summary, fmt.Errorf("build %s smoke-test probes: %w", member, buildErr)
 		}
-		result := CheckEndpoint(ctx, opts.Client, baseURL+endpoint, maxBodyBytes)
-		if err := ctx.Err(); err != nil {
-			return summary, err
+		fmt.Fprintf(out, "\n==================== %s ====================\n", strings.ToUpper(string(member)))
+		suiteSummary := SuiteSummary{Suite: member, Total: len(probes)}
+		for _, probe := range probes {
+			if err := ctx.Err(); err != nil {
+				return summary, err
+			}
+			if requestsStarted > 0 && interval > 0 {
+				if err := waitProbeInterval(ctx, interval); err != nil {
+					return summary, err
+				}
+			}
+			requestsStarted++
+
+			result := CheckProbe(ctx, opts.Client, baseURL, probe, maxBodyBytes)
+			if err := ctx.Err(); err != nil {
+				return summary, err
+			}
+			if result.Failed {
+				fmt.Fprintf(out, "%sFAILED%s [%s] %s  %s\n",
+					colorRed, colorReset, statusString(result.StatusCode), probe.Endpoint, result.Reason)
+				failure := Failure{
+					Suite:       member,
+					OperationID: probe.OperationID,
+					StatusCode:  result.StatusCode,
+					Endpoint:    probe.Endpoint,
+					Reason:      result.Reason,
+				}
+				suiteSummary.Failures = append(suiteSummary.Failures, failure)
+				summary.Failures = append(summary.Failures, failure)
+				continue
+			}
+			suiteSummary.OK++
+			fmt.Fprintf(out, "%sOK%s     [200] %s\n", colorGreen, colorReset, probe.Endpoint)
 		}
-		if result.Failed {
-			fmt.Fprintf(out, "%sFAILED%s [%s] %s  %s\n",
-				colorRed, colorReset, statusString(result.StatusCode), endpoint, result.Reason)
-			summary.Failures = append(summary.Failures, Failure{
-				StatusCode: result.StatusCode,
-				Endpoint:   endpoint,
-				Reason:     result.Reason,
-			})
-			continue
-		}
-		summary.OK++
-		fmt.Fprintf(out, "%sOK%s     [200] %s\n", colorGreen, colorReset, endpoint)
+		summary.Total += suiteSummary.Total
+		summary.OK += suiteSummary.OK
+		summary.Suites = append(summary.Suites, suiteSummary)
 	}
 
 	fmt.Fprintln(out)
@@ -133,24 +197,77 @@ func Run(ctx context.Context, opts Options) (Summary, error) {
 	if len(summary.Failures) > 0 {
 		fmt.Fprintf(out, "\n%sFailures:%s\n", colorRed, colorReset)
 		for _, failure := range summary.Failures {
-			fmt.Fprintf(out, "  %s[%s] %s  %s%s\n", colorRed, statusString(failure.StatusCode),
-				failure.Endpoint, failure.Reason, colorReset)
+			operation := ""
+			if failure.OperationID != "" {
+				operation = " (" + failure.OperationID + ")"
+			}
+			fmt.Fprintf(out, "  %s[%s] %s %s%s  %s%s\n",
+				colorRed, statusString(failure.StatusCode), failure.Suite, failure.Endpoint,
+				operation, failure.Reason, colorReset)
 		}
 		return summary, FailuresError{Count: len(summary.Failures)}
 	}
-	fmt.Fprintf(out, "%sAll endpoints returned 200 with no error body.%s\n", colorGreen, colorReset)
+	fmt.Fprintf(out, "%sAll selected endpoints returned contract-valid HTTP 200 responses.%s\n", colorGreen, colorReset)
 	return summary, nil
 }
 
-// CheckEndpoint performs one context-bound GET with a bounded body read.
+func waitProbeInterval(ctx context.Context, interval time.Duration) error {
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
+// CheckEndpoint retains the frozen v1 one-endpoint API used by existing
+// callers and tests.
 func CheckEndpoint(ctx context.Context, client HTTPClient, fullURL string, maxBodyBytes int64) EndpointResult {
+	baseURL, endpoint := splitFullURL(fullURL)
+	return CheckProbe(ctx, client, baseURL, Probe{
+		Suite:    SuiteV1,
+		Template: endpoint,
+		Endpoint: endpoint,
+	}, maxBodyBytes)
+}
+
+func splitFullURL(fullURL string) (string, string) {
+	index := strings.Index(fullURL, "://")
+	if index < 0 {
+		return "", fullURL
+	}
+	pathStart := strings.Index(fullURL[index+3:], "/")
+	if pathStart < 0 {
+		return fullURL, ""
+	}
+	pathStart += index + 3
+	return fullURL[:pathStart], fullURL[pathStart:]
+}
+
+// CheckProbe performs one context-bound GET with a bounded body read and the
+// suite-specific response contract.
+func CheckProbe(
+	ctx context.Context,
+	client HTTPClient,
+	baseURL string,
+	probe Probe,
+	maxBodyBytes int64,
+) EndpointResult {
 	if maxBodyBytes <= 0 {
 		maxBodyBytes = DefaultMaxBodyBytes
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
+	req, err := http.NewRequestWithContext(ctx, probe.method(), baseURL+probe.Endpoint, nil)
 	if err != nil {
 		return EndpointResult{Failed: true, Reason: "request error: " + err.Error()}
 	}
+	if probe.operation != nil {
+		if err := validateV2Request(ctx, req, probe); err != nil {
+			return EndpointResult{Failed: true, Reason: "request violates OpenAPI v2: " + err.Error()}
+		}
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return EndpointResult{Failed: true, Reason: "request error: " + err.Error()}
@@ -171,9 +288,23 @@ func CheckEndpoint(ctx context.Context, client HTTPClient, fullURL string, maxBo
 			Reason:     "body read error: " + readErr.Error(),
 		}
 	}
-	oversized := int64(len(body)) > maxBodyBytes
-	if oversized {
-		body = body[:maxBodyBytes]
+	if int64(len(body)) > maxBodyBytes {
+		return EndpointResult{
+			StatusCode: resp.StatusCode,
+			Failed:     true,
+			Reason:     fmt.Sprintf("response body exceeds %d bytes", maxBodyBytes),
+		}
+	}
+	if probe.Suite != SuiteV1 {
+		for _, header := range []string{"Deprecation", "Sunset"} {
+			if value := resp.Header.Get(header); value != "" {
+				return EndpointResult{
+					StatusCode: resp.StatusCode,
+					Failed:     true,
+					Reason:     fmt.Sprintf("D6-unsafe %s header: %s", header, value),
+				}
+			}
+		}
 	}
 	if resp.StatusCode != http.StatusOK {
 		return EndpointResult{
@@ -182,21 +313,70 @@ func CheckEndpoint(ctx context.Context, client HTTPClient, fullURL string, maxBo
 			Reason:     "non-200; body: " + snippet(body),
 		}
 	}
-	if oversized {
+	if probe.Suite == SuiteV1 {
+		if reason, ok := BodyError(body); ok {
+			return EndpointResult{
+				StatusCode: resp.StatusCode,
+				Failed:     true,
+				Reason:     "200 but error body: " + reason,
+			}
+		}
+		return EndpointResult{StatusCode: resp.StatusCode}
+	}
+	if strings.HasPrefix(resp.Header.Get("Content-Type"), "application/problem+json") {
 		return EndpointResult{
 			StatusCode: resp.StatusCode,
 			Failed:     true,
-			Reason:     fmt.Sprintf("response body exceeds %d bytes", maxBodyBytes),
+			Reason:     "200 carried application/problem+json: " + snippet(body),
 		}
 	}
-	if reason, ok := BodyError(body); ok {
-		return EndpointResult{
-			StatusCode: resp.StatusCode,
-			Failed:     true,
-			Reason:     "200 but error body: " + reason,
+	if probe.operation != nil {
+		if err := validateV2Response(ctx, req, resp, body, probe); err != nil {
+			return EndpointResult{
+				StatusCode: resp.StatusCode,
+				Failed:     true,
+				Reason:     "response violates OpenAPI v2: " + err.Error(),
+			}
 		}
 	}
 	return EndpointResult{StatusCode: resp.StatusCode}
+}
+
+func v2ValidationInput(req *http.Request, probe Probe) *openapi3filter.RequestValidationInput {
+	return &openapi3filter.RequestValidationInput{
+		Request:    req,
+		PathParams: probe.PathParams,
+		Route: &routers.Route{
+			Spec:      probe.spec,
+			Path:      probe.Template,
+			PathItem:  probe.pathItem,
+			Method:    http.MethodGet,
+			Operation: probe.operation,
+		},
+		Options: &openapi3filter.Options{
+			AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
+		},
+	}
+}
+
+func validateV2Request(ctx context.Context, req *http.Request, probe Probe) error {
+	return openapi3filter.ValidateRequest(ctx, v2ValidationInput(req, probe))
+}
+
+func validateV2Response(
+	ctx context.Context,
+	req *http.Request,
+	resp *http.Response,
+	body []byte,
+	probe Probe,
+) error {
+	input := &openapi3filter.ResponseValidationInput{
+		RequestValidationInput: v2ValidationInput(req, probe),
+		Status:                 resp.StatusCode,
+		Header:                 resp.Header,
+	}
+	input.SetBodyBytes(body)
+	return openapi3filter.ValidateResponse(ctx, input)
 }
 
 // BodyError detects top-level JSON objects carrying a non-empty error value or

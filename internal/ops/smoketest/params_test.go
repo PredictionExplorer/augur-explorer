@@ -110,15 +110,19 @@ func TestSQLParameterSourceLoadsValuesAndQueriesTokenNameColumn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.TokenName != "value-09" || got.RoundNumber != "value-04" || got.ToDate != "value-20" {
+	if got.RandomWalkTokenID != "value-09" || got.TokenName != "value-10" ||
+		got.RoundNumber != "value-04" || got.ToDate != "value-21" {
 		t.Fatalf("params = %#v", got)
 	}
-	if len(queries) != 20 {
+	if len(queries) != 21 {
 		t.Fatalf("query count = %d", len(queries))
 	}
-	if !strings.Contains(queries[8], "SELECT token_name FROM cg_token_name") ||
-		strings.Contains(queries[8], "SELECT name ") {
-		t.Fatalf("token-name query = %q", queries[8])
+	if !strings.Contains(queries[8], "SELECT token_id FROM rw_mint_evt") {
+		t.Fatalf("RandomWalk-token query = %q", queries[8])
+	}
+	if !strings.Contains(queries[9], "SELECT token_name FROM cg_token_name") ||
+		strings.Contains(queries[9], "SELECT name ") {
+		t.Fatalf("token-name query = %q", queries[9])
 	}
 }
 
@@ -198,23 +202,24 @@ func TestLoadParametersMapsEveryQuery(t *testing.T) {
 		BidRound:           "value-06",
 		BidPosition:        "value-07",
 		TokenID:            "value-08",
-		TokenName:          "value-09",
-		ETHDonationID:      "value-10",
-		NFTDonationID:      "value-11",
-		ERC20DonationID:    "value-12",
-		CSTActionID:        "value-13",
-		RandomWalkActionID: "value-14",
-		DepositID:          "value-15",
-		NFTTokenAddress:    "value-16",
-		TimestampMin:       "value-17",
-		TimestampMax:       "value-18",
-		FromDate:           "value-19",
-		ToDate:             "value-20",
+		RandomWalkTokenID:  "value-09",
+		TokenName:          "value-10",
+		ETHDonationID:      "value-11",
+		NFTDonationID:      "value-12",
+		ERC20DonationID:    "value-13",
+		CSTActionID:        "value-14",
+		RandomWalkActionID: "value-15",
+		DepositID:          "value-16",
+		NFTTokenAddress:    "value-17",
+		TimestampMin:       "value-18",
+		TimestampMax:       "value-19",
+		FromDate:           "value-20",
+		ToDate:             "value-21",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("params = %#v, want %#v", got, want)
 	}
-	if len(calls) != 20 {
+	if len(calls) != 21 {
 		t.Fatalf("query count = %d", len(calls))
 	}
 	if fallbacks[1] != "value-01" {
@@ -241,7 +246,7 @@ func TestLoadParametersFallbacksAndErrors(t *testing.T) {
 			t.Fatalf("fallback params = %#v", got)
 		}
 	})
-	for failAt := 1; failAt <= 20; failAt++ {
+	for failAt := 1; failAt <= 21; failAt++ {
 		t.Run(fmt.Sprintf("stops on error %02d", failAt), func(t *testing.T) {
 			t.Parallel()
 			want := errors.New("query canceled")

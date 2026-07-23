@@ -604,6 +604,9 @@ func TestSmoketestCommandWiring(t *testing.T) {
 		if options.BaseURL != "https://api.example/root" {
 			t.Fatalf("options = %#v", options)
 		}
+		if options.Suite != smoketest.SuiteV2 {
+			t.Fatalf("suite = %q, want v2", options.Suite)
+		}
 		fmt.Fprintln(options.Output, "smoketest wiring complete")
 		return smoketest.Summary{Total: 1, OK: 1}, nil
 	}
@@ -685,6 +688,85 @@ func TestSmoketestCommandSetupAndErrors(t *testing.T) {
 			if !errors.Is(result.err, test.err) {
 				t.Fatalf("error = %v", result.err)
 			}
+		})
+	}
+}
+
+func TestSmoketestOperationalSkipsDatabaseAndInvalidSuiteFailsFast(t *testing.T) {
+	t.Run("operational", func(t *testing.T) {
+		deps := defaultSmoketestDeps()
+		deps.getenv = func(string) string {
+			t.Fatal("environment read for no-database operational suite")
+			return ""
+		}
+		deps.openDB = func(context.Context, string) (opsDB, error) {
+			t.Fatal("database opened for operational suite")
+			return nil, nil
+		}
+		deps.newSource = func(opsDB) smoketest.ParameterSource {
+			t.Fatal("parameter source built for operational suite")
+			return nil
+		}
+		deps.apiBase = func() string { return "http://api" }
+		deps.run = func(_ context.Context, options smoketest.Options) (smoketest.Summary, error) {
+			if options.Suite != smoketest.SuiteOperational || options.Source != nil {
+				t.Fatalf("options = %#v", options)
+			}
+			return smoketest.Summary{}, nil
+		}
+		cmd := newSmoketestCmdWithDeps(deps)
+		if result := executeCommand(cmd, "--suite=operational"); result.err != nil {
+			t.Fatal(result.err)
+		}
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		deps := defaultSmoketestDeps()
+		deps.getenv = func(string) string {
+			t.Fatal("environment read after invalid suite")
+			return ""
+		}
+		deps.openDB = func(context.Context, string) (opsDB, error) {
+			t.Fatal("database opened after invalid suite")
+			return nil, nil
+		}
+		cmd := newSmoketestCmdWithDeps(deps)
+		result := executeCommand(cmd, "--suite=unknown")
+		if result.err == nil || !strings.Contains(result.err.Error(), "invalid smoke-test suite") {
+			t.Fatalf("error = %v", result.err)
+		}
+	})
+}
+
+func TestSmoketestForwardsExplicitParameterizedSuites(t *testing.T) {
+	for _, suite := range []smoketest.Suite{smoketest.SuiteV1, smoketest.SuiteBoth} {
+		t.Run(string(suite), func(t *testing.T) {
+			db := newCommandTestDB(t)
+			deps := defaultSmoketestDeps()
+			deps.getenv = func(name string) string {
+				return map[string]string{
+					"PGSQL_HOST": "db:5432", "PGSQL_USERNAME": "user", "PGSQL_DATABASE": "database",
+				}[name]
+			}
+			deps.openDB = func(context.Context, string) (opsDB, error) { return db, nil }
+			deps.ping = func(context.Context, opsDB) error { return nil }
+			deps.newSource = func(opsDB) smoketest.ParameterSource {
+				return parameterSourceFunc(func(context.Context) (smoketest.Params, error) {
+					return smoketest.DefaultParams(), nil
+				})
+			}
+			deps.apiBase = func() string { return "http://api" }
+			deps.run = func(_ context.Context, options smoketest.Options) (smoketest.Summary, error) {
+				if options.Suite != suite || options.Source == nil {
+					t.Fatalf("options = %#v", options)
+				}
+				return smoketest.Summary{}, nil
+			}
+			result := executeCommand(newSmoketestCmdWithDeps(deps), "--suite="+string(suite))
+			if result.err != nil {
+				t.Fatal(result.err)
+			}
+			assertCommandDBClosed(t, db)
 		})
 	}
 }

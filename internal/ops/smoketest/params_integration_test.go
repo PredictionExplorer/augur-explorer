@@ -32,6 +32,9 @@ func TestSQLParameterSourceLoadsSeededDatabase(t *testing.T) {
 	if params.TokenID != "9" {
 		t.Fatalf("token id = %q, want latest fixture token 9", params.TokenID)
 	}
+	if params.RandomWalkTokenID != "13" {
+		t.Fatalf("RandomWalk token id = %q, want latest fixture token 13", params.RandomWalkTokenID)
+	}
 	if params.UserAddress == zeroAddress || params.CSTStakerAddress == zeroAddress {
 		t.Fatalf("fixture addresses were not loaded: %#v", params)
 	}

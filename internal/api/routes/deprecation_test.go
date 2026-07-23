@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/PredictionExplorer/augur-explorer/internal/api/policy"
 )
 
 func TestV1Deprecated(t *testing.T) {
@@ -42,8 +44,8 @@ func TestV1Deprecated(t *testing.T) {
 		{"/", false},
 	}
 	for _, tc := range cases {
-		if got := V1Deprecated(tc.path); got != tc.want {
-			t.Errorf("V1Deprecated(%q) = %v, want %v", tc.path, got, tc.want)
+		if got := policy.V1Deprecated(tc.path); got != tc.want {
+			t.Errorf("policy.V1Deprecated(%q) = %v, want %v", tc.path, got, tc.want)
 		}
 	}
 }
@@ -67,7 +69,7 @@ func TestNewWiresDeprecationHeaders(t *testing.T) {
 	if got := deprecated.Header().Get("Deprecation"); got != "@1784160000" {
 		t.Errorf("Deprecation = %q, want @1784160000 (2026-07-16T00:00:00Z)", got)
 	}
-	wantLink := `<` + V1MigrationGuideURL + `>; rel="deprecation"; type="text/markdown"`
+	wantLink := `<` + policy.V1MigrationGuideURL + `>; rel="deprecation"; type="text/markdown"`
 	if got := deprecated.Header().Get("Link"); got != wantLink {
 		t.Errorf("Link = %q, want %q", got, wantLink)
 	}

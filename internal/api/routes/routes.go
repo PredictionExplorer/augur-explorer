@@ -13,6 +13,7 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/policy"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
 	v2 "github.com/PredictionExplorer/augur-explorer/internal/api/v2"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -77,9 +78,9 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	// preflights, rate-limit rejections and 404s — announces the
 	// deprecation (RFC 9745) and, once configured, the sunset date.
 	r.Use(common.DeprecationHeaders(common.DeprecationPolicy{
-		Match:        func(req *http.Request) bool { return V1Deprecated(req.URL.Path) },
-		DeprecatedAt: V1DeprecatedAt,
-		LinkURL:      V1MigrationGuideURL,
+		Match:        func(req *http.Request) bool { return policy.V1Deprecated(req.URL.Path) },
+		DeprecatedAt: policy.V1DeprecatedAt,
+		LinkURL:      policy.V1MigrationGuideURL,
 		SunsetAt:     opts.V1SunsetAt,
 	}))
 	r.Use(common.CORS(), common.Recovery(opts.PanicLog))
