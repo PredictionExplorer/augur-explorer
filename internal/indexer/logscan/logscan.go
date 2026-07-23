@@ -36,6 +36,13 @@ type Progress struct {
 	Attempt   uint64
 }
 
+// DefaultFetchTimeout bounds one FilterLogs call when Options.FetchTimeout
+// is zero. The scanner's tools run unattended for hours (archive node-fill,
+// transaction collection); a black-holed endpoint must surface as a fetch
+// error the existing halve-and-retry machinery handles, not park the scan
+// forever (D22).
+const DefaultFetchTimeout = time.Minute
+
 // Options configures one inclusive range scan.
 type Options struct {
 	FromBlock uint64
@@ -45,6 +52,11 @@ type Options struct {
 	InitialBatch uint64
 	MinBatch     uint64
 	RetryDelay   time.Duration
+	// FetchTimeout bounds each FilterLogs call; zero applies
+	// DefaultFetchTimeout and negative values are rejected. A timed-out
+	// fetch is an ordinary fetch error: the batch halves and the range is
+	// retried.
+	FetchTimeout time.Duration
 
 	Sleep      SleepFunc
 	OnProgress ProgressFunc
@@ -75,6 +87,10 @@ func Scan(ctx context.Context, client Filterer, opts Options, handle HandleFunc)
 	sleep := opts.Sleep
 	if sleep == nil {
 		sleep = sleepContext
+	}
+	fetchTimeout := opts.FetchTimeout
+	if fetchTimeout == 0 {
+		fetchTimeout = DefaultFetchTimeout
 	}
 
 	query := cloneQuery(opts.Query)
@@ -108,7 +124,7 @@ func Scan(ctx context.Context, client Filterer, opts Options, handle HandleFunc)
 		request.FromBlock = new(big.Int).SetUint64(from)
 		request.ToBlock = new(big.Int).SetUint64(to)
 		stats.FetchAttempts++
-		logs, err := client.FilterLogs(ctx, request)
+		logs, err := fetchLogs(ctx, client, request, fetchTimeout)
 		if err != nil {
 			stats.FilterErrors++
 			if ctxErr := ctx.Err(); ctxErr != nil {
@@ -177,11 +193,20 @@ func validate(client Filterer, opts Options, handle HandleFunc) error {
 		)
 	case opts.RetryDelay <= 0:
 		return errors.New("logscan: retry delay must be greater than zero")
+	case opts.FetchTimeout < 0:
+		return errors.New("logscan: fetch timeout must not be negative")
 	case opts.Query.BlockHash != nil:
 		return errors.New("logscan: block-hash queries cannot be range scanned")
 	default:
 		return nil
 	}
+}
+
+// fetchLogs runs one FilterLogs call under the per-call deadline.
+func fetchLogs(ctx context.Context, client Filterer, query ethereum.FilterQuery, timeout time.Duration) ([]types.Log, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return client.FilterLogs(ctx, query)
 }
 
 func inclusiveEnd(from, end, batch uint64) uint64 {

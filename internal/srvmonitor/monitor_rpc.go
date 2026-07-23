@@ -8,9 +8,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
+
+// rpcProbeTimeout bounds one RPC probe operation (the dial and each of the
+// two head reads), matching the other monitors' 10-second probe bounds. A
+// black-holed node must show as DOWN next cycle, not park the probe
+// goroutine forever (D22). The block wait between the two reads is a
+// deliberate pause and stays outside the bound.
+const rpcProbeTimeout = 10 * time.Second
 
 // RPCStatus holds status for a single RPC node.
 type RPCStatus struct {
@@ -39,6 +47,8 @@ type RPCMonitor struct {
 	// blockWait pauses between the two head reads of one check. Tests
 	// replace it to advance the fake chain instead of sleeping.
 	blockWait func(ctx context.Context)
+	// probeTimeout bounds the dial and each head read; tests shorten it.
+	probeTimeout time.Duration
 }
 
 // NewRPCMonitor creates a new RPC monitor. officialNames maps the chain key
@@ -46,11 +56,12 @@ type RPCMonitor struct {
 // official node name for that chain.
 func NewRPCMonitor(nodes []RPCConfig, officialNames map[string]string, sharedState *SharedRPCState, iv Intervals) *RPCMonitor {
 	m := &RPCMonitor{
-		statuses:    make([]*RPCStatus, len(nodes)),
-		official:    make(map[string]*RPCStatus),
-		position:    Position{X: 0, Y: 0},
-		sharedState: sharedState,
-		interval:    iv.RPC,
+		statuses:     make([]*RPCStatus, len(nodes)),
+		official:     make(map[string]*RPCStatus),
+		position:     Position{X: 0, Y: 0},
+		sharedState:  sharedState,
+		interval:     iv.RPC,
+		probeTimeout: rpcProbeTimeout,
 	}
 	m.blockWait = func(ctx context.Context) { sleepCtx(ctx, iv.RPCBlockWait) }
 
@@ -132,7 +143,9 @@ func (m *RPCMonitor) checkNode(ctx context.Context, status *RPCStatus, errorChan
 	status.Alive = false
 	status.readOK = false
 
-	rpcObj, err := rpc.DialContext(ctx, status.Config.URL)
+	dialCtx, cancelDial := context.WithTimeout(ctx, m.probeTimeout)
+	rpcObj, err := rpc.DialContext(dialCtx, status.Config.URL)
+	cancelDial() // the context only bounds connection establishment
 	if err != nil {
 		status.ErrStr = err.Error()
 		sendErr(ctx, errorChan, status.ErrStr)
@@ -141,7 +154,7 @@ func (m *RPCMonitor) checkNode(ctx context.Context, status *RPCStatus, errorChan
 	defer rpcObj.Close()
 
 	eclient := ethclient.NewClient(rpcObj)
-	latestBlock1, err := eclient.HeaderByNumber(ctx, nil)
+	latestBlock1, err := m.probeHeader(ctx, eclient)
 	if err != nil {
 		status.ErrStr = err.Error()
 		sendErr(ctx, errorChan, status.ErrStr)
@@ -150,7 +163,7 @@ func (m *RPCMonitor) checkNode(ctx context.Context, status *RPCStatus, errorChan
 
 	m.blockWait(ctx)
 
-	latestBlock2, err := eclient.HeaderByNumber(ctx, nil)
+	latestBlock2, err := m.probeHeader(ctx, eclient)
 	if err != nil {
 		status.ErrStr = err.Error()
 		sendErr(ctx, errorChan, status.ErrStr)
@@ -167,6 +180,13 @@ func (m *RPCMonitor) checkNode(ctx context.Context, status *RPCStatus, errorChan
 	} else {
 		status.Alive = true
 	}
+}
+
+// probeHeader reads the latest chain header under the probe deadline.
+func (m *RPCMonitor) probeHeader(ctx context.Context, eclient *ethclient.Client) (*types.Header, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.probeTimeout)
+	defer cancel()
+	return eclient.HeaderByNumber(ctx, nil)
 }
 
 // display renders the RPC status.

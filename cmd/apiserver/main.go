@@ -46,9 +46,13 @@ const shutdownTimeout = 15 * time.Second
 // Public-listener timeouts. Request bodies are small JSON documents (the
 // largest are the ranking POSTs), so a slow-body client is bounded by
 // readTimeout on top of the header bound. idleTimeout reaps abandoned
-// keep-alive connections. There is deliberately NO WriteTimeout: several
-// frozen v1 endpoints stream unbounded arrays, and a write cap would sever
-// legitimate large responses to slow clients — revisit when v1 is removed
+// keep-alive connections. There is deliberately NO WriteTimeout: responses
+// are fully buffered (no route streams), but several frozen v1 endpoints
+// marshal multi-megabyte unpaginated arrays and a write cap would sever
+// their delivery to legitimately slow clients. Handler execution time is
+// bounded separately by the request processing deadline in the shared
+// middleware chain (common.RequestDeadline, D22); the write phase spends
+// memory, not database or RPC capacity. Revisit when v1 is removed
 // (docs/MODERNIZATION.md §6.3).
 const (
 	readHeaderTimeout = 10 * time.Second
@@ -254,15 +258,16 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		}
 	}
 	r := routes.New(deps.store, routes.Options{
-		AccessLog:     logger,
-		PanicLog:      logger,
-		CosmicGame:    cgAPI,
-		RandomWalk:    rwAPI,
-		FAQ:           faqProxy,
-		V2:            v2Server,
-		V1SunsetAt:    cfg.V1SunsetAt,
-		Extra:         []httpx.Middleware{metricsMiddleware()},
-		RegisterExtra: registerStaticAssetRoutes(staticAssetsConfig(cfg, logger)),
+		AccessLog:        logger,
+		PanicLog:         logger,
+		CosmicGame:       cgAPI,
+		RandomWalk:       rwAPI,
+		FAQ:              faqProxy,
+		V2:               v2Server,
+		V1SunsetAt:       cfg.V1SunsetAt,
+		Extra:            []httpx.Middleware{metricsMiddleware()},
+		OnRequestTimeout: countRequestTimeout,
+		RegisterExtra:    registerStaticAssetRoutes(staticAssetsConfig(cfg, logger)),
 	})
 
 	// Bind every listener before starting any serving goroutine. The deferred

@@ -7,7 +7,6 @@ import (
 	"log"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/ops/txcollector"
@@ -30,7 +29,7 @@ func defaultTxCollectorRunDeps() txCollectorRunDeps {
 	return txCollectorRunDeps{
 		loadConfig: toolutil.LoadCollectorConfig,
 		dialRPC: func(ctx context.Context, rpcURL string) (txCollectorRunRPC, error) {
-			return ethclient.DialContext(ctx, rpcURL)
+			return dialBoundedEthClient(ctx, rpcURL)
 		},
 		run: txcollector.Run,
 	}

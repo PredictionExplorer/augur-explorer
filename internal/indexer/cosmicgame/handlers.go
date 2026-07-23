@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethcall"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -115,7 +116,10 @@ type Config struct {
 	// Store serves the base-layer reads (stored sibling event logs).
 	Store *store.Store
 	// Caller performs the contract reads two handlers need (donation-info
-	// records, donated-NFT tokenURI). *ethclient.Client satisfies it.
+	// records, donated-NFT tokenURI). *ethclient.Client satisfies it. New
+	// bounds every call with ethcall.DefaultTimeout: the reads run inside
+	// the per-block ingestion transaction (ADR-0010), so a wedged RPC node
+	// must fail the block instead of holding the transaction open.
 	Caller bind.ContractCaller
 	// Contracts are the resolved contract addresses (BootstrapContracts).
 	Contracts Contracts
@@ -167,7 +171,7 @@ func New(cfg Config) (*Handlers, error) {
 	h := &Handlers{
 		repo:   cfg.Repo,
 		store:  cfg.Store,
-		caller: cfg.Caller,
+		caller: ethcall.NewBoundedCaller(cfg.Caller, ethcall.DefaultTimeout),
 		c:      cfg.Contracts,
 		log:    logger,
 	}

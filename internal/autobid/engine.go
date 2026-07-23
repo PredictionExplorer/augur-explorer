@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -46,6 +47,7 @@ const (
 	idleDelay            = 5 * time.Second        // when there is nothing to do
 	reconnectDelay       = 5 * time.Second        // before a reconnection attempt
 	statsRPCTimeout      = 5 * time.Second        // bound the optional shutdown balance read
+	rpcRequestTimeout    = 30 * time.Second       // bound every HTTP JSON-RPC exchange (default Dial)
 	maxReceiptRetries    = 3                      // abandon a pending-tx wait after this many polls
 	bidGasLimit          = 1000000
 	claimGasLimit        = 5000000
@@ -77,9 +79,29 @@ type Config struct {
 	// cancellation. Defaults to a context-aware timer sleep. Tests inject a
 	// no-op to run scripted rounds instantly.
 	Sleep func(ctx context.Context, d time.Duration) error
-	// Dial opens the RPC connection; defaults to ethrpc.DialContext.
-	// Reconnection re-dials through the same function.
+	// Dial opens the RPC connection; defaults to dialBoundedRPC, which
+	// bounds every HTTP JSON-RPC exchange at rpcRequestTimeout so a
+	// black-holed endpoint surfaces as an error the loop's reconnect
+	// machinery handles instead of hanging a market read, a bid
+	// submission or a receipt poll forever (D22). Reconnection re-dials
+	// through the same function.
 	Dial func(ctx context.Context, url string) (*ethrpc.Client, error)
+}
+
+// dialBoundedRPC is the default Config.Dial: DialContext with an injected
+// HTTP client whose per-request timeout bounds every call made over the
+// connection. WebSocket endpoints ignore the HTTP client and keep their
+// caller-context bounds.
+var dialBoundedRPC = dialWithRequestTimeout(rpcRequestTimeout)
+
+// dialWithRequestTimeout builds a Dial function bounding every HTTP
+// JSON-RPC exchange at timeout (tests use a short one against a hanging
+// stub).
+func dialWithRequestTimeout(timeout time.Duration) func(ctx context.Context, url string) (*ethrpc.Client, error) {
+	client := &http.Client{Timeout: timeout}
+	return func(ctx context.Context, url string) (*ethrpc.Client, error) {
+		return ethrpc.DialOptions(ctx, url, ethrpc.WithHTTPClient(client))
+	}
 }
 
 // sessionStats tracks statistics for one Run.
@@ -184,7 +206,7 @@ func New(ctx context.Context, cfg Config) (*Engine, error) {
 		cfg.Sleep = sleepContext
 	}
 	if cfg.Dial == nil {
-		cfg.Dial = ethrpc.DialContext
+		cfg.Dial = dialBoundedRPC
 	}
 	if cfg.GasPriceMultiplier <= 0 {
 		cfg.GasPriceMultiplier = ethtx.DefaultGasPriceMultiplier

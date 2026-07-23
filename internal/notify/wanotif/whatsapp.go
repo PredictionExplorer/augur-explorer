@@ -12,7 +12,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
+
+// defaultRequestTimeout bounds one Graph API exchange made through the
+// package's fallback client (D22: no outbound call may wait forever). The
+// payloads are small JSON documents; thirty seconds tolerates a slow API
+// while a wedged one surfaces as an error the caller logs.
+const defaultRequestTimeout = 30 * time.Second
+
+// defaultHTTPClient replaces the timeout-less http.DefaultClient as the
+// fallback for Whatsapp values constructed without an HTTPClient.
+var defaultHTTPClient = &http.Client{Timeout: defaultRequestTimeout}
 
 // Whatsapp is a WhatsApp Cloud API client bound to one sending phone
 // number.
@@ -25,7 +36,8 @@ type Whatsapp struct {
 	// BaseURL is the Graph API root; empty selects the production
 	// https://graph.facebook.com (tests point it at an httptest server).
 	BaseURL string
-	// HTTPClient issues the requests; nil selects http.DefaultClient.
+	// HTTPClient issues the requests; nil selects the package's bounded
+	// default client (30s per request).
 	HTTPClient *http.Client
 }
 
@@ -109,7 +121,7 @@ func (wa *Whatsapp) sendMessage(request any) (res map[string]any, err error) {
 
 	client := wa.HTTPClient
 	if client == nil {
-		client = http.DefaultClient
+		client = defaultHTTPClient
 	}
 	resp, err := client.Do(req)
 	if err != nil {

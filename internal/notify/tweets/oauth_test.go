@@ -356,12 +356,16 @@ func TestRequestTokenEmptySecretAllowed(t *testing.T) {
 }
 
 func TestContextClientFallback(t *testing.T) {
-	if got := contextClient(nil); got != http.DefaultClient { //nolint:staticcheck // nil context is the documented fallback input
-		t.Error("nil context should fall back to http.DefaultClient")
+	if got := contextClient(nil); got != defaultHTTPClient { //nolint:staticcheck // nil context is the documented fallback input
+		t.Error("nil context should fall back to the package's bounded default client")
 	}
 	ctx := t.Context()
-	if got := contextClient(ctx); got != http.DefaultClient {
-		t.Error("context without HTTPClient should fall back to http.DefaultClient")
+	if got := contextClient(ctx); got != defaultHTTPClient {
+		t.Error("context without HTTPClient should fall back to the package's bounded default client")
+	}
+	if defaultHTTPClient.Timeout != defaultClientTimeout || defaultHTTPClient.Timeout <= 0 {
+		t.Errorf("fallback client timeout = %v, want the positive defaultClientTimeout %v (a timeout-less fallback could hang a Twitter call forever)",
+			defaultHTTPClient.Timeout, defaultClientTimeout)
 	}
 }
 

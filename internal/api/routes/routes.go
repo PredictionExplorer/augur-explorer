@@ -54,6 +54,11 @@ type Options struct {
 	// stack (production adds Prometheus request metrics here).
 	Extra []httpx.Middleware
 
+	// OnRequestTimeout observes every request whose processing deadline
+	// expired and was answered with the 503 timeout rendering (production
+	// counts them in rwcg_http_request_timeouts_total). Nil ignores them.
+	OnRequestTimeout func(*http.Request)
+
 	// RegisterExtra registers additional routes and their middleware
 	// (production adds the env-gated static asset routes here).
 	RegisterExtra func(*httpx.Router)
@@ -61,9 +66,9 @@ type Options struct {
 
 // New builds the standard middleware chain — CORS, panic recovery, optional
 // access log, gzip compression, per-IP rate limiting, extras, the request
-// body cap, conditional requests — and registers every injected module, the
-// v2 surface, health probes, the version endpoint, and host-dispatched
-// metadata.
+// processing deadline, the request body cap, conditional requests — and
+// registers every injected module, the v2 surface, health probes, the
+// version endpoint, and host-dispatched metadata.
 // st may be nil (bare route-table construction for drift tests).
 func New(st *store.Store, opts Options) *httpx.Router {
 	r := httpx.NewRouter()
@@ -89,6 +94,11 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	// own stricter limits at registration.
 	r.Use(common.RateLimit(50, 100))
 	r.Use(opts.Extra...)
+	// Bounded request time: one deadline on the request context (inside the
+	// metrics extras, so timeout 503s are observable like every response);
+	// a post-deadline internal error renders as the per-family 503 timeout.
+	// The FAQ proxy is policy-exempt — see RequestDeadlineFor.
+	r.Use(common.RequestDeadline(requestDeadlinePolicy, opts.OnRequestTimeout))
 	// Bounded request bodies: declared oversized bodies answer 413 here
 	// (inside the metrics extras, so rejections are observable); undeclared
 	// ones fail at first read past the cap inside the consuming handler.

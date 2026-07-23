@@ -42,6 +42,14 @@ import (
 // httpRequestTimeout bounds each artifact-server or generator request.
 const httpRequestTimeout = 30 * time.Second
 
+// Server-side database time bounds (D22 defense in depth): the scan reads
+// the token directory in one bounded statement, and the systemd timer runs
+// the scan unattended, so a wedged statement must not stall it forever.
+const (
+	dbStatementTimeout = time.Minute
+	dbIdleInTxTimeout  = 5 * time.Minute
+)
+
 // osExit is stubbed by tests that drive main through its failure arm.
 var osExit = os.Exit
 
@@ -117,6 +125,8 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 	// Scan mode: iterate every minted token from the database.
 	storeCfg := cfg.DB.StoreConfig()
 	storeCfg.Logger = logger.With("component", "db")
+	storeCfg.StatementTimeout = dbStatementTimeout
+	storeCfg.IdleInTxSessionTimeout = dbIdleInTxTimeout
 	st, err := store.New(ctx, storeCfg)
 	if err != nil {
 		return fmt.Errorf("failed to connect to storage: %w", err)

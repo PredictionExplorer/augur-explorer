@@ -87,8 +87,9 @@ func TestListenInternalServerReportsBindFailureSynchronously(t *testing.T) {
 
 // TestNewPublicServerTimeoutPolicy pins the listener hardening: header,
 // body-read and keep-alive-idle bounds are set, WriteTimeout is deliberately
-// zero while frozen v1 endpoints stream unbounded arrays to slow clients,
-// each TLS server clones the shared config (ServeTLS mutates it), and the
+// zero while frozen v1 endpoints deliver large buffered arrays to slow
+// clients (handler time is bounded by the request deadline instead), each
+// TLS server clones the shared config (ServeTLS mutates it), and the
 // server's own error records route through the process logger.
 func TestNewPublicServerTimeoutPolicy(t *testing.T) {
 	t.Parallel()
@@ -103,7 +104,7 @@ func TestNewPublicServerTimeoutPolicy(t *testing.T) {
 			readHeaderTimeout, readTimeout, idleTimeout)
 	}
 	if srv.WriteTimeout != 0 {
-		t.Errorf("WriteTimeout = %v, want 0 (v1 streams unbounded arrays; see the constants' doc)", srv.WriteTimeout)
+		t.Errorf("WriteTimeout = %v, want 0 (large buffered v1 responses to slow clients; see the constants' doc)", srv.WriteTimeout)
 	}
 	if srv.TLSConfig == tlsConfig {
 		t.Error("TLS config must be cloned per server, not shared")
@@ -198,5 +199,26 @@ func TestMetricsMiddlewareDeprecatedLabel(t *testing.T) {
 			t.Errorf("GET %s: Deprecation header present = %v, want %v (metric and header policy must agree)",
 				req.path, gotHeader, wantHeader)
 		}
+	}
+}
+
+// TestCountRequestTimeout pins the routes.Options.OnRequestTimeout hook: a
+// deadline-expired request increments rwcg_http_request_timeouts_total with
+// the matched route (or "unmatched") as its label.
+func TestCountRequestTimeout(t *testing.T) {
+	t.Parallel()
+	matched := httptest.NewRequest(http.MethodGet, "/api/cosmicgame/timeout-probe/7", nil)
+	matched.Pattern = "GET /api/cosmicgame/timeout-probe/{id}"
+	before := testutil.ToFloat64(httpRequestTimeoutsTotal.WithLabelValues(http.MethodGet, "/api/cosmicgame/timeout-probe/{id}"))
+	countRequestTimeout(matched)
+	if got := testutil.ToFloat64(httpRequestTimeoutsTotal.WithLabelValues(http.MethodGet, "/api/cosmicgame/timeout-probe/{id}")); got != before+1 {
+		t.Errorf("matched-route series = %v, want %v", got, before+1)
+	}
+
+	unmatched := httptest.NewRequest(http.MethodGet, "/api/cosmicgame/timeout-unrouted", nil)
+	before = testutil.ToFloat64(httpRequestTimeoutsTotal.WithLabelValues(http.MethodGet, "unmatched"))
+	countRequestTimeout(unmatched)
+	if got := testutil.ToFloat64(httpRequestTimeoutsTotal.WithLabelValues(http.MethodGet, "unmatched")); got != before+1 {
+		t.Errorf("unmatched series = %v, want %v", got, before+1)
 	}
 }

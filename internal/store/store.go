@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,6 +46,23 @@ type Config struct {
 
 	// MaxConns bounds the pool size; zero applies DefaultMaxConns.
 	MaxConns int32
+
+	// StatementTimeout, when positive, sets the server-side
+	// statement_timeout on every pool connection: PostgreSQL aborts any
+	// single statement that runs longer (SQLSTATE 57014). It is defense in
+	// depth behind the caller's context deadlines — the backstop for a
+	// query whose cancellation signal never arrives. Zero leaves the server
+	// default (no limit); operator CLIs with legitimately heavy statements
+	// stay unset.
+	StatementTimeout time.Duration
+
+	// IdleInTxSessionTimeout, when positive, sets the server-side
+	// idle_in_transaction_session_timeout on every pool connection:
+	// PostgreSQL terminates a session whose open transaction sits idle
+	// longer than this (SQLSTATE 25P03), releasing its locks and snapshot.
+	// It bounds the damage of a transaction held open by a stalled non-DB
+	// call between statements. Zero leaves the server default (no limit).
+	IdleInTxSessionTimeout time.Duration
 
 	// Logger receives query traces (failed and slow queries) and connect
 	// retry progress. nil disables query tracing and routes connect retry
@@ -134,6 +152,15 @@ func (cfg Config) poolConfig() (*pgxpool.Config, error) {
 	// converted queries' bare table names resolve exactly like the
 	// "public."-qualified names the legacy SQL used.
 	poolCfg.ConnConfig.RuntimeParams["search_path"] = "public"
+	// Server-side time bounds (D22 defense in depth): PostgreSQL enforces
+	// them even when a client-side context deadline never fires. Rendered
+	// in milliseconds, the GUCs' unit-less integer form.
+	if cfg.StatementTimeout > 0 {
+		poolCfg.ConnConfig.RuntimeParams["statement_timeout"] = strconv.FormatInt(cfg.StatementTimeout.Milliseconds(), 10)
+	}
+	if cfg.IdleInTxSessionTimeout > 0 {
+		poolCfg.ConnConfig.RuntimeParams["idle_in_transaction_session_timeout"] = strconv.FormatInt(cfg.IdleInTxSessionTimeout.Milliseconds(), 10)
+	}
 	poolCfg.MaxConns = DefaultMaxConns
 	if cfg.MaxConns > 0 {
 		poolCfg.MaxConns = cfg.MaxConns

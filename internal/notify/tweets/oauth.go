@@ -26,9 +26,11 @@
 //   - The out-of-band (PIN) authorization flow used by `rwctl twitter-auth`:
 //     RequestTemporaryCredentials, AuthorizationURL and RequestToken.
 //
-// A nil *http.Client selects http.DefaultClient; tests inject an
-// httptest.Server client. The context-aware variants accept a client via the
-// HTTPClient context key.
+// A nil *http.Client selects the package's bounded default client (a
+// two-minute per-request timeout sized to the chunked video uploads — never
+// the timeout-less http.DefaultClient, so no Twitter call can hang forever);
+// tests inject an httptest.Server client. The context-aware variants accept
+// a client via the HTTPClient context key.
 package tweets
 
 // PredictionExplorer note:
@@ -492,13 +494,24 @@ var HTTPClient contextKey
 
 type contextKey struct{}
 
+// defaultClientTimeout bounds one Twitter API exchange made through the
+// package's fallback client (D22: no outbound call may wait forever). Two
+// minutes is sized to the slowest legitimate exchange — a chunked video
+// APPEND carrying a base64-encoded MP4 — while a plain status update
+// finishes in a second.
+const defaultClientTimeout = 2 * time.Minute
+
+// defaultHTTPClient replaces the timeout-less http.DefaultClient as the
+// fallback: every request without an injected client is still bounded.
+var defaultHTTPClient = &http.Client{Timeout: defaultClientTimeout}
+
 func contextClient(ctx context.Context) *http.Client {
 	if ctx != nil {
 		if hc, ok := ctx.Value(HTTPClient).(*http.Client); ok && hc != nil {
 			return hc
 		}
 	}
-	return http.DefaultClient
+	return defaultHTTPClient
 }
 
 // RequestCredentialsError is an error containing

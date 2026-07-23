@@ -32,6 +32,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/andersfylling/disgord"
 	"github.com/ethereum/go-ethereum/common"
@@ -39,10 +40,20 @@ import (
 
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/config"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethcall"
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/rwbot"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
+)
+
+// Server-side database time bounds (D22 defense in depth): notibot's queries
+// are small notification reads and watermark writes, so PostgreSQL aborting
+// anything longer keeps a wedged statement from silencing notifications
+// forever.
+const (
+	dbStatementTimeout = time.Minute
+	dbIdleInTxTimeout  = 5 * time.Minute
 )
 
 // osExit is stubbed by tests that drive main through its failure arm.
@@ -104,6 +115,8 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, twit
 
 	storeCfg := cfg.DB.StoreConfig()
 	storeCfg.Logger = logger.With("component", "db")
+	storeCfg.StatementTimeout = dbStatementTimeout
+	storeCfg.IdleInTxSessionTimeout = dbIdleInTxTimeout
 	st, err := store.New(ctx, storeCfg)
 	if err != nil {
 		return fmt.Errorf("connecting to storage: %w\n%s", err, store.ConnectHint(err))
@@ -118,7 +131,10 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, twit
 	rwalkAddr := common.HexToAddress(addrs.RandomWalk)
 	logger.Info("resolved contracts", "randomwalk", rwalkAddr.String(), "marketplace", addrs.MarketPlace)
 
-	rwalkCtrct, err := rwcontracts.NewRWalk(rwalkAddr, eclient)
+	// The withdrawal-amount view is the bot's only contract read; the
+	// bounded read backend gives it a per-call deadline so a wedged RPC
+	// node degrades one notification instead of stalling the loop (D22).
+	rwalkCtrct, err := rwcontracts.NewRWalk(rwalkAddr, ethcall.NewBoundedReadBackend(eclient, ethcall.DefaultTimeout))
 	if err != nil {
 		return fmt.Errorf("instantiating RandomWalk contract %s: %w", rwalkAddr.String(), err)
 	}

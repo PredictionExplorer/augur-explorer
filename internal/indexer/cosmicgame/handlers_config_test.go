@@ -12,6 +12,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/ethcall"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -55,6 +56,24 @@ func TestNewValidatesConfig(t *testing.T) {
 	}
 	if h.Registry() == nil {
 		t.Fatal("New returned a handler set without a registry")
+	}
+}
+
+// TestNewBoundsContractCaller pins the D22 wrap: the handlers' contract
+// reads (donation info, donated-NFT tokenURI) run inside the per-block
+// ingestion transaction, so New must bound every call — a raw unbounded
+// caller can never reach h.caller.
+func TestNewBoundsContractCaller(t *testing.T) {
+	h, err := New(Config{
+		Repo:   cgstore.NewRepo(store.NewFromPool(nil)),
+		Store:  store.NewFromPool(nil),
+		Caller: nopCaller{},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, ok := h.caller.(ethcall.BoundedCaller); !ok {
+		t.Fatalf("h.caller is %T, want ethcall.BoundedCaller (in-transaction reads must be time-bounded)", h.caller)
 	}
 }
 

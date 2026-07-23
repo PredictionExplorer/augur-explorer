@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/cobra"
 
@@ -44,7 +43,7 @@ func defaultArchiveNodeFillDeps() archiveNodeFillDeps {
 		openStorage:     openArchiveNodeFillStorage,
 		requireSchema:   archive.RequireArchLogIndex,
 		dialRPC: func(ctx context.Context, rpcURL string) (archiveNodeFillRPC, error) {
-			return ethclient.DialContext(ctx, rpcURL)
+			return dialBoundedEthClient(ctx, rpcURL)
 		},
 		newRepository: func(db archive.Querier) archive.NodeFillRepository {
 			return &archive.SQLNodeFillRepository{DB: db}

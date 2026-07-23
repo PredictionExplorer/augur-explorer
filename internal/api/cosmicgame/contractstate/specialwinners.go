@@ -42,7 +42,13 @@ type LiveSpecialWinners struct {
 // FetchLiveSpecialWinners performs the live special-winners reads against
 // the latest block. Failures are reported in the Err field rather than a
 // return value so the handler keeps its legacy single-error response shape.
+// The reads are bounded by the same rpcReadTimeout as the background
+// refresh loops: this is the one v1 handler that reaches RPC at request
+// time, and it must not outlive its request budget on a wedged node.
 func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners {
+	ctx, cancel := context.WithTimeout(ctx, s.rpcReadTimeout)
+	defer cancel()
+
 	var out LiveSpecialWinners
 
 	header, err := s.client.HeaderByNumber(ctx, nil)

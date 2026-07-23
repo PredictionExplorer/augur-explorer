@@ -15,12 +15,20 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/notify/rwbot"
 )
 
+// discordCallTimeout bounds one Discord REST call (D22: no outbound call may
+// wait forever). Message posts carry one token PNG at most; thirty seconds
+// tolerates a slow API while a wedged one fails the notification instead of
+// stalling the loop. Rate-limit waits between retries are deliberately not
+// under this bound — only the calls themselves.
+const discordCallTimeout = 30 * time.Second
+
 type discordSink struct {
 	client        *disgord.Client
 	notifyChannel disgord.Snowflake
 	channels      map[rwbot.StatChannel]disgord.Snowflake
 	log           *slog.Logger
 	sleep         func(context.Context, time.Duration) error // injected in tests
+	callTimeout   time.Duration                              // tests shorten it
 }
 
 func newDiscordSink(client *disgord.Client, keys discordKeys, log *slog.Logger) *discordSink {
@@ -33,8 +41,9 @@ func newDiscordSink(client *disgord.Client, keys discordKeys, log *slog.Logger) 
 			rwbot.ChannelLastDate:   disgord.Snowflake(keys.DateStatsChanID),
 			rwbot.ChannelLastReward: disgord.Snowflake(keys.RewardStatsChanID),
 		},
-		log:   log,
-		sleep: sleepContext,
+		log:         log,
+		sleep:       sleepContext,
+		callTimeout: discordCallTimeout,
 	}
 }
 
@@ -52,6 +61,8 @@ func sleepContext(ctx context.Context, delay time.Duration) error {
 // SendMessage posts the notification text with the token image attached and
 // an embed linking to the detail page.
 func (d *discordSink) SendMessage(ctx context.Context, text string, image []byte, detailURL string) error {
+	ctx, cancel := context.WithTimeout(ctx, d.callTimeout)
+	defer cancel()
 	_, err := d.client.Channel(d.notifyChannel).WithContext(ctx).CreateMessage(&disgord.CreateMessage{
 		Content: text,
 		Files: []disgord.CreateMessageFile{
@@ -74,7 +85,9 @@ func (d *discordSink) SetChannelName(ctx context.Context, ch rwbot.StatChannel, 
 		return nil
 	}
 	rename := func() error {
-		_, err := d.client.Channel(id).WithContext(ctx).Update(&disgord.UpdateChannel{Name: &name})
+		callCtx, cancel := context.WithTimeout(ctx, d.callTimeout)
+		defer cancel()
+		_, err := d.client.Channel(id).WithContext(callCtx).Update(&disgord.UpdateChannel{Name: &name})
 		return err
 	}
 	return renameWithRetry(ctx, rename, d.sleep)

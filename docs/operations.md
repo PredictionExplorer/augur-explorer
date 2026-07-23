@@ -119,9 +119,11 @@ response-edge policy lives in the shared middleware chain
 
 - **Listener timeouts**: every listener bounds header reads (10s), full
   request reads (30s — bodies are small JSON) and idle keep-alive
-  connections (120s). There is deliberately **no WriteTimeout** while the
-  frozen v1 API can stream unbounded arrays to slow clients; revisit at v1
-  removal.
+  connections (120s). There is deliberately **no WriteTimeout**: responses
+  are fully buffered, but several frozen v1 routes deliver multi-megabyte
+  unpaginated arrays and a write cap would sever them to legitimately slow
+  clients. Handler *execution* time is bounded separately by the request
+  processing deadline (next section); revisit at v1 removal.
 - **TLS floor**: the public HTTPS listeners require TLS 1.2 or newer
   (Go's server default still admits 1.0/1.1). Handshake failures and other
   `http.Server` records land on the process logger at `WARN` instead of
@@ -170,6 +172,56 @@ toolchain's embedded VCS metadata.
 ```bash
 curl -s https://api.example/version | jq   # {"version":…,"commit":…,…}
 /opt/rwcg/bin/apiserver --version          # same identity on the host
+```
+
+## Time bounds (no unbounded waiting)
+
+Since the bounded-time change (D22 in `docs/MODERNIZATION.md`) every unit of
+work is bounded in time; a black-holed dependency degrades to an explicit,
+observable failure instead of a silent hang. Like the rest of the edge
+policy the bounds are fixed constants — there are no environment switches.
+
+- **API request deadline — 30s.** The shared middleware chain puts one
+  deadline on every request context, so context-aware handler work
+  (PostgreSQL queries, contract reads) fails with `DeadlineExceeded` once
+  the budget is spent. The failure renders as **503** — an RFC 9457
+  `…/problems/request-timeout` problem under `/api/v2/`, the legacy
+  `{"status":0,"error":"request timed out after 30s"}` envelope everywhere
+  else — and increments `rwcg_http_request_timeouts_total{method,route}`.
+  A handler that finishes just past the deadline still delivers its result;
+  only post-deadline internal errors are reinterpreted. The FAQ proxy is
+  the one exempt family: its LLM upstream is bounded by the proxy's own
+  180s client timeout and 4 MiB response cap. 30s is 60x the store's 500ms
+  slow-query warning threshold — a request that needs more is a fault.
+- **Server-side statement timeouts (defense in depth).** The services set
+  PostgreSQL session GUCs on every pool connection: `statement_timeout`
+  30s on the apiserver (matching the request deadline) and 60s on
+  cg-etl/rw-etl/notibot/imggen-monitor; `idle_in_transaction_session_timeout`
+  5m everywhere. These fire only when client-side cancellation never
+  reaches the server (SQLSTATE `57014` / `25P03` in the logs — investigate,
+  they mean the primary bound failed). Operator CLIs (`opsctl`, `cgctl`,
+  `rwctl`, `freezer-verify`) deliberately keep the server defaults: their
+  heavy statements are legitimate and Ctrl-C cancels them.
+- **ETL chain RPC — 60s per call.** The indexer engine wraps its RPC client
+  so every call (`eth_getLogs`, header/transaction/receipt fetches — the
+  historical backfill included) carries a deadline, even mid-batch on the
+  shutdown-immune context. A black-holed RPC endpoint now produces ordinary
+  batch failures — backoff, adaptive batch shrinking, breaker after 10, exit,
+  systemd restart — where it used to hang the ETL forever without a single
+  failure recorded (and SIGTERM could not interrupt it). In-transaction
+  contract reads (donated-NFT `tokenURI`, donation info) and the startup
+  contract-parameter sync are bounded at 15s per call.
+- **Everything else.** Twitter posts (2m — sized to video uploads),
+  WhatsApp sends (30s), Discord REST calls (30s), autobid's whole JSON-RPC
+  transport (30s per exchange), srvmonitor's RPC probes (10s, matching its
+  other probes) and the opsctl chain tools (90s per exchange, above
+  logscan's 60s per-fetch bound) are all bounded; `internal/ethtx` receipt
+  waits were already capped at 2m.
+
+Alert when timeouts appear at all — they are rare by construction:
+
+```promql
+sum by (route) (rate(rwcg_http_request_timeouts_total[15m])) > 0
 ```
 
 ## v1 deprecation headers and the sunset date
@@ -263,7 +315,9 @@ series simply lack it.
   `rwcg_http_requests_total{status="5xx"}` and request-duration percentiles.
   Since the stdlib-router migration the `route` label uses ServeMux syntax
   (`/api/.../{param}` instead of `/api/.../:param`) — update dashboards that
-  filter on route values.
+  filter on route values. `rwcg_http_request_timeouts_total{method,route}`
+  counts requests that hit the 30s processing deadline (rendered 503) —
+  see the time-bounds section for the alert expression.
 - The apiserver and both ETLs also export their shared pgx pool as
   `rwcg_db_pool_*`: saturation gauges (`acquired_conns`, `idle_conns`,
   `constructing_conns`, `total_conns` against the `max_conns` bound) and
@@ -291,8 +345,11 @@ series simply lack it.
 - ETL failure behavior (since the indexer-engine migration): a failed batch —
   RPC or database — is retried in-process with exponential backoff instead of
   crashing; the process exits non-zero only after 10 consecutive failures
-  (systemd restarts it). A restart never skips events: the watermark only
-  advances past fully processed blocks, and the engine re-reads it from
+  (systemd restarts it). Since the bounded-time change a *hung* RPC call is
+  cut off at 60s and counts as an ordinary failure, so a black-holed
+  endpoint trips the breaker instead of stalling the process silently. A
+  restart never skips events: the watermark only advances past fully
+  processed blocks, and the engine re-reads it from
   `cg_proc_status`/`rw_proc_status` at startup (rewind it with the ETL
   stopped if you need a manual replay).
 - ETL atomicity (since the transactional-ingestion change, ADR-0010): each

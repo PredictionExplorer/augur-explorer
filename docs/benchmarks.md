@@ -15,6 +15,7 @@ go test ./internal/freezer/decode/ -bench BenchmarkReceiptsDecode -benchmem -cou
 go test ./internal/api/common/   -bench BenchmarkRateLimiter    -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench 'BenchmarkCompress|BenchmarkConditionalETag' -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench BenchmarkMaxRequestBody -benchmem -count=6 -run '^$'
+go test ./internal/api/common/   -bench BenchmarkRequestDeadline -benchmem -count=6 -run '^$'
 
 # DB benchmarks (Docker required; runs against the seeded test container)
 go test -tags=integration ./internal/store/cosmicgame/ -bench BenchmarkStatisticsQueries -benchmem -count=6 -run '^$' -timeout 15m
@@ -49,6 +50,8 @@ against post-conversion runs; the pre-conversion table is in git history.
 | `BenchmarkMaxRequestBody/get_passthrough` (api/common) | 793 | 5,436 | 16 | full router exchange; the cap wrapper on a bodyless request |
 | `BenchmarkMaxRequestBody/post_1KiB_within_cap` (api/common) | 852 | 5,505 | 18 | 1 KiB body read through MaxBytesReader |
 | `BenchmarkMaxRequestBody/declared_oversize_413` (api/common) | 1,543 | 6,856 | 32 | Content-Length pre-check renders the legacy 413 without reading |
+| `BenchmarkRequestDeadline/bounded_passthrough` (api/common) | 1,006 | 6,028 | 21 | full router exchange under the 30s request deadline (timer + request clone + writer wrapper) |
+| `BenchmarkRequestDeadline/exempt_passthrough` (api/common) | 764 | 5,372 | 15 | policy-exempt request (FAQ family): the middleware's no-deadline fast path |
 | `BenchmarkStatisticsQueries/cosmic_game_statistics` | 2,199,000 | 14,384 | 298 | multi-query dashboard aggregate (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/claims_by_round` | 777,000 | 9,622 | 82 | per-round claim summary CTE (pgx-native Repo) |
 | `BenchmarkStatisticsQueries/roi_leaderboard` | 268,000 | 23,856 | 323 | ROI leaderboard join, sort=roi (pgx-native Repo) |

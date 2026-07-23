@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
+	"github.com/PredictionExplorer/augur-explorer/internal/ethcall"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 )
@@ -43,7 +44,9 @@ type contractParamSync struct {
 }
 
 func allocChainSyncEvtlog(ctx context.Context, st *store.Store, contractAddr string, client *ethclient.Client) (*cgdb.AdminCorrectionMeta, error) {
-	header, err := client.HeaderByNumber(ctx, nil)
+	headerCtx, cancel := context.WithTimeout(ctx, ethcall.DefaultTimeout)
+	defer cancel()
+	header, err := client.HeaderByNumber(headerCtx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("HeaderByNumber: %w", err)
 	}
@@ -181,14 +184,19 @@ func SyncContractParams(ctx context.Context, repo *cgdb.Repo, st *store.Store, c
 	if client == nil {
 		return errors.New("eth client is nil")
 	}
+	// Every chain read is bounded: the bindings run over a read-bounded
+	// backend (per-call deadline) and the CallOpts carry the sync context,
+	// so a wedged RPC node fails the startup sync loudly instead of
+	// wedging cg-etl before its polling loop ever starts.
+	backend := ethcall.NewBoundedReadBackend(client, ethcall.DefaultTimeout)
 	game := ethcommon.HexToAddress(gameAddr)
-	v1, _ := cgc.NewCosmicSignatureGame(game, client)
-	v2, _ := cgc.NewCosmicSignatureGameV2(game, client)
+	v1, _ := cgc.NewCosmicSignatureGame(game, backend)
+	v2, _ := cgc.NewCosmicSignatureGameV2(game, backend)
 	if v1 == nil && v2 == nil {
 		return fmt.Errorf("can't bind CosmicGame at %s", gameAddr)
 	}
 
-	var copts bind.CallOpts
+	copts := bind.CallOpts{Context: ctx}
 	mechanics := probeContractMechanics(v1, v2, &copts)
 
 	meta, err := allocChainSyncEvtlog(ctx, st, gameAddr, client)
@@ -233,7 +241,7 @@ func SyncContractParams(ctx context.Context, repo *cgdb.Repo, st *store.Store, c
 	}
 
 	if prizesWalletAddr != "" {
-		pw, err := cgc.NewPrizesWallet(ethcommon.HexToAddress(prizesWalletAddr), client)
+		pw, err := cgc.NewPrizesWallet(ethcommon.HexToAddress(prizesWalletAddr), backend)
 		if err != nil {
 			logger.Warn("chain sync: parameter skipped", "param", "timeout_withdraw_prizes", "err", fmt.Errorf("bind PrizesWallet: %w", err))
 		} else if val, err := pw.TimeoutDurationToWithdrawPrizes(&copts); err != nil {

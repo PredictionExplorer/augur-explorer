@@ -31,7 +31,24 @@ var (
 		Help:    "HTTP request latency by route.",
 		Buckets: prometheus.DefBuckets,
 	}, []string{"method", "route"})
+
+	httpRequestTimeoutsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "rwcg_http_request_timeouts_total",
+		Help: "Requests whose processing deadline expired and were answered " +
+			"with the 503 timeout rendering, by method and route.",
+	}, []string{"method", "route"})
 )
+
+// countRequestTimeout records one deadline-expired request; it is the
+// routes.Options.OnRequestTimeout hook. The route label uses the matched
+// pattern like every other request metric.
+func countRequestTimeout(r *http.Request) {
+	route := httpx.PatternPath(r)
+	if route == "" {
+		route = "unmatched"
+	}
+	httpRequestTimeoutsTotal.WithLabelValues(r.Method, route).Inc()
+}
 
 // metricsMiddleware records Prometheus counters/latency for every request.
 // The route label uses the matched route pattern (not the raw URL) to keep

@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -25,6 +26,17 @@ import (
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
+)
+
+// Server-side database time bounds (D22 defense in depth). ETL statements
+// are small single-row inserts and short reads; one that runs a minute is a
+// fault, and PostgreSQL aborts it even if the client-side cancellation never
+// arrives. The idle-in-transaction bound caps how long a per-block ingestion
+// transaction (ADR-0010) could pin locks if the process stalled between
+// statements.
+const (
+	dbStatementTimeout = time.Minute
+	dbIdleInTxTimeout  = 5 * time.Minute
 )
 
 // rwProgress adapts the rw_proc_status row to the engine's watermark
@@ -107,6 +119,8 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 	// slog tracer onto the same stream, tagged component=db.
 	storeCfg := cfg.DB.StoreConfig()
 	storeCfg.Logger = logger.With("component", "db")
+	storeCfg.StatementTimeout = dbStatementTimeout
+	storeCfg.IdleInTxSessionTimeout = dbIdleInTxTimeout
 	dbStore, err := store.New(ctx, storeCfg)
 	if err != nil {
 		return fmt.Errorf("can't connect to PostgreSQL database: %w\n%s", err, store.ConnectHint(err))

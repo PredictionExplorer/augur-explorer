@@ -4,7 +4,7 @@
 // store, dispatches every stored event to a caller-supplied processor and
 // advances the caller's processing watermark — with adaptive batch sizing,
 // exponential-backoff retries, a consecutive-failure circuit breaker,
-// structured slog logging and Prometheus metrics.
+// per-call RPC deadlines, structured slog logging and Prometheus metrics.
 //
 // The two ETL binaries differ only in configuration: which contracts to
 // filter, how to process one event, and where the watermark lives. Everything
@@ -143,6 +143,11 @@ type Config struct {
 	Retry RetryConfig
 	// CaughtUpDelay overrides DefaultCaughtUpDelay (tests use ~1ms).
 	CaughtUpDelay time.Duration
+	// RPCCallTimeout bounds every single Client call the engine makes;
+	// zero applies DefaultRPCCallTimeout. A hung RPC endpoint therefore
+	// surfaces as an ordinary batch failure — backoff, batch shrinking and
+	// the circuit breaker apply — instead of stalling the engine forever.
+	RPCCallTimeout time.Duration
 }
 
 // Engine is the indexing pipeline plus its polling loop. Create one with New;
@@ -178,9 +183,13 @@ func New(cfg Config) (*Engine, error) {
 	if caughtUp == 0 {
 		caughtUp = DefaultCaughtUpDelay
 	}
+	rpcTimeout := cfg.RPCCallTimeout
+	if rpcTimeout == 0 {
+		rpcTimeout = DefaultRPCCallTimeout
+	}
 	return &Engine{
 		store:         cfg.Store,
-		client:        cfg.Client,
+		client:        newBoundedClient(cfg.Client, rpcTimeout),
 		progress:      cfg.Progress,
 		process:       cfg.Process,
 		contracts:     cfg.Contracts,
