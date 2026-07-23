@@ -16,7 +16,7 @@ func BuildEndpoints(input Params) []string {
 	)
 	user := params.UserAddress
 	round := params.RoundNumber
-	endpoints := make([]string, 0, 140)
+	endpoints := make([]string, 0, 145)
 	add := func(endpoint string) { endpoints = append(endpoints, endpoint) }
 
 	// Statistics.
@@ -68,6 +68,11 @@ func BuildEndpoints(input Params) []string {
 	add("/api/cosmicgame/bid/eth_price")
 	add("/api/cosmicgame/bid/current_special_winners")
 	add("/api/cosmicgame/get_banned_bids")
+
+	// Cosmic Signature marketplace.
+	add("/api/cosmicgame/marketplace/current_offers/" + sortParam)
+	add("/api/cosmicgame/marketplace/floor_price")
+	add("/api/cosmicgame/marketplace/trading/sales/" + offset + "/" + limit)
 
 	// CST NFT.
 	add("/api/cosmicgame/cst/list/all/" + offset + "/" + limit)

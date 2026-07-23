@@ -65,6 +65,34 @@ INSERT INTO rw_offer_canceled(evtlog_id, block_num, tx_id, time_stamp, contract_
 INSERT INTO rw_withdrawal(evtlog_id, block_num, tx_id, time_stamp, contract_aid, aid, token_id, amount) VALUES
   (5095, 141, 1041, TO_TIMESTAMP(1767229700), 8, 23, 10, 30000000000000000);
 
+-- === Cosmic Signature on the shared marketplace ============================
+-- Offer 101: alice lists Cosmic Signature #1 for 1.5 ETH; bob buys it.
+INSERT INTO rw_new_offer(evtlog_id, block_num, tx_id, time_stamp, contract_aid, rwalk_aid, offer_id, seller_aid, buyer_aid, otype, token_id, active, price) VALUES
+  (5201, 130, 1044, TO_TIMESTAMP(1767228610), 12, 3, 101, 21, 1, 1, 1, TRUE, 1500000000000000000);
+
+INSERT INTO rw_item_bought(evtlog_id, block_num, tx_id, time_stamp, contract_aid, offer_id, seller_aid, buyer_aid) VALUES
+  (5202, 131, 1045, TO_TIMESTAMP(1767228710), 12, 101, 21, 22);
+
+-- Offer 102: dave lists #2 for 2 ETH (active).
+INSERT INTO rw_new_offer(evtlog_id, block_num, tx_id, time_stamp, contract_aid, rwalk_aid, offer_id, seller_aid, buyer_aid, otype, token_id, active, price) VALUES
+  (5203, 132, 1046, TO_TIMESTAMP(1767228810), 12, 3, 102, 24, 1, 1, 2, TRUE, 2000000000000000000);
+
+-- Offer 103: bob places a 0.75 ETH buy bid for #3 (active).
+INSERT INTO rw_new_offer(evtlog_id, block_num, tx_id, time_stamp, contract_aid, rwalk_aid, offer_id, seller_aid, buyer_aid, otype, token_id, active, price) VALUES
+  (5204, 133, 1047, TO_TIMESTAMP(1767228910), 12, 3, 103, 1, 22, 0, 3, TRUE, 750000000000000000);
+
+-- Offer 104: carol lists #3 for 3 ETH, then cancels it.
+INSERT INTO rw_new_offer(evtlog_id, block_num, tx_id, time_stamp, contract_aid, rwalk_aid, offer_id, seller_aid, buyer_aid, otype, token_id, active, price) VALUES
+  (5205, 134, 1048, TO_TIMESTAMP(1767229010), 12, 3, 104, 23, 1, 1, 3, TRUE, 3000000000000000000);
+
+INSERT INTO rw_offer_canceled(evtlog_id, block_num, tx_id, time_stamp, contract_aid, offer_id) VALUES
+  (5206, 135, 1049, TO_TIMESTAMP(1767229110), 12, 104);
+
+-- Offer 105: dave lists #4 at the same price as #2, exercising the exact
+-- price/event-log tie break.
+INSERT INTO rw_new_offer(evtlog_id, block_num, tx_id, time_stamp, contract_aid, rwalk_aid, offer_id, seller_aid, buyer_aid, otype, token_id, active, price) VALUES
+  (5207, 136, 1050, TO_TIMESTAMP(1767229210), 12, 3, 105, 24, 1, 1, 4, TRUE, 2000000000000000000);
+
 -- === Beauty ranking =========================================================
 INSERT INTO rw_token_ranking(token_id, rating, updated_at) VALUES
   (10, 1210.5, TO_TIMESTAMP(1767232000)),

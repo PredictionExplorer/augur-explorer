@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "contentType": "application/json",
+  "body": {
+    "error": "Bad 'offset' parameter: strconv.Atoi: parsing \"xyz\": invalid syntax",
+    "status": 0
+  }
+}

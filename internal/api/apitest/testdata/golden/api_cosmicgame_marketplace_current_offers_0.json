@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MarketAid": 12,
+    "NftAid": 3,
+    "Offers": [
+      {
+        "Active": true,
+        "BlockNum": 132,
+        "BuyerAddr": "0x0000000000000000000000000000000000000000",
+        "DateTime": "2026-01-01 00:53:30+00",
+        "OfferId": 102,
+        "OfferType": 1,
+        "Price": 2,
+        "SellerAddr": "0x2400000000000000000000000000000000000024",
+        "TimeStamp": 1767228810,
+        "TokenId": 2
+      },
+      {
+        "Active": true,
+        "BlockNum": 133,
+        "BuyerAddr": "0x2200000000000000000000000000000000000022",
+        "DateTime": "2026-01-01 00:55:10+00",
+        "OfferId": 103,
+        "OfferType": 0,
+        "Price": 0.75,
+        "SellerAddr": "0x0000000000000000000000000000000000000000",
+        "TimeStamp": 1767228910,
+        "TokenId": 3
+      },
+      {
+        "Active": true,
+        "BlockNum": 136,
+        "BuyerAddr": "0x0000000000000000000000000000000000000000",
+        "DateTime": "2026-01-01 01:00:10+00",
+        "OfferId": 105,
+        "OfferType": 1,
+        "Price": 2,
+        "SellerAddr": "0x2400000000000000000000000000000000000024",
+        "TimeStamp": 1767229210,
+        "TokenId": 4
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

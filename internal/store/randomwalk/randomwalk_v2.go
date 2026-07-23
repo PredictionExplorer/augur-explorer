@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
 )
 
 // truncatePage reports whether more records than limit exist and trims the
@@ -769,82 +770,57 @@ func (r *Repo) ActiveOffersPage(
 	if err != nil {
 		return nil, false, err
 	}
-
-	query := `SELECT
-			o.evtlog_id,
-			o.block_num,
-			t.id,
-			t.tx_hash,
-			EXTRACT(EPOCH FROM o.time_stamp)::BIGINT,
-			o.time_stamp,
-			o.offer_id,
-			o.otype,
-			o.token_id,
-			o.price::TEXT,
-			CASE WHEN o.otype=1 THEN o.seller_aid ELSE o.buyer_aid END,
-			mka.addr
-		FROM rw_new_offer o
-			INNER JOIN transaction t ON t.id=o.tx_id
-			INNER JOIN address mka ON mka.address_id=
-				CASE WHEN o.otype=1 THEN o.seller_aid ELSE o.buyer_aid END
-		WHERE o.active AND o.contract_aid=$1 AND o.rwalk_aid=$2`
-	args := []any{addrs.MarketPlaceAid, addrs.RandomWalkAid}
-	var orderBy string
-	switch sort {
-	case OfferSortNewest:
-		orderBy = "ORDER BY o.evtlog_id DESC"
-		if after != nil {
-			args = append(args, after.EventLogID)
-			query += fmt.Sprintf(" AND o.evtlog_id < $%d", len(args))
-		}
-	case OfferSortOldest:
-		orderBy = "ORDER BY o.evtlog_id"
-		if after != nil {
-			args = append(args, after.EventLogID)
-			query += fmt.Sprintf(" AND o.evtlog_id > $%d", len(args))
-		}
-	case OfferSortPriceAsc:
-		orderBy = "ORDER BY o.price, o.evtlog_id"
-		if after != nil {
-			args = append(args, after.PriceWei, after.EventLogID)
-			query += fmt.Sprintf(
-				" AND (o.price > $%d::NUMERIC OR (o.price = $%d::NUMERIC AND o.evtlog_id > $%d))",
-				len(args)-1, len(args)-1, len(args))
-		}
-	case OfferSortPriceDesc:
-		orderBy = "ORDER BY o.price DESC, o.evtlog_id"
-		if after != nil {
-			args = append(args, after.PriceWei, after.EventLogID)
-			query += fmt.Sprintf(
-				" AND (o.price < $%d::NUMERIC OR (o.price = $%d::NUMERIC AND o.evtlog_id > $%d))",
-				len(args)-1, len(args)-1, len(args))
+	marketSort := map[OfferSort]marketstore.OfferSort{
+		OfferSortNewest:    marketstore.OfferSortNewest,
+		OfferSortOldest:    marketstore.OfferSortOldest,
+		OfferSortPriceAsc:  marketstore.OfferSortPriceAsc,
+		OfferSortPriceDesc: marketstore.OfferSortPriceDesc,
+	}[sort]
+	var marketAfter *marketstore.OfferPageCursor
+	if after != nil {
+		marketAfter = &marketstore.OfferPageCursor{
+			EventLogID: after.EventLogID,
+			PriceWei:   after.PriceWei,
 		}
 	}
-	args = append(args, limit+1)
-	query += fmt.Sprintf("\n\t\t%s\n\t\tLIMIT $%d", orderBy, len(args))
-
-	scan := func(rows pgx.Rows, record *OfferRecord) error {
-		return rows.Scan(
-			&record.ListTx.EvtLogID,
-			&record.ListTx.BlockNum,
-			&record.ListTx.TxID,
-			&record.ListTx.TxHash,
-			&record.ListTx.TimeStamp,
-			store.TimeText(&record.ListTx.DateTime),
-			&record.OfferID,
-			&record.OfferType,
-			&record.TokenID,
-			&record.PriceWei,
-			&record.MakerAid,
-			&record.MakerAddr,
-		)
-	}
-	records, err = queryList(ctx, r, op, limit+1, query, scan, args...)
+	marketRecords, hasMore, err := r.marketplace.ActiveOffersPage(
+		ctx,
+		marketstore.Scope{
+			MarketplaceAid: addrs.MarketPlaceAid,
+			CollectionAid:  addrs.RandomWalkAid,
+		},
+		marketSort,
+		marketAfter,
+		limit,
+	)
 	if err != nil {
 		return nil, false, err
 	}
-	records, hasMore = truncatePage(records, limit)
+	records = make([]OfferRecord, 0, len(marketRecords))
+	for i := range marketRecords {
+		record := marketRecords[i]
+		records = append(records, OfferRecord{
+			ListTx:    randomWalkEventTx(record.ListTx),
+			OfferID:   record.OfferID,
+			OfferType: record.OfferType,
+			TokenID:   record.TokenID,
+			PriceWei:  record.PriceWei,
+			MakerAid:  record.MakerAid,
+			MakerAddr: record.MakerAddr,
+		})
+	}
 	return records, hasMore, nil
+}
+
+func randomWalkEventTx(record marketstore.EventTx) EventTx {
+	return EventTx{
+		EvtLogID:  record.EventLogID,
+		BlockNum:  record.BlockNum,
+		TxID:      record.TxID,
+		TxHash:    record.TxHash,
+		TimeStamp: record.TimeStamp,
+		DateTime:  record.DateTime,
+	}
 }
 
 // OfferOutcomePurchase is the purchase event that filled an offer, with the
@@ -1021,6 +997,29 @@ func (r *Repo) offerHistoryPage(
 	if err != nil {
 		return nil, false, err
 	}
+	if userAid == nil {
+		var marketAfter *marketstore.EventPageCursor
+		if after != nil {
+			marketAfter = &marketstore.EventPageCursor{EventLogID: after.EventLogID}
+		}
+		marketRecords, marketHasMore, err := r.marketplace.OfferHistoryPage(
+			ctx,
+			marketstore.Scope{
+				MarketplaceAid: addrs.MarketPlaceAid,
+				CollectionAid:  addrs.RandomWalkAid,
+			},
+			marketAfter,
+			limit,
+		)
+		if err != nil {
+			return nil, false, err
+		}
+		records = make([]OfferHistoryRecord, 0, len(marketRecords))
+		for i := range marketRecords {
+			records = append(records, randomWalkOfferHistory(marketRecords[i]))
+		}
+		return records, marketHasMore, nil
+	}
 
 	query := offerHistorySelectSQL + `
 	WHERE o.contract_aid=$1 AND o.rwalk_aid=$2`
@@ -1051,6 +1050,34 @@ func (r *Repo) offerHistoryPage(
 	}
 	records, hasMore = truncatePage(records, limit)
 	return records, hasMore, nil
+}
+
+func randomWalkOfferHistory(record marketstore.OfferHistoryRecord) OfferHistoryRecord {
+	output := OfferHistoryRecord{
+		ListTx:    randomWalkEventTx(record.ListTx),
+		OfferID:   record.OfferID,
+		OfferType: record.OfferType,
+		TokenID:   record.TokenID,
+		PriceWei:  record.PriceWei,
+		MakerAid:  record.MakerAid,
+		MakerAddr: record.MakerAddr,
+		Active:    record.Active,
+		ProfitWei: record.ProfitWei,
+	}
+	if record.Purchase != nil {
+		output.Purchase = &OfferOutcomePurchase{
+			Tx:         randomWalkEventTx(record.Purchase.Tx),
+			BuyerAid:   record.Purchase.BuyerAid,
+			BuyerAddr:  record.Purchase.BuyerAddr,
+			SellerAid:  record.Purchase.SellerAid,
+			SellerAddr: record.Purchase.SellerAddr,
+		}
+	}
+	if record.Cancellation != nil {
+		cancellation := randomWalkEventTx(*record.Cancellation)
+		output.Cancellation = &cancellation
+	}
+	return output
 }
 
 // OfferHistoryPage returns at most limit offer-creation events with their
@@ -1108,69 +1135,38 @@ func (r *Repo) TradesPage(
 	if err != nil {
 		return nil, false, err
 	}
-
-	query := `SELECT
-			ib.evtlog_id,
-			ib.block_num,
-			t.id,
-			t.tx_hash,
-			EXTRACT(EPOCH FROM ib.time_stamp)::BIGINT,
-			ib.time_stamp,
-			ib.offer_id,
-			o.otype,
-			o.token_id,
-			o.price::TEXT,
-			ib.buyer_aid,
-			ba.addr,
-			ib.seller_aid,
-			sa.addr,
-			o.profit::TEXT
-		FROM rw_item_bought ib
-			INNER JOIN rw_new_offer o
-				ON o.contract_aid=ib.contract_aid AND o.offer_id=ib.offer_id
-			INNER JOIN transaction t ON t.id=ib.tx_id
-			INNER JOIN address ba ON ba.address_id=ib.buyer_aid
-			INNER JOIN address sa ON sa.address_id=ib.seller_aid
-		WHERE ib.contract_aid=$1 AND o.rwalk_aid=$2`
-	args := []any{addrs.MarketPlaceAid, addrs.RandomWalkAid}
+	var marketAfter *marketstore.EventPageCursor
 	if after != nil {
-		args = append(args, after.EventLogID)
-		query += fmt.Sprintf(" AND ib.evtlog_id < $%d", len(args))
+		marketAfter = &marketstore.EventPageCursor{EventLogID: after.EventLogID}
 	}
-	args = append(args, limit+1)
-	query += fmt.Sprintf(`
-		ORDER BY ib.evtlog_id DESC
-		LIMIT $%d`, len(args))
-
-	scan := func(rows pgx.Rows, record *TradeRecord) error {
-		var profit sql.NullString
-		if err := rows.Scan(
-			&record.Tx.EvtLogID,
-			&record.Tx.BlockNum,
-			&record.Tx.TxID,
-			&record.Tx.TxHash,
-			&record.Tx.TimeStamp,
-			store.TimeText(&record.Tx.DateTime),
-			&record.OfferID,
-			&record.OfferType,
-			&record.TokenID,
-			&record.PriceWei,
-			&record.BuyerAid,
-			&record.BuyerAddr,
-			&record.SellerAid,
-			&record.SellerAddr,
-			&profit,
-		); err != nil {
-			return err
-		}
-		record.ProfitWei = profit.String
-		return nil
-	}
-	records, err = queryList(ctx, r, op, limit+1, query, scan, args...)
+	marketRecords, hasMore, err := r.marketplace.TradesPage(
+		ctx,
+		marketstore.Scope{
+			MarketplaceAid: addrs.MarketPlaceAid,
+			CollectionAid:  addrs.RandomWalkAid,
+		},
+		marketAfter,
+		limit,
+	)
 	if err != nil {
 		return nil, false, err
 	}
-	records, hasMore = truncatePage(records, limit)
+	records = make([]TradeRecord, 0, len(marketRecords))
+	for i := range marketRecords {
+		record := marketRecords[i]
+		records = append(records, TradeRecord{
+			Tx:         randomWalkEventTx(record.Tx),
+			OfferID:    record.OfferID,
+			OfferType:  record.OfferType,
+			TokenID:    record.TokenID,
+			PriceWei:   record.PriceWei,
+			BuyerAid:   record.BuyerAid,
+			BuyerAddr:  record.BuyerAddr,
+			SellerAid:  record.SellerAid,
+			SellerAddr: record.SellerAddr,
+			ProfitWei:  record.ProfitWei,
+		})
+	}
 	return records, hasMore, nil
 }
 
@@ -1193,43 +1189,27 @@ type FloorPriceRecord struct {
 // FloorPriceV2 returns the live sell-side floor. An empty order book is a
 // valid result with a zero count and no floor listing.
 func (r *Repo) FloorPriceV2(ctx context.Context) (FloorPriceRecord, error) {
-	const op = "rwalk floor price v2"
 	addrs, err := r.ContractAddrs(ctx)
 	if err != nil {
 		return FloorPriceRecord{}, err
 	}
-	var record FloorPriceRecord
-	err = r.q(ctx).QueryRow(ctx, `SELECT COUNT(*)
-		FROM rw_new_offer
-		WHERE active AND otype=1 AND contract_aid=$1 AND rwalk_aid=$2`,
-		addrs.MarketPlaceAid, addrs.RandomWalkAid).Scan(&record.ActiveSellOfferCount)
+	marketRecord, err := r.marketplace.FloorPrice(ctx, marketstore.Scope{
+		MarketplaceAid: addrs.MarketPlaceAid,
+		CollectionAid:  addrs.RandomWalkAid,
+	})
 	if err != nil {
-		return FloorPriceRecord{}, store.WrapError(op+": count", err)
+		return FloorPriceRecord{}, err
 	}
-	var floor FloorListingRecord
-	err = r.q(ctx).QueryRow(ctx, `SELECT
-			offer_id,
-			token_id,
-			price::TEXT,
-			EXTRACT(EPOCH FROM time_stamp)::BIGINT,
-			time_stamp
-		FROM rw_new_offer
-		WHERE active AND otype=1 AND contract_aid=$1 AND rwalk_aid=$2
-		ORDER BY price, evtlog_id
-		LIMIT 1`, addrs.MarketPlaceAid, addrs.RandomWalkAid).Scan(
-		&floor.OfferID,
-		&floor.TokenID,
-		&floor.PriceWei,
-		&floor.ListedAtTs,
-		store.TimeText(&floor.ListedAtText),
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return record, nil
+	record := FloorPriceRecord{ActiveSellOfferCount: marketRecord.ActiveSellOfferCount}
+	if marketRecord.Floor != nil {
+		record.Floor = &FloorListingRecord{
+			OfferID:      marketRecord.Floor.OfferID,
+			TokenID:      marketRecord.Floor.TokenID,
+			PriceWei:     marketRecord.Floor.PriceWei,
+			ListedAtTs:   marketRecord.Floor.ListedAtTs,
+			ListedAtText: marketRecord.Floor.ListedAtText,
 		}
-		return FloorPriceRecord{}, store.WrapError(op, err)
 	}
-	record.Floor = &floor
 	return record, nil
 }
 
@@ -1486,7 +1466,14 @@ func (r *Repo) StatisticsV2(ctx context.Context) (StatisticsRecord, error) {
 			lw.token_id
 		FROM (SELECT 1) one
 			LEFT JOIN rw_stats s ON s.rwalk_aid=$1
-			LEFT JOIN rw_mkt_stats ms ON ms.contract_aid=$2
+			LEFT JOIN LATERAL (
+				SELECT COUNT(*)::BIGINT AS total_num_trades,
+					COALESCE(SUM(o.price), 0) AS total_vol
+				FROM rw_item_bought ib
+					INNER JOIN rw_new_offer o
+						ON o.contract_aid=ib.contract_aid AND o.offer_id=ib.offer_id
+				WHERE ib.contract_aid=$2 AND o.rwalk_aid=$1
+			) ms ON TRUE
 			LEFT JOIN LATERAL (SELECT * FROM rw_mint_evt m
 				WHERE m.contract_aid=$1 ORDER BY m.evtlog_id DESC LIMIT 1) lm ON TRUE
 			LEFT JOIN address lma ON lma.address_id=lm.owner_aid

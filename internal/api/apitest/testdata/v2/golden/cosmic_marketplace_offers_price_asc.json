@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "blockNumber": 133,
+        "eventLogId": 5204,
+        "listedAt": "2026-01-01T00:55:10Z",
+        "makerAddress": "0x2200000000000000000000000000000000000022",
+        "nftTokenId": 3,
+        "offerId": 103,
+        "priceWei": "750000000000000000",
+        "side": "buy",
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001047"
+      }
+    ],
+    "meta": {
+      "limit": 1,
+      "nextCursor": "eyJ2IjoxLCJrIjoiY29zbWljU2lnbmF0dXJlTWFya2V0cGxhY2VPZmZlcnMiLCJjIjoiY29zbWljU2lnbmF0dXJlIiwicyI6InByaWNlQXNjIiwicCI6Ijc1MDAwMDAwMDAwMDAwMDAwMCIsImUiOjUyMDR9"
+    }
+  }
+}

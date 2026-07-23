@@ -159,6 +159,17 @@ var parityCases = map[string][]parityCase{
 	},
 	"/api/cosmicgame/get_banned_bids": {{path: "/api/cosmicgame/get_banned_bids"}},
 
+	// --- CosmicGame: shared marketplace --------------------------------------------
+	"/api/cosmicgame/marketplace/current_offers/{order_by}": {
+		{path: "/api/cosmicgame/marketplace/current_offers/0"},
+	},
+	"/api/cosmicgame/marketplace/floor_price": {
+		{path: "/api/cosmicgame/marketplace/floor_price"},
+	},
+	"/api/cosmicgame/marketplace/trading/sales/{offset}/{limit}": {
+		{path: "/api/cosmicgame/marketplace/trading/sales/0/10"},
+	},
+
 	// --- CosmicGame: CS NFTs (cst/*) -----------------------------------------------
 	"/api/cosmicgame/cst/list/all/{offset}/{limit}": {{path: "/api/cosmicgame/cst/list/all/0/20"}},
 	"/api/cosmicgame/cst/list/by_user/{user_addr}/{offset}/{limit}": {

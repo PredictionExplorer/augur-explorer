@@ -25,6 +25,8 @@ func TestErrorShapes(t *testing.T) {
 		{"bad_offset", "/api/cosmicgame/rounds/list/abc/10"},
 		{"bad_round", "/api/cosmicgame/statistics/claims/detail/xyz"},
 		{"bad_order_by", "/api/randomwalk/current_offers/xyz"},
+		{"bad_cosmic_market_order", "/api/cosmicgame/marketplace/current_offers/xyz"},
+		{"bad_cosmic_market_offset", "/api/cosmicgame/marketplace/trading/sales/xyz/10"},
 		{"bad_token_id", "/api/randomwalk/tokens/info/notanumber"},
 		// Date params demand YYYYMMDD.
 		{"bad_date_format", "/api/cosmicgame/ct/total_supply_history_by_date/2026-01-01/20260102"},

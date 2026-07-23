@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
 )
 
 // Repo executes CosmicGame queries on the shared store pool. It is the
@@ -15,12 +16,16 @@ import (
 // run natively on pgx. Files are converted one at a time; anything not yet
 // converted remains a SQLStorageWrapper method.
 type Repo struct {
-	store *store.Store
+	store       *store.Store
+	marketplace *marketstore.Repo
 }
 
 // NewRepo returns a Repo backed by st's connection pool.
 func NewRepo(st *store.Store) *Repo {
-	return &Repo{store: st}
+	return &Repo{
+		store:       st,
+		marketplace: marketstore.NewRepo(st),
+	}
 }
 
 // q resolves the querier for ctx — the transaction the context carries when

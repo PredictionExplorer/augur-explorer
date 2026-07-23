@@ -58,6 +58,9 @@ func TestRandomWalkSecondQueryFailuresAreOpaque(t *testing.T) {
 		path  string
 		table string
 	}{
+		{"/api/cosmicgame/marketplace/current_offers/0", "rw_new_offer"},
+		{"/api/cosmicgame/marketplace/floor_price", "rw_new_offer"},
+		{"/api/cosmicgame/marketplace/trading/sales/0/10", "rw_item_bought"},
 		{"/api/randomwalk/current_offers/0", "rw_new_offer"},
 		{"/api/randomwalk/floor_price", "rw_new_offer"},
 		{"/api/randomwalk/tokens/list/sequential", "rw_mint_evt"},
@@ -69,7 +72,7 @@ func TestRandomWalkSecondQueryFailuresAreOpaque(t *testing.T) {
 		{"/api/randomwalk/trading/sales/0/10", "rw_item_bought"},
 		{"/api/randomwalk/trading/by_user/23/0/10", "rw_new_offer"},
 		{"/api/randomwalk/statistics/by_token", "rw_stats"},
-		{"/api/randomwalk/statistics/by_market", "rw_mkt_stats"},
+		{"/api/randomwalk/statistics/by_market", "rw_item_bought"},
 		{"/api/randomwalk/statistics/trading_volume/1767225600/1767230000/600", "rw_item_bought"},
 		{"/api/randomwalk/statistics/mint_intervals", "rw_mint_evt"},
 		{"/api/randomwalk/statistics/withdrawal_chart", "rw_mint_evt"},

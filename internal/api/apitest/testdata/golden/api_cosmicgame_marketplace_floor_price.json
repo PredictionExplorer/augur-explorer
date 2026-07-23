@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "DBError": "",
+    "FloorPrice": 2,
+    "MarketAid": 12,
+    "NftAid": 3,
+    "error": "",
+    "status": 1
+  }
+}

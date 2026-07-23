@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "MarketAid": 12,
+    "NftAid": 3,
+    "Trading": [
+      {
+        "Active": false,
+        "BlockNum": 130,
+        "BuyerAddr": "0x2200000000000000000000000000000000000022",
+        "DateTime": "2026-01-01 00:51:50+00",
+        "OfferId": 101,
+        "OfferType": 1,
+        "Price": 1.5,
+        "SellerAddr": "0x2100000000000000000000000000000000000021",
+        "TimeStamp": 1767228710,
+        "TokenId": 1
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

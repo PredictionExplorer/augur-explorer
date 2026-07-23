@@ -510,6 +510,25 @@ last-bid timestamp sentinel is omitted.
 - Empty collections are `[]`; optional values are omitted instead of using
   magic sentinels.
 
+## Cosmic Signature marketplace
+
+The shared marketplace tables contain offers for both NFT collections. The
+three upstream-compatible v1 Cosmic Signature routes are now available and
+deprecated under the standard `/api/cosmicgame/*` policy:
+
+- `marketplace/current_offers/{order_by}` becomes
+  `GET /api/v2/cosmicgame/marketplace/offers`.
+- `marketplace/trading/sales/{offset}/{limit}` becomes both
+  `GET …/marketplace/offer-history` (every offer and its current outcome) and
+  `GET …/marketplace/trades` (completed purchases only).
+- `marketplace/floor_price` becomes `GET …/marketplace/floor-price`.
+
+The v1 routes retain the upstream envelope and floating-point ETH fields. The
+v2 resources use exact wei strings, bounded keyset pages and deterministic
+event-log tie breaks. Their opaque cursors are endpoint-, sort- and
+Cosmic-Signature-collection-scoped, so neither a RandomWalk cursor nor a
+cursor from another marketplace resource can be replayed.
+
 ## RandomWalk explorer, marketplace and statistics
 
 Seventeen `/api/v2/randomwalk/*` operations replace twenty-one v1 read

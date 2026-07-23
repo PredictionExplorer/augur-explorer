@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
 )
 
 // Repo executes RandomWalk queries on the shared store pool. It is the
@@ -18,12 +19,16 @@ import (
 // first parameter, return errors instead of exiting, use idiomatic names and
 // run natively on pgx.
 type Repo struct {
-	store *store.Store
+	store       *store.Store
+	marketplace *marketstore.Repo
 }
 
 // NewRepo returns a Repo backed by st's connection pool.
 func NewRepo(st *store.Store) *Repo {
-	return &Repo{store: st}
+	return &Repo{
+		store:       st,
+		marketplace: marketstore.NewRepo(st),
+	}
 }
 
 // q resolves the querier for ctx — the transaction the context carries when

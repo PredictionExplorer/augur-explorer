@@ -46,7 +46,25 @@ func TestV2SmoketestCatalogThroughProductionRouter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("v2 smoke run failed: %v\nsummary: %#v", err, summary)
 	}
-	if summary.Total != 97 || summary.OK != 97 || len(summary.Failures) != 0 {
+	if summary.Total != 101 || summary.OK != 101 || len(summary.Failures) != 0 {
+		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestV1SmoketestCatalogThroughProductionRouter(t *testing.T) {
+	h := server(t)
+	summary, err := smoketest.Run(t.Context(), smoketest.Options{
+		Source:        smoketest.SQLParameterSource{DB: h.store.Pool()},
+		Client:        &smokeRouterClient{harness: h},
+		BaseURL:       "http://apitest.local",
+		Output:        io.Discard,
+		Suite:         smoketest.SuiteV1,
+		DisablePacing: true,
+	})
+	if err != nil {
+		t.Fatalf("v1 smoke run failed: %v\nsummary: %#v", err, summary)
+	}
+	if summary.Total != 145 || summary.OK != 145 || len(summary.Failures) != 0 {
 		t.Fatalf("summary = %#v", summary)
 	}
 }

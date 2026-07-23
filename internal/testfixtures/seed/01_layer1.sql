@@ -258,3 +258,24 @@ INSERT INTO evt_log(id, block_num, tx_id, contract_aid, topic0_sig, log_index, l
   -- Late CosmicGame additions (own transactions)
   (5096, 142, 1042, 6,  'ds000001', 0, '\x00'), -- DonationSent (charity payout)
   (5097, 129, 1043, 2,  'bd000001', 0, '\x00'); -- BidPlaced alice (5th bid overall)
+
+-- Shared-marketplace activity for the Cosmic Signature collection. These use
+-- separate transactions/event ids so RandomWalk fixture identities and
+-- goldens remain unchanged.
+INSERT INTO transaction(id, block_num, from_aid, to_aid, tx_hash) VALUES
+  (1044, 130, 21, 12, '0xf000000000000000000000000000000000000000000000000000000000001044'), -- alice lists CS #1
+  (1045, 131, 22, 12, '0xf000000000000000000000000000000000000000000000000000000000001045'), -- bob buys CS #1
+  (1046, 132, 24, 12, '0xf000000000000000000000000000000000000000000000000000000000001046'), -- dave lists CS #2
+  (1047, 133, 22, 12, '0xf000000000000000000000000000000000000000000000000000000000001047'), -- bob bids on CS #3
+  (1048, 134, 23, 12, '0xf000000000000000000000000000000000000000000000000000000000001048'), -- carol lists CS #3
+  (1049, 135, 23, 12, '0xf000000000000000000000000000000000000000000000000000000000001049'), -- carol cancels
+  (1050, 136, 24, 12, '0xf000000000000000000000000000000000000000000000000000000000001050'); -- dave lists CS #4
+
+INSERT INTO evt_log(id, block_num, tx_id, contract_aid, topic0_sig, log_index, log_rlp) VALUES
+  (5201, 130, 1044, 12, 'of000001', 0, '\x00'),
+  (5202, 131, 1045, 12, 'ib000001', 0, '\x00'),
+  (5203, 132, 1046, 12, 'of000001', 0, '\x00'),
+  (5204, 133, 1047, 12, 'of000001', 0, '\x00'),
+  (5205, 134, 1048, 12, 'of000001', 0, '\x00'),
+  (5206, 135, 1049, 12, 'oc000001', 0, '\x00'),
+  (5207, 136, 1050, 12, 'of000001', 0, '\x00');

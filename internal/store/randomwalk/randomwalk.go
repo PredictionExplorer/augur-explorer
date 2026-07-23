@@ -436,19 +436,27 @@ func (r *Repo) UpdateTopVolumeRank(ctx context.Context, aid int64, rank, volume 
 	return r.updateRank(ctx, "update top volume rank", "top_volume", "volume", aid, rank, volume)
 }
 
-// RankingDataForAllUsers aggregates per-user trade count, profit and volume
-// across contracts (input of the rwctl top-rated rank computation).
+// RankingDataForAllUsers aggregates per-user RandomWalk trade count, profit
+// and volume (input of the rwctl top-rated rank computation). The shared
+// marketplace also indexes other collections, which must not enter this
+// RandomWalk ranking.
 func (r *Repo) RankingDataForAllUsers(ctx context.Context) ([]rwmodel.RankStats, error) {
+	addrs, err := r.ContractAddrs(ctx)
+	if err != nil {
+		return nil, err
+	}
 	query := `SELECT
 			user_aid,
 			SUM(total_num_trades) AS tot_trades,
 			SUM(total_profit) AS profit,
 			SUM(total_vol) AS tot_volume
 		FROM rw_user_stats
-		GROUP BY user_aid`
+		WHERE rwalk_aid=$1
+		GROUP BY user_aid
+		ORDER BY user_aid DESC`
 	return queryList(ctx, r, "ranking data for all users", 8, query, func(rows pgx.Rows, rec *rwmodel.RankStats) error {
 		return rows.Scan(&rec.Aid, &rec.TotalTrades, &rec.ProfitLoss, &rec.VolumeTraded)
-	})
+	}, addrs.RandomWalkAid)
 }
 
 // TopProfitMakers returns the profit leaderboard (best percentile first,

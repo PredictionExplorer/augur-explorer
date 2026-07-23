@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: RWCG Backend API v2
-  version: 0.21.0
+  version: 0.22.0
   description: |
     Resource-oriented API for RandomWalk and CosmicGame. This is the
     canonical specification: the v2 endpoint inventory is complete, every
@@ -1675,6 +1675,82 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/marketplace/offers:
+    get:
+      operationId: listCosmicGameMarketplaceOffers
+      summary: List the live Cosmic Signature marketplace order book
+      description: |
+        Returns active sell listings and buy bids for the Cosmic Signature
+        NFT collection only. Continuation cursors are bound to this
+        collection, endpoint and requested sort.
+      tags:
+        - CosmicGame marketplace
+      parameters:
+        - $ref: "#/components/parameters/RandomWalkOfferSortParam"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicSignatureMarketplaceOfferPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/marketplace/offer-history:
+    get:
+      operationId: listCosmicGameMarketplaceOfferHistory
+      summary: List Cosmic Signature marketplace offer history
+      description: |
+        Returns every Cosmic Signature offer creation newest first by
+        immutable event-log ID, including its active, purchased or canceled
+        outcome and exact wei amounts.
+      tags:
+        - CosmicGame marketplace
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicSignatureMarketplaceOfferHistoryPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/marketplace/trades:
+    get:
+      operationId: listCosmicGameMarketplaceTrades
+      summary: List completed Cosmic Signature marketplace purchases
+      description: |
+        Returns the Cosmic Signature purchase ledger newest first by the
+        purchase event's immutable event-log ID with exact wei prices and
+        both trading parties.
+      tags:
+        - CosmicGame marketplace
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicSignatureMarketplaceTradePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/marketplace/floor-price:
+    get:
+      operationId: getCosmicGameMarketplaceFloorPrice
+      summary: Get the Cosmic Signature marketplace floor price
+      description: |
+        Returns the active Cosmic Signature sell-offer count and cheapest
+        listing. An empty order book is a valid 200 with a zero count and no
+        `floor` member.
+      tags:
+        - CosmicGame marketplace
+      responses:
+        "200":
+          $ref: "#/components/responses/CosmicSignatureMarketplaceFloorPrice"
         "500":
           $ref: "#/components/responses/InternalError"
   /api/v2/randomwalk/tokens:
@@ -7715,6 +7791,53 @@ components:
         - oldest
         - priceAsc
         - priceDesc
+    CosmicSignatureMarketplaceOffer:
+      $ref: "#/components/schemas/RandomWalkMarketplaceOffer"
+    CosmicSignatureMarketplaceOfferPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceOffer"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureMarketplaceOfferHistoryEntry:
+      $ref: "#/components/schemas/RandomWalkOfferHistoryEntry"
+    CosmicSignatureMarketplaceOfferHistoryPage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceOfferHistoryEntry"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureMarketplaceTrade:
+      $ref: "#/components/schemas/RandomWalkTrade"
+    CosmicSignatureMarketplaceTradePage:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceTrade"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    CosmicSignatureMarketplaceFloorPrice:
+      $ref: "#/components/schemas/RandomWalkFloorPrice"
     RandomWalkMarketplaceOffer:
       description: One currently active marketplace offer.
       type: object
@@ -9209,6 +9332,30 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RandomWalkTokenEventPage"
+    CosmicSignatureMarketplaceOfferPage:
+      description: One page of the live Cosmic Signature marketplace order book.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceOfferPage"
+    CosmicSignatureMarketplaceOfferHistoryPage:
+      description: One stable page of Cosmic Signature marketplace offer history.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceOfferHistoryPage"
+    CosmicSignatureMarketplaceTradePage:
+      description: One stable page of completed Cosmic Signature marketplace purchases.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceTradePage"
+    CosmicSignatureMarketplaceFloorPrice:
+      description: The live sell-side floor for the Cosmic Signature collection.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CosmicSignatureMarketplaceFloorPrice"
     RandomWalkMarketplaceOfferPage:
       description: One page of the live marketplace order book.
       content:

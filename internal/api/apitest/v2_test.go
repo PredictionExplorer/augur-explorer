@@ -105,6 +105,10 @@ const (
 	v2GlobalRwStaked     = "/api/v2/cosmicgame/staking/random-walk/staked-tokens"
 	v2RoundStakingReward = "/api/v2/cosmicgame/rounds/{round}/staking-rewards"
 	v2GlobalStakerRaffle = "/api/v2/cosmicgame/staking/raffle-nft-wins"
+	v2CsOffers           = "/api/v2/cosmicgame/marketplace/offers"
+	v2CsOfferHistory     = "/api/v2/cosmicgame/marketplace/offer-history"
+	v2CsTrades           = "/api/v2/cosmicgame/marketplace/trades"
+	v2CsFloor            = "/api/v2/cosmicgame/marketplace/floor-price"
 	// #nosec G101 -- route templates, not credentials.
 	v2RwTokens = "/api/v2/randomwalk/tokens"
 	// #nosec G101 -- route template, not credentials.
@@ -2091,6 +2095,189 @@ func TestAPIV2GlobalStakingResources(t *testing.T) {
 			name:       "global_staker_raffle_error_internal",
 			target:     v2GlobalStakerRaffle + "?pool=cst",
 			template:   v2GlobalStakerRaffle,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+	}
+	runV2GoldenCases(t, h, spec, cases)
+}
+
+func TestAPIV2CosmicSignatureMarketplace(t *testing.T) {
+	h := server(t)
+	spec, err := apiv2.GetSpec()
+	if err != nil {
+		t.Fatalf("loading embedded v2 spec: %v", err)
+	}
+	if err := spec.Validate(context.Background()); err != nil {
+		t.Fatalf("validating embedded v2 spec: %v", err)
+	}
+
+	offersPath := v2CsOffers + "?sort=priceAsc&limit=1"
+	var offers apiv2.CosmicSignatureMarketplaceOfferPage
+	decodeV2JSON(t, h.get(t, offersPath), &offers)
+	if offers.Meta.NextCursor == nil {
+		t.Fatal("fixture Cosmic Signature offer book has no continuation")
+	}
+	historyPath := v2CsOfferHistory + "?limit=2"
+	var history apiv2.CosmicSignatureMarketplaceOfferHistoryPage
+	decodeV2JSON(t, h.get(t, historyPath), &history)
+	if history.Meta.NextCursor == nil {
+		t.Fatal("fixture Cosmic Signature offer history has no continuation")
+	}
+	var randomWalkOffers apiv2.RandomWalkMarketplaceOfferPage
+	decodeV2JSON(t, h.get(t, v2RwOffers+"?limit=1"), &randomWalkOffers)
+	if randomWalkOffers.Meta.NextCursor == nil {
+		t.Fatal("fixture RandomWalk offer book has no continuation")
+	}
+	var randomWalkHistory apiv2.RandomWalkOfferHistoryPage
+	decodeV2JSON(t, h.get(t, v2RwOfferHistory+"?limit=1"), &randomWalkHistory)
+	if randomWalkHistory.Meta.NextCursor == nil {
+		t.Fatal("fixture RandomWalk offer history has no continuation")
+	}
+
+	encode := func(body string) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(body))
+	}
+	ledgerCursor := func(resource string, eventLogID int64) string {
+		return encode(`{"v":1,"k":` + strconv.Quote(resource) +
+			`,"c":"cosmicSignature","e":` + strconv.FormatInt(eventLogID, 10) + `}`)
+	}
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cases := []v2GoldenCase{
+		{
+			name:       "cosmic_marketplace_offers_newest",
+			target:     v2CsOffers,
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offers_price_asc",
+			target:     offersPath,
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offers_price_asc_next",
+			target:     offersPath + "&cursor=" + *offers.Meta.NextCursor,
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offers_error_invalid_sort",
+			target:     v2CsOffers + "?sort=cheapest",
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offers_error_limit_zero",
+			target:     v2CsOffers + "?limit=0",
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offers_error_malformed_cursor",
+			target:     v2CsOffers + "?cursor=bogus",
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "cosmic_marketplace_offers_error_cross_sort_cursor",
+			target: v2CsOffers + "?sort=priceDesc&cursor=" +
+				*offers.Meta.NextCursor,
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "cosmic_marketplace_offers_error_cross_collection_cursor",
+			target: v2CsOffers + "?cursor=" +
+				*randomWalkOffers.Meta.NextCursor,
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offers_error_internal",
+			target:     v2CsOffers,
+			template:   v2CsOffers,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "cosmic_marketplace_offer_history_first",
+			target:     historyPath,
+			template:   v2CsOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offer_history_next",
+			target:     historyPath + "&cursor=" + *history.Meta.NextCursor,
+			template:   v2CsOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "cosmic_marketplace_offer_history_exhausted",
+			target: v2CsOfferHistory + "?cursor=" +
+				ledgerCursor("cosmicSignatureMarketplaceOfferHistory", 5201),
+			template:   v2CsOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offer_history_error_limit_high",
+			target:     v2CsOfferHistory + "?limit=201",
+			template:   v2CsOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "cosmic_marketplace_offer_history_error_cross_collection_cursor",
+			target: v2CsOfferHistory + "?cursor=" +
+				*randomWalkHistory.Meta.NextCursor,
+			template:   v2CsOfferHistory,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_offer_history_error_internal",
+			target:     v2CsOfferHistory,
+			template:   v2CsOfferHistory,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "cosmic_marketplace_trades",
+			target:     v2CsTrades,
+			template:   v2CsTrades,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "cosmic_marketplace_trades_exhausted",
+			target: v2CsTrades + "?cursor=" +
+				ledgerCursor("cosmicSignatureMarketplaceTrades", 5202),
+			template:   v2CsTrades,
+			pathParams: map[string]string{},
+		},
+		{
+			name: "cosmic_marketplace_trades_error_cross_resource_cursor",
+			target: v2CsTrades + "?cursor=" +
+				ledgerCursor("cosmicSignatureMarketplaceOfferHistory", 5202),
+			template:   v2CsTrades,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_trades_error_internal",
+			target:     v2CsTrades,
+			template:   v2CsTrades,
+			pathParams: map[string]string{},
+			ctx:        cancelledCtx,
+		},
+		{
+			name:       "cosmic_marketplace_floor_price",
+			target:     v2CsFloor,
+			template:   v2CsFloor,
+			pathParams: map[string]string{},
+		},
+		{
+			name:       "cosmic_marketplace_floor_price_error_internal",
+			target:     v2CsFloor,
+			template:   v2CsFloor,
 			pathParams: map[string]string{},
 			ctx:        cancelledCtx,
 		},

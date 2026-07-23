@@ -123,6 +123,9 @@ func TestRandomWalkReadFailuresAreOpaque(t *testing.T) {
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()
 	paths := []string{
+		"/api/cosmicgame/marketplace/current_offers/0",
+		"/api/cosmicgame/marketplace/floor_price",
+		"/api/cosmicgame/marketplace/trading/sales/0/10",
 		"/api/randomwalk/current_offers/price",
 		"/api/randomwalk/floor_price",
 		"/api/randomwalk/tokens/list/sequential",

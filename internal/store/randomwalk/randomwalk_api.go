@@ -15,6 +15,7 @@ import (
 
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
 	"github.com/PredictionExplorer/augur-explorer/internal/timefmt"
 )
 
@@ -50,51 +51,51 @@ func activeOffersOrderClause(orderBy int) string {
 // ActiveOffers returns all open marketplace offers for the RandomWalk
 // contract, ordered per the whitelisted orderBy selector.
 func (r *Repo) ActiveOffers(ctx context.Context, rwalkAid, marketAid int64, orderBy int) ([]rwmodel.Offer, error) {
-	query := `SELECT
-			o.id,
-			o.evtlog_id,
-			o.block_num,
-			o.tx_id,
-			tx.tx_hash,
-			EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,
-			o.time_stamp,
-			o.offer_id,
-			o.otype,
-			o.seller_aid,
-			sa.addr seller_addr,
-			o.buyer_aid,
-			ba.addr buyer_addr,
-			o.token_id,
-			o.active,
-			o.price/1e+18 price,
-			o.rwalk_aid
-		FROM rw_new_offer o
-			JOIN transaction tx ON o.tx_id=tx.id
-			JOIN address sa ON o.seller_aid=sa.address_id
-			JOIN address ba ON o.buyer_aid=ba.address_id
-		WHERE (active = 't') AND (o.rwalk_aid=$1) AND (o.contract_aid=$2)` +
-		activeOffersOrderClause(orderBy)
-	return queryList(ctx, r, "active offers", 16, query, func(rows pgx.Rows, rec *rwmodel.Offer) error {
-		return rows.Scan(
-			&rec.Id,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			store.TimeText(&rec.DateTime),
-			&rec.OfferId,
-			&rec.OfferType,
-			&rec.SellerAid,
-			&rec.SellerAddr,
-			&rec.BuyerAid,
-			&rec.BuyerAddr,
-			&rec.TokenId,
-			&rec.Active,
-			&rec.Price,
-			&rec.RWalkAid,
-		)
-	}, rwalkAid, marketAid)
+	records, err := r.marketplace.ActiveOffersLegacy(ctx, marketstore.Scope{
+		MarketplaceAid: marketAid,
+		CollectionAid:  rwalkAid,
+	}, orderBy)
+	if err != nil {
+		return nil, err
+	}
+	output := make([]rwmodel.Offer, 0, len(records))
+	for i := range records {
+		output = append(output, randomWalkLegacyOffer(records[i]))
+	}
+	return output, nil
+}
+
+func randomWalkLegacyOffer(record marketstore.LegacyOffer) rwmodel.Offer {
+	output := rwmodel.Offer{
+		Id:           record.ID,
+		EvtLogId:     record.EventLogID,
+		BlockNum:     record.BlockNumber,
+		TxId:         record.TransactionID,
+		TxHash:       record.TransactionHash,
+		TimeStamp:    record.TimeStamp,
+		DateTime:     record.DateTime,
+		ContractAid:  record.MarketplaceAid,
+		ContractAddr: record.Marketplace,
+		OfferId:      record.OfferID,
+		OfferType:    record.OfferType,
+		SellerAid:    record.SellerAid,
+		SellerAddr:   record.SellerAddress,
+		BuyerAid:     record.BuyerAid,
+		BuyerAddr:    record.BuyerAddress,
+		TokenId:      record.TokenID,
+		Active:       record.Active,
+		Price:        record.PriceETH,
+		RWalkAid:     record.CollectionAid,
+		RWalkAddr:    record.Collection,
+		WasCanceled:  record.WasCanceled,
+	}
+	if record.ProfitETH != nil {
+		output.Profit = profitFromNull(sql.NullFloat64{
+			Float64: *record.ProfitETH,
+			Valid:   true,
+		})
+	}
+	return output
 }
 
 // =============================================================================
@@ -158,6 +159,10 @@ func (r *Repo) MintedTokensSequentially(ctx context.Context, rwalkAid int64, off
 // TradingHistory returns the merged offer/sale/cancel timeline of the
 // marketplace, ordered by the real (most specific) event timestamp.
 func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, limit int) ([]rwmodel.TradingHistoryLog, error) {
+	addrs, err := r.ContractAddrs(ctx)
+	if err != nil {
+		return nil, err
+	}
 	query := "SELECT " +
 		"record_id," + "evtlog_id," + "block_num," + "tx_id, " + "offer_ts," + "offer_date," +
 		"offer_id," + "otype," + "seller_aid," + "seller_addr," + "buyer_aid," + "buyer_addr," +
@@ -190,7 +195,7 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 		"JOIN address ba ON o.buyer_aid=ba.address_id " +
 		"JOIN address ca ON o.contract_aid=ca.address_id " +
 		"JOIN address rwa ON o.rwalk_aid=rwa.address_id " +
-		"WHERE o.contract_aid=$3 " +
+		"WHERE o.contract_aid=$3 AND o.rwalk_aid=$4 " +
 		") UNION ALL (" +
 		"SELECT " +
 		"COALESCE(ib.id,can.id,o.id) AS record_id," +
@@ -226,7 +231,7 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 		"JOIN address rwa ON o.rwalk_aid=rwa.address_id " +
 		"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) " +
 		"LEFT JOIN rw_item_bought ib ON (ib.contract_aid=o.contract_aid) AND (ib.offer_id=o.offer_id) " +
-		"WHERE o.contract_aid=$3 AND ((can.id IS NOT NULL) OR (ib.id IS NOT NULL)) " +
+		"WHERE o.contract_aid=$3 AND o.rwalk_aid=$4 AND ((can.id IS NOT NULL) OR (ib.id IS NOT NULL)) " +
 		")" +
 		") recs " +
 		"ORDER BY real_ts " +
@@ -285,7 +290,7 @@ func (r *Repo) TradingHistory(ctx context.Context, contractAid int64, offset, li
 			rec.BoughtDuration = timefmt.DurationToString(timefmt.TimeDifference(timeOffered, timeBought))
 		}
 		return nil
-	}, offset, limit, contractAid)
+	}, offset, limit, contractAid, addrs.RandomWalkAid)
 }
 
 // =============================================================================
@@ -343,19 +348,27 @@ func (r *Repo) RandomWalkStats(ctx context.Context, rwalkAid int64) (rwmodel.RWa
 	return output, nil
 }
 
-// MarketStats returns marketplace-level volume and trade counts; a missing
-// stats row yields zeros.
+// MarketStats returns RandomWalk collection volume and trade counts on the
+// marketplace. The legacy rw_mkt_stats accumulator is marketplace-wide and
+// therefore cannot distinguish Cosmic Signature trades.
 func (r *Repo) MarketStats(ctx context.Context, marketAid int64) (rwmodel.MarketStats, error) {
+	addrs, err := r.ContractAddrs(ctx)
+	if err != nil {
+		return rwmodel.MarketStats{}, err
+	}
 	var output rwmodel.MarketStats
-	err := r.q(ctx).QueryRow(ctx, `SELECT
-			total_vol/1e+18,
-			total_num_trades
-		FROM rw_mkt_stats
-		WHERE contract_aid = $1`, marketAid).Scan(
+	err = r.q(ctx).QueryRow(ctx, `SELECT
+			COALESCE(SUM(o.price), 0)/1e+18,
+			COUNT(*)::BIGINT
+		FROM rw_item_bought ib
+			INNER JOIN rw_new_offer o
+				ON o.contract_aid=ib.contract_aid AND o.offer_id=ib.offer_id
+		WHERE ib.contract_aid=$1 AND o.rwalk_aid=$2`,
+		marketAid, addrs.RandomWalkAid).Scan(
 		&output.TradingVol,
 		&output.NumTrades,
 	)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return output, store.WrapError("market stats", err)
 	}
 	return output, nil
@@ -834,11 +847,15 @@ func scanFullHistoryEntry(rows pgx.Rows, rec *rwmodel.FullHistoryEntry) error {
 // includes sales before the window.
 func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int64, initTs, finTs, interval int) ([]rwmodel.VolumeHistory, error) {
 	const op = "market trading volume by period"
+	addrs, err := r.ContractAddrs(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var initialVolume sql.NullFloat64
-	err := r.q(ctx).QueryRow(ctx, `SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b
-			JOIN rw_new_offer o ON o.offer_id=b.offer_id
-			WHERE (b.time_stamp < TO_TIMESTAMP($1)) AND (o.contract_aid=$2)`,
-		initTs, contractAid).Scan(&initialVolume)
+	err = r.q(ctx).QueryRow(ctx, `SELECT sum(o.price)/1e+18 AS accum_vol FROM rw_item_bought b
+			JOIN rw_new_offer o ON o.contract_aid=b.contract_aid AND o.offer_id=b.offer_id
+			WHERE (b.time_stamp < TO_TIMESTAMP($1)) AND (o.contract_aid=$2) AND (o.rwalk_aid=$3)`,
+		initTs, contractAid, addrs.RandomWalkAid).Scan(&initialVolume)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, store.WrapError(op+": initial volume", err)
 	}
@@ -864,8 +881,8 @@ func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int6
 		"LEFT JOIN LATERAL ( " +
 		"SELECT b.id,b.time_stamp,o.price " +
 		"FROM rw_item_bought b " +
-		"JOIN rw_new_offer o ON b.offer_id=o.offer_id " +
-		"WHERE b.contract_aid=$4" +
+		"JOIN rw_new_offer o ON b.contract_aid=o.contract_aid AND b.offer_id=o.offer_id " +
+		"WHERE b.contract_aid=$4 AND o.rwalk_aid=$5" +
 		") b ON " +
 		"(p.start_ts <= b.time_stamp) AND " +
 		"(b.time_stamp < p.end_ts) " +
@@ -889,7 +906,7 @@ func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int6
 		}
 		rec.VolumeAccum = accumVol
 		return nil
-	}, initTs, finTs, interval, contractAid)
+	}, initTs, finTs, interval, contractAid, addrs.RandomWalkAid)
 }
 
 // TokenNameChanges returns the naming history of one token, newest first.
@@ -952,33 +969,19 @@ func (r *Repo) TokensByUser(ctx context.Context, userAid int64) ([]rwmodel.UserT
 // FloorPrice returns the cheapest active sell offer. An empty order book is
 // not an error: noOffers is true and err is nil.
 func (r *Repo) FloorPrice(ctx context.Context, rwalkAid, marketAid int64) (noOffers bool, floorPrice float64, offerID, tokenID int64, err error) {
-	var nFloorPrice sql.NullFloat64
-	var nOfferID, nTokenID sql.NullInt64
-	query := `SELECT
-			o.price/1e+18 price,
-			o.offer_id,
-			o.token_id
-		FROM rw_new_offer o
-		WHERE (active = 't') AND (otype=1) AND (o.rwalk_aid=$1) AND (o.contract_aid=$2)
-		ORDER BY o.price ASC
-		LIMIT 1`
-	err = r.q(ctx).QueryRow(ctx, query, rwalkAid, marketAid).Scan(
-		&nFloorPrice,
-		&nOfferID,
-		&nTokenID,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return true, 0, 0, 0, nil
-		}
-		return false, 0, 0, 0, store.WrapError("floor price", err)
-	}
-	return false, nFloorPrice.Float64, nOfferID.Int64, nTokenID.Int64, nil
+	return r.marketplace.FloorPriceETH(ctx, marketstore.Scope{
+		MarketplaceAid: marketAid,
+		CollectionAid:  rwalkAid,
+	})
 }
 
 // TradingHistoryByUser returns closed offers where the user was buyer or
 // seller.
 func (r *Repo) TradingHistoryByUser(ctx context.Context, userAid int64) ([]rwmodel.Offer, error) {
+	addrs, err := r.ContractAddrs(ctx)
+	if err != nil {
+		return nil, err
+	}
 	query := `SELECT
 			o.id,
 			o.evtlog_id,
@@ -1010,8 +1013,19 @@ func (r *Repo) TradingHistoryByUser(ctx context.Context, userAid int64) ([]rwmod
 			JOIN address rwa ON o.rwalk_aid=rwa.address_id
 			LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id)
 		WHERE (active = 'f') AND ((o.buyer_aid=$1) OR (o.seller_aid=$1))
+			AND o.contract_aid=$2 AND o.rwalk_aid=$3
 		ORDER BY o.id`
-	return queryList(ctx, r, "trading history by user", 16, query, scanClosedOffer, userAid)
+	return queryList(
+		ctx,
+		r,
+		"trading history by user",
+		16,
+		query,
+		scanClosedOffer,
+		userAid,
+		addrs.MarketPlaceAid,
+		addrs.RandomWalkAid,
+	)
 }
 
 // scanClosedOffer reads the shared closed-offer row shape used by
@@ -1219,41 +1233,22 @@ func (r *Repo) WithdrawalChart(ctx context.Context, rwalkAid int64) ([]rwmodel.W
 // rw_item_bought timestamp, so "latest sale" matches the most recent
 // on-chain buy; the tx hash is the purchase transaction).
 func (r *Repo) SaleHistory(ctx context.Context, contractAid int64, offset, limit int) ([]rwmodel.Offer, error) {
-	query := `SELECT
-			o.id,
-			o.evtlog_id,
-			o.block_num,
-			ib.tx_id,
-			tx.tx_hash,
-			EXTRACT(EPOCH FROM ib.time_stamp)::BIGINT as ts,
-			ib.time_stamp,
-			o.offer_id,
-			o.otype,
-			o.seller_aid,
-			sa.addr seller_addr,
-			o.buyer_aid,
-			ba.addr buyer_addr,
-			o.token_id,
-			o.active,
-			can.id,
-			o.price/1e+18 price,
-			o.profit/1e+18 profit,
-			o.contract_aid,
-			ca.addr,
-			o.rwalk_aid,
-			rwa.addr
-		FROM rw_new_offer o
-			JOIN rw_item_bought ib ON ib.contract_aid=o.contract_aid AND ib.offer_id=o.offer_id
-			JOIN transaction tx ON ib.tx_id=tx.id
-			JOIN address sa ON o.seller_aid=sa.address_id
-			JOIN address ba ON o.buyer_aid=ba.address_id
-			JOIN address ca ON o.contract_aid=ca.address_id
-			JOIN address rwa ON o.rwalk_aid=rwa.address_id
-			LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id)
-		WHERE (active = 'f') AND (o.contract_aid=$3) AND (can.id IS NULL)
-			ORDER BY ib.time_stamp ASC, o.id ASC
-		OFFSET $1 LIMIT $2`
-	return queryList(ctx, r, "sale history", 16, query, scanClosedOffer, offset, limit, contractAid)
+	addrs, err := r.ContractAddrs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	records, err := r.marketplace.SaleHistoryLegacy(ctx, marketstore.Scope{
+		MarketplaceAid: contractAid,
+		CollectionAid:  addrs.RandomWalkAid,
+	}, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	output := make([]rwmodel.Offer, 0, len(records))
+	for i := range records {
+		output = append(output, randomWalkLegacyOffer(records[i]))
+	}
+	return output, nil
 }
 
 // FloorPriceByPeriod returns the minimum open sell-offer price per

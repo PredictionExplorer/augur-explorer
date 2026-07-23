@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "activeSellOfferCount": 2,
+    "floor": {
+      "listedAt": "2026-01-01T00:53:30Z",
+      "nftTokenId": 2,
+      "offerId": 102,
+      "priceWei": "2000000000000000000"
+    }
+  }
+}

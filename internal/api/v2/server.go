@@ -19,6 +19,7 @@ import (
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
+	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
@@ -150,6 +151,13 @@ type globalDirectoryReader interface {
 	MarketingRewardsGlobalPage(context.Context, *cgstore.UserEventPageCursor, int) ([]cgstore.MarketingRewardRecord, bool, error)
 }
 
+type cosmicMarketplaceReader interface {
+	CosmicSignatureMarketplaceOffersPage(context.Context, marketstore.OfferSort, *marketstore.OfferPageCursor, int) ([]marketstore.OfferRecord, bool, error)
+	CosmicSignatureMarketplaceOfferHistoryPage(context.Context, *marketstore.EventPageCursor, int) ([]marketstore.OfferHistoryRecord, bool, error)
+	CosmicSignatureMarketplaceTradesPage(context.Context, *marketstore.EventPageCursor, int) ([]marketstore.TradeRecord, bool, error)
+	CosmicSignatureMarketplaceFloorPrice(context.Context) (marketstore.FloorPriceRecord, error)
+}
+
 type globalStakingReader interface {
 	GlobalCstStakingActionsPage(context.Context, *cgstore.GlobalStakingActionPageCursor, int) ([]cgstore.GlobalStakingActionRecord, bool, error)
 	GlobalRwalkStakingActionsPage(context.Context, *cgstore.GlobalStakingActionPageCursor, int) ([]cgstore.GlobalStakingActionRecord, bool, error)
@@ -224,6 +232,7 @@ type Server struct {
 	userStaking       userStakingReader
 	userActivity      userActivityReader
 	globalDirectories globalDirectoryReader
+	cosmicMarketplace cosmicMarketplaceReader
 	globalStaking     globalStakingReader
 	randomWalk        randomWalkReader
 	ranking           rankingRepository
@@ -377,6 +386,10 @@ func newServer(
 	if globalDirectories == nil {
 		return nil, errors.New("api v2: global-directory repository is required")
 	}
+	cosmicMarketplace, ok := globalDirectories.(cosmicMarketplaceReader)
+	if !ok {
+		return nil, errors.New("api v2: cosmic marketplace repository is required")
+	}
 	if globalStaking == nil {
 		return nil, errors.New("api v2: global-staking repository is required")
 	}
@@ -409,6 +422,7 @@ func newServer(
 		userStaking:       userStaking,
 		userActivity:      userActivity,
 		globalDirectories: globalDirectories,
+		cosmicMarketplace: cosmicMarketplace,
 		globalStaking:     globalStaking,
 		randomWalk:        randomWalk,
 		ranking:           ranking,

@@ -18,6 +18,7 @@ import (
 	rwmodel "github.com/PredictionExplorer/augur-explorer/internal/model/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
+	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
 	rwstore "github.com/PredictionExplorer/augur-explorer/internal/store/randomwalk"
 )
 
@@ -143,6 +144,10 @@ type fakeGlobalDirectoryReader struct {
 	supplyByBid     func(context.Context, *cgstore.SupplyChangePageCursor, int) ([]cgstore.SupplyChangeRecord, bool, error)
 	supplyDaily     func(context.Context, time.Time, time.Time) ([]cgstore.DailySupplyRecord, error)
 	mktRewards      func(context.Context, *cgstore.UserEventPageCursor, int) ([]cgstore.MarketingRewardRecord, bool, error)
+	marketOffers    func(context.Context, marketstore.OfferSort, *marketstore.OfferPageCursor, int) ([]marketstore.OfferRecord, bool, error)
+	marketHistory   func(context.Context, *marketstore.EventPageCursor, int) ([]marketstore.OfferHistoryRecord, bool, error)
+	marketTrades    func(context.Context, *marketstore.EventPageCursor, int) ([]marketstore.TradeRecord, bool, error)
+	marketFloor     func(context.Context) (marketstore.FloorPriceRecord, error)
 }
 
 type fakeGlobalStakingReader struct {
@@ -292,6 +297,49 @@ func (f fakeGlobalDirectoryReader) MarketingRewardsGlobalPage(
 		return []cgstore.MarketingRewardRecord{}, false, nil
 	}
 	return f.mktRewards(ctx, after, limit)
+}
+
+func (f fakeGlobalDirectoryReader) CosmicSignatureMarketplaceOffersPage(
+	ctx context.Context,
+	sort marketstore.OfferSort,
+	after *marketstore.OfferPageCursor,
+	limit int,
+) ([]marketstore.OfferRecord, bool, error) {
+	if f.marketOffers == nil {
+		return []marketstore.OfferRecord{}, false, nil
+	}
+	return f.marketOffers(ctx, sort, after, limit)
+}
+
+func (f fakeGlobalDirectoryReader) CosmicSignatureMarketplaceOfferHistoryPage(
+	ctx context.Context,
+	after *marketstore.EventPageCursor,
+	limit int,
+) ([]marketstore.OfferHistoryRecord, bool, error) {
+	if f.marketHistory == nil {
+		return []marketstore.OfferHistoryRecord{}, false, nil
+	}
+	return f.marketHistory(ctx, after, limit)
+}
+
+func (f fakeGlobalDirectoryReader) CosmicSignatureMarketplaceTradesPage(
+	ctx context.Context,
+	after *marketstore.EventPageCursor,
+	limit int,
+) ([]marketstore.TradeRecord, bool, error) {
+	if f.marketTrades == nil {
+		return []marketstore.TradeRecord{}, false, nil
+	}
+	return f.marketTrades(ctx, after, limit)
+}
+
+func (f fakeGlobalDirectoryReader) CosmicSignatureMarketplaceFloorPrice(
+	ctx context.Context,
+) (marketstore.FloorPriceRecord, error) {
+	if f.marketFloor == nil {
+		return marketstore.FloorPriceRecord{}, nil
+	}
+	return f.marketFloor(ctx)
 }
 
 func (f fakeGlobalStakingReader) GlobalCstStakingActionsPage(

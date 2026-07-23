@@ -209,6 +209,11 @@ func (a *API) RegisterRoutes(r *httpx.Router) {
 	r.POST("/api/cosmicgame/ban_bid", a.handleBanBid, adminRate, adminGuard)
 	r.POST("/api/cosmicgame/unban_bid", a.handleUnbanBid, adminRate, adminGuard)
 
+	// Shared marketplace, scoped to the Cosmic Signature NFT collection.
+	r.GET("/api/cosmicgame/marketplace/current_offers/{order_by}", a.handleMarketplaceCurrentOffers)
+	r.GET("/api/cosmicgame/marketplace/floor_price", a.handleMarketplaceFloorPrice)
+	r.GET("/api/cosmicgame/marketplace/trading/sales/{offset}/{limit}", a.handleMarketplaceSales)
+
 	// CST Tokens
 	r.GET("/api/cosmicgame/cst/list/all/{offset}/{limit}", a.handleCosmicSignatureTokenList)
 	r.GET("/api/cosmicgame/cst/list/by_user/{user_addr}/{offset}/{limit}", a.handleCosmicSignatureTokenListByUser)

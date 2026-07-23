@@ -42,8 +42,8 @@ func TestV2RouteDriftAgainstOpenAPI(t *testing.T) {
 		}
 	}
 	slices.Sort(specRoutes)
-	if len(specRoutes) != 102 {
-		t.Fatalf("OpenAPI v2 operation count = %d, want 102", len(specRoutes))
+	if len(specRoutes) != 106 {
+		t.Fatalf("OpenAPI v2 operation count = %d, want 106", len(specRoutes))
 	}
 
 	router := httpx.NewRouter()

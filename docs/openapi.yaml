@@ -1551,6 +1551,25 @@ components:
         RWalkAid: { type: integer, format: int64 }
         RWalkAddr: { type: string }
         WasCanceled: { type: boolean }
+    CGMarketOffer:
+      type: object
+      description: Upstream-compatible Cosmic Signature marketplace offer or completed sale.
+      properties:
+        OfferId: { type: integer, format: int64 }
+        OfferType:
+          type: integer
+          description: 0 buy offer, 1 sell offer.
+        TokenId: { type: integer, format: int64 }
+        SellerAddr: { type: string }
+        BuyerAddr: { type: string }
+        Active: { type: boolean }
+        Price:
+          type: number
+          format: double
+          description: Legacy floating-point ETH amount.
+        BlockNum: { type: integer, format: int64 }
+        TimeStamp: { type: integer, format: int64 }
+        DateTime: { type: string }
     API_TokenMint:
       type: object
       properties:
@@ -3764,6 +3783,80 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/UnauthorizedAdmin' }
         '503': { $ref: '#/components/responses/AdminKeyNotConfigured' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/cosmicgame/marketplace/current_offers/{order_by}:
+    get:
+      deprecated: true
+      tags: [cosmicgame-marketplace]
+      summary: Active Cosmic Signature marketplace offers
+      parameters:
+        - name: order_by
+          in: path
+          required: true
+          description: 1 orders by price descending, 2 ascending, all other integers use insertion order.
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Active sell listings and buy bids for the Cosmic Signature collection.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offers:
+                        type: array
+                        items: { $ref: '#/components/schemas/CGMarketOffer' }
+                      NftAid: { type: integer, format: int64 }
+                      MarketAid: { type: integer, format: int64 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/cosmicgame/marketplace/floor_price:
+    get:
+      deprecated: true
+      tags: [cosmicgame-marketplace]
+      summary: Cosmic Signature marketplace floor price
+      responses:
+        '200':
+          description: Cheapest active sell offer as a legacy floating-point ETH amount; an empty book returns zero.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      FloorPrice: { type: number, format: double }
+                      DBError: { type: string }
+                      NftAid: { type: integer, format: int64 }
+                      MarketAid: { type: integer, format: int64 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/cosmicgame/marketplace/trading/sales/{offset}/{limit}:
+    get:
+      deprecated: true
+      tags: [cosmicgame-marketplace]
+      summary: Completed Cosmic Signature marketplace sales
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Completed, non-canceled sales ordered by purchase time.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Trading:
+                        type: array
+                        items: { $ref: '#/components/schemas/CGMarketOffer' }
+                      NftAid: { type: integer, format: int64 }
+                      MarketAid: { type: integer, format: int64 }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/cosmicgame/cst/list/all/{offset}/{limit}:
     get:

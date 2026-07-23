@@ -32,8 +32,8 @@ func TestBuildEndpointsCompletenessAndStableOrder(t *testing.T) {
 	}
 	first := BuildEndpoints(params)
 	second := BuildEndpoints(params)
-	if len(first) != 142 {
-		t.Fatalf("endpoint count = %d, want 142", len(first))
+	if len(first) != 145 {
+		t.Fatalf("endpoint count = %d, want 145", len(first))
 	}
 	if !slices.Equal(first, second) {
 		t.Fatal("endpoint order changed between calls")
@@ -50,6 +50,9 @@ func TestBuildEndpointsCompletenessAndStableOrder(t *testing.T) {
 		"/api/cosmicgame/rounds/info/77",
 		"/api/cosmicgame/bid/info/901",
 		"/api/cosmicgame/bid/info_by_pos/76/12",
+		"/api/cosmicgame/marketplace/current_offers/0",
+		"/api/cosmicgame/marketplace/floor_price",
+		"/api/cosmicgame/marketplace/trading/sales/0/1000000",
 		"/api/cosmicgame/cst/names/search/Alpha%2FBeta%20%3F",
 		"/api/cosmicgame/ct/total_supply_history_by_date/20260101/20260131",
 		"/api/cosmicgame/donations/eth/with_info/info/41",

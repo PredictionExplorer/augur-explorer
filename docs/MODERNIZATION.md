@@ -34,8 +34,8 @@ implementation and a redesigned v2 API that the frontend migrates onto.
 ## 2. Metrics dashboard
 
 Measured 2026-07-23 (v2-operational-readiness sprint, §8.9/D23: bare
-`opsctl smoketest` now discovers and OpenAPI-validates all 97 safe v2 GET
-operations with production-shaped parameters, the frozen 142-request v1
+`opsctl smoketest` now discovers and OpenAPI-validates all 101 safe v2 GET
+operations with production-shaped parameters, the frozen 145-request v1
 regression is explicit, and a no-credentials operational suite plus
 srvmonitor startup validation keep repository-owned probes out of the D6
 deprecated-traffic window. Every remaining unchecked item is external
@@ -60,7 +60,7 @@ production-exported RLP samples), a decision (D1), or finish-line closure
 | Handwritten all-production coverage (`cmd/` + `internal/`, enforced) | n/a | **95.07%** (27,971/29,422; floor **95.0%**) | **≥95% — met**; ratchet only | `make coverage-check` |
 | Changed executable Go coverage (enforced) | n/a | **97.76%** (305/312; only seven defensive embedded-spec mutation/error joins uncovered) | **≥95%** | `make coverage-check` |
 | Queries on sqlc | 0 | 0 — scaffolding retired with Phase 1 (D7 amended: hand-written pgx everywhere) | n/a | n/a |
-| Routes on stdlib router | 0 | **all** — frozen v1 (188 OpenAPI operations incl. `/version`; **180 now deprecated** with spec flags + RFC 9745 headers, 8 exempt) plus **102 generated v2 operations** (the prior 99-operation read/ranking surface plus public paginated bid bans and apiKey-secured create/delete), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
+| Routes on stdlib router | 0 | **all** — frozen v1 (191 OpenAPI operations incl. `/version`; **183 now deprecated** with spec flags + RFC 9745 headers, 8 exempt) plus **106 generated v2 operations** (101 safe GETs plus the five ranking/moderation writes), health, host-dispatched metadata and env-gated static assets on `net/http` via `internal/api/httpx`; **gin is out of the build graph** | all (v1 compat + v2) — active | route-drift tests + `go list -deps ./cmd/... ./internal/... \| rg -c gin-gonic` |
 | `context.Context` on store methods | 0% | **100% — 474 Repo methods (CosmicGame 385 + RandomWalk 89, incl. the two D15 querier resolvers) + 23 base `Store` methods; `SQLStorage` and both wrappers are deleted** | 100% | `rg -c "func \(r \*Repo\)" internal/store/cosmicgame internal/store/randomwalk` |
 | Store queries on pgx-native pool | 0 | all (one shared `pgxpool` per process; every query resolves pool-vs-transaction per call through `store.Querier`, so ETL block transactions span the whole store — D15/ADR-0010). **Since the one-driver sprint the ops toolchain is pgx-native too: `lib/pq` is deleted from `go.mod` and `depguard` denies it repo-wide — pgx is the only PostgreSQL driver in the build graph (D16)** | all | manual + `go list -deps ./cmd/... ./internal/... \| rg -c lib/pq` (must be 0 matches) |
 
@@ -1752,7 +1752,7 @@ canonical API now has an out-of-process contract test, while routine probes
 cannot accidentally keep deprecated v1 traffic alive.**
 
 - [x] `opsctl smoketest` is a typed four-suite engine. Bare invocation runs
-      `v2`: it discovers all 97 GET operations from the embedded canonical
+      `v2`: it discovers all 101 GET operations from the embedded canonical
       OpenAPI document, deterministically binds production-shaped path and
       required query values (including RandomWalk token IDs, enum pools and
       ISO dates), requests minimal pages, requires HTTP 200, validates every
@@ -1760,8 +1760,8 @@ cannot accidentally keep deprecated v1 traffic alive.**
       `Sunset` header. New GETs join automatically; an unknown required
       parameter fails catalog construction loudly. Calls are paced at the
       public 50 rps budget so the smoke run cannot manufacture its own 429.
-- [x] Compatibility and uptime are explicit. `--suite=v1` retains the frozen
-      142-request envelope-aware regression; `--suite=both` reports v2 then
+- [x] Compatibility and uptime are explicit. `--suite=v1` retains the explicit
+      145-request envelope-aware regression; `--suite=both` reports v2 then
       v1 without masking either failure. `--suite=operational` opens no
       parameter database and checks `/healthz`, `/readyz`, `/version` plus
       three stable DB-backed v2 resources. The five intentionally degradable
@@ -1783,15 +1783,15 @@ cannot accidentally keep deprecated v1 traffic alive.**
       environment was stopped before startup by authorization denial while
       pulling the pre-existing `ghcr.io/pressly/goose:latest` migration image;
       the same code path is covered below without an external registry.
-- [x] Test matrix: catalog tests prove exact 97/97 OpenAPI GET coverage,
+- [x] Test matrix: catalog tests prove exact 101/101 OpenAPI GET coverage,
       stable ordering, no duplicates/writes/v1 paths, complete bindings and
       fail-closed behavior under simulated spec drift; response tables cover
       RFC 9457, schema errors, body/transport bounds and forbidden
       deprecation headers; command tests pin default/explicit suites,
       database bypass, cleanup and cancellation; srvmonitor tests cover safe,
       malformed and deprecated URLs. A race-enabled integration test drives
-      all 97 probes through the seeded production router, real PostgreSQL and
-      fixture-coherent chain and gets 97 contract-valid 200s. Two new fuzz
+      all 101 probes through the seeded production router, real PostgreSQL and
+      fixture-coherent chain and gets 101 contract-valid 200s. Two new fuzz
       targets cover URL escaping and policy determinism.
 - [x] Verification: full race+shuffle unit and integration gates, lint (0),
       vet, both `go fix -diff` sets, generation drift and a working-tree-aware
@@ -1880,7 +1880,7 @@ cannot accidentally keep deprecated v1 traffic alive.**
 | D20 | Background-work ownership | fire-and-forget process goroutines / caller-owned context only / run-scoped cancel-and-join | **decided 2026-07-21: run-scoped cancel-and-join** — a function that starts workers, sidecars, refresh loops or listeners owns a derived context and does not return until all children stop. Resources normally close after the join; a transport that must close to unblock an in-flight call (autobid's RPC client) is cancelled, closed and then joined before replacement/return. Listener startup is bind-then-serve with rollback of the complete bound set. Maintenance that can be done lazily (the per-IP visitor eviction) runs on requests rather than an immortal ticker. Context cancellation is necessary but not sufficient: the owner waits, and tests prove the happens-before edge with channels rather than sleeps. |
 | D21 | Request-body bounding policy | per-route limits + env knobs / global fixed cap with per-family 413 rendering / rely on read timeouts alone | **decided 2026-07-22: one fixed global cap, rendered per API family** — every request body is bounded at 1 MiB by shared middleware (the largest legitimate bodies, ranking votes, are a few hundred bytes; the cap leaves two orders of magnitude of headroom and follows D9's no-env-knobs precedent). Declared oversized bodies are rejected before a byte is read; undeclared ones fail at first read through `http.MaxBytesReader`, and each consuming layer maps `*http.MaxBytesError` to its family's shape: RFC 9457 413 problems under `/api/v2/` (declared on the three body-accepting operations; middleware and decoder renderings are pinned byte-identical), the legacy envelope elsewhere, with frozen v1 binds keeping their 400 error-string shape for undeclared overflows (v1 behavior stays frozen; the 413 pre-check is a transport concern like the global 429). The FAQ proxy's buffered upstream responses cap at 4 MiB → 502. Per-route limits were rejected as knob surface with no differentiated need; read timeouts alone bound time, not memory. |
 | D22 | Time-bounding policy (request deadlines, DB statement bounds, per-call RPC/HTTP deadlines) | env-tunable per-route budgets / fixed per-family constants; per-site error mapping in ~300 v1+v2 handlers / one middleware-level timeout interception; client-side deadlines only / client + server-side statement bounds | **decided 2026-07-23: fixed constants, decorator-bounded clients, middleware-rendered timeouts** — the API gets one 30s request deadline (60x the 500ms slow-query warning; FAQ proxy exempt as its upstream is bounded by its own 180s client), and instead of teaching every handler to distinguish a timed-out query from a broken one, the deadline middleware intercepts any post-deadline 5xx at the header boundary and renders the family 503 (`request-timeout` problem / legacy envelope) — zero churn across the ~300 rendering sites, one byte-pinned rendering, deliberate pass-through for responses that started or finished late and for client cancels. Timeouts are middleware responses like the global 429, not per-operation spec declarations. Outbound calls are bounded at the narrowest reusable seam: the engine's `Client` interface (60s), `bind.ContractCaller`/read-backends (`internal/ethcall`, 15s), injected `http.Client` transports where a binary owns its whole RPC surface (autobid 30s, opsctl tools 90s), and per-package bounded fallback clients for the notifiers (Twitter 2m video-sized, WhatsApp/Discord 30s). Server-side `statement_timeout` (apiserver 30s, unattended services 60s) and `idle_in_transaction_session_timeout` (5m) back the context deadlines; when they fire (SQLSTATE 57014/25P03) the client-side bound failed — they render as plain 500s and are worth investigating, not normal timeouts. Operator CLIs stay signal-cancelled with no statement bounds: their heavy statements are legitimate and attended. No env knobs (D9/D21 precedent). |
-| D23 | API smoke/probe policy during the D6 transition | keep v1 default / run v1+v2 by default / make v2 canonical with explicit compatibility and uptime suites | **decided 2026-07-23: v2 default, explicit v1/both/operational suites** — a bare scheduled command must not restart the 30-day deprecated-traffic clock. The canonical suite discovers every safe GET from the embedded OpenAPI document and validates live responses; v1 remains an explicit 142-request compatibility regression until removal, `both` is an operator-invoked migration audit, and the no-database operational subset is the only suite intended for frequent uptime/Compose checks. Contract-cache 503 resources belong to the strict full-v2 dependency check, not process readiness. All suites pace at the public limiter and the shared lightweight path policy prevents srvmonitor configuration from reintroducing deprecated probes. |
+| D23 | API smoke/probe policy during the D6 transition | keep v1 default / run v1+v2 by default / make v2 canonical with explicit compatibility and uptime suites | **decided 2026-07-23: v2 default, explicit v1/both/operational suites** — a bare scheduled command must not restart the 30-day deprecated-traffic clock. The canonical suite discovers every safe GET from the embedded OpenAPI document and validates live responses; v1 remains an explicit 145-request compatibility regression until removal, `both` is an operator-invoked migration audit, and the no-database operational subset is the only suite intended for frequent uptime/Compose checks. Contract-cache 503 resources belong to the strict full-v2 dependency check, not process readiness. All suites pace at the public limiter and the shared lightweight path policy prevents srvmonitor configuration from reintroducing deprecated probes. |
 
 ---
 

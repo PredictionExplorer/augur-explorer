@@ -224,14 +224,14 @@ func TestRunStableSummaryAndOutput(t *testing.T) {
 	if !reflect.DeepEqual(first, second) || firstOutput != secondOutput || !reflect.DeepEqual(firstRequests, secondRequests) {
 		t.Fatal("identical runs produced unstable results")
 	}
-	if first.Total != 142 || first.OK != 140 || len(first.Failures) != 2 {
+	if first.Total != 145 || first.OK != 143 || len(first.Failures) != 2 {
 		t.Fatalf("summary = %#v", first)
 	}
 	if first.Failures[0].Endpoint != "/api/cosmicgame/statistics/counters" ||
 		first.Failures[1].Endpoint != "/api/cosmicgame/time/current" {
 		t.Fatalf("failure order = %#v", first.Failures)
 	}
-	if len(firstRequests) != 142 ||
+	if len(firstRequests) != 145 ||
 		firstRequests[0] != "https://api.example.test/api/cosmicgame/statistics/dashboard" {
 		t.Fatalf("requests = %#v", firstRequests)
 	}
@@ -240,7 +240,7 @@ func TestRunStableSummaryAndOutput(t *testing.T) {
 		"FAILED",
 		"[503] /api/cosmicgame/statistics/counters",
 		"[200] /api/cosmicgame/time/current",
-		"Total: 142",
+		"Total: 145",
 		"FAILED: 2",
 	} {
 		if !strings.Contains(firstOutput, want) {
@@ -262,7 +262,7 @@ func TestRunAllSuccessful(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if summary.Total != 142 || summary.OK != 142 || len(summary.Failures) != 0 {
+	if summary.Total != 145 || summary.OK != 145 || len(summary.Failures) != 0 {
 		t.Fatalf("summary = %#v", summary)
 	}
 	if !strings.Contains(out.String(), "All selected endpoints returned contract-valid HTTP 200 responses.") {
@@ -359,10 +359,10 @@ func TestRunOperationalSkipsParametersAndBothAggregatesSuites(t *testing.T) {
 			Suite: SuiteBoth, DisablePacing: true,
 		})
 		var failures FailuresError
-		if !errors.As(err, &failures) || failures.Count != 97 {
+		if !errors.As(err, &failures) || failures.Count != 101 {
 			t.Fatalf("summary/error = %#v / %v", summary, err)
 		}
-		if summary.Total != 239 || summary.OK != 142 || len(summary.Suites) != 2 ||
+		if summary.Total != 246 || summary.OK != 145 || len(summary.Suites) != 2 ||
 			summary.Suites[0].Suite != SuiteV2 || summary.Suites[1].Suite != SuiteV1 {
 			t.Fatalf("summary = %#v", summary)
 		}
@@ -384,8 +384,8 @@ func TestRunDefaultIsV2(t *testing.T) {
 		DisablePacing: true,
 	})
 	var failures FailuresError
-	if !errors.As(err, &failures) || failures.Count != 97 || requests != 97 ||
-		summary.Total != 97 || summary.Suites[0].Suite != SuiteV2 {
+	if !errors.As(err, &failures) || failures.Count != 101 || requests != 101 ||
+		summary.Total != 101 || summary.Suites[0].Suite != SuiteV2 {
 		t.Fatalf("requests/summary/error = %d / %#v / %v", requests, summary, err)
 	}
 }
