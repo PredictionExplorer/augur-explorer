@@ -67,9 +67,11 @@ func TestErc20TransferFailedAmountShortData(t *testing.T) {
 }
 
 // TestDecodeInitializedVersionBounds pins the totality guard on the
-// OpenZeppelin Initialized(uint64 version) decode: a version beyond int64
-// fails the batch loudly instead of wrapping negative in the database,
-// while the maximum representable version decodes exactly.
+// OpenZeppelin Initialized(uint64 version) decode: the type(uint64).max
+// sentinel emitted by _disableInitializers() maps to -1 (matching legacy
+// data), any other version beyond int64 fails the batch loudly instead of
+// wrapping negative in the database, and the maximum representable version
+// decodes exactly.
 func TestDecodeInitializedVersionBounds(t *testing.T) {
 	h := newUnitHandlers(t)
 	elog := &store.EthereumEventLog{EvtID: 1, BlockNum: 2, TxID: 3}
@@ -82,12 +84,21 @@ func TestDecodeInitializedVersionBounds(t *testing.T) {
 		t.Fatalf("decodeInitialized(2^63) error = %v, want version-overflow rejection", err)
 	}
 
-	// math.MaxInt64 itself is the last valid value.
-	word[24] = 0x7f
-	for i := 25; i < 32; i++ {
+	// type(uint64).max is the _disableInitializers() sentinel, stored as -1.
+	for i := 24; i < 32; i++ {
 		word[i] = 0xff
 	}
 	evt, err := h.decodeInitialized(lg, elog)
+	if err != nil {
+		t.Fatalf("decodeInitialized(MaxUint64): %v", err)
+	}
+	if evt.Version != -1 {
+		t.Fatalf("Version = %d, want -1 sentinel", evt.Version)
+	}
+
+	// math.MaxInt64 itself is the last exactly-representable value.
+	word[24] = 0x7f
+	evt, err = h.decodeInitialized(lg, elog)
 	if err != nil {
 		t.Fatalf("decodeInitialized(MaxInt64): %v", err)
 	}

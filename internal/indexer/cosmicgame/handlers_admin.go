@@ -1026,14 +1026,22 @@ func (h *Handlers) decodeInitialized(lg *types.Log, elog *store.EthereumEventLog
 	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "Initialized", lg.Data); err != nil {
 		return nil, err
 	}
-	if ethEvt.Version > math.MaxInt64 {
-		// Decode must be total: a malformed log fails the batch instead of
-		// wrapping the version negative in the database.
-		return nil, fmt.Errorf("version %d in Initialized event overflows int64", ethEvt.Version)
-	}
 	evt := &cgmodel.CGInitialized{}
 	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
-	evt.Version = int64(ethEvt.Version)
+	switch {
+	case ethEvt.Version == math.MaxUint64:
+		// OpenZeppelin Initializable emits Initialized(type(uint64).max)
+		// from _disableInitializers() in the implementation constructor.
+		// Store the sentinel as -1 (the value legacy indexing produced by
+		// wrapping), keeping from-genesis indexing possible.
+		evt.Version = -1
+	case ethEvt.Version > math.MaxInt64:
+		// Decode must be total: any other out-of-range version fails the
+		// batch instead of wrapping negative in the database.
+		return nil, fmt.Errorf("version %d in Initialized event overflows int64", ethEvt.Version)
+	default:
+		evt.Version = int64(ethEvt.Version)
+	}
 	return evt, nil
 }
 
