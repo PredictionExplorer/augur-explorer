@@ -47,6 +47,7 @@ var keycheckParamsCG = map[string]string{
 	"evtlog_id": "25308",
 }
 
+//nolint:gosec // public on-chain addresses used as sample route parameters, not credentials
 var keycheckParamsRW = map[string]string{
 	"user_addr":  "0x7BBF44394a23504cbE46b2b2d76929451cb86975",
 	"user_aid":   "45",

@@ -148,7 +148,7 @@ func isEthAddr(s string) bool {
 	}
 	for i := 2; i < 42; i++ {
 		c := s[i]
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
 			return false
 		}
 	}
@@ -166,8 +166,10 @@ func ethAddrLink(addr string) template.HTML {
 func ethAddrLinkTo(pathPrefix, addr string) template.HTML {
 	esc := html.EscapeString(addr)
 	if !isEthAddr(addr) {
-		return template.HTML(esc)
+		return template.HTML(esc) // #nosec G203 -- esc is HTML-escaped above
 	}
+	// #nosec G203 -- pathPrefix is a compile-time constant from the template
+	// and esc is HTML-escaped above.
 	return template.HTML(fmt.Sprintf(`<a href="%s%s">%s</a>`, pathPrefix, esc, esc))
 }
 
@@ -184,11 +186,14 @@ type server struct {
 func (s *server) fetch(ctx context.Context, path string) (map[string]any, error) {
 	ctx, cancel := context.WithTimeout(ctx, apiTimeout)
 	defer cancel()
+	// #nosec G704 -- proxying to the operator-configured API server is this
+	// tool's purpose; the base URL comes from API_BASE, only path segments
+	// vary with the request.
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.apiBase+path, nil)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.client.Do(req)
+	resp, err := s.client.Do(req) // #nosec G704 -- see request construction above
 	if err != nil {
 		return nil, err
 	}
@@ -303,6 +308,7 @@ func logRequests(log *slog.Logger, next http.Handler) http.Handler {
 
 type statusRecorder struct {
 	http.ResponseWriter
+
 	status int
 }
 
