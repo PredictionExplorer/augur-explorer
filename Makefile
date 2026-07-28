@@ -6,7 +6,7 @@ SHELL := /bin/bash
 BIN   := bin
 
 # Every runnable service and CLI in cmd/.
-COMMANDS := apiserver cg-etl rw-etl notibot freezer-scan freezer-verify \
+COMMANDS := apiserver apiexplorer cg-etl rw-etl notibot freezer-scan freezer-verify \
             srvmonitor loganomaly imggen-monitor rwalk-alarm \
             cgctl rwctl opsctl covergate
 
