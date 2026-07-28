@@ -1,6 +1,8 @@
 package config
 
 import (
+	"net/netip"
+	"strconv"
 	"strings"
 	"time"
 
@@ -99,8 +101,53 @@ type APIServer struct {
 	// header and migration Link regardless.
 	V1SunsetAt time.Time `env:"V1_SUNSET_AT"`
 
+	// TrustedProxies lists the reverse proxies (comma-separated IPs or
+	// CIDRs, e.g. "127.0.0.1,10.0.0.0/8") whose X-Forwarded-For /
+	// X-Real-IP headers identify the real client for access logs and rate
+	// limiting. Empty means no proxy is trusted and the TCP peer address
+	// is used, matching the legacy no-proxy deployments.
+	TrustedProxies string `env:"TRUSTED_PROXIES"`
+
 	DB  DB
 	Log Log
+
+	// trustedProxyPrefixes is TrustedProxies parsed by LoadAPIServer.
+	trustedProxyPrefixes []netip.Prefix
+}
+
+// TrustedProxyPrefixes returns the parsed TRUSTED_PROXIES networks (empty
+// when the variable is unset).
+func (c *APIServer) TrustedProxyPrefixes() []netip.Prefix {
+	return c.trustedProxyPrefixes
+}
+
+// parseTrustedProxies parses a comma-separated list of IPs and CIDRs; bare
+// IPs become single-address prefixes.
+func parseTrustedProxies(list string) ([]netip.Prefix, []string) {
+	var prefixes []netip.Prefix
+	var problems []string
+	for item := range strings.SplitSeq(list, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if strings.Contains(item, "/") {
+			p, err := netip.ParsePrefix(item)
+			if err != nil {
+				problems = append(problems, "TRUSTED_PROXIES: invalid CIDR "+strconv.Quote(item))
+				continue
+			}
+			prefixes = append(prefixes, p)
+			continue
+		}
+		addr, err := netip.ParseAddr(item)
+		if err != nil {
+			problems = append(problems, "TRUSTED_PROXIES: invalid IP "+strconv.Quote(item))
+			continue
+		}
+		prefixes = append(prefixes, netip.PrefixFrom(addr, addr.BitLen()))
+	}
+	return prefixes, problems
 }
 
 // FAQUpstream resolves the configured FAQ upstream URL, preferring
@@ -118,6 +165,9 @@ func LoadAPIServer(getenv func(string) string) (*APIServer, error) {
 	cfg := &APIServer{}
 	err := Load(cfg, getenv)
 	err = appendProblems(err, cfg.Log.validate()...)
+	var proxyProblems []string
+	cfg.trustedProxyPrefixes, proxyProblems = parseTrustedProxies(cfg.TrustedProxies)
+	err = appendProblems(err, proxyProblems...)
 	if cfg.HTTPPort == "" && cfg.HTTPSHostname == "" {
 		err = appendProblems(err, "HTTP_PORT: no listeners configured — set HTTP_PORT and/or HTTPS_HOSTNAME")
 	}

@@ -91,6 +91,55 @@ func TestLoadAPIServerAggregatesProblems(t *testing.T) {
 	}
 }
 
+func TestLoadAPIServerTrustedProxies(t *testing.T) {
+	t.Parallel()
+	env := minimalAPIServerEnv()
+	env["TRUSTED_PROXIES"] = " 127.0.0.1 , 10.0.0.0/8 , ::1 ,"
+	cfg, err := LoadAPIServer(mapEnv(env))
+	if err != nil {
+		t.Fatalf("LoadAPIServer: %v", err)
+	}
+	got := cfg.TrustedProxyPrefixes()
+	want := []string{"127.0.0.1/32", "10.0.0.0/8", "::1/128"}
+	if len(got) != len(want) {
+		t.Fatalf("TrustedProxyPrefixes = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i].String() != want[i] {
+			t.Errorf("prefix[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestLoadAPIServerTrustedProxiesUnset(t *testing.T) {
+	t.Parallel()
+	cfg, err := LoadAPIServer(mapEnv(minimalAPIServerEnv()))
+	if err != nil {
+		t.Fatalf("LoadAPIServer: %v", err)
+	}
+	if got := cfg.TrustedProxyPrefixes(); len(got) != 0 {
+		t.Errorf("TrustedProxyPrefixes = %v, want empty", got)
+	}
+}
+
+func TestLoadAPIServerTrustedProxiesInvalid(t *testing.T) {
+	t.Parallel()
+	env := minimalAPIServerEnv()
+	env["TRUSTED_PROXIES"] = "127.0.0.1,not-an-ip,10.0.0.0/99"
+	_, err := LoadAPIServer(mapEnv(env))
+	if err == nil {
+		t.Fatal("invalid TRUSTED_PROXIES accepted")
+	}
+	for _, want := range []string{
+		`TRUSTED_PROXIES: invalid IP "not-an-ip"`,
+		`TRUSTED_PROXIES: invalid CIDR "10.0.0.0/99"`,
+	} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("missing %q in:\n%s", want, err)
+		}
+	}
+}
+
 func TestLoadAPIServerMalformedMaxTokenIDReportsOnce(t *testing.T) {
 	t.Parallel()
 	env := minimalAPIServerEnv()

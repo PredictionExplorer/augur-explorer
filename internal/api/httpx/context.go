@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 )
@@ -69,20 +68,6 @@ func PatternPath(r *http.Request) string {
 		pattern = pattern[i:]
 	}
 	return pattern
-}
-
-// ClientIP returns the IP portion of the request's RemoteAddr, or "" when it
-// cannot be parsed. Proxy headers are deliberately not consulted: the
-// servers run without trusted proxies, matching the legacy configuration.
-func ClientIP(r *http.Request) string {
-	ip, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
-	if err != nil {
-		return ""
-	}
-	if parsed := net.ParseIP(ip); parsed == nil {
-		return ""
-	}
-	return ip
 }
 
 // ShouldBindJSON decodes the request body as JSON into obj. It mirrors the

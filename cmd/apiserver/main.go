@@ -187,6 +187,9 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	logger := cfg.Log.NewLogger(logOut)
 	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
 	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
+	// Behind a trusted reverse proxy the forwarding headers name the real
+	// client for access logs and rate limiting.
+	httpx.SetTrustedProxies(cfg.TrustedProxyPrefixes())
 
 	runCtx, cancelRun := context.WithCancel(ctx)
 	ctx = runCtx
