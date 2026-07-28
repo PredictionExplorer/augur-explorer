@@ -1,0 +1,203 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>History for Token ID {{.TokenId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Token History<h3>
+	<h3>Actions made on Token {{.TokenId}}</h3>
+<table>
+	<tr>
+		<td>Token ID</td>
+		<td><a class="link" href="/randomwalk/tokens/info/{{.TokenId}}">{{.TokenId}}</a> (click for token details)</td>
+	</tr>
+	<tr>
+		<td>Contract</td>
+		<td class="addr">{{.RWalkAddr}}</td>
+	</tr>
+</table>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Block</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Address</th>
+		<th class="market_reports">TokenId</th>
+		<th class="market_reports">Op Type</th>
+		<th class="market_reports">Price</th>
+		<th class="market_reports">Operation Info</th>
+	</tr>
+	{{- range $i, $change := .TokenHistory}}
+		<tr class="market_reports">
+			<td class="">
+				{{ if eq .RecordType 1.0 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1.0 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+					{{.Record.DateTime}}
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1.0 }}
+				<a class="link" href="/randomwalk/user/info/{{.Record.OwnerAid}}">
+					{{.Record.OwnerAddr}}
+				</a>
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					{{ if eq .Record.OfferType 1.0 }}
+						<a class="link" href="/randomwalk/user/info/{{.Record.SellerAid}}">
+						{{.Record.SellerAddr }}
+						</a>
+					{{end}}
+					{{ if eq .Record.OfferType 0.0 }}
+						<a class="link" href="/randomwalk/user/info/{{.Record.BuyerAid}}">
+						{{.Record.BuyerAddr}}
+						</a>
+					{{end}}
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					Token Owner
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					<a class="link" href="/randomwalk/user/info/{{.Record.Aid}}">
+					{{.Record.Address }}
+					</a>
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+					Token Owner
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+					<a class="link" href="/randomwalk/user/info/{{.Record.FromAid}}">
+					{{.Record.FromAddr}}
+					</a>
+				{{ end }}
+			</td>
+			<td class="" style="text-align:center;">
+				{{ if eq .RecordType 1.0 }}
+					{{.Record.TokenId}}
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					{{.Record.TokenId}}
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					{{.Record.TokenId }}
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					{{.Record.TokenId }}
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+					{{.Record.TokenId }}
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+					{{.Record.TokenId }}
+				{{ end }}
+			</td>
+			<td nowrap class="">
+				{{ if eq .RecordType 1.0 }}
+					Mint
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					New Offer
+					{{ if eq .Record.OfferType 0.0 }}<!--BUY-->{{end}}
+					{{ if eq .Record.OfferType 1.0 }}<!--SELL-->{{end}}
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					Cancel Offer
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					Item Bought
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+					Token Name
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+					Transfer
+				{{ end }}
+			</td>
+			<td class="market_reports_field" style="text-align: center;">
+				{{ if eq .RecordType 1.0 }}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+						N/A
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+						N/A
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1.0 }}
+					New token was minted with seed {{.Record.SeedNum }}
+				{{ end }}
+				{{ if eq .RecordType 2.0 }}
+					{{ if eq .Record.OfferType 0.0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1.0 }}SELL{{end}}
+					offer with ID={{.Record.OfferId }} created
+				{{ end }}
+				{{ if eq .RecordType 3.0 }}
+					{{ if eq .Record.OfferType 0.0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1.0 }}SELL{{end}}
+					Offer with ID={{.Record.OfferId}} was canceled by creator
+				{{ end }}
+				{{ if eq .RecordType 4.0 }}
+					{{ if eq .Record.OfferType 0.0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1.0 }}SELL{{end}}
+					Offer with ID={{.Record.OfferId}} was bought by {{.Record.Address}}
+				{{ end }}
+				{{ if eq .RecordType 5.0 }}
+					Owner has set Token Name to <font color=yellow><i>{{.Record.TokenName}}</i></font>
+				{{ end }}
+				{{ if eq .RecordType 6.0 }}
+				Owner transferred token to a new owner {{.Record.ToAddr}}
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/randomwalk/tokens/history/[token_id]/[offset]/[limit] <br/>
+
+	Example: /api/randomwalk/tokens/history/{{.TokenId}}/0/1000
+</code>
+</body>

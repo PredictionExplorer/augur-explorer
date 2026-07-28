@@ -1,0 +1,86 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<link href="/res/cosmicgame.css" rel="stylesheet">
+	<title>Token Sales</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/randomwalk/">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📈 Token Trading History</h1>
+			<div class="subtitle">MarketPlace {{.MarketAddr}}</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Block</th>
+					<th>Datetime</th>
+					<th class="center">Event Type</th>
+					<th class="center">OfferId</th>
+					<th class="center">Offer Type</th>
+					<th>Seller</th>
+					<th>Buyer</th>
+					<th class="center">TokenId</th>
+					<th class="right">Price</th>
+					<th class="right">Profit</th>
+					<th class="center">Purchasing Duration</th>
+					<th class="center">Cancelation Duration</th>
+				</tr>
+				{{- range $i, $change := .Sales}}
+					<tr>
+						<td>{{num .BlockNum}}</td>
+						<td>{{.RealDate}}</td>
+						<td class="center">
+							{{ if .WasCanceled }}<span class="badge badge-warning">OFFER CANCELED</span>
+							{{ else }}
+								{{ if .WasBought}}<span class="badge badge-success">ITEM BOUGHT</span>
+								{{ else }}<span class="badge badge-info">NEW OFFER</span>
+								{{ end }}
+							{{ end }}
+						</td>
+						<td class="center">{{num .OfferId}}</td>
+						<td class="center">
+							{{ if eq 0.0 .OfferType }}BUY{{else}}SELL{{end}}
+						</td>
+						<td class="monospace">{{.SellerAddr}}</td>
+						<td class="monospace">{{.BuyerAddr}}</td>
+						<td class="center">
+							<a href="/randomwalk/tokens/history/{{num .TokenId}}">{{num .TokenId}}</a>
+						</td>
+						<td class="right">{{ printf "%.6f" .Price}}</td>
+						<td class="right">
+							{{if .WasCanceled }}
+								CANCELED
+							{{ else }}
+								{{ if .WasBought }}
+									{{if .Profit}}{{ printf "%.6f" .Profit }}{{else}}—{{end}}
+								{{ end }}
+							{{ end }}
+						</td>
+						<td class="center">{{.BoughtDuration}}</td>
+						<td class="center">{{.CanceledDuration}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/randomwalk/trading/history/[offset]/[limit]</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/randomwalk/trading/history/0/1000000</code>
+		</div>
+	</div>
+</body>
+</html>

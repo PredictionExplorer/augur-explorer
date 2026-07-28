@@ -40,3 +40,8 @@ go.work.sum
 
 # Log files
 *.log
+
+cmd/apiexplorer/apiexplorer
+cmd/apiexplorer/res/
+cmd/apiserver/apiserver
+cmd/cg-etl/cg-etl
