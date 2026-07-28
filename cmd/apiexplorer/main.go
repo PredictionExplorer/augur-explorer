@@ -232,7 +232,7 @@ func (s *server) renderError(w http.ResponseWriter, status int, descr string) {
 // paramNames returns the {placeholder} names of an API path template.
 func paramNames(api string) []string {
 	var names []string
-	for _, seg := range strings.Split(api, "/") {
+	for seg := range strings.SplitSeq(api, "/") {
 		if strings.HasPrefix(seg, "{") && strings.HasSuffix(seg, "}") {
 			names = append(names, seg[1:len(seg)-1])
 		}
@@ -244,7 +244,7 @@ func paramNames(api string) []string {
 // exposed under ("round_num" -> "RoundNum").
 func paramKey(name string) string {
 	var b strings.Builder
-	for _, part := range strings.Split(name, "_") {
+	for part := range strings.SplitSeq(name, "_") {
 		if part == "" {
 			continue
 		}
