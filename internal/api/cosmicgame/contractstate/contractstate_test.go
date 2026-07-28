@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -1561,5 +1562,78 @@ func TestSpecialWinnersCacheRecovers(t *testing.T) {
 		snap.SpecialWinners.SourceBlockNumber != 50 {
 		t.Fatalf("recovered special-winners cache = %+v ready=%v",
 			snap.SpecialWinners, snap.SpecialWinnersReady)
+	}
+}
+
+func TestTimingInt64MapsSentinelToMinusOne(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value *big.Int
+		want  int64
+		ok    bool
+	}{
+		{name: "nil"},
+		{name: "sentinel", value: new(big.Int).Set(uint256NegOne), want: -1, ok: true},
+		{name: "below sentinel", value: new(big.Int).Sub(uint256NegOne, big.NewInt(1))},
+		{name: "regular", value: big.NewInt(900), want: 900, ok: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			got, ok := timingInt64(test.value)
+			if got != test.want || ok != test.ok {
+				t.Fatalf("timingInt64 = %d,%v; want %d,%v",
+					got, ok, test.want, test.ok)
+			}
+		})
+	}
+}
+
+// TestFetchLiveSpecialWinnersSentinelTimings reproduces a fresh round: the
+// contract initializes every champion timing field to uint256(-1), which
+// used to fail as "special-winner timing exceeds int64"; the sentinel must
+// map to -1 like the legacy indexing did.
+func TestFetchLiveSpecialWinnersSentinelTimings(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	negOne := new(big.Int).Set(uint256NegOne)
+	stub.Return("tryGetCurrentChampions",
+		ethcommon.Address{}, negOne, ethcommon.Address{}, negOne)
+	stub.Return("enduranceChampionStartTimeStamp", negOne)
+	stub.Return("prevEnduranceChampionDuration", negOne)
+	stub.Return("enduranceChampionAddress", ethcommon.Address{})
+	stub.Return("enduranceChampionDuration", negOne)
+	stub.Return("chronoWarriorDuration", negOne)
+	chain.RegisterCall(gameAddr, stub.Handler())
+	chain.EnsureBlock(50)
+	s := newTestState(t, chain, defaultFakeDB())
+
+	out := s.FetchLiveSpecialWinners(context.Background())
+	if out.Err != nil {
+		t.Fatalf("unexpected error: %v", out.Err)
+	}
+	if out.EnduranceChampionDuration != -1 || out.ChronoWarriorDuration != -1 {
+		t.Errorf("sentinel durations = %d / %d, want -1 / -1",
+			out.EnduranceChampionDuration, out.ChronoWarriorDuration)
+	}
+}
+
+// TestFetchLiveSpecialWinnersChronoSegmentOverflow drives the endurance
+// anchor near MaxInt64 so the chrono-segment start would wrap.
+func TestFetchLiveSpecialWinnersChronoSegmentOverflow(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV1GameStub()
+	// lastBidDuration (600) stays below the stored record (900), so the
+	// stored anchor is used as-is: start MaxInt64 + prev 200 overflows.
+	stub.Return("enduranceChampionStartTimeStamp", big.NewInt(math.MaxInt64))
+	chain.RegisterCall(gameAddr, stub.Handler())
+	chain.EnsureBlock(50)
+	s := newTestState(t, chain, defaultFakeDB())
+
+	out := s.FetchLiveSpecialWinners(context.Background())
+	if out.Err == nil || !strings.Contains(out.Err.Error(), "overflows int64") {
+		t.Fatalf("Err = %v, want chrono-warrior overflow", out.Err)
 	}
 }

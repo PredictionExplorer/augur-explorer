@@ -910,6 +910,9 @@ func (r *Repo) MarketTradingVolumeByPeriod(ctx context.Context, contractAid int6
 }
 
 // TokenNameChanges returns the naming history of one token, newest first.
+// The owner columns are COALESCEd because imported RandomWalk data can carry
+// transaction.from_aid values with no matching address row; those rows must
+// still render (with an empty owner) instead of failing the scan.
 func (r *Repo) TokenNameChanges(ctx context.Context, tokenID int64) ([]rwmodel.TokenNameRec, error) {
 	query := `SELECT
 			t.block_num,
@@ -919,8 +922,8 @@ func (r *Repo) TokenNameChanges(ctx context.Context, tokenID int64) ([]rwmodel.T
 			ca.addr,
 			t.new_name,
 			tx.tx_hash,
-			oa.address_id,
-			oa.addr
+			COALESCE(oa.address_id, 0),
+			COALESCE(oa.addr, '')
 		FROM rw_token_name t
 			LEFT JOIN address ca ON t.contract_aid=ca.address_id
 			LEFT JOIN transaction tx ON t.tx_id=tx.id

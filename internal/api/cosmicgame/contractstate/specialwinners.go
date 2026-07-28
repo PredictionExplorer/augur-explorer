@@ -215,12 +215,15 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		return out
 	}
 	out.RoundNum = roundNum.Int64()
-	enduranceDuration, enduranceOK := nonNegativeInt64(champs.EnduranceChampionDuration)
-	chronoDuration, chronoOK := nonNegativeInt64(champs.ChronoWarriorDuration)
-	enduranceStart, startOK := nonNegativeInt64(enduranceStartTs)
-	previousEnduranceDuration, previousOK := nonNegativeInt64(prevEnduranceDuration)
-	storedEnduranceDuration, storedEnduranceOK := nonNegativeInt64(storedEnduranceChampionDur)
-	storedChronoDuration, storedChronoOK := nonNegativeInt64(storedChronoWarriorDur)
+	// The contract initializes chrono/endurance timing fields to
+	// uint256(-1) ("not set"); timingInt64 maps that sentinel to -1, as the
+	// legacy raw Int64() wrap did.
+	enduranceDuration, enduranceOK := timingInt64(champs.EnduranceChampionDuration)
+	chronoDuration, chronoOK := timingInt64(champs.ChronoWarriorDuration)
+	enduranceStart, startOK := timingInt64(enduranceStartTs)
+	previousEnduranceDuration, previousOK := timingInt64(prevEnduranceDuration)
+	storedEnduranceDuration, storedEnduranceOK := timingInt64(storedEnduranceChampionDur)
+	storedChronoDuration, storedChronoOK := timingInt64(storedChronoWarriorDur)
 	if !enduranceOK || !chronoOK || !startOK || !previousOK ||
 		!storedEnduranceOK || !storedChronoOK {
 		out.Err = errors.New("special-winner timing exceeds int64")
@@ -315,7 +318,9 @@ func (s *State) FetchLiveSpecialWinners(ctx context.Context) LiveSpecialWinners 
 		out.EnduranceChampionStartTimeStamp = liveEnduranceStart
 		out.PrevEnduranceChampionDuration = livePrevDuration
 
-		if liveEnduranceStart > math.MaxInt64-livePrevDuration {
+		// Overflow is only possible when both operands are positive; the -1
+		// "not set" sentinel makes the sum smaller, never larger.
+		if livePrevDuration > 0 && liveEnduranceStart > math.MaxInt64-livePrevDuration {
 			out.Err = errors.New("chrono-warrior segment timestamp overflows int64")
 			return out
 		}

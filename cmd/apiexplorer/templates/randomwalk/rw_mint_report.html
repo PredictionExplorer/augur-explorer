@@ -1,0 +1,53 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<link href="/res/cosmicgame.css" rel="stylesheet">
+	<title>Mint Report</title>
+</head>
+<body>
+	<div class="cg-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/randomwalk/">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🪙 Mint Report</h1>
+			<div class="subtitle">Token mints summarized by calendar month</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Year</th>
+					<th>Month</th>
+					<th class="center">Tokens Minted</th>
+					<th class="right">Total (ETH)</th>
+					<th class="right">Redeem Amount (ETH)</th>
+				</tr>
+				{{- range $i, $change := .Records}}
+					<tr>
+						<td class="center">{{num .Year}}</td>
+						<td>{{.MonthStr}}</td>
+						<td class="center">{{num .TotalMinted}}</td>
+						<td class="right">{{printf "%.6f" .TotalEth}}</td>
+						<td class="right">{{printf "%.6f" .RedeemAmount}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/randomwalk/mint_report</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/randomwalk/mint_report</code>
+		</div>
+	</div>
+</body>
+</html>

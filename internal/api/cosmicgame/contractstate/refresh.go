@@ -72,6 +72,20 @@ func nonNegativeInt64(value *big.Int) (int64, bool) {
 	return value.Int64(), true
 }
 
+// uint256NegOne is type(uint256).max: the contract stores -1 cast to uint256
+// as a "not set" sentinel for chrono-warrior/endurance timing fields.
+var uint256NegOne = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1))
+
+// timingInt64 converts an on-chain timing value, mapping the uint256(-1)
+// sentinel to -1 (the value legacy indexing produced by wrapping) and
+// rejecting any other value outside [0, MaxInt64].
+func timingInt64(value *big.Int) (int64, bool) {
+	if value != nil && value.Cmp(uint256NegOne) == 0 {
+		return -1, true
+	}
+	return nonNegativeInt64(value)
+}
+
 func (s *State) markConstantsUnavailable() {
 	s.mu.Lock()
 	s.snap.ConstantsReady = false
