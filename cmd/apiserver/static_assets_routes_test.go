@@ -93,6 +93,23 @@ func TestStaticImagesMissing404WithCacheHeader(t *testing.T) {
 	}
 }
 
+func TestStaticImagesFlatLayoutServesLegacyNestedURLs(t *testing.T) {
+	r, _ := staticRouter(t, staticAssets{flatPaths: true})
+
+	// The flat URL is what the current metadata emits.
+	if w := doStatic(r, http.MethodGet, "/images/000010_black_thumb.jpg"); w.Code != http.StatusOK {
+		t.Fatalf("flat URL = %d, want 200", w.Code)
+	}
+	// The nested URL is what the legacy metadata emitted; marketplaces
+	// cached those, so flat mode must serve them as an alias.
+	if w := doStatic(r, http.MethodGet, "/images/randomwalk/000010_black_thumb.jpg"); w.Code != http.StatusOK {
+		t.Fatalf("legacy nested URL = %d, want 200", w.Code)
+	}
+	if w := doStatic(r, http.MethodGet, "/images/randomwalk/missing.jpg"); w.Code != http.StatusNotFound {
+		t.Fatalf("missing nested file = %d, want 404", w.Code)
+	}
+}
+
 func TestStaticImagesCosmicPackageFallback(t *testing.T) {
 	r, _ := staticRouter(t, staticAssets{})
 

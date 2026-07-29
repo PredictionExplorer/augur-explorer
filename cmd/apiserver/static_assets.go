@@ -261,6 +261,7 @@ func registerStaticAssetRoutes(sa staticAssets) func(*httpx.Router) {
 			mount, fsRoot := sa.resolveNFTStaticMount(abs)
 			sa.warnNFTAssetsLayout(abs, mount)
 
+			flat := sa.flatPaths
 			handler := func(c *httpx.Context) {
 				rel := strings.TrimPrefix(c.Param("filepath"), "/")
 				if rel == "" {
@@ -268,6 +269,15 @@ func registerStaticAssetRoutes(sa staticAssets) func(*httpx.Router) {
 					return
 				}
 				full, ok := resolveAssetFile(fsRoot, rel)
+				if !ok && flat {
+					// The legacy metadata handler emitted nested
+					// /images/randomwalk/<file> URLs even in the flat
+					// layout, and marketplaces cached them; accept the
+					// nested form as an alias for the flat one.
+					if nested := strings.TrimPrefix(rel, "randomwalk/"); nested != rel {
+						full, ok = resolveAssetFile(fsRoot, nested)
+					}
+				}
 				if !ok {
 					c.Status(http.StatusNotFound)
 					return
