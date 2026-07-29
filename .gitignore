@@ -44,3 +44,4 @@ go.work.sum
 cmd/apiexplorer/apiexplorer
 cmd/apiserver/apiserver
 cmd/cg-etl/cg-etl
+cmd/rw-etl/rw-etl
