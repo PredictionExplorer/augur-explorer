@@ -1,6 +1,7 @@
 package contractstate
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"math"
@@ -8,11 +9,13 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	cg "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
@@ -843,6 +846,54 @@ func TestV2ChangeDivisorFailureMarksConstantsUnavailable(t *testing.T) {
 	if snap.ConstantsReady || snap.ConfigurationReady {
 		t.Fatalf("failed V2 divisor stayed ready: constants=%v configuration=%v",
 			snap.ConstantsReady, snap.ConfigurationReady)
+	}
+}
+
+// TestMechanicsProbeNoiseThrottled verifies that steady-state refreshes
+// re-confirm the cached version with a getter that exists on it instead of
+// re-running the newest-first probe, whose V3 getter reverts on a V2
+// contract and pollutes the RPC node's log. The full probe must still run
+// again once the probe interval elapses.
+func TestMechanicsProbeNoiseThrottled(t *testing.T) {
+	chain := testchain.New(t)
+	stub := newV2GameStub()
+	inner := stub.Handler()
+	var v3Probes atomic.Int64
+	v3Selector := ethcrypto.Keccak256([]byte("mainPrizeNumCosmicSignatureNfts()"))[:4]
+	chain.RegisterCall(gameAddr, func(input []byte) ([]byte, error) {
+		if len(input) >= 4 && bytes.Equal(input[:4], v3Selector) {
+			v3Probes.Add(1)
+		}
+		return inner(input)
+	})
+	s := newTestState(t, chain, defaultFakeDB())
+
+	s.LoadInitial(context.Background())
+	if got := s.Snapshot().MechanicsVersion; got != mechanicsV2 {
+		t.Fatalf("MechanicsVersion = %d, want V2", got)
+	}
+	if v3Probes.Load() == 0 {
+		t.Fatal("initial load never ran the newest-first probe")
+	}
+
+	baseline := v3Probes.Load()
+	for range 3 {
+		s.refreshVariables(context.Background())
+		s.refreshConstants(context.Background())
+	}
+	if extra := v3Probes.Load() - baseline; extra != 0 {
+		t.Fatalf("steady-state refreshes issued %d reverting V3 probes, want 0", extra)
+	}
+
+	// An elapsed probe interval must trigger the full probe again so
+	// upgrades that keep the old getter answering (e.g. V2 -> V3) are
+	// eventually detected.
+	s.mechanicsProbeMu.Lock()
+	s.lastMechanicsFullProbe = time.Now().Add(-s.mechanicsProbeInterval)
+	s.mechanicsProbeMu.Unlock()
+	s.refreshVariables(context.Background())
+	if v3Probes.Load() == baseline {
+		t.Fatal("expired probe interval did not re-run the newest-first probe")
 	}
 }
 

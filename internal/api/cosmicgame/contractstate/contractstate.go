@@ -33,6 +33,14 @@ const (
 	DefaultSpecialWinnersInterval = 30 * time.Second
 	DefaultRPCReadTimeout         = 10 * time.Second
 	DefaultDBReadTimeout          = 10 * time.Second
+
+	// DefaultMechanicsProbeInterval bounds how often the full newest-first
+	// mechanics-version probe runs. The probe calls getters that do not
+	// exist on older contract generations, so every run shows up as
+	// "execution reverted" warnings in the RPC node's log; between full
+	// probes the cached version is merely re-confirmed with a getter that
+	// exists on that generation (see resolveMechanicsVersion).
+	DefaultMechanicsProbeInterval = 15 * time.Minute
 )
 
 // DataSource is the narrow slice of the CosmicGame repository the state
@@ -80,6 +88,7 @@ type Config struct {
 	SpecialWinnersInterval time.Duration
 	RPCReadTimeout         time.Duration
 	DBReadTimeout          time.Duration
+	MechanicsProbeInterval time.Duration
 }
 
 // V3Configuration is the live V3-only configuration, including the latest
@@ -193,10 +202,14 @@ type State struct {
 	specialWinnersInterval time.Duration
 	rpcReadTimeout         time.Duration
 	dbReadTimeout          time.Duration
+	mechanicsProbeInterval time.Duration
 
 	contractRefreshMu       sync.Mutex
 	dbStatsRefreshMu        sync.Mutex
 	specialWinnersRefreshMu sync.Mutex
+
+	mechanicsProbeMu       sync.Mutex
+	lastMechanicsFullProbe time.Time
 
 	mu   sync.RWMutex
 	snap Snapshot // Addrs left zero; filled from s.addrs on read
@@ -231,6 +244,9 @@ func New(cfg Config) (*State, error) {
 	if cfg.DBReadTimeout <= 0 {
 		cfg.DBReadTimeout = DefaultDBReadTimeout
 	}
+	if cfg.MechanicsProbeInterval <= 0 {
+		cfg.MechanicsProbeInterval = DefaultMechanicsProbeInterval
+	}
 	return &State{
 		client:                 cfg.EthClient,
 		db:                     cfg.DB,
@@ -242,6 +258,7 @@ func New(cfg Config) (*State, error) {
 		specialWinnersInterval: cfg.SpecialWinnersInterval,
 		rpcReadTimeout:         cfg.RPCReadTimeout,
 		dbReadTimeout:          cfg.DBReadTimeout,
+		mechanicsProbeInterval: cfg.MechanicsProbeInterval,
 	}, nil
 }
 

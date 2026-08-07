@@ -72,6 +72,32 @@ for h in a1.cosmicsignature.com a2.cosmicsignature.com; do
     api "https://$h/api/v2/cosmicgame/statistics"
 done
 
+# chain-data check: the dashboard's BidPrice is fetched from the game contract
+# via eth_call, so it is only nonzero when the apiserver can reach its RPC
+# node. A 200 with BidPrice=0/missing means "web server up, RPC down" —
+# degraded data that a plain status check would wrongly report as PASS.
+chain() {  # chain <url>
+    local body code bid
+    body=$(curl -sk -m 10 -w '\n%{http_code}' "$1")
+    code=${body##*$'\n'}
+    body=${body%$'\n'*}
+    if [ "$code" != "200" ]; then
+        bad "$1" "http=$code body=${body:0:80}"
+        return
+    fi
+    bid=$(echo "$body" | grep -o '"BidPrice":"[0-9]*"' | grep -o '[0-9]\+')
+    if [ -n "$bid" ] && [ "$bid" != "0" ]; then
+        ok "$1  BidPrice=$bid (RPC-derived data present)"
+    else
+        bad "$1" "200 but BidPrice=${bid:-missing} — apiserver's RPC likely down, data degraded"
+    fi
+}
+
+echo "=== 9) CosmicGame dashboard — chain-data freshness (detects RPC-down-behind-200) ==="
+for h in a1.cosmicsignature.com a2.cosmicsignature.com; do
+    chain "https://$h/api/cosmicgame/statistics/dashboard"
+done
+
 echo
 echo "passed: $PASS   failed: $FAIL"
 exit $((FAIL > 0))
