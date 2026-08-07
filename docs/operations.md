@@ -311,9 +311,12 @@ Repository-owned probes enforce that invariant:
   as a scheduled uptime probe;
 - `opsctl smoketest --suite=operational` needs no database credentials and
   checks `/healthz`, `/readyz`, `/version`, and stable DB-backed v2 reads;
-- srvmonitor rejects configured internal or public URLs under either
-  deprecated v1 prefix at startup. Use `/readyz` internally and a stable
-  resource such as `/api/v2/cosmicgame/rounds?limit=1` publicly.
+- srvmonitor logs a startup warning for configured internal or public URLs
+  under either deprecated v1 prefix (it must still monitor deployed servers
+  that only serve v1). Migrate probes to `/readyz` internally and a stable
+  resource such as `/api/v2/cosmicgame/rounds?limit=1` publicly before the
+  measurement window; any that cannot move must be recorded here as a
+  documented probe.
 
 The full v2 suite intentionally fails on a contract-state 503 because that is
 user-visible dependency degradation. The operational uptime suite excludes

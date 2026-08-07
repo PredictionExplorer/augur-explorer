@@ -20,6 +20,9 @@ type Layout struct {
 	// AnomalyBaseY is the header row of the anomaly section (used only when
 	// anomaly monitoring is enabled).
 	AnomalyBaseY int
+	// IDRACBaseY is the header row of the iDRAC crash-detection section
+	// (used only when iDRAC interfaces are configured).
+	IDRACBaseY int
 	// SSLBaseX/SSLBaseY position the SSL certificate column.
 	SSLBaseX, SSLBaseY int
 	// ErrorX/ErrorY position the shared two-line error area.
@@ -45,11 +48,19 @@ func ComputeLayout(cfg *Config) Layout {
 	// (Image occupies its header + 2 content lines).
 	l.AnomalyBaseY = l.ImageBaseY + 3
 
-	// Bottom of the left-hand column (Postgres / Web API / Image [/ Anomaly] stack).
+	// Bottom of the left-hand column (Postgres / Web API / Image [/ Anomaly]
+	// [/ iDRAC] stack).
 	leftColumnBottomY := l.ImageBaseY + 3
 	if cfg.Anomaly.Enabled() {
 		// Anomaly header at AnomalyBaseY, then AnomalyDisplayCount content lines.
 		leftColumnBottomY = l.AnomalyBaseY + AnomalyDisplayCount
+	}
+
+	// iDRAC crash section sits below whatever ends the left column so far
+	// (one gap line, then a header plus one line per interface).
+	l.IDRACBaseY = leftColumnBottomY + 1
+	if len(cfg.IDRACs) > 0 {
+		leftColumnBottomY = l.IDRACBaseY + len(cfg.IDRACs)
 	}
 
 	// SSL Certificates are placed in a right-hand column, aligned with the
@@ -83,7 +94,8 @@ func ComputeLayout(cfg *Config) Layout {
 // monitor the config enables, mirroring the gating rules of the legacy main:
 // RPC always; databases, event tables, applications, web APIs, disks and SSL
 // certificates when configured; the image monitor when both its database and
-// server URL are set; the anomaly monitor when fully configured.
+// server URL are set; the anomaly monitor when fully configured; the iDRAC
+// crash monitor when at least one iDRAC interface is configured.
 //
 // anomalyDir is where the fetched anomaly file is stored (empty selects the
 // system temp directory).
@@ -134,6 +146,10 @@ func BuildManager(cfg *Config, disp Display, logger *slog.Logger, anomalyDir str
 
 	if cfg.Anomaly.Enabled() {
 		mgr.Register(NewAnomalyMonitor(cfg.Anomaly, layout.AnomalyBaseY, logger, anomalyDir, iv))
+	}
+
+	if len(cfg.IDRACs) > 0 {
+		mgr.Register(NewIDRACMonitor(cfg.IDRACs, cfg.IDRACScript, layout.IDRACBaseY, logger, iv))
 	}
 
 	if len(cfg.SSLCerts) > 0 {

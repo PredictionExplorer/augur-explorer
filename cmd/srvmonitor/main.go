@@ -190,7 +190,11 @@ func logConfigSummary(logger *slog.Logger, cfg *srvmonitor.Config) {
 	logger.Info(fmt.Sprintf("  - %d Event Table databases", len(cfg.EventTableDBs)))
 	logger.Info(fmt.Sprintf("  - %d Application databases", len(cfg.ApplicationDBs)))
 	logger.Info(fmt.Sprintf("  - %d Web APIs", len(cfg.WebAPIs)))
+	for _, warning := range cfg.DeprecationWarnings() {
+		logger.Warn(warning)
+	}
 	logger.Info(fmt.Sprintf("  - %d Disk monitors", len(cfg.DiskMonitors)))
+	logger.Info(fmt.Sprintf("  - %d iDRAC interfaces", len(cfg.IDRACs)))
 	logger.Info(fmt.Sprintf("  - %d SSL certificates", len(cfg.SSLCerts)))
 	if cfg.Anomaly.Enabled() {
 		staleAfter := cfg.Anomaly.StaleAfter

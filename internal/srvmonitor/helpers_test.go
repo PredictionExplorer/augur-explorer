@@ -27,6 +27,7 @@ func testIntervals() Intervals {
 		Image:          time.Millisecond,
 		SSL:            time.Millisecond,
 		Anomaly:        time.Millisecond,
+		IDRAC:          time.Millisecond,
 	}
 }
 
@@ -114,6 +115,20 @@ func (d *fakeDisplay) FgAt(x, y int) Color {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.cells[[2]int{x, y}].fg
+}
+
+// BgAt returns the background color of the cell at (x, y).
+func (d *fakeDisplay) BgAt(x, y int) Color {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.cells[[2]int{x, y}].bg
+}
+
+// Cleared returns how many times Clear was called.
+func (d *fakeDisplay) Cleared() int {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.cleared
 }
 
 // Flushes returns how many times Flush was called.

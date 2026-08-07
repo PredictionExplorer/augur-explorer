@@ -24,6 +24,7 @@ func fullConfig() *Config {
 		DiskMonitors: []DiskConfig{{Title: "disk1"}},
 		SSLCerts:     []SSLCertConfig{{Host: "a"}, {Host: "b"}, {Host: "c"}},
 		Anomaly:      anomalyConfig(),
+		IDRACs:       []IDRACConfig{{Name: "idrac1", Host: "10.0.0.9", User: "u", Pass: "p"}},
 		RWalkDB:      dbConfig("rwalk"),
 		RWalkImage:   ImageServerConfig{URL: "http://img"},
 		MobileNotif:  true,
@@ -52,6 +53,10 @@ func TestComputeLayoutFullConfig(t *testing.T) {
 	if l.AnomalyBaseY != 42 {
 		t.Fatalf("AnomalyBaseY = %d, want 42", l.AnomalyBaseY)
 	}
+	// iDRAC: below the anomaly section (header + 3 content lines) + 1 gap.
+	if l.IDRACBaseY != 46 {
+		t.Fatalf("IDRACBaseY = %d, want 46", l.IDRACBaseY)
+	}
 	// SSL column is fixed.
 	if l.SSLBaseX != 62 || l.SSLBaseY != 24 {
 		t.Fatalf("SSL position = (%d,%d)", l.SSLBaseX, l.SSLBaseY)
@@ -67,6 +72,7 @@ func TestComputeLayoutWithoutSSLAndAnomaly(t *testing.T) {
 	cfg := fullConfig()
 	cfg.SSLCerts = nil
 	cfg.Anomaly = AnomalyConfig{}
+	cfg.IDRACs = nil
 	l := ComputeLayout(cfg)
 
 	// Errors fall to the bottom of the left column: ImageBaseY+3+1.
@@ -79,11 +85,29 @@ func TestComputeLayoutAnomalyExtendsLeftColumn(t *testing.T) {
 	t.Parallel()
 	cfg := fullConfig()
 	cfg.SSLCerts = nil
+	cfg.IDRACs = nil
 	l := ComputeLayout(cfg)
 
 	// With anomaly enabled, the error area sits below the anomaly section.
 	if l.ErrorY != l.AnomalyBaseY+AnomalyDisplayCount+1 {
 		t.Fatalf("ErrorY = %d, want %d", l.ErrorY, l.AnomalyBaseY+AnomalyDisplayCount+1)
+	}
+}
+
+func TestComputeLayoutIDRACExtendsLeftColumn(t *testing.T) {
+	t.Parallel()
+	cfg := fullConfig()
+	cfg.SSLCerts = nil
+	cfg.IDRACs = append(cfg.IDRACs, IDRACConfig{Name: "idrac2", Host: "10.0.0.10", User: "u", Pass: "p"})
+	l := ComputeLayout(cfg)
+
+	// The iDRAC section starts one gap line below the anomaly section.
+	if l.IDRACBaseY != l.AnomalyBaseY+AnomalyDisplayCount+1 {
+		t.Fatalf("IDRACBaseY = %d, want %d", l.IDRACBaseY, l.AnomalyBaseY+AnomalyDisplayCount+1)
+	}
+	// The error area moves below the iDRAC header + one line per interface.
+	if l.ErrorY != l.IDRACBaseY+len(cfg.IDRACs)+1 {
+		t.Fatalf("ErrorY = %d, want %d", l.ErrorY, l.IDRACBaseY+len(cfg.IDRACs)+1)
 	}
 }
 
@@ -101,6 +125,7 @@ func TestBuildManagerRegistersEverything(t *testing.T) {
 		"Disk Usage Monitor",
 		"Image Monitor",
 		"WebSrv Anomaly Monitor",
+		"iDRAC Crash Monitor",
 		"SSL Monitor",
 	}
 	if got := mgr.MonitorNames(); !reflect.DeepEqual(got, want) {

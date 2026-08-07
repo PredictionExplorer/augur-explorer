@@ -249,15 +249,11 @@ func TestLoadFromEnvValidation(t *testing.T) {
 		}
 	})
 
-	t.Run("deprecated and malformed web probes aggregate", func(t *testing.T) {
+	t.Run("malformed web probes aggregate", func(t *testing.T) {
 		t.Parallel()
 		env := minimalEnv()
 		// #nosec G101 -- sentinel credential proves URL errors redact values.
 		maps.Copy(env, map[string]string{
-			"SRV1_WEB_API_NAME":       "legacy internal",
-			"SRV1_WEB_API_HOST":       "api.internal",
-			"SRV1_WEB_API_URI":        "/api/cosmicgame/statistics/dashboard",
-			"SRV1_WEB_API_PUBLIC_URL": "https://api.example/api/randomwalk/statistics",
 			"SRV2_WEB_API_NAME":       "malformed",
 			"SRV2_WEB_API_HOST":       "api.internal",
 			"SRV2_WEB_API_URI":        "not-an-absolute-path",
@@ -268,8 +264,7 @@ func TestLoadFromEnvValidation(t *testing.T) {
 			t.Fatal("unsafe web probes unexpectedly succeeded")
 		}
 		for _, want := range []string{
-			"legacy internal", "deprecated v1", "malformed",
-			"invalid internal URI", "invalid public URL",
+			"malformed", "invalid internal URI", "invalid public URL",
 		} {
 			if !strings.Contains(err.Error(), want) {
 				t.Errorf("error %q missing %q", err, want)
@@ -277,6 +272,93 @@ func TestLoadFromEnvValidation(t *testing.T) {
 		}
 		if strings.Contains(err.Error(), "password-secret") {
 			t.Fatalf("configuration error leaked public URL credentials: %v", err)
+		}
+	})
+
+	t.Run("deprecated v1 web probes load with warnings", func(t *testing.T) {
+		t.Parallel()
+		env := minimalEnv()
+		maps.Copy(env, map[string]string{
+			"SRV1_WEB_API_NAME":       "legacy internal",
+			"SRV1_WEB_API_HOST":       "api.internal",
+			"SRV1_WEB_API_URI":        "/api/cosmicgame/statistics/dashboard",
+			"SRV1_WEB_API_PUBLIC_URL": "https://api.example/api/randomwalk/statistics",
+		})
+		cfg, err := LoadFromEnv(envMap(env))
+		if err != nil {
+			t.Fatalf("deprecated v1 probe rejected: %v", err)
+		}
+		warnings := cfg.DeprecationWarnings()
+		if len(warnings) != 2 {
+			t.Fatalf("DeprecationWarnings() = %v, want 2 warnings", warnings)
+		}
+		joined := strings.Join(warnings, ", ")
+		for _, want := range []string{
+			"legacy internal", "deprecated v1",
+			"/api/cosmicgame/statistics/dashboard", "/api/randomwalk/statistics",
+		} {
+			if !strings.Contains(joined, want) {
+				t.Errorf("warnings %q missing %q", joined, want)
+			}
+		}
+	})
+
+	t.Run("non-deprecated probes produce no warnings", func(t *testing.T) {
+		t.Parallel()
+		env := minimalEnv()
+		maps.Copy(env, map[string]string{
+			"SRV1_WEB_API_NAME":       "modern",
+			"SRV1_WEB_API_HOST":       "api.internal",
+			"SRV1_WEB_API_URI":        "/readyz",
+			"SRV1_WEB_API_PUBLIC_URL": "https://api.example/api/v2/cosmicgame/rounds?limit=1",
+		})
+		cfg, err := LoadFromEnv(envMap(env))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if warnings := cfg.DeprecationWarnings(); len(warnings) != 0 {
+			t.Fatalf("DeprecationWarnings() = %v, want none", warnings)
+		}
+	})
+
+	t.Run("iDRAC entries load and skip gaps", func(t *testing.T) {
+		t.Parallel()
+		env := minimalEnv()
+		maps.Copy(env, map[string]string{
+			"IDRAC1_NAME":        "CG Prod R640",
+			"IDRAC1_HOST":        "205.209.120.142",
+			"IDRAC1_USER":        "monitor",
+			"IDRAC1_PASS":        "secret",
+			"IDRAC3_HOST":        "205.209.120.143",
+			"IDRAC3_USER":        "monitor",
+			"IDRAC3_PASS":        "secret",
+			"IDRAC_CHECK_SCRIPT": "/opt/monitor/idrac_check.sh",
+		})
+		cfg, err := LoadFromEnv(envMap(env))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(cfg.IDRACs) != 2 {
+			t.Fatalf("IDRACs = %+v, want 2 entries", cfg.IDRACs)
+		}
+		if cfg.IDRACs[0].Name != "CG Prod R640" || cfg.IDRACs[0].Host != "205.209.120.142" {
+			t.Fatalf("IDRACs[0] = %+v", cfg.IDRACs[0])
+		}
+		if cfg.IDRACs[1].Name != "" || cfg.IDRACs[1].Host != "205.209.120.143" {
+			t.Fatalf("IDRACs[1] = %+v", cfg.IDRACs[1])
+		}
+		if cfg.IDRACScript != "/opt/monitor/idrac_check.sh" {
+			t.Fatalf("IDRACScript = %q", cfg.IDRACScript)
+		}
+	})
+
+	t.Run("iDRAC host without credentials is invalid", func(t *testing.T) {
+		t.Parallel()
+		env := minimalEnv()
+		env["IDRAC1_HOST"] = "205.209.120.142"
+		_, err := LoadFromEnv(envMap(env))
+		if err == nil || !strings.Contains(err.Error(), "_USER and _PASS") {
+			t.Fatalf("err = %v, want missing-credentials failure", err)
 		}
 	})
 
@@ -323,6 +405,7 @@ func TestDefaultIntervals(t *testing.T) {
 		Image:          900 * time.Second,
 		SSL:            3600 * time.Second,
 		Anomaly:        300 * time.Second,
+		IDRAC:          300 * time.Second,
 	}
 	if iv != want {
 		t.Fatalf("DefaultIntervals() = %+v, want %+v", iv, want)

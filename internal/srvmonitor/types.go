@@ -107,6 +107,16 @@ func (c AnomalyConfig) Enabled() bool {
 	return c.User != "" && c.Host != "" && c.RemoteFile != ""
 }
 
+// IDRACConfig identifies one iDRAC (Dell out-of-band management) interface
+// whose System Event Log is checked for fatal hardware errors through the
+// read-only idrac_check.sh script.
+type IDRACConfig struct {
+	Name string // optional display label; defaults to Host
+	Host string // iDRAC hostname or IP
+	User string // iDRAC user
+	Pass string // iDRAC password
+}
+
 // EventTableConfig holds event table monitoring configuration.
 type EventTableConfig struct {
 	DatabaseConfig

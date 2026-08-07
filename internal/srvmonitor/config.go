@@ -34,6 +34,8 @@ type Intervals struct {
 	SSL time.Duration
 	// Anomaly is the pause between anomaly-file fetches.
 	Anomaly time.Duration
+	// IDRAC is the pause between iDRAC crash-check cycles.
+	IDRAC time.Duration
 }
 
 // DefaultIntervals returns the production polling periods.
@@ -49,6 +51,7 @@ func DefaultIntervals() Intervals {
 		Image:          900 * time.Second,
 		SSL:            3600 * time.Second,
 		Anomaly:        300 * time.Second,
+		IDRAC:          300 * time.Second,
 	}
 }
 
@@ -77,6 +80,12 @@ type Config struct {
 
 	// WebSrv anomaly monitoring (error-log anomalies fetched via scp)
 	Anomaly AnomalyConfig
+
+	// iDRAC crash monitoring (read-only Redfish SEL checks)
+	IDRACs []IDRACConfig
+	// IDRACScript is the path to the read-only check script; empty selects
+	// idrac_check.sh next to the running binary.
+	IDRACScript string
 
 	// Official RPC identifiers
 	OfficialRPCMainnet    string
@@ -250,6 +259,21 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 		})
 	}
 
+	// Load iDRAC crash monitors (IDRAC1_HOST/_USER/_PASS/_NAME ... IDRAC8_*)
+	for i := 1; i <= 8; i++ {
+		host := getenv(fmt.Sprintf("IDRAC%d_HOST", i))
+		if host == "" {
+			continue
+		}
+		cfg.IDRACs = append(cfg.IDRACs, IDRACConfig{
+			Name: getenv(fmt.Sprintf("IDRAC%d_NAME", i)),
+			Host: host,
+			User: getenv(fmt.Sprintf("IDRAC%d_USER", i)),
+			Pass: getenv(fmt.Sprintf("IDRAC%d_PASS", i)),
+		})
+	}
+	cfg.IDRACScript = getenv("IDRAC_CHECK_SCRIPT")
+
 	// Load WebSrv anomaly monitoring (optional; enabled when user/host/file set)
 	staleAfter, err := parseAnomalyStaleAfter(getenv("ANOMALY_STALE_SECS"))
 	if err != nil {
@@ -336,6 +360,16 @@ func (c *Config) validationProblems() []string {
 		problems = append(problems, "ANOMALY_STALE_SECS must be positive")
 	}
 
+	for _, idrac := range c.IDRACs {
+		if idrac.User == "" || idrac.Pass == "" {
+			title := idrac.Name
+			if title == "" {
+				title = idrac.Host
+			}
+			problems = append(problems, fmt.Sprintf("iDRAC %q needs both its _USER and _PASS variables", title))
+		}
+	}
+
 	for _, api := range c.WebAPIs {
 		title := api.Title
 		if title == "" {
@@ -348,12 +382,6 @@ func (c *Config) validationProblems() []string {
 		parsedInternal, err := url.ParseRequestURI(internalURI)
 		if err != nil || !strings.HasPrefix(parsedInternal.Path, "/") {
 			problems = append(problems, fmt.Sprintf("web API %q has an invalid internal URI", title))
-		} else if policy.V1Deprecated(parsedInternal.Path) {
-			problems = append(problems, fmt.Sprintf(
-				"web API %q internal URI %q is deprecated v1; use /readyz or /api/v2",
-				title,
-				parsedInternal.Path,
-			))
 		}
 
 		if api.PublicURL == "" {
@@ -363,14 +391,51 @@ func (c *Config) validationProblems() []string {
 		if err != nil || parsedPublic.Host == "" ||
 			(parsedPublic.Scheme != "http" && parsedPublic.Scheme != "https") {
 			problems = append(problems, fmt.Sprintf("web API %q has an invalid public URL", title))
-		} else if policy.V1Deprecated(parsedPublic.Path) {
-			problems = append(problems, fmt.Sprintf(
-				"web API %q public path %q is deprecated v1; use /api/v2",
-				title,
-				parsedPublic.Path,
-			))
 		}
 	}
 
 	return problems
+}
+
+// DeprecationWarnings lists configured web-API probe paths that still point
+// at the deprecated frozen v1 API. Deployed servers keep serving v1, so the
+// monitor must still be able to watch them; these are startup warnings
+// rather than configuration errors. Note that such probes keep
+// `deprecated="true"` traffic alive and delay the v1 sunset gate — migrate
+// them to /readyz (internal) or /api/v2 (public) when the target server
+// supports those. Malformed URLs are skipped here; validationProblems
+// already reports them as errors.
+func (c *Config) DeprecationWarnings() []string {
+	var warnings []string
+
+	for _, api := range c.WebAPIs {
+		title := api.Title
+		if title == "" {
+			title = api.Host
+		}
+		internalURI := api.URI
+		if internalURI == "" {
+			internalURI = "/"
+		}
+		if parsed, err := url.ParseRequestURI(internalURI); err == nil && policy.V1Deprecated(parsed.Path) {
+			warnings = append(warnings, fmt.Sprintf(
+				"web API %q internal URI %q is deprecated v1; use /readyz or /api/v2",
+				title,
+				parsed.Path,
+			))
+		}
+
+		if api.PublicURL == "" {
+			continue
+		}
+		if parsed, err := url.ParseRequestURI(api.PublicURL); err == nil && policy.V1Deprecated(parsed.Path) {
+			warnings = append(warnings, fmt.Sprintf(
+				"web API %q public path %q is deprecated v1; use /api/v2",
+				title,
+				parsed.Path,
+			))
+		}
+	}
+
+	return warnings
 }

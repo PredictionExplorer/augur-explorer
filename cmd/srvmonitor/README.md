@@ -2,7 +2,8 @@
 
 Interactive terminal dashboard monitoring the operational estate: RPC nodes,
 PostgreSQL databases, ETL progress, web APIs, disk usage, SSL certificate
-expiry, the RandomWalk image server and web-server anomalies.
+expiry, the RandomWalk image server, web-server anomalies and iDRAC-reported
+hardware crashes.
 
 All monitoring logic lives in [`internal/srvmonitor`](../../internal/srvmonitor)
 (monitors, manager, alarm tracker, layout, configuration) with the termbox UI
@@ -34,14 +35,17 @@ PostgreSQL — see the package's test suite.
 | `SSL_CERT1_HOST`/`_PORT`/`_NAME`/`_SERVERNAME` … `SSL_CERT12` | Certificate expiry (warn at ≤10 days) |
 | `ANOMALY_SSH_USER`/`ANOMALY_SSH_HOST`/`ANOMALY_REMOTE_FILE`/`ANOMALY_TITLE`; `ANOMALY_STALE_SECS` (default `1800`) | Web-server anomaly file fetched via scp; heartbeat age detects a stopped `loganomaly` producer |
 | `DB_RWLK_*_SRV`, `RWALK_CONTRACT_ADDR` (+ `RPC1_URL`) | RandomWalk thumbnails: latest mints and a random spot-check must exist; DB and contract token ids must match |
+| `IDRAC1_NAME`/`_HOST`/`_USER`/`_PASS` … `IDRAC8_*`; `IDRAC_CHECK_SCRIPT`, `IDRAC_CRIT_WINDOW_SECS`, `IDRAC_CRIT_REGEX` | iDRAC crash detection via `idrac_check.sh` (see below) |
 | `MOBILE_NOTIF` (`yes`/`true`/`1`) | Android alerts via termux-notification (see `MOBILE_NOTIFICATIONS.md`) |
 | `TMPDIR` | Log and anomaly-file directory (default `/tmp`) |
 
-Web API probes are part of the v1 sunset measurement. Configuration rejects
-deprecated `/api/cosmicgame/*` and `/api/randomwalk/*` probe paths so a
-monitor cannot silently keep `deprecated="true"` traffic alive. Use
-readiness for the internal process/DB path and a stable DB-backed v2 resource
-for the public TLS/proxy path:
+Web API probes are part of the v1 sunset measurement. Deprecated
+`/api/cosmicgame/*` and `/api/randomwalk/*` probe paths still load (deployed
+servers keep serving frozen v1), but each one is logged as a startup warning
+in `$TMPDIR/srvmonitor.log` because such probes keep `deprecated="true"`
+traffic alive. Once the target server supports it, use readiness for the
+internal process/DB path and a stable DB-backed v2 resource for the public
+TLS/proxy path:
 
 ```sh
 SRV1_WEB_API_NAME=cosmic-api
@@ -63,6 +67,35 @@ red `STALE` age and emits the same alarm key on every poll; markerless or
 malformed-marker files remain supported as legacy feeds with no staleness
 claim. SCP/read failures clear prior freshness state and are reported as
 fetch/read errors, not as stale data.
+
+## iDRAC crash detection
+
+Every 5 minutes the monitor runs [`idrac_check.sh`](idrac_check.sh) once per
+configured iDRAC. The script is **strictly read-only** (HTTP GETs only, no
+Redfish power actions — pinned by test): it fetches the Redfish System Event
+Log and reports `CRASH` when a Critical entry whose message matches
+`IDRAC_CRIT_REGEX` (default `fatal error`, e.g. "A bus fatal error was
+detected on a component at slot 2" — an error that halts a PowerEdge R640
+completely) was logged within `IDRAC_CRIT_WINDOW_SECS` (default `3600`).
+
+While a crash is active the dashboard paints a large centered solid-red box
+("SERVER <name> CRASHED"), repainted every second so no other section can
+overwrite it, and the alarm flows into the normal mobile-notification path.
+The box disappears once the SEL entry ages out of the window (or the SEL is
+cleared) — recovery itself stays a manual operator decision.
+
+```sh
+IDRAC1_NAME="CG Prod R640"          # display label (optional)
+IDRAC1_HOST=205.209.120.142         # iDRAC IP or hostname
+IDRAC1_USER=monitor                 # read-only iDRAC account recommended
+IDRAC1_PASS=...
+# IDRAC_CHECK_SCRIPT=/path/to/idrac_check.sh   # default: next to the binary
+# IDRAC_CRIT_WINDOW_SECS=3600
+# IDRAC_CRIT_REGEX='fatal error'
+```
+
+The script requires `curl` and `jq`. Credentials are passed to it through
+the environment, never through command-line arguments.
 
 ## Alerting
 
