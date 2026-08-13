@@ -314,6 +314,18 @@ func (r *Repo) InsertDonationReceived(ctx context.Context, evt *cgmodel.CGDonati
 	return store.WrapError(op, err)
 }
 
+// ResolveDonationRoundsForTx back-patches cg_donation_received rows of a
+// transaction that were stored with the unresolved round marker (-1). Within
+// a claimMainPrize() transaction the CharityWallet DonationReceived log
+// precedes MainPrizeClaimed, so the donation handler cannot resolve the round
+// at insert time; the prize-claim handler calls this once the round is known.
+func (r *Repo) ResolveDonationRoundsForTx(ctx context.Context, txID, roundNum int64) error {
+	const op = "update cg_donation_received round_num"
+	query := "UPDATE cg_donation_received SET round_num=$2 WHERE tx_id=$1 AND round_num=-1"
+	_, err := r.q(ctx).Exec(ctx, query, txID, roundNum)
+	return store.WrapError(op, err)
+}
+
 // InsertDonationSent records a CharityWallet FundsTransferredToCharity event.
 func (r *Repo) InsertDonationSent(ctx context.Context, evt *cgmodel.CGDonationSentEvent) error {
 	const op = "insert into cg_donation_sent"

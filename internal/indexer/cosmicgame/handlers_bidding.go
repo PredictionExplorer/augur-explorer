@@ -123,6 +123,7 @@ func (h *Handlers) decodeFirstBidPlacedInRound(lg *types.Log, elog *store.Ethere
 	evt.EvtId = elog.EvtID
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxID
+	evt.TimeStamp = elog.TimeStamp
 	evt.Contract = lg.Address.String()
 	evt.RoundNum = lg.Topics[1].Big().Int64()
 	evt.StartTimestamp = ethEvt.BlockTimeStamp.Int64()

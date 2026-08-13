@@ -94,7 +94,13 @@ func (h *Handlers) storeMainPrizeClaimed(ctx context.Context, evt *cgmodel.CGPri
 	if err := h.repo.DeletePrizeClaim(ctx, evt.EvtId); err != nil {
 		return err
 	}
-	return h.repo.InsertPrizeClaim(ctx, evt)
+	if err := h.repo.InsertPrizeClaim(ctx, evt); err != nil {
+		return err
+	}
+	// The CharityWallet DonationReceived log of a claimMainPrize() transaction
+	// precedes MainPrizeClaimed, so storeDonationReceived recorded it with
+	// round_num=-1; resolve it now that the round is known.
+	return h.repo.ResolveDonationRoundsForTx(ctx, evt.TxId, evt.RoundNum)
 }
 
 func (h *Handlers) storeMainPrizeClaimedV3(ctx context.Context, evt *cgmodel.CGPrizeClaimEvent) error {
