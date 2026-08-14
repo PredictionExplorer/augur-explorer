@@ -23,6 +23,9 @@ type Layout struct {
 	// IDRACBaseY is the header row of the iDRAC crash-detection section
 	// (used only when iDRAC interfaces are configured).
 	IDRACBaseY int
+	// SiteCheckBaseY is the header row of the headless-browser site-check
+	// section, directly below the iDRAC block (used only when configured).
+	SiteCheckBaseY int
 	// SSLBaseX/SSLBaseY position the SSL certificate column.
 	SSLBaseX, SSLBaseY int
 	// ErrorX/ErrorY position the shared two-line error area.
@@ -63,6 +66,13 @@ func ComputeLayout(cfg *Config) Layout {
 		leftColumnBottomY = l.IDRACBaseY + len(cfg.IDRACs)
 	}
 
+	// Site-check section sits directly below the iDRAC block (one gap line,
+	// then a header plus its capped error lines).
+	l.SiteCheckBaseY = leftColumnBottomY + 1
+	if cfg.SiteCheck.Enabled() {
+		leftColumnBottomY = l.SiteCheckBaseY + siteCheckDisplayLines - 1
+	}
+
 	// SSL Certificates are placed in a right-hand column, aligned with the
 	// top of the "Last Block Numbers in Postgres" section (Y=24). This runs
 	// the SSL list alongside the Postgres/WebAPI stack instead of stacking it
@@ -95,7 +105,8 @@ func ComputeLayout(cfg *Config) Layout {
 // RPC always; databases, event tables, applications, web APIs, disks and SSL
 // certificates when configured; the image monitor when both its database and
 // server URL are set; the anomaly monitor when fully configured; the iDRAC
-// crash monitor when at least one iDRAC interface is configured.
+// crash monitor when at least one iDRAC interface is configured; the
+// headless-browser site checker when its script path is configured.
 //
 // anomalyDir is where the fetched anomaly file is stored (empty selects the
 // system temp directory).
@@ -150,6 +161,10 @@ func BuildManager(cfg *Config, disp Display, logger *slog.Logger, anomalyDir str
 
 	if len(cfg.IDRACs) > 0 {
 		mgr.Register(NewIDRACMonitor(cfg.IDRACs, cfg.IDRACScript, layout.IDRACBaseY, logger, iv))
+	}
+
+	if cfg.SiteCheck.Enabled() {
+		mgr.Register(NewSiteCheckMonitor(cfg.SiteCheck, layout.SiteCheckBaseY, logger, iv))
 	}
 
 	if len(cfg.SSLCerts) > 0 {

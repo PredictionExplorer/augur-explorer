@@ -1,0 +1,13 @@
+{
+  "name": "site-checker",
+  "version": "1.0.0",
+  "description": "Headless-browser health checker for cosmicsignature / randomwalknft / axiomzero sites",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "check": "node check-sites.js"
+  },
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}

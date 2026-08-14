@@ -36,6 +36,7 @@ PostgreSQL — see the package's test suite.
 | `ANOMALY_SSH_USER`/`ANOMALY_SSH_HOST`/`ANOMALY_REMOTE_FILE`/`ANOMALY_TITLE`; `ANOMALY_STALE_SECS` (default `1800`) | Web-server anomaly file fetched via scp; heartbeat age detects a stopped `loganomaly` producer |
 | `DB_RWLK_*_SRV`, `RWALK_CONTRACT_ADDR` (+ `RPC1_URL`) | RandomWalk thumbnails: latest mints and a random spot-check must exist; DB and contract token ids must match |
 | `IDRAC1_NAME`/`_HOST`/`_USER`/`_PASS` … `IDRAC8_*`; `IDRAC_CHECK_SCRIPT`, `IDRAC_CRIT_WINDOW_SECS`, `IDRAC_CRIT_REGEX` | iDRAC crash detection via `idrac_check.sh` (see below) |
+| `SITE_CHECK_SCRIPT`; `SITE_CHECK_NODE`, `SITE_CHECK_CONFIG`, `SITE_CHECK_TITLE` (optional) | Headless-browser website checks via `tools/site-checker` (see below) |
 | `MOBILE_NOTIF` (`yes`/`true`/`1`) | Android alerts via termux-notification (see `MOBILE_NOTIFICATIONS.md`) |
 | `TMPDIR` | Log and anomaly-file directory (default `/tmp`) |
 
@@ -96,6 +97,35 @@ IDRAC1_PASS=...
 
 The script requires `curl` and `jq`. Credentials are passed to it through
 the environment, never through command-line arguments.
+
+## Website checks (headless browser)
+
+Every 5 minutes the monitor launches the Node site checker
+(`backend/tools/site-checker/check-sites.js`) in its own process and reads
+the JSON report back over a stdout pipe (`--json -`). The checker renders
+each production website in headless Chromium — so React actually runs — and
+reports uncaught JS exceptions, console errors, non-200 HTTP statuses,
+failed API/RPC probes and SSL problems, with known-benign noise
+(WalletConnect project-id 403s, Next.js prefetch aborts) already filtered
+out by its own config.
+
+The section appears below the iDRAC block and shows at most the **first two
+problems in red** (plus a `+N more` count), so a falling site is a visible
+red line rather than a screenful of messages. The first two problems also
+flow into the shared error area and the mobile-notification path.
+
+```sh
+SITE_CHECK_SCRIPT=/home/niko/eth/dev/b/backend/tools/site-checker/check-sites.js
+# SITE_CHECK_NODE=/usr/local/bin/node    # default: "node" from PATH
+# SITE_CHECK_CONFIG=/path/to/config.json # default: config.json next to the script
+# SITE_CHECK_TITLE="Site Checker"        # section header label
+```
+
+The checker requires Node and a Playwright Chromium (`npm install &&
+npx playwright install chromium` in the site-checker directory, once).
+A run where the checker itself cannot start or emits no JSON report is shown
+as a red `checker failed: …` line — a broken checker never looks like a
+healthy site.
 
 ## Alerting
 

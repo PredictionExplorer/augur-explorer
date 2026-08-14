@@ -406,6 +406,7 @@ func TestDefaultIntervals(t *testing.T) {
 		SSL:            3600 * time.Second,
 		Anomaly:        300 * time.Second,
 		IDRAC:          300 * time.Second,
+		SiteCheck:      300 * time.Second,
 	}
 	if iv != want {
 		t.Fatalf("DefaultIntervals() = %+v, want %+v", iv, want)

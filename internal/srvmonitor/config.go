@@ -36,6 +36,8 @@ type Intervals struct {
 	Anomaly time.Duration
 	// IDRAC is the pause between iDRAC crash-check cycles.
 	IDRAC time.Duration
+	// SiteCheck is the pause between headless-browser site-check cycles.
+	SiteCheck time.Duration
 }
 
 // DefaultIntervals returns the production polling periods.
@@ -52,6 +54,7 @@ func DefaultIntervals() Intervals {
 		SSL:            3600 * time.Second,
 		Anomaly:        300 * time.Second,
 		IDRAC:          300 * time.Second,
+		SiteCheck:      300 * time.Second,
 	}
 }
 
@@ -86,6 +89,9 @@ type Config struct {
 	// IDRACScript is the path to the read-only check script; empty selects
 	// idrac_check.sh next to the running binary.
 	IDRACScript string
+
+	// SiteCheck runs the headless-browser website checker (Node subprocess).
+	SiteCheck SiteCheckConfig
 
 	// Official RPC identifiers
 	OfficialRPCMainnet    string
@@ -273,6 +279,14 @@ func LoadFromEnv(getenv func(string) string) (*Config, error) {
 		})
 	}
 	cfg.IDRACScript = getenv("IDRAC_CHECK_SCRIPT")
+
+	// Load the headless-browser site checker (enabled when the script is set)
+	cfg.SiteCheck = SiteCheckConfig{
+		Title:  getenv("SITE_CHECK_TITLE"),
+		Script: getenv("SITE_CHECK_SCRIPT"),
+		Node:   getenv("SITE_CHECK_NODE"),
+		Config: getenv("SITE_CHECK_CONFIG"),
+	}
 
 	// Load WebSrv anomaly monitoring (optional; enabled when user/host/file set)
 	staleAfter, err := parseAnomalyStaleAfter(getenv("ANOMALY_STALE_SECS"))

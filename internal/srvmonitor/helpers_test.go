@@ -28,6 +28,7 @@ func testIntervals() Intervals {
 		SSL:            time.Millisecond,
 		Anomaly:        time.Millisecond,
 		IDRAC:          time.Millisecond,
+		SiteCheck:      time.Millisecond,
 	}
 }
 

@@ -117,6 +117,22 @@ type IDRACConfig struct {
 	Pass string // iDRAC password
 }
 
+// SiteCheckConfig configures the headless-browser site checker: an external
+// Node script (backend/tools/site-checker) that renders the production
+// websites in headless Chromium and reports JS errors, bad HTTP statuses,
+// failed API/RPC probes and SSL problems as a JSON report over stdout.
+type SiteCheckConfig struct {
+	Title  string // optional display label; defaults to "Site Checker"
+	Script string // path to check-sites.js; empty disables the monitor
+	Node   string // node binary; empty selects "node" from PATH
+	Config string // optional --config path passed to the script
+}
+
+// Enabled reports whether site checking is configured.
+func (c SiteCheckConfig) Enabled() bool {
+	return c.Script != ""
+}
+
 // EventTableConfig holds event table monitoring configuration.
 type EventTableConfig struct {
 	DatabaseConfig

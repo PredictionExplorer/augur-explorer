@@ -195,6 +195,11 @@ func logConfigSummary(logger *slog.Logger, cfg *srvmonitor.Config) {
 	}
 	logger.Info(fmt.Sprintf("  - %d Disk monitors", len(cfg.DiskMonitors)))
 	logger.Info(fmt.Sprintf("  - %d iDRAC interfaces", len(cfg.IDRACs)))
+	if cfg.SiteCheck.Enabled() {
+		logger.Info(fmt.Sprintf("  - Site checker: %s", cfg.SiteCheck.Script))
+	} else {
+		logger.Info("  - Site checker: DISABLED (set SITE_CHECK_SCRIPT)")
+	}
 	logger.Info(fmt.Sprintf("  - %d SSL certificates", len(cfg.SSLCerts)))
 	if cfg.Anomaly.Enabled() {
 		staleAfter := cfg.Anomaly.StaleAfter

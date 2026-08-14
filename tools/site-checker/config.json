@@ -1,0 +1,73 @@
+{
+  "navTimeoutMs": 45000,
+  "settleMs": 8000,
+  "sslWarnDays": 14,
+  "sites": [
+    {
+      "name": "cosmicsignature",
+      "url": "https://app.cosmicsignature.com/",
+      "ignore": []
+    },
+    {
+      "name": "randomwalknft",
+      "url": "https://randomwalknft.com/",
+      "ignore": []
+    },
+    {
+      "name": "axiomzero",
+      "url": "https://axiomzero.market/",
+      "ignore": []
+    }
+  ],
+  "endpoints": [
+    {
+      "name": "cosmic API a1",
+      "type": "http",
+      "url": "https://a1.cosmicsignature.com/api/cosmicgame/statistics/dashboard"
+    },
+    {
+      "name": "cosmic API a2",
+      "type": "http",
+      "url": "https://a2.cosmicsignature.com/api/cosmicgame/statistics/dashboard"
+    },
+    {
+      "name": "RPC rpc1",
+      "type": "jsonrpc",
+      "url": "https://rpc1.cosmicsignature.com:38546"
+    },
+    {
+      "name": "RPC rpc2",
+      "type": "jsonrpc",
+      "url": "https://rpc2.cosmicsignature.com:38546"
+    }
+  ],
+  "sslHosts": [
+    "app.cosmicsignature.com:443",
+    "randomwalknft.com:443",
+    "axiomzero.market:443",
+    "a1.cosmicsignature.com:443",
+    "a2.cosmicsignature.com:443",
+    "rpc1.cosmicsignature.com:38546",
+    "rpc2.cosmicsignature.com:38546"
+  ],
+  "ignoreGlobal": [
+    "walletconnect",
+    "reown\\.com",
+    "web3modal",
+    "projectId",
+    "project id",
+    "Origin .* not found on Allowlist",
+    "pulse\\.walletconnect",
+    "api\\.web3modal\\.org",
+    "verify\\.walletconnect",
+    "explorer-api\\.walletconnect",
+    "relay\\.walletconnect",
+    "cca-lite\\.coinbase\\.com",
+    "MetaMask",
+    "No (injected|Ethereum) provider",
+    "wagmi",
+    "chrome-extension://",
+    "net::ERR_BLOCKED_BY_CLIENT",
+    "net::ERR_ABORTED"
+  ]
+}
