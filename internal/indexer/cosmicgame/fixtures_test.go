@@ -497,8 +497,11 @@ func eventFixtures() []fixture {
 		{name: "admin_late_bid_premium_exponent_v3", block: 1850, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicRoundLateBidPremiumExponentChanged, func(t *testing.T) *types.Log {
 			return buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountExponentChanged", addr(game), nil, []any{bigInt(3)})
 		}}}}}},
-		{name: "admin_last_bidder_reward_percentage_v3", block: 1860, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicLastBidderRewardPercentageChanged, func(t *testing.T) *types.Log {
-			return buildLog(t, gameV3ABI, "LastBidderBidCstRewardAmountPercentageChanged", addr(game), nil, []any{bigInt(90)})
+		{name: "admin_cst_price_decline_multiplier_v3", block: 1860, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicCstBidPriceDeclineMultiplierChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "CstBidPriceDeclineMultiplierChanged", addr(game), nil, []any{bigInt(16666666666666666)})
+		}}}}}},
+		{name: "admin_cst_price_decline_multiplier_divisor_v3", block: 1865, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicCstBidPriceDeclineMultiplierChangeDivisorChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "CstBidPriceDeclineMultiplierChangeDivisorChanged", addr(game), nil, []any{bigInt(100)})
 		}}}}}},
 		{name: "admin_main_prize_num_nfts_v3", block: 1870, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicMainPrizeNumNftsChanged, func(t *testing.T) *types.Log {
 			return buildLog(t, gameV3ABI, "MainPrizeNumCosmicSignatureNftsChanged", addr(game), nil, []any{bigInt(3)})

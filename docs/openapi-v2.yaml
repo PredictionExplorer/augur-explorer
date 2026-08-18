@@ -2807,10 +2807,10 @@ components:
             - roundLateBidDurationSeconds
             - roundLateBidPricePremiumAmountBaseMultiplier
             - roundLateBidPricePremiumAmountExponent
-            - lastBidderBidCstRewardAmountPercentage
             - mainPrizeNumCosmicSignatureNfts
             - cstDutchAuctionBeginningBidPriceMinLimitWei
-            - bidCstRewardAmountPerMainPrizeTimeIncrementWei
+            - cstBidPriceDeclineMultiplierWei
+            - cstBidPriceDeclineMultiplierChangeDivisor
           properties:
             mechanicsVersion:
               type: string
@@ -2942,12 +2942,6 @@ components:
           format: int64
           minimum: 0
           description: V3-only late-bid premium exponent.
-        lastBidderBidCstRewardAmountPercentage:
-          type: integer
-          format: int64
-          minimum: 0
-          maximum: 100
-          description: V3-only share paid to the outbid previous-last bidder.
         mainPrizeNumCosmicSignatureNfts:
           type: integer
           format: int64
@@ -2956,11 +2950,15 @@ components:
         cstDutchAuctionBeginningBidPriceMinLimitWei:
           type: string
           pattern: "^[0-9]+$"
-          description: V3-only derived CST auction restart floor.
-        bidCstRewardAmountPerMainPrizeTimeIncrementWei:
+          description: V3-only CST auction beginning-price floor.
+        cstBidPriceDeclineMultiplierWei:
           type: string
           pattern: "^[0-9]+$"
-          description: V3-only CST reward accrued per main-prize time increment.
+          description: V3-only CST Dutch auction price decline speed (wei per second).
+        cstBidPriceDeclineMultiplierChangeDivisor:
+          type: string
+          pattern: "^[0-9]+$"
+          description: V3-only divisor for the per-bid CST price decline multiplier adjustment.
     ContractBalances:
       type: object
       additionalProperties: false

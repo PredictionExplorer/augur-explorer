@@ -57,10 +57,10 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 	h := newUnitHandlers(t)
 	reg := h.Registry()
 
-	// The 76 V1/V2 registrations plus V3 MainPrizeClaimed and five V3
+	// The 76 V1/V2 registrations plus V3 MainPrizeClaimed and six V3
 	// configuration events.
-	if got := len(reg.Handlers()); got != 82 {
-		t.Errorf("registered handlers = %d, want 82", got)
+	if got := len(reg.Handlers()); got != 83 {
+		t.Errorf("registered handlers = %d, want 83", got)
 	}
 
 	for _, c := range []struct{ topic, want string }{

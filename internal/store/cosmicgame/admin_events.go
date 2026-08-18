@@ -200,8 +200,9 @@ var adminEventBranches = []adminEventBranch{
 	{recordType: 40, table: "cg_adm_late_bid_dur_divisor", intValue: "r.new_value"},                                  // RoundLateBidDurationDivisorChanged
 	{recordType: 41, table: "cg_adm_late_bid_premium_base_mul", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountBaseMultiplierChanged
 	{recordType: 42, table: "cg_adm_late_bid_premium_exponent", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountExponentChanged
-	{recordType: 43, table: "cg_adm_last_bidder_reward_pct", intValue: "r.new_value"},                                // LastBidderBidCstRewardAmountPercentageChanged
+	{recordType: 43, table: "cg_adm_cst_price_decline_mul", floatValue: "r.new_value/1e18", stringVal: "r.new_value::TEXT"}, // CstBidPriceDeclineMultiplierChanged (repurposed; was the retired LastBidderBidCstRewardAmountPercentageChanged)
 	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},                                   // MainPrizeNumCosmicSignatureNftsChanged
+	{recordType: 45, table: "cg_adm_cst_price_decline_mul_div", intValue: "r.new_value"},                             // CstBidPriceDeclineMultiplierChangeDivisorChanged
 }
 
 // ownershipBranchSQL handles record_type 34, whose two address joins (previous

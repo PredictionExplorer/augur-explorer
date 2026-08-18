@@ -296,14 +296,6 @@ func readV3Configuration(
 	if !ok {
 		return out, errors.New("roundLateBidPricePremiumAmountExponent exceeds int64")
 	}
-	value, err = v3.LastBidderBidCstRewardAmountPercentage(opts)
-	if err != nil {
-		return out, fmt.Errorf("lastBidderBidCstRewardAmountPercentage: %w", err)
-	}
-	out.LastBidderBidCstRewardAmountPercentage, ok = nonNegativeInt64(value)
-	if !ok || out.LastBidderBidCstRewardAmountPercentage > 100 {
-		return out, errors.New("lastBidderBidCstRewardAmountPercentage is invalid")
-	}
 	value, err = v3.MainPrizeNumCosmicSignatureNfts(opts)
 	if err != nil {
 		return out, fmt.Errorf("mainPrizeNumCosmicSignatureNfts: %w", err)
@@ -312,15 +304,20 @@ func readV3Configuration(
 	if !ok || out.MainPrizeNumCosmicSignatureNfts <= 0 {
 		return out, errors.New("mainPrizeNumCosmicSignatureNfts is invalid")
 	}
-	value, err = v3.GetCstDutchAuctionBeginningBidPriceMinLimit(opts)
+	value, err = v3.CstDutchAuctionBeginningBidPriceMinLimit(opts)
 	if err != nil {
-		return out, fmt.Errorf("getCstDutchAuctionBeginningBidPriceMinLimit: %w", err)
+		return out, fmt.Errorf("cstDutchAuctionBeginningBidPriceMinLimit: %w", err)
 	}
 	out.CstDutchAuctionBeginningBidPriceMinLimit = value.String()
-	value, err = v3.GetBidCstRewardAmountPerMainPrizeTimeIncrement(opts)
+	value, err = v3.CstBidPriceDeclineMultiplier(opts)
 	if err != nil {
-		return out, fmt.Errorf("getBidCstRewardAmountPerMainPrizeTimeIncrement: %w", err)
+		return out, fmt.Errorf("cstBidPriceDeclineMultiplier: %w", err)
 	}
-	out.BidCstRewardAmountPerMainPrizeTimeIncrement = value.String()
+	out.CstBidPriceDeclineMultiplier = value.String()
+	value, err = v3.CstBidPriceDeclineMultiplierChangeDivisor(opts)
+	if err != nil {
+		return out, fmt.Errorf("cstBidPriceDeclineMultiplierChangeDivisor: %w", err)
+	}
+	out.CstBidPriceDeclineMultiplierChangeDivisor = value.String()
 	return out, nil
 }

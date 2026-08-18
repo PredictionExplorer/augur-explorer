@@ -159,13 +159,16 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 		if err != nil {
 			return ContractConfiguration{}, fmt.Errorf("CST auction beginning-price floor: %w", err)
 		}
-		rewardPerIncrement, err := requiredAmount(snapshot.V3.BidCstRewardAmountPerMainPrizeTimeIncrement)
+		declineMultiplier, err := requiredAmount(snapshot.V3.CstBidPriceDeclineMultiplier)
 		if err != nil {
-			return ContractConfiguration{}, fmt.Errorf("CST reward per main-prize increment: %w", err)
+			return ContractConfiguration{}, fmt.Errorf("CST bid price decline multiplier: %w", err)
+		}
+		declineMultiplierChangeDivisor, err := requiredAmount(snapshot.V3.CstBidPriceDeclineMultiplierChangeDivisor)
+		if err != nil {
+			return ContractConfiguration{}, fmt.Errorf("CST bid price decline multiplier change divisor: %w", err)
 		}
 		if snapshot.V3.RoundLateBidDurationSeconds <= 0 ||
 			snapshot.V3.RoundLateBidPricePremiumAmountExponent < 0 ||
-			!validPercent(snapshot.V3.LastBidderBidCstRewardAmountPercentage) ||
 			snapshot.V3.MainPrizeNumCosmicSignatureNfts <= 0 {
 			return ContractConfiguration{}, errors.New("cached v3 contract configuration is inconsistent")
 		}
@@ -173,10 +176,10 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 		result.RoundLateBidDurationSeconds = &snapshot.V3.RoundLateBidDurationSeconds
 		result.RoundLateBidPricePremiumAmountBaseMultiplier = &premiumBase
 		result.RoundLateBidPricePremiumAmountExponent = &snapshot.V3.RoundLateBidPricePremiumAmountExponent
-		result.LastBidderBidCstRewardAmountPercentage = &snapshot.V3.LastBidderBidCstRewardAmountPercentage
 		result.MainPrizeNumCosmicSignatureNfts = &snapshot.V3.MainPrizeNumCosmicSignatureNfts
 		result.CstDutchAuctionBeginningBidPriceMinLimitWei = &auctionFloor
-		result.BidCstRewardAmountPerMainPrizeTimeIncrementWei = &rewardPerIncrement
+		result.CstBidPriceDeclineMultiplierWei = &declineMultiplier
+		result.CstBidPriceDeclineMultiplierChangeDivisor = &declineMultiplierChangeDivisor
 	default:
 		return ContractConfiguration{}, errors.New("unknown contract mechanics version")
 	}

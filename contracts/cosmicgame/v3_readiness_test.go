@@ -27,8 +27,12 @@ func TestV3TopicHashesMatchBindings(t *testing.T) {
 			"cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621",
 		},
 		{
-			"LastBidderBidCstRewardAmountPercentageChanged(uint256)",
-			"c63013cf34a6f7b20983b293d1787e833f8de2db868e904525fc2910df652a97",
+			"CstBidPriceDeclineMultiplierChanged(uint256)",
+			"5a7755107bc57392a4597c870f95d2c7cd7802e3e92c8aa549888e0b4a66d19c",
+		},
+		{
+			"CstBidPriceDeclineMultiplierChangeDivisorChanged(uint256)",
+			"dca564eaecef774ca88453bd3a492a26c40497ab897aa02ad10eb030e126c5ce",
 		},
 		{
 			"MainPrizeNumCosmicSignatureNftsChanged(uint256)",
@@ -99,15 +103,16 @@ func TestV3LatestReadMethodsPresent(t *testing.T) {
 	v3ABI := mustABI(t, CosmicSignatureGameV3ABI)
 	for _, method := range []string{
 		"mainPrizeNumCosmicSignatureNfts",
-		"lastBidderBidCstRewardAmountPercentage",
 		"roundLateBidDurationDivisor",
 		"roundLateBidPricePremiumAmountBaseMultiplier",
 		"roundLateBidPricePremiumAmountExponent",
 		"getRoundLateBidDuration",
 		"championDurations",
 		"getCstDutchAuctionDurations",
-		"getCstDutchAuctionBeginningBidPriceMinLimit",
-		"getBidCstRewardAmountPerMainPrizeTimeIncrement",
+		"cstDutchAuctionBeginningBidPriceMinLimit",
+		"cstBidPriceDeclineMultiplier",
+		"cstBidPriceDeclineMultiplierChangeDivisor",
+		"bidRaffleCumulativeWeights",
 	} {
 		if _, ok := v3ABI.Methods[method]; !ok {
 			t.Errorf("CosmicSignatureGameV3 ABI missing method %s", method)
@@ -118,6 +123,21 @@ func TestV3LatestReadMethodsPresent(t *testing.T) {
 	}
 	if _, ok := v3ABI.Events["BidCstRewardAmountPerMinuteChanged"]; ok {
 		t.Fatal("V3 ABI contains obsolete BidCstRewardAmountPerMinuteChanged event")
+	}
+	// Retired on the v3-2026-07-24 contracts: the bid CST reward is minted
+	// entirely to the outbid previous bidder, and the CST Dutch auction is
+	// driven by cstBidPriceDeclineMultiplier instead of a stored duration.
+	for _, method := range []string{
+		"lastBidderBidCstRewardAmountPercentage",
+		"getCstDutchAuctionBeginningBidPriceMinLimit",
+		"getBidCstRewardAmountPerMainPrizeTimeIncrement",
+	} {
+		if _, ok := v3ABI.Methods[method]; ok {
+			t.Errorf("V3 ABI contains retired method %s", method)
+		}
+	}
+	if _, ok := v3ABI.Events["LastBidderBidCstRewardAmountPercentageChanged"]; ok {
+		t.Fatal("V3 ABI contains retired LastBidderBidCstRewardAmountPercentageChanged event")
 	}
 	if CosmicSignatureGameV3Bin == "" {
 		t.Fatal("CosmicSignatureGameV3 creation bytecode is empty")

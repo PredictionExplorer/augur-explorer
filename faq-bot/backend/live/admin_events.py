@@ -49,8 +49,9 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     40: "RoundLateBidDurationDivisorChanged",
     41: "RoundLateBidPricePremiumAmountBaseMultiplierChanged",
     42: "RoundLateBidPricePremiumAmountExponentChanged",
-    43: "LastBidderBidCstRewardAmountPercentageChanged",
+    43: "CstBidPriceDeclineMultiplierChanged",
     44: "MainPrizeNumCosmicSignatureNftsChanged",
+    45: "CstBidPriceDeclineMultiplierChangeDivisorChanged",
 }
 
 

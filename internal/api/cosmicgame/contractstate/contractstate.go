@@ -98,10 +98,10 @@ type V3Configuration struct {
 	RoundLateBidDurationSeconds                  int64
 	RoundLateBidPricePremiumAmountBaseMultiplier string
 	RoundLateBidPricePremiumAmountExponent       int64
-	LastBidderBidCstRewardAmountPercentage       int64
 	MainPrizeNumCosmicSignatureNfts              int64
 	CstDutchAuctionBeginningBidPriceMinLimit     string
-	BidCstRewardAmountPerMainPrizeTimeIncrement  string
+	CstBidPriceDeclineMultiplier                 string
+	CstBidPriceDeclineMultiplierChangeDivisor    string
 }
 
 // Snapshot is one consistent value copy of the cached state. Field groups

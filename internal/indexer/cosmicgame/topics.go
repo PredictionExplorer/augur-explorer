@@ -87,7 +87,8 @@ const (
 	TopicRoundLateBidDurationDivisorChanged          = "7acba37d1b2d934e554139ff1d470d2cce50a7b6e56870577249b87564a95a69" // ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
 	TopicRoundLateBidPremiumBaseMultiplierChanged    = "169f25ec19cc5b518dc57adf05bb2d85155b1d6c60767e9f0e3ced18eac0ab77" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
 	TopicRoundLateBidPremiumExponentChanged          = "cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
-	TopicLastBidderRewardPercentageChanged           = "c63013cf34a6f7b20983b293d1787e833f8de2db868e904525fc2910df652a97" // ISystemEventsV3.sol:LastBidderBidCstRewardAmountPercentageChanged
+	TopicCstBidPriceDeclineMultiplierChanged         = "5a7755107bc57392a4597c870f95d2c7cd7802e3e92c8aa549888e0b4a66d19c" // ISystemEventsV3.sol:CstBidPriceDeclineMultiplierChanged
+	TopicCstBidPriceDeclineMultiplierChangeDivisorChanged = "dca564eaecef774ca88453bd3a492a26c40497ab897aa02ad10eb030e126c5ce" // ISystemEventsV3.sol:CstBidPriceDeclineMultiplierChangeDivisorChanged
 	TopicMainPrizeNumNftsChanged                     = "616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564" // ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
 	TopicStaticCstReward                             = "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
 	TopicMaxMessageLength                            = "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged

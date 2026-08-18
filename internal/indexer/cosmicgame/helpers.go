@@ -25,12 +25,18 @@ type bidRewardMint struct {
 	amount *big.Int
 }
 
-func classifyBidRewardMints(mints []bidRewardMint) (thisReward, previousReward, previousAddr string) {
+func classifyBidRewardMints(mints []bidRewardMint, bidderAddr ethcommon.Address) (thisReward, previousReward, previousAddr string) {
 	switch len(mints) {
 	case 0:
 		return "0", "0", ""
 	case 1:
-		return mints[0].amount.String(), "0", ""
+		// V1/V2 mint the single reward to the bidder placing the bid; the
+		// v3-2026-07-24 contracts mint the whole reward to the outbid
+		// previous bidder instead. The recipient disambiguates the two.
+		if mints[0].to == bidderAddr {
+			return mints[0].amount.String(), "0", ""
+		}
+		return "0", mints[0].amount.String(), mints[0].to.String()
 	}
 	total := new(big.Int)
 	previousIndex := 0
@@ -45,16 +51,16 @@ func classifyBidRewardMints(mints []bidRewardMint) (thisReward, previousReward, 
 	return current.String(), previous.amount.String(), previous.to.String()
 }
 
-// cstBidRewards derives the V3 current/previous bidder split from the CST
-// mint Transfer logs preceding the bid. V1/V2 (and a first V3 bid) have one
-// mint, while a normal V3 bid has two; the larger 90% mint belongs to the
-// outbid previous-last bidder.
+// cstBidRewards derives the current/previous bidder split from the CST mint
+// Transfer logs preceding the bid. V1/V2 have one mint to the current bidder;
+// the early-V3 prototype had two mints (90% to the outbid previous bidder);
+// the v3-2026-07-24 contracts have one mint to the previous bidder (and none
+// on a round's first bid). The mint recipients disambiguate all shapes.
 func (h *Handlers) cstBidRewards(
 	ctx context.Context,
 	bidEvtlogID, txID int64,
 	bidderAddr string,
 ) (thisReward, previousReward, previousAddr string, err error) {
-	_ = bidderAddr // one-mint V1/V2 rows are always the current bidder's share
 	elogRLPs, err := h.store.EventLogRLPsBefore(ctx, txID, h.c.CosmicTokenAid, bidEvtlogID, TopicTransferEvt[:8])
 	if err != nil {
 		return "", "", "", fmt.Errorf("cstBidRewards(): %w", err)
@@ -78,7 +84,7 @@ func (h *Handlers) cstBidRewards(
 			amount: amount,
 		})
 	}
-	thisReward, previousReward, previousAddr = classifyBidRewardMints(mints)
+	thisReward, previousReward, previousAddr = classifyBidRewardMints(mints, ethcommon.HexToAddress(bidderAddr))
 	return thisReward, previousReward, previousAddr, nil
 }
 

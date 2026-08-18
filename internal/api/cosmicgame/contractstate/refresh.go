@@ -653,10 +653,10 @@ func configurationReady(snapshot Snapshot) bool {
 			snapshot.V3.RoundLateBidDurationSeconds > 0 &&
 			cachedDecimalReady(snapshot.V3.RoundLateBidPricePremiumAmountBaseMultiplier) &&
 			snapshot.V3.RoundLateBidPricePremiumAmountExponent >= 0 &&
-			percentageReady(snapshot.V3.LastBidderBidCstRewardAmountPercentage) &&
 			snapshot.V3.MainPrizeNumCosmicSignatureNfts > 0 &&
 			cachedDecimalReady(snapshot.V3.CstDutchAuctionBeginningBidPriceMinLimit) &&
-			cachedDecimalReady(snapshot.V3.BidCstRewardAmountPerMainPrizeTimeIncrement)
+			cachedDecimalReady(snapshot.V3.CstBidPriceDeclineMultiplier) &&
+			cachedDecimalReady(snapshot.V3.CstBidPriceDeclineMultiplierChangeDivisor)
 	default:
 		return false
 	}
