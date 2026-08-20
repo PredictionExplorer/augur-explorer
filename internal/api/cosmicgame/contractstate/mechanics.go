@@ -309,15 +309,5 @@ func readV3Configuration(
 		return out, fmt.Errorf("cstDutchAuctionBeginningBidPriceMinLimit: %w", err)
 	}
 	out.CstDutchAuctionBeginningBidPriceMinLimit = value.String()
-	value, err = v3.CstBidPriceDeclineMultiplier(opts)
-	if err != nil {
-		return out, fmt.Errorf("cstBidPriceDeclineMultiplier: %w", err)
-	}
-	out.CstBidPriceDeclineMultiplier = value.String()
-	value, err = v3.CstBidPriceDeclineMultiplierChangeDivisor(opts)
-	if err != nil {
-		return out, fmt.Errorf("cstBidPriceDeclineMultiplierChangeDivisor: %w", err)
-	}
-	out.CstBidPriceDeclineMultiplierChangeDivisor = value.String()
 	return out, nil
 }

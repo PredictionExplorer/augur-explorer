@@ -765,44 +765,6 @@ func (h *Handlers) storeRoundLateBidPremiumExponentChanged(ctx context.Context, 
 	return h.repo.InsertRoundLateBidPremiumExponentChange(ctx, evt)
 }
 
-func (h *Handlers) decodeCstBidPriceDeclineMultiplierChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGCstBidPriceDeclineMultiplierChanged, error) {
-	var ethEvt cgc.CosmicSignatureGameV3CstBidPriceDeclineMultiplierChanged
-	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "CstBidPriceDeclineMultiplierChanged", lg.Data); err != nil {
-		return nil, err
-	}
-	evt := &cgmodel.CGCstBidPriceDeclineMultiplierChanged{}
-	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
-	evt.NewValue = ethEvt.NewValue.String()
-	return evt, nil
-}
-
-func (h *Handlers) storeCstBidPriceDeclineMultiplierChanged(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChanged) error {
-	h.log.Info("CstBidPriceDeclineMultiplierChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
-	if err := h.repo.DeleteCstBidPriceDeclineMultiplierChange(ctx, evt.EvtId); err != nil {
-		return err
-	}
-	return h.repo.InsertCstBidPriceDeclineMultiplierChange(ctx, evt)
-}
-
-func (h *Handlers) decodeCstBidPriceDeclineMultiplierChangeDivisorChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged, error) {
-	var ethEvt cgc.CosmicSignatureGameV3CstBidPriceDeclineMultiplierChangeDivisorChanged
-	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "CstBidPriceDeclineMultiplierChangeDivisorChanged", lg.Data); err != nil {
-		return nil, err
-	}
-	evt := &cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged{}
-	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
-	evt.NewValue = ethEvt.NewValue.String()
-	return evt, nil
-}
-
-func (h *Handlers) storeCstBidPriceDeclineMultiplierChangeDivisorChanged(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged) error {
-	h.log.Info("CstBidPriceDeclineMultiplierChangeDivisorChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
-	if err := h.repo.DeleteCstBidPriceDeclineMultiplierChangeDivisorChange(ctx, evt.EvtId); err != nil {
-		return err
-	}
-	return h.repo.InsertCstBidPriceDeclineMultiplierChangeDivisorChange(ctx, evt)
-}
-
 func (h *Handlers) decodeMainPrizeNumNftsChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged, error) {
 	var ethEvt cgc.CosmicSignatureGameV3MainPrizeNumCosmicSignatureNftsChanged
 	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "MainPrizeNumCosmicSignatureNftsChanged", lg.Data); err != nil {

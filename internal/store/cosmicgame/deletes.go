@@ -376,18 +376,6 @@ func (r *Repo) DeleteRoundLateBidPremiumExponentChange(ctx context.Context, evtl
 	return r.deleteByEvtlogID(ctx, "cg_adm_late_bid_premium_exponent", evtlogID)
 }
 
-// DeleteCstBidPriceDeclineMultiplierChange removes a V3 CST bid price
-// decline multiplier history row.
-func (r *Repo) DeleteCstBidPriceDeclineMultiplierChange(ctx context.Context, evtlogID int64) error {
-	return r.deleteByEvtlogID(ctx, "cg_adm_cst_price_decline_mul", evtlogID)
-}
-
-// DeleteCstBidPriceDeclineMultiplierChangeDivisorChange removes a V3 CST bid
-// price decline multiplier change divisor history row.
-func (r *Repo) DeleteCstBidPriceDeclineMultiplierChangeDivisorChange(ctx context.Context, evtlogID int64) error {
-	return r.deleteByEvtlogID(ctx, "cg_adm_cst_price_decline_mul_div", evtlogID)
-}
-
 // DeleteMainPrizeNumNftsChange removes a V3 main-prize NFT-count history row.
 func (r *Repo) DeleteMainPrizeNumNftsChange(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_adm_main_prize_num_nfts", evtlogID)

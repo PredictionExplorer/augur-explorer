@@ -760,28 +760,6 @@ type CGRoundLateBidPricePremiumAmountExponentChanged struct {
 	NewValue  string
 }
 
-// CGCstBidPriceDeclineMultiplierChanged records the V3 CST Dutch auction
-// price decline speed (wei of CST price decline per second).
-type CGCstBidPriceDeclineMultiplierChanged struct {
-	EvtId     int64
-	BlockNum  int64
-	TxId      int64
-	TimeStamp int64
-	Contract  string
-	NewValue  string
-}
-
-// CGCstBidPriceDeclineMultiplierChangeDivisorChanged records the divisor
-// governing the per-bid adjustment of the V3 CST bid price decline multiplier.
-type CGCstBidPriceDeclineMultiplierChangeDivisorChanged struct {
-	EvtId     int64
-	BlockNum  int64
-	TxId      int64
-	TimeStamp int64
-	Contract  string
-	NewValue  string
-}
-
 // CGMainPrizeNumCosmicSignatureNftsChanged records the number of sequential
 // Cosmic Signature NFTs awarded with the V3 main prize.
 type CGMainPrizeNumCosmicSignatureNftsChanged struct {

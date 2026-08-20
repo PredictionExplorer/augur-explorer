@@ -1577,28 +1577,6 @@ func (r *Repo) InsertRoundLateBidPremiumExponentChange(ctx context.Context, evt 
 		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
 }
 
-// InsertCstBidPriceDeclineMultiplierChange records a V3
-// CstBidPriceDeclineMultiplierChanged event.
-func (r *Repo) InsertCstBidPriceDeclineMultiplierChange(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChanged) error {
-	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
-	if err != nil {
-		return store.WrapError("insert into cg_adm_cst_price_decline_mul", err)
-	}
-	return r.insertAdminValue(ctx, "cg_adm_cst_price_decline_mul", "new_value",
-		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
-}
-
-// InsertCstBidPriceDeclineMultiplierChangeDivisorChange records a V3
-// CstBidPriceDeclineMultiplierChangeDivisorChanged event.
-func (r *Repo) InsertCstBidPriceDeclineMultiplierChangeDivisorChange(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged) error {
-	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
-	if err != nil {
-		return store.WrapError("insert into cg_adm_cst_price_decline_mul_div", err)
-	}
-	return r.insertAdminValue(ctx, "cg_adm_cst_price_decline_mul_div", "new_value",
-		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
-}
-
 // InsertMainPrizeNumNftsChange records a V3
 // MainPrizeNumCosmicSignatureNftsChanged event.
 func (r *Repo) InsertMainPrizeNumNftsChange(ctx context.Context, evt *cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged) error {

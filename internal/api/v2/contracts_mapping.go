@@ -159,14 +159,6 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 		if err != nil {
 			return ContractConfiguration{}, fmt.Errorf("CST auction beginning-price floor: %w", err)
 		}
-		declineMultiplier, err := requiredAmount(snapshot.V3.CstBidPriceDeclineMultiplier)
-		if err != nil {
-			return ContractConfiguration{}, fmt.Errorf("CST bid price decline multiplier: %w", err)
-		}
-		declineMultiplierChangeDivisor, err := requiredAmount(snapshot.V3.CstBidPriceDeclineMultiplierChangeDivisor)
-		if err != nil {
-			return ContractConfiguration{}, fmt.Errorf("CST bid price decline multiplier change divisor: %w", err)
-		}
 		if snapshot.V3.RoundLateBidDurationSeconds <= 0 ||
 			snapshot.V3.RoundLateBidPricePremiumAmountExponent < 0 ||
 			snapshot.V3.MainPrizeNumCosmicSignatureNfts <= 0 {
@@ -178,8 +170,6 @@ func mapContractConfiguration(snapshot contractstate.Snapshot) (ContractConfigur
 		result.RoundLateBidPricePremiumAmountExponent = &snapshot.V3.RoundLateBidPricePremiumAmountExponent
 		result.MainPrizeNumCosmicSignatureNfts = &snapshot.V3.MainPrizeNumCosmicSignatureNfts
 		result.CstDutchAuctionBeginningBidPriceMinLimitWei = &auctionFloor
-		result.CstBidPriceDeclineMultiplierWei = &declineMultiplier
-		result.CstBidPriceDeclineMultiplierChangeDivisor = &declineMultiplierChangeDivisor
 	default:
 		return ContractConfiguration{}, errors.New("unknown contract mechanics version")
 	}

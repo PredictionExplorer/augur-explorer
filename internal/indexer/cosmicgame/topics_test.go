@@ -110,8 +110,6 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicRoundLateBidDurationDivisorChanged, gameV3, "RoundLateBidDurationDivisorChanged"},
 		{TopicRoundLateBidPremiumBaseMultiplierChanged, gameV3, "RoundLateBidPricePremiumAmountBaseMultiplierChanged"},
 		{TopicRoundLateBidPremiumExponentChanged, gameV3, "RoundLateBidPricePremiumAmountExponentChanged"},
-		{TopicCstBidPriceDeclineMultiplierChanged, gameV3, "CstBidPriceDeclineMultiplierChanged"},
-		{TopicCstBidPriceDeclineMultiplierChangeDivisorChanged, gameV3, "CstBidPriceDeclineMultiplierChangeDivisorChanged"},
 		{TopicMainPrizeNumNftsChanged, gameV3, "MainPrizeNumCosmicSignatureNftsChanged"},
 		{TopicStaticCstReward, game, "CstPrizeAmountChanged"},
 		{TopicMaxMessageLength, game, "BidMessageLengthMaxLimitChanged"},

@@ -122,13 +122,17 @@ func TestV3DriftRegistryUsesFinalNames(t *testing.T) {
 		"round_late_bid_duration_divisor",
 		"round_late_bid_price_premium_base_multiplier",
 		"round_late_bid_price_premium_exponent",
-		"cst_bid_price_decline_multiplier",
-		"cst_bid_price_decline_multiplier_change_divisor",
 		"main_prize_num_cosmic_signature_nfts",
 	} {
 		if !slices.Contains(names, want) {
 			t.Errorf("V3 drift registry missing %s", want)
 		}
+	}
+	// Retired by Solidity commit 0bc80af0, which restored the V2 stored CST
+	// Dutch auction duration in place of the decline multiplier.
+	if slices.Contains(names, "cst_bid_price_decline_multiplier") ||
+		slices.Contains(tables, "cg_adm_cst_price_decline_mul") {
+		t.Fatal("V3 drift registry contains the retired CST price decline multiplier")
 	}
 	if slices.Contains(names, "last_bidder_bid_cst_reward_amount_percentage") ||
 		slices.Contains(tables, "cg_adm_last_bidder_reward_pct") {
@@ -148,8 +152,6 @@ func TestV3DriftReaders(t *testing.T) {
 		Return("roundLateBidDurationDivisor", big.NewInt(4)).
 		Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(2)).
 		Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3)).
-		Return("cstBidPriceDeclineMultiplier", big.NewInt(16666666)).
-		Return("cstBidPriceDeclineMultiplierChangeDivisor", big.NewInt(100)).
 		Return("mainPrizeNumCosmicSignatureNfts", big.NewInt(3)))
 	opts := &bind.CallOpts{}
 	got := map[string]string{}
@@ -158,8 +160,6 @@ func TestV3DriftReaders(t *testing.T) {
 		case "cg_adm_late_bid_dur_divisor",
 			"cg_adm_late_bid_premium_base_mul",
 			"cg_adm_late_bid_premium_exponent",
-			"cg_adm_cst_price_decline_mul",
-			"cg_adm_cst_price_decline_mul_div",
 			"cg_adm_main_prize_num_nfts":
 			value, err := parameter.read(v1, v2, v3, opts)
 			if err != nil {
@@ -172,8 +172,6 @@ func TestV3DriftReaders(t *testing.T) {
 		"cg_adm_late_bid_dur_divisor":      "4",
 		"cg_adm_late_bid_premium_base_mul": "2",
 		"cg_adm_late_bid_premium_exponent": "3",
-		"cg_adm_cst_price_decline_mul":     "16666666",
-		"cg_adm_cst_price_decline_mul_div": "100",
 		"cg_adm_main_prize_num_nfts":       "3",
 	}
 	for table, value := range want {

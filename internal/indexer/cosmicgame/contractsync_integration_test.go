@@ -48,8 +48,6 @@ func driftV3GameStub() *testchain.ContractStub {
 		Return("roundLateBidDurationDivisor", big.NewInt(4)).
 		Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(2)).
 		Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3)).
-		Return("cstBidPriceDeclineMultiplier", big.NewInt(16666666666666666)).
-		Return("cstBidPriceDeclineMultiplierChangeDivisor", big.NewInt(100)).
 		Return("timeoutDurationToClaimMainPrize", big.NewInt(86400)).
 		Return("ethBidPriceIncreaseDivisor", big.NewInt(100)).
 		Return("mainPrizeTimeIncrementIncreaseDivisor", big.NewInt(50)).
@@ -127,8 +125,6 @@ func TestContractDriftAuditV3Configuration(t *testing.T) {
 		buildLog(t, gameV3ABI, "RoundLateBidDurationDivisorChanged", addr(fxGameAddr), nil, []any{big.NewInt(4)}),
 		buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountBaseMultiplierChanged", addr(fxGameAddr), nil, []any{big.NewInt(2)}),
 		buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountExponentChanged", addr(fxGameAddr), nil, []any{big.NewInt(3)}),
-		buildLog(t, gameV3ABI, "CstBidPriceDeclineMultiplierChanged", addr(fxGameAddr), nil, []any{big.NewInt(16666666666666666)}),
-		buildLog(t, gameV3ABI, "CstBidPriceDeclineMultiplierChangeDivisorChanged", addr(fxGameAddr), nil, []any{big.NewInt(100)}),
 		buildLog(t, gameV3ABI, "MainPrizeNumCosmicSignatureNftsChanged", addr(fxGameAddr), nil, []any{big.NewInt(3)}),
 	})
 	adminEvents, err := cgRepo.AdminEventsInRange(context.Background(), 0, math.MaxInt64)

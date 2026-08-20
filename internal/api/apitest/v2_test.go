@@ -2882,8 +2882,6 @@ func TestAPIV2ContractResources(t *testing.T) {
 		h.gameStub.Handle("getRoundLateBidDuration", rpcFailure)
 		h.gameStub.Handle("roundLateBidPricePremiumAmountBaseMultiplier", rpcFailure)
 		h.gameStub.Handle("roundLateBidPricePremiumAmountExponent", rpcFailure)
-		h.gameStub.Handle("cstBidPriceDeclineMultiplier", rpcFailure)
-		h.gameStub.Handle("cstBidPriceDeclineMultiplierChangeDivisor", rpcFailure)
 		h.state.LoadInitial(context.Background())
 	}
 	t.Cleanup(restoreV1)
@@ -2968,8 +2966,6 @@ func TestAPIV2ContractResources(t *testing.T) {
 	h.gameStub.Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(2))
 	h.gameStub.Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3))
 	h.gameStub.Return("cstDutchAuctionBeginningBidPriceMinLimit", wei("180000000000000000000"))
-	h.gameStub.Return("cstBidPriceDeclineMultiplier", wei("16666666666666666"))
-	h.gameStub.Return("cstBidPriceDeclineMultiplierChangeDivisor", big.NewInt(100))
 	h.state.LoadInitial(context.Background())
 	runV2GoldenCases(t, h, spec, []v2GoldenCase{
 		{name: "contracts_configuration_v3", target: v2ContractConfig, template: v2ContractConfig, pathParams: map[string]string{}},
@@ -2979,7 +2975,7 @@ func TestAPIV2ContractResources(t *testing.T) {
 	v3Compat, ok := v3Dashboard["V3Config"].(map[string]any)
 	if !ok ||
 		v3Dashboard["ContractMechanicsVersion"] != float64(3) ||
-		v3Compat["CstBidPriceDeclineMultiplier"] != "16666666666666666" ||
+		v3Compat["CstAuctionPriceMinLimit"] != "180000000000000000000" ||
 		v3Compat["MainPrizeNumCosmicSignatureNfts"] != float64(3) {
 		t.Fatalf("v1 V3 compatibility dashboard = %+v", v3Dashboard)
 	}

@@ -395,20 +395,6 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 				},
 			),
 			v3ContractParam(
-				"cst_bid_price_decline_multiplier",
-				"cg_adm_cst_price_decline_mul",
-				func(v3 *cgc.CosmicSignatureGameV3, opts *bind.CallOpts) (*big.Int, error) {
-					return v3.CstBidPriceDeclineMultiplier(opts)
-				},
-			),
-			v3ContractParam(
-				"cst_bid_price_decline_multiplier_change_divisor",
-				"cg_adm_cst_price_decline_mul_div",
-				func(v3 *cgc.CosmicSignatureGameV3, opts *bind.CallOpts) (*big.Int, error) {
-					return v3.CstBidPriceDeclineMultiplierChangeDivisor(opts)
-				},
-			),
-			v3ContractParam(
 				"main_prize_num_cosmic_signature_nfts",
 				"cg_adm_main_prize_num_nfts",
 				func(v3 *cgc.CosmicSignatureGameV3, opts *bind.CallOpts) (*big.Int, error) {

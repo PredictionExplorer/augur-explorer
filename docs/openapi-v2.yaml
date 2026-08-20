@@ -2809,8 +2809,6 @@ components:
             - roundLateBidPricePremiumAmountExponent
             - mainPrizeNumCosmicSignatureNfts
             - cstDutchAuctionBeginningBidPriceMinLimitWei
-            - cstBidPriceDeclineMultiplierWei
-            - cstBidPriceDeclineMultiplierChangeDivisor
           properties:
             mechanicsVersion:
               type: string
@@ -2951,14 +2949,6 @@ components:
           type: string
           pattern: "^[0-9]+$"
           description: V3-only CST auction beginning-price floor.
-        cstBidPriceDeclineMultiplierWei:
-          type: string
-          pattern: "^[0-9]+$"
-          description: V3-only CST Dutch auction price decline speed (wei per second).
-        cstBidPriceDeclineMultiplierChangeDivisor:
-          type: string
-          pattern: "^[0-9]+$"
-          description: V3-only divisor for the per-bid CST price decline multiplier adjustment.
     ContractBalances:
       type: object
       additionalProperties: false

@@ -654,9 +654,7 @@ func configurationReady(snapshot Snapshot) bool {
 			cachedDecimalReady(snapshot.V3.RoundLateBidPricePremiumAmountBaseMultiplier) &&
 			snapshot.V3.RoundLateBidPricePremiumAmountExponent >= 0 &&
 			snapshot.V3.MainPrizeNumCosmicSignatureNfts > 0 &&
-			cachedDecimalReady(snapshot.V3.CstDutchAuctionBeginningBidPriceMinLimit) &&
-			cachedDecimalReady(snapshot.V3.CstBidPriceDeclineMultiplier) &&
-			cachedDecimalReady(snapshot.V3.CstBidPriceDeclineMultiplierChangeDivisor)
+			cachedDecimalReady(snapshot.V3.CstDutchAuctionBeginningBidPriceMinLimit)
 	default:
 		return false
 	}

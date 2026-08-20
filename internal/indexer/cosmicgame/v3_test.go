@@ -193,26 +193,6 @@ func TestDecodeV3AdminEvents(t *testing.T) {
 			},
 		},
 		{
-			"CstBidPriceDeclineMultiplierChanged",
-			func(log *types.Log, meta *store.EthereumEventLog) (string, error) {
-				event, err := h.decodeCstBidPriceDeclineMultiplierChanged(log, meta)
-				if err != nil {
-					return "", err
-				}
-				return event.NewValue, nil
-			},
-		},
-		{
-			"CstBidPriceDeclineMultiplierChangeDivisorChanged",
-			func(log *types.Log, meta *store.EthereumEventLog) (string, error) {
-				event, err := h.decodeCstBidPriceDeclineMultiplierChangeDivisorChanged(log, meta)
-				if err != nil {
-					return "", err
-				}
-				return event.NewValue, nil
-			},
-		},
-		{
 			"MainPrizeNumCosmicSignatureNftsChanged",
 			func(log *types.Log, meta *store.EthereumEventLog) (string, error) {
 				event, err := h.decodeMainPrizeNumNftsChanged(log, meta)
