@@ -306,11 +306,12 @@ BEGIN
 	END LOOP;
 
 	-- Topic 1222634b (FundsTransferredToCharity, historically "DonationSent")
-	-- is emitted by three contracts but the indexer only decodes two of them:
-	--   charity wallet  -> cg_donation_sent
-	--   marketing wallet-> cg_funds_to_charity
-	--   game (at claim) -> intentionally undecoded (the paired
-	--                      CharityWallet.DonationReceived covers it).
+	-- is emitted by three contracts, split by source:
+	--   charity wallet             -> cg_donation_sent
+	--   game (at claim)            -> cg_funds_to_charity
+	--   CST staking wallet
+	--     (tryPerformMaintenance)  -> cg_funds_to_charity
+	-- The marketing wallet declares no such event and never emits it.
 	SELECT COUNT(*) INTO raw_cnt FROM evt_log e, known_aid k
 	WHERE e.topic0_sig='1222634b' AND e.contract_aid=k.charity_aid;
 	SELECT COUNT(*) INTO dec_cnt FROM cg_donation_sent;
@@ -320,22 +321,22 @@ BEGIN
 	        CASE WHEN raw_cnt=dec_cnt THEN NULL ELSE 'evt_log='||raw_cnt||' table='||dec_cnt END);
 
 	SELECT COUNT(*) INTO raw_cnt FROM evt_log e, known_aid k
-	WHERE e.topic0_sig='1222634b' AND e.contract_aid=k.marketing_aid;
+	WHERE e.topic0_sig='1222634b' AND e.contract_aid IN (k.game_aid, k.staking_cst_aid);
 	SELECT COUNT(*) INTO dec_cnt FROM cg_funds_to_charity;
 	INSERT INTO vr(section,check_name,severity,violations,details)
-	VALUES ('C. topic reconciliation','FundsTransferredToCharity [1222634b] from MarketingWallet -> cg_funds_to_charity','ERROR',
+	VALUES ('C. topic reconciliation','FundsTransferredToCharity [1222634b] from game/StakingWalletCST -> cg_funds_to_charity','ERROR',
 	        CASE WHEN raw_cnt=dec_cnt THEN 0 ELSE 1 END,
 	        CASE WHEN raw_cnt=dec_cnt THEN NULL ELSE 'evt_log='||raw_cnt||' table='||dec_cnt END);
 
-	-- Any other emitter of this topic besides game/charity/marketing is
-	-- unexpected and would go undecoded silently.
+	-- Any other emitter of this topic besides game/charity/CST staking wallet
+	-- is unexpected and would go undecoded silently.
 	SELECT COUNT(*) INTO raw_cnt FROM evt_log e, known_aid k
 	WHERE e.topic0_sig='1222634b'
-	  AND e.contract_aid NOT IN (k.game_aid, k.charity_aid, k.marketing_aid);
+	  AND e.contract_aid NOT IN (k.game_aid, k.charity_aid, k.staking_cst_aid);
 	INSERT INTO vr(section,check_name,severity,violations,details)
 	VALUES ('C. topic reconciliation','FundsTransferredToCharity [1222634b] from unexpected emitter','WARN',
 	        CASE WHEN raw_cnt=0 THEN 0 ELSE 1 END,
-	        CASE WHEN raw_cnt=0 THEN NULL ELSE raw_cnt||' logs from contracts other than game/charity/marketing' END);
+	        CASE WHEN raw_cnt=0 THEN NULL ELSE raw_cnt||' logs from contracts other than game/charity/staking' END);
 
 	-- ERC1967 Upgraded / AdminChanged: the registry only decodes the game
 	-- proxy's emissions; other proxies (if any) are out of scope.

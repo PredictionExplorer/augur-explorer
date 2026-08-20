@@ -328,8 +328,11 @@ func eventFixtures() []fixture {
 		{name: "donation_sent_charity", block: 1540, txs: []fixtureTx{{to: charity, logs: []fixtureLog{{TopicDonationSentEvent, func(t *testing.T) *types.Log {
 			return buildLog(t, charityWalletABI, "FundsTransferredToCharity", addr(charity), []any{addr(fxCharityRcv)}, []any{eth(4)})
 		}}}}}},
-		{name: "funds_to_charity_marketing", block: 1550, txs: []fixtureTx{{to: marketing, logs: []fixtureLog{{TopicFundsToCharity, func(t *testing.T) *types.Log {
-			return buildLog(t, gameABI, "FundsTransferredToCharity", addr(marketing), []any{addr(fxCharityRcv)}, []any{eth(1)})
+		{name: "funds_to_charity_staking", block: 1550, txs: []fixtureTx{{to: stakeCST, logs: []fixtureLog{{TopicFundsToCharity, func(t *testing.T) *types.Log {
+			// StakingWalletCosmicSignatureNft.tryPerformMaintenance sweeps its
+			// balance to charity; the game's own emission is covered by the
+			// round story, which carries it inside the claim transaction.
+			return buildLog(t, gameABI, "FundsTransferredToCharity", addr(stakeCST), []any{addr(fxCharityRcv)}, []any{eth(1)})
 		}}}}}},
 		{name: "donation_erc20_after_bid", block: 1560, txs: []fixtureTx{{to: game, logs: []fixtureLog{
 			{TopicBidEventV2, func(t *testing.T) *types.Log {

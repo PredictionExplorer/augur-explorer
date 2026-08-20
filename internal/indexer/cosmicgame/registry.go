@@ -2,8 +2,9 @@
 // pairing the topic-hash constant, the metric label, the emitting contracts
 // and the decode/store implementation. The three shared-signature cases
 // (CharityAddressChanged from two contracts, FundsTransferredToCharity from
-// two contracts, Transfer from the ERC721 and the ERC20) are separate
-// registrations distinguished by source.
+// the CharityWallet versus the game and the CST staking wallet, Transfer from
+// the ERC721 and the ERC20) are separate registrations distinguished by
+// source.
 
 package cosmicgame
 
@@ -25,6 +26,12 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 	// event variants; preserved verbatim (the topics differ per wallet ABI,
 	// so only one variant can arrive from each wallet in practice).
 	stakingEither := []ethcommon.Address{h.c.StakingCST, h.c.StakingRWalk}
+	// The contracts that hand ETH to the charity address directly: the game
+	// forwarding the charity share in MainPrize._distributePrizes, and the CST
+	// staking wallet sweeping its balance in tryPerformMaintenance. The
+	// CharityWallet emits the same topic0 when it forwards its own balance;
+	// that one is registered separately into cg_donation_sent.
+	charitySenders := []ethcommon.Address{h.c.Game, h.c.StakingCST}
 
 	return []indexer.EventHandler{
 		indexer.NewHandler(topicHash(TopicPrizeClaimEvent), "MainPrizeClaimed", game, h.decodeMainPrizeClaimed, h.storeMainPrizeClaimed),
@@ -105,7 +112,7 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicStartingCstMinLim), "CstDutchAuctionBeginningBidPriceMinLimitChanged", game, h.decodeCstMinLimitChanged, h.storeCstMinLimitChanged),
 		indexer.NewHandler(topicHash(TopicFundTransferErr), "FundTransferFailed", game, h.decodeFundTransferFailed, h.storeFundTransferFailed),
 		indexer.NewHandler(topicHash(TopicERC20TransferErr), "ERC20TransferFailed", game, h.decodeERC20TransferFailed, h.storeERC20TransferFailed),
-		indexer.NewHandler(topicHash(TopicFundsToCharity), "FundsTransferredToCharity", marketing, h.decodeFundsToCharity, h.storeFundsToCharity),
+		indexer.NewHandler(topicHash(TopicFundsToCharity), "FundsTransferredToCharity", charitySenders, h.decodeFundsToCharity, h.storeFundsToCharity),
 		indexer.NewHandler(topicHash(TopicDelayDurationRound), "DelayDurationBeforeRoundActivationChanged", game, h.decodeDelayDurationChanged, h.storeDelayDurationChanged),
 		indexer.NewHandler(topicHash(TopicFirstBidEvent), "FirstBidPlacedInRound", game, h.decodeFirstBidPlacedInRound, h.storeFirstBidPlacedInRound),
 	}

@@ -170,7 +170,8 @@ func scriptedRound(startBlock int64) []storyTx {
 					[]any{addr(fxGameAddr)}, []any{eth(1)})
 			}},
 			{TopicFundsToCharity, func(t *testing.T) *types.Log {
-				return buildLog(t, gameABI, "FundsTransferredToCharity", addr(fxMarketingAddr),
+				// The game forwards the charity share as part of the claim.
+				return buildLog(t, gameABI, "FundsTransferredToCharity", addr(fxGameAddr),
 					[]any{addr(fxCharityRcv)}, []any{eth(1)})
 			}},
 		}},
