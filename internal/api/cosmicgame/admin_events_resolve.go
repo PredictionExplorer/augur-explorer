@@ -34,6 +34,9 @@ func resolveAdminEventFromContract(v1 *cg.CosmicSignatureGame, v2 *cg.CosmicSign
 	}
 	copts := &bind.CallOpts{BlockNumber: big.NewInt(rec.BlockNum)}
 	switch rec.RecordType {
+	case 18:
+		// The divisor sets how much the main-prize time increment grows per bid.
+		return formatPercentFromDivisor(rec.IntegerValue)
 	case 20:
 		return formatPercentFromDivisor(rec.IntegerValue)
 	case 21:

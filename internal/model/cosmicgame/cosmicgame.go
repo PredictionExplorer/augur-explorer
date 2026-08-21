@@ -771,6 +771,30 @@ type CGMainPrizeNumCosmicSignatureNftsChanged struct {
 	NewValue  string
 }
 
+// CGEthBidRefundGasMaxLimitChanged records the cap on how much gas the game
+// is willing to swallow rather than refund an ETH bid overpayment.
+type CGEthBidRefundGasMaxLimitChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	NewValue  string
+}
+
+// CGArbitrumError records an ArbitrumError event: one of the Arbitrum
+// precompile reads feeding the random-number seed failed, so the seed was
+// built from fewer entropy sources than intended. Diagnostic only; not
+// exposed through the API.
+type CGArbitrumError struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	ErrStr    string
+}
+
 // CGInitialSecondsUntilPrizeChanged records an admin change of the initial
 // main-prize countdown at round start.
 type CGInitialSecondsUntilPrizeChanged struct {

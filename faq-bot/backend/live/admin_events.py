@@ -24,7 +24,7 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     15: "CosmicTokenAddressChanged",
     16: "CosmicSignatureNftAddressChanged",
     17: "Upgraded",
-    18: "TimeIncreaseChanged",
+    18: "MainPrizeTimeIncrementIncreaseDivisorChanged",
     19: "TimeoutDurationToClaimMainPrizeChanged",
     20: "PriceIncreaseChanged",
     21: "MainPrizeTimeIncrementMicroSecondsChanged",
@@ -50,6 +50,8 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     41: "RoundLateBidPricePremiumAmountBaseMultiplierChanged",
     42: "RoundLateBidPricePremiumAmountExponentChanged",
     44: "MainPrizeNumCosmicSignatureNftsChanged",
+    # 43 and 45 are retired (the reverted CstBidPriceDecline* events).
+    46: "EthBidRefundAmountInGasToSwallowMaxLimitChanged",
 }
 
 

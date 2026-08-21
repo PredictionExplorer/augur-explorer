@@ -343,6 +343,12 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 				return v1.MarketingWalletCstContributionAmount(opts)
 			}),
 		},
+		{
+			name: "eth_bid_refund_amount_in_gas_to_swallow_max_limit", table: "cg_adm_eth_bid_refund_gas_limit", column: "new_value",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.EthBidRefundAmountInGasToSwallowMaxLimit(opts)
+			}),
+		},
 	}
 
 	switch mechanics {

@@ -92,7 +92,10 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicMarketingAddressChanged, game, "MarketingWalletAddressChanged"},
 		{TopicCosmicTokenAddressChanged, game, "CosmicSignatureTokenAddressChanged"},
 		{TopicCosmicSignatureAddressChanged, game, "CosmicSignatureNftAddressChanged"},
+		{TopicTimeIncreaseChanged, game, "MainPrizeTimeIncrementIncreaseDivisorChanged"},
 		{TopicTimeoutClaimprizeChanged, game, "TimeoutDurationToClaimMainPrizeChanged"},
+		{TopicEthBidRefundGasMaxLimitChanged, game, "EthBidRefundAmountInGasToSwallowMaxLimitChanged"},
+		{TopicArbitrumError, game, "ArbitrumError"},
 		{TopicTimeoutToWithdrawPrize, prizes, "TimeoutDurationToWithdrawPrizesChanged"},
 		{TopicPriceIncreaseChanged, game, "EthBidPriceIncreaseDivisorChanged"},
 		{TopicMainPrizeMicrosecondIncrease, game, "MainPrizeTimeIncrementInMicroSecondsChanged"},
@@ -136,13 +139,19 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 // TestLegacyConstantsHaveNoABIEvent documents the registry entries that no
 // current ABI defines: their handlers must decode the raw data words instead
 // of unpacking by name (doing the latter killed the process; see
-// proc_time_increase_changed_event and proc_bid_cst_reward_amount_changed_event).
+// proc_bid_cst_reward_amount_changed_event).
+//
+// Membership here is not proof that a constant is correct: a constant that is
+// simply wrong also matches no ABI event. TopicTimeIncreaseChanged sat here
+// for years with a hash that keccak256 never produced, so
+// MainPrizeTimeIncrementIncreaseDivisorChanged went undispatched. Every
+// constant that does correspond to a declared event belongs in
+// TestRegistryConstantsMatchABIEventIDs instead.
 func TestLegacyConstantsHaveNoABIEvent(t *testing.T) {
 	game := mustABI(t, cgc.CosmicSignatureGameABI)
 	gameV2 := mustABI(t, cgc.CosmicSignatureGameV2ABI)
 	gameV3 := mustABI(t, cgc.CosmicSignatureGameV3ABI)
 	for name, constant := range map[string]string{
-		"TopicTimeIncreaseChanged":       TopicTimeIncreaseChanged,
 		"TopicBidCstRewardAmountChanged": TopicBidCstRewardAmountChanged,
 		"TopicERC20TransferErr":          TopicERC20TransferErr,
 	} {

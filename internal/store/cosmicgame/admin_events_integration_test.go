@@ -48,23 +48,33 @@ func TestAdminEventsInRange(t *testing.T) {
 }
 
 // TestAdminEventsQueryCoversEveryBranch guards the branch registry: every
-// record type 1..44 must appear in the generated UNION exactly once, so a
+// live record type must appear in the generated UNION exactly once, so a
 // registry edit can never silently drop an admin event type from the API.
+// Retired codes are listed explicitly and must stay absent — their events
+// cannot be emitted any more and their meaning must not be recycled.
 func TestAdminEventsQueryCoversEveryBranch(t *testing.T) {
+	const highestRecordType = 46
+	// 43 and 45 held the CstBidPriceDecline* events that migration 00030
+	// reverted along with the contract change.
+	retired := map[int]bool{43: true, 45: true}
+
 	seen := make(map[int]bool, len(adminEventBranches))
 	for _, b := range adminEventBranches {
 		if seen[b.recordType] {
 			t.Errorf("record type %d listed twice", b.recordType)
 		}
+		if retired[b.recordType] {
+			t.Errorf("record type %d is retired and must not be reused", b.recordType)
+		}
 		seen[b.recordType] = true
 	}
-	for want := 1; want <= 44; want++ {
-		if !seen[want] {
+	for want := 1; want <= highestRecordType; want++ {
+		if !seen[want] && !retired[want] {
 			t.Errorf("record type %d missing from adminEventBranches", want)
 		}
 	}
-	if len(adminEventBranches) != 44 {
-		t.Errorf("expected 44 branches, got %d", len(adminEventBranches))
+	if want := highestRecordType - len(retired); len(adminEventBranches) != want {
+		t.Errorf("expected %d branches, got %d", want, len(adminEventBranches))
 	}
 }
 

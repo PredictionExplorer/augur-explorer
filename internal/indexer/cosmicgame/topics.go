@@ -67,7 +67,7 @@ const (
 	TopicCosmicTokenAddressChanged                   = "9b3eda10f1724a2cf9f7dae4ac263c77908df4d00e92f1377b66fc8be37cd8c1" // ISystemEvents.sol:CosmicSignatureTokenAddressChanged
 	TopicCosmicSignatureAddressChanged               = "5bde6238168795ba4e77972a2bdaa5a465f7c9a5d05817f5e8d3fed2e5a4fa60" // ISystemEvents.sol:CosmicSignatureNftAddressChanged
 	TopicBusinessLogicAddressChanged                 = "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd" // ISystemManagement.sol:BusinessLogicContractAddressChanged
-	TopicTimeIncreaseChanged                         = "ed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd" // ISystemEvents.sol:MainPrizeTimeIncrementIncreaseDivisorChanged
+	TopicTimeIncreaseChanged                         = "4636d3e567b27988879babd22e50f49104ca65647933fc1623ff3d4d807438d2" // ISystemEvents.sol:MainPrizeTimeIncrementIncreaseDivisorChanged
 	TopicTimeoutClaimprizeChanged                    = "37a332914fac995349420c0419b4423a19dcb762017f691442a0782ce4bf417a" // ISystemEvents.sol:TimeoutDurationToClaimMainPrizeChanged
 	TopicTimeoutToWithdrawPrize                      = "8717bb199c6bc4a5dadb21547205f9ef8ec037dda246a5526d6a6471306ea52e" // IPrizesWallet.sol:TimeoutDurationToWithdrawPrizesChanged
 	TopicPriceIncreaseChanged                        = "deb71e1d117914859ddde484a9810084d9ee399077d5cd8dcbdf8770d33d8ae4" // ISystemEvents.sol:EthBidPriceIncreaseDivisorChanged
@@ -96,7 +96,8 @@ const (
 	TopicStartingCstMinLim                           = "4e8c80fe79d13b8663de9f6981925ae24c498cc07b0ebd4f4789fa78ca17caff" // ISystemEvents.sol:CstDutchAuctionBeginningBidPriceMinLimitChanged
 	TopicFundsToCharity                              = "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d" // ICosmicSignatureEvents.sol:FundsTransferredToCharity
 	TopicDelayDurationRound                          = "b0868a729f47ae3829aaafe3ca2975d3db2148553c854112f598be6d91ef0d28" // ISystemManagement.sol:DelayDurationBeforeRoundActivationChanged
-
+	TopicEthBidRefundGasMaxLimitChanged              = "a787f26546d7eeea63d70fc31736f27ad28329e95982f3bc5a7e0280f497bbf5" // ISystemEvents.sol:EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	TopicArbitrumError                               = "a0f59128cf0144d4891de440cb7fffc98340af3ee8b041d4add05fc0248c392d" // ICosmicSignatureEvents.sol:ArbitrumError
 )
 
 // topicHash converts one of the topic-hash constants above to a common.Hash

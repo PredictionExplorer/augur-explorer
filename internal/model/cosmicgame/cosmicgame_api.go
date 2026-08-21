@@ -840,7 +840,7 @@ type CGAdminEvent struct {
 	//			15		CosmicTokenAddressChanged
 	//			16		CosmicSignatureAddressChanged
 	//			17		Upgraded
-	//			18		TimeIncreaseChanged
+	//			18		MainPrizeTimeIncrementIncreaseDivisorChanged
 	//			19		TimeoutClaimPrizeChanged
 	//			20		PriceIncreaseChanged
 	//			21		NanoSecondsExtraChanged
@@ -866,6 +866,8 @@ type CGAdminEvent struct {
 	//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
 	//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
 	//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
+	//			46		EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	// 43 and 45 are retired (the reverted CstBidPriceDecline* events).
 	RecordId      int64
 	EvtLogId      int64
 	BlockNum      int64

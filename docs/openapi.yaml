@@ -1148,7 +1148,7 @@ components:
         RecordType:
           type: integer
           format: int64
-          description: Event type code 0..39 (1 CharityPercentageChanged, 2 PrizePercentageChanged, 3 RafflePercentageChanged, 4 StakingPercentageChanged, ..., 17 Upgraded, 24 ActivationTimeChanged, 34 OwnershipTransferred, 39 CstDutchAuctionDurationChangeDivisorChanged).
+          description: Event type code 0..46, excluding the retired 43 and 45 (1 CharityPercentageChanged, 2 PrizePercentageChanged, 3 RafflePercentageChanged, 4 StakingPercentageChanged, ..., 17 Upgraded, 18 MainPrizeTimeIncrementIncreaseDivisorChanged, 24 ActivationTimeChanged, 34 OwnershipTransferred, 39 CstDutchAuctionDurationChangeDivisorChanged, 40..42 and 44 the V3 configuration events, 46 EthBidRefundAmountInGasToSwallowMaxLimitChanged).
         RecordId: { type: integer, format: int64 }
         EvtLogId: { type: integer, format: int64 }
         BlockNum: { type: integer, format: int64 }

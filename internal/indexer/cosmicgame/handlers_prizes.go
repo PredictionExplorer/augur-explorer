@@ -349,6 +349,35 @@ func (h *Handlers) storeChronoWarriorPrizePaid(ctx context.Context, evt *cgmodel
 	return h.repo.InsertChronoWarrior(ctx, evt)
 }
 
+// decodeArbitrumError handles ArbitrumError, emitted from
+// ArbitrumHelpers.tryGet* when a precompile read that feeds the random-number
+// seed fails (as it does on any non-Arbitrum chain). The seed then draws on
+// fewer entropy sources, so the event is worth keeping even though nothing
+// downstream consumes it.
+func (h *Handlers) decodeArbitrumError(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGArbitrumError, error) {
+	var ethEvt cgc.CosmicSignatureGameArbitrumError
+	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "ArbitrumError", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGArbitrumError{}
+	evt.EvtId = elog.EvtID
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxID
+	evt.Contract = lg.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ErrStr = ethEvt.ErrStr
+	return evt, nil
+}
+
+func (h *Handlers) storeArbitrumError(ctx context.Context, evt *cgmodel.CGArbitrumError) error {
+	h.log.Info("ArbitrumError", "evt_id", evt.EvtId, "err_str", evt.ErrStr)
+
+	if err := h.repo.DeleteArbitrumError(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertArbitrumError(ctx, evt)
+}
+
 func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundTransferFailed, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err

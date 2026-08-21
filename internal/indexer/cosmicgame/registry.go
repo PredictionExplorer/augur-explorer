@@ -85,6 +85,7 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicAdminChanged), "AdminChanged", game, h.decodeAdminChanged, h.storeAdminChanged),
 		indexer.NewHandler(topicHash(TopicTimeIncreaseChanged), "MainPrizeTimeIncrementIncreaseDivisorChanged", game, h.decodeTimeIncreaseChanged, h.storeTimeIncreaseChanged),
 		indexer.NewHandler(topicHash(TopicTimeoutClaimprizeChanged), "TimeoutDurationToClaimMainPrizeChanged", game, h.decodeTimeoutClaimPrizeChanged, h.storeTimeoutClaimPrizeChanged),
+		indexer.NewHandler(topicHash(TopicEthBidRefundGasMaxLimitChanged), "EthBidRefundAmountInGasToSwallowMaxLimitChanged", game, h.decodeEthBidRefundGasMaxLimitChanged, h.storeEthBidRefundGasMaxLimitChanged),
 		indexer.NewHandler(topicHash(TopicTimeoutToWithdrawPrize), "TimeoutDurationToWithdrawPrizesChanged", prizes, h.decodeTimeoutToWithdrawPrizesChanged, h.storeTimeoutToWithdrawPrizesChanged),
 		indexer.NewHandler(topicHash(TopicPriceIncreaseChanged), "EthBidPriceIncreaseDivisorChanged", game, h.decodePriceIncreaseChanged, h.storePriceIncreaseChanged),
 		indexer.NewHandler(topicHash(TopicMainPrizeMicrosecondIncrease), "MainPrizeTimeIncrementInMicroSecondsChanged", game, h.decodeMainPrizeMicrosecondsChanged, h.storeMainPrizeMicrosecondsChanged),
@@ -112,6 +113,9 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicStartingCstMinLim), "CstDutchAuctionBeginningBidPriceMinLimitChanged", game, h.decodeCstMinLimitChanged, h.storeCstMinLimitChanged),
 		indexer.NewHandler(topicHash(TopicFundTransferErr), "FundTransferFailed", game, h.decodeFundTransferFailed, h.storeFundTransferFailed),
 		indexer.NewHandler(topicHash(TopicERC20TransferErr), "ERC20TransferFailed", game, h.decodeERC20TransferFailed, h.storeERC20TransferFailed),
+		// Only MainPrize/MainPrizeV2 reach ArbitrumHelpers, so the game is the
+		// sole emitter of ArbitrumError.
+		indexer.NewHandler(topicHash(TopicArbitrumError), "ArbitrumError", game, h.decodeArbitrumError, h.storeArbitrumError),
 		indexer.NewHandler(topicHash(TopicFundsToCharity), "FundsTransferredToCharity", charitySenders, h.decodeFundsToCharity, h.storeFundsToCharity),
 		indexer.NewHandler(topicHash(TopicDelayDurationRound), "DelayDurationBeforeRoundActivationChanged", game, h.decodeDelayDurationChanged, h.storeDelayDurationChanged),
 		indexer.NewHandler(topicHash(TopicFirstBidEvent), "FirstBidPlacedInRound", game, h.decodeFirstBidPlacedInRound, h.storeFirstBidPlacedInRound),

@@ -1588,6 +1588,27 @@ func (r *Repo) InsertMainPrizeNumNftsChange(ctx context.Context, evt *cgmodel.CG
 		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
 }
 
+// InsertEthBidRefundGasMaxLimitChange records an
+// EthBidRefundAmountInGasToSwallowMaxLimitChanged event.
+func (r *Repo) InsertEthBidRefundGasMaxLimitChange(ctx context.Context, evt *cgmodel.CGEthBidRefundGasMaxLimitChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_eth_bid_refund_gas_limit", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_eth_bid_refund_gas_limit", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertArbitrumError records an ArbitrumError event.
+func (r *Repo) InsertArbitrumError(ctx context.Context, evt *cgmodel.CGArbitrumError) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_arbitrum_error", err)
+	}
+	return r.insertAdminValue(ctx, "cg_arbitrum_error", "err_str",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.ErrStr)
+}
+
 // InsertEthAuctionDurationDivisorChange records an EthDutchAuctionDurationDivisorChanged event.
 func (r *Repo) InsertEthAuctionDurationDivisorChange(ctx context.Context, evt *cgmodel.CGEthDutchAuctionDurationDivisorChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)

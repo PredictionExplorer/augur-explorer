@@ -381,6 +381,17 @@ func (r *Repo) DeleteMainPrizeNumNftsChange(ctx context.Context, evtlogID int64)
 	return r.deleteByEvtlogID(ctx, "cg_adm_main_prize_num_nfts", evtlogID)
 }
 
+// DeleteEthBidRefundGasMaxLimitChange removes an
+// EthBidRefundAmountInGasToSwallowMaxLimitChanged row.
+func (r *Repo) DeleteEthBidRefundGasMaxLimitChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_eth_bid_refund_gas_limit", evtlogID)
+}
+
+// DeleteArbitrumError removes an ArbitrumError row.
+func (r *Repo) DeleteArbitrumError(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_arbitrum_error", evtlogID)
+}
+
 // DeleteEthAuctionDurationDivisorChange removes an EthDutchAuctionDurationDivisorChanged row.
 func (r *Repo) DeleteEthAuctionDurationDivisorChange(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_adm_eth_auclen", evtlogID)

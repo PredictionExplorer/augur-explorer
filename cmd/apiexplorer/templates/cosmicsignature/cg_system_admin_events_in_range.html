@@ -51,7 +51,7 @@
 							{{ if eq 15.0 .RecordType}}CosmicTokenAddressChanged{{end}}
 							{{ if eq 16.0 .RecordType}}CosmicSignatureNftAddressChanged{{end}}
 							{{ if eq 17.0 .RecordType}}Upgraded{{end}}
-							{{ if eq 18.0 .RecordType}}TimeIncreaseChanged{{end}}
+							{{ if eq 18.0 .RecordType}}MainPrizeTimeIncrementIncreaseDivisorChanged{{end}}
 							{{ if eq 19.0 .RecordType}}TimeoutDurationToClaimMainPrizeChanged{{end}}
 							{{ if eq 20.0 .RecordType}}PriceIncreaseChanged{{end}}
 							{{ if eq 21.0 .RecordType}}MainPrizeTimeIncrementMicroSecondsChanged{{end}}
@@ -77,6 +77,7 @@
 						{{ if eq 41.0 .RecordType}}RoundLateBidPricePremiumAmountBaseMultiplierChanged{{end}}
 						{{ if eq 42.0 .RecordType}}RoundLateBidPricePremiumAmountExponentChanged{{end}}
 						{{ if eq 44.0 .RecordType}}MainPrizeNumCosmicSignatureNftsChanged{{end}}
+						{{ if eq 46.0 .RecordType}}EthBidRefundAmountInGasToSwallowMaxLimitChanged{{end}}
 						</td>
 						<td class="center">{{.BlockNum}}</td>
 						<td>{{.DateTime}}</td>

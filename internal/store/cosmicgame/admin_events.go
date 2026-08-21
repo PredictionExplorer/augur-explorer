@@ -201,6 +201,10 @@ var adminEventBranches = []adminEventBranch{
 	{recordType: 41, table: "cg_adm_late_bid_premium_base_mul", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountBaseMultiplierChanged
 	{recordType: 42, table: "cg_adm_late_bid_premium_exponent", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountExponentChanged
 	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},                                   // MainPrizeNumCosmicSignatureNftsChanged
+	// 43 and 45 are retired: they belonged to the CstBidPriceDecline*
+	// events that migration 00030 reverted, so new events take fresh codes
+	// rather than inheriting a meaning a client may have cached.
+	{recordType: 46, table: "cg_adm_eth_bid_refund_gas_limit", intValue: "r.new_value"}, // EthBidRefundAmountInGasToSwallowMaxLimitChanged
 }
 
 // ownershipBranchSQL handles record_type 34, whose two address joins (previous
@@ -245,7 +249,7 @@ func adminEventsQuery() string {
 }
 
 // AdminEventsInRange returns every admin/configuration event with
-// evtlog_start < evtlog_id < evtlog_end, across all 44 admin event tables,
+// evtlog_start < evtlog_id < evtlog_end, across all admin event tables,
 // ordered by evtlog_id.
 func (r *Repo) AdminEventsInRange(ctx context.Context, evtlogStart, evtlogEnd int64) ([]cgmodel.CGAdminEvent, error) {
 	scan := func(rows pgx.Rows, rec *cgmodel.CGAdminEvent) error {

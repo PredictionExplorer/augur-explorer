@@ -196,8 +196,8 @@ func eventFixtures() []fixture {
 		{name: "admin_cst_min_limit", block: 1260, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicStartingCstMinLim, func(t *testing.T) *types.Log {
 			return buildLog(t, gameABI, "CstDutchAuctionBeginningBidPriceMinLimitChanged", addr(game), nil, []any{eth(200)})
 		}}}}}},
-		{name: "admin_time_increase_raw", block: 1270, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicTimeIncreaseChanged, func(t *testing.T) *types.Log {
-			return buildRawLog(t, TopicTimeIncreaseChanged, addr(game), nil, bigInt(3600000001))
+		{name: "admin_time_increase", block: 1270, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicTimeIncreaseChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameABI, "MainPrizeTimeIncrementIncreaseDivisorChanged", addr(game), nil, []any{bigInt(3600000001)})
 		}}}}}},
 		{name: "admin_token_script_url", block: 1280, txs: []fixtureTx{{to: sig, logs: []fixtureLog{{TopicTokenScriptURL, func(t *testing.T) *types.Log {
 			return buildLog(t, signatureABI, "NftGenerationScriptUriChanged", addr(sig), nil, []any{"https://fixture.example/script.js"})
@@ -544,6 +544,15 @@ func eventFixtures() []fixture {
 		// (string errStr + uint256 amount tail, destination indexed).
 		{name: "admin_erc20_transfer_failed", block: 1820, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicERC20TransferErr, func(t *testing.T) *types.Log {
 			return buildERC20TransferFailedLog(t, addr(game), addr(fxCarol), "fixture erc20 transfer failure", eth(2))
+		}}}}}},
+
+		{name: "admin_eth_bid_refund_gas_limit", block: 1900, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicEthBidRefundGasMaxLimitChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameABI, "EthBidRefundAmountInGasToSwallowMaxLimitChanged", addr(game), nil, []any{bigInt(6000)})
+		}}}}}},
+		{name: "arbitrum_error", block: 1910, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicArbitrumError, func(t *testing.T) *types.Log {
+			// The message the game emits on a non-Arbitrum chain, where the
+			// ArbSys precompile does not exist.
+			return buildLog(t, gameABI, "ArbitrumError", addr(game), nil, []any{"ArbSys.arbBlockNumber call failed."})
 		}}}}}},
 	}
 }
