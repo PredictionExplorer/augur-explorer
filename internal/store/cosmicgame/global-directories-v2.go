@@ -733,7 +733,8 @@ func (c *SupplyChangePageCursor) valid() bool {
 }
 
 // SupplyChangeRecord is one bid's exact effect on the Cosmic Token supply
-// with the running total after the bid.
+// with the true total supply as of the bid's transaction (derived from the
+// ERC20 Transfer log, so mints and burns outside bids are included).
 type SupplyChangeRecord struct {
 	Tx             cgmodel.Transaction
 	BidderAid      int64
@@ -746,9 +747,13 @@ type SupplyChangeRecord struct {
 }
 
 // CosmicTokenSupplyByBidPage returns at most limit per-bid supply changes,
-// oldest first by immutable event-log ID, with exact running totals. The
-// running total resumes from an aggregate over everything at or before the
-// cursor, so later pages do not rescan their prefix rows.
+// oldest first by immutable event-log ID. Each row carries the bid's own
+// exact minted/burned/net amounts and the true total supply as of the
+// bid's transaction, derived from the ERC20 Transfer log so supply
+// movement outside bids (prize and marketing-wallet mints, direct burns)
+// is included and the totals reconcile with the contract's totalSupply().
+// Each row's total is anchored to its transaction rather than accumulated
+// across page rows, so pagination needs no resumed running sum.
 func (r *Repo) CosmicTokenSupplyByBidPage(
 	ctx context.Context,
 	after *SupplyChangePageCursor,
@@ -764,6 +769,24 @@ func (r *Repo) CosmicTokenSupplyByBidPage(
 
 	const netExpression = `GREATEST(COALESCE(b.cst_reward, 0), 0)
 		- CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END`
+	// Transfers in the bid's own transaction sort before the bid row
+	// (kind 0 vs 1), so each total reads "supply after this bid".
+	const supplyCTE = `WITH tx_net AS (
+			SELECT tr.tx_id,
+				SUM(CASE tr.otype WHEN 1 THEN tr.value WHEN 2 THEN -tr.value ELSE 0 END) AS net
+			FROM cg_erc20_transfer tr
+			GROUP BY tr.tx_id
+		), stream AS (
+			SELECT tx_id, 0 AS kind, NULL::BIGINT AS bid_id, net FROM tx_net
+			UNION ALL
+			SELECT tx_id, 1, id, 0 FROM cg_bid
+		), running AS (
+			SELECT bid_id,
+				SUM(net) OVER (ORDER BY tx_id, kind
+					ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total_supply
+			FROM stream
+		)
+		`
 	selectList := `SELECT
 			b.evtlog_id,
 			b.block_num,
@@ -776,29 +799,24 @@ func (r *Repo) CosmicTokenSupplyByBidPage(
 			b.bid_type,
 			GREATEST(COALESCE(b.cst_reward, 0), 0)::TEXT,
 			(CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)::TEXT,
-			(` + netExpression + `)::TEXT,`
+			(` + netExpression + `)::TEXT,
+			rn.total_supply::TEXT`
 
 	var query string
 	var args []any
 	if after == nil {
-		query = selectList + `
-			SUM(` + netExpression + `)
-				OVER (ORDER BY b.evtlog_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)::TEXT
+		query = supplyCTE + selectList + `
 		FROM cg_bid b
+			JOIN running rn ON rn.bid_id = b.id
 			LEFT JOIN transaction t ON t.id=b.tx_id
 			LEFT JOIN address ba ON ba.address_id=b.bidder_aid
 		ORDER BY b.evtlog_id
 		LIMIT $1`
 		args = []any{limit + 1}
 	} else {
-		query = `WITH base AS (
-			SELECT COALESCE(SUM(` + netExpression + `), 0) AS supply
-			FROM cg_bid b WHERE b.evtlog_id <= $1
-		)
-		` + selectList + `
-			((SELECT supply FROM base) + SUM(` + netExpression + `)
-				OVER (ORDER BY b.evtlog_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW))::TEXT
+		query = supplyCTE + selectList + `
 		FROM cg_bid b
+			JOIN running rn ON rn.bid_id = b.id
 			LEFT JOIN transaction t ON t.id=b.tx_id
 			LEFT JOIN address ba ON ba.address_id=b.bidder_aid
 		WHERE b.evtlog_id > $1

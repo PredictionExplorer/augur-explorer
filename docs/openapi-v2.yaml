@@ -1320,8 +1320,12 @@ paths:
       description: |
         Returns one row per bid, oldest first by immutable event-log ID,
         with the exact base units the bid minted (its CST reward), burned
-        (the CST price of a CST bid) and the running total supply after
-        the bid. The ledger is append-only, so pages are stable.
+        (the CST price of a CST bid) and the true total supply as of the
+        bid's transaction. The total is derived from the ERC-20 Transfer
+        log, so supply movement outside bids (prize and marketing-wallet
+        mints, direct burns) is included and consecutive totals may differ
+        by more than the row's net. The ledger is append-only, so pages
+        are stable.
       tags:
         - CosmicGame tokens
       parameters:
@@ -1339,11 +1343,13 @@ paths:
       operationId: listCosmicGameCosmicTokenSupplyDaily
       summary: List daily Cosmic Token supply aggregates
       description: |
-        Returns one row per UTC calendar day with at least one bid inside
-        `[from,to)`: the day's bid count, exact minted, burned and net
-        base units, and the running total supply at the end of the day
-        computed over all history. The window covers at most 2,000 days;
-        broader requests return 400 so clients can narrow the range.
+        Returns one row per UTC calendar day with bids or supply movement
+        inside `[from,to)`: the day's bid count, exact minted, burned and
+        net base units from the ERC-20 Transfer log, and the running total
+        supply at the end of the day computed over all history. Days with
+        supply movement but no bids carry a zero bid count. The window
+        covers at most 2,000 days; broader requests return 400 so clients
+        can narrow the range.
       tags:
         - CosmicGame tokens
       parameters:

@@ -734,7 +734,10 @@ func TestListSupplyByBid(t *testing.T) {
 		}
 	})
 
-	t.Run("diverging running total is opaque", func(t *testing.T) {
+	t.Run("total jumping beyond the row's net is accepted", func(t *testing.T) {
+		// Totals are anchored to the ERC20 Transfer log, so supply minted or
+		// burned between bids (prizes, marketing, direct burns) legitimately
+		// moves the total by more than the bid's own net.
 		t.Parallel()
 		second := supplyChangeRow(200, 40, 60)
 		second.TotalSupplyWei = "999"
@@ -744,7 +747,14 @@ func TestListSupplyByBid(t *testing.T) {
 			},
 		})
 		response := serve(t, server, "/api/v2/cosmicgame/cosmic-token/supply-history/by-bid")
-		assertProblem(t, response, http.StatusInternalServerError)
+		if response.Code != http.StatusOK {
+			t.Fatalf("status = %d, body=%s", response.Code, response.Body.String())
+		}
+		var page CosmicGameCosmicTokenSupplyByBidPage
+		decodeResponse(t, response, &page)
+		if len(page.Data) != 2 || page.Data[1].TotalSupplyWei != "999" {
+			t.Fatalf("page = %+v", page)
+		}
 	})
 
 	t.Run("unordered page is opaque", func(t *testing.T) {

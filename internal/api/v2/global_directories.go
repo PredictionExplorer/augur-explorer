@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"strconv"
 	"time"
@@ -640,6 +639,9 @@ func (s *Server) ListCosmicGameCosmicTokenSupplyByBid(
 		return internal(), nil
 	}
 
+	// Consecutive totals are not required to differ by exactly the row's
+	// net: the total is anchored to the ERC20 Transfer log, and supply can
+	// move between bids (prize and marketing-wallet mints, direct burns).
 	data := make([]CosmicTokenSupplyChange, 0, len(records))
 	previousEventLogID := int64(0)
 	hasPrevious := false
@@ -647,7 +649,6 @@ func (s *Server) ListCosmicGameCosmicTokenSupplyByBid(
 		previousEventLogID = after.EventLogID
 		hasPrevious = true
 	}
-	var previousTotal *big.Int
 	for i := range records {
 		record := records[i]
 		if record.Tx.EvtLogId < 1 || (hasPrevious && record.Tx.EvtLogId <= previousEventLogID) {
@@ -661,20 +662,9 @@ func (s *Server) ListCosmicGameCosmicTokenSupplyByBid(
 			s.logInternal(ctx, "map supply change", err, "event_log_id", record.Tx.EvtLogId)
 			return internal(), nil
 		}
-		total, _ := new(big.Int).SetString(change.TotalSupplyWei, 10)
-		if previousTotal != nil {
-			net, _ := new(big.Int).SetString(change.NetWei, 10)
-			if new(big.Int).Add(previousTotal, net).Cmp(total) != 0 {
-				s.logInternal(ctx, "validate supply-by-bid page",
-					errors.New("running supply diverges from the previous row"),
-					"event_log_id", record.Tx.EvtLogId)
-				return internal(), nil
-			}
-		}
 		data = append(data, change)
 		previousEventLogID = record.Tx.EvtLogId
 		hasPrevious = true
-		previousTotal = total
 	}
 
 	meta := PageMeta{Limit: limit}

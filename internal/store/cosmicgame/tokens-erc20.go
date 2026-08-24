@@ -211,11 +211,32 @@ func (r *Repo) UserCosmicTokenSummary(ctx context.Context, userAid int64) (cgmod
 	return summary, nil
 }
 
-// CosmicTokenSupplyHistoryByBid returns one row per bid with the net CST
-// supply change (cst_reward mint minus cst_price burn on CST bids) and
-// running totals computed in SQL.
+// CosmicTokenSupplyHistoryByBid returns one row per bid with the bid's own
+// net CST supply change (cst_reward mint minus cst_price burn on CST bids)
+// and the true running total supply as of the bid's transaction.
+//
+// The running total is derived from the ERC20 Transfer log rather than by
+// accumulating bid nets, so it includes supply movement that happens
+// outside bids (prize and marketing-wallet mints, direct burns) and
+// reconciles with the contract's totalSupply(). Transfers in the bid's own
+// transaction — its reward mint and CST-bid burn — sort before the bid row,
+// so each total reads "supply after this bid".
 func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]cgmodel.CGTotalSupplyHistoryRec, error) {
-	query := `SELECT
+	query := `WITH tx_net AS (
+		SELECT tr.tx_id,
+		SUM(CASE tr.otype WHEN 1 THEN tr.value WHEN 2 THEN -tr.value ELSE 0 END) AS net
+		FROM cg_erc20_transfer tr
+		GROUP BY tr.tx_id
+		), stream AS (
+		SELECT tx_id, 0 AS kind, NULL::BIGINT AS bid_id, net FROM tx_net
+		UNION ALL
+		SELECT tx_id, 1, id, 0 FROM cg_bid
+		), running AS (
+		SELECT bid_id,
+		SUM(net) OVER (ORDER BY tx_id, kind ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total_supply
+		FROM stream
+		)
+		SELECT
 		b.evtlog_id, b.bid_type, COALESCE(ba.addr, ''), b.block_num, COALESCE(t.id, 0), COALESCE(t.tx_hash, ''),
 		EXTRACT(EPOCH FROM b.time_stamp)::BIGINT, b.time_stamp,
 		GREATEST(COALESCE(b.cst_reward, 0), 0)::text,
@@ -224,11 +245,10 @@ func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]cgmodel.CGT
 		(CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)/1e18,
 		(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)::text,
 		(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)/1e18,
-		SUM(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)
-		OVER (ORDER BY b.id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)::text,
-		SUM((GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END)/1e18)
-		OVER (ORDER BY b.id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+		rn.total_supply::text,
+		rn.total_supply/1e18
 		FROM cg_bid b
+		JOIN running rn ON rn.bid_id = b.id
 		LEFT JOIN address ba ON b.bidder_aid = ba.address_id
 		LEFT JOIN transaction t ON t.id = b.tx_id
 		ORDER BY b.id`
