@@ -36,7 +36,9 @@ func (a *API) handleCstMetadata(c *httpx.Context) {
 	}
 	p := c.Param("token_id")
 	var tokenID int64
-	if _, err := fmt.Sscanf(p, "%d", &tokenID); err != nil || tokenID <= 0 {
+	// Token IDs start at 0, so only negatives are invalid.
+	n, err := fmt.Sscanf(p, "%d", &tokenID)
+	if err != nil || n != 1 || tokenID < 0 {
 		common.RespondErrorJSON(c, "invalid token_id")
 		return
 	}
