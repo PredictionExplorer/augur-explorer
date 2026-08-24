@@ -263,16 +263,35 @@ func (r *Repo) CosmicTokenSupplyHistoryByBid(ctx context.Context) ([]cgmodel.CGT
 // CosmicTokenSupplyHistoryByDate returns daily aggregates of CST supply
 // change between fromDate and toDate (inclusive, YYYYMMDD), with running
 // totals over all history up to each day.
+//
+// Minted and burned come from the ERC20 Transfer log rather than from bid
+// rewards, so the running total covers every issuance path (prizes and
+// marketing-wallet contributions included) and reconciles with the
+// contract's totalSupply(). num_bids still counts bids on the day, so a
+// day can carry supply movement without bids and vice versa.
 func (r *Repo) CosmicTokenSupplyHistoryByDate(ctx context.Context, fromDate, toDate string) ([]cgmodel.CGTotalSupplyHistoryByDateRec, error) {
-	query := `WITH daily AS (
+	query := `WITH supply AS (
+		SELECT
+		DATE(t.time_stamp) AS bid_date,
+		COALESCE(SUM(t.value) FILTER (WHERE t.otype = 1), 0) AS mint_amt,
+		COALESCE(SUM(t.value) FILTER (WHERE t.otype = 2), 0) AS burn_amt
+		FROM cg_erc20_transfer t
+		GROUP BY DATE(t.time_stamp)
+		), bids AS (
 		SELECT
 		DATE(b.time_stamp) AS bid_date,
-		COUNT(*)::bigint AS num_bids,
-		SUM(GREATEST(COALESCE(b.cst_reward, 0), 0)) AS mint_amt,
-		SUM(CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END) AS burn_amt,
-		SUM(GREATEST(COALESCE(b.cst_reward, 0), 0) - CASE WHEN b.bid_type = 2 AND b.cst_price > 0 THEN b.cst_price ELSE 0 END) AS net_amt
+		COUNT(*)::bigint AS num_bids
 		FROM cg_bid b
 		GROUP BY DATE(b.time_stamp)
+		), daily AS (
+		SELECT
+		COALESCE(s.bid_date, b.bid_date) AS bid_date,
+		COALESCE(b.num_bids, 0) AS num_bids,
+		COALESCE(s.mint_amt, 0) AS mint_amt,
+		COALESCE(s.burn_amt, 0) AS burn_amt,
+		COALESCE(s.mint_amt, 0) - COALESCE(s.burn_amt, 0) AS net_amt
+		FROM supply s
+		FULL OUTER JOIN bids b ON b.bid_date = s.bid_date
 		), with_totals AS (
 		SELECT
 		d.bid_date,

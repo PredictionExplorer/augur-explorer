@@ -363,8 +363,8 @@ func mapSupplyChange(record cgstore.SupplyChangeRecord) (CosmicTokenSupplyChange
 }
 
 func mapDailySupply(record cgstore.DailySupplyRecord) (CosmicTokenDailySupply, error) {
-	if record.BidCount < 1 {
-		return CosmicTokenDailySupply{}, errors.New("daily row without bids")
+	if record.BidCount < 0 {
+		return CosmicTokenDailySupply{}, errors.New("daily row with a negative bid count")
 	}
 	day, err := time.Parse("2006-01-02", record.Date)
 	if err != nil {
@@ -386,6 +386,11 @@ func mapDailySupply(record cgstore.DailySupplyRecord) (CosmicTokenDailySupply, e
 	burnedInt, _ := new(big.Int).SetString(burned, 10)
 	if new(big.Int).Sub(mintedInt, burnedInt).String() != net {
 		return CosmicTokenDailySupply{}, errors.New("net diverges from minted minus burned")
+	}
+	// Supply movement and bidding are independent: prize and marketing mints
+	// land on days that may carry no bids. A row with neither is not a day.
+	if record.BidCount == 0 && mintedInt.Sign() == 0 && burnedInt.Sign() == 0 {
+		return CosmicTokenDailySupply{}, errors.New("daily row without bids or supply movement")
 	}
 	total, err := requiredAmount(record.TotalSupplyWei)
 	if err != nil {
