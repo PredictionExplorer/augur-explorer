@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -113,11 +114,66 @@ func TestStaticImagesFlatLayoutServesLegacyNestedURLs(t *testing.T) {
 func TestStaticImagesCosmicPackageFallback(t *testing.T) {
 	r, _ := staticRouter(t, staticAssets{})
 
-	// The flat URL resolves onto the packaged full.webp via resolveAssetFile.
+	// The package ships only full.webp, so even a client that did not ask
+	// for WebP gets it as the last resort rather than a 404.
 	const flatURL = "/images/new/cosmicsignature/0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.png"
 	w := doStatic(r, http.MethodGet, flatURL)
 	if w.Code != http.StatusOK {
 		t.Fatalf("packaged seed via flat URL = %d, want 200", w.Code)
+	}
+	if vary := w.Header().Values("Vary"); !slices.Contains(vary, "Accept") {
+		t.Errorf("negotiated flat .png URL lost Vary: Accept (got %q)", vary)
+	}
+}
+
+// TestStaticImagesCosmicPngContentNegotiation pins the Accept-header
+// negotiation for flat Cosmic Signature .png URLs: a URL ending in .png must
+// return actual PNG bytes unless the client advertised image/webp, so NFT
+// indexers that trust the extension are not handed a WebP.
+func TestStaticImagesCosmicPngContentNegotiation(t *testing.T) {
+	r, root := staticRouter(t, staticAssets{})
+	const seed = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+	writeFile(t, filepath.Join(root, "new", "cosmicsignature", seed, "images", "source", "master.png"))
+	const flatURL = "/images/new/cosmicsignature/" + seed + ".png"
+
+	get := func(accept string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, flatURL, nil)
+		if accept != "" {
+			req.Header.Set("Accept", accept)
+		}
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w
+	}
+
+	cases := []struct {
+		name        string
+		accept      string
+		contentType string
+	}{
+		{"no accept header gets the real png", "", "image/png"},
+		{"browser accept gets the web webp", "image/webp,image/png,*/*", "image/webp"},
+		{"indexer accepting only png gets png", "image/png", "image/png"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := get(tc.accept)
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", w.Code)
+			}
+			if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, tc.contentType) {
+				t.Errorf("Content-Type = %q, want %q", ct, tc.contentType)
+			}
+			if vary := w.Header().Values("Vary"); !slices.Contains(vary, "Accept") {
+				t.Errorf("Vary = %q, want it to include Accept", vary)
+			}
+		})
+	}
+
+	// Thumbnails are not negotiated and must not gain the Vary header.
+	thumb := doStatic(r, http.MethodGet, "/images/new/cosmicsignature/"+seed+"/thumb_card.webp")
+	if vary := thumb.Header().Values("Vary"); slices.Contains(vary, "Accept") {
+		t.Errorf("thumbnail response gained Vary: Accept (got %q)", vary)
 	}
 }
 

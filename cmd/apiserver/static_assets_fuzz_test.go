@@ -92,18 +92,28 @@ func FuzzResolveAssetFile(f *testing.F) {
 	fuzzPathSeeds(f)
 	f.Fuzz(func(t *testing.T, urlRel string) {
 		root := fuzzAssetRoot()
-		full, ok := resolveAssetFile(root, urlRel)
-		if !ok {
-			return
-		}
-		assertInsideRoot(t, root, full, urlRel)
-		// The package-layout fallback is scoped to Cosmic Signature: when it
-		// rewrote the path (result differs from the literal request), the
-		// request must have been for new/cosmicsignature/.
-		if literal, literalOK := safeFileUnderRoot(root, urlRel); !literalOK || literal != full {
-			if !strings.HasPrefix(urlRel, cosmicAssetPrefix) {
-				t.Fatalf("fallback applied outside %q: urlRel=%q -> %q", cosmicAssetPrefix, urlRel, full)
+		resolved := map[bool]string{}
+		for _, acceptsWebP := range []bool{false, true} {
+			full, ok := resolveAssetFile(root, urlRel, acceptsWebP)
+			if !ok {
+				continue
 			}
+			resolved[acceptsWebP] = full
+			assertInsideRoot(t, root, full, urlRel)
+			// The package-layout fallback is scoped to Cosmic Signature: when it
+			// rewrote the path (result differs from the literal request), the
+			// request must have been for new/cosmicsignature/.
+			if literal, literalOK := safeFileUnderRoot(root, urlRel); !literalOK || literal != full {
+				if !strings.HasPrefix(urlRel, cosmicAssetPrefix) {
+					t.Fatalf("fallback applied outside %q: urlRel=%q -> %q", cosmicAssetPrefix, urlRel, full)
+				}
+			}
+		}
+		// Accept negotiation may only ever influence flat Cosmic Signature
+		// .png URLs — exactly the ones the handler marks with Vary: Accept.
+		if len(resolved) == 2 && resolved[false] != resolved[true] && !cosmicFlatPNGRequest(urlRel) {
+			t.Fatalf("negotiation changed a non-negotiated URL: urlRel=%q -> %q vs %q",
+				urlRel, resolved[false], resolved[true])
 		}
 	})
 }

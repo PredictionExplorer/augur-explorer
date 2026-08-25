@@ -55,6 +55,12 @@ func TestResolveAssetFile(t *testing.T) {
 	masterOnly := filepath.Join(csDir, masterOnlySeed, "images", "source", "master.png")
 	writeFile(t, masterOnly)
 
+	// Current layout for a seed that only has the web full.webp (no PNG at
+	// all), to exercise the WebP last resort for non-WebP clients.
+	webpOnlySeed := "0x11a4bd93a6cbd0f9bd91b1a26adbcb3b04ef0f6be3b3ac13867d3e04b449b217"
+	webpOnly := filepath.Join(csDir, webpOnlySeed, "images", "web", "full.webp")
+	writeFile(t, webpOnly)
+
 	// Current layout for a seed that only has the hq video (no web/main.mp4).
 	hqOnlySeed := "0xae7e4b937e44eddb5693b29148b6bd03f65417f7a363b60829a562ca2370ec0d"
 	hqOnly := filepath.Join(csDir, hqOnlySeed, "videos", "hq", "main.mp4")
@@ -66,10 +72,11 @@ func TestResolveAssetFile(t *testing.T) {
 	writeFile(t, rwPkgImage)
 
 	cases := []struct {
-		name   string
-		urlRel string
-		want   string
-		wantOK bool
+		name        string
+		urlRel      string
+		acceptsWebP bool
+		want        string
+		wantOK      bool
 	}{
 		{
 			name:   "flat png served directly",
@@ -96,9 +103,22 @@ func TestResolveAssetFile(t *testing.T) {
 			wantOK: true,
 		},
 		{
-			name:   "new layout png -> images/web/full.webp",
+			name:        "new layout png -> images/web/full.webp for webp-accepting clients",
+			urlRel:      "new/cosmicsignature/" + newSeed + ".png",
+			acceptsWebP: true,
+			want:        newFull,
+			wantOK:      true,
+		},
+		{
+			name:   "new layout png -> images/source/master.png without webp accept",
 			urlRel: "new/cosmicsignature/" + newSeed + ".png",
-			want:   newFull,
+			want:   newMaster,
+			wantOK: true,
+		},
+		{
+			name:   "webp-only package is the last resort without webp accept",
+			urlRel: "new/cosmicsignature/" + webpOnlySeed + ".png",
+			want:   webpOnly,
 			wantOK: true,
 		},
 		{
@@ -120,10 +140,11 @@ func TestResolveAssetFile(t *testing.T) {
 			wantOK: true,
 		},
 		{
-			name:   "png falls back to source/master.png when no web image",
-			urlRel: "new/cosmicsignature/" + masterOnlySeed + ".png",
-			want:   masterOnly,
-			wantOK: true,
+			name:        "png falls back to source/master.png when no web image",
+			urlRel:      "new/cosmicsignature/" + masterOnlySeed + ".png",
+			acceptsWebP: true,
+			want:        masterOnly,
+			wantOK:      true,
 		},
 		{
 			name:   "mp4 falls back to videos/hq/main.mp4 when no web video",
@@ -132,10 +153,11 @@ func TestResolveAssetFile(t *testing.T) {
 			wantOK: true,
 		},
 		{
-			name:   "bare-hex seed (no 0x) normalizes to 0x<seed> dir",
-			urlRel: "new/cosmicsignature/" + strings.TrimPrefix(newSeed, "0x") + ".png",
-			want:   newFull,
-			wantOK: true,
+			name:        "bare-hex seed (no 0x) normalizes to 0x<seed> dir",
+			urlRel:      "new/cosmicsignature/" + strings.TrimPrefix(newSeed, "0x") + ".png",
+			acceptsWebP: true,
+			want:        newFull,
+			wantOK:      true,
 		},
 		{
 			name:   "missing seed",
@@ -161,7 +183,7 @@ func TestResolveAssetFile(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, ok := resolveAssetFile(root, tc.urlRel)
+			got, ok := resolveAssetFile(root, tc.urlRel, tc.acceptsWebP)
 			if ok != tc.wantOK {
 				t.Fatalf("ok = %v, want %v", ok, tc.wantOK)
 			}

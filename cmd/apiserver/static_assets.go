@@ -140,10 +140,17 @@ const cosmicAssetPrefix = "new/cosmicsignature/"
 //	                   .../videos/web/main.mp4, .../videos/hq/main.mp4
 //	legacy packages:   new/cosmicsignature/0x<seed>/image.png / video.mp4
 //
+// acceptsWebP steers the flat .png fallback: a .png URL must deliver real PNG
+// bytes (with Content-Type: image/png) unless the client advertised
+// image/webp in its Accept header. Browsers all do, so they keep getting the
+// small web-optimized WebP; NFT indexers and strict marketplace crawlers that
+// trust the URL extension get the actual PNG. Handlers serving negotiated
+// URLs must send "Vary: Accept" (see cosmicFlatPNGRequest).
+//
 // Some frontend callers omit the 0x prefix (e.g. the home banner), so the seed
 // segment is normalized to 0x<seed> when it looks like bare hex. RandomWalk and
 // every other subtree are unaffected: a missing file 404s as before.
-func resolveAssetFile(rootAbs, urlRel string) (full string, ok bool) {
+func resolveAssetFile(rootAbs, urlRel string, acceptsWebP bool) (full string, ok bool) {
 	if full, ok = safeFileUnderRoot(rootAbs, urlRel); ok {
 		return full, true
 	}
@@ -159,10 +166,20 @@ func resolveAssetFile(rootAbs, urlRel string) (full string, ok bool) {
 	switch {
 	case ext == ".png" && !strings.Contains(rest, "/"):
 		seed := normalizeSeedSegment(strings.TrimSuffix(rest, filepath.Ext(rest)))
-		candidates = []string{
-			seed + "/images/web/full.webp",
-			seed + "/images/source/master.png",
-			seed + "/image.png", // legacy package layout
+		if acceptsWebP {
+			candidates = []string{
+				seed + "/images/web/full.webp",
+				seed + "/images/source/master.png",
+				seed + "/image.png", // legacy package layout
+			}
+		} else {
+			// Real PNGs first; the WebP stays as a last resort so the token
+			// still renders when a package ships no PNG at all.
+			candidates = []string{
+				seed + "/images/source/master.png",
+				seed + "/image.png", // legacy package layout
+				seed + "/images/web/full.webp",
+			}
 		}
 	case ext == ".mp4" && !strings.Contains(rest, "/"):
 		seed := normalizeSeedSegment(strings.TrimSuffix(rest, filepath.Ext(rest)))
@@ -187,6 +204,16 @@ func resolveAssetFile(rootAbs, urlRel string) (full string, ok bool) {
 		}
 	}
 	return "", false
+}
+
+// cosmicFlatPNGRequest reports whether urlRel is a flat Cosmic Signature
+// image URL (new/cosmicsignature/0x<seed>.png). The body served for these
+// URLs is negotiated on the Accept header (WebP for clients that advertise
+// image/webp, PNG otherwise), so responses must carry "Vary: Accept" for
+// shared caches to key correctly.
+func cosmicFlatPNGRequest(urlRel string) bool {
+	rest, found := strings.CutPrefix(urlRel, cosmicAssetPrefix)
+	return found && !strings.Contains(rest, "/") && strings.ToLower(filepath.Ext(rest)) == ".png"
 }
 
 // normalizeSeedSegment prepends "0x" when seg looks like a bare hex seed, so
@@ -268,14 +295,18 @@ func registerStaticAssetRoutes(sa staticAssets) func(*httpx.Router) {
 					c.Status(http.StatusNotFound)
 					return
 				}
-				full, ok := resolveAssetFile(fsRoot, rel)
+				acceptsWebP := strings.Contains(c.GetHeader("Accept"), "image/webp")
+				if cosmicFlatPNGRequest(rel) {
+					c.Writer.Header().Add("Vary", "Accept")
+				}
+				full, ok := resolveAssetFile(fsRoot, rel, acceptsWebP)
 				if !ok && flat {
 					// The legacy metadata handler emitted nested
 					// /images/randomwalk/<file> URLs even in the flat
 					// layout, and marketplaces cached them; accept the
 					// nested form as an alias for the flat one.
 					if nested := strings.TrimPrefix(rel, "randomwalk/"); nested != rel {
-						full, ok = resolveAssetFile(fsRoot, nested)
+						full, ok = resolveAssetFile(fsRoot, nested, acceptsWebP)
 					}
 				}
 				if !ok {
