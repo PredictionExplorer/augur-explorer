@@ -1457,29 +1457,102 @@ components:
       type: object
       properties:
         trait_type: { type: string }
-        display_type: { type: string }
+        display_type: { type: string, enum: [number, date] }
         value:
           description: Attribute value (string or number).
+        max_value:
+          type: integer
+          description: Upper bound for numeric traits, e.g. Chaos 0-100.
+    NftAssetDetails:
+      type: object
+      description: >-
+        Dimensions, size and content hash of one served asset, copied from the
+        generator's assets.json (schema_version 2). The metadata server never
+        hashes an asset itself. Omitted when no manifest has been ingested.
+      properties:
+        width: { type: integer }
+        height: { type: integer }
+        format: { type: string }
+        codec: { type: string, description: Video entries only. }
+        duration_seconds: { type: number, description: Video entries only. }
+        bytes: { type: integer, format: int64 }
+        sha256: { type: string, description: Lowercase hex SHA-256 of the file. }
     CosmicSignatureNftMetadata:
       type: object
-      description: OpenSea-compatible ERC-721 metadata for a Cosmic Signature token.
+      description: >-
+        OpenSea-compatible ERC-721 metadata for a Cosmic Signature token.
+
+        Two shapes share this schema. Once the seed's art package has been
+        ingested from the asset host the response is enriched: the generator's
+        attributes appear verbatim and first, followed by the chain-derived
+        Round, Imprinted and Allocation, and properties carries the
+        reproducibility blocks and the full media list. Until then the minimal
+        fallback is served, which every new mint uses for the minutes to hours
+        the pipeline takes to publish.
+
+        Ownership is deliberately absent from both shapes: it changes on every
+        transfer while marketplaces cache metadata for days, so ownerOf() is
+        the only truthful source.
       properties:
+        metadata_version:
+          type: string
+          description: >-
+            Version of this served layout, independent of the trait file's
+            schema_version. 2.0.0 is the first without properties.owner and
+            without the per-token seed attribute.
         name: { type: string }
         description: { type: string }
         image: { type: string, format: uri }
         animation_url: { type: string, format: uri }
+        image_details: { $ref: '#/components/schemas/NftAssetDetails' }
+        animation_details: { $ref: '#/components/schemas/NftAssetDetails' }
         background_color: { type: string }
         external_url: { type: string, format: uri }
         attributes:
           type: array
+          description: >-
+            Art attributes copied verbatim from the generator's
+            nft_traits.json, then the chain-derived Round, Imprinted and
+            Allocation. There is no seed attribute: every value would be
+            unique, so it can never filter anything.
           items: { $ref: '#/components/schemas/NftMetadataAttribute' }
         properties:
           type: object
           properties:
-            seed: { type: string }
+            seed:
+              type: string
+              description: Canonical 0x-prefixed lowercase hex seed.
             token_id: { type: integer, format: int64 }
-            owner: { type: string }
             round_num: { type: integer, format: int64 }
+            simulation:
+              type: object
+              description: >-
+                Raw physics measurements of the winning orbit, verbatim from
+                nft_traits.json. Enriched responses only.
+            generation:
+              type: object
+              description: >-
+                Seed-resolved generation context (the reproducibility
+                certificate), verbatim from nft_traits.json. Enriched
+                responses only.
+            media:
+              type: object
+              description: >-
+                Every hosted asset of the package, including the ones image
+                and animation_url cannot reach. Enriched responses only;
+                asset_manifest and trait_source appear only when an asset host
+                is configured.
+              properties:
+                hq_video: { type: string, format: uri }
+                spectral_sweep: { type: string, format: uri }
+                spectral_sweep_hq: { type: string, format: uri }
+                spectral_bins: { type: string, format: uri }
+                web_image: { type: string, format: uri }
+                source_image: { type: string, format: uri }
+                preview_image: { type: string, format: uri }
+                generation_records: { type: string, format: uri }
+                asset_manifest: { type: string, format: uri }
+                trait_source: { type: string, format: uri }
     RandomWalkNftMetadata:
       type: object
       description: ERC-721 metadata for a RandomWalk token.

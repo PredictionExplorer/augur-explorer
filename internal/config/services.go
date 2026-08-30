@@ -90,6 +90,15 @@ type APIServer struct {
 	ImageNoCache        bool   `env:"WEBSRV_IMAGE_NO_CACHE"`
 	LogImageRequests    bool   `env:"WEBSRV_LOG_IMAGE_REQUESTS"`
 
+	// Cosmic Signature art traits. NFTTraitsSourceBase is the asset host
+	// root that publishes /traits/{seed}.json and
+	// /asset-manifests/{seed}.json — the host root, not the /images mount.
+	// Unset leaves every token on the fallback metadata, which is the
+	// behaviour before the generator published any package.
+	NFTTraitsSourceBase     string        `env:"NFT_TRAITS_SOURCE_BASE"`
+	NFTTraitsIngestInterval time.Duration `env:"NFT_TRAITS_INGEST_INTERVAL" default:"2m"`
+	NFTTraitsIngestDisabled bool          `env:"NFT_TRAITS_INGEST_DISABLED"`
+
 	// FAQ bot upstream: FAQUpstreamURL wins, then the legacy alias, then
 	// the faq package's http://127.0.0.1:8000 default.
 	FAQUpstreamURL       string `env:"AI_BOT_BACKEND_URL"`
@@ -158,6 +167,25 @@ func (c *APIServer) FAQUpstream() string {
 		return c.FAQUpstreamURL
 	}
 	return c.FAQUpstreamURLLegacy
+}
+
+// TraitsSourceBase resolves the asset host root that publishes the Cosmic
+// Signature art trait contract files, without a trailing slash.
+//
+// NFT_TRAITS_SOURCE_BASE wins. Otherwise it is derived from
+// NFT_ASSETS_PUBLIC_BASE by dropping the "/images" mount, because the two
+// live on the same host: images at /images/new/cosmicsignature/... and the
+// contract files at /traits/... and /asset-manifests/... . Deployments that
+// split them across hosts set the variable explicitly.
+func (c *APIServer) TraitsSourceBase() string {
+	if base := strings.TrimRight(strings.TrimSpace(c.NFTTraitsSourceBase), "/"); base != "" {
+		return base
+	}
+	assets := strings.TrimRight(strings.TrimSpace(c.NFTAssetsPublicBase), "/")
+	if assets == "" {
+		return ""
+	}
+	return strings.TrimSuffix(assets, "/images")
 }
 
 // LoadAPIServer loads and validates the API server configuration.

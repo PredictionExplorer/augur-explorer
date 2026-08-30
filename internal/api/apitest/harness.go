@@ -36,6 +36,10 @@ import (
 // fail-closed 503 branch builds a keyless router).
 const adminKey = "apitest-admin-key"
 
+// traitsSourceBase is the asset host the harness advertises as the publisher
+// of the art trait contract files (NFT_TRAITS_SOURCE_BASE in production).
+const traitsSourceBase = "https://assets.example.com"
+
 // harness is the fully wired API server under test: the real router with
 // the real middleware stack, backed by the seeded test database and the
 // deterministic in-memory Ethereum node (internal/testchain) serving
@@ -88,11 +92,16 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	// snapshots drift. New's synchronous loads pin the state once. The
 	// admin keys mirror a production deployment; the fail-closed matrices
 	// build a keyless router next to this one.
+	// TraitsSourceBase is pinned rather than derived so the enriched
+	// metadata's contract links are stable in goldens. StartTraitIngestion
+	// is deliberately not called: a live ingest loop would race the
+	// fixtures, and the trait tests write the rows they need directly.
 	cgAPI, err := cosmicgame.New(ctx, cosmicgame.Config{
-		Store:       st,
-		EthClient:   ethClient,
-		RPCClient:   rpcClient,
-		AdminAPIKey: adminKey,
+		Store:            st,
+		EthClient:        ethClient,
+		RPCClient:        rpcClient,
+		AdminAPIKey:      adminKey,
+		TraitsSourceBase: traitsSourceBase,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("initializing cosmicgame module: %w", err)

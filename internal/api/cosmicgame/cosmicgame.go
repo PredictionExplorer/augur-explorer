@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -16,6 +18,7 @@ import (
 
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
+	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/traits"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgdb "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
@@ -34,6 +37,8 @@ type API struct {
 	logger           *slog.Logger
 	adminAPIKey      string
 	assetsPublicBase string
+	traitsSourceBase string
+	traitsIngester   traitNudger
 }
 
 // Config carries the dependencies for New. Store must be non-nil; the
@@ -50,6 +55,10 @@ type Config struct {
 	// AssetsPublicBase overrides the public /images URL base used in token
 	// metadata (NFT_ASSETS_PUBLIC_BASE); empty derives it per request.
 	AssetsPublicBase string
+	// TraitsSourceBase is the asset host root publishing the art trait
+	// contract files (NFT_TRAITS_SOURCE_BASE). Empty omits the
+	// trait_source and asset_manifest links from the served media block.
+	TraitsSourceBase string
 }
 
 // New builds the module and performs the synchronous contract-state loads
@@ -67,6 +76,7 @@ func New(ctx context.Context, cfg Config) (*API, error) {
 		logger:           orDiscardLogger(cfg.Logger),
 		adminAPIKey:      cfg.AdminAPIKey,
 		assetsPublicBase: cfg.AssetsPublicBase,
+		traitsSourceBase: strings.TrimRight(strings.TrimSpace(cfg.TraitsSourceBase), "/"),
 	}
 	if cfg.Store == nil {
 		return nil, errors.New("cosmicgame: database link wasn't configured")
@@ -135,6 +145,59 @@ func (a *API) StartBackgroundRefresh(ctx context.Context) <-chan struct{} {
 	go func() {
 		defer close(done)
 		a.state.Run(ctx)
+	}()
+	return done
+}
+
+// TraitIngestConfig configures the background art-trait ingest loop.
+type TraitIngestConfig struct {
+	// SourceBase is the asset host root publishing /traits/{seed}.json and
+	// /asset-manifests/{seed}.json (NFT_TRAITS_SOURCE_BASE).
+	SourceBase string
+	// Interval is the scan period; zero selects the package default.
+	Interval time.Duration
+	// Disabled switches ingestion off without unsetting SourceBase, so the
+	// served media block keeps linking the published contract files.
+	Disabled bool
+}
+
+// StartTraitIngestion launches the background loop that fills the art-trait
+// tables from the asset host and returns a channel closed after it stops.
+// Cancelling ctx stops it; owners should wait for the channel before closing
+// the store.
+//
+// It is a no-op — returning an already-closed channel — when ingestion is
+// disabled or unconfigured. That is not a failure: with no trait rows every
+// token simply serves the fallback metadata, which is exactly the behaviour
+// before the asset host published any package.
+//
+// Call it during startup, before the listeners begin serving: it publishes
+// the on-demand nudge hook the metadata handler uses.
+func (a *API) StartTraitIngestion(ctx context.Context, cfg TraitIngestConfig) <-chan struct{} {
+	done := make(chan struct{})
+	if cfg.Disabled || a.repo == nil || strings.TrimSpace(cfg.SourceBase) == "" {
+		if !cfg.Disabled && a.repo != nil {
+			a.logger.Info("trait ingestion inactive (NFT_TRAITS_SOURCE_BASE unset); tokens serve fallback metadata")
+		}
+		close(done)
+		return done
+	}
+	ingester, err := traits.New(traits.Config{
+		Store:      a.repo,
+		SourceBase: cfg.SourceBase,
+		Interval:   cfg.Interval,
+		Logger:     a.logger.With("component", "traits"),
+	})
+	if err != nil {
+		// A malformed asset host must not stop the API from serving.
+		a.logger.Error("trait ingestion disabled", "error", err)
+		close(done)
+		return done
+	}
+	a.traitsIngester = ingester
+	go func() {
+		defer close(done)
+		ingester.Run(ctx)
 	}()
 	return done
 }

@@ -1,0 +1,103 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-28T04:36:15.401882-05:00",
+  "assets": [
+    {
+      "path": "images/source/master.png",
+      "kind": "image",
+      "role": "source_master",
+      "format": "png",
+      "width": 3456,
+      "height": 2234,
+      "pixel_format": "rgb48",
+      "bytes": 24118423,
+      "sha256": "bbfd1e3482eb9a81fa66b5f19e5e8cec422f8ad772efdc7bf59cdbbd6a7d40bb"
+    },
+    {
+      "path": "images/web/full.webp",
+      "kind": "image",
+      "role": "web_full",
+      "format": "webp",
+      "width": 3456,
+      "height": 2234,
+      "bytes": 1874302,
+      "sha256": "0168f59949adfe865fe6f4c8f0594d1d262b1fc66b33f4af08ac73048880e2dd"
+    },
+    {
+      "path": "images/web/preview.webp",
+      "kind": "image",
+      "role": "web_preview",
+      "format": "webp",
+      "width": 640,
+      "height": 414,
+      "bytes": 84213,
+      "sha256": "e24479f7be62245c0c9d706a6181362141c9ceba9fb0ace37e1ccb1467e69bcd"
+    },
+    {
+      "path": "videos/web/main.mp4",
+      "kind": "video",
+      "role": "main_web",
+      "format": "mp4",
+      "width": 3456,
+      "height": 2234,
+      "duration_seconds": 30.0,
+      "frame_rate": 60,
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "bytes": 41982155,
+      "sha256": "97691c5c5e616cab642b35c6af957e3e163f1a0bc6a40bd00094d9f01530906c"
+    },
+    {
+      "path": "videos/hq/main.mp4",
+      "kind": "video",
+      "role": "main_hq",
+      "format": "mp4",
+      "width": 3456,
+      "height": 2234,
+      "duration_seconds": 30.0,
+      "frame_rate": 60,
+      "codec": "hevc",
+      "pixel_format": "yuv422p10le",
+      "bytes": 128374912,
+      "sha256": "35be443efdf00a52bd0021696d77d86d2941873279e0d2fae6aa3b7ec774c1a0"
+    },
+    {
+      "path": "videos/web/spectral_sweep.mp4",
+      "kind": "video",
+      "role": "spectral_sweep_web",
+      "format": "mp4",
+      "width": 3456,
+      "height": 2234,
+      "duration_seconds": 21.333333333333332,
+      "frame_rate": 60,
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "bytes": 29844710,
+      "sha256": "cf12d3b6e326c20af02c77fb792d15446651e9c38308bcbdd1efbb5f76cee34d"
+    },
+    {
+      "path": "videos/hq/spectral_sweep.mp4",
+      "kind": "video",
+      "role": "spectral_sweep_hq",
+      "format": "mp4",
+      "width": 3456,
+      "height": 2234,
+      "duration_seconds": 21.333333333333332,
+      "frame_rate": 60,
+      "codec": "hevc",
+      "pixel_format": "yuv422p10le",
+      "bytes": 91203845,
+      "sha256": "26d40fd4daafa26cb8049e90972145379cd4a941d99bd1e96d1d128a4d36ca22"
+    },
+    {
+      "path": "spectral/",
+      "kind": "image_set",
+      "role": "spectral_bins",
+      "format": "png",
+      "width": 3456,
+      "height": 2234,
+      "pixel_format": "rgb48",
+      "file_count": 64
+    }
+  ]
+}

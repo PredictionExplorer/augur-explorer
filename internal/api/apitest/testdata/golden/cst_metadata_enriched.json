@@ -1,0 +1,193 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "animation_details": {
+      "bytes": 41982155,
+      "codec": "h264",
+      "duration_seconds": 30,
+      "format": "mp4",
+      "height": 2234,
+      "sha256": "97691c5c5e616cab642b35c6af957e3e163f1a0bc6a40bd00094d9f01530906c",
+      "width": 3456
+    },
+    "animation_url": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033.mp4",
+    "attributes": [
+      {
+        "trait_type": "Structure",
+        "value": "Orbit Ribbons"
+      },
+      {
+        "trait_type": "Underlay",
+        "value": "Harmonic Weave"
+      },
+      {
+        "trait_type": "Palette",
+        "value": "Aurora Split"
+      },
+      {
+        "trait_type": "Spectral Class",
+        "value": "A"
+      },
+      {
+        "trait_type": "Mass Balance",
+        "value": "Equal Trio"
+      },
+      {
+        "trait_type": "Fate",
+        "value": "Eternal Dance"
+      },
+      {
+        "display_type": "number",
+        "max_value": 100,
+        "trait_type": "Chaos",
+        "value": 30
+      },
+      {
+        "display_type": "number",
+        "trait_type": "Syzygies",
+        "value": 0
+      },
+      {
+        "display_type": "number",
+        "trait_type": "Round",
+        "value": 0
+      },
+      {
+        "display_type": "date",
+        "trait_type": "Imprinted",
+        "value": 1767226600
+      },
+      {
+        "trait_type": "Allocation",
+        "value": "Final Gesture"
+      }
+    ],
+    "background_color": "000000",
+    "description": "Three bodies trace orbit ribbons in Aurora Split tones over a harmonic weave underlay. Chaos 30/100 across 0 syzygies; spectral class A; fate: eternal dance. Imprinted in Round 0 on 01 Jan 2026. Same seed, same pixels — re-render it to verify.",
+    "external_url": "https://www.cosmicsignature.com/detail/1",
+    "image": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033.png",
+    "image_details": {
+      "bytes": 24118423,
+      "format": "png",
+      "height": 2234,
+      "sha256": "bbfd1e3482eb9a81fa66b5f19e5e8cec422f8ad772efdc7bf59cdbbd6a7d40bb",
+      "width": 3456
+    },
+    "metadata_version": "2.0.0",
+    "name": "Genesis",
+    "properties": {
+      "generation": {
+        "borda": {
+          "aesthetic_score": 0.9509497720127331,
+          "chaos_weight": 1.0,
+          "equil_weight": 10.296312428975746,
+          "retry_count": 0,
+          "selected_index": 180,
+          "selection_score": 1.025949772012733,
+          "total_candidates": 200,
+          "weights_randomized": true
+        },
+        "drift": {
+          "arc_fraction": 0.8249768504515819,
+          "enabled": true,
+          "mode": "elliptical",
+          "orbit_eccentricity": 0.40457605398750857,
+          "randomized": true,
+          "scale": 1.1646093650188862
+        },
+        "finishes": {
+          "diffraction_spikes": false,
+          "halation_strength": 0.13802540679357383,
+          "prism": false,
+          "prism_strength": 0.0,
+          "stardust": false,
+          "stardust_count": 0
+        },
+        "palette": {
+          "anchor_deg": 113.48152026563679,
+          "body_base_hues_deg": [
+            37.33101314275227,
+            165.76628047243778,
+            192.90777170929738
+          ],
+          "dispersion_deg": 154.31325451486185,
+          "dominant_body": 2,
+          "dominant_wavelength_nm": 492.0,
+          "family": "Aurora Split",
+          "fingerprint": "h113.5_d154.3_s+0.91_c0.60x0.60_l0.59w0.21_f2.33a15.2",
+          "gate": "gate1",
+          "spectral_class": "A"
+        },
+        "projection": "position",
+        "resolution": {
+          "height": 2234,
+          "width": 3456
+        },
+        "structure": {
+          "preferred_stack_label": "triangle_web+orbit_ribbons@0.19",
+          "primary": "Orbit Ribbons",
+          "stack_label": "orbit_ribbons+harmonic_weave@0.29",
+          "underlay": {
+            "alpha": 0.29,
+            "vocabulary": "Harmonic Weave"
+          }
+        },
+        "symmetry": "none",
+        "visual_profile": "cosmic_signature",
+        "wildcard": false
+      },
+      "media": {
+        "asset_manifest": "https://assets.example.com/asset-manifests/0x0000000000000000000000000000000000000000000000000000000000100033.json",
+        "generation_records": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/metadata/",
+        "hq_video": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/videos/hq/main.mp4",
+        "preview_image": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/images/web/preview.webp",
+        "source_image": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/images/source/master.png",
+        "spectral_bins": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/spectral/",
+        "spectral_sweep": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/videos/web/spectral_sweep.mp4",
+        "spectral_sweep_hq": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/videos/hq/spectral_sweep.mp4",
+        "trait_source": "https://assets.example.com/traits/0x0000000000000000000000000000000000000000000000000000000000100033.json",
+        "web_image": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/images/web/full.webp"
+      },
+      "round_num": 0,
+      "seed": "0x0000000000000000000000000000000000000000000000000000000000100033",
+      "simulation": {
+        "angular_momentum": 134402.12665994745,
+        "braid": {
+          "crossings": 0,
+          "truncated": false,
+          "word": ""
+        },
+        "chaos_cv": 127.1603797652895,
+        "chaos_index": 30,
+        "chaos_raw": 44824.63929226692,
+        "closest_approach": {
+          "distance": 315.73804627910806,
+          "pair": [
+            1,
+            2
+          ],
+          "step": 19999
+        },
+        "dt": 0.001,
+        "equilateralness": 0.8193808093466316,
+        "escape_threshold": -0.3,
+        "fate": {
+          "horizon_steps": 160000,
+          "outcome": "eternal_dance"
+        },
+        "integrator": "yoshida4",
+        "masses": [
+          274.3025574565995,
+          243.3782017480819,
+          242.6419293965155
+        ],
+        "steps": 20000,
+        "syzygy_count": 0,
+        "total_energy": -4682.9340130252085,
+        "warmup_steps": 20000
+      },
+      "token_id": 1
+    }
+  }
+}

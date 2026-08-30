@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0.0",
+  "seed": "0x100033",
+  "pipeline_version": "1.0.0",
+  "generated_at": "2026-08-28T04:36:15.358711-05:00",
+  "attributes": [
+    {
+      "trait_type": "Structure",
+      "value": "Orbit Ribbons"
+    },
+    {
+      "trait_type": "Underlay",
+      "value": "Harmonic Weave"
+    },
+    {
+      "trait_type": "Palette",
+      "value": "Aurora Split"
+    },
+    {
+      "trait_type": "Spectral Class",
+      "value": "A"
+    },
+    {
+      "trait_type": "Mass Balance",
+      "value": "Equal Trio"
+    },
+    {
+      "trait_type": "Fate",
+      "value": "Eternal Dance"
+    },
+    {
+      "trait_type": "Chaos",
+      "display_type": "number",
+      "value": 30,
+      "max_value": 100
+    },
+    {
+      "trait_type": "Syzygies",
+      "display_type": "number",
+      "value": 0
+    }
+  ],
+  "description_art": "Three bodies trace orbit ribbons in Aurora Split tones over a harmonic weave underlay. Chaos 30/100 across 0 syzygies; spectral class A; fate: eternal dance.",
+  "simulation": {
+    "masses": [
+      274.3025574565995,
+      243.3782017480819,
+      242.6419293965155
+    ],
+    "total_energy": -4682.9340130252085,
+    "angular_momentum": 134402.12665994745,
+    "chaos_raw": 44824.63929226692,
+    "chaos_cv": 127.1603797652895,
+    "chaos_index": 30,
+    "equilateralness": 0.8193808093466316,
+    "closest_approach": {
+      "distance": 315.73804627910806,
+      "pair": [
+        1,
+        2
+      ],
+      "step": 19999
+    },
+    "syzygy_count": 0,
+    "braid": {
+      "word": "",
+      "crossings": 0,
+      "truncated": false
+    },
+    "fate": {
+      "outcome": "eternal_dance",
+      "horizon_steps": 160000
+    },
+    "integrator": "yoshida4",
+    "dt": 0.001,
+    "steps": 20000,
+    "warmup_steps": 20000,
+    "escape_threshold": -0.3
+  },
+  "generation": {
+    "visual_profile": "cosmic_signature",
+    "structure": {
+      "primary": "Orbit Ribbons",
+      "underlay": {
+        "vocabulary": "Harmonic Weave",
+        "alpha": 0.29
+      },
+      "stack_label": "orbit_ribbons+harmonic_weave@0.29",
+      "preferred_stack_label": "triangle_web+orbit_ribbons@0.19"
+    },
+    "projection": "position",
+    "symmetry": "none",
+    "wildcard": false,
+    "finishes": {
+      "prism": false,
+      "prism_strength": 0.0,
+      "diffraction_spikes": false,
+      "stardust": false,
+      "stardust_count": 0,
+      "halation_strength": 0.13802540679357383
+    },
+    "palette": {
+      "fingerprint": "h113.5_d154.3_s+0.91_c0.60x0.60_l0.59w0.21_f2.33a15.2",
+      "gate": "gate1",
+      "family": "Aurora Split",
+      "anchor_deg": 113.48152026563679,
+      "dispersion_deg": 154.31325451486185,
+      "body_base_hues_deg": [
+        37.33101314275227,
+        165.76628047243778,
+        192.90777170929738
+      ],
+      "dominant_body": 2,
+      "spectral_class": "A",
+      "dominant_wavelength_nm": 492.0
+    },
+    "borda": {
+      "chaos_weight": 1.0,
+      "equil_weight": 10.296312428975746,
+      "weights_randomized": true,
+      "selected_index": 180,
+      "total_candidates": 200,
+      "retry_count": 0,
+      "aesthetic_score": 0.9509497720127331,
+      "selection_score": 1.025949772012733
+    },
+    "drift": {
+      "enabled": true,
+      "mode": "elliptical",
+      "scale": 1.1646093650188862,
+      "arc_fraction": 0.8249768504515819,
+      "orbit_eccentricity": 0.40457605398750857,
+      "randomized": true
+    },
+    "resolution": {
+      "width": 3456,
+      "height": 2234
+    }
+  }
+}

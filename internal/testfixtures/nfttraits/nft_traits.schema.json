@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmicsignature.com/schemas/nft_traits.schema.json",
+  "title": "Cosmic Signature nft_traits.json",
+  "description": "Per-seed NFT trait file emitted by the three_body_problem generator at metadata/nft_traits.json. Every value is a deterministic function of the on-chain seed. Consumers MUST check the major component of schema_version before trusting the layout, and MUST NOT recompute or rename art facts.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "seed",
+    "pipeline_version",
+    "generated_at",
+    "attributes",
+    "description_art",
+    "simulation",
+    "generation"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of this file's layout. Major bump = breaking change.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "seed": {
+      "type": "string",
+      "description": "Canonical 0x-prefixed lowercase hex seed.",
+      "pattern": "^0x[0-9a-f]+$"
+    },
+    "pipeline_version": {
+      "type": "string",
+      "description": "Generator crate version that produced the file."
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "RFC 3339 generation timestamp. Informational only: NOT deterministic and excluded from reproducibility comparisons."
+    },
+    "attributes": {
+      "type": "array",
+      "description": "Ready-to-serve marketplace attributes (OpenSea conventions). The metadata server concatenates these with chain-derived attributes (Round, Imprinted, Allocation); it must never alter values.",
+      "items": {
+        "type": "object",
+        "required": ["trait_type", "value"],
+        "properties": {
+          "trait_type": { "type": "string" },
+          "display_type": { "type": "string", "enum": ["number", "date"] },
+          "value": { "type": ["string", "number"] },
+          "max_value": { "type": "integer" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "description_art": {
+      "type": "string",
+      "description": "Art-derived description sentence(s). The metadata server appends a provenance sentence (round, imprint date) from chain data."
+    },
+    "simulation": {
+      "type": "object",
+      "description": "Raw physics measurements of the winning orbit.",
+      "required": [
+        "masses",
+        "total_energy",
+        "angular_momentum",
+        "chaos_raw",
+        "chaos_cv",
+        "chaos_index",
+        "equilateralness",
+        "syzygy_count",
+        "braid",
+        "fate",
+        "integrator",
+        "dt",
+        "steps",
+        "warmup_steps",
+        "escape_threshold"
+      ],
+      "properties": {
+        "masses": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "total_energy": { "type": "number" },
+        "angular_momentum": { "type": "number" },
+        "chaos_raw": {
+          "type": "number",
+          "description": "Production non-chaoticness score (higher = more regular)."
+        },
+        "chaos_cv": {
+          "type": "number",
+          "description": "Scale-invariant chaos coefficient of variation."
+        },
+        "chaos_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Frozen transform of chaos_cv; published as the Chaos attribute."
+        },
+        "equilateralness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "closest_approach": {
+          "type": "object",
+          "required": ["distance", "pair", "step"],
+          "properties": {
+            "distance": { "type": "number" },
+            "pair": {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 0, "maximum": 2 },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "step": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "syzygy_count": { "type": "integer", "minimum": 0 },
+        "braid": {
+          "type": "object",
+          "required": ["word", "crossings", "truncated"],
+          "properties": {
+            "word": {
+              "type": "string",
+              "description": "Artin word, e.g. \"s1 s2' s1\" (apostrophe marks the inverse). Truncated to 48 generators."
+            },
+            "crossings": { "type": "integer", "minimum": 0 },
+            "truncated": { "type": "boolean" }
+          }
+        },
+        "fate": {
+          "type": "object",
+          "required": ["outcome", "horizon_steps"],
+          "properties": {
+            "outcome": { "type": "string", "enum": ["eternal_dance", "ejection"] },
+            "escaper": { "type": "integer", "minimum": 0, "maximum": 2 },
+            "ejection_step": { "type": "integer", "minimum": 0 },
+            "horizon_steps": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "integrator": { "type": "string" },
+        "dt": { "type": "number" },
+        "steps": { "type": "integer", "minimum": 1 },
+        "warmup_steps": { "type": "integer", "minimum": 0 },
+        "escape_threshold": { "type": "number" }
+      }
+    },
+    "generation": {
+      "type": "object",
+      "description": "Seed-resolved generation context (the reproducibility certificate).",
+      "required": [
+        "visual_profile",
+        "structure",
+        "projection",
+        "symmetry",
+        "wildcard",
+        "finishes",
+        "palette",
+        "borda",
+        "drift",
+        "resolution"
+      ],
+      "properties": {
+        "visual_profile": { "type": "string" },
+        "structure": {
+          "type": "object",
+          "required": ["primary", "stack_label", "preferred_stack_label"],
+          "properties": {
+            "primary": { "type": "string" },
+            "underlay": { "$ref": "#/$defs/layer" },
+            "accent": { "$ref": "#/$defs/layer" },
+            "stack_label": { "type": "string" },
+            "preferred_stack_label": { "type": "string" }
+          }
+        },
+        "projection": {
+          "type": "string",
+          "enum": ["position", "phase_portrait", "cross_braid", "hodograph"]
+        },
+        "symmetry": {
+          "type": "string",
+          "description": "\"none\", \"mirror_x\", \"rot{k}\", or \"dih{k}\"."
+        },
+        "wildcard": { "type": "boolean" },
+        "finishes": {
+          "type": "object",
+          "required": [
+            "prism",
+            "prism_strength",
+            "diffraction_spikes",
+            "stardust",
+            "stardust_count",
+            "halation_strength"
+          ],
+          "properties": {
+            "prism": { "type": "boolean" },
+            "prism_strength": { "type": "number" },
+            "diffraction_spikes": { "type": "boolean" },
+            "spike_arms": { "type": "integer" },
+            "stardust": { "type": "boolean" },
+            "stardust_count": { "type": "integer" },
+            "halation_strength": { "type": "number" }
+          }
+        },
+        "palette": {
+          "type": "object",
+          "required": [
+            "fingerprint",
+            "gate",
+            "family",
+            "anchor_deg",
+            "dispersion_deg",
+            "body_base_hues_deg",
+            "dominant_body",
+            "spectral_class",
+            "dominant_wavelength_nm"
+          ],
+          "properties": {
+            "fingerprint": { "type": "string" },
+            "gate": { "type": "string" },
+            "family": { "type": "string" },
+            "anchor_deg": { "type": "number" },
+            "dispersion_deg": { "type": "number" },
+            "body_base_hues_deg": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "dominant_body": { "type": "integer", "minimum": 0, "maximum": 2 },
+            "spectral_class": {
+              "type": "string",
+              "enum": ["O", "B", "A", "F", "G", "K", "M"]
+            },
+            "dominant_wavelength_nm": { "type": "number" }
+          }
+        },
+        "borda": {
+          "type": "object",
+          "required": [
+            "chaos_weight",
+            "equil_weight",
+            "weights_randomized",
+            "selected_index",
+            "total_candidates",
+            "retry_count",
+            "aesthetic_score",
+            "selection_score"
+          ],
+          "properties": {
+            "chaos_weight": { "type": "number" },
+            "equil_weight": { "type": "number" },
+            "weights_randomized": { "type": "boolean" },
+            "selected_index": { "type": "integer" },
+            "total_candidates": { "type": "integer" },
+            "retry_count": { "type": "integer" },
+            "aesthetic_score": { "type": "number" },
+            "selection_score": { "type": "number" }
+          }
+        },
+        "drift": {
+          "type": "object",
+          "required": [
+            "enabled",
+            "mode",
+            "scale",
+            "arc_fraction",
+            "orbit_eccentricity",
+            "randomized"
+          ],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "mode": { "type": "string" },
+            "scale": { "type": "number" },
+            "arc_fraction": { "type": "number" },
+            "orbit_eccentricity": { "type": "number" },
+            "randomized": { "type": "boolean" }
+          }
+        },
+        "resolution": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "layer": {
+      "type": "object",
+      "required": ["vocabulary", "alpha"],
+      "properties": {
+        "vocabulary": { "type": "string" },
+        "alpha": { "type": "number" }
+      }
+    }
+  }
+}

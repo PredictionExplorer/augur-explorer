@@ -114,6 +114,7 @@ func buildModules(
 			Logger:           deps.logger,
 			AdminAPIKey:      cfg.AdminAPIKey,
 			AssetsPublicBase: cfg.NFTAssetsPublicBase,
+			TraitsSourceBase: cfg.TraitsSourceBase(),
 		})
 		if err != nil {
 			// Startup cannot proceed without the CosmicGame contract registry.
@@ -201,11 +202,15 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	var (
 		deps              *serverDeps
 		backgroundRefresh <-chan struct{}
+		traitIngest       <-chan struct{}
 	)
 	defer func() {
 		cancelRun()
 		if backgroundRefresh != nil {
 			<-backgroundRefresh
+		}
+		if traitIngest != nil {
+			<-traitIngest
 		}
 		if deps != nil {
 			deps.store.Close()
@@ -232,6 +237,13 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	}
 	if cgAPI != nil {
 		backgroundRefresh = cgAPI.StartBackgroundRefresh(ctx)
+		// Started before the listeners bind: it publishes the on-demand
+		// nudge hook the metadata handler uses on a trait cache miss.
+		traitIngest = cgAPI.StartTraitIngestion(ctx, cosmicgame.TraitIngestConfig{
+			SourceBase: cfg.TraitsSourceBase(),
+			Interval:   cfg.NFTTraitsIngestInterval,
+			Disabled:   cfg.NFTTraitsIngestDisabled,
+		})
 	}
 
 	// The shared constructor (internal/api/routes) builds the middleware

@@ -183,6 +183,32 @@ func TestFAQUpstreamPrecedence(t *testing.T) {
 	}
 }
 
+func TestTraitsSourceBase(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		explicit   string
+		assetsBase string
+		want       string
+	}{
+		{"explicit wins", "https://traits.example.com", "https://assets.example.com/images", "https://traits.example.com"},
+		{"explicit is trimmed", "  https://traits.example.com//  ", "", "https://traits.example.com"},
+		{"derived from the assets base", "", "https://nfts.cosmicsignature.com/images", "https://nfts.cosmicsignature.com"},
+		{"derived from a bare assets host", "", "https://nfts.cosmicsignature.com", "https://nfts.cosmicsignature.com"},
+		{"derived value is trimmed", "", "https://nfts.cosmicsignature.com/images/", "https://nfts.cosmicsignature.com"},
+		{"unset everywhere", "", "", ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			cfg := &APIServer{NFTTraitsSourceBase: tc.explicit, NFTAssetsPublicBase: tc.assetsBase}
+			if got := cfg.TraitsSourceBase(); got != tc.want {
+				t.Errorf("TraitsSourceBase() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestLoadETL(t *testing.T) {
 	t.Parallel()
 	if _, err := LoadETL(mapEnv(nil)); err == nil || !strings.Contains(err.Error(), "RPC_URL: required") {
