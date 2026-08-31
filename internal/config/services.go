@@ -90,9 +90,10 @@ type APIServer struct {
 	ImageNoCache        bool   `env:"WEBSRV_IMAGE_NO_CACHE"`
 	LogImageRequests    bool   `env:"WEBSRV_LOG_IMAGE_REQUESTS"`
 
-	// Cosmic Signature art traits. NFTTraitsSourceBase is the asset host
-	// root that publishes /traits/{seed}.json and
-	// /asset-manifests/{seed}.json — the host root, not the /images mount.
+	// Cosmic Signature art traits. NFTTraitsSourceBase is the collection
+	// package root that publishes {seed}/metadata/nft_traits.json and
+	// {seed}/metadata/assets.json, e.g.
+	// https://nfts.cosmicsignature.com/images/new/cosmicsignature.
 	// Unset leaves every token on the fallback metadata, which is the
 	// behaviour before the generator published any package.
 	NFTTraitsSourceBase     string        `env:"NFT_TRAITS_SOURCE_BASE"`
@@ -169,14 +170,15 @@ func (c *APIServer) FAQUpstream() string {
 	return c.FAQUpstreamURLLegacy
 }
 
-// TraitsSourceBase resolves the asset host root that publishes the Cosmic
-// Signature art trait contract files, without a trailing slash.
+// TraitsSourceBase resolves the collection package root that publishes the
+// Cosmic Signature art trait contract files, without a trailing slash.
 //
 // NFT_TRAITS_SOURCE_BASE wins. Otherwise it is derived from
-// NFT_ASSETS_PUBLIC_BASE by dropping the "/images" mount, because the two
-// live on the same host: images at /images/new/cosmicsignature/... and the
-// contract files at /traits/... and /asset-manifests/... . Deployments that
-// split them across hosts set the variable explicitly.
+// NFT_ASSETS_PUBLIC_BASE by appending the collection path, because the trait
+// contract and asset manifest live inside each seed's package directory
+// under /new/cosmicsignature/ alongside every other hosted asset.
+// Deployments that publish the packages elsewhere set the variable
+// explicitly.
 func (c *APIServer) TraitsSourceBase() string {
 	if base := strings.TrimRight(strings.TrimSpace(c.NFTTraitsSourceBase), "/"); base != "" {
 		return base
@@ -185,7 +187,7 @@ func (c *APIServer) TraitsSourceBase() string {
 	if assets == "" {
 		return ""
 	}
-	return strings.TrimSuffix(assets, "/images")
+	return assets + "/new/cosmicsignature"
 }
 
 // LoadAPIServer loads and validates the API server configuration.

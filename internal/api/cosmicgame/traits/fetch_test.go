@@ -47,15 +47,58 @@ func TestNewFetcherValidatesBase(t *testing.T) {
 
 func TestFetcherURLs(t *testing.T) {
 	t.Parallel()
-	f, err := newFetcher(http.DefaultClient, "https://nfts.cosmicsignature.com/")
+	f, err := newFetcher(http.DefaultClient, "https://nfts.cosmicsignature.com/images/new/cosmicsignature/")
 	if err != nil {
 		t.Fatalf("newFetcher: %v", err)
 	}
-	if got, want := f.traitsURL("0x100033"), "https://nfts.cosmicsignature.com/traits/0x100033.json"; got != want {
+	const pkg = "https://nfts.cosmicsignature.com/images/new/cosmicsignature/0x100033"
+	if got, want := f.traitsURL("0x100033"), pkg+"/metadata/nft_traits.json"; got != want {
 		t.Errorf("traitsURL = %q, want %q", got, want)
 	}
-	if got, want := f.manifestURL("0x100033"), "https://nfts.cosmicsignature.com/asset-manifests/0x100033.json"; got != want {
+	if got, want := f.manifestURL("0x100033"), pkg+"/metadata/assets.json"; got != want {
 		t.Errorf("manifestURL = %q, want %q", got, want)
+	}
+}
+
+// TestFetcherURLsMatchThePublishedPackageLayout pins the two suffixes the
+// generator actually publishes. It exists because a wrong path is invisible
+// at runtime: the asset host answers 404, the ingester classifies that as
+// fetchMissing ("the package isn't uploaded yet"), and every seed backs off
+// quietly forever instead of reporting an error. A layout mismatch has to
+// fail here, in CI, rather than as a permanently empty traits table.
+func TestFetcherURLsMatchThePublishedPackageLayout(t *testing.T) {
+	t.Parallel()
+	bases := []string{
+		"https://nfts.cosmicsignature.com/images/new/cosmicsignature",
+		"http://127.0.0.1:8080",
+	}
+	seeds := []string{
+		"0x100033",
+		"0x0000000000000000000000000000000000000000000000000000000000100033",
+		"0x0031ab00000000000000000000000000000000000000000000000000000000ff",
+	}
+	for _, base := range bases {
+		f, err := newFetcher(http.DefaultClient, base)
+		if err != nil {
+			t.Fatalf("newFetcher(%q): %v", base, err)
+		}
+		for _, seed := range seeds {
+			traits := f.traitsURL(seed)
+			manifest := f.manifestURL(seed)
+			if want := "/" + seed + "/metadata/nft_traits.json"; !strings.HasSuffix(traits, want) {
+				t.Errorf("traitsURL(%q) = %q, want the suffix %q", seed, traits, want)
+			}
+			if want := "/" + seed + "/metadata/assets.json"; !strings.HasSuffix(manifest, want) {
+				t.Errorf("manifestURL(%q) = %q, want the suffix %q", seed, manifest, want)
+			}
+			// The retired scheme published these at dedicated top-level
+			// routes; both 404 in production.
+			for _, dead := range []string{"/traits/", "/asset-manifests/"} {
+				if strings.Contains(traits, dead) || strings.Contains(manifest, dead) {
+					t.Errorf("the retired %q route reappeared in %q / %q", dead, traits, manifest)
+				}
+			}
+		}
 	}
 }
 

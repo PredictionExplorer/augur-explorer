@@ -193,9 +193,9 @@ func TestTraitsSourceBase(t *testing.T) {
 	}{
 		{"explicit wins", "https://traits.example.com", "https://assets.example.com/images", "https://traits.example.com"},
 		{"explicit is trimmed", "  https://traits.example.com//  ", "", "https://traits.example.com"},
-		{"derived from the assets base", "", "https://nfts.cosmicsignature.com/images", "https://nfts.cosmicsignature.com"},
-		{"derived from a bare assets host", "", "https://nfts.cosmicsignature.com", "https://nfts.cosmicsignature.com"},
-		{"derived value is trimmed", "", "https://nfts.cosmicsignature.com/images/", "https://nfts.cosmicsignature.com"},
+		{"derived from the assets base", "", "https://nfts.cosmicsignature.com/images", "https://nfts.cosmicsignature.com/images/new/cosmicsignature"},
+		{"derived from a bare assets host", "", "https://nfts.cosmicsignature.com", "https://nfts.cosmicsignature.com/new/cosmicsignature"},
+		{"derived value is trimmed", "", "https://nfts.cosmicsignature.com/images/", "https://nfts.cosmicsignature.com/images/new/cosmicsignature"},
 		{"unset everywhere", "", "", ""},
 	}
 	for _, tc := range tests {

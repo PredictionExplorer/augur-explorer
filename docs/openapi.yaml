@@ -1539,9 +1539,9 @@ components:
               type: object
               description: >-
                 Every hosted asset of the package, including the ones image
-                and animation_url cannot reach. Enriched responses only;
-                asset_manifest and trait_source appear only when an asset host
-                is configured.
+                and animation_url cannot reach. Enriched responses only. Every
+                link, asset_manifest and trait_source included, resolves from
+                the same package directory.
               properties:
                 hq_video: { type: string, format: uri }
                 spectral_sweep: { type: string, format: uri }

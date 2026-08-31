@@ -62,8 +62,8 @@ type Store interface {
 type Config struct {
 	// Store persists ingested packages and the fetch schedule.
 	Store Store
-	// SourceBase is the asset host root that publishes /traits/{seed}.json
-	// and /asset-manifests/{seed}.json.
+	// SourceBase is the collection package root that publishes
+	// {seed}/metadata/nft_traits.json and {seed}/metadata/assets.json.
 	SourceBase string
 	// Interval is the scan period; zero selects two minutes.
 	Interval time.Duration

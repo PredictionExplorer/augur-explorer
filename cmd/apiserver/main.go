@@ -114,7 +114,6 @@ func buildModules(
 			Logger:           deps.logger,
 			AdminAPIKey:      cfg.AdminAPIKey,
 			AssetsPublicBase: cfg.NFTAssetsPublicBase,
-			TraitsSourceBase: cfg.TraitsSourceBase(),
 		})
 		if err != nil {
 			// Startup cannot proceed without the CosmicGame contract registry.

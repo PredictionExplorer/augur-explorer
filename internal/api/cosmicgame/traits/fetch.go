@@ -47,9 +47,10 @@ type fetcher struct {
 }
 
 // newFetcher validates the asset host base URL and returns a fetcher for it.
-// The base is the host root (for example https://nfts.cosmicsignature.com),
-// not the /images mount: the trait contract files are published at /traits
-// and /asset-manifests alongside it.
+// The base is the collection package root (for example
+// https://nfts.cosmicsignature.com/images/new/cosmicsignature): the generator
+// publishes the trait contract and the asset manifest inside each seed's own
+// package directory, not at dedicated top-level routes.
 func newFetcher(client *http.Client, base string) (*fetcher, error) {
 	trimmed := strings.TrimRight(strings.TrimSpace(base), "/")
 	if trimmed == "" {
@@ -70,12 +71,12 @@ func newFetcher(client *http.Client, base string) (*fetcher, error) {
 
 // traitsURL is the published location of one seed's trait contract.
 func (f *fetcher) traitsURL(seed string) string {
-	return f.base + "/traits/" + seed + ".json"
+	return f.base + "/" + seed + "/metadata/nft_traits.json"
 }
 
 // manifestURL is the published location of one seed's asset manifest.
 func (f *fetcher) manifestURL(seed string) string {
-	return f.base + "/asset-manifests/" + seed + ".json"
+	return f.base + "/" + seed + "/metadata/assets.json"
 }
 
 // get performs a conditional GET, returning the classified outcome. A

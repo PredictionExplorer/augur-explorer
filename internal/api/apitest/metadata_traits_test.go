@@ -143,10 +143,10 @@ func TestTraitIngestEndToEnd(t *testing.T) {
 
 	assetHost := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/traits/" + enrichedSeed + ".json":
+		case "/" + enrichedSeed + "/metadata/nft_traits.json":
 			w.Header().Set("ETag", `"trait-v1"`)
 			_, _ = w.Write(testfixtures.NftTraitsExample)
-		case "/asset-manifests/" + enrichedSeed + ".json":
+		case "/" + enrichedSeed + "/metadata/assets.json":
 			w.Header().Set("ETag", `"manifest-v1"`)
 			_, _ = w.Write(testfixtures.AssetManifestExample)
 		default:
@@ -159,11 +159,10 @@ func TestTraitIngestEndToEnd(t *testing.T) {
 	// running loop and the nudge hook it publishes cannot leak into the
 	// shared harness that every other test snapshots.
 	cgAPI, err := cosmicgame.New(ctx, cosmicgame.Config{
-		Store:            h.store,
-		EthClient:        h.ethClient,
-		RPCClient:        h.rpcClient,
-		AdminAPIKey:      adminKey,
-		TraitsSourceBase: assetHost.URL,
+		Store:       h.store,
+		EthClient:   h.ethClient,
+		RPCClient:   h.rpcClient,
+		AdminAPIKey: adminKey,
 	})
 	if err != nil {
 		t.Fatalf("building the module: %v", err)
@@ -431,7 +430,14 @@ func TestMetadataHostDispatchServesEnriched(t *testing.T) {
 	if doc.Properties.Seed != enrichedSeed {
 		t.Errorf("properties.seed = %q, want %q", doc.Properties.Seed, enrichedSeed)
 	}
-	wantTraitSource := traitsSourceBase + "/traits/" + enrichedSeed + ".json"
+	// The contract links resolve from the request-derived package root, so
+	// they are pinned against the sibling metadata/ link rather than a
+	// separately configured host.
+	records, _ := doc.Properties.Media["generation_records"].(string)
+	if records == "" {
+		t.Fatal("media.generation_records is missing")
+	}
+	wantTraitSource := records + "nft_traits.json"
 	if got := doc.Properties.Media["trait_source"]; got != wantTraitSource {
 		t.Errorf("media.trait_source = %v, want %q", got, wantTraitSource)
 	}

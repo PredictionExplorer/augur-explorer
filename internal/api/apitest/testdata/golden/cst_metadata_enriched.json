@@ -138,7 +138,7 @@
         "wildcard": false
       },
       "media": {
-        "asset_manifest": "https://assets.example.com/asset-manifests/0x0000000000000000000000000000000000000000000000000000000000100033.json",
+        "asset_manifest": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/metadata/assets.json",
         "generation_records": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/metadata/",
         "hq_video": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/videos/hq/main.mp4",
         "preview_image": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/images/web/preview.webp",
@@ -146,7 +146,7 @@
         "spectral_bins": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/spectral/",
         "spectral_sweep": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/videos/web/spectral_sweep.mp4",
         "spectral_sweep_hq": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/videos/hq/spectral_sweep.mp4",
-        "trait_source": "https://assets.example.com/traits/0x0000000000000000000000000000000000000000000000000000000000100033.json",
+        "trait_source": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/metadata/nft_traits.json",
         "web_image": "http://example.com/images/new/cosmicsignature/0x0000000000000000000000000000000000000000000000000000000000100033/images/web/full.webp"
       },
       "round_num": 0,

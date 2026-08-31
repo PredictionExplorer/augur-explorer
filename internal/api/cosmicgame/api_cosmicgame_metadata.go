@@ -75,7 +75,6 @@ func (a *API) handleCstMetadata(c *httpx.Context) {
 		MintTimestamp: tokenInfo.Tx.TimeStamp,
 		Seed:          metadataSeed(strings.TrimSpace(tokenInfo.Seed)),
 		AssetBase:     base,
-		SourceBase:    a.traitsSourceBase,
 		Allocation:    a.tokenAllocation(ctx, tokenID),
 	}
 	in.Traits = a.tokenTraits(ctx, in.Seed)

@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	testAssetBase  = "https://nfts.cosmicsignature.com/images"
-	testSourceBase = "https://nfts.cosmicsignature.com"
+	testAssetBase = "https://nfts.cosmicsignature.com/images"
 	// testSeed is the 64-hex-character form the indexer stores for the seed
 	// the vendored generator fixture describes.
 	testSeed = "0x0000000000000000000000000000000000000000000000000000000000100033"
@@ -69,7 +68,6 @@ func enrichedInput(tb testing.TB) tokenMetadataInput {
 		MintTimestamp: mintedAt,
 		Seed:          testSeed,
 		AssetBase:     testAssetBase,
-		SourceBase:    testSourceBase,
 		Allocation:    "Final Gesture",
 		Traits:        exampleTraits(tb, true),
 	}
@@ -355,7 +353,7 @@ func TestBuildPropertiesEnriched(t *testing.T) {
 
 func TestBuildPropertiesFallbackIsMinimal(t *testing.T) {
 	t.Parallel()
-	in := tokenMetadataInput{TokenID: 1, RoundNum: 0, Seed: testSeed, AssetBase: testAssetBase, SourceBase: testSourceBase}
+	in := tokenMetadataInput{TokenID: 1, RoundNum: 0, Seed: testSeed, AssetBase: testAssetBase}
 	properties, ok := marshalMetadata(t, in)["properties"].(map[string]any)
 	if !ok {
 		t.Fatal("properties is not an object")
@@ -391,8 +389,8 @@ func TestBuildMediaAdvertisesEveryHostedAsset(t *testing.T) {
 		"source_image":       pkg + "/images/source/master.png",
 		"preview_image":      pkg + "/images/web/preview.webp",
 		"generation_records": pkg + "/metadata/",
-		"asset_manifest":     testSourceBase + "/asset-manifests/" + testSeed + ".json",
-		"trait_source":       testSourceBase + "/traits/" + testSeed + ".json",
+		"asset_manifest":     pkg + "/metadata/assets.json",
+		"trait_source":       pkg + "/metadata/nft_traits.json",
 	}
 	for key, expected := range want {
 		if got := media[key]; got != expected {
@@ -404,22 +402,30 @@ func TestBuildMediaAdvertisesEveryHostedAsset(t *testing.T) {
 	}
 }
 
-// TestBuildMediaOmitsContractLinksWithoutAnAssetHost keeps the document
-// honest: those two paths only exist where the asset host publishes them.
-func TestBuildMediaOmitsContractLinksWithoutAnAssetHost(t *testing.T) {
+// TestBuildMediaContractLinksResolveFromThePackageRoot pins the served
+// contract links to the same package directory the ingester reads, so the
+// two cannot drift apart. They were once composed from a separately
+// configured asset host at /traits/{seed}.json and
+// /asset-manifests/{seed}.json; neither route ever existed.
+func TestBuildMediaContractLinksResolveFromThePackageRoot(t *testing.T) {
 	t.Parallel()
-	in := enrichedInput(t)
-	in.SourceBase = ""
-	properties, _ := marshalMetadata(t, in)["properties"].(map[string]any)
+	properties, _ := marshalMetadata(t, enrichedInput(t))["properties"].(map[string]any)
 	media, _ := properties["media"].(map[string]any)
 
-	for _, key := range []string{"asset_manifest", "trait_source"} {
-		if _, ok := media[key]; ok {
-			t.Errorf("media.%s was emitted without a configured asset host", key)
-		}
+	// generation_records is the package's metadata/ directory, so both
+	// contract files must sit directly beneath it.
+	records, ok := media["generation_records"].(string)
+	if !ok {
+		t.Fatal("media.generation_records is not a string")
 	}
-	if _, ok := media["hq_video"]; !ok {
-		t.Error("the package-relative media links were dropped too")
+	for key, file := range map[string]string{
+		"asset_manifest": "assets.json",
+		"trait_source":   "nft_traits.json",
+	} {
+		want := records + file
+		if got := media[key]; got != want {
+			t.Errorf("media.%s = %v, want %q", key, got, want)
+		}
 	}
 }
 

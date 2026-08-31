@@ -189,12 +189,12 @@ func (h *assetHost) serve(tb testing.TB) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var table map[string]string
 		switch {
-		case strings.HasPrefix(r.URL.Path, "/traits/"):
+		case strings.HasSuffix(r.URL.Path, "/metadata/nft_traits.json"):
 			h.mu.Lock()
 			h.traitsHits++
 			h.mu.Unlock()
 			table = h.traits
-		case strings.HasPrefix(r.URL.Path, "/asset-manifests/"):
+		case strings.HasSuffix(r.URL.Path, "/metadata/assets.json"):
 			h.mu.Lock()
 			h.manifestHits++
 			h.mu.Unlock()
@@ -203,7 +203,9 @@ func (h *assetHost) serve(tb testing.TB) *httptest.Server {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		name := strings.TrimSuffix(r.URL.Path[strings.LastIndexByte(r.URL.Path, '/')+1:], ".json")
+		// Both files live inside the seed's package directory, so the
+		// seed is the leading path segment: /{seed}/metadata/{file}.json.
+		name, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/"), "/")
 		body, ok := table[name]
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
@@ -663,7 +665,7 @@ func (b *brokenBookkeepingStore) RecordTraitDrift(context.Context, string, strin
 func TestIngestReportsManifestTransportFailure(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/asset-manifests/") {
+		if strings.HasSuffix(r.URL.Path, "/metadata/assets.json") {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

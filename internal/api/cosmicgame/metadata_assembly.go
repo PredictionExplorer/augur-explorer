@@ -40,9 +40,6 @@ type tokenMetadataInput struct {
 	Seed string
 	// AssetBase is the public /images prefix, without a trailing slash.
 	AssetBase string
-	// SourceBase is the asset host root that publishes the trait contract
-	// files, empty when trait ingestion is not configured.
-	SourceBase string
 	// Allocation is the display name of the prize path that minted the
 	// token, empty when provenance could not be resolved.
 	Allocation string
@@ -187,9 +184,9 @@ func buildProperties(in tokenMetadataInput) httpx.H {
 // fields cannot reach: the HQ master video, both spectral sweeps and the
 // 64-bin spectral image set. Without this they are hosted but undiscoverable.
 //
-// The manifest and trait-source URLs are only emitted when an asset host is
-// configured, because those two paths are published by the asset host rather
-// than by the /images mount.
+// The manifest and trait-source files live inside the package directory like
+// every other asset, so they resolve from the same base rather than from a
+// separately configured host.
 func buildMedia(in tokenMetadataInput) httpx.H {
 	pkg := in.AssetBase + "/new/cosmicsignature/" + in.Seed
 	media := httpx.H{
@@ -201,10 +198,8 @@ func buildMedia(in tokenMetadataInput) httpx.H {
 		"source_image":       pkg + "/" + masterImagePath,
 		"preview_image":      pkg + "/images/web/preview.webp",
 		"generation_records": pkg + "/metadata/",
-	}
-	if in.SourceBase != "" {
-		media["asset_manifest"] = in.SourceBase + "/asset-manifests/" + in.Seed + ".json"
-		media["trait_source"] = in.SourceBase + "/traits/" + in.Seed + ".json"
+		"asset_manifest":     pkg + "/metadata/assets.json",
+		"trait_source":       pkg + "/metadata/nft_traits.json",
 	}
 	return media
 }

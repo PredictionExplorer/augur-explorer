@@ -37,7 +37,6 @@ type API struct {
 	logger           *slog.Logger
 	adminAPIKey      string
 	assetsPublicBase string
-	traitsSourceBase string
 	traitsIngester   traitNudger
 }
 
@@ -55,10 +54,6 @@ type Config struct {
 	// AssetsPublicBase overrides the public /images URL base used in token
 	// metadata (NFT_ASSETS_PUBLIC_BASE); empty derives it per request.
 	AssetsPublicBase string
-	// TraitsSourceBase is the asset host root publishing the art trait
-	// contract files (NFT_TRAITS_SOURCE_BASE). Empty omits the
-	// trait_source and asset_manifest links from the served media block.
-	TraitsSourceBase string
 }
 
 // New builds the module and performs the synchronous contract-state loads
@@ -76,7 +71,6 @@ func New(ctx context.Context, cfg Config) (*API, error) {
 		logger:           orDiscardLogger(cfg.Logger),
 		adminAPIKey:      cfg.AdminAPIKey,
 		assetsPublicBase: cfg.AssetsPublicBase,
-		traitsSourceBase: strings.TrimRight(strings.TrimSpace(cfg.TraitsSourceBase), "/"),
 	}
 	if cfg.Store == nil {
 		return nil, errors.New("cosmicgame: database link wasn't configured")
@@ -151,8 +145,9 @@ func (a *API) StartBackgroundRefresh(ctx context.Context) <-chan struct{} {
 
 // TraitIngestConfig configures the background art-trait ingest loop.
 type TraitIngestConfig struct {
-	// SourceBase is the asset host root publishing /traits/{seed}.json and
-	// /asset-manifests/{seed}.json (NFT_TRAITS_SOURCE_BASE).
+	// SourceBase is the collection package root publishing
+	// {seed}/metadata/nft_traits.json and {seed}/metadata/assets.json
+	// (NFT_TRAITS_SOURCE_BASE).
 	SourceBase string
 	// Interval is the scan period; zero selects the package default.
 	Interval time.Duration

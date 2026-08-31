@@ -11,8 +11,10 @@ Its `three_body_problem` pipeline renders one package per on-chain seed and
 uploads it to the asset host. As of pipeline `1.0.0+traits` each package also
 carries `metadata/nft_traits.json` — a per-seed trait contract — and an
 `metadata/assets.json` manifest (schema_version 2) with a SHA-256 for every
-file. Both are published over HTTP at `/traits/{seed}.json` and
-`/asset-manifests/{seed}.json`.
+file. Both are published over HTTP inside the seed's own package directory,
+at `{collection}/{seed}/metadata/nft_traits.json` and
+`{collection}/{seed}/metadata/assets.json`, alongside every other asset of
+the package.
 
 Until now `handleCstMetadata` served a near-empty document: a generic
 description, three attributes (`Round`, `Imprinted` and a useless per-token
