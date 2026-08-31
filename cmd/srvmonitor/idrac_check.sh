@@ -55,14 +55,55 @@ candidates=$(jq -r --arg re "$CRIT_REGEX" '
 
 now=$(date -u +%s)
 
+# date(1) parses timestamps incompatibly across implementations: GNU (Linux)
+# takes -d, BSD (macOS) takes -j -f with an explicit format. Only GNU date
+# understands --version, so it doubles as the probe.
+if date --version >/dev/null 2>&1; then
+	date_is_gnu=1
+else
+	date_is_gnu=0
+fi
+
+# parse_epoch prints the Unix epoch for one RFC 3339 SEL timestamp and
+# returns non-zero when it cannot be parsed.
+parse_epoch() {
+	local ts="$1" normalized
+	if [ "$date_is_gnu" -eq 1 ]; then
+		date -d "$ts" +%s 2>/dev/null
+		return
+	fi
+	# BSD date rejects the colon inside the numeric zone offset, so
+	# 2026-06-18T01:27:24-05:00 has to become ...-0500 first.
+	normalized=$(printf '%s' "$ts" | sed -E 's/([+-][0-9]{2}):([0-9]{2})$/\1\2/')
+	date -j -f '%Y-%m-%dT%H:%M:%S%z' "$normalized" +%s 2>/dev/null ||
+		date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$normalized" +%s 2>/dev/null
+}
+
+parsed=0
+unparsed=0
 while IFS=$'\t' read -r created message; do
 	[ -n "$created" ] || continue
-	epoch=$(date -d "$created" +%s 2>/dev/null) || continue
+	if ! epoch=$(parse_epoch "$created"); then
+		# Never skip quietly. Treating an unparseable timestamp as "no
+		# crash" is how this check silently reported OK on every entry
+		# when it only spoke GNU date.
+		echo "cannot parse SEL timestamp: $created" >&2
+		unparsed=$((unparsed + 1))
+		continue
+	fi
+	parsed=$((parsed + 1))
 	age=$((now - epoch))
 	if [ "$age" -le "$WINDOW_SECS" ]; then
 		echo "CRASH $created $message"
 		exit 2
 	fi
 done <<<"$candidates"
+
+# Fatal entries that all failed to parse mean the check could not answer.
+# That is a check failure, not a healthy server.
+if [ "$parsed" -eq 0 ] && [ "$unparsed" -gt 0 ]; then
+	echo "no SEL timestamp could be parsed ($unparsed fatal entries)" >&2
+	exit 1
+fi
 
 echo "OK"

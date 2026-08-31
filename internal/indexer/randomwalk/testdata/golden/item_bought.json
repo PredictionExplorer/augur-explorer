@@ -128,7 +128,7 @@
         "contract_aid": "0x1200000000000000000000000000000000000012",
         "total_buy_orders": 0,
         "total_num_trades": 1,
-        "total_sell_orders": -1,
+        "total_sell_orders": 0,
         "total_vol": 3000000000000000000
       }
     ]
@@ -156,7 +156,7 @@
   "rw_stats": {
     "added": [
       {
-        "money_accumulated": 0,
+        "money_accumulated": 1000000000000000000,
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
         "total_num_toks": 1,
         "total_num_trades": 1,
@@ -235,7 +235,7 @@
       },
       {
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
-        "total_num_toks": 0,
+        "total_num_toks": 1,
         "total_num_trades": 1,
         "total_profit": 2000000000000000000,
         "total_vol": 3000000000000000000,

@@ -59,8 +59,8 @@
     "BurnAmountEth": 200,
     "Amount": "-100000000000000000000",
     "AmountEth": -100,
-    "TotalSupply": "100000000000000000000",
-    "TotalSupplyEth": 100
+    "TotalSupply": "300000000000000000000",
+    "TotalSupplyEth": 300
   },
   {
     "Tx": {
@@ -80,8 +80,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "200000000000000000000",
-    "TotalSupplyEth": 200
+    "TotalSupply": "400000000000000000000",
+    "TotalSupplyEth": 400
   },
   {
     "Tx": {
@@ -101,8 +101,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "300000000000000000000",
-    "TotalSupplyEth": 300
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -122,8 +122,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "400000000000000000000",
-    "TotalSupplyEth": 400
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -143,8 +143,8 @@
     "BurnAmountEth": 210,
     "Amount": "-110000000000000000000",
     "AmountEth": -110,
-    "TotalSupply": "290000000000000000000",
-    "TotalSupplyEth": 290
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -164,8 +164,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "390000000000000000000",
-    "TotalSupplyEth": 390
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -185,8 +185,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "490000000000000000000",
-    "TotalSupplyEth": 490
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -206,8 +206,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "590000000000000000000",
-    "TotalSupplyEth": 590
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -227,8 +227,8 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "690000000000000000000",
-    "TotalSupplyEth": 690
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   },
   {
     "Tx": {
@@ -248,7 +248,7 @@
     "BurnAmountEth": 0,
     "Amount": "100000000000000000000",
     "AmountEth": 100,
-    "TotalSupply": "790000000000000000000",
-    "TotalSupplyEth": 790
+    "TotalSupply": "495000000000000000000",
+    "TotalSupplyEth": 495
   }
 ]

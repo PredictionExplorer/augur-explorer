@@ -118,7 +118,7 @@
         "contract_aid": "0x1200000000000000000000000000000000000012",
         "total_buy_orders": 0,
         "total_num_trades": 1,
-        "total_sell_orders": 1,
+        "total_sell_orders": 2,
         "total_vol": 3000000000000000000
       }
     ],
@@ -127,7 +127,7 @@
         "contract_aid": "0x1200000000000000000000000000000000000012",
         "total_buy_orders": 0,
         "total_num_trades": 0,
-        "total_sell_orders": 0,
+        "total_sell_orders": 1,
         "total_vol": 0
       }
     ]
@@ -233,7 +233,7 @@
   "rw_stats": {
     "added": [
       {
-        "money_accumulated": 3000000000000000000,
+        "money_accumulated": 4000000000000000000,
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
         "total_num_toks": 4,
         "total_num_trades": 1,
@@ -243,7 +243,7 @@
     ],
     "removed": [
       {
-        "money_accumulated": 3000000000000000000,
+        "money_accumulated": 4000000000000000000,
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
         "total_num_toks": 4,
         "total_num_trades": 0,
@@ -329,7 +329,7 @@
     "added": [
       {
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
-        "total_num_toks": 0,
+        "total_num_toks": 1,
         "total_num_trades": 1,
         "total_profit": 0,
         "total_vol": 3000000000000000000,
@@ -338,7 +338,7 @@
       },
       {
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
-        "total_num_toks": 0,
+        "total_num_toks": 1,
         "total_num_trades": 1,
         "total_profit": 2000000000000000000,
         "total_vol": 3000000000000000000,
@@ -349,7 +349,7 @@
     "removed": [
       {
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
-        "total_num_toks": 0,
+        "total_num_toks": 1,
         "total_num_trades": 0,
         "total_profit": 0,
         "total_vol": 0,
@@ -358,7 +358,7 @@
       },
       {
         "rwalk_aid": "0x8000000000000000000000000000000000000008",
-        "total_num_toks": 0,
+        "total_num_toks": 1,
         "total_num_trades": 0,
         "total_profit": 0,
         "total_vol": 0,

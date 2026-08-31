@@ -267,6 +267,12 @@ func New(cfg Config) (*State, error) {
 // are logged and leave the documented sentinel values; startup proceeds so
 // the DB-backed routes stay available while the RPC node is down.
 func (s *State) LoadInitial(ctx context.Context) {
+	// Startup resolves the deployed generation from scratch. The probe
+	// interval exists to keep reverting eth_calls off the steady-state
+	// refresh ticks, not off startup, and confirming a stale cached
+	// version here would misreport a contract upgraded since the last
+	// load: the older getter still answers after a V2 -> V3 upgrade.
+	s.invalidateMechanicsFullProbe()
 	s.refreshVariables(ctx)
 	s.refreshSpecialWinners(ctx)
 	s.refreshDBStats(ctx)

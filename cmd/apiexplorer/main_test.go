@@ -432,7 +432,11 @@ func TestRunServesAndShutsDownOnSignal(t *testing.T) {
 }
 
 func TestRunReportsBindFailure(t *testing.T) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	// run() binds the wildcard address, so the port has to be occupied
+	// there too. A loopback-only listener does not collide with a wildcard
+	// bind on macOS, which let the server start and leave run() blocked in
+	// its signal select until the test timed out.
+	l, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("occupying port: %v", err)
 	}

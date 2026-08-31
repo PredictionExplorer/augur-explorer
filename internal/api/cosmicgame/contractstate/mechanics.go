@@ -138,6 +138,17 @@ func (s *State) recordMechanicsFullProbe() {
 	s.mechanicsProbeMu.Unlock()
 }
 
+// invalidateMechanicsFullProbe forces the next resolveMechanicsVersion call
+// to run the full newest-first probe rather than confirm the cached
+// generation. A confirmation call still succeeds after a V2 -> V3 upgrade,
+// because the V2 getter survives it, so anything that must observe the
+// deployed generation immediately has to discard the cache first.
+func (s *State) invalidateMechanicsFullProbe() {
+	s.mechanicsProbeMu.Lock()
+	s.lastMechanicsFullProbe = time.Time{}
+	s.mechanicsProbeMu.Unlock()
+}
+
 func (s *State) roundStartCSTAuctionSetting(
 	v1 *cg.CosmicSignatureGame,
 	v2 *cg.CosmicSignatureGameV2,
