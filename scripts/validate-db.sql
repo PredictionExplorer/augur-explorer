@@ -4,7 +4,9 @@
 -- Validates the game-mechanics side of the indexer database against the
 -- on-chain rules of the Cosmic-Signature contracts (V2, production `main`
 -- branch): layer-1 integrity, event decoding/linkage, per-round prize
--- structure, withdrawals, bidding, NFT/token state and donation facts.
+-- structure, withdrawals, bidding, NFT/token state, donation facts and the
+-- ingested NFT art traits (cg_token_traits / cg_token_traits_fetch,
+-- ADR-0011).
 --
 -- The trigger-maintained STATISTICAL counters (cg_round_stats, cg_glob_stats,
 -- per-account stats, staking accruals, RandomWalk marketplace stats) are
@@ -898,7 +900,135 @@ FROM (
 ) v;
 
 -- ===========================================================================
--- SECTION I (informational, never fails): evt_log decode coverage.
+-- SECTION I: NFT art traits (cg_token_traits / cg_token_traits_fetch)
+--
+-- Filled by the apiserver's background ingest loop from the asset host
+-- (ADR-0011, migration 00029). A cg_token_traits row existing means "this
+-- seed serves enriched metadata". Packages lag mints by minutes to hours, so
+-- a missing row on a fresh mint is normal; it only becomes a WARN once the
+-- mint is a day old. Art facts are frozen at imprint: a drift alarm or a
+-- schema-gate rejection is an upstream incident, hence ERROR severity.
+--
+-- Note: on a database whose apiserver runs with trait ingestion disabled or
+-- unconfigured (NFT_TRAITS_SOURCE_BASE / NFT_ASSETS_PUBLIC_BASE both unset),
+-- the WARN checks of this section fire for every minted seed. That is the
+-- intended signal that ingestion is not running.
+-- ===========================================================================
+
+-- Canonical minted seeds, in the ingester's own scan shape: hexadecimal
+-- seeds only, spelled "0x" + lowercase to match the trait tables' keys.
+CREATE TEMP TABLE minted_seed ON COMMIT DROP AS
+SELECT '0x' || LOWER(m.seed) AS seed, MIN(m.time_stamp) AS minted_at
+FROM cg_mint_event m
+WHERE m.seed ~ '^[0-9a-fA-F]+$'
+GROUP BY 1;
+
+-- I1: trait rows can only exist for minted seeds (the scan and the nudge
+-- path both derive their candidates from cg_mint_event).
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','cg_token_traits seed matches a minted token seed','ERROR',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed,',' ORDER BY v.seed),300)
+FROM (SELECT t.seed FROM cg_token_traits t
+      LEFT JOIN minted_seed s ON s.seed=t.seed
+      WHERE s.seed IS NULL LIMIT 100) v;
+
+-- I2: same for the bookkeeping table.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','cg_token_traits_fetch seed matches a minted token seed','ERROR',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed,',' ORDER BY v.seed),300)
+FROM (SELECT f.seed FROM cg_token_traits_fetch f
+      LEFT JOIN minted_seed s ON s.seed=f.seed
+      WHERE s.seed IS NULL LIMIT 100) v;
+
+-- I3: UpsertTokenTraits writes the payload and its fetch bookkeeping in one
+-- transaction, so a trait row without a fetch row cannot happen.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','every cg_token_traits row has its cg_token_traits_fetch bookkeeping row','ERROR',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed,',' ORDER BY v.seed),300)
+FROM (SELECT t.seed FROM cg_token_traits t
+      LEFT JOIN cg_token_traits_fetch f ON f.seed=t.seed
+      WHERE f.seed IS NULL LIMIT 100) v;
+
+-- I4: content_hash is a SHA-256 over the canonicalized art facts.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','content_hash is 64 lowercase hex chars','ERROR',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed,',' ORDER BY v.seed),300)
+FROM (SELECT seed FROM cg_token_traits
+      WHERE content_hash !~ '^[0-9a-f]{64}$' LIMIT 100) v;
+
+-- I5: art facts are frozen at imprint. A re-fetched trait file that hashed
+-- differently set drift_detected_at; the stored row was kept, but the
+-- generator has a determinism regression to investigate (ADR-0011).
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','no drift alarms (re-fetched art facts equal the stored facts)','ERROR',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed||' at '||v.drift_detected_at
+                       ||' (pipeline '||COALESCE(v.drift_pipeline_version,'?')||')',',' ORDER BY v.seed),300)
+FROM (SELECT seed, drift_detected_at, drift_pipeline_version
+      FROM cg_token_traits_fetch
+      WHERE drift_detected_at IS NOT NULL LIMIT 100) v;
+
+-- I6: the schema/seed gate refused a live file (major version bump, seed
+-- mismatch or malformed JSON). The token keeps serving its last good state,
+-- but the refusal needs an operator: either deploy a Go version that
+-- understands the new layout or fix the generator output.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','no packages rejected by the schema/seed gate','ERROR',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed||' ('||COALESCE(v.last_error,'no error recorded')||')',',' ORDER BY v.seed),300)
+FROM (SELECT seed, last_error FROM cg_token_traits_fetch
+      WHERE last_status='rejected' LIMIT 100) v;
+
+-- I7 (WARN): the missing-records check. Packages normally land within
+-- hours; a mint over a day old still serving fallback metadata means the
+-- generator is behind, the package never uploaded, or ingestion is off.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','mints older than 24h have ingested art traits','WARN',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed||' ('||v.status||')',',' ORDER BY v.seed),300)
+FROM (SELECT s.seed, COALESCE(f.last_status,'never attempted') AS status
+      FROM minted_seed s
+      LEFT JOIN cg_token_traits t ON t.seed=s.seed
+      LEFT JOIN cg_token_traits_fetch f ON f.seed=s.seed
+      WHERE t.seed IS NULL
+        AND s.minted_at < NOW() - INTERVAL '24 hours' LIMIT 100) v;
+
+-- I8 (WARN): the ingest loop scans every couple of minutes, so nothing
+-- should stay due (or entirely unscanned) for over 30 minutes. Violations
+-- mean the loop is not running against this database or is misconfigured.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','trait ingest loop is keeping up (nothing overdue by >30 minutes)','WARN',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed,',' ORDER BY v.seed),300)
+FROM (SELECT s.seed
+      FROM minted_seed s
+      LEFT JOIN cg_token_traits_fetch f ON f.seed=s.seed
+      WHERE (f.seed IS NULL AND s.minted_at < NOW() - INTERVAL '30 minutes')
+         OR f.next_attempt_at < NOW() - INTERVAL '30 minutes' LIMIT 100) v;
+
+-- I9 (WARN): repeated transport failures against the asset host (5+
+-- consecutive attempts). Distinct from 'missing': the host answered
+-- abnormally (5xx, timeouts, rate limiting) rather than 404.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','no persistent transport failures against the asset host','WARN',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed||' ('||v.attempt_count||' attempts: '
+                       ||COALESCE(v.last_error,'no error recorded')||')',',' ORDER BY v.seed),300)
+FROM (SELECT seed, attempt_count, last_error FROM cg_token_traits_fetch
+      WHERE last_status='error' AND attempt_count >= 5 LIMIT 100) v;
+
+-- I10 (WARN): the asset manifest is optional per ingest, but a stored row
+-- without one serves no image_details/animation_details.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','stored traits carry the asset manifest','WARN',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed,',' ORDER BY v.seed),300)
+FROM (SELECT seed FROM cg_token_traits WHERE assets IS NULL LIMIT 100) v;
+
+-- I11 (WARN): this validator (and the deployed Go code) understands trait
+-- schema major version 1; anything else stored deserves a look.
+INSERT INTO vr(section,check_name,severity,violations,details)
+SELECT 'I. art traits','stored schema_major is the supported major version (1)','WARN',COUNT(*),
+       LEFT(STRING_AGG('seed '||v.seed||' major '||v.schema_major,',' ORDER BY v.seed),300)
+FROM (SELECT seed, schema_major FROM cg_token_traits
+      WHERE schema_major <> 1 LIMIT 100) v;
+
+-- ===========================================================================
+-- SECTION J (informational, never fails): evt_log decode coverage.
 -- Every evt_log row the indexer decoded is referenced by some table's
 -- evtlog_id column; whatever is left over was stored but not tracked in the
 -- SQL model (some on purpose, e.g. the game's FundsTransferredToCharity and
@@ -1074,6 +1204,19 @@ FROM cg_prize_withdrawal WHERE amount = 0;
 
 SELECT w.id, w.round_num, w.winner_aid, w.beneficiary_aid, w.time_stamp
 FROM cg_prize_withdrawal w WHERE w.amount = 0 ORDER BY w.id LIMIT 20;
+
+\echo ''
+\echo '--- Art trait ingest state (informational) ----------------------------------'
+\echo 'Minted seeds by last ingest outcome; "missing" seeds are packages the'
+\echo 'generator has not uploaded yet, "never attempted" means the ingest loop'
+\echo 'has not scanned them (or is not running against this database).'
+SELECT COALESCE(f.last_status,'never attempted') AS last_status,
+       COUNT(*)                                  AS minted_seeds,
+       COUNT(t.seed)                             AS stored_traits
+FROM minted_seed s
+LEFT JOIN cg_token_traits_fetch f ON f.seed=s.seed
+LEFT JOIN cg_token_traits t ON t.seed=s.seed
+GROUP BY 1 ORDER BY 1;
 
 \echo ''
 \echo '--- Summary ----------------------------------------------------------------'
