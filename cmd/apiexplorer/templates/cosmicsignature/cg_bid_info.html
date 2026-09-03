@@ -148,6 +148,22 @@
 		</div>
 		{{ end }}
 
+		{{ if .BidInfo.DonatedERC20TokenAddr }}
+		<div class="section-card">
+			<div class="section-header">Donated ERC-20 Token</div>
+			<div class="details-list">
+				<div class="detail-row">
+					<div class="detail-label">Token Contract Address</div>
+					<div class="detail-value monospace">{{.BidInfo.DonatedERC20TokenAddr}}</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Amount</div>
+					<div class="detail-value">{{ with .BidInfo.DonatedERC20TokenAmountEth }}{{printf "%.4f" .}}{{ else }}0.0000{{ end }}</div>
+				</div>
+			</div>
+		</div>
+		{{ end }}
+
 		<div class="api-info">
 			<strong>API Endpoint:</strong><br/>
 			<code>/api/cosmicgame/bid/info/[evtlog_id]</code><br/><br/>
