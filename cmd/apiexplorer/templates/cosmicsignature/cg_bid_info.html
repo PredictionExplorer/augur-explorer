@@ -68,10 +68,30 @@
 					<div class="detail-label">Bid Price</div>
 					<div class="detail-value">{{printf "%.6f" .BidInfo.EthPriceEth}} ETH</div>
 				</div>
+				{{ if .BidInfo.PreviousBidderAddr }}
+				{{/* V3: the whole bid CST reward is minted to the outbid (previous) bidder. */}}
+				<div class="detail-row">
+					<div class="detail-label">CST Reward (to previous bidder)</div>
+					<div class="detail-value">{{ with .BidInfo.PreviousCstRewardAmountEth }}{{printf "%.4f" .}}{{ else }}0.0000{{ end }} CST</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Previous Bidder (reward recipient)</div>
+					<div class="detail-value monospace">
+						{{ethAddrLink .BidInfo.PreviousBidderAddr}}
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">CST Reward (to this bidder)</div>
+					{{/* The API omits zero amounts (omitempty), and V3 always mints the whole
+					     reward to the previous bidder, so a missing value means 0. */}}
+					<div class="detail-value">{{ with .BidInfo.ThisCstRewardAmountEth }}{{printf "%.4f" .}}{{ else }}0.0000{{ end }} CST</div>
+				</div>
+				{{ else }}
 				<div class="detail-row">
 					<div class="detail-label">CST Reward</div>
 					<div class="detail-value">{{printf "%.4f" .BidInfo.CSTRewardEth}} CST</div>
 				</div>
+				{{ end }}
 				<div class="detail-row">
 					<div class="detail-label">RWalk NFT ID</div>
 					<div class="detail-value">{{num .BidInfo.RWalkNFTId}}</div>
@@ -80,10 +100,13 @@
 					<div class="detail-label">CST Tokens (Bid Price)</div>
 					<div class="detail-value">{{printf "%.4f" .BidInfo.CstPriceEth}} CST</div>
 				</div>
+				{{ if not .BidInfo.PreviousBidderAddr }}
+				{{/* BidPlaced field 7. On V3 bids it duplicates the previous-bidder reward shown above. */}}
 				<div class="detail-row">
 					<div class="detail-label">Bid CST Reward</div>
 					<div class="detail-value">{{ if gt .BidInfo.BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.BidCstRewardAmountEth}} CST{{else}}—{{end}}</div>
 				</div>
+				{{ end }}
 				{{ if ge .BidInfo.CstDutchAuctionDurationInt 0.0 }}
 				<div class="detail-row">
 					<div class="detail-label">CST Dutch Auction Duration (bid v2)</div>
