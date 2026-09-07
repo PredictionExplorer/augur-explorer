@@ -76,9 +76,11 @@ compiler output — the artifacts here cannot invent new ABIs:
 
 Mechanics upgrades are additive binding types: V2 added
 `CosmicSignatureGameV2`, and V3 adds `CosmicSignatureGameV3`. The V3 ABI is
-the proxy-facing effective ABI of the modularized game (the slim
-`CosmicSignatureGameV3` implementation combined with its views/prizes/admin
-delegatecall modules) compiled from the Solidity `v3-2026-07-24` branch at
-commit `51221556` ("late bid price premium as a one-time toll"); the `bin` is
-the slim implementation's creation bytecode. Older types remain unchanged so
-all historical event generations stay decodable.
+compiled from the Solidity `v3.1-2026-08-19` branch at commit `8070c8df`
+("Test V3 CST auction decline rates, idle periods, and round transitions"):
+a monolithic (non-modular) `CosmicSignatureGameV3` implementation with the
+CST bid price decline multiplier mechanics, the weighted bidder raffle
+(`bidsInfo` / `getBidInfoAt` replacing `bidderAddresses` /
+`getBidderAddressAt`), and no one-bid-per-second throttle; the `bin` is that
+implementation's creation bytecode. Older types remain unchanged so all
+historical event generations stay decodable.

@@ -61,10 +61,11 @@ func runInfo(cmd *cobra.Command, addrArg string) error {
 		return fmt.Errorf("failed to instantiate CosmicGame contract: %w", err)
 	}
 	gameV2, _ := cgcontracts.NewCosmicSignatureGameV2(gameAddr, net.Client)
+	gameV3, _ := cgcontracts.NewCosmicSignatureGameV3(gameAddr, net.Client)
 
 	blockTime := int64(net.BlockTime) // #nosec G115 -- real chain timestamps fit int64; display-only CLI
 
-	if err := printRoundStatus(w, out, game, copts, blockTime); err != nil {
+	if err := printRoundStatus(w, out, game, gameV3, copts, blockTime); err != nil {
 		return err
 	}
 	timeoutMainPrize, err := printTiming(out, game, copts)
@@ -103,7 +104,7 @@ func runInfo(cmd *cobra.Command, addrArg string) error {
 	return nil
 }
 
-func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts, blockTime int64) error {
+func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, gameV3 *cgcontracts.CosmicSignatureGameV3, copts *bind.CallOpts, blockTime int64) error {
 	roundNum, err := game.RoundNum(copts)
 	if err != nil {
 		return fmt.Errorf("RoundNum(): %w", err)
@@ -121,9 +122,20 @@ func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSig
 	if err != nil {
 		return fmt.Errorf("GetTotalNumBids(): %w", err)
 	}
-	numRaffleParticipants, err := game.BidderAddresses(copts, big.NewInt(roundNum.Int64()))
-	if err != nil {
-		return fmt.Errorf("BidderAddresses(): %w", err)
+	// The v3.1 contracts renamed the bidderAddresses getter to bidsInfo
+	// (weighted-raffle refactoring). Try the V3 name first (the deployed
+	// target), then fall back to the V1/V2 name for older contracts.
+	var numRaffleParticipants *big.Int
+	if gameV3 != nil {
+		if v, errV3 := gameV3.BidsInfo(copts, big.NewInt(roundNum.Int64())); errV3 == nil {
+			numRaffleParticipants = v
+		}
+	}
+	if numRaffleParticipants == nil {
+		numRaffleParticipants, err = game.BidderAddresses(copts, big.NewInt(roundNum.Int64()))
+		if err != nil {
+			return fmt.Errorf("BidsInfo()/BidderAddresses(): %w", err)
+		}
 	}
 
 	out.Section("ROUND STATUS")

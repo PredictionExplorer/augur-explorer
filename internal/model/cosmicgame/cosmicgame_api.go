@@ -865,9 +865,10 @@ type CGAdminEvent struct {
 	//			40		RoundLateBidDurationDivisorChanged (V3)
 	//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
 	//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
+	//			43		CstBidPriceDeclineMultiplierChanged (V3; repurposed from the retired LastBidderBidCstRewardAmountPercentageChanged)
 	//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
+	//			45		CstBidPriceDeclineMultiplierChangeDivisorChanged (V3)
 	//			46		EthBidRefundAmountInGasToSwallowMaxLimitChanged
-	// 43 and 45 are retired (the reverted CstBidPriceDecline* events).
 	RecordId      int64
 	EvtLogId      int64
 	BlockNum      int64

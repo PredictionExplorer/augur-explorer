@@ -200,11 +200,10 @@ var adminEventBranches = []adminEventBranch{
 	{recordType: 40, table: "cg_adm_late_bid_dur_divisor", intValue: "r.new_value"},                                  // RoundLateBidDurationDivisorChanged
 	{recordType: 41, table: "cg_adm_late_bid_premium_base_mul", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountBaseMultiplierChanged
 	{recordType: 42, table: "cg_adm_late_bid_premium_exponent", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountExponentChanged
+	{recordType: 43, table: "cg_adm_cst_price_decline_mul", floatValue: "r.new_value/1e18", stringVal: "r.new_value::TEXT"}, // CstBidPriceDeclineMultiplierChanged (repurposed; was the retired LastBidderBidCstRewardAmountPercentageChanged)
 	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},                                   // MainPrizeNumCosmicSignatureNftsChanged
-	// 43 and 45 are retired: they belonged to the CstBidPriceDecline*
-	// events that migration 00030 reverted, so new events take fresh codes
-	// rather than inheriting a meaning a client may have cached.
-	{recordType: 46, table: "cg_adm_eth_bid_refund_gas_limit", intValue: "r.new_value"}, // EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	{recordType: 45, table: "cg_adm_cst_price_decline_mul_div", intValue: "r.new_value"},                             // CstBidPriceDeclineMultiplierChangeDivisorChanged
+	{recordType: 46, table: "cg_adm_eth_bid_refund_gas_limit", intValue: "r.new_value"},                              // EthBidRefundAmountInGasToSwallowMaxLimitChanged
 }
 
 // ownershipBranchSQL handles record_type 34, whose two address joins (previous

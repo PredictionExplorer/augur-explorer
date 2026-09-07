@@ -49,8 +49,9 @@ ADMIN_EVENT_TYPE_NAMES: dict[int, str] = {
     40: "RoundLateBidDurationDivisorChanged",
     41: "RoundLateBidPricePremiumAmountBaseMultiplierChanged",
     42: "RoundLateBidPricePremiumAmountExponentChanged",
+    43: "CstBidPriceDeclineMultiplierChanged",
     44: "MainPrizeNumCosmicSignatureNftsChanged",
-    # 43 and 45 are retired (the reverted CstBidPriceDecline* events).
+    45: "CstBidPriceDeclineMultiplierChangeDivisorChanged",
     46: "EthBidRefundAmountInGasToSwallowMaxLimitChanged",
 }
 

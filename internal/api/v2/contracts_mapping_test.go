@@ -105,6 +105,8 @@ func TestMapContractConfigurationMechanics(t *testing.T) {
 		RoundLateBidPricePremiumAmountExponent:       3,
 		MainPrizeNumCosmicSignatureNfts:              3,
 		CstDutchAuctionBeginningBidPriceMinLimit:     "180000000000000000000",
+		CstBidPriceDeclineMultiplier:                 "16666666666666666",
+		CstBidPriceDeclineMultiplierChangeDivisor:    "100",
 	}
 	v3, err := mapContractConfiguration(v3Snapshot)
 	if err != nil {
@@ -114,7 +116,11 @@ func TestMapContractConfigurationMechanics(t *testing.T) {
 		v3.MainPrizeNumCosmicSignatureNfts == nil ||
 		*v3.MainPrizeNumCosmicSignatureNfts != 3 ||
 		v3.CstDutchAuctionBeginningBidPriceMinLimitWei == nil ||
-		*v3.CstDutchAuctionBeginningBidPriceMinLimitWei != "180000000000000000000" {
+		*v3.CstDutchAuctionBeginningBidPriceMinLimitWei != "180000000000000000000" ||
+		v3.CstBidPriceDeclineMultiplierWei == nil ||
+		*v3.CstBidPriceDeclineMultiplierWei != "16666666666666666" ||
+		v3.CstBidPriceDeclineMultiplierChangeDivisor == nil ||
+		*v3.CstBidPriceDeclineMultiplierChangeDivisor != "100" {
 		t.Fatalf("v3 configuration = %+v", v3)
 	}
 }
@@ -163,6 +169,8 @@ func TestMapContractConfigurationV3Failures(t *testing.T) {
 			RoundLateBidPricePremiumAmountExponent:       3,
 			MainPrizeNumCosmicSignatureNfts:              3,
 			CstDutchAuctionBeginningBidPriceMinLimit:     "180",
+			CstBidPriceDeclineMultiplier:                 "16666666666666666",
+			CstBidPriceDeclineMultiplierChangeDivisor:    "100",
 		}
 		return snapshot
 	}
@@ -181,6 +189,12 @@ func TestMapContractConfigurationV3Failures(t *testing.T) {
 		},
 		"auction floor": func(s *contractstate.Snapshot) {
 			s.V3.CstDutchAuctionBeginningBidPriceMinLimit = "bad"
+		},
+		"decline multiplier": func(s *contractstate.Snapshot) {
+			s.V3.CstBidPriceDeclineMultiplier = "bad"
+		},
+		"decline multiplier change divisor": func(s *contractstate.Snapshot) {
+			s.V3.CstBidPriceDeclineMultiplierChangeDivisor = "bad"
 		},
 		"V3 domain": func(s *contractstate.Snapshot) {
 			s.V3.RoundLateBidDurationSeconds = 0
