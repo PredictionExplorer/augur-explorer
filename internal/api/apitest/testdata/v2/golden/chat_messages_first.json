@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "cst",
+        "bidderAddress": "0x2300000000000000000000000000000000000023",
+        "cstPriceWei": "200000000000000000000",
+        "eventLogId": 5008,
+        "message": "cst bid",
+        "occurredAt": "2026-01-01T00:05:00Z",
+        "position": 3,
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001004"
+      }
+    ],
+    "meta": {
+      "hasMore": false,
+      "limit": 1,
+      "nextCursor": "eyJkIjoib2xkZXIiLCJlIjo1MDA4LCJnIjoxLCJyIjowLCJ0IjoiMjAyNi0wMS0wMVQwMDowNTowMFoiLCJ2IjoxfQ",
+      "revision": "1",
+      "syncCursor": "eyJkIjoiYWZ0ZXIiLCJlIjo1MDA4LCJnIjoxLCJyIjowLCJ0IjoiMjAyNi0wMS0wMVQwMDowNTowMFoiLCJ2IjoxfQ"
+    }
+  }
+}

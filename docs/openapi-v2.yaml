@@ -228,6 +228,55 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/v2/cosmicgame/rounds/{round}/messages:
+    get:
+      operationId: listRoundMessages
+      summary: Page visible chat messages or catch up with newly indexed messages
+      description: >-
+        Initial and cursor requests return newest-first messages; after requests
+        return ascending catch-up pages. cursor and after are mutually exclusive.
+        Filters for nonblank text and moderation run before pagination. Empty
+        cycles return an empty 200 page. A 409 feed-reset-required problem means
+        moderation or historical changes invalidated the cursor; reload the feed.
+      tags: [CosmicGame bids]
+      parameters:
+        - $ref: "#/components/parameters/Round"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: after
+          in: query
+          description: Opaque syncCursor from the previous response, scoped to this cycle and revision.
+          schema: {type: string, minLength: 1, maxLength: 512}
+      responses:
+        "200":
+          description: A bounded visible-message page.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RoundChatMessagePage"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "500": {$ref: "#/components/responses/InternalError"}
+  /api/v2/cosmicgame/rounds/{round}/chat-context:
+    get:
+      operationId: getRoundChatContext
+      summary: Complete minimal cycle metadata for chat milestones and participant counts
+      description: >-
+        This compatibility snapshot intentionally costs O(cycle size). It carries
+        every gesture's minimal timing and participant metadata in chronological
+        order, including gestures without messages or with moderated messages.
+        Message bodies, rewards, and attached assets are never queried or returned.
+        Compare its revision with the message page before combining snapshots.
+      tags: [CosmicGame bids]
+      parameters:
+        - $ref: "#/components/parameters/Round"
+      responses:
+        "200":
+          description: Complete minimal cycle metadata; an empty cycle returns an empty data array.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RoundChatContext"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "500": {$ref: "#/components/responses/InternalError"}
   /api/v2/cosmicgame/rounds/{round}/bids:
     get:
       operationId: listRoundBids
@@ -5254,6 +5303,86 @@ components:
           $ref: "#/components/schemas/NftDonation"
         erc20Donation:
           $ref: "#/components/schemas/Erc20Donation"
+    ChatMessage:
+      type: object
+      additionalProperties: false
+      required: [eventLogId, round, position, bidderAddress, occurredAt, message, bidType, transactionHash]
+      properties:
+        eventLogId: {type: integer, format: int64, minimum: 1}
+        round: {type: integer, format: int64, minimum: 0}
+        position: {type: integer, format: int64, minimum: 1}
+        bidderAddress: {type: string, pattern: "^0x[0-9a-fA-F]{40}$"}
+        occurredAt: {type: string, format: date-time}
+        message: {type: string, minLength: 1}
+        bidType: {$ref: "#/components/schemas/BidType"}
+        transactionHash: {type: string, pattern: "^0x[0-9a-fA-F]{64}$"}
+        ethPriceWei: {type: string, pattern: "^[0-9]+$"}
+        cstPriceWei: {type: string, pattern: "^[0-9]+$"}
+        randomWalkTokenId: {type: integer, format: int64, minimum: 0}
+    ChatPageMeta:
+      type: object
+      additionalProperties: false
+      required: [limit, syncCursor, hasMore, revision]
+      properties:
+        limit: {type: integer, minimum: 1, maximum: 200}
+        nextCursor:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: Older-page continuation; only present when more older messages exist.
+        syncCursor:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: >-
+            Initial/older requests capture the latest visible boundary in the same
+            snapshot. After requests advance only through the final returned row
+            and preserve their boundary when empty. Always present, even for an
+            empty cycle. Retain the initial sync cursor while browsing older pages.
+        hasMore:
+          type: boolean
+          description: True only for an after request with more catch-up rows; drain using syncCursor.
+        revision:
+          type: string
+          pattern: "^[1-9][0-9]*$"
+          description: Durable history invalidation generation; ordinary appends do not change it.
+    RoundChatMessagePage:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items: {$ref: "#/components/schemas/ChatMessage"}
+        meta: {$ref: "#/components/schemas/ChatPageMeta"}
+    ChatContextEntry:
+      type: object
+      additionalProperties: false
+      required: [eventLogId, round, position, bidderAddress, occurredAt, bidType, prizeAt]
+      properties:
+        eventLogId: {type: integer, format: int64, minimum: 1}
+        round: {type: integer, format: int64, minimum: 0}
+        position: {type: integer, format: int64, minimum: 1}
+        bidderAddress: {type: string, pattern: "^0x[0-9a-fA-F]{40}$"}
+        occurredAt: {type: string, format: date-time}
+        bidType: {$ref: "#/components/schemas/BidType"}
+        prizeAt: {type: string, format: date-time}
+        cstDutchAuctionDurationSeconds: {type: integer, format: int64, minimum: 0}
+    RoundChatContext:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: {$ref: "#/components/schemas/ChatContextEntry"}
+        meta:
+          type: object
+          additionalProperties: false
+          required: [revision]
+          properties:
+            revision: {type: string, pattern: "^[1-9][0-9]*$"}
     PageMeta:
       type: object
       additionalProperties: false

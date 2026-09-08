@@ -23,6 +23,8 @@ import (
 )
 
 type fakeBidReader struct {
+	chatMessages  func(context.Context, int64, *cgstore.ChatPosition, bool, int) (cgstore.ChatMessagePage, error)
+	chatContext   func(context.Context, int64) (cgstore.ChatContextSnapshot, error)
 	page          func(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
 	item          func(context.Context, int64, int64) (cgmodel.CGBidRec, error)
 	bannedPage    func(context.Context, *cgstore.BannedBidPageCursor, int) ([]cgmodel.CGBannedBidRec, bool, error)
@@ -1808,4 +1810,18 @@ func assertProblem(t *testing.T, response *httptest.ResponseRecorder, status int
 	if problem.Status != status || problem.Type == "" || problem.Title == "" {
 		t.Fatalf("problem = %+v", problem)
 	}
+}
+
+func (f fakeBidReader) ChatMessagesPage(ctx context.Context, round int64, cursor *cgstore.ChatPosition, after bool, limit int) (cgstore.ChatMessagePage, error) {
+	if f.chatMessages == nil {
+		return cgstore.ChatMessagePage{}, errors.New("unexpected chat messages read")
+	}
+	return f.chatMessages(ctx, round, cursor, after, limit)
+}
+
+func (f fakeBidReader) ChatContext(ctx context.Context, round int64) (cgstore.ChatContextSnapshot, error) {
+	if f.chatContext == nil {
+		return cgstore.ChatContextSnapshot{}, errors.New("unexpected chat context read")
+	}
+	return f.chatContext(ctx, round)
 }

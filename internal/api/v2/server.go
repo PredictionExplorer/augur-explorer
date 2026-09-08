@@ -28,6 +28,8 @@ import (
 const problemTypeBase = common.ProblemTypeBase
 
 type bidReader interface {
+	ChatMessagesPage(context.Context, int64, *cgstore.ChatPosition, bool, int) (cgstore.ChatMessagePage, error)
+	ChatContext(context.Context, int64) (cgstore.ChatContextSnapshot, error)
 	BidsByRoundPage(context.Context, int64, cgstore.BidPageCursor, int) ([]cgmodel.CGBidRec, bool, error)
 	BidByRoundAndPosition(context.Context, int64, int64) (cgmodel.CGBidRec, error)
 	BannedBidsPage(context.Context, *cgstore.BannedBidPageCursor, int) ([]cgmodel.CGBannedBidRec, bool, error)

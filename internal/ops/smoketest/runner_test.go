@@ -359,10 +359,10 @@ func TestRunOperationalSkipsParametersAndBothAggregatesSuites(t *testing.T) {
 			Suite: SuiteBoth, DisablePacing: true,
 		})
 		var failures FailuresError
-		if !errors.As(err, &failures) || failures.Count != 101 {
+		if !errors.As(err, &failures) || failures.Count != 103 {
 			t.Fatalf("summary/error = %#v / %v", summary, err)
 		}
-		if summary.Total != 246 || summary.OK != 145 || len(summary.Suites) != 2 ||
+		if summary.Total != 248 || summary.OK != 145 || len(summary.Suites) != 2 ||
 			summary.Suites[0].Suite != SuiteV2 || summary.Suites[1].Suite != SuiteV1 {
 			t.Fatalf("summary = %#v", summary)
 		}
@@ -384,8 +384,8 @@ func TestRunDefaultIsV2(t *testing.T) {
 		DisablePacing: true,
 	})
 	var failures FailuresError
-	if !errors.As(err, &failures) || failures.Count != 101 || requests != 101 ||
-		summary.Total != 101 || summary.Suites[0].Suite != SuiteV2 {
+	if !errors.As(err, &failures) || failures.Count != 103 || requests != 103 ||
+		summary.Total != 103 || summary.Suites[0].Suite != SuiteV2 {
 		t.Fatalf("requests/summary/error = %d / %#v / %v", requests, summary, err)
 	}
 }

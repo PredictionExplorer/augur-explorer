@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "ethPriceWei": "100000000000000000",
+        "eventLogId": 5004,
+        "message": "hello world",
+        "occurredAt": "2026-01-01T00:01:40Z",
+        "position": 1,
+        "round": 0,
+        "transactionHash": "0xf000000000000000000000000000000000000000000000000000000000001002"
+      }
+    ],
+    "meta": {
+      "hasMore": false,
+      "limit": 1,
+      "revision": "1",
+      "syncCursor": "eyJkIjoiYWZ0ZXIiLCJlIjo1MDA4LCJnIjoxLCJyIjowLCJ0IjoiMjAyNi0wMS0wMVQwMDowNTowMFoiLCJ2IjoxfQ"
+    }
+  }
+}

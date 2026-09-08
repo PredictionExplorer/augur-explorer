@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [],
+    "meta": {
+      "hasMore": false,
+      "limit": 50,
+      "revision": "1",
+      "syncCursor": "eyJkIjoiYWZ0ZXIiLCJlIjowLCJnIjoxLCJyIjo5OTk5OSwidCI6IjE5NzAtMDEtMDFUMDA6MDA6MDBaIiwidiI6MX0"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": 409,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Reload the message feed and chat context before continuing.",
+    "instance": "/api/v2/cosmicgame/rounds/0/messages",
+    "status": 409,
+    "title": "Chat history changed",
+    "type": "https://api.cosmicsignature.com/problems/feed-reset-required"
+  }
+}

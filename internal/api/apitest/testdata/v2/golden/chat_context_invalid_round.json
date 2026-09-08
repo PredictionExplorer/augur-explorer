@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "contentType": "application/problem+json",
+  "body": {
+    "detail": "Round must be zero or greater.",
+    "instance": "/api/v2/cosmicgame/rounds/-1/chat-context",
+    "status": 400,
+    "title": "Invalid request",
+    "type": "https://api.cosmicsignature.com/problems/invalid-parameter"
+  }
+}

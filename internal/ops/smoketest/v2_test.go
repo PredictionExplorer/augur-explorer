@@ -61,8 +61,8 @@ func TestBuildV2ProbesMatchesEveryOpenAPIGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(probes) != 101 {
-		t.Fatalf("v2 probe count = %d, want 101", len(probes))
+	if len(probes) != 103 {
+		t.Fatalf("v2 probe count = %d, want 103", len(probes))
 	}
 
 	spec, err := apiv2.GetSpec()

@@ -46,7 +46,7 @@ func TestV2SmoketestCatalogThroughProductionRouter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("v2 smoke run failed: %v\nsummary: %#v", err, summary)
 	}
-	if summary.Total != 101 || summary.OK != 101 || len(summary.Failures) != 0 {
+	if summary.Total != 103 || summary.OK != 103 || len(summary.Failures) != 0 {
 		t.Fatalf("summary = %#v", summary)
 	}
 }

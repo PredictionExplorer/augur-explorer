@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "data": [
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "eventLogId": 5004,
+        "occurredAt": "2026-01-01T00:01:40Z",
+        "position": 1,
+        "prizeAt": "2026-01-01T01:01:40Z",
+        "round": 0
+      },
+      {
+        "bidType": "randomWalk",
+        "bidderAddress": "0x2200000000000000000000000000000000000022",
+        "eventLogId": 5006,
+        "occurredAt": "2026-01-01T00:03:20Z",
+        "position": 2,
+        "prizeAt": "2026-01-01T01:03:20Z",
+        "round": 0
+      },
+      {
+        "bidType": "cst",
+        "bidderAddress": "0x2300000000000000000000000000000000000023",
+        "cstDutchAuctionDurationSeconds": 1800,
+        "eventLogId": 5008,
+        "occurredAt": "2026-01-01T00:05:00Z",
+        "position": 3,
+        "prizeAt": "2026-01-01T01:05:00Z",
+        "round": 0
+      },
+      {
+        "bidType": "eth",
+        "bidderAddress": "0x2100000000000000000000000000000000000021",
+        "eventLogId": 5010,
+        "occurredAt": "2026-01-01T00:06:40Z",
+        "position": 4,
+        "prizeAt": "2026-01-01T01:06:40Z",
+        "round": 0
+      }
+    ],
+    "meta": {
+      "revision": "1"
+    }
+  }
+}
