@@ -28,6 +28,7 @@
 					<th>Winner</th>
 					<th class="center">Round #</th>
 					<th class="right">Main Prize</th>
+					<th class="center">CS NFTs</th>
 					<th class="right">Endurance CST</th>
 					<th class="right">Chrono Warrior</th>
 					<th class="center">Bids</th>
@@ -49,6 +50,8 @@
 							{{printf "%.6f" .MainPrize.EthAmountEth}} ETH
 							{{if gt .MainPrize.CstAmountEth 0.0}}<br>{{printf "%.4f" .MainPrize.CstAmountEth}} CST{{end}}
 						</td>
+						{{/* NumCSNfts is omitted from pre-V3 rounds (implicit single NFT). */}}
+						<td class="center">{{or (index .MainPrize "NumCSNfts") 1}}</td>
 						<td class="right">
 							{{if gt .EnduranceChampion.CstAmountEth 0.0}}{{printf "%.4f" .EnduranceChampion.CstAmountEth}} CST{{else}}—{{end}}
 						</td>

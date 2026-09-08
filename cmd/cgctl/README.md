@@ -32,6 +32,29 @@ Database-backed subcommands (`backfill-dao-evtlog`, `total-tokens`,
 `token-seed`) additionally need the PostgreSQL environment:
 `PGSQL_HOST`, `PGSQL_USERNAME`, `PGSQL_DATABASE`, `PGSQL_PASSWORD`.
 
+## Contract version support (V1 / V2 / V3)
+
+The game is a UUPS proxy upgraded in place, so a single address can be
+running V1, V2, or V3 code. Commands that depend on version-specific ABI
+detect the deployed version by probing view selectors
+(`internal/gamever`): `cstBidPriceDeclineMultiplier()` answers only on V3,
+`cstDutchAuctionDuration()` on V2 and V3, and neither on V1.
+
+- **`bid` and the `autobid` bot** pick the bid call shape per version: V1
+  `bidWithEth(int256,string)` vs. the V2/V3
+  `bidWithEth(int256,string,uint256)` (the added argument is
+  `bidCstRewardAmountMinLimit`; zero accepts any reward). `bid` also quotes
+  the ETH price at the expected execution timestamp via
+  `getNextEthBidPriceAdvanced`, because the V3 late-bid premium makes the
+  price grow with time (the contract refunds overpayment).
+- **`info`** reads the unique-bidder count from `bidsInfo` (V3 name) and
+  falls back to `bidderAddresses` (V1/V2), and reads the bid CST reward from
+  `getBidCstRewardAmount` (V2/V3) falling back to
+  `cstRewardAmountForBidding` (V1).
+- Everything else the CLI calls (claiming, donations, the owner-only
+  setters, and the remaining views) has an identical ABI on all three
+  versions and needs no branching.
+
 ## Architecture
 
 All subcommands share the repository-wide `internal/ethtx` package (the same

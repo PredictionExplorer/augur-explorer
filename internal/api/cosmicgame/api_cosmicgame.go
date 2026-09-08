@@ -41,7 +41,12 @@ func respondUserAddrNotIndexedUserInfoJSON(c *httpx.Context, userAddr string) {
 		"NumRaffleEthWinnings": int64(0), "RaffleNFTsCount": int64(0), "RewardNFTsCount": int64(0),
 		"UnclaimedNFTs": int64(0), "TotalCSTokensWon": int64(0), "CosmicSignatureNumTransfers": int64(0),
 		"TotalDonatedCount": int64(0), "TotalDonatedAmountEth": 0.0,
-		"StakingStatisticsRWalk": httpx.H{},
+		// Zeroed but fully-shaped, so templates dereferencing the stats
+		// fields render 0 instead of erroring on a missing key.
+		"StakingStatisticsRWalk": httpx.H{
+			"TotalNumStakeActions": int64(0), "TotalNumUnstakeActions": int64(0),
+			"TotalTokensStaked": int64(0), "TotalTokensMinted": int64(0), "NumActiveStakers": int64(0),
+		},
 	}
 	c.JSON(http.StatusOK, httpx.H{
 		"status": 1, "error": "", "UserInfo": emptyUserInfo,
@@ -308,16 +313,25 @@ func (a *API) handleDashboard(c *httpx.Context) {
 		"ContractAddrs":                        caddrs,
 	}
 	if snap.MechanicsVersion == 3 {
+		// The bid CST reward for one full main-prize time increment is
+		// bidCstRewardAmountMultiplier / 1e6 wei, independent of the
+		// increment length (reward = elapsedSeconds * multiplier /
+		// timeIncrementInMicroSeconds).
+		cstRewardPerTimeIncrement := ""
+		if mult, ok := new(big.Int).SetString(snap.BidCSTRewardMultiplier, 10); ok {
+			cstRewardPerTimeIncrement = mult.Div(mult, big.NewInt(1_000_000)).String()
+		}
 		payload["V3Config"] = httpx.H{
-			"IsV3":                                   true,
-			"RoundLateBidDurationDivisor":            snap.V3.RoundLateBidDurationDivisor,
-			"RoundLateBidDurationSeconds":            snap.V3.RoundLateBidDurationSeconds,
-			"RoundLateBidPremiumBaseMultiplier":      snap.V3.RoundLateBidPricePremiumAmountBaseMultiplier,
-			"RoundLateBidPremiumExponent":            snap.V3.RoundLateBidPricePremiumAmountExponent,
+			"IsV3":                                      true,
+			"RoundLateBidDurationDivisor":               snap.V3.RoundLateBidDurationDivisor,
+			"RoundLateBidDurationSeconds":               snap.V3.RoundLateBidDurationSeconds,
+			"RoundLateBidPremiumBaseMultiplier":         snap.V3.RoundLateBidPricePremiumAmountBaseMultiplier,
+			"RoundLateBidPremiumExponent":               snap.V3.RoundLateBidPricePremiumAmountExponent,
 			"MainPrizeNumCosmicSignatureNfts":           snap.V3.MainPrizeNumCosmicSignatureNfts,
 			"CstAuctionPriceMinLimit":                   snap.V3.CstDutchAuctionBeginningBidPriceMinLimit,
 			"CstBidPriceDeclineMultiplier":              snap.V3.CstBidPriceDeclineMultiplier,
 			"CstBidPriceDeclineMultiplierChangeDivisor": snap.V3.CstBidPriceDeclineMultiplierChangeDivisor,
+			"CstRewardPerTimeIncrement":                 cstRewardPerTimeIncrement,
 		}
 	}
 	sanitizeMapFloatsForJSON(payload)
@@ -2005,9 +2019,11 @@ func (a *API) handleUserGlobalWinnings(c *httpx.Context) {
 	pUserAddr := c.Param("user_addr")
 	userAid, err := a.store.LookupAddressID(c.Request.Context(), pUserAddr)
 	if err != nil {
-		// Address not in DB yet — return 200 with empty winnings so UI works
+		// Address not in DB yet — return 200 with zeroed winnings so UI
+		// works. Use the same object shape as the success path (the legacy
+		// []any{} fallback broke templates dereferencing Winnings fields).
 		c.JSON(http.StatusOK, httpx.H{
-			"status": 1, "error": "", "Winnings": []any{}, "UserAddr": pUserAddr, "UserAid": int64(0),
+			"status": 1, "error": "", "Winnings": cgmodel.CGClaimInfo{}, "UserAddr": pUserAddr, "UserAid": int64(0),
 		})
 		return
 	}

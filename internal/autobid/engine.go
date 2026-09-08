@@ -34,6 +34,7 @@ import (
 	cgcontracts "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
 	rwcontracts "github.com/PredictionExplorer/augur-explorer/contracts/randomwalk"
 	"github.com/PredictionExplorer/augur-explorer/internal/ethtx"
+	"github.com/PredictionExplorer/augur-explorer/internal/gamever"
 )
 
 // rwalkMintEventTopic is the topic0 of the RandomWalk mint event.
@@ -157,9 +158,14 @@ type Engine struct {
 	rpcClient *ethrpc.Client
 	ethClient *ethclient.Client
 
-	gameContract  *cgcontracts.CosmicSignatureGame
-	rwalkContract *rwcontracts.RWalk
-	prizesWallet  *cgcontracts.PrizesWallet
+	gameContract *cgcontracts.CosmicSignatureGame
+	// gameContractV23 carries the V2/V3 call shapes (bidWithEth/bidWithCst
+	// take a trailing bidCstRewardAmountMinLimit argument); which one is
+	// used per bid is decided by gameVersion.
+	gameContractV23 *cgcontracts.CosmicSignatureGameV3
+	gameVersion     gamever.Version
+	rwalkContract   *rwcontracts.RWalk
+	prizesWallet    *cgcontracts.PrizesWallet
 
 	privateKey *ecdsa.PrivateKey
 	address    common.Address
@@ -311,6 +317,15 @@ func (e *Engine) bindContracts(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame contract: %w", err)
 	}
+	e.gameContractV23, err = cgcontracts.NewCosmicSignatureGameV3(e.cfg.GameAddr, e.ethClient)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate CosmicGame V3 binding: %w", err)
+	}
+	e.gameVersion, err = gamever.Detect(callOpts(ctx), e.cfg.GameAddr, e.ethClient)
+	if err != nil {
+		return fmt.Errorf("detecting game contract version: %w", err)
+	}
+	e.logf("Game contract version: %s", e.gameVersion)
 	rwalkAddr, err := e.gameContract.RandomWalkNft(callOpts(ctx))
 	if err != nil {
 		return fmt.Errorf("getting RWalk addr: %w", err)

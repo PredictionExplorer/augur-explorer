@@ -115,6 +115,13 @@
 							<div class="detail-label">CST Amount</div>
 							<div class="detail-value">{{printf "%.2f" .RoundInfo.EnduranceChampion.CstAmountEth}} CST</div>
 						</div>
+						{{/* V3 championDurations(round); omitted from the JSON for pre-V3 rounds. */}}
+						{{ with index .RoundInfo.RoundStats "EnduranceChampionDuration" }}
+						<div class="detail-row">
+							<div class="detail-label">Championship Duration (V3)</div>
+							<div class="detail-value">{{.}} seconds</div>
+						</div>
+						{{ end }}
 					</div>
 				</div>
 
@@ -159,6 +166,13 @@
 							<div class="detail-label">NFT Token ID</div>
 							<div class="detail-value">{{.RoundInfo.ChronoWarrior.NftTokenId}}</div>
 						</div>
+						{{/* V3 championDurations(round); omitted from the JSON for pre-V3 rounds. */}}
+						{{ with index .RoundInfo.RoundStats "ChronoWarriorDuration" }}
+						<div class="detail-row">
+							<div class="detail-label">Chrono Duration (V3)</div>
+							<div class="detail-value">{{.}} seconds</div>
+						</div>
+						{{ end }}
 					</div>
 				</div>
 			</div>
@@ -188,7 +202,26 @@
 				<div class="stat-card">
 					<div class="stat-label">Staking Deposit</div>
 					<div class="stat-value">{{printf "%.6f" .RoundInfo.StakingDeposit.StakingDepositAmountEth}}</div>
+					<div class="stat-sublabel">ETH ({{printf "%.6f" .RoundInfo.StakingDeposit.StakingPerTokenEth}} / token, {{.RoundInfo.StakingDeposit.StakingNumStakedTokens}} staked)</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">ETH Wagered In Bids</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.RoundStats.TotalEthInBidsEth}}</div>
 					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">CST Consumed In Bids</div>
+					<div class="stat-value">{{printf "%.4f" .RoundInfo.RoundStats.TotalCstInBidsEth}}</div>
+					<div class="stat-sublabel">CST</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">ERC-20 Donations</div>
+					<div class="stat-value">{{.RoundInfo.RoundStats.NumERC20Donations}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Direct ETH Donations</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.RoundStats.TotalDonatedAmountEth}}</div>
+					<div class="stat-sublabel">ETH ({{.RoundInfo.RoundStats.TotalDonatedCount}} donations)</div>
 				</div>
 			</div>
 
@@ -219,6 +252,10 @@
 				<div class="info-item">
 					<div class="info-label">Round Duration</div>
 					<div class="info-value">{{.RoundInfo.RoundStats.RoundDurationSeconds}} seconds</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Delay Before Round Activation</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.DelayDurationBeforeRoundActivation}} seconds</div>
 				</div>
 			</div>
 

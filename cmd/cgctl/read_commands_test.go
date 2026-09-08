@@ -37,8 +37,10 @@ func startReadChain(t *testing.T) *testchain.Chain {
 }
 
 // infoGameStub scripts every read the info command makes against a V1 game.
+// The V2/V3 ABIs are parsed too so tests can opt into newer sections by
+// stubbing the version-specific getters.
 func infoGameStub() *testchain.ContractStub {
-	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI)
+	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI, cgc.CosmicSignatureGameV3ABI)
 	blockTime := testchain.BlockTimeInt64(100)
 
 	// Round status.
@@ -188,6 +190,46 @@ func TestInfoCommandV2Sections(t *testing.T) {
 	}
 	if strings.Contains(out, "CST reward per bid (fixed)") {
 		t.Errorf("V2 info printed the V1 fixed-reward line:\n%s", out)
+	}
+}
+
+func TestInfoCommandV3Sections(t *testing.T) {
+	chain := startReadChain(t)
+	stub := infoGameStub()
+	// V2 getters answer on a V3 contract too.
+	stub.Return("getBidCstRewardAmount", eth(7))
+	stub.Return("cstDutchAuctionDurationChangeDivisor", big.NewInt(11))
+	stub.Return("cstDutchAuctionDuration", big.NewInt(1800))
+	// V3 getters. With mainPrizeTimeIncrement = 3600s (stubbed above), a
+	// 1200s window and base multiplier 24_576_000 give an exponentiation
+	// base of exactly 2^13, so the max premium is 1.00 and the price
+	// multiplier peaks at x2.00.
+	stub.Return("cstBidPriceDeclineMultiplier", eth(0.05)) // 0.05 CST/s = 3 CST/min
+	stub.Return("getRoundLateBidDuration", big.NewInt(1200))
+	stub.Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(24_576_000_000))
+	stub.Return("roundLateBidPricePremiumAmountExponent", big.NewInt(2))
+	// 1.2e26 exactly (the float-based eth() helper is not exact here):
+	// * 60 / 3.6e9 microseconds = 2e18 wei = 2 CST/min.
+	rewardMult, _ := new(big.Int).SetString("120000000000000000000000000", 10)
+	stub.Return("bidCstRewardAmountMultiplier", rewardMult)
+	stub.Return("mainPrizeNumCosmicSignatureNfts", big.NewInt(3))
+	registerInfoWorld(t, chain, stub)
+
+	out, err := executeCmd(t, newInfoCmd(), testGameAddr.Hex())
+	if err != nil {
+		t.Fatalf("info (V3): %v\noutput: %s", err, out)
+	}
+	for _, want := range []string{
+		"V3 PARAMETERS (initializeV3)",
+		"Late-bid window (before prize)= 1200 (20 min 0 sec)",
+		"up to x2.00 at prize time (price x (1 + 1.00 x (elapsed/window)^2))",
+		"Bid CST reward              = 2.000000000000000000 CST/min",
+		"CST bid price decline rate  = 3.000000000000000000 CST/min",
+		"Main prize CS NFTs (winner) = 3",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("V3 info output missing %q\noutput:\n%s", want, out)
+		}
 	}
 }
 

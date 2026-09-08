@@ -53,7 +53,9 @@
 							{{ethAddrLink .BidderAddr}}
 						</td>
 						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
-						<td class="right">{{printf "%.4f" .CSTRewardEth}}</td>
+						{{/* V3 mints the whole bid CST reward to the previous (outbid) bidder;
+						     the per-version fields are omitted from pre-V3 rows. */}}
+						<td class="right">{{ with index . "PreviousCstRewardAmountEth" }}{{printf "%.4f" .}} <span title="V3: minted to the previous (outbid) bidder">&rarr;prev</span>{{ else }}{{printf "%.4f" .CSTRewardEth}}{{ end }}</td>
 						<td class="right">{{ if gt .BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidCstRewardAmountEth}}{{else}}—{{end}}</td>
 						<td class="right">{{ if ge .CstDutchAuctionDurationInt 0.0 }}{{num .CstDutchAuctionDurationInt}}{{else}}—{{end}}</td>
 						<td class="right">{{printf "%.4f" .CstPriceEth}}</td>
