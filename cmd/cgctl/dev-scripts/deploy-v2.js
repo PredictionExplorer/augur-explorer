@@ -110,12 +110,16 @@ async function main() {
     console.log(`Ready to play on V2 (roundNum=${roundNum}).`);
     console.log(`Upgrade later with: CADDR=${proxyAddr} ... upgrade-v3.js (see that script's header).`);
 
-    // Contract registry row for the backend (same format as populate-old-v3.js;
-    // column order matches the cg_contracts table definition).
+    // Contract registry row for the backend (explicit column names).
     console.log("");
     console.log("Contract Addresses Deployed:");
     console.log(
-        "INSERT INTO cg_contracts VALUES(" +
+        "INSERT INTO cg_contracts(" +
+        "cosmic_game_addr,cosmic_signature_addr,cosmic_token_addr,cosmic_dao_addr," +
+        "charity_wallet_addr,prizes_wallet_addr,random_walk_addr," +
+        "staking_wallet_cst_addr,staking_wallet_rwalk_addr,marketing_wallet_addr," +
+        "implementation_addr" +
+        ") VALUES(" +
         `'${proxyAddr}',` +
         `'${await result.cosmicSignature.getAddress()}',` +
         `'${await result.cosmicToken.getAddress()}',` +
