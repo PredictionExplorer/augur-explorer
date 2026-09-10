@@ -76,11 +76,18 @@ compiler output — the artifacts here cannot invent new ABIs:
 
 Mechanics upgrades are additive binding types: V2 added
 `CosmicSignatureGameV2`, and V3 adds `CosmicSignatureGameV3`. The V3 ABI is
-compiled from the Solidity `v3.1-2026-08-19` branch at commit `8070c8df`
-("Test V3 CST auction decline rates, idle periods, and round transitions"):
+compiled from the Solidity `v3.1-2026-08-19` branch at commit `9c04656e`
+("Consolidate main prize duration getters into a signed public getter"):
 a monolithic (non-modular) `CosmicSignatureGameV3` implementation with the
 CST bid price decline multiplier mechanics, the weighted bidder raffle
 (`bidsInfo` / `getBidInfoAt` replacing `bidderAddresses` /
 `getBidderAddressAt`), and no one-bid-per-second throttle; the `bin` is that
-implementation's creation bytecode. Older types remain unchanged so all
-historical event generations stay decodable.
+implementation's creation bytecode. Relative to `8070c8df`, this compile
+drops the `errStr` string from every custom error (new 4-byte selectors),
+replaces `ArbitrumError(string)` with four per-call failure events, adds
+`EthTransferToCharityFailed(address,uint256)`, and consolidates the main
+prize countdown into a single signed `getDurationUntilMainPrize()`
+(`int256`; `getDurationUntilMainPrizeRaw()` is gone — see
+`cosmicgame.AsSignedInt256` for callers that read it through the V1/V2
+bindings). Older types remain unchanged so all historical event generations
+stay decodable.

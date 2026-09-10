@@ -150,6 +150,11 @@ func (r *Repo) DeleteChronoWarrior(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_chrono_warrior_prize", evtlogID)
 }
 
+// DeleteEthToCharityFailed removes a V3.1 EthTransferToCharityFailed row.
+func (r *Repo) DeleteEthToCharityFailed(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_eth_to_charity_failed", evtlogID)
+}
+
 // DeleteFundTransferFailed removes a FundTransferFailed row.
 func (r *Repo) DeleteFundTransferFailed(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_fund_transf_err", evtlogID)

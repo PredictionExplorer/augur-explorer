@@ -51,7 +51,6 @@ func infoGameStub() *testchain.ContractStub {
 	stub.Return("bidderAddresses", big.NewInt(4))
 	// Timing.
 	stub.Return("getDurationUntilMainPrize", big.NewInt(90))
-	stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(90))
 	stub.Return("mainPrizeTime", big.NewInt(blockTime+90))
 	stub.Return("timeoutDurationToClaimMainPrize", big.NewInt(86400))
 	stub.Return("mainPrizeTimeIncrementInMicroSeconds", big.NewInt(3_600_000_000))

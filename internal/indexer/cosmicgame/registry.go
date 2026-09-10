@@ -118,6 +118,21 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		// Only MainPrize/MainPrizeV2 reach ArbitrumHelpers, so the game is the
 		// sole emitter of ArbitrumError.
 		indexer.NewHandler(topicHash(TopicArbitrumError), "ArbitrumError", game, h.decodeArbitrumError, h.storeArbitrumError),
+		// V3.1 replaced ArbitrumError(string) with one parameterless event per
+		// failing precompile call; all four land in cg_arbitrum_error with the
+		// legacy message wording.
+		indexer.NewHandler(topicHash(TopicArbSysArbBlockNumberCallFailed), "ArbSysArbBlockNumberCallFailed", game,
+			h.decodeArbitrumCallFailed("ArbSys.arbBlockNumber call failed."), h.storeArbitrumError),
+		indexer.NewHandler(topicHash(TopicArbSysArbBlockHashCallFailed), "ArbSysArbBlockHashCallFailed", game,
+			h.decodeArbitrumCallFailed("ArbSys.arbBlockHash call failed."), h.storeArbitrumError),
+		indexer.NewHandler(topicHash(TopicArbGasInfoGetGasBacklogCallFailed), "ArbGasInfoGetGasBacklogCallFailed", game,
+			h.decodeArbitrumCallFailed("ArbGasInfo.getGasBacklog call failed."), h.storeArbitrumError),
+		indexer.NewHandler(topicHash(TopicArbGasInfoGetL1PricingUnitsCallFailed), "ArbGasInfoGetL1PricingUnitsSinceUpdateCallFailed", game,
+			h.decodeArbitrumCallFailed("ArbGasInfo.getL1PricingUnitsSinceUpdate call failed."), h.storeArbitrumError),
+		// V3.1 charity-donation failure event (replaces the game's
+		// FundTransferFailed emission on that path).
+		indexer.NewHandler(topicHash(TopicEthTransferToCharityFailed), "EthTransferToCharityFailed", game,
+			h.decodeEthTransferToCharityFailed, h.storeEthTransferToCharityFailed),
 		indexer.NewHandler(topicHash(TopicFundsToCharity), "FundsTransferredToCharity", charitySenders, h.decodeFundsToCharity, h.storeFundsToCharity),
 		indexer.NewHandler(topicHash(TopicDelayDurationRound), "DelayDurationBeforeRoundActivationChanged", game, h.decodeDelayDurationChanged, h.storeDelayDurationChanged),
 		indexer.NewHandler(topicHash(TopicFirstBidEvent), "FirstBidPlacedInRound", game, h.decodeFirstBidPlacedInRound, h.storeFirstBidPlacedInRound),

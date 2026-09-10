@@ -996,6 +996,19 @@ type CGFundTransferFailed struct {
 	Amount      string
 }
 
+// CGEthToCharityFailed records a V3.1 EthTransferToCharityFailed event: the
+// game's round-end ETH donation to the charity address did not go through
+// (the round still completes; the ETH stays in the game contract).
+type CGEthToCharityFailed struct {
+	EvtId          int64
+	BlockNum       int64
+	TxId           int64
+	TimeStamp      int64
+	Contract       string
+	CharityAddress string
+	Amount         string
+}
+
 // CGErc20TransferFailed records an ERC20TransferFailed contract error event:
 // a CST transfer from the game to Destination reverted.
 type CGErc20TransferFailed struct {

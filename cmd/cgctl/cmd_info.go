@@ -155,14 +155,17 @@ func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSig
 }
 
 func printTiming(out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) (*big.Int, error) {
-	timeUntilPrize, err := game.GetDurationUntilMainPrize(copts)
+	// V3.1 removed getDurationUntilMainPrizeRaw() and made
+	// getDurationUntilMainPrize() return a signed value (same selector), so
+	// one call now serves both the raw and the clamped display. AsSignedInt256
+	// also handles pre-V3.1 contracts, whose unsigned result passes through
+	// unchanged.
+	durationUntilPrizeRawUint, err := game.GetDurationUntilMainPrize(copts)
 	if err != nil {
 		return nil, fmt.Errorf("GetDurationUntilMainPrize(): %w", err)
 	}
-	durationUntilPrizeRaw, err := game.GetDurationUntilMainPrizeRaw(copts)
-	if err != nil {
-		return nil, fmt.Errorf("GetDurationUntilMainPrizeRaw(): %w", err)
-	}
+	durationUntilPrizeRaw := cgcontracts.AsSignedInt256(durationUntilPrizeRawUint)
+	timeUntilPrize := cgcontracts.ClampNonNegative(durationUntilPrizeRaw)
 	prizeTime, err := game.MainPrizeTime(copts)
 	if err != nil {
 		return nil, fmt.Errorf("MainPrizeTime(): %w", err)

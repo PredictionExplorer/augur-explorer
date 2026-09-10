@@ -28,7 +28,6 @@ func plannerStub(chain *testchain.Chain) *testchain.ContractStub {
 	stub.Return("getTotalNumBids", big.NewInt(0))
 	stub.Return("lastBidderAddress", zeroAddress())
 	stub.Return("getDurationUntilMainPrize", big.NewInt(0))
-	stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(0))
 	stub.Return("timeoutDurationToClaimMainPrize", big.NewInt(3600))
 	stub.Return("mainPrizeTimeIncrementInMicroSeconds", big.NewInt(1)) // differs from target
 	stub.Return("delayDurationBeforeRoundActivation", big.NewInt(targetDelaySec))
@@ -144,7 +143,6 @@ func TestPlannerPathDDeferThenSet(t *testing.T) {
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)
 	stub.Return("getDurationUntilMainPrize", big.NewInt(500))
-	stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(500))
 	stub.Handle("roundActivationTime", func([]any) ([]any, error) {
 		// Active until the defer transaction moves activation to the future.
 		if chain.SubmittedTxCount() >= 1 {
@@ -180,7 +178,6 @@ func TestPlannerDeferExhaustionFails(t *testing.T) {
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)
 	stub.Return("getDurationUntilMainPrize", big.NewInt(500))
-	stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(500))
 	// Activation never moves to the future: every defer attempt fails to
 	// open the window.
 	stub.Return("roundActivationTime", big.NewInt(blockTime-600))
@@ -209,9 +206,9 @@ func TestPlannerHardhatTimeAdvanceForClaim(t *testing.T) {
 	stub := plannerStub(chain)
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)
-	// Claimable through the anyone-timeout, but the clamped timer still
-	// shows 5 seconds: on Hardhat the planner advances block time.
-	stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(-4000))
+	// The prize timer still shows 5 seconds, so nothing is claimable yet: on
+	// Hardhat the planner advances block time past the timer plus the
+	// anyone-claim timeout (the signer is not the last bidder) and claims.
 	stub.Handle("getDurationUntilMainPrize", func([]any) ([]any, error) {
 		if chain.TimeOffset() > 0 {
 			return []any{big.NewInt(0)}, nil
@@ -233,8 +230,9 @@ func TestPlannerHardhatTimeAdvanceForClaim(t *testing.T) {
 	if !strings.Contains(out, "ADVANCE HARDHAT TIME FOR CLAIM") {
 		t.Errorf("output missing hardhat advance:\n%s", out)
 	}
-	if got := chain.TimeOffset(); got != 6 {
-		t.Errorf("chain time offset = %d, want 6 (5s remaining + 1)", got)
+	// 5s remaining + 3600s anyone-claim timeout (signer != last bidder) + 1.
+	if got := chain.TimeOffset(); got != 3606 {
+		t.Errorf("chain time offset = %d, want 3606 (5s remaining + 3600s timeout + 1)", got)
 	}
 	if got := chain.SubmittedTxCount(); got != 2 {
 		t.Errorf("submitted txs = %d, want 2 (claim + increment)", got)
@@ -247,17 +245,35 @@ func TestPlannerRealNetworkRefusesEarlyClaim(t *testing.T) {
 	stub := plannerStub(chain)
 	stub.Return("getTotalNumBids", big.NewInt(5))
 	stub.Return("lastBidderAddress", otherAddr)
-	stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(-4000))
+	// Timer still running: on a real network the planner must never advance
+	// chain time or force a claim; it falls back to deferring the round.
 	stub.Return("getDurationUntilMainPrize", big.NewInt(5))
-	stub.Return("roundActivationTime", big.NewInt(blockTime-600))
+	stub.Handle("roundActivationTime", func([]any) ([]any, error) {
+		if chain.SubmittedTxCount() >= 1 { // after the defer tx
+			return []any{big.NewInt(blockTime + 100000)}, nil
+		}
+		return []any{big.NewInt(blockTime - 600)}, nil
+	})
 	registerGame(t, chain, stub)
 
-	_, err := runPlanner(t, false, testGameAddr.Hex(), "3600", "300")
-	if err == nil || !strings.Contains(err.Error(), "prize not claimable yet (5 seconds remaining)") {
-		t.Fatalf("early claim on real network = %v", err)
+	out, err := runPlanner(t, true, testGameAddr.Hex(), "3600", "300")
+	if err != nil {
+		t.Fatalf("planner real network: %v\noutput: %s", err, out)
 	}
-	if got := chain.SubmittedTxCount(); got != 0 {
-		t.Errorf("submitted txs = %d, want 0", got)
+	if strings.Contains(out, "ADVANCE HARDHAT TIME FOR CLAIM") {
+		t.Errorf("real network must not advance chain time:\n%s", out)
+	}
+	if strings.Contains(out, "CLAIM MAIN PRIZE") {
+		t.Errorf("real network must not claim while the timer runs:\n%s", out)
+	}
+	if !strings.Contains(out, "DEFER ROUND ACTIVATION (NO CLAIMABLE PRIZE)") {
+		t.Errorf("output missing defer section:\n%s", out)
+	}
+	if got := chain.TimeOffset(); got != 0 {
+		t.Errorf("chain time offset = %d, want 0", got)
+	}
+	if got := chain.SubmittedTxCount(); got != 2 {
+		t.Errorf("submitted txs = %d, want 2 (defer + increment)", got)
 	}
 }
 

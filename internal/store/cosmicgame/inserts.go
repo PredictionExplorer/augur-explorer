@@ -876,6 +876,33 @@ func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *cgmodel.CGChronoWar
 	return store.WrapError(op, err)
 }
 
+// InsertEthToCharityFailed records a V3.1 EthTransferToCharityFailed event.
+func (r *Repo) InsertEthToCharityFailed(ctx context.Context, evt *cgmodel.CGEthToCharityFailed) error {
+	const op = "insert into cg_eth_to_charity_failed"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	charityAid, err := r.addrID(ctx, evt.CharityAddress, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_eth_to_charity_failed(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"charity_aid,amount" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.q(ctx).Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		charityAid,
+		evt.Amount,
+	)
+	return store.WrapError(op, err)
+}
+
 // InsertFundTransferFailed records a FundTransferFailed event.
 func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFundTransferFailed) error {
 	const op = "insert into cg_fund_transf_err"

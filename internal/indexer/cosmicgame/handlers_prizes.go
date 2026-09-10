@@ -378,6 +378,57 @@ func (h *Handlers) storeArbitrumError(ctx context.Context, evt *cgmodel.CGArbitr
 	return h.repo.InsertArbitrumError(ctx, evt)
 }
 
+// decodeArbitrumCallFailed builds a decoder for one of the four V3.1
+// parameterless ArbitrumHelpers failure events (which replaced the generic
+// ArbitrumError(string)). The events carry no data, so the decoder just
+// records the call name in the existing cg_arbitrum_error table, keeping the
+// legacy message wording for continuity.
+func (h *Handlers) decodeArbitrumCallFailed(errStr string) func(*types.Log, *store.EthereumEventLog) (*cgmodel.CGArbitrumError, error) {
+	return func(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGArbitrumError, error) {
+		evt := &cgmodel.CGArbitrumError{}
+		evt.EvtId = elog.EvtID
+		evt.BlockNum = elog.BlockNum
+		evt.TxId = elog.TxID
+		evt.Contract = lg.Address.String()
+		evt.TimeStamp = elog.TimeStamp
+		evt.ErrStr = errStr
+		return evt, nil
+	}
+}
+
+// decodeEthTransferToCharityFailed handles the V3.1
+// EthTransferToCharityFailed(address indexed charityAddress, uint256 amount)
+// event, which replaced the game's FundTransferFailed emission on the
+// round-end charity donation path.
+func (h *Handlers) decodeEthTransferToCharityFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGEthToCharityFailed, error) {
+	if err := requireTopics(lg, 2); err != nil {
+		return nil, err
+	}
+	var ethEvt cgc.CosmicSignatureGameV3EthTransferToCharityFailed
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "EthTransferToCharityFailed", lg.Data); err != nil {
+		return nil, err
+	}
+
+	evt := &cgmodel.CGEthToCharityFailed{}
+	evt.EvtId = elog.EvtID
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxID
+	evt.Contract = lg.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.CharityAddress = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
+	evt.Amount = ethEvt.Amount.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeEthTransferToCharityFailed(ctx context.Context, evt *cgmodel.CGEthToCharityFailed) error {
+	h.log.Info("EthTransferToCharityFailed", "evt_id", evt.EvtId, "charity", evt.CharityAddress, "amount", evt.Amount)
+
+	if err := h.repo.DeleteEthToCharityFailed(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertEthToCharityFailed(ctx, evt)
+}
+
 func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundTransferFailed, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err

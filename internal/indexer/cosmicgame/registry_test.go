@@ -59,9 +59,11 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 
 	// The 78 V1/V2 registrations (including ArbitrumError and
 	// EthBidRefundAmountInGasToSwallowMaxLimitChanged) plus V3
-	// MainPrizeClaimed and six V3 configuration events.
-	if got := len(reg.Handlers()); got != 85 {
-		t.Errorf("registered handlers = %d, want 83", got)
+	// MainPrizeClaimed, six V3 configuration events, and the five V3.1
+	// events (EthTransferToCharityFailed and the four per-call Arbitrum
+	// failure events that replaced ArbitrumError).
+	if got := len(reg.Handlers()); got != 90 {
+		t.Errorf("registered handlers = %d, want 90", got)
 	}
 
 	for _, c := range []struct{ topic, want string }{

@@ -462,6 +462,11 @@ func (e *Engine) refreshMarket(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting time until prize: %w", err)
 	}
+	// V3.1 re-typed getDurationUntilMainPrize() to a signed int256 (negative
+	// once the prize is claimable); the V1 binding decodes that as ~2^256.
+	// Normalize and clamp to preserve the "0 = claimable now" semantics the
+	// bidding logic expects.
+	m.TimeUntilPrize = cgcontracts.ClampNonNegative(cgcontracts.AsSignedInt256(m.TimeUntilPrize))
 	tokenAddr, err := e.gameContract.Token(opts)
 	if err != nil {
 		return fmt.Errorf("getting token address: %w", err)

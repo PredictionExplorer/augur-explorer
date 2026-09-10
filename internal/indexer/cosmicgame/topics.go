@@ -46,60 +46,71 @@ const (
 
 	// Admin events.
 
-	TopicProxyUpgraded                               = "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b" // IERC1967.sol:Upgraded
-	TopicAdminChanged                                = "7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f" // IERC1967.sol:AdminChanged
-	TopicTreasurerChanged                            = "df73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e" // IMarketingWallet.sol:TreasurerAddressChanged
-	TopicInitialized                                 = "c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2" // Initializable.sol:Initialized
-	TopicCharityPercentageChanged                    = "fe65b6d5007c66dadebc5095104ccd672c070f396dfdcfe1ee7f54201b9efa6d" // ISystemEvents.sol:CharityEthDonationAmountPercentageChanged
-	TopicPrizePercentageChanged                      = "b5a05ec7911dd5450a7fa4ae54d50d9d83af6e256db8fc76c82edd7b659cf8bc" // ISystemEvents.sol:MainEthPrizeAmountPercentageChanged
-	TopicRafflePercentageChanged                     = "bfcd8fb930a57c1598c9760db19c84ec766546c3c9a8565611df8302482bfb17" // ISystemEvents.sol:RaffleTotalEthPrizeAmountForBiddersPercentageChanged
-	TopicStakePercentageChanged                      = "9e44c04f534af356419a731b967f3d56bc748b1f3fdbda7a89f4e1a321ade934" // ISystemEvents.sol:CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged
-	TopicChronoPercentageChanged                     = "5581e31f5b8d4b3c45b8ab8bf67e3602ce588b423905eb6ad34bd6bc3c848699" // ISystemEvents.sol:ChronoWarriorEthPrizeAmountPercentageChanged
-	TopicNumRaffleEthPrizeEventsBiddingChanged       = "4787028773c8f14bc3b4bc41f43a02329ae41105823287201a34782c530d35fd" // ISystemEvents.sol:NumRaffleEthPrizesForBiddersChanged
-	TopicNumRaffleNftPrizeEventsBiddingChanged       = "85d8bf21006916836edd67a5afeed2e891cf876a6c9cd9babf7f42f4b007c24f" // ISystemEvents.sol:NumRaffleCosmicSignatureNftsForBiddersChanged
-	TopicNumRaffleNftPrizeEventsStakingRwalkChanged  = "3312247fcf207243294680d9103851c8709e19be3d46ee4b1bff5e12d1c5ca7b" // ISystemEvents.sol:NumRaffleCosmicSignatureNftsForRandomWalkNftStakersChanged
-	TopicSystemModeChanged                           = "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c" // ISystemManagement.sol:SystemModeChanged
-	TopicRwalkAddressChanged                         = "dab38e33e6e11cbb8b085bba9d7426d5e5af01bcc46d2c5957645e4d09e8c49c" // ISystemEvents.sol:RandomWalkNftAddressChanged
-	TopicPrizeWalletAddressChanged                   = "b4cecfe1346c94da27291cf5a02969d5fe0b5c36eca49b04fcd60841d28c5e13" // ISystemEvents.sol:PrizesWalletAddressChanged
-	TopicStakingWalletCstAddressChanged              = "4da1815cd654922275d14d2335fd9a0dd0aa6a0d0ff87fb4cc872ebe9704596f" // ISystemEvents.sol:StakingWalletCosmicSignatureNftAddressChanged
-	TopicStakingWalletRwalkAddressChanged            = "bf6e296f85d08cc1ab124aed644bf4b19e4a726a7aea53e3784ab1341738a040" // ISystemEvents.sol:StakingWalletRandomWalkNftAddressChanged
-	TopicMarketingAddressChanged                     = "4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54" // ISystemEvents.sol:MarketingWalletAddressChanged
-	TopicCosmicTokenAddressChanged                   = "9b3eda10f1724a2cf9f7dae4ac263c77908df4d00e92f1377b66fc8be37cd8c1" // ISystemEvents.sol:CosmicSignatureTokenAddressChanged
-	TopicCosmicSignatureAddressChanged               = "5bde6238168795ba4e77972a2bdaa5a465f7c9a5d05817f5e8d3fed2e5a4fa60" // ISystemEvents.sol:CosmicSignatureNftAddressChanged
-	TopicBusinessLogicAddressChanged                 = "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd" // ISystemManagement.sol:BusinessLogicContractAddressChanged
-	TopicTimeIncreaseChanged                         = "4636d3e567b27988879babd22e50f49104ca65647933fc1623ff3d4d807438d2" // ISystemEvents.sol:MainPrizeTimeIncrementIncreaseDivisorChanged
-	TopicTimeoutClaimprizeChanged                    = "37a332914fac995349420c0419b4423a19dcb762017f691442a0782ce4bf417a" // ISystemEvents.sol:TimeoutDurationToClaimMainPrizeChanged
-	TopicTimeoutToWithdrawPrize                      = "8717bb199c6bc4a5dadb21547205f9ef8ec037dda246a5526d6a6471306ea52e" // IPrizesWallet.sol:TimeoutDurationToWithdrawPrizesChanged
-	TopicPriceIncreaseChanged                        = "deb71e1d117914859ddde484a9810084d9ee399077d5cd8dcbdf8770d33d8ae4" // ISystemEvents.sol:EthBidPriceIncreaseDivisorChanged
-	TopicMainPrizeMicrosecondIncrease                = "07417920574ce0bdfe987af0575c8793cc73a29d7830760ad459d0e569b5b79b" // ISystemEvents.sol:MainPrizeTimeIncrementInMicroSecondsChanged
-	TopicInitialSecondsUntilPrizeChanged             = "b5edd1f338b34c8f5dd3b1c5cc12f05653c495713c282bf588d34cf14fad0f89" // ISystemEvents.sol:InitialDurationUntilMainPrizeDivisorChanged
-	TopicRoundActivationTimeChanged                  = "9a2159c1f277ddd727551baedc6a6c4cba77cc5219c8563ee3b15fb67548d89b" // ISystemManagement.sol:RoundActivationTimeChanged
-	TopicEthDutchAuctionDurationDivisorChanged       = "fdf6043c89a5f304289122dcc9f8bd78bb111b5d4f409e2fc2e6c141a1110b79" // ISystemEvents.sol:EthDutchAuctionDurationDivisorChanged
-	TopicCstDutchAuctionDurationDivisorChanged       = "c95d03f6c735a9e59c760fdb88e585aafe0a31b5c034fc7838155287ee32212f" // ISystemEvents.sol:CstDutchAuctionDurationDivisorChanged
-	TopicEthDutchAuctionEndingPriceDivisorChanged    = "b6f6af60099e44041a78b3561ed029b98bf03fdb0efbbb2eb15e1f3d7d923037" // ISystemEvents.sol:EthDutchAuctionEndingBidPriceDivisorChanged
-	TopicMarketingRewardPaid                         = "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486" // IMarketingWallet.sol:RewardPaid
-	TopicMarketingRewardChanged                      = "2652e6657dd1ed89d7bdcb70f8827cc8449ac4536ebf604dbb2465cdad264020" // ISystemEvents.sol:MarketingWalletCstContributionAmountChanged
-	TopicCstRewardForBiddingChanged                  = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0" // ISystemEvents.sol:CstRewardAmountForBiddingChanged
-	TopicBidCstRewardAmountChanged                   = "96978b83addd498dff54ab50bf4ed5b62e543d07c7935099eafe180248efe4b4" // ISystemEvents.sol:BidCstRewardAmountChanged
-	TopicBidCstRewardAmountMultiplierChanged         = "40b9c59af8c486ccf8c7cc73df5a51e7cc29747ea7d39f99632ecaf9caa2ed1f" // ISystemEventsV2.sol:BidCstRewardAmountMultiplierChanged
-	TopicCstDutchAuctionDurationChanged              = "4abea08c196329c357e3175d011af39a8625be99ef0ba5a0f3547a95534fedb7" // ISystemEventsV2.sol:CstDutchAuctionDurationChanged
-	TopicCstDutchAuctionDurationChangeDivisorChanged = "acbc6b6929088e4b2d043625fa7248e00fb6658a425eb9d9dc8c37b18c7f3e6f" // ISystemEventsV2.sol:CstDutchAuctionDurationChangeDivisorChanged
-	TopicRoundLateBidDurationDivisorChanged          = "7acba37d1b2d934e554139ff1d470d2cce50a7b6e56870577249b87564a95a69" // ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
-	TopicRoundLateBidPremiumBaseMultiplierChanged    = "169f25ec19cc5b518dc57adf05bb2d85155b1d6c60767e9f0e3ced18eac0ab77" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
-	TopicRoundLateBidPremiumExponentChanged          = "cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
-	TopicCstBidPriceDeclineMultiplierChanged         = "5a7755107bc57392a4597c870f95d2c7cd7802e3e92c8aa549888e0b4a66d19c" // ISystemEventsV3.sol:CstBidPriceDeclineMultiplierChanged
+	TopicProxyUpgraded                                    = "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b" // IERC1967.sol:Upgraded
+	TopicAdminChanged                                     = "7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f" // IERC1967.sol:AdminChanged
+	TopicTreasurerChanged                                 = "df73fc12cc071a4834f7ba0e7c6cfe7d23e98866e191ec9e86e6e61614d9e50e" // IMarketingWallet.sol:TreasurerAddressChanged
+	TopicInitialized                                      = "c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2" // Initializable.sol:Initialized
+	TopicCharityPercentageChanged                         = "fe65b6d5007c66dadebc5095104ccd672c070f396dfdcfe1ee7f54201b9efa6d" // ISystemEvents.sol:CharityEthDonationAmountPercentageChanged
+	TopicPrizePercentageChanged                           = "b5a05ec7911dd5450a7fa4ae54d50d9d83af6e256db8fc76c82edd7b659cf8bc" // ISystemEvents.sol:MainEthPrizeAmountPercentageChanged
+	TopicRafflePercentageChanged                          = "bfcd8fb930a57c1598c9760db19c84ec766546c3c9a8565611df8302482bfb17" // ISystemEvents.sol:RaffleTotalEthPrizeAmountForBiddersPercentageChanged
+	TopicStakePercentageChanged                           = "9e44c04f534af356419a731b967f3d56bc748b1f3fdbda7a89f4e1a321ade934" // ISystemEvents.sol:CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged
+	TopicChronoPercentageChanged                          = "5581e31f5b8d4b3c45b8ab8bf67e3602ce588b423905eb6ad34bd6bc3c848699" // ISystemEvents.sol:ChronoWarriorEthPrizeAmountPercentageChanged
+	TopicNumRaffleEthPrizeEventsBiddingChanged            = "4787028773c8f14bc3b4bc41f43a02329ae41105823287201a34782c530d35fd" // ISystemEvents.sol:NumRaffleEthPrizesForBiddersChanged
+	TopicNumRaffleNftPrizeEventsBiddingChanged            = "85d8bf21006916836edd67a5afeed2e891cf876a6c9cd9babf7f42f4b007c24f" // ISystemEvents.sol:NumRaffleCosmicSignatureNftsForBiddersChanged
+	TopicNumRaffleNftPrizeEventsStakingRwalkChanged       = "3312247fcf207243294680d9103851c8709e19be3d46ee4b1bff5e12d1c5ca7b" // ISystemEvents.sol:NumRaffleCosmicSignatureNftsForRandomWalkNftStakersChanged
+	TopicSystemModeChanged                                = "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c" // ISystemManagement.sol:SystemModeChanged
+	TopicRwalkAddressChanged                              = "dab38e33e6e11cbb8b085bba9d7426d5e5af01bcc46d2c5957645e4d09e8c49c" // ISystemEvents.sol:RandomWalkNftAddressChanged
+	TopicPrizeWalletAddressChanged                        = "b4cecfe1346c94da27291cf5a02969d5fe0b5c36eca49b04fcd60841d28c5e13" // ISystemEvents.sol:PrizesWalletAddressChanged
+	TopicStakingWalletCstAddressChanged                   = "4da1815cd654922275d14d2335fd9a0dd0aa6a0d0ff87fb4cc872ebe9704596f" // ISystemEvents.sol:StakingWalletCosmicSignatureNftAddressChanged
+	TopicStakingWalletRwalkAddressChanged                 = "bf6e296f85d08cc1ab124aed644bf4b19e4a726a7aea53e3784ab1341738a040" // ISystemEvents.sol:StakingWalletRandomWalkNftAddressChanged
+	TopicMarketingAddressChanged                          = "4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54" // ISystemEvents.sol:MarketingWalletAddressChanged
+	TopicCosmicTokenAddressChanged                        = "9b3eda10f1724a2cf9f7dae4ac263c77908df4d00e92f1377b66fc8be37cd8c1" // ISystemEvents.sol:CosmicSignatureTokenAddressChanged
+	TopicCosmicSignatureAddressChanged                    = "5bde6238168795ba4e77972a2bdaa5a465f7c9a5d05817f5e8d3fed2e5a4fa60" // ISystemEvents.sol:CosmicSignatureNftAddressChanged
+	TopicBusinessLogicAddressChanged                      = "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd" // ISystemManagement.sol:BusinessLogicContractAddressChanged
+	TopicTimeIncreaseChanged                              = "4636d3e567b27988879babd22e50f49104ca65647933fc1623ff3d4d807438d2" // ISystemEvents.sol:MainPrizeTimeIncrementIncreaseDivisorChanged
+	TopicTimeoutClaimprizeChanged                         = "37a332914fac995349420c0419b4423a19dcb762017f691442a0782ce4bf417a" // ISystemEvents.sol:TimeoutDurationToClaimMainPrizeChanged
+	TopicTimeoutToWithdrawPrize                           = "8717bb199c6bc4a5dadb21547205f9ef8ec037dda246a5526d6a6471306ea52e" // IPrizesWallet.sol:TimeoutDurationToWithdrawPrizesChanged
+	TopicPriceIncreaseChanged                             = "deb71e1d117914859ddde484a9810084d9ee399077d5cd8dcbdf8770d33d8ae4" // ISystemEvents.sol:EthBidPriceIncreaseDivisorChanged
+	TopicMainPrizeMicrosecondIncrease                     = "07417920574ce0bdfe987af0575c8793cc73a29d7830760ad459d0e569b5b79b" // ISystemEvents.sol:MainPrizeTimeIncrementInMicroSecondsChanged
+	TopicInitialSecondsUntilPrizeChanged                  = "b5edd1f338b34c8f5dd3b1c5cc12f05653c495713c282bf588d34cf14fad0f89" // ISystemEvents.sol:InitialDurationUntilMainPrizeDivisorChanged
+	TopicRoundActivationTimeChanged                       = "9a2159c1f277ddd727551baedc6a6c4cba77cc5219c8563ee3b15fb67548d89b" // ISystemManagement.sol:RoundActivationTimeChanged
+	TopicEthDutchAuctionDurationDivisorChanged            = "fdf6043c89a5f304289122dcc9f8bd78bb111b5d4f409e2fc2e6c141a1110b79" // ISystemEvents.sol:EthDutchAuctionDurationDivisorChanged
+	TopicCstDutchAuctionDurationDivisorChanged            = "c95d03f6c735a9e59c760fdb88e585aafe0a31b5c034fc7838155287ee32212f" // ISystemEvents.sol:CstDutchAuctionDurationDivisorChanged
+	TopicEthDutchAuctionEndingPriceDivisorChanged         = "b6f6af60099e44041a78b3561ed029b98bf03fdb0efbbb2eb15e1f3d7d923037" // ISystemEvents.sol:EthDutchAuctionEndingBidPriceDivisorChanged
+	TopicMarketingRewardPaid                              = "e2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f0cf8db0c5e0486" // IMarketingWallet.sol:RewardPaid
+	TopicMarketingRewardChanged                           = "2652e6657dd1ed89d7bdcb70f8827cc8449ac4536ebf604dbb2465cdad264020" // ISystemEvents.sol:MarketingWalletCstContributionAmountChanged
+	TopicCstRewardForBiddingChanged                       = "70ad04ce09c925ea466a5f603054f310bba5b7484bba77b382aade0bf93b55d0" // ISystemEvents.sol:CstRewardAmountForBiddingChanged
+	TopicBidCstRewardAmountChanged                        = "96978b83addd498dff54ab50bf4ed5b62e543d07c7935099eafe180248efe4b4" // ISystemEvents.sol:BidCstRewardAmountChanged
+	TopicBidCstRewardAmountMultiplierChanged              = "40b9c59af8c486ccf8c7cc73df5a51e7cc29747ea7d39f99632ecaf9caa2ed1f" // ISystemEventsV2.sol:BidCstRewardAmountMultiplierChanged
+	TopicCstDutchAuctionDurationChanged                   = "4abea08c196329c357e3175d011af39a8625be99ef0ba5a0f3547a95534fedb7" // ISystemEventsV2.sol:CstDutchAuctionDurationChanged
+	TopicCstDutchAuctionDurationChangeDivisorChanged      = "acbc6b6929088e4b2d043625fa7248e00fb6658a425eb9d9dc8c37b18c7f3e6f" // ISystemEventsV2.sol:CstDutchAuctionDurationChangeDivisorChanged
+	TopicRoundLateBidDurationDivisorChanged               = "7acba37d1b2d934e554139ff1d470d2cce50a7b6e56870577249b87564a95a69" // ISystemEventsV3.sol:RoundLateBidDurationDivisorChanged
+	TopicRoundLateBidPremiumBaseMultiplierChanged         = "169f25ec19cc5b518dc57adf05bb2d85155b1d6c60767e9f0e3ced18eac0ab77" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountBaseMultiplierChanged
+	TopicRoundLateBidPremiumExponentChanged               = "cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621" // ISystemEventsV3.sol:RoundLateBidPricePremiumAmountExponentChanged
+	TopicCstBidPriceDeclineMultiplierChanged              = "5a7755107bc57392a4597c870f95d2c7cd7802e3e92c8aa549888e0b4a66d19c" // ISystemEventsV3.sol:CstBidPriceDeclineMultiplierChanged
 	TopicCstBidPriceDeclineMultiplierChangeDivisorChanged = "dca564eaecef774ca88453bd3a492a26c40497ab897aa02ad10eb030e126c5ce" // ISystemEventsV3.sol:CstBidPriceDeclineMultiplierChangeDivisorChanged
-	TopicMainPrizeNumNftsChanged                     = "616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564" // ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
-	TopicStaticCstReward                             = "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
-	TopicMaxMessageLength                            = "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged
-	TopicTokenScriptURL                              = "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c" // #nosec G101 -- event signature hash, not a credential; ICosmicSignatureNft.sol:NftGenerationScriptUrlChanged
-	TopicBaseURI                                     = "bdfd815215fcee5bb949c941ab489c7ead076a7c8acd3527cd1b50f613ac67e6" // ICosmicSignatureNft.sol:BaseUriChanged
-	TopicOwnershipTransferred                        = "8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0" // Ownable.sol:OwnershipTransferred
-	TopicStartingCstMinLim                           = "4e8c80fe79d13b8663de9f6981925ae24c498cc07b0ebd4f4789fa78ca17caff" // ISystemEvents.sol:CstDutchAuctionBeginningBidPriceMinLimitChanged
-	TopicFundsToCharity                              = "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d" // ICosmicSignatureEvents.sol:FundsTransferredToCharity
-	TopicDelayDurationRound                          = "b0868a729f47ae3829aaafe3ca2975d3db2148553c854112f598be6d91ef0d28" // ISystemManagement.sol:DelayDurationBeforeRoundActivationChanged
-	TopicEthBidRefundGasMaxLimitChanged              = "a787f26546d7eeea63d70fc31736f27ad28329e95982f3bc5a7e0280f497bbf5" // ISystemEvents.sol:EthBidRefundAmountInGasToSwallowMaxLimitChanged
-	TopicArbitrumError                               = "a0f59128cf0144d4891de440cb7fffc98340af3ee8b041d4add05fc0248c392d" // ICosmicSignatureEvents.sol:ArbitrumError
+	TopicMainPrizeNumNftsChanged                          = "616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564" // ISystemEventsV3.sol:MainPrizeNumCosmicSignatureNftsChanged
+	TopicStaticCstReward                                  = "d95e7f967f9370c11deb15ffbb191b9f2e9795ab0738db5bc72bd2794978f32d" // ISystemEvents.sol:CstPrizeAmountChanged
+	TopicMaxMessageLength                                 = "157c413b0549fd4f45aab72b7828304fb2c45dad53de0f1128c5eabf3aaabaf8" // ISystemEvents.sol:BidMessageLengthMaxLimitChanged
+	TopicTokenScriptURL                                   = "27e2bd70f498920ee0fd7d8204ae8845b75dc81330e3acafa32946be3503730c" // #nosec G101 -- event signature hash, not a credential; ICosmicSignatureNft.sol:NftGenerationScriptUrlChanged
+	TopicBaseURI                                          = "bdfd815215fcee5bb949c941ab489c7ead076a7c8acd3527cd1b50f613ac67e6" // ICosmicSignatureNft.sol:BaseUriChanged
+	TopicOwnershipTransferred                             = "8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0" // Ownable.sol:OwnershipTransferred
+	TopicStartingCstMinLim                                = "4e8c80fe79d13b8663de9f6981925ae24c498cc07b0ebd4f4789fa78ca17caff" // ISystemEvents.sol:CstDutchAuctionBeginningBidPriceMinLimitChanged
+	TopicFundsToCharity                                   = "1222634ba80f397fa40371bab63974e6f97da8200777ec79e731c69bb6a2351d" // ICosmicSignatureEvents.sol:FundsTransferredToCharity
+	TopicDelayDurationRound                               = "b0868a729f47ae3829aaafe3ca2975d3db2148553c854112f598be6d91ef0d28" // ISystemManagement.sol:DelayDurationBeforeRoundActivationChanged
+	TopicEthBidRefundGasMaxLimitChanged                   = "a787f26546d7eeea63d70fc31736f27ad28329e95982f3bc5a7e0280f497bbf5" // ISystemEvents.sol:EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	TopicArbitrumError                                    = "a0f59128cf0144d4891de440cb7fffc98340af3ee8b041d4add05fc0248c392d" // ICosmicSignatureEvents.sol:ArbitrumError
+
+	// V3.1 events (Solidity commits 3bbd92e0/b55f5302): the game's charity
+	// transfer failure got a dedicated parameterless-style event, and the
+	// generic ArbitrumError(string) was replaced with one event per failing
+	// precompile call.
+
+	TopicEthTransferToCharityFailed            = "1b957971c8e544b85ea06a7b3245ce66c403427f5885d4e49009a93a1c6c6348" // CosmicSignatureEvents.sol:EthTransferToCharityFailed
+	TopicArbSysArbBlockNumberCallFailed        = "a8d743ae81d09947502807f411c542b10b60869063c5cb96a4024bfdaccff811" // ArbitrumHelpers.sol:ArbSysArbBlockNumberCallFailed
+	TopicArbSysArbBlockHashCallFailed          = "de09184d78b110c5942196171c5b8b344f399922de2be886f56a74ab1337041f" // ArbitrumHelpers.sol:ArbSysArbBlockHashCallFailed
+	TopicArbGasInfoGetGasBacklogCallFailed     = "20bc709aa4eb4e8757a663b1feadf4235acb2418a324a7348a84a1c166fb33b1" // ArbitrumHelpers.sol:ArbGasInfoGetGasBacklogCallFailed
+	TopicArbGasInfoGetL1PricingUnitsCallFailed = "1031a98235b5d0b884fa4bb491d313b7c3add94719cc953bfce9c24abd651791" // ArbitrumHelpers.sol:ArbGasInfoGetL1PricingUnitsSinceUpdateCallFailed
 )
 
 // topicHash converts one of the topic-hash constants above to a common.Hash

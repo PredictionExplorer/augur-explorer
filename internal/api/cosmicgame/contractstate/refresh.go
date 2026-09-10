@@ -423,10 +423,13 @@ func (s *State) refreshVariables(ctx context.Context) {
 		cur.TokenReward = reward
 		cur.NextCSTBidReward = reward
 	}
+	// V3.1 re-typed getDurationUntilMainPrize() to int256 (same selector,
+	// negative once the prize is claimable); the V1 binding decodes negatives
+	// as ~2^256. Normalize and clamp to keep the old "0 = claimable" value.
 	if val, err := v1.GetDurationUntilMainPrize(&copts); err != nil {
 		s.logf("Error at PrizeTime() call: %v\n", err)
 		cur.PrizeClaimTimestamp = -1
-	} else if parsed, ok := nonNegativeInt64(val); !ok {
+	} else if parsed, ok := nonNegativeInt64(cg.ClampNonNegative(cg.AsSignedInt256(val))); !ok {
 		s.logf("Error at PrizeTime() call: value exceeds int64\n")
 		cur.PrizeClaimTimestamp = -1
 	} else {
