@@ -108,6 +108,10 @@ async function main() {
     console.log(`Done. roundNum=${await proxyV3.roundNum()} now runs on V3 (implementation=${implAddr}).`);
     console.log(`Round activates at ${activationTs} (in ~${ACTIVATION_DELAY_SEC}s of chain time).`);
     console.log(`mainPrizeNumCosmicSignatureNfts=${await proxyV3.mainPrizeNumCosmicSignatureNfts()}`);
+
+    // Keep the backend's contract registry in sync with the new implementation.
+    console.log("");
+    console.log(`UPDATE cg_contracts SET implementation_addr='${implAddr}' WHERE cosmic_game_addr='${proxyAddr}';`);
 }
 
 main()

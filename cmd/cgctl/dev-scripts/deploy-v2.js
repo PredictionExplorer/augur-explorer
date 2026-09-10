@@ -109,6 +109,26 @@ async function main() {
     console.log("");
     console.log(`Ready to play on V2 (roundNum=${roundNum}).`);
     console.log(`Upgrade later with: CADDR=${proxyAddr} ... upgrade-v3.js (see that script's header).`);
+
+    // Contract registry row for the backend (same format as populate-old-v3.js;
+    // column order matches the cg_contracts table definition).
+    console.log("");
+    console.log("Contract Addresses Deployed:");
+    console.log(
+        "INSERT INTO cg_contracts VALUES(" +
+        `'${proxyAddr}',` +
+        `'${await result.cosmicSignature.getAddress()}',` +
+        `'${await result.cosmicToken.getAddress()}',` +
+        `'${await result.cosmicDAO.getAddress()}',` +
+        `'${await result.charityWallet.getAddress()}',` +
+        `'${await prizesWallet.getAddress()}',` +
+        `'${await result.randomWalkNFT.getAddress()}',` +
+        `'${await result.stakingWalletCosmicSignatureNft.getAddress()}',` +
+        `'${await result.stakingWalletRandomWalkNft.getAddress()}',` +
+        `'${await result.marketingWallet.getAddress()}',` +
+        `'${implAddr}')`
+    );
+
     console.log("");
     console.log("CADDR=" + proxyAddr);
     console.log("TSAMP1=" + (await samp1.getAddress()));
