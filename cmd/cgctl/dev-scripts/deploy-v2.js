@@ -75,6 +75,11 @@ async function main() {
     await (await proxyV2.connect(owner).setCstDutchAuctionDuration(CST_DUTCH_AUCTION_DURATION, g)).wait();
     await (await proxyV2.connect(owner).setCstDutchAuctionDurationChangeDivisor(CST_DUTCH_AUCTION_DURATION_CHANGE_DIVISOR, g)).wait();
 
+    // 4b) V2's reinitialize() resets timeoutDurationToClaimMainPrize to the 2-day
+    //     production default, wiping the dev value set in step 2 — re-apply it.
+    //     (V3's reinitialize does not touch this variable, so upgrade-v3.js is fine.)
+    await (await proxyV2.connect(owner).setTimeoutDurationToClaimMainPrize(TIMEOUT_CLAIM_SEC, g)).wait();
+
     // 5) Sample ERC20s (attachable to bids / donations from the frontend).
     //    Samp exists on older branches; the v3 branch ships FuzzTestMockErc20 instead
     //    (same fallback as populate-old-v3.js).
