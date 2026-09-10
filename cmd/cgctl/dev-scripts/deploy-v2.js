@@ -4,8 +4,14 @@
  * Upgrade to V3 later with upgrade-v3.js.
  *
  * Flow: deploy V1 stack (Deploy.js, round inactive) → set dev-friendly time params →
- * upgrade proxy to CosmicSignatureGameV2 (reinitialize) → set V2-only CST auction params →
- * deploy 2 Samp ERC20s → activate round 0.
+ * auto-play round 0 on V1 (one bid + claim) → upgrade proxy to CosmicSignatureGameV2
+ * (reinitialize) → set V2-only CST auction params → deploy 2 Samp ERC20s → activate round 1.
+ *
+ * Round 0 MUST be played on V1 before the upgrade (mirroring mainnet history):
+ * V2 dropped V1's first-round pricing fallback (FIRST_ROUND_INITIAL_ETH_BID_PRICE) and
+ * assumes ethDutchAuctionBeginningBidPrice was recorded by a completed round. On V2 at
+ * round 0 that value is 0 and getNextEthBidPrice() underflows in an unchecked block,
+ * quoting ~1.15e59 ETH.
  *
  * Run from the Cosmic-Signature v3.1 repo (its hardhat.config.js / artifacts are used):
  *   cd /home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19
@@ -55,7 +61,31 @@ async function main() {
     await (await cosmicGameProxy.connect(owner).setDelayDurationBeforeRoundActivation(ACTIVATION_DELAY_SEC, g)).wait();
     await (await prizesWallet.connect(owner).setTimeoutDurationToWithdrawPrizes(TIMEOUT_WITHDRAW_PRIZES_SEC, g)).wait();
 
-    // 3) Upgrade the proxy to V2 while the round is still inactive.
+    // 3) Auto-play round 0 on V1: one ETH bid, fast-forward past the (near-immediate)
+    //    main prize time, claim. This records ethDutchAuctionBeginningBidPrice for
+    //    round 1 and satisfies V2's roundNum > 0 assumption (Comment-202605294).
+    console.log("Playing round 0 on V1 (bootstrap bid + claim)...");
+    {
+        const blk = await hre.ethers.provider.getBlock("latest");
+        await (await cosmicGameProxy.connect(owner).setRoundActivationTime(BigInt(blk.timestamp), g)).wait();
+        const bidPrice = await cosmicGameProxy.getNextEthBidPrice();
+        console.log(`Round 0 first bid price: ${hre.ethers.formatEther(bidPrice)} ETH`);
+        // V1 bidWithEth takes (randomWalkNftId, message); -1 = no RandomWalk NFT.
+        await (await cosmicGameProxy.connect(owner).bidWithEth(-1n, "round 0 bootstrap (V1)", { value: bidPrice, gasLimit: 3000000 })).wait();
+        const duration = await cosmicGameProxy.getDurationUntilMainPrize();
+        if (duration > 0n) {
+            await hre.ethers.provider.send("evm_increaseTime", [Number(duration) + 1]);
+            await hre.ethers.provider.send("evm_mine");
+        }
+        await (await cosmicGameProxy.connect(owner).claimMainPrize({ gasLimit: 9000000 })).wait();
+        console.log(`Round 0 claimed (roundNum=${await cosmicGameProxy.roundNum()}).`);
+        // claimMainPrize scheduled round 1 activation delayDuration (~5s) out; park it
+        // in the future so the upgrade and remaining setters run on an inactive round.
+        const blk2 = await hre.ethers.provider.getBlock("latest");
+        await (await cosmicGameProxy.connect(owner).setRoundActivationTime(BigInt(blk2.timestamp) + 86400n, g)).wait();
+    }
+
+    // 4) Upgrade the proxy to V2 while the round is inactive.
     //    Same options as populate-old-v3.js: the v3 branch renamed initializeV2() → reinitialize()
     //    (reinitializer(2)); V2 reuses V1 slots with renamed fields, hence the unsafe flags.
     console.log("Upgrading proxy to CosmicSignatureGameV2 (reinitialize)...");
@@ -70,17 +100,17 @@ async function main() {
     const implAddr = await hre.upgrades.erc1967.getImplementationAddress(proxyAddr);
     console.log(`V2 upgrade complete, implementation=${implAddr}`);
 
-    // 4) V2-only CST auction params (these setters revert with NotImplemented on V3,
+    // 5) V2-only CST auction params (these setters revert with NotImplemented on V3,
     //    so they must be emitted now — matches populate-old-v3.js ordering).
     await (await proxyV2.connect(owner).setCstDutchAuctionDuration(CST_DUTCH_AUCTION_DURATION, g)).wait();
     await (await proxyV2.connect(owner).setCstDutchAuctionDurationChangeDivisor(CST_DUTCH_AUCTION_DURATION_CHANGE_DIVISOR, g)).wait();
 
-    // 4b) V2's reinitialize() resets timeoutDurationToClaimMainPrize to the 2-day
+    // 5b) V2's reinitialize() resets timeoutDurationToClaimMainPrize to the 2-day
     //     production default, wiping the dev value set in step 2 — re-apply it.
     //     (V3's reinitialize does not touch this variable, so upgrade-v3.js is fine.)
     await (await proxyV2.connect(owner).setTimeoutDurationToClaimMainPrize(TIMEOUT_CLAIM_SEC, g)).wait();
 
-    // 5) Sample ERC20s (attachable to bids / donations from the frontend).
+    // 6) Sample ERC20s (attachable to bids / donations from the frontend).
     //    Samp exists on older branches; the v3 branch ships FuzzTestMockErc20 instead
     //    (same fallback as populate-old-v3.js).
     console.log("Deploying sample ERC20 contracts...");
@@ -104,11 +134,11 @@ async function main() {
     }
     console.log(`Deployed sample ERC20 tokens (${sampName})`);
 
-    // 6) Activate round 0 shortly.
+    // 7) Activate round 1 shortly.
     const block = await hre.ethers.provider.getBlock("latest");
     const activationTs = BigInt(block.timestamp) + ACTIVATION_DELAY_SEC;
     await (await proxyV2.connect(owner).setRoundActivationTime(activationTs, g)).wait();
-    console.log(`Round 0 activates at ${activationTs} (in ~${ACTIVATION_DELAY_SEC}s of chain time).`);
+    console.log(`Round 1 activates at ${activationTs} (in ~${ACTIVATION_DELAY_SEC}s of chain time).`);
 
     const roundNum = await proxyV2.roundNum();
     console.log("");
