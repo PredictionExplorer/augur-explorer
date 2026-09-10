@@ -22,6 +22,7 @@
  *   TIME_INCREMENT_SEC      seconds added to the prize timer per bid   (default 60)
  *   TIMEOUT_CLAIM_SEC       anyone-can-claim timeout after prize time  (default 300)
  *   ACTIVATION_DELAY_SEC    delay before round 0 (and each next round) activates (default 5)
+ *   INITIAL_DURATION_SEC    countdown the FIRST bid of a round arms    (default 300)
  *
  * Prints CADDR= / TSAMP1= / TSAMP2= lines (same convention as deploy-and-populate.sh).
  */
@@ -31,8 +32,12 @@ const { basicDeployment } = require("./Deploy.js");
 const TIME_INCREMENT_SEC = BigInt(process.env.TIME_INCREMENT_SEC || "60");
 const TIMEOUT_CLAIM_SEC = BigInt(process.env.TIMEOUT_CLAIM_SEC || "300");
 const ACTIVATION_DELAY_SEC = BigInt(process.env.ACTIVATION_DELAY_SEC || "5");
+const INITIAL_DURATION_SEC = BigInt(process.env.INITIAL_DURATION_SEC || "300");
 
 // Same dev values the populate/deploy scripts use.
+// Only used during the round-0 bootstrap: the first bid arms a ~6-second prize
+// countdown so the script can claim immediately. Step 5c replaces it with a
+// divisor derived from INITIAL_DURATION_SEC for human play.
 const INITIAL_DURATION_DIVISOR = 10000000; // near-immediate first prize time
 const CST_DUTCH_AUCTION_DURATION_DIVISOR = 3600;
 const CST_DUTCH_AUCTION_DURATION = 30 * 60; // V2-only setter
@@ -109,6 +114,14 @@ async function main() {
     //     production default, wiping the dev value set in step 2 — re-apply it.
     //     (V3's reinitialize does not touch this variable, so upgrade-v3.js is fine.)
     await (await proxyV2.connect(owner).setTimeoutDurationToClaimMainPrize(TIMEOUT_CLAIM_SEC, g)).wait();
+
+    // 5c) The near-immediate initial-duration divisor was only for the round-0
+    //     bootstrap. Give human rounds a real countdown: the first bid of a round
+    //     arms initialDuration = mainPrizeTimeIncrement(μs) / divisor seconds.
+    const incrementMicroSec = await proxyV2.mainPrizeTimeIncrementInMicroSeconds();
+    const initialDurationDivisor = incrementMicroSec / INITIAL_DURATION_SEC;
+    await (await proxyV2.connect(owner).setInitialDurationUntilMainPrizeDivisor(initialDurationDivisor, g)).wait();
+    console.log(`First bid of a round arms a ~${INITIAL_DURATION_SEC}s prize countdown (divisor=${initialDurationDivisor}).`);
 
     // 6) Sample ERC20s (attachable to bids / donations from the frontend).
     //    Samp exists on older branches; the v3 branch ships FuzzTestMockErc20 instead

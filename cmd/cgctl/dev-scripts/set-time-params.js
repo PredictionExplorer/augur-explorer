@@ -9,6 +9,7 @@
 //   TIME_INCREMENT_SEC  per-bid main prize time bump, seconds
 //   ROUND_DELAY_SEC     delay before the next round activates after a round ends, seconds
 //   TIMEOUT_CLAIM_SEC   anyone-can-claim timeout after main prize time, seconds
+//   INITIAL_DURATION_SEC  countdown armed by the FIRST bid of a round, seconds
 //   ACTIVATION_DELAY_SEC  when the round has to be deactivated to apply a change,
 //                         re-activate it this many seconds later (default 5)
 //
@@ -35,11 +36,23 @@ const GAME_ABI = [
     "function mainPrizeTimeIncrementInMicroSeconds() view returns (uint256)",
     "function delayDurationBeforeRoundActivation() view returns (uint256)",
     "function timeoutDurationToClaimMainPrize() view returns (uint256)",
+    "function initialDurationUntilMainPrizeDivisor() view returns (uint256)",
     "function setMainPrizeTimeIncrementInMicroSeconds(uint256)",
     "function setDelayDurationBeforeRoundActivation(uint256)",
     "function setTimeoutDurationToClaimMainPrize(uint256)",
+    "function setInitialDurationUntilMainPrizeDivisor(uint256)",
     "function setRoundActivationTime(uint256)",
 ];
+
+async function printValues(game, header) {
+    const incrementMicroSec = await game.mainPrizeTimeIncrementInMicroSeconds();
+    const divisor = await game.initialDurationUntilMainPrizeDivisor();
+    console.log(header);
+    console.log(`  mainPrizeTimeIncrement          = ${incrementMicroSec / 1_000_000n} s`);
+    console.log(`  delayDurationBeforeRoundActivation = ${await game.delayDurationBeforeRoundActivation()} s`);
+    console.log(`  timeoutDurationToClaimMainPrize = ${await game.timeoutDurationToClaimMainPrize()} s`);
+    console.log(`  initialDurationUntilMainPrize   = ${incrementMicroSec / divisor} s (divisor=${divisor})`);
+}
 
 async function main() {
     if (!CADDR) {
@@ -61,10 +74,7 @@ async function main() {
     const hasBids = lastBidder !== hre.ethers.ZeroAddress;
 
     console.log(`roundNum=${roundNum} active=${roundIsActive} hasBids=${hasBids}`);
-    console.log("Current values:");
-    console.log(`  mainPrizeTimeIncrement          = ${(await game.mainPrizeTimeIncrementInMicroSeconds()) / 1_000_000n} s`);
-    console.log(`  delayDurationBeforeRoundActivation = ${await game.delayDurationBeforeRoundActivation()} s`);
-    console.log(`  timeoutDurationToClaimMainPrize = ${await game.timeoutDurationToClaimMainPrize()} s`);
+    await printValues(game, "Current values:");
 
     // Changes that are allowed at any time.
     if (process.env.ROUND_DELAY_SEC != null) {
@@ -87,6 +97,19 @@ async function main() {
         inactiveOnlyChanges.push({
             label: `timeoutDurationToClaimMainPrize = ${v} s`,
             apply: () => game.setTimeoutDurationToClaimMainPrize(v, g),
+        });
+    }
+    if (process.env.INITIAL_DURATION_SEC != null) {
+        const v = BigInt(process.env.INITIAL_DURATION_SEC);
+        inactiveOnlyChanges.push({
+            label: `initialDurationUntilMainPrize = ${v} s`,
+            // initialDuration(s) = mainPrizeTimeIncrement(μs) / divisor. Read the
+            // increment at apply time so a TIME_INCREMENT_SEC change in the same
+            // run (applied above, arrays are ordered) is taken into account.
+            apply: async () => {
+                const incrementMicroSec = await game.mainPrizeTimeIncrementInMicroSeconds();
+                return game.setInitialDurationUntilMainPrizeDivisor(incrementMicroSec / v, g);
+            },
         });
     }
 
@@ -119,10 +142,7 @@ async function main() {
         }
     }
 
-    console.log("New values:");
-    console.log(`  mainPrizeTimeIncrement          = ${(await game.mainPrizeTimeIncrementInMicroSeconds()) / 1_000_000n} s`);
-    console.log(`  delayDurationBeforeRoundActivation = ${await game.delayDurationBeforeRoundActivation()} s`);
-    console.log(`  timeoutDurationToClaimMainPrize = ${await game.timeoutDurationToClaimMainPrize()} s`);
+    await printValues(game, "New values:");
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
