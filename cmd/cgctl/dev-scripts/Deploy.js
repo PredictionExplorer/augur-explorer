@@ -6,7 +6,7 @@
 //const { HardhatContext } = require("hardhat/internal/context");
 //const { getHardhatRuntimeEnvironment } = require("hardhat/plugins");
 //const hre = getHardhatRuntimeEnvironment();
-const hre = require("hardhat");
+const hre = global.hre ?? require("hardhat");
 const basicDeployment = async function (
 	deployerAcct,
 	randomWalkAddr,

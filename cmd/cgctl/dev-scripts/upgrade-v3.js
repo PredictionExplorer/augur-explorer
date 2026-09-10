@@ -21,7 +21,7 @@
  *   CADDR                 game proxy address (required)
  *   ACTIVATION_DELAY_SEC  delay before the next round activates after the upgrade (default 5)
  */
-const hre = require("hardhat");
+const hre = global.hre ?? require("hardhat");
 
 const ACTIVATION_DELAY_SEC = BigInt(process.env.ACTIVATION_DELAY_SEC || "5");
 const g = { gasLimit: 1000000 };

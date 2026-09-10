@@ -23,7 +23,7 @@
 
 "use strict";
 
-const hre = require("hardhat");
+const hre = global.hre ?? require("hardhat");
 
 const CADDR = process.env.CADDR;
 const ACTIVATION_DELAY_SEC = BigInt(process.env.ACTIVATION_DELAY_SEC || "5");

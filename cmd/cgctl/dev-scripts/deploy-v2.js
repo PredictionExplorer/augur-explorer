@@ -19,7 +19,7 @@
  *
  * Prints CADDR= / TSAMP1= / TSAMP2= lines (same convention as deploy-and-populate.sh).
  */
-const hre = require("hardhat");
+const hre = global.hre ?? require("hardhat");
 const { basicDeployment } = require("./Deploy.js");
 
 const TIME_INCREMENT_SEC = BigInt(process.env.TIME_INCREMENT_SEC || "60");
