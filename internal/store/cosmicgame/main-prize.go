@@ -601,7 +601,7 @@ const allPrizesSelect = `SELECT
 			END AS amount_eth,
 			'' AS token_addr,
 			CASE
-				WHEN p.ptype = 2 THEN pc.token_id
+				WHEN p.ptype = 2 THEN pc.token_id + nft_seq.i
 				WHEN p.ptype = 3 THEN lw.erc721_token_id
 				WHEN p.ptype = 5 THEN ew.erc721_token_id
 				WHEN p.ptype = 9 THEN cw.nft_id
@@ -610,7 +610,7 @@ const allPrizesSelect = `SELECT
 				ELSE -1
 			END AS token_id,
 			'' AS token_uri,
-			p.winner_index,
+			p.winner_index + nft_seq.i AS winner_index,
 			TRUE AS claimed,
 			CASE WHEN p.ptype = 15 THEN '(All CS NFT Stakers)' ELSE COALESCE(wa_pc.addr, wa_rew.addr, wa_rnw_bidder.addr, wa_rnw_rwalk.addr, wa_ew.addr, wa_lw.addr, wa_cw.addr, '') END AS winner_addr,
 			COALESCE(pc.winner_aid, rew.winner_aid, rnw_bidder.winner_aid, rnw_rwalk.winner_aid, ew.winner_aid, lw.winner_aid, cw.winner_aid, 0) AS winner_aid
@@ -637,7 +637,11 @@ const allPrizesSelect = `SELECT
 			LEFT JOIN transaction trnw_rwalk ON trnw_rwalk.id = rnw_rwalk.tx_id
 			LEFT JOIN address wa_rnw_rwalk ON rnw_rwalk.winner_aid = wa_rnw_rwalk.address_id
 			LEFT JOIN cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15)
-			LEFT JOIN transaction ted ON ted.id = ed.tx_id`
+			LEFT JOIN transaction ted ON ted.id = ed.tx_id
+			-- A V3 main prize mints num_cs_nfts sequential NFTs (first ID in
+			-- cg_prize_claim.token_id) but cg_prize registers one ptype=2 row;
+			-- expand it into one row per NFT.
+			CROSS JOIN LATERAL generate_series(0, CASE WHEN p.ptype = 2 THEN COALESCE(pc.num_cs_nfts, 1) - 1 ELSE 0 END) AS nft_seq(i)`
 
 func scanPrizeHistoryRow(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 	return rows.Scan(
@@ -667,7 +671,7 @@ func scanPrizeHistoryRow(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]cgmodel.CGPrizeHistory, error) {
 	query := allPrizesSelect + `
 		WHERE p.round_num = $1
-		ORDER BY p.ptype, p.winner_index`
+		ORDER BY p.ptype, winner_index`
 	return queryList(ctx, r, "all prizes for round", 64, query, scanPrizeHistoryRow, roundNum)
 }
 
@@ -697,17 +701,19 @@ func (r *Repo) AllPrizesForRoundPage(
 
 	query := allPrizesSelect + `
 		WHERE p.round_num = $1
-		ORDER BY p.ptype, p.winner_index
+		ORDER BY p.ptype, winner_index
 		LIMIT $2`
 	args := []any{roundNum, limit + 1}
 	if after != nil {
 		if after.PrizeType < 0 || after.PrizeType > 15 || after.WinnerIndex < 0 {
 			return nil, false, fmt.Errorf("%s: invalid cursor", op)
 		}
+		// The cursor compares against the expanded winner index (p.winner_index
+		// + nft_seq.i), matching what scanPrizeHistoryRow returned to the caller.
 		query = allPrizesSelect + `
 			WHERE p.round_num = $1
-				AND (p.ptype, p.winner_index) > ($2, $3)
-			ORDER BY p.ptype, p.winner_index
+				AND (p.ptype, p.winner_index + nft_seq.i) > ($2, $3)
+			ORDER BY p.ptype, winner_index
 			LIMIT $4`
 		args = []any{roundNum, after.PrizeType, after.WinnerIndex, limit + 1}
 	}
