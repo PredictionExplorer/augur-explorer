@@ -34,7 +34,7 @@
 				</tr>
 				{{- range $i, $change := .UnclaimedDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -55,11 +55,11 @@
 		</div>
 
 		<div class="api-info">
-			<strong>Simplified API (NEW):</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/user_unclaimed/[user_addr]</code><br/><br/>
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/unclaimed/by_user/{user_addr}/{offset}/{limit}</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/user_unclaimed/{{.UserAddr}}</code><br/><br/>
-			<small style="color: #888;">Old API (deprecated): /api/cosmicgame/prizes/deposits/unclaimed/by_user/[user_addr]/[offset]/[limit]</small>
+			<code>/api/cosmicgame/prizes/eth/unclaimed/by_user/{{.UserAddr}}/0/100000</code><br/><br/>
+			<small style="color: #888;">Alias: /api/cosmicgame/prizes/deposits/unclaimed/by_user/{user_addr}/{offset}/{limit}</small>
 		</div>
 	</div>
 </body>

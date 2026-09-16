@@ -34,7 +34,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.ETHDonation.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .ETHDonation.Tx.TxHash .ETHDonation.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction ID</div>
@@ -42,7 +42,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.ETHDonation.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .ETHDonation.Tx.TxHash .ETHDonation.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>

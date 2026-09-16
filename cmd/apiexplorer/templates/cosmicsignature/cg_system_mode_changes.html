@@ -33,7 +33,7 @@
 				</tr>
 				{{- range $i, $change := .SystemModeChanges}}
 					<tr>
-						<td class="center">{{.BlockNum}}</td>
+						<td class="center">{{arbiscanTx .TxHash .BlockNum}}</td>
 						<td>
 							{{ if eq -1.0 .EvtLogId }}
 								<span class="badge badge-info">Deployment</span>

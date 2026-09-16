@@ -1,0 +1,68 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<link href="/res/cosmicgame.css" rel="stylesheet">
+	<title>ROI Leaderboard</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>📈 ROI Leaderboard</h1>
+			<div class="subtitle">Bidder spend vs ETH won (min {{.MinBids}} bids)</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th>Bidder</th>
+					<th class="center">Bids</th>
+					<th class="center">Rounds</th>
+					<th class="center">Rounds Won</th>
+					<th class="right">Win Rate</th>
+					<th class="right">ETH Spent</th>
+					<th class="right">CST Spent</th>
+					<th class="right">ETH Won</th>
+					<th class="right">Net P/L</th>
+					<th class="right">ROI</th>
+					<th class="center">Prizes</th>
+					<th class="center">NFTs</th>
+				</tr>
+				{{- range $i, $row := .RoiLeaderboard}}
+					<tr>
+						<td class="monospace">{{ethAddrLink .BidderAddr}}</td>
+						<td class="center">{{.NumBids}}</td>
+						<td class="center">{{.RoundsParticipated}}</td>
+						<td class="center">{{.RoundsWon}}</td>
+						<td class="right">{{printf "%.2f" .WinRate}}</td>
+						<td class="right">{{printf "%.6f" .TotalEthSpentEth}}</td>
+						<td class="right">{{printf "%.4f" .TotalCstSpentEth}}</td>
+						<td class="right">{{printf "%.6f" .EthWonEth}}</td>
+						<td class="right">{{printf "%.6f" .NetPlEth}}</td>
+						<td class="right">{{printf "%.4f" .Roi}}</td>
+						<td class="center">{{.PrizesCount}}</td>
+						<td class="center">{{.NftPrizesCount}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/statistics/leaderboard/roi</code><br/><br/>
+			<strong>Query parameters:</strong> <code>min_bids</code>, <code>sort</code> (net_pl, roi, winrate, spent, nfts, bids), <code>offset</code>, <code>limit</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/statistics/leaderboard/roi</code>
+		</div>
+	</div>
+</body>
+</html>

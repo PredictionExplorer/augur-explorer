@@ -31,11 +31,11 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.CombinedStakingRecordInfo.Stake.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .CombinedStakingRecordInfo.Stake.Tx.TxHash .CombinedStakingRecordInfo.Stake.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.CombinedStakingRecordInfo.Stake.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .CombinedStakingRecordInfo.Stake.Tx.TxHash .CombinedStakingRecordInfo.Stake.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>
@@ -72,11 +72,11 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.CombinedStakingRecordInfo.Unstake.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .CombinedStakingRecordInfo.Unstake.Tx.TxHash .CombinedStakingRecordInfo.Unstake.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.CombinedStakingRecordInfo.Unstake.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .CombinedStakingRecordInfo.Unstake.Tx.TxHash .CombinedStakingRecordInfo.Unstake.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>

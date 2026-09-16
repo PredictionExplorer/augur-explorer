@@ -81,11 +81,11 @@
 						{{ if eq 45.0 .RecordType}}CstBidPriceDeclineMultiplierChangeDivisorChanged{{end}}
 						{{ if eq 46.0 .RecordType}}EthBidRefundAmountInGasToSwallowMaxLimitChanged{{end}}
 						</td>
-						<td class="center">{{.BlockNum}}</td>
+						<td class="center">{{arbiscanTx .TxHash .BlockNum}}</td>
 						<td>{{.DateTime}}</td>
 						<td class="monospace">
 							{{ if .IntegerValue}}{{.IntegerValue}}{{end}}
-							{{ if .FloatValue}}{{.FloatValue}}{{end}}
+							{{ if .FloatValue}}{{.FloatValue}}{{ if eq 43.0 .RecordType}} CST/s{{end}}{{end}}
 							{{ if .AddressValue}}{{.AddressValue}}{{end}}
 							{{ if .StringValue}}{{.StringValue}}{{end}}
 						</td>

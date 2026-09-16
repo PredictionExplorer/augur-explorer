@@ -32,17 +32,15 @@
 					<th class="right">Amount (ETH)</th>
 					<th class="right">Tokens Earned</th>
 					<th class="right">Bid CST Reward</th>
-					<th class="right">CST Auc Duration (v2)</th>
+					<th class="right">CST Auction (V2 duration / V3.1 decline)</th>
 					<th class="right">CST Burned</th>
 					<th class="center">RWalk</th>
 					<th>Message</th>
 				</tr>
 				{{- range $i, $change := .Bids}}
 					<tr>
-						<td>
-							<a href="/cosmicsignature/bid/info/{{num .Tx.EvtLogId}}">{{num .Tx.BlockNum}}</a>
-						</td>
-						<td>{{.Tx.DateTime}}</td>
+						<td>{{arbiscanTx .Tx.TxHash (num .Tx.BlockNum)}}</td>
+						<td><a href="/cosmicsignature/bid/info/{{num .Tx.EvtLogId}}">{{.Tx.DateTime}}</a></td>
 						<td class="center">{{num .RoundNum}}</td>
 						<td class="center">
 							{{ if eq 0.0 .BidType}}<span class="badge badge-info">ETH</span>{{end}}
@@ -57,7 +55,7 @@
 						     the per-version fields are omitted from pre-V3 rows. */}}
 						<td class="right">{{ with index . "PreviousCstRewardAmountEth" }}{{printf "%.4f" .}} <span title="V3: minted to the previous (outbid) bidder">&rarr;prev</span>{{ else }}{{printf "%.4f" .CSTRewardEth}}{{ end }}</td>
 						<td class="right">{{ if gt .BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidCstRewardAmountEth}}{{else}}—{{end}}</td>
-						<td class="right">{{ if ge .CstDutchAuctionDurationInt 0.0 }}{{num .CstDutchAuctionDurationInt}}{{else}}—{{end}}</td>
+						<td class="right">{{auctionParam .CstDutchAuctionDuration .CstDutchAuctionDurationInt}}</td>
 						<td class="right">{{printf "%.4f" .CstPriceEth}}</td>
 						<td class="center">{{num .RWalkNFTId}}</td>
 						<td>{{ .Message }}</td>

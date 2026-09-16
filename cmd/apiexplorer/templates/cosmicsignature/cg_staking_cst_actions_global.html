@@ -37,7 +37,7 @@
 				{{- range $i, $change := .StakingCSTActions}}
 					<tr>
 						<td>{{.Tx.EvtLogId}}</td>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>
 							{{if gt .ActionId 0.0}}<a href="/cosmicsignature/staking/cst/actions/info/{{.ActionId}}">{{.Tx.DateTime}}</a>{{else}}{{.Tx.DateTime}}{{end}}
 						</td>

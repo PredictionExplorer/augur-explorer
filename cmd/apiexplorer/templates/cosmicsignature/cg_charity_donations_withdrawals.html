@@ -31,7 +31,7 @@
 				</tr>
 				{{- range $i, $change := .CharityWithdrawals}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .DestinationAddr}}

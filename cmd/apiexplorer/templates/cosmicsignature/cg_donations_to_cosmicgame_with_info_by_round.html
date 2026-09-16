@@ -34,7 +34,7 @@
 				</tr>
 				{{- range $i, $change := .DirectCGDonations}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>
 							<a href="/cosmicsignature/donations/eth/with_info/info/{{.CGRecordId}}">{{.Tx.DateTime}}</a>
 						</td>

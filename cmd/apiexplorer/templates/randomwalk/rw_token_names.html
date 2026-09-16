@@ -16,7 +16,7 @@
 	</tr>
 	{{- range $i, $change := .TokenNameChanges}}
 		<tr class="market_reports">
-			<td class="">{{.BlockNum}}</td>
+			<td class="">{{arbiscanTx .TxHash .BlockNum}}</td>
 			<td class="">{{.DateTime}}</td>
 			<td class="addr">
 				<a href="/pendingurl/{{.OwnerAddr}}">{{.OwnerAddr}}</a>

@@ -51,7 +51,7 @@
 				</tr>
 				{{- range $i, $change := .CharityDonations}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="monospace">

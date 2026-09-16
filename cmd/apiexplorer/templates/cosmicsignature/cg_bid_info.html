@@ -30,7 +30,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{num .BidInfo.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .BidInfo.Tx.TxHash (num .BidInfo.Tx.BlockNum)}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction ID</div>
@@ -38,7 +38,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.BidInfo.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .BidInfo.Tx.TxHash .BidInfo.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Timestamp</div>
@@ -65,11 +65,23 @@
 					</div>
 				</div>
 				<div class="detail-row">
+					<div class="detail-label">Bid Type</div>
+					<div class="detail-value">
+						{{ if eq 0.0 .BidInfo.BidType}}ETH{{end}}
+						{{ if eq 1.0 .BidInfo.BidType}}RandomWalk{{end}}
+						{{ if eq 2.0 .BidInfo.BidType}}CST{{end}}
+					</div>
+				</div>
+				<div class="detail-row">
+					<div class="detail-label">Bid Position in Round</div>
+					<div class="detail-value">{{num .BidInfo.BidPosition}}</div>
+				</div>
+				<div class="detail-row">
 					<div class="detail-label">Bid Price</div>
 					<div class="detail-value">{{printf "%.6f" .BidInfo.EthPriceEth}} ETH</div>
 				</div>
 				{{ if .BidInfo.PreviousBidderAddr }}
-				{{/* V3: the whole bid CST reward is minted to the outbid (previous) bidder. */}}
+				{{/* V3.1 mints the whole bid CST reward to the outbid (previous) last bidder. */}}
 				<div class="detail-row">
 					<div class="detail-label">CST Reward (to previous bidder)</div>
 					<div class="detail-value">{{ with .BidInfo.PreviousCstRewardAmountEth }}{{printf "%.4f" .}}{{ else }}0.0000{{ end }} CST</div>
@@ -82,7 +94,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">CST Reward (to this bidder)</div>
-					{{/* The API omits zero amounts (omitempty), and V3 always mints the whole
+					{{/* The API omits zero amounts (omitempty). V3.1 mints the whole
 					     reward to the previous bidder, so a missing value means 0. */}}
 					<div class="detail-value">{{ with .BidInfo.ThisCstRewardAmountEth }}{{printf "%.4f" .}}{{ else }}0.0000{{ end }} CST</div>
 				</div>
@@ -101,7 +113,7 @@
 					<div class="detail-value">{{printf "%.4f" .BidInfo.CstPriceEth}} CST</div>
 				</div>
 				{{ if not .BidInfo.PreviousBidderAddr }}
-				{{/* BidPlaced field 7. On V3 bids it duplicates the previous-bidder reward shown above. */}}
+				{{/* BidPlaced field 7. On V3.1 bids it is the previous-bidder reward shown above. */}}
 				<div class="detail-row">
 					<div class="detail-label">Bid CST Reward</div>
 					<div class="detail-value">{{ if gt .BidInfo.BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidInfo.BidCstRewardAmountEth}} CST{{else}}—{{end}}</div>
@@ -109,10 +121,14 @@
 				{{ end }}
 				{{ if ge .BidInfo.CstDutchAuctionDurationInt 0.0 }}
 				<div class="detail-row">
-					<div class="detail-label">CST Dutch Auction Duration (bid v2)</div>
-					<div class="detail-value">{{num .BidInfo.CstDutchAuctionDurationInt}}</div>
+					<div class="detail-label">{{ if isWeiPerSec .BidInfo.CstDutchAuctionDurationInt }}CST Bid Price Decline Multiplier (V3.1){{ else }}CST Dutch Auction Duration (V2){{ end }}</div>
+					<div class="detail-value">{{auctionParam .BidInfo.CstDutchAuctionDuration .BidInfo.CstDutchAuctionDurationInt}}</div>
 				</div>
 				{{ end }}
+				<div class="detail-row">
+					<div class="detail-label">Prize Time</div>
+					<div class="detail-value">{{.BidInfo.PrizeTimeDate}}</div>
+				</div>
 				<div class="detail-row">
 					<div class="detail-label">Message</div>
 					<div class="detail-value">{{.BidInfo.Message}}</div>
@@ -166,7 +182,8 @@
 
 		<div class="api-info">
 			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/bid/info/[evtlog_id]</code><br/><br/>
+			<code>/api/cosmicgame/bid/info/[evtlog_id]</code><br/>
+			<code>/api/cosmicgame/bid/info_by_pos/[round_num]/[bid_position]</code><br/><br/>
 			<strong>Example:</strong><br/>
 			<code>/api/cosmicgame/bid/info/{{num .BidInfo.Tx.EvtLogId}}</code>
 		</div>

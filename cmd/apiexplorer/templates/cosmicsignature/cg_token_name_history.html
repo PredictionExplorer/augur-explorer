@@ -30,7 +30,7 @@
 				</tr>
 				{{- range $i, $change := .TokenNameHistory}}
 					<tr>
-						<td class="center">{{.Tx.BlockNum}}</td>
+						<td class="center">{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td>{{.TokenName}}</td>
 					</tr>

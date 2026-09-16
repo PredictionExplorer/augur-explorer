@@ -1,0 +1,84 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<link href="/res/cosmicgame.css" rel="stylesheet">
+	<title>Claim Detail Round {{.RoundNum}}</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🧾 Claim Detail — Round #{{.RoundNum}}</h1>
+			<div class="subtitle">Claim transactions and tokens attached this round</div>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Claim Transactions</div>
+			<table class="data-table">
+				<tr>
+					<th>Asset</th>
+					<th>Recipient</th>
+					<th>Beneficiary</th>
+					<th class="right">Amount</th>
+					<th>Token</th>
+					<th class="center">Token ID</th>
+					<th class="right">Claimed After</th>
+					<th>Tx</th>
+				</tr>
+				{{- range $i, $row := .ClaimTransactions}}
+					<tr>
+						<td>{{.AssetType}}</td>
+						<td class="monospace">{{ethAddrLink .RecipientAddr}}</td>
+						<td class="monospace">{{ethAddrLink .BeneficiaryAddr}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="right">{{.ClaimedAfterSecs}} s</td>
+						<td class="monospace">{{.TxHash}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="section-card">
+			<div class="section-header">Attached Tokens</div>
+			<table class="data-table">
+				<tr>
+					<th>Asset</th>
+					<th>Contributor</th>
+					<th>Token</th>
+					<th class="center">Token ID</th>
+					<th class="right">Amount</th>
+					<th>Tx</th>
+				</tr>
+				{{- range $i, $row := .AttachedTokens}}
+					<tr>
+						<td>{{.AssetType}}</td>
+						<td class="monospace">{{ethAddrLink .ContributorAddr}}</td>
+						<td class="monospace">{{.TokenAddr}}</td>
+						<td class="center">{{.TokenId}}</td>
+						<td class="right">{{printf "%.6f" .AmountEth}}</td>
+						<td class="monospace">{{.TxHash}}</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/statistics/claims/detail/{round_num}</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/statistics/claims/detail/{{.RoundNum}}</code>
+		</div>
+	</div>
+</body>
+</html>

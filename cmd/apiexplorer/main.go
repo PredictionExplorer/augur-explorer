@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -131,7 +132,8 @@ func unixDate(v any) string {
 }
 
 // weiToEth formats a decimal wei string (the v1 API returns exact amounts as
-// strings) as an ETH value with 6 decimals.
+// strings) as an ETH value with 6 decimals. CST amounts use the same 18-decimal
+// encoding, so this helper also formats CST wei.
 func weiToEth(v any) string {
 	f, _, err := big.ParseFloat(fmt.Sprint(v), 10, 128, big.ToNearestEven)
 	if err != nil {
@@ -139,6 +141,45 @@ func weiToEth(v any) string {
 	}
 	f.Quo(f, big.NewFloat(1e18))
 	return f.Text('f', 6)
+}
+
+func asFloat(v any) float64 {
+	switch t := v.(type) {
+	case jsonNum:
+		return float64(t)
+	case float64:
+		return t
+	case int:
+		return float64(t)
+	case int64:
+		return float64(t)
+	default:
+		f, err := strconv.ParseFloat(fmt.Sprint(v), 64)
+		if err != nil {
+			return 0
+		}
+		return f
+	}
+}
+
+// isWeiPerSec reports whether v looks like a V3.1 CST bid-price decline
+// multiplier (wei/second) rather than a V2 Dutch-auction duration in seconds.
+// Durations are at most days-to-weeks; the V3.1 multiplier is ~1e16 wei/s.
+func isWeiPerSec(v any) bool {
+	return asFloat(v) >= 1e9
+}
+
+// auctionParam formats BidPlaced field 8. V1 stores -1; V2 stores CST Dutch
+// auction duration in seconds; V3.1 stores cstBidPriceDeclineMultiplier (wei/s)
+// in the same JSON keys (CstDutchAuctionDuration / CstDutchAuctionDurationInt).
+func auctionParam(durationStr any, durationInt any) string {
+	if asFloat(durationInt) < 0 {
+		return "—"
+	}
+	if isWeiPerSec(durationInt) {
+		return weiToEth(durationStr) + " CST/s"
+	}
+	return num(durationInt) + " s"
 }
 
 // isEthAddr reports whether s is a 42-char 0x-prefixed hex string.
@@ -153,6 +194,32 @@ func isEthAddr(s string) bool {
 		}
 	}
 	return true
+}
+
+func isTxHash(s string) bool {
+	if len(s) != 66 || s[0] != '0' || (s[1] != 'x' && s[1] != 'X') {
+		return false
+	}
+	for i := 2; i < 66; i++ {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
+			return false
+		}
+	}
+	return true
+}
+
+// arbiscanTx links label to the Arbitrum One explorer transaction page when
+// hash looks like a 0x-prefixed 32-byte hex. Invalid/empty hashes (local
+// Hardhat, missing fields) render as escaped plain text.
+func arbiscanTx(hash any, label any) template.HTML {
+	lab := html.EscapeString(fmt.Sprint(label))
+	h := strings.TrimSpace(fmt.Sprint(hash))
+	if !isTxHash(h) {
+		return template.HTML(lab) // #nosec G203 -- lab is HTML-escaped above
+	}
+	esc := html.EscapeString(h)
+	return template.HTML(fmt.Sprintf(`<a href="https://arbiscan.io/tx/%s" title="%s">%s</a>`, esc, esc, lab)) // #nosec G203 -- esc and lab are HTML-escaped
 }
 
 // ethAddrLink renders a user-info link for valid Ethereum addresses and
@@ -176,6 +243,7 @@ func ethAddrLinkTo(pathPrefix, addr string) template.HTML {
 type server struct {
 	apiBase   string
 	templates *template.Template
+	liveDir   string // non-empty: re-read templates/CSS from this dir each request
 	client    *http.Client
 	log       *slog.Logger
 }
@@ -213,9 +281,22 @@ func (s *server) fetch(ctx context.Context, path string) (map[string]any, error)
 	return data, nil
 }
 
+func (s *server) templateSet() (*template.Template, error) {
+	if s.liveDir != "" {
+		return loadTemplatesFrom(os.DirFS(s.liveDir))
+	}
+	return s.templates, nil
+}
+
 func (s *server) render(w http.ResponseWriter, status int, name string, data any) {
+	tmpl, err := s.templateSet()
+	if err != nil {
+		s.log.Error("template parse failed", "template", name, "err", err)
+		http.Error(w, "template parse failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	var buf strings.Builder
-	if err := s.templates.ExecuteTemplate(&buf, name, data); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
 		s.log.Error("template render failed", "template", name, "err", err)
 		http.Error(w, "template render failed: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -317,25 +398,39 @@ func (r *statusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
-// loadTemplates parses every embedded template under its path relative to
-// templates/ ("cosmicsignature/home.html"), because ParseFS would name the
-// files by base name and the two project home.html files would collide.
+// loadTemplates parses the embedded templates. Tests and production binaries
+// that have no source tree next to them use this path.
 func loadTemplates() (*template.Template, error) {
-	root := template.New("").Funcs(template.FuncMap{
+	return loadTemplatesFrom(templatesFS)
+}
+
+func templateFuncs() template.FuncMap {
+	return template.FuncMap{
 		"ethAddrLink":   ethAddrLink,
 		"ethAddrLinkTo": ethAddrLinkTo,
 		"isEthAddr":     isEthAddr,
+		"arbiscanTx":    arbiscanTx,
 		"num":           num,
 		"weiToEth":      weiToEth,
 		"addf":          addf,
 		"nowTs":         nowTs,
 		"unixDate":      unixDate,
-	})
-	err := fs.WalkDir(templatesFS, "templates", func(path string, d fs.DirEntry, err error) error {
+		"isWeiPerSec":   isWeiPerSec,
+		"auctionParam":  auctionParam,
+	}
+}
+
+// loadTemplatesFrom parses every template under templates/ using names
+// relative to that directory ("cosmicsignature/home.html"), because ParseFS
+// would name the files by base name and the two project home.html files
+// would collide.
+func loadTemplatesFrom(rootFS fs.FS) (*template.Template, error) {
+	root := template.New("").Funcs(templateFuncs())
+	err := fs.WalkDir(rootFS, "templates", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		content, err := templatesFS.ReadFile(path)
+		content, err := fs.ReadFile(rootFS, path)
 		if err != nil {
 			return err
 		}
@@ -343,6 +438,40 @@ func loadTemplates() (*template.Template, error) {
 		return err
 	})
 	return root, err
+}
+
+func isLiveAssetsDir(dir string) bool {
+	st, err := os.Stat(filepath.Join(dir, "templates", "index.html"))
+	return err == nil && !st.IsDir()
+}
+
+// liveAssetsDir returns a directory that contains templates/ and res/ to
+// re-read on each request. Empty means use the embedded copies. Look next
+// to the process (repo root or cmd/apiexplorer) so `go run` and a local
+// binary pick up HTML/CSS edits without a restart.
+func liveAssetsDir() string {
+	if d := strings.TrimSpace(os.Getenv("APIEXPLORER_LIVE_DIR")); d != "" {
+		if isLiveAssetsDir(d) {
+			return d
+		}
+	}
+	candidates := []string{".", "cmd/apiexplorer"}
+	if exe, err := os.Executable(); err == nil {
+		candidates = append(candidates, filepath.Dir(exe))
+	}
+	for _, c := range candidates {
+		if isLiveAssetsDir(c) {
+			return c
+		}
+	}
+	return ""
+}
+
+func noCache(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func run() error {
@@ -357,6 +486,7 @@ func run() error {
 		port = "9091"
 	}
 
+	liveDir := liveAssetsDir()
 	tmpl, err := loadTemplates()
 	if err != nil {
 		return fmt.Errorf("parsing templates: %w", err)
@@ -365,12 +495,17 @@ func run() error {
 	s := &server{
 		apiBase:   apiBase,
 		templates: tmpl,
+		liveDir:   liveDir,
 		client:    &http.Client{Timeout: apiTimeout},
 		log:       logger,
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /res/", http.FileServerFS(resFS))
+	if liveDir != "" {
+		mux.Handle("GET /res/", noCache(http.FileServerFS(os.DirFS(liveDir))))
+	} else {
+		mux.Handle("GET /res/", http.FileServerFS(resFS))
+	}
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusOK, "index.html", nil)
 	})
@@ -395,7 +530,11 @@ func run() error {
 	defer stop()
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.ListenAndServe() }()
-	logger.Info("apiexplorer listening", "port", port, "api_base", apiBase)
+	if liveDir != "" {
+		logger.Info("apiexplorer listening", "port", port, "api_base", apiBase, "live_assets", liveDir)
+	} else {
+		logger.Info("apiexplorer listening", "port", port, "api_base", apiBase, "live_assets", "embedded")
+	}
 
 	select {
 	case err := <-errCh:

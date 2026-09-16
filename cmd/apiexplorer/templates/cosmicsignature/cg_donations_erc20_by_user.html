@@ -42,18 +42,18 @@
 				{{- range $i, $change := .DonatedPrizesERC20ByWinner}}
 					<tr>
 						<td>
-							<a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.Tx.BlockNum}}</a>
+							{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}
 						</td>
-						<td>{{.Tx.DateTime}}</td>
+						<td><a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.Tx.DateTime}}</a></td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="right">{{printf "%.6f" .AmountDonatedEth}}</td>
 						<td class="right">{{printf "%.6f" .AmountClaimedEth}}</td>
 						<td class="right">{{printf "%.6f" .DonateClaimDiffEth}}</td>
 						<td class="center">
 							{{if .Claimed}}
-								<span class="badge badge-success">✅ Claimed</span>
+								<span class="badge badge-success">Yes</span>
 							{{else}}
-								<span class="badge badge-warning">⏳ Unclaimed</span>
+								<span class="badge badge-default">No</span>
 							{{end}}
 						</td>
 					</tr>

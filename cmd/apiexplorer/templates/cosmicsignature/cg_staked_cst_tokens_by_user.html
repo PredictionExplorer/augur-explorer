@@ -44,7 +44,7 @@
 				</tr>
 				{{- range $i, $change := .StakedTokensCST}}
 					<tr>
-						<td>{{.TokenInfo.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .TokenInfo.Tx.TxHash .TokenInfo.Tx.BlockNum}}</td>
 						<td>{{.StakeDateTime}}</td>
 						<td class="center">
 							<a href="/cosmicsignature/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>

@@ -34,7 +34,7 @@
 				</tr>
 				{{- range $i, $change := .ERC20Claims}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">
 							<a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.RoundNum}}</a>

@@ -31,7 +31,7 @@
 				</tr>
 				{{- range $i, $change := .UsedRwalkNFTs}}
 					<tr>
-						<td class="center">{{.BlockNum}}</td>
+						<td class="center">{{arbiscanTx .TxHash .BlockNum}}</td>
 						<td>{{.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="center">{{.RWalkTokenId}}</td>

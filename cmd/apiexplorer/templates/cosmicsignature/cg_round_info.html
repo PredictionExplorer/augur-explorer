@@ -31,7 +31,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.RoundInfo.ClaimPrizeTx.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .RoundInfo.ClaimPrizeTx.Tx.TxHash .RoundInfo.ClaimPrizeTx.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction ID</div>
@@ -39,7 +39,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.RoundInfo.ClaimPrizeTx.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .RoundInfo.ClaimPrizeTx.Tx.TxHash .RoundInfo.ClaimPrizeTx.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>
@@ -346,7 +346,7 @@
 				</tr>
 				{{- range $i, $change := .RoundInfo.RaffleNFTWinners}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -375,7 +375,7 @@
 				</tr>
 				{{- range $i, $change := .RoundInfo.StakingNFTWinners}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -403,7 +403,7 @@
 				</tr>
 				{{- range $i, $change := .RoundInfo.RaffleETHDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}

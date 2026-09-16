@@ -37,9 +37,9 @@
 						<td class="center">{{.StakeActionId}}</td>
 						<td class="center">{{.TokenId}}</td>
 						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
 						</td>
-						<td class="center">{{.ClaimBlockNum}}</td>
+						<td class="center">{{arbiscanTx .ClaimTxHash .ClaimBlockNum}}</td>
 						<td class="monospace">{{.ClaimTxHash}}</td>
 						<td>{{.ClaimDateTime}}</td>
 						<td class="right">{{printf "%.6f" .ClaimRewardAmountEth}}</td>

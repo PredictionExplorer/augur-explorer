@@ -33,13 +33,13 @@
 				</tr>
 				{{- range $i, $change := .RaffleDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.WinnerIndex}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
 						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
 						</td>
 					</tr>
 				{{- end}}
@@ -47,11 +47,10 @@
 		</div>
 
 		<div class="api-info">
-			<strong>Simplified API (NEW):</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/user_raffle/[user_addr]</code><br/><br/>
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/raffle/by_user/{user_addr}</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/user_raffle/{{.UserAddr}}</code><br/><br/>
-			<small style="color: #888;">Old API (deprecated): /api/cosmicgame/prizes/eth/raffle/by_user/[user_addr]</small>
+			<code>/api/cosmicgame/prizes/eth/raffle/by_user/{{.UserAddr}}</code>
 		</div>
 	</div>
 </body>

@@ -57,7 +57,11 @@ const prizeClaimsSelect = `SELECT
 			cw.eth_amount/1e18,
 			cw.cst_amount,
 			cw.cst_amount/1e18,
-			cw.nft_id
+			cw.nft_id,
+			lcb_a.addr,
+			lcb.erc721_token_id,
+			lcb.erc20_amount,
+			lcb.erc20_amount/1e18
 		FROM cg_prize_claim p
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address wa ON p.winner_aid=wa.address_id
@@ -67,6 +71,8 @@ const prizeClaimsSelect = `SELECT
 			LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id
 			LEFT JOIN cg_chrono_warrior_prize cw ON cw.round_num=p.round_num
 			LEFT JOIN address cw_a ON cw.winner_aid=cw_a.address_id
+			LEFT JOIN cg_lastcst_prize lcb ON lcb.round_num=p.round_num
+			LEFT JOIN address lcb_a ON lcb.winner_aid=lcb_a.address_id
 			LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num
 			LEFT JOIN (
 				SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr
@@ -94,6 +100,9 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 	var nullChronoEthAmount, nullChronoCstAmount sql.NullString
 	var nullChronoEthEth, nullChronoCstEth sql.NullFloat64
 	var nullChronoNftID sql.NullInt64
+	var nullLastCstAddr, nullLastCstErc20Amount sql.NullString
+	var nullLastCstTid sql.NullInt64
+	var nullLastCstErc20Eth sql.NullFloat64
 	// Scan order must match prizeClaimsSelect exactly.
 	err := rows.Scan(
 		&rec.ClaimPrizeTx.Tx.EvtLogId,
@@ -140,6 +149,10 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 		&nullChronoCstAmount,
 		&nullChronoCstEth,
 		&nullChronoNftID,
+		&nullLastCstAddr,
+		&nullLastCstTid,
+		&nullLastCstErc20Amount,
+		&nullLastCstErc20Eth,
 	)
 	if err != nil {
 		return err
@@ -184,6 +197,14 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 	}
 	if nullChronoNftID.Valid {
 		rec.ChronoWarrior.NftTokenId = nullChronoNftID.Int64
+	}
+	if nullLastCstTid.Valid {
+		rec.LastCstBidder.WinnerAddr = nullLastCstAddr.String
+		rec.LastCstBidder.NftTokenId = nullLastCstTid.Int64
+	}
+	if nullLastCstErc20Amount.Valid {
+		rec.LastCstBidder.CstAmount = nullLastCstErc20Amount.String
+		rec.LastCstBidder.CstAmountEth = nullLastCstErc20Eth.Float64
 	}
 	if nullCharityAmount.Valid {
 		rec.CharityDeposit.CharityAmount = nullCharityAmount.String

@@ -34,7 +34,7 @@
 				</tr>
 				{{- range $i, $change := .RaffleDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -43,7 +43,7 @@
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
 						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
 						</td>
 					</tr>
 				{{- end}}
@@ -51,12 +51,11 @@
 		</div>
 
 		<div class="api-info">
-			<strong>Simplified API (NEW):</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/raffle</code><br/>
-			<code>/api/cosmicgame/prizes/eth/raffle/[offset]/[limit]</code><br/><br/>
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/raffle/global/{offset}/{limit}</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/raffle/0/1000000</code><br/><br/>
-			<small style="color: #888;">Old API (deprecated): /api/cosmicgame/eth_deposits/raffle_eth/list/[offset]/[limit]</small>
+			<code>/api/cosmicgame/prizes/eth/raffle/global/0/100000</code><br/><br/>
+			<small style="color: #888;">Legacy alias: /api/cosmicgame/eth_deposits/raffle_eth/list/{offset}/{limit}</small>
 		</div>
 	</div>
 </body>

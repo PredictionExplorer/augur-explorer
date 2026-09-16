@@ -36,7 +36,7 @@
 				</tr>
 				{{- range $i, $change := .CollectedStakingCSTRewards}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">
 							<a href="/cosmicsignature/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">

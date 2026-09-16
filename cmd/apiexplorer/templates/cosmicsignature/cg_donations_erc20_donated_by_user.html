@@ -39,9 +39,9 @@
 				{{- range $i, $change := .DonationsERC20ByDonor}}
 					<tr>
 						<td>
-							<a href="/cosmicsignature/donations/erc20/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+							{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}
 						</td>
-						<td>{{.Tx.DateTime}}</td>
+						<td><a href="/cosmicsignature/donations/erc20/info/{{.RecordId}}">{{.Tx.DateTime}}</a></td>
 						<td class="center">
 							<a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.RoundNum}}</a>
 						</td>

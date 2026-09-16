@@ -35,9 +35,9 @@
 				{{- range $i, $change := .DonationsERC20ByRoundSummarized}}
 					<tr>
 						<td>
-							<a href="/cosmicsignature/donations/erc20/info/{{.RecordId}}">{{.Tx.BlockNum}}</a>
+							{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}
 						</td>
-						<td>{{.Tx.DateTime}}</td>
+						<td><a href="/cosmicsignature/donations/erc20/info/{{.RecordId}}">{{.Tx.DateTime}}</a></td>
 						<td class="monospace">{{.TokenAddr}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -45,7 +45,7 @@
 						<td class="right">{{printf "%.6f" .AmountDonatedEth}}</td>
 						<td class="right">{{printf "%.6f" .AmountClaimedEth}}</td>
 						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
 						</td>
 					</tr>
 				{{- end}}

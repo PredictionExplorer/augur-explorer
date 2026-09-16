@@ -201,7 +201,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/dashboard</span></td>
-					<td class="api-description">Get main dashboard statistics</td>
+					<td class="api-description">Get main dashboard statistics. When <code>ContractMechanicsVersion</code> is 3 the payload also includes <code>V3Config</code> (<code>CstBidPriceDeclineMultiplier</code>, late-bid window/premium, <code>MainPrizeNumCosmicSignatureNfts</code>, derived CST auction floor and CST reward per prize-time increment).</td>
 					<td class="api-example"><a href="/api/cosmicgame/statistics/dashboard">/api/cosmicgame/statistics/dashboard</a></td>
 				</tr>
 				<tr>
@@ -224,7 +224,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/system/admin_events/{start}/{end}</span></td>
-					<td class="api-description">Admin events in event log range</td>
+					<td class="api-description">Admin events in event log range. V3.1 record types 40–46 include late-bid window/premium, <code>CstBidPriceDeclineMultiplierChanged</code>, <code>MainPrizeNumCosmicSignatureNftsChanged</code>, decline-multiplier change divisor, and ETH bid refund gas cap.</td>
 					<td class="api-example"><a href="/api/cosmicgame/system/admin_events/0/1000">...admin_events/0/1000</a></td>
 				</tr>
 			</table>
@@ -246,7 +246,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/info/{evtlog_id}</span></td>
-					<td class="api-description">Get bid details. The bid CST reward is reported split per its recipients: <code>PreviousBidderCstRewardAmount</code>/<code>PreviousBidderCstRewardAmountEth</code> (90% to the outbid bidder in V3) and <code>ThisBidderCstRewardAmount</code>/<code>ThisBidderCstRewardAmountEth</code> (~10% to the bidder placing the bid in V3; the whole reward for V2/V1 bids). <code>BidCstRewardAmount</code>/<code>BidCstRewardAmountEth</code> (the total; = Previous + This) are retained for back-compat and will be removed after the V3 upgrade. Also includes <code>CstDutchAuctionDuration</code>, <code>CstDutchAuctionDurationInt</code> (-1 for legacy V1).</td>
+					<td class="api-description">Get bid details. V3.1 mints the whole bid CST reward to the previous (outbid) last bidder: <code>PreviousBidderCstRewardAmount</code>/<code>PreviousCstRewardAmountEth</code> (the outbid bidder) and <code>ThisBidderCstRewardAmount</code>/<code>ThisCstRewardAmountEth</code> (the bidder placing this bid; 0 on V3.1 after the first bid of a round). V1/V2 put the complete reward in this-bidder fields. <code>BidCstRewardAmount</code>/<code>BidCstRewardAmountEth</code> is BidPlaced field 7 (previous-bidder reward on V3.1). <code>CstDutchAuctionDuration</code>/<code>CstDutchAuctionDurationInt</code> is V2 auction duration in seconds, or V3.1 <code>cstBidPriceDeclineMultiplier</code> in wei/s (same JSON keys; -1 for V1).</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/info/1000">.../bid/info/1000</a></td>
 				</tr>
 				<tr>
@@ -271,7 +271,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/cst_price</span></td>
-					<td class="api-description">Current CST bid price</td>
+					<td class="api-description">Current CST bid price. <code>AuctionDuration</code> is V2 Dutch-auction seconds, or the V3.1 derived duration (beginning price / <code>cstBidPriceDeclineMultiplier</code>).</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/cst_price">.../bid/cst_price</a></td>
 				</tr>
 				<tr>
@@ -281,7 +281,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/current_special_winners</span></td>
-					<td class="api-description">Current endurance champion & last CST bidder</td>
+					<td class="api-description">Current endurance champion, chrono warrior, last bidder, and last CST bidder</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/current_special_winners">.../current_special_winners</a></td>
 				</tr>
 			</table>
@@ -306,7 +306,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/rounds/info/{round_num}</span></td>
-					<td class="api-description">Detailed round information</td>
+					<td class="api-description">Detailed round information. V3 main prizes include <code>MainPrize.NumCSNfts</code> and <code>MainPrize.NftTokenIds</code> (omitted on V1/V2, which award one NFT). <code>RoundStats.EnduranceChampionDuration</code> and <code>ChronoWarriorDuration</code> are V3-only.</td>
 					<td class="api-example"><a href="/api/cosmicgame/rounds/info/0">.../rounds/info/0</a></td>
 				</tr>
 				<tr>
@@ -401,6 +401,11 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/info/{token_id}</span></td>
 					<td class="api-description">Detailed token information</td>
 					<td class="api-example"><a href="/api/cosmicgame/cst/info/1">.../cst/info/1</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/metadata/{token_id}</span></td>
+					<td class="api-description">OpenSea-compatible NFT metadata JSON</td>
+					<td class="api-example"><a href="/api/cosmicgame/cst/metadata/1">.../cst/metadata/1</a></td>
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/cst/distribution</span></td>
@@ -924,6 +929,26 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/stakers/both</span></td>
 					<td class="api-description">Unique stakers (both CST & RWalk)</td>
 					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/stakers/both">.../stakers/both</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/leaderboard/roi</span></td>
+					<td class="api-description">Bidder ROI leaderboard (ETH spent vs ETH won)</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/leaderboard/roi">.../leaderboard/roi</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/claims/by_round</span></td>
+					<td class="api-description">Per-round PrizesWallet claim windows and unclaimed counts</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/claims/by_round">.../claims/by_round</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/claims/detail/{round_num}</span></td>
+					<td class="api-description">Claim transactions and attached tokens for one round</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/claims/detail/0">.../claims/detail/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/bid_type_ratio</span></td>
+					<td class="api-description">ETH / RandomWalk / CST bid composition over time</td>
+					<td class="api-example"><a href="/api/cosmicgame/bid/bid_type_ratio">.../bid/bid_type_ratio</a></td>
 				</tr>
 			</table>
 		</div>

@@ -35,7 +35,7 @@
 				</tr>
 				{{- range $i, $change := .AllDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -52,9 +52,9 @@
 						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
 						<td class="center">
 							{{if .Claimed}}
-								<span class="badge badge-success">✓</span>
+								<span class="badge badge-success">Yes</span>
 							{{else}}
-								<span class="badge badge-default">⏳</span>
+								<span class="badge badge-default">No</span>
 							{{end}}
 						</td>
 					</tr>
@@ -63,11 +63,10 @@
 		</div>
 
 		<div class="api-info">
-			<strong>Simplified API (NEW):</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/all</code><br/>
-			<code>/api/cosmicgame/prizes/eth/all/[offset]/[limit]</code><br/><br/>
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/all/global/{offset}/{limit}</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/all/0/1000000</code>
+			<code>/api/cosmicgame/prizes/eth/all/global/0/100000</code>
 		</div>
 	</div>
 </body>

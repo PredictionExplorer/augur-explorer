@@ -29,7 +29,7 @@
 				<div class="info-grid">
 					<div class="info-item">
 						<div class="info-label">Block Number</div>
-						<div class="info-value">{{.Tx.BlockNum}}</div>
+						<div class="info-value">{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</div>
 					</div>
 					<div class="info-item">
 						<div class="info-label">DateTime</div>
@@ -87,7 +87,7 @@
 						<td>{{.Stake.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .RewardEth}}</td>
 						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
 						</td>
 						<td>{{.Unstake.Tx.DateTime}}</td>
 						<td class="right">{{printf "%.6f" .Unstake.RewardAmountEth}}</td>

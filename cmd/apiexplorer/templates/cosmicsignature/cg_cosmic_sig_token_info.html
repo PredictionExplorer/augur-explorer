@@ -35,11 +35,11 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.TokenInfo.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .TokenInfo.Tx.TxHash .TokenInfo.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.TokenInfo.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .TokenInfo.Tx.TxHash .TokenInfo.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>
@@ -71,11 +71,13 @@
 				<div class="detail-row">
 					<div class="detail-label">Prize Information</div>
 					<div class="detail-value">
-						{{ if eq 1.0 .TokenInfo.RecordType}}
-							<span class="badge badge-info">Token won in raffle</span>
-						{{else}}
-							Main prize: <a href="/cosmicsignature/round/info/{{.TokenInfo.RoundNum}}">Round #{{.TokenInfo.RoundNum}}</a>
-						{{ end }}
+						{{ if eq 1.0 .TokenInfo.RecordType}}<span class="badge badge-info">Raffle NFT</span>{{end}}
+						{{ if eq 2.0 .TokenInfo.RecordType}}<span class="badge badge-success">RWalk Staking</span>{{end}}
+						{{ if eq 3.0 .TokenInfo.RecordType}}<span class="badge badge-warning">Main Prize</span>{{end}}
+						{{ if eq 4.0 .TokenInfo.RecordType}}<span class="badge badge-success">Endurance Champion</span>{{end}}
+						{{ if eq 5.0 .TokenInfo.RecordType}}<span class="badge badge-info">Last CST Bidder</span>{{end}}
+						{{ if eq 0.0 .TokenInfo.RecordType}}<span class="badge badge-default">Unknown</span>{{end}}
+						 — <a href="/cosmicsignature/round/info/{{.TokenInfo.RoundNum}}">Round #{{.TokenInfo.RoundNum}}</a>
 					</div>
 				</div>
 				<div class="detail-row">

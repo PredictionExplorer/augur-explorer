@@ -57,7 +57,7 @@
 							{{ if eq 17.0 .RecordType}}<span class="badge badge-default">Donated ERC20 ⏰</span>{{end}}
 							{{ if eq 18.0 .RecordType}}<span class="badge badge-default">Raffle ETH ⏰</span>{{end}}
 						</td>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">
@@ -79,9 +79,9 @@
 						</td>
 						<td class="center">
 							{{if .Claimed}}
-								<span class="badge badge-success">✓</span>
+								<span class="badge badge-success">Yes</span>
 							{{else}}
-								<span class="badge badge-default">⏳</span>
+								<span class="badge badge-default">No</span>
 							{{end}}
 						</td>
 					</tr>

@@ -1,0 +1,61 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<link href="/res/cosmicgame.css" rel="stylesheet">
+	<title>Claims by Round</title>
+</head>
+<body>
+	<div class="cg-wide-container">
+		<div class="page-header">
+			<div class="home-button">
+				<nav>
+					<ul>
+						<li style="width: 10em;">
+							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
+							<span></span><span></span><span></span><span></span>
+						</li>
+					</ul>
+				</nav>
+			</div>
+			<h1>🧾 Claims by Round</h1>
+			<div class="subtitle">PrizesWallet claim windows and unclaimed assets</div>
+		</div>
+
+		<div class="section-card">
+			<table class="data-table">
+				<tr>
+					<th class="center">Round</th>
+					<th>Awarded</th>
+					<th>Claim Window Timeout</th>
+					<th class="center">Expired</th>
+					<th class="right">ETH Unclaimed</th>
+					<th class="center">NFT Unclaimed</th>
+					<th class="center">ERC20 Unclaimed</th>
+					<th class="center">Total Unclaimed</th>
+					<th class="right">Avg Claim Period</th>
+				</tr>
+				{{- range $i, $row := .ClaimsByRound}}
+					<tr>
+						<td class="center"><a href="/cosmicsignature/statistics/claims/detail/{{.RoundNum}}">{{.RoundNum}}</a></td>
+						<td>{{unixDate .AwardedTs}}</td>
+						<td>{{unixDate .ClaimWindowTimeout}}</td>
+						<td class="center">{{.Expired}}</td>
+						<td class="right">{{printf "%.6f" .EthUnclaimedEth}} ETH</td>
+						<td class="center">{{.NftUnclaimed}} / {{.NftAwarded}}</td>
+						<td class="center">{{.Erc20Unclaimed}} / {{.Erc20Awarded}}</td>
+						<td class="center">{{.TotalUnclaimed}} / {{.TotalAwarded}}</td>
+						<td class="right">{{.AvgClaimPeriodSecs}} s</td>
+					</tr>
+				{{- end}}
+			</table>
+		</div>
+
+		<div class="api-info">
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/statistics/claims/by_round</code><br/><br/>
+			<strong>Example:</strong><br/>
+			<code>/api/cosmicgame/statistics/claims/by_round</code>
+		</div>
+	</div>
+</body>
+</html>

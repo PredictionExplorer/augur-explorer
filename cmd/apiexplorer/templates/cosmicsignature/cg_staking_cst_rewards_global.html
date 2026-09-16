@@ -36,7 +36,7 @@
 				{{- range $i, $change := .StakingCSTRewards}}
 					<tr>
 						<td class="center">{{.RecordId}}</td>
-						<td class="center">{{.Tx.BlockNum}}</td>
+						<td class="center">{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">{{printf "%.6f" .TotalDepositAmountEth}} ETH</td>

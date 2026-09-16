@@ -37,7 +37,7 @@
 				</tr>
 				{{- range $i, $change := .UnclaimedEthDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>
 							<a href="/cosmicsignature/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
 								{{.Tx.DateTime}}
