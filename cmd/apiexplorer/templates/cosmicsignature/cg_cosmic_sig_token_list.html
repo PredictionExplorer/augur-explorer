@@ -7,18 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>🎨 Cosmic Signature Token List</h1>
-			<div class="subtitle">All minted CS NFTs</div>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Cosmic Signature Token List</h1>
 		</div>
 
 		<div class="section-card">
@@ -67,7 +57,7 @@
 							{{ if eq 5.0 .RecordType}}<span class="badge badge-info">Last CST Bidder</span>{{end}}
 						</td>
 						<td class="center">
-							<a href="/cosmicsignature/cst/names/history/{{.TokenId}}">📝 View Names</a>
+							<a href="/cosmicsignature/cst/names/history/{{.TokenId}}">View Names</a>
 						</td>
 					</tr>
 				{{- end}}

@@ -22,62 +22,51 @@ nav ul {
 	padding: 0;
 }
 
+/* Quiet button-style nav items: thin border, subtle hover, no animation. */
 nav ul li {
 	--c: goldenrod;
 	color: var(--c);
-	font-size: 16px;
-	border: 0.3em solid var(--c);
-	border-radius: 0.5em;
+	font-size: 13px;
+	border: 1px solid #444;
+	border-radius: 4px;
 	width: 12em;
-	height: 3em;
-	text-transform: uppercase;
-	font-weight: bold;
+	height: 2.4em;
 	font-family: sans-serif;
-	letter-spacing: 0.1em;
+	letter-spacing: 0.03em;
 	text-align: center;
-	line-height: 3em;
-	position: relative;
-	overflow: hidden;
-	z-index: 1;
-	transition: 0.5s;
-	margin: 1em;
+	line-height: 2.4em;
+	background-color: #1a1a1a;
+	transition: border-color 0.2s;
+	margin: 0.4em;
 }
 
 nav ul li span {
-	position: absolute;
-	width: 25%;
-	height: 100%;
-	background-color: var(--c);
-	transform: translateY(150%);
-	border-radius: 50%;
-	left: calc((var(--n) - 1) * 25%);
-	transition: 0.5s;
-	transition-delay: calc((var(--n) - 1) * 0.1s);
-	z-index: -1;
+	display: none;
 }
 
 nav ul li:hover {
-	color: black;
+	border-color: var(--c);
 }
 
-nav ul li:hover span {
-	transform: translateY(0) scale(2);
+nav ul li:hover a.btn_link {
+	color: white;
 }
 
-nav ul li span:nth-child(1) {
-	--n: 1;
+/* Compact home/back link used in page headers. */
+a.home-link {
+	display: inline-block;
+	padding: 0.3em 0.9em;
+	border: 1px solid #444;
+	border-radius: 4px;
+	color: goldenrod;
+	text-decoration: none;
+	font-size: 0.85em;
+	white-space: nowrap;
+	background: #1a1a1a;
 }
-
-nav ul li span:nth-child(2) {
-	--n: 2;
-}
-
-nav ul li span:nth-child(3) {
-	--n: 3;
-}
-
-nav ul li span:nth-child(4) {
-	--n: 4;
+a.home-link:hover {
+	border-color: goldenrod;
+	color: white;
 }
 
 a.btn_link{
@@ -149,8 +138,11 @@ div.mkt_trade_field {
 }
 h3.page_title {
 	font-weight:					bold;
-	font-size:						2.0em;
-	padding:						1em;
+	font-size:						1.4em;
+	color:							goldenrod;
+	padding:						0.75em 0;
+	margin:							0 0 0.5em 0;
+	border-bottom:					1px solid #2d2d2d;
 }
 div.statistics {
 	margin-left:					1.0em;

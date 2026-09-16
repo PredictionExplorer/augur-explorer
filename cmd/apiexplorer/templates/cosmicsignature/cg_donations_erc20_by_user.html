@@ -7,23 +7,14 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>💎 ERC20 Prizes Available to User</h1>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>ERC20 Prizes Available to User</h1>
 			<div class="address-display">{{.UserAddr}}</div>
 			<div class="subtitle" style="margin-top: 1em;">Winner Perspective (Summarized)</div>
 		</div>
 
 		<div class="alert alert-info">
-			<strong>⚠️ Note:</strong> This shows ERC20 tokens YOU WON and can claim (summarized).<br/>
+			<strong>Note:</strong> This shows ERC20 tokens YOU WON and can claim (summarized).<br/>
 			To see tokens you DONATED, use <a href="/cosmicsignature/donations/erc20/donated/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Donations</a>.<br/>
 			To see tokens you already CLAIMED, use <a href="/cosmicsignature/donations/erc20/claims/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Claims</a>.
 		</div>

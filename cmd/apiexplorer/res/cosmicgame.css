@@ -13,49 +13,33 @@
 	padding: 2em;
 }
 
-/* Page Header */
+/* Page Header: compact single-line bar (home button / title / subtitle). */
 .page-header {
-	text-align: center;
-	margin-bottom: 2em;
-	position: relative;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5em 1.25em;
+	margin-bottom: 1.5em;
+	padding-bottom: 0.75em;
+	border-bottom: 1px solid #2d2d2d;
 }
 
 .page-header h1 {
-	font-size: 2.5em;
-	margin: 0 0 0.5em 0;
+	font-size: 1.4em;
+	margin: 0;
 	color: goldenrod;
 }
 
 .page-header .subtitle {
-	font-size: 1.1em;
-	color: #888;
+	font-size: 0.9em;
+	color: #777;
 }
 
 .address-display {
 	font-family: monospace;
-	font-size: 1.1em;
+	font-size: 0.95em;
 	color: #888;
 	word-break: break-all;
-}
-
-/* Home Button */
-.home-button {
-	position: absolute;
-	top: 0;
-	left: 0;
-}
-
-.home-button nav ul {
-	margin: 0;
-	padding: 0;
-}
-
-.home-button nav ul li {
-	width: 10em;
-	height: 2.5em;
-	line-height: 2.5em;
-	font-size: 14px;
-	margin: 0;
 }
 
 /* Stats Dashboard */
@@ -67,18 +51,16 @@
 }
 
 .stat-card {
-	background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-	border: 2px solid #333;
-	border-radius: 12px;
-	padding: 1.5em;
+	background: #141414;
+	border: 1px solid #333;
+	border-radius: 8px;
+	padding: 1.2em;
 	text-align: center;
-	transition: all 0.3s ease;
+	transition: border-color 0.2s;
 }
 
 .stat-card:hover {
-	border-color: goldenrod;
-	transform: translateY(-5px);
-	box-shadow: 0 10px 30px rgba(218, 165, 32, 0.2);
+	border-color: #555;
 }
 
 .stat-card .stat-label {
@@ -90,10 +72,11 @@
 }
 
 .stat-card .stat-value {
-	font-size: 2em;
+	font-size: 1.6em;
 	font-weight: bold;
 	color: goldenrod;
 	margin-bottom: 0.2em;
+	font-variant-numeric: tabular-nums;
 }
 
 .stat-card .stat-sublabel {
@@ -103,19 +86,19 @@
 
 /* Section Cards */
 .section-card {
-	background: #1a1a1a;
-	border: 1px solid #333;
-	border-radius: 12px;
-	padding: 2em;
-	margin-bottom: 2em;
+	background: #141414;
+	border: 1px solid #2d2d2d;
+	border-radius: 8px;
+	padding: 1.5em;
+	margin-bottom: 1.5em;
 }
 
 .section-header {
-	font-size: 1.8em;
+	font-size: 1.2em;
 	color: goldenrod;
-	margin-bottom: 1.5em;
+	margin-bottom: 1em;
 	padding-bottom: 0.5em;
-	border-bottom: 2px solid #333;
+	border-bottom: 1px solid #2d2d2d;
 	display: flex;
 	align-items: center;
 	gap: 0.5em;
@@ -130,7 +113,7 @@
 }
 
 .section-subheader {
-	font-size: 1.3em;
+	font-size: 1.05em;
 	color: #ccc;
 	margin: 1.5em 0 1em 0;
 	padding-bottom: 0.5em;
@@ -147,15 +130,14 @@
 
 .action-item {
 	background: #0d0d0d;
-	border: 2px solid #2d2d2d;
+	border: 1px solid #2d2d2d;
 	border-radius: 8px;
-	padding: 1.2em;
-	transition: all 0.3s ease;
+	padding: 1em 1.2em;
+	transition: border-color 0.2s;
 }
 
 .action-item:hover {
-	border-color: goldenrod;
-	background: #1a1a1a;
+	border-color: #555;
 }
 
 .action-title {
@@ -189,8 +171,8 @@
 
 .info-item {
 	background: #0d0d0d;
-	border-left: 3px solid goldenrod;
-	padding: 1em 1.5em;
+	border-left: 2px solid #8a6d1a;
+	padding: 0.8em 1.2em;
 	border-radius: 4px;
 }
 
@@ -247,6 +229,7 @@
 	background: #0d0d0d;
 	border-radius: 8px;
 	overflow: hidden;
+	font-variant-numeric: tabular-nums;
 }
 
 .data-table th {
@@ -263,8 +246,19 @@
 	border-bottom: 1px solid #222;
 }
 
+.data-table > tbody > tr:nth-child(even) {
+	background: #131313;
+}
+
 .data-table tr:hover {
 	background: #1a1a1a;
+}
+
+/* Nested mini-tables (e.g. per-round prize breakdown) keep the parent
+   row background instead of their own striping/hover. */
+.data-table .prize-mini tr,
+.data-table .prize-mini tr:hover {
+	background: transparent;
 }
 
 .data-table tr:last-child td {
@@ -357,7 +351,7 @@
 	padding-right: 0;
 }
 
-.data-table .prize-mini .empty {
+.data-table .empty {
 	color: #555;
 }
 
@@ -514,33 +508,36 @@
 	font-weight: bold;
 }
 
-/* Badges & Labels */
+/* Badges & Labels: quiet outlined tags that stay within the dark theme. */
 .badge {
 	display: inline-block;
-	padding: 0.3em 0.8em;
-	border-radius: 12px;
-	font-size: 0.85em;
-	font-weight: bold;
+	padding: 0.15em 0.6em;
+	border-radius: 4px;
+	font-size: 0.8em;
+	font-weight: normal;
+	border: 1px solid #444;
+	background: transparent;
+	white-space: nowrap;
 }
 
 .badge-success {
-	background: #1b5e20;
-	color: #4caf50;
+	color: #82b48a;
+	border-color: #2e4a33;
 }
 
 .badge-warning {
-	background: #e65100;
-	color: #ff9800;
+	color: #c9a227;
+	border-color: #5a4a1a;
 }
 
 .badge-info {
-	background: #01579b;
-	color: #03a9f4;
+	color: #7fb3d5;
+	border-color: #34495e;
 }
 
 .badge-default {
-	background: #424242;
-	color: #bdbdbd;
+	color: #9e9e9e;
+	border-color: #424242;
 }
 
 /* Alert Boxes */

@@ -7,18 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature/">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>📊 All Bids</h1>
-			<div class="subtitle">Complete bidding history</div>
+			<a class="home-link" href="/cosmicsignature/">&larr; Home</a>
+			<h1>All Bids</h1>
 		</div>
 
 		<div class="section-card">
@@ -32,7 +22,7 @@
 					<th class="right">Amount (ETH)</th>
 					<th class="right">Tokens Earned</th>
 					<th class="right">Bid CST Reward</th>
-					<th class="right">CST Auction (V2 duration / V3.1 decline)</th>
+					<th class="right" title="V2: Dutch auction duration / V3.1: price decline">CST Auction</th>
 					<th class="right">CST Burned</th>
 					<th class="center">RWalk</th>
 					<th>Message</th>
@@ -40,7 +30,7 @@
 				{{- range $i, $change := .Bids}}
 					<tr>
 						<td>{{arbiscanTx .Tx.TxHash (num .Tx.BlockNum)}}</td>
-						<td><a href="/cosmicsignature/bid/info/{{num .Tx.EvtLogId}}">{{.Tx.DateTime}}</a></td>
+						<td class="nowrap"><a href="/cosmicsignature/bid/info/{{num .Tx.EvtLogId}}">{{.Tx.DateTime}}</a></td>
 						<td class="center">{{num .RoundNum}}</td>
 						<td class="center">
 							{{ if eq 0.0 .BidType}}<span class="badge badge-info">ETH</span>{{end}}
@@ -50,14 +40,14 @@
 						<td class="monospace">
 							{{ethAddrLink .BidderAddr}}
 						</td>
-						<td class="right">{{printf "%.6f" .EthPriceEth}}</td>
+						<td class="right">{{if gt .EthPriceEth 0.0}}{{printf "%.6f" .EthPriceEth}}{{else}}<span class="empty">—</span>{{end}}</td>
 						{{/* V3 mints the whole bid CST reward to the previous (outbid) bidder;
 						     the per-version fields are omitted from pre-V3 rows. */}}
-						<td class="right">{{ with index . "PreviousCstRewardAmountEth" }}{{printf "%.4f" .}} <span title="V3: minted to the previous (outbid) bidder">&rarr;prev</span>{{ else }}{{printf "%.4f" .CSTRewardEth}}{{ end }}</td>
-						<td class="right">{{ if gt .BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidCstRewardAmountEth}}{{else}}—{{end}}</td>
-						<td class="right">{{auctionParam .CstDutchAuctionDuration .CstDutchAuctionDurationInt}}</td>
-						<td class="right">{{printf "%.4f" .CstPriceEth}}</td>
-						<td class="center">{{num .RWalkNFTId}}</td>
+						<td class="right">{{ with index . "PreviousCstRewardAmountEth" }}{{printf "%.4f" .}} <span title="V3: minted to the previous (outbid) bidder">&rarr;prev</span>{{ else }}{{if gt .CSTRewardEth 0.0}}{{printf "%.4f" .CSTRewardEth}}{{else}}<span class="empty">—</span>{{end}}{{ end }}</td>
+						<td class="right">{{ if gt .BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidCstRewardAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+						<td class="right nowrap">{{auctionParam .CstDutchAuctionDuration .CstDutchAuctionDurationInt}}</td>
+						<td class="right">{{if gt .CstPriceEth 0.0}}{{printf "%.4f" .CstPriceEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+						<td class="center">{{if ge .RWalkNFTId 0.0}}{{num .RWalkNFTId}}{{else}}<span class="empty">—</span>{{end}}</td>
 						<td>{{ .Message }}</td>
 					</tr>
 				{{- end}}
