@@ -41,7 +41,7 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]cgmo
 				p.block_num,
 				EXTRACT(EPOCH FROM p.time_stamp)::BIGINT ts,
 				p.time_stamp date_time,
-				-1 AS round_num,
+				p.round_num,
 				1 AS rec_type
 			FROM cg_prize_claim p
 		)
@@ -54,11 +54,11 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]cgmo
 	}
 	defer rows.Close()
 	records := make([]cgmodel.CGSystemModeRec, 0, 256)
-	// A prize-claim row (rec_type 1) closes the round opened by the first-bid
-	// row (rec_type 0) seen just before it in evtlog order; only the closed
-	// spans are returned.
+	// Each prize-claim row (rec_type 1) opens the configuration span for the
+	// following round: it runs from the claim up to that round's first bid
+	// (rec_type 0), or stays open-ended for the current round. First-bid rows
+	// only mark the upper boundary and are not returned themselves.
 	var evtlogHi int64 = math.MaxInt64
-	var roundNum int64
 	for rows.Next() {
 		var rec cgmodel.CGSystemModeRec
 		var recType int64
@@ -75,11 +75,11 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]cgmo
 		}
 		if recType == 1 {
 			rec.NextEvtLogId = evtlogHi
-			rec.RoundNum = roundNum
+			// The claim of round N starts the config span for round N+1.
+			rec.RoundNum++
 			records = append(records, rec)
 		} else {
 			evtlogHi = rec.EvtLogId
-			roundNum = rec.RoundNum
 		}
 	}
 	if err := rows.Err(); err != nil {

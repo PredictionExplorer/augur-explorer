@@ -18,6 +18,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"math"
 	"math/big"
 	"net/http"
 	"os"
@@ -67,7 +68,18 @@ var pages = []page{
 type jsonNum float64
 
 func (n jsonNum) String() string {
-	return strconv.FormatFloat(float64(n), 'f', -1, 64)
+	return formatJSONNum(float64(n))
+}
+
+// formatJSONNum renders a JSON number without scientific notation. The API
+// uses math.MaxInt64 as an open-ended sentinel (e.g. NextEvtLogId), which
+// float64 rounds up to 2^63 (9223372036854776000); print the exact int64
+// maximum instead so links back into integer-parsing API routes stay valid.
+func formatJSONNum(f float64) string {
+	if f >= math.MaxInt64 {
+		return "9223372036854775807"
+	}
+	return strconv.FormatFloat(f, 'f', -1, 64)
 }
 
 // convertNums rewrites a decoded JSON tree in place, wrapping numbers.
@@ -90,8 +102,11 @@ func convertNums(v any) any {
 // num renders a JSON number without scientific notation; kept for templates
 // that format numbers explicitly.
 func num(v any) string {
-	if f, ok := v.(float64); ok {
-		return strconv.FormatFloat(f, 'f', -1, 64)
+	switch f := v.(type) {
+	case float64:
+		return formatJSONNum(f)
+	case jsonNum:
+		return f.String()
 	}
 	return fmt.Sprint(v)
 }
