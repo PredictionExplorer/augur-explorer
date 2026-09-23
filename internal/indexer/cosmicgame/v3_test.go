@@ -36,7 +36,7 @@ func TestClassifyBidRewardMints(t *testing.T) {
 			wantAddress:  previous.String(),
 		},
 		{
-			name: "V3 90/10 in either order",
+			name: "mixed recipients aggregate per recipient",
 			mints: []bidRewardMint{
 				{to: current, amount: big.NewInt(10)},
 				{to: previous, amount: big.NewInt(90)},
@@ -46,14 +46,13 @@ func TestClassifyBidRewardMints(t *testing.T) {
 			wantAddress:  previous.String(),
 		},
 		{
-			name: "same address still has two shares",
+			name: "multiple mints to the bidder sum to the bidder's reward (zero-price CST bid)",
 			mints: []bidRewardMint{
-				{to: current, amount: big.NewInt(90)},
-				{to: current, amount: big.NewInt(10)},
+				{to: current, amount: big.NewInt(0)},
+				{to: current, amount: big.NewInt(100)},
 			},
-			wantCurrent:  "10",
-			wantPrevious: "90",
-			wantAddress:  current.String(),
+			wantCurrent:  "100",
+			wantPrevious: "0",
 		},
 	}
 	for _, test := range tests {
