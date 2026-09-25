@@ -59,11 +59,14 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 
 	// The 78 V1/V2 registrations (including ArbitrumError and
 	// EthBidRefundAmountInGasToSwallowMaxLimitChanged) plus V3
-	// MainPrizeClaimed, six V3 configuration events, and the five V3.1
+	// MainPrizeClaimed, six V3 configuration events, the five V3.1
 	// events (EthTransferToCharityFailed and the four per-call Arbitrum
-	// failure events that replaced ArbitrumError).
-	if got := len(reg.Handlers()); got != 90 {
-		t.Errorf("registered handlers = %d, want 90", got)
+	// failure events that replaced ArbitrumError), the six OpenZeppelin
+	// events inherited by the NFT and the token (two Approval sources,
+	// ApprovalForAll, DelegateChanged, DelegateVotesChanged,
+	// EIP712DomainChanged) and the ten Governor events of the DAO.
+	if got := len(reg.Handlers()); got != 106 {
+		t.Errorf("registered handlers = %d, want 106", got)
 	}
 
 	for _, c := range []struct{ topic, want string }{

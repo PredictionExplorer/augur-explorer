@@ -112,7 +112,9 @@ func (h *Handlers) decodeStakingEthDeposit(lg *types.Log, elog *store.EthereumEv
 	evt.DepositId = ethEvt.ActionCounter.Int64()
 	evt.NumStakedNfts = ethEvt.NumStakedNfts.Int64()
 	evt.Amount = ethEvt.DepositAmount.String()
-	evt.AccumModulo = "0" // pending for resolution regarding StakingWalletCST refactoring
+	// The contract's all-time cumulative reward per staked NFT after this
+	// deposit; the wallet pays (unstake value - stake value) of it on unstake.
+	evt.RewardPerStakedNft = ethEvt.RewardAmountPerStakedNft.String()
 	evt.RoundNum = lg.Topics[1].Big().Int64()
 	divres := big.NewInt(0)
 	rem := big.NewInt(0)
@@ -126,7 +128,8 @@ func (h *Handlers) storeStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEt
 	h.log.Info("EthDepositReceived",
 		"evt_id", evt.EvtId, "deposit_id", evt.DepositId, "round", evt.RoundNum,
 		"num_staked", evt.NumStakedNfts, "amount", evt.Amount,
-		"amount_per_staker", evt.AmountPerStaker, "modulo", evt.Modulo)
+		"amount_per_staker", evt.AmountPerStaker, "modulo", evt.Modulo,
+		"reward_per_staked_nft", evt.RewardPerStakedNft)
 
 	if err := h.repo.DeleteStakingEthDeposit(ctx, evt.EvtId); err != nil {
 		return err
@@ -153,13 +156,15 @@ func (h *Handlers) decodeNftUnstakedRWalk(lg *types.Log, elog *store.EthereumEve
 	evt.NftId = lg.Topics[2].Big().Int64()
 	evt.StakerAddress = ethcommon.BytesToAddress(lg.Topics[3][12:]).String()
 	evt.NumStakedNfts = ethEvt.NumStakedNfts.Int64()
+	evt.ActionCounter = ethEvt.ActionCounter.Int64()
 	return evt, nil
 }
 
 func (h *Handlers) storeNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUnstakedRWalk) error {
 	h.log.Info("RWalk NftUnstaked",
 		"evt_id", evt.EvtId, "action_id", evt.ActionId, "nft_id", evt.NftId,
-		"staker", evt.StakerAddress, "num_staked", evt.NumStakedNfts)
+		"staker", evt.StakerAddress, "num_staked", evt.NumStakedNfts,
+		"action_counter", evt.ActionCounter)
 
 	if err := h.repo.DeleteNftUnstakedRWalk(ctx, evt.EvtId); err != nil {
 		return err

@@ -12,6 +12,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
+	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 )
 
 // eventHandlers returns every CosmicGame event handler in registration order.
@@ -22,6 +23,7 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 	charity := one(h.c.CharityWallet)
 	prizes := one(h.c.PrizesWallet)
 	marketing := one(h.c.MarketingWallet)
+	dao := one(h.c.Dao)
 	// The legacy NftStaked guards accepted either staking wallet for both
 	// event variants; preserved verbatim (the topics differ per wallet ABI,
 	// so only one variant can arrive from each wallet in practice).
@@ -113,7 +115,10 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicOwnershipTransferred), "OwnershipTransferred", h.ownershipSources(), h.decodeOwnershipTransferred, h.storeOwnershipTransferred),
 		indexer.NewHandler(topicHash(TopicInitialized), "Initialized", h.initializedSources(), h.decodeInitialized, h.storeInitialized),
 		indexer.NewHandler(topicHash(TopicStartingCstMinLim), "CstDutchAuctionBeginningBidPriceMinLimitChanged", game, h.decodeCstMinLimitChanged, h.storeCstMinLimitChanged),
-		indexer.NewHandler(topicHash(TopicFundTransferErr), "FundTransferFailed", game, h.decodeFundTransferFailed, h.storeFundTransferFailed),
+		// FundTransferFailed: the game emitted it on charity-donation failure
+		// before V3.1; the CST staking wallet still emits it when
+		// tryPerformMaintenance cannot forward its balance to charity.
+		indexer.NewHandler(topicHash(TopicFundTransferErr), "FundTransferFailed", charitySenders, h.decodeFundTransferFailed, h.storeFundTransferFailed),
 		indexer.NewHandler(topicHash(TopicERC20TransferErr), "ERC20TransferFailed", game, h.decodeERC20TransferFailed, h.storeERC20TransferFailed),
 		// Only MainPrize/MainPrizeV2 reach ArbitrumHelpers, so the game is the
 		// sole emitter of ArbitrumError.
@@ -136,5 +141,27 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicFundsToCharity), "FundsTransferredToCharity", charitySenders, h.decodeFundsToCharity, h.storeFundsToCharity),
 		indexer.NewHandler(topicHash(TopicDelayDurationRound), "DelayDurationBeforeRoundActivationChanged", game, h.decodeDelayDurationChanged, h.storeDelayDurationChanged),
 		indexer.NewHandler(topicHash(TopicFirstBidEvent), "FirstBidPlacedInRound", game, h.decodeFirstBidPlacedInRound, h.storeFirstBidPlacedInRound),
+
+		// OpenZeppelin events inherited by the NFT and the token. Approval
+		// shares its topic0 between ERC721 (tokenId indexed) and ERC20 (value
+		// in data); the source filter separates them like Transfer.
+		indexer.NewHandler(topicHash(TopicApproval), "Approval", signature, h.decodeNftApproval, h.storeNftApproval),
+		indexer.NewHandler(topicHash(TopicApprovalForAll), "NftApprovalForAll", signature, h.decodeNftApprovalForAll, h.storeNftApprovalForAll),
+		indexer.NewHandler(topicHash(TopicApproval), "Approval", one(h.c.Token), h.decodeTokenApproval, h.storeTokenApproval),
+		indexer.NewHandler(topicHash(TopicDelegateChanged), "DelegateChanged", one(h.c.Token), h.decodeDelegateChanged, h.storeDelegateChanged),
+		indexer.NewHandler(topicHash(TopicDelegateVotesChanged), "DelegateVotesChanged", one(h.c.Token), h.decodeDelegateVotesChanged, h.storeDelegateVotesChanged),
+		indexer.NewHandler(topicHash(TopicEIP712DomainChanged), "EIP712DomainChanged", []ethcommon.Address{h.c.Token, h.c.Dao}, h.decodeEIP712DomainChanged, h.storeEIP712DomainChanged),
+
+		// CosmicSignatureDao (OpenZeppelin Governor).
+		indexer.NewHandler(topicHash(TopicDaoProposalCreated), "DaoProposalCreated", dao, h.decodeDaoProposalCreated, h.storeDaoProposalCreated),
+		indexer.NewHandler(topicHash(TopicDaoProposalCanceled), "DaoProposalCanceled", dao, h.decodeDaoProposalCanceled, h.storeDaoProposalStateChange),
+		indexer.NewHandler(topicHash(TopicDaoProposalExecuted), "DaoProposalExecuted", dao, h.decodeDaoProposalExecuted, h.storeDaoProposalStateChange),
+		indexer.NewHandler(topicHash(TopicDaoProposalQueued), "DaoProposalQueued", dao, h.decodeDaoProposalQueued, h.storeDaoProposalStateChange),
+		indexer.NewHandler(topicHash(TopicDaoVoteCast), "DaoVoteCast", dao, h.decodeDaoVoteCast, h.storeDaoVoteCast),
+		indexer.NewHandler(topicHash(TopicDaoVoteCastWithParams), "DaoVoteCastWithParams", dao, h.decodeDaoVoteCastWithParams, h.storeDaoVoteCast),
+		indexer.NewHandler(topicHash(TopicDaoProposalThresholdSet), "DaoProposalThresholdSet", dao, h.decodeDaoSettingChanged("ProposalThresholdSet", cgmodel.DaoSettingProposalThreshold), h.storeDaoSettingChanged),
+		indexer.NewHandler(topicHash(TopicDaoVotingDelaySet), "DaoVotingDelaySet", dao, h.decodeDaoSettingChanged("VotingDelaySet", cgmodel.DaoSettingVotingDelay), h.storeDaoSettingChanged),
+		indexer.NewHandler(topicHash(TopicDaoVotingPeriodSet), "DaoVotingPeriodSet", dao, h.decodeDaoSettingChanged("VotingPeriodSet", cgmodel.DaoSettingVotingPeriod), h.storeDaoSettingChanged),
+		indexer.NewHandler(topicHash(TopicDaoQuorumNumeratorSet), "DaoQuorumNumeratorUpdated", dao, h.decodeDaoSettingChanged("QuorumNumeratorUpdated", cgmodel.DaoSettingQuorumNumerator), h.storeDaoSettingChanged),
 	}
 }

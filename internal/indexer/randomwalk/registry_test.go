@@ -34,17 +34,22 @@ func newUnitHandlers(tb testing.TB) *Handlers {
 func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 	reg := newUnitHandlers(t).Registry()
 
-	if got := len(reg.Handlers()); got != 7 {
-		t.Errorf("registered handlers = %d, want 7", got)
+	// Seven RandomWalk/marketplace events plus the three OpenZeppelin events
+	// RandomWalkNFT inherits (Approval, ApprovalForAll, OwnershipTransferred).
+	if got := len(reg.Handlers()); got != 10 {
+		t.Errorf("registered handlers = %d, want 10", got)
 	}
 	for topic, want := range map[string]string{
-		TopicNewOffer:      "NewOffer",
-		TopicItemBought:    "ItemBought",
-		TopicOfferCanceled: "OfferCanceled",
-		TopicWithdrawalEvt: "WithdrawalEvent",
-		TopicTokenNameEvt:  "TokenNameEvent",
-		TopicTransferEvt:   "Transfer",
-		TopicMintEvent:     "MintEvent",
+		TopicNewOffer:             "NewOffer",
+		TopicItemBought:           "ItemBought",
+		TopicOfferCanceled:        "OfferCanceled",
+		TopicWithdrawalEvt:        "WithdrawalEvent",
+		TopicTokenNameEvt:         "TokenNameEvent",
+		TopicTransferEvt:          "Transfer",
+		TopicMintEvent:            "MintEvent",
+		TopicApproval:             "Approval",
+		TopicApprovalForAll:       "ApprovalForAll",
+		TopicOwnershipTransferred: "OwnershipTransferred",
 	} {
 		if got := reg.TopicName(topicHash(topic)); got != want {
 			t.Errorf("TopicName(%s) = %q, want %q", topic, got, want)

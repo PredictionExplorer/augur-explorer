@@ -730,7 +730,7 @@
         "accum_modulo": 0,
         "accumulated_amount": 2000000000000000000,
         "accumulated_nfts": 1,
-        "accumulated_per_token": null,
+        "accumulated_per_token": 2000000000000000000,
         "amount_per_token": 2000000000000000000,
         "block_num": 3014,
         "contract_aid": "0x9000000000000000000000000000000000000009",
@@ -740,6 +740,7 @@
         "evtlog_id": "evt:3014/0",
         "modulo": 0,
         "num_staked_nfts": 1,
+        "reward_per_staked_nft": 2000000000000000000,
         "round_num": 0,
         "time_stamp": "2026-01-04T11:43:20+00:00",
         "tx_id": "0x6b7686c36393d0c686dc80f8d2b70a35b4d40c1ca2b545273532dacd7b163bcc"

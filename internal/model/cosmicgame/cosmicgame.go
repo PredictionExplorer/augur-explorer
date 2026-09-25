@@ -373,20 +373,25 @@ type CGNftStakedRWalk struct {
 
 // CGEthDeposit records an EthDepositReceived event of the CST staking wallet:
 // prize ETH distributed across the NFTs staked at deposit time.
+// RewardPerStakedNft is the contract's all-time cumulative reward per staked
+// NFT after this deposit (the event's rewardAmountPerStakedNft), the value the
+// wallet later pays out against on unstake; AmountPerStaker/Modulo are the
+// per-deposit split recomputed by the indexer, and the running modulo sum is
+// maintained by the insert trigger.
 type CGEthDeposit struct {
-	EvtId           int64
-	BlockNum        int64
-	TimeStamp       int64
-	TxId            int64
-	ContractAddr    string
-	RoundNum        int64
-	DepositTime     int64
-	DepositId       int64
-	NumStakedNfts   int64
-	Amount          string
-	AmountPerStaker string
-	AccumModulo     string
-	Modulo          string
+	EvtId              int64
+	BlockNum           int64
+	TimeStamp          int64
+	TxId               int64
+	ContractAddr       string
+	RoundNum           int64
+	DepositTime        int64
+	DepositId          int64
+	NumStakedNfts      int64
+	Amount             string
+	AmountPerStaker    string
+	RewardPerStakedNft string
+	Modulo             string
 }
 
 // CGNftUnstakedRWalk records an NftUnstaked event of the RandomWalk staking
@@ -399,6 +404,7 @@ type CGNftUnstakedRWalk struct {
 	ContractAddr  string
 	RoundNum      int64
 	ActionId      int64
+	ActionCounter int64
 	NftId         int64
 	NumStakedNfts int64
 	StakerAddress string
@@ -984,8 +990,11 @@ type CGCstMinLimit struct {
 	CstMinLimit string
 }
 
-// CGFundTransferFailed records a FundTransferFailed contract error event: an
-// ETH send from the game to Destination reverted.
+// CGFundTransferFailed records a FundTransferFailed event: an ETH send from
+// the emitting contract (pre-V3.1 game charity donation; CST staking wallet
+// tryPerformMaintenance charity sweep) to Destination reverted. ErrStr is the
+// message the contract attached (cg_error_lookup keys the same wording by
+// the event signature).
 type CGFundTransferFailed struct {
 	EvtId       int64
 	BlockNum    int64
@@ -994,6 +1003,7 @@ type CGFundTransferFailed struct {
 	Contract    string
 	Destination string
 	Amount      string
+	ErrStr      string
 }
 
 // CGEthToCharityFailed records a V3.1 EthTransferToCharityFailed event: the
@@ -1054,6 +1064,166 @@ type CGRoundStarted struct {
 	Contract       string
 	RoundNum       int64
 	StartTimestamp int64
+}
+
+// --- OpenZeppelin events inherited by the platform contracts ---
+
+// CGNftApproval records an ERC-721 Approval event of the Cosmic Signature
+// NFT: Owner allowed Approved to transfer TokenId (zero address clears it).
+type CGNftApproval struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	Owner     string
+	Approved  string
+	TokenId   int64
+}
+
+// CGNftApprovalForAll records an ERC-721 ApprovalForAll event of the Cosmic
+// Signature NFT: Owner granted or revoked Operator over every token.
+type CGNftApprovalForAll struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	Owner     string
+	Operator  string
+	Approved  bool
+}
+
+// CGTokenApproval records an ERC-20 Approval event of the CosmicToken: Owner
+// set Spender's allowance to Value.
+type CGTokenApproval struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	Owner     string
+	Spender   string
+	Value     string
+}
+
+// CGDelegateChanged records an ERC-20 Votes DelegateChanged event of the
+// CosmicToken: Delegator moved their voting power from FromDelegate to
+// ToDelegate.
+type CGDelegateChanged struct {
+	EvtId        int64
+	BlockNum     int64
+	TxId         int64
+	TimeStamp    int64
+	Contract     string
+	Delegator    string
+	FromDelegate string
+	ToDelegate   string
+}
+
+// CGDelegateVotesChanged records an ERC-20 Votes DelegateVotesChanged event of
+// the CosmicToken: Delegate's voting power moved from PreviousVotes to
+// NewVotes.
+type CGDelegateVotesChanged struct {
+	EvtId         int64
+	BlockNum      int64
+	TxId          int64
+	TimeStamp     int64
+	Contract      string
+	Delegate      string
+	PreviousVotes string
+	NewVotes      string
+}
+
+// CGEIP712DomainChanged records an EIP712DomainChanged event (CosmicToken
+// permit domain, CosmicSignatureDao vote-by-signature domain). It carries no
+// parameters; the row marks when the domain separator changed.
+type CGEIP712DomainChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+}
+
+// --- CosmicSignatureDao (OpenZeppelin Governor) ---
+
+// CGDaoProposalCreated records a Governor ProposalCreated event. The call
+// batch (targets/values/signatures/calldatas) is kept verbatim so a proposal
+// can be re-encoded from the database.
+type CGDaoProposalCreated struct {
+	EvtId       int64
+	BlockNum    int64
+	TxId        int64
+	TimeStamp   int64
+	Contract    string
+	ProposalId  string
+	Proposer    string
+	Targets     []string
+	Values      []string
+	Signatures  []string
+	Calldatas   [][]byte
+	VoteStart   int64
+	VoteEnd     int64
+	Description string
+}
+
+// Proposal state-change kinds stored in cg_dao_proposal_state.
+const (
+	DaoProposalQueued   int64 = 1
+	DaoProposalExecuted int64 = 2
+	DaoProposalCanceled int64 = 3
+)
+
+// CGDaoProposalStateChange records ProposalQueued, ProposalExecuted or
+// ProposalCanceled for one proposal. EtaSeconds is set only for Queued.
+type CGDaoProposalStateChange struct {
+	EvtId      int64
+	BlockNum   int64
+	TxId       int64
+	TimeStamp  int64
+	Contract   string
+	ProposalId string
+	State      int64
+	EtaSeconds int64
+}
+
+// CGDaoVoteCast records a Governor VoteCast or VoteCastWithParams event.
+// Params is nil for the plain VoteCast.
+type CGDaoVoteCast struct {
+	EvtId      int64
+	BlockNum   int64
+	TxId       int64
+	TimeStamp  int64
+	Contract   string
+	Voter      string
+	ProposalId string
+	Support    int64
+	Weight     string
+	Reason     string
+	Params     []byte
+}
+
+// Governor settings stored in cg_dao_setting_changed.setting.
+const (
+	DaoSettingProposalThreshold int64 = 1
+	DaoSettingVotingDelay       int64 = 2
+	DaoSettingVotingPeriod      int64 = 3
+	DaoSettingQuorumNumerator   int64 = 4
+)
+
+// CGDaoSettingChanged records one of the Governor's (old, new) parameter
+// events: ProposalThresholdSet, VotingDelaySet, VotingPeriodSet,
+// QuorumNumeratorUpdated.
+type CGDaoSettingChanged struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	Setting   int64
+	OldValue  string
+	NewValue  string
 }
 
 // CGLiveStateUpdate is one audited observation of event-less on-chain state.

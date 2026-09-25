@@ -916,8 +916,8 @@ func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFund
 	}
 	query := "INSERT INTO cg_fund_transf_err(" +
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
-		"destination_aid,amount" +
-		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+		"destination_aid,amount,err_str" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,NULLIF($8,''))"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -926,6 +926,7 @@ func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFund
 		contractAid,
 		destinationAid,
 		evt.Amount,
+		evt.ErrStr,
 	)
 	return store.WrapError(op, err)
 }
@@ -1064,8 +1065,8 @@ func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUns
 	}
 	query := "INSERT INTO cg_nft_unstaked_rwalk(" +
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
-		"action_id,token_id,num_staked_nfts,staker_aid" +
-		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+		"action_id,action_counter,token_id,num_staked_nfts,staker_aid" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10)"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -1073,6 +1074,7 @@ func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUns
 		evt.TimeStamp,
 		contractAid,
 		evt.ActionId,
+		evt.ActionCounter,
 		evt.NftId,
 		evt.NumStakedNfts,
 		stakerAid,
@@ -1087,9 +1089,11 @@ func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDe
 	if err != nil {
 		return store.WrapError(op, err)
 	}
+	// accum_modulo (running remainder sum) is maintained by the
+	// on_eth_deposit_insert trigger from the previous row.
 	query := "INSERT INTO cg_staking_eth_deposit(" +
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
-		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
+		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,reward_per_staked_nft" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13)"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
@@ -1104,7 +1108,7 @@ func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDe
 		evt.Amount,
 		evt.AmountPerStaker,
 		evt.Modulo,
-		evt.AccumModulo,
+		evt.RewardPerStakedNft,
 	)
 	return store.WrapError(op, err)
 }

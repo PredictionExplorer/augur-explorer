@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -429,13 +430,30 @@ func (h *Handlers) storeEthTransferToCharityFailed(ctx context.Context, evt *cgm
 	return h.repo.InsertEthToCharityFailed(ctx, evt)
 }
 
+// decodeFundTransferFailed handles CosmicSignatureEvents.sol:
+// FundTransferFailed(string errStr, address indexed destinationAddress,
+// uint256 amount), emitted by the pre-V3.1 game on a failed charity donation
+// and by the CST staking wallet when tryPerformMaintenance cannot forward its
+// balance. The game ABI also declares a custom *error* of the same name and
+// parameter list; abi.UnpackIntoInterface resolves the name to the error
+// (whose inputs are all non-indexed), which shifted the decode by one word
+// and stored the string length as the amount. Unpack against the event's
+// non-indexed inputs explicitly.
 func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundTransferFailed, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
-	var ethEvt cgc.CosmicSignatureGameFundTransferFailed
-	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "FundTransferFailed", lg.Data); err != nil {
+	values, err := h.gameABI.Events["FundTransferFailed"].Inputs.NonIndexed().Unpack(lg.Data)
+	if err != nil {
 		return nil, err
+	}
+	if len(values) != 2 {
+		return nil, fmt.Errorf("FundTransferFailed: %d data values, want 2", len(values))
+	}
+	errStr, ok1 := values[0].(string)
+	amount, ok2 := values[1].(*big.Int)
+	if !ok1 || !ok2 || amount == nil {
+		return nil, fmt.Errorf("FundTransferFailed: unexpected value types %T, %T", values[0], values[1])
 	}
 
 	evt := &cgmodel.CGFundTransferFailed{}
@@ -445,12 +463,14 @@ func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumE
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Destination = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
-	evt.Amount = ethEvt.Amount.String()
+	evt.Amount = amount.String()
+	evt.ErrStr = errStr
 	return evt, nil
 }
 
 func (h *Handlers) storeFundTransferFailed(ctx context.Context, evt *cgmodel.CGFundTransferFailed) error {
-	h.log.Info("FundTransferFailed", "evt_id", evt.EvtId, "destination", evt.Destination, "amount", evt.Amount)
+	h.log.Info("FundTransferFailed", "evt_id", evt.EvtId, "contract", evt.Contract,
+		"destination", evt.Destination, "amount", evt.Amount, "err_str", evt.ErrStr)
 
 	if err := h.repo.DeleteFundTransferFailed(ctx, evt.EvtId); err != nil {
 		return err

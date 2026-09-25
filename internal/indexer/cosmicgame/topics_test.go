@@ -36,6 +36,9 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 	marketing := mustABI(t, cgc.MarketingWalletABI)
 	erc20 := mustABI(t, cgc.ERC20ABI)
 	erc1967 := mustABI(t, cgc.IERC1967ABI)
+	token := mustABI(t, cgc.CosmicSignatureTokenABI)
+	dao := mustABI(t, cgc.CosmicSignatureDaoABI)
+	stakingCSTImpl := mustABI(t, cgc.StakingWalletCosmicSignatureNftABI)
 
 	cases := []struct {
 		constant string
@@ -124,6 +127,27 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicStartingCstMinLim, game, "CstDutchAuctionBeginningBidPriceMinLimitChanged"},
 		{TopicFundsToCharity, game, "FundsTransferredToCharity"},
 		{TopicDelayDurationRound, game, "DelayDurationBeforeRoundActivationChanged"},
+		// The CST staking wallet still emits FundTransferFailed (V3.1 moved
+		// the game's emission to EthTransferToCharityFailed).
+		{TopicFundTransferErr, stakingCSTImpl, "FundTransferFailed"},
+		// OpenZeppelin events inherited by the NFT, the token and the DAO.
+		{TopicApproval, nft, "Approval"},
+		{TopicApproval, token, "Approval"},
+		{TopicApprovalForAll, nft, "ApprovalForAll"},
+		{TopicDelegateChanged, token, "DelegateChanged"},
+		{TopicDelegateVotesChanged, token, "DelegateVotesChanged"},
+		{TopicEIP712DomainChanged, token, "EIP712DomainChanged"},
+		{TopicEIP712DomainChanged, dao, "EIP712DomainChanged"},
+		{TopicDaoProposalCreated, dao, "ProposalCreated"},
+		{TopicDaoProposalCanceled, dao, "ProposalCanceled"},
+		{TopicDaoProposalExecuted, dao, "ProposalExecuted"},
+		{TopicDaoProposalQueued, dao, "ProposalQueued"},
+		{TopicDaoVoteCast, dao, "VoteCast"},
+		{TopicDaoVoteCastWithParams, dao, "VoteCastWithParams"},
+		{TopicDaoProposalThresholdSet, dao, "ProposalThresholdSet"},
+		{TopicDaoVotingDelaySet, dao, "VotingDelaySet"},
+		{TopicDaoVotingPeriodSet, dao, "VotingPeriodSet"},
+		{TopicDaoQuorumNumeratorSet, dao, "QuorumNumeratorUpdated"},
 	}
 
 	for _, c := range cases {

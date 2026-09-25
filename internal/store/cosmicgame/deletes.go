@@ -160,6 +160,58 @@ func (r *Repo) DeleteFundTransferFailed(ctx context.Context, evtlogID int64) err
 	return r.deleteByEvtlogID(ctx, "cg_fund_transf_err", evtlogID)
 }
 
+// Inherited OpenZeppelin events and the DAO.
+
+// DeleteNftApproval removes an ERC-721 Approval row.
+func (r *Repo) DeleteNftApproval(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_nft_approval", evtlogID)
+}
+
+// DeleteNftApprovalForAll removes an ERC-721 ApprovalForAll row.
+func (r *Repo) DeleteNftApprovalForAll(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_nft_approval_for_all", evtlogID)
+}
+
+// DeleteTokenApproval removes an ERC-20 Approval row.
+func (r *Repo) DeleteTokenApproval(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_token_approval", evtlogID)
+}
+
+// DeleteDelegateChanged removes a DelegateChanged row.
+func (r *Repo) DeleteDelegateChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_token_delegate_changed", evtlogID)
+}
+
+// DeleteDelegateVotesChanged removes a DelegateVotesChanged row.
+func (r *Repo) DeleteDelegateVotesChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_token_delegate_votes_changed", evtlogID)
+}
+
+// DeleteEIP712DomainChanged removes an EIP712DomainChanged row.
+func (r *Repo) DeleteEIP712DomainChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_eip712_domain_changed", evtlogID)
+}
+
+// DeleteDaoProposalCreated removes a ProposalCreated row.
+func (r *Repo) DeleteDaoProposalCreated(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_proposal_created", evtlogID)
+}
+
+// DeleteDaoProposalStateChange removes a ProposalQueued/Executed/Canceled row.
+func (r *Repo) DeleteDaoProposalStateChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_proposal_state", evtlogID)
+}
+
+// DeleteDaoVoteCast removes a VoteCast/VoteCastWithParams row.
+func (r *Repo) DeleteDaoVoteCast(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_vote_cast", evtlogID)
+}
+
+// DeleteDaoSettingChanged removes a Governor setting-change row.
+func (r *Repo) DeleteDaoSettingChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_setting_changed", evtlogID)
+}
+
 // DeleteERC20TransferFailed removes an ERC20TransferFailed row.
 func (r *Repo) DeleteERC20TransferFailed(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_erc20_transf_err", evtlogID)

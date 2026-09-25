@@ -111,6 +111,28 @@ const (
 	TopicArbSysArbBlockHashCallFailed          = "de09184d78b110c5942196171c5b8b344f399922de2be886f56a74ab1337041f" // ArbitrumHelpers.sol:ArbSysArbBlockHashCallFailed
 	TopicArbGasInfoGetGasBacklogCallFailed     = "20bc709aa4eb4e8757a663b1feadf4235acb2418a324a7348a84a1c166fb33b1" // ArbitrumHelpers.sol:ArbGasInfoGetGasBacklogCallFailed
 	TopicArbGasInfoGetL1PricingUnitsCallFailed = "1031a98235b5d0b884fa4bb491d313b7c3add94719cc953bfce9c24abd651791" // ArbitrumHelpers.sol:ArbGasInfoGetL1PricingUnitsSinceUpdateCallFailed
+
+	// Events inherited from OpenZeppelin by the deployed contracts. Every
+	// event a platform contract can emit is dispatched (TestEveryABIEventHasHandler).
+
+	TopicApproval             = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925" // IERC721.sol / IERC20.sol:Approval (shared topic0; split by source)
+	TopicApprovalForAll       = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31" // IERC721.sol:ApprovalForAll
+	TopicDelegateChanged      = "3134e8a2e6d97e929a7e54011ea5485d7d196dd5f0ba4d4ef95803e8e3fc257f" // IVotes.sol:DelegateChanged
+	TopicDelegateVotesChanged = "dec2bacdd2f05b59de34da9b523dff8be42e5e38e818c82fdb0bae774387a724" // IVotes.sol:DelegateVotesChanged
+	TopicEIP712DomainChanged  = "0a6387c9ea3628b88a633bb4f3b151770f70085117a15f9bf3787cda53f13d31" // IERC5267.sol:EIP712DomainChanged
+
+	// CosmicSignatureDao (OpenZeppelin Governor family).
+
+	TopicDaoProposalCreated      = "7d84a6263ae0d98d3329bd7b46bb4e8d6f98cd35a7adb45c274c8b7fd5ebd5e0" // IGovernor.sol:ProposalCreated
+	TopicDaoProposalCanceled     = "789cf55be980739dad1d0699b93b58e806b51c9d96619bfa8fe0a28abaa7b30c" // IGovernor.sol:ProposalCanceled
+	TopicDaoProposalExecuted     = "712ae1383f79ac853f8d882153778e0260ef8f03b504e2866e0593e04d2b291f" // IGovernor.sol:ProposalExecuted
+	TopicDaoProposalQueued       = "9a2e42fd6722813d69113e7d0079d3d940171428df7373df9c7f7617cfda2892" // IGovernor.sol:ProposalQueued
+	TopicDaoVoteCast             = "b8e138887d0aa13bab447e82de9d5c1777041ecd21ca36ba824ff1e6c07ddda4" // IGovernor.sol:VoteCast
+	TopicDaoVoteCastWithParams   = "e2babfbac5889a709b63bb7f598b324e08bc5a4fb9ec647fb3cbc9ec07eb8712" // IGovernor.sol:VoteCastWithParams
+	TopicDaoProposalThresholdSet = "ccb45da8d5717e6c4544694297c4ba5cf151d455c9bb0ed4fc7a38411bc05461" // GovernorSettings.sol:ProposalThresholdSet
+	TopicDaoVotingDelaySet       = "c565b045403dc03c2eea82b81a0465edad9e2e7fc4d97e11421c209da93d7a93" // GovernorSettings.sol:VotingDelaySet
+	TopicDaoVotingPeriodSet      = "7e3f7f0708a84de9203036abaa450dccc85ad5ff52f78c170f3edb55cf5e8828" // GovernorSettings.sol:VotingPeriodSet
+	TopicDaoQuorumNumeratorSet   = "0553476bf02ef2726e8ce5ced78d63e26e602e4a2257b1f559418e24b4633997" // GovernorVotesQuorumFraction.sol:QuorumNumeratorUpdated
 )
 
 // topicHash converts one of the topic-hash constants above to a common.Hash

@@ -44,9 +44,10 @@ type Contracts struct {
 	CosmicTokenAid int64
 }
 
-// All returns every contract the FilterLogs subscription watches. The DAO is
-// included although Governor events are stored in evt_log only (no cg_dao_*
-// layer-2 tables); the registry ignores unknown topics.
+// All returns every contract the FilterLogs subscription watches. Every event
+// these contracts can emit, including the OpenZeppelin ones they inherit and
+// the DAO's Governor events, has a registered handler
+// (TestEveryABIEventHasHandler); the registry ignores unknown topics.
 func (c Contracts) All() []ethcommon.Address {
 	return []ethcommon.Address{
 		c.Game,
@@ -154,6 +155,8 @@ type Handlers struct {
 	marketingWalletABI *abi.ABI
 	erc20ABI           *abi.ABI
 	erc1967ABI         *abi.ABI
+	tokenABI           *abi.ABI
+	daoABI             *abi.ABI
 
 	registry *indexer.Registry
 }
@@ -198,6 +201,8 @@ func New(cfg Config) (*Handlers, error) {
 		{&h.marketingWalletABI, "MarketingWallet", cgc.MarketingWalletABI},
 		{&h.erc20ABI, "ERC20", cgc.ERC20ABI},
 		{&h.erc1967ABI, "IERC1967", cgc.IERC1967ABI},
+		{&h.tokenABI, "CosmicSignatureToken", cgc.CosmicSignatureTokenABI},
+		{&h.daoABI, "CosmicSignatureDao", cgc.CosmicSignatureDaoABI},
 	} {
 		parsed, err := abi.JSON(strings.NewReader(a.raw))
 		if err != nil {

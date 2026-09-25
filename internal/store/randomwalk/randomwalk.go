@@ -345,6 +345,91 @@ func (r *Repo) InsertTransfer(ctx context.Context, evt *rwmodel.Transfer) error 
 	return store.WrapError(op, err)
 }
 
+// InsertApproval records an ERC-721 Approval of a RandomWalk token.
+func (r *Repo) InsertApproval(ctx context.Context, evt *rwmodel.Approval) error {
+	const op = "insert into rw_approval"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	ownerAid, err := r.addrID(ctx, evt.Owner, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	approvedAid, err := r.addrID(ctx, evt.Approved, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_approval(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			owner_aid,approved_aid,token_id
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8
+		)`
+	_, err = r.q(ctx).Exec(ctx, query,
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid,
+		ownerAid, approvedAid, evt.TokenId,
+	)
+	return store.WrapError(op, err)
+}
+
+// InsertApprovalForAll records an ERC-721 ApprovalForAll on the RandomWalkNFT.
+func (r *Repo) InsertApprovalForAll(ctx context.Context, evt *rwmodel.ApprovalForAll) error {
+	const op = "insert into rw_approval_for_all"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	ownerAid, err := r.addrID(ctx, evt.Owner, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	operatorAid, err := r.addrID(ctx, evt.Operator, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_approval_for_all(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			owner_aid,operator_aid,approved
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8
+		)`
+	_, err = r.q(ctx).Exec(ctx, query,
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid,
+		ownerAid, operatorAid, evt.Approved,
+	)
+	return store.WrapError(op, err)
+}
+
+// InsertOwnershipTransferred records an Ownable OwnershipTransferred of the
+// RandomWalkNFT contract.
+func (r *Repo) InsertOwnershipTransferred(ctx context.Context, evt *rwmodel.OwnershipTransferred) error {
+	const op = "insert into rw_ownership_transferred"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	prevAid, err := r.addrID(ctx, evt.PrevOwner, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	newAid, err := r.addrID(ctx, evt.NewOwner, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := `INSERT INTO rw_ownership_transferred(
+			evtlog_id,block_num,tx_id,time_stamp,contract_aid,
+			prev_owner_aid,new_owner_aid
+		) VALUES (
+			$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7
+		)`
+	_, err = r.q(ctx).Exec(ctx, query,
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid,
+		prevAid, newAid,
+	)
+	return store.WrapError(op, err)
+}
+
 // OfferExists reports whether an offer with offerID exists for the contract.
 // An unknown contract address yields false. (The legacy layer also returned
 // false when the address lookup hit a real DB failure, silently skipping the
