@@ -24,7 +24,14 @@ const bidSelectBase = "SELECT b.evtlog_id,b.block_num,t.id,t.tx_hash," +
 	"COALESCE(br.prev_reward,0), COALESCE(br.prev_reward,0)/1e18, " +
 	"COALESCE(br.this_reward,b.cst_reward,0), COALESCE(br.this_reward,b.cst_reward,0)/1e18, " +
 	"COALESCE(pba.addr,''), " +
-	"b.cst_dutch_auction_duration, (CASE WHEN b.cst_dutch_auction_duration >= 0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END), " +
+	// The eighth BidPlaced word is a duration on V2 and a wei/second decline
+	// multiplier on V3; guard the bigint view against a multiplier beyond
+	// int64 (the raw decimal text is always returned alongside).
+	"b.cst_dutch_auction_duration, (CASE WHEN b.cst_dutch_auction_duration >= 0 AND b.cst_dutch_auction_duration <= 9223372036854775807 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END), " +
+	// Game generation at the bid's block: the game's Initialized(version)
+	// events mark the V1 deploy and each reinitialize (the implementation's
+	// Initialized(max) is stored as -1 and excluded).
+	"(SELECT COALESCE(MAX(i.version), 1) FROM cg_adm_initialized i WHERE i.version > 0 AND i.block_num <= b.block_num) AS mechanics_version, " +
 	"b.bid_type, " +
 	"EXTRACT(EPOCH FROM b.prize_time)::BIGINT AS prize_time_ts, b.prize_time, " +
 	"GREATEST(0, EXTRACT(EPOCH FROM b.prize_time)::BIGINT - EXTRACT(EPOCH FROM NOW())::BIGINT) AS time_until_prize, " +
@@ -146,6 +153,7 @@ func scanBidRow(rows pgx.Rows, rec *cgmodel.CGBidRec) error {
 		&previousAddr,
 		&rec.CstDutchAuctionDuration,
 		&rec.CstDutchAuctionDurationInt,
+		&rec.MechanicsVersion,
 		&rec.BidType,
 		&rec.PrizeTime,
 		store.TimeText(&rec.PrizeTimeDate),

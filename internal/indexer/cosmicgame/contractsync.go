@@ -154,6 +154,35 @@ func CheckContractParamsDrift(
 		}
 	}
 
+	// Contract address settings: every *AddressChanged event has a table
+	// keyed by address id; compare the live getter with the latest row.
+	for _, parameter := range contractAddressParams() {
+		chainAddr, err := parameter.read(v1, opts)
+		if err != nil {
+			logger.Warn("contract drift audit: parameter skipped",
+				"parameter", parameter.name, "err", err)
+			continue
+		}
+		dbAddr, hasRow, err := repo.LatestAddressParam(ctx, parameter.table, parameter.aidColumn)
+		if err != nil {
+			return drifted, fmt.Errorf("%s: %w", parameter.name, err)
+		}
+		if !hasRow {
+			logger.Info("contract drift audit: no indexed history",
+				"parameter", parameter.name,
+				"chain_value", chainAddr.Hex())
+			continue
+		}
+		if ethcommon.HexToAddress(dbAddr) != chainAddr {
+			drifted++
+			logger.Error("contract parameter drift",
+				"parameter", parameter.name,
+				"db_value", dbAddr,
+				"chain_value", chainAddr.Hex(),
+				"block", header.Number.String())
+		}
+	}
+
 	if mechanics >= contractMechanicsV2 {
 		if value, err := v2.CstDutchAuctionDurationChangeDivisor(opts); err != nil {
 			logger.Warn("contract drift audit: parameter skipped",
@@ -349,6 +378,78 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 				return v1.EthBidRefundAmountInGasToSwallowMaxLimit(opts)
 			}),
 		},
+		// Prize split percentages.
+		{
+			name: "charity_eth_donation_amount_percentage", table: "cg_adm_charity_pcent", column: "percentage",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.CharityEthDonationAmountPercentage(opts)
+			}),
+		},
+		{
+			name: "main_eth_prize_amount_percentage", table: "cg_adm_main_prize_pcent", column: "percentage",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.MainEthPrizeAmountPercentage(opts)
+			}),
+		},
+		{
+			name: "raffle_total_eth_prize_amount_for_bidders_percentage", table: "cg_adm_raffle_pcent", column: "percentage",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.RaffleTotalEthPrizeAmountForBiddersPercentage(opts)
+			}),
+		},
+		{
+			name: "chrono_warrior_eth_prize_amount_percentage", table: "cg_adm_chrono_pcent", column: "percentage",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.ChronoWarriorEthPrizeAmountPercentage(opts)
+			}),
+		},
+		{
+			name: "cosmic_signature_nft_staking_total_eth_reward_amount_percentage", table: "cg_adm_stake_pcent", column: "percentage",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.CosmicSignatureNftStakingTotalEthRewardAmountPercentage(opts)
+			}),
+		},
+		// Raffle counts.
+		{
+			name: "num_raffle_eth_prizes_for_bidders", table: "cg_adm_raf_eth_bidding", column: "num_winners",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.NumRaffleEthPrizesForBidders(opts)
+			}),
+		},
+		{
+			name: "num_raffle_cosmic_signature_nfts_for_bidders", table: "cg_adm_raf_nft_bidding", column: "num_winners",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.NumRaffleCosmicSignatureNftsForBidders(opts)
+			}),
+		},
+		{
+			name: "num_raffle_cosmic_signature_nfts_for_random_walk_nft_stakers", table: "cg_adm_raf_nft_staking_rwalk", column: "num_winners",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.NumRaffleCosmicSignatureNftsForRandomWalkNftStakers(opts)
+			}),
+		},
+		// Remaining scalar settings.
+		{
+			name: "bid_message_length_max_limit", table: "cg_adm_msg_len", column: "new_length",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.BidMessageLengthMaxLimit(opts)
+			}),
+		},
+		{
+			name: "cst_prize_amount", table: "cg_adm_erc_rwd_mul", column: "new_reward",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.CstPrizeAmount(opts)
+			}),
+		},
+		// roundActivationTime changes on every main-prize claim, each time
+		// through RoundActivationTimeChanged, so the latest event must match
+		// the live value between claims.
+		{
+			name: "round_activation_time", table: "cg_adm_acttime", column: "new_atime",
+			read: v1Big(func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (*big.Int, error) {
+				return v1.RoundActivationTime(opts)
+			}),
+		},
 	}
 
 	switch mechanics {
@@ -424,6 +525,54 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 		)
 	}
 	return parameters
+}
+
+// contractAddressParam pairs an address getter with the *AddressChanged
+// history table that records it (address-id column).
+type contractAddressParam struct {
+	name      string
+	table     string
+	aidColumn string
+	read      func(v1 *cgc.CosmicSignatureGame, opts *bind.CallOpts) (ethcommon.Address, error)
+}
+
+// contractAddressParams lists the game's evented address settings. The
+// getters exist unchanged on every generation, so the V1 binding serves all.
+func contractAddressParams() []contractAddressParam {
+	return []contractAddressParam{
+		{
+			name: "charity_address", table: "cg_adm_charity_wallet", aidColumn: "new_charity_aid",
+			read: (*cgc.CosmicSignatureGame).CharityAddress,
+		},
+		{
+			name: "random_walk_nft_address", table: "cg_adm_rwalk_addr", aidColumn: "new_rwalk_aid",
+			read: (*cgc.CosmicSignatureGame).RandomWalkNft,
+		},
+		{
+			name: "cosmic_signature_nft_address", table: "cg_adm_cossig_addr", aidColumn: "new_cossig_aid",
+			read: (*cgc.CosmicSignatureGame).Nft,
+		},
+		{
+			name: "cosmic_signature_token_address", table: "cg_adm_costok_addr", aidColumn: "new_costok_aid",
+			read: (*cgc.CosmicSignatureGame).Token,
+		},
+		{
+			name: "prizes_wallet_address", table: "cg_adm_prizes_wallet_addr", aidColumn: "new_wallet_aid",
+			read: (*cgc.CosmicSignatureGame).PrizesWallet,
+		},
+		{
+			name: "staking_wallet_cosmic_signature_nft_address", table: "cg_adm_staking_cst_addr", aidColumn: "new_staking_aid",
+			read: (*cgc.CosmicSignatureGame).StakingWalletCosmicSignatureNft,
+		},
+		{
+			name: "staking_wallet_random_walk_nft_address", table: "cg_adm_staking_rwalk_addr", aidColumn: "new_staking_aid",
+			read: (*cgc.CosmicSignatureGame).StakingWalletRandomWalkNft,
+		},
+		{
+			name: "marketing_wallet_address", table: "cg_adm_marketing_addr", aidColumn: "new_marketing_aid",
+			read: (*cgc.CosmicSignatureGame).MarketingWallet,
+		},
+	}
 }
 
 func v3ContractParam(

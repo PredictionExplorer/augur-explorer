@@ -20,17 +20,22 @@ type BackfillStats struct {
 	LogsSeen int
 	Inserted int
 	Skipped  int
+	// InsertedIDs are the evt_log ids of the rows this run inserted, in
+	// chain order, so a caller can run the domain processors over them.
+	InsertedIDs []int64
 }
 
 func (s *BackfillStats) add(other BackfillStats) {
 	s.LogsSeen += other.LogsSeen
 	s.Inserted += other.Inserted
 	s.Skipped += other.Skipped
+	s.InsertedIDs = append(s.InsertedIDs, other.InsertedIDs...)
 }
 
 // BackfillContractEvtLogs inserts missing evt_log rows for contract logs in
-// [fromBlock, toBlock]. Domain event processors are not invoked; callers use
-// this for contracts whose events are stored in evt_log only. Each block is
+// [fromBlock, toBlock]. Domain event processors are not invoked; callers
+// either use this for contracts whose events are stored in evt_log only or
+// run the processors themselves over the returned InsertedIDs. Each block is
 // committed atomically, and returned statistics describe committed work only.
 func (e *Engine) BackfillContractEvtLogs(
 	ctx context.Context,
@@ -148,7 +153,8 @@ func (e *Engine) backfillBlock(ctx context.Context, logs []types.Log) (BackfillS
 				continue
 			}
 
-			if _, err := e.InsertEventLog(txCtx, *log, txID); err != nil {
+			evtID, err := e.InsertEventLog(txCtx, *log, txID)
+			if err != nil {
 				return fmt.Errorf(
 					"InsertEventLog block=%d tx=%s log_index=%d: %w",
 					blockNum,
@@ -158,6 +164,7 @@ func (e *Engine) backfillBlock(ctx context.Context, logs []types.Log) (BackfillS
 				)
 			}
 			pending.Inserted++
+			pending.InsertedIDs = append(pending.InsertedIDs, evtID)
 		}
 		blockStats = pending
 		return nil

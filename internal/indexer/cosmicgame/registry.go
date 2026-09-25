@@ -113,7 +113,10 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicBaseURI), "NftBaseUriChanged", signature, h.decodeNftBaseURIChanged, h.storeNftBaseURIChanged),
 		indexer.NewHandler(topicHash(TopicMarketingRewardChanged), "MarketingWalletCstContributionAmountChanged", game, h.decodeMarketingRewardChanged, h.storeMarketingRewardChanged),
 		indexer.NewHandler(topicHash(TopicOwnershipTransferred), "OwnershipTransferred", h.ownershipSources(), h.decodeOwnershipTransferred, h.storeOwnershipTransferred),
-		indexer.NewHandler(topicHash(TopicInitialized), "Initialized", h.initializedSources(), h.decodeInitialized, h.storeInitialized),
+		// Initialized is emitted by every platform contract's initializer and
+		// by each game implementation's constructor; the implementation set
+		// grows as Upgraded events arrive, so the sources are dynamic.
+		indexer.NewDynamicHandler(topicHash(TopicInitialized), "Initialized", h.initializedSources, h.decodeInitialized, h.storeInitialized),
 		indexer.NewHandler(topicHash(TopicStartingCstMinLim), "CstDutchAuctionBeginningBidPriceMinLimitChanged", game, h.decodeCstMinLimitChanged, h.storeCstMinLimitChanged),
 		// FundTransferFailed: the game emitted it on charity-donation failure
 		// before V3.1; the CST staking wallet still emits it when

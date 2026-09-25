@@ -84,16 +84,25 @@ type CGBidRec struct {
 	ThisBidderCstRewardAmount     string  `json:"ThisBidderCstRewardAmount,omitempty"`
 	ThisCstRewardAmountEth        float64 `json:"ThisCstRewardAmountEth,omitempty"`
 	PreviousBidderAddr            string  `json:"PreviousBidderAddr,omitempty"`
-	CstDutchAuctionDuration       string  // per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
-	CstDutchAuctionDurationInt    int64   // numeric duration when >= 0; else -1
-	NFTDonationTokenId            int64
-	NFTDonationTokenAddr          string
-	NFTTokenURI                   string
-	ImageURL                      string
-	Message                       string
-	DonatedERC20TokenAddr         string
-	DonatedERC20TokenAmount       string
-	DonatedERC20TokenAmountEth    float64
+	// CstDutchAuctionDuration is the eighth BidPlaced data word: the CST
+	// Dutch auction duration in seconds on V2 mechanics, the CST bid price
+	// decline multiplier in wei per second on V3 (same topic, same slot);
+	// "-1" = V1 bid. MechanicsVersion tells which reading applies.
+	CstDutchAuctionDuration    string
+	CstDutchAuctionDurationInt int64 // numeric value when 0 <= value <= MaxInt64; else -1
+	// MechanicsVersion is the game generation (1, 2 or 3) that produced the
+	// bid, derived from the game's Initialized events preceding the bid's
+	// block. It drives the field semantics of the v2 API and is not part of
+	// the frozen v1 JSON.
+	MechanicsVersion           int64 `json:"-"`
+	NFTDonationTokenId         int64
+	NFTDonationTokenAddr       string
+	NFTTokenURI                string
+	ImageURL                   string
+	Message                    string
+	DonatedERC20TokenAddr      string
+	DonatedERC20TokenAmount    string
+	DonatedERC20TokenAmountEth float64
 }
 
 // CGBannedBidRec is one row from cg_banned_bids (API: get_banned_bids).

@@ -14,6 +14,7 @@
         },
         "ethPriceWei": "100000000000000000",
         "eventLogId": 5004,
+        "mechanicsVersion": 1,
         "message": "hello world",
         "occurredAt": "2026-01-01T00:01:40Z",
         "position": 1,
@@ -28,6 +29,7 @@
         "cstRewardWei": "100000000000000000000",
         "ethPriceWei": "50000000000000000",
         "eventLogId": 5006,
+        "mechanicsVersion": 1,
         "nftDonation": {
           "tokenAddress": "0x2700000000000000000000000000000000000027",
           "tokenId": 777,

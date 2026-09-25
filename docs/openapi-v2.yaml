@@ -5238,10 +5238,30 @@ components:
           type: string
           pattern: "^0x[0-9a-fA-F]{40}$"
           description: V3 recipient of previousBidderCstRewardAmountWei.
+        mechanicsVersion:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 3
+          description: >-
+            Game generation that produced the bid (1, 2 or 3), derived from
+            the game's Initialized events preceding the bid's block. Decides
+            which of cstDutchAuctionDurationSeconds /
+            cstBidPriceDeclineMultiplierWeiPerSecond is present.
         cstDutchAuctionDurationSeconds:
           type: integer
           format: int64
           minimum: 0
+          description: >-
+            V2 mechanics only: the CST Dutch auction duration set by this bid.
+            Absent for V1 bids (not emitted) and for V3 bids (the same
+            BidPlaced slot carries cstBidPriceDeclineMultiplierWeiPerSecond).
+        cstBidPriceDeclineMultiplierWeiPerSecond:
+          type: string
+          pattern: "^[0-9]+$"
+          description: >-
+            V3 mechanics only: the CST bid price decline rate (wei of CST per
+            second) in force after this bid.
         nftDonation:
           $ref: "#/components/schemas/NftDonation"
         erc20Donation:

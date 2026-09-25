@@ -40,7 +40,7 @@ func (e *Engine) Run(ctx context.Context) error {
 	if e.progress == nil || e.process == nil {
 		return errors.New("indexer: Run requires Config.Progress and Config.Process")
 	}
-	if len(e.contracts) == 0 {
+	if len(e.Contracts()) == 0 {
 		return errors.New("indexer: Run requires a non-empty Config.Contracts (an empty FilterLogs address list would match every contract)")
 	}
 
@@ -52,7 +52,7 @@ func (e *Engine) Run(ctx context.Context) error {
 	batch := newBatchPolicy(e.batch)
 	failures := 0
 	e.log.Info("indexer started",
-		"contracts", len(e.contracts),
+		"contracts", len(e.Contracts()),
 		"batch_initial", batch.size, "batch_min", batch.min, "batch_max", batch.max,
 		"max_consecutive_failures", e.retry.MaxConsecutiveFailures)
 
@@ -121,7 +121,7 @@ func (e *Engine) Run(ctx context.Context) error {
 		toBlock := min(fromBlock+batch.size-1, head)
 
 		started := time.Now()
-		logs, err := FetchLogs(ctx, e.client, fromBlock, toBlock, e.contracts)
+		logs, err := FetchLogs(ctx, e.client, fromBlock, toBlock, e.Contracts())
 		if err != nil {
 			if ctx.Err() != nil {
 				e.log.Info("exiting by user request")

@@ -6,10 +6,10 @@
     "UserAid": 21,
     "Winnings": {
       "DonatedERC20Tokens": [],
-      "ETHChronoWarriorToClaim": 0,
-      "ETHChronoWarriorToClaimWei": "",
-      "ETHRaffleToClaim": 0.14,
-      "ETHRaffleToClaimWei": "140000000000000000",
+      "ETHChronoWarriorToClaim": 0.08,
+      "ETHChronoWarriorToClaimWei": "80000000000000000",
+      "ETHRaffleToClaim": 0.06,
+      "ETHRaffleToClaimWei": "60000000000000000",
       "NumDonatedNFTToClaim": 0,
       "UnclaimedStakingReward": 0
     },

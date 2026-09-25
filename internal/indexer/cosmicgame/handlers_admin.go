@@ -512,7 +512,13 @@ func (h *Handlers) storeUpgraded(ctx context.Context, evt *cgmodel.CGUpgraded) e
 	if err := h.repo.DeleteUpgraded(ctx, evt.EvtId); err != nil {
 		return err
 	}
-	return h.repo.InsertUpgraded(ctx, evt)
+	if err := h.repo.InsertUpgraded(ctx, evt); err != nil {
+		return err
+	}
+	// The new implementation is a contract of its own (its constructor emits
+	// Initialized); start watching it.
+	h.noteImplementation(ctx, ethcommon.HexToAddress(evt.Implementation), evt.BlockNum)
+	return nil
 }
 
 // decodeAdminChanged decodes the ERC-1967 proxy event; it is absent from the
@@ -1052,12 +1058,6 @@ func (h *Handlers) storeOwnershipTransferred(ctx context.Context, evt *cgmodel.C
 		return err
 	}
 	return h.repo.InsertOwnershipTransfer(ctx, evt)
-}
-
-// initializedSources lists the platform contracts that may emit OpenZeppelin
-// Initializable:Initialized (the ownership set plus the implementation).
-func (h *Handlers) initializedSources() []ethcommon.Address {
-	return append(h.ownershipSources(), h.c.Implementation)
 }
 
 func (h *Handlers) decodeInitialized(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGInitialized, error) {

@@ -96,7 +96,7 @@
       {
         "Amount": "80000000000000000",
         "AmountEth": 0.08,
-        "Claimed": true,
+        "Claimed": false,
         "IsTimeoutClaim": false,
         "RecordType": 7,
         "RoundNum": 0,

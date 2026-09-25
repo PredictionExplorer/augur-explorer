@@ -36,6 +36,9 @@ func TestMapBid(t *testing.T) {
 	if got.CstDutchAuctionDurationSeconds == nil || *got.CstDutchAuctionDurationSeconds != 1800 {
 		t.Errorf("CstDutchAuctionDurationSeconds = %v", got.CstDutchAuctionDurationSeconds)
 	}
+	if got.CstBidPriceDeclineMultiplierWeiPerSecond != nil {
+		t.Errorf("V2 bid must not carry a decline multiplier, got %q", *got.CstBidPriceDeclineMultiplierWeiPerSecond)
+	}
 	if got.RandomWalkTokenId == nil || *got.RandomWalkTokenId != 13 {
 		t.Errorf("RandomWalkTokenId = %v", got.RandomWalkTokenId)
 	}
@@ -47,6 +50,44 @@ func TestMapBid(t *testing.T) {
 	}
 	if got.Erc20Donation == nil || got.Erc20Donation.AmountWei != "500000000000000000000" {
 		t.Errorf("Erc20Donation = %+v", got.Erc20Donation)
+	}
+}
+
+// TestMapBidV3DeclineMultiplier: on V3 mechanics the eighth BidPlaced word
+// is cstBidPriceDeclineMultiplier (wei/second), not a duration; it must be
+// served under its own name and never as cstDutchAuctionDurationSeconds.
+func TestMapBidV3DeclineMultiplier(t *testing.T) {
+	t.Parallel()
+
+	record := validBidRecord()
+	record.MechanicsVersion = 3
+	record.CstDutchAuctionDuration = "16666666666666666"
+	record.CstDutchAuctionDurationInt = 16666666666666666
+
+	got, err := mapBid(record)
+	if err != nil {
+		t.Fatalf("mapBid: %v", err)
+	}
+	if got.MechanicsVersion == nil || *got.MechanicsVersion != 3 {
+		t.Errorf("MechanicsVersion = %v, want 3", got.MechanicsVersion)
+	}
+	if got.CstDutchAuctionDurationSeconds != nil {
+		t.Errorf("V3 bid must not report a duration, got %d", *got.CstDutchAuctionDurationSeconds)
+	}
+	if got.CstBidPriceDeclineMultiplierWeiPerSecond == nil || *got.CstBidPriceDeclineMultiplierWeiPerSecond != "16666666666666666" {
+		t.Errorf("CstBidPriceDeclineMultiplierWeiPerSecond = %v", got.CstBidPriceDeclineMultiplierWeiPerSecond)
+	}
+
+	// A multiplier beyond int64 still round-trips through the decimal text
+	// (the store reports -1 in the int view).
+	record.CstDutchAuctionDuration = "10000000000000000000"
+	record.CstDutchAuctionDurationInt = -1
+	got, err = mapBid(record)
+	if err != nil {
+		t.Fatalf("mapBid: %v", err)
+	}
+	if got.CstBidPriceDeclineMultiplierWeiPerSecond == nil || *got.CstBidPriceDeclineMultiplierWeiPerSecond != "10000000000000000000" {
+		t.Errorf("large multiplier = %v", got.CstBidPriceDeclineMultiplierWeiPerSecond)
 	}
 }
 

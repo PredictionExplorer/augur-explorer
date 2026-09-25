@@ -632,7 +632,9 @@ const allPrizesSelect = `SELECT
 			END AS token_id,
 			'' AS token_uri,
 			p.winner_index + nft_seq.i AS winner_index,
-			TRUE AS claimed,
+			-- Raffle ETH (10) and Chrono-Warrior ETH (7) are paid into PrizesWallet and
+			-- stay pending until withdrawn; every other prize is delivered on claim.
+			CASE WHEN p.ptype IN (7,10) THEN COALESCE(pd.claimed, FALSE) ELSE TRUE END AS claimed,
 			CASE WHEN p.ptype = 15 THEN '(All CS NFT Stakers)' ELSE COALESCE(wa_pc.addr, wa_rew.addr, wa_rnw_bidder.addr, wa_rnw_rwalk.addr, wa_ew.addr, wa_lw.addr, wa_cw.addr, '') END AS winner_addr,
 			COALESCE(pc.winner_aid, rew.winner_aid, rnw_bidder.winner_aid, rnw_rwalk.winner_aid, ew.winner_aid, lw.winner_aid, cw.winner_aid, 0) AS winner_aid
 		FROM cg_prize p
@@ -651,6 +653,7 @@ const allPrizesSelect = `SELECT
 			LEFT JOIN cg_raffle_eth_prize rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10)
 			LEFT JOIN transaction trew ON trew.id = rew.tx_id
 			LEFT JOIN address wa_rew ON rew.winner_aid = wa_rew.address_id
+			LEFT JOIN cg_prize_deposit pd ON (p.round_num = pd.round_num AND p.winner_index = pd.winner_index AND p.ptype IN (7,10))
 			LEFT JOIN cg_raffle_nft_prize rnw_bidder ON (p.round_num = rnw_bidder.round_num AND p.winner_index = rnw_bidder.winner_idx AND p.ptype IN (11,12) AND rnw_bidder.is_rwalk = false)
 			LEFT JOIN transaction trnw_bidder ON trnw_bidder.id = rnw_bidder.tx_id
 			LEFT JOIN address wa_rnw_bidder ON rnw_bidder.winner_aid = wa_rnw_bidder.address_id

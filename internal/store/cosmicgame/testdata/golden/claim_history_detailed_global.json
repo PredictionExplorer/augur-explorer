@@ -522,7 +522,7 @@
     "TokenAddress": "",
     "TokenId": -1,
     "TokenURI": "",
-    "Claimed": true,
+    "Claimed": false,
     "IsTimeoutClaim": false,
     "WinnerAddr": "0x2100000000000000000000000000000000000021",
     "WinnerAid": 21

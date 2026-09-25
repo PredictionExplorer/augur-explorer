@@ -932,19 +932,38 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgm
 	const op = "user notif red box rewards"
 	var output cgmodel.CGClaimInfo
 
-	var nullRaffleWei sql.NullString
-	var nullRaffleEth sql.NullFloat64
-	query := "SELECT SUM(amount), SUM(amount)/1e18 FROM cg_prize_deposit " +
-		"WHERE winner_aid = $1 AND winner_index < 4 AND claimed = false"
-	err := r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullRaffleWei, &nullRaffleEth)
+	// The Chrono-Warrior's ETH shares the PrizesWallet deposit index space
+	// with the raffle winners (ISecondaryPrizes Comment-202511097): the game
+	// deposits it at index numRaffleEthPrizesForBidders, a configurable
+	// value, so a deposit is the chrono prize exactly when
+	// cg_chrono_warrior_prize has the same (round, index). The legacy
+	// "index < 4 / index = 4" split assumed a fixed layout and misfiled the
+	// chrono deposit as raffle ETH.
+	var nullRaffleWei, nullChronoWei sql.NullString
+	var nullRaffleEth, nullChronoEth sql.NullFloat64
+	query := "SELECT " +
+		"SUM(p.amount) FILTER (WHERE cw.round_num IS NULL), " +
+		"SUM(p.amount) FILTER (WHERE cw.round_num IS NULL)/1e18, " +
+		"SUM(p.amount) FILTER (WHERE cw.round_num IS NOT NULL), " +
+		"SUM(p.amount) FILTER (WHERE cw.round_num IS NOT NULL)/1e18 " +
+		"FROM cg_prize_deposit p " +
+		"LEFT JOIN cg_chrono_warrior_prize cw ON (cw.round_num = p.round_num AND cw.winner_index = p.winner_index) " +
+		"WHERE p.winner_aid = $1 AND p.claimed = false"
+	err := r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullRaffleWei, &nullRaffleEth, &nullChronoWei, &nullChronoEth)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return cgmodel.CGClaimInfo{}, store.WrapError(op+": raffle eth", err)
+		return cgmodel.CGClaimInfo{}, store.WrapError(op+": pending prize deposits", err)
 	}
 	if nullRaffleEth.Valid {
 		output.ETHRaffleToClaim = nullRaffleEth.Float64
 	}
 	if nullRaffleWei.Valid {
 		output.ETHRaffleToClaimWei = nullRaffleWei.String
+	}
+	if nullChronoEth.Valid {
+		output.ETHChronoWarriorToClaim = nullChronoEth.Float64
+	}
+	if nullChronoWei.Valid {
+		output.ETHChronoWarriorToClaimWei = nullChronoWei.String
 	}
 
 	var nullNfts sql.NullInt64
@@ -955,21 +974,6 @@ func (r *Repo) UserNotifRedBoxRewards(ctx context.Context, winnerAid int64) (cgm
 	}
 	if nullNfts.Valid {
 		output.NumDonatedNFTToClaim = nullNfts.Int64
-	}
-
-	var nullChronoWei sql.NullString
-	var nullChronoEth sql.NullFloat64
-	query = "SELECT SUM(amount), SUM(amount)/1e18 FROM cg_prize_deposit " +
-		"WHERE winner_aid = $1 AND winner_index = 4 AND claimed = false"
-	err = r.q(ctx).QueryRow(ctx, query, winnerAid).Scan(&nullChronoWei, &nullChronoEth)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return cgmodel.CGClaimInfo{}, store.WrapError(op+": chrono warrior eth", err)
-	}
-	if nullChronoEth.Valid {
-		output.ETHChronoWarriorToClaim = nullChronoEth.Float64
-	}
-	if nullChronoWei.Valid {
-		output.ETHChronoWarriorToClaimWei = nullChronoWei.String
 	}
 
 	var nullStakingRewards sql.NullFloat64

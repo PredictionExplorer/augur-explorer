@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,6 +46,51 @@ const (
 
 // cgProgress adapts the cg_proc_status row to the engine's watermark
 // interface, preserving last_evt_id across writes.
+// implementationCommitWait bounds how long the implementation backfill waits
+// for the block carrying an Upgraded event to commit before giving up (the
+// startup recovery pass catches anything left behind).
+const implementationCommitWait = 10 * time.Minute
+
+// backfillImplementationAfterCommit waits until the engine has committed
+// blockNum (the Upgraded event's block; the hook fires inside that block's
+// transaction) and then backfills the new implementation's constructor
+// Initialized event. Failures are logged, not fatal: the startup recovery
+// pass (RecoverImplementationEvents) repeats the attempt on the next run.
+func backfillImplementationAfterCommit(
+	ctx context.Context,
+	logger *slog.Logger,
+	progress cgProgress,
+	handlers *cgindexer.Handlers,
+	engine *indexer.Engine,
+	process indexer.ProcessFunc,
+	impl ethcommon.Address,
+	blockNum int64,
+) {
+	deadline := time.Now().Add(implementationCommitWait)
+	for {
+		last, err := progress.LastBlock(ctx)
+		if err == nil && last >= blockNum {
+			break
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			logger.Warn("implementation backfill skipped: Upgraded block not committed in time",
+				"implementation", impl.Hex(), "block", blockNum)
+			return
+		}
+		time.Sleep(time.Second)
+	}
+	if blockNum < 0 {
+		return
+	}
+	if _, err := handlers.BackfillImplementationEvents(ctx, engine, process, impl, uint64(blockNum)); err != nil {
+		logger.Error("implementation backfill failed; the startup recovery pass will retry",
+			"implementation", impl.Hex(), "block", blockNum, "err", err)
+	}
+}
+
 type cgProgress struct {
 	repo *cgstore.Repo
 }
@@ -195,11 +241,13 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 	}
 
 	registry := handlers.Registry()
+	process := indexer.LogProcessor(dbStore, registry)
+	progress := cgProgress{repo: cgRepo}
 	engine, err := indexer.New(indexer.Config{
 		Store:     dbStore,
 		Client:    eclient,
-		Progress:  cgProgress{repo: cgRepo},
-		Process:   indexer.LogProcessor(dbStore, registry),
+		Progress:  progress,
+		Process:   process,
 		Contracts: contracts.All(),
 		Logger:    logger,
 		Metrics:   metrics,
@@ -208,6 +256,18 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 	if err != nil {
 		return fmt.Errorf("can't build indexer engine: %w", err)
 	}
+
+	// Game implementations: constructor events of implementations the ETL
+	// was not watching when they were deployed are backfilled now, and a
+	// new implementation reported by Upgraded joins the FilterLogs set at
+	// once, with its constructor event backfilled once the block commits.
+	if err := handlers.RecoverImplementationEvents(ctx, engine, process); err != nil {
+		return fmt.Errorf("implementation event recovery failed: %w", err)
+	}
+	handlers.SetOnNewImplementation(func(_ context.Context, impl ethcommon.Address, blockNum int64) {
+		engine.AddContracts(impl)
+		go backfillImplementationAfterCommit(ctx, logger, progress, handlers, engine, process, impl, blockNum)
+	})
 
 	if err := engine.Run(ctx); err != nil {
 		logger.Error("Event processing loop terminated", "err", err)
