@@ -103,7 +103,8 @@ func runBid(cmd *cobra.Command, verbose bool, args []string) error {
 	if err != nil {
 		return fmt.Errorf("getting last bidder: %w", err)
 	}
-	totalBids, err := game.GetTotalNumBids(copts, roundNum)
+	gameV3ForStats, _ := cgcontracts.NewCosmicSignatureGameV3(gameAddr, s.Net.Client)
+	totalBids, err := totalNumBids(copts, game, gameV3ForStats, roundNum)
 	if err != nil {
 		return fmt.Errorf("getting total bids: %w", err)
 	}

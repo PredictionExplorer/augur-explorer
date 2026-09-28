@@ -69,6 +69,7 @@ type roundState struct {
 
 func readRoundState(
 	game *cgcontracts.CosmicSignatureGame,
+	gameV3 *cgcontracts.CosmicSignatureGameV3,
 	blockTime uint64,
 	newIncrementMicros *big.Int,
 	delaySeconds int64,
@@ -83,7 +84,7 @@ func readRoundState(
 	if err != nil {
 		return nil, fmt.Errorf("roundActivationTime: %w", err)
 	}
-	totalBids, err := game.GetTotalNumBids(copts, roundNum)
+	totalBids, err := totalNumBids(copts, game, gameV3, roundNum)
 	if err != nil {
 		return nil, fmt.Errorf("getTotalNumBids: %w", err)
 	}
@@ -181,13 +182,13 @@ func sendDeferActivation(ctx context.Context, s *ethtx.Session, game *cgcontract
 
 // openInactiveWindow defers round activation until the round reads as
 // inactive, retrying a few times to absorb block-time races.
-func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, delaySeconds int64) error {
+func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, gameV3 *cgcontracts.CosmicSignatureGameV3, delaySeconds int64) error {
 	const maxAttempts = 3
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		if err := s.Refresh(ctx); err != nil {
 			return err
 		}
-		state, err := readRoundState(game, s.Net.BlockTime, big.NewInt(0), delaySeconds)
+		state, err := readRoundState(game, gameV3, s.Net.BlockTime, big.NewInt(0), delaySeconds)
 		if err != nil {
 			return err
 		}
@@ -204,7 +205,7 @@ func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts
 	if err := s.Refresh(ctx); err != nil {
 		return err
 	}
-	state, err := readRoundState(game, s.Net.BlockTime, big.NewInt(0), delaySeconds)
+	state, err := readRoundState(game, gameV3, s.Net.BlockTime, big.NewInt(0), delaySeconds)
 	if err != nil {
 		return err
 	}
@@ -321,9 +322,10 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame: %w", err)
 	}
+	gameV3, _ := cgcontracts.NewCosmicSignatureGameV3(gameAddr, s.Net.Client)
 	s.Out.ContractInfo("CosmicGame Address", gameAddr)
 
-	state, err := readRoundState(game, s.Net.BlockTime, newIncrementMicros, delaySeconds)
+	state, err := readRoundState(game, gameV3, s.Net.BlockTime, newIncrementMicros, delaySeconds)
 	if err != nil {
 		return fmt.Errorf("failed to read contract state: %w", err)
 	}
@@ -374,7 +376,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed after delay tx: %w", err)
 		}
-		state, err = readRoundState(game, s.Net.BlockTime, newIncrementMicros, delaySeconds)
+		state, err = readRoundState(game, gameV3, s.Net.BlockTime, newIncrementMicros, delaySeconds)
 		if err != nil {
 			return fmt.Errorf("failed to re-read contract state: %w", err)
 		}
@@ -439,7 +441,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 			s.Out.Section("DEFER ROUND ACTIVATION (NO CLAIMABLE PRIZE)")
 			s.Out.KeyValue("Reason", claimReason)
 		}
-		if err := openInactiveWindow(ctx, s, game, delaySeconds); err != nil {
+		if err := openInactiveWindow(ctx, s, game, gameV3, delaySeconds); err != nil {
 			return err
 		}
 		s.Out.Section("SET TIME INCREMENT (DEFERRED INACTIVE WINDOW)")

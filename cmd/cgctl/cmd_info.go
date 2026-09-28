@@ -119,24 +119,16 @@ func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSig
 	if err != nil {
 		return fmt.Errorf("DelayDurationBeforeRoundActivation(): %w", err)
 	}
-	totalBids, err := game.GetTotalNumBids(copts, roundNum)
+	totalBids, err := totalNumBids(copts, game, gameV3, roundNum)
 	if err != nil {
 		return fmt.Errorf("GetTotalNumBids(): %w", err)
 	}
-	// The v3.1 contracts renamed the bidderAddresses getter to bidsInfo
-	// (weighted-raffle refactoring). Try the V3 name first (the deployed
-	// target), then fall back to the V1/V2 name for older contracts.
-	var numRaffleParticipants *big.Int
-	if gameV3 != nil {
-		if v, errV3 := gameV3.BidsInfo(copts, big.NewInt(roundNum.Int64())); errV3 == nil {
-			numRaffleParticipants = v
-		}
-	}
-	if numRaffleParticipants == nil {
-		numRaffleParticipants, err = game.BidderAddresses(copts, big.NewInt(roundNum.Int64()))
-		if err != nil {
-			return fmt.Errorf("BidsInfo()/BidderAddresses(): %w", err)
-		}
+	// Raffle participants: current v3.1 folded the bidsInfo getter (which
+	// reported the same numBids count) into roundStats(), so the bid total
+	// already covers it. V1/V2 still expose bidderAddresses with the count.
+	numRaffleParticipants := totalBids
+	if v, errV12 := game.BidderAddresses(copts, big.NewInt(roundNum.Int64())); errV12 == nil {
+		numRaffleParticipants = v
 	}
 
 	out.Section("ROUND STATUS")

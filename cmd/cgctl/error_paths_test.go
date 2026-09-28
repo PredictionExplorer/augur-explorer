@@ -531,7 +531,6 @@ func TestInfoCommandPerReadFailures(t *testing.T) {
 		{"roundNum", "RoundNum()"},
 		{"delayDurationBeforeRoundActivation", "DelayDurationBeforeRoundActivation()"},
 		{"getTotalNumBids", "GetTotalNumBids()"},
-		{"bidderAddresses", "BidderAddresses()"},
 		{"getDurationUntilMainPrize", "GetDurationUntilMainPrize()"},
 		{"mainPrizeTime", "MainPrizeTime()"},
 		{"timeoutDurationToClaimMainPrize", "TimeoutDurationToClaimMainPrize()"},
@@ -590,6 +589,18 @@ func TestInfoCommandPerReadFailures(t *testing.T) {
 			}
 		})
 	}
+
+	// bidderAddresses only exists on V1/V2 (v3.1 folded its count into
+	// roundStats), so a failing read falls back to the bid total instead of
+	// aborting the whole info dump.
+	t.Run("bidderAddresses failure is non-fatal", func(t *testing.T) {
+		chain := startReadChain(t)
+		registerInfoWorld(t, chain, failOne(infoGameStub(), "bidderAddresses"))
+		_, err := executeCmd(t, newInfoCmd(), testGameAddr.Hex())
+		if err != nil {
+			t.Errorf("info with failing bidderAddresses = %v, want success (fallback to bid total)", err)
+		}
+	})
 
 	t.Run("owner read fails", func(t *testing.T) {
 		chain := startReadChain(t)

@@ -107,16 +107,18 @@ func TestV3LatestReadMethodsPresent(t *testing.T) {
 		"roundLateBidPricePremiumAmountBaseMultiplier",
 		"roundLateBidPricePremiumAmountExponent",
 		"getRoundLateBidDuration",
-		"championDurations",
 		"getCstDutchAuctionDurations",
 		"cstDutchAuctionBeginningBidPriceMinLimit",
 		"cstBidPriceDeclineMultiplier",
 		"cstBidPriceDeclineMultiplierChangeDivisor",
 		// v3.1-2026-08-19: raffle weights live in the BidInfo struct returned
-		// by getBidInfoAt (bidsInfo replaces bidderAddresses) instead of the
-		// earlier bidRaffleCumulativeWeights mapping.
+		// by getBidInfoAt instead of the earlier bidRaffleCumulativeWeights
+		// mapping.
 		"getBidInfoAt",
-		"bidsInfo",
+		// v3.1-2026-09-28 consolidated the per-round getters (getTotalNumBids,
+		// bidsInfo, championDurations, getBidderTotalSpentAmounts) into one
+		// roundStats struct getter.
+		"roundStats",
 	} {
 		if _, ok := v3ABI.Methods[method]; !ok {
 			t.Errorf("CosmicSignatureGameV3 ABI missing method %s", method)
