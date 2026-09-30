@@ -87,6 +87,7 @@ positional arguments, and required environment variables.
 | `donate <addr> <amount-wei>` | Donate ETH to the CosmicGame contract |
 | `autobid` | Run the automated bidding bot (env-configured) |
 | `deploy-erc20` | Deploy a sample ERC-20 token for donation testing |
+| `rwalk_samples [rwalk_addr]` | Dev helper: mint sample RandomWalk NFTs (`-n`, default 10); `RPC_URL` defaults to the local Hardhat node |
 
 ### Diagnostics / read-only
 

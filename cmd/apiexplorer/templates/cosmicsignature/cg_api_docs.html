@@ -170,6 +170,7 @@
 				<div class="toc-item">→ <a href="#staking-rwalk">RWalk Staking</a></div>
 				<div class="toc-item">→ <a href="#donations">Donations (ETH/ERC20/NFT)</a></div>
 				<div class="toc-item">→ <a href="#raffles">Raffles</a></div>
+				<div class="toc-item">→ <a href="#marketplace">Marketplace</a></div>
 				<div class="toc-item">→ <a href="#marketing">Marketing</a></div>
 				<div class="toc-item">→ <a href="#charity">Charity</a></div>
 				<div class="toc-item">→ <a href="#users">User Information</a></div>
@@ -203,6 +204,11 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/time/until_prize</span></td>
 					<td class="api-description">Time until next prize claim</td>
 					<td class="api-example"><a href="/api/cosmicgame/time/until_prize">/api/cosmicgame/time/until_prize</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/rounds/current/time</span></td>
+					<td class="api-description">Main prize claim timestamp of the current round (<code>CurRoundPrizeTime</code>, read live from the contract)</td>
+					<td class="api-example"><a href="/api/cosmicgame/rounds/current/time">.../rounds/current/time</a></td>
 				</tr>
 				<tr>
 					<td class="category-header" colspan="3">System Configuration</td>
@@ -256,7 +262,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/used_randomwalk_nfts</span></td>
-					<td class="api-description">RandomWalk NFTs used in bids</td>
+					<td class="api-description">RandomWalk NFTs used in bids (legacy alias: <code>/bid/used_rwalk_nfts</code>)</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/used_randomwalk_nfts">.../bid/used_randomwalk_nfts</a></td>
 				</tr>
 				<tr>
@@ -273,6 +279,11 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/current_special_winners</span></td>
 					<td class="api-description">Current endurance champion, chrono warrior, last bidder, and last CST bidder</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/current_special_winners">.../current_special_winners</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/get_banned_bids</span></td>
+					<td class="api-description">Bid records whose messages were banned by moderation (raw JSON array)</td>
+					<td class="api-example"><a href="/api/cosmicgame/get_banned_bids">.../get_banned_bids</a></td>
 				</tr>
 			</table>
 		</div>
@@ -364,6 +375,49 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/eth/unclaimed/by_user/{addr}/{offset}/{limit}</span></td>
 					<td class="api-description">User's unclaimed ETH prizes</td>
 					<td class="api-example"><a href="/api/cosmicgame/prizes/eth/unclaimed/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../unclaimed/by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Prize ETH Deposits (PrizesWallet)</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/raffle/deposits/list/{offset}/{limit}</span></td>
+					<td class="api-description">All prize ETH deposits into the PrizesWallet (pagination optional: bare <code>/raffle/deposits/list</code> returns everything)</td>
+					<td class="api-example"><a href="/api/cosmicgame/raffle/deposits/list/0/100">.../raffle/deposits/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/raffle/deposits/by_round/{round_num}</span></td>
+					<td class="api-description">Prize ETH deposits for a specific round</td>
+					<td class="api-example"><a href="/api/cosmicgame/raffle/deposits/by_round/0">.../raffle/deposits/by_round/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/eth_deposits/all/list/{offset}/{limit}</span></td>
+					<td class="api-description">All ETH prize deposits (raffle + chrono warrior combined)</td>
+					<td class="api-example"><a href="/api/cosmicgame/eth_deposits/all/list/0/100">.../eth_deposits/all/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/eth_deposits/raffle_eth/list/{offset}/{limit}</span></td>
+					<td class="api-description">Raffle ETH deposits only</td>
+					<td class="api-example"><a href="/api/cosmicgame/eth_deposits/raffle_eth/list/0/100">.../eth_deposits/raffle_eth/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/eth_deposits/chronowarrior_eth/list/{offset}/{limit}</span></td>
+					<td class="api-description">Chrono warrior ETH deposits only</td>
+					<td class="api-example"><a href="/api/cosmicgame/eth_deposits/chronowarrior_eth/list/0/100">.../chronowarrior_eth/list/0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/deposits/raffle/by_user/{addr}</span></td>
+					<td class="api-description">User's raffle ETH deposits</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/deposits/raffle/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../deposits/raffle/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/deposits/chrono_warrior/by_user/{addr}</span></td>
+					<td class="api-description">User's chrono warrior ETH deposits</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../chrono_warrior/by_user/0x90F7...</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/prizes/deposits/unclaimed/by_user/{addr}/{offset}/{limit}</span></td>
+					<td class="api-description">User's unclaimed (unretrieved) prize ETH deposits</td>
+					<td class="api-example"><a href="/api/cosmicgame/prizes/deposits/unclaimed/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../deposits/unclaimed/by_user/0x90F7.../0/100</a></td>
 				</tr>
 			</table>
 		</div>
@@ -464,6 +518,16 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/transfers/by_user/{addr}/{offset}/{limit}</span></td>
 					<td class="api-description">User's CosmicToken transfers (ERC20)</td>
 					<td class="api-example"><a href="/api/cosmicgame/ct/transfers/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906/0/100">.../transfers/by_user/0x90F7.../0/100</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/total_supply_history_by_bid</span></td>
+					<td class="api-description">CosmicToken total supply history, one point per bid</td>
+					<td class="api-example"><a href="/api/cosmicgame/ct/total_supply_history_by_bid">.../total_supply_history_by_bid</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/ct/total_supply_history_by_date/{from_date}/{to_date}</span></td>
+					<td class="api-description">CosmicToken total supply history in a date range (dates as <code>YYYYMMDD</code>)</td>
+					<td class="api-example"><a href="/api/cosmicgame/ct/total_supply_history_by_date/20250101/20261231">.../by_date/20250101/20261231</a></td>
 				</tr>
 			</table>
 		</div>
@@ -611,6 +675,9 @@
 					<td class="api-description">User's RWalk staking raffle wins</td>
 					<td class="api-example"><a href="/api/cosmicgame/staking/randomwalk/mints/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../mints/by_user/0x90F7...</a></td>
 				</tr>
+				<tr>
+					<td colspan="3" class="api-description" style="color: #888;">Every <code>/staking/randomwalk/...</code> endpoint is also reachable under the legacy alias <code>/staking/rwalk/...</code> (same handlers, same responses).</td>
+				</tr>
 			</table>
 		</div>
 
@@ -715,6 +782,11 @@
 					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/claims/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../claims/by_user/0x90F7...</a></td>
 				</tr>
 				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/erc20/claims/by_round/{round_num}</span></td>
+					<td class="api-description">ERC20 claims for a specific round</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/erc20/claims/by_round/0">.../erc20/claims/by_round/0</a></td>
+				</tr>
+				<tr>
 					<td class="category-header" colspan="3">NFT Donations</td>
 				</tr>
 				<tr>
@@ -758,6 +830,11 @@
 					<td class="api-example"><a href="/api/cosmicgame/donations/nft/unclaimed/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../unclaimed/by_user/0x90F7...</a></td>
 				</tr>
 				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/unclaimed/by_round/{prize_num}</span></td>
+					<td class="api-description">Unclaimed donated NFTs for a specific round (prize number)</td>
+					<td class="api-example"><a href="/api/cosmicgame/donations/nft/unclaimed/by_round/0">.../nft/unclaimed/by_round/0</a></td>
+				</tr>
+				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/donations/nft/statistics</span></td>
 					<td class="api-description">NFT donation statistics</td>
 					<td class="api-example"><a href="/api/cosmicgame/donations/nft/statistics">.../nft/statistics</a></td>
@@ -791,6 +868,33 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/raffle/nft/by_user/{addr}</span></td>
 					<td class="api-description">User's raffle NFT wins</td>
 					<td class="api-example"><a href="/api/cosmicgame/raffle/nft/by_user/0x90F79bf6EB2c4f870365E785982E1f101E93b906">.../nft/by_user/0x90F7...</a></td>
+				</tr>
+			</table>
+		</div>
+
+		<!-- Marketplace -->
+		<div class="section-card" id="marketplace">
+			<div class="section-header">Marketplace</div>
+			<table class="api-table">
+				<tr>
+					<th style="width: 45%;">Endpoint</th>
+					<th style="width: 30%;">Description</th>
+					<th style="width: 25%;">Example</th>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/marketplace/current_offers/{order_by}</span></td>
+					<td class="api-description">Active Cosmic Signature NFT sale offers (order_by: integer sort selector, 0 = default)</td>
+					<td class="api-example"><a href="/api/cosmicgame/marketplace/current_offers/0">.../marketplace/current_offers/0</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/marketplace/floor_price</span></td>
+					<td class="api-description">Current floor price across active offers</td>
+					<td class="api-example"><a href="/api/cosmicgame/marketplace/floor_price">.../marketplace/floor_price</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/marketplace/trading/sales/{offset}/{limit}</span></td>
+					<td class="api-description">Finalized marketplace sales history</td>
+					<td class="api-example"><a href="/api/cosmicgame/marketplace/trading/sales/0/100">.../trading/sales/0/100</a></td>
 				</tr>
 			</table>
 		</div>
@@ -912,7 +1016,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/unique/stakers/randomwalk</span></td>
-					<td class="api-description">Unique RWalk stakers</td>
+					<td class="api-description">Unique RWalk stakers (legacy alias: <code>/statistics/unique/stakers/rwalk</code>)</td>
 					<td class="api-example"><a href="/api/cosmicgame/statistics/unique/stakers/randomwalk">.../stakers/randomwalk</a></td>
 				</tr>
 				<tr>
@@ -939,6 +1043,37 @@
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/bid_type_ratio</span></td>
 					<td class="api-description">ETH / RandomWalk / CST bid composition over time</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/bid_type_ratio">.../bid/bid_type_ratio</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Bidding Activity</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/bidding/time_bounds</span></td>
+					<td class="api-description">Timestamps of the first and last recorded bid (range for the endpoints below)</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/bidding/time_bounds">.../bidding/time_bounds</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/bidding/activity/{init_ts}/{fin_ts}/{interval_secs}</span></td>
+					<td class="api-description">Bid counts bucketed by time interval between two Unix timestamps</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/bidding/activity/0/9999999999/86400">.../bidding/activity/0/9999999999/86400</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/bidding/frequency/{init_ts}/{fin_ts}/{interval_secs}</span></td>
+					<td class="api-description">Bidding frequency per interval between two Unix timestamps</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/bidding/frequency/0/9999999999/86400">.../bidding/frequency/0/9999999999/86400</a></td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/bidding/top_active_periods/{n}/{init_ts}/{fin_ts}</span></td>
+					<td class="api-description">The n most active bidding periods in a time range</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/bidding/top_active_periods/10/0/9999999999">.../top_active_periods/10/0/9999999999</a></td>
+				</tr>
+				<tr>
+					<td class="category-header" colspan="3">Record Counters</td>
+				</tr>
+				<tr>
+					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/counters</span></td>
+					<td class="api-description">Row counts of the main indexed record types (bids, prizes, donations, ...)</td>
+					<td class="api-example"><a href="/api/cosmicgame/statistics/counters">.../statistics/counters</a></td>
 				</tr>
 			</table>
 		</div>
