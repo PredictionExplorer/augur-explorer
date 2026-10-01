@@ -430,6 +430,10 @@ type CGSummarizedERC20Donation struct {
 	WinnerAid          int64
 	WinnerAddr         string
 	Claimed            bool
+	// WalletAddr is the PrizesWallet contract holding the donated tokens
+	// of this round (see CGPrizeDepositRec.WalletAddr). One wallet per
+	// round: the wallet can only change while no round is active.
+	WalletAddr string `json:",omitempty"`
 }
 
 // CGNFTDonation is one ERC-721 token donated to the game during a round.
@@ -444,6 +448,9 @@ type CGNFTDonation struct {
 	NFTTokenId     int64
 	NFTTokenURI    string
 	Index          int64
+	// WalletAddr is the PrizesWallet contract holding this donated NFT
+	// (see CGPrizeDepositRec.WalletAddr).
+	WalletAddr string `json:",omitempty"`
 }
 
 // CGNFTDonationStats counts donated NFTs per originating ERC-721 contract.
@@ -475,6 +482,11 @@ type CGPrizeDepositRec struct {
 	Claimed        bool
 	ClaimTimeStamp int64
 	ClaimDateTime  string
+	// WalletAddr is the PrizesWallet contract holding this deposit. The
+	// game can be pointed at a replacement wallet (setPrizesWallet), so
+	// withdrawals must target the wallet that received the deposit, not
+	// the currently configured one.
+	WalletAddr string `json:",omitempty"`
 }
 
 // CGRaffleNFTWinnerRec is one raffle NFT win (bidder or staker pool) with
@@ -878,6 +890,16 @@ type CGAdminEvent struct {
 	//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
 	//			45		CstBidPriceDeclineMultiplierChangeDivisorChanged (V3)
 	//			46		EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	//			47		DaoProposalThresholdSet (Governor)
+	//			48		DaoVotingDelaySet (Governor)
+	//			49		DaoVotingPeriodSet (Governor)
+	//			50		DaoQuorumNumeratorUpdated (Governor)
+	//			51		DaoProposalCreated (Governor)
+	//			52		DaoProposalQueued (Governor; IntegerValue = execution ETA, unix seconds)
+	//			53		DaoProposalExecuted (Governor)
+	//			54		DaoProposalCanceled (Governor)
+	//			55		DaoVoteCast (Governor)
+	//			56		DelegateVotesChanged (CosmicToken ERC20Votes)
 	RecordId      int64
 	EvtLogId      int64
 	BlockNum      int64

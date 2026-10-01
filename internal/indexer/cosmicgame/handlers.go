@@ -48,6 +48,13 @@ type Contracts struct {
 	// so all of them are watched; the set grows at runtime as new Upgraded
 	// events arrive (Handlers.Implementations).
 	Implementations []ethcommon.Address
+	// PrizesWallets are every prizes wallet known at startup beyond
+	// PrizesWallet: each address an indexed PrizesWalletAddressChanged
+	// event pointed the game at. Superseded wallets keep holding prizes
+	// until their winners withdraw them, so all of them stay watched; the
+	// set grows at runtime as new PrizesWalletAddressChanged events arrive
+	// (Handlers.PrizesWallets).
+	PrizesWallets []ethcommon.Address
 
 	GameAid        int64
 	CosmicTokenAid int64
@@ -59,18 +66,19 @@ type Contracts struct {
 // (TestEveryABIEventHasHandler); the registry ignores unknown topics.
 func (c Contracts) All() []ethcommon.Address {
 	implementations := c.allImplementations()
-	all := make([]ethcommon.Address, 0, 9+len(implementations))
+	prizesWallets := c.allPrizesWallets()
+	all := make([]ethcommon.Address, 0, 8+len(prizesWallets)+len(implementations))
 	all = append(all,
 		c.Game,
 		c.Signature,
 		c.Token,
 		c.Dao,
 		c.CharityWallet,
-		c.PrizesWallet,
 		c.StakingCST,
 		c.StakingRWalk,
 		c.MarketingWallet,
 	)
+	all = append(all, prizesWallets...)
 	return append(all, implementations...)
 }
 
@@ -85,6 +93,22 @@ func (c Contracts) allImplementations() []ethcommon.Address {
 	}
 	add(c.Implementation)
 	for _, a := range c.Implementations {
+		add(a)
+	}
+	return out
+}
+
+// allPrizesWallets returns PrizesWallet plus PrizesWallets without
+// duplicates or the zero address, the current wallet first.
+func (c Contracts) allPrizesWallets() []ethcommon.Address {
+	out := make([]ethcommon.Address, 0, 1+len(c.PrizesWallets))
+	add := func(a ethcommon.Address) {
+		if a != (ethcommon.Address{}) && !slices.Contains(out, a) {
+			out = append(out, a)
+		}
+	}
+	add(c.PrizesWallet)
+	for _, a := range c.PrizesWallets {
 		add(a)
 	}
 	return out
@@ -138,6 +162,14 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		implementations = append(implementations, ethcommon.HexToAddress(hexAddr))
 	}
 
+	// Every prizes wallet the game has ever used (ContractAddrs composes the
+	// registry row with the indexed PrizesWalletAddressChanged history);
+	// superseded wallets keep emitting withdrawal events until drained.
+	prizesWallets := make([]ethcommon.Address, 0, len(addrs.PrizesWalletAddrs))
+	for _, hexAddr := range addrs.PrizesWalletAddrs {
+		prizesWallets = append(prizesWallets, ethcommon.HexToAddress(hexAddr))
+	}
+
 	return Contracts{
 		Game:            ethcommon.HexToAddress(addrs.CosmicGameAddr),
 		Signature:       ethcommon.HexToAddress(addrs.CosmicSignatureAddr),
@@ -150,6 +182,7 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		MarketingWallet: ethcommon.HexToAddress(addrs.MarketingWalletAddr),
 		Implementation:  ethcommon.HexToAddress(addrs.ImplementationAddr),
 		Implementations: implementations,
+		PrizesWallets:   prizesWallets,
 		GameAid:         gameAid,
 		CosmicTokenAid:  tokenAid,
 	}, addrs, nil
@@ -205,6 +238,13 @@ type Handlers struct {
 	implMu              sync.RWMutex
 	implementations     []ethcommon.Address
 	onNewImplementation func(ctx context.Context, impl ethcommon.Address, blockNum int64)
+
+	// prizesWallets is the live set of prizes-wallet contracts (see
+	// Contracts.PrizesWallets); storePrizesWalletAddressChanged grows it
+	// and calls onNewPrizesWallet for addresses it has not seen.
+	pwMu              sync.RWMutex
+	prizesWallets     []ethcommon.Address
+	onNewPrizesWallet func(ctx context.Context, wallet ethcommon.Address, blockNum int64)
 }
 
 // New parses the contract ABIs, validates the dependencies and builds the
@@ -231,6 +271,7 @@ func New(cfg Config) (*Handlers, error) {
 		c:               cfg.Contracts,
 		log:             logger,
 		implementations: cfg.Contracts.allImplementations(),
+		prizesWallets:   cfg.Contracts.allPrizesWallets(),
 	}
 	for _, a := range []struct {
 		dst  **abi.ABI

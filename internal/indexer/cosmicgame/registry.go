@@ -21,7 +21,6 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 	game := one(h.c.Game)
 	signature := one(h.c.Signature)
 	charity := one(h.c.CharityWallet)
-	prizes := one(h.c.PrizesWallet)
 	marketing := one(h.c.MarketingWallet)
 	dao := one(h.c.Dao)
 	// The legacy NftStaked guards accepted either staking wallet for both
@@ -44,21 +43,21 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicEthDonatedWIEvent), "EthDonatedWithInfo", game, h.decodeEthDonatedWithInfo, h.storeEthDonatedWithInfo),
 		indexer.NewHandler(topicHash(TopicDonationReceivedEvent), "DonationReceived", charity, h.decodeDonationReceived, h.storeDonationReceived),
 		indexer.NewHandler(topicHash(TopicDonationSentEvent), "FundsTransferredToCharity", charity, h.decodeDonationSent, h.storeDonationSent),
-		indexer.NewHandler(topicHash(TopicNftEthDonatedEvent), "NftDonated", prizes, h.decodeNftDonated, h.storeNftDonated),
-		indexer.NewHandler(topicHash(TopicERC20Donated), "TokenDonated", prizes, h.decodeTokenDonated, h.storeTokenDonated),
+		indexer.NewDynamicHandler(topicHash(TopicNftEthDonatedEvent), "NftDonated", h.prizesWalletSources, h.decodeNftDonated, h.storeNftDonated),
+		indexer.NewDynamicHandler(topicHash(TopicERC20Donated), "TokenDonated", h.prizesWalletSources, h.decodeTokenDonated, h.storeTokenDonated),
 		indexer.NewHandler(topicHash(TopicCharityReceiverChanged), "CharityAddressChanged", charity, h.decodeCharityReceiverChanged, h.storeCharityReceiverChanged),
 		indexer.NewHandler(topicHash(TopicCharityWalletChanged), "CharityAddressChanged", game, h.decodeCharityWalletChanged, h.storeCharityWalletChanged),
 		indexer.NewHandler(topicHash(TopicTokenNameEvent), "NftNameChanged", signature, h.decodeNftNameChanged, h.storeNftNameChanged),
 		indexer.NewHandler(topicHash(TopicMintEvent), "NftMinted", signature, h.decodeNftMinted, h.storeNftMinted),
-		indexer.NewHandler(topicHash(TopicEthPrizeDepositEvent), "EthReceived", prizes, h.decodePrizesEthReceived, h.storePrizesEthReceived),
-		indexer.NewHandler(topicHash(TopicEthPrizeWithdrawalEvent), "EthWithdrawn", prizes, h.decodePrizesEthWithdrawn, h.storePrizesEthWithdrawn),
+		indexer.NewDynamicHandler(topicHash(TopicEthPrizeDepositEvent), "EthReceived", h.prizesWalletSources, h.decodePrizesEthReceived, h.storePrizesEthReceived),
+		indexer.NewDynamicHandler(topicHash(TopicEthPrizeWithdrawalEvent), "EthWithdrawn", h.prizesWalletSources, h.decodePrizesEthWithdrawn, h.storePrizesEthWithdrawn),
 		indexer.NewHandler(topicHash(TopicRaffleEthPrizeEvent), "RaffleWinnerBidderEthPrizeAllocated", game, h.decodeRaffleEthAllocated, h.storeRaffleEthAllocated),
 		indexer.NewHandler(topicHash(TopicRaffleNftPrizeEvent), "RaffleWinnerPrizePaid", game, h.decodeRaffleWinnerPrizePaid, h.storeRaffleWinnerPrizePaid),
 		indexer.NewHandler(topicHash(TopicEndurancePrizeEvent), "EnduranceChampionPrizePaid", game, h.decodeEnduranceChampionPrizePaid, h.storeEnduranceChampionPrizePaid),
 		indexer.NewHandler(topicHash(TopicLastcstBidderPrizeEvent), "LastCstBidderPrizePaid", game, h.decodeLastCstBidderPrizePaid, h.storeLastCstBidderPrizePaid),
 		indexer.NewHandler(topicHash(TopicChronoWarriorPrizeEvent), "ChronoWarriorPrizePaid", game, h.decodeChronoWarriorPrizePaid, h.storeChronoWarriorPrizePaid),
-		indexer.NewHandler(topicHash(TopicDonatedTokenClaimed), "DonatedTokenClaimed", prizes, h.decodeDonatedTokenClaimed, h.storeDonatedTokenClaimed),
-		indexer.NewHandler(topicHash(TopicDonatedNftClaimed), "DonatedNftClaimed", prizes, h.decodeDonatedNftClaimed, h.storeDonatedNftClaimed),
+		indexer.NewDynamicHandler(topicHash(TopicDonatedTokenClaimed), "DonatedTokenClaimed", h.prizesWalletSources, h.decodeDonatedTokenClaimed, h.storeDonatedTokenClaimed),
+		indexer.NewDynamicHandler(topicHash(TopicDonatedNftClaimed), "DonatedNftClaimed", h.prizesWalletSources, h.decodeDonatedNftClaimed, h.storeDonatedNftClaimed),
 		indexer.NewHandler(topicHash(TopicTransferEvt), "Transfer", signature, h.decodeCosmicSignatureTransfer, h.storeCosmicSignatureTransfer),
 		indexer.NewHandler(topicHash(TopicTransferEvt), "Transfer", one(h.c.Token), h.decodeCosmicTokenTransfer, h.storeCosmicTokenTransfer),
 		indexer.NewHandler(topicHash(TopicCstNftStakedEvent), "NftStakedCST", stakingEither, h.decodeNftStakedCST, h.storeNftStakedCST),
@@ -88,7 +87,7 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicTimeIncreaseChanged), "MainPrizeTimeIncrementIncreaseDivisorChanged", game, h.decodeTimeIncreaseChanged, h.storeTimeIncreaseChanged),
 		indexer.NewHandler(topicHash(TopicTimeoutClaimprizeChanged), "TimeoutDurationToClaimMainPrizeChanged", game, h.decodeTimeoutClaimPrizeChanged, h.storeTimeoutClaimPrizeChanged),
 		indexer.NewHandler(topicHash(TopicEthBidRefundGasMaxLimitChanged), "EthBidRefundAmountInGasToSwallowMaxLimitChanged", game, h.decodeEthBidRefundGasMaxLimitChanged, h.storeEthBidRefundGasMaxLimitChanged),
-		indexer.NewHandler(topicHash(TopicTimeoutToWithdrawPrize), "TimeoutDurationToWithdrawPrizesChanged", prizes, h.decodeTimeoutToWithdrawPrizesChanged, h.storeTimeoutToWithdrawPrizesChanged),
+		indexer.NewDynamicHandler(topicHash(TopicTimeoutToWithdrawPrize), "TimeoutDurationToWithdrawPrizesChanged", h.prizesWalletSources, h.decodeTimeoutToWithdrawPrizesChanged, h.storeTimeoutToWithdrawPrizesChanged),
 		indexer.NewHandler(topicHash(TopicPriceIncreaseChanged), "EthBidPriceIncreaseDivisorChanged", game, h.decodePriceIncreaseChanged, h.storePriceIncreaseChanged),
 		indexer.NewHandler(topicHash(TopicMainPrizeMicrosecondIncrease), "MainPrizeTimeIncrementInMicroSecondsChanged", game, h.decodeMainPrizeMicrosecondsChanged, h.storeMainPrizeMicrosecondsChanged),
 		indexer.NewHandler(topicHash(TopicInitialSecondsUntilPrizeChanged), "InitialDurationUntilMainPrizeDivisorChanged", game, h.decodeInitialSecondsUntilPrizeChanged, h.storeInitialSecondsUntilPrizeChanged),

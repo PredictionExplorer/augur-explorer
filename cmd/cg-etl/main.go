@@ -269,6 +269,13 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 		go backfillImplementationAfterCommit(ctx, logger, progress, handlers, engine, process, impl, blockNum)
 	})
 
+	// A new prizes wallet (PrizesWalletAddressChanged) joins the FilterLogs
+	// set at once. No backfill is needed: a prizes wallet only emits events
+	// when the game calls into it, which cannot precede the announcement.
+	handlers.SetOnNewPrizesWallet(func(_ context.Context, wallet ethcommon.Address, _ int64) {
+		engine.AddContracts(wallet)
+	})
+
 	if err := engine.Run(ctx); err != nil {
 		logger.Error("Event processing loop terminated", "err", err)
 		return fmt.Errorf("event processing loop terminated: %w", err)

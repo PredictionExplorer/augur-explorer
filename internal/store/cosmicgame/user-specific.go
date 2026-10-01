@@ -257,13 +257,15 @@ func (r *Repo) UnclaimedDonatedNFTsByUser(ctx context.Context, winnerAid int64) 
 		"d.idx," +
 		"nft.address_id," +
 		"nft.addr, " +
-		"d.token_uri " +
+		"d.token_uri, " +
+		"COALESCE(pw.addr,'') " +
 		"FROM cg_nft_donation d " +
 		"JOIN cg_prize_claim p ON p.round_num=d.round_num " +
 		"LEFT JOIN cg_donated_nft_claimed c ON c.idx=d.idx " +
 		"LEFT JOIN transaction t ON t.id=d.tx_id " +
 		"LEFT JOIN address da ON d.donor_aid=da.address_id " +
 		"LEFT JOIN address nft ON d.token_aid=nft.address_id " +
+		"LEFT JOIN address pw ON d.contract_aid=pw.address_id " +
 		"WHERE p.winner_aid=$1 AND p.round_num IS NOT NULL  AND c.idx IS NULL " +
 		"ORDER BY d.evtlog_id DESC "
 	scan := func(rows pgx.Rows, rec *cgmodel.CGNFTDonation) error {
@@ -283,6 +285,7 @@ func (r *Repo) UnclaimedDonatedNFTsByUser(ctx context.Context, winnerAid int64) 
 			&rec.TokenAddressId,
 			&rec.TokenAddr,
 			&rec.NFTTokenURI,
+			&rec.WalletAddr,
 		)
 	}
 	return queryList(ctx, r, "unclaimed donated nfts by user", 256, query, scan, winnerAid)
@@ -1042,7 +1045,13 @@ func (r *Repo) ERC20DonatedPrizesByWinner(ctx context.Context, userAid int64) ([
 		"(dt20.total_amount-COALESCE(claim.total,0))/1e18," +
 		"dt20.winner_aid," +
 		"wa.addr, " +
-		"dt20.claimed " +
+		"dt20.claimed, " +
+		// The PrizesWallet holding the round's donations: the stats table
+		// has no contract_aid, but every underlying donation row does, and
+		// a round only ever uses one wallet (it can change only while no
+		// round is active).
+		"COALESCE((SELECT a.addr FROM cg_erc20_donation e JOIN address a ON a.address_id=e.contract_aid " +
+		"WHERE e.round_num=dt20.round_num AND e.token_aid=dt20.token_aid ORDER BY e.id DESC LIMIT 1),'') " +
 		"FROM cg_erc20_donation_stats dt20 " +
 		"INNER JOIN cg_prize_claim p ON p.round_num=dt20.round_num " +
 		"LEFT JOIN transaction t ON t.id=p.tx_id " +
@@ -1074,6 +1083,7 @@ func (r *Repo) ERC20DonatedPrizesByWinner(ctx context.Context, userAid int64) ([
 			&nullWinnerAid,
 			&nullWinnerAddr,
 			&rec.Claimed,
+			&rec.WalletAddr,
 		)
 		if err != nil {
 			return err

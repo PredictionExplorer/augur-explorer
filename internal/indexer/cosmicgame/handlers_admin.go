@@ -369,7 +369,13 @@ func (h *Handlers) storePrizesWalletAddressChanged(ctx context.Context, evt *cgm
 	if err := h.repo.DeletePrizesWalletAddressChange(ctx, evt.EvtId); err != nil {
 		return err
 	}
-	return h.repo.InsertPrizesWalletAddressChange(ctx, evt)
+	if err := h.repo.InsertPrizesWalletAddressChange(ctx, evt); err != nil {
+		return err
+	}
+	// Keep watching the superseded wallet (it still holds unwithdrawn
+	// prizes) and start watching the new one from this block on.
+	h.notePrizesWallet(ctx, ethcommon.HexToAddress(evt.NewPrizeWallet), evt.BlockNum)
+	return nil
 }
 
 func (h *Handlers) decodeStakingWalletCSTAddressChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGStakingWalletCSTAddressChanged, error) {

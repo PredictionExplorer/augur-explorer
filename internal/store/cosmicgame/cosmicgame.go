@@ -3,6 +3,7 @@ package cosmicgame
 import (
 	"context"
 	"errors"
+	"strings"
 
 	cgmodel "github.com/PredictionExplorer/augur-explorer/internal/model/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
@@ -43,6 +44,16 @@ func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.ContractAddrs, error)
 	)
 	if err != nil {
 		return cgmodel.ContractAddrs{}, store.WrapError("cosmic game contract addrs", err)
+	}
+	historic, err := r.HistoricPrizesWallets(ctx)
+	if err != nil {
+		return cgmodel.ContractAddrs{}, err
+	}
+	out.PrizesWalletAddrs = append(out.PrizesWalletAddrs, out.PrizesWalletAddr)
+	for _, addr := range historic {
+		if !strings.EqualFold(addr, out.PrizesWalletAddr) {
+			out.PrizesWalletAddrs = append(out.PrizesWalletAddrs, addr)
+		}
 	}
 	return out, nil
 }

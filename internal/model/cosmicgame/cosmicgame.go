@@ -19,6 +19,12 @@ type ContractAddrs struct {
 	// MarketplaceAddr is rw_contracts.marketplace_addr (RandomWalk NFT marketplace); included on dashboard ContractAddrs.
 	MarketplaceAddr    string
 	ImplementationAddr string
+	// PrizesWalletAddrs is every prizes wallet the game has ever used:
+	// PrizesWalletAddr (the current one) first, then each superseded wallet
+	// an indexed PrizesWalletAddressChanged event introduced. Old wallets
+	// keep holding prizes deposited before the switch until their winners
+	// withdraw them, so clients must offer withdrawals from all of them.
+	PrizesWalletAddrs []string `json:",omitempty"`
 }
 
 // ProcStatus is the cg-etl progress watermark (cg_proc_status row): the

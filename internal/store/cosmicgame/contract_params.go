@@ -107,6 +107,29 @@ func (r *Repo) UpgradedImplementations(ctx context.Context) ([]string, error) {
 	return out, store.WrapError("upgraded implementations", rows.Err())
 }
 
+// HistoricPrizesWallets returns every prizes-wallet address an indexed
+// PrizesWalletAddressChanged event pointed the game at, oldest first. The
+// wallet configured at deployment never emitted that event; callers union
+// this list with cg_contracts.prizes_wallet_addr.
+func (r *Repo) HistoricPrizesWallets(ctx context.Context) ([]string, error) {
+	rows, err := r.q(ctx).Query(ctx,
+		"SELECT a.addr FROM cg_adm_prizes_wallet_addr w JOIN address a ON a.address_id = w.new_wallet_aid "+
+			"GROUP BY a.addr ORDER BY MIN(w.block_num), a.addr")
+	if err != nil {
+		return nil, store.WrapError("historic prizes wallets", err)
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var addr string
+		if err := rows.Scan(&addr); err != nil {
+			return nil, store.WrapError("historic prizes wallets", err)
+		}
+		out = append(out, addr)
+	}
+	return out, store.WrapError("historic prizes wallets", rows.Err())
+}
+
 // ImplementationRef is an implementation address with the block of the
 // first Upgraded event that introduced it.
 type ImplementationRef struct {
