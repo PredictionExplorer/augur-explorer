@@ -355,6 +355,13 @@
 	color: #555;
 }
 
+/* Muted "no records" note shown instead of an empty table. */
+.section-card > .empty {
+	color: #666;
+	font-size: 0.9em;
+	padding: 0.3em 0;
+}
+
 .data-table td.nowrap {
 	white-space: nowrap;
 }

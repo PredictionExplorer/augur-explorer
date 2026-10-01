@@ -13,6 +13,7 @@
 
 		<div class="section-card">
 			<div class="section-header">Claim Transactions</div>
+			{{- if .ClaimTransactions}}
 			<table class="data-table">
 				<tr>
 					<th>Asset</th>
@@ -37,10 +38,14 @@
 					</tr>
 				{{- end}}
 			</table>
+			{{- else}}
+			<div class="empty">No prizes from this round have been claimed yet.</div>
+			{{- end}}
 		</div>
 
 		<div class="section-card">
 			<div class="section-header">Attached Tokens</div>
+			{{- if .AttachedTokens}}
 			<table class="data-table">
 				<tr>
 					<th>Asset</th>
@@ -61,6 +66,9 @@
 					</tr>
 				{{- end}}
 			</table>
+			{{- else}}
+			<div class="empty">No tokens (ERC-20 / ERC-721) were attached to this round.</div>
+			{{- end}}
 		</div>
 
 		<div class="api-info">
