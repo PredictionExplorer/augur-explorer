@@ -141,6 +141,30 @@ type ImplementationRef struct {
 // by an Upgraded event whose constructor Initialized event has no
 // cg_adm_initialized row (the ETL was not watching the address when the
 // deploy transaction was indexed).
+// PrizesWalletAnnouncements returns every prizes wallet the indexed
+// PrizesWalletAddressChanged history introduced, with the block of its first
+// announcement — the point from which the wallet may start emitting events.
+// cg-etl uses it for the startup backfill recovery pass.
+func (r *Repo) PrizesWalletAnnouncements(ctx context.Context) ([]ImplementationRef, error) {
+	rows, err := r.q(ctx).Query(ctx,
+		"SELECT a.addr, MIN(w.block_num) FROM cg_adm_prizes_wallet_addr w "+
+			"JOIN address a ON a.address_id = w.new_wallet_aid "+
+			"GROUP BY a.addr ORDER BY MIN(w.block_num), a.addr")
+	if err != nil {
+		return nil, store.WrapError("prizes wallet announcements", err)
+	}
+	defer rows.Close()
+	var out []ImplementationRef
+	for rows.Next() {
+		var ref ImplementationRef
+		if err := rows.Scan(&ref.Addr, &ref.BlockNum); err != nil {
+			return nil, store.WrapError("prizes wallet announcements", err)
+		}
+		out = append(out, ref)
+	}
+	return out, store.WrapError("prizes wallet announcements", rows.Err())
+}
+
 func (r *Repo) ImplementationsMissingInitialized(ctx context.Context) ([]ImplementationRef, error) {
 	rows, err := r.q(ctx).Query(ctx,
 		"SELECT a.addr, MIN(u.block_num) FROM cg_adm_upgraded u "+

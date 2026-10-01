@@ -91,6 +91,51 @@ func backfillImplementationAfterCommit(
 	}
 }
 
+// backfillPrizesWalletAfterCommit waits until the engine has committed
+// blockNum (the PrizesWalletAddressChanged block; the hook fires inside that
+// block's transaction) and then backfills the wallet's events from the
+// announcement up to the committed watermark. The announcement and the
+// wallet's first events can share one fetch batch whose FilterLogs call
+// predates the wallet joining the address set; this closes that window.
+// Failures are logged, not fatal: RecoverPrizesWalletEvents repeats the
+// attempt on the next run.
+func backfillPrizesWalletAfterCommit(
+	ctx context.Context,
+	logger *slog.Logger,
+	progress cgProgress,
+	handlers *cgindexer.Handlers,
+	engine *indexer.Engine,
+	process indexer.ProcessFunc,
+	wallet ethcommon.Address,
+	blockNum int64,
+) {
+	if blockNum < 0 {
+		return
+	}
+	deadline := time.Now().Add(implementationCommitWait)
+	var last int64
+	for {
+		var err error
+		last, err = progress.LastBlock(ctx)
+		if err == nil && last >= blockNum {
+			break
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			logger.Warn("prizes wallet backfill skipped: announcement block not committed in time",
+				"prizes_wallet", wallet.Hex(), "block", blockNum)
+			return
+		}
+		time.Sleep(time.Second)
+	}
+	if _, err := handlers.BackfillPrizesWalletEvents(ctx, engine, process, wallet, uint64(blockNum), uint64(last)); err != nil {
+		logger.Error("prizes wallet backfill failed; the startup recovery pass will retry",
+			"prizes_wallet", wallet.Hex(), "block", blockNum, "err", err)
+	}
+}
+
 type cgProgress struct {
 	repo *cgstore.Repo
 }
@@ -269,11 +314,19 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 		go backfillImplementationAfterCommit(ctx, logger, progress, handlers, engine, process, impl, blockNum)
 	})
 
-	// A new prizes wallet (PrizesWalletAddressChanged) joins the FilterLogs
-	// set at once. No backfill is needed: a prizes wallet only emits events
-	// when the game calls into it, which cannot precede the announcement.
-	handlers.SetOnNewPrizesWallet(func(_ context.Context, wallet ethcommon.Address, _ int64) {
+	// Prizes wallets: a new wallet (PrizesWalletAddressChanged) joins the
+	// FilterLogs set at once, and the fetch batch that carried the
+	// announcement — whose FilterLogs call predates the wallet — is
+	// re-covered by a backfill once the batch commits. The startup pass
+	// repairs a crash between the two.
+	if lastBlock, err := progress.LastBlock(ctx); err != nil {
+		return fmt.Errorf("prizes wallet event recovery: read watermark: %w", err)
+	} else if err := handlers.RecoverPrizesWalletEvents(ctx, engine, process, lastBlock); err != nil {
+		return fmt.Errorf("prizes wallet event recovery failed: %w", err)
+	}
+	handlers.SetOnNewPrizesWallet(func(_ context.Context, wallet ethcommon.Address, blockNum int64) {
 		engine.AddContracts(wallet)
+		go backfillPrizesWalletAfterCommit(ctx, logger, progress, handlers, engine, process, wallet, blockNum)
 	})
 
 	if err := engine.Run(ctx); err != nil {
