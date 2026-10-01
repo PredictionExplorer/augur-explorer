@@ -111,6 +111,7 @@ type adminEventBranch struct {
 	intValue   string
 	floatValue string
 	stringVal  string
+	extraWhere string // optional row filter for tables that hold several event kinds
 }
 
 func (b adminEventBranch) sql() string {
@@ -134,6 +135,10 @@ func (b adminEventBranch) sql() string {
 	if b.stringVal != "" {
 		strExpr = b.stringVal
 	}
+	whereExtra := ""
+	if b.extraWhere != "" {
+		whereExtra = " AND (" + b.extraWhere + ")"
+	}
 	return `(
 		SELECT
 			` + strconv.Itoa(b.recordType) + ` AS record_type,
@@ -150,7 +155,7 @@ func (b adminEventBranch) sql() string {
 			` + strExpr + ` AS string_value
 		FROM ` + b.table + ` r
 		LEFT JOIN transaction t ON t.id=r.tx_id` + addrJoin + `
-		WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2)
+		WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2)` + whereExtra + `
 	)`
 }
 
@@ -204,6 +209,24 @@ var adminEventBranches = []adminEventBranch{
 	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},                                   // MainPrizeNumCosmicSignatureNftsChanged
 	{recordType: 45, table: "cg_adm_cst_price_decline_mul_div", intValue: "r.new_value"},                             // CstBidPriceDeclineMultiplierChangeDivisorChanged
 	{recordType: 46, table: "cg_adm_eth_bid_refund_gas_limit", intValue: "r.new_value"},                              // EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	// DAO (Governor) and governance-token events. cg_dao_setting_changed and
+	// cg_dao_proposal_state each hold several event kinds, split into separate
+	// record types via extraWhere (setting/state codes from cgmodel).
+	{recordType: 47, table: "cg_dao_setting_changed", extraWhere: "r.setting=1", floatValue: "r.new_value/1e18", stringVal: "r.new_value::TEXT"}, // DaoProposalThresholdSet
+	{recordType: 48, table: "cg_dao_setting_changed", extraWhere: "r.setting=2", intValue: "r.new_value::BIGINT"},                                // DaoVotingDelaySet
+	{recordType: 49, table: "cg_dao_setting_changed", extraWhere: "r.setting=3", intValue: "r.new_value::BIGINT"},                                // DaoVotingPeriodSet
+	{recordType: 50, table: "cg_dao_setting_changed", extraWhere: "r.setting=4", intValue: "r.new_value::BIGINT"},                                // DaoQuorumNumeratorUpdated
+	{recordType: 51, table: "cg_dao_proposal_created", addrValue: "a.addr", addrJoinFK: "proposer_aid",
+		stringVal: "'proposal ' || r.proposal_id::TEXT || ': ' || r.description"}, // DaoProposalCreated
+	{recordType: 52, table: "cg_dao_proposal_state", extraWhere: "r.state=1", intValue: "COALESCE(r.eta_seconds,0)",
+		stringVal: "'proposal ' || r.proposal_id::TEXT"}, // DaoProposalQueued (int_value = execution ETA, unix seconds)
+	{recordType: 53, table: "cg_dao_proposal_state", extraWhere: "r.state=2", stringVal: "'proposal ' || r.proposal_id::TEXT"}, // DaoProposalExecuted
+	{recordType: 54, table: "cg_dao_proposal_state", extraWhere: "r.state=3", stringVal: "'proposal ' || r.proposal_id::TEXT"}, // DaoProposalCanceled
+	{recordType: 55, table: "cg_dao_vote_cast", addrValue: "a.addr", addrJoinFK: "voter_aid", floatValue: "r.weight/1e18",
+		stringVal: "(CASE r.support WHEN 0 THEN 'Against' WHEN 1 THEN 'For' WHEN 2 THEN 'Abstain' ELSE 'support=' || r.support::TEXT END)" +
+			" || (CASE WHEN COALESCE(r.reason,'')='' THEN '' ELSE ': ' || r.reason END)"}, // DaoVoteCast
+	{recordType: 56, table: "cg_token_delegate_votes_changed", addrValue: "a.addr", addrJoinFK: "delegate_aid",
+		floatValue: "r.new_votes/1e18", stringVal: "r.new_votes::TEXT"}, // CosmicToken DelegateVotesChanged
 }
 
 // ownershipBranchSQL handles record_type 34, whose two address joins (previous

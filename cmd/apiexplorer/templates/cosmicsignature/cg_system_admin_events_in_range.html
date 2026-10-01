@@ -71,6 +71,16 @@
 						{{ if eq 44.0 .RecordType}}MainPrizeNumCosmicSignatureNftsChanged{{end}}
 						{{ if eq 45.0 .RecordType}}CstBidPriceDeclineMultiplierChangeDivisorChanged{{end}}
 						{{ if eq 46.0 .RecordType}}EthBidRefundAmountInGasToSwallowMaxLimitChanged{{end}}
+						{{ if eq 47.0 .RecordType}}DAO: ProposalThresholdSet{{end}}
+						{{ if eq 48.0 .RecordType}}DAO: VotingDelaySet{{end}}
+						{{ if eq 49.0 .RecordType}}DAO: VotingPeriodSet{{end}}
+						{{ if eq 50.0 .RecordType}}DAO: QuorumNumeratorUpdated{{end}}
+						{{ if eq 51.0 .RecordType}}DAO: ProposalCreated{{end}}
+						{{ if eq 52.0 .RecordType}}DAO: ProposalQueued{{end}}
+						{{ if eq 53.0 .RecordType}}DAO: ProposalExecuted{{end}}
+						{{ if eq 54.0 .RecordType}}DAO: ProposalCanceled{{end}}
+						{{ if eq 55.0 .RecordType}}DAO: VoteCast{{end}}
+						{{ if eq 56.0 .RecordType}}CosmicToken: DelegateVotesChanged{{end}}
 						</td>
 						<td class="center">{{arbiscanTx .TxHash .BlockNum}}</td>
 						<td>{{.DateTime}}</td>

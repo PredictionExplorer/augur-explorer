@@ -80,6 +80,13 @@ func resolveAdminEventFromContract(v1 *cg.CosmicSignatureGame, v2 *cg.CosmicSign
 				}
 			}
 		}
+	case 47:
+		return fmt.Sprintf("%g CST", rec.FloatValue)
+	case 48, 49:
+		return formatDurationSeconds(rec.IntegerValue)
+	case 50:
+		// Quorum numerator over the default OZ denominator of 100.
+		return fmt.Sprintf("%d%% quorum", rec.IntegerValue)
 	}
 	return ""
 }
