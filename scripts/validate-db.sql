@@ -16,6 +16,11 @@
 -- or invoke directly:
 --   psql "$DATABASE_URL" -f scripts/validate-db.sql
 --
+-- Works against both the v2 (pre-migration) and v3 database schemas: the
+-- schema version is auto-detected from the presence of the v3-only tables,
+-- v3-only checks are skipped on a v2 database, and a partially migrated
+-- schema aborts the run.
+--
 -- The script is read-only with respect to your data: it only creates
 -- TEMPORARY tables and everything runs inside a transaction that is rolled
 -- back at the end. It prints a report of every check and exits with a
@@ -43,6 +48,29 @@
 \pset pager off
 \echo ''
 \echo '=== Cosmic Signature DB validator (game mechanics) ==='
+\echo ''
+
+-- ---------------------------------------------------------------------------
+-- Schema-version detection. The v3 migrations add the tables probed below;
+-- a v2 database has none of them. v3-only checks are skipped on v2 schemas.
+-- A partial set means a half-applied migration and aborts the run.
+-- ---------------------------------------------------------------------------
+SELECT ((to_regclass('cg_adm_eth_bid_refund_gas_limit') IS NOT NULL)::INT
+      + (to_regclass('cg_arbitrum_error')               IS NOT NULL)::INT
+      + (to_regclass('cg_adm_cst_price_decline_mul')    IS NOT NULL)::INT
+      + (to_regclass('cg_adm_cst_price_decline_mul_div') IS NOT NULL)::INT)
+       AS v3_tbl_count \gset
+SELECT (:v3_tbl_count = 4) AS is_v3, (:v3_tbl_count NOT IN (0,4)) AS v3_partial \gset
+\if :v3_partial
+DO $$ BEGIN RAISE EXCEPTION
+	'only some v3 tables exist: half-applied migration? (cg_adm_eth_bid_refund_gas_limit, cg_arbitrum_error, cg_adm_cst_price_decline_mul, cg_adm_cst_price_decline_mul_div)';
+END $$;
+\endif
+\if :is_v3
+\echo 'Detected schema: v3'
+\else
+\echo 'Detected schema: v2 (v3-only event checks are skipped)'
+\endif
 \echo ''
 
 BEGIN;
@@ -256,8 +284,6 @@ INSERT INTO tmap VALUES
  (ARRAY['9b3eda10'],            ARRAY['cg_adm_costok_addr'],      'CosmicSignatureTokenAddressChanged','ERROR'),
  (ARRAY['5bde6238'],            ARRAY['cg_adm_cossig_addr'],      'CosmicSignatureNftAddressChanged',  'ERROR'),
  (ARRAY['4636d3e5'],            ARRAY['cg_adm_time_inc'],         'MainPrizeTimeIncrementIncreaseDivisorChanged','ERROR'),
- (ARRAY['a787f265'],            ARRAY['cg_adm_eth_bid_refund_gas_limit'],'EthBidRefundAmountInGasToSwallowMaxLimitChanged','ERROR'),
- (ARRAY['a0f59128'],            ARRAY['cg_arbitrum_error'],       'ArbitrumError',                     'ERROR'),
  (ARRAY['deb71e1d'],            ARRAY['cg_adm_price_inc'],        'EthBidPriceIncreaseDivisorChanged', 'ERROR'),
  (ARRAY['07417920'],            ARRAY['cg_adm_prize_microsec'],   'MainPrizeTimeIncrementInMicroSecondsChanged','ERROR'),
  (ARRAY['b5edd1f3'],            ARRAY['cg_adm_inisecprize'],      'InitialDurationUntilMainPrizeDivisorChanged','ERROR'),
@@ -269,8 +295,6 @@ INSERT INTO tmap VALUES
  (ARRAY['7acba37d'],            ARRAY['cg_adm_late_bid_dur_divisor'],'RoundLateBidDurationDivisorChanged','ERROR'),
  (ARRAY['169f25ec'],            ARRAY['cg_adm_late_bid_premium_base_mul'],'RoundLateBidPremiumBaseMultiplierChanged','ERROR'),
  (ARRAY['cb78cca7'],            ARRAY['cg_adm_late_bid_premium_exponent'],'RoundLateBidPremiumExponentChanged','ERROR'),
- (ARRAY['5a775510'],            ARRAY['cg_adm_cst_price_decline_mul'],'CstBidPriceDeclineMultiplierChanged','ERROR'),
- (ARRAY['dca564ea'],            ARRAY['cg_adm_cst_price_decline_mul_div'],'CstBidPriceDeclineMultiplierChangeDivisorChanged','ERROR'),
  (ARRAY['616bfcaa'],            ARRAY['cg_adm_main_prize_num_nfts'],'MainPrizeNumCosmicSignatureNftsChanged','ERROR'),
  (ARRAY['fdf6043c'],            ARRAY['cg_adm_eth_auclen'],       'EthDutchAuctionDurationDivisorChanged','ERROR'),
  (ARRAY['b6f6af60'],            ARRAY['cg_adm_eth_auc_endprice'], 'EthDutchAuctionEndingBidPriceDivisorChanged','ERROR'),
@@ -285,6 +309,17 @@ INSERT INTO tmap VALUES
  (ARRAY['4e8c80fe'],            ARRAY['cg_adm_cst_min_limit'],    'CstDutchAuctionBeginningBidPriceMinLimitChanged','ERROR'),
  (ARRAY['b0868a72'],            ARRAY['cg_delay_duration'],       'DelayDurationBeforeRoundActivationChanged','ERROR');
 
+-- v3-only events: their tables exist only after the v3 migrations, and the
+-- events themselves can only be emitted by the v3 contracts, so on a v2
+-- database both sides of the reconciliation are legitimately absent.
+\if :is_v3
+INSERT INTO tmap VALUES
+ (ARRAY['a787f265'],            ARRAY['cg_adm_eth_bid_refund_gas_limit'],'EthBidRefundAmountInGasToSwallowMaxLimitChanged','ERROR'),
+ (ARRAY['a0f59128'],            ARRAY['cg_arbitrum_error'],       'ArbitrumError',                     'ERROR'),
+ (ARRAY['5a775510'],            ARRAY['cg_adm_cst_price_decline_mul'],'CstBidPriceDeclineMultiplierChanged','ERROR'),
+ (ARRAY['dca564ea'],            ARRAY['cg_adm_cst_price_decline_mul_div'],'CstBidPriceDeclineMultiplierChangeDivisorChanged','ERROR');
+\endif
+
 DO $do$
 DECLARE
 	r        RECORD;
@@ -292,20 +327,27 @@ DECLARE
 	dec_cnt  BIGINT;
 	tot      BIGINT;
 	tb       TEXT;
+	missing  TEXT;
 BEGIN
 	FOR r IN SELECT * FROM tmap LOOP
 		SELECT COUNT(*) INTO raw_cnt FROM evt_log WHERE topic0_sig = ANY (r.sigs);
 		dec_cnt := 0;
+		missing := NULL;
 		FOREACH tb IN ARRAY r.tbls LOOP
-			EXECUTE format('SELECT COUNT(*) FROM %I', tb) INTO tot;
-			dec_cnt := dec_cnt + tot;
+			IF to_regclass(tb) IS NULL THEN
+				missing := COALESCE(missing || '+', '') || tb;
+			ELSE
+				EXECUTE format('SELECT COUNT(*) FROM %I', tb) INTO tot;
+				dec_cnt := dec_cnt + tot;
+			END IF;
 		END LOOP;
 		INSERT INTO vr(section,check_name,severity,violations,details)
 		VALUES ('C. topic reconciliation',
 		        r.label||' ['||ARRAY_TO_STRING(r.sigs,'/')||'] -> '||ARRAY_TO_STRING(r.tbls,'+'),
 		        r.sev,
-		        CASE WHEN raw_cnt = dec_cnt THEN 0 ELSE 1 END,
-		        CASE WHEN raw_cnt = dec_cnt THEN NULL
+		        CASE WHEN missing IS NULL AND raw_cnt = dec_cnt THEN 0 ELSE 1 END,
+		        CASE WHEN missing IS NOT NULL THEN 'table(s) missing from schema: '||missing
+		             WHEN raw_cnt = dec_cnt THEN NULL
 		             ELSE 'evt_log has '||raw_cnt||' logs but tables hold '||dec_cnt||' rows' END);
 	END LOOP;
 
