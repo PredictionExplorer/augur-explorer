@@ -7,17 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>⚙️ Admin Events in Range</h1>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Admin Events in Range</h1>
 			<div class="subtitle">Event Logs {{.EvtLogIdStart}} to {{.EvtLogIdEnd}}</div>
 		</div>
 
@@ -51,7 +42,7 @@
 							{{ if eq 15.0 .RecordType}}CosmicTokenAddressChanged{{end}}
 							{{ if eq 16.0 .RecordType}}CosmicSignatureNftAddressChanged{{end}}
 							{{ if eq 17.0 .RecordType}}Upgraded{{end}}
-							{{ if eq 18.0 .RecordType}}TimeIncreaseChanged{{end}}
+							{{ if eq 18.0 .RecordType}}MainPrizeTimeIncrementIncreaseDivisorChanged{{end}}
 							{{ if eq 19.0 .RecordType}}TimeoutDurationToClaimMainPrizeChanged{{end}}
 							{{ if eq 20.0 .RecordType}}PriceIncreaseChanged{{end}}
 							{{ if eq 21.0 .RecordType}}MainPrizeTimeIncrementMicroSecondsChanged{{end}}
@@ -76,14 +67,26 @@
 						{{ if eq 40.0 .RecordType}}RoundLateBidDurationDivisorChanged{{end}}
 						{{ if eq 41.0 .RecordType}}RoundLateBidPricePremiumAmountBaseMultiplierChanged{{end}}
 						{{ if eq 42.0 .RecordType}}RoundLateBidPricePremiumAmountExponentChanged{{end}}
-						{{ if eq 43.0 .RecordType}}LastBidderBidCstRewardAmountPercentageChanged{{end}}
+						{{ if eq 43.0 .RecordType}}CstBidPriceDeclineMultiplierChanged{{end}}
 						{{ if eq 44.0 .RecordType}}MainPrizeNumCosmicSignatureNftsChanged{{end}}
+						{{ if eq 45.0 .RecordType}}CstBidPriceDeclineMultiplierChangeDivisorChanged{{end}}
+						{{ if eq 46.0 .RecordType}}EthBidRefundAmountInGasToSwallowMaxLimitChanged{{end}}
+						{{ if eq 47.0 .RecordType}}DAO: ProposalThresholdSet{{end}}
+						{{ if eq 48.0 .RecordType}}DAO: VotingDelaySet{{end}}
+						{{ if eq 49.0 .RecordType}}DAO: VotingPeriodSet{{end}}
+						{{ if eq 50.0 .RecordType}}DAO: QuorumNumeratorUpdated{{end}}
+						{{ if eq 51.0 .RecordType}}DAO: ProposalCreated{{end}}
+						{{ if eq 52.0 .RecordType}}DAO: ProposalQueued{{end}}
+						{{ if eq 53.0 .RecordType}}DAO: ProposalExecuted{{end}}
+						{{ if eq 54.0 .RecordType}}DAO: ProposalCanceled{{end}}
+						{{ if eq 55.0 .RecordType}}DAO: VoteCast{{end}}
+						{{ if eq 56.0 .RecordType}}CosmicToken: DelegateVotesChanged{{end}}
 						</td>
-						<td class="center">{{.BlockNum}}</td>
+						<td class="center">{{arbiscanTx .TxHash .BlockNum}}</td>
 						<td>{{.DateTime}}</td>
 						<td class="monospace">
 							{{ if .IntegerValue}}{{.IntegerValue}}{{end}}
-							{{ if .FloatValue}}{{.FloatValue}}{{end}}
+							{{ if .FloatValue}}{{.FloatValue}}{{ if eq 43.0 .RecordType}} CST/s{{end}}{{end}}
 							{{ if .AddressValue}}{{.AddressValue}}{{end}}
 							{{ if .StringValue}}{{.StringValue}}{{end}}
 						</td>

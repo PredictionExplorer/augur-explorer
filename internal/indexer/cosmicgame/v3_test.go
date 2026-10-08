@@ -23,13 +23,20 @@ func TestClassifyBidRewardMints(t *testing.T) {
 	}{
 		{name: "no dynamic reward", wantCurrent: "0", wantPrevious: "0"},
 		{
-			name:         "legacy single mint",
+			name:         "legacy single mint to the current bidder (V1/V2)",
 			mints:        []bidRewardMint{{to: current, amount: big.NewInt(100)}},
 			wantCurrent:  "100",
 			wantPrevious: "0",
 		},
 		{
-			name: "V3 90/10 in either order",
+			name:         "V3 single mint to the outbid previous bidder",
+			mints:        []bidRewardMint{{to: previous, amount: big.NewInt(100)}},
+			wantCurrent:  "0",
+			wantPrevious: "100",
+			wantAddress:  previous.String(),
+		},
+		{
+			name: "mixed recipients aggregate per recipient",
 			mints: []bidRewardMint{
 				{to: current, amount: big.NewInt(10)},
 				{to: previous, amount: big.NewInt(90)},
@@ -39,19 +46,18 @@ func TestClassifyBidRewardMints(t *testing.T) {
 			wantAddress:  previous.String(),
 		},
 		{
-			name: "same address still has two shares",
+			name: "multiple mints to the bidder sum to the bidder's reward (zero-price CST bid)",
 			mints: []bidRewardMint{
-				{to: current, amount: big.NewInt(90)},
-				{to: current, amount: big.NewInt(10)},
+				{to: current, amount: big.NewInt(0)},
+				{to: current, amount: big.NewInt(100)},
 			},
-			wantCurrent:  "10",
-			wantPrevious: "90",
-			wantAddress:  current.String(),
+			wantCurrent:  "100",
+			wantPrevious: "0",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			currentAmount, previousAmount, address := classifyBidRewardMints(test.mints)
+			currentAmount, previousAmount, address := classifyBidRewardMints(test.mints, current)
 			if currentAmount != test.wantCurrent ||
 				previousAmount != test.wantPrevious ||
 				address != test.wantAddress {
@@ -186,9 +192,19 @@ func TestDecodeV3AdminEvents(t *testing.T) {
 			},
 		},
 		{
-			"LastBidderBidCstRewardAmountPercentageChanged",
+			"CstBidPriceDeclineMultiplierChanged",
 			func(log *types.Log, meta *store.EthereumEventLog) (string, error) {
-				event, err := h.decodeLastBidderRewardPercentageChanged(log, meta)
+				event, err := h.decodeCstBidPriceDeclineMultiplierChanged(log, meta)
+				if err != nil {
+					return "", err
+				}
+				return event.NewValue, nil
+			},
+		},
+		{
+			"CstBidPriceDeclineMultiplierChangeDivisorChanged",
+			func(log *types.Log, meta *store.EthereumEventLog) (string, error) {
+				event, err := h.decodeCstBidPriceDeclineMultiplierChangeDivisorChanged(log, meta)
 				if err != nil {
 					return "", err
 				}

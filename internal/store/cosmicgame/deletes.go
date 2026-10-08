@@ -150,9 +150,66 @@ func (r *Repo) DeleteChronoWarrior(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_chrono_warrior_prize", evtlogID)
 }
 
+// DeleteEthToCharityFailed removes a V3.1 EthTransferToCharityFailed row.
+func (r *Repo) DeleteEthToCharityFailed(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_eth_to_charity_failed", evtlogID)
+}
+
 // DeleteFundTransferFailed removes a FundTransferFailed row.
 func (r *Repo) DeleteFundTransferFailed(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_fund_transf_err", evtlogID)
+}
+
+// Inherited OpenZeppelin events and the DAO.
+
+// DeleteNftApproval removes an ERC-721 Approval row.
+func (r *Repo) DeleteNftApproval(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_nft_approval", evtlogID)
+}
+
+// DeleteNftApprovalForAll removes an ERC-721 ApprovalForAll row.
+func (r *Repo) DeleteNftApprovalForAll(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_nft_approval_for_all", evtlogID)
+}
+
+// DeleteTokenApproval removes an ERC-20 Approval row.
+func (r *Repo) DeleteTokenApproval(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_token_approval", evtlogID)
+}
+
+// DeleteDelegateChanged removes a DelegateChanged row.
+func (r *Repo) DeleteDelegateChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_token_delegate_changed", evtlogID)
+}
+
+// DeleteDelegateVotesChanged removes a DelegateVotesChanged row.
+func (r *Repo) DeleteDelegateVotesChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_token_delegate_votes_changed", evtlogID)
+}
+
+// DeleteEIP712DomainChanged removes an EIP712DomainChanged row.
+func (r *Repo) DeleteEIP712DomainChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_eip712_domain_changed", evtlogID)
+}
+
+// DeleteDaoProposalCreated removes a ProposalCreated row.
+func (r *Repo) DeleteDaoProposalCreated(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_proposal_created", evtlogID)
+}
+
+// DeleteDaoProposalStateChange removes a ProposalQueued/Executed/Canceled row.
+func (r *Repo) DeleteDaoProposalStateChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_proposal_state", evtlogID)
+}
+
+// DeleteDaoVoteCast removes a VoteCast/VoteCastWithParams row.
+func (r *Repo) DeleteDaoVoteCast(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_vote_cast", evtlogID)
+}
+
+// DeleteDaoSettingChanged removes a Governor setting-change row.
+func (r *Repo) DeleteDaoSettingChanged(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_dao_setting_changed", evtlogID)
 }
 
 // DeleteERC20TransferFailed removes an ERC20TransferFailed row.
@@ -376,15 +433,32 @@ func (r *Repo) DeleteRoundLateBidPremiumExponentChange(ctx context.Context, evtl
 	return r.deleteByEvtlogID(ctx, "cg_adm_late_bid_premium_exponent", evtlogID)
 }
 
-// DeleteLastBidderRewardPercentageChange removes a V3 previous-last-bidder
-// reward percentage history row.
-func (r *Repo) DeleteLastBidderRewardPercentageChange(ctx context.Context, evtlogID int64) error {
-	return r.deleteByEvtlogID(ctx, "cg_adm_last_bidder_reward_pct", evtlogID)
+// DeleteCstBidPriceDeclineMultiplierChange removes a V3 CST bid price
+// decline multiplier history row.
+func (r *Repo) DeleteCstBidPriceDeclineMultiplierChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_cst_price_decline_mul", evtlogID)
+}
+
+// DeleteCstBidPriceDeclineMultiplierChangeDivisorChange removes a V3 CST bid
+// price decline multiplier change divisor history row.
+func (r *Repo) DeleteCstBidPriceDeclineMultiplierChangeDivisorChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_cst_price_decline_mul_div", evtlogID)
 }
 
 // DeleteMainPrizeNumNftsChange removes a V3 main-prize NFT-count history row.
 func (r *Repo) DeleteMainPrizeNumNftsChange(ctx context.Context, evtlogID int64) error {
 	return r.deleteByEvtlogID(ctx, "cg_adm_main_prize_num_nfts", evtlogID)
+}
+
+// DeleteEthBidRefundGasMaxLimitChange removes an
+// EthBidRefundAmountInGasToSwallowMaxLimitChanged row.
+func (r *Repo) DeleteEthBidRefundGasMaxLimitChange(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_adm_eth_bid_refund_gas_limit", evtlogID)
+}
+
+// DeleteArbitrumError removes an ArbitrumError row.
+func (r *Repo) DeleteArbitrumError(ctx context.Context, evtlogID int64) error {
+	return r.deleteByEvtlogID(ctx, "cg_arbitrum_error", evtlogID)
 }
 
 // DeleteEthAuctionDurationDivisorChange removes an EthDutchAuctionDurationDivisorChanged row.

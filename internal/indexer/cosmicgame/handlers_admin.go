@@ -369,7 +369,13 @@ func (h *Handlers) storePrizesWalletAddressChanged(ctx context.Context, evt *cgm
 	if err := h.repo.DeletePrizesWalletAddressChange(ctx, evt.EvtId); err != nil {
 		return err
 	}
-	return h.repo.InsertPrizesWalletAddressChange(ctx, evt)
+	if err := h.repo.InsertPrizesWalletAddressChange(ctx, evt); err != nil {
+		return err
+	}
+	// Keep watching the superseded wallet (it still holds unwithdrawn
+	// prizes) and start watching the new one from this block on.
+	h.notePrizesWallet(ctx, ethcommon.HexToAddress(evt.NewPrizeWallet), evt.BlockNum)
+	return nil
 }
 
 func (h *Handlers) decodeStakingWalletCSTAddressChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGStakingWalletCSTAddressChanged, error) {
@@ -512,7 +518,13 @@ func (h *Handlers) storeUpgraded(ctx context.Context, evt *cgmodel.CGUpgraded) e
 	if err := h.repo.DeleteUpgraded(ctx, evt.EvtId); err != nil {
 		return err
 	}
-	return h.repo.InsertUpgraded(ctx, evt)
+	if err := h.repo.InsertUpgraded(ctx, evt); err != nil {
+		return err
+	}
+	// The new implementation is a contract of its own (its constructor emits
+	// Initialized); start watching it.
+	h.noteImplementation(ctx, ethcommon.HexToAddress(evt.Implementation), evt.BlockNum)
+	return nil
 }
 
 // decodeAdminChanged decodes the ERC-1967 proxy event; it is absent from the
@@ -547,13 +559,13 @@ func (h *Handlers) storeAdminChanged(ctx context.Context, evt *cgmodel.CGAdminCh
 // comes from the raw data (unpacking a name absent from the ABI made the
 // legacy handler terminate the process on every occurrence).
 func (h *Handlers) decodeTimeIncreaseChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGTimeIncreaseChanged, error) {
-	newValue, err := adminUint256FromLogData(lg.Data)
-	if err != nil {
+	var ethEvt cgc.CosmicSignatureGameMainPrizeTimeIncrementIncreaseDivisorChanged
+	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "MainPrizeTimeIncrementIncreaseDivisorChanged", lg.Data); err != nil {
 		return nil, err
 	}
 	evt := &cgmodel.CGTimeIncreaseChanged{}
 	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
-	evt.NewTimeIncrease = newValue.String()
+	evt.NewTimeIncrease = ethEvt.NewValue.String()
 	return evt, nil
 }
 
@@ -564,6 +576,26 @@ func (h *Handlers) storeTimeIncreaseChanged(ctx context.Context, evt *cgmodel.CG
 		return err
 	}
 	return h.repo.InsertTimeIncreaseChange(ctx, evt)
+}
+
+func (h *Handlers) decodeEthBidRefundGasMaxLimitChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGEthBidRefundGasMaxLimitChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameEthBidRefundAmountInGasToSwallowMaxLimitChanged
+	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "EthBidRefundAmountInGasToSwallowMaxLimitChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGEthBidRefundGasMaxLimitChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeEthBidRefundGasMaxLimitChanged(ctx context.Context, evt *cgmodel.CGEthBidRefundGasMaxLimitChanged) error {
+	h.log.Info("EthBidRefundAmountInGasToSwallowMaxLimitChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+
+	if err := h.repo.DeleteEthBidRefundGasMaxLimitChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertEthBidRefundGasMaxLimitChange(ctx, evt)
 }
 
 func (h *Handlers) decodeTimeoutClaimPrizeChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGTimeoutClaimPrizeChanged, error) {
@@ -765,23 +797,42 @@ func (h *Handlers) storeRoundLateBidPremiumExponentChanged(ctx context.Context, 
 	return h.repo.InsertRoundLateBidPremiumExponentChange(ctx, evt)
 }
 
-func (h *Handlers) decodeLastBidderRewardPercentageChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged, error) {
-	var ethEvt cgc.CosmicSignatureGameV3LastBidderBidCstRewardAmountPercentageChanged
-	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "LastBidderBidCstRewardAmountPercentageChanged", lg.Data); err != nil {
+func (h *Handlers) decodeCstBidPriceDeclineMultiplierChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGCstBidPriceDeclineMultiplierChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3CstBidPriceDeclineMultiplierChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "CstBidPriceDeclineMultiplierChanged", lg.Data); err != nil {
 		return nil, err
 	}
-	evt := &cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged{}
+	evt := &cgmodel.CGCstBidPriceDeclineMultiplierChanged{}
 	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
 	evt.NewValue = ethEvt.NewValue.String()
 	return evt, nil
 }
 
-func (h *Handlers) storeLastBidderRewardPercentageChanged(ctx context.Context, evt *cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged) error {
-	h.log.Info("LastBidderBidCstRewardAmountPercentageChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
-	if err := h.repo.DeleteLastBidderRewardPercentageChange(ctx, evt.EvtId); err != nil {
+func (h *Handlers) storeCstBidPriceDeclineMultiplierChanged(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChanged) error {
+	h.log.Info("CstBidPriceDeclineMultiplierChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteCstBidPriceDeclineMultiplierChange(ctx, evt.EvtId); err != nil {
 		return err
 	}
-	return h.repo.InsertLastBidderRewardPercentageChange(ctx, evt)
+	return h.repo.InsertCstBidPriceDeclineMultiplierChange(ctx, evt)
+}
+
+func (h *Handlers) decodeCstBidPriceDeclineMultiplierChangeDivisorChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged, error) {
+	var ethEvt cgc.CosmicSignatureGameV3CstBidPriceDeclineMultiplierChangeDivisorChanged
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "CstBidPriceDeclineMultiplierChangeDivisorChanged", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged{}
+	evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, evt.Contract = adminEventBase(lg, elog)
+	evt.NewValue = ethEvt.NewValue.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeCstBidPriceDeclineMultiplierChangeDivisorChanged(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged) error {
+	h.log.Info("CstBidPriceDeclineMultiplierChangeDivisorChanged", "evt_id", evt.EvtId, "new_value", evt.NewValue)
+	if err := h.repo.DeleteCstBidPriceDeclineMultiplierChangeDivisorChange(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertCstBidPriceDeclineMultiplierChangeDivisorChange(ctx, evt)
 }
 
 func (h *Handlers) decodeMainPrizeNumNftsChanged(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGMainPrizeNumCosmicSignatureNftsChanged, error) {
@@ -1013,12 +1064,6 @@ func (h *Handlers) storeOwnershipTransferred(ctx context.Context, evt *cgmodel.C
 		return err
 	}
 	return h.repo.InsertOwnershipTransfer(ctx, evt)
-}
-
-// initializedSources lists the platform contracts that may emit OpenZeppelin
-// Initializable:Initialized (the ownership set plus the implementation).
-func (h *Handlers) initializedSources() []ethcommon.Address {
-	return append(h.ownershipSources(), h.c.Implementation)
 }
 
 func (h *Handlers) decodeInitialized(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGInitialized, error) {

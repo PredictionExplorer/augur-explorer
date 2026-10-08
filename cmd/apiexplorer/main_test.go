@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
@@ -101,6 +102,24 @@ func TestWeiToEth(t *testing.T) {
 	}
 }
 
+func TestAuctionParam(t *testing.T) {
+	if got := auctionParam("-1", jsonNum(-1)); got != "—" {
+		t.Errorf("V1 sentinel = %q", got)
+	}
+	if got := auctionParam("1800", jsonNum(1800)); got != "1800 s" {
+		t.Errorf("V2 duration = %q", got)
+	}
+	if got := auctionParam("16666666666666666", jsonNum(16666666666666666)); got != "0.016667 CST/s" {
+		t.Errorf("V3.1 decline multiplier = %q", got)
+	}
+	if isWeiPerSec(jsonNum(1800)) {
+		t.Error("1800 s must not be treated as wei/s")
+	}
+	if !isWeiPerSec(jsonNum(1e16)) {
+		t.Error("1e16 must be treated as wei/s")
+	}
+}
+
 func TestIsEthAddr(t *testing.T) {
 	valid := "0x7BBF44394a23504cbE46b2b2d76929451cb86975"
 	cases := []struct {
@@ -131,6 +150,21 @@ func TestEthAddrLink(t *testing.T) {
 	}
 	if got := string(ethAddrLinkTo("/randomwalk/user/info/", "<label>")); got != "&lt;label&gt;" {
 		t.Errorf("invalid address must render escaped text, got %q", got)
+	}
+}
+
+func TestArbiscanTx(t *testing.T) {
+	hash := "0xf000000000000000000000000000000000000000000000000000000000001009"
+	got := string(arbiscanTx(hash, jsonNum(12345)))
+	want := `<a href="https://arbiscan.io/tx/` + hash + `" title="` + hash + `">12345</a>`
+	if got != want {
+		t.Errorf("arbiscanTx = %q, want %q", got, want)
+	}
+	if got := string(arbiscanTx("", 99)); got != "99" {
+		t.Errorf("empty hash must render plain label, got %q", got)
+	}
+	if got := string(arbiscanTx("<script>", "<x>")); got != "&lt;x&gt;" {
+		t.Errorf("invalid hash must escape label, got %q", got)
 	}
 }
 
@@ -185,9 +219,119 @@ func TestLoadTemplates(t *testing.T) {
 		"index.html", "error.html",
 		"cosmicsignature/cg_index.html", "randomwalk/home.html",
 		"randomwalk/rw_trading_history.html",
+		"cosmicsignature/cg_roi_leaderboard.html",
+		"cosmicsignature/cg_claims_by_round.html",
+		"cosmicsignature/cg_claim_detail_by_round.html",
+		"cosmicsignature/cg_bid_info.html",
+		"cosmicsignature/cg_cosmic_sig_token_list.html",
+		"cosmicsignature/cg_current_special_winners.html",
 	} {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("template %q not loaded", name)
+		}
+	}
+}
+
+func TestLiveAssetsReload(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "templates"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "res"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	page := filepath.Join(dir, "templates", "index.html")
+	if err := os.WriteFile(page, []byte("before"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s := &server{liveDir: dir, log: slog.New(slog.DiscardHandler)}
+	rec := httptest.NewRecorder()
+	s.render(rec, http.StatusOK, "index.html", nil)
+	if rec.Body.String() != "before" {
+		t.Fatalf("first render = %q", rec.Body.String())
+	}
+	if err := os.WriteFile(page, []byte("after"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rec = httptest.NewRecorder()
+	s.render(rec, http.StatusOK, "index.html", nil)
+	if rec.Body.String() != "after" {
+		t.Fatalf("reload render = %q", rec.Body.String())
+	}
+}
+
+func TestIsLiveAssetsDir(t *testing.T) {
+	if !isLiveAssetsDir(".") {
+		t.Error("package dir should contain templates/index.html")
+	}
+	if isLiveAssetsDir(t.TempDir()) {
+		t.Error("empty dir must not count as live assets")
+	}
+}
+
+func TestV31TemplatesExecute(t *testing.T) {
+	tmpl, err := loadTemplates()
+	if err != nil {
+		t.Fatalf("loadTemplates: %v", err)
+	}
+	tmpl.Option("missingkey=error")
+
+	cases := []struct {
+		name string
+		data map[string]any
+	}{
+		{
+			name: "cosmicsignature/cg_bid_info.html",
+			data: map[string]any{
+				"BidInfo": map[string]any{
+					"Tx": map[string]any{
+						"EvtLogId": jsonNum(10), "BlockNum": jsonNum(1), "TxId": jsonNum(2),
+						"TxHash": "0xabc", "TimeStamp": jsonNum(1), "DateTime": "t",
+					},
+					"RoundNum": jsonNum(0), "BidderAddr": "0x1", "BidType": jsonNum(0),
+					"BidPosition": jsonNum(1), "EthPriceEth": jsonNum(0.1),
+					"PreviousBidderAddr": "0x2",
+					"PreviousCstRewardAmountEth": jsonNum(1.5),
+					"ThisCstRewardAmountEth": jsonNum(0),
+					"RWalkNFTId": jsonNum(-1), "CstPriceEth": jsonNum(-1),
+					"BidCstRewardAmountEth": jsonNum(1.5),
+					"CstDutchAuctionDuration": "16666666666666666",
+					"CstDutchAuctionDurationInt": jsonNum(16666666666666666),
+					"PrizeTimeDate": "soon", "Message": "hi",
+					"NFTDonationTokenAddr": "", "DonatedERC20TokenAddr": "",
+				},
+			},
+		},
+		{
+			name: "cosmicsignature/cg_cosmic_sig_token_list.html",
+			data: map[string]any{
+				"CosmicSignatureTokenList": []any{
+					map[string]any{
+						"TokenId": jsonNum(1), "WinnerAddr": "0x1", "CurOwnerAddr": "0x1",
+						"RoundNum": jsonNum(0), "RecordType": jsonNum(3),
+						"Tx": map[string]any{"DateTime": "t"},
+					},
+				},
+			},
+		},
+		{
+			name: "cosmicsignature/cg_current_special_winners.html",
+			data: map[string]any{
+				"LastBidderAddress": "0x1", "LastBidderLastBidTime": jsonNum(1),
+				"EnduranceChampionAddress": "0x2", "EnduranceChampionDuration": jsonNum(10),
+				"EnduranceChampionStartTimeStamp": jsonNum(1),
+				"PrevEnduranceChampionDuration": jsonNum(5),
+				"ChronoWarriorAddress": "0x3", "ChronoWarriorDuration": jsonNum(8),
+				"ChronoWarriorIsLive": true,
+				"LastCstBidderAddress": "0x4",
+				"RoundNum": jsonNum(1), "SourceBlockNumber": jsonNum(9),
+				"SourceBlockTimeStamp": jsonNum(1),
+			},
+		},
+	}
+	for _, tc := range cases {
+		if err := tmpl.ExecuteTemplate(io.Discard, tc.name, tc.data); err != nil {
+			t.Errorf("%s: %v", tc.name, err)
 		}
 	}
 }

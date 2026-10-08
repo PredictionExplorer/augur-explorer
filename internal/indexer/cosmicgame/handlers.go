@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -38,28 +40,78 @@ type Contracts struct {
 	StakingCST      ethcommon.Address
 	StakingRWalk    ethcommon.Address
 	MarketingWallet ethcommon.Address
-	Implementation  ethcommon.Address
+	// Implementation is the game implementation registered in cg_contracts.
+	Implementation ethcommon.Address
+	// Implementations are every game implementation known at startup: the
+	// registered one plus each address an indexed Upgraded event pointed the
+	// proxy at. Implementation constructors emit Initialized(uint64.max),
+	// so all of them are watched; the set grows at runtime as new Upgraded
+	// events arrive (Handlers.Implementations).
+	Implementations []ethcommon.Address
+	// PrizesWallets are every prizes wallet known at startup beyond
+	// PrizesWallet: each address an indexed PrizesWalletAddressChanged
+	// event pointed the game at. Superseded wallets keep holding prizes
+	// until their winners withdraw them, so all of them stay watched; the
+	// set grows at runtime as new PrizesWalletAddressChanged events arrive
+	// (Handlers.PrizesWallets).
+	PrizesWallets []ethcommon.Address
 
 	GameAid        int64
 	CosmicTokenAid int64
 }
 
-// All returns every contract the FilterLogs subscription watches. The DAO is
-// included although Governor events are stored in evt_log only (no cg_dao_*
-// layer-2 tables); the registry ignores unknown topics.
+// All returns every contract the FilterLogs subscription watches. Every event
+// these contracts can emit, including the OpenZeppelin ones they inherit and
+// the DAO's Governor events, has a registered handler
+// (TestEveryABIEventHasHandler); the registry ignores unknown topics.
 func (c Contracts) All() []ethcommon.Address {
-	return []ethcommon.Address{
+	implementations := c.allImplementations()
+	prizesWallets := c.allPrizesWallets()
+	all := make([]ethcommon.Address, 0, 8+len(prizesWallets)+len(implementations))
+	all = append(all,
 		c.Game,
 		c.Signature,
 		c.Token,
 		c.Dao,
 		c.CharityWallet,
-		c.PrizesWallet,
 		c.StakingCST,
 		c.StakingRWalk,
 		c.MarketingWallet,
-		c.Implementation,
+	)
+	all = append(all, prizesWallets...)
+	return append(all, implementations...)
+}
+
+// allImplementations returns Implementation plus Implementations without
+// duplicates or the zero address.
+func (c Contracts) allImplementations() []ethcommon.Address {
+	out := make([]ethcommon.Address, 0, 1+len(c.Implementations))
+	add := func(a ethcommon.Address) {
+		if a != (ethcommon.Address{}) && !slices.Contains(out, a) {
+			out = append(out, a)
+		}
 	}
+	add(c.Implementation)
+	for _, a := range c.Implementations {
+		add(a)
+	}
+	return out
+}
+
+// allPrizesWallets returns PrizesWallet plus PrizesWallets without
+// duplicates or the zero address, the current wallet first.
+func (c Contracts) allPrizesWallets() []ethcommon.Address {
+	out := make([]ethcommon.Address, 0, 1+len(c.PrizesWallets))
+	add := func(a ethcommon.Address) {
+		if a != (ethcommon.Address{}) && !slices.Contains(out, a) {
+			out = append(out, a)
+		}
+	}
+	add(c.PrizesWallet)
+	for _, a := range c.PrizesWallets {
+		add(a)
+	}
+	return out
 }
 
 // BootstrapContracts reads the contract registry (cg_contracts), registers
@@ -99,6 +151,25 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		return Contracts{}, addrs, fmt.Errorf("looking up CosmicGame address id: %w", err)
 	}
 
+	// Every implementation the proxy has pointed at so far (indexed Upgraded
+	// events); the registry row alone lags behind after an upgrade.
+	upgraded, err := repo.UpgradedImplementations(ctx)
+	if err != nil {
+		return Contracts{}, addrs, fmt.Errorf("reading upgraded implementations: %w", err)
+	}
+	implementations := make([]ethcommon.Address, 0, len(upgraded))
+	for _, hexAddr := range upgraded {
+		implementations = append(implementations, ethcommon.HexToAddress(hexAddr))
+	}
+
+	// Every prizes wallet the game has ever used (ContractAddrs composes the
+	// registry row with the indexed PrizesWalletAddressChanged history);
+	// superseded wallets keep emitting withdrawal events until drained.
+	prizesWallets := make([]ethcommon.Address, 0, len(addrs.PrizesWalletAddrs))
+	for _, hexAddr := range addrs.PrizesWalletAddrs {
+		prizesWallets = append(prizesWallets, ethcommon.HexToAddress(hexAddr))
+	}
+
 	return Contracts{
 		Game:            ethcommon.HexToAddress(addrs.CosmicGameAddr),
 		Signature:       ethcommon.HexToAddress(addrs.CosmicSignatureAddr),
@@ -110,6 +181,8 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		StakingRWalk:    ethcommon.HexToAddress(addrs.StakingWalletRWalkAddr),
 		MarketingWallet: ethcommon.HexToAddress(addrs.MarketingWalletAddr),
 		Implementation:  ethcommon.HexToAddress(addrs.ImplementationAddr),
+		Implementations: implementations,
+		PrizesWallets:   prizesWallets,
 		GameAid:         gameAid,
 		CosmicTokenAid:  tokenAid,
 	}, addrs, nil
@@ -154,8 +227,24 @@ type Handlers struct {
 	marketingWalletABI *abi.ABI
 	erc20ABI           *abi.ABI
 	erc1967ABI         *abi.ABI
+	tokenABI           *abi.ABI
+	daoABI             *abi.ABI
 
 	registry *indexer.Registry
+
+	// implementations is the live set of game implementation contracts
+	// (see Contracts.Implementations); storeUpgraded grows it and calls
+	// onNewImplementation for addresses it has not seen.
+	implMu              sync.RWMutex
+	implementations     []ethcommon.Address
+	onNewImplementation func(ctx context.Context, impl ethcommon.Address, blockNum int64)
+
+	// prizesWallets is the live set of prizes-wallet contracts (see
+	// Contracts.PrizesWallets); storePrizesWalletAddressChanged grows it
+	// and calls onNewPrizesWallet for addresses it has not seen.
+	pwMu              sync.RWMutex
+	prizesWallets     []ethcommon.Address
+	onNewPrizesWallet func(ctx context.Context, wallet ethcommon.Address, blockNum int64)
 }
 
 // New parses the contract ABIs, validates the dependencies and builds the
@@ -176,11 +265,13 @@ func New(cfg Config) (*Handlers, error) {
 	}
 
 	h := &Handlers{
-		repo:   cfg.Repo,
-		store:  cfg.Store,
-		caller: ethcall.NewBoundedCaller(cfg.Caller, ethcall.DefaultTimeout),
-		c:      cfg.Contracts,
-		log:    logger,
+		repo:            cfg.Repo,
+		store:           cfg.Store,
+		caller:          ethcall.NewBoundedCaller(cfg.Caller, ethcall.DefaultTimeout),
+		c:               cfg.Contracts,
+		log:             logger,
+		implementations: cfg.Contracts.allImplementations(),
+		prizesWallets:   cfg.Contracts.allPrizesWallets(),
 	}
 	for _, a := range []struct {
 		dst  **abi.ABI
@@ -198,6 +289,8 @@ func New(cfg Config) (*Handlers, error) {
 		{&h.marketingWalletABI, "MarketingWallet", cgc.MarketingWalletABI},
 		{&h.erc20ABI, "ERC20", cgc.ERC20ABI},
 		{&h.erc1967ABI, "IERC1967", cgc.IERC1967ABI},
+		{&h.tokenABI, "CosmicSignatureToken", cgc.CosmicSignatureTokenABI},
+		{&h.daoABI, "CosmicSignatureDao", cgc.CosmicSignatureDaoABI},
 	} {
 		parsed, err := abi.JSON(strings.NewReader(a.raw))
 		if err != nil {

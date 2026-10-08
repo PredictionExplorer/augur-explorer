@@ -68,11 +68,13 @@ func (r *Repo) UnclaimedPrizeEthDeposits(ctx context.Context, winnerAid int64, o
 			rd.claimed,
 			EXTRACT(EPOCH FROM rw.time_stamp)::BIGINT AS tstmp,
 			rw.time_stamp,
-			CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type
+			CASE WHEN cw.round_num IS NOT NULL THEN 7 ELSE 10 END AS record_type,
+			COALESCE(pw.addr,'') AS wallet_addr
 		FROM cg_prize_deposit rd
 			LEFT JOIN cg_prize_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id
 			LEFT JOIN transaction t ON t.id=rd.tx_id
 			LEFT JOIN address wa ON rd.winner_aid = wa.address_id
+			LEFT JOIN address pw ON rd.contract_aid = pw.address_id
 			LEFT JOIN cg_chrono_warrior_prize cw ON (rd.round_num = cw.round_num AND rd.winner_index = cw.winner_index)
 		WHERE rd.winner_aid=$1 AND rd.claimed='F'
 		ORDER BY rd.id DESC
@@ -96,6 +98,7 @@ func (r *Repo) UnclaimedPrizeEthDeposits(ctx context.Context, winnerAid int64, o
 			&claimTs,
 			store.NullTimeText(&rec.ClaimDateTime),
 			&rec.RecordType,
+			&rec.WalletAddr,
 		)
 		if err != nil {
 			return err

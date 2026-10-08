@@ -84,16 +84,25 @@ type CGBidRec struct {
 	ThisBidderCstRewardAmount     string  `json:"ThisBidderCstRewardAmount,omitempty"`
 	ThisCstRewardAmountEth        float64 `json:"ThisCstRewardAmountEth,omitempty"`
 	PreviousBidderAddr            string  `json:"PreviousBidderAddr,omitempty"`
-	CstDutchAuctionDuration       string  // per-bid auction duration from IBiddingV2 BidPlaced; "-1" = legacy
-	CstDutchAuctionDurationInt    int64   // numeric duration when >= 0; else -1
-	NFTDonationTokenId            int64
-	NFTDonationTokenAddr          string
-	NFTTokenURI                   string
-	ImageURL                      string
-	Message                       string
-	DonatedERC20TokenAddr         string
-	DonatedERC20TokenAmount       string
-	DonatedERC20TokenAmountEth    float64
+	// CstDutchAuctionDuration is the eighth BidPlaced data word: the CST
+	// Dutch auction duration in seconds on V2 mechanics, the CST bid price
+	// decline multiplier in wei per second on V3 (same topic, same slot);
+	// "-1" = V1 bid. MechanicsVersion tells which reading applies.
+	CstDutchAuctionDuration    string
+	CstDutchAuctionDurationInt int64 // numeric value when 0 <= value <= MaxInt64; else -1
+	// MechanicsVersion is the game generation (1, 2 or 3) that produced the
+	// bid, derived from the game's Initialized events preceding the bid's
+	// block. It drives the field semantics of the v2 API and is not part of
+	// the frozen v1 JSON.
+	MechanicsVersion           int64 `json:"-"`
+	NFTDonationTokenId         int64
+	NFTDonationTokenAddr       string
+	NFTTokenURI                string
+	ImageURL                   string
+	Message                    string
+	DonatedERC20TokenAddr      string
+	DonatedERC20TokenAmount    string
+	DonatedERC20TokenAmountEth float64
 }
 
 // CGBannedBidRec is one row from cg_banned_bids (API: get_banned_bids).
@@ -421,6 +430,10 @@ type CGSummarizedERC20Donation struct {
 	WinnerAid          int64
 	WinnerAddr         string
 	Claimed            bool
+	// WalletAddr is the PrizesWallet contract holding the donated tokens
+	// of this round (see CGPrizeDepositRec.WalletAddr). One wallet per
+	// round: the wallet can only change while no round is active.
+	WalletAddr string `json:",omitempty"`
 }
 
 // CGNFTDonation is one ERC-721 token donated to the game during a round.
@@ -435,6 +448,9 @@ type CGNFTDonation struct {
 	NFTTokenId     int64
 	NFTTokenURI    string
 	Index          int64
+	// WalletAddr is the PrizesWallet contract holding this donated NFT
+	// (see CGPrizeDepositRec.WalletAddr).
+	WalletAddr string `json:",omitempty"`
 }
 
 // CGNFTDonationStats counts donated NFTs per originating ERC-721 contract.
@@ -466,6 +482,11 @@ type CGPrizeDepositRec struct {
 	Claimed        bool
 	ClaimTimeStamp int64
 	ClaimDateTime  string
+	// WalletAddr is the PrizesWallet contract holding this deposit. The
+	// game can be pointed at a replacement wallet (setPrizesWallet), so
+	// withdrawals must target the wallet that received the deposit, not
+	// the currently configured one.
+	WalletAddr string `json:",omitempty"`
 }
 
 // CGRaffleNFTWinnerRec is one raffle NFT win (bidder or staker pool) with
@@ -840,7 +861,7 @@ type CGAdminEvent struct {
 	//			15		CosmicTokenAddressChanged
 	//			16		CosmicSignatureAddressChanged
 	//			17		Upgraded
-	//			18		TimeIncreaseChanged
+	//			18		MainPrizeTimeIncrementIncreaseDivisorChanged
 	//			19		TimeoutClaimPrizeChanged
 	//			20		PriceIncreaseChanged
 	//			21		NanoSecondsExtraChanged
@@ -865,8 +886,20 @@ type CGAdminEvent struct {
 	//			40		RoundLateBidDurationDivisorChanged (V3)
 	//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
 	//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
-	//			43		LastBidderBidCstRewardAmountPercentageChanged (V3)
+	//			43		CstBidPriceDeclineMultiplierChanged (V3; repurposed from the retired LastBidderBidCstRewardAmountPercentageChanged)
 	//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
+	//			45		CstBidPriceDeclineMultiplierChangeDivisorChanged (V3)
+	//			46		EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	//			47		DaoProposalThresholdSet (Governor)
+	//			48		DaoVotingDelaySet (Governor)
+	//			49		DaoVotingPeriodSet (Governor)
+	//			50		DaoQuorumNumeratorUpdated (Governor)
+	//			51		DaoProposalCreated (Governor)
+	//			52		DaoProposalQueued (Governor; IntegerValue = execution ETA, unix seconds)
+	//			53		DaoProposalExecuted (Governor)
+	//			54		DaoProposalCanceled (Governor)
+	//			55		DaoVoteCast (Governor)
+	//			56		DelegateVotesChanged (CosmicToken ERC20Votes)
 	RecordId      int64
 	EvtLogId      int64
 	BlockNum      int64

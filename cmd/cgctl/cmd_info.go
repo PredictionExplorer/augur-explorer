@@ -61,10 +61,11 @@ func runInfo(cmd *cobra.Command, addrArg string) error {
 		return fmt.Errorf("failed to instantiate CosmicGame contract: %w", err)
 	}
 	gameV2, _ := cgcontracts.NewCosmicSignatureGameV2(gameAddr, net.Client)
+	gameV3, _ := cgcontracts.NewCosmicSignatureGameV3(gameAddr, net.Client)
 
 	blockTime := int64(net.BlockTime) // #nosec G115 -- real chain timestamps fit int64; display-only CLI
 
-	if err := printRoundStatus(w, out, game, copts, blockTime); err != nil {
+	if err := printRoundStatus(w, out, game, gameV3, copts, blockTime); err != nil {
 		return err
 	}
 	timeoutMainPrize, err := printTiming(out, game, copts)
@@ -75,6 +76,7 @@ func runInfo(cmd *cobra.Command, addrArg string) error {
 		return err
 	}
 	printV2Parameters(out, gameV2, copts, timeoutMainPrize)
+	printV3Parameters(w, out, game, gameV3, copts)
 	if err := printChampions(out, game, copts); err != nil {
 		return err
 	}
@@ -103,7 +105,7 @@ func runInfo(cmd *cobra.Command, addrArg string) error {
 	return nil
 }
 
-func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts, blockTime int64) error {
+func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, gameV3 *cgcontracts.CosmicSignatureGameV3, copts *bind.CallOpts, blockTime int64) error {
 	roundNum, err := game.RoundNum(copts)
 	if err != nil {
 		return fmt.Errorf("RoundNum(): %w", err)
@@ -117,13 +119,16 @@ func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSig
 	if err != nil {
 		return fmt.Errorf("DelayDurationBeforeRoundActivation(): %w", err)
 	}
-	totalBids, err := game.GetTotalNumBids(copts, roundNum)
+	totalBids, err := totalNumBids(copts, game, gameV3, roundNum)
 	if err != nil {
 		return fmt.Errorf("GetTotalNumBids(): %w", err)
 	}
-	numRaffleParticipants, err := game.BidderAddresses(copts, big.NewInt(roundNum.Int64()))
-	if err != nil {
-		return fmt.Errorf("BidderAddresses(): %w", err)
+	// Raffle participants: current v3.1 folded the bidsInfo getter (which
+	// reported the same numBids count) into roundStats(), so the bid total
+	// already covers it. V1/V2 still expose bidderAddresses with the count.
+	numRaffleParticipants := totalBids
+	if v, errV12 := game.BidderAddresses(copts, big.NewInt(roundNum.Int64())); errV12 == nil {
+		numRaffleParticipants = v
 	}
 
 	out.Section("ROUND STATUS")
@@ -142,14 +147,17 @@ func printRoundStatus(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSig
 }
 
 func printTiming(out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) (*big.Int, error) {
-	timeUntilPrize, err := game.GetDurationUntilMainPrize(copts)
+	// V3.1 removed getDurationUntilMainPrizeRaw() and made
+	// getDurationUntilMainPrize() return a signed value (same selector), so
+	// one call now serves both the raw and the clamped display. AsSignedInt256
+	// also handles pre-V3.1 contracts, whose unsigned result passes through
+	// unchanged.
+	durationUntilPrizeRawUint, err := game.GetDurationUntilMainPrize(copts)
 	if err != nil {
 		return nil, fmt.Errorf("GetDurationUntilMainPrize(): %w", err)
 	}
-	durationUntilPrizeRaw, err := game.GetDurationUntilMainPrizeRaw(copts)
-	if err != nil {
-		return nil, fmt.Errorf("GetDurationUntilMainPrizeRaw(): %w", err)
-	}
+	durationUntilPrizeRaw := cgcontracts.AsSignedInt256(durationUntilPrizeRawUint)
+	timeUntilPrize := cgcontracts.ClampNonNegative(durationUntilPrizeRaw)
 	prizeTime, err := game.MainPrizeTime(copts)
 	if err != nil {
 		return nil, fmt.Errorf("MainPrizeTime(): %w", err)
@@ -318,6 +326,74 @@ func printV2Parameters(out ethtx.Output, gameV2 *cgcontracts.CosmicSignatureGame
 	out.KeyValue("cstDutchAuctionDurationChangeDivisor", cstAucChgDiv)
 	out.KeyValue("bidCstRewardAmountMultiplier", bidCstRewardMultiplierV2)
 	out.KeyValueDuration("timeoutDurationToClaimMainPrize", timeoutMainPrize.Int64())
+}
+
+// roundLateBidPremiumResolutionExponent mirrors
+// CosmicSignatureConstants.ROUND_LATE_BID_PRICE_PREMIUM_AMOUNT_RESOLUTION_EXPONENT:
+// the premium math multiplies by 2^13 for integer resolution and shifts it
+// back out after exponentiation.
+const roundLateBidPremiumResolutionExponent = 13
+
+// printV3Parameters prints the V3.1 (initializeV3) parameters when the proxy
+// is on V3 (the V3-only getters succeed); on V1/V2 they revert and the
+// section is skipped. Raw divisors/multipliers are translated into the
+// operational units: window length, price multiplier, CST per minute.
+func printV3Parameters(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSignatureGame, gameV3 *cgcontracts.CosmicSignatureGameV3, copts *bind.CallOpts) {
+	if gameV3 == nil {
+		return
+	}
+	declineMultiplier, errV3 := gameV3.CstBidPriceDeclineMultiplier(copts)
+	if errV3 != nil {
+		return
+	}
+	lateBidDuration, _ := gameV3.GetRoundLateBidDuration(copts)
+	premiumBaseMult, _ := gameV3.RoundLateBidPricePremiumAmountBaseMultiplier(copts)
+	premiumExponent, _ := gameV3.RoundLateBidPricePremiumAmountExponent(copts)
+	rewardMultiplier, _ := gameV3.BidCstRewardAmountMultiplier(copts)
+	mainPrizeNfts, _ := gameV3.MainPrizeNumCosmicSignatureNfts(copts)
+	timeIncrement, _ := game.MainPrizeTimeIncrementInMicroSeconds(copts)
+
+	out.Section("V3 PARAMETERS (initializeV3)")
+
+	// Late-bid window: getRoundLateBidDuration() already resolves
+	// mainPrizeTimeIncrement / roundLateBidDurationDivisor into seconds.
+	if lateBidDuration != nil {
+		out.KeyValueDuration("Late-bid window (before prize)", lateBidDuration.Int64())
+	}
+
+	// Late-bid price premium. The contract charges
+	//   price * (1 + ((elapsed * M / T_us) ** E) / 2^(13*E))
+	// which grows as (elapsed/window)^E and peaks at prize time, so the two
+	// raw parameters are presented as one curve: the max multiplier plus the
+	// growth exponent.
+	if lateBidDuration != nil && premiumBaseMult != nil && premiumExponent != nil &&
+		timeIncrement != nil && timeIncrement.Sign() > 0 && premiumExponent.Cmp(big.NewInt(64)) <= 0 {
+		base := new(big.Int).Mul(lateBidDuration, premiumBaseMult)
+		base.Div(base, timeIncrement)
+		exp := uint(premiumExponent.Uint64())
+		num := new(big.Int).Exp(base, premiumExponent, nil)
+		den := new(big.Int).Lsh(big.NewInt(1), roundLateBidPremiumResolutionExponent*exp)
+		maxPremium, _ := new(big.Float).Quo(new(big.Float).SetInt(num), new(big.Float).SetInt(den)).Float64()
+		fmt.Fprintf(w, "%-28s= up to x%.2f at prize time (price x (1 + %.2f x (elapsed/window)^%d))\n",
+			"Late-bid price premium", 1+maxPremium, maxPremium, exp)
+	}
+
+	// Bid CST reward: reward = elapsedSeconds * multiplier / T_us, i.e. the
+	// multiplier is per-microsecond-of-increment; report it per minute.
+	if rewardMultiplier != nil && timeIncrement != nil && timeIncrement.Sign() > 0 {
+		rewardPerMin := new(big.Int).Mul(rewardMultiplier, big.NewInt(60))
+		rewardPerMin.Div(rewardPerMin, timeIncrement)
+		fmt.Fprintf(w, "%-28s= %s CST/min\n", "Bid CST reward", ethtx.WeiToEthText(rewardPerMin))
+	}
+
+	// CST bid price decline: price = beginning - elapsedSeconds * multiplier,
+	// so the multiplier is CST-wei per second; report it per minute.
+	declinePerMin := new(big.Int).Mul(declineMultiplier, big.NewInt(60))
+	fmt.Fprintf(w, "%-28s= %s CST/min\n", "CST bid price decline rate", ethtx.WeiToEthText(declinePerMin))
+
+	if mainPrizeNfts != nil {
+		out.KeyValue("Main prize CS NFTs (winner)", mainPrizeNfts)
+	}
 }
 
 func printChampions(out ethtx.Output, game *cgcontracts.CosmicSignatureGame, copts *bind.CallOpts) error {

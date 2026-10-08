@@ -95,6 +95,8 @@ var (
 	erc20ABI           *abi.ABI
 	erc721ABI          *abi.ABI
 	erc1967ABI         *abi.ABI
+	tokenABI           *abi.ABI
+	daoABI             *abi.ABI
 
 	championDurationsMu sync.RWMutex
 	championDurations   = make(map[int64][2]int64)
@@ -180,6 +182,8 @@ func initHarness(ctx context.Context, db *testdb.DB) error {
 		{&erc20ABI, cgc.ERC20ABI},
 		{&erc721ABI, cgc.ERC721ABI},
 		{&erc1967ABI, cgc.IERC1967ABI},
+		{&tokenABI, cgc.CosmicSignatureTokenABI},
+		{&daoABI, cgc.CosmicSignatureDaoABI},
 	} {
 		parsed, err := abi.JSON(strings.NewReader(a.raw))
 		if err != nil {

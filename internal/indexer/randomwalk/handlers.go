@@ -135,6 +135,10 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicTokenNameEvt), "TokenNameEvent", rwalk, h.decodeTokenName, h.storeTokenName),
 		indexer.NewHandler(topicHash(TopicTransferEvt), "Transfer", rwalk, h.decodeTransfer, h.storeTransfer),
 		indexer.NewHandler(topicHash(TopicMintEvent), "MintEvent", rwalk, h.decodeMintEvent, h.storeMintEvent),
+		// OpenZeppelin events RandomWalkNFT inherits.
+		indexer.NewHandler(topicHash(TopicApproval), "Approval", rwalk, h.decodeApproval, h.storeApproval),
+		indexer.NewHandler(topicHash(TopicApprovalForAll), "ApprovalForAll", rwalk, h.decodeApprovalForAll, h.storeApprovalForAll),
+		indexer.NewHandler(topicHash(TopicOwnershipTransferred), "OwnershipTransferred", rwalk, h.decodeOwnershipTransferred, h.storeOwnershipTransferred),
 	}
 }
 

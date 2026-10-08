@@ -48,11 +48,12 @@ type EventHandler interface {
 
 // handler is the generic EventHandler adapter built by NewHandler.
 type handler[E any] struct {
-	topic   common.Hash
-	name    string
-	sources []common.Address
-	decode  func(*types.Log, *store.EthereumEventLog) (E, error)
-	store   func(context.Context, E) error
+	topic     common.Hash
+	name      string
+	sources   []common.Address
+	sourcesFn func() []common.Address // when set, wins over sources
+	decode    func(*types.Log, *store.EthereumEventLog) (E, error)
+	store     func(context.Context, E) error
 }
 
 // NewHandler pairs a typed decode function with its store function. The
@@ -69,9 +70,27 @@ func NewHandler[E any](
 	return handler[E]{topic: topic, name: name, sources: sources, decode: decode, store: store}
 }
 
-func (h handler[E]) Topic() common.Hash        { return h.topic }
-func (h handler[E]) Name() string              { return h.name }
-func (h handler[E]) Sources() []common.Address { return h.sources }
+// NewDynamicHandler is NewHandler with a source set that is re-evaluated on
+// every dispatch, for events whose emitting contracts are only discovered
+// while indexing (the game implementations reported by Upgraded).
+func NewDynamicHandler[E any](
+	topic common.Hash,
+	name string,
+	sources func() []common.Address,
+	decode func(*types.Log, *store.EthereumEventLog) (E, error),
+	store func(context.Context, E) error,
+) EventHandler {
+	return handler[E]{topic: topic, name: name, sourcesFn: sources, decode: decode, store: store}
+}
+
+func (h handler[E]) Topic() common.Hash { return h.topic }
+func (h handler[E]) Name() string       { return h.name }
+func (h handler[E]) Sources() []common.Address {
+	if h.sourcesFn != nil {
+		return h.sourcesFn()
+	}
+	return h.sources
+}
 
 func (h handler[E]) Decode(lg *types.Log, elog *store.EthereumEventLog) (any, error) {
 	return h.decode(lg, elog)

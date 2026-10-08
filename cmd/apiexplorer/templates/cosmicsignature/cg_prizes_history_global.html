@@ -7,18 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>🏆 Global Prize Distribution History</h1>
-			<div class="subtitle">Complete history of all prizes across all rounds</div>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Global Prize Distribution History</h1>
 		</div>
 
 		<div class="section-card">
@@ -53,11 +43,11 @@
 							{{ if eq 13.0 .RecordType}}<span class="badge badge-info">Raffle CST (RWalk)</span>{{end}}
 							{{ if eq 14.0 .RecordType}}<span class="badge badge-success">Raffle NFT (RWalk)</span>{{end}}
 							{{ if eq 15.0 .RecordType}}<span class="badge badge-warning">Staking Deposit ETH</span>{{end}}
-							{{ if eq 16.0 .RecordType}}<span class="badge badge-default">Donated NFT ⏰</span>{{end}}
-							{{ if eq 17.0 .RecordType}}<span class="badge badge-default">Donated ERC20 ⏰</span>{{end}}
-							{{ if eq 18.0 .RecordType}}<span class="badge badge-default">Raffle ETH ⏰</span>{{end}}
+							{{ if eq 16.0 .RecordType}}<span class="badge badge-default">Donated NFT </span>{{end}}
+							{{ if eq 17.0 .RecordType}}<span class="badge badge-default">Donated ERC20 </span>{{end}}
+							{{ if eq 18.0 .RecordType}}<span class="badge badge-default">Raffle ETH </span>{{end}}
 						</td>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">
@@ -79,9 +69,9 @@
 						</td>
 						<td class="center">
 							{{if .Claimed}}
-								<span class="badge badge-success">✓</span>
+								<span class="badge badge-success">Yes</span>
 							{{else}}
-								<span class="badge badge-default">⏳</span>
+								<span class="badge badge-default">No</span>
 							{{end}}
 						</td>
 					</tr>

@@ -13,7 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 
@@ -60,10 +62,12 @@ func startFundedChain(t *testing.T) *testchain.Chain {
 	return chain
 }
 
-// gameStubFull returns a CosmicGame stub (V1+V2 ABIs) pre-loaded with the
-// reads the transaction commands make.
+// gameStubFull returns a CosmicGame stub (V1+V2+V3 ABIs) pre-loaded with the
+// reads the transaction commands make. No version-specific getter is
+// stubbed, so gamever detection sees it as a V1 contract; tests opt into V2
+// or V3 by stubbing cstDutchAuctionDuration or cstBidPriceDeclineMultiplier.
 func gameStubFull() *testchain.ContractStub {
-	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI)
+	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI, cgc.CosmicSignatureGameV3ABI)
 	stub.Return("roundNum", big.NewInt(3))
 	stub.Return("getNextEthBidPrice", eth(0.05))
 	stub.Return("lastBidderAddress", otherAddr)
@@ -109,6 +113,103 @@ func TestBidCommandSubmitsAndWaits(t *testing.T) {
 	}
 	if got := chain.SubmittedTxCount(); got != 1 {
 		t.Errorf("submitted txs = %d, want 1", got)
+	}
+}
+
+// bidSelector returns the 4-byte selector of bidWithEth in the given ABI JSON.
+func bidSelector(t *testing.T, abiJSON string) []byte {
+	t.Helper()
+	parsed, err := abi.JSON(strings.NewReader(abiJSON))
+	if err != nil {
+		t.Fatalf("parsing ABI: %v", err)
+	}
+	m, ok := parsed.Methods["bidWithEth"]
+	if !ok {
+		t.Fatal("bidWithEth not in ABI")
+	}
+	return m.ID
+}
+
+// captureSubmittedTx returns a pointer that receives every mined transaction.
+func captureSubmittedTx(chain *testchain.Chain) *[]*types.Transaction {
+	var txs []*types.Transaction
+	chain.SetMinedTxLogs(func(tx *types.Transaction, blockNum int64) []*types.Log {
+		txs = append(txs, tx)
+		return nil
+	})
+	return &txs
+}
+
+// TestBidCommandV1Shape: without version-specific getters stubbed, detection
+// reports V1 and the legacy 2-arg bidWithEth selector is submitted.
+func TestBidCommandV1Shape(t *testing.T) {
+	chain := startFundedChain(t)
+	registerGame(t, chain, gameStubFull())
+	txs := captureSubmittedTx(chain)
+
+	out, err := executeCmd(t, newBidCmd(), "-i", testGameAddr.Hex())
+	if err != nil {
+		t.Fatalf("bid: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Contract Version") || !strings.Contains(out, "= V1") {
+		t.Errorf("output missing detected version V1:\n%s", out)
+	}
+	if len(*txs) != 1 {
+		t.Fatalf("mined txs = %d, want 1", len(*txs))
+	}
+	want := bidSelector(t, cgc.CosmicSignatureGameABI)
+	if got := (*txs)[0].Data()[:4]; !bytes.Equal(got, want) {
+		t.Errorf("tx selector = 0x%x, want V1 bidWithEth 0x%x", got, want)
+	}
+}
+
+// TestBidCommandV2Shape: cstDutchAuctionDuration answers (V2 marker), so the
+// 3-arg bidWithEth selector with a zero min limit is submitted.
+func TestBidCommandV2Shape(t *testing.T) {
+	chain := startFundedChain(t)
+	stub := gameStubFull()
+	stub.Return("cstDutchAuctionDuration", big.NewInt(1800))
+	registerGame(t, chain, stub)
+	txs := captureSubmittedTx(chain)
+
+	out, err := executeCmd(t, newBidCmd(), "-i", testGameAddr.Hex())
+	if err != nil {
+		t.Fatalf("bid: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "= V2") {
+		t.Errorf("output missing detected version V2:\n%s", out)
+	}
+	if len(*txs) != 1 {
+		t.Fatalf("mined txs = %d, want 1", len(*txs))
+	}
+	want := bidSelector(t, cgc.CosmicSignatureGameV3ABI)
+	if got := (*txs)[0].Data()[:4]; !bytes.Equal(got, want) {
+		t.Errorf("tx selector = 0x%x, want V2/V3 bidWithEth 0x%x", got, want)
+	}
+}
+
+// TestBidCommandV3Shape: cstBidPriceDeclineMultiplier answers (V3 marker),
+// so the 3-arg bidWithEth selector is submitted.
+func TestBidCommandV3Shape(t *testing.T) {
+	chain := startFundedChain(t)
+	stub := gameStubFull()
+	stub.Return("cstBidPriceDeclineMultiplier", big.NewInt(16_666_666_666_666_666))
+	registerGame(t, chain, stub)
+	txs := captureSubmittedTx(chain)
+
+	out, err := executeCmd(t, newBidCmd(), "-i", testGameAddr.Hex())
+	if err != nil {
+		t.Fatalf("bid: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "= V3") {
+		t.Errorf("output missing detected version V3:\n%s", out)
+	}
+	if len(*txs) != 1 {
+		t.Fatalf("mined txs = %d, want 1", len(*txs))
+	}
+	want := bidSelector(t, cgc.CosmicSignatureGameV3ABI)
+	if got := (*txs)[0].Data()[:4]; !bytes.Equal(got, want) {
+		t.Errorf("tx selector = 0x%x, want V2/V3 bidWithEth 0x%x", got, want)
 	}
 }
 

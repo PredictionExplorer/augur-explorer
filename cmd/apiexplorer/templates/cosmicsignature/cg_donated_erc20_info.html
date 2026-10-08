@@ -7,17 +7,8 @@
 <body>
 	<div class="cg-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>💎 Donated ERC20 Information</h1>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Donated ERC20 Information</h1>
 			<div class="subtitle">Record ID: {{.ERC20Donation.RecordId}}</div>
 		</div>
 
@@ -34,7 +25,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.ERC20Donation.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .ERC20Donation.Tx.TxHash .ERC20Donation.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction ID</div>
@@ -42,7 +33,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.ERC20Donation.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .ERC20Donation.Tx.TxHash .ERC20Donation.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>

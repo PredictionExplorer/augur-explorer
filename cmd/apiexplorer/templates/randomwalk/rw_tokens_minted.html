@@ -28,7 +28,7 @@
 	</tr>
 	{{- range $i, $change := .MintedTokens}}
 		<tr class="market_reports">
-			<td class="">{{.BlockNum}}</td>
+			<td class="">{{arbiscanTx .TxHash .BlockNum}}</td>
 			<td class="">{{.DateTime}}</td>
 			<td class="" style="text-align:center;">{{.TokenId}}</td>
 			<td class="addr">

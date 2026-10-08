@@ -74,7 +74,7 @@ func TestBackfillContractEvtLogsCommitsPerBlockAndRetryConverges(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "injected later-log failure") {
 		t.Fatalf("BackfillContractEvtLogs error = %v", err)
 	}
-	if stats != (BackfillStats{LogsSeen: 1, Inserted: 1}) {
+	if stats.LogsSeen != 1 || stats.Inserted != 1 || stats.Skipped != 0 || len(stats.InsertedIDs) != 1 {
 		t.Fatalf("durable stats after failed block = %+v", stats)
 	}
 	requireBackfillCount(t, e, "SELECT COUNT(*) FROM block WHERE block_num=100", 1)
@@ -115,7 +115,7 @@ func TestBackfillContractEvtLogsCommitsPerBlockAndRetryConverges(t *testing.T) {
 	if err != nil {
 		t.Fatalf("retry BackfillContractEvtLogs: %v", err)
 	}
-	if stats != (BackfillStats{LogsSeen: 3, Inserted: 2, Skipped: 1}) {
+	if stats.LogsSeen != 3 || stats.Inserted != 2 || stats.Skipped != 1 || len(stats.InsertedIDs) != 2 {
 		t.Fatalf("retry stats = %+v", stats)
 	}
 	requireBackfillCount(t, e, "SELECT COUNT(*) FROM block WHERE block_num=101", 1)
@@ -150,7 +150,7 @@ func TestBackfillBlockRejectsMixedIdentityAndCancellation(t *testing.T) {
 	if err == nil || !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancelled backfill = %+v, %v", stats, err)
 	}
-	if stats != (BackfillStats{}) {
+	if !emptyBackfillStats(stats) {
 		t.Fatalf("cancelled stats = %+v", stats)
 	}
 }

@@ -7,18 +7,8 @@
 <body>
 	<div class="cg-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>⏱️ Chrono Warrior ETH Prize Deposits</h1>
-			<div class="subtitle">ETH prizes won by Chrono Warriors</div>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Chrono Warrior ETH Prize Deposits</h1>
 		</div>
 
 		<div class="section-card">
@@ -34,7 +24,7 @@
 				</tr>
 				{{- range $i, $change := .ChronoWarriorDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -43,7 +33,7 @@
 						<td class="center">{{.RoundNum}}</td>
 						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
 						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">✓</span>{{else}}<span class="badge badge-default">⏳</span>{{end}}
+							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
 						</td>
 					</tr>
 				{{- end}}
@@ -51,11 +41,10 @@
 		</div>
 
 		<div class="api-info">
-			<strong>Simplified API (NEW):</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/chronowarrior</code><br/>
-			<code>/api/cosmicgame/prizes/eth/chronowarrior/[offset]/[limit]</code><br/><br/>
+			<strong>API Endpoint:</strong><br/>
+			<code>/api/cosmicgame/prizes/eth/chronowarrior/global/{offset}/{limit}</code><br/><br/>
 			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/chronowarrior/0/1000000</code>
+			<code>/api/cosmicgame/prizes/eth/chronowarrior/global/0/100000</code>
 		</div>
 	</div>
 </body>

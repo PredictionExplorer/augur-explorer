@@ -25,36 +25,39 @@ type bidRewardMint struct {
 	amount *big.Int
 }
 
-func classifyBidRewardMints(mints []bidRewardMint) (thisReward, previousReward, previousAddr string) {
-	switch len(mints) {
-	case 0:
-		return "0", "0", ""
-	case 1:
-		return mints[0].amount.String(), "0", ""
-	}
-	total := new(big.Int)
-	previousIndex := 0
+// classifyBidRewardMints attributes the CST mints of a bid transaction by
+// recipient: V1/V2 mint the bid reward to the bidder placing the bid, while
+// V3 mints the whole reward to the outbid previous bidder (and nothing on a
+// round's first bid). A transaction can carry more than one mint log for the
+// same recipient (e.g. a zero-price CST bid emits a zero-amount mint next to
+// the reward mint), so amounts are summed per recipient.
+func classifyBidRewardMints(mints []bidRewardMint, bidderAddr ethcommon.Address) (thisReward, previousReward, previousAddr string) {
+	this := new(big.Int)
+	previous := new(big.Int)
+	var previousTo ethcommon.Address
 	for i := range mints {
-		total.Add(total, mints[i].amount)
-		if mints[i].amount.Cmp(mints[previousIndex].amount) > 0 {
-			previousIndex = i
+		if mints[i].to == bidderAddr {
+			this.Add(this, mints[i].amount)
+		} else {
+			previous.Add(previous, mints[i].amount)
+			previousTo = mints[i].to
 		}
 	}
-	previous := mints[previousIndex]
-	current := new(big.Int).Sub(total, previous.amount)
-	return current.String(), previous.amount.String(), previous.to.String()
+	if previousTo == (ethcommon.Address{}) {
+		return this.String(), "0", ""
+	}
+	return this.String(), previous.String(), previousTo.String()
 }
 
-// cstBidRewards derives the V3 current/previous bidder split from the CST
-// mint Transfer logs preceding the bid. V1/V2 (and a first V3 bid) have one
-// mint, while a normal V3 bid has two; the larger 90% mint belongs to the
-// outbid previous-last bidder.
+// cstBidRewards derives the reward attribution from the CST mint Transfer
+// logs preceding the bid. V1/V2 mint to the current bidder; V3 mints the
+// whole reward to the outbid previous bidder (and none on a round's first
+// bid). The mint recipients disambiguate the shapes.
 func (h *Handlers) cstBidRewards(
 	ctx context.Context,
 	bidEvtlogID, txID int64,
 	bidderAddr string,
 ) (thisReward, previousReward, previousAddr string, err error) {
-	_ = bidderAddr // one-mint V1/V2 rows are always the current bidder's share
 	elogRLPs, err := h.store.EventLogRLPsBefore(ctx, txID, h.c.CosmicTokenAid, bidEvtlogID, TopicTransferEvt[:8])
 	if err != nil {
 		return "", "", "", fmt.Errorf("cstBidRewards(): %w", err)
@@ -78,7 +81,7 @@ func (h *Handlers) cstBidRewards(
 			amount: amount,
 		})
 	}
-	thisReward, previousReward, previousAddr = classifyBidRewardMints(mints)
+	thisReward, previousReward, previousAddr = classifyBidRewardMints(mints, ethcommon.HexToAddress(bidderAddr))
 	return thisReward, previousReward, previousAddr, nil
 }
 

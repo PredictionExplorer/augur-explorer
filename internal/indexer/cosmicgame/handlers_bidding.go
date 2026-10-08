@@ -75,6 +75,15 @@ func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *store.EthereumEventLog
 	}
 	evt.PrizeTime = ethEvt.MainPrizeTime.Int64()
 	evt.Message = ethEvt.Message
+	// V2 and V3 BidPlaced share this topic and parameter type list, but two
+	// data fields changed meaning in V3 (IBidding2V2.sol vs IBidding2V3.sol;
+	// contracts/README.md summarizes the V3 mechanics): BidCstRewardAmount
+	// is the reward minted to the PREVIOUS (outbid) bidder (0 on a round's
+	// first bid), and the eighth field carries cstBidPriceDeclineMultiplier
+	// instead of cstDutchAuctionDuration. The positional decode below stays
+	// valid; consumers interpret the stored values per the bid's mechanics
+	// version (CGBidRec.MechanicsVersion, derived from the game's
+	// Initialized events).
 	evt.BidCstRewardAmount = ethEvt.BidCstRewardAmount.String()
 	evt.CstDutchAuctionDuration = ethEvt.CstDutchAuctionDuration.String()
 	return evt, nil

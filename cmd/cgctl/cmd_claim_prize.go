@@ -75,6 +75,9 @@ func runClaimPrize(cmd *cobra.Command, verbose bool, addrArg string) error {
 	if err != nil {
 		return fmt.Errorf("getting duration until prize: %w", err)
 	}
+	// V3.1 returns a signed value (negative once claimable) under the same
+	// selector; clamp for display, as the pre-V3.1 contract did on-chain.
+	durationUntilPrize = cgcontracts.ClampNonNegative(cgcontracts.AsSignedInt256(durationUntilPrize))
 
 	s.Out.Section("PRIZE INFO")
 	s.Out.KeyValue("Round Number", roundNum.String())

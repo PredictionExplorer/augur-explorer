@@ -10,8 +10,28 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+// sendBidWithEth submits an ETH bid using the call shape of the detected
+// contract version: V1 bidWithEth(int256,string) or the V2/V3
+// bidWithEth(int256,string,uint256), where a zero bidCstRewardAmountMinLimit
+// accepts any bid CST reward.
+func (e *Engine) sendBidWithEth(txopts *bind.TransactOpts, randomWalkNftID *big.Int) (*types.Transaction, error) {
+	if e.gameVersion.BidsTakeMinLimit() {
+		return e.gameContractV23.BidWithEth(txopts, randomWalkNftID, "", big.NewInt(0))
+	}
+	return e.gameContract.BidWithEth(txopts, randomWalkNftID, "")
+}
+
+// sendBidWithCst is the CST-bid counterpart of sendBidWithEth.
+func (e *Engine) sendBidWithCst(txopts *bind.TransactOpts) (*types.Transaction, error) {
+	if e.gameVersion.BidsTakeMinLimit() {
+		return e.gameContractV23.BidWithCst(txopts, e.market.CstPrice, "", big.NewInt(0))
+	}
+	return e.gameContract.BidWithCst(txopts, e.market.CstPrice, "")
+}
 
 // Run starts the main event loop. It returns nil when the round ends or the
 // context is cancelled, and an error on fatal conditions (blockchain reset,
@@ -193,7 +213,7 @@ func (e *Engine) bidCST(ctx context.Context) {
 		e.logf("Error creating tx opts: %v", err)
 		return
 	}
-	tx, err := e.gameContract.BidWithCst(txopts, e.market.CstPrice, "")
+	tx, err := e.sendBidWithCst(txopts)
 	if err != nil {
 		e.logf("BidWithCST error: %v", err)
 		return
@@ -209,7 +229,7 @@ func (e *Engine) bidETH(ctx context.Context) {
 		e.logf("Error creating tx opts: %v", err)
 		return
 	}
-	tx, err := e.gameContract.BidWithEth(txopts, big.NewInt(-1), "")
+	tx, err := e.sendBidWithEth(txopts, big.NewInt(-1))
 	if err != nil {
 		e.logf("BidWithEth error: %v", err)
 		return
@@ -252,7 +272,7 @@ func (e *Engine) sendRWalkBid(ctx context.Context) {
 		e.logf("Error creating tx opts: %v", err)
 		return
 	}
-	tx, err := e.gameContract.BidWithEth(txopts, big.NewInt(tokenID), "")
+	tx, err := e.sendBidWithEth(txopts, big.NewInt(tokenID))
 	if err != nil {
 		e.logf("BidWithEth (RWalk) error: %v", err)
 		return
@@ -401,7 +421,7 @@ func (e *Engine) runInitialBidding(ctx context.Context) {
 			_ = e.cfg.Sleep(ctx, errorDelay)
 			continue
 		}
-		tx, err := e.gameContract.BidWithEth(txopts, big.NewInt(-1), "")
+		tx, err := e.sendBidWithEth(txopts, big.NewInt(-1))
 		if err != nil {
 			e.logf("Bid error: %v", err)
 			failures++

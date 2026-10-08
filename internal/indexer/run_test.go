@@ -195,16 +195,16 @@ func TestPipelineRejectsOverflowingBlockNumber(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "overflows int64") {
 		t.Errorf("BackfillContractEvtLogs error = %v, want block-number overflow", err)
 	}
-	if stats != (BackfillStats{}) {
+	if !emptyBackfillStats(stats) {
 		t.Errorf("backfill reported non-durable work before rejecting: %+v", stats)
 	}
-	if stats, err := e.backfillBlock(context.Background(), nil); err != nil || stats != (BackfillStats{}) {
+	if stats, err := e.backfillBlock(context.Background(), nil); err != nil || !emptyBackfillStats(stats) {
 		t.Errorf("empty backfill block = %+v, %v", stats, err)
 	}
 	valid := types.Log{BlockNumber: 1}
 	if stats, err := e.backfillBlock(context.Background(), []types.Log{valid, overflowing}); err == nil ||
 		!strings.Contains(err.Error(), "overflows int64") ||
-		stats != (BackfillStats{}) {
+		!emptyBackfillStats(stats) {
 		t.Errorf("later overflow backfill = %+v, %v", stats, err)
 	}
 }
@@ -643,4 +643,9 @@ func TestRunWatermarkZeroFallsBackToStoreWatermark(t *testing.T) {
 		}
 	}()
 	_, _ = e.lastProcessedBlock(context.Background())
+}
+
+// emptyBackfillStats reports whether stats records no work at all.
+func emptyBackfillStats(s BackfillStats) bool {
+	return s.LogsSeen == 0 && s.Inserted == 0 && s.Skipped == 0 && len(s.InsertedIDs) == 0
 }

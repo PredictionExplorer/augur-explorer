@@ -36,6 +36,9 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 	marketing := mustABI(t, cgc.MarketingWalletABI)
 	erc20 := mustABI(t, cgc.ERC20ABI)
 	erc1967 := mustABI(t, cgc.IERC1967ABI)
+	token := mustABI(t, cgc.CosmicSignatureTokenABI)
+	dao := mustABI(t, cgc.CosmicSignatureDaoABI)
+	stakingCSTImpl := mustABI(t, cgc.StakingWalletCosmicSignatureNftABI)
 
 	cases := []struct {
 		constant string
@@ -92,7 +95,10 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicMarketingAddressChanged, game, "MarketingWalletAddressChanged"},
 		{TopicCosmicTokenAddressChanged, game, "CosmicSignatureTokenAddressChanged"},
 		{TopicCosmicSignatureAddressChanged, game, "CosmicSignatureNftAddressChanged"},
+		{TopicTimeIncreaseChanged, game, "MainPrizeTimeIncrementIncreaseDivisorChanged"},
 		{TopicTimeoutClaimprizeChanged, game, "TimeoutDurationToClaimMainPrizeChanged"},
+		{TopicEthBidRefundGasMaxLimitChanged, game, "EthBidRefundAmountInGasToSwallowMaxLimitChanged"},
+		{TopicArbitrumError, game, "ArbitrumError"},
 		{TopicTimeoutToWithdrawPrize, prizes, "TimeoutDurationToWithdrawPrizesChanged"},
 		{TopicPriceIncreaseChanged, game, "EthBidPriceIncreaseDivisorChanged"},
 		{TopicMainPrizeMicrosecondIncrease, game, "MainPrizeTimeIncrementInMicroSecondsChanged"},
@@ -110,7 +116,8 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicRoundLateBidDurationDivisorChanged, gameV3, "RoundLateBidDurationDivisorChanged"},
 		{TopicRoundLateBidPremiumBaseMultiplierChanged, gameV3, "RoundLateBidPricePremiumAmountBaseMultiplierChanged"},
 		{TopicRoundLateBidPremiumExponentChanged, gameV3, "RoundLateBidPricePremiumAmountExponentChanged"},
-		{TopicLastBidderRewardPercentageChanged, gameV3, "LastBidderBidCstRewardAmountPercentageChanged"},
+		{TopicCstBidPriceDeclineMultiplierChanged, gameV3, "CstBidPriceDeclineMultiplierChanged"},
+		{TopicCstBidPriceDeclineMultiplierChangeDivisorChanged, gameV3, "CstBidPriceDeclineMultiplierChangeDivisorChanged"},
 		{TopicMainPrizeNumNftsChanged, gameV3, "MainPrizeNumCosmicSignatureNftsChanged"},
 		{TopicStaticCstReward, game, "CstPrizeAmountChanged"},
 		{TopicMaxMessageLength, game, "BidMessageLengthMaxLimitChanged"},
@@ -120,6 +127,27 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicStartingCstMinLim, game, "CstDutchAuctionBeginningBidPriceMinLimitChanged"},
 		{TopicFundsToCharity, game, "FundsTransferredToCharity"},
 		{TopicDelayDurationRound, game, "DelayDurationBeforeRoundActivationChanged"},
+		// The CST staking wallet still emits FundTransferFailed (V3.1 moved
+		// the game's emission to EthTransferToCharityFailed).
+		{TopicFundTransferErr, stakingCSTImpl, "FundTransferFailed"},
+		// OpenZeppelin events inherited by the NFT, the token and the DAO.
+		{TopicApproval, nft, "Approval"},
+		{TopicApproval, token, "Approval"},
+		{TopicApprovalForAll, nft, "ApprovalForAll"},
+		{TopicDelegateChanged, token, "DelegateChanged"},
+		{TopicDelegateVotesChanged, token, "DelegateVotesChanged"},
+		{TopicEIP712DomainChanged, token, "EIP712DomainChanged"},
+		{TopicEIP712DomainChanged, dao, "EIP712DomainChanged"},
+		{TopicDaoProposalCreated, dao, "ProposalCreated"},
+		{TopicDaoProposalCanceled, dao, "ProposalCanceled"},
+		{TopicDaoProposalExecuted, dao, "ProposalExecuted"},
+		{TopicDaoProposalQueued, dao, "ProposalQueued"},
+		{TopicDaoVoteCast, dao, "VoteCast"},
+		{TopicDaoVoteCastWithParams, dao, "VoteCastWithParams"},
+		{TopicDaoProposalThresholdSet, dao, "ProposalThresholdSet"},
+		{TopicDaoVotingDelaySet, dao, "VotingDelaySet"},
+		{TopicDaoVotingPeriodSet, dao, "VotingPeriodSet"},
+		{TopicDaoQuorumNumeratorSet, dao, "QuorumNumeratorUpdated"},
 	}
 
 	for _, c := range cases {
@@ -137,13 +165,19 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 // TestLegacyConstantsHaveNoABIEvent documents the registry entries that no
 // current ABI defines: their handlers must decode the raw data words instead
 // of unpacking by name (doing the latter killed the process; see
-// proc_time_increase_changed_event and proc_bid_cst_reward_amount_changed_event).
+// proc_bid_cst_reward_amount_changed_event).
+//
+// Membership here is not proof that a constant is correct: a constant that is
+// simply wrong also matches no ABI event. TopicTimeIncreaseChanged sat here
+// for years with a hash that keccak256 never produced, so
+// MainPrizeTimeIncrementIncreaseDivisorChanged went undispatched. Every
+// constant that does correspond to a declared event belongs in
+// TestRegistryConstantsMatchABIEventIDs instead.
 func TestLegacyConstantsHaveNoABIEvent(t *testing.T) {
 	game := mustABI(t, cgc.CosmicSignatureGameABI)
 	gameV2 := mustABI(t, cgc.CosmicSignatureGameV2ABI)
 	gameV3 := mustABI(t, cgc.CosmicSignatureGameV3ABI)
 	for name, constant := range map[string]string{
-		"TopicTimeIncreaseChanged":       TopicTimeIncreaseChanged,
 		"TopicBidCstRewardAmountChanged": TopicBidCstRewardAmountChanged,
 		"TopicERC20TransferErr":          TopicERC20TransferErr,
 	} {

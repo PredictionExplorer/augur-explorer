@@ -876,6 +876,33 @@ func (r *Repo) InsertChronoWarrior(ctx context.Context, evt *cgmodel.CGChronoWar
 	return store.WrapError(op, err)
 }
 
+// InsertEthToCharityFailed records a V3.1 EthTransferToCharityFailed event.
+func (r *Repo) InsertEthToCharityFailed(ctx context.Context, evt *cgmodel.CGEthToCharityFailed) error {
+	const op = "insert into cg_eth_to_charity_failed"
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	charityAid, err := r.addrID(ctx, evt.CharityAddress, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError(op, err)
+	}
+	query := "INSERT INTO cg_eth_to_charity_failed(" +
+		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
+		"charity_aid,amount" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+	_, err = r.q(ctx).Exec(ctx, query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contractAid,
+		charityAid,
+		evt.Amount,
+	)
+	return store.WrapError(op, err)
+}
+
 // InsertFundTransferFailed records a FundTransferFailed event.
 func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFundTransferFailed) error {
 	const op = "insert into cg_fund_transf_err"
@@ -889,8 +916,8 @@ func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFund
 	}
 	query := "INSERT INTO cg_fund_transf_err(" +
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
-		"destination_aid,amount" +
-		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
+		"destination_aid,amount,err_str" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,NULLIF($8,''))"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -899,6 +926,7 @@ func (r *Repo) InsertFundTransferFailed(ctx context.Context, evt *cgmodel.CGFund
 		contractAid,
 		destinationAid,
 		evt.Amount,
+		evt.ErrStr,
 	)
 	return store.WrapError(op, err)
 }
@@ -1037,8 +1065,8 @@ func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUns
 	}
 	query := "INSERT INTO cg_nft_unstaked_rwalk(" +
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
-		"action_id,token_id,num_staked_nfts,staker_aid" +
-		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+		"action_id,action_counter,token_id,num_staked_nfts,staker_aid" +
+		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10)"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -1046,6 +1074,7 @@ func (r *Repo) InsertNftUnstakedRWalk(ctx context.Context, evt *cgmodel.CGNftUns
 		evt.TimeStamp,
 		contractAid,
 		evt.ActionId,
+		evt.ActionCounter,
 		evt.NftId,
 		evt.NumStakedNfts,
 		stakerAid,
@@ -1060,9 +1089,11 @@ func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDe
 	if err != nil {
 		return store.WrapError(op, err)
 	}
+	// accum_modulo (running remainder sum) is maintained by the
+	// on_eth_deposit_insert trigger from the previous row.
 	query := "INSERT INTO cg_staking_eth_deposit(" +
 		"evtlog_id,block_num,tx_id,time_stamp,contract_aid," +
-		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,accum_modulo" +
+		"deposit_time,round_num,deposit_id,num_staked_nfts,deposit_amount,amount_per_token,modulo,reward_per_staked_nft" +
 		") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13)"
 	_, err = r.q(ctx).Exec(ctx, query,
 		evt.EvtId,
@@ -1077,7 +1108,7 @@ func (r *Repo) InsertStakingEthDeposit(ctx context.Context, evt *cgmodel.CGEthDe
 		evt.Amount,
 		evt.AmountPerStaker,
 		evt.Modulo,
-		evt.AccumModulo,
+		evt.RewardPerStakedNft,
 	)
 	return store.WrapError(op, err)
 }
@@ -1577,14 +1608,25 @@ func (r *Repo) InsertRoundLateBidPremiumExponentChange(ctx context.Context, evt 
 		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
 }
 
-// InsertLastBidderRewardPercentageChange records a V3
-// LastBidderBidCstRewardAmountPercentageChanged event.
-func (r *Repo) InsertLastBidderRewardPercentageChange(ctx context.Context, evt *cgmodel.CGLastBidderBidCstRewardAmountPercentageChanged) error {
+// InsertCstBidPriceDeclineMultiplierChange records a V3
+// CstBidPriceDeclineMultiplierChanged event.
+func (r *Repo) InsertCstBidPriceDeclineMultiplierChange(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChanged) error {
 	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
 	if err != nil {
-		return store.WrapError("insert into cg_adm_last_bidder_reward_pct", err)
+		return store.WrapError("insert into cg_adm_cst_price_decline_mul", err)
 	}
-	return r.insertAdminValue(ctx, "cg_adm_last_bidder_reward_pct", "new_value",
+	return r.insertAdminValue(ctx, "cg_adm_cst_price_decline_mul", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertCstBidPriceDeclineMultiplierChangeDivisorChange records a V3
+// CstBidPriceDeclineMultiplierChangeDivisorChanged event.
+func (r *Repo) InsertCstBidPriceDeclineMultiplierChangeDivisorChange(ctx context.Context, evt *cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_cst_price_decline_mul_div", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_cst_price_decline_mul_div", "new_value",
 		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
 }
 
@@ -1597,6 +1639,27 @@ func (r *Repo) InsertMainPrizeNumNftsChange(ctx context.Context, evt *cgmodel.CG
 	}
 	return r.insertAdminValue(ctx, "cg_adm_main_prize_num_nfts", "new_value",
 		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertEthBidRefundGasMaxLimitChange records an
+// EthBidRefundAmountInGasToSwallowMaxLimitChanged event.
+func (r *Repo) InsertEthBidRefundGasMaxLimitChange(ctx context.Context, evt *cgmodel.CGEthBidRefundGasMaxLimitChanged) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_adm_eth_bid_refund_gas_limit", err)
+	}
+	return r.insertAdminValue(ctx, "cg_adm_eth_bid_refund_gas_limit", "new_value",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.NewValue)
+}
+
+// InsertArbitrumError records an ArbitrumError event.
+func (r *Repo) InsertArbitrumError(ctx context.Context, evt *cgmodel.CGArbitrumError) error {
+	contractAid, err := r.addrID(ctx, evt.Contract, evt.BlockNum, evt.TxId)
+	if err != nil {
+		return store.WrapError("insert into cg_arbitrum_error", err)
+	}
+	return r.insertAdminValue(ctx, "cg_arbitrum_error", "err_str",
+		evt.EvtId, evt.BlockNum, evt.TxId, evt.TimeStamp, contractAid, evt.ErrStr)
 }
 
 // InsertEthAuctionDurationDivisorChange records an EthDutchAuctionDurationDivisorChanged event.

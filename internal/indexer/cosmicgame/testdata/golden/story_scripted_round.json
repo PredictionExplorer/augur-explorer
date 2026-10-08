@@ -551,7 +551,7 @@
         "amount": 1000000000000000000,
         "block_num": 2009,
         "charity_aid": "0x2800000000000000000000000000000000000028",
-        "contract_aid": "0x1100000000000000000000000000000000000011",
+        "contract_aid": "0x2000000000000000000000000000000000000002",
         "evtlog_id": "evt:2009/12",
         "time_stamp": "2026-01-03T07:48:20+00:00",
         "tx_id": "0xf37a2913aba8d8b3bc569b5dd020df457d28b7c2ac3c617cf8fee9df12d9c922"
@@ -1098,7 +1098,7 @@
         "accum_modulo": 0,
         "accumulated_amount": 2000000000000000000,
         "accumulated_nfts": 1,
-        "accumulated_per_token": null,
+        "accumulated_per_token": 2000000000000000000,
         "amount_per_token": 2000000000000000000,
         "block_num": 2014,
         "contract_aid": "0x9000000000000000000000000000000000000009",
@@ -1108,6 +1108,7 @@
         "evtlog_id": "evt:2014/0",
         "modulo": 0,
         "num_staked_nfts": 1,
+        "reward_per_staked_nft": 2000000000000000000,
         "round_num": 0,
         "time_stamp": "2026-01-03T07:56:40+00:00",
         "tx_id": "0xc6966953f5198ff5be24bc6052a3cb522f6dc2c523078e269c4d1808711f5953"
@@ -1316,7 +1317,7 @@
       },
       {
         "block_num": 2009,
-        "contract_aid": "0x1100000000000000000000000000000000000011",
+        "contract_aid": "0x2000000000000000000000000000000000000002",
         "log_index": 12,
         "topic0_sig": "1222634b",
         "tx_id": "0xf37a2913aba8d8b3bc569b5dd020df457d28b7c2ac3c617cf8fee9df12d9c922"

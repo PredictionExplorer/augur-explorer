@@ -40,6 +40,10 @@ func TestResolveAdminEventFromContract(t *testing.T) {
 		{name: "ETH duration", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 36, IntegerValue: 1}, want: "1h"},
 		{name: "ETH end price", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 37, IntegerValue: 10}, want: "0.10000000 ETH"},
 		{name: "CST duration change", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 39, IntegerValue: 10}, want: "3m change per bid"},
+		{name: "DAO proposal threshold", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 47, FloatValue: 100}, want: "100 CST"},
+		{name: "DAO voting delay", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 48, IntegerValue: 172800}, want: "48h"},
+		{name: "DAO voting period", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 49, IntegerValue: 1209600}, want: "336h"},
+		{name: "DAO quorum numerator", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 50, IntegerValue: 3}, want: "3% quorum"},
 		{name: "unknown", event: &cgmodel.CGAdminEvent{BlockNum: 1, RecordType: 999, IntegerValue: 1}},
 	}
 	for _, test := range tests {

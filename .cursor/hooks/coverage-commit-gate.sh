@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-input=$(</dev/stdin)
+# stdin carries the hook payload but may be closed in some hook runtimes;
+# $(</dev/stdin) hard-fails there ("No such device or address"), so read
+# defensively and fall back to an empty payload.
+input=$(cat 2>/dev/null || true)
 policy="${COVERAGE_POLICY:-coverage/policy.json}"
 status=$(go run ./cmd/covergate -policy "$policy" -commit-status)
 case "$status" in

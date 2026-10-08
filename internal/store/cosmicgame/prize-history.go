@@ -49,7 +49,7 @@ func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, 
 			END AS amount_eth,
 			'' AS token_addr,
 			CASE
-				WHEN p.ptype = 2 THEN pc.token_id
+				WHEN p.ptype = 2 THEN pc.token_id + nft_seq.i
 				WHEN p.ptype = 3 THEN lw.erc721_token_id
 				WHEN p.ptype = 5 THEN ew.erc721_token_id
 				WHEN p.ptype = 9 THEN cw.nft_id
@@ -58,8 +58,10 @@ func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, 
 				ELSE -1
 			END AS token_id,
 			'' AS token_uri,
-			p.winner_index,
-			CASE WHEN p.ptype = 10 THEN pd.claimed ELSE TRUE END AS claimed,
+			p.winner_index + nft_seq.i AS winner_index,
+			-- Raffle ETH (10) and Chrono-Warrior ETH (7) are paid into PrizesWallet and
+			-- stay pending until withdrawn; every other prize is delivered on claim.
+			CASE WHEN p.ptype IN (7,10) THEN COALESCE(pd.claimed, FALSE) ELSE TRUE END AS claimed,
 			FALSE AS is_timeout_claim
 		FROM cg_prize p
 			LEFT JOIN cg_prize_claim pc ON (p.round_num = pc.round_num AND p.ptype IN (0,1,2))
@@ -72,11 +74,13 @@ func (r *Repo) PrizeHistoryByUser(ctx context.Context, winnerAid int64, offset, 
 			LEFT JOIN transaction tcw ON tcw.id = cw.tx_id
 			LEFT JOIN cg_raffle_eth_prize rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10)
 			LEFT JOIN transaction trew ON trew.id = rew.tx_id
-			LEFT JOIN cg_prize_deposit pd ON (p.round_num = pd.round_num AND p.winner_index = pd.winner_index AND p.ptype = 10)
+			LEFT JOIN cg_prize_deposit pd ON (p.round_num = pd.round_num AND p.winner_index = pd.winner_index AND p.ptype IN (7,10))
 			LEFT JOIN cg_raffle_nft_prize rnw_bidder ON (p.round_num = rnw_bidder.round_num AND p.winner_index = rnw_bidder.winner_idx AND p.ptype IN (11,12) AND rnw_bidder.is_rwalk = false)
 			LEFT JOIN transaction trnw_bidder ON trnw_bidder.id = rnw_bidder.tx_id
 			LEFT JOIN cg_raffle_nft_prize rnw_rwalk ON (p.round_num = rnw_rwalk.round_num AND p.winner_index = rnw_rwalk.winner_idx AND p.ptype IN (13,14) AND rnw_rwalk.is_rwalk = true)
 			LEFT JOIN transaction trnw_rwalk ON trnw_rwalk.id = rnw_rwalk.tx_id
+			-- Expand a multi-NFT V3 main prize (ptype 2) into one row per NFT.
+			CROSS JOIN LATERAL generate_series(0, CASE WHEN p.ptype = 2 THEN COALESCE(pc.num_cs_nfts, 1) - 1 ELSE 0 END) AS nft_seq(i)
 		WHERE (
 				(p.ptype IN (0,1,2) AND pc.winner_aid = $1) OR
 				(p.ptype IN (3,4) AND lw.winner_aid = $1) OR
@@ -226,7 +230,7 @@ func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]cgm
 			END AS amount_eth,
 			'' AS token_addr,
 			CASE
-				WHEN p.ptype = 2 THEN pc.token_id
+				WHEN p.ptype = 2 THEN pc.token_id + nft_seq.i
 				WHEN p.ptype = 3 THEN lw.erc721_token_id
 				WHEN p.ptype = 5 THEN ew.erc721_token_id
 				WHEN p.ptype = 9 THEN cw.nft_id
@@ -235,8 +239,10 @@ func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]cgm
 				ELSE -1
 			END AS token_id,
 			'' AS token_uri,
-			p.winner_index,
-			CASE WHEN p.ptype = 10 THEN pd.claimed ELSE TRUE END AS claimed,
+			p.winner_index + nft_seq.i AS winner_index,
+			-- Raffle ETH (10) and Chrono-Warrior ETH (7) are paid into PrizesWallet and
+			-- stay pending until withdrawn; every other prize is delivered on claim.
+			CASE WHEN p.ptype IN (7,10) THEN COALESCE(pd.claimed, FALSE) ELSE TRUE END AS claimed,
 			FALSE AS is_timeout_claim,
 			CASE WHEN p.ptype = 15 THEN '(All CS NFT Stakers)' ELSE COALESCE(wa_pc.addr, wa_lw.addr, wa_ew.addr, wa_cw.addr, wa_rew.addr, wa_rnw_bidder.addr, wa_rnw_rwalk.addr, '') END AS winner_addr,
 			COALESCE(pc.winner_aid, lw.winner_aid, ew.winner_aid, cw.winner_aid, rew.winner_aid, rnw_bidder.winner_aid, rnw_rwalk.winner_aid, 0) AS winner_aid
@@ -256,7 +262,7 @@ func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]cgm
 			LEFT JOIN cg_raffle_eth_prize rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10)
 			LEFT JOIN transaction trew ON trew.id = rew.tx_id
 			LEFT JOIN address wa_rew ON rew.winner_aid = wa_rew.address_id
-			LEFT JOIN cg_prize_deposit pd ON (p.round_num = pd.round_num AND p.winner_index = pd.winner_index AND p.ptype = 10)
+			LEFT JOIN cg_prize_deposit pd ON (p.round_num = pd.round_num AND p.winner_index = pd.winner_index AND p.ptype IN (7,10))
 			LEFT JOIN cg_raffle_nft_prize rnw_bidder ON (p.round_num = rnw_bidder.round_num AND p.winner_index = rnw_bidder.winner_idx AND p.ptype IN (11,12) AND rnw_bidder.is_rwalk = false)
 			LEFT JOIN transaction trnw_bidder ON trnw_bidder.id = rnw_bidder.tx_id
 			LEFT JOIN address wa_rnw_bidder ON rnw_bidder.winner_aid = wa_rnw_bidder.address_id
@@ -265,6 +271,8 @@ func (r *Repo) ClaimHistoryGlobal(ctx context.Context, offset, limit int) ([]cgm
 			LEFT JOIN address wa_rnw_rwalk ON rnw_rwalk.winner_aid = wa_rnw_rwalk.address_id
 			LEFT JOIN cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15)
 			LEFT JOIN transaction ted ON ted.id = ed.tx_id
+			-- Expand a multi-NFT V3 main prize (ptype 2) into one row per NFT.
+			CROSS JOIN LATERAL generate_series(0, CASE WHEN p.ptype = 2 THEN COALESCE(pc.num_cs_nfts, 1) - 1 ELSE 0 END) AS nft_seq(i)
 
 		UNION
 

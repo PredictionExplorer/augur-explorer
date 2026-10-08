@@ -84,6 +84,16 @@ type ETokenNameEvent struct {
 	Raw     types.Log
 }
 
+// EApprovalForAll is the ABI-unpack target for IERC721.ApprovalForAll
+// (owner and operator are indexed; only approved rides in the data).
+type EApprovalForAll struct {
+	// signature: 0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31
+	Owner    common.Address
+	Operator common.Address
+	Approved bool
+	Raw      types.Log
+}
+
 // EMintEvent is the decoded RandomWalk MintEvent contract event with the
 // token's generation seed.
 type EMintEvent struct {
@@ -197,6 +207,44 @@ type MintEvent struct {
 	Seed      string
 	SeedNum   string
 	Price     string
+}
+
+// Approval is the rw_approval row: an ERC-721 Approval of a RandomWalk token
+// (Approved is the zero address when the approval is cleared).
+type Approval struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	Owner     string
+	Approved  string
+	TokenId   int64
+}
+
+// ApprovalForAll is the rw_approval_for_all row: Owner granted or revoked
+// Operator over every RandomWalk token.
+type ApprovalForAll struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	Owner     string
+	Operator  string
+	Approved  bool
+}
+
+// OwnershipTransferred is the rw_ownership_transferred row: the Ownable
+// owner of the RandomWalkNFT contract changed.
+type OwnershipTransferred struct {
+	EvtId     int64
+	BlockNum  int64
+	TxId      int64
+	TimeStamp int64
+	Contract  string
+	PrevOwner string
+	NewOwner  string
 }
 
 // =====================================================================

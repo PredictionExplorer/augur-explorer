@@ -7,17 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/randomwalk/">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>📈 Token Trading History</h1>
+			<a class="home-link" href="/randomwalk/">&larr; Home</a>
+			<h1>Token Trading History</h1>
 			<div class="subtitle">MarketPlace {{.MarketAddr}}</div>
 		</div>
 
@@ -39,7 +30,7 @@
 				</tr>
 				{{- range $i, $change := .Sales}}
 					<tr>
-						<td>{{num .BlockNum}}</td>
+						<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
 						<td>{{.RealDate}}</td>
 						<td class="center">
 							{{ if .WasCanceled }}<span class="badge badge-warning">OFFER CANCELED</span>

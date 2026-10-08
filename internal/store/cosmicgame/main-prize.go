@@ -57,7 +57,11 @@ const prizeClaimsSelect = `SELECT
 			cw.eth_amount/1e18,
 			cw.cst_amount,
 			cw.cst_amount/1e18,
-			cw.nft_id
+			cw.nft_id,
+			lcb_a.addr,
+			lcb.erc721_token_id,
+			lcb.erc20_amount,
+			lcb.erc20_amount/1e18
 		FROM cg_prize_claim p
 			LEFT JOIN transaction t ON t.id=tx_id
 			LEFT JOIN address wa ON p.winner_aid=wa.address_id
@@ -67,6 +71,8 @@ const prizeClaimsSelect = `SELECT
 			LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id
 			LEFT JOIN cg_chrono_warrior_prize cw ON cw.round_num=p.round_num
 			LEFT JOIN address cw_a ON cw.winner_aid=cw_a.address_id
+			LEFT JOIN cg_lastcst_prize lcb ON lcb.round_num=p.round_num
+			LEFT JOIN address lcb_a ON lcb.winner_aid=lcb_a.address_id
 			LEFT JOIN cg_staking_eth_deposit dp ON dp.round_num=p.round_num
 			LEFT JOIN (
 				SELECT round_num, SUM(amount) as donation_amount, STRING_AGG(DISTINCT cha.addr, ', ') as charity_addr
@@ -94,6 +100,9 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 	var nullChronoEthAmount, nullChronoCstAmount sql.NullString
 	var nullChronoEthEth, nullChronoCstEth sql.NullFloat64
 	var nullChronoNftID sql.NullInt64
+	var nullLastCstAddr, nullLastCstErc20Amount sql.NullString
+	var nullLastCstTid sql.NullInt64
+	var nullLastCstErc20Eth sql.NullFloat64
 	// Scan order must match prizeClaimsSelect exactly.
 	err := rows.Scan(
 		&rec.ClaimPrizeTx.Tx.EvtLogId,
@@ -140,6 +149,10 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 		&nullChronoCstAmount,
 		&nullChronoCstEth,
 		&nullChronoNftID,
+		&nullLastCstAddr,
+		&nullLastCstTid,
+		&nullLastCstErc20Amount,
+		&nullLastCstErc20Eth,
 	)
 	if err != nil {
 		return err
@@ -184,6 +197,14 @@ func scanPrizeClaimRow(rows pgx.Rows, rec *cgmodel.CGRoundRec) error {
 	}
 	if nullChronoNftID.Valid {
 		rec.ChronoWarrior.NftTokenId = nullChronoNftID.Int64
+	}
+	if nullLastCstTid.Valid {
+		rec.LastCstBidder.WinnerAddr = nullLastCstAddr.String
+		rec.LastCstBidder.NftTokenId = nullLastCstTid.Int64
+	}
+	if nullLastCstErc20Amount.Valid {
+		rec.LastCstBidder.CstAmount = nullLastCstErc20Amount.String
+		rec.LastCstBidder.CstAmountEth = nullLastCstErc20Eth.Float64
 	}
 	if nullCharityAmount.Valid {
 		rec.CharityDeposit.CharityAmount = nullCharityAmount.String
@@ -601,7 +622,7 @@ const allPrizesSelect = `SELECT
 			END AS amount_eth,
 			'' AS token_addr,
 			CASE
-				WHEN p.ptype = 2 THEN pc.token_id
+				WHEN p.ptype = 2 THEN pc.token_id + nft_seq.i
 				WHEN p.ptype = 3 THEN lw.erc721_token_id
 				WHEN p.ptype = 5 THEN ew.erc721_token_id
 				WHEN p.ptype = 9 THEN cw.nft_id
@@ -610,8 +631,10 @@ const allPrizesSelect = `SELECT
 				ELSE -1
 			END AS token_id,
 			'' AS token_uri,
-			p.winner_index,
-			TRUE AS claimed,
+			p.winner_index + nft_seq.i AS winner_index,
+			-- Raffle ETH (10) and Chrono-Warrior ETH (7) are paid into PrizesWallet and
+			-- stay pending until withdrawn; every other prize is delivered on claim.
+			CASE WHEN p.ptype IN (7,10) THEN COALESCE(pd.claimed, FALSE) ELSE TRUE END AS claimed,
 			CASE WHEN p.ptype = 15 THEN '(All CS NFT Stakers)' ELSE COALESCE(wa_pc.addr, wa_rew.addr, wa_rnw_bidder.addr, wa_rnw_rwalk.addr, wa_ew.addr, wa_lw.addr, wa_cw.addr, '') END AS winner_addr,
 			COALESCE(pc.winner_aid, rew.winner_aid, rnw_bidder.winner_aid, rnw_rwalk.winner_aid, ew.winner_aid, lw.winner_aid, cw.winner_aid, 0) AS winner_aid
 		FROM cg_prize p
@@ -630,6 +653,7 @@ const allPrizesSelect = `SELECT
 			LEFT JOIN cg_raffle_eth_prize rew ON (p.round_num = rew.round_num AND p.winner_index = rew.winner_idx AND p.ptype = 10)
 			LEFT JOIN transaction trew ON trew.id = rew.tx_id
 			LEFT JOIN address wa_rew ON rew.winner_aid = wa_rew.address_id
+			LEFT JOIN cg_prize_deposit pd ON (p.round_num = pd.round_num AND p.winner_index = pd.winner_index AND p.ptype IN (7,10))
 			LEFT JOIN cg_raffle_nft_prize rnw_bidder ON (p.round_num = rnw_bidder.round_num AND p.winner_index = rnw_bidder.winner_idx AND p.ptype IN (11,12) AND rnw_bidder.is_rwalk = false)
 			LEFT JOIN transaction trnw_bidder ON trnw_bidder.id = rnw_bidder.tx_id
 			LEFT JOIN address wa_rnw_bidder ON rnw_bidder.winner_aid = wa_rnw_bidder.address_id
@@ -637,7 +661,11 @@ const allPrizesSelect = `SELECT
 			LEFT JOIN transaction trnw_rwalk ON trnw_rwalk.id = rnw_rwalk.tx_id
 			LEFT JOIN address wa_rnw_rwalk ON rnw_rwalk.winner_aid = wa_rnw_rwalk.address_id
 			LEFT JOIN cg_staking_eth_deposit ed ON (p.round_num = ed.round_num AND p.ptype = 15)
-			LEFT JOIN transaction ted ON ted.id = ed.tx_id`
+			LEFT JOIN transaction ted ON ted.id = ed.tx_id
+			-- A V3 main prize mints num_cs_nfts sequential NFTs (first ID in
+			-- cg_prize_claim.token_id) but cg_prize registers one ptype=2 row;
+			-- expand it into one row per NFT.
+			CROSS JOIN LATERAL generate_series(0, CASE WHEN p.ptype = 2 THEN COALESCE(pc.num_cs_nfts, 1) - 1 ELSE 0 END) AS nft_seq(i)`
 
 func scanPrizeHistoryRow(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 	return rows.Scan(
@@ -667,7 +695,7 @@ func scanPrizeHistoryRow(rows pgx.Rows, rec *cgmodel.CGPrizeHistory) error {
 func (r *Repo) AllPrizesForRound(ctx context.Context, roundNum int64) ([]cgmodel.CGPrizeHistory, error) {
 	query := allPrizesSelect + `
 		WHERE p.round_num = $1
-		ORDER BY p.ptype, p.winner_index`
+		ORDER BY p.ptype, winner_index`
 	return queryList(ctx, r, "all prizes for round", 64, query, scanPrizeHistoryRow, roundNum)
 }
 
@@ -697,17 +725,19 @@ func (r *Repo) AllPrizesForRoundPage(
 
 	query := allPrizesSelect + `
 		WHERE p.round_num = $1
-		ORDER BY p.ptype, p.winner_index
+		ORDER BY p.ptype, winner_index
 		LIMIT $2`
 	args := []any{roundNum, limit + 1}
 	if after != nil {
 		if after.PrizeType < 0 || after.PrizeType > 15 || after.WinnerIndex < 0 {
 			return nil, false, fmt.Errorf("%s: invalid cursor", op)
 		}
+		// The cursor compares against the expanded winner index (p.winner_index
+		// + nft_seq.i), matching what scanPrizeHistoryRow returned to the caller.
 		query = allPrizesSelect + `
 			WHERE p.round_num = $1
-				AND (p.ptype, p.winner_index) > ($2, $3)
-			ORDER BY p.ptype, p.winner_index
+				AND (p.ptype, p.winner_index + nft_seq.i) > ($2, $3)
+			ORDER BY p.ptype, winner_index
 			LIMIT $4`
 		args = []any{roundNum, after.PrizeType, after.WinnerIndex, limit + 1}
 	}

@@ -9,21 +9,11 @@
 	<div class="cg-wide-container">
 		<!-- Page Header -->
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>🎮 CosmicGame Dashboard</h1>
-			<div class="subtitle">Real-time blockchain gaming statistics and management</div>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>CosmicGame Dashboard</h1>
 			<div style="margin-top: 1em;">
 				<a href="/cosmicsignature/api_docs" style="display: inline-block; padding: 0.5em 1.5em; background: #1a1a1a; border: 2px solid goldenrod; border-radius: 8px; color: goldenrod; text-decoration: none; font-weight: bold; transition: all 0.3s ease;">
-					📚 API Documentation
+					API Documentation
 				</a>
 			</div>
 		</div>
@@ -67,12 +57,12 @@
 				</div>
 				<div class="info-item">
 					<div class="info-label">Last Bidder</div>
-					<div class="info-value monospace">{{.LastBidderAddr}}</div>
+					<div class="info-value monospace">{{ethAddrLink .LastBidderAddr}}</div>
 				</div>
 				<div class="info-item">
 					<div class="info-label">View Round Details</div>
 					<div class="info-value">
-						<a href="/cosmicsignature/bid/list/by_round/{{.TotalPrizes}}/0/0/100000">Round #{{.CurRoundNum}} Bids</a>
+						<a href="/cosmicsignature/bid/list/by_round/{{.CurRoundNum}}/0/0/100000">Round #{{.CurRoundNum}} Bids</a>
 					</div>
 				</div>
 			</div>
@@ -212,7 +202,7 @@
 				</div>
 				<div class="info-item">
 					<div class="info-label">Token Reward</div>
-					<div class="info-value">{{.TokenReward}}</div>
+					<div class="info-value">{{if eq .TokenReward "error"}}—{{else}}{{weiToEth .TokenReward}} CST{{end}}</div>
 				</div>
 				<div class="info-item">
 					<div class="info-label">Prize Percentage</div>
@@ -221,6 +211,10 @@
 				<div class="info-item">
 					<div class="info-label">Raffle Percentage</div>
 					<div class="info-value">{{.RafflePercentage}}%</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Chrono Warrior Percentage</div>
+					<div class="info-value">{{.ChronoWarriorPercentage}}%</div>
 				</div>
 				<div class="info-item">
 					<div class="info-label">Staking Percentage</div>
@@ -235,13 +229,25 @@
 					<div class="info-value" title="{{.CharityBalance}}">{{printf "%.6f" .CharityBalanceEth}} ETH</div>
 				</div>
 				<div class="info-item">
+					<div class="info-label">Game Contract Balance</div>
+					<div class="info-value">{{printf "%.6f" .CosmicGameBalanceEth}} ETH</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Current Raffle Pool</div>
+					<div class="info-value">{{printf "%.6f" .RaffleAmountEth}} ETH</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Current Staking Pool</div>
+					<div class="info-value">{{printf "%.6f" .StakingAmountEth}} ETH</div>
+				</div>
+				<div class="info-item">
 					<div class="info-label">Charity Address</div>
 					<div class="info-value monospace">{{.CharityAddr}}</div>
 				</div>
 				<div class="info-item">
 					<div class="info-label">Contract Mechanics Version</div>
 					<div class="info-value">
-						{{if eq .ContractMechanicsVersion 3.0}}V3{{else if eq .ContractMechanicsVersion 2.0}}V2{{else if eq .ContractMechanicsVersion 1.0}}V1{{else}}unknown{{end}}
+						{{if eq .ContractMechanicsVersion 3.0}}V3.1{{else if eq .ContractMechanicsVersion 2.0}}V2{{else if eq .ContractMechanicsVersion 1.0}}V1{{else}}unknown{{end}}
 					</div>
 				</div>
 			</div>
@@ -259,8 +265,12 @@
 					<div class="info-value">{{.V3Config.MainPrizeNumCosmicSignatureNfts}}</div>
 				</div>
 				<div class="info-item">
-					<div class="info-label">Last Bidder Reward Share</div>
-					<div class="info-value">{{.V3Config.LastBidderBidCstRewardAmountPercentage}}%</div>
+					<div class="info-label">CST Price Decline Multiplier</div>
+					<div class="info-value" title="{{.V3Config.CstBidPriceDeclineMultiplier}} wei/s">{{weiToEth .V3Config.CstBidPriceDeclineMultiplier}} CST/s</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">CST Price Decline Change Divisor</div>
+					<div class="info-value">{{.V3Config.CstBidPriceDeclineMultiplierChangeDivisor}}</div>
 				</div>
 				<div class="info-item">
 					<div class="info-label">Late-Bid Window</div>
@@ -295,7 +305,7 @@
 			<div class="section-header">Quick Access</div>
 			<div class="action-grid">
 				<div class="action-item">
-					<div class="action-title">📊 Game Data</div>
+					<div class="action-title">Game Data</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
@@ -315,7 +325,7 @@
 				</div>
 
 				<div class="action-item">
-					<div class="action-title">🏆 Prizes & Winners</div>
+					<div class="action-title">Prizes & Winners</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
@@ -334,12 +344,20 @@
 								<a class="btn_link" href="/cosmicsignature/bid/current_special_winners">Special Winners</a>
 								<span></span><span></span><span></span><span></span>
 							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/cosmicsignature/statistics/leaderboard/roi">ROI Leaderboard</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/cosmicsignature/statistics/claims/by_round">Claims by Round</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
 						</ul>
 					</nav>
 				</div>
 
 				<div class="action-item">
-					<div class="action-title">🎁 Donations</div>
+					<div class="action-title">Donations</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
@@ -367,7 +385,7 @@
 				</div>
 
 				<div class="action-item">
-					<div class="action-title">💰 CST Staking</div>
+					<div class="action-title">CST Staking</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
@@ -391,7 +409,7 @@
 				</div>
 
 				<div class="action-item">
-					<div class="action-title">🚶 RWalk Staking</div>
+					<div class="action-title">RWalk Staking</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
@@ -415,7 +433,7 @@
 				</div>
 
 				<div class="action-item">
-					<div class="action-title">❤️ Charity</div>
+					<div class="action-title">Charity</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
@@ -431,11 +449,19 @@
 				</div>
 
 				<div class="action-item">
-					<div class="action-title">⚙️ System</div>
+					<div class="action-title">System</div>
 					<nav>
 						<ul>
 							<li style="width: 100%;">
 								<a class="btn_link" href="/cosmicsignature/ct/balances">ERC20 Balances</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/cosmicsignature/bid/cst_price">CST Bid Price</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							<li style="width: 100%;">
+								<a class="btn_link" href="/cosmicsignature/bid/eth_price">ETH Bid Price</a>
 								<span></span><span></span><span></span><span></span>
 							</li>
 							<li style="width: 100%;">
@@ -444,10 +470,6 @@
 							</li>
 							<li style="width: 100%;">
 								<a class="btn_link" href="/cosmicsignature/system/modelist/-1/10000">System Events</a>
-								<span></span><span></span><span></span><span></span>
-							</li>
-							<li style="width: 100%;">
-								<a class="btn_link" href="/cosmicsignature/dev_funcs">Development</a>
 								<span></span><span></span><span></span><span></span>
 							</li>
 						</ul>

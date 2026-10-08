@@ -7,17 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>✅ Collected CST Staking Rewards</h1>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Collected CST Staking Rewards</h1>
 			<div class="address-display">{{.UserAddr}}</div>
 		</div>
 
@@ -36,7 +27,7 @@
 				</tr>
 				{{- range $i, $change := .CollectedStakingCSTRewards}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="center">
 							<a href="/cosmicsignature/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">

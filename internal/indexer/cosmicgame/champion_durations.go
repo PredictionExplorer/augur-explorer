@@ -5,7 +5,9 @@ import (
 	"errors"
 	"math/big"
 	"strconv"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	cgc "github.com/PredictionExplorer/augur-explorer/contracts/cosmicgame"
@@ -16,18 +18,51 @@ const (
 	liveStateChronoWarriorDuration     = "chrono_warrior_duration"
 )
 
-func (h *Handlers) readChampionDurations(ctx context.Context, roundNum int64) (endurance, chrono int64, err error) {
-	caller, _ := cgc.NewCosmicSignatureGameV3Caller(h.c.Game, h.caller)
-	out, err := caller.ChampionDurations(&bind.CallOpts{Context: ctx}, big.NewInt(roundNum))
+// legacyChampionDurationsABI is the pre-consolidation v3.1 getter that
+// roundStats() replaced. Kept as a raw fragment (the current bindings no
+// longer carry it) so recovery still works against chains deployed from
+// older v3.1 code.
+var legacyChampionDurationsABI = func() abi.ABI {
+	parsed, err := abi.JSON(strings.NewReader(`[{"inputs":[{"internalType":"uint256","name":"roundNum_","type":"uint256"}],"name":"championDurations","outputs":[{"internalType":"uint256","name":"enduranceChampion","type":"uint256"},{"internalType":"uint256","name":"chronoWarrior","type":"uint256"}],"stateMutability":"view","type":"function"}]`))
 	if err != nil {
+		panic(err)
+	}
+	return parsed
+}()
+
+// checkedChampionPair validates the raw duration pair read from the contract.
+func checkedChampionPair(enduranceRaw, chronoRaw *big.Int) (endurance, chrono int64, err error) {
+	if enduranceRaw == nil || chronoRaw == nil ||
+		!enduranceRaw.IsInt64() || !chronoRaw.IsInt64() ||
+		enduranceRaw.Sign() < 0 || chronoRaw.Sign() < 0 {
+		return 0, 0, errors.New("champion duration values exceed int64")
+	}
+	return enduranceRaw.Int64(), chronoRaw.Int64(), nil
+}
+
+func (h *Handlers) readChampionDurations(ctx context.Context, roundNum int64) (endurance, chrono int64, err error) {
+	copts := &bind.CallOpts{Context: ctx}
+	rn := big.NewInt(roundNum)
+
+	// Current v3.1 contracts consolidated the per-round getters into
+	// roundStats(); its 7th and 8th fields are the champion durations.
+	caller, _ := cgc.NewCosmicSignatureGameV3Caller(h.c.Game, h.caller)
+	if stats, statsErr := caller.RoundStats(copts, rn); statsErr == nil {
+		return checkedChampionPair(stats.EnduranceChampionDuration, stats.ChronoWarriorDuration)
+	}
+
+	// Older v3.1 deployments expose championDurations(uint256) instead.
+	legacy := bind.NewBoundContract(h.c.Game, legacyChampionDurationsABI, h.caller, nil, nil)
+	var out []interface{}
+	if err := legacy.Call(copts, &out, "championDurations", rn); err != nil {
 		return 0, 0, err
 	}
-	if out.EnduranceChampion == nil || out.ChronoWarrior == nil ||
-		!out.EnduranceChampion.IsInt64() || !out.ChronoWarrior.IsInt64() ||
-		out.EnduranceChampion.Sign() < 0 || out.ChronoWarrior.Sign() < 0 {
-		return 0, 0, errors.New("championDurations values exceed int64")
+	if len(out) != 2 {
+		return 0, 0, errors.New("championDurations returned unexpected shape")
 	}
-	return out.EnduranceChampion.Int64(), out.ChronoWarrior.Int64(), nil
+	enduranceRaw, _ := out[0].(*big.Int)
+	chronoRaw, _ := out[1].(*big.Int)
+	return checkedChampionPair(enduranceRaw, chronoRaw)
 }
 
 // captureChampionDurations reads and stores one V3 snapshot. Contract-call

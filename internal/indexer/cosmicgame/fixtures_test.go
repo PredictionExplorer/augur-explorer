@@ -196,8 +196,8 @@ func eventFixtures() []fixture {
 		{name: "admin_cst_min_limit", block: 1260, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicStartingCstMinLim, func(t *testing.T) *types.Log {
 			return buildLog(t, gameABI, "CstDutchAuctionBeginningBidPriceMinLimitChanged", addr(game), nil, []any{eth(200)})
 		}}}}}},
-		{name: "admin_time_increase_raw", block: 1270, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicTimeIncreaseChanged, func(t *testing.T) *types.Log {
-			return buildRawLog(t, TopicTimeIncreaseChanged, addr(game), nil, bigInt(3600000001))
+		{name: "admin_time_increase", block: 1270, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicTimeIncreaseChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameABI, "MainPrizeTimeIncrementIncreaseDivisorChanged", addr(game), nil, []any{bigInt(3600000001)})
 		}}}}}},
 		{name: "admin_token_script_url", block: 1280, txs: []fixtureTx{{to: sig, logs: []fixtureLog{{TopicTokenScriptURL, func(t *testing.T) *types.Log {
 			return buildLog(t, signatureABI, "NftGenerationScriptUriChanged", addr(sig), nil, []any{"https://fixture.example/script.js"})
@@ -328,8 +328,11 @@ func eventFixtures() []fixture {
 		{name: "donation_sent_charity", block: 1540, txs: []fixtureTx{{to: charity, logs: []fixtureLog{{TopicDonationSentEvent, func(t *testing.T) *types.Log {
 			return buildLog(t, charityWalletABI, "FundsTransferredToCharity", addr(charity), []any{addr(fxCharityRcv)}, []any{eth(4)})
 		}}}}}},
-		{name: "funds_to_charity_marketing", block: 1550, txs: []fixtureTx{{to: marketing, logs: []fixtureLog{{TopicFundsToCharity, func(t *testing.T) *types.Log {
-			return buildLog(t, gameABI, "FundsTransferredToCharity", addr(marketing), []any{addr(fxCharityRcv)}, []any{eth(1)})
+		{name: "funds_to_charity_staking", block: 1550, txs: []fixtureTx{{to: stakeCST, logs: []fixtureLog{{TopicFundsToCharity, func(t *testing.T) *types.Log {
+			// StakingWalletCosmicSignatureNft.tryPerformMaintenance sweeps its
+			// balance to charity; the game's own emission is covered by the
+			// round story, which carries it inside the claim transaction.
+			return buildLog(t, gameABI, "FundsTransferredToCharity", addr(stakeCST), []any{addr(fxCharityRcv)}, []any{eth(1)})
 		}}}}}},
 		{name: "donation_erc20_after_bid", block: 1560, txs: []fixtureTx{{to: game, logs: []fixtureLog{
 			{TopicBidEventV2, func(t *testing.T) *types.Log {
@@ -497,8 +500,11 @@ func eventFixtures() []fixture {
 		{name: "admin_late_bid_premium_exponent_v3", block: 1850, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicRoundLateBidPremiumExponentChanged, func(t *testing.T) *types.Log {
 			return buildLog(t, gameV3ABI, "RoundLateBidPricePremiumAmountExponentChanged", addr(game), nil, []any{bigInt(3)})
 		}}}}}},
-		{name: "admin_last_bidder_reward_percentage_v3", block: 1860, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicLastBidderRewardPercentageChanged, func(t *testing.T) *types.Log {
-			return buildLog(t, gameV3ABI, "LastBidderBidCstRewardAmountPercentageChanged", addr(game), nil, []any{bigInt(90)})
+		{name: "admin_cst_price_decline_multiplier_v3", block: 1860, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicCstBidPriceDeclineMultiplierChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "CstBidPriceDeclineMultiplierChanged", addr(game), nil, []any{bigInt(16666666666666666)})
+		}}}}}},
+		{name: "admin_cst_price_decline_multiplier_divisor_v3", block: 1865, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicCstBidPriceDeclineMultiplierChangeDivisorChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameV3ABI, "CstBidPriceDeclineMultiplierChangeDivisorChanged", addr(game), nil, []any{bigInt(100)})
 		}}}}}},
 		{name: "admin_main_prize_num_nfts_v3", block: 1870, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicMainPrizeNumNftsChanged, func(t *testing.T) *types.Log {
 			return buildLog(t, gameV3ABI, "MainPrizeNumCosmicSignatureNftsChanged", addr(game), nil, []any{bigInt(3)})
@@ -545,6 +551,94 @@ func eventFixtures() []fixture {
 		{name: "admin_erc20_transfer_failed", block: 1820, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicERC20TransferErr, func(t *testing.T) *types.Log {
 			return buildERC20TransferFailedLog(t, addr(game), addr(fxCarol), "fixture erc20 transfer failure", eth(2))
 		}}}}}},
+
+		{name: "admin_eth_bid_refund_gas_limit", block: 1900, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicEthBidRefundGasMaxLimitChanged, func(t *testing.T) *types.Log {
+			return buildLog(t, gameABI, "EthBidRefundAmountInGasToSwallowMaxLimitChanged", addr(game), nil, []any{bigInt(6000)})
+		}}}}}},
+		{name: "arbitrum_error", block: 1910, txs: []fixtureTx{{to: game, logs: []fixtureLog{{TopicArbitrumError, func(t *testing.T) *types.Log {
+			// The message the game emits on a non-Arbitrum chain, where the
+			// ArbSys precompile does not exist.
+			return buildLog(t, gameABI, "ArbitrumError", addr(game), nil, []any{"ArbSys.arbBlockNumber call failed."})
+		}}}}}},
+
+		// --- v3.1 event audit: the CST staking wallet's FundTransferFailed
+		// (tryPerformMaintenance charity sweep) and the OpenZeppelin events
+		// the deployed contracts inherit ---
+		{name: "staking_fund_transfer_failed", block: 1920, txs: []fixtureTx{{to: stakeCST, logs: []fixtureLog{{TopicFundTransferErr, func(t *testing.T) *types.Log {
+			// The library event has the game ABI's shape; the wallet is the emitter.
+			return buildLog(t, gameABI, "FundTransferFailed", addr(stakeCST), []any{addr(fxCarol)}, []any{"ETH transfer to charity failed.", eth(1)})
+		}}}}}},
+		{name: "nft_approval", block: 1930, txs: []fixtureTx{{to: sig, logs: []fixtureLog{
+			{TopicApproval, func(t *testing.T) *types.Log {
+				return buildLog(t, signatureABI, "Approval", addr(sig), []any{addr(fxAlice), addr(fxBob), bigInt(42)}, nil)
+			}},
+			{TopicApprovalForAll, func(t *testing.T) *types.Log {
+				return buildLog(t, signatureABI, "ApprovalForAll", addr(sig), []any{addr(fxAlice), addr(fxCarol)}, []any{true})
+			}},
+		}}}},
+		{name: "token_approval_and_votes", block: 1940, txs: []fixtureTx{{to: token, logs: []fixtureLog{
+			{TopicApproval, func(t *testing.T) *types.Log {
+				return buildLog(t, tokenABI, "Approval", addr(token), []any{addr(fxAlice), addr(fxBob)}, []any{eth(5)})
+			}},
+			{TopicDelegateChanged, func(t *testing.T) *types.Log {
+				return buildLog(t, tokenABI, "DelegateChanged", addr(token), []any{addr(fxAlice), addr("0x0000000000000000000000000000000000000000"), addr(fxCarol)}, nil)
+			}},
+			{TopicDelegateVotesChanged, func(t *testing.T) *types.Log {
+				return buildLog(t, tokenABI, "DelegateVotesChanged", addr(token), []any{addr(fxCarol)}, []any{bigInt(0), eth(5)})
+			}},
+			{TopicEIP712DomainChanged, func(t *testing.T) *types.Log {
+				return buildLog(t, tokenABI, "EIP712DomainChanged", addr(token), nil, nil)
+			}},
+		}}}},
+		{name: "dao_proposal_lifecycle", block: 1950, txs: []fixtureTx{
+			{blockOffset: 0, to: fxDaoAddr, logs: []fixtureLog{{TopicDaoProposalCreated, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "ProposalCreated", addr(fxDaoAddr), nil, []any{
+					bigInt(777),
+					addr(fxAlice),
+					[]ethcommon.Address{addr(game)},
+					[]*big.Int{bigInt(0)},
+					[]string{"setBidMessageLengthMaxLimit(uint256)"},
+					[][]byte{{0xde, 0xad}},
+					bigInt(1950),
+					bigInt(2050),
+					"Raise the bid message limit",
+				})
+			}}}},
+			{blockOffset: 1, to: fxDaoAddr, logs: []fixtureLog{
+				{TopicDaoVoteCast, func(t *testing.T) *types.Log {
+					return buildLog(t, daoABI, "VoteCast", addr(fxDaoAddr), []any{addr(fxBob)}, []any{bigInt(777), uint8(1), eth(3), "for"})
+				}},
+				{TopicDaoVoteCastWithParams, func(t *testing.T) *types.Log {
+					return buildLog(t, daoABI, "VoteCastWithParams", addr(fxDaoAddr), []any{addr(fxCarol)}, []any{bigInt(777), uint8(0), eth(1), "", []byte{0x01}})
+				}},
+			}},
+			{blockOffset: 2, to: fxDaoAddr, logs: []fixtureLog{{TopicDaoProposalQueued, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "ProposalQueued", addr(fxDaoAddr), nil, []any{bigInt(777), bigInt(1767300000)})
+			}}}},
+			{blockOffset: 3, to: fxDaoAddr, logs: []fixtureLog{{TopicDaoProposalExecuted, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "ProposalExecuted", addr(fxDaoAddr), nil, []any{bigInt(777)})
+			}}}},
+		}},
+		{name: "dao_proposal_canceled", block: 1960, txs: []fixtureTx{{to: fxDaoAddr, logs: []fixtureLog{{TopicDaoProposalCanceled, func(t *testing.T) *types.Log {
+			return buildLog(t, daoABI, "ProposalCanceled", addr(fxDaoAddr), nil, []any{bigInt(778)})
+		}}}}}},
+		{name: "dao_settings", block: 1970, txs: []fixtureTx{{to: fxDaoAddr, logs: []fixtureLog{
+			{TopicDaoProposalThresholdSet, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "ProposalThresholdSet", addr(fxDaoAddr), nil, []any{bigInt(0), eth(100)})
+			}},
+			{TopicDaoVotingDelaySet, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "VotingDelaySet", addr(fxDaoAddr), nil, []any{bigInt(7200), bigInt(3600)})
+			}},
+			{TopicDaoVotingPeriodSet, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "VotingPeriodSet", addr(fxDaoAddr), nil, []any{bigInt(50400), bigInt(100800)})
+			}},
+			{TopicDaoQuorumNumeratorSet, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "QuorumNumeratorUpdated", addr(fxDaoAddr), nil, []any{bigInt(4), bigInt(2)})
+			}},
+			{TopicEIP712DomainChanged, func(t *testing.T) *types.Log {
+				return buildLog(t, daoABI, "EIP712DomainChanged", addr(fxDaoAddr), nil, nil)
+			}},
+		}}}},
 	}
 }
 

@@ -69,6 +69,7 @@ type roundState struct {
 
 func readRoundState(
 	game *cgcontracts.CosmicSignatureGame,
+	gameV3 *cgcontracts.CosmicSignatureGameV3,
 	blockTime uint64,
 	newIncrementMicros *big.Int,
 	delaySeconds int64,
@@ -83,7 +84,7 @@ func readRoundState(
 	if err != nil {
 		return nil, fmt.Errorf("roundActivationTime: %w", err)
 	}
-	totalBids, err := game.GetTotalNumBids(copts, roundNum)
+	totalBids, err := totalNumBids(copts, game, gameV3, roundNum)
 	if err != nil {
 		return nil, fmt.Errorf("getTotalNumBids: %w", err)
 	}
@@ -91,14 +92,16 @@ func readRoundState(
 	if err != nil {
 		return nil, fmt.Errorf("lastBidderAddress: %w", err)
 	}
-	durationUntilPrize, err := game.GetDurationUntilMainPrize(copts)
+	// V3.1 removed getDurationUntilMainPrizeRaw(); getDurationUntilMainPrize()
+	// now returns the signed value under the same selector. Derive both the
+	// raw (signed) and clamped durations from the single remaining getter;
+	// pre-V3.1 unsigned values pass through AsSignedInt256 unchanged.
+	durationUntilPrizeUint, err := game.GetDurationUntilMainPrize(copts)
 	if err != nil {
 		return nil, fmt.Errorf("getDurationUntilMainPrize: %w", err)
 	}
-	durationUntilPrizeRaw, err := game.GetDurationUntilMainPrizeRaw(copts)
-	if err != nil {
-		return nil, fmt.Errorf("getDurationUntilMainPrizeRaw: %w", err)
-	}
+	durationUntilPrizeRaw := cgcontracts.AsSignedInt256(durationUntilPrizeUint)
+	durationUntilPrize := cgcontracts.ClampNonNegative(durationUntilPrizeRaw)
 	timeoutClaim, err := game.TimeoutDurationToClaimMainPrize(copts)
 	if err != nil {
 		return nil, fmt.Errorf("timeoutDurationToClaimMainPrize: %w", err)
@@ -179,13 +182,13 @@ func sendDeferActivation(ctx context.Context, s *ethtx.Session, game *cgcontract
 
 // openInactiveWindow defers round activation until the round reads as
 // inactive, retrying a few times to absorb block-time races.
-func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, delaySeconds int64) error {
+func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts.CosmicSignatureGame, gameV3 *cgcontracts.CosmicSignatureGameV3, delaySeconds int64) error {
 	const maxAttempts = 3
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		if err := s.Refresh(ctx); err != nil {
 			return err
 		}
-		state, err := readRoundState(game, s.Net.BlockTime, big.NewInt(0), delaySeconds)
+		state, err := readRoundState(game, gameV3, s.Net.BlockTime, big.NewInt(0), delaySeconds)
 		if err != nil {
 			return err
 		}
@@ -202,7 +205,7 @@ func openInactiveWindow(ctx context.Context, s *ethtx.Session, game *cgcontracts
 	if err := s.Refresh(ctx); err != nil {
 		return err
 	}
-	state, err := readRoundState(game, s.Net.BlockTime, big.NewInt(0), delaySeconds)
+	state, err := readRoundState(game, gameV3, s.Net.BlockTime, big.NewInt(0), delaySeconds)
 	if err != nil {
 		return err
 	}
@@ -260,6 +263,11 @@ func maybeAdvanceForClaim(ctx context.Context, s *ethtx.Session, game *cgcontrac
 		return nil
 	}
 	waitSec := state.durationUntilPrize.Int64() + 1
+	if s.Acc.Address != state.lastBidder {
+		// Right after the deadline only the last bidder may claim; anyone
+		// else must also wait out the claim timeout.
+		waitSec += state.timeoutClaim.Int64()
+	}
 	if s.Net.IsDevChain() {
 		s.Out.Section("ADVANCE HARDHAT TIME FOR CLAIM")
 		s.Out.KeyValueDuration("Waiting for prize timer", waitSec)
@@ -270,6 +278,9 @@ func maybeAdvanceForClaim(ctx context.Context, s *ethtx.Session, game *cgcontrac
 		if err != nil {
 			return err
 		}
+		// V3.1 returns a signed value (negative once claimable); clamp so the
+		// stored duration keeps the pre-V3.1 non-negative semantics.
+		durationUntilPrize = cgcontracts.ClampNonNegative(cgcontracts.AsSignedInt256(durationUntilPrize))
 		if durationUntilPrize.Int64() > 0 {
 			return fmt.Errorf("prize still not claimable after advancing %d seconds (remaining: %d)", waitSec, durationUntilPrize.Int64())
 		}
@@ -311,9 +322,10 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 	if err != nil {
 		return fmt.Errorf("failed to instantiate CosmicGame: %w", err)
 	}
+	gameV3, _ := cgcontracts.NewCosmicSignatureGameV3(gameAddr, s.Net.Client)
 	s.Out.ContractInfo("CosmicGame Address", gameAddr)
 
-	state, err := readRoundState(game, s.Net.BlockTime, newIncrementMicros, delaySeconds)
+	state, err := readRoundState(game, gameV3, s.Net.BlockTime, newIncrementMicros, delaySeconds)
 	if err != nil {
 		return fmt.Errorf("failed to read contract state: %w", err)
 	}
@@ -364,7 +376,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 		if err := s.Refresh(ctx); err != nil {
 			return fmt.Errorf("network refresh failed after delay tx: %w", err)
 		}
-		state, err = readRoundState(game, s.Net.BlockTime, newIncrementMicros, delaySeconds)
+		state, err = readRoundState(game, gameV3, s.Net.BlockTime, newIncrementMicros, delaySeconds)
 		if err != nil {
 			return fmt.Errorf("failed to re-read contract state: %w", err)
 		}
@@ -397,7 +409,13 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 		if err := sendIncrement(ctx, s, game, newIncrementMicros); err != nil {
 			return err
 		}
-	case claimOK:
+	// V3.1 note: getDurationUntilMainPrize() is now a single signed getter,
+	// so "claimable through the anyone-timeout while the clamped timer still
+	// runs" can no longer happen — claimOK now implies a zero timer. To keep
+	// the Hardhat workflow (wait out the timer by advancing block time, then
+	// claim), dev chains take the claim branch whenever bids exist and the
+	// timer is still running; maybeAdvanceForClaim does the waiting.
+	case claimOK || (s.Net.IsDevChain() && state.hasBids && state.durationUntilPrize.Int64() > 0):
 		s.Out.Section("CLAIM MAIN PRIZE")
 		if err := maybeAdvanceForClaim(ctx, s, game, state); err != nil {
 			return err
@@ -423,7 +441,7 @@ func runClaimAndSetTimeIncrement(cmd *cobra.Command, verbose bool, args []string
 			s.Out.Section("DEFER ROUND ACTIVATION (NO CLAIMABLE PRIZE)")
 			s.Out.KeyValue("Reason", claimReason)
 		}
-		if err := openInactiveWindow(ctx, s, game, delaySeconds); err != nil {
+		if err := openInactiveWindow(ctx, s, game, gameV3, delaySeconds); err != nil {
 			return err
 		}
 		s.Out.Section("SET TIME INCREMENT (DEFERRED INACTIVE WINDOW)")

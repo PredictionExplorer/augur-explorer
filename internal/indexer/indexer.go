@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
+	"slices"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -153,14 +155,19 @@ type Config struct {
 // Engine is the indexing pipeline plus its polling loop. Create one with New;
 // it is safe to run exactly one Run per Engine.
 type Engine struct {
-	store     *store.Store
-	client    Client
-	progress  Progress
-	process   ProcessFunc
-	contracts []common.Address
-	log       *slog.Logger
-	metrics   *Metrics
-	topicName func(common.Hash) string
+	store    *store.Store
+	client   Client
+	progress Progress
+	process  ProcessFunc
+	log      *slog.Logger
+
+	// contracts is the FilterLogs address set. It grows at runtime when a
+	// handler discovers a new emitting contract (a new game implementation
+	// reported by Upgraded); reads take a snapshot per batch.
+	contractsMu sync.RWMutex
+	contracts   []common.Address
+	metrics     *Metrics
+	topicName   func(common.Hash) string
 
 	batch         BatchConfig
 	retry         RetryConfig
@@ -200,6 +207,29 @@ func New(cfg Config) (*Engine, error) {
 		retry:         cfg.Retry.withDefaults(),
 		caughtUpDelay: caughtUp,
 	}, nil
+}
+
+// Contracts returns a snapshot of the FilterLogs address set.
+func (e *Engine) Contracts() []common.Address {
+	e.contractsMu.RLock()
+	defer e.contractsMu.RUnlock()
+	return slices.Clone(e.contracts)
+}
+
+// AddContracts adds addresses to the FilterLogs address set; the next batch
+// fetch includes them. It returns how many were new.
+func (e *Engine) AddContracts(addrs ...common.Address) int {
+	e.contractsMu.Lock()
+	defer e.contractsMu.Unlock()
+	added := 0
+	for _, a := range addrs {
+		if a == (common.Address{}) || slices.Contains(e.contracts, a) {
+			continue
+		}
+		e.contracts = append(e.contracts, a)
+		added++
+	}
+	return added
 }
 
 // FetchLogs retrieves the logs emitted by the given contracts in

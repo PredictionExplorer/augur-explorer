@@ -104,7 +104,7 @@
     "TokenAddress": "",
     "TokenId": -1,
     "TokenURI": "",
-    "Claimed": true,
+    "Claimed": false,
     "IsTimeoutClaim": false,
     "WinnerAddr": "",
     "WinnerAid": 0

@@ -46,6 +46,7 @@
   "cg_nft_unstaked_rwalk": {
     "added": [
       {
+        "action_counter": 6,
         "action_id": 5,
         "block_num": 1781,
         "contract_aid": "0x1000000000000000000000000000000000000010",

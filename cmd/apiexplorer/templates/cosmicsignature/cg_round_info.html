@@ -7,18 +7,8 @@
 <body>
 	<div class="cg-wide-container">
 		<div class="page-header">
-			<div class="home-button">
-				<nav>
-					<ul>
-						<li style="width: 10em;">
-							<a class="btn_link" href="/cosmicsignature">🏠 Home</a>
-							<span></span><span></span><span></span><span></span>
-						</li>
-					</ul>
-				</nav>
-			</div>
-			<h1>🏆 Round #{{.RoundInfo.RoundNum}} Details</h1>
-			<div class="subtitle">Complete round information and statistics</div>
+			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
+			<h1>Round #{{.RoundInfo.RoundNum}} Details</h1>
 		</div>
 
 		<!-- Transaction Info -->
@@ -31,7 +21,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Block Number</div>
-					<div class="detail-value">{{.RoundInfo.ClaimPrizeTx.Tx.BlockNum}}</div>
+					<div class="detail-value">{{arbiscanTx .RoundInfo.ClaimPrizeTx.Tx.TxHash .RoundInfo.ClaimPrizeTx.Tx.BlockNum}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction ID</div>
@@ -39,7 +29,7 @@
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">Transaction Hash</div>
-					<div class="detail-value monospace">{{.RoundInfo.ClaimPrizeTx.Tx.TxHash}}</div>
+					<div class="detail-value monospace">{{arbiscanTx .RoundInfo.ClaimPrizeTx.Tx.TxHash .RoundInfo.ClaimPrizeTx.Tx.TxHash}}</div>
 				</div>
 				<div class="detail-row">
 					<div class="detail-label">DateTime</div>
@@ -99,7 +89,7 @@
 			
 			<div class="sub-grid">
 				<div class="sub-card">
-					<div class="sub-header">🏃 Endurance Champion</div>
+					<div class="sub-header">Endurance Champion</div>
 					<div class="details-list">
 						<div class="detail-row">
 							<div class="detail-label">Winner</div>
@@ -115,11 +105,18 @@
 							<div class="detail-label">CST Amount</div>
 							<div class="detail-value">{{printf "%.2f" .RoundInfo.EnduranceChampion.CstAmountEth}} CST</div>
 						</div>
+						{{/* V3 championDurations(round); omitted from the JSON for pre-V3 rounds. */}}
+						{{ with index .RoundInfo.RoundStats "EnduranceChampionDuration" }}
+						<div class="detail-row">
+							<div class="detail-label">Championship Duration (V3)</div>
+							<div class="detail-value">{{.}} seconds</div>
+						</div>
+						{{ end }}
 					</div>
 				</div>
 
 				<div class="sub-card">
-					<div class="sub-header">🎯 Last CST Bidder</div>
+					<div class="sub-header">Last CST Bidder</div>
 					<div class="details-list">
 						<div class="detail-row">
 							<div class="detail-label">Winner</div>
@@ -139,7 +136,7 @@
 				</div>
 
 				<div class="sub-card">
-					<div class="sub-header">⏱️ Chrono Warrior</div>
+					<div class="sub-header">Chrono Warrior</div>
 					<div class="details-list">
 						<div class="detail-row">
 							<div class="detail-label">Winner</div>
@@ -159,6 +156,13 @@
 							<div class="detail-label">NFT Token ID</div>
 							<div class="detail-value">{{.RoundInfo.ChronoWarrior.NftTokenId}}</div>
 						</div>
+						{{/* V3 championDurations(round); omitted from the JSON for pre-V3 rounds. */}}
+						{{ with index .RoundInfo.RoundStats "ChronoWarriorDuration" }}
+						<div class="detail-row">
+							<div class="detail-label">Chrono Duration (V3)</div>
+							<div class="detail-value">{{.}} seconds</div>
+						</div>
+						{{ end }}
 					</div>
 				</div>
 			</div>
@@ -188,7 +192,26 @@
 				<div class="stat-card">
 					<div class="stat-label">Staking Deposit</div>
 					<div class="stat-value">{{printf "%.6f" .RoundInfo.StakingDeposit.StakingDepositAmountEth}}</div>
+					<div class="stat-sublabel">ETH ({{printf "%.6f" .RoundInfo.StakingDeposit.StakingPerTokenEth}} / token, {{.RoundInfo.StakingDeposit.StakingNumStakedTokens}} staked)</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">ETH Wagered In Bids</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.RoundStats.TotalEthInBidsEth}}</div>
 					<div class="stat-sublabel">ETH</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">CST Consumed In Bids</div>
+					<div class="stat-value">{{printf "%.4f" .RoundInfo.RoundStats.TotalCstInBidsEth}}</div>
+					<div class="stat-sublabel">CST</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">ERC-20 Donations</div>
+					<div class="stat-value">{{.RoundInfo.RoundStats.NumERC20Donations}}</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-label">Direct ETH Donations</div>
+					<div class="stat-value">{{printf "%.6f" .RoundInfo.RoundStats.TotalDonatedAmountEth}}</div>
+					<div class="stat-sublabel">ETH ({{.RoundInfo.RoundStats.TotalDonatedCount}} donations)</div>
 				</div>
 			</div>
 
@@ -219,6 +242,10 @@
 				<div class="info-item">
 					<div class="info-label">Round Duration</div>
 					<div class="info-value">{{.RoundInfo.RoundStats.RoundDurationSeconds}} seconds</div>
+				</div>
+				<div class="info-item">
+					<div class="info-label">Delay Before Round Activation</div>
+					<div class="info-value">{{.RoundInfo.RoundStats.DelayDurationBeforeRoundActivation}} seconds</div>
 				</div>
 			</div>
 
@@ -296,7 +323,7 @@
 
 		<!-- Raffle NFT Winners (Bidders) -->
 		<div class="section-card">
-			<div class="section-header">🎲 Raffle NFT Winners (Bidders)</div>
+			<div class="section-header">Raffle NFT Winners (Bidders)</div>
 			<table class="data-table">
 				<tr>
 					<th>Block</th>
@@ -309,7 +336,7 @@
 				</tr>
 				{{- range $i, $change := .RoundInfo.RaffleNFTWinners}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -325,7 +352,7 @@
 
 		<!-- Staking NFT Winners -->
 		<div class="section-card">
-			<div class="section-header">🚶 Staking NFT Winners (RandomWalk Stakers)</div>
+			<div class="section-header">Staking NFT Winners (RandomWalk Stakers)</div>
 			<table class="data-table">
 				<tr>
 					<th>Block</th>
@@ -338,7 +365,7 @@
 				</tr>
 				{{- range $i, $change := .RoundInfo.StakingNFTWinners}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -354,7 +381,7 @@
 
 		<!-- Raffle ETH Deposits -->
 		<div class="section-card">
-			<div class="section-header">💰 Raffle ETH Deposits (Bidders)</div>
+			<div class="section-header">Raffle ETH Deposits (Bidders)</div>
 			<table class="data-table">
 				<tr>
 					<th>Block</th>
@@ -366,7 +393,7 @@
 				</tr>
 				{{- range $i, $change := .RoundInfo.RaffleETHDeposits}}
 					<tr>
-						<td>{{.Tx.BlockNum}}</td>
+						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
 						<td>{{.Tx.DateTime}}</td>
 						<td class="monospace">
 							{{ethAddrLink .WinnerAddr}}
@@ -382,7 +409,7 @@
 		<!-- The v1 rounds/info endpoint does not embed donated NFT / ERC20
 		     lists; they have their own round-scoped pages. -->
 		<div class="section-card">
-			<div class="section-header">🎁 Round Donations</div>
+			<div class="section-header">Round Donations</div>
 			<div class="action-grid">
 				<div class="action-item">
 					<nav>

@@ -95,7 +95,6 @@ func TestReadRoundStateFailures(t *testing.T) {
 		{"getTotalNumBids", "getTotalNumBids:"},
 		{"lastBidderAddress", "lastBidderAddress:"},
 		{"getDurationUntilMainPrize", "getDurationUntilMainPrize:"},
-		{"getDurationUntilMainPrizeRaw", "getDurationUntilMainPrizeRaw:"},
 		{"timeoutDurationToClaimMainPrize", "timeoutDurationToClaimMainPrize:"},
 		{"mainPrizeTimeIncrementInMicroSeconds", "mainPrizeTimeIncrementInMicroSeconds:"},
 		{"delayDurationBeforeRoundActivation", "delayDurationBeforeRoundActivation:"},
@@ -158,7 +157,6 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
 		stub.Return("getDurationUntilMainPrize", big.NewInt(500))
-		stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(500))
 		stub.Return("roundActivationTime", big.NewInt(blockTime-600)) // active
 		registerGame(t, chain, stub)
 		chain.MarkNextTxReverted()
@@ -319,7 +317,6 @@ func TestPlannerTransactionFailures(t *testing.T) {
 			stub.Return("getTotalNumBids", big.NewInt(5))
 			stub.Return("lastBidderAddress", otherAddr)
 			stub.Return("getDurationUntilMainPrize", big.NewInt(500))
-			stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(500))
 			stub.Return("roundActivationTime", big.NewInt(blockTime-600))
 			registerGame(t, chain, stub)
 			return chain, stub
@@ -372,7 +369,6 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
 		stub.Return("getDurationUntilMainPrize", big.NewInt(500))
-		stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(500))
 		stub.Handle("roundActivationTime", func([]any) ([]any, error) {
 			if chain.SubmittedTxCount() >= 3 {
 				return []any{big.NewInt(blockTime + 100000)}, nil
@@ -403,7 +399,6 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
-		stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(-4000))
 		stub.Handle("getDurationUntilMainPrize", func([]any) ([]any, error) {
 			if chain.TimeOffset() > 0 {
 				return nil, errors.New("post-advance read revert")
@@ -432,7 +427,6 @@ func TestPlannerTransactionFailures(t *testing.T) {
 		stub := plannerStub(chain)
 		stub.Return("getTotalNumBids", big.NewInt(5))
 		stub.Return("lastBidderAddress", otherAddr)
-		stub.Return("getDurationUntilMainPrizeRaw", big.NewInt(-4000))
 		stub.Return("getDurationUntilMainPrize", big.NewInt(5))
 		stub.Return("roundActivationTime", big.NewInt(blockTime-600))
 		registerGame(t, chain, stub)
@@ -537,9 +531,7 @@ func TestInfoCommandPerReadFailures(t *testing.T) {
 		{"roundNum", "RoundNum()"},
 		{"delayDurationBeforeRoundActivation", "DelayDurationBeforeRoundActivation()"},
 		{"getTotalNumBids", "GetTotalNumBids()"},
-		{"bidderAddresses", "BidderAddresses()"},
 		{"getDurationUntilMainPrize", "GetDurationUntilMainPrize()"},
-		{"getDurationUntilMainPrizeRaw", "GetDurationUntilMainPrizeRaw()"},
 		{"mainPrizeTime", "MainPrizeTime()"},
 		{"timeoutDurationToClaimMainPrize", "TimeoutDurationToClaimMainPrize()"},
 		{"mainPrizeTimeIncrementInMicroSeconds", "MainPrizeTimeIncrementInMicroSeconds()"},
@@ -597,6 +589,18 @@ func TestInfoCommandPerReadFailures(t *testing.T) {
 			}
 		})
 	}
+
+	// bidderAddresses only exists on V1/V2 (v3.1 folded its count into
+	// roundStats), so a failing read falls back to the bid total instead of
+	// aborting the whole info dump.
+	t.Run("bidderAddresses failure is non-fatal", func(t *testing.T) {
+		chain := startReadChain(t)
+		registerInfoWorld(t, chain, failOne(infoGameStub(), "bidderAddresses"))
+		_, err := executeCmd(t, newInfoCmd(), testGameAddr.Hex())
+		if err != nil {
+			t.Errorf("info with failing bidderAddresses = %v, want success (fallback to bid total)", err)
+		}
+	})
 
 	t.Run("owner read fails", func(t *testing.T) {
 		chain := startReadChain(t)

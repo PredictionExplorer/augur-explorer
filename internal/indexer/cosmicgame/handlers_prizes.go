@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -349,13 +350,110 @@ func (h *Handlers) storeChronoWarriorPrizePaid(ctx context.Context, evt *cgmodel
 	return h.repo.InsertChronoWarrior(ctx, evt)
 }
 
+// decodeArbitrumError handles ArbitrumError, emitted from
+// ArbitrumHelpers.tryGet* when a precompile read that feeds the random-number
+// seed fails (as it does on any non-Arbitrum chain). The seed then draws on
+// fewer entropy sources, so the event is worth keeping even though nothing
+// downstream consumes it.
+func (h *Handlers) decodeArbitrumError(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGArbitrumError, error) {
+	var ethEvt cgc.CosmicSignatureGameArbitrumError
+	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "ArbitrumError", lg.Data); err != nil {
+		return nil, err
+	}
+	evt := &cgmodel.CGArbitrumError{}
+	evt.EvtId = elog.EvtID
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxID
+	evt.Contract = lg.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ErrStr = ethEvt.ErrStr
+	return evt, nil
+}
+
+func (h *Handlers) storeArbitrumError(ctx context.Context, evt *cgmodel.CGArbitrumError) error {
+	h.log.Info("ArbitrumError", "evt_id", evt.EvtId, "err_str", evt.ErrStr)
+
+	if err := h.repo.DeleteArbitrumError(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertArbitrumError(ctx, evt)
+}
+
+// decodeArbitrumCallFailed builds a decoder for one of the four V3.1
+// parameterless ArbitrumHelpers failure events (which replaced the generic
+// ArbitrumError(string)). The events carry no data, so the decoder just
+// records the call name in the existing cg_arbitrum_error table, keeping the
+// legacy message wording for continuity.
+func (h *Handlers) decodeArbitrumCallFailed(errStr string) func(*types.Log, *store.EthereumEventLog) (*cgmodel.CGArbitrumError, error) {
+	return func(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGArbitrumError, error) {
+		evt := &cgmodel.CGArbitrumError{}
+		evt.EvtId = elog.EvtID
+		evt.BlockNum = elog.BlockNum
+		evt.TxId = elog.TxID
+		evt.Contract = lg.Address.String()
+		evt.TimeStamp = elog.TimeStamp
+		evt.ErrStr = errStr
+		return evt, nil
+	}
+}
+
+// decodeEthTransferToCharityFailed handles the V3.1
+// EthTransferToCharityFailed(address indexed charityAddress, uint256 amount)
+// event, which replaced the game's FundTransferFailed emission on the
+// round-end charity donation path.
+func (h *Handlers) decodeEthTransferToCharityFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGEthToCharityFailed, error) {
+	if err := requireTopics(lg, 2); err != nil {
+		return nil, err
+	}
+	var ethEvt cgc.CosmicSignatureGameV3EthTransferToCharityFailed
+	if err := h.gameV3ABI.UnpackIntoInterface(&ethEvt, "EthTransferToCharityFailed", lg.Data); err != nil {
+		return nil, err
+	}
+
+	evt := &cgmodel.CGEthToCharityFailed{}
+	evt.EvtId = elog.EvtID
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxID
+	evt.Contract = lg.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.CharityAddress = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
+	evt.Amount = ethEvt.Amount.String()
+	return evt, nil
+}
+
+func (h *Handlers) storeEthTransferToCharityFailed(ctx context.Context, evt *cgmodel.CGEthToCharityFailed) error {
+	h.log.Info("EthTransferToCharityFailed", "evt_id", evt.EvtId, "charity", evt.CharityAddress, "amount", evt.Amount)
+
+	if err := h.repo.DeleteEthToCharityFailed(ctx, evt.EvtId); err != nil {
+		return err
+	}
+	return h.repo.InsertEthToCharityFailed(ctx, evt)
+}
+
+// decodeFundTransferFailed handles CosmicSignatureEvents.sol:
+// FundTransferFailed(string errStr, address indexed destinationAddress,
+// uint256 amount), emitted by the pre-V3.1 game on a failed charity donation
+// and by the CST staking wallet when tryPerformMaintenance cannot forward its
+// balance. The game ABI also declares a custom *error* of the same name and
+// parameter list; abi.UnpackIntoInterface resolves the name to the error
+// (whose inputs are all non-indexed), which shifted the decode by one word
+// and stored the string length as the amount. Unpack against the event's
+// non-indexed inputs explicitly.
 func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundTransferFailed, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
 	}
-	var ethEvt cgc.CosmicSignatureGameFundTransferFailed
-	if err := h.gameABI.UnpackIntoInterface(&ethEvt, "FundTransferFailed", lg.Data); err != nil {
+	values, err := h.gameABI.Events["FundTransferFailed"].Inputs.NonIndexed().Unpack(lg.Data)
+	if err != nil {
 		return nil, err
+	}
+	if len(values) != 2 {
+		return nil, fmt.Errorf("FundTransferFailed: %d data values, want 2", len(values))
+	}
+	errStr, ok1 := values[0].(string)
+	amount, ok2 := values[1].(*big.Int)
+	if !ok1 || !ok2 || amount == nil {
+		return nil, fmt.Errorf("FundTransferFailed: unexpected value types %T, %T", values[0], values[1])
 	}
 
 	evt := &cgmodel.CGFundTransferFailed{}
@@ -365,12 +463,14 @@ func (h *Handlers) decodeFundTransferFailed(lg *types.Log, elog *store.EthereumE
 	evt.Contract = lg.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Destination = ethcommon.BytesToAddress(lg.Topics[1][12:]).String()
-	evt.Amount = ethEvt.Amount.String()
+	evt.Amount = amount.String()
+	evt.ErrStr = errStr
 	return evt, nil
 }
 
 func (h *Handlers) storeFundTransferFailed(ctx context.Context, evt *cgmodel.CGFundTransferFailed) error {
-	h.log.Info("FundTransferFailed", "evt_id", evt.EvtId, "destination", evt.Destination, "amount", evt.Amount)
+	h.log.Info("FundTransferFailed", "evt_id", evt.EvtId, "contract", evt.Contract,
+		"destination", evt.Destination, "amount", evt.Amount, "err_str", evt.ErrStr)
 
 	if err := h.repo.DeleteFundTransferFailed(ctx, evt.EvtId); err != nil {
 		return err

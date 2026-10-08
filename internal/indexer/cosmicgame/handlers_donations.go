@@ -126,8 +126,8 @@ func (h *Handlers) storeDonationReceived(ctx context.Context, evt *cgmodel.CGDon
 }
 
 // decodeDonationSent handles the CharityWallet's FundsTransferredToCharity
-// (the topic0 is shared with the game/marketing-wallet event of the same
-// name; the registry's source filter separates them).
+// (the topic0 is shared with the game/staking-wallet event of the same name;
+// the registry's source filter separates them).
 func (h *Handlers) decodeDonationSent(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGDonationSentEvent, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err
@@ -319,9 +319,10 @@ func (h *Handlers) storeDonatedNftClaimed(ctx context.Context, evt *cgmodel.CGDo
 	return h.repo.InsertDonatedNFTClaim(ctx, evt)
 }
 
-// decodeFundsToCharity handles the game's FundsTransferredToCharity emitted
-// through the marketing wallet (same topic0 as the CharityWallet event;
-// separated by source).
+// decodeFundsToCharity handles FundsTransferredToCharity as emitted by the
+// game when it forwards the charity share while distributing prizes, and by
+// the CST staking wallet when maintenance sweeps its balance (same topic0 as
+// the CharityWallet event; separated by source).
 func (h *Handlers) decodeFundsToCharity(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGFundsToCharity, error) {
 	if err := requireTopics(lg, 2); err != nil {
 		return nil, err

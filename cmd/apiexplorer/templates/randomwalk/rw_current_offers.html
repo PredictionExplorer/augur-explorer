@@ -18,7 +18,7 @@
 	</tr>
 	{{- range $i, $change := .Offers}}
 		<tr class="market_reports">
-			<td class="">{{.BlockNum}}</td>
+			<td class="">{{arbiscanTx .TxHash .BlockNum}}</td>
 			<td class="">{{.DateTime}}</td>
 			<td class="" style="text-align:center;">{{.OfferId}}</td>
 			<td class="">
