@@ -215,7 +215,7 @@ func TestChatMessageMappingValidation(t *testing.T) {
 
 func TestChatContextSnapshot(t *testing.T) {
 	r := chatRecord(1)
-	entry := cgstore.ChatContextRecord{ChatPosition: r.ChatPosition, Round: 7, Position: 1, BidderAddress: r.BidderAddress, BidType: 2, PrizeAt: time.Unix(2000, 0), CstDutchAuctionDurationSeconds: 0}
+	entry := cgstore.ChatContextRecord{ChatPosition: r.ChatPosition, Round: 7, Position: 1, BidderAddress: r.BidderAddress, BidType: 2, PrizeAt: time.Unix(2000, 0), MechanicsVersion: 2, CstDutchAuctionDurationValue: 0}
 	s := newTestServer(t, fakeBidReader{chatContext: func(context.Context, int64) (cgstore.ChatContextSnapshot, error) {
 		return cgstore.ChatContextSnapshot{Revision: 2, Records: []cgstore.ChatContextRecord{entry}}, nil
 	}})
@@ -227,10 +227,35 @@ func TestChatContextSnapshot(t *testing.T) {
 	if page.Meta.Revision != "2" || len(page.Data) != 1 || page.Data[0].CstDutchAuctionDurationSeconds == nil {
 		t.Fatalf("context=%#v", page)
 	}
+	if page.Data[0].CstBidPriceDeclineMultiplierWeiPerSecond != nil {
+		t.Fatalf("V2 entry must not carry the V3 multiplier: %#v", page.Data[0])
+	}
 	rr := httptest.NewRecorder()
 	_ = response.VisitGetRoundChatContextResponse(rr)
 	if rr.Code != http.StatusOK || strings.Contains(rr.Body.String(), "message") || strings.Contains(rr.Body.String(), "reward") {
 		t.Fatalf("context leaked fields: %s", rr.Body.String())
+	}
+
+	// Regression: a V3 bid's eighth BidPlaced word is the CST price decline
+	// multiplier (wei/second), far beyond JavaScript's safe-integer range.
+	// It must be served as the string multiplier field, never as the
+	// integer duration (which crashed strict clients).
+	v3 := entry
+	v3.MechanicsVersion = 3
+	v3.CstDutchAuctionDurationValue = 16666666666666667
+	s = newTestServer(t, fakeBidReader{chatContext: func(context.Context, int64) (cgstore.ChatContextSnapshot, error) {
+		return cgstore.ChatContextSnapshot{Revision: 2, Records: []cgstore.ChatContextRecord{v3}}, nil
+	}})
+	response, err = s.GetRoundChatContext(context.Background(), GetRoundChatContextRequestObject{Round: 7})
+	if err != nil {
+		t.Fatal(err)
+	}
+	page = response.(GetRoundChatContext200JSONResponse)
+	if len(page.Data) != 1 || page.Data[0].CstDutchAuctionDurationSeconds != nil {
+		t.Fatalf("V3 entry must not serve the multiplier as a duration: %#v", page.Data)
+	}
+	if page.Data[0].CstBidPriceDeclineMultiplierWeiPerSecond == nil || *page.Data[0].CstBidPriceDeclineMultiplierWeiPerSecond != "16666666666666667" {
+		t.Fatalf("V3 multiplier missing or wrong: %#v", page.Data[0])
 	}
 	for _, round := range []int64{-1, 8} {
 		response, _ := s.GetRoundChatContext(context.Background(), GetRoundChatContextRequestObject{Round: round})
@@ -325,7 +350,7 @@ func TestChatContextRejectsCorruptSnapshots(t *testing.T) {
 	valid := cgstore.ChatContextRecord{
 		ChatPosition: chatRecord(1).ChatPosition, Round: 7, Position: 1,
 		BidderAddress: chatRecord(1).BidderAddress, PrizeAt: time.Unix(2000, 0),
-		CstDutchAuctionDurationSeconds: -1,
+		CstDutchAuctionDurationValue: -1,
 	}
 	for _, tc := range []struct {
 		name     string

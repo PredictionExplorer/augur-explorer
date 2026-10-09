@@ -173,7 +173,7 @@ func (s *Server) GetRoundChatContext(ctx context.Context, request GetRoundChatCo
 	response.Meta.Revision = strconv.FormatInt(snapshot.Revision, 10)
 	var previous *cgstore.ChatPosition
 	for _, record := range snapshot.Records {
-		if record.Round != request.Round || (previous != nil && compareChatPosition(record.ChatPosition, *previous) <= 0) || record.PrizeAt.IsZero() || record.CstDutchAuctionDurationSeconds < -1 {
+		if record.Round != request.Round || (previous != nil && compareChatPosition(record.ChatPosition, *previous) <= 0) || record.PrizeAt.IsZero() || record.CstDutchAuctionDurationValue < -1 {
 			return fail(errors.New("invalid or unordered chat context")), nil
 		}
 		if err := validateChatIdentity(record.ChatPosition, record.Round, record.Position, record.BidderAddress); err != nil {
@@ -184,8 +184,20 @@ func (s *Server) GetRoundChatContext(ctx context.Context, request GetRoundChatCo
 			BidderAddress: ethcommon.HexToAddress(record.BidderAddress).Hex(), OccurredAt: record.OccurredAt.UTC(),
 			BidType: mapBidType(record.BidType), PrizeAt: record.PrizeAt.UTC(),
 		}
-		if record.CstDutchAuctionDurationSeconds >= 0 {
-			duration := record.CstDutchAuctionDurationSeconds
+		// The eighth BidPlaced data word changed meaning between
+		// generations (same topic, same slot): V2 emits the CST Dutch
+		// auction duration in seconds, V3 the CST bid price decline
+		// multiplier in wei per second — a value far above JavaScript's
+		// safe-integer range, so it must never be served as the integer
+		// duration field. Mirrors the switch in bids.go.
+		switch {
+		case record.MechanicsVersion >= 3:
+			if record.CstDutchAuctionDurationValue >= 0 {
+				multiplier := strconv.FormatInt(record.CstDutchAuctionDurationValue, 10)
+				item.CstBidPriceDeclineMultiplierWeiPerSecond = &multiplier
+			}
+		case record.CstDutchAuctionDurationValue >= 0:
+			duration := record.CstDutchAuctionDurationValue
 			item.CstDutchAuctionDurationSeconds = &duration
 		}
 		response.Data = append(response.Data, item)

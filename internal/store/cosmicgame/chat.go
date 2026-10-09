@@ -43,12 +43,20 @@ type ChatMessagePage struct {
 type ChatContextRecord struct {
 	ChatPosition
 
-	Round                          int64
-	Position                       int64
-	BidderAddress                  string
-	BidType                        int64
-	PrizeAt                        time.Time
-	CstDutchAuctionDurationSeconds int64
+	Round         int64
+	Position      int64
+	BidderAddress string
+	BidType       int64
+	PrizeAt       time.Time
+	// MechanicsVersion is the game generation that produced the bid (1, 2
+	// or 3), derived from the game's Initialized events preceding the
+	// bid's block; it decides how CstDutchAuctionDurationValue is
+	// interpreted (Comment in internal/api/v2/bids.go applies).
+	MechanicsVersion int64
+	// CstDutchAuctionDurationValue is the raw eighth BidPlaced data word:
+	// the CST Dutch auction duration in seconds on V2, the CST bid price
+	// decline multiplier in wei per second on V3, -1 when absent (V1).
+	CstDutchAuctionDurationValue int64
 }
 
 // ChatContextSnapshot holds complete minimal metadata and its history revision.
@@ -142,9 +150,12 @@ func (r *Repo) ChatContext(ctx context.Context, round int64) (ChatContextSnapsho
 	}
 	const query = `SELECT s.revision,COALESCE(p.evtlog_id,0),COALESCE(p.round_num,0),
 		COALESCE(p.bid_position,0),COALESCE(p.addr,''),COALESCE(p.time_stamp,'epoch'::timestamptz),
-		COALESCE(p.bid_type,0),COALESCE(p.prize_time,'epoch'::timestamptz),COALESCE(p.duration,-1)
+		COALESCE(p.bid_type,0),COALESCE(p.prize_time,'epoch'::timestamptz),
+		COALESCE(p.mechanics_version,0),COALESCE(p.duration,-1)
 	FROM cg_chat_revision s LEFT JOIN LATERAL (
 		SELECT b.evtlog_id,b.round_num,b.bid_position,ba.addr,b.time_stamp,b.bid_type,b.prize_time,
+			(SELECT COALESCE(MAX(i.version),1) FROM cg_adm_initialized i
+				WHERE i.version>0 AND i.block_num<=b.block_num) AS mechanics_version,
 			CASE WHEN b.cst_dutch_auction_duration>=0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END AS duration
 		FROM cg_bid b LEFT JOIN address ba ON ba.address_id=b.bidder_aid
 		WHERE b.round_num=$1
@@ -157,7 +168,8 @@ func (r *Repo) ChatContext(ctx context.Context, round int64) (ChatContextSnapsho
 	for rows.Next() {
 		var record ChatContextRecord
 		if err := rows.Scan(&out.Revision, &record.EventLogID, &record.Round, &record.Position,
-			&record.BidderAddress, &record.OccurredAt, &record.BidType, &record.PrizeAt, &record.CstDutchAuctionDurationSeconds); err != nil {
+			&record.BidderAddress, &record.OccurredAt, &record.BidType, &record.PrizeAt,
+			&record.MechanicsVersion, &record.CstDutchAuctionDurationValue); err != nil {
 			return out, store.WrapError(op, err)
 		}
 		if record.EventLogID != 0 {
