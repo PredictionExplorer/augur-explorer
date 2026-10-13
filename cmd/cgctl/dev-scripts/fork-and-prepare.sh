@@ -98,8 +98,16 @@ PIN=$(( $((16#$LATEST_HEX)) - 8 ))
 echo "upstream: $UPSTREAM_RPC | pin block: $PIN | log: $LOG_FILE"
 echo "$PIN" > "$RUN_DIR/fork-block.txt"
 
-cd "$HH_REPO"
-HARDHAT_MODE_CODE=2 nohup npx hardhat node --fork "$UPSTREAM_RPC" --fork-block-number "$PIN" \
+# The node runs from the standalone fork-node project (hardhat pinned to 2.26.x):
+# hardhat 2.27+ injects L1 genesis predeploys with storage, which EDR cannot apply
+# in fork mode (NomicFoundation/edr#911), so forking Arbitrum fails with HH604.
+FORK_NODE_DIR="$SELF_DIR/fork-node"
+if [ ! -d "$FORK_NODE_DIR/node_modules" ]; then
+	echo "Installing the pinned hardhat for the fork node (one-time)..."
+	(cd "$FORK_NODE_DIR" && npm install --no-audit --no-fund)
+fi
+cd "$FORK_NODE_DIR"
+nohup npx hardhat node --fork "$UPSTREAM_RPC" --fork-block-number "$PIN" \
 	--hostname "$HH_HOST" --port "$HH_PORT" > "$LOG_FILE" 2>&1 &
 echo $! > "$PID_FILE"
 cd "$RUN_DIR"

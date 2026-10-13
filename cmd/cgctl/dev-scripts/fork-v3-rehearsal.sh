@@ -153,13 +153,68 @@ claim) # ---- steps 5-6: claim with hardhat account #0; round goes inactive ----
 	;;
 
 upgrade) # ---- step 7: V2 -> V3 while the round is inactive ----
-	if [ ! -f "$COSMIC_SIG_REPO/scripts/upgrade-fork-to-v3.js" ]; then
-		echo "upgrade-fork-to-v3.js not found under COSMIC_SIG_REPO=$COSMIC_SIG_REPO" >&2
-		echo "Run manually:  cd <Cosmic-Signature repo> && HARDHAT_MODE_CODE=2 npx hardhat run scripts/upgrade-fork-to-v3.js --network fork_local" >&2
+	UPGRADE_JS="$SELF_DIR/upgrade-fork-v3.js"
+	if [ ! -f "$UPGRADE_JS" ]; then
+		echo "upgrade-fork-v3.js not found next to this script ($UPGRADE_JS)" >&2
+		exit 1
+	fi
+	if [ ! -f "$COSMIC_SIG_REPO/hardhat.config.js" ]; then
+		echo "COSMIC_SIG_REPO=$COSMIC_SIG_REPO is not a hardhat project (set it in fork-env.sh)" >&2
 		exit 1
 	fi
 	cd "$COSMIC_SIG_REPO"
-	HARDHAT_MODE_CODE=2 GAME_PROXY_ADDR=$GAME_ADDR npx hardhat run scripts/upgrade-fork-to-v3.js --network fork_local
+	RPC_URL="$RPC_URL" GAME_ADDR="$GAME_ADDR" npx hardhat run "$UPGRADE_JS"
+	;;
+
+upgrade-oz) # ---- step 7 alternative: the STANDARD OZ procedure (validator gate included) ----
+	OZ_JS="$SELF_DIR/upgrade-fork-v3-oz.js"
+	if [ ! -f "$COSMIC_SIG_REPO/hardhat.config.js" ]; then
+		echo "COSMIC_SIG_REPO=$COSMIC_SIG_REPO is not a hardhat project (set it in fork-env.sh)" >&2
+		exit 1
+	fi
+	echo "NOTE: requires the fork node on port 8545 (HH_PORT=8545 fork-and-prepare.sh)."
+	cd "$COSMIC_SIG_REPO"
+
+	# The deployed-V2 -> V3 upgrade needs 3 annotation edits in the storage base
+	# (same edits the runbook prescribes for the real deployment branch):
+	#   1. ENABLE  @custom:oz-renamed-from bidderAddresses       (roundStats rename)
+	#   2. DISABLE @custom:oz-renamed-from cstDutchAuctionDurationDivisor  (V1->V2 rename, n/a here)
+	#   3. DISABLE @custom:oz-renamed-from bidCstRewardAmount              (V1->V2 rename, n/a here)
+	# Apply them temporarily, compile, run the OZ upgrade, then git-restore the file.
+	STORAGE_SOL="contracts/production/CosmicSignatureGameStorageV2Base.sol"
+	if ! git diff --quiet -- "$STORAGE_SOL"; then
+		echo "$STORAGE_SOL already has uncommitted changes — refusing to sed/git-restore over them." >&2
+		echo "Commit, stash, or 'git restore' it first, then rerun." >&2
+		exit 1
+	fi
+	restore_storage_sol() {
+		echo "Restoring stock $STORAGE_SOL (git restore) and recompiling..."
+		git restore -- "$STORAGE_SOL"
+		npx hardhat compile
+	}
+	trap restore_storage_sol EXIT
+	echo "Applying the 3 annotation edits to $STORAGE_SOL..."
+	sed -i \
+		-e 's|/// // @custom:oz-renamed-from bidderAddresses|/// @custom:oz-renamed-from bidderAddresses|' \
+		-e 's|/// @custom:oz-renamed-from cstDutchAuctionDurationDivisor|/// // @custom:oz-renamed-from cstDutchAuctionDurationDivisor|' \
+		-e 's|/// @custom:oz-renamed-from bidCstRewardAmount$|/// // @custom:oz-renamed-from bidCstRewardAmount|' \
+		"$STORAGE_SOL"
+	if ! grep -q '^\s*/// @custom:oz-renamed-from bidderAddresses$' "$STORAGE_SOL"; then
+		echo "sed failed to enable the bidderAddresses rename annotation in $STORAGE_SOL — source format changed?" >&2
+		exit 1
+	fi
+	npx hardhat compile
+	GAME_ADDR="$GAME_ADDR" npx hardhat run "$OZ_JS" --network hardhat_on_localhost
+	;;
+
+smoke) # ---- step 8 alternative: full round lifecycle test on the upgraded fork ----
+	SMOKE_JS="$SELF_DIR/fork-v3-smoke.js"
+	if [ ! -f "$COSMIC_SIG_REPO/hardhat.config.js" ]; then
+		echo "COSMIC_SIG_REPO=$COSMIC_SIG_REPO is not a hardhat project (set it in fork-env.sh)" >&2
+		exit 1
+	fi
+	cd "$COSMIC_SIG_REPO"
+	RPC_URL="$RPC_URL" GAME_ADDR="$GAME_ADDR" npx hardhat run "$SMOKE_JS"
 	;;
 
 new-round) # ---- step 8: pass the activation time and place the first gesture ----
@@ -176,8 +231,8 @@ new-round) # ---- step 8: pass the activation time and place the first gesture -
 	;;
 
 *)
-	echo "Usage: $0 {status|set-delay|jump|claim|upgrade|new-round}"
-	echo "Run in order: status -> set-delay -> jump -> claim -> upgrade -> new-round"
+	echo "Usage: $0 {status|set-delay|jump|claim|upgrade|upgrade-oz|smoke|new-round}"
+	echo "Run in order: status -> set-delay -> jump -> claim -> upgrade (or upgrade-oz, port 8545) -> smoke"
 	exit 1
 	;;
 esac
