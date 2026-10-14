@@ -1,7 +1,8 @@
 /**
  * populate-old-v3.js — sample chain population for Cosmic-Signature v3 branch.
  *
- * Flow (v3.1-2026-08-19 contracts): deploy CosmicSignatureGame (V1 proxy) → round 0 on V1 →
+ * Flow (review-branch contracts, claude/v3-contract-review-dc3c65 @ 383e0650):
+ * deploy CosmicSignatureGame (V1 proxy) → round 0 on V1 →
  * upgrade to CosmicSignatureGameV2 (reinitialize) → round 1 on V2 → upgrade to
  * CosmicSignatureGameV3 (reinitialize) → rounds 2+ on V3.
  *
@@ -10,20 +11,20 @@
  *   V2 topic 0x8c551ec2…  (rounds 0–1, claimed before the V3 upgrade)
  *   V3 topic 0x9314e785…  (rounds 2+; adds prizeNumCosmicSignatureNfts, multi-NFT prize)
  *
- * V3 behavior exercised (rounds 2+, v3.1-2026-08-19):
+ * V3 behavior exercised (rounds 2+, review branch):
  *   - Multi-NFT main prize: winner receives `mainPrizeNumCosmicSignatureNfts` (default 3) sequential NFTs.
  *   - Bid CST reward minted entirely to the outbid (previous) bidder; 0 on a round's first bid.
  *     Rounds 8/9 space bids in time so the linear reward is non-zero.
- *   - BidPlaced field 8 carries cstBidPriceDeclineMultiplier (not cstDutchAuctionDuration).
+ *   - BidPlaced field 8 carries cstDutchAuctionBeginningBidPrice (not cstDutchAuctionDuration).
  *   - Weighted bidder raffle (raffle weights stored in the BidInfo structs).
  *   - Late bid price premium near mainPrizeTime (BiddingV3).
  *   - No one-bid-per-second throttle (removed in v3.1).
  *
- * V3 config admin events (ISystemEventsV3 → cg_adm_* tables, record types 40–45), emitted post-upgrade
- * while the round is inactive (setters are onlyOwner + _onlyRoundIsInactive):
+ * V3 config admin events (ISystemEventsV3 → cg_adm_* tables, record types 40-42, 44), emitted
+ * post-upgrade while the round is inactive (setters are onlyOwner + _onlyRoundIsInactive):
  *   setRoundLateBidDurationDivisor, setRoundLateBidPricePremiumAmountBaseMultiplier,
- *   setRoundLateBidPricePremiumAmountExponent, setCstBidPriceDeclineMultiplier,
- *   setCstBidPriceDeclineMultiplierChangeDivisor, setMainPrizeNumCosmicSignatureNfts
+ *   setRoundLateBidPricePremiumAmountExponent, setMainPrizeNumCosmicSignatureNfts
+ * (the review branch removed setCstBidPriceDeclineMultiplier and its change divisor)
  *
  * The V2-only setCstDutchAuctionDuration / setCstDutchAuctionDurationChangeDivisor revert with
  * NotImplemented on V3, so they are emitted while the proxy is still on V2 (after round 0).
@@ -535,14 +536,15 @@ async function upgradeGameProxyToV3() {
 }
 
 /**
- * V3-only config admin events (ISystemEventsV3 → cg_adm_* record types 40–45).
- * Emits (v3.1-2026-08-19 contracts):
+ * V3-only config admin events (ISystemEventsV3 → cg_adm_* record types 40-42, 44).
+ * Emits (review-branch contracts, claude/v3-contract-review-dc3c65):
  *   setRoundLateBidDurationDivisor                    → RoundLateBidDurationDivisorChanged
  *   setRoundLateBidPricePremiumAmountBaseMultiplier   → RoundLateBidPricePremiumAmountBaseMultiplierChanged
  *   setRoundLateBidPricePremiumAmountExponent         → RoundLateBidPricePremiumAmountExponentChanged
- *   setCstBidPriceDeclineMultiplier                   → CstBidPriceDeclineMultiplierChanged
- *   setCstBidPriceDeclineMultiplierChangeDivisor      → CstBidPriceDeclineMultiplierChangeDivisorChanged
  *   setMainPrizeNumCosmicSignatureNfts                → MainPrizeNumCosmicSignatureNftsChanged
+ *
+ * The review branch removed setCstBidPriceDeclineMultiplier(+ChangeDivisor): the CST Dutch
+ * auction decline rate derives from the bid CST reward rate, so there is nothing to set.
  *
  * All setters are onlyOwner + _onlyRoundIsInactive, so this must run while the round is inactive
  * (call it right after upgradeGameProxyToV3(), before setActivationTimeToNow()).
@@ -566,21 +568,10 @@ async function emitV3ConfigAdminEvents() {
     await game.setRoundLateBidPricePremiumAmountExponent(gameSettings.roundLateBidPricePremiumAmountExponent, g);
     console.log(`  setRoundLateBidPricePremiumAmountExponent → RoundLateBidPricePremiumAmountExponentChanged: ${gameSettings.roundLateBidPricePremiumAmountExponent}`);
 
-    // v3.1: the CST Dutch auction is driven by a direct price decline multiplier
-    // (wei of CST per second) instead of the V2 stored duration. Bump the
-    // reinitialize() defaults by ~1% so both *Changed events fire with real values.
-    const newDeclineMultiplier = bumpOnePercent(await cosmicGameProxy.cstBidPriceDeclineMultiplier());
-    await game.setCstBidPriceDeclineMultiplier(newDeclineMultiplier, g);
-    console.log(`  setCstBidPriceDeclineMultiplier → CstBidPriceDeclineMultiplierChanged: ${newDeclineMultiplier}`);
-
-    const newDeclineChangeDivisor = bumpOnePercent(await cosmicGameProxy.cstBidPriceDeclineMultiplierChangeDivisor());
-    await game.setCstBidPriceDeclineMultiplierChangeDivisor(newDeclineChangeDivisor, g);
-    console.log(`  setCstBidPriceDeclineMultiplierChangeDivisor → CstBidPriceDeclineMultiplierChangeDivisorChanged: ${newDeclineChangeDivisor}`);
-
     await game.setMainPrizeNumCosmicSignatureNfts(gameSettings.mainPrizeNumCosmicSignatureNfts, g);
     console.log(`  setMainPrizeNumCosmicSignatureNfts → MainPrizeNumCosmicSignatureNftsChanged: ${gameSettings.mainPrizeNumCosmicSignatureNfts}`);
 
-    console.log(`  ETL verify: cg_adm_late_bid_dur_divisor, cg_adm_late_bid_premium_base_mul, cg_adm_late_bid_premium_exponent, cg_adm_cst_price_decline_mul, cg_adm_cst_price_decline_mul_div, cg_adm_main_prize_num_nfts`);
+    console.log(`  ETL verify: cg_adm_late_bid_dur_divisor, cg_adm_late_bid_premium_base_mul, cg_adm_late_bid_premium_exponent, cg_adm_main_prize_num_nfts`);
 }
 
 /**
@@ -803,8 +794,10 @@ async function emitAllV2AdminEvents() {
         bumpOnePercent(await cosmicGameProxy.ethBidPriceIncreaseDivisor()), g);
     await game.setEthBidRefundAmountInGasToSwallowMaxLimit(
         bumpOnePercent(await cosmicGameProxy.ethBidRefundAmountInGasToSwallowMaxLimit()), g);
-    await game.setCstDutchAuctionBeginningBidPriceMinLimit(
-        bumpOnePercent(await cosmicGameProxy.cstDutchAuctionBeginningBidPriceMinLimit()), g);
+    // setCstDutchAuctionBeginningBidPriceMinLimit is NOT called here: this function runs
+    // after the V3 upgrade, and the review-branch V3 reverts it with NotImplemented
+    // (the min limit is frozen at its V2 value; V3 never reads it). It is still emitted
+    // pre-upgrade in emitAllV1AdminEvents and the V1-era configuration.
     await game.setBidMessageLengthMaxLimit(
         bumpOnePercent(await cosmicGameProxy.bidMessageLengthMaxLimit()), g);
     await game.setCstPrizeAmount(
@@ -1046,9 +1039,9 @@ async function main() {
     await advanceTimeAndClaim(addr1);
 
     // === V2 → V3 UPGRADE (after round 1) ===
-    // Upgrade early so rounds 2+ all run on the v3.1 contracts and generate lots of V3
-    // sample data: V3 BidPlaced semantics (field 8 = cstBidPriceDeclineMultiplier, reward
-    // minted to the outbid previous bidder), decline-multiplier admin events, V3
+    // Upgrade early so rounds 2+ all run on the review-branch contracts and generate lots
+    // of V3 sample data: V3 BidPlaced semantics (field 8 = cstDutchAuctionBeginningBidPrice,
+    // reward minted to the outbid previous bidder), V3 config admin events, V3
     // MainPrizeClaimed topic (multi-NFT main prize), and the weighted bidder raffle.
     await deferRoundActivationForUpgrade();
     await upgradeGameProxyToV3();
