@@ -4,7 +4,7 @@
  *
  * Flow: defer round activation (the upgrade authorizer requires an inactive round) →
  * upgrade proxy to CosmicSignatureGameV3 (reinitialize, reinitializer(3) sets V3 defaults) →
- * re-emit the 6 V3 config admin events (values unchanged; exercises indexer coverage) →
+ * re-emit the 4 V3 config admin events (values unchanged; exercises indexer coverage) →
  * reactivate the round.
  *
  * IMPORTANT: the current round must be finished (main prize claimed) before running this.
