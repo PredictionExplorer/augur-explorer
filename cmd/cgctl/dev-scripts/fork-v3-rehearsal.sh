@@ -175,32 +175,18 @@ upgrade-oz) # ---- step 7 alternative: the STANDARD OZ procedure (validator gate
 	echo "NOTE: requires the fork node on port 8545 (HH_PORT=8545 fork-and-prepare.sh)."
 	cd "$COSMIC_SIG_REPO"
 
-	# The deployed-V2 -> V3 upgrade needs 3 annotation edits in the storage base
-	# (same edits the runbook prescribes for the real deployment branch):
-	#   1. ENABLE  @custom:oz-renamed-from bidderAddresses       (roundStats rename)
-	#   2. DISABLE @custom:oz-renamed-from cstDutchAuctionDurationDivisor  (V1->V2 rename, n/a here)
-	#   3. DISABLE @custom:oz-renamed-from bidCstRewardAmount              (V1->V2 rename, n/a here)
-	# Apply them temporarily, compile, run the OZ upgrade, then git-restore the file.
+	# No source edits needed anymore: review-branch commit 9cfcd878 ("Make the
+	# committed Game sources pass OpenZeppelin validation for the live V2 to V3
+	# upgrade") activated the roundStats rename annotation in V2Base AND declared
+	# it in the repo's V1 sources, so the committed sources validate as-is for
+	# both the deployed-V2 -> V3 path and the V1 -> V2 -> V3 test chain
+	# (Comment-202611032; docs/cosmic-signature-game-upgrade-storage-annotations.md).
+	# The earlier sed toggles here are obsolete and would now DISABLE annotations
+	# the validator requires to stay in the sources forever.
 	STORAGE_SOL="contracts/production/CosmicSignatureGameStorageV2Base.sol"
-	if ! git diff --quiet -- "$STORAGE_SOL"; then
-		echo "$STORAGE_SOL already has uncommitted changes — refusing to sed/git-restore over them." >&2
-		echo "Commit, stash, or 'git restore' it first, then rerun." >&2
-		exit 1
-	fi
-	restore_storage_sol() {
-		echo "Restoring stock $STORAGE_SOL (git restore) and recompiling..."
-		git restore -- "$STORAGE_SOL"
-		npx hardhat compile
-	}
-	trap restore_storage_sol EXIT
-	echo "Applying the 3 annotation edits to $STORAGE_SOL..."
-	sed -i \
-		-e 's|/// // @custom:oz-renamed-from bidderAddresses|/// @custom:oz-renamed-from bidderAddresses|' \
-		-e 's|/// @custom:oz-renamed-from cstDutchAuctionDurationDivisor|/// // @custom:oz-renamed-from cstDutchAuctionDurationDivisor|' \
-		-e 's|/// @custom:oz-renamed-from bidCstRewardAmount$|/// // @custom:oz-renamed-from bidCstRewardAmount|' \
-		"$STORAGE_SOL"
 	if ! grep -q '^\s*/// @custom:oz-renamed-from bidderAddresses$' "$STORAGE_SOL"; then
-		echo "sed failed to enable the bidderAddresses rename annotation in $STORAGE_SOL — source format changed?" >&2
+		echo "$STORAGE_SOL does not carry the active bidderAddresses rename annotation —" >&2
+		echo "is COSMIC_SIG_REPO on the review branch (>= 9cfcd878)? Older sources need the retired sed toggles." >&2
 		exit 1
 	fi
 	npx hardhat compile
