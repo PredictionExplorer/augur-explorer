@@ -215,7 +215,7 @@ func TestChatMessageMappingValidation(t *testing.T) {
 
 func TestChatContextSnapshot(t *testing.T) {
 	r := chatRecord(1)
-	entry := cgstore.ChatContextRecord{ChatPosition: r.ChatPosition, Round: 7, Position: 1, BidderAddress: r.BidderAddress, BidType: 2, PrizeAt: time.Unix(2000, 0), MechanicsVersion: 2, CstDutchAuctionDurationValue: 0}
+	entry := cgstore.ChatContextRecord{ChatPosition: r.ChatPosition, Round: 7, Position: 1, BidderAddress: r.BidderAddress, BidType: 2, PrizeAt: time.Unix(2000, 0), MechanicsVersion: 2, CstDutchAuctionDuration: "0", CstDutchAuctionDurationInt: 0}
 	s := newTestServer(t, fakeBidReader{chatContext: func(context.Context, int64) (cgstore.ChatContextSnapshot, error) {
 		return cgstore.ChatContextSnapshot{Revision: 2, Records: []cgstore.ChatContextRecord{entry}}, nil
 	}})
@@ -238,11 +238,14 @@ func TestChatContextSnapshot(t *testing.T) {
 
 	// Regression: a V3 bid's eighth BidPlaced word is the CST Dutch auction
 	// beginning bid price (wei of CST), far beyond JavaScript's safe-integer
-	// range. It must be served as the string price field, never as the
-	// integer duration (which crashed strict clients).
+	// range AND beyond int64/SQL bigint (150 CST = 1.5e20 wei overflowed the
+	// store's bigint cast and 500'd the endpoint). It must flow through as a
+	// decimal string and be served as the string price field, never as the
+	// integer duration.
 	v3 := entry
 	v3.MechanicsVersion = 3
-	v3.CstDutchAuctionDurationValue = 16666666666666667
+	v3.CstDutchAuctionDuration = "150000000000000000000"
+	v3.CstDutchAuctionDurationInt = -1 // out of int64 range, as the store reports it
 	s = newTestServer(t, fakeBidReader{chatContext: func(context.Context, int64) (cgstore.ChatContextSnapshot, error) {
 		return cgstore.ChatContextSnapshot{Revision: 2, Records: []cgstore.ChatContextRecord{v3}}, nil
 	}})
@@ -254,7 +257,7 @@ func TestChatContextSnapshot(t *testing.T) {
 	if len(page.Data) != 1 || page.Data[0].CstDutchAuctionDurationSeconds != nil {
 		t.Fatalf("V3 entry must not serve the beginning price as a duration: %#v", page.Data)
 	}
-	if page.Data[0].CstDutchAuctionBeginningBidPriceWei == nil || *page.Data[0].CstDutchAuctionBeginningBidPriceWei != "16666666666666667" {
+	if page.Data[0].CstDutchAuctionBeginningBidPriceWei == nil || *page.Data[0].CstDutchAuctionBeginningBidPriceWei != "150000000000000000000" {
 		t.Fatalf("V3 beginning price missing or wrong: %#v", page.Data[0])
 	}
 	for _, round := range []int64{-1, 8} {
@@ -350,7 +353,7 @@ func TestChatContextRejectsCorruptSnapshots(t *testing.T) {
 	valid := cgstore.ChatContextRecord{
 		ChatPosition: chatRecord(1).ChatPosition, Round: 7, Position: 1,
 		BidderAddress: chatRecord(1).BidderAddress, PrizeAt: time.Unix(2000, 0),
-		CstDutchAuctionDurationValue: -1,
+		CstDutchAuctionDuration: "-1", CstDutchAuctionDurationInt: -1,
 	}
 	for _, tc := range []struct {
 		name     string

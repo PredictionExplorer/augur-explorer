@@ -50,13 +50,18 @@ type ChatContextRecord struct {
 	PrizeAt       time.Time
 	// MechanicsVersion is the game generation that produced the bid (1, 2
 	// or 3), derived from the game's Initialized events preceding the
-	// bid's block; it decides how CstDutchAuctionDurationValue is
-	// interpreted (Comment in internal/api/v2/bids.go applies).
+	// bid's block; it decides how CstDutchAuctionDuration is interpreted
+	// (Comment in internal/api/v2/bids.go applies).
 	MechanicsVersion int64
-	// CstDutchAuctionDurationValue is the raw eighth BidPlaced data word:
-	// the CST Dutch auction duration in seconds on V2, the CST bid price
-	// decline multiplier in wei per second on V3, -1 when absent (V1).
-	CstDutchAuctionDurationValue int64
+	// CstDutchAuctionDuration is the raw eighth BidPlaced data word as a
+	// decimal string: the CST Dutch auction duration in seconds on V2,
+	// the CST Dutch auction beginning bid price in wei of CST on V3,
+	// "-1" when absent (V1). Text because the V3 wei values overflow
+	// int64 (and SQL bigint).
+	CstDutchAuctionDuration string
+	// CstDutchAuctionDurationInt is the same word as int64 when it fits
+	// [0, MaxInt64] and -1 otherwise; only the V2 duration ever fits.
+	CstDutchAuctionDurationInt int64
 }
 
 // ChatContextSnapshot holds complete minimal metadata and its history revision.
@@ -151,12 +156,14 @@ func (r *Repo) ChatContext(ctx context.Context, round int64) (ChatContextSnapsho
 	const query = `SELECT s.revision,COALESCE(p.evtlog_id,0),COALESCE(p.round_num,0),
 		COALESCE(p.bid_position,0),COALESCE(p.addr,''),COALESCE(p.time_stamp,'epoch'::timestamptz),
 		COALESCE(p.bid_type,0),COALESCE(p.prize_time,'epoch'::timestamptz),
-		COALESCE(p.mechanics_version,0),COALESCE(p.duration,-1)
+		COALESCE(p.mechanics_version,0),COALESCE(p.duration_raw,'-1'),COALESCE(p.duration_int,-1)
 	FROM cg_chat_revision s LEFT JOIN LATERAL (
 		SELECT b.evtlog_id,b.round_num,b.bid_position,ba.addr,b.time_stamp,b.bid_type,b.prize_time,
 			(SELECT COALESCE(MAX(i.version),1) FROM cg_adm_initialized i
 				WHERE i.version>0 AND i.block_num<=b.block_num) AS mechanics_version,
-			CASE WHEN b.cst_dutch_auction_duration>=0 THEN b.cst_dutch_auction_duration::bigint ELSE -1 END AS duration
+			b.cst_dutch_auction_duration::text AS duration_raw,
+			CASE WHEN b.cst_dutch_auction_duration>=0 AND b.cst_dutch_auction_duration<=9223372036854775807
+				THEN b.cst_dutch_auction_duration::bigint ELSE -1 END AS duration_int
 		FROM cg_bid b LEFT JOIN address ba ON ba.address_id=b.bidder_aid
 		WHERE b.round_num=$1
 	) p ON TRUE WHERE s.singleton ORDER BY p.time_stamp ASC,p.evtlog_id ASC`
@@ -169,7 +176,7 @@ func (r *Repo) ChatContext(ctx context.Context, round int64) (ChatContextSnapsho
 		var record ChatContextRecord
 		if err := rows.Scan(&out.Revision, &record.EventLogID, &record.Round, &record.Position,
 			&record.BidderAddress, &record.OccurredAt, &record.BidType, &record.PrizeAt,
-			&record.MechanicsVersion, &record.CstDutchAuctionDurationValue); err != nil {
+			&record.MechanicsVersion, &record.CstDutchAuctionDuration, &record.CstDutchAuctionDurationInt); err != nil {
 			return out, store.WrapError(op, err)
 		}
 		if record.EventLogID != 0 {
