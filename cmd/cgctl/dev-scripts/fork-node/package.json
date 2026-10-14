@@ -1,0 +1,8 @@
+{
+  "name": "cg-fork-node",
+  "private": true,
+  "description": "Standalone Hardhat project that only runs `hardhat node --fork` for the V3 upgrade rehearsal. Pinned to hardhat 2.26.x: the 2.27 line injects L1 genesis predeploys with storage, which EDR cannot apply in fork mode (NomicFoundation/edr#911), breaking forks of Arbitrum.",
+  "dependencies": {
+    "hardhat": "=2.26.5"
+  }
+}
