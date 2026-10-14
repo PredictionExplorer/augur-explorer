@@ -227,8 +227,7 @@ func newV3GameStub() *testchain.ContractStub {
 	stub.Return("roundLateBidPricePremiumAmountExponent", big.NewInt(3))
 	stub.Return("mainPrizeNumCosmicSignatureNfts", big.NewInt(3))
 	stub.Return("cstDutchAuctionBeginningBidPriceMinLimit", mustBig("180000000000000000000"))
-	stub.Return("cstBidPriceDeclineMultiplier", mustBig("16666666666666666"))
-	stub.Return("cstBidPriceDeclineMultiplierChangeDivisor", big.NewInt(100))
+	stub.Return("getNextCstBidPriceBase", mustBig("180000000000000000000"))
 	return stub
 }
 
@@ -777,9 +776,7 @@ func TestMechanicsV3DetectionAndLatestConfiguration(t *testing.T) {
 			snap.ConstantsReady, snap.ConfigurationReady, snap.BidPricesReady)
 	}
 	if snap.V3.MainPrizeNumCosmicSignatureNfts != 3 ||
-		snap.V3.CstDutchAuctionBeginningBidPriceMinLimit != "180000000000000000000" ||
-		snap.V3.CstBidPriceDeclineMultiplier != "16666666666666666" ||
-		snap.V3.CstBidPriceDeclineMultiplierChangeDivisor != "100" {
+		snap.V3.CstDutchAuctionBeginningBidPriceMinLimit != "180000000000000000000" {
 		t.Fatalf("V3 configuration = %+v", snap.V3)
 	}
 }
@@ -804,8 +801,6 @@ func TestReadV3ConfigurationFailures(t *testing.T) {
 		{name: "main prize count read", method: "mainPrizeNumCosmicSignatureNfts"},
 		{name: "main prize count domain", method: "mainPrizeNumCosmicSignatureNfts", value: big.NewInt(0)},
 		{name: "auction floor read", method: "cstDutchAuctionBeginningBidPriceMinLimit"},
-		{name: "decline multiplier read", method: "cstBidPriceDeclineMultiplier"},
-		{name: "decline multiplier change divisor read", method: "cstBidPriceDeclineMultiplierChangeDivisor"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1240,8 +1235,6 @@ func TestReadinessRejectsIncoherentSnapshots(t *testing.T) {
 					RoundLateBidPricePremiumAmountExponent:       3,
 					MainPrizeNumCosmicSignatureNfts:              3,
 					CstDutchAuctionBeginningBidPriceMinLimit:     "180",
-					CstBidPriceDeclineMultiplier:                 "16666666666666666",
-					CstBidPriceDeclineMultiplierChangeDivisor:    "100",
 				}
 			},
 			wantConfiguration: true,
@@ -1262,7 +1255,9 @@ func TestReadinessRejectsIncoherentSnapshots(t *testing.T) {
 					RoundLateBidPricePremiumAmountBaseMultiplier: "2",
 					RoundLateBidPricePremiumAmountExponent:       3,
 					MainPrizeNumCosmicSignatureNfts:              3,
-					CstDutchAuctionBeginningBidPriceMinLimit:     "180",
+					// CstDutchAuctionBeginningBidPriceMinLimit deliberately
+					// left empty: the newest required V3 field missing must
+					// make the configuration not-ready.
 				}
 			},
 			wantBidPrices: true,

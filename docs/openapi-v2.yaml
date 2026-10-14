@@ -2864,8 +2864,6 @@ components:
             - roundLateBidPricePremiumAmountExponent
             - mainPrizeNumCosmicSignatureNfts
             - cstDutchAuctionBeginningBidPriceMinLimitWei
-            - cstBidPriceDeclineMultiplierWei
-            - cstBidPriceDeclineMultiplierChangeDivisor
           properties:
             mechanicsVersion:
               type: string
@@ -3005,15 +3003,12 @@ components:
         cstDutchAuctionBeginningBidPriceMinLimitWei:
           type: string
           pattern: "^[0-9]+$"
-          description: V3-only CST auction beginning-price floor.
-        cstBidPriceDeclineMultiplierWei:
-          type: string
-          pattern: "^[0-9]+$"
-          description: V3-only CST Dutch auction price decline speed (wei per second).
-        cstBidPriceDeclineMultiplierChangeDivisor:
-          type: string
-          pattern: "^[0-9]+$"
-          description: V3-only divisor for the per-bid CST price decline multiplier adjustment.
+          description: >-
+            V3-only CST auction beginning-price floor. Frozen at its V2 value:
+            the review-branch V3 contracts neither read nor write it, and its
+            setter reverts with NotImplemented. The live CST price decline
+            derives from cstBidRewardMultiplier /
+            mainPrizeTimeIncrementMicroSeconds instead of a stored multiplier.
     ContractBalances:
       type: object
       additionalProperties: false
@@ -5302,7 +5297,7 @@ components:
             Game generation that produced the bid (1, 2 or 3), derived from
             the game's Initialized events preceding the bid's block. Decides
             which of cstDutchAuctionDurationSeconds /
-            cstBidPriceDeclineMultiplierWeiPerSecond is present.
+            cstDutchAuctionBeginningBidPriceWei is present.
         cstDutchAuctionDurationSeconds:
           type: integer
           format: int64
@@ -5310,13 +5305,15 @@ components:
           description: >-
             V2 mechanics only: the CST Dutch auction duration set by this bid.
             Absent for V1 bids (not emitted) and for V3 bids (the same
-            BidPlaced slot carries cstBidPriceDeclineMultiplierWeiPerSecond).
-        cstBidPriceDeclineMultiplierWeiPerSecond:
+            BidPlaced slot carries cstDutchAuctionBeginningBidPriceWei).
+        cstDutchAuctionBeginningBidPriceWei:
           type: string
           pattern: "^[0-9]+$"
           description: >-
-            V3 mechanics only: the CST bid price decline rate (wei of CST per
-            second) in force after this bid.
+            V3 mechanics only: the CST Dutch auction beginning bid price (wei
+            of CST) in force after this bid. A CST bid restarts the auction at
+            this price; an ETH bid leaves it unchanged (the round's first bid
+            seeds it).
         nftDonation:
           $ref: "#/components/schemas/NftDonation"
         erc20Donation:
@@ -5393,13 +5390,13 @@ components:
           description: >-
             V2 mechanics only: the CST Dutch auction duration set by this
             bid. Absent for V1 bids (not emitted) and for V3 bids (the same
-            BidPlaced slot carries cstBidPriceDeclineMultiplierWeiPerSecond).
-        cstBidPriceDeclineMultiplierWeiPerSecond:
+            BidPlaced slot carries cstDutchAuctionBeginningBidPriceWei).
+        cstDutchAuctionBeginningBidPriceWei:
           type: string
           pattern: "^[0-9]+$"
           description: >-
-            V3 mechanics only: the CST bid price decline rate (wei of CST
-            per second) in force after this bid.
+            V3 mechanics only: the CST Dutch auction beginning bid price
+            (wei of CST) in force after this bid.
     RoundChatContext:
       type: object
       additionalProperties: false

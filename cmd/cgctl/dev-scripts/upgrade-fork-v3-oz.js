@@ -166,12 +166,10 @@ async function main() {
         console.log(`New PrizesWallet=${pw.target} set on the game.`);
     }
 
-    // ---- re-emit the 6 V3 config admin events; reactivate ----
+    // ---- re-emit the 4 V3 config admin events; reactivate ----
     await (await game.setRoundLateBidDurationDivisor(await game.roundLateBidDurationDivisor())).wait();
     await (await game.setRoundLateBidPricePremiumAmountBaseMultiplier(await game.roundLateBidPricePremiumAmountBaseMultiplier())).wait();
     await (await game.setRoundLateBidPricePremiumAmountExponent(await game.roundLateBidPricePremiumAmountExponent())).wait();
-    await (await game.setCstBidPriceDeclineMultiplier(await game.cstBidPriceDeclineMultiplier())).wait();
-    await (await game.setCstBidPriceDeclineMultiplierChangeDivisor(await game.cstBidPriceDeclineMultiplierChangeDivisor())).wait();
     await (await game.setMainPrizeNumCosmicSignatureNfts(await game.mainPrizeNumCosmicSignatureNfts())).wait();
     console.log("V3 config admin events emitted (values unchanged).");
 

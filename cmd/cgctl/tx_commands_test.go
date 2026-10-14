@@ -65,7 +65,7 @@ func startFundedChain(t *testing.T) *testchain.Chain {
 // gameStubFull returns a CosmicGame stub (V1+V2+V3 ABIs) pre-loaded with the
 // reads the transaction commands make. No version-specific getter is
 // stubbed, so gamever detection sees it as a V1 contract; tests opt into V2
-// or V3 by stubbing cstDutchAuctionDuration or cstBidPriceDeclineMultiplier.
+// or V3 by stubbing cstDutchAuctionDuration or getNextCstBidPriceBase.
 func gameStubFull() *testchain.ContractStub {
 	stub := testchain.MustContractStub(cgc.CosmicSignatureGameABI, cgc.CosmicSignatureGameV2ABI, cgc.CosmicSignatureGameV3ABI)
 	stub.Return("roundNum", big.NewInt(3))
@@ -188,12 +188,12 @@ func TestBidCommandV2Shape(t *testing.T) {
 	}
 }
 
-// TestBidCommandV3Shape: cstBidPriceDeclineMultiplier answers (V3 marker),
+// TestBidCommandV3Shape: getNextCstBidPriceBase answers (V3 marker),
 // so the 3-arg bidWithEth selector is submitted.
 func TestBidCommandV3Shape(t *testing.T) {
 	chain := startFundedChain(t)
 	stub := gameStubFull()
-	stub.Return("cstBidPriceDeclineMultiplier", big.NewInt(16_666_666_666_666_666))
+	stub.Return("getNextCstBidPriceBase", big.NewInt(16_666_666_666_666_666))
 	registerGame(t, chain, stub)
 	txs := captureSubmittedTx(chain)
 

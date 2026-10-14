@@ -886,9 +886,9 @@ type CGAdminEvent struct {
 	//			40		RoundLateBidDurationDivisorChanged (V3)
 	//			41		RoundLateBidPricePremiumAmountBaseMultiplierChanged (V3)
 	//			42		RoundLateBidPricePremiumAmountExponentChanged (V3)
-	//			43		CstBidPriceDeclineMultiplierChanged (V3; repurposed from the retired LastBidderBidCstRewardAmountPercentageChanged)
+	//			43		retired (was CstBidPriceDeclineMultiplierChanged, removed with the review-branch V3 contracts; before that the retired LastBidderBidCstRewardAmountPercentageChanged)
 	//			44		MainPrizeNumCosmicSignatureNftsChanged (V3)
-	//			45		CstBidPriceDeclineMultiplierChangeDivisorChanged (V3)
+	//			45		retired (was CstBidPriceDeclineMultiplierChangeDivisorChanged, removed with the review-branch V3 contracts)
 	//			46		EthBidRefundAmountInGasToSwallowMaxLimitChanged
 	//			47		DaoProposalThresholdSet (Governor)
 	//			48		DaoVotingDelaySet (Governor)

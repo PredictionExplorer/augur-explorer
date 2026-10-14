@@ -79,7 +79,8 @@ func (h *Handlers) decodeBidPlacedV2(lg *types.Log, elog *store.EthereumEventLog
 	// data fields changed meaning in V3 (IBidding2V2.sol vs IBidding2V3.sol;
 	// contracts/README.md summarizes the V3 mechanics): BidCstRewardAmount
 	// is the reward minted to the PREVIOUS (outbid) bidder (0 on a round's
-	// first bid), and the eighth field carries cstBidPriceDeclineMultiplier
+	// first bid), and the eighth field carries the CST Dutch auction
+	// beginning bid price (cstDutchAuctionBeginningBidPrice, wei of CST)
 	// instead of cstDutchAuctionDuration. The positional decode below stays
 	// valid; consumers interpret the stored values per the bid's mechanics
 	// version (CGBidRec.MechanicsVersion, derived from the game's

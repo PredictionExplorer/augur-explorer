@@ -191,24 +191,6 @@ func TestV3AdminStoreDeleteErrorsPropagate(t *testing.T) {
 			},
 		},
 		{
-			name:  "decline multiplier",
-			table: "cg_adm_cst_price_decline_mul",
-			store: func(ctx context.Context) error {
-				return testHandlers.storeCstBidPriceDeclineMultiplierChanged(
-					ctx, &cgmodel.CGCstBidPriceDeclineMultiplierChanged{EvtId: 1},
-				)
-			},
-		},
-		{
-			name:  "decline multiplier change divisor",
-			table: "cg_adm_cst_price_decline_mul_div",
-			store: func(ctx context.Context) error {
-				return testHandlers.storeCstBidPriceDeclineMultiplierChangeDivisorChanged(
-					ctx, &cgmodel.CGCstBidPriceDeclineMultiplierChangeDivisorChanged{EvtId: 1},
-				)
-			},
-		},
-		{
 			name:  "main prize count",
 			table: "cg_adm_main_prize_num_nfts",
 			store: func(ctx context.Context) error {

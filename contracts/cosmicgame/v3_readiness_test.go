@@ -27,14 +27,6 @@ func TestV3TopicHashesMatchBindings(t *testing.T) {
 			"cb78cca7628d232a9c7beef53b62f7204d9eacb44de85a8f593e6b0bb72a1621",
 		},
 		{
-			"CstBidPriceDeclineMultiplierChanged(uint256)",
-			"5a7755107bc57392a4597c870f95d2c7cd7802e3e92c8aa549888e0b4a66d19c",
-		},
-		{
-			"CstBidPriceDeclineMultiplierChangeDivisorChanged(uint256)",
-			"dca564eaecef774ca88453bd3a492a26c40497ab897aa02ad10eb030e126c5ce",
-		},
-		{
 			"MainPrizeNumCosmicSignatureNftsChanged(uint256)",
 			"616bfcaa6490f55f6e57a4deedac1db04d0d6826deb84fad86cc43439bcf3564",
 		},
@@ -109,8 +101,11 @@ func TestV3LatestReadMethodsPresent(t *testing.T) {
 		"getRoundLateBidDuration",
 		"getCstDutchAuctionDurations",
 		"cstDutchAuctionBeginningBidPriceMinLimit",
-		"cstBidPriceDeclineMultiplier",
-		"cstBidPriceDeclineMultiplierChangeDivisor",
+		// claude/v3-contract-review-dc3c65: the CST Dutch auction decline
+		// derives from the bid CST reward rate; these views expose the live
+		// auction base price.
+		"getNextCstBidPriceBase",
+		"getNextCstBidPriceBaseAdvanced",
 		// v3.1-2026-08-19: raffle weights live in the BidInfo struct returned
 		// by getBidInfoAt instead of the earlier bidRaffleCumulativeWeights
 		// mapping.
@@ -131,12 +126,18 @@ func TestV3LatestReadMethodsPresent(t *testing.T) {
 		t.Fatal("V3 ABI contains obsolete BidCstRewardAmountPerMinuteChanged event")
 	}
 	// Retired on the v3-2026-07-24 contracts: the bid CST reward is minted
-	// entirely to the outbid previous bidder, and the CST Dutch auction is
-	// driven by cstBidPriceDeclineMultiplier instead of a stored duration.
+	// entirely to the outbid previous bidder. Retired on the review branch
+	// (claude/v3-contract-review-dc3c65): the stored CST price decline
+	// multiplier and its change divisor, replaced by a decline rate derived
+	// from the bid CST reward rate.
 	for _, method := range []string{
 		"lastBidderBidCstRewardAmountPercentage",
 		"getCstDutchAuctionBeginningBidPriceMinLimit",
 		"getBidCstRewardAmountPerMainPrizeTimeIncrement",
+		"cstBidPriceDeclineMultiplier",
+		"cstBidPriceDeclineMultiplierChangeDivisor",
+		"setCstBidPriceDeclineMultiplier",
+		"setCstBidPriceDeclineMultiplierChangeDivisor",
 		// Renamed on v3.1-2026-08-19 (weighted raffle refactoring).
 		"getBidderAddressAt",
 		"bidderAddresses",

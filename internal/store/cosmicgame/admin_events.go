@@ -205,10 +205,15 @@ var adminEventBranches = []adminEventBranch{
 	{recordType: 40, table: "cg_adm_late_bid_dur_divisor", intValue: "r.new_value"},                                  // RoundLateBidDurationDivisorChanged
 	{recordType: 41, table: "cg_adm_late_bid_premium_base_mul", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountBaseMultiplierChanged
 	{recordType: 42, table: "cg_adm_late_bid_premium_exponent", intValue: "r.new_value"},                             // RoundLateBidPricePremiumAmountExponentChanged
-	{recordType: 43, table: "cg_adm_cst_price_decline_mul", floatValue: "r.new_value/1e18", stringVal: "r.new_value::TEXT"}, // CstBidPriceDeclineMultiplierChanged (repurposed; was the retired LastBidderBidCstRewardAmountPercentageChanged)
-	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},                                   // MainPrizeNumCosmicSignatureNftsChanged
-	{recordType: 45, table: "cg_adm_cst_price_decline_mul_div", intValue: "r.new_value"},                             // CstBidPriceDeclineMultiplierChangeDivisorChanged
-	{recordType: 46, table: "cg_adm_eth_bid_refund_gas_limit", intValue: "r.new_value"},                              // EthBidRefundAmountInGasToSwallowMaxLimitChanged
+	// Record types 43 and 45 are retired: the review-branch V3 contracts
+	// (claude/v3-contract-review-dc3c65) removed CstBidPriceDeclineMultiplierChanged
+	// and CstBidPriceDeclineMultiplierChangeDivisorChanged (the CST Dutch auction
+	// decline now derives from the bid CST reward rate; no stored multiplier).
+	// 43 had already been repurposed once (from the retired
+	// LastBidderBidCstRewardAmountPercentageChanged); neither event ever
+	// reached production.
+	{recordType: 44, table: "cg_adm_main_prize_num_nfts", intValue: "r.new_value"},      // MainPrizeNumCosmicSignatureNftsChanged
+	{recordType: 46, table: "cg_adm_eth_bid_refund_gas_limit", intValue: "r.new_value"}, // EthBidRefundAmountInGasToSwallowMaxLimitChanged
 	// DAO (Governor) and governance-token events. cg_dao_setting_changed and
 	// cg_dao_proposal_state each hold several event kinds, split into separate
 	// record types via extraWhere (setting/state codes from cgmodel).

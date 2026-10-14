@@ -36,8 +36,8 @@ func TestMapBid(t *testing.T) {
 	if got.CstDutchAuctionDurationSeconds == nil || *got.CstDutchAuctionDurationSeconds != 1800 {
 		t.Errorf("CstDutchAuctionDurationSeconds = %v", got.CstDutchAuctionDurationSeconds)
 	}
-	if got.CstBidPriceDeclineMultiplierWeiPerSecond != nil {
-		t.Errorf("V2 bid must not carry a decline multiplier, got %q", *got.CstBidPriceDeclineMultiplierWeiPerSecond)
+	if got.CstDutchAuctionBeginningBidPriceWei != nil {
+		t.Errorf("V2 bid must not carry a CST auction beginning price, got %q", *got.CstDutchAuctionBeginningBidPriceWei)
 	}
 	if got.RandomWalkTokenId == nil || *got.RandomWalkTokenId != 13 {
 		t.Errorf("RandomWalkTokenId = %v", got.RandomWalkTokenId)
@@ -53,10 +53,10 @@ func TestMapBid(t *testing.T) {
 	}
 }
 
-// TestMapBidV3DeclineMultiplier: on V3 mechanics the eighth BidPlaced word
-// is cstBidPriceDeclineMultiplier (wei/second), not a duration; it must be
-// served under its own name and never as cstDutchAuctionDurationSeconds.
-func TestMapBidV3DeclineMultiplier(t *testing.T) {
+// TestMapBidV3BeginningBidPrice: on V3 mechanics the eighth BidPlaced word
+// is cstDutchAuctionBeginningBidPrice (wei of CST), not a duration; it must
+// be served under its own name and never as cstDutchAuctionDurationSeconds.
+func TestMapBidV3BeginningBidPrice(t *testing.T) {
 	t.Parallel()
 
 	record := validBidRecord()
@@ -74,11 +74,11 @@ func TestMapBidV3DeclineMultiplier(t *testing.T) {
 	if got.CstDutchAuctionDurationSeconds != nil {
 		t.Errorf("V3 bid must not report a duration, got %d", *got.CstDutchAuctionDurationSeconds)
 	}
-	if got.CstBidPriceDeclineMultiplierWeiPerSecond == nil || *got.CstBidPriceDeclineMultiplierWeiPerSecond != "16666666666666666" {
-		t.Errorf("CstBidPriceDeclineMultiplierWeiPerSecond = %v", got.CstBidPriceDeclineMultiplierWeiPerSecond)
+	if got.CstDutchAuctionBeginningBidPriceWei == nil || *got.CstDutchAuctionBeginningBidPriceWei != "16666666666666666" {
+		t.Errorf("CstDutchAuctionBeginningBidPriceWei = %v", got.CstDutchAuctionBeginningBidPriceWei)
 	}
 
-	// A multiplier beyond int64 still round-trips through the decimal text
+	// A price beyond int64 still round-trips through the decimal text
 	// (the store reports -1 in the int view).
 	record.CstDutchAuctionDuration = "10000000000000000000"
 	record.CstDutchAuctionDurationInt = -1
@@ -86,8 +86,8 @@ func TestMapBidV3DeclineMultiplier(t *testing.T) {
 	if err != nil {
 		t.Fatalf("mapBid: %v", err)
 	}
-	if got.CstBidPriceDeclineMultiplierWeiPerSecond == nil || *got.CstBidPriceDeclineMultiplierWeiPerSecond != "10000000000000000000" {
-		t.Errorf("large multiplier = %v", got.CstBidPriceDeclineMultiplierWeiPerSecond)
+	if got.CstDutchAuctionBeginningBidPriceWei == nil || *got.CstDutchAuctionBeginningBidPriceWei != "10000000000000000000" {
+		t.Errorf("large beginning price = %v", got.CstDutchAuctionBeginningBidPriceWei)
 	}
 }
 

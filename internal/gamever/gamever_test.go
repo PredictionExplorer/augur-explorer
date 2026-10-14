@@ -37,7 +37,7 @@ func newGameChain(t *testing.T) (*testchain.Chain, *testchain.ContractStub) {
 
 func TestDetectV3(t *testing.T) {
 	chain, stub := newGameChain(t)
-	stub.Return("cstBidPriceDeclineMultiplier", big.NewInt(1))
+	stub.Return("getNextCstBidPriceBase", big.NewInt(1))
 	// A V3 contract also answers the V2 getter; V3 must win.
 	stub.Return("cstDutchAuctionDuration", big.NewInt(1800))
 

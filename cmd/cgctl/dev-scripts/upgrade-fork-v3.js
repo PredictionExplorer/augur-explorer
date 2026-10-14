@@ -10,7 +10,7 @@
  *   1. defer round activation      (the upgrade authorizer requires an inactive round)
  *   2. deploy CosmicSignatureGameV3 and upgradeToAndCall(impl, reinitialize())
  *   3. deploy a new PrizesWallet(game) and setPrizesWallet(new)     [SKIP_PRIZES_WALLET=1]
- *   4. re-emit the 6 V3 config admin events (values unchanged) — reinitialize() only
+ *   4. re-emit the 4 V3 config admin events (values unchanged) — reinitialize() only
  *      emits Initialized(3) (Comment-202610175), so the ETL needs these to populate
  *      the V3 config admin tables
  *   5. reactivate the round and verify every value reinitialize() wrote
@@ -48,11 +48,13 @@ const ERC1967_IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a
 const gCall = { gasLimit: 2_000_000 };
 const gDeploy = { gasLimit: 60_000_000 };
 
-// Values written by reinitialize(3), per docs/v3-vs-v2-changes.md — verified at the end.
+// Values written by reinitialize(3) — verified at the end. The review-branch
+// contracts (claude/v3-contract-review-dc3c65) removed the CST price decline
+// multiplier pair; the decline rate now derives from the bid CST reward rate,
+// and cstDutchAuctionBeginningBidPriceMinLimit is frozen at its V2 value.
 const V3_GETTERS = [
     "cstDutchAuctionBeginningBidPriceMinLimit",
-    "cstBidPriceDeclineMultiplier",
-    "cstBidPriceDeclineMultiplierChangeDivisor",
+    "getNextCstBidPriceBase",
     "roundLateBidDurationDivisor",
     "roundLateBidPricePremiumAmountBaseMultiplier",
     "roundLateBidPricePremiumAmountExponent",
@@ -241,13 +243,11 @@ async function main() {
         console.log(`  new PrizesWallet=${newPrizesWallet} (game.prizesWallet and wallet.game verified)`);
     }
 
-    // ---- 4) re-emit the 6 V3 config admin events (reinitialize emits only Initialized(3)) ----
+    // ---- 4) re-emit the 4 V3 config admin events (reinitialize emits only Initialized(3)) ----
     console.log("Emitting V3 config admin events (values unchanged)...");
     await (await game.setRoundLateBidDurationDivisor(await game.roundLateBidDurationDivisor(), gCall)).wait();
     await (await game.setRoundLateBidPricePremiumAmountBaseMultiplier(await game.roundLateBidPricePremiumAmountBaseMultiplier(), gCall)).wait();
     await (await game.setRoundLateBidPricePremiumAmountExponent(await game.roundLateBidPricePremiumAmountExponent(), gCall)).wait();
-    await (await game.setCstBidPriceDeclineMultiplier(await game.cstBidPriceDeclineMultiplier(), gCall)).wait();
-    await (await game.setCstBidPriceDeclineMultiplierChangeDivisor(await game.cstBidPriceDeclineMultiplierChangeDivisor(), gCall)).wait();
     await (await game.setMainPrizeNumCosmicSignatureNfts(await game.mainPrizeNumCosmicSignatureNfts(), gCall)).wait();
 
     // ---- 5) reactivate the round and verify what reinitialize() wrote ----

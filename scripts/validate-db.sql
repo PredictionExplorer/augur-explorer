@@ -57,15 +57,16 @@
 -- a v2 database has none of them. v3-only checks are skipped on v2 schemas.
 -- A partial set means a half-applied migration and aborts the run.
 -- ---------------------------------------------------------------------------
+-- Note: cg_adm_cst_price_decline_mul(_div) are no longer probed; migration
+-- 00036 dropped them (review-branch contracts removed the decline multiplier),
+-- so they are absent on both fully migrated v2 and v3 schemas.
 SELECT ((to_regclass('cg_adm_eth_bid_refund_gas_limit') IS NOT NULL)::INT
-      + (to_regclass('cg_arbitrum_error')               IS NOT NULL)::INT
-      + (to_regclass('cg_adm_cst_price_decline_mul')    IS NOT NULL)::INT
-      + (to_regclass('cg_adm_cst_price_decline_mul_div') IS NOT NULL)::INT)
+      + (to_regclass('cg_arbitrum_error')               IS NOT NULL)::INT)
        AS v3_tbl_count \gset
-SELECT (:v3_tbl_count = 4) AS is_v3, (:v3_tbl_count NOT IN (0,4)) AS v3_partial \gset
+SELECT (:v3_tbl_count = 2) AS is_v3, (:v3_tbl_count NOT IN (0,2)) AS v3_partial \gset
 \if :v3_partial
 DO $$ BEGIN RAISE EXCEPTION
-	'only some v3 tables exist: half-applied migration? (cg_adm_eth_bid_refund_gas_limit, cg_arbitrum_error, cg_adm_cst_price_decline_mul, cg_adm_cst_price_decline_mul_div)';
+	'only some v3 tables exist: half-applied migration? (cg_adm_eth_bid_refund_gas_limit, cg_arbitrum_error)';
 END $$;
 \endif
 \if :is_v3
@@ -317,9 +318,7 @@ INSERT INTO tmap VALUES
 \if :is_v3
 INSERT INTO tmap VALUES
  (ARRAY['a787f265'],            ARRAY['cg_adm_eth_bid_refund_gas_limit'],'EthBidRefundAmountInGasToSwallowMaxLimitChanged','ERROR'),
- (ARRAY['a0f59128'],            ARRAY['cg_arbitrum_error'],       'ArbitrumError',                     'ERROR'),
- (ARRAY['5a775510'],            ARRAY['cg_adm_cst_price_decline_mul'],'CstBidPriceDeclineMultiplierChanged','ERROR'),
- (ARRAY['dca564ea'],            ARRAY['cg_adm_cst_price_decline_mul_div'],'CstBidPriceDeclineMultiplierChangeDivisorChanged','ERROR');
+ (ARRAY['a0f59128'],            ARRAY['cg_arbitrum_error'],       'ArbitrumError',                     'ERROR');
 \endif
 
 DO $do$
@@ -1159,8 +1158,6 @@ INSERT INTO topic_names VALUES
  ('7acba37d','RoundLateBidDurationDivisorChanged'),
  ('169f25ec','RoundLateBidPricePremiumAmountBaseMultiplierChanged'),
  ('cb78cca7','RoundLateBidPricePremiumAmountExponentChanged'),
- ('5a775510','CstBidPriceDeclineMultiplierChanged'),
- ('dca564ea','CstBidPriceDeclineMultiplierChangeDivisorChanged'),
  ('616bfcaa','MainPrizeNumCosmicSignatureNftsChanged'),
  ('d95e7f96','CstPrizeAmountChanged'),
  ('157c413b','BidMessageLengthMaxLimitChanged'),

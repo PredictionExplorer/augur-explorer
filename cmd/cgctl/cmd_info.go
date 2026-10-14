@@ -342,7 +342,7 @@ func printV3Parameters(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSi
 	if gameV3 == nil {
 		return
 	}
-	declineMultiplier, errV3 := gameV3.CstBidPriceDeclineMultiplier(copts)
+	nextCstPriceBase, errV3 := gameV3.GetNextCstBidPriceBase(copts)
 	if errV3 != nil {
 		return
 	}
@@ -386,10 +386,11 @@ func printV3Parameters(w io.Writer, out ethtx.Output, game *cgcontracts.CosmicSi
 		fmt.Fprintf(w, "%-28s= %s CST/min\n", "Bid CST reward", ethtx.WeiToEthText(rewardPerMin))
 	}
 
-	// CST bid price decline: price = beginning - elapsedSeconds * multiplier,
-	// so the multiplier is CST-wei per second; report it per minute.
-	declinePerMin := new(big.Int).Mul(declineMultiplier, big.NewInt(60))
-	fmt.Fprintf(w, "%-28s= %s CST/min\n", "CST bid price decline rate", ethtx.WeiToEthText(declinePerMin))
+	// CST bid price decline: the review-branch V3 contracts have no stored
+	// multiplier; the decline rate equals the bid CST reward rate (the
+	// "Bid CST reward" line above). Show the live auction base price instead.
+	fmt.Fprintf(w, "%-28s= %s CST (declines at the bid CST reward rate)\n",
+		"Next CST bid price (base)", ethtx.WeiToEthText(nextCstPriceBase))
 
 	if mainPrizeNfts != nil {
 		out.KeyValue("Main prize CS NFTs (winner)", mainPrizeNfts)

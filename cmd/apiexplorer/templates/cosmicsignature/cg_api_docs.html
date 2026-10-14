@@ -192,7 +192,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/statistics/dashboard</span></td>
-					<td class="api-description">Get main dashboard statistics. When <code>ContractMechanicsVersion</code> is 3 the payload also includes <code>V3Config</code> (<code>CstBidPriceDeclineMultiplier</code>, late-bid window/premium, <code>MainPrizeNumCosmicSignatureNfts</code>, derived CST auction floor and CST reward per prize-time increment).</td>
+					<td class="api-description">Get main dashboard statistics. When <code>ContractMechanicsVersion</code> is 3 the payload also includes <code>V3Config</code> (late-bid window/premium, <code>MainPrizeNumCosmicSignatureNfts</code>, CST auction floor and CST reward per prize-time increment; the CST price decline derives from the reward rate, no stored multiplier).</td>
 					<td class="api-example"><a href="/api/cosmicgame/statistics/dashboard">/api/cosmicgame/statistics/dashboard</a></td>
 				</tr>
 				<tr>
@@ -220,7 +220,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/system/admin_events/{start}/{end}</span></td>
-					<td class="api-description">Admin events in event log range. V3.1 record types 40–46 include late-bid window/premium, <code>CstBidPriceDeclineMultiplierChanged</code>, <code>MainPrizeNumCosmicSignatureNftsChanged</code>, decline-multiplier change divisor, and ETH bid refund gas cap.</td>
+					<td class="api-description">Admin events in event log range. V3 record types 40–46 include late-bid window/premium, <code>MainPrizeNumCosmicSignatureNftsChanged</code>, and ETH bid refund gas cap (43 and 45 are retired).</td>
 					<td class="api-example"><a href="/api/cosmicgame/system/admin_events/0/1000">...admin_events/0/1000</a></td>
 				</tr>
 			</table>
@@ -242,7 +242,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/info/{evtlog_id}</span></td>
-					<td class="api-description">Get bid details. V3.1 mints the whole bid CST reward to the previous (outbid) last bidder: <code>PreviousBidderCstRewardAmount</code>/<code>PreviousCstRewardAmountEth</code> (the outbid bidder) and <code>ThisBidderCstRewardAmount</code>/<code>ThisCstRewardAmountEth</code> (the bidder placing this bid; 0 on V3.1 after the first bid of a round). V1/V2 put the complete reward in this-bidder fields. <code>BidCstRewardAmount</code>/<code>BidCstRewardAmountEth</code> is BidPlaced field 7 (previous-bidder reward on V3.1). <code>CstDutchAuctionDuration</code>/<code>CstDutchAuctionDurationInt</code> is V2 auction duration in seconds, or V3.1 <code>cstBidPriceDeclineMultiplier</code> in wei/s (same JSON keys; -1 for V1).</td>
+					<td class="api-description">Get bid details. V3.1 mints the whole bid CST reward to the previous (outbid) last bidder: <code>PreviousBidderCstRewardAmount</code>/<code>PreviousCstRewardAmountEth</code> (the outbid bidder) and <code>ThisBidderCstRewardAmount</code>/<code>ThisCstRewardAmountEth</code> (the bidder placing this bid; 0 on V3.1 after the first bid of a round). V1/V2 put the complete reward in this-bidder fields. <code>BidCstRewardAmount</code>/<code>BidCstRewardAmountEth</code> is BidPlaced field 7 (previous-bidder reward on V3.1). <code>CstDutchAuctionDuration</code>/<code>CstDutchAuctionDurationInt</code> is V2 auction duration in seconds, or V3 <code>cstDutchAuctionBeginningBidPrice</code> in wei of CST (same JSON keys; -1 for V1).</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/info/1000">.../bid/info/1000</a></td>
 				</tr>
 				<tr>
@@ -267,7 +267,7 @@
 				</tr>
 				<tr>
 					<td><span class="method-get">GET</span><span class="api-endpoint">/bid/cst_price</span></td>
-					<td class="api-description">Current CST bid price. <code>AuctionDuration</code> is V2 Dutch-auction seconds, or the V3.1 derived duration (beginning price / <code>cstBidPriceDeclineMultiplier</code>).</td>
+					<td class="api-description">Current CST bid price. <code>AuctionDuration</code> is V2 Dutch-auction seconds, or the V3 derived duration (beginning price / reward-rate-derived decline).</td>
 					<td class="api-example"><a href="/api/cosmicgame/bid/cst_price">.../bid/cst_price</a></td>
 				</tr>
 				<tr>

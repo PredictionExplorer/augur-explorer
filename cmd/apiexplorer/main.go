@@ -177,22 +177,23 @@ func asFloat(v any) float64 {
 	}
 }
 
-// isWeiPerSec reports whether v looks like a V3.1 CST bid-price decline
-// multiplier (wei/second) rather than a V2 Dutch-auction duration in seconds.
-// Durations are at most days-to-weeks; the V3.1 multiplier is ~1e16 wei/s.
+// isWeiPerSec reports whether v looks like a V3 CST Dutch auction beginning
+// bid price (wei of CST) rather than a V2 Dutch-auction duration in seconds.
+// Durations are at most days-to-weeks; the V3 beginning price is wei-scale.
 func isWeiPerSec(v any) bool {
 	return asFloat(v) >= 1e9
 }
 
 // auctionParam formats BidPlaced field 8. V1 stores -1; V2 stores CST Dutch
-// auction duration in seconds; V3.1 stores cstBidPriceDeclineMultiplier (wei/s)
-// in the same JSON keys (CstDutchAuctionDuration / CstDutchAuctionDurationInt).
+// auction duration in seconds; V3 stores cstDutchAuctionBeginningBidPrice
+// (wei of CST) in the same JSON keys (CstDutchAuctionDuration /
+// CstDutchAuctionDurationInt).
 func auctionParam(durationStr any, durationInt any) string {
 	if asFloat(durationInt) < 0 {
 		return "—"
 	}
 	if isWeiPerSec(durationInt) {
-		return weiToEth(durationStr) + " CST/s"
+		return weiToEth(durationStr) + " CST"
 	}
 	return num(durationInt) + " s"
 }

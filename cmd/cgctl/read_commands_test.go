@@ -203,7 +203,7 @@ func TestInfoCommandV3Sections(t *testing.T) {
 	// 1200s window and base multiplier 24_576_000 give an exponentiation
 	// base of exactly 2^13, so the max premium is 1.00 and the price
 	// multiplier peaks at x2.00.
-	stub.Return("cstBidPriceDeclineMultiplier", eth(0.05)) // 0.05 CST/s = 3 CST/min
+	stub.Return("getNextCstBidPriceBase", eth(100)) // live CST auction base price
 	stub.Return("getRoundLateBidDuration", big.NewInt(1200))
 	stub.Return("roundLateBidPricePremiumAmountBaseMultiplier", big.NewInt(24_576_000_000))
 	stub.Return("roundLateBidPricePremiumAmountExponent", big.NewInt(2))
@@ -223,7 +223,7 @@ func TestInfoCommandV3Sections(t *testing.T) {
 		"Late-bid window (before prize)= 1200 (20 min 0 sec)",
 		"up to x2.00 at prize time (price x (1 + 1.00 x (elapsed/window)^2))",
 		"Bid CST reward              = 2.000000000000000000 CST/min",
-		"CST bid price decline rate  = 3.000000000000000000 CST/min",
+		"Next CST bid price (base)   = 100.000000000000000000 CST (declines at the bid CST reward rate)",
 		"Main prize CS NFTs (winner) = 3",
 	} {
 		if !strings.Contains(out, want) {

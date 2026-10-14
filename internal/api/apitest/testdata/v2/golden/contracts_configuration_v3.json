@@ -5,8 +5,6 @@
     "charityAddress": "0x6000000000000000000000000000000000000006",
     "charityDonationPercentage": 10,
     "chronoWarriorPercentage": 7,
-    "cstBidPriceDeclineMultiplierChangeDivisor": "100",
-    "cstBidPriceDeclineMultiplierWei": "16666666666666666",
     "cstBidRewardMode": "dynamic",
     "cstBidRewardMultiplier": "7",
     "cstDutchAuctionBeginningBidPriceMinLimitWei": "180000000000000000000",

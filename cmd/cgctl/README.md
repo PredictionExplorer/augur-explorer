@@ -37,7 +37,7 @@ Database-backed subcommands (`backfill-dao-evtlog`, `total-tokens`,
 The game is a UUPS proxy upgraded in place, so a single address can be
 running V1, V2, or V3 code. Commands that depend on version-specific ABI
 detect the deployed version by probing view selectors
-(`internal/gamever`): `cstBidPriceDeclineMultiplier()` answers only on V3,
+(`internal/gamever`): `getNextCstBidPriceBase()` answers only on V3,
 `cstDutchAuctionDuration()` on V2 and V3, and neither on V1.
 
 - **`bid` and the `autobid` bot** pick the bid call shape per version: V1

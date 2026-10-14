@@ -109,8 +109,8 @@ func TestAuctionParam(t *testing.T) {
 	if got := auctionParam("1800", jsonNum(1800)); got != "1800 s" {
 		t.Errorf("V2 duration = %q", got)
 	}
-	if got := auctionParam("16666666666666666", jsonNum(16666666666666666)); got != "0.016667 CST/s" {
-		t.Errorf("V3.1 decline multiplier = %q", got)
+	if got := auctionParam("16666666666666666", jsonNum(16666666666666666)); got != "0.016667 CST" {
+		t.Errorf("V3 beginning bid price = %q", got)
 	}
 	if isWeiPerSec(jsonNum(1800)) {
 		t.Error("1800 s must not be treated as wei/s")

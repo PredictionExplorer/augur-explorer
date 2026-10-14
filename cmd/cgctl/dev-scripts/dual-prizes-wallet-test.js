@@ -362,13 +362,11 @@ async function main() {
     const implV3 = await hre.upgrades.erc1967.getImplementationAddress(gameAddr);
     console.log(`V3 implementation: ${implV3}`);
 
-    // V3 config admin events (record types 40–45) with current values, so the
-    // ETL sees the ISystemEventsV3 stream (same as upgrade-v3.js).
+    // V3 config admin events (record types 40-42, 44) with current values, so
+    // the ETL sees the ISystemEventsV3 stream (same as upgrade-v3.js).
     await (await game.connect(owner).setRoundLateBidDurationDivisor(await game.roundLateBidDurationDivisor(), g)).wait();
     await (await game.connect(owner).setRoundLateBidPricePremiumAmountBaseMultiplier(await game.roundLateBidPricePremiumAmountBaseMultiplier(), g)).wait();
     await (await game.connect(owner).setRoundLateBidPricePremiumAmountExponent(await game.roundLateBidPricePremiumAmountExponent(), g)).wait();
-    await (await game.connect(owner).setCstBidPriceDeclineMultiplier(await game.cstBidPriceDeclineMultiplier(), g)).wait();
-    await (await game.connect(owner).setCstBidPriceDeclineMultiplierChangeDivisor(await game.cstBidPriceDeclineMultiplierChangeDivisor(), g)).wait();
     await (await game.connect(owner).setMainPrizeNumCosmicSignatureNfts(await game.mainPrizeNumCosmicSignatureNfts(), g)).wait();
 
     console.log("Deploying PrizesWallet 2 and pointing the game at it (setPrizesWallet)...");

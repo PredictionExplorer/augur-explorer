@@ -227,8 +227,8 @@ func TestChatContextSnapshot(t *testing.T) {
 	if page.Meta.Revision != "2" || len(page.Data) != 1 || page.Data[0].CstDutchAuctionDurationSeconds == nil {
 		t.Fatalf("context=%#v", page)
 	}
-	if page.Data[0].CstBidPriceDeclineMultiplierWeiPerSecond != nil {
-		t.Fatalf("V2 entry must not carry the V3 multiplier: %#v", page.Data[0])
+	if page.Data[0].CstDutchAuctionBeginningBidPriceWei != nil {
+		t.Fatalf("V2 entry must not carry the V3 beginning price: %#v", page.Data[0])
 	}
 	rr := httptest.NewRecorder()
 	_ = response.VisitGetRoundChatContextResponse(rr)
@@ -236,9 +236,9 @@ func TestChatContextSnapshot(t *testing.T) {
 		t.Fatalf("context leaked fields: %s", rr.Body.String())
 	}
 
-	// Regression: a V3 bid's eighth BidPlaced word is the CST price decline
-	// multiplier (wei/second), far beyond JavaScript's safe-integer range.
-	// It must be served as the string multiplier field, never as the
+	// Regression: a V3 bid's eighth BidPlaced word is the CST Dutch auction
+	// beginning bid price (wei of CST), far beyond JavaScript's safe-integer
+	// range. It must be served as the string price field, never as the
 	// integer duration (which crashed strict clients).
 	v3 := entry
 	v3.MechanicsVersion = 3
@@ -252,10 +252,10 @@ func TestChatContextSnapshot(t *testing.T) {
 	}
 	page = response.(GetRoundChatContext200JSONResponse)
 	if len(page.Data) != 1 || page.Data[0].CstDutchAuctionDurationSeconds != nil {
-		t.Fatalf("V3 entry must not serve the multiplier as a duration: %#v", page.Data)
+		t.Fatalf("V3 entry must not serve the beginning price as a duration: %#v", page.Data)
 	}
-	if page.Data[0].CstBidPriceDeclineMultiplierWeiPerSecond == nil || *page.Data[0].CstBidPriceDeclineMultiplierWeiPerSecond != "16666666666666667" {
-		t.Fatalf("V3 multiplier missing or wrong: %#v", page.Data[0])
+	if page.Data[0].CstDutchAuctionBeginningBidPriceWei == nil || *page.Data[0].CstDutchAuctionBeginningBidPriceWei != "16666666666666667" {
+		t.Fatalf("V3 beginning price missing or wrong: %#v", page.Data[0])
 	}
 	for _, round := range []int64{-1, 8} {
 		response, _ := s.GetRoundChatContext(context.Background(), GetRoundChatContextRequestObject{Round: round})

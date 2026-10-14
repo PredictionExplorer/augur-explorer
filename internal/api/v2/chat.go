@@ -186,15 +186,15 @@ func (s *Server) GetRoundChatContext(ctx context.Context, request GetRoundChatCo
 		}
 		// The eighth BidPlaced data word changed meaning between
 		// generations (same topic, same slot): V2 emits the CST Dutch
-		// auction duration in seconds, V3 the CST bid price decline
-		// multiplier in wei per second — a value far above JavaScript's
+		// auction duration in seconds, V3 the CST Dutch auction beginning
+		// bid price in wei of CST — a value far above JavaScript's
 		// safe-integer range, so it must never be served as the integer
 		// duration field. Mirrors the switch in bids.go.
 		switch {
 		case record.MechanicsVersion >= 3:
 			if record.CstDutchAuctionDurationValue >= 0 {
-				multiplier := strconv.FormatInt(record.CstDutchAuctionDurationValue, 10)
-				item.CstBidPriceDeclineMultiplierWeiPerSecond = &multiplier
+				beginningPrice := strconv.FormatInt(record.CstDutchAuctionDurationValue, 10)
+				item.CstDutchAuctionBeginningBidPriceWei = &beginningPrice
 			}
 		case record.CstDutchAuctionDurationValue >= 0:
 			duration := record.CstDutchAuctionDurationValue

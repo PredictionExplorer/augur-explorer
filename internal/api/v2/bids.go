@@ -245,14 +245,14 @@ func mapBid(record cgmodel.CGBidRec) (Bid, error) {
 	}
 	// The eighth BidPlaced data word changed meaning between generations
 	// (same topic, same slot): V2 emits the CST Dutch auction duration in
-	// seconds, V3 the CST bid price decline multiplier in wei per second.
+	// seconds, V3 the CST Dutch auction beginning bid price in wei of CST.
 	// Serve each under its own name; a V1 bid carries neither (-1).
 	switch {
 	case record.MechanicsVersion >= 3:
-		if multiplier, err := optionalAmount(record.CstDutchAuctionDuration); err != nil {
-			return Bid{}, fmt.Errorf("cst bid price decline multiplier: %w", err)
-		} else if multiplier != nil {
-			bid.CstBidPriceDeclineMultiplierWeiPerSecond = multiplier
+		if beginningPrice, err := optionalAmount(record.CstDutchAuctionDuration); err != nil {
+			return Bid{}, fmt.Errorf("cst dutch auction beginning bid price: %w", err)
+		} else if beginningPrice != nil {
+			bid.CstDutchAuctionBeginningBidPriceWei = beginningPrice
 		}
 	case record.CstDutchAuctionDurationInt >= 0:
 		value := record.CstDutchAuctionDurationInt

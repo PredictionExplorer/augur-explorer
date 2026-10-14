@@ -88,15 +88,13 @@ async function main() {
     const implAddr = await hre.upgrades.erc1967.getImplementationAddress(proxyAddr);
     console.log(`V3 upgrade complete, implementation=${implAddr}`);
 
-    // 3) Re-emit the 6 V3 config admin events with their current (default) values so the
-    //    backend indexer sees ISystemEventsV3 records (record types 40–45). No behavior change.
+    // 3) Re-emit the 4 V3 config admin events with their current (default) values so the
+    //    backend indexer sees ISystemEventsV3 records (record types 40-42, 44). No behavior change.
     console.log("Emitting V3 config admin events (values unchanged)...");
     const game = proxyV3.connect(owner);
     await (await game.setRoundLateBidDurationDivisor(await proxyV3.roundLateBidDurationDivisor(), g)).wait();
     await (await game.setRoundLateBidPricePremiumAmountBaseMultiplier(await proxyV3.roundLateBidPricePremiumAmountBaseMultiplier(), g)).wait();
     await (await game.setRoundLateBidPricePremiumAmountExponent(await proxyV3.roundLateBidPricePremiumAmountExponent(), g)).wait();
-    await (await game.setCstBidPriceDeclineMultiplier(await proxyV3.cstBidPriceDeclineMultiplier(), g)).wait();
-    await (await game.setCstBidPriceDeclineMultiplierChangeDivisor(await proxyV3.cstBidPriceDeclineMultiplierChangeDivisor(), g)).wait();
     await (await game.setMainPrizeNumCosmicSignatureNfts(await proxyV3.mainPrizeNumCosmicSignatureNfts(), g)).wait();
 
     // 4) Reactivate the round.

@@ -22,8 +22,6 @@ INSERT INTO abi_events(signature, evt_name, contracts) VALUES
 	('5bde6238', 'CosmicSignatureNftAddressChanged(address)', 'Bidding,BiddingCommon,BiddingCommonV2,BiddingOpenBid,BiddingV2,BiddingV2Base'),
 	('9e44c04f', 'CosmicSignatureNftStakingTotalEthRewardAmountPercentageChanged(uint256)', 'Bidding,BiddingCommon,BiddingCommonV2,BiddingOpenBid,BiddingV2,BiddingV2Base'),
 	('9b3eda10', 'CosmicSignatureTokenAddressChanged(address)', 'Bidding,BiddingCommon,BiddingCommonV2,BiddingOpenBid,BiddingV2,BiddingV2Base'),
-	('dca564ea', 'CstBidPriceDeclineMultiplierChangeDivisorChanged(uint256)', 'CosmicSignatureGameV3,ISystemEventsV3,SystemManagementV3'),
-	('5a775510', 'CstBidPriceDeclineMultiplierChanged(uint256)', 'CosmicSignatureGameV3,ISystemEventsV3,SystemManagementV3'),
 	('4e8c80fe', 'CstDutchAuctionBeginningBidPriceMinLimitChanged(uint256)', 'Bidding,BiddingCommon,BiddingCommonV2,BiddingOpenBid,BiddingV2,BiddingV2Base'),
 	('acbc6b69', 'CstDutchAuctionDurationChangeDivisorChanged(uint256)', 'BiddingCommonV2,BiddingV2,BiddingV2Base,BiddingV3,CosmicSignatureGameV2,CosmicSignatureGameV2Base'),
 	('4abea08c', 'CstDutchAuctionDurationChanged(uint256)', 'BiddingCommonV2,BiddingV2,BiddingV2Base,BiddingV3,CosmicSignatureGameV2,CosmicSignatureGameV2Base'),

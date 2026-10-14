@@ -7,8 +7,9 @@
 // added), and the V3.1 upgrade renamed the bidderAddresses getter to
 // bidsInfo. Probing distinguishes the versions:
 //
-//   - cstBidPriceDeclineMultiplier() exists only on V3 (v3.1 decline-rate
-//     CST pricing).
+//   - getNextCstBidPriceBase() exists only on V3 (the review-branch CST
+//     pricing derives the Dutch auction decline from the bid CST reward
+//     rate and exposes the premium-free price base through this getter).
 //   - cstDutchAuctionDuration() exists on V2 and V3 (V2 replaced the V1
 //     divisor-derived CST auction duration with a directly-set one).
 //   - Neither exists on V1.
@@ -49,7 +50,7 @@ func Detect(copts *bind.CallOpts, gameAddr common.Address, client bind.ContractC
 	if err != nil {
 		return 0, fmt.Errorf("instantiating V3 caller: %w", err)
 	}
-	if _, err := v3.CstBidPriceDeclineMultiplier(copts); err == nil {
+	if _, err := v3.GetNextCstBidPriceBase(copts); err == nil {
 		return V3, nil
 	}
 	if _, err := v3.CstDutchAuctionDuration(copts); err == nil {
