@@ -654,3 +654,64 @@
 	}
 }
 
+/* Help balloons (admin events "Event" column) */
+.help-balloon {
+	position: relative;
+}
+
+/* .data-table clips overflow for its rounded corners, which would also
+   clip the balloons; let it overflow and round the corner cells instead. */
+.data-table:has(.help-balloon) {
+	overflow: visible;
+}
+
+.data-table:has(.help-balloon) th:first-child {
+	border-top-left-radius: 8px;
+}
+
+.data-table:has(.help-balloon) th:last-child {
+	border-top-right-radius: 8px;
+}
+
+.data-table:has(.help-balloon) tr:last-child td:first-child {
+	border-bottom-left-radius: 8px;
+}
+
+.data-table:has(.help-balloon) tr:last-child td:last-child {
+	border-bottom-right-radius: 8px;
+}
+
+.help-balloon .balloon-hint {
+	margin-left: 0.35em;
+	color: goldenrod;
+	cursor: help;
+	font-size: 0.9em;
+}
+
+.help-balloon .balloon-text {
+	display: none;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	z-index: 1000;
+	width: 380px;
+	max-width: 70vw;
+	padding: 0.7em 0.9em;
+	margin-top: 0.3em;
+	background: #1c1c1c;
+	color: #e0e0e0;
+	border: 1px solid goldenrod;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+	font-size: 0.85em;
+	font-weight: normal;
+	line-height: 1.45;
+	white-space: normal;
+	text-align: left;
+	cursor: auto;
+}
+
+.help-balloon:hover .balloon-text {
+	display: block;
+}
+

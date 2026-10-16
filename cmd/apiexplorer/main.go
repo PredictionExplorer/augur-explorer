@@ -422,17 +422,18 @@ func loadTemplates() (*template.Template, error) {
 
 func templateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"ethAddrLink":   ethAddrLink,
-		"ethAddrLinkTo": ethAddrLinkTo,
-		"isEthAddr":     isEthAddr,
-		"arbiscanTx":    arbiscanTx,
-		"num":           num,
-		"weiToEth":      weiToEth,
-		"addf":          addf,
-		"nowTs":         nowTs,
-		"unixDate":      unixDate,
-		"isWeiPerSec":   isWeiPerSec,
-		"auctionParam":  auctionParam,
+		"ethAddrLink":    ethAddrLink,
+		"ethAddrLinkTo":  ethAddrLinkTo,
+		"isEthAddr":      isEthAddr,
+		"arbiscanTx":     arbiscanTx,
+		"num":            num,
+		"weiToEth":       weiToEth,
+		"addf":           addf,
+		"nowTs":          nowTs,
+		"unixDate":       unixDate,
+		"isWeiPerSec":    isWeiPerSec,
+		"auctionParam":   auctionParam,
+		"adminEventHelp": adminEventHelp,
 	}
 }
 
