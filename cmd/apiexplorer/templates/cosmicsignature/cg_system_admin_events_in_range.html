@@ -9,7 +9,7 @@
 		<div class="page-header">
 			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
 			<h1>Admin Events in Range</h1>
-			<div class="subtitle">Event Logs {{.EvtLogIdStart}} to {{.EvtLogIdEnd}}</div>
+			<div class="subtitle">Event Logs {{.EvtLogIdStart}} to {{.EvtLogIdEnd}}{{ with roundRangeLabel .RoundNumStart .RoundNumEnd }} &middot; {{.}}{{ end }}</div>
 		</div>
 
 		<div class="section-card">

@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // Help-balloon text for the admin-events page: what each admin event means
 // and what values it accepts. Keyed by the record_type numbering of
 // cgmodel.CGAdminEvent (the registry in
@@ -119,6 +121,35 @@ var adminEventHelpTexts = map[int]string{
 		"Values show the voter, their voting weight in CST, the choice (For / Against / Abstain) and an optional reason.",
 	56: "Cosmic Token: a delegate's voting power changed (CST transfers or delegation). " +
 		"The value is the delegate's new total voting power in CST.",
+}
+
+// roundRangeLabel renders the header's round label: "Round N" when the
+// range lies in one round, "Rounds N to M" when it spans several, and ""
+// when the API did not supply the round numbers (older apiserver builds),
+// so the page still renders against them.
+func roundRangeLabel(start, end any) string {
+	toInt := func(v any) (int64, bool) {
+		switch n := v.(type) {
+		case jsonNum:
+			return int64(n), true
+		case float64:
+			return int64(n), true
+		case int:
+			return int64(n), true
+		default:
+			return 0, false
+		}
+	}
+	s, okS := toInt(start)
+	e, okE := toInt(end)
+	switch {
+	case !okS || !okE:
+		return ""
+	case s == e:
+		return fmt.Sprintf("Round %d", s)
+	default:
+		return fmt.Sprintf("Rounds %d to %d", s, e)
+	}
 }
 
 // adminEventHelp returns the help-balloon text for an admin event record

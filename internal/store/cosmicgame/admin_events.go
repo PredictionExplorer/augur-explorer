@@ -98,6 +98,25 @@ func (r *Repo) SystemModeChanges(ctx context.Context, offset, limit int) ([]cgmo
 	return records, nil
 }
 
+// RoundNumAtEvtLog returns the round that event-log id evtlogId belongs to:
+// the round closed by the next main-prize claim at or after it, or the
+// in-progress round (one past the last claimed round) when the id lies
+// beyond every claim. This matches the SystemModeChanges span model, where
+// the claim of round N opens the configuration span for round N+1.
+func (r *Repo) RoundNumAtEvtLog(ctx context.Context, evtlogId int64) (int64, error) {
+	var roundNum int64
+	err := r.q(ctx).QueryRow(ctx, `
+		SELECT COALESCE(
+			(SELECT round_num FROM cg_prize_claim WHERE evtlog_id >= $1 ORDER BY evtlog_id LIMIT 1),
+			(SELECT COALESCE(MAX(round_num) + 1, 0) FROM cg_prize_claim)
+		)`, evtlogId,
+	).Scan(&roundNum)
+	if err != nil {
+		return 0, store.WrapError("round num at evtlog", err)
+	}
+	return roundNum, nil
+}
+
 // adminEventBranch renders one arm of the AdminEventsInRange UNION: table
 // determines the source, recordType tags the rows, and the four value
 // expressions land in addr_value / int_value / float_value / string_value.

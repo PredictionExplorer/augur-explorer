@@ -3029,6 +3029,21 @@ func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 	}
 	a.enrichAdminEventsResolvedValues(eventList)
 
+	// The range bounds are exclusive (evtlog_start < id < evtlog_end), so
+	// the rounds are sampled just inside them. A range that starts at a
+	// main-prize claim therefore reports the round the claim opened, not
+	// the one it closed — matching the SystemModeChanges span model.
+	roundNumStart, err := a.repo.RoundNumAtEvtLog(c.Request.Context(), evtlogStart+1)
+	if err != nil {
+		a.respondStoreError(c, err)
+		return
+	}
+	roundNumEnd, err := a.repo.RoundNumAtEvtLog(c.Request.Context(), evtlogEnd-1)
+	if err != nil {
+		a.respondStoreError(c, err)
+		return
+	}
+
 	reqStatus := 1
 	errStr := ""
 	c.JSON(http.StatusOK, httpx.H{
@@ -3037,6 +3052,8 @@ func (a *API) handleAdminEventsInRange(c *httpx.Context) {
 		"AdminEvents":   eventList,
 		"EvtLogIdStart": evtlogStart,
 		"EvtLogIdEnd":   evtlogEnd,
+		"RoundNumStart": roundNumStart,
+		"RoundNumEnd":   roundNumEnd,
 	})
 }
 
