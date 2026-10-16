@@ -28,11 +28,30 @@ func TestAdminEventHelp(t *testing.T) {
 	}
 }
 
+func TestRoundRangeLabel(t *testing.T) {
+	if got := roundRangeLabel(jsonNum(10), jsonNum(10)); got != "Round 10" {
+		t.Errorf("same round = %q", got)
+	}
+	if got := roundRangeLabel(jsonNum(0), jsonNum(0)); got != "Round 0" {
+		t.Errorf("round zero = %q", got)
+	}
+	if got := roundRangeLabel(jsonNum(4), jsonNum(7)); got != "Rounds 4 to 7" {
+		t.Errorf("round span = %q", got)
+	}
+	// Older apiserver builds omit the fields; the label must vanish
+	// instead of breaking the page.
+	if got := roundRangeLabel(nil, nil); got != "" {
+		t.Errorf("missing fields = %q, want empty", got)
+	}
+}
+
 func TestAdminEventsPageRendersBalloon(t *testing.T) {
 	tmpl, err := loadTemplates()
 	if err != nil {
 		t.Fatalf("loadTemplates: %v", err)
 	}
+	// RoundNumStart/RoundNumEnd are deliberately absent: an older apiserver
+	// build omits them and the page must still render (without the label).
 	data := map[string]any{
 		"EvtLogIdStart": jsonNum(1), "EvtLogIdEnd": jsonNum(2),
 		"AdminEvents": []any{

@@ -318,6 +318,7 @@ func TestV31TemplatesExecute(t *testing.T) {
 			name: "cosmicsignature/cg_system_admin_events_in_range.html",
 			data: map[string]any{
 				"EvtLogIdStart": jsonNum(1820), "EvtLogIdEnd": jsonNum(1904),
+				"RoundNumStart": jsonNum(4), "RoundNumEnd": jsonNum(5),
 				"AdminEvents": []any{
 					map[string]any{
 						"RecordType": jsonNum(21), // has help text
