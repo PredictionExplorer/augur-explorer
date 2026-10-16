@@ -24,6 +24,7 @@
 				{{- range $i, $change := .AdminEvents}}
 					<tr>
 						<td>
+							<span class="help-balloon">
 							{{ if eq 0.0 .RecordType}}Undefined{{end}}
 							{{ if eq 1.0 .RecordType}}CharityEthDonationAmount%Changed{{end}}
 							{{ if eq 2.0 .RecordType}}MainEthPrizeAmount%Changed{{end}}
@@ -81,6 +82,10 @@
 						{{ if eq 54.0 .RecordType}}DAO: ProposalCanceled{{end}}
 						{{ if eq 55.0 .RecordType}}DAO: VoteCast{{end}}
 						{{ if eq 56.0 .RecordType}}CosmicToken: DelegateVotesChanged{{end}}
+							{{- with adminEventHelp .RecordType}}
+							<span class="balloon-hint" aria-hidden="true">&#9432;</span><span class="balloon-text" role="tooltip">{{.}}</span>
+							{{- end}}
+							</span>
 						</td>
 						<td class="center">{{arbiscanTx .TxHash .BlockNum}}</td>
 						<td>{{.DateTime}}</td>
