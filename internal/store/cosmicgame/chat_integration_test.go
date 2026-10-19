@@ -58,6 +58,21 @@ func TestChatMessagesFilteringAndBoundaries(t *testing.T) {
 		if snapshot.Records[0].EventLogID != 5004 || snapshot.Records[1].EventLogID != 5006 {
 			t.Fatalf("context must retain all gestures: %+v", snapshot)
 		}
+		// Regression: a V3 eighth BidPlaced word (CST bid price decline
+		// multiplier, wei/second) beyond int64 used to abort the whole
+		// context query at the ::bigint cast. It must surface as raw text
+		// with the int view parked at -1.
+		if _, err := r.q(ctx).Exec(ctx, `UPDATE cg_bid SET cst_dutch_auction_duration=150000000000000000000 WHERE evtlog_id=5010`); err != nil {
+			t.Fatal(err)
+		}
+		overflowed, err := r.ChatContext(ctx, 0)
+		if err != nil {
+			t.Fatalf("context with overflowing V3 multiplier: %v", err)
+		}
+		v3Record := overflowed.Records[len(overflowed.Records)-1]
+		if v3Record.EventLogID != 5010 || v3Record.CstDutchAuctionDuration != "150000000000000000000" || v3Record.CstDutchAuctionDurationInt != -1 {
+			t.Fatalf("overflowing V3 multiplier mangled: %+v", v3Record)
+		}
 		if _, err := r.q(ctx).Exec(ctx, `UPDATE cg_bid SET msg=$1 WHERE evtlog_id=5010`, "\ufeff\n\u3000"); err != nil {
 			t.Fatal(err)
 		}

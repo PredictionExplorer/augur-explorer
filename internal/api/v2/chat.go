@@ -173,7 +173,7 @@ func (s *Server) GetRoundChatContext(ctx context.Context, request GetRoundChatCo
 	response.Meta.Revision = strconv.FormatInt(snapshot.Revision, 10)
 	var previous *cgstore.ChatPosition
 	for _, record := range snapshot.Records {
-		if record.Round != request.Round || (previous != nil && compareChatPosition(record.ChatPosition, *previous) <= 0) || record.PrizeAt.IsZero() || record.CstDutchAuctionDurationValue < -1 {
+		if record.Round != request.Round || (previous != nil && compareChatPosition(record.ChatPosition, *previous) <= 0) || record.PrizeAt.IsZero() || record.CstDutchAuctionDurationInt < -1 {
 			return fail(errors.New("invalid or unordered chat context")), nil
 		}
 		if err := validateChatIdentity(record.ChatPosition, record.Round, record.Position, record.BidderAddress); err != nil {
@@ -192,12 +192,13 @@ func (s *Server) GetRoundChatContext(ctx context.Context, request GetRoundChatCo
 		// duration field. Mirrors the switch in bids.go.
 		switch {
 		case record.MechanicsVersion >= 3:
-			if record.CstDutchAuctionDurationValue >= 0 {
-				multiplier := strconv.FormatInt(record.CstDutchAuctionDurationValue, 10)
-				item.CstBidPriceDeclineMultiplierWeiPerSecond = &multiplier
+			if multiplier, err := optionalAmount(record.CstDutchAuctionDuration); err != nil {
+				return fail(fmt.Errorf("cst bid price decline multiplier: %w", err)), nil
+			} else if multiplier != nil {
+				item.CstBidPriceDeclineMultiplierWeiPerSecond = multiplier
 			}
-		case record.CstDutchAuctionDurationValue >= 0:
-			duration := record.CstDutchAuctionDurationValue
+		case record.CstDutchAuctionDurationInt >= 0:
+			duration := record.CstDutchAuctionDurationInt
 			item.CstDutchAuctionDurationSeconds = &duration
 		}
 		response.Data = append(response.Data, item)
