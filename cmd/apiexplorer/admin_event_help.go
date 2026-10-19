@@ -6,7 +6,7 @@ import "fmt"
 // and what values it accepts. Keyed by the record_type numbering of
 // cgmodel.CGAdminEvent (the registry in
 // internal/store/cosmicgame/admin_events.go is the source of truth for the
-// numbering; 43 and 45 are retired there and deliberately absent here).
+// numbering).
 var adminEventHelpTexts = map[int]string{
 	1: "Share of a round's ETH pot donated to charity when the main prize is claimed. " +
 		"Accepts a percentage (whole number); all pot percentages together must stay below 100.",
@@ -58,13 +58,13 @@ var adminEventHelpTexts = map[int]string{
 	24: "When the current round activates and starts accepting bids. " +
 		"Accepts a Unix timestamp in seconds; settable only while the round is inactive.",
 	25: "Length of the CST Dutch auction (the declining-price window for CST bids). " +
-		"V1 set the duration in seconds; V2+ set a divisor applied to the main-prize time increment. " +
-		"Accepts a positive whole number.",
+		"V1 set the duration in seconds; V2 set a divisor applied to the main-prize time increment. " +
+		"Accepts a positive whole number. On V3 the setter is disabled: the duration " +
+		"follows from the beginning price and the decline rate (record type 43).",
 	26: "CST reward multiplier for ERC-20 payouts to a round's participants. " +
 		"Accepts an amount in wei of CST (shown here in whole CST).",
 	27: "Floor for the price a new CST Dutch auction may begin at. " +
-		"Accepts an amount in wei of CST (shown in whole CST). " +
-		"On the review-branch V3 contracts the setter is disabled (the value is frozen at its V2 setting).",
+		"Accepts an amount in wei of CST (shown in whole CST); the V3 default is 1 CST.",
 	28: "CST contribution minted to the marketing wallet on each main prize claim. " +
 		"Accepts an amount in wei of CST (shown in whole CST).",
 	29: "CST reward for placing a bid. V1/V2 minted a fixed amount to the bidder; " +
@@ -98,7 +98,13 @@ var adminEventHelpTexts = map[int]string{
 		"Accepts a positive whole number (V3 only).",
 	42: "Exponent shaping how steeply the late-bid price premium grows as the main prize deadline approaches. " +
 		"Accepts a non-negative whole number (V3 only).",
+	43: "Rate at which the CST bid price declines during the Dutch auction (V3 only; replaces the V2 " +
+		"auction duration). Shown in CST per second. Adjusts automatically with the bid mix: ETH bids " +
+		"raise it, CST bids lower it, subject to the 3-minute minimum auction duration safeguard.",
 	44: "How many Cosmic Signature NFTs are minted to the main prize winner on a claim. " +
+		"Accepts a positive whole number (V3 only).",
+	45: "Divisor controlling how much each bid adjusts the CST bid price decline rate " +
+		"(record type 43): every bid moves the rate by 1/divisor (100 means 1% per bid). " +
 		"Accepts a positive whole number (V3 only).",
 	46: "Threshold for refunding ETH bid overpayment, measured in gas units: " +
 		"overpayments cheaper than this much gas are kept by the game instead of refunded. " +

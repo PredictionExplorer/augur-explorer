@@ -20,8 +20,11 @@ func TestAdminEventHelp(t *testing.T) {
 	if got := adminEventHelp(jsonNum(0)); got != "" {
 		t.Errorf("adminEventHelp(0) = %q, want empty", got)
 	}
-	if got := adminEventHelp(jsonNum(43)); got != "" {
-		t.Errorf("adminEventHelp(43) = %q, want empty (retired type)", got)
+	if got := adminEventHelp(jsonNum(43)); !strings.Contains(got, "decline") {
+		t.Errorf("adminEventHelp(43) = %q, want the decline-rate text", got)
+	}
+	if got := adminEventHelp(jsonNum(45)); !strings.Contains(got, "divisor") {
+		t.Errorf("adminEventHelp(45) = %q, want the adjustment-divisor text", got)
 	}
 	if got := adminEventHelp("21"); got != "" {
 		t.Errorf("adminEventHelp(string) = %q, want empty", got)
