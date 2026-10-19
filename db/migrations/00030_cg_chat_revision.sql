@@ -2,7 +2,7 @@
 -- Match ECMAScript String.trim(), including BOM but excluding U+0085. Keep
 -- this predicate shared by the message query and its partial index.
 -- +goose StatementBegin
-CREATE FUNCTION cg_chat_has_text(value TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION cg_chat_has_text(value TEXT) RETURNS BOOLEAN
 LANGUAGE SQL IMMUTABLE PARALLEL SAFE AS $$
     SELECT COALESCE(btrim(value, U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF') <> '', FALSE)
 $$;
@@ -18,7 +18,7 @@ CREATE TABLE cg_chat_revision (
 INSERT INTO cg_chat_revision (singleton) VALUES (TRUE);
 
 -- +goose StatementBegin
-CREATE FUNCTION cg_invalidate_chat_history() RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION cg_invalidate_chat_history() RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE cg_chat_revision SET revision = revision + 1 WHERE singleton;
