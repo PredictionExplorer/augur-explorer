@@ -75,9 +75,15 @@ compiler output — the artifacts here cannot invent new ABIs:
    real pipeline.
 
 Mechanics upgrades are additive binding types: V2 added
-`CosmicSignatureGameV2`, and V3 adds `CosmicSignatureGameV3`. The V3 ABI is
-compiled from the Solidity `v3.1-2026-08-19` branch at commit `9c04656e`
-("Consolidate main prize duration getters into a signed public getter"):
+`CosmicSignatureGameV2`, and V3 adds `CosmicSignatureGameV3`. The V3
+artifact is compiled from the Solidity `v3.1-2026-10-13` branch at commit
+`9d1a6447` ("Edited comments") — the Arbitrum One deployment candidate —
+with the production settings (solc 0.8.34, viaIR, optimizer runs 400, EVM
+osaka). Its ABI is identical to the previous `v3.1-2026-08-19` compile at
+`9c04656e` ("Consolidate main prize duration getters into a signed public
+getter"); only the creation bytecode changed (the non-configurable 3-minute
+CST Dutch auction duration minimum and related free-CST-bid safeguards).
+The `9c04656e` ABI description below still applies:
 a monolithic (non-modular) `CosmicSignatureGameV3` implementation with the
 CST bid price decline multiplier mechanics, the weighted bidder raffle
 (`bidsInfo` / `getBidInfoAt` replacing `bidderAddresses` /
