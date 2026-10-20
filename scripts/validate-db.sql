@@ -949,7 +949,7 @@ FROM (
 -- SECTION I: NFT art traits (cg_token_traits / cg_token_traits_fetch)
 --
 -- Filled by the apiserver's background ingest loop from the asset host
--- (ADR-0011, migration 00029). A cg_token_traits row existing means "this
+-- (ADR-0011, migration 00036). A cg_token_traits row existing means "this
 -- seed serves enriched metadata". Packages lag mints by minutes to hours, so
 -- a missing row on a fresh mint is normal; it only becomes a WARN once the
 -- mint is a day old. Art facts are frozen at imprint: a drift alarm or a

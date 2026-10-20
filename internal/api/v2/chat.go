@@ -139,7 +139,7 @@ func mapChatMessage(record cgstore.ChatMessageRecord) (ChatMessage, error) {
 	return item, nil
 }
 
-// ECMAScript trim's exact whitespace set, shared with migration 00030.
+// ECMAScript trim's exact whitespace set, shared with migration 00037.
 func chatHasText(value string) bool {
 	return strings.Trim(value, "\u0009\u000a\u000b\u000c\u000d\u0020\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff") != ""
 }

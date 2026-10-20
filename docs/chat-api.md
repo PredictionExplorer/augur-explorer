@@ -86,7 +86,7 @@ empty feed. Clients may fall back to the unchanged legacy API only when the v2
 route is unavailable (404/501); 400/409/429/5xx and invalid responses must not be
 treated as permission to silently switch protocols.
 
-Apply migration 00030, then the concurrently built partial index in 00031, before
+Apply migration 00037, then the concurrently built partial index in 00038, before
 deploying the new server. Old servers remain compatible with those migrations.
 The frontend may ship first with capability fallback and discover the new routes
 after deployment. Migration and server rollout are separate operator actions;
