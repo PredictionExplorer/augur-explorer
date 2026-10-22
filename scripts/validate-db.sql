@@ -87,13 +87,32 @@ CREATE TEMP TABLE vr (
 	details    TEXT
 ) ON COMMIT DROP;
 
+-- cg_adm_main_prize_num_nfts exists only on v3 schemas; this shim lets the
+-- cfg query below reference it unconditionally (empty on v2 = no overrides,
+-- matching reality: a v2 schema cannot hold decoded V3 admin events).
+\if :is_v3
+CREATE TEMP TABLE adm_main_prize_num_nfts_shim ON COMMIT DROP AS
+SELECT block_num, evtlog_id, new_value FROM cg_adm_main_prize_num_nfts;
+\else
+CREATE TEMP TABLE adm_main_prize_num_nfts_shim (
+	block_num BIGINT, evtlog_id BIGINT, new_value DECIMAL
+) ON COMMIT DROP;
+\endif
+
 -- ---------------------------------------------------------------------------
 -- Per-round effective configuration (deploy defaults + cg_adm_* overrides
 -- effective at the claim block). One row per completed round.
+--
+-- The V3 reinitialize (the Initialized version=3 event marks its block)
+-- changed the ETH split percentages to 20/15/5/5/5 and the main prize to
+-- 3 sequential CS NFTs WITHOUT emitting the per-parameter admin events, so
+-- the deploy defaults are selected by comparing the claim block against the
+-- V3 upgrade block. Explicit cg_adm_* overrides still win when present.
 -- ---------------------------------------------------------------------------
 CREATE TEMP TABLE cfg ON COMMIT DROP AS
 SELECT
 	pc.round_num,
+	(v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block) AS is_v3,
 	pc.evtlog_id  AS claim_evtlog_id,
 	pc.block_num  AS claim_block,
 	pc.tx_id      AS claim_tx,
@@ -110,18 +129,27 @@ SELECT
 	COALESCE((SELECT a.num_winners::BIGINT FROM cg_adm_raf_nft_staking_rwalk a
 	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 10) AS n_nft_rwalk,
 	COALESCE((SELECT a.percentage::NUMERIC FROM cg_adm_main_prize_pcent a
-	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 25) AS pct_main,
+	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1),
+	         CASE WHEN v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block THEN 20 ELSE 25 END) AS pct_main,
 	COALESCE((SELECT a.percentage::NUMERIC FROM cg_adm_chrono_pcent a
-	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 8)  AS pct_chrono,
+	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1),
+	         CASE WHEN v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block THEN 15 ELSE 8 END)  AS pct_chrono,
 	COALESCE((SELECT a.percentage::NUMERIC FROM cg_adm_raffle_pcent a
-	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 4)  AS pct_raffle,
+	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1),
+	         CASE WHEN v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block THEN 5 ELSE 4 END)   AS pct_raffle,
 	COALESCE((SELECT a.percentage::NUMERIC FROM cg_adm_stake_pcent a
-	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 6)  AS pct_stake,
+	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1),
+	         CASE WHEN v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block THEN 5 ELSE 6 END)   AS pct_stake,
 	COALESCE((SELECT a.percentage::NUMERIC FROM cg_adm_charity_pcent a
-	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 7)  AS pct_charity,
+	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1),
+	         CASE WHEN v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block THEN 5 ELSE 7 END)   AS pct_charity,
+	COALESCE((SELECT a.new_value::BIGINT FROM adm_main_prize_num_nfts_shim a
+	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1),
+	         CASE WHEN v3.v3_block IS NOT NULL AND pc.block_num >= v3.v3_block THEN 3 ELSE 1 END)   AS n_main_nfts,
 	COALESCE((SELECT a.new_timeout FROM cg_adm_timeout_withdraw a
 	          WHERE a.block_num <= pc.block_num ORDER BY a.evtlog_id DESC LIMIT 1), 3024000) AS withdraw_timeout
-FROM cg_prize_claim pc;
+FROM cg_prize_claim pc
+CROSS JOIN (SELECT (SELECT MIN(i.block_num) FROM cg_adm_initialized i WHERE i.version = 3) AS v3_block) v3;
 
 -- Well-known address ids.
 CREATE TEMP TABLE known_aid ON COMMIT DROP AS
@@ -418,13 +446,18 @@ BEGIN
 	        CASE WHEN raw_cnt=dec_cnt THEN 0 ELSE 1 END,
 	        CASE WHEN raw_cnt=dec_cnt THEN NULL ELSE 'evt_log='||raw_cnt||' table='||dec_cnt END);
 
-	-- Initialized: same source set as OwnershipTransferred plus the
+	-- Initialized: same source set as OwnershipTransferred plus every game
 	-- implementation contract (initializedSources() in handlers_admin.go).
+	-- The static cg_contracts.implementation_addr is a deploy-time snapshot;
+	-- later implementations (each emits Initialized(2^64-1) from its own
+	-- address via _disableInitializers) are found through cg_adm_upgraded,
+	-- mirroring how the indexer composes its Implementations list.
 	SELECT COUNT(*) INTO raw_cnt FROM evt_log e, known_aid k
 	WHERE e.topic0_sig='c7f505b2'
-	  AND e.contract_aid IN (k.game_aid, k.nft_aid, k.cst_aid, k.charity_aid,
-	                         k.prizes_aid, k.staking_cst_aid, k.staking_rwalk_aid,
-	                         k.marketing_aid, k.dao_aid, k.impl_aid);
+	  AND (e.contract_aid IN (k.game_aid, k.nft_aid, k.cst_aid, k.charity_aid,
+	                          k.prizes_aid, k.staking_cst_aid, k.staking_rwalk_aid,
+	                          k.marketing_aid, k.dao_aid, k.impl_aid)
+	       OR e.contract_aid IN (SELECT u.implementation_aid FROM cg_adm_upgraded u));
 	SELECT COUNT(*) INTO dec_cnt FROM cg_adm_initialized;
 	INSERT INTO vr(section,check_name,severity,violations,details)
 	VALUES ('C. topic reconciliation','Initialized [c7f505b2] from platform contracts -> cg_adm_initialized','ERROR',
@@ -562,7 +595,7 @@ FROM (
 -- D7: ETH split cross-ratios. All slices are floor(balance*pct/100) of the SAME
 -- balance snapshot, so amountA*pctB and amountB*pctA differ by < pctA+pctB wei.
 INSERT INTO vr(section,check_name,severity,violations,details)
-SELECT 'D. round structure','ETH split ratio: main prize vs chrono warrior (25:8 by default)','ERROR',COUNT(*),
+SELECT 'D. round structure','ETH split ratio: main prize vs chrono warrior (25:8 pre-V3, 20:15 V3)','ERROR',COUNT(*),
        LEFT(STRING_AGG('round '||v.round_num,',' ORDER BY v.round_num),300)
 FROM (
 	SELECT c.round_num FROM cfg c JOIN cg_chrono_warrior_prize w USING (round_num)
@@ -570,7 +603,7 @@ FROM (
 ) v;
 
 INSERT INTO vr(section,check_name,severity,violations,details)
-SELECT 'D. round structure','ETH split ratio: main prize vs staking deposit (25:6 by default)','ERROR',COUNT(*),
+SELECT 'D. round structure','ETH split ratio: main prize vs staking deposit (25:6 pre-V3, 20:5 V3)','ERROR',COUNT(*),
        LEFT(STRING_AGG('round '||v.round_num,',' ORDER BY v.round_num),300)
 FROM (
 	SELECT c.round_num FROM cfg c JOIN cg_staking_eth_deposit s USING (round_num)
@@ -578,7 +611,7 @@ FROM (
 ) v;
 
 INSERT INTO vr(section,check_name,severity,violations,details)
-SELECT 'D. round structure','ETH split ratio: main prize vs charity donation in claim tx (25:7 by default)','ERROR',COUNT(*),
+SELECT 'D. round structure','ETH split ratio: main prize vs charity donation in claim tx (25:7 pre-V3, 20:5 V3)','ERROR',COUNT(*),
        LEFT(STRING_AGG('round '||v.round_num,',' ORDER BY v.round_num),300)
 FROM (
 	SELECT c.round_num FROM cfg c
@@ -587,10 +620,11 @@ FROM (
 	WHERE ABS(c.main_eth*c.pct_charity - d.amount*c.pct_main) > (c.pct_main + c.pct_charity)
 ) v;
 
--- Chrono vs sum(raffle ETH): chrono = floor(bal*8/100), raffleTotal = floor(bal*4/100),
--- deposited raffle sum = raffleTotal - (raffleTotal % N). Range check with dust bounds.
+-- Chrono vs sum(raffle ETH): chrono = floor(bal*pct_chrono/100), raffleTotal =
+-- floor(bal*pct_raffle/100) (8:4 pre-V3, 15:5 V3), deposited raffle sum =
+-- raffleTotal - (raffleTotal % N). Range check with dust bounds.
 INSERT INTO vr(section,check_name,severity,violations,details)
-SELECT 'D. round structure','ETH split ratio: chrono vs sum of raffle ETH (2x by default, +division dust)','ERROR',COUNT(*),
+SELECT 'D. round structure','ETH split ratio: chrono vs sum of raffle ETH (2x pre-V3, 3x V3, +division dust)','ERROR',COUNT(*),
        LEFT(STRING_AGG('round '||v.round_num,',' ORDER BY v.round_num),300)
 FROM (
 	SELECT c.round_num FROM cfg c
@@ -618,7 +652,9 @@ FROM (
 ) v;
 
 -- D9a: 1:1 correspondence between prize-NFT awards and NftMinted rows,
--- and the minted NFT's owner must be the prize winner.
+-- and the minted NFT's owner must be the prize winner. The main prize is
+-- n_main_nfts sequential NFTs starting at MainPrizeClaimed.token_id
+-- (1 pre-V3, 3 under V3).
 INSERT INTO vr(section,check_name,severity,violations,details)
 SELECT 'D. round structure','every prize NFT has a matching mint (same round, owner = winner) and vice versa','ERROR',COUNT(*),
        LEFT(STRING_AGG(v.msg,'; '),300)
@@ -626,7 +662,9 @@ FROM (
 	SELECT COALESCE('token '||p.token_id||' ('||p.src||')','mint token '||m.token_id)||
 	       ' round '||COALESCE(p.round_num,m.round_num) AS msg
 	FROM (
-		SELECT round_num, token_id, winner_aid, 'main' AS src FROM cg_prize_claim
+		SELECT c.round_num, c.main_token_id + g.i AS token_id, c.main_winner_aid AS winner_aid,
+		       'main' AS src
+		FROM cfg c CROSS JOIN LATERAL generate_series(0, c.n_main_nfts - 1) g(i)
 		UNION ALL SELECT round_num, erc721_token_id, winner_aid, 'endurance' FROM cg_endurance_prize
 		UNION ALL SELECT round_num, erc721_token_id, winner_aid, 'lastcst' FROM cg_lastcst_prize
 		UNION ALL SELECT round_num, nft_id, winner_aid, 'chrono' FROM cg_chrono_warrior_prize
@@ -638,15 +676,20 @@ FROM (
 ) v;
 
 -- D9b: token ids minted in a round are contiguous (nft.mintMany) and the main
--- prize NFT (MainPrizeClaimed.prizeCosmicSignatureNftId) is the FIRST minted id.
+-- prize NFT block (MainPrizeClaimed.prizeCosmicSignatureNftId, n_main_nfts
+-- ids) sits where the contract mints it: pre-V3 the single main NFT is the
+-- FIRST minted id; under V3 the claim mints endurance, chrono, raffle NFTs
+-- first and the main-prize block of 3 LAST, so claim token_id + n - 1 = max.
 INSERT INTO vr(section,check_name,severity,violations,details)
-SELECT 'D. round structure','round mints contiguous; claim token_id = first minted id of round','ERROR',COUNT(*),
+SELECT 'D. round structure','round mints contiguous; main-prize NFT block first (pre-V3) / last (V3)','ERROR',COUNT(*),
        LEFT(STRING_AGG('round '||v.round_num,',' ORDER BY v.round_num),300)
 FROM (
 	SELECT c.round_num FROM cfg c
 	JOIN (SELECT round_num, COUNT(*) cnt, MIN(token_id) mn, MAX(token_id) mx
 	      FROM cg_mint_event GROUP BY round_num) m USING (round_num)
-	WHERE m.mx - m.mn + 1 <> m.cnt OR c.main_token_id <> m.mn
+	WHERE m.mx - m.mn + 1 <> m.cnt
+	   OR (NOT c.is_v3 AND c.main_token_id <> m.mn)
+	   OR (c.is_v3 AND c.main_token_id + c.n_main_nfts - 1 <> m.mx)
 ) v;
 
 -- D10: cg_prize registry (populated by triggers) matches the fact tables in

@@ -83,6 +83,9 @@ FROM (
 	endur  AS (SELECT round_num, SUM(erc20_amount) cst, COUNT(*) cnt FROM cg_endurance_prize GROUP BY round_num),
 	lcst   AS (SELECT round_num, SUM(erc20_amount) cst, COUNT(*) cnt FROM cg_lastcst_prize GROUP BY round_num),
 	claimx AS (SELECT round_num, SUM(cst_amount) cst, COUNT(*) cnt FROM cg_prize_claim GROUP BY round_num),
+	-- NftMinted is the fact table for mint counts; prize-row counting breaks
+	-- under V3 where the main prize mints 3 NFTs per MainPrizeClaimed.
+	mints  AS (SELECT round_num, COUNT(*) cnt FROM cg_mint_event GROUP BY round_num),
 	dons   AS (SELECT round_num, SUM(amount) total, COUNT(*) cnt FROM
 	           (SELECT round_num, amount FROM cg_eth_donated
 	            UNION ALL SELECT round_num, amount FROM cg_eth_donated_wi) x GROUP BY round_num)
@@ -97,6 +100,7 @@ FROM (
 	LEFT JOIN endur  en USING (round_num)
 	LEFT JOIN lcst   lc USING (round_num)
 	LEFT JOIN claimx cl USING (round_num)
+	LEFT JOIN mints  mt USING (round_num)
 	LEFT JOIN dons   dn USING (round_num),
 	LATERAL (VALUES
 		('total_bids',                r.total_bids::NUMERIC,                COALESCE(b.cnt,0)::NUMERIC),
@@ -110,8 +114,7 @@ FROM (
 		('chrono_warrior_prize_eth',  r.chrono_warrior_prize_eth::NUMERIC,  COALESCE(ch.eth,0)::NUMERIC),
 		('total_cst_paid_in_prizes',  r.total_cst_paid_in_prizes::NUMERIC,
 		     COALESCE(cl.cst,0)+COALESCE(en.cst,0)+COALESCE(lc.cst,0)+COALESCE(ch.cst,0)+COALESCE(rn.cst,0)),
-		('total_nfts_minted',         r.total_nfts_minted::NUMERIC,
-		     COALESCE(cl.cnt,0)+COALESCE(en.cnt,0)+COALESCE(lc.cnt,0)+COALESCE(ch.cnt,0)+COALESCE(rn.cnt,0)),
+		('total_nfts_minted',         r.total_nfts_minted::NUMERIC,         COALESCE(mt.cnt,0)::NUMERIC),
 		('donations_round_total',     r.donations_round_total::NUMERIC,     COALESCE(dn.total,0)::NUMERIC),
 		('donations_round_count',     r.donations_round_count::NUMERIC,     COALESCE(dn.cnt,0)::NUMERIC)
 	) v(col, got, want)
