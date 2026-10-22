@@ -1,41 +1,23 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>Unique Bidders</title>
-</head>
-<body>
-	<div class="cg-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>Unique Bidder Accounts</h1>
-		</div>
+<title>Unique Bidders</title>
+<div class="page-header">
+	<h1>Unique Bidder Accounts</h1>
+</div>
 
-		<div class="section-card">
-			<table class="data-table">
-				<tr>
-					<th>Bidder Address</th>
-					<th class="center">Num Bids</th>
-					<th class="right">Max Bid (ETH)</th>
-				</tr>
-				{{- range $i, $change := .UniqueBidders}}
-					<tr>
-						<td class="monospace">
-							{{ethAddrLink .BidderAddr}}
-						</td>
-						<td class="center">{{.NumBids}}</td>
-						<td class="right">{{printf "%.6f" .MaxBidAmountEth}}</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/statistics/unique/bidders</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/statistics/unique/bidders</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Bidder Address</th>
+			<th class="center">Num Bids</th>
+			<th class="right">Max Bid (ETH)</th>
+		</tr>
+		{{- range $i, $change := .UniqueBidders}}
+			<tr>
+				<td class="monospace">
+					{{ethAddrLink .BidderAddr}}
+				</td>
+				<td class="center">{{.NumBids}}</td>
+				<td class="right">{{printf "%.6f" .MaxBidAmountEth}}</td>
+			</tr>
+		{{- end}}
+	</table>
+</div>

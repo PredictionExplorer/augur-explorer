@@ -1,10 +1,4 @@
-<html>
-<head>
-	<title>User Info for {{.UserAddr}}</title>
-	<link href="/res/main.css" rel="stylesheet">
-</head>
-
-<body>
+<title>User Info for {{.UserAddr}}</title>
 	<h3>User info for {{.UserAddr}}</h3>
 <table>
 	{{ if .UserInfo.IsMarketPlaceContract }}
@@ -53,5 +47,3 @@
 
 	Example: /api/randomwalk/user/info/200057
 </code>
-</body>
-</html>

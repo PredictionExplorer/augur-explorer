@@ -1,41 +1,23 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>Unique Donors</title>
-</head>
-<body>
-	<div class="cg-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>Unique Donors</h1>
-		</div>
+<title>Unique Donors</title>
+<div class="page-header">
+	<h1>Unique Donors</h1>
+</div>
 
-		<div class="section-card">
-			<table class="data-table">
-				<tr>
-					<th>Donor Address</th>
-					<th class="center">Donations Made</th>
-					<th class="right">Total ETH Donated</th>
-				</tr>
-				{{- range $i, $change := .UniqueDonors}}
-					<tr>
-						<td class="monospace">
-							{{ethAddrLink .DonorAddr}}
-						</td>
-						<td class="center"><a href="/cosmicsignature/donations/eth/by_user/{{.DonorAddr}}">{{.CountDonations}}</a></td>
-						<td class="right">{{printf "%.6f" .TotalDonatedEth}}</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/statistics/unique/donors</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/statistics/unique/donors</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Donor Address</th>
+			<th class="center">Donations Made</th>
+			<th class="right">Total ETH Donated</th>
+		</tr>
+		{{- range $i, $change := .UniqueDonors}}
+			<tr>
+				<td class="monospace">
+					{{ethAddrLink .DonorAddr}}
+				</td>
+				<td class="center"><a href="/cosmicsignature/donations/eth/by_user/{{.DonorAddr}}">{{.CountDonations}}</a></td>
+				<td class="right">{{printf "%.6f" .TotalDonatedEth}}</td>
+			</tr>
+		{{- end}}
+	</table>
+</div>

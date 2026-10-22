@@ -5,16 +5,35 @@
 
 body {
 	margin: 0;
-	height: 100vh;
-	/*display: flex;*/
 	color: white;
-	align-items: center;
-	justify-content: center;
 	background-color: black;
 }
 a {
+	color: goldenrod;
+	text-decoration: none;
+}
+a:hover {
 	color: white;
-	text-decoration-color: blue;
+}
+/* Legacy RandomWalk pages: plain tables get the compact treatment too. */
+table {
+	border-collapse: collapse;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+td, th {
+	padding: 0.1em 0.5em;
+	border-bottom: 1px solid #1c1c1c;
+	text-align: left;
+}
+th {
+	color: goldenrod;
+	font-weight: 600;
+}
+h3 {
+	font-size: 1.05em;
+	color: goldenrod;
+	margin: 0.3em 0;
 }
 nav ul {
 	list-style-type: none;

@@ -1,63 +1,45 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>ERC20 Prizes Won by User</title>
-</head>
-<body>
-	<div class="cg-wide-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>ERC20 Prizes Available to User</h1>
-			<div class="address-display">{{.UserAddr}}</div>
-			<div class="subtitle" style="margin-top: 1em;">Winner Perspective (Summarized)</div>
-		</div>
+<title>ERC20 Prizes Won by User</title>
+<div class="page-header">
+	<h1>ERC20 Prizes Available to User</h1>
+	<div class="address-display">{{.UserAddr}}</div>
+	<div class="subtitle" style="margin-top: 1em;">Winner Perspective (Summarized)</div>
+</div>
 
-		<div class="alert alert-info">
-			<strong>Note:</strong> This shows ERC20 tokens YOU WON and can claim (summarized).<br/>
-			To see tokens you DONATED, use <a href="/cosmicsignature/donations/erc20/donated/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Donations</a>.<br/>
-			To see tokens you already CLAIMED, use <a href="/cosmicsignature/donations/erc20/claims/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Claims</a>.
-		</div>
+<div class="alert alert-info">
+	<strong>Note:</strong> This shows ERC20 tokens YOU WON and can claim (summarized).<br/>
+	To see tokens you DONATED, use <a href="/cosmicsignature/donations/erc20/donated/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Donations</a>.<br/>
+	To see tokens you already CLAIMED, use <a href="/cosmicsignature/donations/erc20/claims/by_user/{{.UserAddr}}" style="color: #4CAF50;">ERC20 Claims</a>.
+</div>
 
-		<div class="section-card">
-			<table class="data-table">
-				<tr>
-					<th>Block</th>
-					<th>DateTime</th>
-					<th>Token Address</th>
-					<th class="right">Amount Donated</th>
-					<th class="right">Amount Claimed</th>
-					<th class="right">Remaining</th>
-					<th class="center">Status</th>
-				</tr>
-				{{- range $i, $change := .DonatedPrizesERC20ByWinner}}
-					<tr>
-						<td>
-							{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}
-						</td>
-						<td><a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.Tx.DateTime}}</a></td>
-						<td class="monospace">{{.TokenAddr}}</td>
-						<td class="right">{{printf "%.6f" .AmountDonatedEth}}</td>
-						<td class="right">{{printf "%.6f" .AmountClaimedEth}}</td>
-						<td class="right">{{printf "%.6f" .DonateClaimDiffEth}}</td>
-						<td class="center">
-							{{if .Claimed}}
-								<span class="badge badge-success">Yes</span>
-							{{else}}
-								<span class="badge badge-default">No</span>
-							{{end}}
-						</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/donations/erc20/by_user/[user_addr]</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/donations/erc20/by_user/{{.UserAddr}}</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>DateTime</th>
+			<th>Token Address</th>
+			<th class="right">Amount Donated</th>
+			<th class="right">Amount Claimed</th>
+			<th class="right">Remaining</th>
+			<th class="center">Status</th>
+		</tr>
+		{{- range $i, $change := .DonatedPrizesERC20ByWinner}}
+			<tr>
+				<td>
+					{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}
+				</td>
+				<td><a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.Tx.DateTime}}</a></td>
+				<td class="monospace">{{.TokenAddr}}</td>
+				<td class="right">{{printf "%.6f" .AmountDonatedEth}}</td>
+				<td class="right">{{printf "%.6f" .AmountClaimedEth}}</td>
+				<td class="right">{{printf "%.6f" .DonateClaimDiffEth}}</td>
+				<td class="center">
+					{{if .Claimed}}
+						<span class="badge badge-success">Yes</span>
+					{{else}}
+						<span class="badge badge-default">No</span>
+					{{end}}
+				</td>
+			</tr>
+		{{- end}}
+	</table>
+</div>

@@ -1,92 +1,30 @@
-<html>
-<head>
-	<title>RandomWalk Explorer</title>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-</head>
-<body>
-	<div class="cg-wide-container">
-		<div class="page-header">
-			<a class="home-link" href="/">&larr; Home</a>
-			<h1>RandomWalk Dashboard</h1>
-		</div>
+<title>RandomWalk Explorer</title>
+<div class="page-header">
+	<h1>RandomWalk Dashboard</h1>
+	<div class="subtitle">every table is in the sidebar; token ids open the token history</div>
+</div>
 
-		<div class="section-card">
-			<div class="section-header">Browse</div>
-			<nav>
-				<ul style="display: flex; flex-wrap: wrap;">
-					<li>
-						<a class="btn_link" href="/randomwalk/mint_report">Mint Report</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/trading/history">Trade History</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/tokens/list/sequential">Token Mints</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/current_offers/0">Active Offers</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/statistics/by_market">Market Stats</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/floor_price">Floor Price</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/statistics/by_token">Token Stats</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/trading/sales">Finalized Sales</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/statistics/mint_intervals">Mint Intervals</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/statistics/withdrawal_chart">Withdrawal Chart</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-					<li>
-						<a class="btn_link" href="/randomwalk/statistics/floor_price/0/0/0">Floor Price Chart</a>
-						<span></span><span></span><span></span><span></span>
-					</li>
-				</ul>
-			</nav>
-		</div>
-
-		<div class="section-card">
-			<div class="section-header">Top 5 Traded Tokens</div>
-			<table class="data-table">
-				<tr>
-					<th class="center">TokenID</th>
-					<th>Seed</th>
-					<th class="center">Total Trades</th>
-				</tr>
-				{{- range $i, $change := .Top5TradedTokens}}
-					<tr>
-						<td class="center">{{num .TokenId}}</td>
-						<td class="monospace">
-							<a href="/randomwalk/tokens/history/{{num .TokenId}}">{{.SeedHex}}</a>
-						</td>
-						<td class="center">{{num .TotalTrades}}</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/randomwalk/top5tokens</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="panel-grid">
+	<section class="panel span-4">
+		<h2>Top 5 traded tokens <a class="more" href="/randomwalk/statistics/by_token">token stats →</a></h2>
+		<table class="data-table dense">
+			<tr><th>token</th><th>seed</th><th class="num">trades</th></tr>
+			{{- range .Top5TradedTokens}}
+			<tr>
+				<td>{{rwTokenLink .TokenId}}</td>
+				<td>{{hexCell .SeedHex}}</td>
+				<td class="num">{{num .TotalTrades}}</td>
+			</tr>
+			{{- end}}
+		</table>
+	</section>
+	<section class="panel span-4">
+		<h2>Tables</h2>
+		<table class="kv-table">
+			<tr><th>mints</th><td class="l"><a href="/randomwalk/tokens/list/sequential">token mints</a> · <a href="/randomwalk/mint_report">mint report</a> · <a href="/randomwalk/statistics/mint_intervals">intervals</a></td></tr>
+			<tr><th>trading</th><td class="l"><a href="/randomwalk/trading/history">history</a> · <a href="/randomwalk/trading/sales">sales</a> · <a href="/randomwalk/current_offers/0">offers</a></td></tr>
+			<tr><th>prices</th><td class="l"><a href="/randomwalk/floor_price">floor</a> · <a href="/randomwalk/statistics/floor_price/0/0/0">floor chart</a> · <a href="/randomwalk/statistics/trading_volume/0/0/0">volume</a></td></tr>
+			<tr><th>statistics</th><td class="l"><a href="/randomwalk/statistics/by_market">market</a> · <a href="/randomwalk/statistics/by_token">token</a> · <a href="/randomwalk/statistics/withdrawal_chart">withdrawals</a></td></tr>
+		</table>
+	</section>
+</div>

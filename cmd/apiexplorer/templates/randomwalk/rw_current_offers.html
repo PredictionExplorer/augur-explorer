@@ -1,9 +1,4 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<title>Active Offers</title>
-</head>
-<body>
+<title>Active Offers</title>
 	<h3 class="page_title">Active Offers<h3>
 <h3>Active Offers</h3>
 <table>
@@ -25,7 +20,7 @@
 				{{ if eq .OfferType 0.0 }}BUY{{else}}SELL{{end}}
 			</td>
 			<td class="addr">
-				<a href="/black/poly/markets/list/?c={{.SellerAddr}}">{{.SellerAddr}}</a>
+				{{hexCell .SellerAddr}}
 			</td>
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
 			<td class="market_reports_field" style="text-align: center;">
@@ -41,4 +36,3 @@
 	Example: /api/randomwalk/current_offers/0</br/>
 </code>
 <br/>
-</body>

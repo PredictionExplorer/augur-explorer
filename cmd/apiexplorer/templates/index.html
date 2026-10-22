@@ -1,39 +1,28 @@
-<html>
-<head>
-	<title>API Explorer</title>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-</head>
-<body>
-	<div class="cg-container">
-		<div class="page-header">
-			<h1>API Explorer</h1>
-		</div>
+<title>API Explorer</title>
+<div class="page-header">
+	<h1>API Explorer</h1>
+	<div class="subtitle">developer view over the v1 API · pick a project</div>
+</div>
 
-		<div style="display: flex; justify-content: center; gap: 3em; margin-top: 4em; flex-wrap: wrap;">
-			<a href="/randomwalk/" style="text-decoration: none;">
-				<div style="width: 12em; height: 8em; border: 0.3em solid goldenrod; border-radius: 0.8em;
-						color: goldenrod; font-family: sans-serif; font-weight: bold; font-size: 1.6em;
-						letter-spacing: 0.08em; text-transform: uppercase; display: flex; flex-direction: column;
-						align-items: center; justify-content: center; gap: 0.4em; transition: 0.3s;"
-					onmouseover="this.style.background='goldenrod'; this.style.color='black';"
-					onmouseout="this.style.background='transparent'; this.style.color='goldenrod';">
-					<img src="/res/randomwalk-logo.png" alt="RandomWalk logo" style="width: 3.2em; height: 3.2em; object-fit: contain;">
-					RandomWalk
-				</div>
-			</a>
-			<a href="/cosmicsignature/" style="text-decoration: none;">
-				<div style="width: 12em; height: 8em; border: 0.3em solid goldenrod; border-radius: 0.8em;
-						color: goldenrod; font-family: sans-serif; font-weight: bold; font-size: 1.6em;
-						letter-spacing: 0.08em; text-transform: uppercase; display: flex; flex-direction: column;
-						align-items: center; justify-content: center; gap: 0.4em; transition: 0.3s;"
-					onmouseover="this.style.background='goldenrod'; this.style.color='black';"
-					onmouseout="this.style.background='transparent'; this.style.color='goldenrod';">
-					<img src="/res/cosmicsignature-logo.svg" alt="CosmicSignature logo" style="width: 3.2em; height: 3.2em; object-fit: contain;">
-					CosmicSignature
-				</div>
-			</a>
-		</div>
-	</div>
-</body>
-</html>
+<div class="panel-grid">
+	<a class="panel span-3" href="/cosmicsignature/" style="text-decoration: none; display: flex; align-items: center; gap: 0.8em; padding: 0.8em;">
+		<img src="/res/cosmicsignature-logo.svg" alt="" style="width: 2.4em; height: 2.4em; object-fit: contain;">
+		<span><strong style="color: goldenrod;">CosmicSignature</strong><br><span class="dim">game, prizes, tokens, donations, staking</span></span>
+	</a>
+	<a class="panel span-3" href="/randomwalk/" style="text-decoration: none; display: flex; align-items: center; gap: 0.8em; padding: 0.8em;">
+		<img src="/res/randomwalk-logo.png" alt="" style="width: 2.4em; height: 2.4em; object-fit: contain;">
+		<span><strong style="color: goldenrod;">RandomWalk</strong><br><span class="dim">mints, trading, offers, statistics</span></span>
+	</a>
+</div>
+
+<div class="section-card">
+	<div class="section-header">Keyboard</div>
+	<table class="kv-table" style="width: auto;">
+		<tr><th>/</th><td class="l">focus quick-jump (address · tx hash · round · <span class="mono">b</span> evtlog · <span class="mono">t</span> token · <span class="mono">rw</span> token · <span class="mono">a</span> action · <span class="mono">e</span> evtlog)</td></tr>
+		<tr><th>[</th><td class="l">toggle sidebar</td></tr>
+		<tr><th>Esc</th><td class="l">close JSON drawer</td></tr>
+		<tr><th>Fields</th><td class="l">any page as dense all-field tables (<span class="mono">?view=fields</span>)</td></tr>
+		<tr><th>{ }</th><td class="l">raw API JSON drawer with line filter</td></tr>
+		<tr><th>0x…</th><td class="l">toggle full addresses / hashes</td></tr>
+	</table>
+</div>

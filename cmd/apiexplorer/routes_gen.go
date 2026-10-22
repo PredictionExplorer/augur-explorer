@@ -32,7 +32,6 @@ var generatedPages = []page{
 	{"GET /cosmicsignature/prizes/eth/user_unclaimed/{user_addr}", "cosmicsignature/cg_prizes_eth_user_unclaimed.html", "/api/cosmicgame/prizes/eth/unclaimed/by_user/{user_addr}/0/100000"},
 	{"GET /cosmicsignature/prizes/deposits/raffle/by_user/{user_addr}", "cosmicsignature/cg_user_raffle_deposits.html", "/api/cosmicgame/prizes/deposits/raffle/by_user/{user_addr}"},
 	{"GET /cosmicsignature/prizes/deposits/chrono_warrior/by_user/{user_addr}", "cosmicsignature/cg_user_chrono_warrior_deposits.html", "/api/cosmicgame/prizes/deposits/chrono_warrior/by_user/{user_addr}"},
-	{"GET /cosmicsignature/bid/list/all", "cosmicsignature/cg_bids.html", "/api/cosmicgame/bid/list/all/0/100000"},
 	{"GET /cosmicsignature/bid/info/{evtlog_id}", "cosmicsignature/cg_bid_info.html", "/api/cosmicgame/bid/info/{evtlog_id}"},
 	{"GET /cosmicsignature/bid/info_by_pos/{round_num}/{bid_position}", "cosmicsignature/cg_bid_info.html", "/api/cosmicgame/bid/info_by_pos/{round_num}/{bid_position}"},
 	{"GET /cosmicsignature/bid/list/by_round/{round_num}/{sort}/{offset}/{limit}", "cosmicsignature/cg_bids_by_round_num.html", "/api/cosmicgame/bid/list/by_round/{round_num}/{sort}/{offset}/{limit}"},

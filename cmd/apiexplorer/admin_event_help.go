@@ -99,7 +99,8 @@ var adminEventHelpTexts = map[int]string{
 	42: "Exponent shaping how steeply the late-bid price premium grows as the main prize deadline approaches. " +
 		"Accepts a non-negative whole number (V3 only).",
 	43: "Rate at which the CST bid price declines during the Dutch auction (V3 only; replaces the V2 " +
-		"auction duration). Shown in CST per second. Adjusts automatically with the bid mix: ETH bids " +
+		"auction duration). Shown in CST per minute (the contract stores wei per second; hover the value " +
+		"for the raw figure). Adjusts automatically with the bid mix: ETH bids " +
 		"raise it, CST bids lower it, subject to the 3-minute minimum auction duration safeguard.",
 	44: "How many Cosmic Signature NFTs are minted to the main prize winner on a claim. " +
 		"Accepts a positive whole number (V3 only).",

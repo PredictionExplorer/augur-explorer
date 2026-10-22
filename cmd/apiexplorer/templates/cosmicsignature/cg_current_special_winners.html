@@ -1,124 +1,106 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>Current Special Winners</title>
-</head>
-<body>
-	<div class="cg-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>Current Special Winners</h1>
-		</div>
+<title>Current Special Winners</title>
+<div class="page-header">
+	<h1>Current Special Winners</h1>
+</div>
 
-		<div class="section-card">
-			<div class="section-header">Last Bidder</div>
-			<div class="details-list">
-				<div class="detail-row">
-					<div class="detail-label">Last Bidder Address</div>
-					<div class="detail-value monospace">
-						{{ethAddrLink .LastBidderAddress}}
-					</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Last Bid Time</div>
-					<div class="detail-value">{{.LastBidderLastBidTime}}</div>
-				</div>
+<div class="section-card">
+	<div class="section-header">Last Bidder</div>
+	<div class="details-list">
+		<div class="detail-row">
+			<div class="detail-label">Last Bidder Address</div>
+			<div class="detail-value monospace">
+				{{ethAddrLink .LastBidderAddress}}
 			</div>
 		</div>
-
-		<div class="section-card">
-			<div class="section-header">Endurance Champion</div>
-			<div class="details-list">
-				<div class="detail-row">
-					<div class="detail-label">Champion Address</div>
-					<div class="detail-value monospace">
-						{{ethAddrLink .EnduranceChampionAddress}}
-					</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Duration</div>
-					<div class="detail-value">{{.EnduranceChampionDuration}} seconds</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Championship Start</div>
-					<div class="detail-value">{{.EnduranceChampionStartTimeStamp}}</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Previous Championship Duration</div>
-					<div class="detail-value">{{.PrevEnduranceChampionDuration}} seconds</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="section-card">
-			<div class="section-header">Chrono Warrior</div>
-			<div class="details-list">
-				<div class="detail-row">
-					<div class="detail-label">Warrior Address</div>
-					<div class="detail-value monospace">
-						{{ethAddrLink .ChronoWarriorAddress}}
-					</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Duration</div>
-					<div class="detail-value">{{.ChronoWarriorDuration}} seconds</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Currently Live</div>
-					<div class="detail-value">{{.ChronoWarriorIsLive}}</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="section-card">
-			<div class="section-header">Last CST Bidder</div>
-			<div class="details-list">
-				<div class="detail-row">
-					<div class="detail-label">Bidder Address</div>
-					<div class="detail-value monospace">
-						{{ethAddrLink .LastCstBidderAddress}}
-					</div>
-				</div>
-				{{ with index . "LastCstBidderLastBidTime" }}
-				<div class="detail-row">
-					<div class="detail-label">Last CST Bid Time</div>
-					<div class="detail-value">{{.}}</div>
-				</div>
-				{{ end }}
-				{{ with index . "LastCstBidEventLogId" }}
-				<div class="detail-row">
-					<div class="detail-label">Last CST Bid Event</div>
-					<div class="detail-value"><a href="/cosmicsignature/bid/info/{{num .}}">{{num .}}</a></div>
-				</div>
-				{{ end }}
-			</div>
-		</div>
-
-		<div class="section-card">
-			<div class="section-header">Snapshot</div>
-			<div class="details-list">
-				<div class="detail-row">
-					<div class="detail-label">Round</div>
-					<div class="detail-value">{{.RoundNum}}</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Source Block</div>
-					<div class="detail-value">{{.SourceBlockNumber}}</div>
-				</div>
-				<div class="detail-row">
-					<div class="detail-label">Source Block Time</div>
-					<div class="detail-value">{{.SourceBlockTimeStamp}}</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/bid/current_special_winners</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/bid/current_special_winners</code>
+		<div class="detail-row">
+			<div class="detail-label">Last Bid Time</div>
+			<div class="detail-value">{{.LastBidderLastBidTime}}</div>
 		</div>
 	</div>
-</body>
-</html>
+</div>
+
+<div class="section-card">
+	<div class="section-header">Endurance Champion</div>
+	<div class="details-list">
+		<div class="detail-row">
+			<div class="detail-label">Champion Address</div>
+			<div class="detail-value monospace">
+				{{ethAddrLink .EnduranceChampionAddress}}
+			</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Duration</div>
+			<div class="detail-value">{{.EnduranceChampionDuration}} seconds</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Championship Start</div>
+			<div class="detail-value">{{.EnduranceChampionStartTimeStamp}}</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Previous Championship Duration</div>
+			<div class="detail-value">{{.PrevEnduranceChampionDuration}} seconds</div>
+		</div>
+	</div>
+</div>
+
+<div class="section-card">
+	<div class="section-header">Chrono Warrior</div>
+	<div class="details-list">
+		<div class="detail-row">
+			<div class="detail-label">Warrior Address</div>
+			<div class="detail-value monospace">
+				{{ethAddrLink .ChronoWarriorAddress}}
+			</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Duration</div>
+			<div class="detail-value">{{.ChronoWarriorDuration}} seconds</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Currently Live</div>
+			<div class="detail-value">{{.ChronoWarriorIsLive}}</div>
+		</div>
+	</div>
+</div>
+
+<div class="section-card">
+	<div class="section-header">Last CST Bidder</div>
+	<div class="details-list">
+		<div class="detail-row">
+			<div class="detail-label">Bidder Address</div>
+			<div class="detail-value monospace">
+				{{ethAddrLink .LastCstBidderAddress}}
+			</div>
+		</div>
+		{{ with index . "LastCstBidderLastBidTime" }}
+		<div class="detail-row">
+			<div class="detail-label">Last CST Bid Time</div>
+			<div class="detail-value">{{.}}</div>
+		</div>
+		{{ end }}
+		{{ with index . "LastCstBidEventLogId" }}
+		<div class="detail-row">
+			<div class="detail-label">Last CST Bid Event</div>
+			<div class="detail-value"><a href="/cosmicsignature/bid/info/{{num .}}">{{num .}}</a></div>
+		</div>
+		{{ end }}
+	</div>
+</div>
+
+<div class="section-card">
+	<div class="section-header">Snapshot</div>
+	<div class="details-list">
+		<div class="detail-row">
+			<div class="detail-label">Round</div>
+			<div class="detail-value">{{.RoundNum}}</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Source Block</div>
+			<div class="detail-value">{{.SourceBlockNumber}}</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-label">Source Block Time</div>
+			<div class="detail-value">{{.SourceBlockTimeStamp}}</div>
+		</div>
+	</div>
+</div>

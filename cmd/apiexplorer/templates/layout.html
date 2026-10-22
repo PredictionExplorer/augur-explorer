@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>{{if .Title}}{{.Title}} · {{end}}API Explorer</title>
+	<link rel="icon" href="/favicon.ico">
+	<link href="/res/main.css" rel="stylesheet">
+	<link href="/res/cosmicgame.css" rel="stylesheet">
+	<link href="/res/shell.css" rel="stylesheet">
+</head>
+<body class="shell{{if not .Nav}} no-nav{{end}}">
+	<header class="topbar">
+		<button type="button" class="tb-btn" id="nav-toggle" title="toggle sidebar [">☰</button>
+		<a class="tb-brand" href="/">API<span>explorer</span></a>
+		<nav class="tb-projects">
+			<a href="/cosmicsignature/" {{if eq .Project "cosmicsignature"}}class="active"{{end}}>CosmicSignature</a>
+			<a href="/randomwalk/" {{if eq .Project "randomwalk"}}class="active"{{end}}>RandomWalk</a>
+		</nav>
+		<form class="tb-jump" action="/jump" method="get">
+			<input type="search" name="q" id="jump" autocomplete="off" spellcheck="false"
+				placeholder="jump: 0xaddr · txhash · round# · b <evtlog> · t <token> · rw <token> · a <action> · e <evtlog>   [/]">
+		</form>
+		<div class="tb-tools">
+			{{if .API}}
+				{{if eq .View "fields"}}
+					<a class="tb-btn" href="{{.Path}}" title="hand-written page template">Page</a>
+				{{else}}
+					<a class="tb-btn" href="{{.Path}}?view=fields" title="every field of the API response as dense tables">Fields</a>
+				{{end}}
+				<button type="button" class="tb-btn" id="json-toggle" data-api="{{.API}}" title="raw API JSON drawer">{ }</button>
+				<a class="tb-api mono" href="{{.API}}" target="_blank" rel="noopener" title="{{.APIBase}}{{.API}}">{{.API}}</a>
+			{{end}}
+			<button type="button" class="tb-btn" id="hex-toggle" title="show full addresses / hashes">0x…</button>
+		</div>
+	</header>
+
+	{{if .Nav}}
+	<aside class="sidebar" id="sidebar">
+		{{range .Nav}}
+		<details class="nav-group" open>
+			<summary>{{.Title}}</summary>
+			{{if .Param}}
+				<input class="nav-param" type="text" data-param="{{.Param}}" placeholder="{{.Hint}}" autocomplete="off" spellcheck="false">
+			{{end}}
+			<ul>
+				{{range .Items}}
+				<li><a href="{{.Href}}" {{if eq .Href $.Path}}class="active"{{end}}>{{.Label}}</a></li>
+				{{end}}
+			</ul>
+		</details>
+		{{end}}
+	</aside>
+	{{end}}
+
+	<main class="content">
+		{{.Content}}
+	</main>
+
+	<aside class="json-drawer" id="json-drawer" hidden>
+		<div class="jd-head">
+			<span class="mono" id="jd-path"></span>
+			<input type="search" id="jd-filter" placeholder="filter lines" autocomplete="off">
+			<button type="button" class="tb-btn" id="jd-close" title="close">×</button>
+		</div>
+		<pre id="jd-body" class="mono"></pre>
+	</aside>
+
+	<footer class="statusbar mono">
+		<span>api {{.APIBase}}</span>
+		<span>{{.Now}}</span>
+	</footer>
+	<script src="/res/explorer.js"></script>
+</body>
+</html>

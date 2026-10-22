@@ -1,51 +1,33 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>Raffle ETH Prizes</title>
-</head>
-<body>
-	<div class="cg-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>Raffle ETH Prize Deposits</h1>
-		</div>
+<title>Raffle ETH Prizes</title>
+<div class="page-header">
+	<h1>Raffle ETH Prize Deposits</h1>
+</div>
 
-		<div class="section-card">
-			<table class="data-table">
-				<tr>
-					<th>Block</th>
-					<th>DateTime</th>
-					<th>Winner</th>
-					<th class="center">Winner Index</th>
-					<th class="center">Round</th>
-					<th class="right">Amount</th>
-					<th class="center">Claimed</th>
-				</tr>
-				{{- range $i, $change := .RaffleDeposits}}
-					<tr>
-						<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
-						<td>{{.Tx.DateTime}}</td>
-						<td class="monospace">
-							{{ethAddrLink .WinnerAddr}}
-						</td>
-						<td class="center">{{.WinnerIndex}}</td>
-						<td class="center">{{.RoundNum}}</td>
-						<td class="right">{{printf "%.6f" .Amount}} ETH</td>
-						<td class="center">
-							{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
-						</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/raffle/global/{offset}/{limit}</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/prizes/eth/raffle/global/0/100000</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>DateTime</th>
+			<th>Winner</th>
+			<th class="center">Winner Index</th>
+			<th class="center">Round</th>
+			<th class="right">Amount</th>
+			<th class="center">Claimed</th>
+		</tr>
+		{{- range $i, $change := .RaffleDeposits}}
+			<tr>
+				<td>{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
+				<td>{{.Tx.DateTime}}</td>
+				<td class="monospace">
+					{{ethAddrLink .WinnerAddr}}
+				</td>
+				<td class="center">{{.WinnerIndex}}</td>
+				<td class="center">{{.RoundNum}}</td>
+				<td class="right">{{printf "%.6f" .Amount}} ETH</td>
+				<td class="center">
+					{{if .Claimed}}<span class="badge badge-success">Yes</span>{{else}}<span class="badge badge-default">No</span>{{end}}
+				</td>
+			</tr>
+		{{- end}}
+	</table>
+</div>

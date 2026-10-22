@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
 	"html/template"
 	"io"
 	"io/fs"
@@ -51,12 +50,12 @@ type page struct {
 }
 
 // pages holds the project home pages and short aliases; the full legacy
-// route table lives in routes_gen.go (generatedPages).
+// route table lives in routes_gen.go (generatedPages). The CosmicSignature
+// dashboard aggregates several calls and has its own handler (dashboard.go).
 var pages = []page{
-	{"GET /cosmicsignature/{$}", "cosmicsignature/cg_index.html", "/api/cosmicgame/statistics/dashboard"},
 	{"GET /randomwalk/{$}", "randomwalk/home.html", "/api/randomwalk/top5tokens"},
-	// Short aliases kept from the prototype.
-	{"GET /cosmicsignature/bids", "cosmicsignature/cg_bids.html", "/api/cosmicgame/bid/list/all/0/100000"},
+	// Short alias kept from the prototype (the /cosmicsignature/bids alias is
+	// served by bidsHandler, see bids.go).
 	{"GET /cosmicsignature/rounds", "cosmicsignature/cg_rounds.html", "/api/cosmicgame/rounds/list/0/100000"},
 }
 
@@ -184,6 +183,53 @@ func isWeiPerSec(v any) bool {
 	return asFloat(v) >= 1e9
 }
 
+// The contract stores the CST bid-price decline rate per second; the explorer
+// shows it per minute, which gives readable magnitudes (~0.76 CST/min rather
+// than ~0.0127 CST/s).
+const cstRateUnit = "CST/min"
+
+// weiPerSecToCstPerMin converts a wei-per-second rate (string or number) to
+// CST per minute with 6 decimals. Unparseable input is echoed back.
+func weiPerSecToCstPerMin(v any) string {
+	f, _, err := big.ParseFloat(fmt.Sprint(v), 10, 128, big.ToNearestEven)
+	if err != nil {
+		return fmt.Sprint(v)
+	}
+	f.Mul(f, big.NewFloat(60))
+	f.Quo(f, big.NewFloat(1e18))
+	return f.Text('f', 6)
+}
+
+// perMin converts a per-second float (already in CST, e.g. an admin event
+// FloatValue) to per minute with 6 decimals.
+func perMin(v any) string {
+	return strconv.FormatFloat(asFloat(v)*60, 'f', 6, 64)
+}
+
+// cstDecline is auctionParam without the unit suffix, for dense tables whose
+// header already says CST/min. V2 rows keep their "N s" duration so the two
+// mechanics are not confused.
+func cstDecline(durationStr any, durationInt any) string {
+	if asFloat(durationInt) < 0 {
+		return "—"
+	}
+	if isWeiPerSec(durationInt) {
+		return weiPerSecToCstPerMin(durationStr)
+	}
+	return num(durationInt) + " s"
+}
+
+// shortTime renders an RFC 3339 timestamp as "MM-DD HH:MM:SS" (UTC); other
+// strings are returned unchanged.
+func shortTime(v any) string {
+	s := fmt.Sprint(v)
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return s
+	}
+	return t.UTC().Format("01-02 15:04:05")
+}
+
 // auctionParam formats BidPlaced field 8. V1 stores -1; V2 stores CST Dutch
 // auction duration in seconds; V3.1 stores cstBidPriceDeclineMultiplier (wei/s)
 // in the same JSON keys (CstDutchAuctionDuration / CstDutchAuctionDurationInt).
@@ -192,7 +238,7 @@ func auctionParam(durationStr any, durationInt any) string {
 		return "—"
 	}
 	if isWeiPerSec(durationInt) {
-		return weiToEth(durationStr) + " CST/s"
+		return weiPerSecToCstPerMin(durationStr) + " " + cstRateUnit
 	}
 	return num(durationInt) + " s"
 }
@@ -222,37 +268,6 @@ func isTxHash(s string) bool {
 		}
 	}
 	return true
-}
-
-// arbiscanTx links label to the Arbitrum One explorer transaction page when
-// hash looks like a 0x-prefixed 32-byte hex. Invalid/empty hashes (local
-// Hardhat, missing fields) render as escaped plain text.
-func arbiscanTx(hash any, label any) template.HTML {
-	lab := html.EscapeString(fmt.Sprint(label))
-	h := strings.TrimSpace(fmt.Sprint(hash))
-	if !isTxHash(h) {
-		return template.HTML(lab) // #nosec G203 -- lab is HTML-escaped above
-	}
-	esc := html.EscapeString(h)
-	return template.HTML(fmt.Sprintf(`<a href="https://arbiscan.io/tx/%s" title="%s">%s</a>`, esc, esc, lab)) // #nosec G203 -- esc and lab are HTML-escaped
-}
-
-// ethAddrLink renders a user-info link for valid Ethereum addresses and
-// escaped plain text otherwise (e.g. labels like "(All CS NFT Stakers)").
-func ethAddrLink(addr string) template.HTML {
-	return ethAddrLinkTo("/cosmicsignature/user/info/", addr)
-}
-
-// ethAddrLinkTo renders a pathPrefix+addr link for valid Ethereum addresses
-// and escaped plain text otherwise.
-func ethAddrLinkTo(pathPrefix, addr string) template.HTML {
-	esc := html.EscapeString(addr)
-	if !isEthAddr(addr) {
-		return template.HTML(esc) // #nosec G203 -- esc is HTML-escaped above
-	}
-	// #nosec G203 -- pathPrefix is a compile-time constant from the template
-	// and esc is HTML-escaped above.
-	return template.HTML(fmt.Sprintf(`<a href="%s%s">%s</a>`, pathPrefix, esc, esc))
 }
 
 type server struct {
@@ -303,26 +318,22 @@ func (s *server) templateSet() (*template.Template, error) {
 	return s.templates, nil
 }
 
+// render executes a page template inside the layout; see renderPage.
 func (s *server) render(w http.ResponseWriter, status int, name string, data any) {
-	tmpl, err := s.templateSet()
-	if err != nil {
-		s.log.Error("template parse failed", "template", name, "err", err)
-		http.Error(w, "template parse failed: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	var buf strings.Builder
-	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
-		s.log.Error("template render failed", "template", name, "err", err)
-		http.Error(w, "template render failed: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-	_, _ = io.WriteString(w, buf.String())
+	s.renderPage(w, status, name, data, pageMeta{})
 }
 
 func (s *server) renderError(w http.ResponseWriter, status int, descr string) {
 	s.render(w, status, "error.html", map[string]any{"ErrDescr": descr})
+}
+
+// renderFields renders the generic all-fields view of an API response.
+func (s *server) renderFields(w http.ResponseWriter, data map[string]any, meta pageMeta) {
+	meta.View = "fields"
+	s.renderPage(w, http.StatusOK, "fields.html", map[string]any{
+		"Fields": buildFieldsView(meta.Project, data),
+		"API":    meta.API,
+	}, meta)
 }
 
 // paramNames returns the {placeholder} names of an API path template.
@@ -366,11 +377,13 @@ func injectParams(data map[string]any, api string, get func(string) string) {
 func (s *server) pageHandler(p page) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]any{}
+		meta := pageMeta{Project: projectOf(r.URL.Path), Path: r.URL.Path}
 		if p.API != "" {
 			apiPath := p.API
 			for _, name := range paramNames(p.API) {
 				apiPath = strings.ReplaceAll(apiPath, "{"+name+"}", r.PathValue(name))
 			}
+			meta.API = apiPath
 			var err error
 			data, err = s.fetch(r.Context(), apiPath)
 			if err != nil {
@@ -378,9 +391,13 @@ func (s *server) pageHandler(p page) http.HandlerFunc {
 				s.renderError(w, http.StatusBadGateway, err.Error())
 				return
 			}
+			if r.URL.Query().Get("view") == "fields" {
+				s.renderFields(w, data, meta)
+				return
+			}
 			injectParams(data, p.API, r.PathValue)
 		}
-		s.render(w, http.StatusOK, p.Template, data)
+		s.renderPage(w, http.StatusOK, p.Template, data, meta)
 	}
 }
 
@@ -432,8 +449,29 @@ func templateFuncs() template.FuncMap {
 		"unixDate":        unixDate,
 		"isWeiPerSec":     isWeiPerSec,
 		"auctionParam":    auctionParam,
+		"cstPerMin":       weiPerSecToCstPerMin,
+		"perMin":          perMin,
+		"cstDecline":      cstDecline,
+		"shortTime":       shortTime,
 		"adminEventHelp":  adminEventHelp,
 		"roundRangeLabel": roundRangeLabel,
+		// Dashboard-style helpers (hover.go).
+		"shortHex":    shortHex,
+		"hexCell":     hexCell,
+		"txHashCell":  txHashCell,
+		"roundLink":   roundLink,
+		"tokenLink":   tokenLink,
+		"rwTokenLink": rwTokenLink,
+		"recordCard":  recordCard,
+		"jsonPretty":  jsonPretty,
+		"durationStr": durationStr,
+		"hasKey":      hasKey,
+		"pct":         pct,
+		"asFloat":     asFloat,
+		// Labels (labels.go).
+		"prizeTypeBadge":   prizeTypeBadge,
+		"bidTypeBadge":     bidTypeBadge,
+		"mechanicsVersion": mechanicsVersion,
 	}
 }
 
@@ -526,6 +564,14 @@ func run() error {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusOK, "index.html", nil)
 	})
+	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, resFS, "res/favicon.ico")
+	})
+	mux.HandleFunc("GET /jump", s.jumpHandler)
+	mux.HandleFunc("GET /api/", s.apiProxy)
+	mux.HandleFunc("GET /cosmicsignature/{$}", s.dashboardHandler)
+	mux.HandleFunc("GET /cosmicsignature/bid/list/all", s.bidsHandler)
+	mux.HandleFunc("GET /cosmicsignature/bids", s.bidsHandler)
 	for _, p := range pages {
 		mux.HandleFunc(p.Pattern, s.pageHandler(p))
 	}

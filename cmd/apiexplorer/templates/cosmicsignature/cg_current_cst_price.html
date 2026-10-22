@@ -1,41 +1,23 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>Current CST Price</title>
-</head>
-<body>
-	<div class="cg-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>Current CST Price</h1>
-		</div>
+<title>Current CST Price</title>
+<div class="page-header">
+	<h1>Current CST Price</h1>
+</div>
 
-		<div class="section-card">
-			<div class="stats-dashboard">
-				<div class="stat-card">
-					<div class="stat-label">CST Price</div>
-					<div class="stat-value">{{weiToEth .CSTPrice}}</div>
-					<div class="stat-sublabel">CST</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-label">Seconds Elapsed</div>
-					<div class="stat-value">{{.SecondsElapsed}}</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-label">Auction Duration</div>
-					<div class="stat-value">{{.AuctionDuration}}</div>
-					<div class="stat-sublabel">seconds (V3.1: derived from beginning price / decline multiplier)</div>
-				</div>
-			</div>
+<div class="section-card">
+	<div class="stats-dashboard">
+		<div class="stat-card">
+			<div class="stat-label">CST Price</div>
+			<div class="stat-value">{{weiToEth .CSTPrice}}</div>
+			<div class="stat-sublabel">CST</div>
 		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/bid/cst_price</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/bid/cst_price</code>
+		<div class="stat-card">
+			<div class="stat-label">Seconds Elapsed</div>
+			<div class="stat-value">{{.SecondsElapsed}}</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">Auction Duration</div>
+			<div class="stat-value">{{.AuctionDuration}}</div>
+			<div class="stat-sublabel">seconds (V3.1: derived from beginning price / decline multiplier)</div>
 		</div>
 	</div>
-</body>
-</html>
+</div>

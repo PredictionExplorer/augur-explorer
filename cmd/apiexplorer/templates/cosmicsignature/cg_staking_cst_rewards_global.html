@@ -1,55 +1,37 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>CST Staking Rewards Global</title>
-</head>
-<body>
-	<div class="cg-wide-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>CST Staking Rewards (Global)</h1>
-		</div>
+<title>CST Staking Rewards Global</title>
+<div class="page-header">
+	<h1>CST Staking Rewards (Global)</h1>
+</div>
 
-		<div class="section-card">
-			<table class="data-table">
-				<tr>
-					<th class="center">Record ID</th>
-					<th class="center">Block</th>
-					<th>DateTime</th>
-					<th class="center">Round</th>
-					<th class="right">Deposit Amount</th>
-					<th class="right">Collected</th>
-					<th class="right">Pending</th>
-					<th class="center">Fully Collected</th>
-				</tr>
-				{{- range $i, $change := .StakingCSTRewards}}
-					<tr>
-						<td class="center">{{.RecordId}}</td>
-						<td class="center">{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
-						<td>{{.Tx.DateTime}}</td>
-						<td class="center">{{.RoundNum}}</td>
-						<td class="right">{{printf "%.6f" .TotalDepositAmountEth}} ETH</td>
-						<td class="right">{{printf "%.6f" .AlreadyCollectedEth}} ETH</td>
-						<td class="right">{{printf "%.6f" .PendingToCollectEth}} ETH</td>
-						<td class="center">
-							{{if .FullyClaimed}}
-								<span class="badge badge-success">✓</span>
-							{{else}}
-								<span class="badge badge-warning">Pending</span>
-							{{end}}
-						</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/staking/cst/rewards/global</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/staking/cst/rewards/global</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th class="center">Record ID</th>
+			<th class="center">Block</th>
+			<th>DateTime</th>
+			<th class="center">Round</th>
+			<th class="right">Deposit Amount</th>
+			<th class="right">Collected</th>
+			<th class="right">Pending</th>
+			<th class="center">Fully Collected</th>
+		</tr>
+		{{- range $i, $change := .StakingCSTRewards}}
+			<tr>
+				<td class="center">{{.RecordId}}</td>
+				<td class="center">{{arbiscanTx .Tx.TxHash .Tx.BlockNum}}</td>
+				<td>{{.Tx.DateTime}}</td>
+				<td class="center">{{.RoundNum}}</td>
+				<td class="right">{{printf "%.6f" .TotalDepositAmountEth}} ETH</td>
+				<td class="right">{{printf "%.6f" .AlreadyCollectedEth}} ETH</td>
+				<td class="right">{{printf "%.6f" .PendingToCollectEth}} ETH</td>
+				<td class="center">
+					{{if .FullyClaimed}}
+						<span class="badge badge-success">✓</span>
+					{{else}}
+						<span class="badge badge-warning">Pending</span>
+					{{end}}
+				</td>
+			</tr>
+		{{- end}}
+	</table>
+</div>

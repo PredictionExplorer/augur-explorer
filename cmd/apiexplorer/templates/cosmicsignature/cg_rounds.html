@@ -1,122 +1,97 @@
-<html>
-<head>
-	<link href="/res/main.css" rel="stylesheet">
-	<link href="/res/cosmicgame.css" rel="stylesheet">
-	<title>Rounds</title>
-</head>
-<body>
-	<div class="cg-wide-container">
-		<div class="page-header">
-			<a class="home-link" href="/cosmicsignature">&larr; Home</a>
-			<h1>Game Rounds</h1>
-		</div>
+<title>Rounds</title>
+<div class="page-header">
+	<h1>Game Rounds</h1>
+	<div class="subtitle">{{len .Rounds}} rounds · hover the round number for every per-round view</div>
+</div>
 
-		<div class="section-card">
-			<table class="data-table">
-				<tr>
-					<th class="center">Round</th>
-					<th>DateTime</th>
-					<th>Winner</th>
-					<th>Prizes</th>
-					<th class="center">CS NFTs</th>
-					<th class="center">Bids</th>
-					<th class="center">Donated NFTs</th>
-					<th class="center">Raffle NFTs</th>
-					<th>Quick Links</th>
-				</tr>
-				{{- range $i, $change := .Rounds}}
-					<tr>
-						<td class="center">
-							<a href="/cosmicsignature/round/info/{{.RoundNum}}">{{.RoundNum}}</a>
-						</td>
-						<td class="nowrap">{{arbiscanTx .ClaimPrizeTx.Tx.TxHash .ClaimPrizeTx.Tx.DateTime}}</td>
-						<td class="monospace">
-							{{ethAddrLink .MainPrize.WinnerAddr}}
-						</td>
-						<td>
-							<table class="prize-mini">
-								<tr>
-									<th></th>
-									<th>ETH</th>
-									<th>CST</th>
-								</tr>
-								<tr>
-									<td>main</td>
-									<td>{{if gt .MainPrize.EthAmountEth 0.0}}{{printf "%.6f" .MainPrize.EthAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
-									<td>{{if gt .MainPrize.CstAmountEth 0.0}}{{printf "%.4f" .MainPrize.CstAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
-								</tr>
-								<tr>
-									<td>chrono</td>
-									<td>{{if gt .ChronoWarrior.EthAmountEth 0.0}}{{printf "%.6f" .ChronoWarrior.EthAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
-									<td>{{if gt .ChronoWarrior.CstAmountEth 0.0}}{{printf "%.4f" .ChronoWarrior.CstAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
-								</tr>
-								<tr>
-									<td>endur</td>
-									<td><span class="empty">—</span></td>
-									<td>{{if gt .EnduranceChampion.CstAmountEth 0.0}}{{printf "%.4f" .EnduranceChampion.CstAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
-								</tr>
-								<tr>
-									<td>raffle</td>
-									<td>{{if gt .RoundStats.TotalRaffleEthDepositsEth 0.0}}{{printf "%.6f" .RoundStats.TotalRaffleEthDepositsEth}}{{else}}<span class="empty">—</span>{{end}}</td>
-									<td><span class="empty">—</span></td>
-								</tr>
-								{{- if gt .LastCstBidder.CstAmountEth 0.0}}
-								<tr>
-									<td>last CST</td>
-									<td><span class="empty">—</span></td>
-									<td>{{printf "%.4f" .LastCstBidder.CstAmountEth}}</td>
-								</tr>
-								{{- end}}
-								{{- if gt .StakingDeposit.StakingDepositAmountEth 0.0}}
-								<tr>
-									<td>stake</td>
-									<td>{{printf "%.6f" .StakingDeposit.StakingDepositAmountEth}}</td>
-									<td><span class="empty">—</span></td>
-								</tr>
-								{{- end}}
-								{{- if gt .CharityDeposit.CharityAmountETH 0.0}}
-								<tr>
-									<td>charity</td>
-									<td>{{printf "%.6f" .CharityDeposit.CharityAmountETH}}</td>
-									<td><span class="empty">—</span></td>
-								</tr>
-								{{- end}}
-							</table>
-						</td>
-						{{/* Total CS NFTs minted for the round: main prize (NumCSNfts is
-						     omitted from pre-V3 rounds, implicit 1) + raffle and RWalk
-						     staking winners (TotalRaffleNFTs) + one each for the endurance
-						     champion, chrono warrior and last CST bidder when present. */}}
-						{{- $nfts := addf (or (index .MainPrize "NumCSNfts") 1.0) .RoundStats.TotalRaffleNFTs}}
-						{{- if .EnduranceChampion.WinnerAddr}}{{$nfts = addf $nfts 1.0}}{{end}}
-						{{- if .ChronoWarrior.WinnerAddr}}{{$nfts = addf $nfts 1.0}}{{end}}
-						{{- if .LastCstBidder.WinnerAddr}}{{$nfts = addf $nfts 1.0}}{{end}}
-						<td class="center" title="main {{or (index .MainPrize "NumCSNfts") 1}} + raffle/staking {{.RoundStats.TotalRaffleNFTs}} + endurance/chrono/last-CST winners">{{num $nfts}}</td>
-						<td class="center">{{.RoundStats.TotalBids}}</td>
-						<td class="center">{{.RoundStats.TotalDonatedNFTs}}</td>
-						<td class="center">{{.RoundStats.TotalRaffleNFTs}}</td>
-						<td class="quick-links-cell">
-							<div class="quick-links">
-								<a href="/cosmicsignature/bid/list/by_round/{{.RoundNum}}/0/0/100000">Bids</a>
-								<a href="/cosmicsignature/donations/nft/by_round/{{.RoundNum}}">Donated NFTs</a>
-								<a href="/cosmicsignature/donations/erc20/by_round/detailed/{{.RoundNum}}">Donated ERC20</a>
-								<a href="/cosmicsignature/donations/eth/both/by_round/{{.RoundNum}}">Donated ETH</a>
-								<a href="/cosmicsignature/prizes/eth/round/{{.RoundNum}}">ETH prizes</a>
-								<a href="/cosmicsignature/raffle/nft/by_round/{{.RoundNum}}">Raffle NFTs</a>
-								<a href="/cosmicsignature/staking/cst/rewards/by_round/{{.RoundNum}}">Staking</a>
-							</div>
-						</td>
-					</tr>
-				{{- end}}
-			</table>
-		</div>
-
-		<div class="api-info">
-			<strong>API Endpoint:</strong><br/>
-			<code>/api/cosmicgame/rounds/list/[offset]/[limit]</code><br/><br/>
-			<strong>Example:</strong><br/>
-			<code>/api/cosmicgame/rounds/list/0/1000000</code>
-		</div>
-	</div>
-</body>
-</html>
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th class="center">Round</th>
+			<th>claim evtlog</th>
+			<th>claim block</th>
+			<th>claimed (UTC)</th>
+			<th>Winner</th>
+			<th>Prizes</th>
+			<th class="center">CS NFTs</th>
+			<th class="center">Bids</th>
+			<th class="center">Donated NFTs</th>
+			<th class="center">Raffle NFTs</th>
+			<th></th>
+		</tr>
+		{{- range $i, $change := .Rounds}}
+			<tr>
+				<td class="center">{{roundLink .RoundNum}}</td>
+				<td>{{num .ClaimPrizeTx.Tx.EvtLogId}}</td>
+				<td>{{arbiscanTx .ClaimPrizeTx.Tx.TxHash (num .ClaimPrizeTx.Tx.BlockNum)}}</td>
+				<td class="nowrap">{{.ClaimPrizeTx.Tx.DateTime}}</td>
+				<td class="monospace">
+					{{ethAddrLink .MainPrize.WinnerAddr}}
+				</td>
+				<td>
+					<table class="prize-mini">
+						<tr>
+							<th></th>
+							<th>ETH</th>
+							<th>CST</th>
+						</tr>
+						<tr>
+							<td>main</td>
+							<td>{{if gt .MainPrize.EthAmountEth 0.0}}{{printf "%.6f" .MainPrize.EthAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+							<td>{{if gt .MainPrize.CstAmountEth 0.0}}{{printf "%.4f" .MainPrize.CstAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+						</tr>
+						<tr>
+							<td>chrono</td>
+							<td>{{if gt .ChronoWarrior.EthAmountEth 0.0}}{{printf "%.6f" .ChronoWarrior.EthAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+							<td>{{if gt .ChronoWarrior.CstAmountEth 0.0}}{{printf "%.4f" .ChronoWarrior.CstAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+						</tr>
+						<tr>
+							<td>endur</td>
+							<td><span class="empty">—</span></td>
+							<td>{{if gt .EnduranceChampion.CstAmountEth 0.0}}{{printf "%.4f" .EnduranceChampion.CstAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+						</tr>
+						<tr>
+							<td>raffle</td>
+							<td>{{if gt .RoundStats.TotalRaffleEthDepositsEth 0.0}}{{printf "%.6f" .RoundStats.TotalRaffleEthDepositsEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+							<td><span class="empty">—</span></td>
+						</tr>
+						{{- if gt .LastCstBidder.CstAmountEth 0.0}}
+						<tr>
+							<td>last CST</td>
+							<td><span class="empty">—</span></td>
+							<td>{{printf "%.4f" .LastCstBidder.CstAmountEth}}</td>
+						</tr>
+						{{- end}}
+						{{- if gt .StakingDeposit.StakingDepositAmountEth 0.0}}
+						<tr>
+							<td>stake</td>
+							<td>{{printf "%.6f" .StakingDeposit.StakingDepositAmountEth}}</td>
+							<td><span class="empty">—</span></td>
+						</tr>
+						{{- end}}
+						{{- if gt .CharityDeposit.CharityAmountETH 0.0}}
+						<tr>
+							<td>charity</td>
+							<td>{{printf "%.6f" .CharityDeposit.CharityAmountETH}}</td>
+							<td><span class="empty">—</span></td>
+						</tr>
+						{{- end}}
+					</table>
+				</td>
+				{{/* Total CS NFTs minted for the round: main prize (NumCSNfts is
+				     omitted from pre-V3 rounds, implicit 1) + raffle and RWalk
+				     staking winners (TotalRaffleNFTs) + one each for the endurance
+				     champion, chrono warrior and last CST bidder when present. */}}
+				{{- $nfts := addf (or (index .MainPrize "NumCSNfts") 1.0) .RoundStats.TotalRaffleNFTs}}
+				{{- if .EnduranceChampion.WinnerAddr}}{{$nfts = addf $nfts 1.0}}{{end}}
+				{{- if .ChronoWarrior.WinnerAddr}}{{$nfts = addf $nfts 1.0}}{{end}}
+				{{- if .LastCstBidder.WinnerAddr}}{{$nfts = addf $nfts 1.0}}{{end}}
+				<td class="center" title="main {{or (index .MainPrize "NumCSNfts") 1}} + raffle/staking {{.RoundStats.TotalRaffleNFTs}} + endurance/chrono/last-CST winners">{{num $nfts}}</td>
+				<td class="center">{{.RoundStats.TotalBids}}</td>
+				<td class="center">{{.RoundStats.TotalDonatedNFTs}}</td>
+				<td class="center">{{.RoundStats.TotalRaffleNFTs}}</td>
+				<td class="rec">{{recordCard .}}</td>
+			</tr>
+		{{- end}}
+	</table>
+</div>
