@@ -577,3 +577,4 @@ body.full-hex .hx .hx-full { display: inline; }
 
 .dim { color: var(--muted); }
 .warn { color: #ff9800; }
+.ok { color: #7cc47c; }

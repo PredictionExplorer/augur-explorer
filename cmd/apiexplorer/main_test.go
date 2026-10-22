@@ -688,6 +688,11 @@ func TestBidsHandler(t *testing.T) {
 		`<option value="all">all rounds</option>`,
 		`<title>Bids · round 3 · API Explorer</title>`,
 		`href="/cosmicsignature/bid/info/31603"`,
+		`CST Δsupply`,
+		`>+7.3000</td>`,         // ETH bid: reward minted, nothing burned
+		`+7.3000</span> minted`, // totals line
+		`−0.0000</span> burned`,
+		`net <b class="ok">+7.3000</b> CST`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("bids page missing %q", want)
@@ -762,6 +767,30 @@ func TestAnnotateBidGaps(t *testing.T) {
 	annotateBidGaps(odd)
 	if gap(odd[0].(map[string]any)) != "none" {
 		t.Error("row without a timestamped neighbour must have no gap")
+	}
+}
+
+func TestAnnotateCstSupply(t *testing.T) {
+	rows := []any{
+		// CST bid: mints 7.5 to the previous bidder, burns the 8.2 price.
+		map[string]any{"BidType": jsonNum(2), "BidCstRewardAmountEth": jsonNum(7.5), "CstPriceEth": jsonNum(8.2)},
+		// ETH bid: mints only (CstPriceEth is the -1e-18 sentinel).
+		map[string]any{"BidType": jsonNum(0), "BidCstRewardAmountEth": jsonNum(10), "CstPriceEth": jsonNum(-1e-18)},
+		// V1 bid: BidCstRewardAmount is -1, fall back to CSTRewardEth.
+		map[string]any{"BidType": jsonNum(0), "BidCstRewardAmountEth": jsonNum(-1), "CSTRewardEth": jsonNum(100), "CstPriceEth": jsonNum(-1e-18)},
+		// First bid of a round: nothing minted.
+		map[string]any{"BidType": jsonNum(0), "BidCstRewardAmountEth": jsonNum(0), "CstPriceEth": jsonNum(-1e-18)},
+		"junk",
+	}
+	tot := annotateCstSupply(rows)
+	if tot.Minted != 117.5 || tot.Burned != 8.2 || fmt.Sprintf("%.4f", tot.Net()) != "109.3000" {
+		t.Errorf("totals = %+v net %.4f", tot, tot.Net())
+	}
+	want := []string{"-0.7000", "+10.0000", "+100.0000", "+0.0000"}
+	for i, w := range want {
+		if got := string(signedCst(rows[i].(map[string]any)["CstSupplyDelta"])); got != w {
+			t.Errorf("row %d delta = %s, want %s", i, got, w)
+		}
 	}
 }
 

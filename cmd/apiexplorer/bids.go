@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -60,6 +61,56 @@ func annotateBidGaps(rows []any) {
 	}
 }
 
+// cstSupplyTotals sums the CST minted and burned by a list of bids.
+type cstSupplyTotals struct {
+	Minted, Burned float64
+}
+
+// Net is the total-supply change: minted minus burned.
+func (t cstSupplyTotals) Net() float64 { return t.Minted - t.Burned }
+
+// annotateCstSupply adds CstMinted, CstBurned and CstSupplyDelta (all in
+// CST) to every bid row and returns the totals. Per the contracts, a bid
+// mints BidCstRewardAmount to the previous bidder (ETH, RandomWalk and CST
+// bids alike) and a CST bid additionally burns the CST price paid. V1 rows
+// carry "-1" in BidCstRewardAmount; their reward is CSTRewardEth. Round-end
+// prize mints are not bids and are not included.
+func annotateCstSupply(rows []any) cstSupplyTotals {
+	var tot cstSupplyTotals
+	for _, r := range rows {
+		m, ok := r.(map[string]any)
+		if !ok {
+			continue
+		}
+		minted := asFloat(m["BidCstRewardAmountEth"])
+		if minted < 0 {
+			minted = asFloat(m["CSTRewardEth"])
+		}
+		if minted < 0 {
+			minted = 0
+		}
+		var burned float64
+		if asFloat(m["BidType"]) == 2 {
+			if p := asFloat(m["CstPriceEth"]); p > 0 {
+				burned = p
+			}
+		}
+		m["CstMinted"] = jsonNum(minted)
+		m["CstBurned"] = jsonNum(burned)
+		m["CstSupplyDelta"] = jsonNum(minted - burned)
+		tot.Minted += minted
+		tot.Burned += burned
+	}
+	return tot
+}
+
+// signedCst formats a CST amount with an explicit sign, 4 decimals. The
+// result is sign and digits only, so it is safe to return unescaped (the
+// template escaper would otherwise turn "+" into "&#43;").
+func signedCst(v any) template.HTML {
+	return template.HTML(fmt.Sprintf("%+.4f", asFloat(v)))
+}
+
 // bidsRound picks the round for the Bids page: the raw query value when it
 // is a valid round number (0..cur), else the current round.
 func bidsRound(raw string, cur int) int {
@@ -115,6 +166,7 @@ func (s *server) bidsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if list, ok := data[rows].([]any); ok {
 		annotateBidGaps(list)
+		data["CstTotals"] = annotateCstSupply(list)
 	}
 	data["Bids"] = data[rows]
 	data["CurRoundNum"] = cur

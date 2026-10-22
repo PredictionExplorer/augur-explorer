@@ -452,6 +452,7 @@ func templateFuncs() template.FuncMap {
 		"cstPerMin":       weiPerSecToCstPerMin,
 		"perMin":          perMin,
 		"cstDecline":      cstDecline,
+		"signedCst":       signedCst,
 		"shortTime":       shortTime,
 		"adminEventHelp":  adminEventHelp,
 		"roundRangeLabel": roundRangeLabel,

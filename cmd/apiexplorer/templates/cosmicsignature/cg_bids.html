@@ -17,6 +17,14 @@
 		{{if not .AllRounds}}{{roundLink .SelectedRound}}{{end}}
 	</h1>
 	<div class="subtitle">{{len .Bids}} rows · newest first · evtlog id links to the bid record</div>
+	{{with .CstTotals}}
+	<div class="subtitle" title="CST minted as bid rewards minus CST burned by CST bids, over the listed bids only (round-end prize mints are not included)">
+		CST supply from these bids:
+		<span class="ok">+{{printf "%.4f" .Minted}}</span> minted ·
+		<span class="warn">−{{printf "%.4f" .Burned}}</span> burned ·
+		net <b class="{{if ge .Net 0.0}}ok{{else}}warn{{end}}">{{signedCst .Net}}</b> CST
+	</div>
+	{{end}}
 </div>
 
 <table class="data-table dense">
@@ -34,6 +42,7 @@
 		<th class="num">bid CST reward</th>
 		<th class="num" title="V2: Dutch auction duration (s) / V3.1: price decline (CST/min)">CST auction</th>
 		<th class="num">CST burned</th>
+		<th class="num" title="change of CST total supply caused by this bid: reward minted to the previous bidder minus CST price burned">CST Δsupply</th>
 		<th>rwalk</th>
 		<th>message</th>
 		<th></th>
@@ -55,6 +64,7 @@
 		<td class="num">{{ if gt .BidCstRewardAmountEth 0.0 }}{{printf "%.4f" .BidCstRewardAmountEth}}{{else}}<span class="empty">—</span>{{end}}</td>
 		<td class="num">{{auctionParam .CstDutchAuctionDuration .CstDutchAuctionDurationInt}}</td>
 		<td class="num">{{if gt .CstPriceEth 0.0}}{{printf "%.4f" .CstPriceEth}}{{else}}<span class="empty">—</span>{{end}}</td>
+		<td class="num {{if lt .CstSupplyDelta 0.0}}warn{{else if gt .CstSupplyDelta 0.0}}ok{{else}}dim{{end}}" title="+{{printf "%.4f" .CstMinted}} minted − {{printf "%.4f" .CstBurned}} burned">{{signedCst .CstSupplyDelta}}</td>
 		<td>{{if ge .RWalkNFTId 0.0}}{{rwTokenLink .RWalkNFTId}}{{else}}<span class="empty">—</span>{{end}}</td>
 		<td>{{if .Message}}<span class="trunc" title="{{.Message}}">{{.Message}}</span>{{else}}<span class="empty">—</span>{{end}}</td>
 		<td class="rec">{{recordCard .}}</td>
