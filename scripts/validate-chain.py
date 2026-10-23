@@ -21,6 +21,18 @@ Checks:
                         history and later runs only scan new blocks. Interrupting
                         with Ctrl-C loses at most one chunk. Set
                         SKIP_LOG_PARITY=1 to run only the fast checks.
+                        ARCHIVE MODE: when ARCHIVE_DIR points at a tx-collector
+                        backup tree (<dir>/<block>/<txhash>_receipt.rlp, written
+                        by `opsctl tx-collector run` or the old standalone
+                        transaction-collector), the parity check reads the
+                        archived receipts instead of calling eth_getLogs — no
+                        node work at all, and finer grained: per-transaction
+                        per-contract log counts are compared in both directions,
+                        so a single log missing from evt_log inside an otherwise
+                        indexed transaction is caught. ARCHIVE_CONFIG must point
+                        at the collector's JSON config; only contracts the
+                        collector discovers (its "contracts" map) are fully
+                        covered, others are reported as WARN/skipped.
   2. CST supply      -- CosmicSignatureToken.totalSupply() vs mints-burns in
                         cg_erc20_transfer (otype 1 minus otype 2).
   3. NFT supply+owners -- CosmicSignatureNft.totalSupply() vs cg_mint_event count,
@@ -292,6 +304,89 @@ def scan_logs(state, scan_key, addrs, frm, to):
     return counts
 
 
+# --------------------------------------------------------------------------
+# Archive mode: read tx-collector receipt backups instead of eth_getLogs.
+# --------------------------------------------------------------------------
+def rlp_decode(data, pos=0):
+    """Decode one RLP item at pos; return (item, next_pos). Items are bytes or
+    lists of items."""
+    prefix = data[pos]
+    if prefix < 0x80:
+        return data[pos:pos + 1], pos + 1
+    if prefix < 0xb8:
+        n = prefix - 0x80
+        return data[pos + 1:pos + 1 + n], pos + 1 + n
+    if prefix < 0xc0:
+        ln = prefix - 0xb7
+        n = int.from_bytes(data[pos + 1:pos + 1 + ln], "big")
+        s = pos + 1 + ln
+        return data[s:s + n], s + n
+    if prefix < 0xf8:
+        n = prefix - 0xc0
+        end = pos + 1 + n
+        pos += 1
+    else:
+        ln = prefix - 0xf7
+        n = int.from_bytes(data[pos + 1:pos + 1 + ln], "big")
+        pos += 1 + ln
+        end = pos + n
+    items = []
+    while pos < end:
+        item, pos = rlp_decode(data, pos)
+        items.append(item)
+    return items, pos
+
+
+def receipt_log_addresses(blob):
+    """Yield lowercase 0x-addresses, one per log, from a backed-up receipt.
+
+    Handles the three on-disk encodings: BackupReceipt v1
+    ([version, type, status, cumGas, bloom, logs] with 4-field logs),
+    legacy consensus receipts ([status, cumGas, bloom, logs] with 3-field
+    logs), and typed-envelope blobs (an RLP byte string whose payload is
+    typeByte || consensus receipt).
+    """
+    item, _ = rlp_decode(blob)
+    if isinstance(item, bytes):  # typed envelope: strip type byte, re-decode
+        item, _ = rlp_decode(item[1:])
+    if not isinstance(item, list):
+        raise ValueError("receipt blob is not an RLP list")
+    if len(item) == 6 and item[0] == b"\x01":
+        logs = item[5]
+    elif len(item) == 4:
+        logs = item[3]
+    else:
+        raise ValueError(f"unrecognized receipt layout ({len(item)} fields)")
+    for log in logs:
+        yield "0x" + log[0].hex()
+
+
+def archive_log_counts(archive_dir, tracked, db_head):
+    """Per-(tx_hash, addr) log counts for tracked addrs from the backup tree,
+    limited to blocks <= db_head. Returns (counts, n_receipts, decode_errors)."""
+    counts = {}
+    n_receipts = 0
+    errors = []
+    with os.scandir(archive_dir) as blocks:
+        block_dirs = [d for d in blocks if d.is_dir() and d.name.isdigit()
+                      and int(d.name) <= db_head]
+    for d in sorted(block_dirs, key=lambda d: int(d.name)):
+        for entry in os.scandir(d.path):
+            if not entry.name.endswith("_receipt.rlp"):
+                continue
+            tx_hash = entry.name[:-len("_receipt.rlp")].lower()
+            n_receipts += 1
+            try:
+                with open(entry.path, "rb") as f:
+                    blob = f.read()
+                for addr in receipt_log_addresses(blob):
+                    if addr in tracked:
+                        counts[(tx_hash, addr)] = counts.get((tx_hash, addr), 0) + 1
+            except (ValueError, IndexError, OSError) as exc:
+                errors.append(f"{entry.path}: {exc}")
+    return counts, n_receipts, errors
+
+
 def volatile_match(chain_fn, db_fn, label):
     """Compare a live chain value with a DB value, retrying through ETL lag.
 
@@ -364,6 +459,48 @@ def main():
     # from the checkpoint file, so only new blocks are scanned on reruns.
     if os.environ.get("SKIP_LOG_PARITY"):
         add("WARN", "log parity", "skipped (SKIP_LOG_PARITY set)")
+    elif os.environ.get("ARCHIVE_DIR"):
+        cfg_path = os.environ.get("ARCHIVE_CONFIG")
+        if not cfg_path:
+            sys.stderr.write("error: ARCHIVE_CONFIG (collector JSON) is"
+                             " required with ARCHIVE_DIR\n")
+            sys.exit(2)
+        with open(cfg_path) as f:
+            scope = {a.lower() for a in json.load(f)["contracts"].values()}
+        tracked = {a for _, a in labeled}
+        arch, n_receipts, errors = archive_log_counts(
+            os.environ["ARCHIVE_DIR"], tracked, db_head)
+        add("PASS" if not errors else "FAIL",
+            f"archive readable ({n_receipts} receipts <= block {db_head})",
+            "; ".join(errors[:3]))
+        db_groups = {(tx, a): int(n) for tx, a, n in db(
+            "SELECT LOWER(t.tx_hash), LOWER(a.addr), COUNT(*)"
+            " FROM evt_log e"
+            " JOIN transaction t ON t.id = e.tx_id"
+            " JOIN address a ON a.address_id = e.contract_aid"
+            " WHERE LOWER(a.addr) = ANY(ARRAY["
+            + ",".join(f"'{a}'" for a in sorted(tracked)) + "])"
+            f" AND e.block_num <= {db_head} GROUP BY 1, 2")}
+        for name, addr in labeled:
+            if addr not in scope:
+                add("WARN", f"log parity (archive): {name}",
+                    "not in collector config; not covered by the archive")
+                continue
+            diffs = []
+            a_total = d_total = 0
+            txs = ({tx for tx, a in arch if a == addr}
+                   | {tx for tx, a in db_groups if a == addr})
+            for tx in sorted(txs):
+                an = arch.get((tx, addr), 0)
+                dn = db_groups.get((tx, addr), 0)
+                a_total += an
+                d_total += dn
+                if an != dn:
+                    diffs.append(f"tx {tx}: archive={an} db={dn}")
+            add("PASS" if not diffs else "FAIL",
+                f"log parity (archive): {name}",
+                f"archive={a_total} db={d_total} (..{db_head})"
+                + ("; " + "; ".join(diffs[:5]) if diffs else ""))
     else:
         chain_id = int(rpc("eth_chainId", []), 16)
         cosmic_from = int(db1(
