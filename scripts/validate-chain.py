@@ -351,12 +351,19 @@ def main():
             seen.add(a)
 
     # -- 1. head lag ---------------------------------------------------------
+    # The block table only holds blocks that contained tracked events, so its
+    # max is really "last event", not indexer progress. cg_proc_status is the
+    # ETL's processing checkpoint and advances through eventless blocks too;
+    # GREATEST covers databases where the checkpoint was never initialized.
     chain_head = int(rpc("eth_blockNumber", []), 16)
-    db_head = int(db1("SELECT MAX(block_num) FROM block"))
+    db_head = int(db1(
+        "SELECT GREATEST((SELECT COALESCE(MAX(block_num), 0) FROM block),"
+        " (SELECT COALESCE(MAX(last_block_num), 0) FROM cg_proc_status))"))
     lag = chain_head - db_head
     add("WARN" if lag > HEAD_LAG_WARN else "PASS",
         "indexer head lag",
-        f"chain={chain_head} db={db_head} lag={lag} blocks")
+        f"chain={chain_head} etl={db_head} lag={lag} blocks"
+        f" (~{lag // 4}s at 4 blocks/s)")
 
     # -- 2. log-count parity per contract ------------------------------------
     # Scan window: from the first indexed cosmic-platform log (= deployment-era
