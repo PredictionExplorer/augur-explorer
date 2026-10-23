@@ -12,6 +12,16 @@ Checks:
                         Catches silently skipped logs or block ranges. Scans from
                         the first indexed log of the contract family, so a missed
                         prefix BEFORE the first indexed log is out of scope.
+                        All platform contracts are counted in ONE pass over the
+                        range (eth_getLogs takes an address array); RandomWalkNFT
+                        history older than the platform is scanned separately.
+                        Scan progress is checkpointed to a state file after every
+                        chunk (VALIDATE_CHAIN_STATE, default
+                        ~/.cache/cosmic-signature/validate-chain-state.json,
+                        keyed by chain id), so the first run pays for the full
+                        history and later runs only scan new blocks. Interrupting
+                        with Ctrl-C loses at most one chunk. Set
+                        SKIP_LOG_PARITY=1 to run only the fast checks.
   3. CST supply      -- CosmicSignatureToken.totalSupply() vs mints-burns in
                         cg_erc20_transfer (otype 1 minus otype 2).
   4. NFT supply+owners -- CosmicSignatureNft.totalSupply() vs cg_mint_event count,
@@ -63,10 +73,15 @@ SEL_NUM_STAKED = "0xca7c1f92"    # numStakedNfts()
 SEL_ROUND_STATS = "0x259d33c1"   # roundStats(uint256) -> 9 uint256 words
 SEL_ROUND_NUM = "0x119b22b3"     # roundNum()
 
-LOG_CHUNK = 8_000_000      # initial eth_getLogs span; bisected on node errors
+LOG_CHUNK = 2_000_000      # eth_getLogs span per request; bisected on node errors
+LOG_TIMEOUT = 900          # seconds per getLogs request (bloom scans are slow);
+                           # single attempt so timeouts never stack queries
 VOLATILE_RETRIES = 4       # chain/DB agreement attempts for live values
 VOLATILE_DELAY = 2.0       # seconds between attempts
 HEAD_LAG_WARN = 1800       # blocks (~7.5 min on Arbitrum) before WARN
+STATE_PATH = os.environ.get(
+    "VALIDATE_CHAIN_STATE",
+    os.path.expanduser("~/.cache/cosmic-signature/validate-chain-state.json"))
 
 results = []  # (status, check_name, details)
 
@@ -136,7 +151,7 @@ RPC_URL = None
 _rpc_id = 0
 
 
-def rpc(method, params, timeout=90):
+def rpc(method, params, timeout=90, attempts=3):
     global _rpc_id
     _rpc_id += 1
     body = json.dumps({"jsonrpc": "2.0", "id": _rpc_id,
@@ -144,7 +159,7 @@ def rpc(method, params, timeout=90):
     req = urllib.request.Request(
         RPC_URL, data=body, headers={"Content-Type": "application/json"})
     last = None
-    for attempt in range(3):
+    for attempt in range(attempts):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 reply = json.loads(resp.read())
@@ -175,29 +190,72 @@ def encode_uint(n):
     return format(n, "064x")
 
 
-def get_logs_count(addr, frm, to):
-    """Count logs for addr in [frm, to], bisecting ranges the node rejects."""
+def get_logs_by_addr(addrs, frm, to, counts):
+    """Add per-address log counts in [frm, to] into counts (one node pass for
+    all addresses), bisecting ranges the node rejects."""
     if frm > to:
-        return 0
+        return
     try:
-        logs = rpc("eth_getLogs", [{
-            "address": addr, "fromBlock": hex(frm), "toBlock": hex(to)}])
-        return len(logs)
+        logs = rpc("eth_getLogs",
+                   [{"address": addrs, "fromBlock": hex(frm), "toBlock": hex(to)}],
+                   timeout=LOG_TIMEOUT, attempts=1)
     except RpcError:
         if frm == to:
             raise
         mid = (frm + to) // 2
-        return get_logs_count(addr, frm, mid) + get_logs_count(addr, mid + 1, to)
+        get_logs_by_addr(addrs, frm, mid, counts)
+        get_logs_by_addr(addrs, mid + 1, to, counts)
+        return
+    for log in logs:
+        a = log["address"].lower()
+        counts[a] = counts.get(a, 0) + 1
 
 
-def get_logs_count_chunked(addr, frm, to):
-    total = 0
-    start = frm
+def load_state():
+    try:
+        with open(STATE_PATH) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(state):
+    os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
+    tmp = STATE_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f)
+    os.replace(tmp, STATE_PATH)
+
+
+def scan_logs(state, scan_key, addrs, frm, to):
+    """Checkpointed multi-address log count over [frm, to].
+
+    Returns {addr: count} covering exactly [frm, to], resuming from and
+    updating the persisted state. Returns None if the checkpoint is ahead of
+    `to` (e.g. the DB was restored from an older backup), since counts up to
+    `to` can then no longer be derived from the checkpoint.
+    """
+    entry = state.get(scan_key)
+    if entry is None or entry.get("from") != frm:
+        entry = {"from": frm, "scanned_to": frm - 1, "counts": {}}
+    if entry["scanned_to"] > to:
+        return None
+    counts = dict(entry["counts"])
+    start = entry["scanned_to"] + 1
     while start <= to:
         end = min(start + LOG_CHUNK - 1, to)
-        total += get_logs_count(addr, start, end)
+        t0 = time.time()
+        get_logs_by_addr(addrs, start, end, counts)
+        sys.stderr.write(
+            f"[scan {scan_key}] blocks {start}..{end} of {to}"
+            f" ({(end - frm + 1) * 100 // (to - frm + 1)}%,"
+            f" {time.time() - t0:.1f}s, {sum(counts.values())} logs)\n")
+        sys.stderr.flush()
+        entry = {"from": frm, "scanned_to": end, "counts": counts}
+        state[scan_key] = entry
+        save_state(state)
         start = end + 1
-    return total
+    return counts
 
 
 def volatile_match(chain_fn, db_fn, label):
@@ -264,31 +322,50 @@ def main():
 
     # -- 2. log-count parity per contract ------------------------------------
     # Scan window: from the first indexed cosmic-platform log (= deployment-era
-    # constructor events) up to the DB head. RandomWalkNFT predates the
-    # platform, so it uses its own first indexed log.
-    cosmic_from = int(db1(
-        "SELECT MIN(e.block_num) FROM evt_log e"
-        " JOIN address a ON a.address_id = e.contract_aid"
-        " WHERE LOWER(a.addr) = ANY(ARRAY["
-        + ",".join(f"'{a}'" for _, a in labeled if a != rwalk) + "])"))
-    for name, addr in labeled:
-        frm = cosmic_from
-        if addr == rwalk:
-            v = db1("SELECT MIN(e.block_num) FROM evt_log e"
-                    " JOIN address a ON a.address_id = e.contract_aid"
-                    f" WHERE LOWER(a.addr) = '{addr}'")
-            if v == "":
+    # constructor events) up to the DB head, counting every tracked contract in
+    # one node pass. RandomWalkNFT predates the platform, so its older history
+    # is scanned separately from its own first indexed log. Both scans resume
+    # from the checkpoint file, so only new blocks are scanned on reruns.
+    if os.environ.get("SKIP_LOG_PARITY"):
+        add("WARN", "log parity", "skipped (SKIP_LOG_PARITY set)")
+    else:
+        chain_id = int(rpc("eth_chainId", []), 16)
+        cosmic_from = int(db1(
+            "SELECT MIN(e.block_num) FROM evt_log e"
+            " JOIN address a ON a.address_id = e.contract_aid"
+            " WHERE LOWER(a.addr) = ANY(ARRAY["
+            + ",".join(f"'{a}'" for _, a in labeled if a != rwalk) + "])"))
+        all_addrs = sorted(a for _, a in labeled)
+        state = load_state()
+        counts = scan_logs(state, f"{chain_id}:platform", all_addrs,
+                           cosmic_from, db_head)
+        rw_from = db1("SELECT MIN(e.block_num) FROM evt_log e"
+                      " JOIN address a ON a.address_id = e.contract_aid"
+                      f" WHERE LOWER(a.addr) = '{rwalk}'")
+        rw_prefix = None
+        if rw_from != "" and int(rw_from) < cosmic_from:
+            rw_prefix = scan_logs(state, f"{chain_id}:randomwalk-prefix",
+                                  [rwalk], int(rw_from), cosmic_from - 1)
+        for name, addr in labeled:
+            if counts is None or (addr == rwalk and rw_from != ""
+                                  and int(rw_from) < cosmic_from
+                                  and rw_prefix is None):
+                add("WARN", f"log parity: {name}",
+                    "checkpoint ahead of DB head; delete state file to rescan")
+                continue
+            if addr == rwalk and rw_from == "":
                 add("WARN", f"log parity: {name}", "no indexed logs; skipped")
                 continue
-            frm = int(v)
-        db_cnt = int(db1(
-            "SELECT COUNT(*) FROM evt_log e"
-            " JOIN address a ON a.address_id = e.contract_aid"
-            f" WHERE LOWER(a.addr) = '{addr}' AND e.block_num <= {db_head}"))
-        chain_cnt = get_logs_count_chunked(addr, frm, db_head)
-        add("PASS" if chain_cnt == db_cnt else "FAIL",
-            f"log parity: {name}",
-            f"chain={chain_cnt} db={db_cnt} (blocks {frm}..{db_head})")
+            chain_cnt = counts.get(addr, 0)
+            if addr == rwalk and rw_prefix is not None:
+                chain_cnt += rw_prefix.get(addr, 0)
+            db_cnt = int(db1(
+                "SELECT COUNT(*) FROM evt_log e"
+                " JOIN address a ON a.address_id = e.contract_aid"
+                f" WHERE LOWER(a.addr) = '{addr}' AND e.block_num <= {db_head}"))
+            add("PASS" if chain_cnt == db_cnt else "FAIL",
+                f"log parity: {name}",
+                f"chain={chain_cnt} db={db_cnt} (..{db_head})")
 
     # -- 3. CST total supply --------------------------------------------------
     ok, cv, dv = volatile_match(
