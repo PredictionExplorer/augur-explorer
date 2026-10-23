@@ -7,10 +7,15 @@ gap: it reconciles the database against live Arbitrum contract state, catching
 indexer omissions that no internal check can see.
 
 Checks:
-  1. log parity      -- eth_getLogs count per tracked contract vs evt_log count.
-                        Catches silently skipped logs or block ranges. Scans from
-                        the first indexed log of the contract family, so a missed
-                        prefix BEFORE the first indexed log is out of scope.
+  1. log parity      -- OFF BY DEFAULT (event completeness is normally covered
+                        by the tx-collector backup plus `opsctl tx-collector
+                        verify`). Enable with ARCHIVE_DIR (fast local match
+                        against the backup tree) or FULL_LOG_PARITY=1 (slow
+                        eth_getLogs network scan). Compares per-contract log
+                        counts against evt_log, catching silently skipped logs
+                        or block ranges. The scan starts at the first indexed
+                        log of the contract family, so a missed prefix BEFORE
+                        the first indexed log is out of scope.
                         All platform contracts are counted in ONE pass over the
                         range (eth_getLogs takes an address array); RandomWalkNFT
                         history older than the platform is scanned separately.
@@ -19,8 +24,7 @@ Checks:
                         ~/.cache/cosmic-signature/validate-chain-state.json,
                         keyed by chain id), so the first run pays for the full
                         history and later runs only scan new blocks. Interrupting
-                        with Ctrl-C loses at most one chunk. Set
-                        SKIP_LOG_PARITY=1 to run only the fast checks.
+                        with Ctrl-C loses at most one chunk.
                         ARCHIVE MODE: when ARCHIVE_DIR points at a tx-collector
                         backup tree (<dir>/<block>/<txhash>_receipt.rlp, written
                         by `opsctl tx-collector run` or the old standalone
@@ -457,8 +461,9 @@ def main():
     # one node pass. RandomWalkNFT predates the platform, so its older history
     # is scanned separately from its own first indexed log. Both scans resume
     # from the checkpoint file, so only new blocks are scanned on reruns.
-    if os.environ.get("SKIP_LOG_PARITY"):
-        add("WARN", "log parity", "skipped (SKIP_LOG_PARITY set)")
+    if not os.environ.get("ARCHIVE_DIR") and not os.environ.get("FULL_LOG_PARITY"):
+        print("(log parity skipped; set ARCHIVE_DIR=<tx-collector backup dir>"
+              " or FULL_LOG_PARITY=1 to enable)")
     elif os.environ.get("ARCHIVE_DIR"):
         cfg_path = os.environ.get("ARCHIVE_CONFIG")
         if not cfg_path:
