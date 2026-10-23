@@ -14,12 +14,13 @@ func TestRootCommandTree(t *testing.T) {
 	t.Parallel()
 	root := newRootCmd()
 	want := map[string][]string{
-		"archive":      {"corpus-export", "export", "node-fill", "verify"},
-		"assets":       {"gen-thumbnails", "inventory", "verify-token-images"},
-		"db":           {"evtlog-diff", "verify"},
-		"scan":         {"cst-auction-len"},
-		"smoketest":    {},
-		"tx-collector": {"run", "verify"},
+		"archive":        {"corpus-export", "export", "node-fill", "verify"},
+		"assets":         {"gen-thumbnails", "inventory", "verify-token-images"},
+		"db":             {"evtlog-diff", "verify"},
+		"scan":           {"cst-auction-len"},
+		"smoketest":      {},
+		"tx-collector":   {"run", "verify"},
+		"validate-chain": {},
 	}
 
 	if got := childCommandNames(root); !reflect.DeepEqual(got, sortedKeys(want)) {

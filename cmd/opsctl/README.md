@@ -36,6 +36,7 @@ scanners share the adaptive range/retry implementation in
 | `opsctl assets verify-token-images` | `cmd/notibot/scripts/verify-token-imgs.go` | Check RandomWalk token image URLs for HTTP 403 |
 | `opsctl smoketest` | `rwcg/tools/api_smoketest.go` | Validate the canonical v2 API, frozen v1 compatibility surface, or D6-safe operational probes |
 | `opsctl scan cst-auction-len` | `rwcg/tools/scan_cst_auclen_chg_div.go` | Scan chain for `CstDutchAuctionDurationChangeDivisorChanged` events |
+| `opsctl validate-chain` | `scripts/validate-chain.py` | Reconcile the SQL database against live on-chain contract state |
 
 `dev-scripts/check_cs_images.sh` (formerly `rwcg/tools/check_cs_images.sh`)
 remains a shell script: it checks the *public image URLs* served by the
@@ -46,8 +47,8 @@ frontend web server (via `psql` + `curl`), complementing the on-disk checks of
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `RPC_URL` | `archive node-fill`, `scan cst-auction-len` | Ethereum/Arbitrum JSON-RPC endpoint |
-| `PGSQL_HOST` (`host[:port]`), `PGSQL_USERNAME`, `PGSQL_DATABASE`, `PGSQL_PASSWORD` | `tx-collector verify`, `assets inventory`, `assets gen-thumbnails`, `assets verify-token-images`, `smoketest` | PostgreSQL connection (used when no `--db` flag is given; `smoketest --suite=operational` does not need it) |
+| `RPC_URL` | `archive node-fill`, `scan cst-auction-len`, `validate-chain` | Ethereum/Arbitrum JSON-RPC endpoint |
+| `PGSQL_HOST` (`host[:port]`), `PGSQL_USERNAME`, `PGSQL_DATABASE`, `PGSQL_PASSWORD` | `tx-collector verify`, `assets inventory`, `assets gen-thumbnails`, `assets verify-token-images`, `smoketest`, `validate-chain` | PostgreSQL connection (used when no `--db` flag is given; `smoketest --suite=operational` does not need it) |
 | `NFT_ASSETS_ROOT` | `assets gen-thumbnails` | Asset root; default base dir is `$NFT_ASSETS_ROOT/new/cosmicsignature` |
 | `API_BASE` | `smoketest` | Overrides the API base URL |
 | `HTTP_PORT` | `smoketest` | websrv port; base defaults to `http://127.0.0.1:$HTTP_PORT` (9090 when unset) |
@@ -294,6 +295,50 @@ missing from the `cg_adm_cst_auclen_chg_div` table. Requires `RPC_URL`.
 ```sh
 RPC_URL=https://arb1.arbitrum.io/rpc opsctl scan cst-auction-len --db 'postgres://cgprod@localhost/cgprod?sslmode=disable'
 ```
+
+## validate-chain
+
+Reconciles the SQL database against live contract state (the Go successor of
+`scripts/validate-chain.py`; `scripts/validate-chain.sh` is a thin wrapper).
+Complements the offline SQL validators (`validate-db.sql` etc.), which only
+prove internal consistency. Requires `RPC_URL` and the `PGSQL_*` /
+`DATABASE_URL` connection variables.
+
+Default checks (fast, a handful of RPC calls): CST `totalSupply()` vs
+mints-minus-burns in `cg_erc20_transfer`, CS NFT `totalSupply()` and per-token
+`ownerOf()` vs `cg_mint_event`, `numStakedNfts()` on both staking wallets vs
+stake/unstake events, PrizesWallet ETH balance vs deposits minus withdrawals,
+and `roundStats(r)` vs a `cg_bid` recomputation for every round (`numBids`
+only for pre-V3 rounds; all six statistics for V3 rounds). Live-chain races
+are absorbed by retrying volatile comparisons a few times.
+
+Log parity (event completeness) is off by default — that job normally belongs
+to the tx-collector backup plus `opsctl tx-collector verify` — and comes in
+two optional modes:
+
+- `--archive-dir` + `--archive-config`: match per-transaction per-contract
+  log counts against a local tx-collector backup tree, in both directions.
+  Contracts absent from the collector config are reported as WARN.
+- `--full-log-parity`: count logs straight off the chain with multi-address
+  `eth_getLogs` (slow: the node bloom-scans the whole block range). Progress
+  is checkpointed to `--state-file` and resumes incrementally.
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--archive-dir` | `$ARCHIVE_DIR` | tx-collector backup tree for local log parity |
+| `--archive-config` | `$ARCHIVE_CONFIG` | collector JSON naming the archived contracts |
+| `--full-log-parity` | `$FULL_LOG_PARITY` set | enable the network log-parity scan |
+| `--state-file` | `$VALIDATE_CHAIN_STATE` or `~/.cache/cosmic-signature/validate-chain-state.json` | network-scan checkpoint |
+| `--log-workers` | `$LOG_WORKERS` or 4 | concurrent `eth_getLogs` requests |
+| `--log-chunk` | `$LOG_CHUNK` or 2000000 | block span per `eth_getLogs` request |
+
+```sh
+RPC_URL=https://rpc1.cosmicsignature.com:38546 opsctl validate-chain
+opsctl validate-chain --archive-dir /var/backups/cosmicgame-transactions \
+    --archive-config ~/configs/transaction-collector.cosmicgame.json
+```
+
+Exits 1 if any check finds a mismatch.
 
 ## dev-scripts
 

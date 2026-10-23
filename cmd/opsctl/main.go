@@ -2,8 +2,9 @@
 // event-log archival (archive export / verify / node-fill), database
 // comparison (db verify / evtlog-diff), transaction backup (tx-collector
 // run / verify), NFT asset utilities (assets inventory / gen-thumbnails /
-// verify-token-images), API smoke testing (smoketest) and ad-hoc chain
-// scanners (scan cst-auction-len).
+// verify-token-images), API smoke testing (smoketest), ad-hoc chain
+// scanners (scan cst-auction-len) and the chain-vs-database audit
+// (validate-chain).
 //
 // It consolidates the former standalone tools from rwcg/tools/ (plus the
 // notibot verify-token-imgs script) into a single binary with one subcommand
@@ -44,6 +45,7 @@ func newRootCmd() *cobra.Command {
 		newScanCmd(),
 		newSmoketestCmd(),
 		newTxCollectorCmd(),
+		newValidateChainCmd(),
 	)
 	return root
 }
