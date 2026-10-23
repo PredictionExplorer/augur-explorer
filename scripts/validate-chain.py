@@ -7,8 +7,7 @@ gap: it reconciles the database against live Arbitrum contract state, catching
 indexer omissions that no internal check can see.
 
 Checks:
-  1. head lag        -- chain head vs highest indexed block (informational/WARN).
-  2. log parity      -- eth_getLogs count per tracked contract vs evt_log count.
+  1. log parity      -- eth_getLogs count per tracked contract vs evt_log count.
                         Catches silently skipped logs or block ranges. Scans from
                         the first indexed log of the contract family, so a missed
                         prefix BEFORE the first indexed log is out of scope.
@@ -22,16 +21,16 @@ Checks:
                         history and later runs only scan new blocks. Interrupting
                         with Ctrl-C loses at most one chunk. Set
                         SKIP_LOG_PARITY=1 to run only the fast checks.
-  3. CST supply      -- CosmicSignatureToken.totalSupply() vs mints-burns in
+  2. CST supply      -- CosmicSignatureToken.totalSupply() vs mints-burns in
                         cg_erc20_transfer (otype 1 minus otype 2).
-  4. NFT supply+owners -- CosmicSignatureNft.totalSupply() vs cg_mint_event count,
+  3. NFT supply+owners -- CosmicSignatureNft.totalSupply() vs cg_mint_event count,
                         and ownerOf(token) vs cg_mint_event.cur_owner_aid for
                         every token. (Staked NFTs are owned by the staking
                         wallet on chain AND in the DB, so they compare equal.)
-  5. staked counts   -- numStakedNfts() on both staking wallets vs
+  4. staked counts   -- numStakedNfts() on both staking wallets vs
                         stake-minus-unstake event counts.
-  6. PrizesWallet    -- on-chain ETH balance vs deposits minus withdrawals.
-  7. roundStats      -- the V3 roundStats(r) getter vs cg_bid recomputation:
+  5. PrizesWallet    -- on-chain ETH balance vs deposits minus withdrawals.
+  6. roundStats      -- the V3 roundStats(r) getter vs cg_bid recomputation:
                         numBids for every round (the V2->V3 storage
                         reinterpretation makes it valid for legacy rounds too);
                         numCstBids / totalSpentEthAmount / totalSpentCstAmount /
@@ -84,7 +83,6 @@ LOG_WORKERS = int(os.environ.get("LOG_WORKERS", "4"))  # concurrent getLogs
                            # to 1 if it must stay responsive for other traffic
 VOLATILE_RETRIES = 4       # chain/DB agreement attempts for live values
 VOLATILE_DELAY = 2.0       # seconds between attempts
-HEAD_LAG_WARN = 1800       # blocks (~7.5 min on Arbitrum) before WARN
 STATE_PATH = os.environ.get(
     "VALIDATE_CHAIN_STATE",
     os.path.expanduser("~/.cache/cosmic-signature/validate-chain-state.json"))
@@ -350,22 +348,15 @@ def main():
             labeled.append((f"game impl {a[:10]}", a))
             seen.add(a)
 
-    # -- 1. head lag ---------------------------------------------------------
-    # The block table only holds blocks that contained tracked events, so its
-    # max is really "last event", not indexer progress. cg_proc_status is the
-    # ETL's processing checkpoint and advances through eventless blocks too;
-    # GREATEST covers databases where the checkpoint was never initialized.
-    chain_head = int(rpc("eth_blockNumber", []), 16)
+    # -- DB head: the upper bound for log scans and DB-side counts. Not a
+    # health check (monitor cg_proc_status directly for indexer lag); the
+    # GREATEST covers databases where the checkpoint was never initialized,
+    # falling back to the newest block that contained a tracked event.
     db_head = int(db1(
         "SELECT GREATEST((SELECT COALESCE(MAX(block_num), 0) FROM block),"
         " (SELECT COALESCE(MAX(last_block_num), 0) FROM cg_proc_status))"))
-    lag = chain_head - db_head
-    add("WARN" if lag > HEAD_LAG_WARN else "PASS",
-        "indexer head lag",
-        f"chain={chain_head} etl={db_head} lag={lag} blocks"
-        f" (~{lag // 4}s at 4 blocks/s)")
 
-    # -- 2. log-count parity per contract ------------------------------------
+    # -- 1. log-count parity per contract ------------------------------------
     # Scan window: from the first indexed cosmic-platform log (= deployment-era
     # constructor events) up to the DB head, counting every tracked contract in
     # one node pass. RandomWalkNFT predates the platform, so its older history
