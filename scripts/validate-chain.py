@@ -61,10 +61,12 @@ Exit codes: 0 all checks pass (warnings allowed), 2 usage/config error,
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --- function selectors (keccak4, generated with go-ethereum crypto.Keccak256) --
 SEL_TOTAL_SUPPLY = "0x18160ddd"  # totalSupply()
@@ -73,9 +75,13 @@ SEL_NUM_STAKED = "0xca7c1f92"    # numStakedNfts()
 SEL_ROUND_STATS = "0x259d33c1"   # roundStats(uint256) -> 9 uint256 words
 SEL_ROUND_NUM = "0x119b22b3"     # roundNum()
 
-LOG_CHUNK = 2_000_000      # eth_getLogs span per request; bisected on node errors
+LOG_CHUNK = int(os.environ.get("LOG_CHUNK", "2000000"))
+                           # eth_getLogs span per request; bisected on node errors
 LOG_TIMEOUT = 900          # seconds per getLogs request (bloom scans are slow);
                            # single attempt so timeouts never stack queries
+LOG_WORKERS = int(os.environ.get("LOG_WORKERS", "4"))  # concurrent getLogs
+                           # requests; raise if the node has idle cores, lower
+                           # to 1 if it must stay responsive for other traffic
 VOLATILE_RETRIES = 4       # chain/DB agreement attempts for live values
 VOLATILE_DELAY = 2.0       # seconds between attempts
 HEAD_LAG_WARN = 1800       # blocks (~7.5 min on Arbitrum) before WARN
@@ -241,20 +247,50 @@ def scan_logs(state, scan_key, addrs, frm, to):
     if entry["scanned_to"] > to:
         return None
     counts = dict(entry["counts"])
+    chunks = []
     start = entry["scanned_to"] + 1
     while start <= to:
         end = min(start + LOG_CHUNK - 1, to)
-        t0 = time.time()
-        get_logs_by_addr(addrs, start, end, counts)
-        sys.stderr.write(
-            f"[scan {scan_key}] blocks {start}..{end} of {to}"
-            f" ({(end - frm + 1) * 100 // (to - frm + 1)}%,"
-            f" {time.time() - t0:.1f}s, {sum(counts.values())} logs)\n")
-        sys.stderr.flush()
-        entry = {"from": frm, "scanned_to": end, "counts": counts}
-        state[scan_key] = entry
-        save_state(state)
+        chunks.append((start, end))
         start = end + 1
+    if not chunks:
+        return counts
+
+    def scan_chunk(chunk):
+        delta = {}
+        get_logs_by_addr(addrs, chunk[0], chunk[1], delta)
+        return delta
+
+    # LOG_WORKERS chunks run concurrently; the checkpoint only ever advances
+    # over the CONTIGUOUS completed prefix, so an interrupt mid-flight never
+    # records a gap (out-of-order completions are held back until their
+    # predecessors finish, and at most the in-flight chunks are lost).
+    t0 = time.time()
+    folded = 0
+    pending = {}  # start -> per-address delta, completed but not yet folded
+    with ThreadPoolExecutor(max_workers=LOG_WORKERS) as pool:
+        futures = {pool.submit(scan_chunk, c): c for c in chunks}
+        next_idx = 0  # next chunk to fold into the checkpoint
+        for fut in as_completed(futures):
+            chunk = futures[fut]
+            pending[chunk[0]] = fut.result()
+            while next_idx < len(chunks) and chunks[next_idx][0] in pending:
+                cstart, cend = chunks[next_idx]
+                for a, n in pending.pop(cstart).items():
+                    counts[a] = counts.get(a, 0) + n
+                state[scan_key] = {"from": frm, "scanned_to": cend,
+                                   "counts": counts}
+                save_state(state)
+                next_idx += 1
+                folded += 1
+                rate = (time.time() - t0) / folded
+                eta = int(rate * (len(chunks) - next_idx))
+                sys.stderr.write(
+                    f"[scan {scan_key}] blocks {cstart}..{cend} of {to}"
+                    f" ({(cend - frm + 1) * 100 // (to - frm + 1)}%,"
+                    f" {sum(counts.values())} logs,"
+                    f" ETA {eta // 60}m{eta % 60:02d}s)\n")
+                sys.stderr.flush()
     return counts
 
 
@@ -279,6 +315,8 @@ def volatile_match(chain_fn, db_fn, label):
 # --------------------------------------------------------------------------
 def main():
     global PSQL_ARGV, RPC_URL
+    # Die quietly when piped into head/grep instead of raising BrokenPipeError.
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     RPC_URL = os.environ.get("RPC_URL")
     if not RPC_URL:
         sys.stderr.write("error: RPC_URL must be set (Arbitrum RPC endpoint)\n")
