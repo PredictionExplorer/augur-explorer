@@ -29,12 +29,14 @@ flowchart LR
     end
     subgraph consumers [Consumers]
         fe[Frontends]
+        apx[apiexplorer]
         bots[notibot / alarms]
         faq[faq-bot Python RAG]
     end
     rpc --> cgetl --> db
     rpc --> rwetl --> db
     db --> api --> fe
+    api --> apx
     db --> bots
     api -- proxy --> faq
 ```
@@ -52,7 +54,10 @@ flowchart LR
    its domain table (`cg_bid`, `cg_prize_claim`, `rw_mint_evt`, ...).
    CosmicGame keeps both V2 and V3 event topics registered; V3 adds multi-NFT
    claims, normalized bid-reward shares and bounded recovery of the
-   event-less `championDurations(round)` snapshot. Evented configuration is
+   event-less `championDurations(round)` snapshot. V3.1 additionally indexes
+   every historic `PrizesWallet` contract, reads the consolidated
+   `roundStats()` getter in place of the removed per-round getters, and
+   decodes the DAO governance admin events. Evented configuration is
    audited read-only against chain state, while event-less observations live
    in `cg_live_state_updates` rather than synthetic event rows. All of
    a block's writes — rows, domain writes and the processing watermark —
@@ -77,7 +82,12 @@ flowchart LR
    and pgx store. The server also exposes ERC-721 `tokenURI` metadata at
    `/metadata/:token_id` (host-dispatched between the two collections, and
    permanently outside the versioned API because the deployed contracts pin
-   the path) and the NFT image/video asset mirror at `/images/*`.
+   the path) and the NFT image/video asset mirror at `/images/*`. The v2
+   surface includes the paginated round chat API
+   (`internal/api/v2/chat.go`, see [chat-api.md](chat-api.md)), and the
+   server runs the background NFT-traits ingestion loop (`internal/nftraits`,
+   configured via the `NFT_TRAITS_*` variables) that feeds the served
+   ERC-721 metadata.
 3. **Notify.** `notibot` polls for new events and posts to Discord/Twitter;
    `rwalk-alarm` and `srvmonitor` watch service health and alert via WhatsApp
    and a terminal dashboard.
@@ -87,16 +97,18 @@ flowchart LR
 | Path | Contents |
 |------|----------|
 | `cmd/apiserver` | JSON API server (net/http ServeMux via `internal/api/httpx`): routing, TLS, static assets, health, metrics |
+| `cmd/apiexplorer` | Developer dashboard web UI over the JSON API (listens on `APIEXPLORER_PORT`, default 9091; upstream `API_BASE`, default `http://127.0.0.1:9090`) |
 | `cmd/cg-etl`, `cmd/rw-etl` | Chain indexers, one per contract family |
 | `cmd/notibot` | Discord/Twitter mint & trade notifications (thin wiring of `internal/notify/rwbot`, shared with `rwctl notify-bot`) |
 | `cmd/freezer-scan`, `cmd/freezer-verify` | Geth freezer-file reader for historical backfill (scan pipeline in `internal/freezer/scan`, DB comparison in `internal/freezer/verify`) |
 | `cmd/imggen-monitor` | Verifies/regenerates NFT image+video artifacts (engine in `internal/ops/imggen`) |
 | `cmd/srvmonitor`, `cmd/loganomaly`, `cmd/rwalk-alarm` | Ops monitoring daemons (engines in `internal/srvmonitor` and `internal/notify/urlalarm`) |
 | `cmd/cgctl`, `cmd/rwctl`, `cmd/opsctl` | Thin operator CLI wiring (contract interaction, social tools, data ops) |
+| `cmd/covergate` | Coverage-policy gate (ADR-0006) for Go coverage profiles (engine in `internal/covergate`) |
 | `internal/api` | HTTP stack: frozen v1 handlers, generated/injected `v2`, `httpx` router, `faq` proxy, shared middleware |
 | `internal/store` | pgx-native database layer: pool-owning `Store`, `cosmicgame`/`randomwalk` repos and collection-scoped shared `marketplace` reads (ADR-0002) |
 | `internal/indexer` | Shared indexing engine: polling loop, batch/retry policy, block ops, chain-split handling, backfill, ETL metrics; typed event-handler registry plus reusable adaptive `logscan` ranges |
-| `internal/ops` | Context-aware engines behind `opsctl`: archive, assets, CST scan, DB verification, API smoke testing and transaction backups |
+| `internal/ops` | Context-aware engines behind `opsctl`: archive, assets, CST scan, DB verification, API smoke testing and transaction backups (the chain-vs-database audit `opsctl validate-chain` is wired directly in `cmd/opsctl`) |
 | `internal/model` | Domain types and API response structs (`cosmicgame`, `randomwalk`) |
 | `internal/timefmt` | Human-readable calendar-duration rendering (frozen v1 formats) |
 | `internal/freezer` | Geth freezer/ancient store readers |
@@ -139,6 +151,8 @@ Recorded as ADRs in [docs/adr/](adr/):
 - **ADR-0010** — transactional ingestion: one database transaction per
   block commits its rows, domain writes and processing watermark together,
   via a context-scoped querier and a transaction-aware address cache.
+- **ADR-0011** — NFT art traits: ingest first, serve from the database,
+  freeze at imprint.
 
 ## Databases and schemas
 
@@ -148,10 +162,14 @@ Everything lives in one PostgreSQL database (default schema `public`):
   `evt_topic`) store raw chain data with RLP payloads for replay/verification.
 - **CosmicGame tables** (`cg_*`) hold decoded V1/V2/V3 events,
   trigger-managed aggregates, normalized `cg_bid_reward` shares and the
-  event-less `cg_live_state_updates` audit.
+  event-less `cg_live_state_updates` audit. Later migrations add the V3.1
+  CST decline multiplier (00029/00030/00032), previously missing event
+  tables (00031), event-audit gap fixes (00034), ingested art traits
+  (`cg_token_traits`, 00036, ADR-0011) and the chat revision bookkeeping
+  with its triggers (`cg_chat_revision`, 00037–00038).
 - **RandomWalk tables** (`rw_*`) hold mints, the shared multi-collection
-  marketplace activity used by both NFT APIs, and the Elo-style ranking
-  state.
+  marketplace activity used by both NFT APIs, the Elo-style ranking
+  state and the inherited OpenZeppelin ERC-721 events (00035).
 - **Archive tables** (`arch_*`) mirror pruned historical data recovered from
   geth freezer files.
 

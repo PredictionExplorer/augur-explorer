@@ -1,5 +1,12 @@
 # Modernization Roadmap — Go-Native Rewrite
 
+> **Status: frozen as of 2026-07-23.** This tracker is retained as a
+> historical record of the Go-modernization effort and is no longer updated.
+> Later work — the V3/cgv3.1 mechanics migration, the cycle chat API, NFT
+> token traits, and the validate-chain audit — is documented in
+> [BACKEND.md](BACKEND.md), [architecture.md](architecture.md),
+> [operations.md](operations.md) and the [ADRs](adr/).
+
 This is the working document for turning this codebase into world-class,
 idiomatic Go. It tracks everything: what has been done, what remains, which
 tests protect each change, and how to verify every step. The end state is a

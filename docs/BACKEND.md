@@ -36,6 +36,7 @@ The backend consists of three main components:
 | ETL - CosmicGame | `cmd/cg-etl/` | Processes CosmicGame contract events |
 | ETL - RandomWalk | `cmd/rw-etl/` | Processes RandomWalk contract events |
 | Web Server | `cmd/apiserver/` + `internal/api/` | REST API serving data to frontend |
+| FAQ Proxy | `internal/api/faq/` | Proxies FAQ queries to the Python `faq-bot/` service |
 | Database Layer | `internal/store/` | pgx-native PostgreSQL pool and domain queries |
 | SQL Schema | `db/migrations/` | goose schema migrations |
 | Contracts | `contracts/` | ABI definitions for smart contracts |
@@ -94,6 +95,7 @@ Game event and statistics tables. Most tables reference `evt_log(id)` for tracea
 | `cg_bid` | Bid events | `bidder_aid`, `round_num`, `bid_type`, `eth_price`, `cst_price`, `msg` |
 | `cg_bid_reward` | Normalized CST reward recipients (current/previous bidder) | `bid_id`, `recipient_aid`, `reward_type`, `amount` |
 | `cg_first_bid` | First bid in each round | `round_num`, `start_ts` |
+| `cg_chat_revision` | Singleton invalidation generation for the v2 chat API (see [chat-api.md](chat-api.md)); bumped by triggers on `cg_bid` edits and `cg_banned_bids` changes | `revision` |
 
 #### Donation Tables
 
@@ -122,6 +124,8 @@ Game event and statistics tables. Most tables reference `evt_log(id)` for tracea
 | `cg_token_delegate_changed` | ERC20 Votes delegation changes | `delegator_aid`, `from_delegate_aid`, `to_delegate_aid` |
 | `cg_token_delegate_votes_changed` | ERC20 Votes voting-power changes | `delegate_aid`, `previous_votes`, `new_votes` |
 | `cg_eip712_domain_changed` | EIP712DomainChanged (token permit domain, DAO vote domain) | `contract_aid` |
+| `cg_token_traits` | Per-seed art traits ingested from the asset host, served in ERC-721 metadata ([ADR-0011](adr/0011-nft-trait-ingestion.md)) | `seed`, `attributes`, `content_hash` |
+| `cg_token_traits_fetch` | Trait-ingest bookkeeping (ETags, retry backoff, drift alarms); never gates the read path | `seed`, `next_attempt_at`, `drift_detected_at` |
 
 #### DAO Tables (CosmicSignatureDao, OpenZeppelin Governor)
 
@@ -179,7 +183,9 @@ Tables prefixed with `cg_adm_*` track configuration changes:
 - `cg_adm_charity_wallet`, `cg_adm_rwalk_addr`, `cg_adm_prizes_wallet_addr`
 - `cg_adm_time_inc`, `cg_adm_price_inc`, `cg_adm_acttime`
 - V3 late-bid divisor/premium, last-bidder reward percentage and main-prize
-  NFT-count tables. Event-less V3 observations are stored separately in
+  NFT-count tables; V3.1 CST bid price decline multiplier
+  (`cg_adm_cst_price_decline_mul`, `cg_adm_cst_price_decline_mul_div`) and
+  `cg_adm_eth_bid_refund_gas_limit`. Event-less V3 observations are stored separately in
   `cg_live_state_updates`; startup contract sync only reports drift and never
   fabricates `evt_log` rows.
 
@@ -257,11 +263,7 @@ The ETL (Extract, Transform, Load) process synchronizes blockchain events to the
 
 ### Event Fetching
 
-**Location**: `etl/common/eventfetcher.go`
-
-```go
-FetchEvents(client, fromBlock, toBlock, contracts []common.Address)
-```
+**Location**: `internal/indexer/run.go` (fetch loop), `internal/indexer/boundedclient.go` (bounded `FilterLogs` wrapper), `internal/indexer/policy.go` (adaptive batch sizing)
 
 - Uses `ethclient.FilterLogs()` to fetch events
 - Filters by contract addresses and block ranges
@@ -269,7 +271,7 @@ FetchEvents(client, fromBlock, toBlock, contracts []common.Address)
 
 ### Raw Event Storage
 
-**Location**: `dbs/blockchain_insert.go`
+**Location**: `internal/store/blockchain_insert.go` (`InsertEventLog`)
 
 Events are first stored in raw form:
 
@@ -368,35 +370,34 @@ fails the build when a regenerated ABI adds one.
 ### Event Decoding Example
 
 ```go
-// BidPlaced event processing (cosmicgame.go)
-func process_bid_event(log types.Log) {
-    // 1. Decode non-indexed data
-    var evt struct {
-        PaidEthPrice   *big.Int
-        PaidCstPrice   *big.Int
-        MainPrizeTime  *big.Int
-        Message        string
+// BidPlaced decode step (internal/indexer/cosmicgame/handlers_bidding.go)
+func (h *Handlers) decodeBidPlacedV1(lg *types.Log, elog *store.EthereumEventLog) (*cgmodel.CGBidEvent, error) {
+    // 1. Decode non-indexed data using the generated binding
+    var ethEvt cgc.CosmicSignatureGameBidPlaced
+    if err := h.gameABI.UnpackIntoInterface(&ethEvt, "BidPlaced", lg.Data); err != nil {
+        return nil, err
     }
-    cosmic_game_abi.UnpackIntoInterface(&evt, "BidPlaced", log.Data)
-    
+
     // 2. Extract indexed parameters from Topics
-    roundNum := new(big.Int).SetBytes(log.Topics[1].Bytes())
-    bidder := common.BytesToAddress(log.Topics[2].Bytes()[12:])
-    rwalkTokenId := new(big.Int).SetBytes(log.Topics[3].Bytes())
-    
-    // 3. Insert into database
-    Insert_bid_event(evtlog_id, block_num, tx_id, timestamp,
-        contract_aid, bidder_aid, rwalkTokenId, roundNum,
-        evt.PaidEthPrice, evt.PaidCstPrice, evt.MainPrizeTime, evt.Message)
+    evt := &cgmodel.CGBidEvent{}
+    evt.RoundNum = lg.Topics[1].Big().Int64()
+    evt.LastBidderAddr = ethcommon.BytesToAddress(lg.Topics[2][12:]).String()
+    evt.RandomWalkTokenId = lg.Topics[3].Big().Int64()
+    evt.EthPrice = ethEvt.PaidEthPrice.String()
+    // ... bid type, CST price, prize time, message ...
+    return evt, nil
 }
 ```
+
+The paired `Store` step inserts the decoded record into `cg_bid`.
 
 ### Address Normalization
 
 All Ethereum addresses are normalized to address IDs:
 
 ```go
-aid, err := Lookup_or_create_address(addr, blockNum, txId)  // Returns BIGINT ID
+// (*store.Store).LookupOrCreateAddress — internal/store/address.go
+aid, err := s.LookupOrCreateAddress(ctx, addr, blockNum, txID)  // Returns BIGINT address_id
 ```
 
 This reduces storage and enables efficient joins.
@@ -597,6 +598,7 @@ The essentials:
 | `PGSQL_USERNAME` / `PGSQL_PASSWORD` / `PGSQL_DATABASE` / `PGSQL_HOST` | Individual PostgreSQL settings | One of URL / `PGSQL_*` |
 | `RPC_URL` | Ethereum RPC endpoint | Yes |
 | `ENABLE_ROUTES_COSMICGAME` | Enable CosmicGame API | No (default: true) |
+| `ENABLE_ROUTES_FAQ` | Enable the FAQ proxy routes | No (default: true) |
 | `LOG_FORMAT` / `LOG_LEVEL` | stdout log format (`text`/`json`) and level | No (default: `text`/`info`) |
 
 ### Database Initialization

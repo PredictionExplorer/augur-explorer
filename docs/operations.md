@@ -37,6 +37,19 @@ docker compose --profile smoke up --build --abort-on-container-exit \
   --exit-code-from smoketest smoketest
 ```
 
+### API explorer
+
+`apiexplorer` is the developer dashboard over the JSON API (`make build`
+includes it in `./bin`). It listens on `APIEXPLORER_PORT` (default `9091`)
+and reads the apiserver from `API_BASE` (default `http://127.0.0.1:9090`):
+
+```bash
+API_BASE=http://127.0.0.1:9090 ./bin/apiexplorer
+```
+
+There is no systemd unit for it — run it ad hoc or under your own
+supervisor.
+
 ## Testing
 
 ```bash
@@ -306,7 +319,7 @@ must read exactly zero.
 
 Repository-owned probes enforce that invariant:
 
-- bare `opsctl smoketest` runs all 101 safe v2 GET operations; use explicit
+- bare `opsctl smoketest` runs all 103 safe v2 GET operations; use explicit
   `--suite=v1` only for an operator-invoked compatibility regression, never
   as a scheduled uptime probe;
 - `opsctl smoketest --suite=operational` needs no database credentials and
@@ -412,12 +425,21 @@ series simply lack it.
 
 ### CosmicSignatureGame V3 rollout
 
-Migrations `00026_cosmicgame_v3.sql` and
-`00027_rw_marketplace_collection_indexes.sql` are additive/reversible: they
-add V3 claim/reward/configuration/live-state storage and concurrent
-collection-scoped marketplace indexes. Deploy in this order:
+The V3/V3.1 schema work spans migrations `00026`–`00038`, all
+additive/reversible: `00026_cosmicgame_v3.sql` and
+`00027_rw_marketplace_collection_indexes.sql` add the core V3
+claim/reward/configuration/live-state storage and concurrent
+collection-scoped marketplace indexes; `00029`–`00032` cover the CST
+decline-multiplier churn and previously missing event tables, `00034`
+closes event-audit gaps, `00035` adds the RandomWalk inherited events,
+`00036` the token traits and `00037`–`00038` the chat storage (the
+token-traits and chat migrations were renumbered on 2026-10-20 to resolve
+goose collisions). Deploy in this order:
 
-1. Back up PostgreSQL, stop `cg-etl`, and apply migrations.
+1. Back up PostgreSQL, stop `cg-etl`, and apply migrations. (`opsctl
+   tx-collector run` maintains the per-contract transaction/receipt RLP
+   backups, which `opsctl validate-chain --archive-dir` can consume for
+   post-rollout auditing.)
 2. Deploy the regenerated V3-aware `cg-etl` and API binaries together.
 3. Start `cg-etl`; its bounded startup recovery fills missing
    `championDurations(round)` snapshots, while claim-time RPC failures remain
@@ -425,7 +447,7 @@ collection-scoped marketplace indexes. Deploy in this order:
 4. Check startup logs for `contract parameter drift`. Evented `cg_adm_*`
    history is authoritative; the drift audit no longer writes synthetic
    chain events.
-5. Run `opsctl smoketest` (101 v2 GETs), then the explicit
+5. Run `opsctl smoketest` (103 v2 GETs), then the explicit
    `--suite=v1` compatibility sweep (145 requests).
 
 Migration `00026` intentionally preserves historical rows created by the old
@@ -490,8 +512,12 @@ production samples.
 | Task | Command |
 |------|---------|
 | Verify DB contents against chain | `opsctl db verify`, `opsctl db evtlog-diff` |
+| Reconcile DB against live contract state | `opsctl validate-chain` (wrapped by `scripts/validate-chain.sh`) |
+| Offline SQL validators (mechanics, stats, durations) | `scripts/validate-db.sh`, `scripts/validate-stats.sh`, `scripts/validate-durations.sh` |
+| Transaction/receipt RLP backups | `opsctl tx-collector run` / `opsctl tx-collector verify` |
 | Export/verify RLP archives and corpora | `opsctl archive export` / `corpus-export` / `verify` / `node-fill` |
 | Check NFT asset presence | `opsctl assets inventory`, `imggen-monitor` |
+| Check token image URLs | `opsctl assets verify-token-images` |
 | Regenerate thumbnails | `opsctl assets gen-thumbnails` |
 | Canonical v2 API smoke test | `opsctl smoketest` |
 | D6-safe uptime/Compose probe | `opsctl smoketest --suite=operational` |

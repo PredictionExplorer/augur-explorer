@@ -45,7 +45,7 @@ or synthesize cursors in clients.
 
 ## Historical changes and snapshot validity
 
-Migration 00030 installs a durable singleton revision and transactional row
+Migration 00037 installs a durable singleton revision and transactional row
 triggers. Actual gesture updates/deletions and moderation inserts/updates/deletes
 advance it. This includes reorganization cascades and legacy moderation writes.
 The indexer's no-op delete-before-insert and ordinary appended events do not
@@ -64,8 +64,12 @@ replacement for the revision: those can miss an old message's removal or unban.
 
 `GET /api/v2/cosmicgame/rounds/{round}/chat-context` returns all gestures' minimal
 metadata in ascending `(occurredAt, eventLogId)` order. Each item has `eventLogId`,
-`round`, `position`, `bidderAddress`, `occurredAt`, `bidType`, `prizeAt`, and optional
-`cstDutchAuctionDurationSeconds`. `meta.revision` uses the same history generation.
+`round`, `position`, `bidderAddress`, `occurredAt`, `bidType`, `prizeAt`, and at most
+one optional CST auction field: `cstDutchAuctionDurationSeconds` for V2 bids, or the
+decimal-string `cstBidPriceDeclineMultiplierWeiPerSecond` (wei of CST per second) for
+V3 bids. The same BidPlaced slot changed meaning between generations, and the V3
+multiplier exceeds safe-integer range, so the two fields are mutually exclusive and
+never share a representation. `meta.revision` uses the same history generation.
 The query does not select message bodies, rewards, or attached assets and retains
 gestures without visible messages so participant counts remain correct.
 

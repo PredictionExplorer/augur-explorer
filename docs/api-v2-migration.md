@@ -469,7 +469,10 @@ The following dashboard fields move to `/contracts/configuration`:
   duration-change divisor.
 - V3 keeps the dynamic reward mode and adds the late-bid divisor/window,
   premium base/exponent, previous-bidder reward percentage, main-prize NFT
-  count, derived CST auction floor and CST reward per prize-time increment.
+  count, derived CST auction floor, CST reward per prize-time increment, and
+  (since cgv3.1) the CST bid price decline pair
+  `cstBidPriceDeclineMultiplierWei` and
+  `cstBidPriceDeclineMultiplierChangeDivisor`.
   Its CST round-start value comes from `getCstDutchAuctionDurations`, not the
   inert V2 storage-slot getter.
 - The MarketingWallet's owner-tunable treasurer is `treasurerAddress`
