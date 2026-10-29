@@ -24,22 +24,81 @@ const ROUND_ACTIVATION_DELAY_SEC = 5;
 
 async function main() {
     const [owner] = await hre.ethers.getSigners();
-    const deployJsPath = path.join(process.cwd(), "scripts", "Deploy.js");
+    // Prefer the repo's own scripts/Deploy.js (V2-era layout); the V3 repos
+    // use a task-based deployment instead, so fall back to the V3-compatible
+    // Deploy.js that lives next to this script.
+    const fs = require("fs");
+    let deployJsPath = path.join(process.cwd(), "scripts", "Deploy.js");
+    if (!fs.existsSync(deployJsPath)) {
+        deployJsPath = path.join(__dirname, "Deploy.js");
+        console.log("Repo has no scripts/Deploy.js; using " + deployJsPath);
+    }
     const { basicDeployment } = require(deployJsPath);
 
     // Deploy with future activation (activationTime=1) so round stays inactive; we set dev params then activate
     console.log("Deploying CosmicSignatureGame stack (basicDeployment, activation in future)...");
     const result = await basicDeployment(owner, "", 1, "", false, true);
-    const { cosmicGameProxy, prizesWallet } = result;
+    let { cosmicGameProxy, prizesWallet } = result;
     const cosmicGameAddr = await cosmicGameProxy.getAddress();
+
+    // Mirror the mainnet history when the repo ships V2/V3 game contracts:
+    // the V1->V2 upgrade reuses V1 storage slots with renamed fields and assumes
+    // a completed round zero (the repo's own test helpers do
+    // deployV1 -> completeRoundZero -> upgradeToV2 -> upgradeToV3).
+    let gameVersion = 1;
+    try {
+        await hre.ethers.getContractFactory("CosmicSignatureGameV2", owner);
+        await hre.ethers.getContractFactory("CosmicSignatureGameV3", owner);
+        gameVersion = 3;
+    } catch (e) { /* V1-only repo; leave the proxy as deployed */ }
+
+    if (gameVersion === 3) {
+        console.log("Completing round zero on V1 (required before the V2 upgrade)...");
+        const gq = { gasLimit: 12000000 };
+        const block0 = await hre.ethers.provider.getBlock("latest");
+        await (await cosmicGameProxy.connect(owner).setRoundActivationTime(block0.timestamp + 1, { gasLimit: 1000000 })).wait();
+        await hre.network.provider.send("evm_increaseTime", [2]);
+        await hre.network.provider.send("evm_mine");
+        await (await cosmicGameProxy.connect(owner).bidWithEth(-1, "round zero", { value: hre.ethers.parseEther("1"), ...gq })).wait();
+        const mainPrizeTime = await cosmicGameProxy.mainPrizeTime();
+        await hre.network.provider.send("evm_setNextBlockTimestamp", [Number(mainPrizeTime) + 1]);
+        await hre.network.provider.send("evm_mine");
+        await (await cosmicGameProxy.connect(owner).claimMainPrize(gq)).wait();
+        console.log("Round zero claimed (roundNum=" + (await cosmicGameProxy.roundNum()) + ").");
+
+        for (const upgradeName of ["CosmicSignatureGameV2", "CosmicSignatureGameV3"]) {
+            const factory = await hre.ethers.getContractFactory(upgradeName, owner);
+            cosmicGameProxy = await hre.upgrades.upgradeProxy(cosmicGameProxy, factory, {
+                kind: "uups",
+                call: "reinitialize",
+            });
+            await cosmicGameProxy.waitForDeployment();
+            console.log("Proxy upgraded to " + upgradeName + ".");
+        }
+    }
 
     console.log("Setting dev-friendly time parameters (round still inactive)...");
     const g = { gasLimit: 1000000 };
 
-    await (await cosmicGameProxy.connect(owner).setTimeoutDurationToClaimMainPrize(TIMEOUT_CLAIM_MAIN_PRIZE_SEC, g)).wait();
-    await (await cosmicGameProxy.connect(owner).setMainPrizeTimeIncrementInMicroSeconds(MAIN_PRIZE_TIME_INCREMENT_MICRO, g)).wait();
-    await (await cosmicGameProxy.connect(owner).setInitialDurationUntilMainPrizeDivisor(INITIAL_DURATION_UNTIL_MAIN_PRIZE_DIVISOR, g)).wait();
-    await (await cosmicGameProxy.connect(owner).setCstDutchAuctionDurationDivisor(CST_DUTCH_AUCTION_DURATION_DIVISOR, g)).wait();
+    // Setter names differ per contract version (e.g. setCstDutchAuctionDurationDivisor
+    // is V1-only; V3 reverts the V2 CST-auction setters with NotImplemented).
+    async function trySet(contract, fnName, value) {
+        const fn = contract.connect(owner)[fnName];
+        if (typeof fn !== "function") {
+            console.log(`  ${fnName}: not present on this contract version; skipped`);
+            return;
+        }
+        try {
+            await (await fn(value, g)).wait();
+            console.log(`  ${fnName}(${value})`);
+        } catch (e) {
+            console.warn(`  ${fnName}: reverted; skipped (${String(e.message || e).slice(0, 100)})`);
+        }
+    }
+    await trySet(cosmicGameProxy, "setTimeoutDurationToClaimMainPrize", TIMEOUT_CLAIM_MAIN_PRIZE_SEC);
+    await trySet(cosmicGameProxy, "setMainPrizeTimeIncrementInMicroSeconds", MAIN_PRIZE_TIME_INCREMENT_MICRO);
+    await trySet(cosmicGameProxy, "setInitialDurationUntilMainPrizeDivisor", INITIAL_DURATION_UNTIL_MAIN_PRIZE_DIVISOR);
+    await trySet(cosmicGameProxy, "setCstDutchAuctionDurationDivisor", CST_DUTCH_AUCTION_DURATION_DIVISOR);
     await (await prizesWallet.connect(owner).setTimeoutDurationToWithdrawPrizes(TIMEOUT_WITHDRAW_PRIZES_SEC, g)).wait();
 
     // Delay before first round activates so populate can run admin setters during this window (see claim-and-configure.sh pattern)
@@ -54,12 +113,27 @@ async function main() {
         console.warn("Continuing: Samp deploy and populate will run; populate will skip admin config if round is active.");
     }
 
-    console.log("Deploying Samp ERC20 contracts...");
-    const Samp = await hre.ethers.getContractFactory("Samp");
-    const samp1 = await Samp.connect(owner).deploy("ERC20 Token Sample1", "SAMP1");
-    await samp1.waitForDeployment();
-    const samp2 = await Samp.connect(owner).deploy("ERC20 Token Sample2", "SAMP2");
-    await samp2.waitForDeployment();
+    console.log("Deploying sample ERC20 contracts...");
+    // The available test-token artifact differs per repo: "Samp" (V2-era,
+    // sometimes with name/symbol args) or "FuzzTestMockErc20" (V3 repos).
+    async function deploySample(label) {
+        const attempts = [
+            ["Samp", []],
+            ["Samp", ["ERC20 Token " + label, label]],
+            ["FuzzTestMockErc20", []],
+        ];
+        for (const [name, args] of attempts) {
+            try {
+                const factory = await hre.ethers.getContractFactory(name);
+                const t = await factory.connect(owner).deploy(...args);
+                await t.waitForDeployment();
+                return t;
+            } catch (e) { /* try the next variant */ }
+        }
+        throw new Error("no deployable sample ERC20 artifact (tried Samp, FuzzTestMockErc20)");
+    }
+    const samp1 = await deploySample("SAMP1");
+    const samp2 = await deploySample("SAMP2");
     const tsamp1 = await samp1.getAddress();
     const tsamp2 = await samp2.getAddress();
 

@@ -36,8 +36,10 @@ if [ -z "$COSMIC_SIGNATURE_DIR" ]; then
     exit 1
 fi
 
-if [ ! -f "$COSMIC_SIGNATURE_DIR/scripts/Deploy.js" ]; then
-    echo "Error: Not a Cosmic-Signature repo (missing scripts/Deploy.js): $COSMIC_SIGNATURE_DIR"
+# V2-era repos ship scripts/Deploy.js; V3 repos deploy via hardhat tasks, in
+# which case deploy-dev-and-samp.js falls back to the Deploy.js next to it.
+if [ ! -f "$COSMIC_SIGNATURE_DIR/hardhat.config.js" ] && [ ! -f "$COSMIC_SIGNATURE_DIR/hardhat.config.ts" ]; then
+    echo "Error: Not a Hardhat repo (missing hardhat.config.js): $COSMIC_SIGNATURE_DIR"
     exit 1
 fi
 
@@ -58,7 +60,11 @@ echo ""
 echo "Step 1: Deploy CosmicSignatureGame (dev times) and Samp..."
 echo "------------------------------------------------------------------------"
 cd "$COSMIC_SIGNATURE_DIR"
-OUTPUT=$(NODE_PATH=$PWD/node_modules npx hardhat run "$DEPLOY_DEV_JS" --network "$NETWORK" 2>&1)
+OUTPUT=$(NODE_PATH=$PWD/node_modules npx hardhat run "$DEPLOY_DEV_JS" --network "$NETWORK" 2>&1) || {
+    echo "$OUTPUT"
+    echo "Error: deploy step failed."
+    exit 1
+}
 echo "$OUTPUT"
 
 CADDR=$(echo "$OUTPUT" | sed -n 's/^CADDR=\(0x[0-9a-fA-F]\{40\}\)$/\1/p' | tail -1)
