@@ -66,6 +66,12 @@ async function main() {
         await (await cosmicGameProxy.connect(owner).claimMainPrize(gq)).wait();
         console.log("Round zero claimed (roundNum=" + (await cosmicGameProxy.roundNum()) + ").");
 
+        // _authorizeUpgrade is _onlyRoundIsInactive and the post-claim inactive
+        // window can be very short on a real-time node: freeze the round
+        // inactive before upgrading (reactivated with dev settings below).
+        const blockC = await hre.ethers.provider.getBlock("latest");
+        await (await cosmicGameProxy.connect(owner).setRoundActivationTime(blockC.timestamp + 1000000, { gasLimit: 1000000 })).wait();
+
         for (const upgradeName of ["CosmicSignatureGameV2", "CosmicSignatureGameV3"]) {
             const factory = await hre.ethers.getContractFactory(upgradeName, owner);
             cosmicGameProxy = await hre.upgrades.upgradeProxy(cosmicGameProxy, factory, {
