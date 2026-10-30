@@ -697,6 +697,10 @@ async function main() {
             if (!s) continue;
             await TX(nft.connect(s).approve(addr5.address, i, g));
             await TX(nft.connect(s).transferFrom(o, addr4.address, i, g));
+            // The NEW owner renames the token it just received: rename rights
+            // must follow ownership, and the API should attribute this
+            // NftNameChanged to addr4, not the previous owner.
+            await TX(nft.connect(addr4).setNftName(i, "renamed by new owner", g));
             moved = true;
         }
         if (!moved) throw new Error("no signer-owned CS NFT available for transfer");
