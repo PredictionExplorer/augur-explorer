@@ -481,6 +481,16 @@ async function main() {
             await TX(game.connect(s).bidWithEthAndDonateNft(-1, "donated rwalk " + rwId, 0, await randomWalkNFT.getAddress(), rwId, { value: (bidPrice * 125n) / 100n, ...g }));
         }
 
+        // RandomWalk-discount bids combined with donations in the same tx
+        // (BidPlaced with rwalk id + TokenDonated / NftDonated together).
+        const rwDiscT = await mintRwalk(randomWalkNFT, addr2);
+        bidPrice = await game.getNextEthBidPrice();
+        await TX(game.connect(addr2).bidWithEthAndDonateToken(rwDiscT, "rwalk-discount + token donation", 0, samp1Addr, ethers.parseEther("2"), { value: (bidPrice * 125n) / 100n, ...g }));
+        const rwDiscN = await mintRwalk(randomWalkNFT, addr2);
+        const rwDonN = await mintRwalk(randomWalkNFT, addr2);
+        bidPrice = await game.getNextEthBidPrice();
+        await TX(game.connect(addr2).bidWithEthAndDonateNft(rwDiscN, "rwalk-discount + nft donation", 0, await randomWalkNFT.getAddress(), rwDonN, { value: (bidPrice * 125n) / 100n, ...g }));
+
         // CST bid family; addr3 earned CST from earlier bids.
         await cstBid(game, token, addr3, "plain CST bid");
         await waitUntilCstPriceAffordable(game, token, addr3.address);
@@ -499,7 +509,7 @@ async function main() {
         console.log("Round", Number(round), "claimed by addr3 (CST last bid, 2 main NFTs)");
 
         // Winner claims the donated prizes: one single claim, rest in batches.
-        await TX(prizesWallet.connect(addr3).claimDonatedToken(round, samp1Addr, ethers.parseEther("15"), g));
+        await TX(prizesWallet.connect(addr3).claimDonatedToken(round, samp1Addr, ethers.parseEther("17"), g));
         await TX(prizesWallet.connect(addr3).claimManyDonatedTokens([{ roundNum: round, tokenAddress: samp2Addr, amount: ethers.parseEther("10") }], g));
         const nftIdx = recordedEvents(prizesWallet.interface, "NftDonated", prizesWalletAddr)
             .filter(ev => ev.args.roundNum === round)
