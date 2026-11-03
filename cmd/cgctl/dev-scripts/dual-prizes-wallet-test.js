@@ -22,9 +22,9 @@
  * Run from the Cosmic-Signature v3.1 repo (its hardhat.config.js / artifacts
  * are used), against a running `npx hardhat node`:
  *
- *   cd /home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19
+ *   cd $COSMIC_SIGNATURE_DIR
  *   NODE_PATH=$PWD/node_modules npx hardhat run \
- *     /home/niko/eth/dev/b/backend-v3.1/cmd/cgctl/dev-scripts/dual-prizes-wallet-test.js \
+ *     $BACKEND_DIR/cmd/cgctl/dev-scripts/dual-prizes-wallet-test.js \
  *     --network localhost
  *
  * Afterwards:

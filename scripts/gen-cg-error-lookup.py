@@ -12,9 +12,14 @@ related to its description.
 Usage:
     scripts/gen-cg-error-lookup.py [CONTRACTS_PRODUCTION_DIR] > seed.sql
 
+The contracts location comes from the positional argument or from the
+COSMIC_SIGNATURE_DIR environment variable (the repo root;
+contracts/production is appended); there is no built-in default.
+
 The output is pasted into the migration that owns the table (00034) and is
 re-run whenever the contracts add or reword an error.
 """
+import os
 import re
 import sys
 from collections import defaultdict
@@ -24,8 +29,6 @@ try:
     from Crypto.Hash import keccak
 except ImportError:  # pragma: no cover
     sys.exit("pycryptodome is required: pip install pycryptodome")
-
-DEFAULT_ROOT = "/home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19/contracts/production"
 
 # Events that report a failure. Everything else emitted by the contracts is
 # ordinary telemetry and has no message to look up.
@@ -117,7 +120,12 @@ def balanced_args(src: str, start: int) -> str:
 
 
 def main() -> None:
-    root = Path(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ROOT)
+    if len(sys.argv) > 1:
+        root = Path(sys.argv[1])
+    elif os.environ.get("COSMIC_SIGNATURE_DIR"):
+        root = Path(os.environ["COSMIC_SIGNATURE_DIR"]) / "contracts" / "production"
+    else:
+        sys.exit("pass contracts/production as an argument or set COSMIC_SIGNATURE_DIR")
     decls = {}  # (kind, name) -> (abi_signature, file)
     messages = defaultdict(set)  # (kind, name) -> {message}
 

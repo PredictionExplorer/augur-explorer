@@ -14,9 +14,9 @@
  * quoting ~1.15e59 ETH.
  *
  * Run from the Cosmic-Signature v3.1 repo (its hardhat.config.js / artifacts are used):
- *   cd /home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19
+ *   cd $COSMIC_SIGNATURE_DIR
  *   NODE_PATH=$PWD/node_modules npx hardhat run \
- *     /home/niko/eth/dev/b/backend-v3.1/cmd/cgctl/dev-scripts/deploy-v2.js --network localhost
+ *     $BACKEND_DIR/cmd/cgctl/dev-scripts/deploy-v2.js --network localhost
  *
  * Tunables (env):
  *   TIME_INCREMENT_SEC      seconds added to the prize timer per bid   (default 60)

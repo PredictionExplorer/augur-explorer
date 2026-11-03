@@ -3,7 +3,9 @@
 # Usage:
 #   ./deploy-and-populate.sh [--network NETWORK] [COSMIC_SIGNATURE_DIR]
 #
-# Defaults: network=localhost, COSMIC_SIGNATURE_DIR=$COSMIC_SIGNATURE_DIR or parent/todays/Cosmic-Signature.
+# Defaults: network=localhost. The Solidity repo location comes from the
+# positional argument or the COSMIC_SIGNATURE_DIR environment variable;
+# the script exits when neither is set.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,8 +13,9 @@ POPULATE_JS="$SCRIPT_DIR/populate.js"
 DEPLOY_DEV_JS="$SCRIPT_DIR/deploy-dev-and-samp.js"
 NETWORK="${NETWORK:-localhost}"
 
-# Parse args: [--network NETWORK] [COSMIC_SIGNATURE_DIR]
-COSMIC_SIGNATURE_DIR=""
+# Parse args: [--network NETWORK] [COSMIC_SIGNATURE_DIR].
+# A positional argument overrides the environment value.
+COSMIC_SIGNATURE_DIR="${COSMIC_SIGNATURE_DIR:-}"
 while [ $# -gt 0 ]; do
     case "$1" in
         --network)
@@ -27,12 +30,9 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$COSMIC_SIGNATURE_DIR" ]; then
-    COSMIC_SIGNATURE_DIR="${COSMIC_SIGNATURE_DIR:-}"
-fi
-if [ -z "$COSMIC_SIGNATURE_DIR" ]; then
-    echo "Error: COSMIC_SIGNATURE_DIR required (path to Cosmic-Signature repo)."
+    echo "Error: COSMIC_SIGNATURE_DIR required (path to the Cosmic-Signature repo)."
     echo "Usage: $0 [--network NETWORK] COSMIC_SIGNATURE_DIR"
-    echo "Example: $0 --network localhost /home/niko/eth/dev/b/todays/Cosmic-Signature"
+    echo "   or: COSMIC_SIGNATURE_DIR=/path/to/Cosmic-Signature $0 [--network NETWORK]"
     exit 1
 fi
 

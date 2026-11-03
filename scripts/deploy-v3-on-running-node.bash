@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# Same as deploy-v3-local.bash, but NEVER starts or kills a Hardhat node.
-# It uses whatever node the `hardhat_on_localhost` network in hardhat.config.js points at
-# (local or remote), and assumes that node is already running.
+# Deploys the full Cosmic Signature V1->V2->V3 stack on an already-running
+# Hardhat node; it NEVER starts or kills a node itself. It uses whatever node
+# the `hardhat_on_localhost` network in hardhat.config.js points at (local or
+# remote), and assumes that node is already running.
 #
 # Steps:
 #   1. Checks that the configured RPC endpoint responds.

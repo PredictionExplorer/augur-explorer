@@ -17,7 +17,7 @@
 #              ETL_WAIT_SEC seconds.
 #
 # Env:
-#   COSMIC_SIGNATURE_DIR   Cosmic-Signature repo (default: the v3.1 checkout)
+#   COSMIC_SIGNATURE_DIR   Cosmic-Signature repo (required; or pass as argument)
 #   CADDR                  game proxy (default: deploy-dev-and-samp.js address)
 #   REJECT_ADDR            ETH-rejecting destination (default: the game's nft())
 #   BALANCE_ETH            balance planted in the wallet (default 1)
@@ -32,7 +32,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NETWORK="${NETWORK:-localhost}"
-COSMIC_SIGNATURE_DIR="${COSMIC_SIGNATURE_DIR:-/home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19}"
+COSMIC_SIGNATURE_DIR="${COSMIC_SIGNATURE_DIR:-}"
 ETL_WAIT_SEC="${ETL_WAIT_SEC:-120}"
 DEPLOY=0
 
@@ -45,6 +45,10 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+if [ -z "$COSMIC_SIGNATURE_DIR" ]; then
+    echo "Error: set COSMIC_SIGNATURE_DIR (or pass it as an argument) to the Cosmic-Signature repo." >&2
+    exit 1
+fi
 if [ ! -f "$COSMIC_SIGNATURE_DIR/hardhat.config.js" ]; then
     echo "Error: not a Cosmic-Signature hardhat repo: $COSMIC_SIGNATURE_DIR" >&2
     exit 1

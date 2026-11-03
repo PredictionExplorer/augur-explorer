@@ -5,7 +5,7 @@ serves:
 
 | Package | Contracts | Generated file |
 |---|---|---|
-| `contracts/cosmicgame` | CosmicSignatureGame proxy (V1 + V2 + V3 mechanics), CosmicSignature NFT, CosmicSignatureToken (ERC-20), DAO, Charity/Prizes/Marketing wallets, both staking wallets, Arbitrum precompile helpers, OpenZeppelin bases and the SampToken test ERC-20 (113 types) | `bindings.gen.go` |
+| `contracts/cosmicgame` | CosmicSignatureGame proxy (V1 + V2 + V3 mechanics), CosmicSignature NFT, CosmicSignatureToken (ERC-20), DAO, Charity/Prizes/Marketing wallets, both staking wallets, Arbitrum precompile helpers and OpenZeppelin bases (113 types) | `bindings.gen.go` |
 | `contracts/randomwalk` | RandomWalk NFT, RandomWalk marketplace (2 types) | `bindings.gen.go` |
 
 Each package is one abigen invocation over one committed build artifact,

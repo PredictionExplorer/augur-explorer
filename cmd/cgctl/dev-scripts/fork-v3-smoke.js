@@ -18,7 +18,7 @@
  *
  * Typical use (from the Cosmic-Signature repo):
  *   RPC_URL=http://127.0.0.1:10545 npx hardhat run \
- *     /home/niko/eth/dev/b/backend/cmd/cgctl/dev-scripts/fork-v3-smoke.js
+ *     $BACKEND_DIR/cmd/cgctl/dev-scripts/fork-v3-smoke.js
  *
  * Env: RPC_URL, GAME_ADDR, TOKEN_ADDR, NFT_ADDR (defaults: production).
  */

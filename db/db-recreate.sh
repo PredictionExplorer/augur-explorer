@@ -12,11 +12,11 @@
 #
 # Does NOT execute anything; pipe the output into psql yourself:
 #
-#   ./cat-recreate.sh | psql -h localhost -U cosmicgame -d cosmicgame
+#   ./db-recreate.sh | psql -h localhost -U cosmicgame -d cosmicgame
 #
 # All schema data is lost, including the cg_contracts/rw_contracts registry
-# rows; re-insert them before starting the ETLs (populate.js prints the
-# INSERT).
+# rows; re-insert them before starting the ETLs
+# (cmd/cgctl/dev-scripts/populate.js prints the INSERT).
 #
 # Note: a database initialized this way has no goose_db_version table, so
 # `make migrate-up` / goose cannot manage it later. For a goose-managed

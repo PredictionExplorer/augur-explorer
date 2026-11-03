@@ -1,6 +1,6 @@
 #!/bin/bash
-# api-baseline.sh — smoke test for cosmic1 (a1/rpc1) and cosmic2 (a2/rpc2) services
-# usage: ./api-baseline.sh
+# baseline.sh — smoke test for cosmic1 (a1/rpc1) and cosmic2 (a2/rpc2) services
+# usage: ./scripts/baseline.sh
 
 PASS=0; FAIL=0
 

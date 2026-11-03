@@ -1,24 +1,37 @@
 #!/usr/bin/env bash
 #
 # Compile Solidity contracts and generate Go bindings (wrappers) for cosmicgame.
-# Single pass: compile all from compiled-Cosmic-Signature, then generate Go.
-# Output directory: /tmp/cosmicgame-wrappers
+# Single pass: compile all sources, then generate Go.
 #
-# Prerequisites: solc at /usr/local/bin/solc-0.8.30 (V1) and solc-0.8.34 (V2/V3), abigen at ~/bin/abigen-1.15.5
+# Every machine-specific location comes from the environment:
+#
+#   COMPILED_CONTRACTS_DIR  flattened/compiled .sol source tree (preferred source)
+#   COSMIC_SIGNATURE_DIR    Cosmic-Signature repo root (fallback source:
+#                           contracts/production; also provides the V2/V3
+#                           upgrade implementations)
+#   OPENZEPPELIN_5_1        OpenZeppelin 5.1 checkout (required)
+#   OPENZEPPELIN_5_02       OpenZeppelin 5.02 checkout (required)
+#   ARBITRUM                @arbitrum sources (optional; defaults to
+#                           $COMPILED_CONTRACTS_DIR/@arbitrum when set)
+#   SOLC                    solc for V1 contracts (default: solc-0.8.30 on PATH)
+#   SOLC_V2                 solc for V2/V3 contracts (default: solc-0.8.34 on PATH)
+#   ABIGEN                  abigen binary (default: abigen-1.15.5 on PATH)
+#   OUT_DIR                 output directory (default: /tmp/cosmicgame-wrappers)
+#
+# At least one of COMPILED_CONTRACTS_DIR / COSMIC_SIGNATURE_DIR must be set.
 #
 
 set -e
 
-readonly OUT_DIR="/tmp/cosmicgame-wrappers"
-readonly ABIGEN="${HOME}/bin/abigen-1.15.5"
-readonly SOLC="/usr/local/bin/solc-0.8.30"
-readonly SOLC_V2="/usr/local/bin/solc-0.8.34"
-readonly OPENZEPPELIN_5_1="/home/niko/eth/dev/openzeppelin/5.1"
-readonly OPENZEPPELIN_5_02="/home/niko/eth/dev/openzeppelin/5.02"
-readonly ARBITRUM="/home/niko/eth/dev/compiled-Cosmic-Signature/@arbitrum"
-readonly WORK_DIR="/home/niko/eth/dev/compiled-Cosmic-Signature"
-readonly BASE_PATH="/home/niko/eth/dev/b/cursor-vref"
-readonly PRODUCTION_SYMLINK="${BASE_PATH}/production"
+readonly OUT_DIR="${OUT_DIR:-/tmp/cosmicgame-wrappers}"
+readonly ABIGEN="${ABIGEN:-abigen-1.15.5}"
+readonly SOLC="${SOLC:-solc-0.8.30}"
+readonly SOLC_V2="${SOLC_V2:-solc-0.8.34}"
+readonly OPENZEPPELIN_5_1="${OPENZEPPELIN_5_1:?set OPENZEPPELIN_5_1 to the OpenZeppelin 5.1 checkout}"
+readonly OPENZEPPELIN_5_02="${OPENZEPPELIN_5_02:?set OPENZEPPELIN_5_02 to the OpenZeppelin 5.02 checkout}"
+readonly WORK_DIR="${COMPILED_CONTRACTS_DIR:-}"
+readonly COSMIC_SIGNATURE_DIR="${COSMIC_SIGNATURE_DIR:-}"
+readonly ARBITRUM="${ARBITRUM:-${WORK_DIR:+${WORK_DIR}/@arbitrum}}"
 
 readonly CONTRACTS=(
 	CosmicSignatureGame
@@ -34,18 +47,16 @@ readonly CONTRACTS=(
 	StakingWalletRandomWalkNft
 )
 
-# Prefer WORK_DIR if it has the .sol files; else use resolved production symlink
+# Prefer COMPILED_CONTRACTS_DIR if it has the .sol files; else the repo's
+# contracts/production.
 SRC_DIR=""
-if [[ -d "$WORK_DIR" ]] && [[ -f "$WORK_DIR/CosmicSignatureGame.sol" ]]; then
+if [[ -n "$WORK_DIR" ]] && [[ -f "$WORK_DIR/CosmicSignatureGame.sol" ]]; then
 	SRC_DIR="$WORK_DIR"
-else
-	RESOLVED=$(readlink -f "$PRODUCTION_SYMLINK" 2>/dev/null || true)
-	if [[ -d "$RESOLVED" ]] && [[ -f "$RESOLVED/CosmicSignatureGame.sol" ]]; then
-		SRC_DIR="$RESOLVED"
-	fi
+elif [[ -n "$COSMIC_SIGNATURE_DIR" ]] && [[ -f "$COSMIC_SIGNATURE_DIR/contracts/production/CosmicSignatureGame.sol" ]]; then
+	SRC_DIR="$COSMIC_SIGNATURE_DIR/contracts/production"
 fi
 if [[ -z "$SRC_DIR" ]]; then
-	echo "Error: no source dir with .sol files. Tried: $WORK_DIR and $PRODUCTION_SYMLINK" >&2
+	echo "Error: no source dir with .sol files. Set COMPILED_CONTRACTS_DIR or COSMIC_SIGNATURE_DIR." >&2
 	exit 1
 fi
 
@@ -58,9 +69,11 @@ for contract in "${CONTRACTS[@]}"; do
 	entry="${contract}.sol"
 	if [[ ! -f "$entry" ]] && { [[ "$contract" == "CosmicSignatureGameV2" ]] || [[ "$contract" == "CosmicSignatureGameV3" ]]; }; then
 		# Upgrade implementations live alongside V1 in production; the compiled source tree may lag.
-		upgrade_src="/home/niko/eth/dev/b/todays/Cosmic-Signature/contracts/production/${entry}"
-		if [[ -f "$upgrade_src" ]]; then
-			entry="$upgrade_src"
+		if [[ -n "$COSMIC_SIGNATURE_DIR" ]]; then
+			upgrade_src="${COSMIC_SIGNATURE_DIR}/contracts/production/${entry}"
+			if [[ -f "$upgrade_src" ]]; then
+				entry="$upgrade_src"
+			fi
 		fi
 	fi
 	if [[ ! -f "$entry" ]]; then

@@ -115,7 +115,7 @@ red line rather than a screenful of messages. The first two problems also
 flow into the shared error area and the mobile-notification path.
 
 ```sh
-SITE_CHECK_SCRIPT=/home/niko/eth/dev/b/backend/tools/site-checker/check-sites.js
+SITE_CHECK_SCRIPT=$HOME/backend/tools/site-checker/check-sites.js
 # SITE_CHECK_NODE=/usr/local/bin/node    # default: "node" from PATH
 # SITE_CHECK_CONFIG=/path/to/config.json # default: config.json next to the script
 # SITE_CHECK_TITLE="Site Checker"        # section header label

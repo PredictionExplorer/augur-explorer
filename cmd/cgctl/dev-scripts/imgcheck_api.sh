@@ -22,7 +22,13 @@ if [ -z "$SSH_HOST" ]; then
 	exit 1
 fi
 
-DST_DIR="/home/frontend/nft-assets/new/cosmicsignature"
+# Destination on the remote web server: DST_DIR directly, or derived from
+# NFT_ASSETS_ROOT (the production convention, e.g. in cosmic-api-config.env).
+DST_DIR="${DST_DIR:-${NFT_ASSETS_ROOT:+$NFT_ASSETS_ROOT/new/cosmicsignature}}"
+if [ -z "$DST_DIR" ]; then
+	echo "Error: set DST_DIR or NFT_ASSETS_ROOT (remote nft-assets location)." >&2
+	exit 1
+fi
 # Accept new host keys on first connect (avoid "Host key verification failed"); use SSH_OPTS_EXTRA to override
 SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new ${SSH_OPTS_EXTRA:-}"
 SSH="ssh $SSH_OPTS -l frontend $SSH_HOST"

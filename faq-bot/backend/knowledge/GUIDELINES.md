@@ -28,7 +28,7 @@ contract ABIs still come from the **frontend** clone (`frontend/src/contracts/*.
 
 ## Output layout
 
-Set `KNOWLEDGE_BASE` in `backend/.env` (e.g. `/home/niko/eth/dev/ai-faq-kb`):
+Set `KNOWLEDGE_BASE` in `backend/.env` (e.g. `/path/to/ai-faq-kb`):
 
 ```
 $KNOWLEDGE_BASE/

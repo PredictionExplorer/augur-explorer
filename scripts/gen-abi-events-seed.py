@@ -11,8 +11,12 @@ change an event.
 
 Usage:
     scripts/gen-abi-events-seed.py [COSMIC_SIGNATURE_DIR] > scripts/seed-abi-events.sql
+
+The repo location comes from the positional argument or the
+COSMIC_SIGNATURE_DIR environment variable; there is no built-in default.
 """
 import json
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -21,8 +25,6 @@ try:
     from Crypto.Hash import keccak
 except ImportError:  # pragma: no cover
     sys.exit("pycryptodome is required: pip install pycryptodome")
-
-DEFAULT_REPO = "/home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19"
 MAX_CONTRACTS = 6  # matches the width the original seed used
 
 # Events the current sources no longer declare but the already-deployed
@@ -45,7 +47,10 @@ def canonical_type(inp: dict) -> str:
 
 
 def main() -> None:
-    repo = Path(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_REPO)
+    repo_arg = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("COSMIC_SIGNATURE_DIR")
+    if not repo_arg:
+        sys.exit("pass the Cosmic-Signature repo as an argument or set COSMIC_SIGNATURE_DIR")
+    repo = Path(repo_arg)
     root = repo / "artifacts" / "production"
     if not root.is_dir():
         sys.exit(f"no artifacts at {root}; compile the contracts first")

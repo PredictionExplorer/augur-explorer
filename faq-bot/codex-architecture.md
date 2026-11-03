@@ -1,6 +1,6 @@
 ## Summary
 
-`codex mcp-server` runs Codex as a **stdio MCP server** (JSON-RPC 2.0, newline-delimited). It exposes **two MCP tools** that wrap the full Codex agent. Your machine has **codex-cli 0.120.0**; `~/.codex/config.toml` exists but has **no `[mcp_servers.*]`** entries yet. A recent MCP session against `/home/niko/eth/dev/faq-bot` used `source: "mcp"` with `read-only` sandbox.
+`codex mcp-server` runs Codex as a **stdio MCP server** (JSON-RPC 2.0, newline-delimited). It exposes **two MCP tools** that wrap the full Codex agent. Your machine has **codex-cli 0.120.0**; `~/.codex/config.toml` exists but has **no `[mcp_servers.*]`** entries yet. A recent MCP session against `the faq-bot repo` used `source: "mcp"` with `read-only` sandbox.
 
 ---
 
@@ -204,9 +204,9 @@ sequenceDiagram
 | Item | Finding |
 |------|---------|
 | Codex CLI | `codex-cli 0.120.0` at `/usr/local/node/bin/codex` |
-| Config | `/home/niko/.codex/config.toml` — model `gpt-5.4`, no `[mcp_servers]` |
-| MCP session evidence | `/home/niko/.codex/sessions/2026/05/20/...jsonl` — `originator: codex_cli_rs`, `source: mcp`, cwd `faq-bot`, `read-only` sandbox |
-| FAQ bot repo | `/home/niko/eth/dev/faq-bot` — no Codex/MCP integration code found yet |
+| Config | `~/.codex/config.toml` — model `gpt-5.4`, no `[mcp_servers]` |
+| MCP session evidence | `~/.codex/sessions/2026/05/20/...jsonl` — `originator: codex_cli_rs`, `source: mcp`, cwd `faq-bot`, `read-only` sandbox |
+| FAQ bot repo | `the faq-bot repo` — no Codex/MCP integration code found yet |
 
 ---
 

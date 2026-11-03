@@ -15,9 +15,9 @@
  * Run from the Cosmic-Signature repo (the v3.1-2026-10-13 deployment branch;
  * use THIS copy of the script — the backend-v3.1 copy is adapted to the
  * review-branch contracts and calls a different setter surface):
- *   cd /home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-10-13
+ *   cd $COSMIC_SIGNATURE_DIR
  *   CADDR=0x... NODE_PATH=$PWD/node_modules npx hardhat run \
- *     /home/niko/eth/dev/b/backend/cmd/cgctl/dev-scripts/upgrade-v3.js --network localhost
+ *     $BACKEND_DIR/cmd/cgctl/dev-scripts/upgrade-v3.js --network localhost
  *
  * Env:
  *   CADDR                 game proxy address (required)

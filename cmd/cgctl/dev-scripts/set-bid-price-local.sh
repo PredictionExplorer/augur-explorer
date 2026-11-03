@@ -12,8 +12,8 @@
 
 set -e -o pipefail
 
-# Solidity repo with hardhat.config.js (override with SOLIDITY_REPO env var).
-SOLIDITY_REPO="${SOLIDITY_REPO:-$HOME/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19}"
+# Solidity repo with hardhat.config.js; must be set in the environment.
+SOLIDITY_REPO="${SOLIDITY_REPO:?set SOLIDITY_REPO to the Cosmic-Signature repo (with hardhat.config.js)}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

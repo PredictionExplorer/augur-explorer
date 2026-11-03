@@ -683,7 +683,7 @@ func RequireArchLogIndex(ctx context.Context, db Querier) error {
 		return err
 	}
 	if count == 0 {
-		return errors.New("arch_evtlog.log_index missing — create the archive tables from db/layer1/archive_tables.sql first")
+		return errors.New("arch_evtlog.log_index missing — apply db/migrations/00001_layer1_schema.sql (make migrate-up) first")
 	}
 	return nil
 }

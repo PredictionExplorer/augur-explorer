@@ -56,7 +56,7 @@ frontend web server (via `psql` + `curl`), complementing the on-disk checks of
 ## archive
 
 Tools that maintain the `arch_evtlog` / `arch_tx` / `arch_block` archive
-tables (see `db/layer1/archive_tables.sql`). `--project both` processes
+tables (created by `db/migrations/00001_layer1_schema.sql`). `--project both` processes
 cosmicgame first, then randomwalk; either order is safe because every tool
 resumes per project.
 

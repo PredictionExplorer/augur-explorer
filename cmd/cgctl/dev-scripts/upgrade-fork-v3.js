@@ -22,9 +22,9 @@
  * CosmicSignatureGameV3-DeployedV2StorageLayout.js test covers that separately.
  *
  * Typical use (after fork-and-prepare.sh + fork-v3-rehearsal.sh claim):
- *   cd /home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19-review
+ *   cd $COSMIC_SIGNATURE_DIR
  *   RPC_URL=http://127.0.0.1:10545 npx hardhat run \
- *     /home/niko/eth/dev/b/backend/cmd/cgctl/dev-scripts/upgrade-fork-v3.js
+ *     $BACKEND_DIR/cmd/cgctl/dev-scripts/upgrade-fork-v3.js
  *
  * Env:
  *   RPC_URL               fork node RPC            (default http://127.0.0.1:10545)

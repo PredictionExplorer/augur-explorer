@@ -159,12 +159,12 @@ module.exports = {
   apps: [
     {
       name: 'faq-backend',
-      cwd: '/home/ubuntu/faq/backend',
-      script: '/home/ubuntu/faq/backend/venv/bin/python',
+      cwd: '/path/to/faq/backend',
+      script: '/path/to/faq/backend/venv/bin/python',
       args: 'app.py',
       interpreter: 'none',
       env: {
-        PATH: '/home/ubuntu/faq/backend/venv/bin:' + process.env.PATH,
+        PATH: '/path/to/faq/backend/venv/bin:' + process.env.PATH,
       },
       watch: false,
       autorestart: true,
@@ -172,7 +172,7 @@ module.exports = {
     },
     {
       name: 'faq-frontend',
-      cwd: '/home/ubuntu/faq',
+      cwd: '/path/to/faq',
       script: 'node_modules/.bin/next',
       args: 'start -p 3000',
       watch: false,

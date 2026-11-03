@@ -18,9 +18,9 @@
  *      FundTransferFailed("ETH transfer to charity failed.", nft, amount).
  *
  * Run from the Cosmic-Signature repo (its hardhat.config.js / artifacts are used):
- *   cd /home/niko/eth/dev/b/cg-v3/Cosmic-Signature-v3.1-2026-08-19
+ *   cd $COSMIC_SIGNATURE_DIR
  *   CADDR=0x... npx hardhat run \
- *     /home/niko/eth/dev/b/backend-v3.1/cmd/cgctl/dev-scripts/force-fund-transfer-failed.js --network localhost
+ *     $BACKEND_DIR/cmd/cgctl/dev-scripts/force-fund-transfer-failed.js --network localhost
  *
  * Env:
  *   CADDR          game proxy address (default: the deploy-dev-and-samp.js address)

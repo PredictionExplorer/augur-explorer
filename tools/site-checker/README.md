@@ -87,7 +87,7 @@ prints and exits non-zero, if MAILTO is set):
 
 ```cron
 MAILTO=you@example.com
-*/15 * * * * cd /home/niko/eth/dev/b/backend/tools/site-checker && node check-sites.js > /tmp/site-check.log 2>&1 || cat /tmp/site-check.log
+*/15 * * * * cd $HOME/backend/tools/site-checker && node check-sites.js > /tmp/site-check.log 2>&1 || cat /tmp/site-check.log
 ```
 
 Or hook any alerting command to the exit code:
