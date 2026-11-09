@@ -1,0 +1,30 @@
+<title>ChaosZero Claims</title>
+<div class="page-header">
+	<h1>Claims</h1>
+	<div class="subtitle">
+		{{if .UserAddr}}user {{.UserAddr}}{{else}}winning positions redeemed for CST, newest first{{end}}
+	</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>User</th>
+			<th>Amounts per question (CST)</th>
+			<th class="right">Total CST</th>
+		</tr>
+		{{- range .Claims}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{hexCell .UserAddr}}</td>
+			<td class="mono">{{range $i, $a := .Amounts}}{{if $i}} · {{end}}{{printf "%.2f" (asFloat $a)}}{{end}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .Total)}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

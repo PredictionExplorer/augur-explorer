@@ -1,0 +1,45 @@
+<title>ChaosZero Rounds</title>
+<div class="page-header">
+	<h1>Rounds (combined)</h1>
+	<div class="subtitle">funding, trading, settlement and claims aggregated per round</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th class="center">Round</th>
+			<th>First seen</th>
+			<th class="right">Fundings</th>
+			<th class="right">Funded CST</th>
+			<th class="right">Trades</th>
+			<th class="right">Volume CST</th>
+			<th class="right">Traders</th>
+			<th class="center">Settled</th>
+			<th class="center">Answers (q0…q7)</th>
+			<th class="right">Carried CST</th>
+			<th class="right">Escrowed CST</th>
+			<th class="right">Claims</th>
+			<th class="right">Claimed CST</th>
+		</tr>
+		{{- range .Rounds}}
+		<tr>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{shortTime .FirstSeenDate}}</td>
+			<td class="right">{{num .NumFundings}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .FundedTotal)}}</td>
+			<td class="right"><a href="/chaoszero/trades/by_round/{{num .RoundId}}">{{num .NumTrades}}</a></td>
+			<td class="right">{{printf "%.4f" (asFloat .Volume)}}</td>
+			<td class="right">{{num .NumTraders}}</td>
+			<td class="center">
+				{{if .Settled}}<span class="badge badge-success">SETTLED</span>
+				{{else}}<span class="badge badge-info">OPEN</span>{{end}}
+			</td>
+			<td class="center mono">{{if .Settled}}{{maskBits .ValuesMask}}{{else}}—{{end}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .Carried)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .EscrowedTotal)}}</td>
+			<td class="right">{{num .NumClaims}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .ClaimedTotal)}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

@@ -1,0 +1,32 @@
+<title>ChaosZero Round Funding</title>
+<div class="page-header">
+	<h1>Round Funding</h1>
+	<div class="subtitle">RoundFunded events · donated + direct transfers + carry absorbed into the eight pools</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>Caller</th>
+			<th class="right">Donated CST</th>
+			<th class="right">Transfers CST</th>
+			<th class="right">Carry CST</th>
+			<th>Allocations per question (CST)</th>
+		</tr>
+		{{- range .Fundings}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{hexCell .CallerAddr}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .Donated)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .TransfersUsed)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .CarryUsed)}}</td>
+			<td class="mono">{{range $i, $a := .Allocations}}{{if $i}} · {{end}}{{printf "%.2f" (asFloat $a)}}{{end}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

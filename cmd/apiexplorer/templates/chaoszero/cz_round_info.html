@@ -1,0 +1,125 @@
+<title>ChaosZero Round {{num .RoundNum}}</title>
+<div class="page-header">
+	<h1>Round {{num .RoundNum}}</h1>
+	<div class="subtitle">combined round view · funding, settlement, escrow, claims and payouts</div>
+</div>
+
+{{with .Round}}
+<div class="panel-grid">
+	<section class="panel span-4">
+		<h2>Summary</h2>
+		{{with .Summary}}
+		<table class="kv-table">
+			<tr><th>first seen</th><td class="l">{{shortTime .FirstSeenDate}}</td></tr>
+			<tr><th>status</th><td class="l">
+				{{if .Settled}}<span class="badge badge-success">SETTLED</span>
+				{{else}}<span class="badge badge-info">OPEN</span>{{end}}
+			</td></tr>
+			<tr><th>fundings</th><td class="l">{{num .NumFundings}} ({{printf "%.4f" (asFloat .FundedTotal)}} CST)</td></tr>
+			<tr><th>trades</th><td class="l"><a href="/chaoszero/trades/by_round/{{num .RoundId}}">{{num .NumTrades}}</a> · {{printf "%.4f" (asFloat .Volume)}} CST · {{num .NumTraders}} traders</td></tr>
+			<tr><th>carried</th><td class="l">{{printf "%.4f" (asFloat .Carried)}} CST</td></tr>
+			<tr><th>escrowed</th><td class="l">{{printf "%.4f" (asFloat .EscrowedTotal)}} CST</td></tr>
+			<tr><th>claims</th><td class="l">{{num .NumClaims}} ({{printf "%.4f" (asFloat .ClaimedTotal)}} CST)</td></tr>
+		</table>
+		{{end}}
+	</section>
+	<section class="panel span-8">
+		<h2>Settlement</h2>
+		{{with .Settlement}}
+		<table class="kv-table">
+			<tr><th>tx</th><td class="l">{{arbiscanTx .TxHash (num .BlockNum)}} · {{shortTime .DateTime}}</td></tr>
+			<tr><th>answers</th><td class="l mono">{{maskBits .ValuesMask}} <span class="dim">(q0…q7, Y = YES won)</span></td></tr>
+			<tr><th>carried</th><td class="l">{{printf "%.4f" (asFloat .Carried)}} CST rolled into the next round</td></tr>
+		</table>
+		<table class="data-table dense">
+			<tr><th class="center">#</th><th>question</th><th class="center">answer</th><th class="right">escrowed CST</th></tr>
+			{{- $s := .}}
+			{{- range $q, $ans := .Answers}}
+			<tr>
+				<td class="center">{{$q}}</td>
+				<td>{{czQuestionTitle $q}}</td>
+				<td class="center">
+					{{if $ans}}<span class="badge badge-success">YES</span>
+					{{else}}<span class="badge badge-warning">NO</span>{{end}}
+				</td>
+				<td class="right">{{printf "%.4f" (asFloat (index $s.Escrowed $q))}}</td>
+			</tr>
+			{{- end}}
+		</table>
+		{{else}}<div class="dim">Not settled yet.</div>{{end}}
+	</section>
+	<section class="panel span-6">
+		<h2>Funding events</h2>
+		{{if .Fundings}}
+		<table class="data-table dense">
+			<tr><th>Block</th><th>Datetime</th><th>Caller</th><th class="right">Donated</th><th class="right">Transfers</th><th class="right">Carry</th></tr>
+			{{- range .Fundings}}
+			<tr>
+				<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+				<td>{{shortTime .DateTime}}</td>
+				<td>{{hexCell .CallerAddr}}</td>
+				<td class="right">{{printf "%.4f" (asFloat .Donated)}}</td>
+				<td class="right">{{printf "%.4f" (asFloat .TransfersUsed)}}</td>
+				<td class="right">{{printf "%.4f" (asFloat .CarryUsed)}}</td>
+			</tr>
+			{{- end}}
+		</table>
+		{{else}}<div class="dim">No funding events.</div>{{end}}
+	</section>
+	<section class="panel span-6">
+		<h2>Vault escrow &amp; answer observations</h2>
+		{{with .Escrow}}
+		<table class="kv-table">
+			<tr><th>escrowed</th><td class="l">{{arbiscanTx .TxHash (num .BlockNum)}} · {{shortTime .DateTime}}</td></tr>
+			<tr><th>per question</th><td class="l mono">{{range $i, $a := .Amounts}}{{if $i}} · {{end}}{{printf "%.2f" (asFloat $a)}}{{end}}</td></tr>
+		</table>
+		{{else}}<div class="dim">No vault escrow for this round.</div>{{end}}
+		{{if .Answers}}
+		<table class="data-table dense">
+			<tr><th>Block</th><th>Datetime</th><th class="center">Known (q0…q7)</th><th class="center">Values (q0…q7)</th></tr>
+			{{- range .Answers}}
+			<tr>
+				<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+				<td>{{shortTime .DateTime}}</td>
+				<td class="center mono">{{maskBits .KnownMask}}</td>
+				<td class="center mono">{{maskBits .ValuesMask}}</td>
+			</tr>
+			{{- end}}
+		</table>
+		{{end}}
+	</section>
+	<section class="panel span-6">
+		<h2>Claims</h2>
+		{{if .Claims}}
+		<table class="data-table dense">
+			<tr><th>Block</th><th>Datetime</th><th>User</th><th class="right">Total CST</th></tr>
+			{{- range .Claims}}
+			<tr>
+				<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+				<td>{{shortTime .DateTime}}</td>
+				<td>{{hexCell .UserAddr}}</td>
+				<td class="right">{{printf "%.4f" (asFloat .Total)}}</td>
+			</tr>
+			{{- end}}
+		</table>
+		{{else}}<div class="dim">No claims yet.</div>{{end}}
+	</section>
+	<section class="panel span-6">
+		<h2>Vault payouts</h2>
+		{{if .Payouts}}
+		<table class="data-table dense">
+			<tr><th>Block</th><th>Datetime</th><th>Question</th><th>Recipient</th><th class="right">CST</th></tr>
+			{{- range .Payouts}}
+			<tr>
+				<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+				<td>{{shortTime .DateTime}}</td>
+				<td>{{czQuestion .Question}}</td>
+				<td>{{hexCell .RecipientAddr}}</td>
+				<td class="right">{{printf "%.4f" (asFloat .Amount)}}</td>
+			</tr>
+			{{- end}}
+		</table>
+		{{else}}<div class="dim">No vault payouts yet.</div>{{end}}
+	</section>
+</div>
+{{end}}

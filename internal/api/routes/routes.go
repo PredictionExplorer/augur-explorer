@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/chaoszero"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
@@ -36,6 +37,10 @@ type Options struct {
 
 	// RandomWalk registers the frozen v1 RandomWalk surface.
 	RandomWalk *randomwalk.API
+
+	// ChaosZero registers the ChaosZero prediction-market surface
+	// (cz_ tables maintained by cmd/cz-etl).
+	ChaosZero *chaoszero.API
 
 	// FAQ registers the FAQ bot proxy routes.
 	FAQ *faq.Proxy
@@ -126,6 +131,9 @@ func New(st *store.Store, opts Options) *httpx.Router {
 	}
 	if opts.CosmicGame != nil {
 		opts.CosmicGame.RegisterRoutes(r)
+	}
+	if opts.ChaosZero != nil {
+		opts.ChaosZero.RegisterRoutes(r)
 	}
 	if opts.FAQ != nil {
 		opts.FAQ.RegisterRoutes(r)

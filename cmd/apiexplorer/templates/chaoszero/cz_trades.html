@@ -1,0 +1,42 @@
+<title>ChaosZero Trades</title>
+<div class="page-header">
+	<h1>Trades</h1>
+	<div class="subtitle">
+		{{if .UserAddr}}user {{.UserAddr}}{{else if .RoundNum}}round {{num .RoundNum}}{{else}}all rounds, newest first{{end}}
+	</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>Question</th>
+			<th class="center">Side</th>
+			<th class="center">Action</th>
+			<th>User</th>
+			<th class="right">CST</th>
+			<th class="right">Units</th>
+		</tr>
+		{{- range .Trades}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{czQuestion .Question}}</td>
+			<td class="center">
+				{{if .Yes}}<span class="badge badge-success">YES</span>
+				{{else}}<span class="badge badge-warning">NO</span>{{end}}
+			</td>
+			<td class="center">
+				{{if .Buy}}<span class="badge badge-info">BUY</span>
+				{{else}}<span class="badge badge-warning">SELL</span>{{end}}
+			</td>
+			<td>{{hexCell .UserAddr}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .Cash)}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .Units)}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

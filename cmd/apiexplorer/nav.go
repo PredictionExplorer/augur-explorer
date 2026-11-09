@@ -20,14 +20,16 @@ type navGroup struct {
 	Items []navItem
 }
 
-// projectNav returns the sidebar groups for a project ("cosmicsignature" or
-// "randomwalk"); nil for the explorer index.
+// projectNav returns the sidebar groups for a project ("cosmicsignature",
+// "randomwalk" or "chaoszero"); nil for the explorer index.
 func projectNav(project string) []navGroup {
 	switch project {
 	case "cosmicsignature":
 		return cgNav
 	case "randomwalk":
 		return rwNav
+	case "chaoszero":
+		return czNav
 	}
 	return nil
 }

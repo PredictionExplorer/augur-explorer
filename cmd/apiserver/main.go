@@ -27,6 +27,7 @@ import (
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/chaoszero"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
@@ -103,7 +104,7 @@ func buildModules(
 	deps *serverDeps,
 	ethClient *ethclient.Client,
 	rpcClient *ethrpc.Client,
-) (*cosmicgame.API, *randomwalk.API, *faq.Proxy, error) {
+) (*cosmicgame.API, *randomwalk.API, *chaoszero.API, *faq.Proxy, error) {
 	var cgAPI *cosmicgame.API
 	if cfg.EnableCosmicGame {
 		var err error
@@ -119,7 +120,7 @@ func buildModules(
 			// Startup cannot proceed without the CosmicGame contract registry.
 			errStr := fmt.Sprintf("CosmicGame module init failed: %v", err)
 			deps.logger.Error(errStr)
-			return nil, nil, nil, fmt.Errorf("FATAL: %s\nHINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env", errStr)
+			return nil, nil, nil, nil, fmt.Errorf("FATAL: %s\nHINT: If you don't need CosmicGame, set ENABLE_ROUTES_COSMICGAME=false in websrv .env", errStr)
 		}
 		deps.logger.Info("CosmicGame HTTP routes: enabled (ENABLE_ROUTES_COSMICGAME unset or true)")
 	} else {
@@ -142,6 +143,14 @@ func buildModules(
 		deps.logger.Info("RandomWalk HTTP routes: disabled (ENABLE_ROUTES_RANDOMWALK=false)")
 	}
 
+	var czAPI *chaoszero.API
+	if cfg.EnableChaosZero {
+		czAPI = chaoszero.New(deps.store, chaoszero.Options{Logger: deps.logger})
+		deps.logger.Info("ChaosZero HTTP routes: enabled (ENABLE_ROUTES_CHAOSZERO unset or true)")
+	} else {
+		deps.logger.Info("ChaosZero HTTP routes: disabled (ENABLE_ROUTES_CHAOSZERO=false)")
+	}
+
 	var faqProxy *faq.Proxy
 	if cfg.EnableFAQ {
 		faqProxy = faq.New(faq.Options{UpstreamURL: cfg.FAQUpstream(), Logger: deps.logger})
@@ -149,7 +158,7 @@ func buildModules(
 		deps.logger.Info("FAQ proxy disabled (ENABLE_ROUTES_FAQ=false)")
 	}
 
-	return cgAPI, rwAPI, faqProxy, nil
+	return cgAPI, rwAPI, czAPI, faqProxy, nil
 }
 
 // osExit is stubbed by tests that drive main through its failure arm.
@@ -230,7 +239,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	}
 	defer prometheus.Unregister(poolCollector)
 
-	cgAPI, rwAPI, faqProxy, err := buildModules(ctx, cfg, deps, ethClient, rpcClient)
+	cgAPI, rwAPI, czAPI, faqProxy, err := buildModules(ctx, cfg, deps, ethClient, rpcClient)
 	if err != nil {
 		return err
 	}
@@ -276,6 +285,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		PanicLog:         logger,
 		CosmicGame:       cgAPI,
 		RandomWalk:       rwAPI,
+		ChaosZero:        czAPI,
 		FAQ:              faqProxy,
 		V2:               v2Server,
 		V1SunsetAt:       cfg.V1SunsetAt,

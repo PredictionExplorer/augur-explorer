@@ -1,0 +1,29 @@
+<title>ChaosZero Operator Approvals</title>
+<div class="page-header">
+	<h1>Operator Approvals</h1>
+	<div class="subtitle">ApprovalForAll events on the market's ERC-1155 positions</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th>Owner</th>
+			<th>Operator</th>
+			<th class="center">Approved</th>
+		</tr>
+		{{- range .Approvals}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td>{{hexCell .OwnerAddr}}</td>
+			<td>{{hexCell .OperatorAddr}}</td>
+			<td class="center">
+				{{if .Approved}}<span class="badge badge-success">GRANTED</span>
+				{{else}}<span class="badge badge-warning">REVOKED</span>{{end}}
+			</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

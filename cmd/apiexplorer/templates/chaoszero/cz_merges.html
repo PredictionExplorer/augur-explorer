@@ -1,0 +1,28 @@
+<title>ChaosZero Position Merges</title>
+<div class="page-header">
+	<h1>Position Merges</h1>
+	<div class="subtitle">matched YES + NO sets merged back into CST collateral</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>User</th>
+			<th>Amounts per question (CST)</th>
+			<th class="right">Collateral out CST</th>
+		</tr>
+		{{- range .Merges}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{hexCell .UserAddr}}</td>
+			<td class="mono">{{range $i, $a := .Amounts}}{{if $i}} · {{end}}{{printf "%.2f" (asFloat $a)}}{{end}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .CollateralOut)}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

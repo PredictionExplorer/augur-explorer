@@ -55,7 +55,7 @@ func projectOf(s string) string {
 		s = s[:i]
 	}
 	switch s {
-	case "cosmicsignature", "randomwalk":
+	case "cosmicsignature", "randomwalk", "chaoszero":
 		return s
 	}
 	return ""

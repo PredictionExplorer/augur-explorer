@@ -1,0 +1,41 @@
+<title>ChaosZero Position Transfers</title>
+<div class="page-header">
+	<h1>Position Transfers (ERC-1155)</h1>
+	<div class="subtitle">
+		{{if .UserAddr}}user {{.UserAddr}} as sender or receiver{{else}}TransferSingle / TransferBatch items, newest first{{end}}
+	</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>Question</th>
+			<th class="center">Side</th>
+			<th>Operator</th>
+			<th>From</th>
+			<th>To</th>
+			<th class="right">Units</th>
+			<th class="center">Batch #</th>
+		</tr>
+		{{- range .Transfers}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{czQuestion .Question}}</td>
+			<td class="center">
+				{{if .Yes}}<span class="badge badge-success">YES</span>
+				{{else}}<span class="badge badge-warning">NO</span>{{end}}
+			</td>
+			<td>{{hexCell .OperatorAddr}}</td>
+			<td>{{hexCell .FromAddr}}</td>
+			<td>{{hexCell .ToAddr}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .Amount)}}</td>
+			<td class="center">{{num .BatchIndex}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

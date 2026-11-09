@@ -473,6 +473,10 @@ func templateFuncs() template.FuncMap {
 		"prizeTypeBadge":   prizeTypeBadge,
 		"bidTypeBadge":     bidTypeBadge,
 		"mechanicsVersion": mechanicsVersion,
+		// ChaosZero helpers (cz.go).
+		"czQuestion":      czQuestion,
+		"czQuestionTitle": czQuestionTitle,
+		"maskBits":        maskBits,
 	}
 }
 
@@ -579,10 +583,14 @@ func run() error {
 	for _, p := range generatedPages {
 		mux.HandleFunc(p.Pattern, s.pageHandler(p))
 	}
-	// Everything else under the two project prefixes is a legacy page that
+	for _, p := range czPages {
+		mux.HandleFunc(p.Pattern, s.pageHandler(p))
+	}
+	// Everything else under the project prefixes is a legacy page that
 	// is not ported yet; answer with the styled placeholder.
 	mux.HandleFunc("GET /cosmicsignature/", s.notImplemented)
 	mux.HandleFunc("GET /randomwalk/", s.notImplemented)
+	mux.HandleFunc("GET /chaoszero/", s.notImplemented)
 
 	srv := &http.Server{
 		Addr:              ":" + port,

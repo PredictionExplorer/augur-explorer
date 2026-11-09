@@ -62,6 +62,7 @@ type APIServer struct {
 	// shared /metadata dispatch answers its legacy unavailable envelope.
 	EnableCosmicGame bool `env:"ENABLE_ROUTES_COSMICGAME" default:"true"`
 	EnableRandomWalk bool `env:"ENABLE_ROUTES_RANDOMWALK" default:"true"`
+	EnableChaosZero  bool `env:"ENABLE_ROUTES_CHAOSZERO" default:"true"`
 	EnableFAQ        bool `env:"ENABLE_ROUTES_FAQ" default:"true"`
 
 	// MetricsAddr serves /metrics and pprof on a private listener; empty

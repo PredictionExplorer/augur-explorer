@@ -1,0 +1,26 @@
+<title>ChaosZero Answers Observed</title>
+<div class="page-header">
+	<h1>Answers Observed</h1>
+	<div class="subtitle">AnswersObserved events · which questions were already decided mid-round</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th class="center">Known (q0…q7)</th>
+			<th class="center">Values (q0…q7)</th>
+		</tr>
+		{{- range .Answers}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td class="center mono">{{maskBits .KnownMask}}</td>
+			<td class="center mono">{{maskBits .ValuesMask}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

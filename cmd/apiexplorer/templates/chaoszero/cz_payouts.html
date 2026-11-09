@@ -1,0 +1,28 @@
+<title>ChaosZero Vault Payouts</title>
+<div class="page-header">
+	<h1>Vault Payouts</h1>
+	<div class="subtitle">Paid events · escrowed CST delivered to winning position holders</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>Question</th>
+			<th>Recipient</th>
+			<th class="right">CST</th>
+		</tr>
+		{{- range .Payouts}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{czQuestion .Question}}</td>
+			<td>{{hexCell .RecipientAddr}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .Amount)}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

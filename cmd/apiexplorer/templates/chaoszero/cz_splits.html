@@ -1,0 +1,28 @@
+<title>ChaosZero Position Splits</title>
+<div class="page-header">
+	<h1>Position Splits</h1>
+	<div class="subtitle">CST split into equal YES + NO position token sets</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Block</th>
+			<th>Datetime</th>
+			<th class="center">Round</th>
+			<th>Question</th>
+			<th>User</th>
+			<th class="right">Amount CST</th>
+		</tr>
+		{{- range .Splits}}
+		<tr>
+			<td>{{arbiscanTx .TxHash (num .BlockNum)}}</td>
+			<td>{{shortTime .DateTime}}</td>
+			<td class="center"><a href="/chaoszero/round/info/{{num .RoundId}}">{{num .RoundId}}</a></td>
+			<td>{{czQuestion .Question}}</td>
+			<td>{{hexCell .UserAddr}}</td>
+			<td class="right">{{printf "%.6f" (asFloat .Amount)}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>
