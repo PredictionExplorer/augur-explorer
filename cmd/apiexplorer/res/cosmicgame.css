@@ -1,6 +1,6 @@
 /* Cosmic Game - compact developer-dashboard styles.
    Class names are shared with every page template; values are tuned for
-   density (13px data font, ~22px table rows, one-line key/value items). */
+   density (14px data font, ~22px table rows, one-line key/value items). */
 
 :root {
 	--bg: #000;
@@ -15,7 +15,7 @@
 	--gold-2: #c9a227;
 	--mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "DejaVu Sans Mono", monospace;
 	--sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-	--fs: 13px;
+	--fs: 14px;
 }
 
 /* Container & Layout */
@@ -185,7 +185,7 @@
 	border: none;
 	background: transparent;
 	text-align: left;
-	font-size: 12px;
+	font-size: 13px;
 }
 
 /* Info Grid: one-line key/value items */
@@ -267,7 +267,7 @@
 	background: var(--panel);
 	font-variant-numeric: tabular-nums;
 	font-family: var(--mono);
-	font-size: 12px;
+	font-size: 13px;
 	line-height: 1.5;
 }
 
@@ -284,7 +284,7 @@
 	top: 0;
 	z-index: 2;
 	font-family: var(--sans);
-	font-size: 11px;
+	font-size: 12px;
 	letter-spacing: 0.02em;
 }
 
@@ -347,7 +347,7 @@
 	padding: 0 0.4em;
 	border: 1px solid #3a3a3a;
 	border-radius: 3px;
-	font-size: 11px;
+	font-size: 12px;
 	line-height: 1.5;
 	white-space: nowrap;
 	background: #161616;
@@ -360,7 +360,7 @@
 
 .prize-mini {
 	border-collapse: collapse;
-	font-size: 11px;
+	font-size: 12px;
 	font-variant-numeric: tabular-nums;
 	line-height: 1.3;
 }
@@ -467,7 +467,7 @@
 	padding: 0.4em 0.6em;
 	margin-top: 0.6em;
 	font-family: var(--mono);
-	font-size: 11px;
+	font-size: 12px;
 	color: var(--muted);
 }
 

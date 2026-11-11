@@ -8,7 +8,7 @@ html, body.shell {
 	background: var(--bg, #000);
 	color: var(--fg, #e6e6e6);
 	font-family: var(--sans);
-	font-size: var(--fs, 13px);
+	font-size: var(--fs, 14px);
 }
 
 body.shell {
@@ -69,7 +69,7 @@ body.shell.no-nav .sidebar { display: none; }
 	text-decoration: none;
 	padding: 0.1em 0.5em;
 	border-radius: 3px;
-	font-size: 12px;
+	font-size: 13px;
 }
 
 .tb-projects a.active {
@@ -126,7 +126,7 @@ body.shell.no-nav .sidebar { display: none; }
 .tb-api {
 	color: var(--muted);
 	text-decoration: none;
-	font-size: 11px;
+	font-size: 12px;
 	max-width: 28em;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -144,7 +144,7 @@ body.shell.no-nav .sidebar { display: none; }
 	background: #0a0a0a;
 	border-right: 1px solid var(--line);
 	padding: 0.3em 0 1em 0;
-	font-size: 12px;
+	font-size: 13px;
 	scrollbar-width: thin;
 }
 
@@ -249,7 +249,7 @@ body.shell.no-nav .sidebar { display: none; }
 	gap: 0.5em;
 	padding: 0.3em 0.5em;
 	border-bottom: 1px solid var(--line);
-	font-size: 11px;
+	font-size: 12px;
 	color: var(--muted);
 }
 
@@ -341,7 +341,7 @@ body.full-hex .hx .hx-full { display: inline; }
 	word-break: break-all;
 }
 
-.hx-row.mono { font-size: 11px; }
+.hx-row.mono { font-size: 12px; }
 
 .hx-links {
 	display: flex;
@@ -357,7 +357,7 @@ body.full-hex .hx .hx-full { display: inline; }
 	border-radius: 3px;
 	color: var(--gold);
 	text-decoration: none;
-	font-size: 11px;
+	font-size: 12px;
 	line-height: 1.6;
 	white-space: nowrap;
 	background: #121212;
@@ -371,7 +371,7 @@ body.full-hex .hx .hx-full { display: inline; }
 	color: var(--muted);
 	border-radius: 3px;
 	cursor: pointer;
-	font-size: 11px;
+	font-size: 12px;
 	padding: 0 0.3em;
 	line-height: 1.4;
 }
@@ -423,7 +423,7 @@ body.full-hex .hx .hx-full { display: inline; }
 	border: 1px solid var(--line);
 	border-radius: 3px;
 	padding: 0.05em 0.5em;
-	font-size: 12px;
+	font-size: 13px;
 	max-width: 100%;
 }
 
@@ -458,7 +458,7 @@ body.full-hex .hx .hx-full { display: inline; }
 .panel.span-12 { grid-column: span 12; }
 
 .panel h2 {
-	font-size: 11px;
+	font-size: 12px;
 	color: var(--gold);
 	letter-spacing: 0.04em;
 	margin: 0 0 0.3em 0;
@@ -520,7 +520,7 @@ body.full-hex .hx .hx-full { display: inline; }
 .kv-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 12px;
+	font-size: 13px;
 	line-height: 1.45;
 }
 
@@ -565,7 +565,7 @@ body.full-hex .hx .hx-full { display: inline; }
 	white-space: nowrap;
 }
 
-.numbers .n .k { color: var(--muted); font-size: 11px; }
+.numbers .n .k { color: var(--muted); font-size: 12px; }
 .numbers .n .v { color: var(--gold); font: 600 14px var(--mono); font-variant-numeric: tabular-nums; }
 .numbers .n .u { color: var(--dim); font-size: 10.5px; }
 .numbers .n a { color: inherit; text-decoration: none; }
