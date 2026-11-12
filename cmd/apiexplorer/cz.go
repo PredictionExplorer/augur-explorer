@@ -21,6 +21,8 @@ var czPages = []page{
 	{"GET /chaoszero/trades/by_round/{round_num}/{offset}/{limit}", "chaoszero/cz_trades.html", "/api/chaoszero/trades/by_round/{round_num}/{offset}/{limit}"},
 	{"GET /chaoszero/trades/by_user/{user_addr}", "chaoszero/cz_trades.html", "/api/chaoszero/trades/by_user/{user_addr}/0/1000"},
 	{"GET /chaoszero/trades/by_user/{user_addr}/{offset}/{limit}", "chaoszero/cz_trades.html", "/api/chaoszero/trades/by_user/{user_addr}/{offset}/{limit}"},
+	{"GET /chaoszero/traders/list", "chaoszero/cz_traders.html", "/api/chaoszero/traders/list/0/1000"},
+	{"GET /chaoszero/traders/list/{offset}/{limit}", "chaoszero/cz_traders.html", "/api/chaoszero/traders/list/{offset}/{limit}"},
 	{"GET /chaoszero/funding/list", "chaoszero/cz_funding.html", "/api/chaoszero/funding/list/0/1000"},
 	{"GET /chaoszero/funding/list/{offset}/{limit}", "chaoszero/cz_funding.html", "/api/chaoszero/funding/list/{offset}/{limit}"},
 	{"GET /chaoszero/splits/list", "chaoszero/cz_splits.html", "/api/chaoszero/splits/list/0/1000"},
@@ -52,6 +54,7 @@ var czNav = []navGroup{
 		{"Dashboard", "/chaoszero/"},
 		{"Rounds (combined)", "/chaoszero/rounds/list"},
 		{"Trades", "/chaoszero/trades/list"},
+		{"Unique traders", "/chaoszero/traders/list"},
 		{"Round funding", "/chaoszero/funding/list"},
 		{"Settlements", "/chaoszero/settlements/list"},
 		{"Claims", "/chaoszero/claims/list"},
@@ -90,6 +93,16 @@ var czQuestionTitles = [8]string{
 	"Odd gesture count?",
 	"One gesture, both titles?",
 	"Higher CST peak?",
+}
+
+// oneMinus returns 1-v for complementary probabilities (P(NO) = 1-P(YES)).
+func oneMinus(v any) float64 {
+	return 1 - asFloat(v)
+}
+
+// asInt converts an API JSON number for use with the builtin index func.
+func asInt(v any) int {
+	return int(asFloat(v))
 }
 
 // czQuestion renders "N · title" for a question id from API JSON.

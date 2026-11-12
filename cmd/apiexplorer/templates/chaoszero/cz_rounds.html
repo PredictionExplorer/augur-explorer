@@ -14,6 +14,8 @@
 			<th class="right">Trades</th>
 			<th class="right">Volume CST</th>
 			<th class="right">Traders</th>
+			<th class="right">Early exits</th>
+			<th class="right">Withdrawn early CST</th>
 			<th class="center">Settled</th>
 			<th class="center">Answers (q0…q7)</th>
 			<th class="right">Carried CST</th>
@@ -30,6 +32,8 @@
 			<td class="right"><a href="/chaoszero/trades/by_round/{{num .RoundId}}">{{num .NumTrades}}</a></td>
 			<td class="right">{{printf "%.4f" (asFloat .Volume)}}</td>
 			<td class="right">{{num .NumTraders}}</td>
+			<td class="right">{{num .NumSells}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .SoldTotal)}}</td>
 			<td class="center">
 				{{if .Settled}}<span class="badge badge-success">SETTLED</span>
 				{{else}}<span class="badge badge-info">OPEN</span>{{end}}

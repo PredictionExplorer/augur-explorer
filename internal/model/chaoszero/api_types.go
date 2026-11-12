@@ -26,6 +26,8 @@ type ApiRoundSummary struct {
 	NumTrades     int64
 	Volume        float64
 	NumTraders    int64
+	NumSells      int64   // early exits: sells are only possible while the round is open
+	SoldTotal     float64 // CST withdrawn early through those sells
 	Settled       bool
 	ValuesMask    int16
 	Carried       float64
@@ -37,12 +39,30 @@ type ApiRoundSummary struct {
 // ApiRoundDetail is the combined single-round view.
 type ApiRoundDetail struct {
 	Summary    ApiRoundSummary
+	Odds       []ApiQuestionOdds
 	Fundings   []ApiRoundFunded
 	Settlement *ApiRoundSettled
 	Escrow     *ApiCycleEscrowed
 	Answers    []ApiAnswersObserved
 	Claims     []ApiClaim
 	Payouts    []ApiPaid
+}
+
+// ApiQuestionOdds is one of the eight per-question implied-odds rows of a
+// round detail. The price of the question's most recent trade (CST paid or
+// received per position unit) is read as the market-implied probability at
+// that moment: a winning unit always pays exactly 1 CST, so buying YES at
+// 0.66 CST/unit implies a 66% YES. Questions without trades have
+// NumTrades = 0 and zero-valued price fields.
+type ApiQuestionOdds struct {
+	Question   int16
+	NumTrades  int64
+	LastYes    bool    // side of the most recent trade
+	LastBuy    bool    // direction of the most recent trade
+	LastPrice  float64 // CST per position unit in that trade
+	ImpliedYes float64 // P(YES) implied by that price, in [0,1]
+	LastTs     int64
+	LastDate   string
 }
 
 // ApiRoundFunded is one cz_round_funded row.
@@ -151,6 +171,33 @@ type ApiApprovalForAll struct {
 	Approved     bool
 }
 
+// ApiTraderSummary aggregates one address's market cash flows across every
+// money-moving cz_ table (trades, splits, merges, claims). Profit is pure
+// realized cash accounting — CST received back from the market minus CST
+// paid in; positions still held in unsettled rounds are not valued, and a
+// position received by ERC-1155 transfer counts as zero cost.
+type ApiTraderSummary struct {
+	UserAddr    string
+	NumRounds   int64 // distinct rounds with any activity
+	FirstTs     int64
+	FirstDate   string
+	LastTs      int64
+	LastDate    string
+	NumBuys     int64
+	BuyVolume   float64 // CST paid buying positions
+	NumSells    int64
+	SellVolume  float64 // CST withdrawn early by selling to the pool
+	NumSplits   int64
+	SplitVolume float64 // CST deposited minting YES+NO pairs
+	NumMerges   int64
+	MergeVolume float64 // CST redeemed merging pairs back
+	NumClaims   int64
+	ClaimVolume float64 // CST claimed after settlement
+	TotalIn     float64 // buys + splits
+	TotalOut    float64 // sells + merges + claims
+	Profit      float64 // TotalOut - TotalIn (realized)
+}
+
 // ApiStatistics is the combined dashboard summary over every cz_ table.
 type ApiStatistics struct {
 	NumRounds       int64
@@ -160,6 +207,8 @@ type ApiStatistics struct {
 	NumTrades       int64
 	Volume          float64
 	NumTraders      int64
+	NumSells        int64   // early exits (see ApiRoundSummary.NumSells)
+	SoldTotal       float64 // CST withdrawn early through sells
 	NumSplits       int64
 	NumMerges       int64
 	NumSettled      int64

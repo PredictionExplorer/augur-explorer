@@ -53,6 +53,8 @@ func (r *Repo) Statistics(ctx context.Context) (czmodel.ApiStatistics, error) {
 		(SELECT COUNT(*) FROM cz_trade),
 		(SELECT COALESCE(SUM(cash/1e18),0)::FLOAT8 FROM cz_trade),
 		(SELECT COUNT(DISTINCT user_aid) FROM cz_trade),
+		(SELECT COUNT(*) FROM cz_trade WHERE NOT buy),
+		(SELECT COALESCE(SUM(cash/1e18),0)::FLOAT8 FROM cz_trade WHERE NOT buy),
 		(SELECT COUNT(*) FROM cz_position_split),
 		(SELECT COUNT(*) FROM cz_positions_merged),
 		(SELECT COUNT(*) FROM cz_round_settled),
@@ -67,6 +69,7 @@ func (r *Repo) Statistics(ctx context.Context) (czmodel.ApiStatistics, error) {
 	err := r.q(ctx).QueryRow(ctx, query).Scan(
 		&s.NumRounds, &s.LatestRound, &s.NumFundings, &s.FundedTotal,
 		&s.NumTrades, &s.Volume, &s.NumTraders,
+		&s.NumSells, &s.SoldTotal,
 		&s.NumSplits, &s.NumMerges,
 		&s.NumSettled, &s.CarriedTotal,
 		&s.NumClaims, &s.ClaimedTotal,
@@ -87,6 +90,7 @@ const roundSummaryQuery = `SELECT
 		ri.time_stamp,
 		COALESCE(f.num_fundings,0), COALESCE(f.funded_total,0)::FLOAT8,
 		COALESCE(tr.num_trades,0), COALESCE(tr.volume,0)::FLOAT8, COALESCE(tr.num_traders,0),
+		COALESCE(tr.num_sells,0), COALESCE(tr.sold_total,0)::FLOAT8,
 		(s.round_id IS NOT NULL), COALESCE(s.values_mask,0), COALESCE(s.carried,0)::FLOAT8,
 		COALESCE(e.escrowed_total,0)::FLOAT8,
 		COALESCE(c.num_claims,0), COALESCE(c.claimed_total,0)::FLOAT8
@@ -98,7 +102,9 @@ const roundSummaryQuery = `SELECT
 	) f ON f.round_id = ri.round_id
 	LEFT JOIN (
 		SELECT round_id, COUNT(*) num_trades, SUM(cash/1e18) volume,
-			COUNT(DISTINCT user_aid) num_traders
+			COUNT(DISTINCT user_aid) num_traders,
+			COUNT(*) FILTER (WHERE NOT buy) num_sells,
+			SUM(cash/1e18) FILTER (WHERE NOT buy) sold_total
 		FROM cz_trade GROUP BY round_id
 	) tr ON tr.round_id = ri.round_id
 	LEFT JOIN (
@@ -122,6 +128,7 @@ func scanRoundSummary(rows pgx.Rows, rec *czmodel.ApiRoundSummary) error {
 		&rec.RoundId, &rec.FirstSeenTs, store.TimeText(&rec.FirstSeenDate),
 		&rec.NumFundings, &rec.FundedTotal,
 		&rec.NumTrades, &rec.Volume, &rec.NumTraders,
+		&rec.NumSells, &rec.SoldTotal,
 		&rec.Settled, &rec.ValuesMask, &rec.Carried,
 		&rec.EscrowedTotal,
 		&rec.NumClaims, &rec.ClaimedTotal,
@@ -148,6 +155,9 @@ func (r *Repo) RoundDetail(ctx context.Context, roundID int64) (czmodel.ApiRound
 		return out, store.ErrNotFound
 	}
 	out.Summary = summaries[0]
+	if out.Odds, err = r.questionOdds(ctx, roundID); err != nil {
+		return out, err
+	}
 	if out.Fundings, err = r.FundingByRound(ctx, roundID); err != nil {
 		return out, err
 	}
@@ -175,6 +185,121 @@ func (r *Repo) RoundDetail(ctx context.Context, roundID int64) (czmodel.ApiRound
 		return out, err
 	}
 	return out, nil
+}
+
+// questionOdds returns exactly eight rows (questions 0..7) with the price of
+// each question's most recent trade read as the market-implied probability.
+// cash/units is the effective CST price per position unit for buys and sells
+// alike; a question nobody traded keeps its zero-valued row.
+func (r *Repo) questionOdds(ctx context.Context, roundID int64) ([]czmodel.ApiQuestionOdds, error) {
+	const query = `SELECT t.question, cnt.num_trades, t.yes, t.buy,
+			(t.cash/t.units)::FLOAT8,
+			EXTRACT(EPOCH FROM t.time_stamp)::BIGINT, t.time_stamp
+		FROM (
+			SELECT DISTINCT ON (question) question, yes, buy, cash, units, time_stamp
+			FROM cz_trade WHERE round_id = $1 AND units > 0
+			ORDER BY question, id DESC
+		) t
+		JOIN (
+			SELECT question, COUNT(*) num_trades
+			FROM cz_trade WHERE round_id = $1 GROUP BY question
+		) cnt USING (question)`
+	rows, err := queryList(ctx, r, "chaoszero question odds", 8, query,
+		func(rows pgx.Rows, rec *czmodel.ApiQuestionOdds) error {
+			return rows.Scan(&rec.Question, &rec.NumTrades, &rec.LastYes, &rec.LastBuy,
+				&rec.LastPrice, &rec.LastTs, store.TimeText(&rec.LastDate))
+		}, roundID)
+	if err != nil {
+		return nil, err
+	}
+	odds := make([]czmodel.ApiQuestionOdds, 8)
+	for q := range odds {
+		odds[q].Question = int16(q) // #nosec G115 -- q is 0..7
+	}
+	for _, rec := range rows {
+		if rec.Question < 0 || rec.Question > 7 {
+			continue
+		}
+		p := min(max(rec.LastPrice, 0), 1)
+		rec.ImpliedYes = p
+		if !rec.LastYes {
+			rec.ImpliedYes = 1 - p
+		}
+		odds[rec.Question] = rec
+	}
+	return odds, nil
+}
+
+// TradersList aggregates per-address cash flows across every money-moving
+// table (trades, splits, merges, claims), most profitable first. Profit is
+// realized cash only: CST the market paid back (sells + merges + claims)
+// minus CST the user paid in (buys + splits). Positions still held in
+// unsettled rounds are not valued.
+func (r *Repo) TradersList(ctx context.Context, offset, limit int) ([]czmodel.ApiTraderSummary, error) {
+	const query = `WITH ev AS (
+			SELECT user_aid, round_id, time_stamp FROM cz_trade
+			UNION ALL SELECT user_aid, round_id, time_stamp FROM cz_position_split
+			UNION ALL SELECT user_aid, round_id, time_stamp FROM cz_positions_merged
+			UNION ALL SELECT user_aid, round_id, time_stamp FROM cz_claim
+		), act AS (
+			SELECT user_aid, COUNT(DISTINCT round_id) num_rounds,
+				MIN(time_stamp) first_ts, MAX(time_stamp) last_ts
+			FROM ev GROUP BY user_aid
+		), tr AS (
+			SELECT user_aid,
+				COUNT(*) FILTER (WHERE buy) num_buys,
+				COALESCE(SUM(cash/1e18) FILTER (WHERE buy),0) buy_vol,
+				COUNT(*) FILTER (WHERE NOT buy) num_sells,
+				COALESCE(SUM(cash/1e18) FILTER (WHERE NOT buy),0) sell_vol
+			FROM cz_trade GROUP BY user_aid
+		), sp AS (
+			SELECT user_aid, COUNT(*) n, SUM(amount/1e18) vol
+			FROM cz_position_split GROUP BY user_aid
+		), mg AS (
+			SELECT user_aid, COUNT(*) n, SUM(collateral_out/1e18) vol
+			FROM cz_positions_merged GROUP BY user_aid
+		), cl AS (
+			SELECT user_aid, COUNT(*) n, SUM(total/1e18) vol
+			FROM cz_claim GROUP BY user_aid
+		)
+		SELECT a.addr, act.num_rounds,
+			EXTRACT(EPOCH FROM act.first_ts)::BIGINT, act.first_ts,
+			EXTRACT(EPOCH FROM act.last_ts)::BIGINT, act.last_ts,
+			COALESCE(tr.num_buys,0), COALESCE(tr.buy_vol,0)::FLOAT8,
+			COALESCE(tr.num_sells,0), COALESCE(tr.sell_vol,0)::FLOAT8,
+			COALESCE(sp.n,0), COALESCE(sp.vol,0)::FLOAT8,
+			COALESCE(mg.n,0), COALESCE(mg.vol,0)::FLOAT8,
+			COALESCE(cl.n,0), COALESCE(cl.vol,0)::FLOAT8
+		FROM act
+		JOIN address a ON a.address_id = act.user_aid
+		LEFT JOIN tr USING (user_aid)
+		LEFT JOIN sp USING (user_aid)
+		LEFT JOIN mg USING (user_aid)
+		LEFT JOIN cl USING (user_aid)
+		ORDER BY (COALESCE(tr.sell_vol,0)+COALESCE(mg.vol,0)+COALESCE(cl.vol,0)
+			-COALESCE(tr.buy_vol,0)-COALESCE(sp.vol,0)) DESC, a.addr
+		OFFSET $1 LIMIT $2`
+	rows, err := queryList(ctx, r, "chaoszero traders list", 32, query,
+		func(rows pgx.Rows, rec *czmodel.ApiTraderSummary) error {
+			return rows.Scan(&rec.UserAddr, &rec.NumRounds,
+				&rec.FirstTs, store.TimeText(&rec.FirstDate),
+				&rec.LastTs, store.TimeText(&rec.LastDate),
+				&rec.NumBuys, &rec.BuyVolume,
+				&rec.NumSells, &rec.SellVolume,
+				&rec.NumSplits, &rec.SplitVolume,
+				&rec.NumMerges, &rec.MergeVolume,
+				&rec.NumClaims, &rec.ClaimVolume)
+		}, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	for i := range rows {
+		rec := &rows[i]
+		rec.TotalIn = rec.BuyVolume + rec.SplitVolume
+		rec.TotalOut = rec.SellVolume + rec.MergeVolume + rec.ClaimVolume
+		rec.Profit = rec.TotalOut - rec.TotalIn
+	}
+	return rows, nil
 }
 
 // =============================================================================

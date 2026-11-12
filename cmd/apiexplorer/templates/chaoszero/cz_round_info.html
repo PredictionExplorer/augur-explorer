@@ -17,6 +17,7 @@
 			</td></tr>
 			<tr><th>fundings</th><td class="l">{{num .NumFundings}} ({{printf "%.4f" (asFloat .FundedTotal)}} CST)</td></tr>
 			<tr><th>trades</th><td class="l"><a href="/chaoszero/trades/by_round/{{num .RoundId}}">{{num .NumTrades}}</a> · {{printf "%.4f" (asFloat .Volume)}} CST · {{num .NumTraders}} traders</td></tr>
+			<tr><th>early exits</th><td class="l">{{num .NumSells}} sells · {{printf "%.4f" (asFloat .SoldTotal)}} CST withdrawn before round end</td></tr>
 			<tr><th>carried</th><td class="l">{{printf "%.4f" (asFloat .Carried)}} CST</td></tr>
 			<tr><th>escrowed</th><td class="l">{{printf "%.4f" (asFloat .EscrowedTotal)}} CST</td></tr>
 			<tr><th>claims</th><td class="l">{{num .NumClaims}} ({{printf "%.4f" (asFloat .ClaimedTotal)}} CST)</td></tr>
@@ -47,6 +48,48 @@
 			{{- end}}
 		</table>
 		{{else}}<div class="dim">Not settled yet.</div>{{end}}
+	</section>
+	<section class="panel span-12">
+		<h2>Implied odds</h2>
+		<div class="subtitle">price of each question's most recent trade read as the market's probability at that moment (a winning unit pays exactly 1 CST)</div>
+		{{- $settled := .Settlement}}
+		<table class="data-table dense">
+			<tr>
+				<th class="center">#</th><th>question</th><th class="right">trades</th>
+				<th>last trade</th><th class="right">price CST/unit</th>
+				<th class="right">implied P(YES)</th><th class="right">implied P(NO)</th>
+				{{if $settled}}<th class="center">settled</th>{{end}}
+			</tr>
+			{{- range .Odds}}
+			<tr>
+				<td class="center">{{num .Question}}</td>
+				<td>{{czQuestionTitle .Question}}</td>
+				{{- if gt (asFloat .NumTrades) 0.0}}
+				<td class="right"><a href="/chaoszero/trades/by_round/{{num $.Round.Summary.RoundId}}">{{num .NumTrades}}</a></td>
+				<td>
+					{{if .LastBuy}}<span class="badge badge-success">BUY</span>{{else}}<span class="badge badge-warning">SELL</span>{{end}}
+					{{if .LastYes}}<span class="badge badge-info">YES</span>{{else}}<span class="badge">NO</span>{{end}}
+					<span class="dim">{{shortTime .LastDate}}</span>
+				</td>
+				<td class="right">{{printf "%.4f" (asFloat .LastPrice)}}</td>
+				<td class="right">{{pct .ImpliedYes}}</td>
+				<td class="right">{{pct (oneMinus .ImpliedYes)}}</td>
+				{{- else}}
+				<td class="right dim">0</td>
+				<td class="dim">—</td>
+				<td class="right dim">—</td>
+				<td class="right dim">—</td>
+				<td class="right dim">—</td>
+				{{- end}}
+				{{if $settled}}
+				<td class="center">
+					{{if index $settled.Answers (asInt .Question)}}<span class="badge badge-success">YES</span>
+					{{else}}<span class="badge badge-warning">NO</span>{{end}}
+				</td>
+				{{end}}
+			</tr>
+			{{- end}}
+		</table>
 	</section>
 	<section class="panel span-6">
 		<h2>Funding events</h2>

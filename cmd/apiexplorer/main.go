@@ -477,6 +477,8 @@ func templateFuncs() template.FuncMap {
 		"czQuestion":      czQuestion,
 		"czQuestionTitle": czQuestionTitle,
 		"maskBits":        maskBits,
+		"oneMinus":        oneMinus,
+		"asInt":           asInt,
 	}
 }
 

@@ -1,0 +1,48 @@
+<title>ChaosZero Unique Traders</title>
+<div class="page-header">
+	<h1>Unique Traders</h1>
+	<div class="subtitle">
+		every address that moved CST through the market, most profitable first ·
+		realized P&amp;L = CST received back (sells + merges + claims) &minus; CST paid in (buys + splits) ·
+		positions still held in open rounds are not valued, and positions received by transfer count as zero cost
+	</div>
+</div>
+
+<div class="section-card">
+	<table class="data-table">
+		<tr>
+			<th>Trader</th>
+			<th class="right">Rounds</th>
+			<th class="right">Buys</th>
+			<th class="right">Bought CST</th>
+			<th class="right">Sells<br><span class="dim">(early exits)</span></th>
+			<th class="right">Sold CST<br><span class="dim">(early exits)</span></th>
+			<th class="right">Split CST</th>
+			<th class="right">Merged CST</th>
+			<th class="right">Claimed CST</th>
+			<th class="right">Paid in</th>
+			<th class="right">Received</th>
+			<th class="right">Realized P&amp;L</th>
+			<th>First seen</th>
+			<th>Last active</th>
+		</tr>
+		{{- range .Traders}}
+		<tr>
+			<td>{{hexCell .UserAddr}}</td>
+			<td class="right">{{num .NumRounds}}</td>
+			<td class="right">{{num .NumBuys}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .BuyVolume)}}</td>
+			<td class="right"><a href="/chaoszero/trades/by_user/{{.UserAddr}}">{{num .NumSells}}</a></td>
+			<td class="right">{{printf "%.4f" (asFloat .SellVolume)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .SplitVolume)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .MergeVolume)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .ClaimVolume)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .TotalIn)}}</td>
+			<td class="right">{{printf "%.4f" (asFloat .TotalOut)}}</td>
+			<td class="right {{if ge (asFloat .Profit) 0.0}}ok{{else}}warn{{end}}">{{signedCst .Profit}}</td>
+			<td>{{shortTime .FirstDate}}</td>
+			<td>{{shortTime .LastDate}}</td>
+		</tr>
+		{{- end}}
+	</table>
+</div>

@@ -41,6 +41,11 @@
  */
 const { ethers } = require("hardhat");
 require("./rpc-helpers.js");
+// Optional ChaosZero market simulation (WITH_CHAOSZERO=1 + CHAOSZERO_DIR):
+// deploys the production ChaosZero contracts on top of THIS game so the
+// market rounds are the same rounds the cosmicgame ETL indexes, then
+// interleaves asserted betting activity between the steps below.
+const czSim = require("./chaoszero-sim.js");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -401,6 +406,11 @@ async function main() {
     let rn = await game.roundNum();
     console.log("Round num =", Number(rn));
 
+    // ChaosZero simulation (optional): phases run between steps, while the
+    // game sits in the round state each phase expects (see chaoszero-sim.js).
+    const cz = czSim.enabled() ? czSim.create({ ethers, game, token, signers, TX, increaseTime }) : null;
+    if (cz) console.log("ChaosZero simulation ENABLED (WITH_CHAOSZERO)");
+
     // Tracking state shared across steps.
     let namedTokenDone = false;
     let secondPrizesWallet = null;
@@ -455,6 +465,12 @@ async function main() {
             await TX(charityWallet.connect(addr1).transferOwnership(owner.address, g));
         });
     });
+
+    // -----------------------------------------------------------------------
+    // ChaosZero phase A runs after S3 (NOT before: S3's inactive-window
+    // setters require that no bid has landed in the new round yet) while
+    // round 1 is open: deploy on the live game, fund, trade, split, batch.
+    if (cz) await step("CZ-A: ChaosZero deploy + round-1 funding, trades, transfers", () => cz.phaseA());
 
     // -----------------------------------------------------------------------
     await step("S4: round B — donations (tokens + NFTs), CST bids, batch claims", async () => {
@@ -539,6 +555,11 @@ async function main() {
     });
 
     // -----------------------------------------------------------------------
+    // Round 1 is closed (S4) and S5's inactive window is over: settle it
+    // explicitly, run the merge/claim family, open round 2 by its first buy.
+    if (cz) await step("CZ-B: settle round 1, claims, round-2 carry rollover", () => cz.phaseB());
+
+    // -----------------------------------------------------------------------
     await step("S6: staking (CST + RWalk), reward deposit, unstake", async () => {
         // stakeMany/unstakeMany over many NFTs can exceed a small limit.
         const g = { gasLimit: 12000000 };
@@ -617,6 +638,11 @@ async function main() {
         // Sweep any leftover staking-wallet balance to charity.
         await TX(stakingCst.connect(owner).tryPerformMaintenance(await charityWallet.getAddress(), g));
     });
+
+    // -----------------------------------------------------------------------
+    // Round 2 closed by S6; merge on it but deliberately do NOT settle, and
+    // give S7's round (3) no market activity at all: the skipped-round path.
+    if (cz) await step("CZ-C: post-closure merge on unsettled round 2", () => cz.phaseC());
 
     // -----------------------------------------------------------------------
     await step("S7: timeout paths (late claim, foreign withdrawals)", async () => {
@@ -707,6 +733,11 @@ async function main() {
     });
 
     // -----------------------------------------------------------------------
+    // Round 4 is open (round 3 was skipped by the market): funding round 4
+    // must settle round 2 across the gap in the same transaction.
+    if (cz) await step("CZ-D: fundRound(4) settles round 2 across the skipped round", () => cz.phaseD());
+
+    // -----------------------------------------------------------------------
     await step("S10: PrizesWallet replacement + round on the new wallet", async () => {
         const g = { gasLimit: 1500000 };
         const PrizesWalletFactory = await ethers.getContractFactory("PrizesWallet");
@@ -734,6 +765,11 @@ async function main() {
             .filter(ev => ev.args.roundNum === roundNum).map(ev => ev.args.index);
         if (idx.length > 0) await TX(secondPrizesWallet.connect(addr1).claimDonatedNft(idx[0], g));
     });
+
+    // -----------------------------------------------------------------------
+    // Round 4 closed by S10: claimKnown() triggers its settlement (the last
+    // of the three settlement paths), final claims, cz tally + SQL.
+    if (cz) await step("CZ-E: claim-triggered settlement of round 4 + tally", () => cz.phaseE());
 
     // -----------------------------------------------------------------------
     // Final report: cg_contracts INSERT, event tally, coverage assertion.

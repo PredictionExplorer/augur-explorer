@@ -20,7 +20,8 @@
 		<table class="kv-table">
 			<tr><th>trades</th><td class="num">{{num .NumTrades}}</td></tr>
 			<tr><th>volume (CST)</th><td class="num">{{printf "%.4f" (asFloat .Volume)}}</td></tr>
-			<tr><th>unique traders</th><td class="num">{{num .NumTraders}}</td></tr>
+			<tr><th>unique traders</th><td class="num"><a href="/chaoszero/traders/list">{{num .NumTraders}}</a></td></tr>
+			<tr><th>early exits (CST sold)</th><td class="num">{{num .NumSells}} · {{printf "%.4f" (asFloat .SoldTotal)}}</td></tr>
 			<tr><th>splits / merges</th><td class="num">{{num .NumSplits}} / {{num .NumMerges}}</td></tr>
 		</table>
 	</section>

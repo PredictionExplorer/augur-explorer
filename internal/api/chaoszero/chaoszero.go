@@ -74,6 +74,7 @@ func (a *API) RegisterRoutes(r *httpx.Router) {
 	r.GET("/api/chaoszero/trades/list/{offset}/{limit}", a.handleTradesList)
 	r.GET("/api/chaoszero/trades/by_round/{round_num}/{offset}/{limit}", a.handleTradesByRound)
 	r.GET("/api/chaoszero/trades/by_user/{user_addr}/{offset}/{limit}", a.handleTradesByUser)
+	r.GET("/api/chaoszero/traders/list/{offset}/{limit}", a.handleTradersList)
 	r.GET("/api/chaoszero/funding/list/{offset}/{limit}", a.handleFundingList)
 	r.GET("/api/chaoszero/splits/list/{offset}/{limit}", a.handleSplitsList)
 	r.GET("/api/chaoszero/merges/list/{offset}/{limit}", a.handleMergesList)

@@ -207,6 +207,12 @@ func (a *API) handleTradesByUser(c *httpx.Context) {
 	})
 }
 
+func (a *API) handleTradersList(c *httpx.Context) {
+	a.listHandler(c, "Traders", func(ctx context.Context, offset, limit int) (any, error) {
+		return a.repo.TradersList(ctx, offset, limit)
+	})
+}
+
 func (a *API) handleFundingList(c *httpx.Context) {
 	a.listHandler(c, "Fundings", func(ctx context.Context, offset, limit int) (any, error) {
 		return a.repo.FundingList(ctx, offset, limit)

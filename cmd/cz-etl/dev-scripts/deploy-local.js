@@ -10,8 +10,10 @@
 // The addresses are written to cz-local-deployment.json (consumed by
 // populate.js) and the SQL that points a local backend database at this
 // deployment is printed: cz_contracts must hold the local addresses and
-// cz_proc_status.last_block must drop to 0, because the production default
-// (517037316) would make cz-etl skip every local block.
+// cz_proc_status.last_block must drop to the block before this deployment
+// (the production default, 517037316, would make cz-etl skip every local
+// block, and a plain 0 falls back to the shared block watermark, skipping
+// history whenever another ETL already indexed past it).
 //
 // Usage (requires a built ChaosZero checkout and a running local chain):
 //   CHAOSZERO_DIR=/path/to/ChaosZero \
@@ -87,12 +89,15 @@ async function main() {
   console.log(`\nDeployment written to ${deploymentFile()}`);
 
   console.log(`
--- Point a local backend database at this deployment before starting cz-etl:
+-- Point a local backend database at this deployment before starting cz-etl.
+-- last_block is the block before this deployment: a zero would make cz-etl
+-- fall back to the shared block watermark, which skips this history when
+-- another ETL has already indexed past it in the same database.
 UPDATE cz_contracts SET
 	market_addr = '${deployment.marketAddress}',
 	source_addr = '${deployment.sourceAddress}',
 	vault_addr  = '${deployment.vaultAddress}';
-UPDATE cz_proc_status SET last_evt_id = 0, last_block = 0;
+UPDATE cz_proc_status SET last_evt_id = 0, last_block = ${Math.max(0, deployment.startBlock - 1)};
 `);
 }
 

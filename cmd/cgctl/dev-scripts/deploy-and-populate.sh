@@ -1,11 +1,16 @@
 #!/bin/bash
 # Deploy CosmicSignatureGame with dev time settings + Samp tokens, then run populate.js.
 # Usage:
-#   ./deploy-and-populate.sh [--network NETWORK] [COSMIC_SIGNATURE_DIR]
+#   ./deploy-and-populate.sh [--network NETWORK] [--with-chaoszero] [COSMIC_SIGNATURE_DIR]
 #
 # Defaults: network=localhost. The Solidity repo location comes from the
 # positional argument or the COSMIC_SIGNATURE_DIR environment variable;
 # the script exits when neither is set.
+#
+# --with-chaoszero additionally deploys the ChaosZero prediction-market
+# contracts on top of the freshly deployed game and interleaves asserted
+# betting activity with the populate rounds (see chaoszero-sim.js). Requires
+# CHAOSZERO_DIR to point at a built ChaosZero checkout.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,11 +21,16 @@ NETWORK="${NETWORK:-localhost}"
 # Parse args: [--network NETWORK] [COSMIC_SIGNATURE_DIR].
 # A positional argument overrides the environment value.
 COSMIC_SIGNATURE_DIR="${COSMIC_SIGNATURE_DIR:-}"
+WITH_CHAOSZERO="${WITH_CHAOSZERO:-}"
 while [ $# -gt 0 ]; do
     case "$1" in
         --network)
             NETWORK="$2"
             shift 2
+            ;;
+        --with-chaoszero)
+            WITH_CHAOSZERO=1
+            shift
             ;;
         *)
             COSMIC_SIGNATURE_DIR="$1"
@@ -28,6 +38,19 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
+
+if [ -n "$WITH_CHAOSZERO" ]; then
+    if [ -z "${CHAOSZERO_DIR:-}" ] || [ ! -f "$CHAOSZERO_DIR/src/IndependentOutcomeMarket.sol" ]; then
+        echo "Error: --with-chaoszero requires CHAOSZERO_DIR to point at the ChaosZero checkout."
+        exit 1
+    fi
+    if [ ! -d "$CHAOSZERO_DIR/.local/hardhat-artifacts" ] && [ ! -d "$CHAOSZERO_DIR/out" ]; then
+        echo "Error: no ChaosZero artifacts found; build it first (pnpm build:deployment or forge build)."
+        exit 1
+    fi
+    export WITH_CHAOSZERO CHAOSZERO_DIR
+    echo "ChaosZero simulation: ENABLED ($CHAOSZERO_DIR)"
+fi
 
 if [ -z "$COSMIC_SIGNATURE_DIR" ]; then
     echo "Error: COSMIC_SIGNATURE_DIR required (path to the Cosmic-Signature repo)."
