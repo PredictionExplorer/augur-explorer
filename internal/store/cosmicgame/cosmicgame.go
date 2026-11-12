@@ -58,6 +58,17 @@ func (r *Repo) ContractAddrs(ctx context.Context) (cgmodel.ContractAddrs, error)
 	return out, nil
 }
 
+// UpdateImplementationAddr points the contract registry (cg_contracts,
+// one row) at the game implementation a proxy Upgraded event introduced.
+// Without this the registry keeps the implementation recorded at deploy
+// time forever; the ETL calls it from storeUpgraded so the row follows
+// every upgrade (and a historical resync converges on the latest one).
+func (r *Repo) UpdateImplementationAddr(ctx context.Context, addr string) error {
+	_, err := r.q(ctx).Exec(ctx,
+		"UPDATE cg_contracts SET implementation_addr = $1", addr)
+	return store.WrapError("update cg_contracts implementation_addr", err)
+}
+
 // ProcessingStatus returns the ETL watermark (last processed event id and
 // block number), lazily creating the singleton cg_proc_status row on a fresh
 // database.

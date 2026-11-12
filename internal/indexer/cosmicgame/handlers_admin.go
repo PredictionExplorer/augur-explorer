@@ -521,6 +521,13 @@ func (h *Handlers) storeUpgraded(ctx context.Context, evt *cgmodel.CGUpgraded) e
 	if err := h.repo.InsertUpgraded(ctx, evt); err != nil {
 		return err
 	}
+	// Keep the contract registry row current: cg_contracts.implementation_addr
+	// otherwise stays at whatever the deploy-time INSERT recorded. Events are
+	// processed in chain order, so after a resync the row holds the latest
+	// implementation.
+	if err := h.repo.UpdateImplementationAddr(ctx, evt.Implementation); err != nil {
+		return err
+	}
 	// The new implementation is a contract of its own (its constructor emits
 	// Initialized); start watching it.
 	h.noteImplementation(ctx, ethcommon.HexToAddress(evt.Implementation), evt.BlockNum)
