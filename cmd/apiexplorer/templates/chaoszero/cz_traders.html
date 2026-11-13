@@ -2,9 +2,10 @@
 <div class="page-header">
 	<h1>Unique Traders</h1>
 	<div class="subtitle">
-		every address that moved CST through the market, most profitable first ·
+		every address that moved CST through the market &mdash; by trading, splitting, merging or claiming &mdash; most profitable first ·
 		realized P&amp;L = CST received back (sells + merges + claims) &minus; CST paid in (buys + splits) ·
-		positions still held in open rounds are not valued, and positions received by transfer count as zero cost
+		positions still held in open rounds are not valued, and positions received by ERC-1155 transfer count as zero cost
+		(such an address can appear here with zero trades)
 	</div>
 </div>
 
@@ -30,9 +31,21 @@
 		<tr>
 			<td>{{hexCell .UserAddr}}</td>
 			<td class="right">{{num .NumRounds}}</td>
+			{{- /* Link into the by-user trades page only when the user has
+			       trades; addresses that only claimed or merged (e.g. a
+			       position received by transfer) would land on an empty
+			       list. */}}
+			{{- if gt (asFloat .NumBuys) 0.0}}
+			<td class="right"><a href="/chaoszero/trades/by_user/{{.UserAddr}}">{{num .NumBuys}}</a></td>
+			{{- else}}
 			<td class="right">{{num .NumBuys}}</td>
+			{{- end}}
 			<td class="right">{{printf "%.4f" (asFloat .BuyVolume)}}</td>
+			{{- if gt (asFloat .NumSells) 0.0}}
 			<td class="right"><a href="/chaoszero/trades/by_user/{{.UserAddr}}">{{num .NumSells}}</a></td>
+			{{- else}}
+			<td class="right">{{num .NumSells}}</td>
+			{{- end}}
 			<td class="right">{{printf "%.4f" (asFloat .SellVolume)}}</td>
 			<td class="right">{{printf "%.4f" (asFloat .SplitVolume)}}</td>
 			<td class="right">{{printf "%.4f" (asFloat .MergeVolume)}}</td>

@@ -202,6 +202,8 @@ type ApiTraderSummary struct {
 type ApiStatistics struct {
 	NumRounds       int64
 	LatestRound     int64
+	LatestRoundOpen bool    // latest round has no settlement yet
+	OpenLiquidity   float64 // CST collateral in the open round's question pools (0 when settled)
 	NumFundings     int64
 	FundedTotal     float64
 	NumTrades       int64

@@ -768,8 +768,18 @@ async function main() {
 
     // -----------------------------------------------------------------------
     // Round 4 closed by S10: claimKnown() triggers its settlement (the last
-    // of the three settlement paths), final claims, cz tally + SQL.
-    if (cz) await step("CZ-E: claim-triggered settlement of round 4 + tally", () => cz.phaseE());
+    // of the three settlement paths), final claims.
+    if (cz) await step("CZ-E: claim-triggered settlement of round 4", () => cz.phaseE());
+
+    // -----------------------------------------------------------------------
+    // Leave the NEXT round open and rich in data: everything before this is
+    // settled, so this is the database's only intermediate-state sample
+    // (open liquidity, OPEN badges, live implied odds). Ends with the cz
+    // event tally + SQL.
+    if (cz) await step("CZ-F: open round left unsettled + tally", async () => {
+        await advanceToNextRoundActive(game);
+        await cz.phaseF();
+    });
 
     // -----------------------------------------------------------------------
     // Final report: cg_contracts INSERT, event tally, coverage assertion.

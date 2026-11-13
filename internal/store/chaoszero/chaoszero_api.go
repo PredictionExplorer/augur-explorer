@@ -79,6 +79,31 @@ func (r *Repo) Statistics(ctx context.Context) (czmodel.ApiStatistics, error) {
 	if err != nil {
 		return s, store.WrapError(op, err)
 	}
+	// Liquidity operating in the latest round: the CST collateral in its
+	// eight question pools, reconstructed from events (fundings and buys
+	// add, sells and merges remove, splits add). Settlement drains the
+	// pools to escrow + carry, so a settled latest round reports zero.
+	// The reconstruction conserves exactly: for every settled round,
+	// this same sum equals escrowed_total + carried.
+	liqQuery := `WITH cur AS (SELECT COALESCE(MAX(round_id),-1) rid FROM cz_round_initialized)
+		SELECT cur.rid >= 0 AND NOT EXISTS
+				(SELECT 1 FROM cz_round_settled s WHERE s.round_id = cur.rid),
+			(COALESCE((SELECT SUM(donated+transfers_used+carry_used)
+				FROM cz_round_funded WHERE round_id = cur.rid),0)
+			+ COALESCE((SELECT SUM(CASE WHEN buy THEN cash ELSE -cash END)
+				FROM cz_trade WHERE round_id = cur.rid),0)
+			+ COALESCE((SELECT SUM(amount)
+				FROM cz_position_split WHERE round_id = cur.rid),0)
+			- COALESCE((SELECT SUM(collateral_out)
+				FROM cz_positions_merged WHERE round_id = cur.rid),0))::FLOAT8/1e18
+		FROM cur`
+	var liquidity float64
+	if err := r.q(ctx).QueryRow(ctx, liqQuery).Scan(&s.LatestRoundOpen, &liquidity); err != nil {
+		return s, store.WrapError(op+": open liquidity", err)
+	}
+	if s.LatestRoundOpen {
+		s.OpenLiquidity = liquidity
+	}
 	return s, nil
 }
 

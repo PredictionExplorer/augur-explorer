@@ -10,7 +10,9 @@
 		<h2>Rounds <a class="more" href="/chaoszero/rounds/list">combined view →</a></h2>
 		<table class="kv-table">
 			<tr><th>rounds seen</th><td class="num">{{num .NumRounds}}</td></tr>
-			<tr><th>latest round</th><td class="num"><a href="/chaoszero/round/info/{{num .LatestRound}}">{{num .LatestRound}}</a></td></tr>
+			<tr><th>latest round</th><td class="num"><a href="/chaoszero/round/info/{{num .LatestRound}}">{{num .LatestRound}}</a>
+				{{if .LatestRoundOpen}}<span class="badge badge-info">OPEN</span>{{else}}<span class="badge badge-success">SETTLED</span>{{end}}</td></tr>
+			<tr><th>open liquidity (CST)</th><td class="num">{{if .LatestRoundOpen}}{{printf "%.4f" (asFloat .OpenLiquidity)}}{{else}}—{{end}}</td></tr>
 			<tr><th>settled</th><td class="num">{{num .NumSettled}}</td></tr>
 			<tr><th>carry (CST)</th><td class="num">{{printf "%.4f" (asFloat .CarriedTotal)}}</td></tr>
 		</table>

@@ -35,8 +35,16 @@
  *           purchases.
  *   phaseE  after S10 (R4 closed): claimKnown() triggers the settlement of
  *           R4 (third settlement path); final claims; one entitlement left
- *           escrowed; event tally with per-type minimums and structural
- *           checks (throws, so populate.js reports POPULATE FAILED).
+ *           escrowed.
+ *   phaseF  after S10 + activation delay: open the NEXT game round with a
+ *           bid and leave its market round rich and UNSETTLED — funding
+ *           that absorbs the settled history's carry, both-sided buys, an
+ *           early-exit sell, a direct-transfer absorb, a split, a partial
+ *           merge and a gifted position. Every earlier round ends settled,
+ *           so this is the only intermediate-state sample the populated
+ *           database gets (open liquidity, OPEN badges, live odds). Ends
+ *           with the event tally: per-type minimums and structural checks
+ *           (throws, so populate.js reports POPULATE FAILED).
  *
  * Outcome values are never assumed: the game statistics are dictated by the
  * populate.js scenario, so every claim assertion derives the entitlement
@@ -148,7 +156,7 @@ function create(ctx) {
     const st = {
         market: null, source: null, marketAddr: null, sourceAddr: null, vaultAddr: null,
         marketIface: null, vaultIface: null, startBlock: 0,
-        r1: 0n, r2: 0n, r4: 0n,
+        r1: 0n, r2: 0n, r4: 0n, rF: 0n,
         valuesR1: 0, aliceQ0Out: 0n, ids: null,
     };
 
@@ -551,6 +559,62 @@ function create(ctx) {
         // Carol holds both q6 sides and does not claim: escrow persists.
         expect((await expectedClaim(await carol.getAddress(), r4, o.values)) > 0n,
             "carol leaves a guaranteed claim escrowed on the final round");
+    }
+
+    // ----------------------------------------------------------------------
+    // phaseF — open the next round and leave it rich and UNSETTLED
+    // ----------------------------------------------------------------------
+    async function phaseF() {
+        // The caller advanced past the activation delay; the first ETH bid
+        // starts the new game round (the market follows the game's rounds).
+        const bidPrice = await game.getNextEthBidPrice();
+        ok("first bid of the open round (alice)", await TX(game.connect(alice).bidWithEth(-1, "cz open-round bid", 0,
+            { value: (bidPrice * 125n) / 100n, gasLimit: 1500000 })));
+        const rF = await game.roundNum();
+        expect(rF > st.r4, `game round ${rF} is newer than the last settled market round ${st.r4}`);
+        st.rF = rF;
+        await earnCst([["alice", alice], ["bob", bob], ["carol", carol]], 60n * ONE);
+
+        // The initial funding of the open round absorbs the carry the
+        // settled history rolled forward.
+        {
+            const receipt = await TX(st.market.connect(alice).fundRound(rF, 5n * ONE, G));
+            const funded = mEvents(receipt, "RoundFunded");
+            expect(funded.length === 1, "explicit fundRound initializes the open round");
+            expect(funded[0].args.carryUsed > 0n, "the open round absorbed the settled history's carry");
+            ok(`fundRound(${rF}) donation 5 CST + carry (alice)`, receipt);
+        }
+
+        console.log("  cz -- open-round activity (deliberately left unsettled):");
+        // Both sides of q0: a two-sided trade history for the odds pages.
+        await trade(alice, "alice", rF, 0, true, true, 6n * ONE);
+        await trade(bob, "bob", rF, 0, false, true, 4n * ONE);
+        await trade(carol, "carol", rF, 2, true, true, 5n * ONE);
+        await trade(bob, "bob", rF, 3, false, true, 3n * ONE);
+        // An early exit at market price while the round is open.
+        const q5 = await trade(alice, "alice", rF, 5, true, true, 2n * ONE);
+        await trade(alice, "alice", rF, 5, true, false, q5.output / 2n);
+        // A direct transfer absorbed by the next buy (open-round top-up).
+        ok("direct transfer 6 CST (bob)", await TX(token.connect(bob).transfer(st.marketAddr, 6n * ONE)));
+        {
+            const { receipt } = await trade(carol, "carol", rF, 4, false, true, 2n * ONE);
+            const funded = mEvents(receipt, "RoundFunded");
+            expect(funded.length === 1 && funded[0].args.transfersUsed === 6n * ONE,
+                "the buy absorbed the held transfer into the open round");
+        }
+        // A split and a partial merge-back, both while the round is open.
+        ok("splitPosition q7 2 CST (carol)", await TX(st.market.connect(carol).splitPosition(rF, 7, 2n * ONE, G)));
+        ok("mergePositions {q7:1} while open (carol)", await TX(
+            st.market.connect(carol).mergePositions(rF, [0n, 0n, 0n, 0n, 0n, 0n, 0n, ONE], G)));
+        // A gifted position on the open round (zero-cost holder).
+        ok("gift 1.0 q0 YES unit alice->dave", await TX(st.market.connect(alice).safeTransferFrom(
+            await alice.getAddress(), await dave.getAddress(), await posId(rF, 0, true), ONE, "0x", G)));
+
+        const o = await outcome(rF);
+        expect(!o.finalized, `round ${rF} must still be open`);
+        const active = await st.market.totalActiveCollateral();
+        expect(active > 0n, "the open round holds live liquidity");
+        console.log(`  cz round ${rF} left OPEN with ${ethers.formatEther(active)} CST active collateral`);
 
         await tally();
     }
@@ -559,16 +623,16 @@ function create(ctx) {
     // Final event tally + structural checks + cz_contracts SQL
     // ----------------------------------------------------------------------
     const REQUIRED_EVENTS = {
-        RoundInitialized: { src: "market", min: 3 }, // R1, R2, R4 (R3 skipped)
-        RoundFunded: { src: "market", min: 6 },
-        Trade: { src: "market", min: 15 },
+        RoundInitialized: { src: "market", min: 4 }, // R1, R2, R4, RF (R3 skipped)
+        RoundFunded: { src: "market", min: 8 },      // +2 on the open round (explicit, absorb)
+        Trade: { src: "market", min: 21 },           // +6 on the open round
         AnswersObserved: { src: "market", min: 2 },
-        PositionSplit: { src: "market", min: 3 },
-        PositionsMerged: { src: "market", min: 4 },
-        RoundSettled: { src: "market", min: 3 },
+        PositionSplit: { src: "market", min: 4 },    // +1 on the open round
+        PositionsMerged: { src: "market", min: 5 },  // +1 on the open round
+        RoundSettled: { src: "market", min: 3 },     // RF stays unsettled (structural check)
         Claimed: { src: "market", min: 8 },
-        TransferSingle: { src: "market", min: 8 },
-        TransferBatch: { src: "market", min: 4 },
+        TransferSingle: { src: "market", min: 15 },  // +7 on the open round (6 trades + gift)
+        TransferBatch: { src: "market", min: 6 },    // +2 on the open round (split, merge)
         ApprovalForAll: { src: "market", min: 2 },
         CycleEscrowed: { src: "vault", min: 3 },
         Paid: { src: "vault", min: 6 },
@@ -607,6 +671,13 @@ function create(ctx) {
                     && p.args.from !== ethers.ZeroAddress && p.args.to !== ethers.ZeroAddress)],
             ["paying Claimed on at least two rounds",
                 new Set(parsed.filter((p) => p.name === "Claimed" && p.args.total > 0n).map((p) => p.args.roundId)).size >= 2],
+            ["final round left open: initialized and funded, never settled",
+                st.rF > 0n
+                && parsed.some((p) => p.name === "RoundInitialized" && p.args.roundId === st.rF)
+                && parsed.some((p) => p.name === "RoundFunded" && p.args.roundId === st.rF)
+                && !parsed.some((p) => p.name === "RoundSettled" && p.args.roundId === st.rF)],
+            ["open round holds live liquidity (totalActiveCollateral > 0)",
+                (await st.market.totalActiveCollateral()) > 0n],
         ];
         for (const [what, good] of structural) {
             console.log(`  ${good ? "OK  " : "MISS"} struct ${what}`);
@@ -629,10 +700,10 @@ function create(ctx) {
         }
         console.log(`\n  cz OK: all ${Object.keys(REQUIRED_EVENTS).length} event types and ` +
             `${structural.length} structural scenarios covered on game rounds ${st.r1}, ${st.r2}, ${st.r4}` +
-            ` (round ${st.r2 + 1n} skipped).`);
+            ` (round ${st.r2 + 1n} skipped); round ${st.rF} left open with live data.`);
     }
 
-    return { phaseA, phaseB, phaseC, phaseD, phaseE };
+    return { phaseA, phaseB, phaseC, phaseD, phaseE, phaseF };
 }
 
 module.exports = { enabled, create };
