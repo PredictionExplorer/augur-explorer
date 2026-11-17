@@ -55,7 +55,9 @@ location and unions execution counts before calculating any percentage.
   2026-07-12:** handwritten internal coverage first reached 90% (91.82%
   measured under the race-enabled profile), so `commitGateEnabled` is `true`
   with a 90.0 commit floor and a 91.5 internal floor; the hook now fails
-  closed on test, Docker, profile, policy, global or changed-code failures.
+  closed on test, database-availability, profile, policy, global or
+  changed-code failures. The integration profile needs PostgreSQL: a local
+  server named by `TEST_PGSQL_URL`, or (fallback) Docker testcontainers.
   `make hooks-install` installs the tracked hook without changing Git
   configuration or overwriting unrelated hooks.
 - `.cursor/hooks.json` denies Agent attempts to use `git commit --no-verify`
@@ -85,9 +87,10 @@ Generated response visitors are not tested merely to inflate the percentage.
 ## Consequences
 
 With the commit gate active, commits that change Go code can take tens of
-seconds with a warm Docker cache and longer on first use. Successful profiles
-are cached by staged-source hash; ambiguous partial staging, missing Docker
-and malformed evidence fail closed.
+seconds (longer on a cold start). Successful profiles are cached by
+staged-source hash; ambiguous partial staging, an unavailable test database
+(no `TEST_PGSQL_URL` server and no Docker) and malformed evidence fail
+closed.
 
 The first policy sprint raised handwritten internal coverage to 80.43%, the
 legacy metric to 79.07%, and truthful all-production coverage to 52.80% under

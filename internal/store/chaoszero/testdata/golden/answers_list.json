@@ -1,0 +1,14 @@
+[
+  {
+    "RecordId": 1,
+    "EvtLogId": 5309,
+    "BlockNum": 157,
+    "TxId": 1108,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001108",
+    "TimeStamp": 1767231300,
+    "DateTime": "2026-01-01T01:35:00Z",
+    "RoundId": 0,
+    "KnownMask": 1,
+    "ValuesMask": 1
+  }
+]

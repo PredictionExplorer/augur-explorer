@@ -1,0 +1,239 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1950
+      },
+      {
+        "addr": "0x2200000000000000000000000000000000000022",
+        "block_num": 1951
+      },
+      {
+        "addr": "0x2300000000000000000000000000000000000023",
+        "block_num": 1951
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1950
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1950,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T06:10:00+00:00"
+      },
+      {
+        "block_num": 1951,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T06:11:40+00:00"
+      },
+      {
+        "block_num": 1952,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T06:13:20+00:00"
+      },
+      {
+        "block_num": 1953,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T06:15:00+00:00"
+      }
+    ]
+  },
+  "cg_dao_proposal_created": {
+    "added": [
+      {
+        "block_num": 1950,
+        "call_values": [
+          0
+        ],
+        "calldatas": [
+          "\\xdead"
+        ],
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "description": "Raise the bid message limit",
+        "evtlog_id": "evt:1950/0",
+        "proposal_id": 777,
+        "proposer_aid": "0x2100000000000000000000000000000000000021",
+        "signatures": [
+          "setBidMessageLengthMaxLimit(uint256)"
+        ],
+        "targets": [
+          "0x2000000000000000000000000000000000000002"
+        ],
+        "time_stamp": "2026-01-03T06:10:00+00:00",
+        "tx_id": "0xc4c95b4faeb00cc30c4eb45a7521a5217174321982e648165acf63ad80ddee3b",
+        "vote_end": 2050,
+        "vote_start": 1950
+      }
+    ]
+  },
+  "cg_dao_proposal_state": {
+    "added": [
+      {
+        "block_num": 1952,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "eta_seconds": 1767300000,
+        "evtlog_id": "evt:1952/0",
+        "proposal_id": 777,
+        "state": 1,
+        "time_stamp": "2026-01-03T06:13:20+00:00",
+        "tx_id": "0xc16191fdac52fa19d08643ac2ce472c3b737f83a69f9ea529c79e71ca94b33f2"
+      },
+      {
+        "block_num": 1953,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "eta_seconds": null,
+        "evtlog_id": "evt:1953/0",
+        "proposal_id": 777,
+        "state": 2,
+        "time_stamp": "2026-01-03T06:15:00+00:00",
+        "tx_id": "0xe406fc9a2787f8e5b0553f0128b97aab9980666e67dfd2fa7011a2270b743946"
+      }
+    ]
+  },
+  "cg_dao_vote_cast": {
+    "added": [
+      {
+        "block_num": 1951,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "evtlog_id": "evt:1951/0",
+        "params": null,
+        "proposal_id": 777,
+        "reason": "for",
+        "support": 1,
+        "time_stamp": "2026-01-03T06:11:40+00:00",
+        "tx_id": "0x1c3a3aa51bfceef3c5c5411bdeb37a9a5f855bee3f394d91c7f83e89557dfbf8",
+        "voter_aid": "0x2200000000000000000000000000000000000022",
+        "weight": 3000000000000000000
+      },
+      {
+        "block_num": 1951,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "evtlog_id": "evt:1951/1",
+        "params": "\\x01",
+        "proposal_id": 777,
+        "reason": "",
+        "support": 0,
+        "time_stamp": "2026-01-03T06:11:40+00:00",
+        "tx_id": "0x1c3a3aa51bfceef3c5c5411bdeb37a9a5f855bee3f394d91c7f83e89557dfbf8",
+        "voter_aid": "0x2300000000000000000000000000000000000023",
+        "weight": 1000000000000000000
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1950,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "log_index": 0,
+        "topic0_sig": "7d84a626",
+        "tx_id": "0xc4c95b4faeb00cc30c4eb45a7521a5217174321982e648165acf63ad80ddee3b"
+      },
+      {
+        "block_num": 1951,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "log_index": 0,
+        "topic0_sig": "b8e13888",
+        "tx_id": "0x1c3a3aa51bfceef3c5c5411bdeb37a9a5f855bee3f394d91c7f83e89557dfbf8"
+      },
+      {
+        "block_num": 1951,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "log_index": 1,
+        "topic0_sig": "e2babfba",
+        "tx_id": "0x1c3a3aa51bfceef3c5c5411bdeb37a9a5f855bee3f394d91c7f83e89557dfbf8"
+      },
+      {
+        "block_num": 1952,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "log_index": 0,
+        "topic0_sig": "9a2e42fd",
+        "tx_id": "0xc16191fdac52fa19d08643ac2ce472c3b737f83a69f9ea529c79e71ca94b33f2"
+      },
+      {
+        "block_num": 1953,
+        "contract_aid": "0x5000000000000000000000000000000000000005",
+        "log_index": 0,
+        "topic0_sig": "712ae138",
+        "tx_id": "0xe406fc9a2787f8e5b0553f0128b97aab9980666e67dfd2fa7011a2270b743946"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1953
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1950,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x5000000000000000000000000000000000000005",
+        "tx_hash": "0xc4c95b4faeb00cc30c4eb45a7521a5217174321982e648165acf63ad80ddee3b",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1951,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x5000000000000000000000000000000000000005",
+        "tx_hash": "0x1c3a3aa51bfceef3c5c5411bdeb37a9a5f855bee3f394d91c7f83e89557dfbf8",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1952,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x5000000000000000000000000000000000000005",
+        "tx_hash": "0xc16191fdac52fa19d08643ac2ce472c3b737f83a69f9ea529c79e71ca94b33f2",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1953,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x5000000000000000000000000000000000000005",
+        "tx_hash": "0xe406fc9a2787f8e5b0553f0128b97aab9980666e67dfd2fa7011a2270b743946",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

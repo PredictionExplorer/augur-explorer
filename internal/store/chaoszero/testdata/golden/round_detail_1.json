@@ -1,0 +1,133 @@
+{
+  "Summary": {
+    "RoundId": 1,
+    "FirstSeenTs": 1767231900,
+    "FirstSeenDate": "2026-01-01T01:45:00Z",
+    "NumFundings": 1,
+    "FundedTotal": 100,
+    "NumTrades": 1,
+    "Volume": 4,
+    "NumTraders": 1,
+    "NumSells": 0,
+    "SoldTotal": 0,
+    "Settled": false,
+    "ValuesMask": 0,
+    "Carried": 0,
+    "EscrowedTotal": 0,
+    "NumClaims": 0,
+    "ClaimedTotal": 0
+  },
+  "Odds": [
+    {
+      "Question": 0,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    },
+    {
+      "Question": 1,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    },
+    {
+      "Question": 2,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    },
+    {
+      "Question": 3,
+      "NumTrades": 1,
+      "LastYes": true,
+      "LastBuy": true,
+      "LastPrice": 0.8,
+      "ImpliedYes": 0.8,
+      "LastTs": 1767232100,
+      "LastDate": "2026-01-01T01:48:20Z"
+    },
+    {
+      "Question": 4,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    },
+    {
+      "Question": 5,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    },
+    {
+      "Question": 6,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    },
+    {
+      "Question": 7,
+      "NumTrades": 0,
+      "LastYes": false,
+      "LastBuy": false,
+      "LastPrice": 0,
+      "ImpliedYes": 0,
+      "LastTs": 0,
+      "LastDate": ""
+    }
+  ],
+  "Fundings": [
+    {
+      "RecordId": 2,
+      "EvtLogId": 5318,
+      "BlockNum": 164,
+      "TxId": 1115,
+      "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001115",
+      "TimeStamp": 1767232000,
+      "DateTime": "2026-01-01T01:46:40Z",
+      "RoundId": 1,
+      "CallerAddr": "0x2200000000000000000000000000000000000022",
+      "Donated": 10,
+      "TransfersUsed": 0,
+      "CarryUsed": 90,
+      "Allocations": [
+        12.5,
+        12.5,
+        12.5,
+        12.5,
+        12.5,
+        12.5,
+        12.5,
+        12.5
+      ]
+    }
+  ],
+  "Settlement": null,
+  "Escrow": null,
+  "Answers": [],
+  "Claims": [],
+  "Payouts": []
+}

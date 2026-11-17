@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Statistics": {
+      "CarriedTotal": 90,
+      "ClaimedTotal": 17,
+      "FundedTotal": 200,
+      "LatestRound": 1,
+      "LatestRoundOpen": true,
+      "NumAnswerEvents": 1,
+      "NumApprovals": 2,
+      "NumClaims": 1,
+      "NumFundings": 2,
+      "NumMerges": 1,
+      "NumPayouts": 1,
+      "NumRounds": 2,
+      "NumSells": 1,
+      "NumSettled": 1,
+      "NumSplits": 1,
+      "NumTraders": 4,
+      "NumTrades": 4,
+      "NumTransfers": 4,
+      "OpenLiquidity": 104,
+      "PaidTotal": 17,
+      "SoldTotal": 7,
+      "Volume": 28
+    },
+    "error": "",
+    "status": 1
+  }
+}

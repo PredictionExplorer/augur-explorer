@@ -66,11 +66,12 @@ func TestDeprecationPolicyMatchesOpenAPI(t *testing.T) {
 	}
 
 	// The split itself is pinned so a future route lands on the right side
-	// deliberately: 183 deprecated v1 operations; 8 exempt (healthz,
-	// readyz, version, the two contract-pinned metadata routes and the
-	// three FAQ proxy operations).
-	if deprecatedCount != 183 || activeCount != 8 {
-		t.Errorf("deprecated/active operations = %d/%d, want 183/8 — update this pin only with a deliberate policy change",
+	// deliberately: 183 deprecated v1 operations; 28 exempt (healthz,
+	// readyz, version, the two contract-pinned metadata routes, the three
+	// FAQ proxy operations and the 20 ChaosZero operations added after
+	// the v1 freeze).
+	if deprecatedCount != 183 || activeCount != 28 {
+		t.Errorf("deprecated/active operations = %d/%d, want 183/28 — update this pin only with a deliberate policy change",
 			deprecatedCount, activeCount)
 	}
 }

@@ -249,7 +249,7 @@
         {
           "Amount": "50000000000000000",
           "AmountEth": 0.05,
-          "Claimed": true,
+          "Claimed": false,
           "IsTimeoutClaim": false,
           "RecordType": 10,
           "RoundNum": 0,

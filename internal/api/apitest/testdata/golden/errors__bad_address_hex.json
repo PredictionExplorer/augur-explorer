@@ -39,7 +39,13 @@
       "NumRaffleEthWinnings": 0,
       "RaffleNFTsCount": 0,
       "RewardNFTsCount": 0,
-      "StakingStatisticsRWalk": {},
+      "StakingStatisticsRWalk": {
+        "NumActiveStakers": 0,
+        "TotalNumStakeActions": 0,
+        "TotalNumUnstakeActions": 0,
+        "TotalTokensMinted": 0,
+        "TotalTokensStaked": 0
+      },
       "SumRaffleEthWinnings": 0,
       "SumRaffleEthWithdrawal": 0,
       "TotalCSTokensWon": 0,

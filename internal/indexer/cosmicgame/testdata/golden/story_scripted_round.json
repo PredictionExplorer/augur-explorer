@@ -1318,13 +1318,6 @@
       {
         "block_num": 2009,
         "contract_aid": "0x2000000000000000000000000000000000000002",
-        "log_index": 12,
-        "topic0_sig": "1222634b",
-        "tx_id": "0xf37a2913aba8d8b3bc569b5dd020df457d28b7c2ac3c617cf8fee9df12d9c922"
-      },
-      {
-        "block_num": 2009,
-        "contract_aid": "0x2000000000000000000000000000000000000002",
         "log_index": 0,
         "topic0_sig": "8c551ec2",
         "tx_id": "0xf37a2913aba8d8b3bc569b5dd020df457d28b7c2ac3c617cf8fee9df12d9c922"
@@ -1334,6 +1327,13 @@
         "contract_aid": "0x2000000000000000000000000000000000000002",
         "log_index": 10,
         "topic0_sig": "3901b643",
+        "tx_id": "0xf37a2913aba8d8b3bc569b5dd020df457d28b7c2ac3c617cf8fee9df12d9c922"
+      },
+      {
+        "block_num": 2009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 12,
+        "topic0_sig": "1222634b",
         "tx_id": "0xf37a2913aba8d8b3bc569b5dd020df457d28b7c2ac3c617cf8fee9df12d9c922"
       },
       {

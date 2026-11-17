@@ -20,6 +20,7 @@
     "DonateClaimDiffEth": -500,
     "WinnerAid": 21,
     "WinnerAddr": "0x2100000000000000000000000000000000000021",
-    "Claimed": true
+    "Claimed": true,
+    "WalletAddr": "0x7000000000000000000000000000000000000007"
   }
 ]

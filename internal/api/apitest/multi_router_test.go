@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/chaoszero"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/randomwalk"
@@ -54,6 +55,7 @@ func TestTwoIndependentRoutersInOneProcess(t *testing.T) {
 	second := routes.New(h.store, routes.Options{
 		CosmicGame: cgAPI,
 		RandomWalk: randomwalk.New(h.store, randomwalk.Options{AdminAPIKey: adminKey}),
+		ChaosZero:  chaoszero.New(h.store, chaoszero.Options{}),
 		FAQ:        faq.New(faq.Options{UpstreamURL: secondFAQ.URL}),
 		V2:         v2Server,
 	})

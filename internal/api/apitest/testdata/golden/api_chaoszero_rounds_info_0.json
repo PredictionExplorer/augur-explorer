@@ -1,0 +1,242 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Round": {
+      "Answers": [
+        {
+          "BlockNum": 157,
+          "DateTime": "2026-01-01T01:35:00Z",
+          "EvtLogId": 5309,
+          "KnownMask": 1,
+          "RecordId": 1,
+          "RoundId": 0,
+          "TimeStamp": 1767231300,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001108",
+          "TxId": 1108,
+          "ValuesMask": 1
+        }
+      ],
+      "Claims": [
+        {
+          "Amounts": [
+            17,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "BlockNum": 159,
+          "DateTime": "2026-01-01T01:38:20Z",
+          "EvtLogId": 5312,
+          "RecordId": 1,
+          "RoundId": 0,
+          "TimeStamp": 1767231500,
+          "Total": 17,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001110",
+          "TxId": 1110,
+          "UserAddr": "0x2100000000000000000000000000000000000021"
+        }
+      ],
+      "Escrow": {
+        "Amounts": [
+          20,
+          0,
+          15,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "BlockNum": 158,
+        "DateTime": "2026-01-01T01:36:40Z",
+        "EvtLogId": 5311,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767231400,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001109",
+        "TxId": 1109
+      },
+      "Fundings": [
+        {
+          "Allocations": [
+            12.5,
+            12.5,
+            12.5,
+            12.5,
+            12.5,
+            12.5,
+            12.5,
+            12.5
+          ],
+          "BlockNum": 151,
+          "CallerAddr": "0x2100000000000000000000000000000000000021",
+          "CarryUsed": 0,
+          "DateTime": "2026-01-01T01:25:00Z",
+          "Donated": 100,
+          "EvtLogId": 5302,
+          "RecordId": 1,
+          "RoundId": 0,
+          "TimeStamp": 1767230700,
+          "TransfersUsed": 0,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001102",
+          "TxId": 1102
+        }
+      ],
+      "Odds": [
+        {
+          "ImpliedYes": 0.75,
+          "LastBuy": true,
+          "LastDate": "2026-01-01T01:26:40Z",
+          "LastPrice": 0.75,
+          "LastTs": 1767230800,
+          "LastYes": true,
+          "NumTrades": 1,
+          "Question": 0
+        },
+        {
+          "ImpliedYes": 0.375,
+          "LastBuy": true,
+          "LastDate": "2026-01-01T01:28:20Z",
+          "LastPrice": 0.625,
+          "LastTs": 1767230900,
+          "LastYes": false,
+          "NumTrades": 1,
+          "Question": 1
+        },
+        {
+          "ImpliedYes": 0.7,
+          "LastBuy": false,
+          "LastDate": "2026-01-01T01:31:40Z",
+          "LastPrice": 0.7,
+          "LastTs": 1767231100,
+          "LastYes": true,
+          "NumTrades": 1,
+          "Question": 2
+        },
+        {
+          "ImpliedYes": 0,
+          "LastBuy": false,
+          "LastDate": "",
+          "LastPrice": 0,
+          "LastTs": 0,
+          "LastYes": false,
+          "NumTrades": 0,
+          "Question": 3
+        },
+        {
+          "ImpliedYes": 0,
+          "LastBuy": false,
+          "LastDate": "",
+          "LastPrice": 0,
+          "LastTs": 0,
+          "LastYes": false,
+          "NumTrades": 0,
+          "Question": 4
+        },
+        {
+          "ImpliedYes": 0,
+          "LastBuy": false,
+          "LastDate": "",
+          "LastPrice": 0,
+          "LastTs": 0,
+          "LastYes": false,
+          "NumTrades": 0,
+          "Question": 5
+        },
+        {
+          "ImpliedYes": 0,
+          "LastBuy": false,
+          "LastDate": "",
+          "LastPrice": 0,
+          "LastTs": 0,
+          "LastYes": false,
+          "NumTrades": 0,
+          "Question": 6
+        },
+        {
+          "ImpliedYes": 0,
+          "LastBuy": false,
+          "LastDate": "",
+          "LastPrice": 0,
+          "LastTs": 0,
+          "LastYes": false,
+          "NumTrades": 0,
+          "Question": 7
+        }
+      ],
+      "Payouts": [
+        {
+          "Amount": 17,
+          "BlockNum": 159,
+          "DateTime": "2026-01-01T01:38:20Z",
+          "EvtLogId": 5313,
+          "Question": 0,
+          "RecipientAddr": "0x2100000000000000000000000000000000000021",
+          "RecordId": 1,
+          "RoundId": 0,
+          "TimeStamp": 1767231500,
+          "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001110",
+          "TxId": 1110
+        }
+      ],
+      "Settlement": {
+        "Answers": [
+          true,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "BlockNum": 158,
+        "Carried": 90,
+        "DateTime": "2026-01-01T01:36:40Z",
+        "Escrowed": [
+          20,
+          0,
+          15,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "EvtLogId": 5310,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767231400,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001109",
+        "TxId": 1109,
+        "ValuesMask": 5
+      },
+      "Summary": {
+        "Carried": 90,
+        "ClaimedTotal": 17,
+        "EscrowedTotal": 35,
+        "FirstSeenDate": "2026-01-01T01:23:20Z",
+        "FirstSeenTs": 1767230600,
+        "FundedTotal": 100,
+        "NumClaims": 1,
+        "NumFundings": 1,
+        "NumSells": 1,
+        "NumTraders": 3,
+        "NumTrades": 3,
+        "RoundId": 0,
+        "Settled": true,
+        "SoldTotal": 7,
+        "ValuesMask": 5,
+        "Volume": 24
+      }
+    },
+    "RoundNum": 0,
+    "error": "",
+    "status": 1
+  }
+}

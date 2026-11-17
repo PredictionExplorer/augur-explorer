@@ -61,11 +61,18 @@ cache_dir=$(git rev-parse --git-path coverage-gate)
 mkdir -p "$cache_dir"
 
 if [[ "$run_tests" == true ]]; then
-	command -v docker >/dev/null || { echo "coverage gate: Docker is required" >&2; exit 2; }
-	docker info >/dev/null 2>&1 || {
-		echo "coverage gate: Docker daemon is unavailable" >&2
-		exit 2
-	}
+	# The integration tests need PostgreSQL: either a local server named by
+	# TEST_PGSQL_URL (no Docker) or a testcontainer (Docker daemon).
+	if [[ -z "${TEST_PGSQL_URL:-}" ]]; then
+		command -v docker >/dev/null || {
+			echo "coverage gate: set TEST_PGSQL_URL to a local PostgreSQL server URL, or install Docker" >&2
+			exit 2
+		}
+		docker info >/dev/null 2>&1 || {
+			echo "coverage gate: Docker daemon is unavailable (or set TEST_PGSQL_URL to a local PostgreSQL server URL)" >&2
+			exit 2
+		}
+	fi
 
 	if ! git diff --quiet -- '*.go' go.mod go.sum 'db/migrations/*.sql' "$policy"; then
 		echo "coverage gate: unstaged coverable changes would make staged coverage ambiguous" >&2

@@ -16,6 +16,7 @@
     "TokenAddr": "0x2700000000000000000000000000000000000027",
     "NFTTokenId": 888,
     "NFTTokenURI": "https://nft.example/888",
-    "Index": 1
+    "Index": 1,
+    "WalletAddr": "0x7000000000000000000000000000000000000007"
   }
 ]

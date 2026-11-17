@@ -897,13 +897,6 @@
       {
         "block_num": 3009,
         "contract_aid": "0x2000000000000000000000000000000000000002",
-        "log_index": 12,
-        "topic0_sig": "1222634b",
-        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
-      },
-      {
-        "block_num": 3009,
-        "contract_aid": "0x2000000000000000000000000000000000000002",
         "log_index": 0,
         "topic0_sig": "8c551ec2",
         "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
@@ -913,6 +906,13 @@
         "contract_aid": "0x2000000000000000000000000000000000000002",
         "log_index": 10,
         "topic0_sig": "3901b643",
+        "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x2000000000000000000000000000000000000002",
+        "log_index": 12,
+        "topic0_sig": "1222634b",
         "tx_id": "0x724dda038364204e073294805fdb3f42cd1eadda1f9264a4a2d647eee76782d4"
       },
       {

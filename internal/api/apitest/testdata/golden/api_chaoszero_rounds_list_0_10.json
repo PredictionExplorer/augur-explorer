@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "Rounds": [
+      {
+        "Carried": 0,
+        "ClaimedTotal": 0,
+        "EscrowedTotal": 0,
+        "FirstSeenDate": "2026-01-01T01:45:00Z",
+        "FirstSeenTs": 1767231900,
+        "FundedTotal": 100,
+        "NumClaims": 0,
+        "NumFundings": 1,
+        "NumSells": 0,
+        "NumTraders": 1,
+        "NumTrades": 1,
+        "RoundId": 1,
+        "Settled": false,
+        "SoldTotal": 0,
+        "ValuesMask": 0,
+        "Volume": 4
+      },
+      {
+        "Carried": 90,
+        "ClaimedTotal": 17,
+        "EscrowedTotal": 35,
+        "FirstSeenDate": "2026-01-01T01:23:20Z",
+        "FirstSeenTs": 1767230600,
+        "FundedTotal": 100,
+        "NumClaims": 1,
+        "NumFundings": 1,
+        "NumSells": 1,
+        "NumTraders": 3,
+        "NumTrades": 3,
+        "RoundId": 0,
+        "Settled": true,
+        "SoldTotal": 7,
+        "ValuesMask": 5,
+        "Volume": 24
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

@@ -17,6 +17,7 @@
     "Amount": 0.05,
     "Claimed": false,
     "ClaimTimeStamp": 0,
-    "ClaimDateTime": ""
+    "ClaimDateTime": "",
+    "WalletAddr": "0x7000000000000000000000000000000000000007"
   }
 ]

@@ -1,0 +1,38 @@
+[
+  {
+    "RoundId": 1,
+    "FirstSeenTs": 1767231900,
+    "FirstSeenDate": "2026-01-01T01:45:00Z",
+    "NumFundings": 1,
+    "FundedTotal": 100,
+    "NumTrades": 1,
+    "Volume": 4,
+    "NumTraders": 1,
+    "NumSells": 0,
+    "SoldTotal": 0,
+    "Settled": false,
+    "ValuesMask": 0,
+    "Carried": 0,
+    "EscrowedTotal": 0,
+    "NumClaims": 0,
+    "ClaimedTotal": 0
+  },
+  {
+    "RoundId": 0,
+    "FirstSeenTs": 1767230600,
+    "FirstSeenDate": "2026-01-01T01:23:20Z",
+    "NumFundings": 1,
+    "FundedTotal": 100,
+    "NumTrades": 3,
+    "Volume": 24,
+    "NumTraders": 3,
+    "NumSells": 1,
+    "SoldTotal": 7,
+    "Settled": true,
+    "ValuesMask": 5,
+    "Carried": 90,
+    "EscrowedTotal": 35,
+    "NumClaims": 1,
+    "ClaimedTotal": 17
+  }
+]

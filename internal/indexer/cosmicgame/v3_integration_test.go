@@ -148,9 +148,12 @@ func TestChampionDurationZeroAndOverflowReads(t *testing.T) {
 	}
 
 	overflow := new(big.Int).Lsh(big.NewInt(1), 80)
+	zero := big.NewInt(0)
 	testChain.RegisterCall(addr(fxGameAddr),
 		testchain.MustContractStub(cgc.CosmicSignatureGameV3ABI).
-			Return("championDurations", overflow, big.NewInt(1)).
+			Return("roundStats",
+				zero, zero, zero, zero, zero, zero,
+				overflow, big.NewInt(1), zero).
 			Handler())
 	if _, _, err := testHandlers.readChampionDurations(context.Background(), 999); err == nil {
 		t.Fatal("overflowing champion duration was accepted")

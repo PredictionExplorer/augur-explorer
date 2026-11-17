@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Escrows": [
+      {
+        "Amounts": [
+          20,
+          0,
+          15,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "BlockNum": 158,
+        "DateTime": "2026-01-01T01:36:40Z",
+        "EvtLogId": 5311,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767231400,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001109",
+        "TxId": 1109
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}

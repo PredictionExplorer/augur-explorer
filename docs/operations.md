@@ -4,10 +4,13 @@ How to run, deploy, and maintain the RWCG backend.
 
 ## Local development
 
-Prerequisites: Go 1.26+, Docker (for Postgres and integration tests).
+Prerequisites: Go 1.26+ and a PostgreSQL server. Docker is optional: it is
+one way to get a database (`docker compose up db migrate`) and the fallback
+backend for integration tests, but any locally running PostgreSQL works.
 
 ```bash
-# Start a migrated database
+# Start a migrated database (any PostgreSQL server; the compose service is
+# one convenient option)
 docker compose up db migrate
 
 # Environment
@@ -54,14 +57,29 @@ supervisor.
 
 ```bash
 make test              # unit tests, race detector, shuffled
-make test-integration  # + testcontainers Postgres (needs Docker)
+make test-integration  # + real Postgres (TEST_PGSQL_URL server, or testcontainers)
 make lint              # golangci-lint
 make vuln              # govulncheck dependency scan
 ```
 
-Integration tests get a fresh PostgreSQL container with all migrations
-applied via `internal/testdb`; they skip automatically when Docker is not
-available.
+Integration tests get a fresh, fully-migrated throwaway PostgreSQL database
+via `internal/testdb`. Two backends:
+
+- **Local server (no Docker).** Set `TEST_PGSQL_URL` to a URL naming a
+  maintenance database on a running PostgreSQL 13+ server whose role has
+  the `CREATEDB` privilege, e.g.
+
+  ```bash
+  export TEST_PGSQL_URL="postgres://rwcg:secret@localhost:5432/postgres?sslmode=disable"
+  ```
+
+  Each test provisions a uniquely-named `rwcg_test_*` database there and
+  drops it on cleanup. Misconfiguration fails the tests loudly.
+- **Testcontainers (fallback).** With `TEST_PGSQL_URL` unset, each test
+  starts a PostgreSQL container, which needs a running Docker daemon; the
+  tests skip automatically when Docker is not available.
+
+The coverage gate (`make coverage-check`) accepts either backend.
 
 ## Database migrations
 

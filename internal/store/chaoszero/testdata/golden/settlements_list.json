@@ -1,0 +1,34 @@
+[
+  {
+    "RecordId": 1,
+    "EvtLogId": 5310,
+    "BlockNum": 158,
+    "TxId": 1109,
+    "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001109",
+    "TimeStamp": 1767231400,
+    "DateTime": "2026-01-01T01:36:40Z",
+    "RoundId": 0,
+    "ValuesMask": 5,
+    "Answers": [
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "Escrowed": [
+      20,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Carried": 90
+  }
+]

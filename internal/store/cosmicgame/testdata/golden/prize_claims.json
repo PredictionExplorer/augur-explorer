@@ -206,10 +206,10 @@
       "CstAmountEth": 45
     },
     "LastCstBidder": {
-      "WinnerAddr": "",
-      "NftTokenId": 0,
-      "CstAmount": "",
-      "CstAmountEth": 0
+      "WinnerAddr": "0x2300000000000000000000000000000000000023",
+      "NftTokenId": 4,
+      "CstAmount": "40000000000000000000",
+      "CstAmountEth": 40
     },
     "ChronoWarrior": {
       "WinnerAddr": "0x2100000000000000000000000000000000000021",

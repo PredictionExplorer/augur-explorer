@@ -49,7 +49,7 @@ generate-check:
 test:
 	go test -race -shuffle=on ./...
 
-## test-integration: run tests that need Docker (testcontainers)
+## test-integration: run tests that need PostgreSQL (TEST_PGSQL_URL server, or Docker testcontainers)
 test-integration:
 	go test -race -shuffle=on -tags=integration -timeout 20m ./...
 

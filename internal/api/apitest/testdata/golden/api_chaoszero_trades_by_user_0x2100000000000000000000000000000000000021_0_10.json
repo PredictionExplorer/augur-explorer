@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "Trades": [
+      {
+        "BlockNum": 152,
+        "Buy": true,
+        "Cash": 12,
+        "DateTime": "2026-01-01T01:26:40Z",
+        "EvtLogId": 5303,
+        "Question": 0,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767230800,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001103",
+        "TxId": 1103,
+        "Units": 16,
+        "UserAddr": "0x2100000000000000000000000000000000000021",
+        "Yes": true
+      }
+    ],
+    "UserAddr": "0x2100000000000000000000000000000000000021",
+    "UserAid": 21,
+    "error": "",
+    "status": 1
+  }
+}

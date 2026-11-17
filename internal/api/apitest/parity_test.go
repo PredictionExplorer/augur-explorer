@@ -461,6 +461,65 @@ var parityCases = map[string][]parityCase{
 	},
 	"/api/randomwalk/ranking/beauty-pair-ids": {{path: "/api/randomwalk/ranking/beauty-pair-ids"}},
 	"/api/randomwalk/metadata/{token_id}":     {{path: "/api/randomwalk/metadata/10"}},
+
+	// --- ChaosZero (see internal/testfixtures/seed/04_chaoszero.sql) -----------------------------------
+	"/api/chaoszero/statistics": {{path: "/api/chaoszero/statistics"}},
+	"/api/chaoszero/contracts":  {{path: "/api/chaoszero/contracts"}},
+	"/api/chaoszero/rounds/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/rounds/list/0/10"},
+	},
+	"/api/chaoszero/rounds/info/{round_num}": {
+		{path: "/api/chaoszero/rounds/info/0"}, // settled round, every sub-list populated
+		{path: "/api/chaoszero/rounds/info/1"}, // open round
+	},
+	"/api/chaoszero/trades/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/trades/list/0/10"},
+	},
+	"/api/chaoszero/trades/by_round/{round_num}/{offset}/{limit}": {
+		{path: "/api/chaoszero/trades/by_round/0/0/10"},
+	},
+	"/api/chaoszero/trades/by_user/{user_addr}/{offset}/{limit}": {
+		{path: "/api/chaoszero/trades/by_user/" + addrAlice + "/0/10"},
+	},
+	"/api/chaoszero/traders/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/traders/list/0/10"},
+	},
+	"/api/chaoszero/funding/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/funding/list/0/10"},
+	},
+	"/api/chaoszero/splits/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/splits/list/0/10"},
+	},
+	"/api/chaoszero/merges/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/merges/list/0/10"},
+	},
+	"/api/chaoszero/settlements/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/settlements/list/0/10"},
+	},
+	"/api/chaoszero/claims/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/claims/list/0/10"},
+	},
+	"/api/chaoszero/claims/by_user/{user_addr}/{offset}/{limit}": {
+		{path: "/api/chaoszero/claims/by_user/" + addrAlice + "/0/10"},
+	},
+	"/api/chaoszero/answers/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/answers/list/0/10"},
+	},
+	"/api/chaoszero/escrows/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/escrows/list/0/10"},
+	},
+	"/api/chaoszero/payouts/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/payouts/list/0/10"},
+	},
+	"/api/chaoszero/transfers/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/transfers/list/0/10"},
+	},
+	"/api/chaoszero/transfers/by_user/{user_addr}/{offset}/{limit}": {
+		{path: "/api/chaoszero/transfers/by_user/" + addrDave + "/0/10"},
+	},
+	"/api/chaoszero/approvals/list/{offset}/{limit}": {
+		{path: "/api/chaoszero/approvals/list/0/10"},
+	},
 }
 
 // TestAPIParity snapshots every registered GET route against the fixture

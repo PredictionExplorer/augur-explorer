@@ -202,7 +202,10 @@ func initHarness(ctx context.Context, db *testdb.DB) error {
 func registerCallHandlers() {
 	game := ethcommon.HexToAddress(fxGameAddr)
 	donationRecords := gameABI.Methods["ethDonationWithInfoRecords"]
-	championMethod := gameV3ABI.Methods["championDurations"]
+	// The v3.1 bindings rebuild consolidated the per-round getters into
+	// roundStats(); its 7th and 8th outputs are the champion durations the
+	// production reader consumes (readChampionDurations).
+	roundStatsMethod := gameV3ABI.Methods["roundStats"]
 	testChain.RegisterCall(game, func(input []byte) ([]byte, error) {
 		if len(input) < 4 {
 			return nil, fmt.Errorf("unexpected call to game contract: %x", input)
@@ -220,18 +223,21 @@ func registerCallHandlers() {
 				big.NewInt(0),
 				fmt.Sprintf(`{"fixture":"donation record %v"}`, recordID),
 			)
-		case string(championMethod.ID):
-			args, err := championMethod.Inputs.Unpack(input[4:])
+		case string(roundStatsMethod.ID):
+			args, err := roundStatsMethod.Inputs.Unpack(input[4:])
 			if err != nil {
-				return nil, fmt.Errorf("unpacking championDurations args: %w", err)
+				return nil, fmt.Errorf("unpacking roundStats args: %w", err)
 			}
 			round := args[0].(*big.Int).Int64()
 			championDurationsMu.RLock()
 			durations := championDurations[round]
 			championDurationsMu.RUnlock()
-			return championMethod.Outputs.Pack(
-				big.NewInt(durations[0]),
-				big.NewInt(durations[1]),
+			zero := big.NewInt(0)
+			return roundStatsMethod.Outputs.Pack(
+				zero, zero, zero, zero, zero, zero, // bid counts, spend totals, max prices
+				big.NewInt(durations[0]), // enduranceChampionDuration
+				big.NewInt(durations[1]), // chronoWarriorDuration
+				zero, // flags
 			)
 		default:
 			return nil, fmt.Errorf("unexpected call to game contract: %x", input)

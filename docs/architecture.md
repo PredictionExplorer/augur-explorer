@@ -114,7 +114,7 @@ flowchart LR
 | `internal/freezer` | Geth freezer/ancient store readers |
 | `internal/notify` | Twitter (`tweets`) and WhatsApp (`wanotif`) clients, the unified RandomWalk bot (`rwbot`) and the URL watchdog (`urlalarm`) |
 | `internal/srvmonitor` | Terminal server-monitoring engine (monitors, alarm tracker, layout; termbox UI in `termboxui`) |
-| `internal/testdb` | Disposable migrated Postgres for integration tests (testcontainers) |
+| `internal/testdb` | Disposable migrated Postgres for integration tests (local server via `TEST_PGSQL_URL`, or testcontainers) |
 | `contracts/` | abigen-generated Go bindings (`bindings.gen.go` per package, regenerated from committed `buildjson/` artifacts with the go.mod-pinned abigen — see `contracts/README.md`) |
 | `db/migrations` | goose schema migrations — the source of truth for the schema |
 | `deploy/` | Dockerfile, systemd units |

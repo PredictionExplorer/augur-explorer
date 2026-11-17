@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Claims": [
+      {
+        "Amounts": [
+          17,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "BlockNum": 159,
+        "DateTime": "2026-01-01T01:38:20Z",
+        "EvtLogId": 5312,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767231500,
+        "Total": 17,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001110",
+        "TxId": 1110,
+        "UserAddr": "0x2100000000000000000000000000000000000021"
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}

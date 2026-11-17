@@ -1,0 +1,167 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1061
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1060
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1060,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T05:26:40+00:00"
+      },
+      {
+        "block_num": 1061,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T05:28:20+00:00"
+      }
+    ]
+  },
+  "cz_claim": {
+    "added": [
+      {
+        "amounts": [
+          17000000000000000000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "block_num": 1061,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:1061/0",
+        "round_id": 0,
+        "time_stamp": "2026-01-02T05:28:20+00:00",
+        "total": 17000000000000000000,
+        "tx_id": "0xe563fc55626c0c1ee7fa087c584ae095f5e569e0d685fc9adeb67f21c723a67e",
+        "user_aid": "0x2100000000000000000000000000000000000021"
+      }
+    ]
+  },
+  "cz_round_initialized": {
+    "added": [
+      {
+        "block_num": 1060,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:1060/0",
+        "round_id": 0,
+        "time_stamp": "2026-01-02T05:26:40+00:00",
+        "tx_id": "0x3da41e739c55baff7a96e8449e47d5f0cd7ec7c323c71c2ee9852abb1ce8558b"
+      }
+    ]
+  },
+  "cz_round_settled": {
+    "added": [
+      {
+        "answers": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "block_num": 1060,
+        "carried": 77000000000000000000,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "escrowed": [
+          20000000000000000000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "evtlog_id": "evt:1060/1",
+        "round_id": 0,
+        "time_stamp": "2026-01-02T05:26:40+00:00",
+        "tx_id": "0x3da41e739c55baff7a96e8449e47d5f0cd7ec7c323c71c2ee9852abb1ce8558b",
+        "values_mask": 1
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1060,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "e2d996ef",
+        "tx_id": "0x3da41e739c55baff7a96e8449e47d5f0cd7ec7c323c71c2ee9852abb1ce8558b"
+      },
+      {
+        "block_num": 1060,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 1,
+        "topic0_sig": "7bac5aa6",
+        "tx_id": "0x3da41e739c55baff7a96e8449e47d5f0cd7ec7c323c71c2ee9852abb1ce8558b"
+      },
+      {
+        "block_num": 1061,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "d1669759",
+        "tx_id": "0xe563fc55626c0c1ee7fa087c584ae095f5e569e0d685fc9adeb67f21c723a67e"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1061
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1060,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x3da41e739c55baff7a96e8449e47d5f0cd7ec7c323c71c2ee9852abb1ce8558b",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1061,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0xe563fc55626c0c1ee7fa087c584ae095f5e569e0d685fc9adeb67f21c723a67e",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

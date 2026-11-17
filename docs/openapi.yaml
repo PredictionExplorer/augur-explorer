@@ -9,10 +9,11 @@ info:
     a `Link` to the migration guide (`docs/api-v2-migration.md`), which maps
     every v1 path to its `/api/v2` replacement in `docs/openapi-v2.yaml` —
     the canonical specification for new integrations. v1 keeps answering
-    byte-identically until the sunset gates of ADR-0005 are met (announced
+    byte-identically until     the sunset gates of ADR-0005 are met (announced
     via the `Sunset` header); the exceptions that are *not* deprecated are
     the operational endpoints (`/healthz`, `/readyz`, `/version`), the
-    contract-pinned metadata routes and the FAQ proxy.
+    contract-pinned metadata routes, the FAQ proxy and the ChaosZero
+    surface (`/api/chaoszero/*`, added after the v1 freeze).
 
     JSON API served by cmd/apiserver (net/http) for two related on-chain projects:
 
@@ -26,6 +27,13 @@ info:
       Endpoints under `/api/randomwalk/*` expose token mints, trading history,
       offers, per-token and market statistics, and the beauty-contest (Elo)
       token ranking.
+    * **ChaosZero** - an eight-question parimutuel prediction market on
+      Arbitrum (CST collateral, ERC-1155 positions). Endpoints under
+      `/api/chaoszero/*` expose rounds, trades, traders, fundings, position
+      splits/merges, settlements, claims, escrows, vault payouts, position
+      transfers, operator approvals and aggregate statistics. CST amounts
+      are returned scaled to whole CST (float). This surface was added
+      after the v1 freeze and is not deprecated.
 
     Every JSON handler (unless noted otherwise) wraps its payload in a common
     envelope `{"status": 1, "error": "", ...}`; errors are reported as
@@ -34,8 +42,8 @@ info:
     exceeded; mutating endpoints add stricter per-route limits.
 
     Route groups can be disabled per deployment with the environment switches
-    ENABLE_ROUTES_COSMICGAME, ENABLE_ROUTES_RANDOMWALK and ENABLE_ROUTES_FAQ
-    (all default to enabled). Static NFT asset routes (`/images/**`, `/static/**`)
+    ENABLE_ROUTES_COSMICGAME, ENABLE_ROUTES_RANDOMWALK, ENABLE_ROUTES_CHAOSZERO
+    and ENABLE_ROUTES_FAQ (all default to enabled). Static NFT asset routes (`/images/**`, `/static/**`)
     are registered only when NFT_ASSETS_ROOT / STATIC_ABI_DIR are configured and
     are not part of this specification; the Prometheus `/metrics` and pprof
     endpoints live on a separate internal listener (METRICS_ADDR) and are also
@@ -70,6 +78,8 @@ tags:
     description: Beauty-contest token ranking (Elo), random explore pairs and wallet-signed votes.
   - name: randomwalk-statistics
     description: RandomWalk collection and market statistics, charts and reports.
+  - name: chaoszero
+    description: ChaosZero prediction-market rounds, trades, traders, fundings, position splits/merges, settlements, claims, escrows, vault payouts, ERC-1155 transfers and approvals.
   - name: metadata
     description: ERC-721 tokenURI metadata endpoints (OpenSea-compatible JSON).
   - name: faq
@@ -1982,6 +1992,311 @@ components:
         error: { type: string }
         component: { type: string }
         upstream: { type: string }
+    CZ_EventRow:
+      type: object
+      description: Columns shared by every ChaosZero per-event list row.
+      properties:
+        RecordId: { type: integer, format: int64 }
+        EvtLogId: { type: integer, format: int64 }
+        BlockNum: { type: integer, format: int64 }
+        TxId: { type: integer, format: int64 }
+        TxHash: { type: string }
+        TimeStamp:
+          type: integer
+          format: int64
+          description: Unix seconds.
+        DateTime:
+          type: string
+          description: Formatted date-time string for TimeStamp.
+    CZ_RoundSummary:
+      type: object
+      description: One row of the combined per-round list - lifecycle, funding, trading and settlement facts aggregated from several cz_ tables.
+      properties:
+        RoundId: { type: integer, format: int64 }
+        FirstSeenTs: { type: integer, format: int64 }
+        FirstSeenDate: { type: string }
+        NumFundings: { type: integer, format: int64 }
+        FundedTotal: { type: number, format: double }
+        NumTrades: { type: integer, format: int64 }
+        Volume: { type: number, format: double }
+        NumTraders: { type: integer, format: int64 }
+        NumSells:
+          type: integer
+          format: int64
+          description: Early exits - sells are only possible while the round is open.
+        SoldTotal:
+          type: number
+          format: double
+          description: CST withdrawn early through those sells.
+        Settled: { type: boolean }
+        ValuesMask: { type: integer }
+        Carried: { type: number, format: double }
+        EscrowedTotal: { type: number, format: double }
+        NumClaims: { type: integer, format: int64 }
+        ClaimedTotal: { type: number, format: double }
+    CZ_QuestionOdds:
+      type: object
+      description: Per-question implied odds derived from the question's most recent trade (a winning unit pays exactly 1 CST). Questions without trades have NumTrades 0 and zero-valued price fields.
+      properties:
+        Question: { type: integer }
+        NumTrades: { type: integer, format: int64 }
+        LastYes:
+          type: boolean
+          description: Side of the most recent trade.
+        LastBuy:
+          type: boolean
+          description: Direction of the most recent trade.
+        LastPrice:
+          type: number
+          format: double
+          description: CST per position unit in that trade.
+        ImpliedYes:
+          type: number
+          format: double
+          description: P(YES) implied by that price, in [0,1].
+        LastTs: { type: integer, format: int64 }
+        LastDate: { type: string }
+    CZ_RoundFunded:
+      description: One cz_round_funded row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            CallerAddr: { type: string }
+            Donated: { type: number, format: double }
+            TransfersUsed: { type: number, format: double }
+            CarryUsed: { type: number, format: double }
+            Allocations:
+              type: array
+              items: { type: number, format: double }
+    CZ_Trade:
+      description: One cz_trade row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            UserAddr: { type: string }
+            Question: { type: integer }
+            Yes: { type: boolean }
+            Buy: { type: boolean }
+            Cash: { type: number, format: double }
+            Units: { type: number, format: double }
+    CZ_PositionSplit:
+      description: One cz_position_split row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            UserAddr: { type: string }
+            Question: { type: integer }
+            Amount: { type: number, format: double }
+    CZ_PositionsMerged:
+      description: One cz_positions_merged row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            UserAddr: { type: string }
+            Amounts:
+              type: array
+              items: { type: number, format: double }
+            CollateralOut: { type: number, format: double }
+    CZ_RoundSettled:
+      description: One cz_round_settled row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            ValuesMask: { type: integer }
+            Answers:
+              type: array
+              items: { type: boolean }
+            Escrowed:
+              type: array
+              items: { type: number, format: double }
+            Carried: { type: number, format: double }
+    CZ_Claim:
+      description: One cz_claim row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            UserAddr: { type: string }
+            Amounts:
+              type: array
+              items: { type: number, format: double }
+            Total: { type: number, format: double }
+    CZ_AnswersObserved:
+      description: One cz_answers_observed row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            KnownMask: { type: integer }
+            ValuesMask: { type: integer }
+    CZ_CycleEscrowed:
+      description: One cz_cycle_escrowed row (vault).
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            Amounts:
+              type: array
+              items: { type: number, format: double }
+    CZ_Paid:
+      description: One cz_paid row (vault).
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            RoundId: { type: integer, format: int64 }
+            Question: { type: integer }
+            RecipientAddr: { type: string }
+            Amount: { type: number, format: double }
+    CZ_PositionTransfer:
+      description: One cz_position_transfer row (ERC-1155 TransferSingle/TransferBatch element).
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            BatchIndex: { type: integer }
+            OperatorAddr: { type: string }
+            FromAddr: { type: string }
+            ToAddr: { type: string }
+            PositionId:
+              type: string
+              description: ERC-1155 position token id (decimal string, uint256).
+            RoundId: { type: integer, format: int64 }
+            Question: { type: integer }
+            Yes: { type: boolean }
+            Amount: { type: number, format: double }
+    CZ_ApprovalForAll:
+      description: One cz_approval_for_all row.
+      allOf:
+        - $ref: '#/components/schemas/CZ_EventRow'
+        - type: object
+          properties:
+            OwnerAddr: { type: string }
+            OperatorAddr: { type: string }
+            Approved: { type: boolean }
+    CZ_TraderSummary:
+      type: object
+      description: One address's market cash flows across every money-moving cz_ table (trades, splits, merges, claims). Profit is realized cash only - positions still held in unsettled rounds are not valued.
+      properties:
+        UserAddr: { type: string }
+        NumRounds:
+          type: integer
+          format: int64
+          description: Distinct rounds with any activity.
+        FirstTs: { type: integer, format: int64 }
+        FirstDate: { type: string }
+        LastTs: { type: integer, format: int64 }
+        LastDate: { type: string }
+        NumBuys: { type: integer, format: int64 }
+        BuyVolume:
+          type: number
+          format: double
+          description: CST paid buying positions.
+        NumSells: { type: integer, format: int64 }
+        SellVolume:
+          type: number
+          format: double
+          description: CST withdrawn early by selling to the pool.
+        NumSplits: { type: integer, format: int64 }
+        SplitVolume:
+          type: number
+          format: double
+          description: CST deposited minting YES+NO pairs.
+        NumMerges: { type: integer, format: int64 }
+        MergeVolume:
+          type: number
+          format: double
+          description: CST redeemed merging pairs back.
+        NumClaims: { type: integer, format: int64 }
+        ClaimVolume:
+          type: number
+          format: double
+          description: CST claimed after settlement.
+        TotalIn:
+          type: number
+          format: double
+          description: Buys + splits.
+        TotalOut:
+          type: number
+          format: double
+          description: Sells + merges + claims.
+        Profit:
+          type: number
+          format: double
+          description: TotalOut - TotalIn (realized).
+    CZ_Statistics:
+      type: object
+      description: Combined dashboard summary over every cz_ table.
+      properties:
+        NumRounds: { type: integer, format: int64 }
+        LatestRound: { type: integer, format: int64 }
+        LatestRoundOpen:
+          type: boolean
+          description: Latest round has no settlement yet.
+        OpenLiquidity:
+          type: number
+          format: double
+          description: CST collateral in the open round's question pools (0 when settled).
+        NumFundings: { type: integer, format: int64 }
+        FundedTotal: { type: number, format: double }
+        NumTrades: { type: integer, format: int64 }
+        Volume: { type: number, format: double }
+        NumTraders: { type: integer, format: int64 }
+        NumSells: { type: integer, format: int64 }
+        SoldTotal: { type: number, format: double }
+        NumSplits: { type: integer, format: int64 }
+        NumMerges: { type: integer, format: int64 }
+        NumSettled: { type: integer, format: int64 }
+        CarriedTotal: { type: number, format: double }
+        NumClaims: { type: integer, format: int64 }
+        ClaimedTotal: { type: number, format: double }
+        NumPayouts: { type: integer, format: int64 }
+        PaidTotal: { type: number, format: double }
+        NumTransfers: { type: integer, format: int64 }
+        NumApprovals: { type: integer, format: int64 }
+        NumAnswerEvents: { type: integer, format: int64 }
+    CZ_RoundDetail:
+      type: object
+      description: Combined single-round view - the summary row plus the round's implied odds, fundings, settlement, escrow, answer observations, claims and vault payouts.
+      properties:
+        Summary: { $ref: '#/components/schemas/CZ_RoundSummary' }
+        Odds:
+          type: array
+          description: Exactly eight rows, one per question 0..7.
+          items: { $ref: '#/components/schemas/CZ_QuestionOdds' }
+        Fundings:
+          type: array
+          items: { $ref: '#/components/schemas/CZ_RoundFunded' }
+        Settlement:
+          oneOf:
+            - $ref: '#/components/schemas/CZ_RoundSettled'
+            - type: 'null'
+        Escrow:
+          oneOf:
+            - $ref: '#/components/schemas/CZ_CycleEscrowed'
+            - type: 'null'
+        Answers:
+          type: array
+          items: { $ref: '#/components/schemas/CZ_AnswersObserved' }
+        Claims:
+          type: array
+          items: { $ref: '#/components/schemas/CZ_Claim' }
+        Payouts:
+          type: array
+          items: { $ref: '#/components/schemas/CZ_Paid' }
 paths:
   /healthz:
     get:
@@ -6806,6 +7121,487 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SimpleError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  # --- ChaosZero (added after the v1 freeze; not deprecated) -----------------
+  /api/chaoszero/statistics:
+    get:
+      tags: [chaoszero]
+      summary: Aggregate ChaosZero market statistics
+      responses:
+        '200':
+          description: Dashboard totals over every cz_ table.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Statistics: { $ref: '#/components/schemas/CZ_Statistics' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/contracts:
+    get:
+      tags: [chaoszero]
+      summary: ChaosZero contract addresses
+      responses:
+        '200':
+          description: Market, answer-source and vault contract addresses.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      MarketAddr: { type: string }
+                      SourceAddr: { type: string }
+                      VaultAddr: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/rounds/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Combined per-round summaries, newest round first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Round summaries.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Rounds:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_RoundSummary' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/rounds/info/{round_num}:
+    get:
+      tags: [chaoszero]
+      summary: Combined single-round view
+      description: Summary plus implied odds, fundings, settlement, escrow, answer observations, claims and vault payouts. A round the indexer never saw answers the status=0 envelope with "Round not found".
+      parameters:
+        - $ref: '#/components/parameters/RoundNumPath'
+      responses:
+        '200':
+          description: Round detail.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      RoundNum: { type: integer, format: int64 }
+                      Round: { $ref: '#/components/schemas/CZ_RoundDetail' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/trades/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Trades, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Trades.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Trades:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_Trade' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/trades/by_round/{round_num}/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: One round's trades in event order
+      parameters:
+        - $ref: '#/components/parameters/RoundNumPath'
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Trades of the round.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      RoundNum: { type: integer, format: int64 }
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Trades:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_Trade' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/trades/by_user/{user_addr}/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: One user's trades, newest first
+      description: An address absent from the address table answers an empty list with UserAid 0.
+      parameters:
+        - $ref: '#/components/parameters/UserAddrPath'
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Trades of the user.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      UserAid: { type: integer, format: int64 }
+                      UserAddr: { type: string }
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Trades:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_Trade' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/traders/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Per-address cash-flow summaries, most profitable first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Trader summaries.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Traders:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_TraderSummary' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/funding/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Round fundings, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Round fundings.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Fundings:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_RoundFunded' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/splits/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Position splits, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Position splits.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Splits:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_PositionSplit' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/merges/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Position merges, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Position merges.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Merges:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_PositionsMerged' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/settlements/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Round settlements, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Round settlements.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Settlements:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_RoundSettled' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/claims/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Post-settlement claims, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Claims.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Claims:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_Claim' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/claims/by_user/{user_addr}/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: One user's claims, newest first
+      description: An address absent from the address table answers an empty list with UserAid 0.
+      parameters:
+        - $ref: '#/components/parameters/UserAddrPath'
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Claims of the user.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      UserAid: { type: integer, format: int64 }
+                      UserAddr: { type: string }
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Claims:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_Claim' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/answers/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Answer observations, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Answer observations.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Answers:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_AnswersObserved' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/escrows/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Vault escrows, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Vault escrows.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Escrows:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_CycleEscrowed' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/payouts/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: Vault payouts, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Vault payouts.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Payouts:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_Paid' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/transfers/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: ERC-1155 position transfers, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Position transfers.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Transfers:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_PositionTransfer' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/transfers/by_user/{user_addr}/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: One user's transfers (as sender or receiver), newest first
+      description: An address absent from the address table answers an empty list with UserAid 0.
+      parameters:
+        - $ref: '#/components/parameters/UserAddrPath'
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Transfers of the user.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      UserAid: { type: integer, format: int64 }
+                      UserAddr: { type: string }
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Transfers:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_PositionTransfer' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/chaoszero/approvals/list/{offset}/{limit}:
+    get:
+      tags: [chaoszero]
+      summary: ERC-1155 operator approvals, newest first
+      parameters:
+        - $ref: '#/components/parameters/OffsetPath'
+        - $ref: '#/components/parameters/LimitPath'
+      responses:
+        '200':
+          description: Operator approvals.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      Offset: { type: integer }
+                      Limit: { type: integer }
+                      Approvals:
+                        type: array
+                        items: { $ref: '#/components/schemas/CZ_ApprovalForAll' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
 

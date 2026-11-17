@@ -1,0 +1,423 @@
+//go:build integration
+
+// Test harness for the ChaosZero handler fixture suite: one testcontainers
+// Postgres plus one fake Ethereum node per test process, a Handlers set
+// built exactly like cmd/cz-etl builds it, and helpers that push synthetic
+// logs through the real production pipeline. The structure mirrors the
+// RandomWalk handler harness (internal/indexer/randomwalk).
+package chaoszero
+
+import (
+	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"log/slog"
+	"math/big"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+
+	czc "github.com/PredictionExplorer/augur-explorer/contracts/chaoszero"
+	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
+	"github.com/PredictionExplorer/augur-explorer/internal/store"
+	czstore "github.com/PredictionExplorer/augur-explorer/internal/store/chaoszero"
+	"github.com/PredictionExplorer/augur-explorer/internal/testchain"
+	"github.com/PredictionExplorer/augur-explorer/internal/testdb"
+	"github.com/PredictionExplorer/augur-explorer/internal/testutil"
+)
+
+// Fixture contract and user addresses (digits only: checksummed form equals
+// the lowercase form), matching the conventions of the other suites.
+const (
+	fxMarketAddr = "0x3100000000000000000000000000000000000031"
+	fxSourceAddr = "0x3200000000000000000000000000000000000032"
+	fxVaultAddr  = "0x3300000000000000000000000000000000000033"
+
+	fxAlice = "0x2100000000000000000000000000000000000021"
+	fxBob   = "0x2200000000000000000000000000000000000022"
+	fxCarol = "0x2300000000000000000000000000000000000023"
+	fxDave  = "0x2400000000000000000000000000000000000024"
+	fxZero  = "0x0000000000000000000000000000000000000000"
+)
+
+var (
+	testDB       *testdb.DB
+	testChain    *testchain.Chain
+	testIndexer  *indexer.Engine // the production pipeline the fixtures run through
+	errSetupSkip error           // non-nil: integration environment unavailable, skip
+
+	dbStore *store.Store
+	czRepo  *czstore.Repo
+	eclient *ethclient.Client
+
+	// Rebuilt by resetDB over the freshly re-registered contract addresses.
+	testHandlers  *Handlers
+	testProcess   indexer.ProcessFunc
+	testContracts Contracts
+
+	// ABI handles for the fixture-log builders (parsed once in TestMain).
+	fxMarketABI *abi.ABI
+	fxVaultABI  *abi.ABI
+)
+
+// TestMain owns the database container, the fake chain and the harness state
+// that cmd/cz-etl would normally initialize. Fixtures reset the database,
+// not the process, between cases.
+func TestMain(m *testing.M) {
+	os.Exit(runMain(m))
+}
+
+func runMain(m *testing.M) int {
+	flag.Parse()
+	time.Local = time.UTC
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	db, stopDB, err := testdb.Start(ctx)
+	if err != nil {
+		if errors.Is(err, testdb.ErrContainerUnavailable) {
+			errSetupSkip = err
+			return m.Run() // every test skips with the reason
+		}
+		fmt.Fprintf(os.Stderr, "chaoszero handler test: starting test database: %v\n", err)
+		return 1
+	}
+	defer stopDB()
+	testDB = db
+
+	chain, stopChain := testchain.Start()
+	defer stopChain()
+	testChain = chain
+
+	if err := initHarness(ctx, db); err != nil {
+		fmt.Fprintf(os.Stderr, "chaoszero handler test: initializing harness: %v\n", err)
+		return 1
+	}
+
+	return m.Run()
+}
+
+// initHarness mirrors the initialization order of cmd/cz-etl: RPC client,
+// storage, ABIs. The contract addresses and the Handlers set are
+// (re)established by resetDB.
+func initHarness(ctx context.Context, db *testdb.DB) error {
+	rpcclient, err := rpc.DialContext(ctx, testChain.URL())
+	if err != nil {
+		return fmt.Errorf("dialing fake chain: %w", err)
+	}
+	eclient = ethclient.NewClient(rpcclient)
+
+	dbStore = store.NewFromPool(db.Pool)
+	czRepo = czstore.NewRepo(dbStore)
+
+	// The fixtures push logs through the same engine pipeline cz-etl runs.
+	testIndexer, err = indexer.New(indexer.Config{
+		Store:  dbStore,
+		Client: eclient,
+		Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		return fmt.Errorf("building indexer engine: %w", err)
+	}
+
+	marketABI, err := abi.JSON(strings.NewReader(czc.MarketABI))
+	if err != nil {
+		return fmt.Errorf("parsing market ABI: %w", err)
+	}
+	fxMarketABI = &marketABI
+	vaultABI, err := abi.JSON(strings.NewReader(czc.VaultABI))
+	if err != nil {
+		return fmt.Errorf("parsing vault ABI: %w", err)
+	}
+	fxVaultABI = &vaultABI
+	return nil
+}
+
+// requireHarness skips the test when Docker is unavailable.
+func requireHarness(t *testing.T) {
+	t.Helper()
+	if errSetupSkip != nil {
+		t.Skipf("skipping: %v", errSetupSkip)
+	}
+	if testDB == nil {
+		t.Fatal("chaoszero handler test harness not initialized (TestMain did not run?)")
+	}
+}
+
+// resetSeedSQL restores what a fresh production database provides: the
+// contract registry row and the watermark rows (zeroed so harness runs
+// start at block 0, not at the production deployment block).
+const resetSeedSQL = `
+INSERT INTO cz_contracts(market_addr, source_addr, vault_addr)
+  VALUES ('` + fxMarketAddr + `', '` + fxSourceAddr + `', '` + fxVaultAddr + `');
+INSERT INTO cz_proc_status(last_evt_id, last_block) VALUES (0, 0);
+INSERT INTO last_block(block_num) VALUES (0);
+`
+
+// resetDB truncates every user table, restarts all sequences, re-applies the
+// seed, re-registers the contract addresses (the same BootstrapContracts
+// call cmd/cz-etl makes) and rebuilds the Handlers set over them.
+func resetDB(t *testing.T) {
+	t.Helper()
+	requireHarness(t)
+	ctx := context.Background()
+
+	var tables string
+	err := testDB.SQL.QueryRowContext(ctx, `
+		SELECT string_agg(quote_ident(table_name), ', ')
+		FROM information_schema.tables
+		WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+		  AND table_name <> 'goose_db_version'`).Scan(&tables)
+	if err != nil {
+		t.Fatalf("listing tables for reset: %v", err)
+	}
+	if _, err := testDB.SQL.ExecContext(ctx, "TRUNCATE "+tables+" RESTART IDENTITY CASCADE"); err != nil {
+		t.Fatalf("truncating tables: %v", err)
+	}
+	dbStore.ResetAddressCache()
+
+	if _, err := testDB.SQL.ExecContext(ctx, resetSeedSQL); err != nil {
+		t.Fatalf("re-seeding database: %v", err)
+	}
+
+	testContracts, _, err = BootstrapContracts(ctx, czRepo, dbStore)
+	if err != nil {
+		t.Fatalf("bootstrapping contract addresses: %v", err)
+	}
+	testHandlers = newTestHandlers(t, czRepo, testContracts)
+	testProcess = indexer.LogProcessor(dbStore, testHandlers.Registry())
+}
+
+// newTestHandlers builds a Handlers set with a discarding logger.
+func newTestHandlers(t *testing.T, repo *czstore.Repo, contracts Contracts) *Handlers {
+	t.Helper()
+	h, err := New(Config{
+		Repo:      repo,
+		Contracts: contracts,
+		Logger:    slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		t.Fatalf("building handlers: %v", err)
+	}
+	return h
+}
+
+// snapshot captures the canonical database state.
+func snapshot(t *testing.T) testutil.Snapshot {
+	t.Helper()
+	snap, err := testutil.TakeSnapshot(context.Background(), testDB.SQL)
+	if err != nil {
+		t.Fatalf("taking snapshot: %v", err)
+	}
+	return snap
+}
+
+// requireNoDiff asserts two snapshots are identical.
+func requireNoDiff(t *testing.T, before, after testutil.Snapshot, context string) {
+	t.Helper()
+	diff, err := testutil.DiffSnapshots(before, after)
+	if err != nil {
+		t.Fatalf("%s: diffing snapshots: %v", context, err)
+	}
+	if strings.TrimSpace(string(diff)) != "{}" {
+		t.Errorf("%s: state changed unexpectedly:\n%s", context, diff)
+	}
+}
+
+// harnessProgress is the production cz-etl watermark adapter with an
+// optional post-write hook. Tests use the hook to cancel Engine.Run only
+// after the target block's watermark write has joined its transaction.
+type harnessProgress struct {
+	repo  *czstore.Repo
+	onSet func(block int64)
+}
+
+func (p *harnessProgress) LastBlock(ctx context.Context) (int64, error) {
+	status, err := p.repo.ProcessingStatus(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return status.LastBlockNum, nil
+}
+
+func (p *harnessProgress) SetLastBlock(ctx context.Context, block int64) error {
+	status, err := p.repo.ProcessingStatus(ctx)
+	if err != nil {
+		return err
+	}
+	status.LastBlockNum = block
+	if err := p.repo.UpdateProcessingStatus(ctx, &status); err != nil {
+		return err
+	}
+	if p.onSet != nil {
+		p.onSet(block)
+	}
+	return nil
+}
+
+// primeHarnessProgress makes the next Engine.Run start at firstBlock without
+// changing the layer-1 last_block watermark being tested.
+func primeHarnessProgress(t *testing.T, firstBlock int64) *harnessProgress {
+	t.Helper()
+	progress := &harnessProgress{repo: czRepo}
+	status, err := czRepo.ProcessingStatus(context.Background())
+	if err != nil {
+		t.Fatalf("reading processing status: %v", err)
+	}
+	status.LastBlockNum = firstBlock - 1
+	if err := czRepo.UpdateProcessingStatus(context.Background(), &status); err != nil {
+		t.Fatalf("priming processing status: %v", err)
+	}
+	return progress
+}
+
+// newHarnessRunEngine builds the same Engine configuration as cmd/cz-etl,
+// with a fixed batch width and one-attempt breaker for deterministic
+// integration tests.
+func newHarnessRunEngine(
+	t *testing.T,
+	progress indexer.Progress,
+	process indexer.ProcessFunc,
+	batchSize uint64,
+) *indexer.Engine {
+	t.Helper()
+	if process == nil {
+		process = testProcess
+	}
+	engine, err := indexer.New(indexer.Config{
+		Store:     dbStore,
+		Client:    eclient,
+		Progress:  progress,
+		Process:   process,
+		Contracts: testContracts.All(),
+		Logger:    slog.New(slog.DiscardHandler),
+		TopicName: testHandlers.Registry().TopicName,
+		Batch: indexer.BatchConfig{
+			Initial: batchSize,
+			Min:     batchSize,
+			Max:     batchSize,
+		},
+		Retry: indexer.RetryConfig{
+			MaxConsecutiveFailures: 1,
+			MinDelay:               time.Nanosecond,
+			MaxDelay:               time.Nanosecond,
+		},
+		CaughtUpDelay: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("building run engine: %v", err)
+	}
+	return engine
+}
+
+// runHarnessRange runs the production polling loop from firstBlock through
+// targetBlock and cancels immediately after the target watermark commits.
+// A returned error is the engine's real breaker error.
+func runHarnessRange(
+	t *testing.T,
+	firstBlock, targetBlock int64,
+	batchSize uint64,
+) error {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	progress := primeHarnessProgress(t, firstBlock)
+	progress.onSet = func(block int64) {
+		if block == targetBlock {
+			cancel()
+		}
+	}
+	err := newHarnessRunEngine(t, progress, nil, batchSize).Run(ctx)
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		t.Fatal("Engine.Run timed out")
+	}
+	return err
+}
+
+// stageTx records one transaction and its logs on the fake chain without
+// touching PostgreSQL. Engine.Run can then fetch and ingest the block through
+// the exact production processBatch path.
+func stageTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) {
+	t.Helper()
+	tx := testChain.AddTx(blockNum, to, nil)
+	for i, l := range logs {
+		l.BlockNumber = uint64(blockNum) // #nosec G115 -- positive test block constant
+		l.BlockHash = testChain.BlockHash(blockNum)
+		l.TxHash = tx.Hash()
+		l.TxIndex = 0
+		l.Index = startLogIndex + uint(i)
+	}
+	testChain.AttachLogs(tx.Hash(), logs)
+}
+
+// ingestTx records one transaction with its logs on the fake chain and runs
+// every log through the production pipeline, returning the evt_log ids.
+func ingestTx(t *testing.T, blockNum int64, to ethcommon.Address, startLogIndex uint, logs []*types.Log) []int64 {
+	t.Helper()
+
+	stageTx(t, blockNum, to, startLogIndex, logs)
+
+	// One transaction per ingested chain transaction, mirroring the engine's
+	// per-block InTx: the fixtures prove every handler behaves identically
+	// inside the production transaction scope.
+	evtIDs := make([]int64, 0, len(logs))
+	err := dbStore.InTx(context.Background(), func(ctx context.Context) error {
+		for _, l := range logs {
+			if _, err := testIndexer.EnsureBlockExists(ctx, blockNum, l.BlockHash.Hex()); err != nil {
+				return fmt.Errorf("EnsureBlockExists(%d): %w", blockNum, err)
+			}
+			txID, _, err := testIndexer.EnsureTransactionExists(ctx, l.TxHash, blockNum)
+			if err != nil {
+				return fmt.Errorf("EnsureTransactionExists(%s): %w", l.TxHash, err)
+			}
+			evtID, err := testIndexer.InsertEventLog(ctx, *l, txID)
+			if err != nil {
+				return fmt.Errorf("InsertEventLog: %w", err)
+			}
+			if err := testProcess(ctx, evtID); err != nil {
+				return fmt.Errorf("processing event %d: %w", evtID, err)
+			}
+			evtIDs = append(evtIDs, evtID)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("ingesting logs: %v", err)
+	}
+	return evtIDs
+}
+
+func buildLog(t *testing.T, contractABI *abi.ABI, eventName string, address ethcommon.Address, indexed []any, nonIndexed []any) *types.Log {
+	t.Helper()
+	return testutil.BuildEventLog(t, contractABI, eventName, address, indexed, nonIndexed)
+}
+
+func bigInt(v int64) *big.Int { return big.NewInt(v) }
+
+// cst converts whole CST to its 1e18-scaled raw amount.
+func cst(n int64) *big.Int {
+	return new(big.Int).Mul(big.NewInt(n), big.NewInt(1_000_000_000_000_000_000))
+}
+
+// cstArray builds a uint256[8] with the given whole-CST values.
+func cstArray(vals ...int64) [8]*big.Int {
+	var out [8]*big.Int
+	for i := range out {
+		out[i] = big.NewInt(0)
+	}
+	for i, v := range vals {
+		out[i] = cst(v)
+	}
+	return out
+}
+
+func addr(hex string) ethcommon.Address { return ethcommon.HexToAddress(hex) }

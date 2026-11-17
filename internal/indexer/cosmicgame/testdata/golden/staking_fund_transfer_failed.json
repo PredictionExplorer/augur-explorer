@@ -1,0 +1,78 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2300000000000000000000000000000000000023",
+        "block_num": 1920
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1920
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1920,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-03T05:20:00+00:00"
+      }
+    ]
+  },
+  "cg_fund_transf_err": {
+    "added": [
+      {
+        "amount": 1000000000000000000,
+        "block_num": 1920,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "destination_aid": "0x2300000000000000000000000000000000000023",
+        "err_str": "ETH transfer to charity failed.",
+        "evtlog_id": "evt:1920/0",
+        "time_stamp": "2026-01-03T05:20:00+00:00",
+        "tx_id": "0x09f014410b8a0222f71f295aa443d48978345e2fa3ed437d20f8ac86b2eb6f09"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1920,
+        "contract_aid": "0x9000000000000000000000000000000000000009",
+        "log_index": 0,
+        "topic0_sig": "154fb6c6",
+        "tx_id": "0x09f014410b8a0222f71f295aa443d48978345e2fa3ed437d20f8ac86b2eb6f09"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1920
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1920,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x9000000000000000000000000000000000000009",
+        "tx_hash": "0x09f014410b8a0222f71f295aa443d48978345e2fa3ed437d20f8ac86b2eb6f09",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

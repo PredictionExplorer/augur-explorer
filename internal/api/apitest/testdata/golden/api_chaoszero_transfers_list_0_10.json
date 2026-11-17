@@ -1,0 +1,66 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "Transfers": [
+      {
+        "Amount": 3,
+        "BatchIndex": 1,
+        "BlockNum": 161,
+        "DateTime": "2026-01-01T01:41:40Z",
+        "EvtLogId": 5315,
+        "FromAddr": "0x2300000000000000000000000000000000000023",
+        "OperatorAddr": "0x2300000000000000000000000000000000000023",
+        "PositionId": "4",
+        "Question": 2,
+        "RecordId": 4,
+        "RoundId": 0,
+        "TimeStamp": 1767231700,
+        "ToAddr": "0x2400000000000000000000000000000000000024",
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001112",
+        "TxId": 1112,
+        "Yes": false
+      },
+      {
+        "Amount": 2,
+        "BatchIndex": 0,
+        "BlockNum": 161,
+        "DateTime": "2026-01-01T01:41:40Z",
+        "EvtLogId": 5315,
+        "FromAddr": "0x2300000000000000000000000000000000000023",
+        "OperatorAddr": "0x2300000000000000000000000000000000000023",
+        "PositionId": "5",
+        "Question": 2,
+        "RecordId": 3,
+        "RoundId": 0,
+        "TimeStamp": 1767231700,
+        "ToAddr": "0x2400000000000000000000000000000000000024",
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001112",
+        "TxId": 1112,
+        "Yes": true
+      },
+      {
+        "Amount": 3,
+        "BatchIndex": 0,
+        "BlockNum": 160,
+        "DateTime": "2026-01-01T01:40:00Z",
+        "EvtLogId": 5314,
+        "FromAddr": "0x2100000000000000000000000000000000000021",
+        "OperatorAddr": "0x2100000000000000000000000000000000000021",
+        "PositionId": "1",
+        "Question": 0,
+        "RecordId": 2,
+        "RoundId": 0,
+        "TimeStamp": 1767231600,
+        "ToAddr": "0x2400000000000000000000000000000000000024",
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001111",
+        "TxId": 1111,
+        "Yes": true
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

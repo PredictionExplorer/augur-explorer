@@ -11,6 +11,7 @@
 package apitest
 
 import (
+	"github.com/PredictionExplorer/augur-explorer/internal/api/chaoszero"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/faq"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/httpx"
@@ -25,6 +26,7 @@ func buildBareRouter() *httpx.Router {
 	return routes.New(nil, routes.Options{
 		CosmicGame: cosmicgame.NewBare(),
 		RandomWalk: randomwalk.NewBare(),
+		ChaosZero:  chaoszero.NewBare(),
 		FAQ:        faq.New(faq.Options{UpstreamURL: "http://127.0.0.1:8000"}),
 	})
 }

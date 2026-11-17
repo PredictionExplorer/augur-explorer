@@ -1,0 +1,88 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x0000000000000000000000000000000000000000",
+        "block_num": 1100
+      },
+      {
+        "addr": "0x2100000000000000000000000000000000000021",
+        "block_num": 1100
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1100
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1100,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T06:33:20+00:00"
+      }
+    ]
+  },
+  "cz_position_transfer": {
+    "added": [
+      {
+        "amount": 16000000000000000000,
+        "batch_index": 0,
+        "block_num": 1100,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:1100/0",
+        "from_aid": "0x0000000000000000000000000000000000000000",
+        "operator_aid": "0x3100000000000000000000000000000000000031",
+        "position_id": 1,
+        "question": 0,
+        "round_id": 0,
+        "time_stamp": "2026-01-02T06:33:20+00:00",
+        "to_aid": "0x2100000000000000000000000000000000000021",
+        "tx_id": "0x240ba6a49baab92d703409f5316d26b566c051c2a63316f30957ce506abf5d5f",
+        "yes": true
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1100,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "c3d58168",
+        "tx_id": "0x240ba6a49baab92d703409f5316d26b566c051c2a63316f30957ce506abf5d5f"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1100
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1100,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x240ba6a49baab92d703409f5316d26b566c051c2a63316f30957ce506abf5d5f",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

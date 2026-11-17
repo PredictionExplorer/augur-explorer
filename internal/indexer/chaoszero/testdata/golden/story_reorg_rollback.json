@@ -1,0 +1,325 @@
+{
+  "block": {
+    "added": [
+      {
+        "block_num": 3009,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:35:00+00:00"
+      },
+      {
+        "block_num": 3010,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:36:40+00:00"
+      },
+      {
+        "block_num": 3011,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:38:20+00:00"
+      },
+      {
+        "block_num": 3012,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-04T11:40:00+00:00"
+      }
+    ]
+  },
+  "cz_approval_for_all": {
+    "added": [
+      {
+        "approved": true,
+        "block_num": 3012,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:3012/0",
+        "operator_aid": "0x2200000000000000000000000000000000000022",
+        "owner_aid": "0x2400000000000000000000000000000000000024",
+        "time_stamp": "2026-01-04T11:40:00+00:00",
+        "tx_id": "0x6817e8887996e65b51e04f4a8a94da7b143c5298c4a751ea3d3c0797c659c660"
+      }
+    ]
+  },
+  "cz_claim": {
+    "added": [
+      {
+        "amounts": [
+          17000000000000000000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "block_num": 3009,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:3009/0",
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "total": 17000000000000000000,
+        "tx_id": "0x267bde5e8b79b03bd5847327a3082cea919a58c3a211b52071ccd2dca95badb0",
+        "user_aid": "0x2100000000000000000000000000000000000021"
+      }
+    ]
+  },
+  "cz_cycle_escrowed": {
+    "added": [
+      {
+        "amounts": [
+          20000000000000000000,
+          0,
+          15000000000000000000,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "block_num": 3008,
+        "contract_aid": "0x3300000000000000000000000000000000000033",
+        "evtlog_id": "evt:3008/1",
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:33:20+00:00",
+        "tx_id": "0xf9089a039b8b6543ed405e429725638c6e0989aef21636f11b2e36108ba3b615"
+      }
+    ]
+  },
+  "cz_paid": {
+    "added": [
+      {
+        "amount": 17000000000000000000,
+        "block_num": 3009,
+        "contract_aid": "0x3300000000000000000000000000000000000033",
+        "evtlog_id": "evt:3009/1",
+        "question": 0,
+        "recipient_aid": "0x2100000000000000000000000000000000000021",
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:35:00+00:00",
+        "tx_id": "0x267bde5e8b79b03bd5847327a3082cea919a58c3a211b52071ccd2dca95badb0"
+      }
+    ]
+  },
+  "cz_position_transfer": {
+    "added": [
+      {
+        "amount": 2000000000000000000,
+        "batch_index": 0,
+        "block_num": 3011,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:3011/0",
+        "from_aid": "0x2300000000000000000000000000000000000023",
+        "operator_aid": "0x2300000000000000000000000000000000000023",
+        "position_id": 5,
+        "question": 2,
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:38:20+00:00",
+        "to_aid": "0x2400000000000000000000000000000000000024",
+        "tx_id": "0x79f6cba4679fea04926a7082a2c85b0a6076196b0fd8f4c374b940210896dda0",
+        "yes": true
+      },
+      {
+        "amount": 3000000000000000000,
+        "batch_index": 0,
+        "block_num": 3010,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:3010/0",
+        "from_aid": "0x2100000000000000000000000000000000000021",
+        "operator_aid": "0x2100000000000000000000000000000000000021",
+        "position_id": 1,
+        "question": 0,
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:36:40+00:00",
+        "to_aid": "0x2400000000000000000000000000000000000024",
+        "tx_id": "0x6099af115f3be803367859247c9936f562eb01432488ddd603f18665b27af1ca",
+        "yes": true
+      },
+      {
+        "amount": 3000000000000000000,
+        "batch_index": 1,
+        "block_num": 3011,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:3011/0",
+        "from_aid": "0x2300000000000000000000000000000000000023",
+        "operator_aid": "0x2300000000000000000000000000000000000023",
+        "position_id": 4,
+        "question": 2,
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:38:20+00:00",
+        "to_aid": "0x2400000000000000000000000000000000000024",
+        "tx_id": "0x79f6cba4679fea04926a7082a2c85b0a6076196b0fd8f4c374b940210896dda0",
+        "yes": false
+      }
+    ]
+  },
+  "cz_round_settled": {
+    "added": [
+      {
+        "answers": [
+          true,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "block_num": 3008,
+        "carried": 90000000000000000000,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "escrowed": [
+          20000000000000000000,
+          0,
+          15000000000000000000,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "evtlog_id": "evt:3008/0",
+        "round_id": 0,
+        "time_stamp": "2026-01-04T11:33:20+00:00",
+        "tx_id": "0xf9089a039b8b6543ed405e429725638c6e0989aef21636f11b2e36108ba3b615",
+        "values_mask": 5
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 3008,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "7bac5aa6",
+        "tx_id": "0xf9089a039b8b6543ed405e429725638c6e0989aef21636f11b2e36108ba3b615"
+      },
+      {
+        "block_num": 3008,
+        "contract_aid": "0x3300000000000000000000000000000000000033",
+        "log_index": 1,
+        "topic0_sig": "16cbc14e",
+        "tx_id": "0xf9089a039b8b6543ed405e429725638c6e0989aef21636f11b2e36108ba3b615"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "d1669759",
+        "tx_id": "0x267bde5e8b79b03bd5847327a3082cea919a58c3a211b52071ccd2dca95badb0"
+      },
+      {
+        "block_num": 3009,
+        "contract_aid": "0x3300000000000000000000000000000000000033",
+        "log_index": 1,
+        "topic0_sig": "9f777629",
+        "tx_id": "0x267bde5e8b79b03bd5847327a3082cea919a58c3a211b52071ccd2dca95badb0"
+      },
+      {
+        "block_num": 3010,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "c3d58168",
+        "tx_id": "0x6099af115f3be803367859247c9936f562eb01432488ddd603f18665b27af1ca"
+      },
+      {
+        "block_num": 3011,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "4a39dc06",
+        "tx_id": "0x79f6cba4679fea04926a7082a2c85b0a6076196b0fd8f4c374b940210896dda0"
+      },
+      {
+        "block_num": 3012,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "17307eab",
+        "tx_id": "0x6817e8887996e65b51e04f4a8a94da7b143c5298c4a751ea3d3c0797c659c660"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 3012
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 3008
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 3008,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0xf9089a039b8b6543ed405e429725638c6e0989aef21636f11b2e36108ba3b615",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3009,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x267bde5e8b79b03bd5847327a3082cea919a58c3a211b52071ccd2dca95badb0",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3010,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x6099af115f3be803367859247c9936f562eb01432488ddd603f18665b27af1ca",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3011,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x79f6cba4679fea04926a7082a2c85b0a6076196b0fd8f4c374b940210896dda0",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 3012,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x6817e8887996e65b51e04f4a8a94da7b143c5298c4a751ea3d3c0797c659c660",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

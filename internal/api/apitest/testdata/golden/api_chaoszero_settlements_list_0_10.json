@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "Settlements": [
+      {
+        "Answers": [
+          true,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "BlockNum": 158,
+        "Carried": 90,
+        "DateTime": "2026-01-01T01:36:40Z",
+        "Escrowed": [
+          20,
+          0,
+          15,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "EvtLogId": 5310,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767231400,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001109",
+        "TxId": 1109,
+        "ValuesMask": 5
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

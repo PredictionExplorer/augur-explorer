@@ -1,0 +1,148 @@
+{
+  "address": {
+    "added": [
+      {
+        "addr": "0x2300000000000000000000000000000000000023",
+        "block_num": 1040
+      },
+      {
+        "addr": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "block_num": 1040
+      }
+    ]
+  },
+  "block": {
+    "added": [
+      {
+        "block_num": 1040,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T04:53:20+00:00"
+      },
+      {
+        "block_num": 1041,
+        "cash_flow": 0.000000000000000000,
+        "num_tx": 0,
+        "ts": "2026-01-02T04:55:00+00:00"
+      }
+    ]
+  },
+  "cz_position_split": {
+    "added": [
+      {
+        "amount": 20000000000000000000,
+        "block_num": 1040,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:1040/1",
+        "question": 2,
+        "round_id": 0,
+        "time_stamp": "2026-01-02T04:53:20+00:00",
+        "tx_id": "0x399de2140e5eabd8f4961c7d6aa660a237e1cb4dab25d3ef98796a4b1786b607",
+        "user_aid": "0x2300000000000000000000000000000000000023"
+      }
+    ]
+  },
+  "cz_positions_merged": {
+    "added": [
+      {
+        "amounts": [
+          0,
+          0,
+          5000000000000000000,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "block_num": 1041,
+        "collateral_out": 5000000000000000000,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:1041/0",
+        "round_id": 0,
+        "time_stamp": "2026-01-02T04:55:00+00:00",
+        "tx_id": "0x5122f558cd611f6d7b6d7c8cf64badbf7d1b0a7c3cd4f2f05203b75b5bd821e8",
+        "user_aid": "0x2300000000000000000000000000000000000023"
+      }
+    ]
+  },
+  "cz_round_initialized": {
+    "added": [
+      {
+        "block_num": 1040,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "evtlog_id": "evt:1040/0",
+        "round_id": 0,
+        "time_stamp": "2026-01-02T04:53:20+00:00",
+        "tx_id": "0x399de2140e5eabd8f4961c7d6aa660a237e1cb4dab25d3ef98796a4b1786b607"
+      }
+    ]
+  },
+  "evt_log": {
+    "added": [
+      {
+        "block_num": 1040,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "e2d996ef",
+        "tx_id": "0x399de2140e5eabd8f4961c7d6aa660a237e1cb4dab25d3ef98796a4b1786b607"
+      },
+      {
+        "block_num": 1040,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 1,
+        "topic0_sig": "f35af27f",
+        "tx_id": "0x399de2140e5eabd8f4961c7d6aa660a237e1cb4dab25d3ef98796a4b1786b607"
+      },
+      {
+        "block_num": 1041,
+        "contract_aid": "0x3100000000000000000000000000000000000031",
+        "log_index": 0,
+        "topic0_sig": "81ac7d05",
+        "tx_id": "0x5122f558cd611f6d7b6d7c8cf64badbf7d1b0a7c3cd4f2f05203b75b5bd821e8"
+      }
+    ]
+  },
+  "last_block": {
+    "added": [
+      {
+        "block_num": 1041
+      }
+    ],
+    "removed": [
+      {
+        "block_num": 0
+      }
+    ]
+  },
+  "transaction": {
+    "added": [
+      {
+        "block_num": 1040,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 2,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x399de2140e5eabd8f4961c7d6aa660a237e1cb4dab25d3ef98796a4b1786b607",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      },
+      {
+        "block_num": 1041,
+        "ctrct_create": false,
+        "from_aid": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        "gas_price": 1000000000.000000000000000000,
+        "gas_used": 21000,
+        "input_sig": "          ",
+        "num_logs": 1,
+        "to_aid": "0x3100000000000000000000000000000000000031",
+        "tx_hash": "0x5122f558cd611f6d7b6d7c8cf64badbf7d1b0a7c3cd4f2f05203b75b5bd821e8",
+        "tx_index": 0,
+        "value": 0.000000000000000000
+      }
+    ]
+  }
+}

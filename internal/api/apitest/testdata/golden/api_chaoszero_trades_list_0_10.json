@@ -1,0 +1,76 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Limit": 10,
+    "Offset": 0,
+    "Trades": [
+      {
+        "BlockNum": 165,
+        "Buy": true,
+        "Cash": 4,
+        "DateTime": "2026-01-01T01:48:20Z",
+        "EvtLogId": 5319,
+        "Question": 3,
+        "RecordId": 4,
+        "RoundId": 1,
+        "TimeStamp": 1767232100,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001116",
+        "TxId": 1116,
+        "Units": 5,
+        "UserAddr": "0x2400000000000000000000000000000000000024",
+        "Yes": true
+      },
+      {
+        "BlockNum": 155,
+        "Buy": false,
+        "Cash": 7,
+        "DateTime": "2026-01-01T01:31:40Z",
+        "EvtLogId": 5307,
+        "Question": 2,
+        "RecordId": 3,
+        "RoundId": 0,
+        "TimeStamp": 1767231100,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001106",
+        "TxId": 1106,
+        "Units": 10,
+        "UserAddr": "0x2300000000000000000000000000000000000023",
+        "Yes": true
+      },
+      {
+        "BlockNum": 153,
+        "Buy": true,
+        "Cash": 5,
+        "DateTime": "2026-01-01T01:28:20Z",
+        "EvtLogId": 5305,
+        "Question": 1,
+        "RecordId": 2,
+        "RoundId": 0,
+        "TimeStamp": 1767230900,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001104",
+        "TxId": 1104,
+        "Units": 8,
+        "UserAddr": "0x2200000000000000000000000000000000000022",
+        "Yes": false
+      },
+      {
+        "BlockNum": 152,
+        "Buy": true,
+        "Cash": 12,
+        "DateTime": "2026-01-01T01:26:40Z",
+        "EvtLogId": 5303,
+        "Question": 0,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767230800,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001103",
+        "TxId": 1103,
+        "Units": 16,
+        "UserAddr": "0x2100000000000000000000000000000000000021",
+        "Yes": true
+      }
+    ],
+    "error": "",
+    "status": 1
+  }
+}

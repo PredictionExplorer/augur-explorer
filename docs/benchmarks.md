@@ -9,7 +9,7 @@ introduces it.
 ## How to run
 
 ```sh
-# Unit benchmarks (no Docker)
+# Unit benchmarks (no database)
 go test ./internal/indexer/cosmicgame/ -bench BenchmarkEventDecode -benchmem -count=6 -run '^$' | tee old.txt
 go test ./internal/freezer/decode/ -bench BenchmarkReceiptsDecode -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench BenchmarkRateLimiter    -benchmem -count=6 -run '^$'
@@ -17,7 +17,7 @@ go test ./internal/api/common/   -bench 'BenchmarkCompress|BenchmarkConditionalE
 go test ./internal/api/common/   -bench BenchmarkMaxRequestBody -benchmem -count=6 -run '^$'
 go test ./internal/api/common/   -bench BenchmarkRequestDeadline -benchmem -count=6 -run '^$'
 
-# DB benchmarks (Docker required; runs against the seeded test container)
+# DB benchmarks (need PostgreSQL: TEST_PGSQL_URL server, or Docker testcontainers)
 go test -tags=integration ./internal/store/cosmicgame/ -bench BenchmarkStatisticsQueries -benchmem -count=6 -run '^$' -timeout 15m
 go test -tags=integration ./internal/store/randomwalk/ -bench BenchmarkRandomWalkV2Queries -benchmem -count=6 -run '^$' -timeout 15m
 go test -tags=integration ./internal/indexer/ -bench BenchmarkIngestBlock -benchmem -count=6 -run '^$' -timeout 15m

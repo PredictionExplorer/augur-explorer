@@ -199,10 +199,10 @@
           "WinnerAddr": "0x2200000000000000000000000000000000000022"
         },
         "LastCstBidder": {
-          "CstAmount": "",
-          "CstAmountEth": 0,
-          "NftTokenId": 0,
-          "WinnerAddr": ""
+          "CstAmount": "40000000000000000000",
+          "CstAmountEth": 40,
+          "NftTokenId": 4,
+          "WinnerAddr": "0x2300000000000000000000000000000000000023"
         },
         "MainPrize": {
           "CstAmount": "100000000000000000000",

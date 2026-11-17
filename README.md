@@ -30,11 +30,14 @@ design decisions.
 
 ## Quick start
 
-Prerequisites: Go 1.26+, Docker.
+Prerequisites: Go 1.26+ and a PostgreSQL server (any local install works;
+Docker is optional — `docker compose up -d db migrate` is just one way to
+get one).
 
 ```bash
-# 1. Database (starts Postgres and applies migrations)
-docker compose up -d db migrate
+# 1. Database: point the PGSQL_* / DATABASE_URL variables at your server
+#    and apply migrations (or use the optional compose service:
+#    docker compose up -d db migrate)
 
 # 2. Configuration
 cp .env.example .env          # set RPC_URL; see the file for all variables
@@ -47,7 +50,7 @@ make build
 ./bin/rw-etl                  # RandomWalk indexer
 ```
 
-Or everything in containers: `docker compose --profile etl up`.
+Optionally, everything in containers: `docker compose --profile etl up`.
 
 ## Repository layout
 
@@ -66,7 +69,7 @@ Or everything in containers: `docker compose --profile etl up`.
 ```bash
 make generate          # regenerate OpenAPI v2 models/server + contract bindings
 make test              # unit tests (race detector)
-make test-integration  # + real Postgres via testcontainers
+make test-integration  # + real Postgres (TEST_PGSQL_URL server, or testcontainers)
 make coverage-check    # enforced global + changed-code coverage policy
 make hooks-install     # install the staged pre-commit policy hook
 make lint              # golangci-lint

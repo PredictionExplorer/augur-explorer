@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/PredictionExplorer/augur-explorer/internal/api/chaoszero"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/common"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/api/cosmicgame/contractstate"
@@ -103,6 +104,7 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 		AdminAPIKey:     adminKey,
 		RankingAdminKey: adminKey,
 	})
+	czAPI := chaoszero.New(st, chaoszero.Options{})
 	faqProxy := faq.New(faq.Options{UpstreamURL: faqSrv.URL})
 
 	v2Server, err := v2.NewServer(
@@ -139,6 +141,7 @@ func newHarness(ctx context.Context, db *testdb.DB) (*harness, error) {
 	r := routes.New(st, routes.Options{
 		CosmicGame: cgAPI,
 		RandomWalk: rwAPI,
+		ChaosZero:  czAPI,
 		FAQ:        faqProxy,
 		V2:         v2Server,
 	})

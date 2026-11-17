@@ -1,8 +1,9 @@
 // The ChaosZero ETL: indexes the IndependentOutcomeMarket and
-// OutcomeSettlementVault contract events into PostgreSQL. main wires the
-// process-wide dependencies (typed configuration, process logger, RPC
-// client, store, the handler set of internal/indexer/chaoszero) and hands
-// control to the shared indexing engine (internal/indexer).
+// OutcomeSettlementVault contract events into PostgreSQL. The shared process
+// skeleton (typed configuration, process logger, RPC client, store, metrics,
+// the indexing engine) lives in internal/etlapp; this binary contributes
+// only the ChaosZero module wiring: contract bootstrap, the handler set of
+// internal/indexer/chaoszero and the cz_proc_status watermark adapter.
 //
 // The ChaosZero contracts are immutable singletons (no proxy, no owner), so
 // unlike cmd/cg-etl there is no contract-parameter drift audit and no
@@ -13,34 +14,16 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
-	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/config"
-	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
+	"github.com/PredictionExplorer/augur-explorer/internal/etlapp"
 	czindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/chaoszero"
-	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	czstore "github.com/PredictionExplorer/augur-explorer/internal/store/chaoszero"
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
-)
-
-// Server-side database time bounds (D22 defense in depth). ETL statements
-// are small single-row inserts and short reads; one that runs a minute is a
-// fault, and PostgreSQL aborts it even if the client-side cancellation never
-// arrives. The idle-in-transaction bound caps how long a per-block ingestion
-// transaction (ADR-0010) could pin locks if the process stalled between
-// statements.
-const (
-	dbStatementTimeout = time.Minute
-	dbIdleInTxTimeout  = 5 * time.Minute
 )
 
 // czProgress adapts the cz_proc_status row to the engine's watermark
@@ -90,98 +73,36 @@ func runMain() error {
 	return run(ctx, os.Getenv, os.Stdout, prometheus.DefaultRegisterer, prometheus.DefaultGatherer)
 }
 
-// run wires every dependency and drives the indexing engine until ctx is
-// cancelled (returning nil) or a fatal error occurs. Environment access goes
-// through getenv and structured logs go to logOut; the Prometheus
-// registerer/gatherer pair is injected so tests can use isolated registries
-// (the default registry rejects duplicate registration across runs).
+// run drives the shared ETL skeleton with the ChaosZero module wiring; the
+// signature is the integration tests' seam.
 func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg prometheus.Registerer, gatherer prometheus.Gatherer) error {
-	cfg, err := config.LoadETL(getenv)
-	if err != nil {
-		return err
-	}
-	logger := cfg.Log.NewLogger(logOut)
-	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
-	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
+	return etlapp.Run(ctx, getenv, logOut, reg, gatherer, wireChaosZero)
+}
 
-	go func() {
-		<-ctx.Done()
-		logger.Info("Got signal, will exit after current batch is processed." +
-			" To interrupt abruptly send SIGKILL (9) to the kernel.")
-	}()
+// wireChaosZero registers the contract addresses (fresh-database bootstrap)
+// and builds the event-handler set over them.
+func wireChaosZero(ctx context.Context, deps etlapp.Deps) (etlapp.Module, error) {
+	czRepo := czstore.NewRepo(deps.Store)
 
-	rpcclient, err := rpc.DialContext(ctx, cfg.RPCURL)
+	contracts, addrs, err := czindexer.BootstrapContracts(ctx, czRepo, deps.Store)
 	if err != nil {
-		return fmt.Errorf("dialing RPC node: %w", err)
+		return etlapp.Module{}, fmt.Errorf("contract address bootstrap failed: %w", err)
 	}
-	logger.Info("Connected to ETH node", "rpc_url", config.RedactURL(cfg.RPCURL))
-	eclient := ethclient.NewClient(rpcclient)
-
-	// Database log output (failed and slow queries) goes through the pgx
-	// slog tracer onto the same stream, tagged component=db.
-	storeCfg := cfg.DB.StoreConfig()
-	storeCfg.Logger = logger.With("component", "db")
-	storeCfg.StatementTimeout = dbStatementTimeout
-	storeCfg.IdleInTxSessionTimeout = dbIdleInTxTimeout
-	dbStore, err := store.New(ctx, storeCfg)
-	if err != nil {
-		return fmt.Errorf("can't connect to PostgreSQL database: %w\n%s", err, store.ConnectHint(err))
-	}
-	defer dbStore.Close()
-	poolCollector := store.NewPoolCollector(dbStore.Pool())
-	if err := reg.Register(poolCollector); err != nil {
-		return fmt.Errorf("registering db pool metrics: %w", err)
-	}
-	defer reg.Unregister(poolCollector)
-	czRepo := czstore.NewRepo(dbStore)
-
-	// Register the contract addresses (fresh-database bootstrap) and build
-	// the event-handler set over them.
-	contracts, addrs, err := czindexer.BootstrapContracts(ctx, czRepo, dbStore)
-	if err != nil {
-		return fmt.Errorf("contract address bootstrap failed: %w", err)
-	}
-	logger.Info("Contract addresses registered in address table",
+	deps.Logger.Info("Contract addresses registered in address table",
 		"market", contracts.Market.String(), "vault", contracts.Vault.String(), "source", addrs.Source)
 
 	handlers, err := czindexer.New(czindexer.Config{
 		Repo:      czRepo,
 		Contracts: contracts,
-		Logger:    logger,
+		Logger:    deps.Logger,
 	})
 	if err != nil {
-		return fmt.Errorf("can't build event handlers: %w", err)
+		return etlapp.Module{}, fmt.Errorf("can't build event handlers: %w", err)
 	}
 
-	// Private metrics/pprof listener, enabled by METRICS_ADDR (never expose
-	// it publicly; use a different port per process on shared hosts).
-	metrics := indexer.NewMetrics(reg)
-	if addr := strings.TrimSpace(cfg.MetricsAddr); addr != "" {
-		srv, _, err := indexer.StartMetricsServer(ctx, addr, gatherer, logger)
-		if err != nil {
-			return fmt.Errorf("can't start metrics server on %v: %w", addr, err)
-		}
-		defer func() { _ = srv.Close() }()
-	}
-
-	registry := handlers.Registry()
-	engine, err := indexer.New(indexer.Config{
-		Store:     dbStore,
-		Client:    eclient,
+	return etlapp.Module{
 		Progress:  czProgress{repo: czRepo},
-		Process:   indexer.LogProcessor(dbStore, registry),
+		Registry:  handlers.Registry(),
 		Contracts: contracts.All(),
-		Logger:    logger,
-		Metrics:   metrics,
-		TopicName: registry.TopicName,
-	})
-	if err != nil {
-		return fmt.Errorf("can't build indexer engine: %w", err)
-	}
-
-	if err := engine.Run(ctx); err != nil {
-		logger.Error("Event processing loop terminated", "err", err)
-		return fmt.Errorf("event processing loop terminated: %w", err)
-	}
-	return nil
+	}, nil
 }

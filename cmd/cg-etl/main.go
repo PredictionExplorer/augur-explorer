@@ -1,9 +1,11 @@
 // The CosmicGame ETL: indexes every CosmicGame-family contract event into
-// PostgreSQL. main wires the process-wide dependencies (typed configuration,
-// process logger, RPC client, store, the handler set of
-// internal/indexer/cosmicgame), audits contract-parameter drift, recovers
-// event-less V3 champion durations and hands control to the shared indexing
-// engine (internal/indexer).
+// PostgreSQL. The shared process skeleton (typed configuration, process
+// logger, RPC client, store, metrics, the indexing engine) lives in
+// internal/etlapp; this binary contributes the CosmicGame module wiring:
+// contract bootstrap, the handler set of internal/indexer/cosmicgame, the
+// cg_proc_status watermark adapter, the contract-parameter drift audit,
+// event-less V3 champion-duration recovery and the implementation /
+// prizes-wallet recovery passes with their live hooks.
 package main
 
 import (
@@ -14,42 +16,32 @@ import (
 	"math"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/PredictionExplorer/augur-explorer/internal/config"
 	"github.com/PredictionExplorer/augur-explorer/internal/ethcall"
+	"github.com/PredictionExplorer/augur-explorer/internal/etlapp"
 	"github.com/PredictionExplorer/augur-explorer/internal/indexer"
 	cgindexer "github.com/PredictionExplorer/augur-explorer/internal/indexer/cosmicgame"
-	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	cgstore "github.com/PredictionExplorer/augur-explorer/internal/store/cosmicgame"
 	"github.com/PredictionExplorer/augur-explorer/internal/version"
 )
 
-// Server-side database time bounds (D22 defense in depth). ETL statements
-// are small single-row inserts and short reads; one that runs a minute is a
-// fault, and PostgreSQL aborts it even if the client-side cancellation never
-// arrives. The idle-in-transaction bound caps how long a per-block ingestion
-// transaction (ADR-0010) could pin locks if the process stalled between
-// statements — for example on a chain RPC call that the engine's per-call
-// deadline somehow failed to cut short.
-const (
-	dbStatementTimeout = time.Minute
-	dbIdleInTxTimeout  = 5 * time.Minute
-)
-
-// cgProgress adapts the cg_proc_status row to the engine's watermark
-// interface, preserving last_evt_id across writes.
 // implementationCommitWait bounds how long the implementation backfill waits
 // for the block carrying an Upgraded event to commit before giving up (the
-// startup recovery pass catches anything left behind).
-const implementationCommitWait = 10 * time.Minute
+// startup recovery pass catches anything left behind). Tests shrink it to
+// pin the timeout arm.
+var implementationCommitWait = 10 * time.Minute
+
+// blockWatermark is the committed-watermark read the backfills poll; the
+// production value is cgProgress, tests substitute failures and fixed
+// positions.
+type blockWatermark interface {
+	LastBlock(ctx context.Context) (int64, error)
+}
 
 // backfillImplementationAfterCommit waits until the engine has committed
 // blockNum (the Upgraded event's block; the hook fires inside that block's
@@ -59,7 +51,7 @@ const implementationCommitWait = 10 * time.Minute
 func backfillImplementationAfterCommit(
 	ctx context.Context,
 	logger *slog.Logger,
-	progress cgProgress,
+	progress blockWatermark,
 	handlers *cgindexer.Handlers,
 	engine *indexer.Engine,
 	process indexer.ProcessFunc,
@@ -102,7 +94,7 @@ func backfillImplementationAfterCommit(
 func backfillPrizesWalletAfterCommit(
 	ctx context.Context,
 	logger *slog.Logger,
-	progress cgProgress,
+	progress blockWatermark,
 	handlers *cgindexer.Handlers,
 	engine *indexer.Engine,
 	process indexer.ProcessFunc,
@@ -136,6 +128,8 @@ func backfillPrizesWalletAfterCommit(
 	}
 }
 
+// cgProgress adapts the cg_proc_status row to the engine's watermark
+// interface, preserving last_evt_id across writes.
 type cgProgress struct {
 	repo *cgstore.Repo
 }
@@ -181,70 +175,37 @@ func runMain() error {
 	return run(ctx, os.Getenv, os.Stdout, prometheus.DefaultRegisterer, prometheus.DefaultGatherer)
 }
 
-// run wires every dependency and drives the indexing engine until ctx is
-// cancelled (returning nil) or a fatal error occurs. Environment access goes
-// through getenv and structured logs go to logOut; the Prometheus
-// registerer/gatherer pair is injected so tests can use isolated registries
-// (the default registry rejects duplicate registration across runs).
+// run drives the shared ETL skeleton with the CosmicGame module wiring; the
+// signature is the integration tests' seam.
 func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg prometheus.Registerer, gatherer prometheus.Gatherer) error {
-	cfg, err := config.LoadETL(getenv)
-	if err != nil {
-		return err
-	}
-	// One structured logger on stdout; journald owns persistence (§8.3 —
-	// the legacy $HOME/ae_logs dual-file layout is gone).
-	logger := cfg.Log.NewLogger(logOut)
-	logger.LogAttrs(ctx, slog.LevelInfo, "build info", version.LogAttrs()...)
-	logger.LogAttrs(ctx, slog.LevelInfo, "effective configuration", config.Attrs(cfg)...)
+	return etlapp.Run(ctx, getenv, logOut, reg, gatherer, wireCosmicGame)
+}
 
-	go func() {
-		<-ctx.Done()
-		logger.Info("Got signal, will exit after current batch is processed." +
-			" To interrupt abruptly send SIGKILL (9) to the kernel.")
-	}()
+// wireCosmicGame registers the contract addresses (fresh-database
+// bootstrap), builds the event-handler set over them, audits
+// contract-parameter drift, recovers event-less V3 champion durations and
+// defers the implementation/prizes-wallet recovery passes (which need the
+// built engine) to the PostEngine hook.
+func wireCosmicGame(ctx context.Context, deps etlapp.Deps) (etlapp.Module, error) {
+	logger := deps.Logger
+	eclient := deps.Client
+	cgRepo := cgstore.NewRepo(deps.Store)
 
-	rpcclient, err := rpc.DialContext(ctx, cfg.RPCURL)
+	contracts, cgAddrs, err := cgindexer.BootstrapContracts(ctx, cgRepo, deps.Store)
 	if err != nil {
-		return fmt.Errorf("dialing RPC node: %w", err)
-	}
-	logger.Info("Connected to ETH node", "rpc_url", config.RedactURL(cfg.RPCURL))
-	eclient := ethclient.NewClient(rpcclient)
-
-	// Database log output (failed and slow queries) goes through the pgx
-	// slog tracer onto the same stream, tagged component=db.
-	storeCfg := cfg.DB.StoreConfig()
-	storeCfg.Logger = logger.With("component", "db")
-	storeCfg.StatementTimeout = dbStatementTimeout
-	storeCfg.IdleInTxSessionTimeout = dbIdleInTxTimeout
-	dbStore, err := store.New(ctx, storeCfg)
-	if err != nil {
-		return fmt.Errorf("can't connect to PostgreSQL database: %w\n%s", err, store.ConnectHint(err))
-	}
-	defer dbStore.Close()
-	poolCollector := store.NewPoolCollector(dbStore.Pool())
-	if err := reg.Register(poolCollector); err != nil {
-		return fmt.Errorf("registering db pool metrics: %w", err)
-	}
-	defer reg.Unregister(poolCollector)
-	cgRepo := cgstore.NewRepo(dbStore)
-
-	// Register the contract addresses (fresh-database bootstrap) and build
-	// the event-handler set over them.
-	contracts, cgAddrs, err := cgindexer.BootstrapContracts(ctx, cgRepo, dbStore)
-	if err != nil {
-		return fmt.Errorf("contract address bootstrap failed: %w", err)
+		return etlapp.Module{}, fmt.Errorf("contract address bootstrap failed: %w", err)
 	}
 	logger.Info("All contract addresses registered in address table")
 
 	handlers, err := cgindexer.New(cgindexer.Config{
 		Repo:      cgRepo,
-		Store:     dbStore,
+		Store:     deps.Store,
 		Caller:    eclient,
 		Contracts: contracts,
 		Logger:    logger,
 	})
 	if err != nil {
-		return fmt.Errorf("can't build event handlers: %w", err)
+		return etlapp.Module{}, fmt.Errorf("can't build event handlers: %w", err)
 	}
 
 	if _, err := cgindexer.CheckContractParamsDrift(
@@ -256,7 +217,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 		logger,
 	); err != nil {
 		logger.Error("Contract parameter drift audit failed", "err", err)
-		return fmt.Errorf("contract parameter drift audit failed: %w", err)
+		return etlapp.Module{}, fmt.Errorf("contract parameter drift audit failed: %w", err)
 	}
 
 	recoveryCtx, cancelRecovery := context.WithTimeout(ctx, ethcall.DefaultTimeout)
@@ -265,73 +226,51 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer, reg 
 	if headerErr != nil {
 		logger.Warn("Champion duration recovery skipped: latest header unavailable", "err", headerErr)
 	} else if header.Time > math.MaxInt64 {
-		return fmt.Errorf("champion duration recovery: header timestamp %d overflows int64", header.Time)
+		return etlapp.Module{}, fmt.Errorf("champion duration recovery: header timestamp %d overflows int64", header.Time)
 	} else if err := handlers.RecoverChampionDurations(
 		ctx,
 		header.Number.Int64(),
 		int64(header.Time), // #nosec G115 -- bounded above
 	); err != nil {
-		return fmt.Errorf("champion duration recovery failed: %w", err)
+		return etlapp.Module{}, fmt.Errorf("champion duration recovery failed: %w", err)
 	}
 
-	// Private metrics/pprof listener, enabled by METRICS_ADDR (never expose
-	// it publicly; use a different port per process on shared hosts).
-	metrics := indexer.NewMetrics(reg)
-	if addr := strings.TrimSpace(cfg.MetricsAddr); addr != "" {
-		srv, _, err := indexer.StartMetricsServer(ctx, addr, gatherer, logger)
-		if err != nil {
-			return fmt.Errorf("can't start metrics server on %v: %w", addr, err)
-		}
-		defer func() { _ = srv.Close() }()
-	}
-
-	registry := handlers.Registry()
-	process := indexer.LogProcessor(dbStore, registry)
 	progress := cgProgress{repo: cgRepo}
-	engine, err := indexer.New(indexer.Config{
-		Store:     dbStore,
-		Client:    eclient,
-		Progress:  progress,
-		Process:   process,
-		Contracts: contracts.All(),
-		Logger:    logger,
-		Metrics:   metrics,
-		TopicName: registry.TopicName,
-	})
-	if err != nil {
-		return fmt.Errorf("can't build indexer engine: %w", err)
+	postEngine := func(ctx context.Context, engine *indexer.Engine, process indexer.ProcessFunc) error {
+		// Game implementations: constructor events of implementations the
+		// ETL was not watching when they were deployed are backfilled now,
+		// and a new implementation reported by Upgraded joins the
+		// FilterLogs set at once, with its constructor event backfilled
+		// once the block commits.
+		if err := handlers.RecoverImplementationEvents(ctx, engine, process); err != nil {
+			return fmt.Errorf("implementation event recovery failed: %w", err)
+		}
+		handlers.SetOnNewImplementation(func(_ context.Context, impl ethcommon.Address, blockNum int64) {
+			engine.AddContracts(impl)
+			go backfillImplementationAfterCommit(ctx, logger, progress, handlers, engine, process, impl, blockNum)
+		})
+
+		// Prizes wallets: a new wallet (PrizesWalletAddressChanged) joins
+		// the FilterLogs set at once, and the fetch batch that carried the
+		// announcement — whose FilterLogs call predates the wallet — is
+		// re-covered by a backfill once the batch commits. The startup pass
+		// repairs a crash between the two.
+		if lastBlock, err := progress.LastBlock(ctx); err != nil {
+			return fmt.Errorf("prizes wallet event recovery: read watermark: %w", err)
+		} else if err := handlers.RecoverPrizesWalletEvents(ctx, engine, process, lastBlock); err != nil {
+			return fmt.Errorf("prizes wallet event recovery failed: %w", err)
+		}
+		handlers.SetOnNewPrizesWallet(func(_ context.Context, wallet ethcommon.Address, blockNum int64) {
+			engine.AddContracts(wallet)
+			go backfillPrizesWalletAfterCommit(ctx, logger, progress, handlers, engine, process, wallet, blockNum)
+		})
+		return nil
 	}
 
-	// Game implementations: constructor events of implementations the ETL
-	// was not watching when they were deployed are backfilled now, and a
-	// new implementation reported by Upgraded joins the FilterLogs set at
-	// once, with its constructor event backfilled once the block commits.
-	if err := handlers.RecoverImplementationEvents(ctx, engine, process); err != nil {
-		return fmt.Errorf("implementation event recovery failed: %w", err)
-	}
-	handlers.SetOnNewImplementation(func(_ context.Context, impl ethcommon.Address, blockNum int64) {
-		engine.AddContracts(impl)
-		go backfillImplementationAfterCommit(ctx, logger, progress, handlers, engine, process, impl, blockNum)
-	})
-
-	// Prizes wallets: a new wallet (PrizesWalletAddressChanged) joins the
-	// FilterLogs set at once, and the fetch batch that carried the
-	// announcement — whose FilterLogs call predates the wallet — is
-	// re-covered by a backfill once the batch commits. The startup pass
-	// repairs a crash between the two.
-	if lastBlock, err := progress.LastBlock(ctx); err != nil {
-		return fmt.Errorf("prizes wallet event recovery: read watermark: %w", err)
-	} else if err := handlers.RecoverPrizesWalletEvents(ctx, engine, process, lastBlock); err != nil {
-		return fmt.Errorf("prizes wallet event recovery failed: %w", err)
-	}
-	handlers.SetOnNewPrizesWallet(func(_ context.Context, wallet ethcommon.Address, blockNum int64) {
-		engine.AddContracts(wallet)
-		go backfillPrizesWalletAfterCommit(ctx, logger, progress, handlers, engine, process, wallet, blockNum)
-	})
-
-	if err := engine.Run(ctx); err != nil {
-		logger.Error("Event processing loop terminated", "err", err)
-		return fmt.Errorf("event processing loop terminated: %w", err)
-	}
-	return nil
+	return etlapp.Module{
+		Progress:   progress,
+		Registry:   handlers.Registry(),
+		Contracts:  contracts.All(),
+		PostEngine: postEngine,
+	}, nil
 }

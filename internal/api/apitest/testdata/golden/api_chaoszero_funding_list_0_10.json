@@ -1,0 +1,60 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Fundings": [
+      {
+        "Allocations": [
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5
+        ],
+        "BlockNum": 164,
+        "CallerAddr": "0x2200000000000000000000000000000000000022",
+        "CarryUsed": 90,
+        "DateTime": "2026-01-01T01:46:40Z",
+        "Donated": 10,
+        "EvtLogId": 5318,
+        "RecordId": 2,
+        "RoundId": 1,
+        "TimeStamp": 1767232000,
+        "TransfersUsed": 0,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001115",
+        "TxId": 1115
+      },
+      {
+        "Allocations": [
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5,
+          12.5
+        ],
+        "BlockNum": 151,
+        "CallerAddr": "0x2100000000000000000000000000000000000021",
+        "CarryUsed": 0,
+        "DateTime": "2026-01-01T01:25:00Z",
+        "Donated": 100,
+        "EvtLogId": 5302,
+        "RecordId": 1,
+        "RoundId": 0,
+        "TimeStamp": 1767230700,
+        "TransfersUsed": 0,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001102",
+        "TxId": 1102
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}

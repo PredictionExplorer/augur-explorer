@@ -1,0 +1,36 @@
+{
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "Approvals": [
+      {
+        "Approved": false,
+        "BlockNum": 166,
+        "DateTime": "2026-01-01T01:50:00Z",
+        "EvtLogId": 5320,
+        "OperatorAddr": "0x2200000000000000000000000000000000000022",
+        "OwnerAddr": "0x2400000000000000000000000000000000000024",
+        "RecordId": 2,
+        "TimeStamp": 1767232200,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001117",
+        "TxId": 1117
+      },
+      {
+        "Approved": true,
+        "BlockNum": 162,
+        "DateTime": "2026-01-01T01:43:20Z",
+        "EvtLogId": 5316,
+        "OperatorAddr": "0x2200000000000000000000000000000000000022",
+        "OwnerAddr": "0x2400000000000000000000000000000000000024",
+        "RecordId": 1,
+        "TimeStamp": 1767231800,
+        "TxHash": "0xf000000000000000000000000000000000000000000000000000000000001113",
+        "TxId": 1113
+      }
+    ],
+    "Limit": 10,
+    "Offset": 0,
+    "error": "",
+    "status": 1
+  }
+}
